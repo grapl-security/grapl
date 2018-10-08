@@ -38,9 +38,14 @@ This could return a graph like:
 ![word_macro_hit](https://github.com/insanitybit/grapl/blob/master/images/word_child.png)
 
 
-When these analyzers find matches, engagements are created. In the future
-it will be possible to interact with these engagements through an API targeting
-Jupyter notebooks. For now the feature is limited to a visual representation.
+When these analyzers find matches, engagements are created. Engagements are a graph
+representation of all of the events related to an incident. So, while a signature
+might give us Word and the dropped payload, our engagement might pull in files
+read by word, children of the 'payload' process, or other relevant information.
+
+In the future it will be possible to interact with these engagements through
+an API targeting Jupyter notebooks. For now the feature is limited to a visual
+representation.
 
 Grapl can automatically expand signature hits out to scope the engagement by
 traversing the edges of the signature match, pulling relevant nodes into the
@@ -50,7 +55,6 @@ Given the `word` and `payload` children we can recursively
 add subsequent children, find the files read by word, etc.
 
 ![word_macro_graph](https://github.com/insanitybit/grapl/blob/master/images/word_macro_graph.png)
-
 
 Even in cases where your detections are built on discrete events Grapl should
 be able to provide benefits with its automated scoping.
