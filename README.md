@@ -1,10 +1,12 @@
 # grapl
 Graph platform for Detection, Forensics, and Incident Response
 
-Grapl aims to describe a network, and actions taking place on that network,
-as a graph. This makes querying for interconnected
-events efficient, easily expressed, and allows you to automate scoping
-your investigations.
+Grapl aims to describe a network, and actions taking place on that network, as a graph. 
+
+The graph representation makes it easy to express complex attacker signatures
+that span multiple discrete events. Automated contexting can be applied to
+arbitrary signature matches by expanding the graph surrounding the match,
+pulling in related information.
 
 Currently supported graph representations:
 * Process Start/ Stop
@@ -28,24 +30,29 @@ Currently supported graph representations:
   }
 }
 ```
+(This is dgraph's query language, [graphql+](https://docs.dgraph.io/query-language/) - in the future a Python wrapper will be provided)
 
 This could return a graph like:
 ![word_macro_hit](https://github.com/insanitybit/grapl/blob/master/images/word_child.png)
 
 
-When these analyzers find matches, engagements are created and displayed in a visual representation. In the future
-it will be possible to interact with these engagements through an API targeting
-Jupyter notebooks.
+When these analyzers find matches, engagements are created. Engagements are a graph
+representation of all of the events related to an incident. So, while a signature
+might give us Word and the dropped payload, our engagement might pull in files
+read by word, children of the 'payload' process, or other relevant information.
 
-Grapl can automatically expand signature hits out to scope our engagement by
-traversing the edges of the signature match, pulling more nodes into the
+In the future it will be possible to interact with these engagements through
+an API targeting Jupyter notebooks. For now the feature is limited to a visual
+representation.
+
+Grapl can automatically expand signature hits out to scope the engagement by
+traversing the edges of the signature match, pulling relevant nodes into the
 engagement.
 
 Given the `word` and `payload` children we can recursively
 add subsequent children, find the files read by word, etc.
 
 ![word_macro_graph](https://github.com/insanitybit/grapl/blob/master/images/word_macro_graph.png)
-
 
 Even in cases where your detections are built on discrete events Grapl should
 be able to provide benefits with its automated scoping.
