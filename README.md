@@ -146,5 +146,3 @@ Once the binaries are build you can zip them up, move them to the `grapl-cdk` fo
 But this is not enough. For one thing the `grapl-stack` is large, comprising more than 200
 resources, which is more than CloudFormation allows. As such you'll have to pin a few things
 up manually. I haven't spent time splitting the stack up (contributions very welcome).
-
-Security groups will need to be modified for access to the `historydb` and dgraph clusters.
