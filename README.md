@@ -52,42 +52,36 @@ Even in cases where your detections are built on discrete events Grapl should
 be able to provide benefits with its automated scoping.
 
 
-### Features
-
-Grapl consists primarily of:
-
-1. Parsers to turn logs into subgraphs, and infra to merge those subgraphs into a master graph
-2. Analyzers to query the master graph in realtime
-3. Engagements to interact with the output of analyzers
-
-With 'behind the scenes' features like automated scoping,
-attribution of ips to assets, etc.
-
 ### Current State
 
 **Grapl is currently: Alpha Quality**
 
-Currently the majority of the pipeline from parsing to population
-of the master graph is working fairly well. Grapl only supports a specific set
-of JSON encoded logs for Processes and Files.
+**What Works**
+* Can parse process and file events, if they conform to our 'generic' parser
+* Can identify and merge generated subgraphs into master graph
 
-The analysis and engagement pieces are fragile and unreliable. As an example,
-there is no whitelisting, and automated scoping of the engagement is in a
-broken state.
 
-Setting Grapl up requires some source code modifications due to hardcoded
-resources.
+**What Doesn't Work**
+* No support for custom parsers
+* Analyzer concept is immature and bulky
+* No whitelisting for analyzers yet
+* Automated scoping of engagements is totally broken
+* Build/ Deploy is overly manual, very fragile
+* Grapl is unoptimized, I have spent virtually 0 time optimizing it except what was necessary
+    to get it working. There's a ton of low hanging fruit. 
 
-Grapl exposes secrets, such as the history database username + password,
-and otherwise has not been given the security attention it deserves.
+Note that Grapl exposes secrets, such as the history database username + password,
+and otherwise has not been given the security attention it deserves. I do not recommend
+using it without examining the generated Cloudformation stack and source code.
 
-Building the rust binaries requires a custom docker image and a nightly
-compiler (nightly is mostly unnecessary and I can eventually target stable).
 
 ### Next Steps
 
 The immediate next steps are:
 * Get the pipeline from subgraph generators to graph merging up to RC quality
+    * Support arbitrary log parsers
+    * Remove any hardcoded infra information/ sensitive information
+    * Handle a few edge cases that are currently left aside
 * Re-architect the analyzer concept so that individual signatures don't map to
     individual lambdas
 * Engagement creation and automated scoping
@@ -96,7 +90,22 @@ The immediate next steps are:
 Eventually, I intend to support:
 * Network relationships between nodes - ip, dns
 * User and Asset nodes
+* Much better/ higher level libraries for writing parsers and analyzers
 
+
+## Architecture Diagram
+
+Grapl has a lot of moving parts. This is the current architecture doc.
+
+Note that this doc does not include every service, and includes some that have yet to be built.
+
+![grapl_arch](https://github.com/insanitybit/grapl/blob/master/images/grapl_arch.png)
+
+
+As the diagram shows, Grapl is built primarily as a Pub Sub system. The goal is to make it easy to link
+your own services up, move Grapl's own services around, and extend the platform to match your need.
+
+Grapl is primarily built in Rust, with the Analyzers being built in Python.
 
 ## Setting up Grapl
 
