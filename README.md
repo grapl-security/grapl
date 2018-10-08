@@ -16,7 +16,7 @@ our engagement.
 Given the `word` and `payload` children we can recursively
 add subsequent children, find the files read by word, etc.
 
-![word_macro_graph](https://github.com/insanitybit/grapl/images/word_macro_graph.png)
+![word_macro_graph](https://github.com/insanitybit/grapl/blob/master/images/word_macro_graph.png)
 
 
 ### Features
