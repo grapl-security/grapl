@@ -6,6 +6,13 @@ as a graph. By doing so it will make querying for interconnected
 events efficient and easily expressed while allowing for automated scoping
 of your investigations.
 
+Grapl currently supports graph representations for:
+* Process Start/ Stop
+* File Create/Read/Write/Delete
+
+
+### Example Use Case
+
 As an example, one can write signatures a malicious word macro: 
 * Process with `image_name` "word.exe" executes
 * "word" executes a child process
@@ -86,6 +93,10 @@ The immediate next steps are:
 * Engagement creation and automated scoping
 * Engagement interactions via Python API
 
+Eventually, I intend to support:
+* Network relationships between nodes - ip, dns
+* User and Asset nodes
+
 
 ## Setting up Grapl
 
@@ -96,8 +107,10 @@ In order to build the rust binaries for aws lambda you'll need to use the
 
 [Due to a dependency on grpcio, you'll need to modify this project accordingly:](https://github.com/emk/rust-musl-builder/issues/53)
 
+Due to the dockerized builds, library dependencies in grapl are expected to be copied into the service folder.
 
-In the future I can package and provide built binaries.
+In the future I can package and provide built binaries, and with a bit of Docker work the need to copy dependencies
+should go away as well.
 
 ### DGraph
 
