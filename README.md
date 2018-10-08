@@ -3,8 +3,8 @@ Graph platform for Detection, Forensics, and Incident Response
 
 Grapl aims to describe a network, and actions taking place on that network,
 as a graph. By doing so it will make querying for interconnected
-events efficient and easily expressed while allowing for automated scoping
-of your investigations.
+events efficient and easily expressed and automatically scoping your
+investigations.
 
 Grapl currently supports graph representations for:
 * Process Start/ Stop
