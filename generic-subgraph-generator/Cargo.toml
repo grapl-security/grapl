@@ -1,0 +1,19 @@
+[package]
+name = "generic-subgraph-generator"
+version = "0.1.0"
+authors = ["Insanitybit <insanitybit@gmail.com>"]
+
+[dependencies]
+graph-generator-lib = { path = "./graph-generator-lib/" }
+graph-descriptions = { path = "./graph-descriptions/" }
+serde_json = "*"
+serde = "1.0.71"
+serde_derive = "1.0.71"
+failure = "0.1.2"
+prost = "0.4.0"
+log = "0.4.3"
+
+
+[dependencies.uuid]
+version = "*"
+features = ["v4"]

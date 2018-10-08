@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package graph_description;
+
+// Used to identify the system for a given node
+// for example, 'a process executed on cobrien-mbp'
+message Host {
+    oneof host_id {
+        // the hostname of the host
+        string hostname = 1;
+        // the ip address of the host
+        string ip = 2;
+
+        // The asset ID itself
+        // We expect this to be the variant once we have attributed the node
+        string asset_id = 3;
+    }
+}
+
+message NodeDescriptionProto {
+    oneof which_node {
+        ProcessDescriptionProto process_node = 1;
+        FileDescriptionProto file_node = 2;
+        IpAddressDescriptionProto ip_address_node = 3;
+    }
+}
+
+message ProcessDescriptionProto {
+    string nodeKey = 1;
+    Host host_id = 2;
+    // 1 = Created, 2 = Terminated, 3 = Existing
+    uint32 state = 3;
+    uint64 pid = 4;
+    // When state == 1, create_time
+    // When state == 2, end_time
+    // When state == 3, seen_time
+    uint64 timestamp = 5;
+    bytes image_name = 6;
+    bytes image_path = 7;
+}
+
+message FileDescriptionProto {
+    string nodeKey = 1;
+    Host host_id = 2;
+    // 1 = Created, 2 = Deleted, 3 = Referenced
+    uint32 state = 3;
+    uint64 timestamp = 5;
+    bytes path = 6;
+}
+
+message IpAddressDescriptionProto {
+    string nodeKey = 1;
+    uint64 timestamp = 2;
+    bytes ip = 3;
+}
+
+message EdgeDescriptionProto {
+    string fromNeighborKey = 1;
+    string toNeighborKey = 2;
+    string edgeName = 3;
+}
+
+message EdgeListProto {
+    repeated EdgeDescriptionProto edges = 1;
+}
+
+message GraphDescriptionProto {
+    map <string, NodeDescriptionProto> nodes = 1;
+    map <string, EdgeListProto> edges = 2;
+    uint64 timestamp = 3;
+}
+
+message GeneratedSubgraphsProto {
+    repeated GraphDescriptionProto subgraphs = 1;
+}
+
+
+
+

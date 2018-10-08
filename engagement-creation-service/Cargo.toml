@@ -1,0 +1,22 @@
+[package]
+name = "engagement-creation-service"
+version = "0.1.0"
+authors = ["Insanitybit <insanitybit@gmail.com>"]
+
+[dependencies]
+incident-graph = {path = "./incident-graph"}
+dgraph_client = "0.1.0"
+engagements = {path = "./engagements"}
+
+uuid = { version = "0.6", features = ["v4"] }
+serde = "1.0.70"
+serde_derive = "1.0.70"
+serde_json = "1.0.24"
+
+aws_lambda = { git = "https://github.com/srijs/rust-aws-lambda" }
+graph-descriptions= { path = "./graph-descriptions/" }
+sqs-microservice = { path = "./sqs-microservice/" }
+
+prost = "0.4.0"
+failure = "0.1.2"
+log = "0.4.5"

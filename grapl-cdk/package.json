@@ -1,0 +1,25 @@
+{
+  "name": "grapl-cdk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-cdk/aws-ec2": "^0.9.0",
+    "@aws-cdk/aws-lambda": "^0.9.0",
+    "@aws-cdk/aws-rds": "^0.9.0",
+    "@aws-cdk/aws-s3": "^0.9.0",
+    "@aws-cdk/aws-s3-notifications": "^0.9.0",
+    "@aws-cdk/aws-sns": "^0.9.0",
+    "@aws-cdk/aws-sqs": "^0.9.0",
+    "@aws-cdk/cdk": "^0.9.0",
+    "@types/node": "^10.9.4"
+  }
+}
