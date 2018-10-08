@@ -61,7 +61,8 @@ attribution of ips to assets, etc.
 **Grapl is currently: Alpha Quality**
 
 Currently the majority of the pipeline from parsing to population
-of the master graph is working fairly well.
+of the master graph is working fairly well. Grapl only supports a specific set
+of JSON encoded logs for Processes and Files.
 
 The analysis and engagement pieces are fragile and unreliable. As an example,
 there is no whitelisting, and automated scoping of the engagement is in a
