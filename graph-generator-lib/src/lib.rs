@@ -41,6 +41,7 @@ pub fn handle_json_encoded_logs(f: impl (Fn(Vec<Value>)
     -> Result<Vec<GraphDescription>, Error>) + Clone + Send + 'static)
 {
     handle_s3_sns_sqs_json(f, move |subgraphs| {
+        info!("Uploading {} subgraphs", subgraphs.len());
         upload_subgraphs(GeneratedSubgraphs::new(subgraphs))
     });
 }
@@ -63,36 +64,35 @@ pub fn send_logs_to_generators(
 
         let day = epoch - (epoch % (24 * 60 * 60));
 
-        format!("{}/{}/{}",
-                          sourcetype.as_ref(), day, key
-        )
+        format!("{}/{}/{}", sourcetype.as_ref(), day, key)
     };
 
-    let s3_client =
+    info!("Sending {} logs to {}", logs.len(), key);
 
-        S3Client::simple(Region::UsEast1);
+    let s3_client = S3Client::simple(Region::UsEast1);
 
     s3_client.put_object(&PutObjectRequest {
-        bucket: "raw-logs".into(),
+        bucket: "grapl-stack-graplrawlogbucket0e0443ef-1wcdeswbxouzn".into(),
         key,
         body: Some(logs.into()),
         ..Default::default()
     }).wait()?;
-
+    info!("Uploaded raw-logs");
     Ok(())
 }
 
 pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
     // TODO: Preallocate buffers
-    let mut proto = vec![];
-    subgraphs.encode(&mut proto);
+    info!("upload_subgraphs");
+    let mut proto = Vec::with_capacity(512);
+    subgraphs.encode(&mut proto)?;
 
     let mut hasher = Sha256::default();
     hasher.input(&proto);
 
     let key = base64::encode(hasher.result().as_ref());
 
-    let bucket = "grapl-unid-subgraph-generated".to_string();
+    let bucket = "grapl-stack-graplunidsubgraphsgeneratedbucket89be-a3hfez29q83c".to_string();
     let epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH).unwrap().as_secs();
 
@@ -103,6 +103,7 @@ pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
                       day,
                       base64::encode(&key)
     );
+    info!("uploading unidentifed_subgraphs to {}", key);
 
     let s3_client = S3Client::simple(Region::UsEast1);
 
@@ -112,6 +113,8 @@ pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
         body: Some(proto.into()),
         ..Default::default()
     }).wait()?;
+
+    info!("uploaded unidentified subgraphs");
 
     Ok(())
 }
