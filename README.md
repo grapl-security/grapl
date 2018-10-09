@@ -1,8 +1,7 @@
 # grapl
 Graph platform for Detection, Forensics, and Incident Response
 
-Grapl aims to describe a network, and actions taking place on that network,
-as a graph.
+Grapl aims to describe a network, and actions taking place on that network, as a graph.
 
 The graph representation makes it easy to express complex attacker signatures
 that span multiple discrete events. Automated contexting can be applied to
@@ -14,7 +13,7 @@ Grapl currently supports graph representations for:
 * File Create/Read/Write/Delete
 
 
-### Example Use Case
+### Example Use Case: Catching a malicious word macro
 
 As an example, one can write a signature to catch a malicious word macro: 
 * Process with `image_name` "word.exe" executes
