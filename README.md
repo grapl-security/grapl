@@ -2,7 +2,7 @@
 Graph platform for Detection, Forensics, and Incident Response
 
 Grapl aims to describe a network, and actions taking place on that network,
-as a graph. 
+as a graph.
 
 The graph representation makes it easy to express complex attacker signatures
 that span multiple discrete events. Automated contexting can be applied to
@@ -39,7 +39,7 @@ This could return a graph like:
 
 
 When these analyzers find matches, engagements are created. Engagements are a graph
-representation of all of the events related to an incident. So, while a signature
+representation of all of the events related to an incident. While a signature
 might give us Word and the dropped payload, our engagement might pull in files
 read by word, children of the 'payload' process, or other relevant information.
 
@@ -65,21 +65,22 @@ be able to provide benefits with its automated scoping.
 **Grapl is currently: Alpha Quality**
 
 **What Works**
-* Can parse process and file events, if they conform to our 'generic' parser
+* Can parse process and file events, if they conform to the 'generic' parser
 * Can identify and merge generated subgraphs into master graph
+* Visualizing graphs via `dgraph-ratel`
 
 
 **What Doesn't Work**
 * No support for custom parsers
+* Attributing ip addresses to assets
 * Analyzer concept is immature and bulky
 * No whitelisting for analyzers yet
 * Automated scoping of engagements is totally broken
 * Build/ Deploy is overly manual, very fragile
 * Grapl is unoptimized, I have spent virtually 0 time optimizing it except what was necessary
-    to get it working. There's a ton of low hanging fruit. 
+    to get it working. There's a ton of low hanging fruit (contributions very welcome).
 
-Note that Grapl exposes secrets, such as the history database username + password,
-and otherwise has not been given the security attention it deserves. I do not recommend
+Note that Grapl has not been given the security attention it deserves. I do not recommend
 using it without examining the generated Cloudformation stack and source code.
 
 
@@ -88,14 +89,14 @@ using it without examining the generated Cloudformation stack and source code.
 The immediate next steps are:
 * Get the pipeline from subgraph generators to graph merging up to RC quality
     * Support arbitrary log parsers
-    * Remove any hardcoded infra information/ sensitive information
+    * Remove any hardcoded infra information
     * Handle a few edge cases that are currently left aside
 * Re-architect the analyzer concept so that individual signatures don't map to
-    individual lambdas
+    individual lambdas, generally lower cost of writing analyzers
 * Engagement creation and automated scoping
 * Engagement interactions via Python API
 
-Eventually, I intend to support:
+Eventually I intend to support:
 * Network relationships between nodes - ip, dns
 * User and Asset nodes
 * Much better/ higher level libraries for writing parsers and analyzers
@@ -105,10 +106,7 @@ Eventually, I intend to support:
 
 Grapl has a lot of moving parts. This is the current architecture doc.
 
-Note that this doc does not include every service, and includes some that have yet to be built.
-
-![grapl_arch](https://github.com/insanitybit/grapl/blob/master/images/grapl_arch.png)
-
+[grapl_arch](https://github.com/insanitybit/grapl/blob/master/images/grapl_arch.png)
 
 As the diagram shows, Grapl is built primarily as a Pub Sub system. The goal is to make it easy to link
 your own services up, move Grapl's own services around, and extend the platform to match your need.
@@ -150,3 +148,6 @@ resources, which is more than CloudFormation allows. As such you'll have to pin 
 up manually. I haven't spent time splitting the stack up (contributions very welcome).
 
 Security groups will need to be modified for access to the `historydb` and dgraph clusters.
+
+In order to run the lambdas within their respective VPCs you may need to open a support request
+with AWS to reserve extra Elastic IPs (20 has been sufficient for me).

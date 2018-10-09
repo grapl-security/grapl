@@ -8,6 +8,8 @@ import lambda = require('@aws-cdk/aws-lambda');
 import {SubnetType, VpcNetwork} from "@aws-cdk/aws-ec2";
 import {Stack, Token} from "@aws-cdk/cdk";
 
+var env = require('node-env-file');
+
 function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetwork, username: Token, password: Token) {
     return new rds.DatabaseCluster(stack, 'HistoryDb', {
         defaultDatabaseName: 'historydb',
@@ -124,12 +126,14 @@ class GraplStack extends cdk.Stack {
     constructor(parent: cdk.App, id: string) {
         super(parent, id + '-stack');
 
+        const env_file = env(__dirname + '/.env');
+
         let history_db_vpc = new ec2.VpcNetwork(this, 'HistoryVPC');
 
         let dgraph_vpc = new ec2.VpcNetwork(this, 'DGraphVPC');
 
-        const username = new cdk.Token('username');
-        const password = new cdk.Token('passwd1234567890');
+        const username = new cdk.Token(process.env.HISTORY_DB_USERNAME);
+        const password = new cdk.Token(process.env.HISTORY_DB_PASSWORD);
         let db = get_history_db(this, history_db_vpc, username, password);
 
         // S3 buckets

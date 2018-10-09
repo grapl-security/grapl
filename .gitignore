@@ -3,6 +3,7 @@ node_modules/
 .idea/
 *.iml
 *.zip
+.env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
