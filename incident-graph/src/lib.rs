@@ -14,11 +14,13 @@ extern crate failure;
 
 extern crate uuid;
 
+extern crate sha2;
 use serde_json::Value;
 use uuid::Uuid;
 use failure::Error;
 
 use dgraph_client::api_grpc::DgraphClient;
+use sha2::{Digest, Sha256};
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -57,6 +59,7 @@ const FILE_ATTRIBUTES_COMMA_SEP: &str =
     delete_time,
     path";
 
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RootNode {
     File(File),
@@ -70,6 +73,43 @@ impl RootNode {
             RootNode::Process(ref process) => &process.node_key,
         }
     }
+}
+
+pub fn root_node_hash(root_node: &RootNode) -> Vec<u8> {
+    let mut hasher = Sha256::default();
+    let mut uids: Vec<&str> = vec![];
+
+    match root_node {
+        RootNode::File(ref file) => {
+            let uid = &file.uid;
+            uids.push(uid);
+        },
+        RootNode::Process(ref process) => {
+            get_proc_uids(&process, &mut uids);
+        }
+    };
+
+    uids.sort_unstable();
+
+    for uid in uids {
+        hasher.input(uid);
+    }
+
+    hasher.result().to_vec()
+}
+
+fn get_proc_uids<'a>(process: &'a Process, uids: &mut Vec<&'a str>) {
+    uids.push(&process.uid);
+    for child in process.children.iter() {
+        get_proc_uids(&child, uids);
+    }
+    if let Some(ref bin_file) = process.bin_file {
+        get_file_uids(&bin_file, uids)
+    }
+}
+
+fn get_file_uids<'a>(file: &'a File, uids: &mut Vec<&'a str>) {
+    uids.push(&file.uid);
 }
 
 impl From<Process> for RootNode {

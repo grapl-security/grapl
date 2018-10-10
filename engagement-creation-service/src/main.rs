@@ -45,7 +45,7 @@ fn expand_and_contextualize(
     for node in root_nodes.iter_mut() {
         let node = match node {
             RootNode::Process(process) => expand_process(&dgraph_client, process, &mut expanded),
-            RootNode::File(file) => () ,//expand_file(&dgraph_client, file, &mut expanded),
+            RootNode::File(file) => unimplemented!() ,//expand_file(&dgraph_client, file, &mut expanded),
         };
     }
 
@@ -168,22 +168,10 @@ fn should_throttle(
     // TODO: for this analyzer
     let mut req = dgraph_client::api::Request::new();
 
-    let node_key = incident.get_node_key();
+    let hash = root_node_hash(incident);
 
-    // @filter(eq(analyzer_name, "{}"))
-    req.query = format!(r#"
-            {{
-                question(func: eq(node_key, "{}"))
-                {{
-                    uid,
-                }}
-            }}"#, node_key);
-
-    let resp = dgraph_client.query(&req).expect("query");
-    let uid: serde_json::Value =
-        serde_json::from_slice(resp.get_json()).unwrap();
-
-    !uid["question"][0].is_null()
+    // Lookup hash + analyzer_name
+    unimplemented!()
 }
 
 #[derive(Serialize, Deserialize)]

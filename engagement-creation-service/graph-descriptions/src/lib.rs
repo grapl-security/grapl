@@ -1,8 +1,6 @@
 #![feature(nll, stdsimd)]
 extern crate base64;
 #[macro_use] extern crate custom_derive;
-
-
 #[macro_use]
 extern crate derive_more;
 extern crate hash_hasher;
@@ -22,13 +20,12 @@ extern crate sha3;
 extern crate typed_builder;
 extern crate uuid;
 
+
 use graph_description::*;
 use graph_description::host::HostId;
 use graph_description::node_description_proto::*;
-
-use serde_json::Value;
-
 use hash_hasher::HashBuildHasher;
+use serde_json::Value;
 use sha3::Digest;
 use sha3::Keccak256;
 use std::collections::HashMap;
