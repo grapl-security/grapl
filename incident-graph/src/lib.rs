@@ -75,43 +75,6 @@ impl RootNode {
     }
 }
 
-pub fn root_node_hash(root_node: &RootNode) -> Vec<u8> {
-    let mut hasher = Sha256::default();
-    let mut uids: Vec<&str> = vec![];
-
-    match root_node {
-        RootNode::File(ref file) => {
-            let uid = &file.uid;
-            uids.push(uid);
-        },
-        RootNode::Process(ref process) => {
-            get_proc_uids(&process, &mut uids);
-        }
-    };
-
-    uids.sort_unstable();
-
-    for uid in uids {
-        hasher.input(uid);
-    }
-
-    hasher.result().to_vec()
-}
-
-fn get_proc_uids<'a>(process: &'a Process, uids: &mut Vec<&'a str>) {
-    uids.push(&process.uid);
-    for child in process.children.iter() {
-        get_proc_uids(&child, uids);
-    }
-    if let Some(ref bin_file) = process.bin_file {
-        get_file_uids(&bin_file, uids)
-    }
-}
-
-fn get_file_uids<'a>(file: &'a File, uids: &mut Vec<&'a str>) {
-    uids.push(&file.uid);
-}
-
 impl From<Process> for RootNode {
     fn from(process: Process) -> RootNode {
         RootNode::Process(process)
@@ -735,4 +698,105 @@ pub fn set_engagement_file_schema(client: &DgraphClient) {
        		path: string @index(hash) .
         "#.to_string();
     let res = client.alter(&op_schema).expect("set schema");
+}
+
+
+pub fn subgraph_exists(dgraph_client: &DgraphClient, root_node: &RootNode) -> bool {
+
+    let tuples = match root_node {
+        RootNode::Process(process) => generate_process_node_key_tuples(&process),
+        _ => unimplemented!()
+    };
+
+    // TODO: Handle single node case
+    if tuples.is_empty() {
+        unimplemented!()
+    }
+
+
+    let tuples_len = tuples.len();
+
+    let mut queries = vec![];
+    for (i, (n_a, edge, n_b)) in tuples.iter().enumerate() {
+        let query = edge_exists_query(i as u16, n_a, edge, n_b);
+        queries.push(query);
+    }
+
+    let mut final_query = "{".to_owned();
+    for query in queries {
+        final_query.push_str(&query);
+    }
+    final_query.push_str("}");
+
+    println!("{}", final_query);
+
+    let client = dgraph_client::new_client("localhost:xyz");
+
+    let mut req = dgraph_client::api::Request::new();
+    req.query = final_query.to_string();
+    let resp = client.query(&req).expect("query");
+
+    let resp: serde_json::Value =
+        serde_json::from_slice(resp.get_json()).unwrap();
+
+    info!("{}", resp);
+
+    let resp: Vec<serde_json::Value> =
+        serde_json::from_value(resp).unwrap();
+
+    resp.len() == tuples_len
+}
+
+fn edge_exists_query(id: u16, node_key_a: &str, edge: &str, node_key_b: &str) -> String {
+    format!(r#"
+            q{id}(func: eq(node_key, "{node_key_a}") @cascade {{
+                uid,
+                {edge} @filter(eq(node_key, "{node_key_b}")) {{
+                  uid,
+                }}
+            }}
+        "#,
+            id=id, node_key_a=node_key_a, edge=edge, node_key_b=node_key_b
+    )
+}
+
+
+fn generate_process_node_key_tuples(node: &Process) -> Vec<(&str, &str, &str)> {
+    let mut edge_tuples: Vec<(&str, &str, &str)> = Vec::new();
+    let mut already_visited: HashSet<&str> = HashSet::new();
+    for child in node.children.iter() {
+        edge_tuples.push((node.node_key.as_str(), "children", child.node_key.as_str()));
+        _generate_process_node_key_tuples(&child, &mut edge_tuples, &mut already_visited);
+    }
+
+    if let Some(ref bin_file) = node.bin_file {
+        edge_tuples.push((node.node_key.as_ref(), "bin_file", bin_file.node_key.as_ref()))
+    }
+
+    edge_tuples
+}
+
+fn _generate_process_node_key_tuples<'a>(node: &'a Process,
+                                 edge_tuples: &mut Vec<(&'a str, &'a str, &'a str)>,
+                                 already_visited: &mut HashSet<&'a str>,
+) {
+
+    for child in node.children.iter() {
+        if already_visited.contains(child.node_key.as_str()) {
+            continue
+        }
+        edge_tuples.push((
+            node.node_key.as_str(),
+            "children",
+            child.node_key.as_str()
+        ));
+
+        already_visited.insert(&child.node_key.as_str());
+
+        _generate_process_node_key_tuples(&child, edge_tuples, already_visited);
+    }
+
+    if let Some(ref bin_file) = node.bin_file {
+        edge_tuples.push((node.node_key.as_ref(), "bin_file", bin_file.node_key.as_ref()))
+    }
 }

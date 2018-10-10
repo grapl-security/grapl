@@ -145,16 +145,53 @@ class Process(object):
         else:
             s = j
 
-        return Process(
-            uid=s['uid'],
-            pid=int(s['pid']),
-            create_time=int(s['create_time']),
-            terminate_time=Option(s.get('terminate_time')).map(int),
-            node_key=s['node_key'],
-            asset_id=s['asset_id'],
-            image_name=Option(s.get('image_name')),
-            bin_file=Option(s.get('bin_file')).map(File.from_json),
+        try:
+            uid=s['uid']
+        except Exception as e:
+            print('Process::from_json uid {}'.format(e))
+        try:
+            pid=int(s['pid'])
+        except Exception as e:
+            print('Process::from_json pid {}'.format(e))
+        try:
+            create_time=int(s['create_time'])
+        except Exception as e:
+            print('Process::from_json create_time {}'.format(e))
+        try:
+            terminate_time=Option(s.get('terminate_time')).map(int)
+        except Exception as e:
+            print('Process::from_json terminate_time {}'.format(e))
+        try:
+            node_key=s['node_key']
+        except Exception as e:
+            print('Process::from_json node_key {}'.format(e))
+        try:
+            asset_id=s['asset_id']
+        except Exception as e:
+            print('Process::from_json asset_id {}'.format(e))
+        try:
+            image_name=Option(s.get('image_name'))
+        except Exception as e:
+            print('Process::from_json image_name {}'.format(e))
+        try:
+            bin_file=Option(s.get('bin_file')).map(File.from_json)
+        except Exception as e:
+            print('Process::from_json bin_file {}'.format(e))
+        try:
             children=[Process.from_json(child) for child in s.get('children', [])]
+        except Exception as e:
+            print('Process::from_json children {}'.format(e))
+
+        return Process(
+            uid=uid,
+            pid=pid,
+            create_time=create_time,
+            terminate_time=terminate_time,
+            node_key=node_key,
+            asset_id=asset_id,
+            image_name=image_name,
+            bin_file=bin_file,
+            children=children,
         )
 
     def to_dict(self):

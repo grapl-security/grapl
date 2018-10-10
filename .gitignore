@@ -5,22 +5,22 @@ node_modules/
 *.zip
 .env
 
-./engagement-creation-service/graph-descriptions/
-./engagement-creation-service/incident-graph/
-./engagement-creation-service/sqs-microservice/
+engagement-creation-service/graph-descriptions/
+engagement-creation-service/incident-graph/
+engagement-creation-service/sqs-microservice/
 
-./generic-subgraph-generator/graph-descriptions/
-./generic-subgraph-generator/sqs-microservice/
-./generic-subgraph-generator/graph-generator-lib/
+generic-subgraph-generator/graph-descriptions/
+generic-subgraph-generator/sqs-microservice/
+generic-subgraph-generator/graph-generator-lib/
 
-./graph-service/graph-descriptions/
-./graph-service/sqs-microservice/
+graph-service/graph-descriptions/
+graph-service/sqs-microservice/
 
-./node-identity-mapper/graph-descriptions/
-./node-identity-mapper/sqs-microservice/
+node-identity-mapper/graph-descriptions/
+node-identity-mapper/sqs-microservice/
 
-./node-identifier/graph-descriptions/
-./node-identifier/sqs-microservice/
+node-identifier/graph-descriptions/
+node-identifier/sqs-microservice/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

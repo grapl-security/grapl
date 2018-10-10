@@ -67,7 +67,7 @@ fn expand_file(dgraph_client: &DgraphClient,
 
     file.add_creator(dgraph_client);
 
-    Process::procs_executed_from(&file, dgraph_client);
+    File::procs_executed_from(&file, dgraph_client);
     expanded.insert(file.uid.clone());
 
 }
@@ -130,17 +130,17 @@ fn handle_incident(mut root_nodes: Vec<RootNode>, engagement_key: String) {
 
         let mut node_value  = match node {
             RootNode::Process(process) => {
-                serde_json::to_value(&process).unwrap()
-
+                serde_json::to_value(&process)
+                    .expect("to_value(&process)")
             }
             RootNode::File(file) => {
-                serde_json::to_value(&file).unwrap()
+                serde_json::to_value(&file)
+                    .expect("to_value(&file)")
             }
         };
 
-
-        node_value["engagement_key"] = engagement_key.into();
-        let encoded_node = serde_json::to_vec(&node_value).unwrap();
+        node_value["engagement_key"] = engagement_key.clone().into();
+        let encoded_node = serde_json::to_vec(&node_value).expect("node_value to_vec");
 
         let mut mutation = dgraph_client::api::Mutation::new();
 
@@ -158,21 +158,6 @@ fn handle_incident(mut root_nodes: Vec<RootNode>, engagement_key: String) {
 
 }
 
-fn should_throttle(
-    dgraph_client: &DgraphClient,
-    incident: &RootNode,
-    analyzer_name: &str
-) -> bool {
-
-    // TODO: Check for the existence of the graph incident in the engagement,
-    // TODO: for this analyzer
-    let mut req = dgraph_client::api::Request::new();
-
-    let hash = root_node_hash(incident);
-
-    // Lookup hash + analyzer_name
-    unimplemented!()
-}
 
 #[derive(Serialize, Deserialize)]
 struct Incident {
@@ -194,7 +179,7 @@ fn main() {
 
         let mut new_incidents = vec![];
         for incident in incidents.into_iter() {
-            if !should_throttle(&dgraph_client, &incident,  "word-macro-analyzer".into()) {
+            if !subgraph_exists(&dgraph_client, &incident) {
                 info!("not throttling");
                 new_incidents.push(incident);
             } else {
