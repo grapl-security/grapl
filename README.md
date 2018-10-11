@@ -73,9 +73,7 @@ be able to provide benefits with its automated scoping.
 * No support for custom parsers
 * Attributing ip addresses to assets
 * Analyzer concept is immature and bulky
-* No whitelisting for analyzers yet
-* Automated scoping of engagements is totally broken
-* Build/ Deploy is overly manual, very fragile
+* Automated scoping of engagements is unreliable
 
 Note that Grapl has not been given the security attention it deserves. I do not recommend
 using it without examining the generated Cloudformation stack and source code.
