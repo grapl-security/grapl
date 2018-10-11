@@ -140,7 +140,8 @@ fn handle_incident(mut root_nodes: Vec<RootNode>, engagement_key: String) {
         };
 
         node_value["engagement_key"] = engagement_key.clone().into();
-        let encoded_node = serde_json::to_vec(&node_value).expect("node_value to_vec");
+        let encoded_node = serde_json::to_vec(&node_value)
+            .expect("node_value to_vec");
 
         let mut mutation = dgraph_client::api::Mutation::new();
 
@@ -149,13 +150,7 @@ fn handle_incident(mut root_nodes: Vec<RootNode>, engagement_key: String) {
         let mut_res = engagement_client.mutate(&mutation);
 
         info!("inserted nodes {:#?}", mut_res);
-//        insert_root_node(
-//            &engagement_client,
-//            &engagement_key,
-//            node
-//        );
     }
-
 }
 
 
