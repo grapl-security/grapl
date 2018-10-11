@@ -76,8 +76,6 @@ be able to provide benefits with its automated scoping.
 * No whitelisting for analyzers yet
 * Automated scoping of engagements is totally broken
 * Build/ Deploy is overly manual, very fragile
-* Grapl is unoptimized, I have spent virtually 0 time optimizing it except what was necessary
-    to get it working. There's a ton of low hanging fruit (contributions very welcome).
 
 Note that Grapl has not been given the security attention it deserves. I do not recommend
 using it without examining the generated Cloudformation stack and source code.
@@ -128,7 +126,7 @@ should go away as well.
 
 ### DGraph
 
-Grapl relies on DGraph, and expects two separate dgraph instances. Grapl expects these
+Grapl relies on DGraph, and expects two **separate** dgraph instances. Grapl expects these
 instances to be resolvable from the names:
 `db.mastergraph`
 `db.engagementgraph`
@@ -146,7 +144,7 @@ But this is not enough. For one thing the `grapl-stack` is large, comprising mor
 resources, which is more than CloudFormation allows. As such you'll have to pin a few things
 up manually. I haven't spent time splitting the stack up (contributions very welcome).
 
-Security groups will need to be modified for access to the `historydb` and dgraph clusters.
+Security groups will need to be modified for access to the dgraph clusters.
 
 In order to run the lambdas within their respective VPCs you may need to open a support request
 with AWS to reserve extra Elastic IPs (20 has been sufficient for me).
