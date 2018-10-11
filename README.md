@@ -138,13 +138,23 @@ The majority of Grapl infrastructure is managed via [aws-cdk](https://gitter.im/
 
 See `aws-cdk` docs for setup instructions.
 
-Once the binaries are build you can zip them up, move them to the `grapl-cdk` folder, and `cdk deploy grapl-cdk`.
+Once the binaries are build you can zip them up, move them to the `grapl-cdk` folder, and deploy the stacks.
 
-But this is not enough. For one thing the `grapl-stack` is large, comprising more than 200
-resources, which is more than CloudFormation allows. As such you'll have to pin a few things
-up manually. I haven't spent time splitting the stack up (contributions very welcome).
 
-Security groups will need to be modified for access to the dgraph clusters.
+I recommend running `cdk diff` to see what resource changes you can expect.
+
+```
+cdk deploy vpcs-stack && \
+cdk deploy event-emitters-stack && \
+cdk deploy history-db-stack && \
+cdk deploy generic-subgraph-generator-stack && \
+cdk deploy node-identifier-stack && \
+cdk deploy graph-merger-stack && \
+cdk deploy word-macro-analyzer-stack && \
+cdk deploy engagement-creation-service-stack
+```
+Your DGraph cluster security groups will need to allow traffic from the graph-merger, any analyzers,
+and the engagement-creation-service.
 
 In order to run the lambdas within their respective VPCs you may need to open a support request
 with AWS to reserve extra Elastic IPs (20 has been sufficient for me).

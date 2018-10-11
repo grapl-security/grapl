@@ -7,10 +7,13 @@ import rds = require('@aws-cdk/aws-rds');
 import lambda = require('@aws-cdk/aws-lambda');
 import {SubnetType, VpcNetwork} from "@aws-cdk/aws-ec2";
 import {Stack, Token} from "@aws-cdk/cdk";
+import {Bucket} from "@aws-cdk/aws-s3";
+import {Topic} from "@aws-cdk/aws-sns";
+import {DatabaseCluster, DatabaseClusterRefProps} from "@aws-cdk/aws-rds";
 
 var env = require('node-env-file');
 
-function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetwork, username: Token, password: Token) {
+function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetworkRef, username: Token, password: Token): DatabaseCluster {
     return new rds.DatabaseCluster(stack, 'HistoryDb', {
         defaultDatabaseName: 'historydb',
         masterUser: {
@@ -45,98 +48,20 @@ function subscribe_lambda_to_queue(stack: cdk.Stack, id: string, fn: lambda.Func
         .addAction('sqs:*')
         .addResource(queue.queueArn));
 }
-//
-//
-// class S3SnsSqs {
-//     public bucket: s3.Bucket;
-//     public sns_topic: sns.Topic;
-//     public queue: sqs.Queue;
-//     constructor(name: string,
-//                 stack: cdk.Stack,
-//                 vpc?: ec2.VpcNetworkRef,
-//                 dead_letter_queue?: sqs.Queue,
-//                 max_receive_count?: number
-//     ) {
-//
-//         this.bucket = new s3.Bucket(stack, name + '-bucket');
-//         this.sns_topic = new sns.Topic(stack, name + '-topic');
-//
-//         if (dead_letter_queue != null) {
-//             this.queue = new sqs.Queue(stack, name + '-retry-handler-queue', {
-//                 deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: max_receive_count }
-//             });
-//         } else {
-//             this.queue = new sqs.Queue(stack, name + '-retry-handler-queue');
-//         }
-//     }
-// }
-//
-// function word_macro_analyzer(stack: cdk.Stack, vpc: ec2.VpcNetwork) {
-//     const events = new S3SnsSqs('word-macro-analyzer', stack, vpc);
-//     const analyzer = new SqsLambda('generic-subgraph-generator', stack, events.queue, vpc);
-//
-//
-// }
 
-//
-// class SqsLambda {
-//     public fn: lambda.Function;
-//
-//     constructor(
-//         name: string,
-//         stack: cdk.Stack,
-//         queue: sqs.QueueRef,
-//         vpc?: ec2.VpcNetworkRef,
-//         runtime?: lambda.Runtime
-//     ) {
-//
-//         runtime = runtime || lambda.Runtime.Go1x;
-//
-//         this.fn = new lambda.Function(
-//             stack,
-//             name,
-//             {
-//                 runtime: runtime,
-//                 handler: '${name}',
-//                 code: lambda.Code.file(`./${name}zip`),
-//                 vpc: vpc
-//             }
-//         );
-//     }
-// }
+class EventEmitters extends cdk.Stack {
+    raw_logs_bucket: s3.BucketRefProps;
+    unid_subgraphs_generated_bucket: s3.BucketRefProps;
+    subgraphs_generated_bucket: s3.BucketRefProps;
 
+    incident_topic: sns.TopicRefProps;
+    raw_logs_topic: sns.TopicRefProps;
+    unid_subgraphs_generated_topic: sns.TopicRefProps;
+    subgraphs_generated_topic: sns.TopicRefProps;
+    subgraph_merged_topic: sns.TopicRefProps;
 
-// function new_lambda(
-//     stack: cdk.Stack,
-//     name: string,
-//     queue: sqs.Queue,
-//     reads_from: s3.BucketRef,
-//     writes_to: s3.BucketRef
-// ): lambda.FunctionRef {
-//
-//
-//
-//
-//     return null;
-//
-// }
-
-
-class GraplStack extends cdk.Stack {
     constructor(parent: cdk.App, id: string) {
         super(parent, id + '-stack');
-
-        const env_file = env(__dirname + '/.env');
-
-        let history_db_vpc = new ec2.VpcNetwork(this, 'HistoryVPC');
-
-        let dgraph_vpc = new ec2.VpcNetwork(this, 'DGraphVPC');
-
-        const username = new cdk.Token(process.env.HISTORY_DB_USERNAME);
-        const password = new cdk.Token(process.env.HISTORY_DB_PASSWORD);
-        let db = get_history_db(this, history_db_vpc, username, password);
-
-        // S3 buckets
         let raw_logs_bucket = new s3.Bucket(this, id + '-raw-log-bucket');
         let unid_subgraphs_generated_bucket =
             new s3.Bucket(this, id + '-unid-subgraphs-generated-bucket');
@@ -146,7 +71,6 @@ class GraplStack extends cdk.Stack {
         // SNS Topics
         let incident_topic =
             new sns.Topic(this, id + '-incident-topic');
-
         let raw_logs_topic =
             new sns.Topic(this, '-raw-log-topic');
         let unid_subgraphs_generated_topic =
@@ -165,38 +89,51 @@ class GraplStack extends cdk.Stack {
         subgraphs_generated_bucket
             .onEvent(s3.EventType.ObjectCreated, subgraphs_generated_topic);
 
+        this.raw_logs_bucket = raw_logs_bucket.export();
+        this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket.export();
+        this.subgraphs_generated_bucket = subgraphs_generated_bucket.export();
 
-        // Services and Queues
+        this.incident_topic = incident_topic.export();
+        this.raw_logs_topic = raw_logs_topic.export();
+        this.unid_subgraphs_generated_topic = unid_subgraphs_generated_topic.export();
+        this.subgraphs_generated_topic = subgraphs_generated_topic.export();
+        this.subgraph_merged_topic = subgraph_merged_topic.export();
+    }
+}
 
-        // Node identity mapper
-        let node_identity_mapper = new lambda.Function(
-            this, 'node-identity-mapper', {
-                runtime: lambda.Runtime.Go1x,
-                handler: 'node-identity-mapper',
-                code: lambda.Code.file('./node-identity-mapper.zip'),
-                vpc: history_db_vpc
-            }
+class GenericSubgraphGenerator extends cdk.Stack {
+
+    constructor(parent: cdk.App, id: string,
+                reads_from_props: s3.BucketRefProps,
+                event_producer_props: sns.TopicRefProps,
+                writes_to_props: s3.BucketRefProps,
+                ) {
+        super(parent, id + '-stack');
+
+        const reads_from = Bucket.import(
+            this,
+            'reads_from',
+            reads_from_props
         );
-        //
-        node_identity_mapper.addToRolePolicy(new cdk.PolicyStatement()
-            .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket')
-            .addAction('s3:ActionList')
-            .addResource(unid_subgraphs_generated_bucket.bucketArn));
 
-        unid_subgraphs_generated_bucket.grantRead(node_identity_mapper.role);
+        const event_producer = Topic.import(
+            this,
+            'event_producer',
+            event_producer_props
+        );
 
-        let node_identity_mapper_queue =
-            new sqs.Queue(this, 'node-identity-mapper-queue');
-
-        subscribe_lambda_to_queue(this, 'nodeIdentityMapper', node_identity_mapper, node_identity_mapper_queue);
+        const writes_to = Bucket.import(
+            this,
+            'writes_to',
+            writes_to_props
+        );
 
         // Generic subgraph generator
         let generic_subgraph_generator = new lambda.Function(
             this, 'generic-subgraph-generator', {
                 runtime: lambda.Runtime.Go1x,
                 handler: 'generic-subgraph-generator',
-                code: lambda.Code.file('./generic-subgraph-generator.zip'),
+                code: lambda.Code.file('./generic-subgraph-generator.zip')
             }
         );
 
@@ -204,29 +141,77 @@ class GraplStack extends cdk.Stack {
             .addAction('s3:GetObject')
             .addAction('s3:ActionGetBucket')
             .addAction('s3:ActionList')
-            .addResource(raw_logs_bucket.bucketArn));
+            .addResource(reads_from.bucketArn));
 
 
-        raw_logs_bucket.grantRead(generic_subgraph_generator.role);
+        reads_from.grantRead(generic_subgraph_generator.role);
 
 
         let generic_subgraph_generator_queue =
             new sqs.Queue(this, 'generic-subgraph-generator-queue');
 
         subscribe_lambda_to_queue(this, 'genericSubgraphGenerator', generic_subgraph_generator, generic_subgraph_generator_queue);
+        event_producer.subscribeQueue(generic_subgraph_generator_queue);
 
+        writes_to.grantWrite(generic_subgraph_generator.role);
+    }
+}
+
+
+class NodeIdentifier extends cdk.Stack {
+
+    constructor(parent: cdk.App, id: string,
+                reads_from_props: s3.BucketRefProps,
+                event_producer_props: sns.TopicRefProps,
+                writes_to_props: s3.BucketRefProps,
+                history_db_props: rds.DatabaseClusterRefProps,
+                vpc_props: ec2.VpcNetworkRefProps
+    ) {
+        super(parent, id + '-stack');
+        const reads_from = Bucket.import(
+            this,
+            'reads_from',
+            reads_from_props
+        );
+
+        const history_db = rds.DatabaseCluster.import(
+            this,
+            'history-db',
+            history_db_props
+            );
+
+        const event_producer = Topic.import(
+            this,
+            'event_producer',
+            event_producer_props
+        );
+
+        const writes_to = Bucket.import(
+            this,
+            'writes_to',
+            writes_to_props
+        );
+
+        const vpc = ec2.VpcNetwork.import(
+            this,
+            'vpc',
+            vpc_props
+        );
 
         // Add retry handler for node identifier retry handler
         let node_identifier_rth_dead_letter_queue =
             new sqs.Queue(this, 'node-identifier-rth-dead-letter-queue');
-
 
         let node_identifier_retry_handler = new lambda.Function(
             this, 'node-identifier-retry-handler', {
                 runtime: lambda.Runtime.Go1x,
                 handler: 'node-identifier-retry-handler',
                 code: lambda.Code.file('./node-identifier-retry-handler.zip'),
-                vpc: history_db_vpc
+                vpc: vpc,
+                environment: {
+                    "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
+                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD
+                }
             }
         );
 
@@ -234,13 +219,13 @@ class GraplStack extends cdk.Stack {
             .addAction('s3:GetObject')
             .addAction('s3:ActionGetBucket')
             .addAction('s3:ActionList')
-            .addResource(unid_subgraphs_generated_bucket.bucketArn));
+            .addResource(reads_from.bucketArn));
 
-        unid_subgraphs_generated_bucket.grantRead(node_identifier_retry_handler.role);
+        reads_from.grantRead(node_identifier_retry_handler.role);
 
         let node_identifier_retry_handler_queue =
             new sqs.Queue(this, 'node-identifier-retry-handler-queue', {
-                deadLetterQueue: { queue: node_identifier_rth_dead_letter_queue, maxReceiveCount: 5 }
+                deadLetterQueue: {queue: node_identifier_rth_dead_letter_queue, maxReceiveCount: 5}
             });
 
         subscribe_lambda_to_queue(
@@ -250,14 +235,17 @@ class GraplStack extends cdk.Stack {
             node_identifier_retry_handler_queue
         );
 
-
         // Node Identifier
         let node_identifier = new lambda.Function(
             this, 'node-identifier', {
                 runtime: lambda.Runtime.Go1x,
                 handler: 'node-identifier',
                 code: lambda.Code.file('./node-identifier.zip'),
-                vpc: history_db_vpc
+                vpc: vpc,
+                environment: {
+                    "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
+                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD
+                }
             }
         );
 
@@ -265,26 +253,75 @@ class GraplStack extends cdk.Stack {
             .addAction('s3:GetObject')
             .addAction('s3:ActionGetBucket')
             .addAction('s3:ActionList')
-            .addResource(unid_subgraphs_generated_bucket.bucketArn));
+            .addResource(reads_from.bucketArn));
 
-        unid_subgraphs_generated_bucket.grantRead(node_identifier.role);
+        reads_from.grantRead(node_identifier.role);
 
         let node_identifier_queue =
             new sqs.Queue(this, 'node-identifier-queue', {
-                deadLetterQueue: { queue: node_identifier_retry_handler_queue, maxReceiveCount: 5 }
+                deadLetterQueue: {queue: node_identifier_retry_handler_queue, maxReceiveCount: 5}
             });
 
         subscribe_lambda_to_queue(this, 'nodeIdentifier', node_identifier, node_identifier_queue);
 
+        history_db.connections.allowDefaultPortFrom(
+          node_identifier,
+          'node-identifier-history-db'
+        );
 
+        history_db.connections.allowDefaultPortFrom(
+            node_identifier_retry_handler,
+            'node-identifier-retry-handler-history-db'
+        );
 
-        // Graph Merge Service
+        event_producer.subscribeQueue(node_identifier_queue);
+
+        writes_to.grantWrite(node_identifier.role);
+        writes_to.grantWrite(node_identifier_retry_handler.role);
+    }
+}
+
+class GraphMerger extends cdk.Stack {
+
+    constructor(parent: cdk.App,
+                id: string,
+                reads_from_props: s3.BucketRefProps,
+                event_producer_props: sns.TopicRefProps,
+                publishes_to_props: sns.TopicRefProps,
+                vpc_props: ec2.VpcNetworkRefProps
+    ) {
+        super(parent, id + '-stack');
+
+        const reads_from = Bucket.import(
+            this,
+            'reads_from',
+            reads_from_props
+        );
+
+        const event_producer = Topic.import(
+            this,
+            'event_producer',
+            event_producer_props
+        );
+
+        const publishes_to = sns.Topic.import(
+            this,
+            'publishes_to',
+            publishes_to_props
+        );
+
+        const vpc = ec2.VpcNetwork.import(
+            this,
+            'vpc',
+            vpc_props
+        );
+
         let graph_merger = new lambda.Function(
             this, 'graph-merger', {
                 runtime: lambda.Runtime.Go1x,
                 handler: 'graph-merger',
                 code: lambda.Code.file('./graph-merger.zip'),
-                vpc: dgraph_vpc
+                vpc: vpc
             }
         );
 
@@ -297,18 +334,48 @@ class GraplStack extends cdk.Stack {
             .addAction('s3:GetObject')
             .addAction('s3:ActionGetBucket')
             .addAction('s3:ActionList')
-            .addResource(subgraphs_generated_bucket.bucketArn));
+            .addResource(reads_from.bucketArn));
 
-        subgraphs_generated_bucket.grantRead(graph_merger.role);
+        reads_from.grantRead(graph_merger.role);
+        event_producer.subscribeQueue(graph_merger_queue);
+        publishes_to.grantPublish(graph_merger.role);
+    }
+}
 
-        // Python Malicious Word Macro Execution
+class WordMacroAnalyzer extends cdk.Stack {
 
+    constructor(parent: cdk.App,
+                id: string,
+                event_producer_props: sns.TopicRefProps,
+                publishes_to_props: sns.TopicRefProps,
+                vpc_props: ec2.VpcNetworkRefProps
+    ) {
+        super(parent, id + '-stack');
+
+
+        const event_producer = Topic.import(
+            this,
+            'event_producer',
+            event_producer_props
+        );
+
+        const publishes_to = sns.Topic.import(
+            this,
+            'publishes_to',
+            publishes_to_props
+        );
+
+        const vpc = ec2.VpcNetwork.import(
+            this,
+            'vpc',
+            vpc_props
+        );
         let word_macro_analyzer = new lambda.Function(
             this, 'word-macro-analyzer', {
                 runtime: lambda.Runtime.Python36,
                 handler: 'word-macro-analyzer.lambda_handler',
                 code: lambda.Code.file('./word-macro-analyzer.zip'),
-                vpc: dgraph_vpc
+                vpc: vpc
             }
         );
 
@@ -322,14 +389,48 @@ class GraplStack extends cdk.Stack {
             word_macro_analyzer_queue
         );
 
-        subgraph_merged_topic.subscribeQueue(word_macro_analyzer_queue);
+        event_producer.subscribeQueue(word_macro_analyzer_queue);
+
+        publishes_to.grantPublish(word_macro_analyzer.role);
+    }
+}
+
+
+class EngagementCreationService extends cdk.Stack {
+
+    constructor(parent: cdk.App,
+                id: string,
+                event_producer_props: sns.TopicRefProps,
+                vpc_props: ec2.VpcNetworkRefProps
+    ) {
+        super(parent, id + '-stack');
+
+        const event_producer = Topic.import(
+            this,
+            'event_producer',
+            event_producer_props
+        );
+
+        const vpc = ec2.VpcNetwork.import(
+            this,
+            'vpc',
+            vpc_props
+        );
+        let word_macro_analyzer = new lambda.Function(
+            this, 'word-macro-analyzer', {
+                runtime: lambda.Runtime.Python36,
+                handler: 'word-macro-analyzer.lambda_handler',
+                code: lambda.Code.file('./word-macro-analyzer.zip'),
+                vpc: vpc
+            }
+        );
 
         let engagement_creation_service = new lambda.Function(
             this, 'engagement-creation-service', {
                 runtime: lambda.Runtime.Go1x,
                 handler: 'engagement-creation-service',
                 code: lambda.Code.file('./engagement-creation-service.zip'),
-                vpc: dgraph_vpc
+                vpc: vpc
             }
         );
 
@@ -337,29 +438,116 @@ class GraplStack extends cdk.Stack {
             new sqs.Queue(this, 'engagement-creation-service-queue');
 
         subscribe_lambda_to_queue(this, 'engagementCreator', engagement_creation_service, engagement_creation_service_queue);
+        event_producer.subscribeQueue(engagement_creation_service_queue);
+    }
+}
 
-        // SNS -> Service Queue
-        raw_logs_topic.subscribeQueue(generic_subgraph_generator_queue);
-        unid_subgraphs_generated_topic.subscribeQueue(node_identifier_queue);
-        subgraphs_generated_topic.subscribeQueue(graph_merger_queue);
-        // incident_topic.subscribeQueue(engagement_creation_service_queue);
+class Networks extends cdk.Stack {
+    history_db_vpc: ec2.VpcNetworkRefProps;
+    dgraph_vpc: ec2.VpcNetworkRefProps;
 
-        // Service -> S3
-        unid_subgraphs_generated_bucket.grantWrite(generic_subgraph_generator.role);
-        subgraphs_generated_bucket.grantWrite(node_identifier.role);
-        subgraphs_generated_bucket.grantWrite(node_identifier_retry_handler.role);
+    constructor(parent: cdk.App, id: string,) {
+        super(parent, id + '-stack');
 
-        // Service -> SNS
-        subgraph_merged_topic.grantPublish(graph_merger.role);
-        incident_topic.grantPublish(word_macro_analyzer.role);
+        let history_db_vpc = new ec2.VpcNetwork(this, 'HistoryVPC');
+        let dgraph_vpc = new ec2.VpcNetwork(this, 'DGraphVPC');
+
+        this.history_db_vpc = history_db_vpc.export();
+        this.dgraph_vpc = dgraph_vpc.export();
+
+    }
+}
+
+class HistoryDb extends cdk.Stack {
+
+    db: rds.DatabaseClusterRefProps;
+
+    constructor(parent: cdk.App,
+                id: string,
+                history_db_vpc_props: ec2.VpcNetworkRefProps,
+                username: cdk.Token,
+                password: cdk.Token
+                ) {
+        super(parent, id + '-stack');
+
+        const history_db_vpc = ec2.VpcNetwork.import(
+            this,
+            'vpc',
+            history_db_vpc_props
+        );
+
+        this.db = get_history_db(this, history_db_vpc, username, password).export();
     }
 }
 
 class Grapl extends cdk.App {
     constructor(argv: string[]) {
         super(argv);
-        new GraplStack(this, 'grapl');
+
+        const env_file = env(__dirname + '/.env');
+
+        const network = new Networks(this, 'vpcs');
+
+        const history_db = new HistoryDb(
+            this,
+            'history-db',
+            network.history_db_vpc,
+            new cdk.Token(process.env.HISTORY_DB_USERNAME),
+            new cdk.Token(process.env.HISTORY_DB_PASSWORD)
+        );
+
+        let event_emitters = new EventEmitters(this, 'event-emitters');
+        new GenericSubgraphGenerator(
+                this,
+                'generic-subgraph-generator',
+                event_emitters.raw_logs_bucket,
+                event_emitters.raw_logs_topic,
+                event_emitters.unid_subgraphs_generated_bucket
+            );
+
+        new NodeIdentifier(
+            this,
+            'node-identifier',
+            event_emitters.unid_subgraphs_generated_bucket,
+            event_emitters.unid_subgraphs_generated_topic,
+            event_emitters.subgraphs_generated_bucket,
+            history_db.db,
+            network.history_db_vpc
+        );
+
+        new GraphMerger(
+            this,
+            'graph-merger',
+            event_emitters.subgraphs_generated_bucket,
+            event_emitters.subgraphs_generated_topic,
+            event_emitters.subgraph_merged_topic,
+            network.dgraph_vpc
+        );
+
+        new WordMacroAnalyzer(
+            this,
+            'word-macro-analyzer',
+            event_emitters.subgraph_merged_topic,
+            event_emitters.incident_topic,
+            network.dgraph_vpc
+        )
+
+        new EngagementCreationService(
+            this,
+            'engagement-creation-service',
+            event_emitters.incident_topic,
+            network.dgraph_vpc
+        )
     }
 }
 
 process.stdout.write(new Grapl(process.argv).run());
+//
+// cdk deploy vpcs-stack && \
+// cdk deploy event-emitters-stack && \
+// cdk deploy history-db-stack && \
+// cdk deploy generic-subgraph-generator-stack && \
+// cdk deploy node-identifier-stack && \
+// cdk deploy graph-merger-stack && \
+// cdk deploy word-macro-analyzer-stack && \
+// cdk deploy engagement-creation-service-stack
