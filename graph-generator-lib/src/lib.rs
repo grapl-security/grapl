@@ -72,7 +72,7 @@ pub fn send_logs_to_generators(
     let s3_client = S3Client::simple(Region::UsEast1);
 
     s3_client.put_object(&PutObjectRequest {
-        bucket: "grapl-stack-graplrawlogbucket0e0443ef-1wcdeswbxouzn".into(),
+        bucket: "grapl-raw-log-bucket".into(),
         key,
         body: Some(logs.into()),
         ..Default::default()
@@ -92,7 +92,7 @@ pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
 
     let key = base64::encode(hasher.result().as_ref());
 
-    let bucket = "grapl-stack-graplunidsubgraphsgeneratedbucket89be-a3hfez29q83c".to_string();
+    let bucket = "grapl-unid-subgraph-generated-bucket".to_string();
     let epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH).unwrap().as_secs();
 

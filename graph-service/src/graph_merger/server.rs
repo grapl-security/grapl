@@ -31,9 +31,12 @@ use prost::Message;
 use rusoto_core::region::Region;
 use rusoto_sns::{Sns, SnsClient};
 use rusoto_sns::PublishInput;
+use rusoto_sns::CreateTopicInput;
 use sqs_microservice::handle_s3_sns_sqs_proto;
 use stopwatch::Stopwatch;
-use subgraph_merge_event::SubgraphMerged;macro_rules! log_time {
+use subgraph_merge_event::SubgraphMerged;
+
+macro_rules! log_time {
     ($msg: expr, $x:expr) => {
         let mut sw = Stopwatch::start_new();
         let result = {$x};
@@ -78,7 +81,6 @@ pub fn main() {
 
         let event = base64::encode(&event);
 
-
         log_time!{
             "merge_subgraph",
             {
@@ -86,7 +88,12 @@ pub fn main() {
                 Region::UsEast1
             );
 
-            let arn = "arn:aws:sns:us-east-1:251074890252:grapl-stack-graplsubgraphsmergedtopic327309AA-H2CXYHN8MMEF";
+            let arn = sns_client.create_topic(
+                &CreateTopicInput {
+                    name: "incident-topic".into()
+                }
+            ).wait()?.topic_arn
+                .expect("arn was none for incident-topic");
 
             info!("Publishing {} bytes to SNS", event.len());
             sns_client.publish(

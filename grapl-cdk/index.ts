@@ -62,23 +62,45 @@ class EventEmitters extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string) {
         super(parent, id + '-stack');
-        let raw_logs_bucket = new s3.Bucket(this, id + '-raw-log-bucket');
-        let unid_subgraphs_generated_bucket =
-            new s3.Bucket(this, id + '-unid-subgraphs-generated-bucket');
+        let raw_logs_bucket = new s3.Bucket(
+            this,
+            id + '-raw-log-bucket',
+            {
+                bucketName: "raw-log-bucket"
+            });
+        let unid_subgraphs_generated_bucket = new s3.Bucket(
+                this,
+                id + '-unid-subgraphs-generated-bucket',
+                {
+                    bucketName: "unid-subgraphs-generated-bucket"
+                }
+            );
         let subgraphs_generated_bucket =
-            new s3.Bucket(this, id + '-subgraphs-generated-bucket');
+            new s3.Bucket(this, id + '-subgraphs-generated-bucket', {
+                bucketName: "subgraphs-generated-bucket"
+            });
 
         // SNS Topics
         let incident_topic =
-            new sns.Topic(this, id + '-incident-topic');
+            new sns.Topic(this, id + '-incident-topic', {
+                topicName: 'incident-topic'
+            });
         let raw_logs_topic =
-            new sns.Topic(this, '-raw-log-topic');
+            new sns.Topic(this, id +  '-raw-log-topic', {
+                topicName: 'raw-log-topic'
+            });
         let unid_subgraphs_generated_topic =
-            new sns.Topic(this, '-unid-subgraphs-generated-topic');
+            new sns.Topic(this, id +  '-unid-subgraphs-generated-topic', {
+                topicName: 'unid-subgraphs-generated-topic'
+            });
         let subgraphs_generated_topic =
-            new sns.Topic(this, '-subgraphs-generated-topic');
+            new sns.Topic(this, id + '-subgraphs-generated-topic', {
+                topicName: 'subgraphs-generated-topic'
+            });
         let subgraph_merged_topic =
-            new sns.Topic(this, id + '-subgraphs-merged-topic');
+            new sns.Topic(this, id + '-subgraphs-merged-topic', {
+                topicName: 'subgraphs-merged-topic'
+            });
 
         // S3 -> SNS Events
 

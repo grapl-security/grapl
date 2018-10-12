@@ -188,7 +188,7 @@ def main():
     s3 = boto3.client('s3')
     s3.put_object(
         Body=serialized_raw_logs,
-        Bucket="grapl-stack-graplrawlogbucket0e0443ef-1wcdeswbxouzn",
+        Bucket="grapl-raw-logs",
         Key=str(epoch - (epoch % (24 * 60 * 60))) + "/PROCESS_START/" + str(epoch)
     )
     # s3 = boto3.client('s3')

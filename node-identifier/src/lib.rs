@@ -32,6 +32,7 @@ use sha2::{Digest, Sha256};
 
 use sqs_microservice::handle_message;
 use postgres::{Connection, TlsMode};
+use std::env;
 
 
 use rusoto_s3::{S3, S3Client};
@@ -70,7 +71,7 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
 
     let key = hasher.result().as_ref().to_base58();
 
-    let bucket = "grapl-stack-graplsubgraphsgeneratedbucketd55a568d-1ra9eyv9uyq9c".into();
+    let bucket = "grapl-subgraphs-generated-bucket".into();
     let epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH).unwrap().as_secs();
 
@@ -102,8 +103,13 @@ pub fn identify_nodes(should_default: bool) {
         // TODO: Grab password from Secret Storage
         info!("Connecting to history database");
 
+        let username = env::var("HISTORY_DB_USERNAME").expect("HISTORY_DB_USERNAME");
+        let password = env::var("HISTORY_DB_PASSWORD").expect("HISTORY_DB_PASSWORD");
+
         let pool = my::Pool::new(
-            "mysql://username:passwd1234567890@db.historydb:3306/historydb"
+            format!("mysql://{username}:{password}@db.historydb:3306/historydb",
+                    username=username,
+                    password=password)
         ).unwrap();
 
         info!("Connected to history database");
