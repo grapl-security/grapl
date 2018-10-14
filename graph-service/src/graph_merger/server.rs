@@ -64,6 +64,7 @@ pub fn main() {
         set_process_schema(&mut dgraph_client);
         set_file_schema(&mut dgraph_client);
 
+        info!("Set schemas");
         log_time!{
             "merge_subgraph",
             merge_subgraph(&dgraph_client, &subgraph.into())
@@ -94,6 +95,8 @@ pub fn main() {
                 }
             ).wait()?.topic_arn
                 .expect("arn was none for incident-topic");
+
+            info!("Got arn for incident-topic");
 
             info!("Publishing {} bytes to SNS", event.len());
             sns_client.publish(

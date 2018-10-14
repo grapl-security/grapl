@@ -3,7 +3,7 @@
 extern crate aws_lambda as lambda;
 extern crate failure;
 extern crate futures;
-extern crate base64;
+extern crate base16;
 extern crate prost;
 extern crate sha2;
 extern crate rusoto_s3;
@@ -58,7 +58,7 @@ pub fn send_logs_to_generators(
         hasher.input(&logs);
 
         let key = hasher.result();
-        let key = base64::encode(&key);
+        let key = base16::encode_lower(&key);
         let epoch = SystemTime::now()
             .duration_since(UNIX_EPOCH).unwrap().as_secs();
 
@@ -71,8 +71,10 @@ pub fn send_logs_to_generators(
 
     let s3_client = S3Client::simple(Region::UsEast1);
 
+    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+
     s3_client.put_object(&PutObjectRequest {
-        bucket: "grapl-raw-log-bucket".into(),
+        bucket: bucket_prefix + "grapl-raw-log-bucket",
         key,
         body: Some(logs.into()),
         ..Default::default()
@@ -90,9 +92,11 @@ pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
     let mut hasher = Sha256::default();
     hasher.input(&proto);
 
-    let key = base64::encode(hasher.result().as_ref());
+    let key = base16::encode_lower(hasher.result().as_ref());
 
-    let bucket = "grapl-unid-subgraph-generated-bucket".to_string();
+    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+
+    let bucket = bucket_prefix + "unid-subgraphs-generated-bucket";
     let epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH).unwrap().as_secs();
 
@@ -101,7 +105,7 @@ pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
 
     let key = format!("{}/{}",
                       day,
-                      base64::encode(&key)
+                      base16::encode_lower(&key)
     );
     info!("uploading unidentifed_subgraphs to {}", key);
 
@@ -128,3 +132,9 @@ mod tests {
         assert_eq!(2 + 2, 4);
     }
 }
+
+//rust-musl-builder cargo build --release && cp ./target/x86_64-unknown-linux-musl/release/generic-subgraph-generator . && zip ./generic-subgraph-generator.zip ./generic-subgraph-generator && cp ./generic-subgraph-generator.zip ~/workspace/grapl/grapl-cdk/ && rm ./generic-subgraph-generator.zip
+
+
+
+

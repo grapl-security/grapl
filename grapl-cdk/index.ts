@@ -5,11 +5,12 @@ import sqs = require('@aws-cdk/aws-sqs');
 import ec2 = require('@aws-cdk/aws-ec2');
 import rds = require('@aws-cdk/aws-rds');
 import lambda = require('@aws-cdk/aws-lambda');
-import {SubnetType, VpcNetwork} from "@aws-cdk/aws-ec2";
+import {cloudformation, PrefixList, SubnetType, TcpAllPorts, VpcNetwork} from "@aws-cdk/aws-ec2";
 import {Stack, Token} from "@aws-cdk/cdk";
 import {Bucket} from "@aws-cdk/aws-s3";
 import {Topic} from "@aws-cdk/aws-sns";
 import {DatabaseCluster, DatabaseClusterRefProps} from "@aws-cdk/aws-rds";
+import SecurityGroupEgressResource = cloudformation.SecurityGroupEgressResource;
 
 var env = require('node-env-file');
 
@@ -36,6 +37,8 @@ function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetworkRef, username: Toke
 }
 
 function subscribe_lambda_to_queue(stack: cdk.Stack, id: string, fn: lambda.Function, queue: sqs.Queue) {
+
+    // TODO: Build the S3 Endpoint and allow traffic only through that endpoint
     new lambda.cloudformation.EventSourceMappingResource(stack, id + 'Events', {
         functionName: fn.functionName,
         eventSourceArn: queue.queueArn
@@ -66,18 +69,18 @@ class EventEmitters extends cdk.Stack {
             this,
             id + '-raw-log-bucket',
             {
-                bucketName: "raw-log-bucket"
+                bucketName: process.env.BUCKET_PREFIX + "-raw-log-bucket"
             });
         let unid_subgraphs_generated_bucket = new s3.Bucket(
                 this,
                 id + '-unid-subgraphs-generated-bucket',
                 {
-                    bucketName: "unid-subgraphs-generated-bucket"
+                    bucketName: process.env.BUCKET_PREFIX + "-unid-subgraphs-generated-bucket"
                 }
             );
         let subgraphs_generated_bucket =
             new s3.Bucket(this, id + '-subgraphs-generated-bucket', {
-                bucketName: "subgraphs-generated-bucket"
+                bucketName: process.env.BUCKET_PREFIX + "-subgraphs-generated-bucket"
             });
 
         // SNS Topics
@@ -155,7 +158,10 @@ class GenericSubgraphGenerator extends cdk.Stack {
             this, 'generic-subgraph-generator', {
                 runtime: lambda.Runtime.Go1x,
                 handler: 'generic-subgraph-generator',
-                code: lambda.Code.file('./generic-subgraph-generator.zip')
+                code: lambda.Code.file('./generic-subgraph-generator.zip'),
+                environment: {
+                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+                }
             }
         );
 
@@ -167,6 +173,7 @@ class GenericSubgraphGenerator extends cdk.Stack {
 
 
         reads_from.grantRead(generic_subgraph_generator.role);
+
 
 
         let generic_subgraph_generator_queue =
@@ -232,7 +239,8 @@ class NodeIdentifier extends cdk.Stack {
                 vpc: vpc,
                 environment: {
                     "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
-                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD
+                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
+                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
                 }
             }
         );
@@ -266,7 +274,8 @@ class NodeIdentifier extends cdk.Stack {
                 vpc: vpc,
                 environment: {
                     "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
-                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD
+                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
+                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
                 }
             }
         );
@@ -300,6 +309,10 @@ class NodeIdentifier extends cdk.Stack {
 
         writes_to.grantWrite(node_identifier.role);
         writes_to.grantWrite(node_identifier_retry_handler.role);
+
+        node_identifier.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
+        node_identifier_retry_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
+
     }
 }
 
@@ -343,7 +356,12 @@ class GraphMerger extends cdk.Stack {
                 runtime: lambda.Runtime.Go1x,
                 handler: 'graph-merger',
                 code: lambda.Code.file('./graph-merger.zip'),
-                vpc: vpc
+                vpc: vpc,
+                environment: {
+                    "GRAPH_MERGER": process.env.GRAPH_MERGER_READ_BUCKET,
+                    "GRAPH_MERGER_WRITE_TOPIC": process.env.GRAPH_MERGER_WRITE_TOPIC,
+                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+                }
             }
         );
 
@@ -358,9 +376,16 @@ class GraphMerger extends cdk.Stack {
             .addAction('s3:ActionList')
             .addResource(reads_from.bucketArn));
 
+
+        graph_merger.addToRolePolicy(new cdk.PolicyStatement()
+            .addAction('sns:*')
+            .addResource(publishes_to.topicArn));
+
         reads_from.grantRead(graph_merger.role);
         event_producer.subscribeQueue(graph_merger_queue);
         publishes_to.grantPublish(graph_merger.role);
+        graph_merger.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+
     }
 }
 
@@ -397,7 +422,7 @@ class WordMacroAnalyzer extends cdk.Stack {
                 runtime: lambda.Runtime.Python36,
                 handler: 'word-macro-analyzer.lambda_handler',
                 code: lambda.Code.file('./word-macro-analyzer.zip'),
-                vpc: vpc
+                vpc: vpc,
             }
         );
 
@@ -438,14 +463,6 @@ class EngagementCreationService extends cdk.Stack {
             'vpc',
             vpc_props
         );
-        let word_macro_analyzer = new lambda.Function(
-            this, 'word-macro-analyzer', {
-                runtime: lambda.Runtime.Python36,
-                handler: 'word-macro-analyzer.lambda_handler',
-                code: lambda.Code.file('./word-macro-analyzer.zip'),
-                vpc: vpc
-            }
-        );
 
         let engagement_creation_service = new lambda.Function(
             this, 'engagement-creation-service', {
@@ -465,17 +482,16 @@ class EngagementCreationService extends cdk.Stack {
 }
 
 class Networks extends cdk.Stack {
-    history_db_vpc: ec2.VpcNetworkRefProps;
-    dgraph_vpc: ec2.VpcNetworkRefProps;
+    grapl_vpc: ec2.VpcNetworkRefProps;
 
     constructor(parent: cdk.App, id: string,) {
         super(parent, id + '-stack');
 
-        let history_db_vpc = new ec2.VpcNetwork(this, 'HistoryVPC');
-        let dgraph_vpc = new ec2.VpcNetwork(this, 'DGraphVPC');
+        let grapl_vpc = new ec2.VpcNetwork(this, 'GraplVPC', {
+            natGateways: 2
+        });
 
-        this.history_db_vpc = history_db_vpc.export();
-        this.dgraph_vpc = dgraph_vpc.export();
+        this.grapl_vpc = grapl_vpc.export();
 
     }
 }
@@ -486,19 +502,19 @@ class HistoryDb extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                history_db_vpc_props: ec2.VpcNetworkRefProps,
+                grapl_vpc_props: ec2.VpcNetworkRefProps,
                 username: cdk.Token,
                 password: cdk.Token
                 ) {
         super(parent, id + '-stack');
 
-        const history_db_vpc = ec2.VpcNetwork.import(
+        const grapl_vpc = ec2.VpcNetwork.import(
             this,
             'vpc',
-            history_db_vpc_props
+            grapl_vpc_props
         );
 
-        this.db = get_history_db(this, history_db_vpc, username, password).export();
+        this.db = get_history_db(this, grapl_vpc, username, password).export();
     }
 }
 
@@ -513,7 +529,7 @@ class Grapl extends cdk.App {
         const history_db = new HistoryDb(
             this,
             'history-db',
-            network.history_db_vpc,
+            network.grapl_vpc,
             new cdk.Token(process.env.HISTORY_DB_USERNAME),
             new cdk.Token(process.env.HISTORY_DB_PASSWORD)
         );
@@ -534,7 +550,7 @@ class Grapl extends cdk.App {
             event_emitters.unid_subgraphs_generated_topic,
             event_emitters.subgraphs_generated_bucket,
             history_db.db,
-            network.history_db_vpc
+            network.grapl_vpc
         );
 
         new GraphMerger(
@@ -542,8 +558,8 @@ class Grapl extends cdk.App {
             'graph-merger',
             event_emitters.subgraphs_generated_bucket,
             event_emitters.subgraphs_generated_topic,
-            event_emitters.subgraph_merged_topic,
-            network.dgraph_vpc
+            event_emitters.incident_topic,
+            network.grapl_vpc
         );
 
         new WordMacroAnalyzer(
@@ -551,15 +567,15 @@ class Grapl extends cdk.App {
             'word-macro-analyzer',
             event_emitters.subgraph_merged_topic,
             event_emitters.incident_topic,
-            network.dgraph_vpc
-        )
+            network.grapl_vpc
+        );
 
         new EngagementCreationService(
             this,
             'engagement-creation-service',
             event_emitters.incident_topic,
-            network.dgraph_vpc
-        )
+            network.grapl_vpc
+        );
     }
 }
 

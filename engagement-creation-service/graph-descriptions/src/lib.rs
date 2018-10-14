@@ -20,7 +20,6 @@ extern crate sha3;
 extern crate typed_builder;
 extern crate uuid;
 
-
 use graph_description::*;
 use graph_description::host::HostId;
 use graph_description::node_description_proto::*;
@@ -249,7 +248,7 @@ impl NodeDescriptionProto {
         }
     }
 
-    pub fn into_json(self) -> String {
+    pub fn into_json(self) -> Value {
         match self.which_node.unwrap() {
             WhichNode::ProcessNode(node) => {
                 let node: ProcessDescription = node.into();
@@ -355,7 +354,7 @@ impl ProcessDescription {
         self.node_key.clone()
     }
 
-    pub fn into_json(self) -> String {
+    pub fn into_json(self) -> Value {
         let asset_id = &self.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
         let asset_id = match asset_id {
             HostId::AssetId(asset_id) => asset_id,
@@ -380,7 +379,7 @@ impl ProcessDescription {
             ProcessState::Existing => j["seen_at"] = self.timestamp.into(),
         }
 
-        j.to_string()
+        j
     }
 
     pub fn asset_id(&self) -> &str {
@@ -439,7 +438,7 @@ impl FileDescription {
         self.node_key.clone()
     }
 
-    pub fn into_json(self) -> String {
+    pub fn into_json(self) -> Value {
         let asset_id = &self.host_id
             .as_ref().unwrap().host_id.as_ref().unwrap();
         let asset_id = match asset_id {
@@ -460,7 +459,7 @@ impl FileDescription {
             FileState::Existing => j["seen_at"] = self.timestamp.into(),
         }
 
-        j.to_string()
+        j
     }
 }
 
@@ -494,12 +493,12 @@ impl IpAddressDescription {
     }
 
 
-    pub fn into_json(self) -> String {
+    pub fn into_json(self) -> Value {
         json!({
             "node_key": self.node_key,
             "last_seen": self.timestamp,
             "ip": self.ip,
-        }).to_string()
+        })
     }
 
 }

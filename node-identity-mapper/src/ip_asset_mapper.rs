@@ -12,8 +12,6 @@ pub fn create_ip_asset_session(conn: &Connection,
                                ip: impl AsRef<str>,
                                asset_id: impl AsRef<str>,
                                create_time: u64) -> Result<(), Error> {
-
-    // TODO: Escape stuff
     let query = r"
        INSERT INTO ip_asset_history
           (session_id, ip, create_time)

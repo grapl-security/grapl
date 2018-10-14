@@ -5,6 +5,8 @@ node_modules/
 *.zip
 .env
 
+word-macro-analyzer/*/
+
 engagement-creation-service/graph-descriptions/
 engagement-creation-service/incident-graph/
 engagement-creation-service/sqs-microservice/

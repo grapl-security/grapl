@@ -21,7 +21,7 @@ As an example, one can write a signature to catch a malicious word macro:
 
 ```
 {
-  q(func: eq(image_name, "word")) 
+  q(func: eq(image_name, "word")) @cascade
   @filter(gt(create_time, 0) AND lt(create_time, 600))
   {
     uid, pid, create_time, image_name, terminate_time, node_key, asset_id
@@ -63,6 +63,10 @@ be able to provide benefits with its automated scoping.
 
 **Grapl is currently: Alpha Quality**
 
+Alpha means that there will be a lot of code churn (total rewrites) and possibly
+data-format changes. This means that data you write to grapl today may not be
+valid tomorrow. I do not intend to support migrations during Alpha.
+
 **What Works**
 * Can parse process and file events, if they conform to the 'generic' parser
 * Can identify and merge generated subgraphs into master graph
@@ -78,16 +82,15 @@ be able to provide benefits with its automated scoping.
 Note that Grapl has not been given the security attention it deserves. I do not recommend
 using it without examining the generated Cloudformation stack and source code.
 
+Contributions very welcome.
+
 
 ### Next Steps
 
 The immediate next steps are:
-* Get the pipeline from subgraph generators to graph merging up to RC quality
-    * Support arbitrary log parsers
-    * Remove any hardcoded infra information
-    * Handle a few edge cases that are currently left aside
-* Re-architect the analyzer concept so that individual signatures don't map to
-    individual lambdas, generally lower cost of writing analyzers
+* Support arbitrary log parsers
+* SUpport mapping IPs and Hostnames to asset_id's
+* Cower cost of writing analyzers, provide generic analyzer to host /load multiple signatures
 * Engagement creation and automated scoping
 * Engagement interactions via Python API
 
@@ -115,12 +118,10 @@ Grapl is primarily built in Rust, with the Analyzers being built in Python.
 In order to build the rust binaries for aws lambda you'll need to use the
 [rust-musl-builder](https://github.com/emk/rust-musl-builder/) project.
 
-[Due to a dependency on grpcio, you'll need to modify this project accordingly:](https://github.com/emk/rust-musl-builder/issues/53)
-
-Due to the dockerized builds, library dependencies in grapl are expected to be copied into the service folder.
-
-In the future I can package and provide built binaries, and with a bit of Docker work the need to copy dependencies
-should go away as well.
+* Build the docker image so that it uses the rust nightly compiler.
+* Set up the `rust-musl-builder` alias as the readme suggests.
+* Modify `build.sh` to point to your built Docker image (`-t <your image id>`)
+* Run the `build.sh` to build files and place them in the `grapl-cdk` folder for later deployment. 
 
 ### DGraph
 
@@ -136,8 +137,19 @@ The majority of Grapl infrastructure is managed via [aws-cdk](https://gitter.im/
 
 See `aws-cdk` docs for setup instructions.
 
-Once the binaries are build you can zip them up, move them to the `grapl-cdk` folder, and deploy the stacks.
+The one thing not provided by cdk is the S3 endpoint that you'll need for your lambdas to talk to
+S3. Just create one through the console/ your preferred means within the  GraplVpc vpc after running cdk.
 
+
+Once the binaries are built you can zip them up, move them to the `grapl-cdk` folder, and deploy the stacks.
+
+You'll need to provide a `.env` file with the following properties:
+```
+HISTORY_DB_USERNAME
+HISTORY_DB_PASSWORD
+BUCKET_PREFIX
+```
+BUCKET_PREFIX needs to be a unique string, valid for S3 bucket names.
 
 I recommend running `cdk diff` to see what resource changes you can expect.
 
@@ -155,4 +167,5 @@ Your DGraph cluster security groups will need to allow traffic from the graph-me
 and the engagement-creation-service.
 
 In order to run the lambdas within their respective VPCs you may need to open a support request
-with AWS to reserve extra Elastic IPs (20 has been sufficient for me).
+with AWS to reserve extra Elastic IPs (16 has been sufficient for me).
+ 

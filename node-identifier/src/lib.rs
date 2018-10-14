@@ -11,7 +11,6 @@ extern crate failure;
 
 extern crate base58;
 extern crate graph_descriptions;
-extern crate postgres;
 extern crate sqs_microservice;
 extern crate rusoto_core;
 extern crate rusoto_s3;
@@ -31,7 +30,7 @@ use failure::Error;
 use sha2::{Digest, Sha256};
 
 use sqs_microservice::handle_message;
-use postgres::{Connection, TlsMode};
+
 use std::env;
 
 
@@ -71,7 +70,9 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
 
     let key = hasher.result().as_ref().to_base58();
 
-    let bucket = "grapl-subgraphs-generated-bucket".into();
+    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+
+    let bucket = bucket_prefix + "subgraphs-generated-bucket";
     let epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH).unwrap().as_secs();
 
@@ -100,7 +101,6 @@ pub fn identify_nodes(should_default: bool) {
 
 
     handle_s3_sns_sqs_proto( move |mut subgraphs: GeneratedSubgraphsProto| {
-        // TODO: Grab password from Secret Storage
         info!("Connecting to history database");
 
         let username = env::var("HISTORY_DB_USERNAME").expect("HISTORY_DB_USERNAME");
@@ -116,9 +116,9 @@ pub fn identify_nodes(should_default: bool) {
 
         info!("Handling {} subgraphs", subgraphs.subgraphs.len());
 
-//        ip_asset_history::create_table(&pool);
-//        process_history::create_table(&pool);
-//        file_history::create_table(&pool);
+        ip_asset_history::create_table(&pool);
+        process_history::create_table(&pool);
+        file_history::create_table(&pool);
 
         // Just retry Existing and if after 30 seconds it doesnt work just default
         // Process other logs as normal

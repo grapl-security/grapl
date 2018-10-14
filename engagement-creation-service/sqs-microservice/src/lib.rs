@@ -42,6 +42,8 @@ use std::thread::JoinHandle;
 fn read_raw_message<S>(s3_client: Rc<S>, bucket: String, path: String) -> Result<Vec<u8>, Error>
     where S: S3 + 'static
 {
+    info!("Fetching data from {} {}", bucket, path);
+
     let object = await!(s3_client.get_object(&GetObjectRequest {
             bucket: bucket.to_owned(),
             key: path.clone(),
@@ -63,6 +65,7 @@ fn read_message<M, S>(s3_client: Rc<S>, bucket: String, path: String) -> Result<
     where M: Message + Default,
           S: S3 + 'static
 {
+    info!("Fetching data from {} {}", bucket, path);
     let object = await!(s3_client.get_object(&GetObjectRequest {
             bucket: bucket.to_owned(),
             key: path,
@@ -72,7 +75,7 @@ fn read_message<M, S>(s3_client: Rc<S>, bucket: String, path: String) -> Result<
     let mut body = vec![];
 
     #[async]
-        for chunk in object.body.unwrap() {
+    for chunk in object.body.unwrap() {
         body.extend_from_slice(&chunk);
     }
 
@@ -118,6 +121,7 @@ pub fn get_messages<M>(event: S3Event) -> Result<Vec<M>, Error>
         (record.s3.bucket.name.unwrap(),
          record.s3.object.key.unwrap())
     }).collect();
+    info!("Extracted s3 paths: {:#?}", paths);
 
     let s3_client = S3Client::simple(
         Region::UsEast1

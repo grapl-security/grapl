@@ -184,9 +184,10 @@ pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result
             let mut json_node = (*node).clone().into_json();
             json_node["uid"] = Value::from(uid);
 
+            info!("json_node: {}", json_node.to_string());
             mutation.set_json = json_node.to_string().into_bytes();
 
-            info!("mutation: {}", (*node).clone().into_json());
+            info!("mutation with uid: {}", (*node).clone().into_json());
 
             log_time!{
                 "mutation",
@@ -277,3 +278,5 @@ pub fn set_ip_address_schema(client: &mut DgraphClient) {
         "#.to_string();
     let _res = client.alter(&op_schema).expect("set schema");
 }
+
+

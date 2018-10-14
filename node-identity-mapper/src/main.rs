@@ -6,7 +6,7 @@ extern crate prost_derive;
 
 extern crate base64;
 extern crate failure;
-extern crate postgres;
+extern crate mysql;
 extern crate sqs_microservice;
 extern crate graph_descriptions;
 extern crate rusoto_core;
@@ -34,6 +34,7 @@ use rusoto_core::Region;
 
 use ip_asset_mapping::{IpAssetMapping, IpAssetMappings};
 use ip_asset_mapper::create_ip_asset_session;
+use std::env;
 
 mod ip_asset_mapping {
     include!(concat!(env!("OUT_DIR"), "/ip_asset_mapping.rs"));
@@ -43,9 +44,16 @@ fn main() {
 
     handle_s3_sns_sqs_proto(move |ip_asset_mappings: IpAssetMappings| {
         info!("Attempting to connect to postgres");
-        let conn = Connection::connect(
-            "postgres://history-service.cmy5ojzyubkc.us-east-1.rds.amazonaws.com:5433",
-            TlsMode::None).expect("postgres"); // TODO: TLS
+
+        let username = env::var("HISTORY_DB_USERNAME").expect("HISTORY_DB_USERNAME");
+        let password = env::var("HISTORY_DB_PASSWORD").expect("HISTORY_DB_PASSWORD");
+
+        let pool = my::Pool::new(
+            format!("mysql://{username}:{password}@db.historydb:3306/historydb",
+                    username=username,
+                    password=password)
+        ).unwrap();
+
         info!("Connected successfully to postgres");
 
         for ip_asset_mapping in ip_asset_mappings.mappings {
