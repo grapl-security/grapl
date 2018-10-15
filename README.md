@@ -12,6 +12,10 @@ Grapl currently supports graph representations for:
 * Process Start/ Stop
 * File Create/Read/Write/Delete
 
+What you can do with Grapl today:
+* Send it data, given you provide a specific format
+* Query the db for graphs of Process trees and their associated files
+
 
 ### Example Use Case: Catching a malicious word macro
 
@@ -117,6 +121,7 @@ Grapl is primarily built in Rust, with the Analyzers being built in Python.
 
 In order to build the rust binaries for aws lambda you'll need to use the
 [rust-musl-builder](https://github.com/emk/rust-musl-builder/) project.
+(You'll need this patch https://github.com/emk/rust-musl-builder/pull/57#discussion_r225104037 )
 
 * Build the docker image so that it uses the rust nightly compiler.
 * Set up the `rust-musl-builder` alias as the readme suggests.
