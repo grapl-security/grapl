@@ -8,7 +8,7 @@ use graph_descriptions::*;
 
 use uuid;
 
-pub fn get_ip_asset_session_id(conn: &mut Transaction,
+pub fn get_ip_asset_session_id(conn: &Pool,
                           ip: &str,
                           timestamp: u64) -> Result<Option<String>, Error> {
     info!("get_ip_asset_session_id");
@@ -74,7 +74,7 @@ pub fn create_table(conn: &Pool) {
 }
 
 
-pub fn attribute_ip_asset_process_node(conn: &mut Transaction,
+pub fn attribute_ip_asset_process_node(conn: &Pool,
                   node: &mut ProcessDescriptionProto) -> Result<(), Error> {
     info!("attribute_ip_asset_process_node");
 
@@ -109,7 +109,7 @@ pub fn attribute_ip_asset_process_node(conn: &mut Transaction,
 //    unimplemented!()
 }
 
-pub fn attribute_ip_asset_file_node(conn: &mut Transaction,
+pub fn attribute_ip_asset_file_node(conn: &Pool,
                                        node: &mut FileDescriptionProto) -> Result<(), Error> {
     info!("attribute_ip_asset_file_node");
 
@@ -139,7 +139,7 @@ pub fn attribute_ip_asset_file_node(conn: &mut Transaction,
 //    unimplemented!()
 }
 
-pub fn map_asset_ids_to_graph(conn: &mut Transaction,
+pub fn map_asset_ids_to_graph(conn: &Pool,
                               subgraph: &mut GraphDescription) -> Result<(), Error> {
 
     info!("map_asset_ids_to_graph");

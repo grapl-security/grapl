@@ -8,7 +8,7 @@ use uuid;
 use std::collections::HashSet;
 use mysql::{Pool, Transaction};
 
-pub fn get_process_session_id(conn: &mut Transaction,
+pub fn get_process_session_id(conn: &Pool,
                           pid: u64,
                           asset_id: &str,
                           timestamp: u64) -> Result<Option<String>, Error> {
@@ -43,7 +43,7 @@ pub fn get_process_session_id(conn: &mut Transaction,
         let a_time: i64 = row.get("create_time").expect("create_time");
         let a_time: u64 = a_time as u64;
 
-        if timestamp > a_time {
+        if timestamp >= a_time {
             return Ok(Some(row.get("session_id").expect("create_time")));
         }
     }
@@ -61,7 +61,7 @@ pub fn get_process_session_id(conn: &mut Transaction,
     Ok(None)
 }
 
-pub fn check_exact_process(conn: &mut Transaction,
+pub fn check_exact_process(conn: &Pool,
                            pid: u64,
                            asset_id: &str,
                            create_time: u64) -> Result<Option<String>, Error> {
@@ -71,8 +71,7 @@ pub fn check_exact_process(conn: &mut Transaction,
        SELECT session_id
        FROM process_history
        WHERE pid = {} AND asset_id = \"{}\"
-             AND create_time = {}
-       ORDER BY create_time DESC",
+             AND create_time = {}",
                         pid, asset_id, create_time
     );
 
@@ -87,7 +86,7 @@ pub fn check_exact_process(conn: &mut Transaction,
     Ok(None)
 }
 
-pub fn create_process_session(conn: &mut Transaction,
+pub fn create_process_session(conn: &Pool,
                           pid: u64,
                           asset_id: &str,
                           create_time: u64) -> Result<String, Error> {
@@ -111,13 +110,17 @@ pub fn create_process_session(conn: &mut Transaction,
     );
 
     info!("create_process_session prep_exec {}", &query);
-    conn.prep_exec(&query, &())?;
+    let res = conn.prep_exec(&query, &());
+    if let Err(ref e) = res {
+        error!("{:#?}", e);
+    }
+    res?;
 
     Ok(session_id)
 }
 
 
-pub fn update_or_create(conn: &mut Transaction,
+pub fn update_or_create(conn: &Pool,
                     pid: u64,
                     asset_id: &str,
                     create_time: u64,
@@ -156,7 +159,7 @@ pub fn create_table(conn: &Pool) {
 }
 
 
-pub fn attribute_process_node(conn: &mut Transaction,
+pub fn attribute_process_node(conn: &Pool,
                               node: &mut ProcessDescriptionProto,
                               should_default: bool
 ) -> Result<(), Error> {
@@ -231,7 +234,7 @@ pub fn remap_edges(key_map: &HashMap<String, String>,
 }
 
 
-pub fn map_process_session_ids_to_graph(conn: &mut Transaction,
+pub fn map_process_session_ids_to_graph(conn: &Pool,
                                         subgraph: &mut GraphDescription,
                                         should_default: bool
 ) -> Result<(), Error> {

@@ -10,7 +10,7 @@ use uuid;
 use std::collections::HashSet;
 use mysql::Pool;
 
-pub fn get_file_session_id(conn: &mut Transaction,
+pub fn get_file_session_id(conn: &Pool,
                               path: &str,
                               asset_id: &str,
                               timestamp: u64) -> Result<Option<String>, Error> {
@@ -63,7 +63,7 @@ pub fn get_file_session_id(conn: &mut Transaction,
     Ok(None)
 }
 
-pub fn check_exact_file(conn: &mut Transaction,
+pub fn check_exact_file(conn: &Pool,
                         path: &str,
                         asset_id: &str,
                         create_time: u64) -> Result<Option<String>, Error> {
@@ -88,7 +88,7 @@ pub fn check_exact_file(conn: &mut Transaction,
     Ok(None)
 }
 
-pub fn create_file_session(conn: &mut Transaction,
+pub fn create_file_session(conn: &Pool,
                               path: &str,
                               asset_id: &str,
                               create_time: u64) -> Result<String, Error> {
@@ -118,7 +118,7 @@ pub fn create_file_session(conn: &mut Transaction,
 }
 
 
-pub fn update_or_create(conn: &mut Transaction,
+pub fn update_or_create(conn: &Pool,
                         path: &str,
                         asset_id: &str,
                         create_time: u64,
@@ -157,7 +157,7 @@ pub fn create_table(conn: &Pool) {
 }
 
 
-pub fn attribute_file_node(conn: &mut Transaction,
+pub fn attribute_file_node(conn: &Pool,
                            node: &mut FileDescriptionProto,
                            should_default: bool
 ) -> Result<(), Error> {
@@ -232,7 +232,7 @@ pub fn remap_edges(key_map: &HashMap<String, String>,
     subgraph.edges = edge_map;
 }
 
-pub fn map_file_session_ids_to_graph(conn: &mut Transaction,
+pub fn map_file_session_ids_to_graph(conn: &Pool,
                                         subgraph: &mut GraphDescription,
                                         should_default: bool
 ) -> Result<(), Error> {

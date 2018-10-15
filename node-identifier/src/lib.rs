@@ -130,52 +130,28 @@ pub fn identify_nodes(should_default: bool) {
                 let mut result = Ok(());
 
                 info!("Mapping asset ids to graph");
-                let mut p_transaction = pool.start_transaction(
-                    false,
-                    Some(my::IsolationLevel::Serializable),
-                    Some(false)
-                )?;
 
-                let r = map_asset_ids_to_graph(&mut p_transaction, &mut subgraph);
+                let r = map_asset_ids_to_graph(&pool, &mut subgraph);
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
-                    p_transaction.rollback().expect("rollback");
-                } else {
-                    if let Err(e) = p_transaction.commit() {error!("{}", e)}
                 }
+
                 info!("Mapping process session ids to graph");
 
                 // Process/ File mapping *must* happen after asset ids
-                let mut p_transaction = pool.start_transaction(
-                    false,
-                    Some(my::IsolationLevel::Serializable),
-                    Some(false)
-                )?;
 
-                let r = map_process_session_ids_to_graph(&mut p_transaction, &mut subgraph, should_default);
+                let r = map_process_session_ids_to_graph(&pool, &mut subgraph, should_default);
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
-                    p_transaction.rollback().expect("rollback");
-                } else {
-                    if let Err(e) = p_transaction.commit() {error!("{}", e)}
                 }
 
-                let mut p_transaction = pool.start_transaction(
-                    false,
-                    Some(my::IsolationLevel::Serializable),
-                    Some(false)
-                )?;
-
                 info!("Mapping file session ids to graph");
-                let r = map_file_session_ids_to_graph(&mut p_transaction, &mut subgraph, should_default);
+                let r = map_file_session_ids_to_graph(&pool, &mut subgraph, should_default);
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
-                    p_transaction.rollback().expect("rollback");
-                } else {
-                    if let Err(e) = p_transaction.commit() {error!("{}", e)}
                 }
 
                 info!("{:#?}", subgraph);
