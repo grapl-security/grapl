@@ -91,12 +91,12 @@ pub fn main() {
 
             let arn = sns_client.create_topic(
                 &CreateTopicInput {
-                    name: "incident-topic".into()
+                    name: "subgraphs-merged-topic".into()
                 }
             ).wait()?.topic_arn
-                .expect("arn was none for incident-topic");
+                .expect("arn was none for subgraphs-merged-topic");
 
-            info!("Got arn for incident-topic");
+            info!("Got arn for subgraphs-merged-topic");
 
             info!("Publishing {} bytes to SNS", event.len());
             sns_client.publish(
@@ -334,3 +334,5 @@ mod tests {
     }
 
 }
+
+

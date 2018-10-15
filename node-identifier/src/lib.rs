@@ -72,11 +72,12 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
 
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-    let bucket = bucket_prefix + "subgraphs-generated-bucket";
+    let bucket = bucket_prefix + "-subgraphs-generated-bucket";
     let epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH).unwrap().as_secs();
 
-    // Bucket by day
+    //
+    // by day
     let day = epoch - (epoch % (24 * 60 * 60));
 
     let key = format!("{}/{}",
@@ -120,9 +121,7 @@ pub fn identify_nodes(should_default: bool) {
         process_history::create_table(&pool);
         file_history::create_table(&pool);
 
-        // Just retry Existing and if after 30 seconds it doesnt work just default
-        // Process other logs as normal
-        subgraphs.subgraphs.sort_unstable_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        subgraphs.subgraphs.sort_unstable_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
         let mut result = Ok(());
         for subgraph in subgraphs.subgraphs {
@@ -131,26 +130,54 @@ pub fn identify_nodes(should_default: bool) {
                 let mut result = Ok(());
 
                 info!("Mapping asset ids to graph");
-                let r = map_asset_ids_to_graph(&pool, &mut subgraph);
+                let mut p_transaction = pool.start_transaction(
+                    false,
+                    Some(my::IsolationLevel::Serializable),
+                    Some(false)
+                )?;
+
+                let r = map_asset_ids_to_graph(&mut p_transaction, &mut subgraph);
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
+                    p_transaction.rollback().expect("rollback");
+                } else {
+                    if let Err(e) = p_transaction.commit() {error!("{}", e)}
                 }
                 info!("Mapping process session ids to graph");
 
                 // Process/ File mapping *must* happen after asset ids
-                let r = map_process_session_ids_to_graph(&pool, &mut subgraph, should_default);
+                let mut p_transaction = pool.start_transaction(
+                    false,
+                    Some(my::IsolationLevel::Serializable),
+                    Some(false)
+                )?;
+
+                let r = map_process_session_ids_to_graph(&mut p_transaction, &mut subgraph, should_default);
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
+                    p_transaction.rollback().expect("rollback");
+                } else {
+                    if let Err(e) = p_transaction.commit() {error!("{}", e)}
                 }
 
+                let mut p_transaction = pool.start_transaction(
+                    false,
+                    Some(my::IsolationLevel::Serializable),
+                    Some(false)
+                )?;
+
                 info!("Mapping file session ids to graph");
-                let r = map_file_session_ids_to_graph(&pool, &mut subgraph, should_default);
+                let r = map_file_session_ids_to_graph(&mut p_transaction, &mut subgraph, should_default);
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
+                    p_transaction.rollback().expect("rollback");
+                } else {
+                    if let Err(e) = p_transaction.commit() {error!("{}", e)}
                 }
+
                 info!("{:#?}", subgraph);
 
                 let r = upload_identified_graphs(subgraph);

@@ -1,4 +1,4 @@
-use mysql::Pool;
+use mysql::{Pool, Transaction};
 
 use failure::Error;
 use graph_descriptions::graph_description::*;
@@ -8,7 +8,7 @@ use graph_descriptions::*;
 
 use uuid;
 
-pub fn get_ip_asset_session_id(conn: &Pool,
+pub fn get_ip_asset_session_id(conn: &mut Transaction,
                           ip: &str,
                           timestamp: u64) -> Result<Option<String>, Error> {
     info!("get_ip_asset_session_id");
@@ -74,7 +74,7 @@ pub fn create_table(conn: &Pool) {
 }
 
 
-pub fn attribute_ip_asset_process_node(conn: &Pool,
+pub fn attribute_ip_asset_process_node(conn: &mut Transaction,
                   node: &mut ProcessDescriptionProto) -> Result<(), Error> {
     info!("attribute_ip_asset_process_node");
 
@@ -82,17 +82,17 @@ pub fn attribute_ip_asset_process_node(conn: &Pool,
         let asset_id = match ProcessState::from(node.state) {
             ProcessState::Created => {
                 get_ip_asset_session_id(
-                    &conn,ip,node.timestamp
+                    conn,ip,node.timestamp
                 )?.unwrap()
             },
             ProcessState::Existing => {
                 get_ip_asset_session_id(
-                    &conn,ip,node.timestamp
+                    conn,ip,node.timestamp
                 )?.unwrap()
             },
             ProcessState::Terminated => {
                 get_ip_asset_session_id(
-                    &conn,ip,node.timestamp
+                    conn,ip,node.timestamp
                 )?.unwrap()
             },
         };
@@ -109,20 +109,20 @@ pub fn attribute_ip_asset_process_node(conn: &Pool,
 //    unimplemented!()
 }
 
-pub fn attribute_ip_asset_file_node(conn: &Pool,
+pub fn attribute_ip_asset_file_node(conn: &mut Transaction,
                                        node: &mut FileDescriptionProto) -> Result<(), Error> {
     info!("attribute_ip_asset_file_node");
 
     if let HostId::Ip(ref ip) = node.host_id.as_ref().unwrap().host_id.as_ref().unwrap() {
         let asset_id = match FileState::from(node.state) {
             FileState::Created => get_ip_asset_session_id(
-                &conn,ip,node.timestamp
+                conn,ip,node.timestamp
             )?.unwrap(),
             FileState::Existing => get_ip_asset_session_id(
-                &conn,ip,node.timestamp
+                conn,ip,node.timestamp
             )?.unwrap(),
             FileState::Deleted => get_ip_asset_session_id(
-                    &conn,ip,node.timestamp
+                    conn,ip,node.timestamp
                 )?.unwrap(),
         };
 
@@ -139,7 +139,7 @@ pub fn attribute_ip_asset_file_node(conn: &Pool,
 //    unimplemented!()
 }
 
-pub fn map_asset_ids_to_graph(conn: &Pool,
+pub fn map_asset_ids_to_graph(conn: &mut Transaction,
                               subgraph: &mut GraphDescription) -> Result<(), Error> {
 
     info!("map_asset_ids_to_graph");
@@ -148,11 +148,11 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
         let node: NodeDescription = _node.1.into();
         match node.which() {
             Node::ProcessNode(mut node) => {
-                attribute_ip_asset_process_node(&conn, &mut node)?;
+                attribute_ip_asset_process_node(conn, &mut node)?;
                 subgraph.nodes.insert(_node.0, node.into());
             }
             Node::FileNode(mut node) => {
-                attribute_ip_asset_file_node(&conn, &mut node)?;
+                attribute_ip_asset_file_node(conn, &mut node)?;
                 subgraph.nodes.insert(_node.0, node.into());
             }
             _ => continue

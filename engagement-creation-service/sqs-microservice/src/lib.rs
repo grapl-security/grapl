@@ -345,7 +345,7 @@ pub fn events_from_sns_sqs(event: SqsMessage) -> Value {
         .expect("SnsEntity");
     info!("{:#?}", sns_event);
     serde_json::from_str(sns_event.message.as_ref().unwrap())
-        .expect("S3Event")
+        .expect("SnsEvent")
 }
 
 

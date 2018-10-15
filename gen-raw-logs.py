@@ -56,7 +56,7 @@ class ProcessLogGenerator(object):
 
 def generate_basic_process_logs():
     logs = []
-    asset = "asset_za"
+    asset = "asset_zg"
 
     logs.append(
         {
@@ -188,7 +188,7 @@ def main():
     s3 = boto3.client('s3')
     s3.put_object(
         Body=serialized_raw_logs,
-        Bucket="raw-log-bucket",
+        Bucket="grapl-raw-log-bucket",
         Key=str(epoch - (epoch % (24 * 60 * 60))) + "/PROCESS_START/" + str(epoch)
     )
     # s3 = boto3.client('s3')

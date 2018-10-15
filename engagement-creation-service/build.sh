@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 cp -r "../graph-descriptions" . &&
 cp -r "../incident-graph" . &&
 cp -r "../sqs-microservice"  . &&

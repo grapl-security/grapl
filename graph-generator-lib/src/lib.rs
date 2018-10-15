@@ -74,7 +74,7 @@ pub fn send_logs_to_generators(
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
     s3_client.put_object(&PutObjectRequest {
-        bucket: bucket_prefix + "grapl-raw-log-bucket",
+        bucket: bucket_prefix + "-grapl-raw-log-bucket",
         key,
         body: Some(logs.into()),
         ..Default::default()
@@ -96,7 +96,7 @@ pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
 
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-    let bucket = bucket_prefix + "unid-subgraphs-generated-bucket";
+    let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
     let epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH).unwrap().as_secs();
 

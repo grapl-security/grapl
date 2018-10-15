@@ -1,5 +1,3 @@
-use mysql::Pool;
-
 use failure::Error;
 use graph_descriptions::graph_description::*;
 use graph_descriptions::*;
@@ -8,11 +6,19 @@ use std::collections::HashMap;
 
 use uuid;
 use std::collections::HashSet;
+use mysql::{Pool, Transaction};
 
-pub fn get_process_session_id(conn: &Pool,
+pub fn get_process_session_id(conn: &mut Transaction,
                           pid: u64,
                           asset_id: &str,
                           timestamp: u64) -> Result<Option<String>, Error> {
+
+    let maybe_id = check_exact_process(conn, pid, asset_id, timestamp)?;
+
+    if let Some(session_id) = maybe_id {
+        return Ok(Some(session_id))
+    }
+
     info!("get process session id");
     let query = format!("
        SELECT session_id, create_time
@@ -55,7 +61,7 @@ pub fn get_process_session_id(conn: &Pool,
     Ok(None)
 }
 
-pub fn check_exact_process(conn: &Pool,
+pub fn check_exact_process(conn: &mut Transaction,
                            pid: u64,
                            asset_id: &str,
                            create_time: u64) -> Result<Option<String>, Error> {
@@ -81,7 +87,7 @@ pub fn check_exact_process(conn: &Pool,
     Ok(None)
 }
 
-pub fn create_process_session(conn: &Pool,
+pub fn create_process_session(conn: &mut Transaction,
                           pid: u64,
                           asset_id: &str,
                           create_time: u64) -> Result<String, Error> {
@@ -111,7 +117,7 @@ pub fn create_process_session(conn: &Pool,
 }
 
 
-pub fn update_or_create(conn: &Pool,
+pub fn update_or_create(conn: &mut Transaction,
                     pid: u64,
                     asset_id: &str,
                     create_time: u64,
@@ -150,30 +156,30 @@ pub fn create_table(conn: &Pool) {
 }
 
 
-pub fn attribute_process_node(conn: &Pool,
+pub fn attribute_process_node(conn: &mut Transaction,
                               node: &mut ProcessDescriptionProto,
                               should_default: bool
 ) -> Result<(), Error> {
 
     let session_id = match ProcessState::from(node.state) {
         ProcessState::Created => {
-            info!("Handling created process");
+            info!("Handling created process {:#?}", node);
 
             create_process_session(
-                &conn, node.pid, node.asset_id(), node.timestamp
+                conn, node.pid, node.asset_id(), node.timestamp
             )?
         },
         ProcessState::Existing => {
             info!("Handling existing process");
             update_or_create(
-                &conn, node.pid, node.asset_id(), node.timestamp,
+                conn, node.pid, node.asset_id(), node.timestamp,
                 should_default
             )?
         },
         ProcessState::Terminated => {
             warn!("Unimplemented!: Handling terminated process {:#?}", node);
 //            let session_id = get_process_session_id(
-//                &conn, node.pid, node.asset_id(), node.timestamp
+//                conn, node.pid, node.asset_id(), node.timestamp
 //            )?;
 //
             unimplemented!()
@@ -225,7 +231,7 @@ pub fn remap_edges(key_map: &HashMap<String, String>,
 }
 
 
-pub fn map_process_session_ids_to_graph(conn: &Pool,
+pub fn map_process_session_ids_to_graph(conn: &mut Transaction,
                                         subgraph: &mut GraphDescription,
                                         should_default: bool
 ) -> Result<(), Error> {
@@ -239,9 +245,11 @@ pub fn map_process_session_ids_to_graph(conn: &Pool,
     for _node in subgraph.nodes.clone() {
         let node: NodeDescription = _node.1.into();
         if let Node::ProcessNode(mut node) = node.which() {
-            let attribution_res = attribute_process_node(&conn, &mut node, should_default);
+            let old_id = node.clone_key().to_owned();
+            let attribution_res = attribute_process_node(conn, &mut node, should_default);
 
             if let e @ Err(_) = attribution_res {
+                error!("Process Attribution Failure {:#?}", e);
                 subgraph.nodes.remove(&_node.0);
                 dead_node_keys.insert(_node.0);
                 result = e;
@@ -252,8 +260,9 @@ pub fn map_process_session_ids_to_graph(conn: &Pool,
 
             // Replace old node with new node
             subgraph.nodes.remove(&_node.0);
-            subgraph.nodes.insert(node.node_key.clone(), node.into());
+            subgraph.nodes.insert(node.node_key.clone(), node.clone().into());
 
+            info!("old node: {} new node: {}", old_id, node.clone_key());
         }
     }
 

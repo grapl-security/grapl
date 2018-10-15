@@ -155,7 +155,9 @@ pub fn handle_raw_event<T>(f: impl Fn(Vec<u8>) -> Result<T, Error> + Clone + Sen
                 let messages = get_raw_messages(event).unwrap();
 
                 for message in messages {
-                    f(message);
+                    if let Err(e) = f(message) {
+                        error!("error: {}", e);
+                    }
                 }
 
                 tx.send((message.receipt_handle.unwrap(),
@@ -219,7 +221,9 @@ pub fn handle_message<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone + Send + '
                 let messages = get_messages(event).unwrap();
 
                 for message in messages {
-                    f(message);
+                    if let Err(e) = f(message) {
+                        error!("error: {}", e);
+                    }
                 }
 
                 tx.send((message.receipt_handle.unwrap(),
@@ -291,7 +295,9 @@ pub fn handle_proto_sqs_message<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone 
                 let body = base64::decode(&body).unwrap();
                 let event: M = M::decode(&body).unwrap();
 
-                f(event);
+                if let Err(e) = f(event) {
+                    error!("error: {}", e);
+                }
 
                 tx.send((message.receipt_handle.unwrap(),
                          message.event_source_arn.unwrap())).unwrap();
@@ -464,6 +470,7 @@ pub fn handle_s3_sns_sqs_proto<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone +
                             }
                         }
                         Err(e) => {
+                            error!("{}", e);
                             tx.send(Err(e)).unwrap()
                         }
                     };

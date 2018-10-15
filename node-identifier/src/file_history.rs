@@ -1,4 +1,4 @@
-use mysql::Pool;
+use mysql::Transaction;
 
 use failure::Error;
 use graph_descriptions::graph_description::*;
@@ -8,11 +8,19 @@ use std::collections::HashMap;
 
 use uuid;
 use std::collections::HashSet;
+use mysql::Pool;
 
-pub fn get_file_session_id(conn: &Pool,
+pub fn get_file_session_id(conn: &mut Transaction,
                               path: &str,
                               asset_id: &str,
                               timestamp: u64) -> Result<Option<String>, Error> {
+
+    let maybe_id = check_exact_file(conn, path, asset_id, timestamp)?;
+
+    if let Some(session_id) = maybe_id {
+        return Ok(Some(session_id))
+    }
+
     info!("get file session id");
     let query = format!("
        SELECT session_id, create_time
@@ -55,18 +63,17 @@ pub fn get_file_session_id(conn: &Pool,
     Ok(None)
 }
 
-pub fn check_exact_file(conn: &Pool,
-                           path: &str,
-                           asset_id: &str,
-                           create_time: u64) -> Result<Option<String>, Error> {
+pub fn check_exact_file(conn: &mut Transaction,
+                        path: &str,
+                        asset_id: &str,
+                        create_time: u64) -> Result<Option<String>, Error> {
 
     // TODO: We can probably add a bit of skew here, +/- 5 seconds would be safe
     let query = format!("
        SELECT session_id
        FROM file_history
        WHERE path = \"{}\" AND asset_id = \"{}\"
-             AND create_time = {}
-       ORDER BY create_time DESC",
+             AND create_time = {}",
                         path, asset_id, create_time
     );
 
@@ -81,7 +88,7 @@ pub fn check_exact_file(conn: &Pool,
     Ok(None)
 }
 
-pub fn create_file_session(conn: &Pool,
+pub fn create_file_session(conn: &mut Transaction,
                               path: &str,
                               asset_id: &str,
                               create_time: u64) -> Result<String, Error> {
@@ -111,7 +118,7 @@ pub fn create_file_session(conn: &Pool,
 }
 
 
-pub fn update_or_create(conn: &Pool,
+pub fn update_or_create(conn: &mut Transaction,
                         path: &str,
                         asset_id: &str,
                         create_time: u64,
@@ -150,7 +157,7 @@ pub fn create_table(conn: &Pool) {
 }
 
 
-pub fn attribute_file_node(conn: &Pool,
+pub fn attribute_file_node(conn: &mut Transaction,
                            node: &mut FileDescriptionProto,
                            should_default: bool
 ) -> Result<(), Error> {
@@ -161,20 +168,20 @@ pub fn attribute_file_node(conn: &Pool,
             info!("Handling created file");
 
             create_file_session(
-                &conn, str::from_utf8(&node.path).unwrap(), node.asset_id(), node.timestamp
+                conn, str::from_utf8(&node.path).unwrap(), node.asset_id(), node.timestamp
             )?
         },
         FileState::Existing => {
             info!("Handling existing file");
             update_or_create(
-                &conn, str::from_utf8(&node.path).unwrap(), node.asset_id(), node.timestamp,
+                conn, str::from_utf8(&node.path).unwrap(), node.asset_id(), node.timestamp,
                 should_default
             )?
         },
         FileState::Deleted => {
             warn!("Unimplemented!: Handling terminated file {:#?}", node);
 //            let session_id = get_file_session_id(
-//                &conn, node.path, node.asset_id(), node.timestamp
+//                conn, node.path, node.asset_id(), node.timestamp
 //            )?;
 //
             unimplemented!()
@@ -225,7 +232,7 @@ pub fn remap_edges(key_map: &HashMap<String, String>,
     subgraph.edges = edge_map;
 }
 
-pub fn map_file_session_ids_to_graph(conn: &Pool,
+pub fn map_file_session_ids_to_graph(conn: &mut Transaction,
                                         subgraph: &mut GraphDescription,
                                         should_default: bool
 ) -> Result<(), Error> {
@@ -238,7 +245,7 @@ pub fn map_file_session_ids_to_graph(conn: &Pool,
     for _node in subgraph.nodes.clone() {
         let node: NodeDescription = _node.1.into();
         if let Node::FileNode(mut node) = node.which() {
-            let attribution_res = attribute_file_node(&conn, &mut node, should_default);
+            let attribution_res = attribute_file_node(conn, &mut node, should_default);
 
             if let e @ Err(_) = attribution_res {
                 subgraph.nodes.remove(&_node.0);

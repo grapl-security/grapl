@@ -378,7 +378,7 @@ class GraphMerger extends cdk.Stack {
 
 
         graph_merger.addToRolePolicy(new cdk.PolicyStatement()
-            .addAction('sns:*')
+            .addAction('sns:CreateTopic')
             .addResource(publishes_to.topicArn));
 
         reads_from.grantRead(graph_merger.role);
@@ -558,7 +558,7 @@ class Grapl extends cdk.App {
             'graph-merger',
             event_emitters.subgraphs_generated_bucket,
             event_emitters.subgraphs_generated_topic,
-            event_emitters.incident_topic,
+            event_emitters.subgraph_merged_topic,
             network.grapl_vpc
         );
 
