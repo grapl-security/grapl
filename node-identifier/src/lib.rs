@@ -20,8 +20,7 @@ extern crate futures_await as futures;
 extern crate sha2;
 
 pub mod ip_asset_history;
-pub mod file_history;
-pub mod process_history;
+pub mod history;
 
 use base58::ToBase58;
 
@@ -42,15 +41,16 @@ use mysql as my;
 use futures::future::Future;
 
 
-use process_history::map_process_session_ids_to_graph;
+use history::map_session_ids_to_graph;
 use ip_asset_history::map_asset_ids_to_graph;
 use graph_descriptions::graph_description::*;
 use graph_descriptions::*;
-use file_history::map_file_session_ids_to_graph;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use rusoto_core::Region;
 use sqs_microservice::handle_s3_sns_sqs_proto;
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 
 pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error> {
@@ -118,20 +118,24 @@ pub fn identify_nodes(should_default: bool) {
         info!("Handling {} subgraphs", subgraphs.subgraphs.len());
 
         ip_asset_history::create_table(&pool);
-        process_history::create_table(&pool);
-        file_history::create_table(&pool);
+        history::create_process_table(&pool);
+        history::create_file_table(&pool);
 
         subgraphs.subgraphs.sort_unstable_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
         let mut result = Ok(());
-        for subgraph in subgraphs.subgraphs {
+        for unid_subgraph in subgraphs.subgraphs {
             let _result: Result<(), Error> = (|| {
-                let mut subgraph: GraphDescription = subgraph.into();
+                let mut output_subgraph = GraphDescription::new(unid_subgraph.timestamp);
+                let mut unid_subgraph: GraphDescription = unid_subgraph.into();
                 let mut result = Ok(());
+
+                let mut unid_id_map = HashMap::new();
+                let mut dead_node_ids = HashSet::new();
 
                 info!("Mapping asset ids to graph");
 
-                let r = map_asset_ids_to_graph(&pool, &mut subgraph);
+                let r = map_asset_ids_to_graph(&pool, &mut unid_subgraph);
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
@@ -141,26 +145,32 @@ pub fn identify_nodes(should_default: bool) {
 
                 // Process/ File mapping *must* happen after asset ids
 
-                let r = map_process_session_ids_to_graph(&pool, &mut subgraph, should_default);
+                let r = map_session_ids_to_graph(
+                    &pool,
+                    &mut unid_id_map,
+                    &mut dead_node_ids,
+                    &unid_subgraph,
+                    &mut output_subgraph,
+                    should_default
+                );
+
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
                 }
 
-                info!("Mapping file session ids to graph");
-                let r = map_file_session_ids_to_graph(&pool, &mut subgraph, should_default);
+                info!("{:#?}", unid_subgraph);
+
+                remap_edges(&unid_id_map, &dead_node_ids, &unid_subgraph, &mut output_subgraph);
+
+
+                let r = upload_identified_graphs(output_subgraph);
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
                 }
 
-                info!("{:#?}", subgraph);
 
-                let r = upload_identified_graphs(subgraph);
-                if let e @ Err(_) = r {
-                    error!("error: {:#?}", e);
-                    result = e;
-                }
                 result
             })();
 
@@ -174,4 +184,36 @@ pub fn identify_nodes(should_default: bool) {
     }, move |_| {Ok(())})
 
 
+}
+
+
+
+pub fn remap_edges(key_map: &HashMap<String, String>,
+                    dead_node_ids: &HashSet<String>,
+                    input_subgraph: &GraphDescription,
+                    output_subgraph: &mut GraphDescription) {
+
+    for (_node_key, edges) in &input_subgraph.edges {
+        for edge in &edges.edges {
+
+            if dead_node_ids.contains(&edge.from_neighbor_key) {
+                continue
+            }
+
+            if dead_node_ids.contains(&edge.to_neighbor_key) {
+                continue
+            }
+
+            let from_neighbor_key = key_map.get(&edge.from_neighbor_key)
+                .expect("from_neighbor_key");
+            let to_neighbor_key = key_map.get(&edge.to_neighbor_key)
+                .expect("to_neighbor_key");
+
+            output_subgraph.add_edge(
+                edge.edge_name.to_owned(),
+                from_neighbor_key.to_owned(),
+                to_neighbor_key.to_owned(),
+            )
+        }
+    }
 }
