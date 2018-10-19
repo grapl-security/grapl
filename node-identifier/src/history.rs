@@ -99,7 +99,7 @@ pub fn get_session_id(conn: &mut Transaction, session: & impl Session) -> Result
     let query = format!("
        SELECT session_id, create_time
            FROM {}
-       WHERE {} = {} AND asset_id = \"{}\"
+       WHERE {} = \"{}\" AND asset_id = \"{}\"
              AND create_time <= {}
        ORDER BY create_time DESC",
         session.get_table_name(),
@@ -174,10 +174,11 @@ pub fn create_session(conn: &mut Transaction, session: & impl Session) -> Result
     let session_id = uuid::Uuid::new_v4().to_string();
 
     let query = format!("
-       INSERT INTO process_history
+       INSERT INTO {}
           (session_id, {}, asset_id, create_time)
           VALUES
-              (\"{}\", {}, \"{}\", {})",
+              (\"{}\", \"{}\", \"{}\", {})",
+        session.get_table_name(),
         session.get_key_name(), session_id, session.get_key(), session.get_asset_id(), session.get_timestamp()
     );
 
@@ -229,8 +230,8 @@ pub fn create_process_table(conn: &Pool) {
 }
 
 pub fn create_file_table(conn: &Pool) {
-    info!("Creating process_history  table");
-//    conn.prep_exec("DROP TABLE IF EXISTS `process_history`", &());
+    info!("Creating file_history  table");
+//    conn.prep_exec("DROP TABLE IF EXISTS `file_history`", &());
 
     conn.prep_exec("CREATE TABLE IF NOT EXISTS file_history (
                     primary_key     SERIAL PRIMARY KEY,
@@ -238,7 +239,7 @@ pub fn create_file_table(conn: &Pool) {
                     asset_id        TEXT NOT NULL,
                     path            TEXT NOT NULL,
                     create_time     NUMERIC NOT NULL
-                  )", &()).expect("process_history::create_table");
+                  )", &()).expect("file_history::create_table");
 }
 
 

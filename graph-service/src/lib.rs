@@ -37,6 +37,7 @@ use stopwatch::Stopwatch;
 macro_rules! log_time {
     ($msg: expr, $x:expr) => {
         let mut sw = Stopwatch::start_new();
+        #[allow(path_statements)]
         let result = {$x};
         sw.stop();
         info!("{} {} milliseconds", $msg, sw.elapsed_ms());
@@ -152,6 +153,8 @@ pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
 
 pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result<String, Error> {
     let node_key = node.get_key();
+    let mut txn = dgraph_client::api::TxnContext::new();
+    txn.set_start_ts(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs());
     // Get the _uid_ associated with our generated node_key
     let mut req = dgraph_client::api::Request::new();
 
@@ -184,7 +187,7 @@ pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result
             // TODO: Check for differences in the nodes and merges
 
             let mut mutation = dgraph_client::api::Mutation::new();
-            mutation.commit_now = true;
+            mutation.commit_now = false;
             let mut json_node = (*node).clone().into_json();
             json_node["uid"] = Value::from(uid);
 
@@ -193,12 +196,19 @@ pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result
 
             info!("mutation with uid: {}", (*node).clone().into_json());
 
+            txn.set_commit_ts(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs());
+
             log_time!{
                 "mutation",
                 loop {
-                    let mut_res = client.mutate(&mutation);
+                    info!("Transaction: {:#?}", txn);
+                    let mut_res = client.commit_or_abort(&txn);
+//                    let mut_res = client.mutate(&mutation);
+//                    client.commit_or_abort(&txn);
+
                     match mut_res {
-                        Ok(_) => {
+                        Ok(r) => {
+                            info!("Mutation succeeded: {:#?}", r);
                             break
                         }
                         Err(e) => {
