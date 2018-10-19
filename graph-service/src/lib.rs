@@ -77,8 +77,12 @@ pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
 
     for edges in subgraph.edges.iter() {
         for edge in edges.1.edges.iter() {
-            let to = &node_key_uid_map[edge.to_neighbor_key.as_str()];
-            let from = &node_key_uid_map[edge.from_neighbor_key.as_str()];
+            let to = &node_key_uid_map
+                .get(edge.to_neighbor_key.as_str())
+                .expect("edge.to_neighbor_key");
+            let from = &node_key_uid_map
+                .get(edge.from_neighbor_key.as_str())
+                .expect("edge.from_neighbor_key");
             let edge_name = edge.edge_name.clone();
 
             let mut req = dgraph_client::api::Request::new();

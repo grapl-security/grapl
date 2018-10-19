@@ -56,7 +56,7 @@ class ProcessLogGenerator(object):
 
 def generate_basic_process_logs():
     logs = []
-    asset = "asset_zg"
+    asset = "asset_zL"
 
     logs.append(
         {
