@@ -1,21 +1,19 @@
 #![feature(nll, test, proc_macro_non_items, generators, async_await, use_extern_macros)]
 
 extern crate aws_lambda as lambda;
-extern crate openssl_probe;
 extern crate base64;
 #[macro_use] extern crate failure;
 #[macro_use] extern crate futures_await as futures;
 #[macro_use] extern crate log;
+extern crate openssl_probe;
 extern crate prost;
 extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate rusoto_sqs;
 extern crate serde;
 extern crate serde_json;
+extern crate stopwatch;
 extern crate tokio_core;
-
-use serde_json::Value;
-use serde::Deserialize;
 
 use failure::Error;
 use futures::Future;
@@ -28,14 +26,30 @@ use prost::Message;
 use rusoto_core::Region;
 use rusoto_s3::{GetObjectRequest, S3};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{Sqs, SqsClient, GetQueueUrlRequest };
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
+use serde::Deserialize;
+use serde_json::Value;
+use std::any::Any;
 use std::rc::Rc;
 use std::sync::mpsc::channel;
-use tokio_core::reactor::{Core, Handle};
 use std::sync::mpsc::Receiver;
-use std::any::Any;
 use std::thread;
 use std::thread::JoinHandle;
+use stopwatch::Stopwatch;
+use tokio_core::reactor::{Core, Handle};
+
+macro_rules! log_time {
+    ($msg: expr, $x:expr) => {
+        {
+            let mut sw = Stopwatch::start_new();
+            #[allow(path_statements)]
+            let result = {$x};
+            sw.stop();
+            info!("{} {} milliseconds", $msg, sw.elapsed_ms());
+            result
+        }
+    };
+}
 
 
 #[async]
@@ -53,7 +67,7 @@ fn read_raw_message<S>(s3_client: Rc<S>, bucket: String, path: String) -> Result
     let mut body = vec![];
 
     #[async]
-        for chunk in object.body.expect("object.body") {
+    for chunk in object.body.expect("object.body") {
         body.extend_from_slice(&chunk);
     }
 
@@ -105,7 +119,10 @@ pub fn get_raw_messages(event: S3Event) -> Result<Vec<Vec<u8>>, Error>
 
     paths.into_iter()
         .map(|(bucket, object)| {
-            read_raw_message(s3_client.clone(), bucket, object).wait()
+            log_time!{
+                "read_raw_message",
+                read_raw_message(s3_client.clone(), bucket, object).wait()
+            }
         }).collect()
 }
 
@@ -131,7 +148,10 @@ pub fn get_messages<M>(event: S3Event) -> Result<Vec<M>, Error>
 
     paths.into_iter()
         .map(|(bucket, object)| {
-            read_message(s3_client.clone(), bucket, object).wait()
+            log_time!{
+                "read_message",
+                read_message(s3_client.clone(), bucket, object).wait()
+            }
         }).collect()
 }
 
@@ -266,6 +286,7 @@ pub fn handle_message<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone + Send + '
 }
 
 fn queue_url_from_arn(sqs: &SqsClient, arn: impl AsRef<str>) -> String {
+
     let queue_name = arn.as_ref().split(":").last().unwrap();
 
     sqs.get_queue_url(

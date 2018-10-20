@@ -49,6 +49,24 @@ pub mod subgraph_merge_event {
     include!(concat!(env!("OUT_DIR"), "/subgraph_merge_event.rs"));
 }
 
+pub fn upsert_with_retries(client: &DgraphClient, node: &NodeDescriptionProto) -> Result<String, Error> {
+    let mut retries = 5;
+    loop {
+        let res = upsert_node(client, node);
+        match res {
+            ok @ Ok(_) => break ok,
+            Err(e) => {
+                if retries == 0 {
+                    break Err(e)
+                }
+                warn!("Upsert failed, retrying: {}", e);
+                retries -= 1;
+            }
+        }
+    }
+}
+
+
 pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
                       -> Result<(u64, u64), Error> {
 
@@ -66,7 +84,7 @@ pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
 
             let (node_key, node) = node;
             info!("Upserting node");
-            let node_uid = upsert_node(&client, node)?;
+            let node_uid = upsert_with_retries(&client, node)?;
             info!("Upserted node");
 
             node_key_uid_map.insert(node_key.as_ref(), node_uid);
@@ -154,6 +172,7 @@ pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
 pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result<String, Error> {
     let node_key = node.get_key();
     let mut txn = dgraph_client::api::TxnContext::new();
+
     txn.set_start_ts(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs());
     // Get the _uid_ associated with our generated node_key
     let mut req = dgraph_client::api::Request::new();
@@ -180,44 +199,23 @@ pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result
 
     let new_node_key: String = match uid {
         Some(uid) => {
-//            let old_image_name = json_response["question"][0].get("image_name");
-////            if let Some(old_image_name) = old_image_name {
-////                node.
-////            }
-            // TODO: Check for differences in the nodes and merges
-
             let mut mutation = dgraph_client::api::Mutation::new();
-            mutation.commit_now = false;
+            mutation.commit_now = true;
             let mut json_node = (*node).clone().into_json();
             json_node["uid"] = Value::from(uid);
+            json_node.as_object_mut().unwrap().remove("node_key");
 
             info!("json_node: {}", json_node.to_string());
             mutation.set_json = json_node.to_string().into_bytes();
 
-            info!("mutation with uid: {}", (*node).clone().into_json());
+            info!("mutation with uid: {}", json_node);
 
+
+            info!("Transaction: {:#?}", txn);
+            client.mutate(&mutation)?;
+            
             txn.set_commit_ts(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs());
-
-            log_time!{
-                "mutation",
-                loop {
-                    info!("Transaction: {:#?}", txn);
-                    let mut_res = client.commit_or_abort(&txn);
-//                    let mut_res = client.mutate(&mutation);
-//                    client.commit_or_abort(&txn);
-
-                    match mut_res {
-                        Ok(r) => {
-                            info!("Mutation succeeded: {:#?}", r);
-                            break
-                        }
-                        Err(e) => {
-                            error!("mutation error {:#?}", e);
-                            continue;
-                        }
-                    }
-                }
-            }
+            client.commit_or_abort(&txn)?;
 
             uid.to_string()
         }
@@ -228,23 +226,17 @@ pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result
             mutation.set_json = (*node).clone().into_json().to_string().into_bytes();
 
             info!("mutation: {}", (*node).clone().into_json());
+            txn.set_commit_ts(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs());
 
-            log_time!{
-                "mutation",
-                loop {
-                    let mut_res = client.mutate(&mutation);
-                    match mut_res {
-                        Ok(mut_res) => {
-                            let uid = mut_res.get_uids().get("blank-0").unwrap();
-                            break uid.to_owned();
-                        }
-                        Err(e) => {
-                            error!("mutation error {:#?}", e);
-                            continue;
-                        }
-                    }
-                }
-            }
+            let mut_res = client.mutate(&mutation);
+            let uid = mut_res.map(|mut_res| {
+                mut_res.get_uids().get("blank-0").unwrap().to_owned()
+            })?;
+
+            client.commit_or_abort(&txn)?;
+
+            uid
+
         }
     };
 

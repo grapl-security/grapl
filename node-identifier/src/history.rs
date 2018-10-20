@@ -10,6 +10,21 @@ use std::str;
 use uuid;
 use mysql::IsolationLevel;
 
+use stopwatch::Stopwatch;
+
+//macro_rules! log_time {
+//    ($msg:expr, $x:expr) => {
+//        {
+//            let mut sw = Stopwatch::start_new();
+//            #[allow(path_statements)]
+//            let result = $x;
+//            sw.stop();
+//            info!("{} {} milliseconds", $msg, sw.elapsed_ms());
+//            result
+//        }
+//    };
+//}
+
 pub trait Session: Debug {
     fn get_table_name(&self) -> &'static str;
     fn get_key_name(&self) -> &'static str;
@@ -199,9 +214,12 @@ pub fn update_or_create(conn: &mut Transaction,
 ) -> Result<String, Error> {
     info!("update or create process session id");
 
-    let session_id = get_session_id(
-        conn, session
-    )?;
+    let session_id = log_time!{
+        "get_session_id",
+        get_session_id(
+            conn, session
+        )?
+    };
 
     if let Some(session_id) = session_id {
         info!("Got process session_id");
@@ -252,17 +270,23 @@ pub fn attribute_node(conn: &mut Transaction,
         Action::Create => {
             info!("Handling created process {:#?}", node);
 
-            create_session(
-                conn, &node
-            )?
+            log_time!{
+                "create_session",
+                create_session(
+                    conn, &node
+                )?
+            }
         },
         Action::UpdateOrCreate => {
             info!("Handling existing process");
-            update_or_create(
-                conn,
-                &node,
-                should_default
-            )?
+            log_time!{
+                "update_or_create",
+                update_or_create(
+                    conn,
+                    &node,
+                    should_default
+                )?
+            }
         },
         Action::Terminate => {
             warn!("Unimplemented!: Handling terminated process {:#?}", node);

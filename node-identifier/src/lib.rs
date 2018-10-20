@@ -9,6 +9,7 @@ extern crate log;
 #[macro_use]
 extern crate failure;
 
+extern crate stopwatch;
 extern crate base58;
 extern crate graph_descriptions;
 extern crate sqs_microservice;
@@ -19,11 +20,25 @@ extern crate prost;
 extern crate futures_await as futures;
 extern crate sha2;
 
+
+macro_rules! log_time {
+    ($msg:expr, $x:expr) => {
+        {
+            let mut sw = Stopwatch::start_new();
+            #[allow(path_statements)]
+            let result = $x;
+            sw.stop();
+            info!("{} {} milliseconds", $msg, sw.elapsed_ms());
+            result
+        }
+    };
+}
+
 pub mod ip_asset_history;
 pub mod history;
 
 use base58::ToBase58;
-
+use stopwatch::Stopwatch;
 use failure::Error;
 
 use sha2::{Digest, Sha256};
@@ -51,6 +66,7 @@ use rusoto_core::Region;
 use sqs_microservice::handle_s3_sns_sqs_proto;
 use std::collections::HashMap;
 use std::collections::HashSet;
+
 
 
 pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error> {
@@ -117,9 +133,14 @@ pub fn identify_nodes(should_default: bool) {
 
         info!("Handling {} subgraphs", subgraphs.subgraphs.len());
 
-        ip_asset_history::create_table(&pool);
-        history::create_process_table(&pool);
-        history::create_file_table(&pool);
+        log_time!{
+            "creating tables",
+            {
+                ip_asset_history::create_table(&pool);
+                history::create_process_table(&pool);
+                history::create_file_table(&pool);
+            }
+        }
 
         subgraphs.subgraphs.sort_unstable_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
@@ -161,7 +182,10 @@ pub fn identify_nodes(should_default: bool) {
 
                 info!("{:#?}", unid_subgraph);
 
-                remap_edges(&unid_id_map, &dead_node_ids, &unid_subgraph, &mut output_subgraph);
+                log_time! {
+                    "remap_edges",
+                    remap_edges(&unid_id_map, &dead_node_ids, &unid_subgraph, &mut output_subgraph)
+                }
 
 
                 let r = upload_identified_graphs(output_subgraph);
