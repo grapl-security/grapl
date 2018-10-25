@@ -21,6 +21,9 @@ sha256 = "0.1.0"
 sha2 = "0.7.1"
 log = "0.4.4"
 mysql = "14.1.0"
+serde = "1.0.80"
+serde_json = "1.0.32"
+serde_derive = "1.0.80"
 
 
 [dependencies.uuid]

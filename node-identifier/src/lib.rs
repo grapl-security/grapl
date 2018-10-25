@@ -35,7 +35,7 @@ macro_rules! log_time {
 }
 
 pub mod ip_asset_history;
-pub mod history;
+pub mod session_history;
 
 use base58::ToBase58;
 use stopwatch::Stopwatch;
@@ -56,7 +56,7 @@ use mysql as my;
 use futures::future::Future;
 
 
-use history::map_session_ids_to_graph;
+use session_history::map_session_ids_to_graph;
 use ip_asset_history::map_asset_ids_to_graph;
 use graph_descriptions::graph_description::*;
 use graph_descriptions::*;
@@ -130,6 +130,7 @@ pub fn identify_nodes(should_default: bool) {
         ).unwrap();
 
         info!("Connected to history database");
+        info!("subgraphs: {:#?}", subgraphs);
 
         info!("Handling {} subgraphs", subgraphs.subgraphs.len());
 
@@ -139,6 +140,7 @@ pub fn identify_nodes(should_default: bool) {
                 ip_asset_history::create_table(&pool);
                 history::create_process_table(&pool);
                 history::create_file_table(&pool);
+                history::create_connection_table(&pool);
             }
         }
 
@@ -156,16 +158,23 @@ pub fn identify_nodes(should_default: bool) {
 
                 info!("Mapping asset ids to graph");
 
-                let r = map_asset_ids_to_graph(&pool, &mut unid_subgraph);
+                let r = map_asset_ids_to_graph(
+                    &pool,
+                    &mut dead_node_ids,
+                    &mut unid_subgraph,
+                );
                 if let e @ Err(_) = r {
                     error!("error: {:#?}", e);
                     result = e;
                 }
 
+                info!("removing {} nodes and their edges", dead_node_ids.len());
+                remove_dead_nodes(&dead_node_ids, &mut unid_subgraph);
+                dead_node_ids.clear();
+
                 info!("Mapping process session ids to graph");
 
                 // Process/ File mapping *must* happen after asset ids
-
                 let r = map_session_ids_to_graph(
                     &pool,
                     &mut unid_id_map,
@@ -211,6 +220,28 @@ pub fn identify_nodes(should_default: bool) {
 }
 
 
+pub fn remove_dead_nodes(dead_node_ids: &HashSet<String>,
+                         unid_subgraph: &mut GraphDescription) {
+    for node_id in dead_node_ids.iter() {
+        unid_subgraph.nodes.remove(node_id);
+
+    }
+
+    for (_node_key, edges) in unid_subgraph.edges.iter_mut() {
+        let mut new_edges = vec![];
+        for edge in &edges.edges {
+            if dead_node_ids.contains(&edge.from_neighbor_key) ||
+                dead_node_ids.contains(&edge.to_neighbor_key) {
+                continue
+            }
+            new_edges.push(edge.clone());
+        }
+        edges.edges = new_edges;
+    }
+
+}
+
+
 
 pub fn remap_edges(key_map: &HashMap<String, String>,
                     dead_node_ids: &HashSet<String>,
@@ -221,10 +252,12 @@ pub fn remap_edges(key_map: &HashMap<String, String>,
         for edge in &edges.edges {
 
             if dead_node_ids.contains(&edge.from_neighbor_key) {
+                warn!("Removing edge.from_neighbor_key {}", edge.from_neighbor_key);
                 continue
             }
 
             if dead_node_ids.contains(&edge.to_neighbor_key) {
+                warn!("Removing edge.to_neighbor_key {}", edge.to_neighbor_key);
                 continue
             }
 

@@ -35,6 +35,8 @@ use rusoto_sns::CreateTopicInput;
 use sqs_microservice::handle_s3_sns_sqs_proto;
 use stopwatch::Stopwatch;
 use subgraph_merge_event::SubgraphMerged;
+use graph_merger::set_ip_address_schema;
+use graph_merger::set_connection_schema;
 
 macro_rules! log_time {
     ($msg: expr, $x:expr) => {
@@ -51,7 +53,6 @@ mod subgraph_merge_event {
 }
 
 
-
 /// The Graph Merge Service
 #[cfg_attr(tarpaulin, skip)]
 pub fn main() {
@@ -63,6 +64,8 @@ pub fn main() {
         println!("connected to db.mastergraph");
         set_process_schema(&mut dgraph_client);
         set_file_schema(&mut dgraph_client);
+        set_ip_address_schema(&mut dgraph_client);
+        set_connection_schema(&mut dgraph_client);
 
         info!("Set schemas");
         log_time!{
@@ -85,27 +88,27 @@ pub fn main() {
         log_time!{
             "merge_subgraph",
             {
-            let sns_client = SnsClient::simple(
-                Region::UsEast1
-            );
+                let sns_client = SnsClient::simple(
+                    Region::UsEast1
+                );
 
-            let arn = sns_client.create_topic(
-                &CreateTopicInput {
-                    name: "subgraphs-merged-topic".into()
-                }
-            ).wait()?.topic_arn
-                .expect("arn was none for subgraphs-merged-topic");
+                let arn = sns_client.create_topic(
+                    &CreateTopicInput {
+                        name: "subgraphs-merged-topic".into()
+                    }
+                ).wait()?.topic_arn
+                    .expect("arn was none for subgraphs-merged-topic");
 
-            info!("Got arn for subgraphs-merged-topic");
+                info!("Got arn for subgraphs-merged-topic");
 
-            info!("Publishing {} bytes to SNS", event.len());
-            sns_client.publish(
-                &PublishInput {
-                    message: event,
-                    topic_arn: arn.to_string().into(),
-                    ..Default::default()
-                }
-            ).wait()?;
+                info!("Publishing {} bytes to SNS", event.len());
+                sns_client.publish(
+                    &PublishInput {
+                        message: event,
+                        topic_arn: arn.to_string().into(),
+                        ..Default::default()
+                    }
+                ).wait()?;
             }
 
         }

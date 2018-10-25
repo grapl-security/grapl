@@ -1,18 +1,178 @@
 #![feature(nll)]
 #[macro_use]
 extern crate failure;
-#[macro_use] extern crate log;
-#[macro_use] extern crate serde_derive;
-
 extern crate graph_descriptions;
 extern crate graph_generator_lib;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use] extern crate log;
+extern crate regex;
 extern crate serde;
+#[macro_use] extern crate serde_derive;
 extern crate serde_json;
 
 use failure::Error;
 use graph_descriptions::*;
 use graph_generator_lib::handle_json_encoded_logs;
+use regex::bytes::Regex;
 use serde_json::Value;
+
+
+#[derive(Serialize, Deserialize)]
+pub struct OutboundConnectionLog {
+    pid: u64,
+    protocol: String,
+    src_port: u32,
+    dst_port: u32,
+    src_addr: String,
+    dst_addr: String,
+    timestamp: u64,
+    sourcetype: String,
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct InboundConnectionLog {
+    pid: u64,
+    protocol: String,
+    src_port: u32,
+    dst_port: u32,
+    src_addr: String,
+    dst_addr: String,
+    timestamp: u64,
+    sourcetype: String,
+}
+
+fn is_internal_ip(ip: &[u8]) -> bool {
+
+    lazy_static!(
+        static ref RE: Regex = Regex::new(
+            r"/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/"
+        ).expect("is_internal_ip regex");
+    );
+
+    RE.is_match(ip)
+}
+
+
+fn handle_outbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription {
+    let mut graph = GraphDescription::new(
+        conn_log.timestamp
+    );
+
+    // A process creates an outbound connection to dst_port
+    // Another process must have an inbound connection to src_port
+    // Or the other process is external/ not running the instrumentation
+    let process = ProcessDescription::new(
+        HostIdentifier::IpAddress(conn_log.src_addr.clone().into_bytes()),
+        ProcessState::Existing,
+        conn_log.pid,
+        conn_log.timestamp,
+        vec![],
+        vec![]
+    );
+
+    let outbound = OutboundConnection::new(
+        HostIdentifier::IpAddress(conn_log.src_addr.clone().into_bytes()),
+        ConnectionState::Created,
+        conn_log.src_port,
+        conn_log.timestamp
+    );
+
+
+    if is_internal_ip(&conn_log.dst_addr.clone().into_bytes()) {
+        let inbound = InboundConnection::new(
+            HostIdentifier::IpAddress(conn_log.dst_addr.clone().into_bytes()),
+            ConnectionState::Existing,
+            conn_log.dst_port,
+            conn_log.timestamp
+        );
+        graph.add_edge("connection",
+                       outbound.clone_key(),
+                       inbound.clone_key());
+        graph.add_node(inbound);
+    } else {
+        let external_ip = IpAddressDescription::new(
+            conn_log.timestamp,
+            conn_log.dst_addr.clone().into_bytes()
+        );
+
+        graph.add_edge("external_connection",
+                       outbound.clone_key(),
+                       external_ip.clone_key());
+
+        graph.add_node(external_ip);
+    }
+
+    graph.add_edge("created_connection",
+                   process.clone_key(),
+                   outbound.clone_key());
+
+
+    graph.add_node(outbound);
+    graph.add_node(process);
+
+    graph
+}
+
+fn handle_inbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription {
+    let mut graph = GraphDescription::new(
+        conn_log.timestamp
+    );
+
+    let process = ProcessDescription::new(
+        HostIdentifier::IpAddress(conn_log.src_addr.clone().into_bytes()),
+        ProcessState::Existing,
+        conn_log.pid,
+        conn_log.timestamp,
+        vec![],
+        vec![]
+    );
+
+    // Inbound is the 'src', at least in sysmon
+    let inbound = InboundConnection::new(
+        HostIdentifier::IpAddress(conn_log.src_addr.clone().into_bytes()),
+        ConnectionState::Created,
+        conn_log.src_port,
+        conn_log.timestamp
+    );
+
+
+//    if is_internal_ip(&conn_log.dst_addr.clone().into_bytes()) {
+//        let outbound = InboundConnection::new(
+//            HostIdentifier::IpAddress(conn_log.dst_addr.clone().into_bytes()),
+//            ConnectionState::Existing,
+//            conn_log.dst_port,
+//            conn_log.timestamp
+//        );
+//
+//        graph.add_edge("connection",
+//                       outbound.clone_key(),
+//                       inbound.clone_key());
+//
+//        graph.add_node(outbound);
+//    } else {
+//        let external_ip = IpAddressDescription::new(
+//            conn_log.timestamp,
+//            conn_log.dst_addr.clone().into_bytes()
+//        );
+//
+//        graph.add_edge("external_connection",
+//                       inbound.clone_key(),
+//                       external_ip.clone_key());
+//
+//        graph.add_node(external_ip);
+//    }
+
+    graph.add_edge("bound_connection",
+                   process.clone_key(),
+                   inbound.clone_key());
+
+    graph.add_node(inbound);
+    graph.add_node(process);
+
+    graph
+}
 
 
 #[derive(Serialize, Deserialize)]
@@ -95,7 +255,7 @@ fn handle_process_start(process_start: ProcessStart) -> GraphDescription {
         ProcessState::Created,
         process_start.pid,
         process_start.timestamp,
-        process_start.name.into_bytes(),
+        process_start.name.clone().into_bytes(),
         vec![]
     );
 
@@ -105,7 +265,7 @@ fn handle_process_start(process_start: ProcessStart) -> GraphDescription {
             HostIdentifier::AssetId(process_start.asset_id),
             FileState::Existing,
             process_start.timestamp,
-            exe_path.into_bytes(),
+            exe_path.clone().into_bytes(),
         );
 
         graph.add_edge("bin_file",
@@ -135,7 +295,7 @@ fn handle_process_stop(process_stop: ProcessStop) -> GraphDescription {
         ProcessState::Terminated,
         process_stop.pid,
         process_stop.timestamp,
-        process_stop.name.into_bytes(),
+        process_stop.name.clone().into_bytes(),
         vec![]
     );
 
@@ -161,7 +321,7 @@ fn handle_file_delete(file_delete: FileDelete) -> GraphDescription {
         HostIdentifier::AssetId(file_delete.asset_id),
         FileState::Deleted,
         file_delete.timestamp,
-        file_delete.path.into_bytes(),
+        file_delete.path.clone().into_bytes(),
     );
 
     let mut graph = GraphDescription::new(
@@ -191,7 +351,7 @@ fn handle_file_create(file_creator: FileCreate) -> GraphDescription {
         HostIdentifier::AssetId(file_creator.asset_id),
         FileState::Created,
         file_creator.timestamp,
-        file_creator.path.into_bytes(),
+        file_creator.path.clone().into_bytes(),
     );
 
     info!("file {}", file.clone().into_json());
@@ -223,7 +383,7 @@ fn handle_file_write(file_write: FileWrite) -> GraphDescription {
         HostIdentifier::AssetId(file_write.asset_id),
         FileState::Existing,
         file_write.timestamp,
-        file_write.path.into_bytes(),
+        file_write.path.clone().into_bytes(),
     );
 
     let mut graph = GraphDescription::new(
@@ -253,7 +413,7 @@ fn handle_file_read(file_read: FileRead) -> GraphDescription {
         HostIdentifier::AssetId(file_read.asset_id),
         FileState::Existing,
         file_read.timestamp,
-        file_read.path.into_bytes(),
+        file_read.path.clone().into_bytes(),
     );
 
     let mut graph = GraphDescription::new(
@@ -280,6 +440,8 @@ fn handle_log(raw_log: Value) -> Result<GraphDescription, Error> {
         "FILE_DELETE" => handle_file_delete(serde_json::from_value(raw_log)?),
         "PROCESS_START" => handle_process_start(serde_json::from_value(raw_log)?),
         "PROCESS_STOP" => handle_process_stop(serde_json::from_value(raw_log)?),
+        "INBOUND_TCP" => handle_inbound_traffic(serde_json::from_value(raw_log)?),
+        "OUTBOUND_TCP" => handle_outbound_traffic(serde_json::from_value(raw_log)?),
         _ => bail!("invalid sourcetype")
     };
 

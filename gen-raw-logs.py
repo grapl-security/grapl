@@ -9,29 +9,12 @@ import boto3
 import json
 import random
 
-# import ip_asset_mapping_pb2
-# from ip_asset_mapping_pb2 import IpAssetMapping, IpAssetMappings
 
 def rand_str(l):
     # type: (int) -> str
     return ''.join(random.choice(string.ascii_uppercase + string.digits)
                    for _ in range(l))
 
-
-class IpAssetMappingGenerator(object):
-    def __init__(self, asset_id=None, ip=None, timestamp=None):
-        # type: (Optional[str], Optional[str], Optional[int]) -> None
-        self.asset_id = asset_id or rand_str(20)
-        self.ip = ip or ".".join(str(random.randint(0, 255)) for _ in range(4))
-        self.timestamp = timestamp or int(time.time())
-
-    def generate_mapping(self):
-        # type: () -> IpAssetMapping
-        mapping = IpAssetMapping()
-        mapping.asset_id = self.asset_id
-        mapping.ip = self.ip
-        mapping.timestamp = self.timestamp
-        return mapping
 
 class ProcessLogGenerator(object):
 
@@ -54,16 +37,22 @@ class ProcessLogGenerator(object):
         }
 
 
+asset_a = "asset_zze"
+asset_b = "asset2_2"
+asset_a_ip = "172.23.4.5"
+asset_b_ip = "172.26.7.8"
+
 def generate_basic_process_logs():
     logs = []
-    asset = "asset_zzd"
+
+    cnc_ip = "12.34.45.56"
 
     logs.append(
         {
             'pid': 1,
             'ppid': 0,
             'name': "init",
-            'asset_id': asset,
+            'asset_id': asset_a,
             'arguments': rand_str(20),
             'timestamp': 150,
             'sourcetype': "PROCESS_START",
@@ -75,7 +64,7 @@ def generate_basic_process_logs():
             'pid': 2,
             'ppid': 1,
             'name': "explorer",
-            'asset_id': asset,
+            'asset_id': asset_a,
             'arguments': rand_str(20),
             'timestamp': 250,
             'sourcetype': "PROCESS_START",
@@ -88,7 +77,7 @@ def generate_basic_process_logs():
             'pid': 3,
             'ppid': 2,
             'name': "chrome",
-            'asset_id': asset,
+            'asset_id': asset_a,
             'arguments': rand_str(20),
             'timestamp': 350,
             'sourcetype': "PROCESS_START",
@@ -101,7 +90,7 @@ def generate_basic_process_logs():
             "creator_pid": 3,
             "creator_name": "chrome",
             "path": "/home/user/downloads/malicious.doc",
-            "asset_id": asset,
+            "asset_id": asset_a,
             "timestamp": 450,
             "sourcetype": "FILE_CREATE"
         }
@@ -114,7 +103,7 @@ def generate_basic_process_logs():
             'ppid': 2,
             'name': "word",
             'exe': "/user/program_files/word.exe",
-            'asset_id': asset,
+            'asset_id': asset_a,
             'arguments': rand_str(20),
             'timestamp': 500,
             'sourcetype': "PROCESS_START",
@@ -127,20 +116,35 @@ def generate_basic_process_logs():
             "reader_pid": 4,
             "reader_name": "word",
             "path": "/home/user/downloads/malicious.doc",
-            "asset_id": asset,
+            "asset_id": asset_a,
             "timestamp": 550,
             "sourcetype": "FILE_READ"
         }
     )
 
-    # Word.exe downloads and creates payload.exe
+    # word.exe external ip connection
+
+    logs.append(
+        {
+            "pid": 4,
+            "protocol": "TCP",
+            "src_port": 253,
+            "dst_port": 443,
+            "src_addr": asset_a_ip,
+            "dst_addr": cnc_ip,
+            "timestamp": 585,
+            "sourcetype": "OUTBOUND_TCP",
+        }
+    )
+
+    # Word.exe creates payload.exe
 
     logs.append(
         {
             "creator_pid": 4,
             "creator_name": "word",
             "path": "/home/user/local/payload.exe",
-            "asset_id": asset,
+            "asset_id": asset_a,
             "timestamp": 600,
             "sourcetype": "FILE_CREATE"
         }
@@ -154,14 +158,101 @@ def generate_basic_process_logs():
             'ppid': 4,
             'name': "payload",
             'exe': "/home/user/local/payload.exe",
-            'asset_id': asset,
+            'asset_id': asset_a,
             'arguments': rand_str(20),
             'timestamp': 650,
             'sourcetype': "PROCESS_START",
         }
     )
 
+    # Payload spawns SSH
+    logs.append(
+        {
+            'pid': 6,
+            'ppid': 5,
+            'name': "ssh",
+            'exe': "/bin/ssh",
+            'asset_id': asset_a,
+            'arguments': "username@"+asset_b_ip,
+            'timestamp': 700,
+            'sourcetype': "PROCESS_START",
+        }
+    )
+
+    # SSH connects to asset2
+
+    logs.append(
+        {
+            "pid": 6,
+            "protocol": "TCP",
+            "src_port": 149,
+            "dst_port": 22,
+            "src_addr": asset_a_ip,
+            "dst_addr": asset_b_ip,
+            "timestamp": 750,
+            "sourcetype": "OUTBOUND_TCP",
+        }
+    )
+
+    # sshd spawns on asset2
+
+    logs.append(
+        {
+            'pid': 7,
+            'ppid': 1,
+            'name': "sshd",
+            'exe': "/bin/sshd",
+            'asset_id': asset_b,
+            'arguments': rand_str(20),
+            'timestamp': 450,
+            'sourcetype': "PROCESS_START",
+        }
+    )
+
+    # sshd receives connection from asset_a
+    logs.append(
+        {
+            "pid": 7,
+            "protocol": "TCP",
+            "src_port": 22,
+            "dst_port": 149,
+            "src_addr": asset_b_ip,
+            "dst_addr": asset_a_ip,
+            "timestamp": 751,
+            "sourcetype": "INBOUND_TCP",
+        }
+    )
+
+    # sshd spawns child process bash
+    logs.append(
+        {
+            'pid': 8,
+            'ppid': 7,
+            'name': "bash",
+            'exe': "/bin/bash",
+            'asset_id': asset_b,
+            'arguments': rand_str(20),
+            'timestamp': 850,
+            'sourcetype': "PROCESS_START",
+        }
+    )
+
     return logs
+
+
+def identity_mappings():
+    return [
+        {
+            "ip": asset_b_ip,
+            "asset_id": asset_b,
+            "timestamp": 10,
+        },
+        {
+            "ip": asset_a_ip,
+            "asset_id": asset_a,
+            "timestamp": 10,
+        },
+    ]
 
 
 def main():
@@ -170,35 +261,31 @@ def main():
     time.sleep(1)
     proc_generator = ProcessLogGenerator()
 
-    # raw_logs = [proc_generator.generate_raw_log() for _ in (range(0, 100))]
     raw_logs = generate_basic_process_logs()
-    # mappings = [IpAssetMappingGenerator(asset_id=p['asset_id'], timestamp=now)
-    #                 .generate_mapping() for p in raw_logs]
-
-    # print(mappings)
     print(raw_logs)
     epoch = int(time.time())
 
-    # mapping = IpAssetMappings()
-    # mapping.mappings.extend(mappings)
-    # mapping_body = mapping.SerializeToString()
+    mapping_body = json.dumps(identity_mappings())
     serialized_raw_logs = json.dumps(raw_logs)
-    # #
-    #
+
     s3 = boto3.client('s3')
+
+
+    res = s3.put_object(
+        Body=mapping_body,
+        Bucket="grapl-identity-mappings-bucket",
+        Key=str(epoch - (epoch % (24 * 60 * 60))) + "/ip_asset_mappings/" +
+            str(epoch)
+    )
+    time.sleep(2)
+
     s3.put_object(
         Body=serialized_raw_logs,
         Bucket="grapl-raw-log-bucket",
         Key=str(epoch - (epoch % (24 * 60 * 60))) + "/PROCESS_START/" + str(epoch)
     )
-    # s3 = boto3.client('s3')
-    # res = s3.put_object(
-    #     Body=mapping_body,
-    #     Bucket="grapl-identity-mappings",
-    #     Key=str(epoch - (epoch % (24 * 60 * 60))) + "/ip_asset_mappings/" +
-    #         str(epoch)
-    # )
-    # print(res)
+
+    print(res)
 
 
 if __name__ == '__main__':

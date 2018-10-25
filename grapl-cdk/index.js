@@ -47,6 +47,9 @@ class EventEmitters extends cdk.Stack {
         let raw_logs_bucket = new s3.Bucket(this, id + '-raw-log-bucket', {
             bucketName: process.env.BUCKET_PREFIX + "-raw-log-bucket"
         });
+        let identity_mappings_bucket = new s3.Bucket(this, id + '-identity-mappings-bucket', {
+            bucketName: process.env.BUCKET_PREFIX + "-identity-mappings-bucket"
+        });
         let unid_subgraphs_generated_bucket = new s3.Bucket(this, id + '-unid-subgraphs-generated-bucket', {
             bucketName: process.env.BUCKET_PREFIX + "-unid-subgraphs-generated-bucket"
         });
@@ -60,6 +63,9 @@ class EventEmitters extends cdk.Stack {
         let raw_logs_topic = new sns.Topic(this, id + '-raw-log-topic', {
             topicName: 'raw-log-topic'
         });
+        let identity_mappings_topic = new sns.Topic(this, id + '-identity-mappings-topic', {
+            topicName: 'identity-mappings-topic'
+        });
         let unid_subgraphs_generated_topic = new sns.Topic(this, id + '-unid-subgraphs-generated-topic', {
             topicName: 'unid-subgraphs-generated-topic'
         });
@@ -72,15 +78,19 @@ class EventEmitters extends cdk.Stack {
         // S3 -> SNS Events
         raw_logs_bucket
             .onEvent(s3.EventType.ObjectCreated, raw_logs_topic);
+        identity_mappings_bucket
+            .onEvent(s3.EventType.ObjectCreated, identity_mappings_topic);
         unid_subgraphs_generated_bucket
             .onEvent(s3.EventType.ObjectCreated, unid_subgraphs_generated_topic);
         subgraphs_generated_bucket
             .onEvent(s3.EventType.ObjectCreated, subgraphs_generated_topic);
         this.raw_logs_bucket = raw_logs_bucket.export();
+        this.identity_mappings_bucket = identity_mappings_bucket.export();
         this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket.export();
         this.subgraphs_generated_bucket = subgraphs_generated_bucket.export();
         this.incident_topic = incident_topic.export();
         this.raw_logs_topic = raw_logs_topic.export();
+        this.identity_mappings_topic = identity_mappings_topic.export();
         this.unid_subgraphs_generated_topic = unid_subgraphs_generated_topic.export();
         this.subgraphs_generated_topic = subgraphs_generated_topic.export();
         this.subgraph_merged_topic = subgraph_merged_topic.export();
@@ -99,7 +109,8 @@ class GenericSubgraphGenerator extends cdk.Stack {
             code: lambda.Code.file('./generic-subgraph-generator.zip'),
             environment: {
                 "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-            }
+            },
+            timeout: 30
         });
         generic_subgraph_generator.addToRolePolicy(new cdk.PolicyStatement()
             .addAction('s3:GetObject')
@@ -111,6 +122,38 @@ class GenericSubgraphGenerator extends cdk.Stack {
         subscribe_lambda_to_queue(this, 'genericSubgraphGenerator', generic_subgraph_generator, generic_subgraph_generator_queue);
         event_producer.subscribeQueue(generic_subgraph_generator_queue);
         writes_to.grantWrite(generic_subgraph_generator.role);
+    }
+}
+class NodeIdentityMapper extends cdk.Stack {
+    constructor(parent, id, reads_from_props, event_producer_props, history_db_props, vpc_props) {
+        super(parent, id + '-stack');
+        const reads_from = aws_s3_1.Bucket.import(this, 'reads_from', reads_from_props);
+        const history_db = rds.DatabaseCluster.import(this, 'history-db', history_db_props);
+        const event_producer = aws_sns_1.Topic.import(this, 'event_producer', event_producer_props);
+        const vpc = ec2.VpcNetwork.import(this, 'vpc', vpc_props);
+        let node_identity_mapper = new lambda.Function(this, 'node-identity-mapper', {
+            runtime: lambda.Runtime.Go1x,
+            handler: 'node-identity-mapper',
+            code: lambda.Code.file('./node-identity-mapper.zip'),
+            vpc: vpc,
+            environment: {
+                "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
+                "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
+                "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            },
+            timeout: 30
+        });
+        node_identity_mapper.addToRolePolicy(new cdk.PolicyStatement()
+            .addAction('s3:GetObject')
+            .addAction('s3:ActionGetBucket')
+            .addAction('s3:ActionList')
+            .addResource(reads_from.bucketArn));
+        reads_from.grantRead(node_identity_mapper.role);
+        let node_identity_mapper_queue = new sqs.Queue(this, 'node-identity-mapper-queue');
+        subscribe_lambda_to_queue(this, 'nodeIdentityMapper', node_identity_mapper, node_identity_mapper_queue);
+        history_db.connections.allowDefaultPortFrom(node_identity_mapper, 'node-identity-mapper-history-db');
+        event_producer.subscribeQueue(node_identity_mapper_queue);
+        node_identity_mapper.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
     }
 }
 class NodeIdentifier extends cdk.Stack {
@@ -132,7 +175,8 @@ class NodeIdentifier extends cdk.Stack {
                 "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
                 "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
                 "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-            }
+            },
+            timeout: 30
         });
         node_identifier_retry_handler.addToRolePolicy(new cdk.PolicyStatement()
             .addAction('s3:GetObject')
@@ -154,7 +198,8 @@ class NodeIdentifier extends cdk.Stack {
                 "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
                 "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
                 "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-            }
+            },
+            timeout: 30
         });
         node_identifier.addToRolePolicy(new cdk.PolicyStatement()
             .addAction('s3:GetObject')
@@ -191,7 +236,8 @@ class GraphMerger extends cdk.Stack {
                 "GRAPH_MERGER": process.env.GRAPH_MERGER_READ_BUCKET,
                 "GRAPH_MERGER_WRITE_TOPIC": process.env.GRAPH_MERGER_WRITE_TOPIC,
                 "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-            }
+            },
+            timeout: 30
         });
         let graph_merger_queue = new sqs.Queue(this, 'graph-merger-queue');
         subscribe_lambda_to_queue(this, 'graphMerger', graph_merger, graph_merger_queue);
@@ -267,6 +313,7 @@ class Grapl extends cdk.App {
         const history_db = new HistoryDb(this, 'history-db', network.grapl_vpc, new cdk.Token(process.env.HISTORY_DB_USERNAME), new cdk.Token(process.env.HISTORY_DB_PASSWORD));
         let event_emitters = new EventEmitters(this, 'event-emitters');
         new GenericSubgraphGenerator(this, 'generic-subgraph-generator', event_emitters.raw_logs_bucket, event_emitters.raw_logs_topic, event_emitters.unid_subgraphs_generated_bucket);
+        new NodeIdentityMapper(this, 'node-identity-mapper', event_emitters.identity_mappings_bucket, event_emitters.identity_mappings_topic, history_db.db, network.grapl_vpc);
         new NodeIdentifier(this, 'node-identifier', event_emitters.unid_subgraphs_generated_bucket, event_emitters.unid_subgraphs_generated_topic, event_emitters.subgraphs_generated_bucket, history_db.db, network.grapl_vpc);
         new GraphMerger(this, 'graph-merger', event_emitters.subgraphs_generated_bucket, event_emitters.subgraphs_generated_topic, event_emitters.subgraph_merged_topic, network.grapl_vpc);
         new WordMacroAnalyzer(this, 'word-macro-analyzer', event_emitters.subgraph_merged_topic, event_emitters.incident_topic, network.grapl_vpc);
@@ -280,6 +327,17 @@ process.stdout.write(new Grapl(process.argv).run());
 // cdk deploy history-db-stack && \
 // cdk deploy generic-subgraph-generator-stack && \
 // cdk deploy node-identifier-stack && \
+// cdk deploy node-identity-mapper-stack && \
 // cdk deploy graph-merger-stack && \
 // cdk deploy word-macro-analyzer-stack && \
 // cdk deploy engagement-creation-service-stack
+//
+// cdk diff vpcs-stack && \
+// cdk diff event-emitters-stack && \
+// cdk diff history-db-stack && \
+// cdk diff generic-subgraph-generator-stack && \
+// cdk diff node-identifier-stack && \
+// cdk diff node-identity-mapper-stack && \
+// cdk diff graph-merger-stack && \
+// cdk diff word-macro-analyzer-stack && \
+// cdk diff engagement-creation-service-stack

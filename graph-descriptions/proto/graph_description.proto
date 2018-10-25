@@ -9,7 +9,7 @@ message Host {
         // the hostname of the host
         string hostname = 1;
         // the ip address of the host
-        string ip = 2;
+        bytes ip = 2;
 
         // The asset ID itself
         // We expect this to be the variant once we have attributed the node
@@ -22,7 +22,27 @@ message NodeDescriptionProto {
         ProcessDescriptionProto process_node = 1;
         FileDescriptionProto file_node = 2;
         IpAddressDescriptionProto ip_address_node = 3;
+        OutboundConnectionProto outbound_connection_node = 4;
+        InboundConnectionProto inbound_connection_node = 5;
     }
+}
+
+message OutboundConnectionProto {
+    string nodeKey = 1;
+    Host host_id = 2;
+    // 1 = Created, 2 = Terminated, 3 = Existing
+    uint32 state = 3;
+    uint64 timestamp = 4;
+    uint32 port = 5;
+}
+
+message InboundConnectionProto {
+    string nodeKey = 1;
+    Host host_id = 2;
+    // 1 = Created, 2 = Terminated, 3 = Existing
+    uint32 state = 6;
+    uint64 timestamp = 7;
+    uint32 port = 8;
 }
 
 message ProcessDescriptionProto {
@@ -51,7 +71,7 @@ message FileDescriptionProto {
 message IpAddressDescriptionProto {
     string nodeKey = 1;
     uint64 timestamp = 2;
-    bytes ip = 3;
+    bytes ip_address = 3;
 }
 
 message EdgeDescriptionProto {

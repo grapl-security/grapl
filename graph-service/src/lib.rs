@@ -91,7 +91,6 @@ pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
         }
     };
 
-
     info!("earliest: {} latest: {}", earliest, latest);
 
     for edges in subgraph.edges.iter() {
@@ -116,12 +115,6 @@ pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
                         }}
                     }}
                 }}"#, from, to);
-
-
-//            let resp = log_time!(
-//                    "dgraph_node_key_query",
-//                    client.query(&req).expect("query")
-//                );
 
             let resp = client.query(&req).expect("query");
 
@@ -151,16 +144,13 @@ pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
                 mutation.commit_now = true;
                 mutation.set_json = m.into_bytes();
 
-//                log_time!{
-//                    "mutation",
-                    loop {
-                        let mut_res = client.mutate(&mutation);
-                        match mut_res {
-                            Ok(_) => break,
-                            Err(e) => error!("{}", e)
-                        }
+                loop {
+                    let mut_res = client.mutate(&mutation);
+                    match mut_res {
+                        Ok(_) => break,
+                        Err(e) => error!("{}", e)
                     }
-//                }
+                }
 
             }
         }
@@ -245,21 +235,23 @@ pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result
 
 pub fn set_process_schema(client: &DgraphClient) {
     let mut op_schema = dgraph_client::api::Operation::new();
-    op_schema.schema = r#"
-       		node_key: string @upsert @index(hash) .
-       		pid: int @index(int) .
-       		create_time: int @index(int) .
-       		asset_id: string @index(hash) .
-       		terminate_time: int @index(int) .
-       		image_name: string @index(hash) .
-       		arguments: string .
-       		bin_file: uid @reverse .
-       		children: uid @reverse .
-       		created_files: uid @reverse .
-            deleted_files: uid @reverse .
-            read_files: uid @reverse .
-            wrote_files: uid @reverse .
-        "#.to_string();
+    op_schema.schema = concat!(
+       		"node_key: string @upsert @index(hash) .\n",
+       		"pid: int @index(int) .\n",
+       		"create_time: int @index(int) .\n",
+       		"asset_id: string @index(hash) .\n",
+       		"terminate_time: int @index(int) .\n",
+       		"image_name: string @index(hash) .\n",
+       		"arguments: string .\n",
+       		"bin_file: uid @reverse .\n",
+       		"children: uid @reverse .\n",
+       		"created_files: uid @reverse .\n",
+            "deleted_files: uid @reverse .\n",
+            "read_files: uid @reverse .\n",
+            "wrote_files: uid @reverse .\n",
+            "created_connection: uid @reverse .\n",
+            "bound_connection: uid @reverse .\n",
+        ).to_string();
     let _res = client.alter(&op_schema).expect("set schema");
 }
 
@@ -280,9 +272,22 @@ pub fn set_ip_address_schema(client: &mut DgraphClient) {
     op_schema.schema = r#"
        		node_key: string @upsert @index(hash) .
        		last_seen: int @index(int) .
-       		ip: string @index(hash) .
+       		external_ip: string @index(hash) .
         "#.to_string();
     let _res = client.alter(&op_schema).expect("set schema");
 }
 
-
+pub fn set_connection_schema(client: &mut DgraphClient) {
+    let mut op_schema = dgraph_client::api::Operation::new();
+    op_schema.schema = concat!(
+       		"node_key: string @upsert @index(hash) .\n",
+       		"create_time: int @index(int) .\n",
+       		"ip: string @index(hash) .\n",
+       		"port: string @index(hash) .\n",
+       		// outbound connections have a `connection` edge to inbound connections
+       		"connection: uid @reverse .\n",
+       		// outbound connections have a `connection` edge to external ip addresses
+       		"external_connection: uid @reverse .\n",
+    ).to_string();
+    let _res = client.alter(&op_schema).expect("set schema");
+}

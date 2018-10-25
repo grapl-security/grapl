@@ -1,13 +1,11 @@
 #![feature(nll)]
 
-#[macro_use]
-extern crate prost_derive;
+#[macro_use] extern crate prost_derive;
 #[macro_use] extern crate log;
+#[macro_use] extern crate mysql;
 
 extern crate base64;
 extern crate failure;
-extern crate mysql;
-extern crate sqs_microservice;
 extern crate graph_descriptions;
 extern crate rusoto_core;
 extern crate rusoto_s3;
@@ -15,13 +13,18 @@ extern crate uuid;
 extern crate prost;
 extern crate futures_await as futures;
 extern crate sha2;
+extern crate sqs_microservice;
+
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
 use failure::Error;
 
 use sha2::{Digest, Sha256};
 
 use sqs_microservice::handle_s3_sns_sqs_proto;
-use postgres::{Connection, TlsMode};
+use mysql::{Pool, Transaction};
 
 use rusoto_s3::{S3, S3Client};
 use prost::Message;
@@ -32,31 +35,39 @@ mod ip_asset_mapper;
 
 use rusoto_core::Region;
 
-use ip_asset_mapping::{IpAssetMapping, IpAssetMappings};
 use ip_asset_mapper::create_ip_asset_session;
 use std::env;
+use sqs_microservice::handle_s3_sns_sqs_json;
+use ip_asset_mapper::create_table;
 
-mod ip_asset_mapping {
-    include!(concat!(env!("OUT_DIR"), "/ip_asset_mapping.rs"));
+
+#[derive(Serialize, Deserialize)]
+struct IpAssetMapping {
+    ip: String,
+    asset_id: String,
+    timestamp: u64
 }
+
 
 fn main() {
 
-    handle_s3_sns_sqs_proto(move |ip_asset_mappings: IpAssetMappings| {
-        info!("Attempting to connect to postgres");
+    handle_s3_sns_sqs_json(move |ip_asset_mappings: Vec<IpAssetMapping>| {
+        info!("Attempting to connect to mysql");
 
         let username = env::var("HISTORY_DB_USERNAME").expect("HISTORY_DB_USERNAME");
         let password = env::var("HISTORY_DB_PASSWORD").expect("HISTORY_DB_PASSWORD");
 
-        let pool = my::Pool::new(
+        let pool = mysql::Pool::new(
             format!("mysql://{username}:{password}@db.historydb:3306/historydb",
                     username=username,
                     password=password)
         ).unwrap();
 
-        info!("Connected successfully to postgres");
+        info!("Connected successfully to mysql");
 
-        for ip_asset_mapping in ip_asset_mappings.mappings {
+        create_table(&pool);
+
+        for ip_asset_mapping in ip_asset_mappings {
             let ip = ip_asset_mapping.ip;
             let asset_id = ip_asset_mapping.asset_id;
             let timestamp = ip_asset_mapping.timestamp;
@@ -64,7 +75,7 @@ fn main() {
                     ip, timestamp, asset_id);
 
             create_ip_asset_session(
-                &conn,
+                &pool,
                 ip,
                 asset_id,
                 timestamp
