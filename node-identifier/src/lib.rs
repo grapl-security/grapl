@@ -138,9 +138,9 @@ pub fn identify_nodes(should_default: bool) {
             "creating tables",
             {
                 ip_asset_history::create_table(&pool);
-                history::create_process_table(&pool);
-                history::create_file_table(&pool);
-                history::create_connection_table(&pool);
+                session_history::create_process_table(&pool);
+                session_history::create_file_table(&pool);
+                session_history::create_connection_table(&pool);
             }
         }
 

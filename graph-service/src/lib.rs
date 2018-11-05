@@ -202,9 +202,10 @@ pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result
 
 
             info!("Transaction: {:#?}", txn);
-            client.mutate(&mutation)?;
-            
-            txn.set_commit_ts(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs());
+            let mut_res = client.mutate(&mutation)?;
+            info!("mut_res: {:#?}", mut_res);
+
+            txn.set_commit_ts(mut_res.context.get_ref().commit_ts);
             client.commit_or_abort(&txn)?;
 
             uid.to_string()
@@ -216,10 +217,11 @@ pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result
             mutation.set_json = (*node).clone().into_json().to_string().into_bytes();
 
             info!("mutation: {}", (*node).clone().into_json());
-            txn.set_commit_ts(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_secs());
 
             let mut_res = client.mutate(&mutation);
+            info!("mut_res: {:#?}", mut_res);
             let uid = mut_res.map(|mut_res| {
+                txn.set_commit_ts(mut_res.context.get_ref().commit_ts);
                 mut_res.get_uids().get("blank-0").unwrap().to_owned()
             })?;
 

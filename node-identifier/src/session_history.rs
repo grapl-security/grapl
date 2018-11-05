@@ -108,7 +108,7 @@ impl<'a> Session for &'a OutboundConnectionProto {
     }
 
     fn get_key_name(&self) -> &'static str {
-        "port"
+        "dir_port_ip"
     }
 
     fn get_key(&self) -> Cow<str> {
@@ -124,7 +124,7 @@ impl<'a> Session for &'a OutboundConnectionProto {
     }
 
     fn get_timestamp(&self) -> u64 {
-        self.timestamp
+        self.timestamp - (self.timestamp % 10)
     }
 
     fn get_action(&self) -> Action {
@@ -142,7 +142,7 @@ impl<'a> Session for &'a InboundConnectionProto {
     }
 
     fn get_key_name(&self) -> &'static str {
-        "port"
+        "dir_port_ip"
     }
 
     fn get_key(&self) -> Cow<str> {
@@ -158,7 +158,7 @@ impl<'a> Session for &'a InboundConnectionProto {
     }
 
     fn get_timestamp(&self) -> u64 {
-        self.timestamp
+        self.timestamp - (self.timestamp % 10)
     }
 
     fn get_action(&self) -> Action {
@@ -341,7 +341,7 @@ pub fn create_connection_table(conn: &Pool) {
                     primary_key     SERIAL PRIMARY KEY,
                     session_id      TEXT NOT NULL,
                     asset_id        TEXT NOT NULL,
-                    port            NUMERIC NOT NULL,
+                    dir_port_ip     TEXT NOT NULL,
                     create_time     NUMERIC NOT NULL
                   )", &()).expect("connection_history::create_table");
 }

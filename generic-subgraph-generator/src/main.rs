@@ -138,31 +138,31 @@ fn handle_inbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription {
     );
 
 
-//    if is_internal_ip(&conn_log.dst_addr.clone().into_bytes()) {
-//        let outbound = InboundConnection::new(
-//            HostIdentifier::IpAddress(conn_log.dst_addr.clone().into_bytes()),
-//            ConnectionState::Existing,
-//            conn_log.dst_port,
-//            conn_log.timestamp
-//        );
-//
-//        graph.add_edge("connection",
-//                       outbound.clone_key(),
-//                       inbound.clone_key());
-//
-//        graph.add_node(outbound);
-//    } else {
-//        let external_ip = IpAddressDescription::new(
-//            conn_log.timestamp,
-//            conn_log.dst_addr.clone().into_bytes()
-//        );
-//
-//        graph.add_edge("external_connection",
-//                       inbound.clone_key(),
-//                       external_ip.clone_key());
-//
-//        graph.add_node(external_ip);
-//    }
+    if is_internal_ip(&conn_log.dst_addr.clone().into_bytes()) {
+        let outbound = InboundConnection::new(
+            HostIdentifier::IpAddress(conn_log.dst_addr.clone().into_bytes()),
+            ConnectionState::Existing,
+            conn_log.dst_port,
+            conn_log.timestamp
+        );
+
+        graph.add_edge("connection",
+                       outbound.clone_key(),
+                       inbound.clone_key());
+
+        graph.add_node(outbound);
+    } else {
+        let external_ip = IpAddressDescription::new(
+            conn_log.timestamp,
+            conn_log.dst_addr.clone().into_bytes()
+        );
+
+        graph.add_edge("external_connection",
+                       inbound.clone_key(),
+                       external_ip.clone_key());
+
+        graph.add_node(external_ip);
+    }
 
     graph.add_edge("bound_connection",
                    process.clone_key(),

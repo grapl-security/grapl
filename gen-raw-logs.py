@@ -22,7 +22,6 @@ class ProcessLogGenerator(object):
         # type: () -> None
         self.inner_time = time.time()
 
-
     def generate_raw_log(self):
         # type: () -> Dict[str, Union[str, int]]
         self.inner_time = random.randint(50, 150)
@@ -37,10 +36,10 @@ class ProcessLogGenerator(object):
         }
 
 
-asset_a = "asset_zze"
-asset_b = "asset2_2"
-asset_a_ip = "172.23.4.5"
-asset_b_ip = "172.26.7.8"
+asset_a = "asset_zzj"
+asset_b = "asset2_7"
+asset_a_ip = "172.23.4.7"
+asset_b_ip = "172.26.7.10"
 
 def generate_basic_process_logs():
     logs = []

@@ -15,12 +15,8 @@ extern crate serde_json;
 
 use graph_descriptions::*;
 
-use lambda::event::s3::S3Event;
-use lambda::event::sqs::SqsEvent;
-
 use rusoto_core::Region;
 use rusoto_s3::{S3, S3Client, PutObjectRequest};
-use rusoto_sqs::{Sqs, SqsClient};
 use failure::Error;
 use prost::Message;
 
@@ -32,7 +28,6 @@ use sha2::{Digest, Sha256};
 
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use std::sync::mpsc::channel;
 use sqs_microservice::*;
 
 

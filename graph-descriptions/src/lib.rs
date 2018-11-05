@@ -426,7 +426,7 @@ impl NodeDescriptionProto {
                     }
                 )
             }
-            WhichNode::IpAddressNode(ref mut node) => {
+            WhichNode::IpAddressNode(_) => {
                 panic!("ip address node has no asset id")
             }
             WhichNode::OutboundConnectionNode(ref mut node) => {
