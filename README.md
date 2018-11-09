@@ -11,10 +11,11 @@ pulling in related information.
 Grapl currently supports graph representations for:
 * Process Start/ Stop
 * File Create/Read/Write/Delete
+* Internal and External network traffic
 
 What you can do with Grapl today:
 * Send it data, given you provide a specific format
-* Query the db for graphs of Process trees and their associated files
+* Query the db for graphs of Process trees and their associated files and network activity
 
 
 ### Example Use Case: Catching a malicious word macro
@@ -57,6 +58,14 @@ engagement.
 Given the `word` and `payload` children we can recursively
 add subsequent children, find the files read by word, etc.
 
+Here we can see that:
+* Chrome downloaded the `malicious.doc` doc
+* Word read the `malicious.doc` file
+* Word connected to an external IP (red node)
+* Word created a `payload.exe` and executed it
+* `payload.exe` spawned `ssh`, and connected to another asset (yellow nodes)
+* `sshd` spawned a shell on the other asset
+
 ![word_macro_graph](https://github.com/insanitybit/grapl/blob/master/images/word_macro_graph.png)
 
 Even in cases where your detections are built on discrete events Grapl should
@@ -73,14 +82,14 @@ valid tomorrow. I do not intend to support migrations during Alpha.
 
 **What Works**
 * Can parse process and file events, if they conform to the 'generic' parser
+* Can connect processes across a network, given process + network attributed data
 * Can identify and merge generated subgraphs into master graph
 * Visualizing graphs via `dgraph-ratel`
 
 
 **What Doesn't Work**
 * No support for custom parsers
-* Attributing ip addresses to assets
-* Analyzer concept is immature and bulky
+* Analyzer concept is immature and bulky, going to be thrown out and reworked from scratch
 * Automated scoping of engagements is unreliable
 
 Note that Grapl has not been given the security attention it deserves. I do not recommend
@@ -93,15 +102,13 @@ Contributions very welcome.
 
 The immediate next steps are:
 * Support arbitrary log parsers
-* SUpport mapping IPs and Hostnames to asset_id's
-* Cower cost of writing analyzers, provide generic analyzer to host /load multiple signatures
-* Engagement creation and automated scoping
-* Engagement interactions via Python API
+* User and Asset nodes
+* Lower cost of writing analyzers, provide generic analyzer to host /load multiple signatures
 
 Eventually I intend to support:
-* Network relationships between nodes - ip, dns
-* User and Asset nodes
 * Much better/ higher level libraries for writing parsers and analyzers
+* Engagement creation and automated scoping
+* Engagement interactions via Python API
 
 
 ## Architecture Diagram
