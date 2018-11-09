@@ -25,7 +25,7 @@ extern crate stopwatch;
 extern crate tokio_core;
 
 use futures::Future;
-use graph_descriptions::graph_description::GraphDescriptionProto;
+use graph_descriptions::graph_description::GraphDescription;
 use graph_merger::{merge_subgraph, set_file_schema, set_process_schema};
 use prost::Message;
 use rusoto_core::region::Region;
@@ -57,7 +57,7 @@ mod subgraph_merge_event {
 #[cfg_attr(tarpaulin, skip)]
 pub fn main() {
 
-    handle_s3_sns_sqs_proto(move |subgraph: GraphDescriptionProto| {
+    handle_s3_sns_sqs_proto(move |subgraph: GraphDescription| {
         println!("connecting to db.mastergraph");
         let mut dgraph_client =
             dgraph_client::new_client("db.mastergraph:9080");

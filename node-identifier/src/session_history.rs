@@ -40,7 +40,7 @@ pub enum Action {
     Terminate
 }
 
-impl<'a> Session for &'a ProcessDescriptionProto {
+impl<'a> Session for &'a ProcessDescription {
     fn get_table_name(&self) -> &'static str {
         "process_history"
     }
@@ -71,7 +71,7 @@ impl<'a> Session for &'a ProcessDescriptionProto {
 }
 
 
-impl<'a> Session for &'a FileDescriptionProto {
+impl<'a> Session for &'a FileDescription {
     fn get_table_name(&self) -> &'static str {
         "file_history"
     }
@@ -102,7 +102,7 @@ impl<'a> Session for &'a FileDescriptionProto {
 }
 
 
-impl<'a> Session for &'a OutboundConnectionProto {
+impl<'a> Session for &'a OutboundConnection {
     fn get_table_name(&self) -> &'static str {
         "connection_history"
     }
@@ -136,7 +136,7 @@ impl<'a> Session for &'a OutboundConnectionProto {
     }
 }
 
-impl<'a> Session for &'a InboundConnectionProto {
+impl<'a> Session for &'a InboundConnection {
     fn get_table_name(&self) -> &'static str {
         "connection_history"
     }
@@ -410,7 +410,7 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                     Some(false)
                 ).expect("Failed to acquire transaction");
 
-                let attribution_res = attribute_session_node(&mut tx, &*node, should_default);
+                let attribution_res = attribute_session_node(&mut tx, &node, should_default);
 
                 match attribution_res {
                     Ok(new_node_key) => {
@@ -438,7 +438,7 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                     Some(false)
                 ).expect("Failed to acquire transaction");
 
-                let attribution_res = attribute_session_node(&mut tx, &*node, should_default);
+                let attribution_res = attribute_session_node(&mut tx, &node, should_default);
 
                 match attribution_res {
                     Ok(new_node_key) => {
@@ -466,7 +466,7 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                     Some(false)
                 ).expect("Failed to acquire transaction");
 
-                let attribution_res = attribute_session_node(&mut tx, &*node, should_default);
+                let attribution_res = attribute_session_node(&mut tx, &node, should_default);
 
                 match attribution_res {
                     Ok(new_node_key) => {
@@ -494,7 +494,7 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                     Some(false)
                 ).expect("Failed to acquire transaction");
 
-                let attribution_res = attribute_session_node(&mut tx, &*node, should_default);
+                let attribution_res = attribute_session_node(&mut tx, &node, should_default);
 
                 match attribution_res {
                     Ok(new_node_key) => {

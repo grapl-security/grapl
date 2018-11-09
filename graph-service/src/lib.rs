@@ -49,7 +49,7 @@ pub mod subgraph_merge_event {
     include!(concat!(env!("OUT_DIR"), "/subgraph_merge_event.rs"));
 }
 
-pub fn upsert_with_retries(client: &DgraphClient, node: &NodeDescriptionProto) -> Result<String, Error> {
+pub fn upsert_with_retries(client: &DgraphClient, node: &NodeDescription) -> Result<String, Error> {
     let mut retries = 5;
     loop {
         let res = upsert_node(client, node);
@@ -159,7 +159,7 @@ pub fn merge_subgraph(client: &DgraphClient, subgraph: &GraphDescription)
     Ok((earliest, latest))
 }
 
-pub fn upsert_node(client: &DgraphClient, node: &NodeDescriptionProto) -> Result<String, Error> {
+pub fn upsert_node(client: &DgraphClient, node: &NodeDescription) -> Result<String, Error> {
     let node_key = node.get_key();
     let mut txn = dgraph_client::api::TxnContext::new();
 

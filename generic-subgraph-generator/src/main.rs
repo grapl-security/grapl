@@ -13,6 +13,7 @@ extern crate serde_json;
 
 use failure::Error;
 use graph_descriptions::*;
+use graph_descriptions::graph_description::*;
 use graph_generator_lib::handle_json_encoded_logs;
 use regex::bytes::Regex;
 use serde_json::Value;

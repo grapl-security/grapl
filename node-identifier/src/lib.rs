@@ -76,7 +76,7 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
     );
 
 
-    let subgraph: GraphDescriptionProto = subgraph.into();
+    let subgraph: GraphDescription = subgraph.into();
 
     let mut body = Vec::new();
     subgraph.encode(&mut body).expect("Failed to encode subgraph");
@@ -117,7 +117,7 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
 pub fn identify_nodes(should_default: bool) {
 
 
-    handle_s3_sns_sqs_proto( move |mut subgraphs: GeneratedSubgraphsProto| {
+    handle_s3_sns_sqs_proto( move |mut subgraphs: GeneratedSubgraphs| {
         info!("Connecting to history database");
 
         let username = env::var("HISTORY_DB_USERNAME").expect("HISTORY_DB_USERNAME");

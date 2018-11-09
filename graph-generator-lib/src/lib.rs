@@ -13,8 +13,6 @@ extern crate sqs_microservice;
 extern crate graph_descriptions;
 extern crate serde_json;
 
-use graph_descriptions::*;
-
 use rusoto_core::Region;
 use rusoto_s3::{S3, S3Client, PutObjectRequest};
 use failure::Error;
@@ -30,6 +28,7 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use sqs_microservice::*;
 
+use graph_descriptions::graph_description::*;
 
 #[inline(always)]
 pub fn handle_json_encoded_logs(f: impl (Fn(Vec<Value>)
