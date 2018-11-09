@@ -133,7 +133,7 @@ impl InboundConnection {
             state: state.into(),
             port,
             timestamp,
-        }.into()
+        }
     }
 
     pub fn clone_key(&self) -> String {
@@ -194,7 +194,7 @@ macro_rules! node_from {
             fn from(t: $t) -> Self {
                 NodeDescription {
                     which_node: WhichNode::$n(
-                        t.into()
+                        t
                     ).into()
                 }
             }
@@ -417,13 +417,14 @@ pub enum ProcessState {
     Existing
 }
 
-impl Into<u32> for ProcessState {
-    fn into(self) -> u32 {
-        match self {
+impl From<ProcessState> for u32 {
+    fn from(p: ProcessState) -> u32 {
+        match p {
             ProcessState::Created => 1,
             ProcessState::Terminated => 2,
             ProcessState::Existing => 3,
         }
+
     }
 }
 
@@ -466,14 +467,14 @@ impl From<u32> for FileState {
     }
 }
 
-
-impl Into<u32> for FileState {
-    fn into(self) -> u32 {
-        match self {
+impl From<FileState> for u32 {
+    fn from(p: FileState) -> u32 {
+        match p {
             FileState::Created => 1,
             FileState::Deleted => 2,
             FileState::Existing => 3,
         }
+
     }
 }
 
@@ -659,7 +660,7 @@ impl IpAddressDescription {
             node_key,
             timestamp,
             ip_address
-        }.into()
+        }
     }
 
     pub fn get_key(&self) -> &str {
@@ -691,7 +692,7 @@ impl GraphDescription {
             nodes: hashmap![],
             edges: hashmap![],
             timestamp
-        }.into()
+        }
     }
 
 
@@ -705,7 +706,7 @@ impl GraphDescription {
         self.edges
             .entry(key)
             .or_insert_with(|| {
-                EdgeList { edges: vec![] }.into()
+                EdgeList { edges: vec![] }
             });
     }
 
@@ -730,12 +731,12 @@ impl GraphDescription {
             from_neighbor_key: from.clone(),
             to_neighbor_key: to,
             edge_name
-        }.into();
+        };
 
         self.edges
             .entry(from)
             .or_insert_with(|| {
-                EdgeList { edges: Vec::with_capacity(1) }.into()
+                EdgeList { edges: Vec::with_capacity(1) }
             })
             .edges.push(edge);
     }
