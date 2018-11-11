@@ -98,9 +98,15 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     Some(true)
                 ).expect("Failed to acquire transaction");
 
-                let host_id = node.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
 
-                let attribution_res = attribute_asset(&mut tx, host_id, node.timestamp);
+                let host_id = match (&node.asset_id, &node.hostname, &node.host_ip) {
+                    (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
+                    (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
+                    (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
+                    (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
+                };
+
+                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp);
 
                 match attribution_res {
                     Ok(new_asset_id) => {
@@ -126,9 +132,14 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     Some(true)
                 ).expect("Failed to acquire transaction");
 
-                let host_id = node.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
+                let host_id = match (&node.asset_id, &node.hostname, &node.host_ip) {
+                    (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
+                    (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
+                    (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
+                    (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
+                };
 
-                let attribution_res = attribute_asset(&mut tx, host_id, node.timestamp);
+                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp);
 
                 match attribution_res {
                     Ok(new_asset_id) => {
@@ -155,9 +166,15 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     Some(true)
                 ).expect("Failed to acquire transaction");
 
-                let host_id = node.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
+                let host_id = match (&node.asset_id, &node.hostname, &node.host_ip) {
+                    (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
+                    (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
+                    (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
+                    (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
+                };
 
-                let attribution_res = attribute_asset(&mut tx, host_id, node.timestamp);
+
+                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp);
 
                 match attribution_res {
                     Ok(new_asset_id) => {
@@ -185,9 +202,14 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     Some(true)
                 ).expect("Failed to acquire transaction");
 
-                let host_id = node.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
+                let host_id = match (&node.asset_id, &node.hostname, &node.host_ip) {
+                    (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
+                    (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
+                    (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
+                    (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
+                };
 
-                let attribution_res = attribute_asset(&mut tx, host_id, node.timestamp);
+                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp);
 
                 match attribution_res {
                     Ok(new_asset_id) => {

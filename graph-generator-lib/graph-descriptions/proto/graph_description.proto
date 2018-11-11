@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/wrappers.proto";
+
 package graph_description;
 
 // Used to identify the system for a given node
@@ -29,43 +31,50 @@ message NodeDescription {
 
 message OutboundConnection {
     string nodeKey = 1;
-    Host host_id = 2;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.BytesValue host_ip = 4;
     // 1 = Created, 2 = Terminated, 3 = Existing
-    uint32 state = 3;
-    uint64 timestamp = 4;
-    uint32 port = 5;
+    uint32 state = 5;
+    uint64 timestamp = 6;
+    uint32 port = 7;
 }
 
 message InboundConnection {
     string nodeKey = 1;
-    Host host_id = 2;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.BytesValue host_ip = 4;
     // 1 = Created, 2 = Terminated, 3 = Existing
-    uint32 state = 6;
-    uint64 timestamp = 7;
-    uint32 port = 8;
+    uint32 state = 5;
+    uint64 timestamp = 6;
+    uint32 port = 7;
 }
 
 message ProcessDescription {
     string nodeKey = 1;
-    Host host_id = 2;
-    // 1 = Created, 2 = Terminated, 3 = Existing
-    uint32 state = 3;
-    uint64 pid = 4;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.BytesValue host_ip = 4;
+    uint32 state = 5;
+    uint64 pid = 6;
     // When state == 1, create_time
     // When state == 2, end_time
     // When state == 3, seen_time
-    uint64 timestamp = 5;
-    bytes image_name = 6;
-    bytes image_path = 7;
+    uint64 timestamp = 7;
+    bytes image_name = 8;
+    bytes image_path = 9;
 }
 
 message FileDescription {
     string nodeKey = 1;
-    Host host_id = 2;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.BytesValue host_ip = 4;
     // 1 = Created, 2 = Deleted, 3 = Referenced
-    uint32 state = 3;
-    uint64 timestamp = 5;
-    bytes path = 6;
+    uint32 state = 5;
+    uint64 timestamp = 6;
+    bytes path = 7;
 }
 
 message IpAddressDescription {

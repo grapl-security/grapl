@@ -1,6 +1,7 @@
 #![feature(nll, stdsimd)]
 extern crate base64;
 #[macro_use] extern crate custom_derive;
+#[macro_use] extern crate typed_builder;
 #[macro_use]
 extern crate derive_more;
 extern crate hash_hasher;
@@ -16,8 +17,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 extern crate sha3;
-#[macro_use]
-extern crate typed_builder;
 extern crate uuid;
 
 use graph_description::*;
@@ -63,14 +62,18 @@ impl Into<u32> for ConnectionState {
 
 impl OutboundConnection {
     pub fn new(
-        host_id: HostIdentifier,
+        asset_id: impl Into<Option<String>>,
+        hostname: impl Into<Option<String>>,
+        host_ip: impl Into<Option<Vec<u8>>>,
         state: ConnectionState,
         port: u32,
         timestamp: u64,
     ) -> OutboundConnection {
         OutboundConnection {
             node_key: Uuid::new_v4().to_string(),
-            host_id: Some(host_id.into()),
+            asset_id: asset_id.into(),
+            hostname: hostname.into(),
+            host_ip: host_ip.into(),
             state: state.into(),
             port,
             timestamp,
@@ -82,11 +85,7 @@ impl OutboundConnection {
     }
 
     pub fn into_json(self) -> Value {
-        let asset_id = &self.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
-        let asset_id = match asset_id {
-            HostId::AssetId(asset_id) => asset_id,
-            _ => unimplemented!()
-        };
+        let asset_id = self.asset_id.as_ref().unwrap();
 
         let mut j = json!({
             "node_key": self.node_key,
@@ -110,11 +109,7 @@ impl OutboundConnection {
     }
 
     pub fn set_asset_id(&mut self, asset_id: String) {
-        self.host_id = Some(
-            Host{
-                host_id: Some(HostId::AssetId(asset_id))
-            }
-        )
+        self.asset_id = Some(asset_id)
     }
 
 }
@@ -122,18 +117,22 @@ impl OutboundConnection {
 
 impl InboundConnection {
     pub fn new(
-        host_id: HostIdentifier,
+        asset_id: impl Into<Option<String>>,
+        hostname: impl Into<Option<String>>,
+        host_ip: impl Into<Option<Vec<u8>>>,
         state: ConnectionState,
         port: u32,
         timestamp: u64,
     ) -> InboundConnection {
         InboundConnection {
             node_key: Uuid::new_v4().to_string(),
-            host_id: Some(host_id.into()),
+            asset_id: asset_id.into(),
+            hostname: hostname.into(),
+            host_ip: host_ip.into(),
             state: state.into(),
             port,
             timestamp,
-        }.into()
+        }
     }
 
     pub fn clone_key(&self) -> String {
@@ -141,11 +140,8 @@ impl InboundConnection {
     }
 
     pub fn into_json(self) -> Value {
-        let asset_id = &self.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
-        let asset_id = match asset_id {
-            HostId::AssetId(asset_id) => asset_id,
-            _ => unimplemented!()
-        };
+        let asset_id = self.asset_id.as_ref().unwrap();
+
         let mut j = json!({
             "node_key": self.node_key,
             "asset_id": asset_id,
@@ -168,11 +164,7 @@ impl InboundConnection {
     }
 
     pub fn set_asset_id(&mut self, asset_id: String) {
-        self.host_id = Some(
-            Host{
-                host_id: Some(HostId::AssetId(asset_id))
-            }
-        )
+        self.asset_id = Some(asset_id)
     }
 }
 
@@ -194,7 +186,7 @@ macro_rules! node_from {
             fn from(t: $t) -> Self {
                 NodeDescription {
                     which_node: WhichNode::$n(
-                        t.into()
+                        t
                     ).into()
                 }
             }
@@ -329,35 +321,19 @@ impl NodeDescription {
     pub fn set_asset_id(&mut self, asset_id: String) {
         match self.which_node.as_mut().unwrap() {
             WhichNode::ProcessNode(ref mut node) => {
-                node.host_id = Some(
-                    Host{
-                        host_id: Some(HostId::AssetId(asset_id))
-                    }
-                )
+                node.asset_id = Some(asset_id)
             }
             WhichNode::FileNode(ref mut node) => {
-                node.host_id = Some(
-                    Host{
-                        host_id: Some(HostId::AssetId(asset_id))
-                    }
-                )
+                node.asset_id = Some(asset_id)
             }
             WhichNode::IpAddressNode(_) => {
                 panic!("ip address node has no asset id")
             }
             WhichNode::OutboundConnectionNode(ref mut node) => {
-                node.host_id = Some(
-                    Host{
-                        host_id: Some(HostId::AssetId(asset_id))
-                    }
-                )
+                node.asset_id = Some(asset_id)
             }
             WhichNode::InboundConnectionNode(ref mut node) => {
-                node.host_id = Some(
-                    Host{
-                        host_id: Some(HostId::AssetId(asset_id))
-                    }
-                )
+                node.asset_id = Some(asset_id)
             }
         }
     }
@@ -417,13 +393,14 @@ pub enum ProcessState {
     Existing
 }
 
-impl Into<u32> for ProcessState {
-    fn into(self) -> u32 {
-        match self {
+impl From<ProcessState> for u32 {
+    fn from(p: ProcessState) -> u32 {
+        match p {
             ProcessState::Created => 1,
             ProcessState::Terminated => 2,
             ProcessState::Existing => 3,
         }
+
     }
 }
 
@@ -466,19 +443,21 @@ impl From<u32> for FileState {
     }
 }
 
-
-impl Into<u32> for FileState {
-    fn into(self) -> u32 {
-        match self {
+impl From<FileState> for u32 {
+    fn from(p: FileState) -> u32 {
+        match p {
             FileState::Created => 1,
             FileState::Deleted => 2,
             FileState::Existing => 3,
         }
+
     }
 }
 
 impl ProcessDescription {
-    pub fn new(host_id: HostIdentifier,
+    pub fn new(asset_id: impl Into<Option<String>>,
+               hostname: impl Into<Option<String>>,
+               host_ip: impl Into<Option<Vec<u8>>>,
                state: ProcessState,
                pid: u64,
                timestamp: u64,
@@ -487,7 +466,9 @@ impl ProcessDescription {
     ) -> ProcessDescription {
         ProcessDescription {
             node_key: Uuid::new_v4().to_string(),
-            host_id: Some(host_id.into()),
+            asset_id: asset_id.into(),
+            hostname: hostname.into(),
+            host_ip: host_ip.into(),
             state: state.into(),
             pid,
             timestamp,
@@ -505,11 +486,7 @@ impl ProcessDescription {
     }
 
     pub fn set_asset_id(&mut self, asset_id: String) {
-        self.host_id = Some(
-            Host{
-                host_id: Some(HostId::AssetId(asset_id))
-            }
-        )
+        self.asset_id = Some(asset_id)
     }
 
     pub fn clone_key(&self) -> String {
@@ -517,11 +494,8 @@ impl ProcessDescription {
     }
 
     pub fn into_json(self) -> Value {
-        let asset_id = &self.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
-        let asset_id = match asset_id {
-            HostId::AssetId(asset_id) => asset_id,
-            _ => unimplemented!()
-        };
+        let asset_id = self.asset_id.as_ref().unwrap();
+
         let mut j =
             json!({
             "node_key": self.node_key,
@@ -547,53 +521,41 @@ impl ProcessDescription {
 
 impl OutboundConnection {
     pub fn asset_id(&self) -> &str {
-        let asset_id = &self.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
-        match asset_id {
-            HostId::AssetId(asset_id) => asset_id,
-            _ => unimplemented!()
-        }
+        self.asset_id.as_ref().unwrap()
     }
 }
 
 impl InboundConnection {
     pub fn asset_id(&self) -> &str {
-        let asset_id = &self.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
-        match asset_id {
-            HostId::AssetId(asset_id) => asset_id,
-            _ => unimplemented!()
-        }
+        self.asset_id.as_ref().unwrap()
     }
 }
 
 impl ProcessDescription {
     pub fn asset_id(&self) -> &str {
-        let asset_id = &self.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
-        match asset_id {
-            HostId::AssetId(asset_id) => asset_id,
-            _ => unimplemented!()
-        }
+        self.asset_id.as_ref().unwrap()
     }
 }
 
 impl FileDescription {
     pub fn asset_id(&self) -> &str {
-        let asset_id = &self.host_id.as_ref().unwrap().host_id.as_ref().unwrap();
-        match asset_id {
-            HostId::AssetId(asset_id) => asset_id,
-            _ => unimplemented!()
-        }
+        self.asset_id.as_ref().unwrap()
     }
 }
 
 impl FileDescription {
-    pub fn new(host_id: HostIdentifier,
+    pub fn new(asset_id: impl Into<Option<String>>,
+               hostname: impl Into<Option<String>>,
+               host_ip: impl Into<Option<Vec<u8>>>,
                state: FileState,
                timestamp: u64,
                path: Vec<u8>,
     ) -> FileDescription {
         FileDescription {
             node_key: Uuid::new_v4().to_string(),
-            host_id: Some(host_id.into()),
+            asset_id: asset_id.into(),
+            hostname: hostname.into(),
+            host_ip: host_ip.into(),
             state: state.into(),
             timestamp,
             path
@@ -609,11 +571,7 @@ impl FileDescription {
     }
 
     pub fn set_asset_id(&mut self, asset_id: String) {
-        self.host_id = Some(
-            Host{
-                host_id: Some(HostId::AssetId(asset_id))
-            }
-        )
+        self.asset_id = Some(asset_id)
     }
 
     pub fn clone_key(&self) -> String {
@@ -621,12 +579,7 @@ impl FileDescription {
     }
 
     pub fn into_json(self) -> Value {
-        let asset_id = &self.host_id
-            .as_ref().unwrap().host_id.as_ref().unwrap();
-        let asset_id = match asset_id {
-            HostId::AssetId(asset_id) => asset_id,
-            _ => unimplemented!()
-        };
+        let asset_id = self.asset_id.as_ref().unwrap();
         let mut j = json!({
             "node_key": self.node_key,
             "asset_id": asset_id,
@@ -659,7 +612,7 @@ impl IpAddressDescription {
             node_key,
             timestamp,
             ip_address
-        }.into()
+        }
     }
 
     pub fn get_key(&self) -> &str {
@@ -691,7 +644,7 @@ impl GraphDescription {
             nodes: hashmap![],
             edges: hashmap![],
             timestamp
-        }.into()
+        }
     }
 
 
@@ -705,7 +658,7 @@ impl GraphDescription {
         self.edges
             .entry(key)
             .or_insert_with(|| {
-                EdgeList { edges: vec![] }.into()
+                EdgeList { edges: vec![] }
             });
     }
 
@@ -730,12 +683,12 @@ impl GraphDescription {
             from_neighbor_key: from.clone(),
             to_neighbor_key: to,
             edge_name
-        }.into();
+        };
 
         self.edges
             .entry(from)
             .or_insert_with(|| {
-                EdgeList { edges: Vec::with_capacity(1) }.into()
+                EdgeList { edges: Vec::with_capacity(1) }
             })
             .edges.push(edge);
     }

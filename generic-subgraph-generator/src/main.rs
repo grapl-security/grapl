@@ -10,6 +10,7 @@ extern crate regex;
 extern crate serde;
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
+extern crate uuid;
 
 use failure::Error;
 use graph_descriptions::*;
@@ -64,30 +65,32 @@ fn handle_outbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription 
     // A process creates an outbound connection to dst_port
     // Another process must have an inbound connection to src_port
     // Or the other process is external/ not running the instrumentation
-    let process = ProcessDescription::new(
-        HostIdentifier::IpAddress(conn_log.src_addr.clone().into_bytes()),
-        ProcessState::Existing,
-        conn_log.pid,
-        conn_log.timestamp,
-        vec![],
-        vec![]
-    );
+    let process = ProcessDescriptionBuilder::default()
+        .host_ip(conn_log.src_addr.clone().into_bytes())
+        .state(ProcessState::Existing)
+        .pid(conn_log.pid)
+        .timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
-    let outbound = OutboundConnection::new(
-        HostIdentifier::IpAddress(conn_log.src_addr.clone().into_bytes()),
-        ConnectionState::Created,
-        conn_log.src_port,
-        conn_log.timestamp
-    );
+    let outbound = OutboundConnectionBuilder::default()
+        .host_ip(conn_log.src_addr.clone().into_bytes())
+        .state(ConnectionState::Created)
+        .port(conn_log.src_port)
+        .timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
 
     if is_internal_ip(&conn_log.dst_addr.clone().into_bytes()) {
-        let inbound = InboundConnection::new(
-            HostIdentifier::IpAddress(conn_log.dst_addr.clone().into_bytes()),
-            ConnectionState::Existing,
-            conn_log.dst_port,
-            conn_log.timestamp
-        );
+        let inbound = InboundConnectionBuilder::default()
+            .host_ip(conn_log.dst_addr.clone().into_bytes())
+            .state(ConnectionState::Existing)
+            .port(conn_log.dst_port)
+            .timestamp(conn_log.timestamp)
+            .build()
+            .unwrap();
+
         graph.add_edge("connection",
                        outbound.clone_key(),
                        inbound.clone_key());
@@ -121,31 +124,32 @@ fn handle_inbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription {
         conn_log.timestamp
     );
 
-    let process = ProcessDescription::new(
-        HostIdentifier::IpAddress(conn_log.src_addr.clone().into_bytes()),
-        ProcessState::Existing,
-        conn_log.pid,
-        conn_log.timestamp,
-        vec![],
-        vec![]
-    );
+    let process = ProcessDescriptionBuilder::default()
+        .host_ip(conn_log.src_addr.clone().into_bytes())
+        .state(ProcessState::Existing)
+        .pid(conn_log.pid)
+        .timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
     // Inbound is the 'src', at least in sysmon
-    let inbound = InboundConnection::new(
-        HostIdentifier::IpAddress(conn_log.src_addr.clone().into_bytes()),
-        ConnectionState::Created,
-        conn_log.src_port,
-        conn_log.timestamp
-    );
+    let inbound = InboundConnectionBuilder::default()
+        .host_ip(conn_log.src_addr.clone().into_bytes())
+        .state(ConnectionState::Created)
+        .port(conn_log.src_port)
+        .timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
 
     if is_internal_ip(&conn_log.dst_addr.clone().into_bytes()) {
-        let outbound = InboundConnection::new(
-            HostIdentifier::IpAddress(conn_log.dst_addr.clone().into_bytes()),
-            ConnectionState::Existing,
-            conn_log.dst_port,
-            conn_log.timestamp
-        );
+        let outbound = InboundConnectionBuilder::default()
+            .host_ip(conn_log.dst_addr.clone().into_bytes())
+            .state(ConnectionState::Created)
+            .port(conn_log.src_port)
+            .timestamp(conn_log.timestamp)
+            .build()
+            .unwrap();
 
         graph.add_edge("connection",
                        outbound.clone_key(),
@@ -242,32 +246,32 @@ fn handle_process_start(process_start: ProcessStart) -> GraphDescription {
         process_start.timestamp
     );
 
-    let parent = ProcessDescription::new(
-        HostIdentifier::AssetId(process_start.asset_id.clone()),
-        ProcessState::Existing,
-        process_start.ppid,
-        process_start.timestamp,
-        vec![],
-        vec![]
-    );
+    let parent = ProcessDescriptionBuilder::default()
+        .asset_id(process_start.asset_id.clone())
+        .state(ProcessState::Existing)
+        .pid(process_start.ppid)
+        .timestamp(process_start.timestamp)
+        .build()
+        .unwrap();
 
-    let child = ProcessDescription::new(
-        HostIdentifier::AssetId(process_start.asset_id.clone()),
-        ProcessState::Created,
-        process_start.pid,
-        process_start.timestamp,
-        process_start.name.clone().into_bytes(),
-        vec![]
-    );
+    let child = ProcessDescriptionBuilder::default()
+        .asset_id(process_start.asset_id.clone())
+        .state(ProcessState::Created)
+        .pid(process_start.pid)
+        .timestamp(process_start.timestamp)
+        .build()
+        .unwrap();
+
 
     if let Some(exe_path) = process_start.exe {
 
-        let child_exe = FileDescription::new(
-            HostIdentifier::AssetId(process_start.asset_id),
-            FileState::Existing,
-            process_start.timestamp,
-            exe_path.clone().into_bytes(),
-        );
+        let child_exe = FileDescriptionBuilder::default()
+            .asset_id(process_start.asset_id)
+            .state(FileState::Existing)
+            .timestamp(process_start.timestamp)
+            .path(exe_path)
+            .build()
+            .unwrap();
 
         graph.add_edge("bin_file",
             child.clone_key(),
@@ -291,14 +295,13 @@ fn handle_process_start(process_start: ProcessStart) -> GraphDescription {
 }
 
 fn handle_process_stop(process_stop: ProcessStop) -> GraphDescription {
-    let terminated_process = ProcessDescription::new(
-        HostIdentifier::AssetId(process_stop.asset_id),
-        ProcessState::Terminated,
-        process_stop.pid,
-        process_stop.timestamp,
-        process_stop.name.clone().into_bytes(),
-        vec![]
-    );
+    let terminated_process = ProcessDescriptionBuilder::default()
+        .asset_id(process_stop.asset_id.clone())
+        .state(ProcessState::Terminated)
+        .pid(process_stop.pid)
+        .timestamp(process_stop.timestamp)
+        .build()
+        .unwrap();
 
     let mut graph = GraphDescription::new(
         process_stop.timestamp
@@ -309,21 +312,21 @@ fn handle_process_stop(process_stop: ProcessStop) -> GraphDescription {
 }
 
 fn handle_file_delete(file_delete: FileDelete) -> GraphDescription {
-    let deleter = ProcessDescription::new(
-        HostIdentifier::AssetId(file_delete.asset_id.clone()),
-        ProcessState::Existing,
-        file_delete.deleter_pid,
-        file_delete.timestamp,
-        vec![],
-        vec![]
-    );
+    let deleter = ProcessDescriptionBuilder::default()
+        .asset_id(file_delete.asset_id.clone())
+        .state(ProcessState::Existing)
+        .pid(file_delete.deleter_pid)
+        .timestamp(file_delete.timestamp)
+        .build()
+        .unwrap();
 
-    let file = FileDescription::new(
-        HostIdentifier::AssetId(file_delete.asset_id),
-        FileState::Deleted,
-        file_delete.timestamp,
-        file_delete.path.clone().into_bytes(),
-    );
+    let file = FileDescriptionBuilder::default()
+        .asset_id(file_delete.asset_id)
+        .state(FileState::Deleted)
+        .timestamp(file_delete.timestamp)
+        .path(file_delete.path)
+        .build()
+        .unwrap();
 
     let mut graph = GraphDescription::new(
         file_delete.timestamp
@@ -339,21 +342,21 @@ fn handle_file_delete(file_delete: FileDelete) -> GraphDescription {
 }
 
 fn handle_file_create(file_creator: FileCreate) -> GraphDescription {
-    let creator = ProcessDescription::new(
-        HostIdentifier::AssetId(file_creator.asset_id.clone()),
-        ProcessState::Existing,
-        file_creator.creator_pid,
-        file_creator.timestamp,
-        vec![],
-        vec![]
-    );
+    let creator = ProcessDescriptionBuilder::default()
+        .asset_id(file_creator.asset_id.clone())
+        .state(ProcessState::Existing)
+        .pid(file_creator.creator_pid)
+        .timestamp(file_creator.timestamp)
+        .build()
+        .unwrap();
 
-    let file = FileDescription::new(
-        HostIdentifier::AssetId(file_creator.asset_id),
-        FileState::Created,
-        file_creator.timestamp,
-        file_creator.path.clone().into_bytes(),
-    );
+    let file = FileDescriptionBuilder::default()
+        .asset_id(file_creator.asset_id)
+        .state(FileState::Created)
+        .timestamp(file_creator.timestamp)
+        .path(file_creator.path)
+        .build()
+        .unwrap();
 
     info!("file {}", file.clone().into_json());
 
@@ -371,21 +374,21 @@ fn handle_file_create(file_creator: FileCreate) -> GraphDescription {
 }
 
 fn handle_file_write(file_write: FileWrite) -> GraphDescription {
-    let deleter = ProcessDescription::new(
-        HostIdentifier::AssetId(file_write.asset_id.clone()),
-        ProcessState::Existing,
-        file_write.writer_pid,
-        file_write.timestamp,
-        vec![],
-        vec![]
-    );
+    let deleter = ProcessDescriptionBuilder::default()
+        .asset_id(file_write.asset_id.clone())
+        .state(ProcessState::Existing)
+        .pid(file_write.writer_pid)
+        .timestamp(file_write.timestamp)
+        .build()
+        .unwrap();
 
-    let file = FileDescription::new(
-        HostIdentifier::AssetId(file_write.asset_id),
-        FileState::Existing,
-        file_write.timestamp,
-        file_write.path.clone().into_bytes(),
-    );
+    let file = FileDescriptionBuilder::default()
+        .asset_id(file_write.asset_id)
+        .state(FileState::Existing)
+        .timestamp(file_write.timestamp)
+        .path(file_write.path)
+        .build()
+        .unwrap();
 
     let mut graph = GraphDescription::new(
         file_write.timestamp
@@ -401,21 +404,21 @@ fn handle_file_write(file_write: FileWrite) -> GraphDescription {
 }
 
 fn handle_file_read(file_read: FileRead) -> GraphDescription {
-    let deleter = ProcessDescription::new(
-        HostIdentifier::AssetId(file_read.asset_id.clone()),
-        ProcessState::Existing,
-        file_read.reader_pid,
-        file_read.timestamp,
-        vec![],
-        vec![]
-    );
+    let deleter = ProcessDescriptionBuilder::default()
+        .asset_id(file_read.asset_id.clone())
+        .state(ProcessState::Existing)
+        .pid(file_read.reader_pid)
+        .timestamp(file_read.timestamp)
+        .build()
+        .unwrap();
 
-    let file = FileDescription::new(
-        HostIdentifier::AssetId(file_read.asset_id),
-        FileState::Existing,
-        file_read.timestamp,
-        file_read.path.clone().into_bytes(),
-    );
+    let file = FileDescriptionBuilder::default()
+        .asset_id(file_read.asset_id)
+        .state(FileState::Existing)
+        .timestamp(file_read.timestamp)
+        .path(file_read.path)
+        .build()
+        .unwrap();
 
     let mut graph = GraphDescription::new(
         file_read.timestamp

@@ -11,7 +11,7 @@ bytes = "0.4"
 prost = "0.4"
 prost-derive = "0.4"
 
-typed-builder= "0.1.0"
+typed-builder= "0.1.1"
 sha3="*"
 
 derive_more = "0.10.*"
@@ -31,4 +31,4 @@ features = ["v4"]
 
 
 [build-dependencies]
-tower-grpc-build = { git = "https://github.com/tower-rs/tower-grpc" }
+prost-build = "0.4.0"
