@@ -19,6 +19,9 @@ extern crate uuid;
 extern crate prost;
 extern crate futures_await as futures;
 extern crate sha2;
+extern crate lru_time_cache;
+
+use lru_time_cache::LruCache;
 
 
 macro_rules! log_time {
@@ -36,6 +39,8 @@ macro_rules! log_time {
 
 pub mod ip_asset_history;
 pub mod session_history;
+pub mod cache;
+pub mod session;
 
 use base58::ToBase58;
 use stopwatch::Stopwatch;
@@ -66,8 +71,11 @@ use rusoto_core::Region;
 use sqs_microservice::handle_s3_sns_sqs_proto;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::time::Duration;
+use std::sync::Arc;
+use std::sync::Mutex;
 
-
+use cache::IdentityCache;
 
 pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error> {
     info!("Uploading identified subgraphs");
@@ -115,6 +123,12 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
 }
 
 pub fn identify_nodes(should_default: bool) {
+    let max_count = 100_000;
+    let time_to_live = Duration::from_secs(60 * 5);
+
+
+    // TODO: Update the library to allow for customizing the hasher
+    let lru_cache = IdentityCache::new(max_count, time_to_live, b"pepper");
 
 
     handle_s3_sns_sqs_proto( move |mut subgraphs: GeneratedSubgraphs| {
@@ -148,6 +162,7 @@ pub fn identify_nodes(should_default: bool) {
 
         let mut result = Ok(());
         for unid_subgraph in subgraphs.subgraphs {
+            let lru_cache = lru_cache.clone();
             let _result: Result<(), Error> = (|| {
                 let mut output_subgraph = GraphDescription::new(unid_subgraph.timestamp);
                 let mut unid_subgraph: GraphDescription = unid_subgraph.into();
@@ -181,7 +196,8 @@ pub fn identify_nodes(should_default: bool) {
                     &mut dead_node_ids,
                     &unid_subgraph,
                     &mut output_subgraph,
-                    should_default
+                    should_default,
+                    lru_cache
                 );
 
                 if let e @ Err(_) = r {
@@ -196,6 +212,7 @@ pub fn identify_nodes(should_default: bool) {
                     remap_edges(&unid_id_map, &dead_node_ids, &unid_subgraph, &mut output_subgraph)
                 }
 
+//                lru_cache.check_cache("a");
 
                 let r = upload_identified_graphs(output_subgraph);
                 if let e @ Err(_) = r {
@@ -206,6 +223,8 @@ pub fn identify_nodes(should_default: bool) {
 
                 result
             })();
+
+
 
             if let e @ Err(_) = _result {
                 error!("error: {:#?}", e);

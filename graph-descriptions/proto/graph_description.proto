@@ -30,7 +30,7 @@ message NodeDescription {
 }
 
 message OutboundConnection {
-    string nodeKey = 1;
+    string node_key = 1;
     google.protobuf.StringValue asset_id = 2;
     google.protobuf.StringValue hostname = 3;
     google.protobuf.BytesValue host_ip = 4;
@@ -41,7 +41,7 @@ message OutboundConnection {
 }
 
 message InboundConnection {
-    string nodeKey = 1;
+    string node_key = 1;
     google.protobuf.StringValue asset_id = 2;
     google.protobuf.StringValue hostname = 3;
     google.protobuf.BytesValue host_ip = 4;
@@ -52,7 +52,7 @@ message InboundConnection {
 }
 
 message ProcessDescription {
-    string nodeKey = 1;
+    string node_key = 1;
     google.protobuf.StringValue asset_id = 2;
     google.protobuf.StringValue hostname = 3;
     google.protobuf.BytesValue host_ip = 4;
@@ -67,7 +67,7 @@ message ProcessDescription {
 }
 
 message FileDescription {
-    string nodeKey = 1;
+    string node_key = 1;
     google.protobuf.StringValue asset_id = 2;
     google.protobuf.StringValue hostname = 3;
     google.protobuf.BytesValue host_ip = 4;
@@ -78,7 +78,7 @@ message FileDescription {
 }
 
 message IpAddressDescription {
-    string nodeKey = 1;
+    string node_key = 1;
     uint64 timestamp = 2;
     bytes ip_address = 3;
 }

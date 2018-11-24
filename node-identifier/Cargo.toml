@@ -32,6 +32,7 @@ sha2 = "0.7.1"
 log = "*"
 base58 = "0.1.0"
 stopwatch = "0.0.7"
+lru_time_cache = "0.8.0"
 
 [dependencies.uuid]
 version = "*"
