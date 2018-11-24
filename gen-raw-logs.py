@@ -36,10 +36,10 @@ class ProcessLogGenerator(object):
         }
 
 
-asset_a = "asset_zzj"
-asset_b = "asset2_7"
-asset_a_ip = "172.23.4.7"
-asset_b_ip = "172.26.7.10"
+asset_a = "asset_zzl"
+asset_b = "asset2_9"
+asset_a_ip = "172.23.4.9"
+asset_b_ip = "172.26.7.12"
 
 def generate_basic_process_logs():
     logs = []
