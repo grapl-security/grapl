@@ -5,14 +5,13 @@ import sqs = require('@aws-cdk/aws-sqs');
 import ec2 = require('@aws-cdk/aws-ec2');
 import rds = require('@aws-cdk/aws-rds');
 import lambda = require('@aws-cdk/aws-lambda');
-import {cloudformation, PrefixList, SubnetType, TcpAllPorts, VpcNetwork} from "@aws-cdk/aws-ec2";
-import {Stack, Token} from "@aws-cdk/cdk";
+import {SubnetType} from "@aws-cdk/aws-ec2";
+import {Token} from "@aws-cdk/cdk";
 import {Bucket} from "@aws-cdk/aws-s3";
 import {Topic} from "@aws-cdk/aws-sns";
-import {DatabaseCluster, DatabaseClusterRefProps} from "@aws-cdk/aws-rds";
-import SecurityGroupEgressResource = cloudformation.SecurityGroupEgressResource;
+import {DatabaseCluster} from "@aws-cdk/aws-rds";
 
-var env = require('node-env-file');
+const env = require('node-env-file');
 
 function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetworkRef, username: Token, password: Token): DatabaseCluster {
     return new rds.DatabaseCluster(stack, 'HistoryDb', {
