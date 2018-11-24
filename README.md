@@ -126,6 +126,8 @@ Grapl is primarily built in Rust, with the Analyzers being built in Python.
 
 ### Building the binaries
 
+Built lambda packages are provided in the `grapl-cdk` directory. Otherwise, you can build them manually.
+
 In order to build the rust binaries for aws lambda you'll need to use the
 [rust-musl-builder](https://github.com/emk/rust-musl-builder/) project.
 (You'll need this patch https://github.com/emk/rust-musl-builder/pull/57#discussion_r225104037 )
