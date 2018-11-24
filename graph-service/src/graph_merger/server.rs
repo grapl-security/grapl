@@ -62,6 +62,7 @@ pub fn main() {
         let mut dgraph_client =
             dgraph_client::new_client("db.mastergraph:9080");
         println!("connected to db.mastergraph");
+
         set_process_schema(&mut dgraph_client);
         set_file_schema(&mut dgraph_client);
         set_ip_address_schema(&mut dgraph_client);

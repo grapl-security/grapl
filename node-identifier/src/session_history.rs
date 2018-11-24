@@ -11,165 +11,8 @@ use uuid;
 use mysql::IsolationLevel;
 
 use stopwatch::Stopwatch;
-
-//macro_rules! log_time {
-//    ($msg:expr, $x:expr) => {
-//        {
-//            let mut sw = Stopwatch::start_new();
-//            #[allow(path_statements)]
-//            let result = $x;
-//            sw.stop();
-//            info!("{} {} milliseconds", $msg, sw.elapsed_ms());
-//            result
-//        }
-//    };
-//}
-
-pub trait Session: Debug {
-    fn get_table_name(&self) -> &'static str;
-    fn get_key_name(&self) -> &'static str;
-    fn get_key(&self) -> Cow<str>;
-    fn get_asset_id(&self) -> &str;
-    fn get_timestamp(&self) -> u64;
-    fn get_action(&self) -> Action;
-}
-
-pub enum Action {
-    Create,
-    UpdateOrCreate,
-    Terminate
-}
-
-impl<'a> Session for &'a ProcessDescription {
-    fn get_table_name(&self) -> &'static str {
-        "process_history"
-    }
-
-    fn get_key_name(&self) -> &'static str {
-        "pid"
-    }
-
-    fn get_key(&self) -> Cow<str> {
-        Cow::Owned(self.pid.to_string())
-    }
-
-    fn get_asset_id(&self) -> &str {
-        self.asset_id()
-    }
-
-    fn get_timestamp(&self) -> u64 {
-        self.timestamp
-    }
-
-    fn get_action(&self) -> Action {
-        match ProcessState::from(self.state) {
-            ProcessState::Created => Action::Create,
-            ProcessState::Existing => Action::UpdateOrCreate,
-            ProcessState::Terminated => Action::Terminate
-        }
-    }
-}
-
-
-impl<'a> Session for &'a FileDescription {
-    fn get_table_name(&self) -> &'static str {
-        "file_history"
-    }
-
-    fn get_key_name(&self) -> &'static str {
-        "path"
-    }
-
-    fn get_key(&self) -> Cow<str> {
-        Cow::Borrowed(str::from_utf8(&self.path).expect("Failed utf8 path"))
-    }
-
-    fn get_asset_id(&self) -> &str {
-        self.asset_id()
-    }
-
-    fn get_timestamp(&self) -> u64 {
-        self.timestamp
-    }
-
-    fn get_action(&self) -> Action {
-        match FileState::from(self.state) {
-            FileState::Created => Action::Create,
-            FileState::Existing => Action::UpdateOrCreate,
-            FileState::Deleted => Action::Terminate
-        }
-    }
-}
-
-
-impl<'a> Session for &'a OutboundConnection {
-    fn get_table_name(&self) -> &'static str {
-        "connection_history"
-    }
-
-    fn get_key_name(&self) -> &'static str {
-        "dir_port_ip"
-    }
-
-    fn get_key(&self) -> Cow<str> {
-        let mut key = String::new();
-        key.push_str("outbound");
-        key.push_str(&self.port.to_string());
-        key.push_str(self.asset_id());
-        Cow::Owned(key)
-    }
-
-    fn get_asset_id(&self) -> &str {
-        self.asset_id()
-    }
-
-    fn get_timestamp(&self) -> u64 {
-        self.timestamp - (self.timestamp % 10)
-    }
-
-    fn get_action(&self) -> Action {
-        match ConnectionState::from(self.state) {
-            ConnectionState::Created => Action::Create,
-            ConnectionState::Existing => Action::UpdateOrCreate,
-            ConnectionState::Terminated => Action::Terminate
-        }
-    }
-}
-
-impl<'a> Session for &'a InboundConnection {
-    fn get_table_name(&self) -> &'static str {
-        "connection_history"
-    }
-
-    fn get_key_name(&self) -> &'static str {
-        "dir_port_ip"
-    }
-
-    fn get_key(&self) -> Cow<str> {
-        let mut key = String::new();
-        key.push_str("inbound");
-        key.push_str(&self.port.to_string());
-        key.push_str(self.asset_id());
-        Cow::Owned(key)
-    }
-
-    fn get_asset_id(&self) -> &str {
-        self.asset_id()
-    }
-
-    fn get_timestamp(&self) -> u64 {
-        self.timestamp - (self.timestamp % 10)
-    }
-
-    fn get_action(&self) -> Action {
-        match ConnectionState::from(self.state) {
-            ConnectionState::Created => Action::Create,
-            ConnectionState::Existing => Action::UpdateOrCreate,
-            ConnectionState::Terminated => Action::Terminate
-        }
-    }
-}
-
+use cache::IdentityCache;
+use session::{Session, Action};
 
 pub fn get_session_id(conn: &mut Transaction, session: & impl Session) -> Result<Option<String>, Error> {
 
@@ -348,7 +191,7 @@ pub fn create_connection_table(conn: &Pool) {
 
 pub fn attribute_session_node(conn: &mut Transaction,
                               node: impl Session,
-                              should_default: bool
+                              should_default: bool,
 ) -> Result<String, Error> {
 
     let session_id = match node.get_action() {
@@ -391,7 +234,8 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                                 dead_node_keys: &mut HashSet<String>,
                                 unid_subgraph: &GraphDescription,
                                 output_subgraph: &mut GraphDescription,
-                                should_default: bool
+                                should_default: bool,
+                                cache: IdentityCache,
 ) -> Result<(), Error> {
 
     // Maps old session ids to new ones
@@ -401,8 +245,18 @@ pub fn map_session_ids_to_graph(conn: &Pool,
         let node: NodeDescription = _node.1.into();
         match node.which() {
             Node::ProcessNode(mut node) => {
+
+
                 info!("Mapping sesion id for ProcessNode. pid {}", node.pid);
-                let old_id = node.clone_key().to_owned();
+                let old_id = node.clone_key();
+
+                let session_id = cache.check_cache(&node)?;
+                if let Some(new_node_key) = session_id {
+                    node.set_key(new_node_key.clone());
+                    key_map.insert(old_id, new_node_key.clone());
+                    output_subgraph.nodes.insert(new_node_key, node.into());
+                    continue
+                }
 
                 let mut tx = conn.start_transaction(
                     false,
@@ -418,7 +272,8 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                         tx.commit().expect("transaction commit failed");
                         node.set_key(new_node_key.clone());
                         key_map.insert(old_id, new_node_key.clone());
-                        output_subgraph.nodes.insert(new_node_key, node.into());
+                        output_subgraph.nodes.insert(new_node_key.clone(), node.clone().into());
+                        cache.update_cache(&node, new_node_key);
                     }
                     Err(e) => {
                         tx.rollback().expect("transaction rollback failed");
@@ -430,7 +285,15 @@ pub fn map_session_ids_to_graph(conn: &Pool,
             }
             Node::FileNode(mut node) => {
                 info!("Mapping sesion id for FileNode");
-                let old_id = node.clone_key().to_owned();
+                let old_id = node.clone_key();
+
+                let session_id = cache.check_cache(&node)?;
+                if let Some(new_node_key) = session_id {
+                    node.set_key(new_node_key.clone());
+                    key_map.insert(old_id, new_node_key.clone());
+                    output_subgraph.nodes.insert(new_node_key, node.into());
+                    continue
+                }
 
                 let mut tx = conn.start_transaction(
                     false,
@@ -446,7 +309,8 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                         tx.commit().expect("transaction commit failed");
                         node.set_key(new_node_key.clone());
                         key_map.insert(old_id, new_node_key.clone());
-                        output_subgraph.nodes.insert(new_node_key, node.into());
+                        output_subgraph.nodes.insert(new_node_key.clone(), node.clone().into());
+                        cache.update_cache(&node, new_node_key);
                     }
                     Err(e) => {
                         tx.rollback().expect("transaction rollback failed");
@@ -458,7 +322,15 @@ pub fn map_session_ids_to_graph(conn: &Pool,
             }
             Node::OutboundConnectionNode(mut node) => {
                 info!("Mapping sesion id for OutboundConnectionNode");
-                let old_id = node.clone_key().to_owned();
+                let old_id = node.clone_key();
+
+                let session_id = cache.check_cache(&node)?;
+                if let Some(new_node_key) = session_id {
+                    node.set_key(new_node_key.clone());
+                    key_map.insert(old_id, new_node_key.clone());
+                    output_subgraph.nodes.insert(new_node_key, node.into());
+                    continue
+                }
 
                 let mut tx = conn.start_transaction(
                     false,
@@ -474,7 +346,8 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                         tx.commit().expect("transaction commit failed");
                         node.set_key(new_node_key.clone());
                         key_map.insert(old_id, new_node_key.clone());
-                        output_subgraph.nodes.insert(new_node_key, node.into());
+                        output_subgraph.nodes.insert(new_node_key.clone(), node.clone().into());
+                        cache.update_cache(&node, new_node_key);
                     }
                     Err(e) => {
                         tx.rollback().expect("transaction rollback failed");
@@ -486,7 +359,14 @@ pub fn map_session_ids_to_graph(conn: &Pool,
             }
             Node::InboundConnectionNode(mut node) => {
                 info!("Mapping sesion id for InboundConnectionNode");
-                let old_id = node.clone_key().to_owned();
+                let old_id = node.clone_key();
+                let session_id = cache.check_cache(&node)?;
+                if let Some(new_node_key) = session_id {
+                    node.set_key(new_node_key.clone());
+                    key_map.insert(old_id, new_node_key.clone());
+                    output_subgraph.nodes.insert(new_node_key, node.into());
+                    continue
+                }
 
                 let mut tx = conn.start_transaction(
                     false,
@@ -502,7 +382,8 @@ pub fn map_session_ids_to_graph(conn: &Pool,
                         tx.commit().expect("transaction commit failed");
                         node.set_key(new_node_key.clone());
                         key_map.insert(old_id, new_node_key.clone());
-                        output_subgraph.nodes.insert(new_node_key, node.into());
+                        output_subgraph.nodes.insert(new_node_key.clone(), node.clone().into());
+                        cache.update_cache(&node, new_node_key);
                     }
                     Err(e) => {
                         tx.rollback().expect("transaction rollback failed");

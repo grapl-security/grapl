@@ -432,7 +432,7 @@ fn handle_results(thread_handles: Vec<JoinHandle<()>>,
 }
 
 
-pub fn handle_s3_sns_sqs_proto<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone + Send + 'static,
+pub fn handle_s3_sns_sqs_proto<M, T>(f: impl FnMut(M) -> Result<T, Error> + Clone + Send + 'static,
                                      on_success: impl Fn(T) -> Result<(), Error> + Clone + Send + 'static)
     where M: Message + Default + 'static
 {
@@ -448,7 +448,7 @@ pub fn handle_s3_sns_sqs_proto<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone +
 
         for sqs_msg in sqs_event.records {
 
-            let f = f.clone();
+            let mut f = f.clone();
             let on_success = on_success.clone();
             let tx = tx.clone();
 

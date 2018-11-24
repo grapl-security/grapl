@@ -256,6 +256,7 @@ fn handle_process_start(process_start: ProcessStart) -> GraphDescription {
 
     let child = ProcessDescriptionBuilder::default()
         .asset_id(process_start.asset_id.clone())
+        .image_name(process_start.name)
         .state(ProcessState::Created)
         .pid(process_start.pid)
         .timestamp(process_start.timestamp)
@@ -296,6 +297,7 @@ fn handle_process_start(process_start: ProcessStart) -> GraphDescription {
 
 fn handle_process_stop(process_stop: ProcessStop) -> GraphDescription {
     let terminated_process = ProcessDescriptionBuilder::default()
+        .image_name(process_stop.name)
         .asset_id(process_stop.asset_id.clone())
         .state(ProcessState::Terminated)
         .pid(process_stop.pid)
@@ -315,6 +317,7 @@ fn handle_file_delete(file_delete: FileDelete) -> GraphDescription {
     let deleter = ProcessDescriptionBuilder::default()
         .asset_id(file_delete.asset_id.clone())
         .state(ProcessState::Existing)
+        .image_name(file_delete.deleter_name)
         .pid(file_delete.deleter_pid)
         .timestamp(file_delete.timestamp)
         .build()
@@ -344,6 +347,7 @@ fn handle_file_delete(file_delete: FileDelete) -> GraphDescription {
 fn handle_file_create(file_creator: FileCreate) -> GraphDescription {
     let creator = ProcessDescriptionBuilder::default()
         .asset_id(file_creator.asset_id.clone())
+        .image_name(file_creator.creator_name)
         .state(ProcessState::Existing)
         .pid(file_creator.creator_pid)
         .timestamp(file_creator.timestamp)
@@ -375,6 +379,7 @@ fn handle_file_create(file_creator: FileCreate) -> GraphDescription {
 
 fn handle_file_write(file_write: FileWrite) -> GraphDescription {
     let deleter = ProcessDescriptionBuilder::default()
+        .image_name(file_write.writer_name)
         .asset_id(file_write.asset_id.clone())
         .state(ProcessState::Existing)
         .pid(file_write.writer_pid)
@@ -405,6 +410,7 @@ fn handle_file_write(file_write: FileWrite) -> GraphDescription {
 
 fn handle_file_read(file_read: FileRead) -> GraphDescription {
     let deleter = ProcessDescriptionBuilder::default()
+        .image_name(file_read.reader_name)
         .asset_id(file_read.asset_id.clone())
         .state(ProcessState::Existing)
         .pid(file_read.reader_pid)

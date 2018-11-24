@@ -5,10 +5,11 @@ import sqs = require('@aws-cdk/aws-sqs');
 import ec2 = require('@aws-cdk/aws-ec2');
 import rds = require('@aws-cdk/aws-rds');
 import lambda = require('@aws-cdk/aws-lambda');
-import {SubnetType} from "@aws-cdk/aws-ec2";
+import iam = require('@aws-cdk/aws-iam');
+import {SubnetType, VpcNetworkRef} from "@aws-cdk/aws-ec2";
 import {Token} from "@aws-cdk/cdk";
-import {Bucket} from "@aws-cdk/aws-s3";
-import {Topic} from "@aws-cdk/aws-sns";
+import {Bucket, BucketRef} from "@aws-cdk/aws-s3";
+import {Topic, TopicRef} from "@aws-cdk/aws-sns";
 import {DatabaseCluster} from "@aws-cdk/aws-rds";
 
 const env = require('node-env-file');
@@ -35,7 +36,106 @@ function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetworkRef, username: Toke
 
 }
 
-function subscribe_lambda_to_queue(stack: cdk.Stack, id: string, fn: lambda.Function, queue: sqs.Queue) {
+class Queues {
+    queue: sqs.Queue;
+    retry_queue: sqs.Queue;
+    dead_letter_queue: sqs.Queue;
+
+    constructor(stack: cdk.Stack, queue_name: string) {
+        this.dead_letter_queue = new sqs.Queue(stack, queue_name + '-dead-letter');
+
+        this.retry_queue = new sqs.Queue(stack, queue_name + '-retry', {
+            deadLetterQueue: {queue: this.dead_letter_queue, maxReceiveCount: 10}
+        });
+
+        this.queue = new sqs.Queue(stack, queue_name, {
+            deadLetterQueue: {queue: this.retry_queue, maxReceiveCount: 5}
+        });
+
+    }
+}
+
+class Service {
+    event_handler: lambda.Function;
+    event_retry_handler: lambda.Function;
+    queues: Queues;
+
+    constructor(stack: cdk.Stack, name: string, environment?: any, vpc?: VpcNetworkRef, retry_code_name?: string) {
+        const queues = new Queues(stack, name + '-queue');
+
+        let event_handler = new lambda.Function(
+            stack, name, {
+                runtime: lambda.Runtime.Go1x,
+                handler: name,
+                code: lambda.Code.file(`./${name}.zip`),
+                vpc: vpc,
+                environment: environment,
+                timeout: 30
+            }
+        );
+
+        if (!retry_code_name) {
+            retry_code_name = name
+        }
+
+        let event_retry_handler = new lambda.Function(
+            stack, name + '-retry-handler', {
+                runtime: lambda.Runtime.Go1x,
+                handler: retry_code_name,
+                code: lambda.Code.file(`./${retry_code_name}.zip`),
+                vpc: vpc,
+                environment: environment,
+                timeout: 30
+            }
+        );
+
+        const camelName = name.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase(); });
+
+        subscribe_lambda_to_queue(stack, camelName, event_handler, queues.queue);
+        subscribe_lambda_to_queue(stack, camelName + 'Retry', event_retry_handler, queues.retry_queue);
+
+        this.queues = queues;
+        this.event_handler = event_handler;
+        this.event_retry_handler = event_retry_handler;
+    }
+
+    readsFrom(bucket: BucketRef) {
+        this.event_handler.addToRolePolicy(new iam.PolicyStatement()
+            .addAction('s3:GetObject')
+            .addAction('s3:ActionGetBucket')
+            .addResource(bucket.bucketArn));
+
+        this.event_retry_handler.addToRolePolicy(new iam.PolicyStatement()
+            .addAction('s3:GetObject')
+            .addAction('s3:ActionGetBucket')
+            .addResource(bucket.bucketArn));
+
+        bucket.grantRead(this.event_handler.role);
+        bucket.grantRead(this.event_retry_handler.role);
+    }
+
+    publishesTo(publishes_to: TopicRef | BucketRef) {
+        if (publishes_to instanceof TopicRef) {
+            this.event_handler.addToRolePolicy(new iam.PolicyStatement()
+                .addAction('sns:CreateTopic')
+                .addResource(publishes_to.topicArn));
+
+            this.event_retry_handler.addToRolePolicy(new iam.PolicyStatement()
+                .addAction('sns:CreateTopic')
+                .addResource(publishes_to.topicArn));
+
+            publishes_to.grantPublish(this.event_handler.role);
+            publishes_to.grantPublish(this.event_retry_handler.role);
+
+        } else {
+            publishes_to.grantWrite(this.event_handler.role);
+            publishes_to.grantWrite(this.event_retry_handler.role);
+        }
+    }
+}
+
+
+function subscribe_lambda_to_queue(stack: cdk.Stack, id: string, fn: lambda.Function, queue: sqs.QueueRefProps) {
 
     // TODO: Build the S3 Endpoint and allow traffic only through that endpoint
     new lambda.cloudformation.EventSourceMappingResource(stack, id + 'Events', {
@@ -43,12 +143,26 @@ function subscribe_lambda_to_queue(stack: cdk.Stack, id: string, fn: lambda.Func
         eventSourceArn: queue.queueArn
     });
 
-    fn.addToRolePolicy(new cdk.PolicyStatement()
+    fn.addToRolePolicy(new iam.PolicyStatement()
         .addAction('sqs:ReceiveMessage')
         .addAction('sqs:DeleteMessage')
         .addAction('sqs:GetQueueAttributes')
-        .addAction('sqs:*')
+        .addAction('sqs:GetQueueUrl')
         .addResource(queue.queueArn));
+}
+
+class SessionIdentityCache extends cdk.Stack {
+    constructor(parent: cdk.App, vpc_props: ec2.VpcNetworkRefProps) {
+        super(parent, 'session-identity-cache-stack');
+
+        // const zone = new route53.PrivateHostedZone(this, 'HostedZone', {
+        //     zoneName: 'sessionid.cache',
+        //     vpc_props
+        // });
+
+
+    }
+
 }
 
 class EventEmitters extends cdk.Stack {
@@ -170,37 +284,15 @@ class GenericSubgraphGenerator extends cdk.Stack {
             writes_to_props
         );
 
-        // Generic subgraph generator
-        let generic_subgraph_generator = new lambda.Function(
-            this, 'generic-subgraph-generator', {
-                runtime: lambda.Runtime.Go1x,
-                handler: 'generic-subgraph-generator',
-                code: lambda.Code.file('./generic-subgraph-generator.zip'),
-                environment: {
-                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-                },
-                timeout: 30
-            }
-        );
+        const environment = {
+                "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            };
 
-        generic_subgraph_generator.addToRolePolicy(new cdk.PolicyStatement()
-            .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket')
-            .addAction('s3:ActionList')
-            .addResource(reads_from.bucketArn));
+        const service = new Service(this, 'generic-subgraph-generator', environment);
 
-
-        reads_from.grantRead(generic_subgraph_generator.role);
-
-
-
-        let generic_subgraph_generator_queue =
-            new sqs.Queue(this, 'generic-subgraph-generator-queue');
-
-        subscribe_lambda_to_queue(this, 'genericSubgraphGenerator', generic_subgraph_generator, generic_subgraph_generator_queue);
-        event_producer.subscribeQueue(generic_subgraph_generator_queue);
-
-        writes_to.grantWrite(generic_subgraph_generator.role);
+        service.readsFrom(reads_from);
+        event_producer.subscribeQueue(service.queues.queue);
+        service.publishesTo(writes_to);
     }
 }
 
@@ -238,43 +330,30 @@ class NodeIdentityMapper extends cdk.Stack {
             vpc_props
         );
 
-        let node_identity_mapper = new lambda.Function(
-            this, 'node-identity-mapper', {
-                runtime: lambda.Runtime.Go1x,
-                handler: 'node-identity-mapper',
-                code: lambda.Code.file('./node-identity-mapper.zip'),
-                vpc: vpc,
-                environment: {
-                    "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
-                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
-                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-                },
-                timeout: 30
-            }
-        );
+        let environment = {
+            "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
+            "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+        };
 
-        node_identity_mapper.addToRolePolicy(new cdk.PolicyStatement()
-            .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket')
-            .addAction('s3:ActionList')
-            .addResource(reads_from.bucketArn));
+        let service = new Service(this, 'node-identity-mapper', environment, vpc);
 
-        reads_from.grantRead(node_identity_mapper.role);
 
-        let node_identity_mapper_queue =
-            new sqs.Queue(this, 'node-identity-mapper-queue');
-
-        subscribe_lambda_to_queue(this, 'nodeIdentityMapper', node_identity_mapper, node_identity_mapper_queue);
+        service.readsFrom(reads_from);
 
         history_db.connections.allowDefaultPortFrom(
-            node_identity_mapper,
+            service.event_handler,
             'node-identity-mapper-history-db'
         );
 
-        event_producer.subscribeQueue(node_identity_mapper_queue);
+        history_db.connections.allowDefaultPortFrom(
+            service.event_retry_handler,
+            'node-identity-mapper-retry-handler-history-db'
+        );
+        event_producer.subscribeQueue(service.queues.queue);
 
-        node_identity_mapper.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
-
+        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
     }
 }
 
@@ -318,94 +397,29 @@ class NodeIdentifier extends cdk.Stack {
             'vpc',
             vpc_props
         );
+        const environment = {
+            "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
+            "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+        };
 
-        // Add retry handler for node identifier retry handler
-        let node_identifier_rth_dead_letter_queue =
-            new sqs.Queue(this, 'node-identifier-rth-dead-letter-queue');
-
-        let node_identifier_retry_handler = new lambda.Function(
-            this, 'node-identifier-retry-handler', {
-                runtime: lambda.Runtime.Go1x,
-                handler: 'node-identifier-retry-handler',
-                code: lambda.Code.file('./node-identifier-retry-handler.zip'),
-                vpc: vpc,
-                environment: {
-                    "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
-                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
-                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-                },
-                timeout: 30
-            }
-        );
-
-        node_identifier_retry_handler.addToRolePolicy(new cdk.PolicyStatement()
-            .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket')
-            .addAction('s3:ActionList')
-            .addResource(reads_from.bucketArn));
-
-        reads_from.grantRead(node_identifier_retry_handler.role);
-
-        let node_identifier_retry_handler_queue =
-            new sqs.Queue(this, 'node-identifier-retry-handler-queue', {
-                deadLetterQueue: {queue: node_identifier_rth_dead_letter_queue, maxReceiveCount: 5}
-            });
-
-        subscribe_lambda_to_queue(
-            this,
-            'nodeIdentifierRetryHandler',
-            node_identifier_retry_handler,
-            node_identifier_retry_handler_queue
-        );
-
-        // Node Identifier
-        let node_identifier = new lambda.Function(
-            this, 'node-identifier', {
-                runtime: lambda.Runtime.Go1x,
-                handler: 'node-identifier',
-                code: lambda.Code.file('./node-identifier.zip'),
-                vpc: vpc,
-                environment: {
-                    "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
-                    "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
-                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-                },
-                timeout: 30
-            }
-        );
-
-        node_identifier.addToRolePolicy(new cdk.PolicyStatement()
-            .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket')
-            .addAction('s3:ActionList')
-            .addResource(reads_from.bucketArn));
-
-        reads_from.grantRead(node_identifier.role);
-
-        let node_identifier_queue =
-            new sqs.Queue(this, 'node-identifier-queue', {
-                deadLetterQueue: {queue: node_identifier_retry_handler_queue, maxReceiveCount: 5}
-            });
-
-        subscribe_lambda_to_queue(this, 'nodeIdentifier', node_identifier, node_identifier_queue);
+        const service = new Service(this, 'node-identifier', environment, vpc, 'node-identifier-retry-handler');
+        service.readsFrom(reads_from);
 
         history_db.connections.allowDefaultPortFrom(
-          node_identifier,
+          service.event_handler,
           'node-identifier-history-db'
         );
 
         history_db.connections.allowDefaultPortFrom(
-            node_identifier_retry_handler,
+            service.event_retry_handler,
             'node-identifier-retry-handler-history-db'
         );
 
-        event_producer.subscribeQueue(node_identifier_queue);
-
-        writes_to.grantWrite(node_identifier.role);
-        writes_to.grantWrite(node_identifier_retry_handler.role);
-
-        node_identifier.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
-        node_identifier_retry_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
+        service.publishesTo(writes_to);
+        event_producer.subscribeQueue(service.queues.queue);
+        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
 
     }
 }
@@ -445,95 +459,22 @@ class GraphMerger extends cdk.Stack {
             vpc_props
         );
 
-        let graph_merger = new lambda.Function(
-            this, 'graph-merger', {
-                runtime: lambda.Runtime.Go1x,
-                handler: 'graph-merger',
-                code: lambda.Code.file('./graph-merger.zip'),
-                vpc: vpc,
-                environment: {
-                    "GRAPH_MERGER": process.env.GRAPH_MERGER_READ_BUCKET,
-                    "GRAPH_MERGER_WRITE_TOPIC": process.env.GRAPH_MERGER_WRITE_TOPIC,
-                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-                },
-                timeout: 30
-            }
-        );
+        const environment = {
+            "GRAPH_MERGER": process.env.GRAPH_MERGER_READ_BUCKET,
+            "GRAPH_MERGER_WRITE_TOPIC": process.env.GRAPH_MERGER_WRITE_TOPIC,
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+        };
 
-        let graph_merger_queue =
-            new sqs.Queue(this, 'graph-merger-queue');
+        const service = new Service(this, 'graph-merger', environment, vpc);
 
-        subscribe_lambda_to_queue(this, 'graphMerger', graph_merger, graph_merger_queue);
+        service.readsFrom(reads_from);
+        service.publishesTo(publishes_to);
 
-        graph_merger.addToRolePolicy(new cdk.PolicyStatement()
-            .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket')
-            .addAction('s3:ActionList')
-            .addResource(reads_from.bucketArn));
+        event_producer.subscribeQueue(service.queues.queue);
 
+        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
 
-        graph_merger.addToRolePolicy(new cdk.PolicyStatement()
-            .addAction('sns:CreateTopic')
-            .addResource(publishes_to.topicArn));
-
-        reads_from.grantRead(graph_merger.role);
-        event_producer.subscribeQueue(graph_merger_queue);
-        publishes_to.grantPublish(graph_merger.role);
-        graph_merger.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
-
-    }
-}
-
-class WordMacroAnalyzer extends cdk.Stack {
-
-    constructor(parent: cdk.App,
-                id: string,
-                event_producer_props: sns.TopicRefProps,
-                publishes_to_props: sns.TopicRefProps,
-                vpc_props: ec2.VpcNetworkRefProps
-    ) {
-        super(parent, id + '-stack');
-
-
-        const event_producer = Topic.import(
-            this,
-            'event_producer',
-            event_producer_props
-        );
-
-        const publishes_to = sns.Topic.import(
-            this,
-            'publishes_to',
-            publishes_to_props
-        );
-
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
-        let word_macro_analyzer = new lambda.Function(
-            this, 'word-macro-analyzer', {
-                runtime: lambda.Runtime.Python36,
-                handler: 'word-macro-analyzer.lambda_handler',
-                code: lambda.Code.file('./word-macro-analyzer.zip'),
-                vpc: vpc,
-            }
-        );
-
-        let word_macro_analyzer_queue =
-            new sqs.Queue(this, 'word-macro-analyzer-queue');
-
-        subscribe_lambda_to_queue(
-            this,
-            'wordMacroAnalyzer',
-            word_macro_analyzer,
-            word_macro_analyzer_queue
-        );
-
-        event_producer.subscribeQueue(word_macro_analyzer_queue);
-
-        publishes_to.grantPublish(word_macro_analyzer.role);
     }
 }
 
@@ -571,7 +512,13 @@ class EngagementCreationService extends cdk.Stack {
         let engagement_creation_service_queue =
             new sqs.Queue(this, 'engagement-creation-service-queue');
 
-        subscribe_lambda_to_queue(this, 'engagementCreator', engagement_creation_service, engagement_creation_service_queue);
+        subscribe_lambda_to_queue(
+            this,
+            'engagementCreator',
+            engagement_creation_service,
+            engagement_creation_service_queue
+        );
+
         event_producer.subscribeQueue(engagement_creation_service_queue);
     }
 }
@@ -614,8 +561,8 @@ class HistoryDb extends cdk.Stack {
 }
 
 class Grapl extends cdk.App {
-    constructor(argv: string[]) {
-        super(argv);
+    constructor() {
+        super();
 
         const env_file = env(__dirname + '/.env');
 
@@ -667,13 +614,6 @@ class Grapl extends cdk.App {
             network.grapl_vpc
         );
 
-        new WordMacroAnalyzer(
-            this,
-            'word-macro-analyzer',
-            event_emitters.subgraph_merged_topic,
-            event_emitters.incident_topic,
-            network.grapl_vpc
-        );
 
         new EngagementCreationService(
             this,
@@ -684,7 +624,7 @@ class Grapl extends cdk.App {
     }
 }
 
-process.stdout.write(new Grapl(process.argv).run());
+new Grapl().run();
 //
 // cdk deploy vpcs-stack && \
 // cdk deploy event-emitters-stack && \
