@@ -6,7 +6,6 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 [dependencies]
 bytes = "0.4"
 failure = "*"
-futures-await = "0.1.1"
 sqs-microservice = {path = "./sqs-microservice"}
 graph-descriptions = {path = "./graph-descriptions"}
 prost = "0.4.0"
@@ -24,6 +23,7 @@ mysql = "14.1.0"
 serde = "1.0.80"
 serde_json = "1.0.32"
 serde_derive = "1.0.80"
+futures = "0.1.25"
 
 
 [dependencies.uuid]

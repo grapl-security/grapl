@@ -1,5 +1,3 @@
-#![feature(nll)]
-
 extern crate node_identifier;
 
 use node_identifier::identify_nodes;

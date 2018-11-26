@@ -8,7 +8,7 @@ import string
 import boto3
 import json
 import random
-
+import zstd
 
 def rand_str(l):
     # type: (int) -> str
@@ -36,10 +36,10 @@ class ProcessLogGenerator(object):
         }
 
 
-asset_a = "asset_zzl"
-asset_b = "asset2_9"
-asset_a_ip = "172.23.4.9"
-asset_b_ip = "172.26.7.12"
+asset_a = "asset_zzm"
+asset_b = "asset2_10"
+asset_a_ip = "172.23.4.10"
+asset_b_ip = "172.26.7.13"
 
 def generate_basic_process_logs():
     logs = []
@@ -264,8 +264,8 @@ def main():
     print(raw_logs)
     epoch = int(time.time())
 
-    mapping_body = json.dumps(identity_mappings())
-    serialized_raw_logs = json.dumps(raw_logs)
+    mapping_body = zstd.compress(json.dumps(identity_mappings()), 4)
+    serialized_raw_logs = zstd.compress(json.dumps(raw_logs), 4)
 
     s3 = boto3.client('s3')
 

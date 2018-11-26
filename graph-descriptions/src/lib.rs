@@ -1,4 +1,3 @@
-#![feature(nll, stdsimd)]
 extern crate base64;
 #[macro_use] extern crate custom_derive;
 #[macro_use]

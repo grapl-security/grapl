@@ -1,5 +1,3 @@
-#![feature(test, nll, proc_macro_non_items, generators, async_await, use_extern_macros)]
-
 extern crate aws_lambda as lambda;
 extern crate base64;
 extern crate bytes;

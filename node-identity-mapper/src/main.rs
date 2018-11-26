@@ -1,5 +1,3 @@
-#![feature(nll)]
-
 #[macro_use] extern crate prost_derive;
 #[macro_use] extern crate log;
 #[macro_use] extern crate mysql;
@@ -11,7 +9,7 @@ extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate uuid;
 extern crate prost;
-extern crate futures_await as futures;
+extern crate futures;
 extern crate sha2;
 extern crate sqs_microservice;
 

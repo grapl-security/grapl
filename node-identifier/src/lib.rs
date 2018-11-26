@@ -1,5 +1,3 @@
-#![feature(nll)]
-
 #[macro_use]
 extern crate mysql;
 
@@ -17,9 +15,10 @@ extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate uuid;
 extern crate prost;
-extern crate futures_await as futures;
+extern crate futures;
 extern crate sha2;
 extern crate lru_time_cache;
+extern crate zstd;
 
 use lru_time_cache::LruCache;
 
@@ -76,6 +75,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use cache::IdentityCache;
+use std::io::Cursor;
 
 pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error> {
     info!("Uploading identified subgraphs");
@@ -83,11 +83,16 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
         Region::UsEast1
     );
 
-
     let subgraph: GraphDescription = subgraph.into();
 
-    let mut body = Vec::new();
+    let mut body = Vec::with_capacity(5000);
     subgraph.encode(&mut body).expect("Failed to encode subgraph");
+
+    let mut compressed = Vec::with_capacity(body.len());
+    let mut proto = Cursor::new(&body);
+
+    zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
+        .expect("compress zstd capnp");
 
     let mut hasher = Sha256::default();
     hasher.input(&body);
@@ -100,8 +105,6 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
     let epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH).unwrap().as_secs();
 
-    //
-    // by day
     let day = epoch - (epoch % (24 * 60 * 60));
 
     let key = format!("{}/{}",
@@ -113,7 +116,7 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
         &rusoto_s3::PutObjectRequest {
             bucket,
             key: key.clone(),
-            body: Some(body),
+            body: Some(compressed),
             ..Default::default()
         }
     ).wait()?;
@@ -128,6 +131,7 @@ pub fn identify_nodes(should_default: bool) {
 
 
     // TODO: Update the library to allow for customizing the hasher
+    let username = env::var("HISTORY_DB_USERNAME").expect("IDENTITY_CACHE_PEPPER");
     let lru_cache = IdentityCache::new(max_count, time_to_live, b"pepper");
 
 

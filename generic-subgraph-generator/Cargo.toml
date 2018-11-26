@@ -15,6 +15,7 @@ log = "0.4.3"
 base16 = "0.1.1"
 regex = "1.0.5"
 lazy_static = "1.1.0"
+brotli = "3.1.0"
 
 
 [dependencies.uuid]

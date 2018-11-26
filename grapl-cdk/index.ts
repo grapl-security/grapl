@@ -6,13 +6,15 @@ import ec2 = require('@aws-cdk/aws-ec2');
 import rds = require('@aws-cdk/aws-rds');
 import lambda = require('@aws-cdk/aws-lambda');
 import iam = require('@aws-cdk/aws-iam');
-import {SubnetType, VpcNetworkRef} from "@aws-cdk/aws-ec2";
+import {SubnetType, VpcNetwork, VpcNetworkRef} from "@aws-cdk/aws-ec2";
 import {Token} from "@aws-cdk/cdk";
 import {Bucket, BucketRef} from "@aws-cdk/aws-s3";
 import {Topic, TopicRef} from "@aws-cdk/aws-sns";
 import {DatabaseCluster} from "@aws-cdk/aws-rds";
+import {QueueRef} from "@aws-cdk/aws-sqs";
 
-const env = require('node-env-file');
+
+var env = require('node-env-file');
 
 function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetworkRef, username: Token, password: Token): DatabaseCluster {
     return new rds.DatabaseCluster(stack, 'HistoryDb', {
@@ -195,12 +197,12 @@ class EventEmitters extends cdk.Stack {
             });
 
         let unid_subgraphs_generated_bucket = new s3.Bucket(
-                this,
-                id + '-unid-subgraphs-generated-bucket',
-                {
-                    bucketName: process.env.BUCKET_PREFIX + "-unid-subgraphs-generated-bucket"
-                }
-            );
+            this,
+            id + '-unid-subgraphs-generated-bucket',
+            {
+                bucketName: process.env.BUCKET_PREFIX + "-unid-subgraphs-generated-bucket"
+            }
+        );
         let subgraphs_generated_bucket =
             new s3.Bucket(this, id + '-subgraphs-generated-bucket', {
                 bucketName: process.env.BUCKET_PREFIX + "-subgraphs-generated-bucket"
@@ -263,7 +265,7 @@ class GenericSubgraphGenerator extends cdk.Stack {
                 reads_from_props: s3.BucketRefProps,
                 event_producer_props: sns.TopicRefProps,
                 writes_to_props: s3.BucketRefProps,
-                ) {
+    ) {
         super(parent, id + '-stack');
 
         const reads_from = Bucket.import(
@@ -285,8 +287,8 @@ class GenericSubgraphGenerator extends cdk.Stack {
         );
 
         const environment = {
-                "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-            };
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+        };
 
         const service = new Service(this, 'generic-subgraph-generator', environment);
 
@@ -378,7 +380,7 @@ class NodeIdentifier extends cdk.Stack {
             this,
             'history-db',
             history_db_props
-            );
+        );
 
         const event_producer = Topic.import(
             this,
@@ -397,18 +399,20 @@ class NodeIdentifier extends cdk.Stack {
             'vpc',
             vpc_props
         );
+            
         const environment = {
             "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
             "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
-            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
+            "IDENTITY_CACHE_PEPPER": process.env.IDENTITY_CACHE_PEPPER,
         };
 
         const service = new Service(this, 'node-identifier', environment, vpc, 'node-identifier-retry-handler');
         service.readsFrom(reads_from);
 
         history_db.connections.allowDefaultPortFrom(
-          service.event_handler,
-          'node-identifier-history-db'
+            service.event_handler,
+            'node-identifier-history-db'
         );
 
         history_db.connections.allowDefaultPortFrom(
@@ -547,7 +551,7 @@ class HistoryDb extends cdk.Stack {
                 grapl_vpc_props: ec2.VpcNetworkRefProps,
                 username: cdk.Token,
                 password: cdk.Token
-                ) {
+    ) {
         super(parent, id + '-stack');
 
         const grapl_vpc = ec2.VpcNetwork.import(
@@ -578,12 +582,12 @@ class Grapl extends cdk.App {
 
         let event_emitters = new EventEmitters(this, 'event-emitters');
         new GenericSubgraphGenerator(
-                this,
-                'generic-subgraph-generator',
-                event_emitters.raw_logs_bucket,
-                event_emitters.raw_logs_topic,
-                event_emitters.unid_subgraphs_generated_bucket
-            );
+            this,
+            'generic-subgraph-generator',
+            event_emitters.raw_logs_bucket,
+            event_emitters.raw_logs_topic,
+            event_emitters.unid_subgraphs_generated_bucket
+        );
 
 
         new NodeIdentityMapper(

@@ -12,6 +12,7 @@ extern crate rusoto_core;
 extern crate sqs_microservice;
 extern crate graph_descriptions;
 extern crate serde_json;
+extern crate zstd;
 
 use rusoto_core::Region;
 use rusoto_s3::{S3, S3Client, PutObjectRequest};
@@ -29,6 +30,7 @@ use std::time::UNIX_EPOCH;
 use sqs_microservice::*;
 
 use graph_descriptions::graph_description::*;
+use std::io::Cursor;
 
 #[inline(always)]
 pub fn handle_json_encoded_logs(f: impl (Fn(Vec<Value>)
@@ -80,7 +82,7 @@ pub fn send_logs_to_generators(
 pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
     // TODO: Preallocate buffers
     info!("upload_subgraphs");
-    let mut proto = Vec::with_capacity(512);
+    let mut proto = Vec::with_capacity(5000);
     subgraphs.encode(&mut proto)?;
 
     let mut hasher = Sha256::default();
@@ -105,10 +107,15 @@ pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
 
     let s3_client = S3Client::simple(Region::UsEast1);
 
+    let mut compressed = Vec::with_capacity(proto.len());
+    let mut proto = Cursor::new(&proto);
+    zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
+        .expect("compress zstd capnp");
+
     s3_client.put_object(&PutObjectRequest {
         bucket,
         key,
-        body: Some(proto.into()),
+        body: Some(compressed.into()),
         ..Default::default()
     }).wait()?;
 

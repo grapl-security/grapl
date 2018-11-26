@@ -1,4 +1,3 @@
-#![feature(nll)]
 #[macro_use]
 extern crate failure;
 extern crate graph_descriptions;
@@ -119,7 +118,7 @@ fn handle_outbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription 
     graph
 }
 
-fn handle_inbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription {
+fn handle_inbound_traffic(conn_log: InboundConnectionLog) -> GraphDescription {
     let mut graph = GraphDescription::new(
         conn_log.timestamp
     );
@@ -176,6 +175,7 @@ fn handle_inbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription {
     graph.add_node(inbound);
     graph.add_node(process);
 
+    println!("generated inbound subgraph {:#?}", graph);
     graph
 }
 
@@ -443,15 +443,16 @@ fn handle_log(raw_log: Value) -> Result<GraphDescription, Error> {
     let sourcetype = raw_log["sourcetype"].as_str().unwrap();
 
     info!("Parsing log of type: {}", sourcetype);
+    // TODO: nll will make the cloning unnecessary
     let graph = match sourcetype {
-        "FILE_READ" => handle_file_read(serde_json::from_value(raw_log)?),
-        "FILE_WRITE" => handle_file_write(serde_json::from_value(raw_log)?),
-        "FILE_CREATE" => handle_file_create(serde_json::from_value(raw_log)?),
-        "FILE_DELETE" => handle_file_delete(serde_json::from_value(raw_log)?),
-        "PROCESS_START" => handle_process_start(serde_json::from_value(raw_log)?),
-        "PROCESS_STOP" => handle_process_stop(serde_json::from_value(raw_log)?),
-        "INBOUND_TCP" => handle_inbound_traffic(serde_json::from_value(raw_log)?),
-        "OUTBOUND_TCP" => handle_outbound_traffic(serde_json::from_value(raw_log)?),
+        "FILE_READ" => handle_file_read(serde_json::from_value(raw_log.clone())?),
+        "FILE_WRITE" => handle_file_write(serde_json::from_value(raw_log.clone())?),
+        "FILE_CREATE" => handle_file_create(serde_json::from_value(raw_log.clone())?),
+        "FILE_DELETE" => handle_file_delete(serde_json::from_value(raw_log.clone())?),
+        "PROCESS_START" => handle_process_start(serde_json::from_value(raw_log.clone())?),
+        "PROCESS_STOP" => handle_process_stop(serde_json::from_value(raw_log.clone())?),
+        "INBOUND_TCP" => handle_inbound_traffic(serde_json::from_value(raw_log.clone())?),
+        "OUTBOUND_TCP" => handle_outbound_traffic(serde_json::from_value(raw_log.clone())?),
         _ => bail!("invalid sourcetype")
     };
 

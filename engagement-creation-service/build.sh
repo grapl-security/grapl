@@ -2,7 +2,7 @@
 cp -r "../graph-descriptions" . &&
 cp -r "../incident-graph" . &&
 cp -r "../sqs-microservice"  . &&
-docker run --rm -it -v "$(pwd)":/home/rust/src -t 3b07546503c6 cargo build --release &&
+docker run --rm -it -v "$(pwd)":/home/rust/src -t ea24bf58caa2 cargo build --release &&
 cp "./target/x86_64-unknown-linux-musl/release/engagement-creation-service" . &&
 zip "./engagement-creation-service.zip" "./engagement-creation-service" &&
 cp "./engagement-creation-service.zip" "../grapl-cdk/" &&

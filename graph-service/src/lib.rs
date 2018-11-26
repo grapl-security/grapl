@@ -1,7 +1,7 @@
 extern crate base64;
 extern crate dgraph_client;
 extern crate failure;
-extern crate futures_await as futures;
+extern crate futures;
 extern crate graph_descriptions;
 extern crate hash_hasher;
 #[macro_use]
@@ -61,6 +61,7 @@ pub fn upsert_with_retries(client: &DgraphClient, node: &NodeDescription) -> Res
                 }
                 warn!("Upsert failed, retrying: {}", e);
                 retries -= 1;
+                std::thread::sleep_ms(10 * (10 - retries));
             }
         }
     }

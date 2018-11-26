@@ -145,11 +145,9 @@ mod tests {
 
     impl<'a> IdentityKeyable for &'a MockKeyable {
         fn get_cache_key(&self, pepper: &[u8]) -> Vec<u8> {
-           self.get_cache_key(pepper)
+            self.get_cache_key(pepper)
         }
-        fn get_future_cache_key(&self, pepper: &[u8]) -> Vec<u8> {
-           self.get_future_cache_key(pepper)
-        }
+        fn get_future_cache_key(&self, pepper: &[u8]) -> Vec<u8> {self.get_future_cache_key(pepper)}
     }
 
     impl IdentityKeyable for MockKeyable {
@@ -162,7 +160,7 @@ mod tests {
             hasher.input(timestamp.as_bytes());
             hasher.input(pepper);
 
-            let key= hasher.result();
+            let key = hasher.result();
 
             key.to_vec()
         }
@@ -175,7 +173,7 @@ mod tests {
             hasher.input(timestamp.as_bytes());
             hasher.input(pepper);
 
-            let key= hasher.result();
+            let key = hasher.result();
 
             key.to_vec()
         }
@@ -191,7 +189,7 @@ mod tests {
         );
 
         let identity = "identity";
-        
+
         let keyable = MockKeyable {
             timestamp: 1234,
             key: &b"key"[..],
@@ -203,9 +201,7 @@ mod tests {
 
 
     #[test]
-    fn test_set_get_skew() {
-
-    }
+    fn test_set_get_skew() {}
 
     #[test]
     fn test_set_get_preload() {
@@ -213,3 +209,4 @@ mod tests {
         // Please note, that private functions can be tested too!
 //        assert_eq!(bad_add(1, 2), 3);
     }
+}

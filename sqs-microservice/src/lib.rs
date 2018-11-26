@@ -1,9 +1,7 @@
-#![feature(nll, test, proc_macro_non_items, generators, async_await, use_extern_macros)]
-
 extern crate aws_lambda as lambda;
 extern crate base64;
+extern crate futures;
 #[macro_use] extern crate failure;
-#[macro_use] extern crate futures_await as futures;
 #[macro_use] extern crate log;
 extern crate openssl_probe;
 extern crate prost;
@@ -14,10 +12,10 @@ extern crate serde;
 extern crate serde_json;
 extern crate stopwatch;
 extern crate tokio_core;
+extern crate zstd;
 
 use failure::Error;
 use futures::Future;
-use futures::prelude::{async, async_block, await};
 use futures::Stream;
 use lambda::event::s3::S3Event;
 use lambda::event::sns::*;
@@ -37,6 +35,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use stopwatch::Stopwatch;
 use tokio_core::reactor::{Core, Handle};
+use std::io::Cursor;
 
 macro_rules! log_time {
     ($msg: expr, $x:expr) => {
@@ -52,48 +51,40 @@ macro_rules! log_time {
 }
 
 
-#[async]
 fn read_raw_message<S>(s3_client: Rc<S>, bucket: String, path: String) -> Result<Vec<u8>, Error>
     where S: S3 + 'static
 {
     info!("Fetching data from {} {}", bucket, path);
 
-    let object = await!(s3_client.get_object(&GetObjectRequest {
+    let object = s3_client.get_object(&GetObjectRequest {
             bucket: bucket.to_owned(),
             key: path.clone(),
             ..GetObjectRequest::default()
-        })).expect(&format!("get_object {} {}", bucket, path));
+        }).wait().expect(&format!("get_object {} {}", bucket, path));
 
-    let mut body = vec![];
 
-    #[async]
-    for chunk in object.body.expect("object.body") {
-        body.extend_from_slice(&chunk);
+    let mut body = Vec::with_capacity(5000);
+
+    for chunk in object.body.unwrap().wait() {
+        body.extend_from_slice(&chunk.unwrap());
     }
 
-    Ok(body)
+    let mut decompressed = Vec::with_capacity(body.len() * 2);
+
+    let mut body = Cursor::new(&body);
+
+    zstd::stream::copy_decode(&mut body, &mut decompressed)
+        .expect("decompress zstd proto");
+
+    Ok(decompressed)
 }
 
-#[async]
+
 fn read_message<M, S>(s3_client: Rc<S>, bucket: String, path: String) -> Result<M, Error>
     where M: Message + Default,
           S: S3 + 'static
 {
-    info!("Fetching data from {} {}", bucket, path);
-    let object = await!(s3_client.get_object(&GetObjectRequest {
-            bucket: bucket.to_owned(),
-            key: path,
-            ..GetObjectRequest::default()
-        })).unwrap();
-
-    let mut body = vec![];
-
-    #[async]
-    for chunk in object.body.unwrap() {
-        body.extend_from_slice(&chunk);
-    }
-
-    Ok(M::decode(body)?)
+    Ok(M::decode(read_raw_message(s3_client, bucket, path)?)?)
 }
 
 
@@ -117,21 +108,22 @@ pub fn get_raw_messages(event: S3Event) -> Result<Vec<Vec<u8>>, Error>
 
     let s3_client = Rc::new(s3_client);
 
-    paths.into_iter()
+    Ok(
+        paths.into_iter()
         .map(|(bucket, object)| {
             log_time!{
                 "read_raw_message",
-                read_raw_message(s3_client.clone(), bucket, object).wait()
+                read_raw_message(s3_client.clone(), bucket, object).unwrap()
             }
         }).collect()
+    )
 }
 
-
-//#[async]
 pub fn get_messages<M>(event: S3Event) -> Result<Vec<M>, Error>
     where M: Message + Default
 {
-    // NOTE that `paths` should be assumed to be of length 1
+    // NOTE that `paths` should be assumed to be of length 1+
+
     // https://stackoverflow.com/questions/28484421/
     // does-sqs-really-send-multiple-s3-put-object-records-per-message
     let paths: Vec<_> = event.records.into_iter().map(|record| {
@@ -146,13 +138,15 @@ pub fn get_messages<M>(event: S3Event) -> Result<Vec<M>, Error>
 
     let s3_client = Rc::new(s3_client);
 
-    paths.into_iter()
-        .map(|(bucket, object)| {
-            log_time!{
+    Ok(
+        paths.into_iter()
+            .map(|(bucket, object)| {
+                log_time!{
                 "read_message",
-                read_message(s3_client.clone(), bucket, object).wait()
+                read_message(s3_client.clone(), bucket, object).unwrap()
             }
-        }).collect()
+            }).collect()
+    )
 }
 
 #[inline(always)]
@@ -182,7 +176,6 @@ pub fn handle_raw_event<T>(f: impl Fn(Vec<u8>) -> Result<T, Error> + Clone + Sen
 
                 tx.send((message.receipt_handle.unwrap(),
                          message.event_source_arn.unwrap())).unwrap();
-//                Ok(())
             });
         }
 
@@ -248,7 +241,6 @@ pub fn handle_message<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone + Send + '
 
                 tx.send((message.receipt_handle.unwrap(),
                          message.event_source_arn.unwrap())).unwrap();
-//                Ok(())
             });
         }
 
