@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package subgraph_merge_event;
-
-message SubgraphMerged {
-    uint64 earliest = 1;
-    uint64 latest = 2;
-}

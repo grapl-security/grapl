@@ -148,7 +148,6 @@ pub fn identify_nodes(should_default: bool) {
         ).unwrap();
 
         info!("Connected to history database");
-        info!("subgraphs: {:#?}", subgraphs);
 
         info!("Handling {} subgraphs", subgraphs.subgraphs.len());
 

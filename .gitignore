@@ -18,8 +18,8 @@ generic-subgraph-generator/graph-descriptions/
 generic-subgraph-generator/sqs-microservice/
 generic-subgraph-generator/graph-generator-lib/
 
-graph-service/graph-descriptions/
-graph-service/sqs-microservice/
+graph-merger/graph-descriptions/
+graph-merger/sqs-microservice/
 
 node-identity-mapper/graph-descriptions/
 node-identity-mapper/sqs-microservice/
