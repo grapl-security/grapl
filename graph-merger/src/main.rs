@@ -37,13 +37,11 @@ struct Uid {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct DgraphResponse {
-    // TODO: Custom hasher for qN key format
-    // TODO: SmallVec<1>
     response: IntHashMap<String, Vec<Uid>>,
 }
 
 struct DgraphQuery<'a> {
-    node_key: &'a str,  // TODO: Make this a &'a str
+    node_key: &'a str,
     s_key: String,
     query: String,
     insert: serde_json::Value,
@@ -80,8 +78,7 @@ impl<'a> From<(usize, &'a NodeDescription)> for DgraphQuery<'a> {
             }}
         "#, s_key=s_key, node_key=node_key);
 
-
-        let mut insert = (*node).clone().into_json();
+        let insert = (*node).clone().into_json();
 
         DgraphQuery {
             node_key,
@@ -171,8 +168,6 @@ impl<'a> BulkUpserter<'a> {
         let mut req = dgraph_client::api::Request::new();
 
         req.query = self.query_buffer.to_string();
-
-//        info!("query_buffer: {}", self.query_buffer);
 
         let resp = self.client.query(&req).expect("upsert query");
 
@@ -279,27 +274,27 @@ fn generate_edge_insert(to: &str, from: &str, edge_name: &str) -> String {
         }
     }).to_string()
 }
-
-enum NodeType {
-    Process,
-    File,
-    OutboundNetwork,
-    InboundNetwork,
-    IpAddress,
-}
-
-struct OutputMetadata {
-    node_key: String,
-    uid: String,
-    node_type: NodeType,
-    was_created: bool,
-}
-
-struct MergeResults {
-    meta: Vec<OutputMetadata>,
-    earliest: u64,
-    latest: u64,
-}
+//
+//enum NodeType {
+//    Process,
+//    File,
+//    OutboundNetwork,
+//    InboundNetwork,
+//    IpAddress,
+//}
+//
+//struct OutputMetadata {
+//    node_key: String,
+//    uid: String,
+//    node_type: NodeType,
+//    was_created: bool,
+//}
+//
+//struct MergeResults {
+//    meta: Vec<OutputMetadata>,
+//    earliest: u64,
+//    latest: u64,
+//}
 
 
 fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> {
@@ -335,21 +330,21 @@ fn main() {
         set_ip_address_schema(&mg_client);
         set_connection_schema(&mg_client);
 
-
         let mut upserter = BulkUpserter::new(
             &mg_client,
         subgraph.nodes.values()
         );
 
-        with_retries(|| upserter.upsert_all())?;
+        // Even if some node upserts fail we should create edges for the ones that succeeded
+        let upsert_res = with_retries(|| upserter.upsert_all());
 
         with_retries(|| {
             let edges = subgraph.edges.values().map(|e| &e.edges).flatten();
             insert_edges(&mg_client, edges, &upserter.node_key_to_uid)
         })?;
 
-        Ok(())
-
+        // Retry any upserts that failed
+        upsert_res
     }, move |_| {
 
         // Encode and compress results
