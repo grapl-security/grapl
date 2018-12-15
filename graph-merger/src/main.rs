@@ -78,7 +78,19 @@ impl<'a> From<(usize, &'a NodeDescription)> for DgraphQuery<'a> {
             }}
         "#, s_key=s_key, node_key=node_key);
 
-        let insert = (*node).clone().into_json();
+        let mut insert = (*node).clone().into_json();
+
+        for value in insert.as_object_mut().unwrap().values_mut() {
+            if let Some(s_value) = value.clone().as_str() {
+                let escaped_value = s_value.replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\'", "\\\'")
+                    .replace("\n", "\\\n")
+                    .replace("\t", "\\\t");
+
+                *value = serde_json::Value::from(escaped_value);
+            }
+        }
 
         DgraphQuery {
             node_key,
@@ -120,7 +132,7 @@ impl<'a> BulkUpserter<'a> {
 
     pub fn upsert_all(&mut self) -> Result<(), Error> {
         let mut txn = dgraph_client::api::TxnContext::new();
-        txn.set_start_ts(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs());
+        txn.set_start_ts(0);
 
         info!("Generating queries");
         // clear, and then fill, the internal query buffer
@@ -128,8 +140,9 @@ impl<'a> BulkUpserter<'a> {
 
         info!("Querying all nodes");
         // Query dgraph for remaining nodes
-        let query_response = self.query_all()?;
+        let (start_ts, query_response) = self.query_all()?;
 
+        txn.set_start_ts(start_ts);
         info!("Generating inserts");
         // Generate upserts
         self.generate_insert(query_response)?;
@@ -138,9 +151,11 @@ impl<'a> BulkUpserter<'a> {
         // perform upsert
         println!("insert_buffer: {}", self.insert_buffer);
         let mut mutation = dgraph_client::api::Mutation::new();
-        mutation.commit_now = true;
+//        mutation.commit_now = true;
+
         mutation.set_json = self.insert_buffer.as_bytes().to_owned();
         let mut_res = self.client.mutate(&mutation)?;
+
 
         txn.set_commit_ts(mut_res.context.get_ref().commit_ts);
 
@@ -164,7 +179,7 @@ impl<'a> BulkUpserter<'a> {
 
     }
 
-    fn query_all(&mut self) -> Result<DgraphResponse, Error> {
+    fn query_all(&mut self) -> Result<(u64, DgraphResponse), Error> {
         let mut req = dgraph_client::api::Request::new();
 
         req.query = self.query_buffer.to_string();
@@ -173,7 +188,7 @@ impl<'a> BulkUpserter<'a> {
 
         println!("{:?}", resp.get_json());
 
-        Ok(DgraphResponse{response: serde_json::from_slice(resp.get_json())?})
+        Ok((resp.txn.as_ref().unwrap().start_ts, DgraphResponse{response: serde_json::from_slice(resp.get_json())?}))
     }
 
 
@@ -191,7 +206,7 @@ impl<'a> BulkUpserter<'a> {
 
                 },
                 // If we get an empty response we just create the node
-                Some([]) => (),
+                Some([]) => to_insert.mut_insert()["uid"] = (),
                 // We should never get more than a single uid back
                 Some(uids) if uids.len() > 1 => bail!("Got more than one response"),
                 // If we generate a query we should never *not* have it in a response
@@ -199,7 +214,10 @@ impl<'a> BulkUpserter<'a> {
                 _ => unreachable!("until slice patterns improve")
 
             };
-            insert_buffer.push_str(&to_insert.get_insert().to_string());
+
+            let insert = &to_insert.get_insert().to_string();
+
+            insert_buffer.push_str(insert);
             insert_buffer.push_str(",");
         }
 

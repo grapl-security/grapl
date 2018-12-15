@@ -32,7 +32,11 @@ pub fn get_session_id(conn: &mut Transaction, session: & impl Session) -> Result
        "#,
         session.get_table_name(),
         session.get_key_name(),
-        key=session.get_key().as_ref(),
+        key=session.get_key().as_ref().replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\'", "\\\'")
+            .replace("\n", "\\\n")
+            .replace("\t", "\\\t"),
         asset_id=session.get_asset_id(),
         create_time=session.get_timestamp()
     );
@@ -77,7 +81,11 @@ pub fn check_exact_session(conn: &mut Transaction, session: & impl Session) -> R
        FROM {}
        WHERE {} = \"{}\" AND asset_id = \"{}\"
              AND create_time = {}",
-        session.get_table_name(), session.get_key_name(), session.get_key(), session.get_asset_id(), session.get_timestamp()
+        session.get_table_name(), session.get_key_name(), session.get_key().replace("\\", "\\\\")
+                            .replace("\"", "\\\"")
+                            .replace("\'", "\\\'")
+                            .replace("\n", "\\\n")
+                            .replace("\t", "\\\t"), session.get_asset_id(), session.get_timestamp()
     );
 
     let query_result = conn.prep_exec(&query, &())?;
@@ -110,7 +118,11 @@ pub fn create_session(conn: &mut Transaction, session: & impl Session) -> Result
           VALUES
               (\"{}\", \"{}\", \"{}\", {})",
         session.get_table_name(),
-        session.get_key_name(), session_id, session.get_key(), session.get_asset_id(), session.get_timestamp()
+        session.get_key_name(), session_id, session.get_key().replace("\\", "\\\\")
+                            .replace("\"", "\\\"")
+                            .replace("\'", "\\\'")
+                            .replace("\n", "\\\n")
+                            .replace("\t", "\\\t"), session.get_asset_id(), session.get_timestamp()
     );
 
     info!("create_session prep_exec {}", &query);

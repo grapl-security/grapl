@@ -72,7 +72,8 @@ class Service {
                 code: lambda.Code.file(`./${name}.zip`),
                 vpc: vpc,
                 environment: environment,
-                timeout: 30
+                timeout: 45,
+                memorySize: 256,
             }
         );
 
@@ -87,7 +88,8 @@ class Service {
                 code: lambda.Code.file(`./${retry_code_name}.zip`),
                 vpc: vpc,
                 environment: environment,
-                timeout: 30
+                timeout: 60,
+                memorySize: 512,
             }
         );
 
@@ -150,6 +152,7 @@ function subscribe_lambda_to_queue(stack: cdk.Stack, id: string, fn: lambda.Func
         .addAction('sqs:DeleteMessage')
         .addAction('sqs:GetQueueAttributes')
         .addAction('sqs:GetQueueUrl')
+        .addAction('sqs:*')
         .addResource(queue.queueArn));
 }
 
@@ -169,6 +172,7 @@ class SessionIdentityCache extends cdk.Stack {
 
 class EventEmitters extends cdk.Stack {
     raw_logs_bucket: s3.BucketRefProps;
+    sysmon_logs_bucket: s3.BucketRefProps;
     identity_mappings_bucket: s3.BucketRefProps;
     unid_subgraphs_generated_bucket: s3.BucketRefProps;
     subgraphs_generated_bucket: s3.BucketRefProps;
@@ -176,6 +180,7 @@ class EventEmitters extends cdk.Stack {
     incident_topic: sns.TopicRefProps;
     identity_mappings_topic: sns.TopicRefProps;
     raw_logs_topic: sns.TopicRefProps;
+    sysmon_logs_topic: sns.TopicRefProps;
     unid_subgraphs_generated_topic: sns.TopicRefProps;
     subgraphs_generated_topic: sns.TopicRefProps;
     subgraph_merged_topic: sns.TopicRefProps;
@@ -187,6 +192,13 @@ class EventEmitters extends cdk.Stack {
             id + '-raw-log-bucket',
             {
                 bucketName: process.env.BUCKET_PREFIX + "-raw-log-bucket"
+            });
+
+        let sysmon_logs_bucket = new s3.Bucket(
+            this,
+            id + '-sysmon-log-bucket',
+            {
+                bucketName: process.env.BUCKET_PREFIX + "-sysmon-log-bucket"
             });
 
         let identity_mappings_bucket = new s3.Bucket(
@@ -217,6 +229,10 @@ class EventEmitters extends cdk.Stack {
             new sns.Topic(this, id +  '-raw-log-topic', {
                 topicName: 'raw-log-topic'
             });
+        let sysmon_logs_topic =
+            new sns.Topic(this, id +  '-sysmon-log-topic', {
+                topicName: 'sysmon-log-topic'
+            });
         let identity_mappings_topic =
             new sns.Topic(this, id +  '-identity-mappings-topic', {
                 topicName: 'identity-mappings-topic'
@@ -238,6 +254,8 @@ class EventEmitters extends cdk.Stack {
 
         raw_logs_bucket
             .onEvent(s3.EventType.ObjectCreated, raw_logs_topic);
+        sysmon_logs_bucket
+            .onEvent(s3.EventType.ObjectCreated, sysmon_logs_topic);
         identity_mappings_bucket
             .onEvent(s3.EventType.ObjectCreated, identity_mappings_topic);
         unid_subgraphs_generated_bucket
@@ -246,18 +264,60 @@ class EventEmitters extends cdk.Stack {
             .onEvent(s3.EventType.ObjectCreated, subgraphs_generated_topic);
 
         this.raw_logs_bucket = raw_logs_bucket.export();
+        this.sysmon_logs_bucket = sysmon_logs_bucket.export();
         this.identity_mappings_bucket = identity_mappings_bucket.export();
         this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket.export();
         this.subgraphs_generated_bucket = subgraphs_generated_bucket.export();
 
         this.incident_topic = incident_topic.export();
         this.raw_logs_topic = raw_logs_topic.export();
+        this.sysmon_logs_topic = sysmon_logs_topic.export();
         this.identity_mappings_topic = identity_mappings_topic.export();
         this.unid_subgraphs_generated_topic = unid_subgraphs_generated_topic.export();
         this.subgraphs_generated_topic = subgraphs_generated_topic.export();
         this.subgraph_merged_topic = subgraph_merged_topic.export();
     }
 }
+
+class SysmonSubgraphGenerator extends cdk.Stack {
+
+    constructor(parent: cdk.App, id: string,
+                reads_from_props: s3.BucketRefProps,
+                event_producer_props: sns.TopicRefProps,
+                writes_to_props: s3.BucketRefProps,
+    ) {
+        super(parent, id + '-stack');
+
+        const reads_from = Bucket.import(
+            this,
+            'reads_from',
+            reads_from_props
+        );
+
+        const event_producer = Topic.import(
+            this,
+            'event_producer',
+            event_producer_props
+        );
+
+        const writes_to = Bucket.import(
+            this,
+            'writes_to',
+            writes_to_props
+        );
+
+        const environment = {
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+        };
+
+        const service = new Service(this, 'sysmon-subgraph-generator', environment);
+
+        service.readsFrom(reads_from);
+        event_producer.subscribeQueue(service.queues.queue);
+        service.publishesTo(writes_to);
+    }
+}
+
 
 class GenericSubgraphGenerator extends cdk.Stack {
 
@@ -586,6 +646,14 @@ class Grapl extends cdk.App {
             'generic-subgraph-generator',
             event_emitters.raw_logs_bucket,
             event_emitters.raw_logs_topic,
+            event_emitters.unid_subgraphs_generated_bucket
+        );
+
+        new SysmonSubgraphGenerator(
+            this,
+            'sysmon-subgraph-generator',
+            event_emitters.sysmon_logs_bucket,
+            event_emitters.sysmon_logs_topic,
             event_emitters.unid_subgraphs_generated_bucket
         );
 

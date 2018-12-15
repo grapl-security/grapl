@@ -10,6 +10,7 @@ extern crate serde;
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
 extern crate uuid;
+use graph_generator_lib::handle_json_encoded_logs;
 
 use failure::Error;
 use graph_descriptions::*;
@@ -30,7 +31,7 @@ pub struct OutboundConnectionLog {
     timestamp: u64,
     sourcetype: String,
 }
-
+x
 
 #[derive(Serialize, Deserialize)]
 pub struct InboundConnectionLog {
