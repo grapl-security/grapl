@@ -208,7 +208,6 @@ pub fn identify_nodes(should_default: bool) {
                     result = e;
                 }
 
-                info!("{:#?}", unid_subgraph);
 
                 log_time! {
                     "remap_edges",

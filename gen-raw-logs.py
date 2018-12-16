@@ -259,16 +259,22 @@ def main():
     s3 = boto3.client('s3')
 
     with open('./events.xml', 'r') as b:
-        body = b.read()
+        body = b.readlines()
 
-    c_body = zstd.compress(body, 4)
-    epoch = int(time.time())
-    res = s3.put_object(
-        Body=c_body,
-        Bucket="grapl-sysmon-log-bucket",
-        Key=str(epoch - (epoch % (24 * 60 * 60))) + "/sysmon/" +
-            str(epoch)
-    )
+    def chunker(seq, size):
+        return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
+
+    for chunks in chunker(body, 7000):
+
+        c_body = zstd.compress("\n".join(chunks), 4)
+        epoch = int(time.time())
+
+        res = s3.put_object(
+            Body=c_body,
+            Bucket="grapl-sysmon-log-bucket",
+            Key=str(epoch - (epoch % (24 * 60 * 60))) + "/sysmon/" +
+                str(epoch) + rand_str(3)
+        )
 
     # now = int(time.time())
     #

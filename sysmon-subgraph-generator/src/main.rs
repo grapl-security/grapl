@@ -37,6 +37,8 @@ macro_rules! log_time {
 }
 
 pub fn utc_to_epoch(utc: &str) -> Result<u64, Error> {
+    let utc_time = "2017-04-28 22:08:22.025";
+
     let dt = NaiveDateTime::parse_from_str(
         utc, "%Y-%m-%d %H:%M:%S%.3f")?;
 
@@ -47,7 +49,7 @@ pub fn utc_to_epoch(utc: &str) -> Result<u64, Error> {
         bail!("Timestamp is negative")
     }
 
-    Ok(1)
+    Ok(ts as u64)
 }
 
 fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescription, Error> {
@@ -142,7 +144,7 @@ fn main() {
             event.split(|i| &[*i][..] == &b"\n"[..]).collect()
         );
 
-        let subgraphs = log_time!(
+        let subgraphs: Vec<_> = log_time!(
             "events par_iter",
              events.into_par_iter().flat_map(move |event| {
                 let event = String::from_utf8_lossy(event);
@@ -180,14 +182,29 @@ fn main() {
             }).collect()
         );
 
+        info!("Completed mapping {} subgraphs", subgraphs.len());
         let graphs = GeneratedSubgraphs {subgraphs};
-//
-//        log_time!(
-//            "upload_subgraphs",
-//            upload_subgraphs(graphs)
-//        )?;
+
+        log_time!(
+            "upload_subgraphs",
+            upload_subgraphs(graphs)
+        )?;
 
 
         Ok(())
     });
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_time() {
+        let utc_time = "2017-04-28 22:08:22.025";
+        let ts = utc_to_epoch(utc_time).unwrap();
+
+    }
+
 }

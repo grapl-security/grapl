@@ -8,21 +8,27 @@ extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 
-extern crate dgraph_client;
+extern crate dgraph_rs;
 extern crate graph_descriptions;
-extern crate int_hash;
 extern crate serde;
 extern crate sqs_microservice;
+extern crate grpc;
 
 use std::collections::HashMap;
 use std::time::SystemTime;
 
-use dgraph_client::api_grpc::DgraphClient;
 use failure::Error;
 use graph_descriptions::graph_description::*;
-use int_hash::IntHashMap;
 use sqs_microservice::handle_s3_sns_sqs_proto;
 
+use dgraph_rs::protos::api;
+use dgraph_rs::protos::api_grpc::{DgraphClient, Dgraph};
+use dgraph_rs::Transaction;
+use dgraph_rs::protos::api_grpc;
+use std::sync::Arc;
+
+use grpc::{Client, ClientStub};
+use grpc::ClientConf;
 
 #[derive(Debug, Fail)]
 enum MergeFailure {
@@ -37,7 +43,7 @@ struct Uid {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct DgraphResponse {
-    response: IntHashMap<String, Vec<Uid>>,
+    response: HashMap<String, Vec<Uid>>,
 }
 
 struct DgraphQuery<'a> {
@@ -106,7 +112,7 @@ struct BulkUpserter<'a> {
     client: &'a DgraphClient,
     query_buffer: String,
     insert_buffer: String,
-    node_key_to_uid: HashMap<&'a str, String>
+    node_key_to_uid: HashMap<String, String>
 }
 
 impl<'a> BulkUpserter<'a> {
@@ -131,8 +137,7 @@ impl<'a> BulkUpserter<'a> {
     }
 
     pub fn upsert_all(&mut self) -> Result<(), Error> {
-        let mut txn = dgraph_client::api::TxnContext::new();
-        txn.set_start_ts(0);
+        let mut txn = Transaction::new(&self.client);
 
         info!("Generating queries");
         // clear, and then fill, the internal query buffer
@@ -140,9 +145,8 @@ impl<'a> BulkUpserter<'a> {
 
         info!("Querying all nodes");
         // Query dgraph for remaining nodes
-        let (start_ts, query_response) = self.query_all()?;
+        let query_response = self.query_all(&mut txn)?;
 
-        txn.set_start_ts(start_ts);
         info!("Generating inserts");
         // Generate upserts
         self.generate_insert(query_response)?;
@@ -150,18 +154,18 @@ impl<'a> BulkUpserter<'a> {
         info!("Performing bulk upsert");
         // perform upsert
         println!("insert_buffer: {}", self.insert_buffer);
-        let mut mutation = dgraph_client::api::Mutation::new();
-//        mutation.commit_now = true;
+
+        let mut mutation = api::Mutation::new();
 
         mutation.set_json = self.insert_buffer.as_bytes().to_owned();
-        let mut_res = self.client.mutate(&mutation)?;
 
+        let mut_res = txn.mutate(
+            mutation
+        )?;
 
-        txn.set_commit_ts(mut_res.context.get_ref().commit_ts);
-
-        if self.client.commit_or_abort(&txn)?.aborted {
-            bail!(MergeFailure::TransactionFailure)
-        };
+        let txn_commit = txn.commit()?;
+        // We need to take the newly created uids and add them to our map
+        self.node_key_to_uid.extend(mut_res.uids);
 
         Ok(())
     }
@@ -179,16 +183,12 @@ impl<'a> BulkUpserter<'a> {
 
     }
 
-    fn query_all(&mut self) -> Result<(u64, DgraphResponse), Error> {
-        let mut req = dgraph_client::api::Request::new();
+    fn query_all(&mut self, txn: &mut Transaction) -> Result<DgraphResponse, Error> {
+        let resp = txn.query(
+            &self.query_buffer[..]
+        )?;
 
-        req.query = self.query_buffer.to_string();
-
-        let resp = self.client.query(&req).expect("upsert query");
-
-        println!("{:?}", resp.get_json());
-
-        Ok((resp.txn.as_ref().unwrap().start_ts, DgraphResponse{response: serde_json::from_slice(resp.get_json())?}))
+        Ok(DgraphResponse{response: serde_json::from_slice(&resp.json)?})
     }
 
 
@@ -201,12 +201,16 @@ impl<'a> BulkUpserter<'a> {
 
             match response.map(Vec::as_slice) {
                 Some([uid]) => {
-                    self.node_key_to_uid.insert(to_insert.node_key, uid.uid.clone());
+                    self.node_key_to_uid.insert(to_insert.node_key.into(), uid.uid.clone());
                     to_insert.mut_insert()["uid"] = serde_json::Value::from(uid.uid.clone());
 
                 },
                 // If we get an empty response we just create the node
-                Some([]) => to_insert.mut_insert()["uid"] = (),
+                Some([]) => {
+                    let placeholder = format!("_:{}", to_insert.node_key);
+
+                    to_insert.mut_insert()["uid"] = serde_json::Value::from(placeholder);
+                },
                 // We should never get more than a single uid back
                 Some(uids) if uids.len() > 1 => bail!("Got more than one response"),
                 // If we generate a query we should never *not* have it in a response
@@ -222,6 +226,9 @@ impl<'a> BulkUpserter<'a> {
         }
 
         info!("popped {:#?}", insert_buffer.pop());
+        if insert_buffer.is_empty() {
+            bail!("insert_buffer empty");
+        }
         insert_buffer.push_str("]");
 
         Ok(())
@@ -230,25 +237,30 @@ impl<'a> BulkUpserter<'a> {
 
 fn insert_edges<'a>(client: &DgraphClient,
                 edges: impl IntoIterator<Item=&'a EdgeDescription>,
-                key_uid: &HashMap<&str, String>) -> Result<(), Error> {
+                key_uid: &HashMap<String, String>) -> Result<(), Error> {
 
-    let bulk_insert = generate_bulk_edge_insert(edges, key_uid);
+    if key_uid.is_empty() {
+        warn!("key_uid is empty");
+        return Ok(())
+    }
 
-    let mut mutation = dgraph_client::api::Mutation::new();
+    let bulk_insert = generate_bulk_edge_insert(edges, key_uid)?;
+
+    let mut mutation = api::Mutation::new();
     mutation.commit_now = true;
     mutation.set_json = bulk_insert.into_bytes();
 
 
-    client.mutate(&mutation)?;
+    info!("inesrt_edges {:?}", client.mutate(Default::default(), mutation).wait()?);
 
     Ok(())
 }
 
 fn generate_bulk_edge_insert<'a>(edges: impl IntoIterator<Item=&'a EdgeDescription>,
-                             key_uid: &HashMap<&str, String>) -> String {
+                             key_uid: &HashMap<String, String>) -> Result<String, Error> {
 
     if key_uid.is_empty() {
-        panic!("key_uid must not be empty");
+        bail!("key_uid must not be empty");
     }
 
     let edges = edges.into_iter();
@@ -276,12 +288,12 @@ fn generate_bulk_edge_insert<'a>(edges: impl IntoIterator<Item=&'a EdgeDescripti
         bulk_insert.push_str(",");
     }
     // Eat the trailing comma, replace with "]"
-    info!("popped {:#?}", bulk_insert.pop());
+    bulk_insert.pop();
     if bulk_insert.is_empty() {
-        panic!("Failed to generate any edge insertions")
+        bail!("Failed to generate any edge insertions")
     }
     bulk_insert.push_str("]");
-    bulk_insert
+    Ok(bulk_insert)
 }
 
 fn generate_edge_insert(to: &str, from: &str, edge_name: &str) -> String {
@@ -339,14 +351,32 @@ fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> 
 
 fn main() {
 
+//    let _: Result<(), Error> = (|| {
+//        let mg_client = api_grpc::DgraphClient::with_client(
+//            Arc::new(
+//                Client::new_plain("db.mastergraph", 9080, ClientConf {
+//                    ..Default::default()
+//                })?
+//            )
+//        );
+//
+//        set_process_schema(&mg_client);
+//        set_file_schema(&mg_client);
+//        set_ip_address_schema(&mg_client);
+//        set_connection_schema(&mg_client);
+//        Ok(())
+//    })();
+
     handle_s3_sns_sqs_proto(move |subgraph: GraphDescription| {
         println!("handling new subgraph");
-        let mg_client = dgraph_client::new_client("db.mastergraph:9080");
 
-        set_process_schema(&mg_client);
-        set_file_schema(&mg_client);
-        set_ip_address_schema(&mg_client);
-        set_connection_schema(&mg_client);
+        let mg_client = &api_grpc::DgraphClient::with_client(
+            Arc::new(
+                Client::new_plain("db.mastergraph", 9080, ClientConf {
+                    ..Default::default()
+                })?
+            )
+        );
 
         let mut upserter = BulkUpserter::new(
             &mg_client,
@@ -357,6 +387,7 @@ fn main() {
         let upsert_res = with_retries(|| upserter.upsert_all());
 
         with_retries(|| {
+            println!("inserting {} edges", subgraph.edges.values().fold(0, |mut acc, e| {acc += e.edges.len(); acc}));
             let edges = subgraph.edges.values().map(|e| &e.edges).flatten();
             insert_edges(&mg_client, edges, &upserter.node_key_to_uid)
         })?;
@@ -371,21 +402,20 @@ fn main() {
         Ok(())
     })
 
-
 }
 
-
 pub fn set_process_schema(client: &DgraphClient) {
-    let mut op_schema = dgraph_client::api::Operation::new();
+    let mut op_schema = api::Operation::new();
+    op_schema.drop_all = false;
     op_schema.schema = concat!(
        		"node_key: string @upsert @index(hash) .\n",
        		"pid: int @index(int) .\n",
        		"create_time: int @index(int) .\n",
        		"asset_id: string @index(hash) .\n",
        		"terminate_time: int @index(int) .\n",
-       		"image_name: string @index(hash) .\n",
-       		"arguments: string .\n",
-       		"bin_file: uid @reverse .\n",
+       		"image_name: string @index(hash) @index(fulltext) .\n",
+       		"arguments: string  @index(fulltext) .\n",
+       		"bin_file: uid @reverse @index(fulltext) .\n",
        		"children: uid @reverse .\n",
        		"created_files: uid @reverse .\n",
             "deleted_files: uid @reverse .\n",
@@ -394,11 +424,12 @@ pub fn set_process_schema(client: &DgraphClient) {
             "created_connection: uid @reverse .\n",
             "bound_connection: uid @reverse .\n",
         ).to_string();
-    let _res = client.alter(&op_schema).expect("set schema");
+    let _res = client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
 
 pub fn set_file_schema(client: &DgraphClient) {
-    let mut op_schema = dgraph_client::api::Operation::new();
+    let mut op_schema = api::Operation::new();
+    op_schema.drop_all = false;
     op_schema.schema = r#"
        		node_key: string @upsert @index(hash) .
        		asset_id: string @index(hash) .
@@ -406,21 +437,25 @@ pub fn set_file_schema(client: &DgraphClient) {
        		delete_time: int @index(int) .
        		path: string @index(hash) .
         "#.to_string();
-    let _res = client.alter(&op_schema).expect("set schema");
+    let _res = client.alter(Default::default(), op_schema).wait().expect("set schema");
+
 }
 
 pub fn set_ip_address_schema(client: &DgraphClient) {
-    let mut op_schema = dgraph_client::api::Operation::new();
+    let mut op_schema = api::Operation::new();
+    op_schema.drop_all = false;
     op_schema.schema = r#"
        		node_key: string @upsert @index(hash) .
        		last_seen: int @index(int) .
        		external_ip: string @index(hash) .
         "#.to_string();
-    let _res = client.alter(&op_schema).expect("set schema");
+    let _res = client.alter(Default::default(), op_schema).wait().expect("set schema");
+
 }
 
 pub fn set_connection_schema(client: &DgraphClient) {
-    let mut op_schema = dgraph_client::api::Operation::new();
+    let mut op_schema = api::Operation::new();
+    op_schema.drop_all = false;
     op_schema.schema = concat!(
        		"node_key: string @upsert @index(hash) .\n",
        		"create_time: int @index(int) .\n",
@@ -431,5 +466,7 @@ pub fn set_connection_schema(client: &DgraphClient) {
        		// outbound connections have a `connection` edge to external ip addresses
        		"external_connection: uid @reverse .\n",
     ).to_string();
-    let _res = client.alter(&op_schema).expect("set schema");
+    let _res = client.alter(Default::default(), op_schema).wait().expect("set schema");
+
 }
+

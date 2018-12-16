@@ -1,3 +1,4 @@
+import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import cdk = require('@aws-cdk/cdk');
 import s3 = require('@aws-cdk/aws-s3');
 import sns = require('@aws-cdk/aws-sns');
@@ -27,7 +28,7 @@ function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetworkRef, username: Toke
         instanceProps: {
             instanceType: new ec2.InstanceTypePair(
                 ec2.InstanceClass.Burstable2,
-                ec2.InstanceSize.Small
+                ec2.InstanceSize.Medium
             ),
             vpc: vpc,
             vpcPlacement: {
@@ -47,11 +48,13 @@ class Queues {
         this.dead_letter_queue = new sqs.Queue(stack, queue_name + '-dead-letter');
 
         this.retry_queue = new sqs.Queue(stack, queue_name + '-retry', {
-            deadLetterQueue: {queue: this.dead_letter_queue, maxReceiveCount: 10}
+            deadLetterQueue: {queue: this.dead_letter_queue, maxReceiveCount: 10},
+            visibilityTimeoutSec: 65
         });
 
         this.queue = new sqs.Queue(stack, queue_name, {
-            deadLetterQueue: {queue: this.retry_queue, maxReceiveCount: 5}
+            deadLetterQueue: {queue: this.retry_queue, maxReceiveCount: 5},
+            visibilityTimeoutSec: 50
         });
 
     }
@@ -69,7 +72,7 @@ class Service {
             stack, name, {
                 runtime: lambda.Runtime.Go1x,
                 handler: name,
-                code: lambda.Code.file(`./${name}.zip`),
+                code: lambda.Code.asset(`./${name}.zip`),
                 vpc: vpc,
                 environment: environment,
                 timeout: 45,
@@ -85,7 +88,7 @@ class Service {
             stack, name + '-retry-handler', {
                 runtime: lambda.Runtime.Go1x,
                 handler: retry_code_name,
-                code: lambda.Code.file(`./${retry_code_name}.zip`),
+                code: lambda.Code.asset(`./${retry_code_name}.zip`),
                 vpc: vpc,
                 environment: environment,
                 timeout: 60,
@@ -93,10 +96,8 @@ class Service {
             }
         );
 
-        const camelName = name.replace(/-([a-z])/g, function (g) { return g[1].toUpperCase(); });
-
-        subscribe_lambda_to_queue(stack, camelName, event_handler, queues.queue);
-        subscribe_lambda_to_queue(stack, camelName + 'Retry', event_retry_handler, queues.retry_queue);
+        event_handler.addEventSource(new SqsEventSource(queues.queue));
+        event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue));
 
         this.queues = queues;
         this.event_handler = event_handler;
@@ -138,23 +139,6 @@ class Service {
     }
 }
 
-
-function subscribe_lambda_to_queue(stack: cdk.Stack, id: string, fn: lambda.Function, queue: sqs.QueueRefProps) {
-
-    // TODO: Build the S3 Endpoint and allow traffic only through that endpoint
-    new lambda.cloudformation.EventSourceMappingResource(stack, id + 'Events', {
-        functionName: fn.functionName,
-        eventSourceArn: queue.queueArn
-    });
-
-    fn.addToRolePolicy(new iam.PolicyStatement()
-        .addAction('sqs:ReceiveMessage')
-        .addAction('sqs:DeleteMessage')
-        .addAction('sqs:GetQueueAttributes')
-        .addAction('sqs:GetQueueUrl')
-        .addAction('sqs:*')
-        .addResource(queue.queueArn));
-}
 
 class SessionIdentityCache extends cdk.Stack {
     constructor(parent: cdk.App, vpc_props: ec2.VpcNetworkRefProps) {
@@ -568,7 +552,7 @@ class EngagementCreationService extends cdk.Stack {
             this, 'engagement-creation-service', {
                 runtime: lambda.Runtime.Go1x,
                 handler: 'engagement-creation-service',
-                code: lambda.Code.file('./engagement-creation-service.zip'),
+                code: lambda.Code.asset('./engagement-creation-service.zip'),
                 vpc: vpc
             }
         );
@@ -576,14 +560,15 @@ class EngagementCreationService extends cdk.Stack {
         let engagement_creation_service_queue =
             new sqs.Queue(this, 'engagement-creation-service-queue');
 
-        subscribe_lambda_to_queue(
-            this,
-            'engagementCreator',
-            engagement_creation_service,
-            engagement_creation_service_queue
-        );
-
-        event_producer.subscribeQueue(engagement_creation_service_queue);
+        // fn.addEventSource(new SqsEventSource(engagement_creation_service_queue));
+        // subscribe_lambda_to_queue(
+        //     this,
+        //     'engagementCreator',
+        //     engagement_creation_service,
+        //     engagement_creation_service_queue
+        // );
+        //
+        // event_producer.subscribeQueue(engagement_creation_service_queue);
     }
 }
 
@@ -686,13 +671,13 @@ class Grapl extends cdk.App {
             network.grapl_vpc
         );
 
-
-        new EngagementCreationService(
-            this,
-            'engagement-creation-service',
-            event_emitters.incident_topic,
-            network.grapl_vpc
-        );
+        //
+        // new EngagementCreationService(
+        //     this,
+        //     'engagement-creation-service',
+        //     event_emitters.incident_topic,
+        //     network.grapl_vpc
+        // );
     }
 }
 

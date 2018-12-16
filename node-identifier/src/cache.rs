@@ -90,6 +90,7 @@ impl<'a> IdentityCache<'a> {
 
     pub fn check_cache(&self, session: impl IdentityKeyable) -> Result<Option<String>, Error> {
         println!("fn check_cache(&self");
+        return Ok(None);
         let mut lru_cache = self.lru.lock().unwrap();
 
         let key = session.get_cache_key(&self.pepper);

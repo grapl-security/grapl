@@ -208,7 +208,7 @@ pub fn attribute_session_node(conn: &mut Transaction,
 
     let session_id = match node.get_action() {
         Action::Create => {
-            info!("Handling created session {:#?}", node);
+            info!("Handling created session {}", node.get_table_name());
 
             log_time!{
                 "create_session",
@@ -259,7 +259,7 @@ pub fn map_session_ids_to_graph(conn: &Pool,
             Node::ProcessNode(mut node) => {
 
 
-                info!("Mapping sesion id for ProcessNode. pid {}", node.pid);
+                info!("Mapping session id for ProcessNode. pid {}", node.pid);
                 let old_id = node.clone_key();
 
                 let session_id = cache.check_cache(&node)?;
