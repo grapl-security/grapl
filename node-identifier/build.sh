@@ -18,3 +18,4 @@ cp "./node-identifier-retry-handler.zip" "../grapl-cdk/"
 
 rm ./node-identifier-retry-handler
 rm ./node-identifier-retry-handler.zip
+date

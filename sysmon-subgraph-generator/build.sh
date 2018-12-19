@@ -7,3 +7,4 @@ zip "./sysmon-subgraph-generator.zip" "./sysmon-subgraph-generator" &&
 cp "./sysmon-subgraph-generator.zip" "../grapl-cdk/"
 rm "./sysmon-subgraph-generator.zip"
 rm "./sysmon-subgraph-generator"
+date

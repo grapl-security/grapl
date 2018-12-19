@@ -15,7 +15,6 @@ use graph_generator_lib::handle_json_encoded_logs;
 use failure::Error;
 use graph_descriptions::*;
 use graph_descriptions::graph_description::*;
-use graph_generator_lib::handle_json_encoded_logs;
 use regex::bytes::Regex;
 use serde_json::Value;
 
@@ -31,7 +30,7 @@ pub struct OutboundConnectionLog {
     timestamp: u64,
     sourcetype: String,
 }
-x
+
 
 #[derive(Serialize, Deserialize)]
 pub struct InboundConnectionLog {
@@ -66,7 +65,7 @@ fn handle_outbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription 
     // Another process must have an inbound connection to src_port
     // Or the other process is external/ not running the instrumentation
     let process = ProcessDescriptionBuilder::default()
-        .host_ip(conn_log.src_addr.clone().into_bytes())
+        .host_ip(conn_log.src_addr.to_owned().into_bytes())
         .state(ProcessState::Existing)
         .pid(conn_log.pid)
         .timestamp(conn_log.timestamp)
@@ -74,7 +73,7 @@ fn handle_outbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription 
         .unwrap();
 
     let outbound = OutboundConnectionBuilder::default()
-        .host_ip(conn_log.src_addr.clone().into_bytes())
+        .host_ip(conn_log.src_addr.to_owned().into_bytes())
         .state(ConnectionState::Created)
         .port(conn_log.src_port)
         .timestamp(conn_log.timestamp)
@@ -82,9 +81,9 @@ fn handle_outbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription 
         .unwrap();
 
 
-    if is_internal_ip(&conn_log.dst_addr.clone().into_bytes()) {
+    if is_internal_ip(&conn_log.dst_addr.to_owned().into_bytes()) {
         let inbound = InboundConnectionBuilder::default()
-            .host_ip(conn_log.dst_addr.clone().into_bytes())
+            .host_ip(conn_log.dst_addr.to_owned().into_bytes())
             .state(ConnectionState::Existing)
             .port(conn_log.dst_port)
             .timestamp(conn_log.timestamp)
@@ -98,7 +97,7 @@ fn handle_outbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription 
     } else {
         let external_ip = IpAddressDescription::new(
             conn_log.timestamp,
-            conn_log.dst_addr.clone().into_bytes()
+            conn_log.dst_addr.to_owned().into_bytes()
         );
 
         graph.add_edge("external_connection",
@@ -441,19 +440,21 @@ fn handle_file_read(file_read: FileRead) -> GraphDescription {
 }
 
 fn handle_log(raw_log: Value) -> Result<GraphDescription, Error> {
-    let sourcetype = raw_log["sourcetype"].as_str().unwrap();
+    let sourcetype = match raw_log.get("sourcetype").and_then(|sourcetype| sourcetype.as_str()) {
+        Some(sourcetype) => sourcetype.to_owned(),
+        None => bail!("Sourcetype must be specified and a valid string")
+    };
 
     info!("Parsing log of type: {}", sourcetype);
-    // TODO: nll will make the cloning unnecessary
-    let graph = match sourcetype {
-        "FILE_READ" => handle_file_read(serde_json::from_value(raw_log.clone())?),
-        "FILE_WRITE" => handle_file_write(serde_json::from_value(raw_log.clone())?),
-        "FILE_CREATE" => handle_file_create(serde_json::from_value(raw_log.clone())?),
-        "FILE_DELETE" => handle_file_delete(serde_json::from_value(raw_log.clone())?),
-        "PROCESS_START" => handle_process_start(serde_json::from_value(raw_log.clone())?),
-        "PROCESS_STOP" => handle_process_stop(serde_json::from_value(raw_log.clone())?),
-        "INBOUND_TCP" => handle_inbound_traffic(serde_json::from_value(raw_log.clone())?),
-        "OUTBOUND_TCP" => handle_outbound_traffic(serde_json::from_value(raw_log.clone())?),
+    let graph = match &sourcetype[..] {
+        "FILE_READ" => handle_file_read(serde_json::from_value(raw_log)?),
+        "FILE_WRITE" => handle_file_write(serde_json::from_value(raw_log)?),
+        "FILE_CREATE" => handle_file_create(serde_json::from_value(raw_log)?),
+        "FILE_DELETE" => handle_file_delete(serde_json::from_value(raw_log)?),
+        "PROCESS_START" => handle_process_start(serde_json::from_value(raw_log)?),
+        "PROCESS_STOP" => handle_process_stop(serde_json::from_value(raw_log)?),
+        "INBOUND_TCP" => handle_inbound_traffic(serde_json::from_value(raw_log)?),
+        "OUTBOUND_TCP" => handle_outbound_traffic(serde_json::from_value(raw_log)?),
         _ => bail!("invalid sourcetype")
     };
 

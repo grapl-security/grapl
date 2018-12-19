@@ -190,23 +190,23 @@ pub fn handle_raw_event<T>(f: impl Fn(Vec<u8>) -> Result<T, Error> + Clone + Sen
         for (receipt_handle, arn) in rx {
             match queue_url {
                 Some(ref url) => {
-                    sqs_client.delete_message(
-                        &rusoto_sqs::DeleteMessageRequest {
-                            queue_url: url.clone(),
-                            receipt_handle,
-                        }
-                    );
+//                    sqs_client.delete_message(
+//                        &rusoto_sqs::DeleteMessageRequest {
+//                            queue_url: url.clone(),
+//                            receipt_handle,
+//                        }
+//                    );
 
                 },
                 None => {
-                    let url = queue_url_from_arn(&sqs_client, arn);
-                    queue_url = Some(url.clone());
-                    sqs_client.delete_message(
-                        &rusoto_sqs::DeleteMessageRequest {
-                            queue_url: url,
-                            receipt_handle,
-                        }
-                    );
+//                    let url = queue_url_from_arn(&sqs_client, arn);
+//                    queue_url = Some(url.clone());
+//                    sqs_client.delete_message(
+//                        &rusoto_sqs::DeleteMessageRequest {
+//                            queue_url: url,
+//                            receipt_handle,
+//                        }
+//                    );
                 }
             };
         }
@@ -257,24 +257,24 @@ pub fn handle_message<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone + Send + '
             match queue_url {
                 Some(ref url) => {
                     info!("Deleting message");
-                    sqs_client.delete_message(
-                        &rusoto_sqs::DeleteMessageRequest {
-                            queue_url: url.clone(),
-                            receipt_handle,
-                        }
-                    );
+//                    sqs_client.delete_message(
+//                        &rusoto_sqs::DeleteMessageRequest {
+//                            queue_url: url.clone(),
+//                            receipt_handle,
+//                        }
+//                    );
 
                 },
                 None => {
-                    let url = queue_url_from_arn(&sqs_client, arn);
-                    queue_url = Some(url.clone());
-                    info!("Deleting message");
-                    sqs_client.delete_message(
-                        &rusoto_sqs::DeleteMessageRequest {
-                            queue_url: url,
-                            receipt_handle,
-                        }
-                    );
+//                    let url = queue_url_from_arn(&sqs_client, arn);
+//                    queue_url = Some(url.clone());
+//                    info!("Deleting message");
+//                    sqs_client.delete_message(
+//                        &rusoto_sqs::DeleteMessageRequest {
+//                            queue_url: url,
+//                            receipt_handle,
+//                        }
+//                    );
                 }
             };
         }
@@ -327,33 +327,33 @@ pub fn handle_proto_sqs_message<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone 
             });
         }
 
-        let sqs_client =
-            SqsClient::simple(rusoto_core::region::Region::UsEast1);
-
-        let mut queue_url: Option<String> = None;
+//        let sqs_client =
+//            SqsClient::simple(rusoto_core::region::Region::UsEast1);
+//
+//        let mut queue_url: Option<String> = None;
 
         for (receipt_handle, arn) in rx {
-            match queue_url {
-                Some(ref url) => {
-                    sqs_client.delete_message(
-                        &rusoto_sqs::DeleteMessageRequest {
-                            queue_url: url.clone(),
-                            receipt_handle,
-                        }
-                    );
-
-                },
-                None => {
-                    let url = queue_url_from_arn(&sqs_client, arn);
-                    queue_url = Some(url.clone());
-                    sqs_client.delete_message(
-                        &rusoto_sqs::DeleteMessageRequest {
-                            queue_url: url,
-                            receipt_handle,
-                        }
-                    );
-                }
-            };
+//            match queue_url {
+//                Some(ref url) => {
+//                    sqs_client.delete_message(
+//                        &rusoto_sqs::DeleteMessageRequest {
+//                            queue_url: url.clone(),
+//                            receipt_handle,
+//                        }
+//                    );
+//
+//                },
+//                None => {
+//                    let url = queue_url_from_arn(&sqs_client, arn);
+//                    queue_url = Some(url.clone());
+//                    sqs_client.delete_message(
+//                        &rusoto_sqs::DeleteMessageRequest {
+//                            queue_url: url,
+//                            receipt_handle,
+//                        }
+//                    );
+//                }
+//            };
         }
 
         Ok(())
@@ -397,26 +397,26 @@ fn handle_results(thread_handles: Vec<JoinHandle<()>>,
         match queue_url {
             Some(ref url) => {
                 info!("Deleting message");
-                sqs_client.delete_message(
-                    &rusoto_sqs::DeleteMessageRequest {
-                        queue_url: url.clone(),
-                        receipt_handle,
-                    }
-                );
+//                sqs_client.delete_message(
+//                    &rusoto_sqs::DeleteMessageRequest {
+//                        queue_url: url.clone(),
+//                        receipt_handle,
+//                    }
+//                );
                 info!("Deleted message");
 
             },
             None => {
                 info!("Getting queue url from arn {}", arn);
-                let url = queue_url_from_arn(&sqs_client, arn);
-                queue_url = Some(url.clone());
-                info!("Deleting message");
-                sqs_client.delete_message(
-                    &rusoto_sqs::DeleteMessageRequest {
-                        queue_url: url,
-                        receipt_handle,
-                    }
-                );
+//                let url = queue_url_from_arn(&sqs_client, arn);
+//                queue_url = Some(url.clone());
+//                info!("Deleting message");
+//                sqs_client.delete_message(
+//                    &rusoto_sqs::DeleteMessageRequest {
+//                        queue_url: url,
+//                        receipt_handle,
+//                    }
+//                );
                 info!("Deleted message");
             }
         };

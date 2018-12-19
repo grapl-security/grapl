@@ -96,8 +96,8 @@ class Service {
             }
         );
 
-        event_handler.addEventSource(new SqsEventSource(queues.queue));
-        event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue));
+        event_handler.addEventSource(new SqsEventSource(queues.queue, {batchSize: 1}));
+        event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue, {batchSize: 1}));
 
         this.queues = queues;
         this.event_handler = event_handler;
@@ -376,7 +376,7 @@ class NodeIdentityMapper extends cdk.Stack {
             vpc_props
         );
 
-        let environment = {
+        const environment = {
             "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
             "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX
@@ -578,7 +578,7 @@ class Networks extends cdk.Stack {
     constructor(parent: cdk.App, id: string,) {
         super(parent, id + '-stack');
 
-        let grapl_vpc = new ec2.VpcNetwork(this, 'GraplVPC', {
+        const grapl_vpc = new ec2.VpcNetwork(this, 'GraplVPC', {
             natGateways: 2
         });
 

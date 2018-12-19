@@ -10,3 +10,4 @@ cdk deploy node-identifier-stack &&
 cdk deploy graph-merger-stack &&
 cdk deploy engagement-creation-service-stack
 
+date

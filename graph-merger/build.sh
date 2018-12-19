@@ -6,3 +6,4 @@ zip "./graph-merger.zip" "./graph-merger" &&
 cp "./graph-merger.zip" "../grapl-cdk/"
 rm ./graph-merger
 rm ./graph-merger.zip
+date
