@@ -2,6 +2,7 @@
 extern crate failure;
 extern crate graph_descriptions;
 extern crate graph_generator_lib;
+extern crate lambda_runtime as lambda;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use] extern crate log;
@@ -10,13 +11,41 @@ extern crate serde;
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
 extern crate uuid;
-use graph_generator_lib::handle_json_encoded_logs;
+extern crate sqs_lambda;
+extern crate rusoto_core;
+extern crate rusoto_s3;
+extern crate rusoto_sqs;
+extern crate aws_lambda_events;
+extern crate simple_logger;
+extern crate openssl_probe;
+
+use sqs_lambda::S3EventRetriever;
+use sqs_lambda::events_from_s3_sns_sqs;
+use sqs_lambda::ZstdJsonDecoder;
+use std::marker::PhantomData;
+use sqs_lambda::BlockingSqsCompletionHandler;
+use sqs_lambda::SqsService;
+use sqs_lambda::EventHandler;
+
+use lambda::Handler;
+use lambda::Context;
+use lambda::lambda;
+use lambda::error::HandlerError;
+
+use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
+
+use rusoto_core::Region;
+use rusoto_s3::{GetObjectRequest, S3};
+use rusoto_s3::S3Client;
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
 
 use failure::Error;
 use graph_descriptions::*;
 use graph_descriptions::graph_description::*;
 use regex::bytes::Regex;
 use serde_json::Value;
+use std::sync::Arc;
+use graph_generator_lib::upload_subgraphs;
 
 
 #[derive(Serialize, Deserialize)]
@@ -461,13 +490,75 @@ fn handle_log(raw_log: Value) -> Result<GraphDescription, Error> {
     Ok(graph)
 }
 
-fn main() {
+#[derive(Clone)]
+struct GenericSubgraphGenerator;
 
-    handle_json_encoded_logs(
-        move |raw_logs| {
-            info!("Handling raw log");
-            raw_logs.into_iter().map(handle_log).collect()
-        }
+
+impl EventHandler<Vec<serde_json::Value>> for GenericSubgraphGenerator {
+    fn handle_event(&self, event: Vec<serde_json::Value>) -> Result<(), Error> {
+        let subgraphs: Vec<_> = event
+            .into_iter()
+            .map(handle_log)
+            .map(|res| {
+                if let Err(ref e) = res {
+                    error!("Failed to generate subgraph with: {}", e);
+                }
+                res
+            })
+            .flat_map(Result::ok)
+            .collect();
+
+        upload_subgraphs(GeneratedSubgraphs::new(subgraphs))?;
+        Ok(())
+    }
+}
+
+fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+    let region = Region::UsEast1;
+    info!("Creating sqs_client");
+    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
+
+    info!("Creating s3_client");
+    let s3_client = Arc::new(S3Client::simple(region.clone()));
+
+    info!("Creating retriever");
+    let retriever = S3EventRetriever::new(
+        s3_client,
+        |d| {info!("Parsing: {:?}", d); events_from_s3_sns_sqs(d)},
+        ZstdJsonDecoder{buffer: Vec::with_capacity(1 << 8)},
     );
+
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+
+    info!("Creating sqs_completion_handler");
+    let sqs_completion_handler = BlockingSqsCompletionHandler::new(
+        sqs_client,
+        queue_url
+    );
+
+    let handler = GenericSubgraphGenerator{};
+
+    let mut sqs_service = SqsService::new(
+        retriever,
+        handler,
+        sqs_completion_handler,
+    );
+
+    info!("Handing off event");
+    sqs_service.run(event, ctx)?;
+
+    Ok(())
+}
+
+fn main() {
+    openssl_probe::init_ssl_cert_env_vars();
+    simple_logger::init_with_level(log::Level::Info).unwrap();
+    lambda!(my_handler);
+//    handle_json_encoded_logs(
+//        move |raw_logs| {
+//            info!("Handling raw log");
+//            raw_logs.into_iter().map(handle_log).collect()
+//        }
+//    );
 
 }

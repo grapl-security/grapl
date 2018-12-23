@@ -351,8 +351,9 @@ fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> 
 
 fn main() {
 
-    let _: Result<(), Error> = (|| {
-        let mg_client = api_grpc::DgraphClient::with_client(
+    handle_s3_sns_sqs_proto(move |subgraph: GraphDescription| {
+        println!("handling new subgraph");
+        let mg_client = &api_grpc::DgraphClient::with_client(
             Arc::new(
                 Client::new_plain("db.mastergraph", 9080, ClientConf {
                     ..Default::default()
@@ -364,19 +365,6 @@ fn main() {
         set_file_schema(&mg_client);
         set_ip_address_schema(&mg_client);
         set_connection_schema(&mg_client);
-        Ok(())
-    })();
-
-    handle_s3_sns_sqs_proto(move |subgraph: GraphDescription| {
-        println!("handling new subgraph");
-
-        let mg_client = &api_grpc::DgraphClient::with_client(
-            Arc::new(
-                Client::new_plain("db.mastergraph", 9080, ClientConf {
-                    ..Default::default()
-                })?
-            )
-        );
 
         let mut upserter = BulkUpserter::new(
             &mg_client,

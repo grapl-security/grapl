@@ -1,6 +1,9 @@
+extern crate openssl_probe;
 extern crate failure;
 extern crate rayon;
 extern crate log;
+extern crate simple_logger;
+
 extern crate stopwatch;
 
 extern crate chrono;
@@ -8,7 +11,30 @@ extern crate graph_generator_lib;
 extern crate graph_descriptions;
 extern crate regex;
 extern crate sysmon;
-extern crate sqs_microservice;
+extern crate serde;
+extern crate futures;
+extern crate lambda_runtime as lambda;
+extern crate aws_lambda_events;
+
+
+extern crate rusoto_core;
+extern crate rusoto_s3;
+extern crate rusoto_sqs;
+extern crate sqs_lambda;
+
+use lambda::Handler;
+use lambda::Context;
+use lambda::lambda;
+use log::error;
+
+use rusoto_core::Region;
+
+use futures::{Stream, Future};
+use rusoto_s3::{GetObjectRequest, S3};
+use rusoto_s3::S3Client;
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
+use serde::Deserialize;
+
 
 use rayon::prelude::*;
 use rayon::iter::Either;
@@ -16,11 +42,12 @@ use log::*;
 use failure::bail;
 use failure::Error;
 use chrono::prelude::*;
-use sqs_microservice::handle_raw_event;
 use graph_descriptions::*;
 use graph_descriptions::graph_description::*;
 use graph_generator_lib::upload_subgraphs;
 use sysmon::*;
+
+use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
 
 
 macro_rules! log_time {
@@ -132,10 +159,22 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
 }
 
 use std::borrow::Cow;
+use sqs_lambda::S3EventRetriever;
+use sqs_lambda::events_from_s3_sns_sqs;
+use sqs_lambda::ZstdDecoder;
+use std::marker::PhantomData;
+use sqs_lambda::BlockingSqsCompletionHandler;
+use sqs_lambda::SqsService;
+use sqs_lambda::EventHandler;
+use lambda::error::HandlerError;
+use std::sync::Arc;
 
-fn main() {
 
-    handle_raw_event(|event: Vec<u8>| {
+#[derive(Clone)]
+struct SysmonSubgraphGenerator;
+
+impl EventHandler<Vec<u8>> for SysmonSubgraphGenerator {
+    fn handle_event(&self, event: Vec<u8>) -> Result<(), Error> {
         info!("Handling raw event");
 
 
@@ -185,14 +224,61 @@ fn main() {
         info!("Completed mapping {} subgraphs", subgraphs.len());
         let graphs = GeneratedSubgraphs {subgraphs};
 
-        log_time!(
-            "upload_subgraphs",
-            upload_subgraphs(graphs)
-        )?;
+//        log_time!(
+//            "upload_subgraphs",
+//            upload_subgraphs(graphs)
+//        )?;
 
 
         Ok(())
-    });
+    }
+}
+
+
+fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+    let region = Region::UsEast1;
+    info!("Creating sqs_client");
+    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
+
+    info!("Creating s3_client");
+    let s3_client = Arc::new(S3Client::simple(region.clone()));
+
+    info!("Creating retriever");
+    let retriever = S3EventRetriever::new(
+        s3_client,
+        |d| {info!("Parsing: {:?}", d); events_from_s3_sns_sqs(d)},
+        ZstdDecoder{buffer: Vec::with_capacity(1 << 8)},
+    );
+
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+
+    info!("Creating sqs_completion_handler");
+    let sqs_completion_handler = BlockingSqsCompletionHandler::new(
+        sqs_client,
+        queue_url
+    );
+
+    let handler = SysmonSubgraphGenerator{};
+
+    let mut sqs_service = SqsService::new(
+        retriever,
+        handler,
+        sqs_completion_handler,
+    );
+
+    info!("Handing off event");
+    sqs_service.run(event, ctx)?;
+
+    Ok(())
+}
+
+fn main()  -> Result<(), Box<dyn std::error::Error>> {
+    openssl_probe::init_ssl_cert_env_vars();
+    simple_logger::init_with_level(log::Level::Info).unwrap();
+
+    info!("Starting lambda");
+    lambda!(my_handler);
+    Ok(())
 }
 
 

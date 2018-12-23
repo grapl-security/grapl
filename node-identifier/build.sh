@@ -1,21 +1,20 @@
 cp -r "../graph-descriptions" . &&
-cp -r "../sqs-microservice"  . &&
-docker run --rm -it -v "$(pwd)":/home/rust/src -t ea24bf58caa2 cargo build --release --bin node-identifier &&
-cp "./target/x86_64-unknown-linux-musl/release/node-identifier" . &&
-zip "./node-identifier.zip" "./node-identifier" &&
+docker run --rm -it -v "$(pwd)":/home/rust/src -t 58c6c63dcf52 cargo build --release --bin node-identifier &&
+cp "./target/x86_64-unknown-linux-musl/release/node-identifier" "./bootstrap" &&
+zip "./node-identifier.zip" "./bootstrap" &&
 cp "./node-identifier.zip" "../grapl-cdk/"
 
-rm ./node-identifier
+rm ./bootstrap
 rm ./node-identifier.zip
 
 
 
-docker run --rm -it -v "$(pwd)":/home/rust/src -t ea24bf58caa2 cargo build --release --bin node-identifier-retry-handler &&
-cp "./target/x86_64-unknown-linux-musl/release/node-identifier-retry-handler" . &&
-zip "./node-identifier-retry-handler.zip" "./node-identifier-retry-handler" &&
+docker run --rm -it -v "$(pwd)":/home/rust/src -t 58c6c63dcf52 cargo build --release --bin node-identifier-retry-handler &&
+cp "./target/x86_64-unknown-linux-musl/release/node-identifier-retry-handler" "./bootstrap" &&
+zip "./node-identifier-retry-handler.zip" "./bootstrap" &&
 cp "./node-identifier-retry-handler.zip" "../grapl-cdk/"
 
 
-rm ./node-identifier-retry-handler
+rm ./bootstrap
 rm ./node-identifier-retry-handler.zip
 date

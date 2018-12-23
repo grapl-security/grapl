@@ -10,17 +10,25 @@ extern crate failure;
 extern crate stopwatch;
 extern crate base58;
 extern crate graph_descriptions;
-extern crate sqs_microservice;
 extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate uuid;
 extern crate prost;
-extern crate futures;
 extern crate sha2;
 extern crate lru_time_cache;
 extern crate zstd;
 
+extern crate futures;
+extern crate lambda_runtime as lambda;
+extern crate aws_lambda_events;
+
+extern crate rusoto_sqs;
+extern crate sqs_lambda;
+
+
+use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
 use lru_time_cache::LruCache;
+use lambda::Context;
 
 
 macro_rules! log_time {
@@ -47,8 +55,6 @@ use failure::Error;
 
 use sha2::{Digest, Sha256};
 
-use sqs_microservice::handle_message;
-
 use std::env;
 
 
@@ -67,75 +73,45 @@ use graph_descriptions::*;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 use rusoto_core::Region;
-use sqs_microservice::handle_s3_sns_sqs_proto;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::time::Duration;
 use std::sync::Arc;
 use std::sync::Mutex;
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
 
 use cache::IdentityCache;
 use std::io::Cursor;
+use lambda::error::HandlerError;
+use sqs_lambda::S3EventRetriever;
+use sqs_lambda::EventHandler;
+use sqs_lambda::BlockingSqsCompletionHandler;
+use sqs_lambda::SqsService;
+use sqs_lambda::ZstdProtoDecoder;
+use sqs_lambda::events_from_s3_sns_sqs;
 
-pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error> {
-    info!("Uploading identified subgraphs");
-    let s3 = S3Client::simple(
-        Region::UsEast1
-    );
-
-    let subgraph: GraphDescription = subgraph.into();
-
-    let mut body = Vec::with_capacity(5000);
-    subgraph.encode(&mut body).expect("Failed to encode subgraph");
-
-    let mut compressed = Vec::with_capacity(body.len());
-    let mut proto = Cursor::new(&body);
-
-    zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-        .expect("compress zstd capnp");
-
-    let mut hasher = Sha256::default();
-    hasher.input(&body);
-
-    let key = hasher.result().as_ref().to_base58();
-
-    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-
-    let bucket = bucket_prefix + "-subgraphs-generated-bucket";
-    let epoch = SystemTime::now()
-        .duration_since(UNIX_EPOCH).unwrap().as_secs();
-
-    let day = epoch - (epoch % (24 * 60 * 60));
-
-    let key = format!("{}/{}",
-                      day,
-                      key
-    );
-    info!("Uploading identified subgraphs to {}", key);
-    s3.put_object(
-        &rusoto_s3::PutObjectRequest {
-            bucket,
-            key: key.clone(),
-            body: Some(compressed),
-            ..Default::default()
-        }
-    ).wait()?;
-    info!("Uploaded identified subgraphs to {}", key);
-
-    Ok(())
+#[derive(Clone)]
+struct NodeIdentifier<'a> {
+    lru_cache: IdentityCache<'a>,
+    should_default: bool
 }
 
-pub fn identify_nodes(should_default: bool) {
-    let max_count = 100_000;
-    let time_to_live = Duration::from_secs(60 * 5);
+impl<'a> NodeIdentifier<'a> {
+    pub fn new(lru_cache: IdentityCache<'a>, should_default: bool) -> Self {
+        Self {
+            lru_cache,
+            should_default
+        }
+    }
+}
 
 
-    // TODO: Update the library to allow for customizing the hasher
-    let username = env::var("HISTORY_DB_USERNAME").expect("IDENTITY_CACHE_PEPPER");
-    let lru_cache = IdentityCache::new(max_count, time_to_live, b"pepper");
+impl<'a> EventHandler<GeneratedSubgraphs> for NodeIdentifier<'a> {
+    fn handle_event(&self, event: GeneratedSubgraphs) -> Result<(), Error> {
+        let mut subgraphs = event;
+        info!("Handling raw event");
 
 
-    handle_s3_sns_sqs_proto( move |mut subgraphs: GeneratedSubgraphs| {
         info!("Connecting to history database");
 
         let username = env::var("HISTORY_DB_USERNAME").expect("HISTORY_DB_USERNAME");
@@ -165,7 +141,7 @@ pub fn identify_nodes(should_default: bool) {
 
         let mut result = Ok(());
         for unid_subgraph in subgraphs.subgraphs {
-            let lru_cache = lru_cache.clone();
+            let lru_cache = self.lru_cache.clone();
             let _result: Result<(), Error> = (|| {
                 let mut output_subgraph = GraphDescription::new(unid_subgraph.timestamp);
                 let mut unid_subgraph: GraphDescription = unid_subgraph.into();
@@ -199,7 +175,7 @@ pub fn identify_nodes(should_default: bool) {
                     &mut dead_node_ids,
                     &unid_subgraph,
                     &mut output_subgraph,
-                    should_default,
+                    self.should_default,
                     lru_cache
                 );
 
@@ -235,10 +211,95 @@ pub fn identify_nodes(should_default: bool) {
         }
 
         result
-    }, move |_| {Ok(())})
-
-
+    }
 }
+
+pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+    let max_count = 100_000;
+    let time_to_live = Duration::from_secs(60 * 5);
+
+    let username = env::var("HISTORY_DB_USERNAME").expect("IDENTITY_CACHE_PEPPER");
+    let lru_cache = IdentityCache::new(max_count, time_to_live, b"pepper");
+
+    let handler = NodeIdentifier::new(lru_cache, false);
+
+    let region = Region::UsEast1;
+    info!("Creating sqs_client");
+    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
+
+    info!("Creating s3_client");
+    let s3_client = Arc::new(S3Client::simple(region.clone()));
+
+    info!("Creating retriever");
+    let retriever = S3EventRetriever::new(
+        s3_client,
+        |d| {info!("Parsing: {:?}", d); events_from_s3_sns_sqs(d)},
+        ZstdProtoDecoder{},
+    );
+
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+
+    info!("Creating sqs_completion_handler");
+    let sqs_completion_handler = BlockingSqsCompletionHandler::new(
+        sqs_client,
+        queue_url
+    );
+
+    let mut sqs_service = SqsService::new(
+        retriever,
+        handler,
+        sqs_completion_handler,
+    );
+
+    info!("Handing off event");
+    sqs_service.run(event, ctx)?;
+
+    Ok(())
+}
+
+pub fn retry_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+    let max_count = 100_000;
+    let time_to_live = Duration::from_secs(60 * 5);
+
+    let username = env::var("HISTORY_DB_USERNAME").expect("IDENTITY_CACHE_PEPPER");
+    let lru_cache = IdentityCache::new(max_count, time_to_live, b"pepper");
+
+    let handler = NodeIdentifier::new(lru_cache, true);
+
+    let region = Region::UsEast1;
+    info!("Creating sqs_client");
+    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
+
+    info!("Creating s3_client");
+    let s3_client = Arc::new(S3Client::simple(region.clone()));
+
+    info!("Creating retriever");
+    let retriever = S3EventRetriever::new(
+        s3_client,
+        |d| {info!("Parsing: {:?}", d); events_from_s3_sns_sqs(d)},
+        ZstdProtoDecoder{},
+    );
+
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+
+    info!("Creating sqs_completion_handler");
+    let sqs_completion_handler = BlockingSqsCompletionHandler::new(
+        sqs_client,
+        queue_url
+    );
+
+    let mut sqs_service = SqsService::new(
+        retriever,
+        handler,
+        sqs_completion_handler,
+    );
+
+    info!("Handing off event");
+    sqs_service.run(event, ctx)?;
+
+    Ok(())
+}
+
 
 
 pub fn remove_dead_nodes(dead_node_ids: &HashSet<String>,
@@ -295,3 +356,52 @@ pub fn remap_edges(key_map: &HashMap<String, String>,
         }
     }
 }
+
+pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error> {
+    info!("Uploading identified subgraphs");
+    let s3 = S3Client::simple(
+        Region::UsEast1
+    );
+
+    let subgraph: GraphDescription = subgraph.into();
+
+    let mut body = Vec::with_capacity(5000);
+    subgraph.encode(&mut body).expect("Failed to encode subgraph");
+
+    let mut compressed = Vec::with_capacity(body.len());
+    let mut proto = Cursor::new(&body);
+
+    zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
+        .expect("compress zstd capnp");
+
+    let mut hasher = Sha256::default();
+    hasher.input(&body);
+
+    let key = hasher.result().as_ref().to_base58();
+
+    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+
+    let bucket = bucket_prefix + "-subgraphs-generated-bucket";
+    let epoch = SystemTime::now()
+        .duration_since(UNIX_EPOCH).unwrap().as_secs();
+
+    let day = epoch - (epoch % (24 * 60 * 60));
+
+    let key = format!("{}/{}",
+                      day,
+                      key
+    );
+    info!("Uploading identified subgraphs to {}", key);
+    s3.put_object(
+        &rusoto_s3::PutObjectRequest {
+            bucket,
+            key: key.clone(),
+            body: Some(compressed),
+            ..Default::default()
+        }
+    ).wait()?;
+    info!("Uploaded identified subgraphs to {}", key);
+
+    Ok(())
+}
+

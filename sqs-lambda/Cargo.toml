@@ -1,0 +1,25 @@
+[package]
+name = "sqs-lambda"
+version = "0.1.0"
+authors = ["Insanitybit <insanitybit@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+failure = "0.1.3"
+
+lambda_runtime = {path="../aws-lambda-rust-runtime/lambda-runtime/"}
+serde_derive = "1.0.82"
+log = "0.4.6"
+simple_logger = "1.0.1"
+aws_lambda_events = "0.2.0"
+
+rusoto_s3 = "0.32.0"
+rusoto_core = "0.32.0"
+rusoto_sqs = "0.32.0"
+
+futures = "0.1.25"
+serde_json = "1.0.33"
+serde = "1.0.82"
+zstd = "0.4.21+zstd.1.3.7"
+stopwatch = "0.0.7"
+prost = "0.4.0"

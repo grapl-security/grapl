@@ -16,7 +16,16 @@ base16 = "0.1.1"
 regex = "1.0.5"
 lazy_static = "1.1.0"
 brotli = "3.1.0"
+sqs-lambda = "0.1.4"
+lambda_runtime = "0.1.0"
 
+rusoto_s3 = "0.32.0"
+rusoto_core = "0.32.0"
+rusoto_sqs = "0.32.0"
+futures = "0.1.25"
+aws_lambda_events = "0.2.0"
+simple_logger = "1.0.1"
+openssl-probe = "0.1.2"
 
 [dependencies.uuid]
 version = "*"

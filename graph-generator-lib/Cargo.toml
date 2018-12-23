@@ -7,7 +7,6 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 
 aws_lambda = { git = "https://github.com/srijs/rust-aws-lambda" }
 
-sqs-microservice = {path = "../sqs-microservice"}
 graph-descriptions = {path = "../graph-descriptions"}
 failure = "0.1.2"
 

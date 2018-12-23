@@ -10,7 +10,7 @@ venv/
 grapl-cdk/index.js
 
 word-macro-analyzer/*/
-
+bootstrap
 engagement-creation-service/graph-descriptions/
 engagement-creation-service/incident-graph/
 engagement-creation-service/sqs-microservice/

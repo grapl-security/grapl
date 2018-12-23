@@ -248,6 +248,8 @@ pub fn handle_message<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone + Send + '
             });
         }
 
+        drop(tx);
+
         info!("Creating sqs client");
         let sqs_client =
             SqsClient::simple(rusoto_core::region::Region::UsEast1);
@@ -327,6 +329,7 @@ pub fn handle_proto_sqs_message<M, T>(f: impl Fn(M) -> Result<T, Error> + Clone 
             });
         }
 
+        drop(tx);
 //        let sqs_client =
 //            SqsClient::simple(rusoto_core::region::Region::UsEast1);
 //

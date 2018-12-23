@@ -68,9 +68,13 @@ class Service {
     constructor(stack: cdk.Stack, name: string, environment?: any, vpc?: VpcNetworkRef, retry_code_name?: string) {
         const queues = new Queues(stack, name + '-queue');
 
+        if (environment) {
+            environment.QUEUE_URL =queues.queue.queueUrl;
+        }
+
         let event_handler = new lambda.Function(
             stack, name, {
-                runtime: lambda.Runtime.Go1x,
+                runtime: {name: "provided", supportsInlineCode: true},
                 handler: name,
                 code: lambda.Code.asset(`./${name}.zip`),
                 vpc: vpc,
@@ -86,7 +90,7 @@ class Service {
 
         let event_retry_handler = new lambda.Function(
             stack, name + '-retry-handler', {
-                runtime: lambda.Runtime.Go1x,
+                runtime: {name: "provided", supportsInlineCode: true},
                 handler: retry_code_name,
                 code: lambda.Code.asset(`./${retry_code_name}.zip`),
                 vpc: vpc,
@@ -291,7 +295,7 @@ class SysmonSubgraphGenerator extends cdk.Stack {
         );
 
         const environment = {
-            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
         };
 
         const service = new Service(this, 'sysmon-subgraph-generator', environment);

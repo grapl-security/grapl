@@ -9,7 +9,6 @@ extern crate sha2;
 extern crate rusoto_s3;
 extern crate rusoto_sqs;
 extern crate rusoto_core;
-extern crate sqs_microservice;
 extern crate graph_descriptions;
 extern crate serde_json;
 extern crate zstd;
@@ -27,20 +26,20 @@ use sha2::{Digest, Sha256};
 
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use sqs_microservice::*;
+//use sqs_microservice::*;
 
 use graph_descriptions::graph_description::*;
 use std::io::Cursor;
-
-#[inline(always)]
-pub fn handle_json_encoded_logs(f: impl (Fn(Vec<Value>)
-    -> Result<Vec<GraphDescription>, Error>) + Clone + Send + 'static)
-{
-    handle_s3_sns_sqs_json(f, move |subgraphs| {
-        info!("Uploading {} subgraphs", subgraphs.len());
-        upload_subgraphs(GeneratedSubgraphs::new(subgraphs))
-    });
-}
+//
+//#[inline(always)]
+//pub fn handle_json_encoded_logs(f: impl (Fn(Vec<Value>)
+//    -> Result<Vec<GraphDescription>, Error>) + Clone + Send + 'static)
+//{
+//    handle_s3_sns_sqs_json(f, move |subgraphs| {
+//        info!("Uploading {} subgraphs", subgraphs.len());
+//        upload_subgraphs(GeneratedSubgraphs::new(subgraphs))
+//    });
+//}
 
 
 pub fn send_logs_to_generators(
