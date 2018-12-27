@@ -1,54 +1,56 @@
-extern crate openssl_probe;
-extern crate failure;
-extern crate rayon;
-extern crate log;
-extern crate simple_logger;
-
-extern crate stopwatch;
-
-extern crate chrono;
-extern crate graph_generator_lib;
-extern crate graph_descriptions;
-extern crate regex;
-extern crate sysmon;
-extern crate serde;
-extern crate futures;
-extern crate lambda_runtime as lambda;
 extern crate aws_lambda_events;
-
-
+extern crate chrono;
+extern crate failure;
+extern crate futures;
+extern crate graph_descriptions;
+extern crate graph_generator_lib;
+extern crate lambda_runtime as lambda;
+extern crate log;
+extern crate openssl_probe;
+extern crate rayon;
+extern crate regex;
 extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate rusoto_sqs;
+extern crate serde;
+extern crate simple_logger;
 extern crate sqs_lambda;
+extern crate stopwatch;
+extern crate sysmon;
 
-use lambda::Handler;
+
+use std::borrow::Cow;
+use std::marker::PhantomData;
+use std::sync::Arc;
+
+use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
+use chrono::prelude::*;
+use failure::bail;
+use failure::Error;
+use futures::{Future, Stream};
+use graph_descriptions::*;
+use graph_descriptions::graph_description::*;
+use graph_generator_lib::upload_subgraphs;
 use lambda::Context;
+use lambda::error::HandlerError;
+use lambda::Handler;
 use lambda::lambda;
+use log::*;
 use log::error;
-
+use rayon::iter::Either;
+use rayon::prelude::*;
 use rusoto_core::Region;
-
-use futures::{Stream, Future};
 use rusoto_s3::{GetObjectRequest, S3};
 use rusoto_s3::S3Client;
 use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
 use serde::Deserialize;
-
-
-use rayon::prelude::*;
-use rayon::iter::Either;
-use log::*;
-use failure::bail;
-use failure::Error;
-use chrono::prelude::*;
-use graph_descriptions::*;
-use graph_descriptions::graph_description::*;
-use graph_generator_lib::upload_subgraphs;
+use sqs_lambda::BlockingSqsCompletionHandler;
+use sqs_lambda::EventHandler;
+use sqs_lambda::events_from_s3_sns_sqs;
+use sqs_lambda::S3EventRetriever;
+use sqs_lambda::SqsService;
+use sqs_lambda::ZstdDecoder;
 use sysmon::*;
-
-use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
-
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -89,7 +91,7 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         .asset_id(process_start.header.computer.clone())
         .state(ProcessState::Existing)
         .pid(process_start.parent_process_id)
-        .timestamp(timestamp)
+        .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
 
@@ -98,14 +100,14 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         .image_name(process_start.image.clone())
         .state(ProcessState::Created)
         .pid(process_start.process_id)
-        .timestamp(timestamp)
+        .created_timestamp(timestamp)
         .build()
         .unwrap();
 
     let child_exe = FileDescriptionBuilder::default()
         .asset_id(process_start.header.computer.clone())
         .state(FileState::Existing)
-        .timestamp(timestamp)
+        .last_seen_timestamp(timestamp)
         .path(process_start.image)
         .build()
         .unwrap();
@@ -136,7 +138,7 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
         .asset_id(file_create.header.computer.clone())
         .state(ProcessState::Existing)
         .pid(file_create.process_id)
-        .timestamp(timestamp)
+        .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
 
@@ -144,7 +146,7 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
         .asset_id(file_create.header.computer.clone())
         .state(FileState::Created)
         .path(file_create.target_filename)
-        .timestamp(timestamp)
+        .created_timestamp(timestamp)
         .build()
         .unwrap();
 
@@ -157,18 +159,6 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
 
     Ok(graph)
 }
-
-use std::borrow::Cow;
-use sqs_lambda::S3EventRetriever;
-use sqs_lambda::events_from_s3_sns_sqs;
-use sqs_lambda::ZstdDecoder;
-use std::marker::PhantomData;
-use sqs_lambda::BlockingSqsCompletionHandler;
-use sqs_lambda::SqsService;
-use sqs_lambda::EventHandler;
-use lambda::error::HandlerError;
-use std::sync::Arc;
-
 
 #[derive(Clone)]
 struct SysmonSubgraphGenerator;
@@ -224,10 +214,10 @@ impl EventHandler<Vec<u8>> for SysmonSubgraphGenerator {
         info!("Completed mapping {} subgraphs", subgraphs.len());
         let graphs = GeneratedSubgraphs {subgraphs};
 
-//        log_time!(
-//            "upload_subgraphs",
-//            upload_subgraphs(graphs)
-//        )?;
+        log_time!(
+            "upload_subgraphs",
+            upload_subgraphs(graphs)
+        )?;
 
 
         Ok(())

@@ -38,6 +38,8 @@ futures = "0.1.25"
 sqs-lambda = "0.1.4"
 lambda_runtime = "0.1.0"
 aws_lambda_events = "0.2.0"
+openssl-probe = "0.1.2"
+simple_logger = "1.0.1"
 
 [dependencies.uuid]
 version = "*"

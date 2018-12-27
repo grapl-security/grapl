@@ -1,34 +1,50 @@
-
+extern crate openssl_probe;
+extern crate lambda_runtime as lambda;
+extern crate aws_lambda_events;
+extern crate simple_logger;
+extern crate dgraph_rs;
 #[macro_use]
 extern crate failure;
+extern crate futures;
+extern crate graph_descriptions;
+extern crate grpc;
 #[macro_use]
 extern crate log;
+extern crate rusoto_core;
+extern crate rusoto_s3;
+extern crate rusoto_sqs;
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
-
-extern crate dgraph_rs;
-extern crate graph_descriptions;
-extern crate serde;
-extern crate sqs_microservice;
-extern crate grpc;
+extern crate sqs_lambda;
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::SystemTime;
 
+use dgraph_rs::protos::api;
+use dgraph_rs::protos::api_grpc::{Dgraph, DgraphClient};
+use dgraph_rs::protos::api_grpc;
+use dgraph_rs::Transaction;
 use failure::Error;
 use graph_descriptions::graph_description::*;
-use sqs_microservice::handle_s3_sns_sqs_proto;
-
-use dgraph_rs::protos::api;
-use dgraph_rs::protos::api_grpc::{DgraphClient, Dgraph};
-use dgraph_rs::Transaction;
-use dgraph_rs::protos::api_grpc;
-use std::sync::Arc;
-
 use grpc::{Client, ClientStub};
 use grpc::ClientConf;
+use rusoto_core::Region;
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
+use rusoto_s3::{S3, S3Client};
+use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
+use sqs_lambda::BlockingSqsCompletionHandler;
+use sqs_lambda::EventHandler;
+use sqs_lambda::events_from_s3_sns_sqs;
+use sqs_lambda::S3EventRetriever;
+use sqs_lambda::SqsService;
+use sqs_lambda::ZstdProtoDecoder;
+use lambda::Context;
+use lambda::lambda;
+use lambda::error::HandlerError;
 
 #[derive(Debug, Fail)]
 enum MergeFailure {
@@ -340,7 +356,7 @@ fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> 
                 } else {
                     error!("with_retries: {}", e);
                     cur += 1;
-                    std::thread::sleep_ms(cur * 10);
+                    std::thread::sleep_ms(cur * 25);
                 }
             }
 
@@ -349,9 +365,11 @@ fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> 
 }
 
 
-fn main() {
+#[derive(Clone)]
+struct GraphMerger;
 
-    handle_s3_sns_sqs_proto(move |subgraph: GraphDescription| {
+impl EventHandler<GraphDescription> for GraphMerger {
+    fn handle_event(&self, subgraph: GraphDescription) -> Result<(), Error> {
         println!("handling new subgraph");
         let mg_client = &api_grpc::DgraphClient::with_client(
             Arc::new(
@@ -375,21 +393,64 @@ fn main() {
         let upsert_res = with_retries(|| upserter.upsert_all());
 
         with_retries(|| {
-            println!("inserting {} edges", subgraph.edges.values().fold(0, |mut acc, e| {acc += e.edges.len(); acc}));
-            let edges = subgraph.edges.values().map(|e| &e.edges).flatten();
+            let edges: Vec<_> = subgraph.edges.values().map(|e| &e.edges).flatten().collect();
+            if edges.is_empty() {
+                return Ok(())
+            }
+
+            info!("inserting {} edges", edges.len());
+
             insert_edges(&mg_client, edges, &upserter.node_key_to_uid)
         })?;
 
         // Retry any upserts that failed
         upsert_res
-    }, move |_| {
+    }
+}
 
-        // Encode and compress results
+pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+    let handler = GraphMerger{};
 
-        // TODO: Publish results to SNS
-        Ok(())
-    })
+    let region = Region::UsEast1;
+    info!("Creating sqs_client");
+    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
 
+    info!("Creating s3_client");
+    let s3_client = Arc::new(S3Client::simple(region.clone()));
+
+    info!("Creating retriever");
+    let retriever = S3EventRetriever::new(
+        s3_client,
+        |d| {info!("Parsing: {:?}", d); events_from_s3_sns_sqs(d)},
+        ZstdProtoDecoder{},
+    );
+
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+
+    info!("Creating sqs_completion_handler");
+    let sqs_completion_handler = BlockingSqsCompletionHandler::new(
+        sqs_client,
+        queue_url
+    );
+
+    let mut sqs_service = SqsService::new(
+        retriever,
+        handler,
+        sqs_completion_handler,
+    );
+
+    info!("Handing off event");
+    sqs_service.run(event, ctx)?;
+
+    Ok(())
+}
+
+
+fn main() {
+    simple_logger::init_with_level(log::Level::Info).unwrap();
+    openssl_probe::init_ssl_cert_env_vars();
+
+    lambda!(handler);
 }
 
 pub fn set_process_schema(client: &DgraphClient) {
@@ -403,7 +464,7 @@ pub fn set_process_schema(client: &DgraphClient) {
        		"terminate_time: int @index(int) .\n",
        		"image_name: string @index(hash) @index(fulltext) .\n",
        		"arguments: string  @index(fulltext) .\n",
-       		"bin_file: uid @reverse @index(fulltext) .\n",
+       		"bin_file: uid @reverse .\n",
        		"children: uid @reverse .\n",
        		"created_files: uid @reverse .\n",
             "deleted_files: uid @reverse .\n",
@@ -412,7 +473,7 @@ pub fn set_process_schema(client: &DgraphClient) {
             "created_connection: uid @reverse .\n",
             "bound_connection: uid @reverse .\n",
         ).to_string();
-    let _res = client.alter(Default::default(), op_schema).wait().expect("set schema");
+    client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
 
 pub fn set_file_schema(client: &DgraphClient) {
@@ -423,10 +484,9 @@ pub fn set_file_schema(client: &DgraphClient) {
        		asset_id: string @index(hash) .
        		create_time: int @index(int) .
        		delete_time: int @index(int) .
-       		path: string @index(hash) .
+       		path: string @index(hash) @index(fulltext) .
         "#.to_string();
-    let _res = client.alter(Default::default(), op_schema).wait().expect("set schema");
-
+    client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
 
 pub fn set_ip_address_schema(client: &DgraphClient) {
@@ -437,8 +497,7 @@ pub fn set_ip_address_schema(client: &DgraphClient) {
        		last_seen: int @index(int) .
        		external_ip: string @index(hash) .
         "#.to_string();
-    let _res = client.alter(Default::default(), op_schema).wait().expect("set schema");
-
+    client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
 
 pub fn set_connection_schema(client: &DgraphClient) {
@@ -447,6 +506,8 @@ pub fn set_connection_schema(client: &DgraphClient) {
     op_schema.schema = concat!(
        		"node_key: string @upsert @index(hash) .\n",
        		"create_time: int @index(int) .\n",
+       		"terminate_time: int @index(int) .\n",
+       		"last_seen_time: int @index(int) .\n",
        		"ip: string @index(hash) .\n",
        		"port: string @index(hash) .\n",
        		// outbound connections have a `connection` edge to inbound connections
@@ -454,7 +515,6 @@ pub fn set_connection_schema(client: &DgraphClient) {
        		// outbound connections have a `connection` edge to external ip addresses
        		"external_connection: uid @reverse .\n",
     ).to_string();
-    let _res = client.alter(Default::default(), op_schema).wait().expect("set schema");
-
+    client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
 

@@ -36,8 +36,10 @@ message OutboundConnection {
     google.protobuf.BytesValue host_ip = 4;
     // 1 = Created, 2 = Terminated, 3 = Existing
     uint32 state = 5;
-    uint64 timestamp = 6;
-    uint32 port = 7;
+    uint64 created_timestamp = 6;
+    uint64 terminated_timestamp = 7;
+    uint64 last_seen_timestamp = 8;
+    uint32 port = 9;
 }
 
 message InboundConnection {
@@ -47,8 +49,10 @@ message InboundConnection {
     google.protobuf.BytesValue host_ip = 4;
     // 1 = Created, 2 = Terminated, 3 = Existing
     uint32 state = 5;
-    uint64 timestamp = 6;
-    uint32 port = 7;
+    uint64 created_timestamp = 6;
+    uint64 terminated_timestamp = 7;
+    uint64 last_seen_timestamp = 8;
+    uint32 port = 9;
 }
 
 message ProcessDescription {
@@ -61,9 +65,11 @@ message ProcessDescription {
     // When state == 1, create_time
     // When state == 2, end_time
     // When state == 3, seen_time
-    uint64 timestamp = 7;
-    bytes image_name = 8;
-    bytes image_path = 9;
+    uint64 created_timestamp = 7;
+    uint64 terminated_timestamp = 8;
+    uint64 last_seen_timestamp = 9;
+    bytes image_name = 10;
+    bytes image_path = 11;
 }
 
 message FileDescription {
@@ -73,8 +79,10 @@ message FileDescription {
     google.protobuf.BytesValue host_ip = 4;
     // 1 = Created, 2 = Deleted, 3 = Referenced
     uint32 state = 5;
-    uint64 timestamp = 6;
-    bytes path = 7;
+    uint64 created_timestamp = 6;
+    uint64 deleted_timestamp = 7;
+    uint64 last_seen_timestamp = 8;
+    bytes path = 9;
 }
 
 message IpAddressDescription {

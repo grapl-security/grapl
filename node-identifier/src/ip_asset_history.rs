@@ -106,7 +106,7 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
                 };
 
-                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp);
+                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp());
 
                 match attribution_res {
                     Ok(new_asset_id) => {
@@ -139,7 +139,7 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
                 };
 
-                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp);
+                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp());
 
                 match attribution_res {
                     Ok(new_asset_id) => {
@@ -174,7 +174,7 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                 };
 
 
-                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp);
+                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp());
 
                 match attribution_res {
                     Ok(new_asset_id) => {
@@ -209,7 +209,7 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
                 };
 
-                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp);
+                let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp());
 
                 match attribution_res {
                     Ok(new_asset_id) => {

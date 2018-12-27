@@ -27,6 +27,11 @@ fn main() {
     config.field_attribute(".graph_description.FileDescription.hostname", "#[builder(default)]");
     config.field_attribute(".graph_description.FileDescription.host_ip", "#[builder(default)]");
 
+
+    config.field_attribute(".graph_description.FileDescription.created_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.FileDescription.deleted_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.FileDescription.last_seen_timestamp", "#[builder(default)]");
+
     config.field_attribute(".graph_description.ProcessDescription.node_key", "#[builder(field(private))]");
     config.field_attribute(".graph_description.ProcessDescription.node_key",
                            "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]");
@@ -37,6 +42,10 @@ fn main() {
     config.field_attribute(".graph_description.ProcessDescription.image_name", "#[builder(default)]");
     config.field_attribute(".graph_description.ProcessDescription.image_path", "#[builder(default)]");
 
+    config.field_attribute(".graph_description.ProcessDescription.created_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.ProcessDescription.terminated_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.ProcessDescription.last_seen_timestamp", "#[builder(default)]");
+
 
     config.field_attribute(".graph_description.InboundConnection.node_key", "#[builder(field(private))]");
     config.field_attribute(".graph_description.InboundConnection.node_key",
@@ -46,6 +55,11 @@ fn main() {
     config.field_attribute(".graph_description.InboundConnection.hostname", "#[builder(default)]");
     config.field_attribute(".graph_description.InboundConnection.host_ip", "#[builder(default)]");
 
+
+    config.field_attribute(".graph_description.InboundConnection.created_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.InboundConnection.terminated_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.InboundConnection.last_seen_timestamp", "#[builder(default)]");
+
     config.field_attribute(".graph_description.OutboundConnection.node_key", "#[builder(field(private))]");
     config.field_attribute(".graph_description.OutboundConnection.node_key",
                            "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]");
@@ -54,7 +68,9 @@ fn main() {
     config.field_attribute(".graph_description.OutboundConnection.hostname", "#[builder(default)]");
     config.field_attribute(".graph_description.OutboundConnection.host_ip", "#[builder(default)]");
 
-
+    config.field_attribute(".graph_description.OutboundConnection.created_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.OutboundConnection.terminated_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.OutboundConnection.last_seen_timestamp", "#[builder(default)]");
 
     config
         .compile_protos(&[

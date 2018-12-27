@@ -1,35 +1,62 @@
-#[macro_use]
-extern crate mysql;
-
-#[macro_use]
-extern crate log;
-
+extern crate aws_lambda_events;
+extern crate base58;
 #[macro_use]
 extern crate failure;
-
-extern crate stopwatch;
-extern crate base58;
+extern crate futures;
 extern crate graph_descriptions;
+extern crate lambda_runtime as lambda;
+#[macro_use]
+extern crate log;
+extern crate lru_time_cache;
+#[macro_use]
+extern crate mysql;
+extern crate prost;
 extern crate rusoto_core;
 extern crate rusoto_s3;
-extern crate uuid;
-extern crate prost;
+extern crate rusoto_sqs;
 extern crate sha2;
-extern crate lru_time_cache;
+extern crate sqs_lambda;
+extern crate stopwatch;
+extern crate uuid;
 extern crate zstd;
 
-extern crate futures;
-extern crate lambda_runtime as lambda;
-extern crate aws_lambda_events;
 
-extern crate rusoto_sqs;
-extern crate sqs_lambda;
-
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::env;
+use std::io::Cursor;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::time::Duration;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
-use lru_time_cache::LruCache;
+use base58::ToBase58;
+use failure::Error;
+use futures::future::Future;
+use graph_descriptions::*;
+use graph_descriptions::graph_description::*;
 use lambda::Context;
+use lambda::error::HandlerError;
+use lru_time_cache::LruCache;
+use mysql as my;
+use prost::Message;
+use rusoto_core::Region;
+use rusoto_s3::{S3, S3Client};
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
+use sha2::{Digest, Sha256};
+use sqs_lambda::BlockingSqsCompletionHandler;
+use sqs_lambda::EventHandler;
+use sqs_lambda::events_from_s3_sns_sqs;
+use sqs_lambda::S3EventRetriever;
+use sqs_lambda::SqsService;
+use sqs_lambda::ZstdProtoDecoder;
+use stopwatch::Stopwatch;
 
+use cache::IdentityCache;
+use ip_asset_history::map_asset_ids_to_graph;
+use session_history::map_session_ids_to_graph;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -48,47 +75,6 @@ pub mod ip_asset_history;
 pub mod session_history;
 pub mod cache;
 pub mod session;
-
-use base58::ToBase58;
-use stopwatch::Stopwatch;
-use failure::Error;
-
-use sha2::{Digest, Sha256};
-
-use std::env;
-
-
-use rusoto_s3::{S3, S3Client};
-use prost::Message;
-
-use mysql as my;
-
-use futures::future::Future;
-
-
-use session_history::map_session_ids_to_graph;
-use ip_asset_history::map_asset_ids_to_graph;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::*;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
-use rusoto_core::Region;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::time::Duration;
-use std::sync::Arc;
-use std::sync::Mutex;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
-
-use cache::IdentityCache;
-use std::io::Cursor;
-use lambda::error::HandlerError;
-use sqs_lambda::S3EventRetriever;
-use sqs_lambda::EventHandler;
-use sqs_lambda::BlockingSqsCompletionHandler;
-use sqs_lambda::SqsService;
-use sqs_lambda::ZstdProtoDecoder;
-use sqs_lambda::events_from_s3_sns_sqs;
 
 #[derive(Clone)]
 struct NodeIdentifier<'a> {
@@ -112,16 +98,21 @@ impl<'a> EventHandler<GeneratedSubgraphs> for NodeIdentifier<'a> {
         info!("Handling raw event");
 
 
+        if subgraphs.subgraphs.is_empty() {
+            return Ok(())
+        }
+
+
         info!("Connecting to history database");
 
-        let username = env::var("HISTORY_DB_USERNAME").expect("HISTORY_DB_USERNAME");
-        let password = env::var("HISTORY_DB_PASSWORD").expect("HISTORY_DB_PASSWORD");
+        let username = env::var("HISTORY_DB_USERNAME")?;
+        let password = env::var("HISTORY_DB_PASSWORD")?;
 
         let pool = my::Pool::new(
             format!("mysql://{username}:{password}@db.historydb:3306/historydb",
                     username=username,
                     password=password)
-        ).unwrap();
+        )?;
 
         info!("Connected to history database");
 
@@ -138,6 +129,8 @@ impl<'a> EventHandler<GeneratedSubgraphs> for NodeIdentifier<'a> {
         }
 
         subgraphs.subgraphs.sort_unstable_by(|a, b| a.timestamp.cmp(&b.timestamp));
+
+        let mut total_subgraph = GraphDescription::new(subgraphs.subgraphs[0].timestamp);
 
         let mut result = Ok(());
         for unid_subgraph in subgraphs.subgraphs {
@@ -190,25 +183,18 @@ impl<'a> EventHandler<GeneratedSubgraphs> for NodeIdentifier<'a> {
                     remap_edges(&unid_id_map, &dead_node_ids, &unid_subgraph, &mut output_subgraph)
                 }
 
-//                lru_cache.check_cache("a");
-
-                let r = upload_identified_graphs(output_subgraph);
-                if let e @ Err(_) = r {
-                    error!("error: {:#?}", e);
-                    result = e;
-                }
-
+                total_subgraph.merge(&output_subgraph);
 
                 result
             })();
-
-
 
             if let e @ Err(_) = _result {
                 error!("error: {:#?}", e);
                 result = e;
             }
         }
+
+        upload_identified_graphs(total_subgraph)?;
 
         result
     }
@@ -306,7 +292,6 @@ pub fn remove_dead_nodes(dead_node_ids: &HashSet<String>,
                          unid_subgraph: &mut GraphDescription) {
     for node_id in dead_node_ids.iter() {
         unid_subgraph.nodes.remove(node_id);
-
     }
 
     for (_node_key, edges) in unid_subgraph.edges.iter_mut() {

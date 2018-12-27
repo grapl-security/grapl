@@ -47,7 +47,7 @@ impl<'a> Session for &'a ProcessDescription {
     }
 
     fn get_timestamp(&self) -> u64 {
-        self.timestamp
+        self.timestamp()
     }
 
     fn get_action(&self) -> Action {
@@ -78,7 +78,7 @@ impl<'a> Session for &'a FileDescription {
     }
 
     fn get_timestamp(&self) -> u64 {
-        self.timestamp
+        self.timestamp()
     }
 
     fn get_action(&self) -> Action {
@@ -113,7 +113,7 @@ impl<'a> Session for &'a OutboundConnection {
     }
 
     fn get_timestamp(&self) -> u64 {
-        self.timestamp - (self.timestamp % 10)
+        self.timestamp() - (self.timestamp() % 10)
     }
 
     fn get_action(&self) -> Action {
@@ -147,7 +147,7 @@ impl<'a> Session for &'a InboundConnection {
     }
 
     fn get_timestamp(&self) -> u64 {
-        self.timestamp - (self.timestamp % 10)
+        self.timestamp() - (self.timestamp() % 10)
     }
 
     fn get_action(&self) -> Action {
