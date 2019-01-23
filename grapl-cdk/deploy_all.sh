@@ -8,6 +8,6 @@ cdk deploy generic-subgraph-generator-stack &&
 cdk deploy sysmon-subgraph-generator-stack &&
 cdk deploy node-identifier-stack &&
 cdk deploy graph-merger-stack &&
-cdk deploy engagement-creation-service-stack
+# cdk deploy engagement-creation-service-stack
 
 date

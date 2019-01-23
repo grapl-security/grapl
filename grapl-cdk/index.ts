@@ -88,6 +88,11 @@ class Service {
             retry_code_name = name
         }
 
+
+        if (environment) {
+            environment.QUEUE_URL =queues.retry_queue.queueUrl;
+        }
+
         let event_retry_handler = new lambda.Function(
             stack, name + '-retry-handler', {
                 runtime: {name: "provided", supportsInlineCode: true},
@@ -383,6 +388,7 @@ class NodeIdentityMapper extends cdk.Stack {
         const environment = {
             "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
             "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
+            "HISTORY_DB_ADDRESS": "db.historydb", // TODO: Derive this
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX
         };
 
@@ -452,6 +458,7 @@ class NodeIdentifier extends cdk.Stack {
             "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
             "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
+            "HISTORY_DB_ADDRESS": "db.historydb", // TODO: Derive this
             "IDENTITY_CACHE_PEPPER": process.env.IDENTITY_CACHE_PEPPER,
         };
 

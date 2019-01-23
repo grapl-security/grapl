@@ -22,7 +22,7 @@ pub fn get_ip_asset_asset_id(conn: &mut Transaction,
        WHERE ip = "{}"
              AND create_time <= {}
        ORDER BY create_time DESC"#,
-       str::from_utf8(ip).unwrap(), &timestamp
+       str::from_utf8(ip).expect("ip is not valid utf8"), &timestamp
     );
 
     let query_result = conn.prep_exec(
@@ -31,11 +31,11 @@ pub fn get_ip_asset_asset_id(conn: &mut Transaction,
     )?;
 
     for row in query_result {
-        let row = row.unwrap();
-        let a_time: u64 = row.get("create_time").unwrap();
+        let row = row.expect("row failed");
+        let a_time: u64 = row.get("create_time").expect("create_time");
 
         if timestamp >= a_time {
-            return Ok(Some(row.get("asset_id").unwrap()));
+            return Ok(Some(row.get("asset_id").expect("asset_id")));
         }
     }
 
@@ -63,7 +63,7 @@ pub fn attribute_asset(conn: &mut Transaction, host_id: &HostId, timestamp: u64)
         HostId::Ip(ref ip) => {
             let asset_id = get_ip_asset_asset_id(
                 conn,ip, timestamp
-            )?.unwrap();
+            )?.expect(&format!("Failed to retrieve asset id from ip address {}", ip));
 
             Ok(asset_id)
         }
@@ -71,7 +71,7 @@ pub fn attribute_asset(conn: &mut Transaction, host_id: &HostId, timestamp: u64)
             Ok(asset_id.to_owned())
         }
         HostId::Hostname(ref hostname) => {
-            unimplemented!()
+            panic!("Attributing hostnames is not implemented")
         }
     }
 

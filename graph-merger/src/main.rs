@@ -1,4 +1,5 @@
 extern crate openssl_probe;
+extern crate stopwatch;
 extern crate lambda_runtime as lambda;
 extern crate aws_lambda_events;
 extern crate simple_logger;
@@ -36,7 +37,7 @@ use rusoto_core::Region;
 use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
 use rusoto_s3::{S3, S3Client};
 use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
-use sqs_lambda::BlockingSqsCompletionHandler;
+use sqs_lambda::NopSqsCompletionHandler;
 use sqs_lambda::EventHandler;
 use sqs_lambda::events_from_s3_sns_sqs;
 use sqs_lambda::S3EventRetriever;
@@ -45,6 +46,21 @@ use sqs_lambda::ZstdProtoDecoder;
 use lambda::Context;
 use lambda::lambda;
 use lambda::error::HandlerError;
+
+
+macro_rules! log_time {
+    ($msg:expr, $x:expr) => {
+        {
+            let mut sw = stopwatch::Stopwatch::start_new();
+            #[allow(path_statements)]
+            let result = $x;
+            sw.stop();
+            info!("{} {} milliseconds", $msg, sw.elapsed_ms());
+            result
+        }
+    };
+}
+
 
 #[derive(Debug, Fail)]
 enum MergeFailure {
@@ -157,29 +173,26 @@ impl<'a> BulkUpserter<'a> {
 
         info!("Generating queries");
         // clear, and then fill, the internal query buffer
-        self.generate_queries();
+        log_time!("generate_queries", self.generate_queries());
 
         info!("Querying all nodes");
         // Query dgraph for remaining nodes
-        let query_response = self.query_all(&mut txn)?;
+        let query_response =
+            log_time!("query_all", self.query_all(&mut txn)?);
 
         info!("Generating inserts");
         // Generate upserts
-        self.generate_insert(query_response)?;
+        log_time!("generate_insert", self.generate_insert(query_response)?);
 
         info!("Performing bulk upsert");
         // perform upsert
-        println!("insert_buffer: {}", self.insert_buffer);
-
         let mut mutation = api::Mutation::new();
 
         mutation.set_json = self.insert_buffer.as_bytes().to_owned();
 
-        let mut_res = txn.mutate(
-            mutation
-        )?;
+        let mut_res = log_time!("txn.mutate", txn.mutate(mutation)?);
 
-        let txn_commit = txn.commit()?;
+        let txn_commit = log_time!("txn.commit", txn.commit()?);
         // We need to take the newly created uids and add them to our map
         self.node_key_to_uid.extend(mut_res.uids);
 
@@ -202,11 +215,18 @@ impl<'a> BulkUpserter<'a> {
     fn query_all(&mut self, txn: &mut Transaction) -> Result<DgraphResponse, Error> {
         let resp = txn.query(
             &self.query_buffer[..]
-        )?;
+        );
+
+        let resp = match resp {
+            Ok(resp) => resp,
+            Err(e) => {
+                error!("Query failed. Buffer: {:?}", self.query_buffer);
+                bail!(e);
+            }
+        };
 
         Ok(DgraphResponse{response: serde_json::from_slice(&resp.json)?})
     }
-
 
     fn generate_insert(&mut self, response: DgraphResponse) -> Result<(), Error> {
         self.insert_buffer.clear();
@@ -320,6 +340,7 @@ fn generate_edge_insert(to: &str, from: &str, edge_name: &str) -> String {
         }
     }).to_string()
 }
+
 //
 //enum NodeType {
 //    Process,
@@ -390,7 +411,9 @@ impl EventHandler<GraphDescription> for GraphMerger {
         );
 
         // Even if some node upserts fail we should create edges for the ones that succeeded
-        let upsert_res = with_retries(|| upserter.upsert_all());
+        let upsert_res = with_retries(|| {
+            log_time!("upsert_all", upserter.upsert_all())
+        });
 
         with_retries(|| {
             let edges: Vec<_> = subgraph.edges.values().map(|e| &e.edges).flatten().collect();
@@ -400,7 +423,7 @@ impl EventHandler<GraphDescription> for GraphMerger {
 
             info!("inserting {} edges", edges.len());
 
-            insert_edges(&mg_client, edges, &upserter.node_key_to_uid)
+            log_time!("insert_edges", insert_edges(&mg_client, edges, &upserter.node_key_to_uid))
         })?;
 
         // Retry any upserts that failed
@@ -412,8 +435,8 @@ pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     let handler = GraphMerger{};
 
     let region = Region::UsEast1;
-    info!("Creating sqs_client");
-    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
+//    info!("Creating sqs_client");
+//    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
 
     info!("Creating s3_client");
     let s3_client = Arc::new(S3Client::simple(region.clone()));
@@ -428,8 +451,7 @@ pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
 
     info!("Creating sqs_completion_handler");
-    let sqs_completion_handler = BlockingSqsCompletionHandler::new(
-        sqs_client,
+    let sqs_completion_handler = NopSqsCompletionHandler::new(
         queue_url
     );
 
@@ -440,7 +462,7 @@ pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     );
 
     info!("Handing off event");
-    sqs_service.run(event, ctx)?;
+    log_time!("sqs_service.run", sqs_service.run(event, ctx)?);
 
     Ok(())
 }
@@ -459,7 +481,7 @@ pub fn set_process_schema(client: &DgraphClient) {
     op_schema.schema = concat!(
        		"node_key: string @upsert @index(hash) .\n",
        		"pid: int @index(int) .\n",
-       		"create_time: int @index(int) .\n",
+       		"created_time: int @index(int) .\n",
        		"asset_id: string @index(hash) .\n",
        		"terminate_time: int @index(int) .\n",
        		"image_name: string @index(hash) @index(fulltext) .\n",

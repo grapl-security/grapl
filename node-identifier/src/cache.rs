@@ -131,83 +131,83 @@ impl<'a> IdentityCache<'a> {
 
 }
 
-#[cfg(test)]
-mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
-    use super::*;
-    use session::Action;
-    use std::borrow::Cow;
-
-    #[derive(Debug)]
-    struct MockKeyable {
-        pub timestamp: u64,
-        pub key: &'static [u8]
-    }
-
-    impl<'a> IdentityKeyable for &'a MockKeyable {
-        fn get_cache_key(&self, pepper: &[u8]) -> Vec<u8> {
-            self.get_cache_key(pepper)
-        }
-        fn get_future_cache_key(&self, pepper: &[u8]) -> Vec<u8> {self.get_future_cache_key(pepper)}
-    }
-
-    impl IdentityKeyable for MockKeyable {
-        fn get_cache_key(&self, pepper: &[u8]) -> Vec<u8> {
-            let timestamp = (self.timestamp - self.timestamp % 10).to_string();
-
-            let mut hasher = Sha224::new();
-
-            hasher.input(self.key);
-            hasher.input(timestamp.as_bytes());
-            hasher.input(pepper);
-
-            let key = hasher.result();
-
-            key.to_vec()
-        }
-        fn get_future_cache_key(&self, pepper: &[u8]) -> Vec<u8> {
-            let timestamp = (self.timestamp - self.timestamp % 10 + 10).to_string();
-
-            let mut hasher = Sha224::new();
-
-            hasher.input(self.key);
-            hasher.input(timestamp.as_bytes());
-            hasher.input(pepper);
-
-            let key = hasher.result();
-
-            key.to_vec()
-        }
-    }
-
-
-    #[test]
-    fn test_set_get_eq() {
-        let mut cache = IdentityCache::new(
-            10,
-            Duration::from_secs(1 << 8),
-            b"pepper"
-        );
-
-        let identity = "identity";
-
-        let keyable = MockKeyable {
-            timestamp: 1234,
-            key: &b"key"[..],
-        };
-
-        cache.update_cache(&keyable, identity);
-//        cache.check_cache(keyable);
-    }
-
-
-    #[test]
-    fn test_set_get_skew() {}
-
-    #[test]
-    fn test_set_get_preload() {
-        // This assert would fire and test will fail.
-        // Please note, that private functions can be tested too!
-//        assert_eq!(bad_add(1, 2), 3);
-    }
-}
+//#[cfg(test)]
+//mod tests {
+//    // Note this useful idiom: importing names from outer (for mod tests) scope.
+//    use super::*;
+//    use session::Action;
+//    use std::borrow::Cow;
+//
+//    #[derive(Debug)]
+//    struct MockKeyable {
+//        pub timestamp: u64,
+//        pub key: &'static [u8]
+//    }
+//
+//    impl<'a> IdentityKeyable for &'a MockKeyable {
+//        fn get_cache_key(&self, pepper: &[u8]) -> Vec<u8> {
+//            self.get_cache_key(pepper)
+//        }
+//        fn get_future_cache_key(&self, pepper: &[u8]) -> Vec<u8> {self.get_future_cache_key(pepper)}
+//    }
+//
+//    impl IdentityKeyable for MockKeyable {
+//        fn get_cache_key(&self, pepper: &[u8]) -> Vec<u8> {
+//            let timestamp = (self.timestamp - self.timestamp % 10).to_string();
+//
+//            let mut hasher = Sha224::new();
+//
+//            hasher.input(self.key);
+//            hasher.input(timestamp.as_bytes());
+//            hasher.input(pepper);
+//
+//            let key = hasher.result();
+//
+//            key.to_vec()
+//        }
+//        fn get_future_cache_key(&self, pepper: &[u8]) -> Vec<u8> {
+//            let timestamp = (self.timestamp - self.timestamp % 10 + 10).to_string();
+//
+//            let mut hasher = Sha224::new();
+//
+//            hasher.input(self.key);
+//            hasher.input(timestamp.as_bytes());
+//            hasher.input(pepper);
+//
+//            let key = hasher.result();
+//
+//            key.to_vec()
+//        }
+//    }
+//
+//
+//    #[test]
+//    fn test_set_get_eq() {
+//        let mut cache = IdentityCache::new(
+//            10,
+//            Duration::from_secs(1 << 8),
+//            b"pepper"
+//        );
+//
+//        let identity = "identity";
+//
+//        let keyable = MockKeyable {
+//            timestamp: 1234,
+//            key: &b"key"[..],
+//        };
+//
+//        cache.update_cache(&keyable, identity);
+////        cache.check_cache(keyable);
+//    }
+//
+//
+//    #[test]
+//    fn test_set_get_skew() {}
+//
+//    #[test]
+//    fn test_set_get_preload() {
+//        // This assert would fire and test will fail.
+//        // Please note, that private functions can be tested too!
+////        assert_eq!(bad_add(1, 2), 3);
+//    }
+//}

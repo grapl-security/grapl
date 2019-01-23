@@ -590,7 +590,7 @@ impl ProcessDescription {
         };
 
         match state {
-            ProcessState::Created => pd.created_timestamp= timestamp,
+            ProcessState::Created => pd.created_timestamp = timestamp,
             ProcessState::Existing => pd.last_seen_timestamp = timestamp,
             ProcessState::Terminated => pd.terminated_timestamp = timestamp,
         }

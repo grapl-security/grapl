@@ -14,6 +14,100 @@ use stopwatch::Stopwatch;
 use cache::IdentityCache;
 use session::{Session, Action};
 
+pub fn find_first_session_after(conn: &mut Transaction, session: & impl Session) -> Result<Option<(String, bool)>, Error> {
+    let query = format!(r#"
+       SELECT session_id, create_time, is_guess
+           FROM {}
+       WHERE {} = "{key}" AND asset_id = "{asset_id}"
+             AND create_time >= {create_time}
+       ORDER BY create_time ASC
+       LIMIT 1
+       "#,
+                        session.get_table_name(),
+                        session.get_key_name(),
+                        key=session.get_key().as_ref().replace("\\", "\\\\")
+                            .replace("\"", "\\\"")
+                            .replace("\'", "\\\'")
+                            .replace("\n", "\\\n")
+                            .replace("\t", "\\\t"),
+                        asset_id=session.get_asset_id(),
+                        create_time=session.get_timestamp()
+    );
+
+    let query_results = conn.prep_exec(&query, &())?;
+
+    let row = query_results.into_iter().next();
+
+    if row.is_none() {
+        return Ok(None)
+    }
+    let row = row.unwrap();
+
+    let row = row.as_ref().expect("Failed to unwrap row");
+    let session_id: String = row.get("session_id").expect("is_guess");
+    let is_guess: bool = row.get("is_guess").expect("is_guess");
+
+    Ok(Some((session_id, is_guess)))
+}
+
+pub fn find_latest_guess(conn: &mut Transaction, session: & impl Session) -> Result<Option<String>, Error> {
+
+    // given the timestamp for session
+    // find the FIRST ID after that session
+    // If it is a guess, we can assume that session's ID
+    // If it is not a guess, we must create the id
+
+    let query = format!(r#"
+       SELECT session_id, create_time, is_guess
+           FROM {}
+       WHERE {} = "{key}" AND asset_id = "{asset_id}"
+             AND create_time >= {create_time}
+       ORDER BY create_time ASC
+       LIMIT 1
+       "#,
+                        session.get_table_name(),
+                        session.get_key_name(),
+                        key=session.get_key().as_ref().replace("\\", "\\\\")
+                            .replace("\"", "\\\"")
+                            .replace("\'", "\\\'")
+                            .replace("\n", "\\\n")
+                            .replace("\t", "\\\t"),
+                        asset_id=session.get_asset_id(),
+                        create_time=session.get_timestamp()
+    );
+
+    info!("Query is: {}", &query);
+
+    let query_results = conn.prep_exec(&query, &())?;
+
+    info!("get_session_id prep_exec");
+
+    let query_results: Vec<_> = query_results.collect();
+
+    for row in &query_results {
+        info!("Row {:#?}", row);
+        let row = row.as_ref().expect("Failed to unwrap row");
+        let is_guess: bool = row.get("is_guess").expect("is_guess");
+
+        if is_guess {
+            return Ok(Some(row.get("session_id").expect("session_id")));
+        }
+
+    }
+
+    if !query_results.is_empty() {
+        info!("Retrieving session id for latest session");
+        let row = query_results.last().unwrap();
+        let row = row.as_ref().expect("Failed to unwrap row");
+
+        return Ok(Some(row.get("session_id").expect("session_id")));
+    }
+
+    info!("Went through all query results");
+
+    Ok(None)
+}
+
 pub fn get_session_id(conn: &mut Transaction, session: & impl Session) -> Result<Option<String>, Error> {
 
     let maybe_id = check_exact_session(conn, session)?;
@@ -75,17 +169,26 @@ pub fn get_session_id(conn: &mut Transaction, session: & impl Session) -> Result
 
 pub fn check_exact_session(conn: &mut Transaction, session: & impl Session) -> Result<Option<String>, Error> {
 
+    let min_ts = session.get_timestamp() - 100;
+    let max_ts = session.get_timestamp() + 100;
+
     // TODO: We can probably add a bit of skew here, +/- 5 seconds would be safe
     let query = format!("
        SELECT session_id
        FROM {}
        WHERE {} = \"{}\" AND asset_id = \"{}\"
-             AND create_time = {}",
-        session.get_table_name(), session.get_key_name(), session.get_key().replace("\\", "\\\\")
+             AND create_time >= {}
+             AND create_time <= {}
+       LIMIT 1
+             ",
+        session.get_table_name(),session.get_key_name(), session.get_key().replace("\\", "\\\\")
                             .replace("\"", "\\\"")
                             .replace("\'", "\\\'")
                             .replace("\n", "\\\n")
-                            .replace("\t", "\\\t"), session.get_asset_id(), session.get_timestamp()
+                            .replace("\t", "\\\t"),
+                        session.get_asset_id(),
+                        min_ts,
+                        max_ts
     );
 
     let query_result = conn.prep_exec(&query, &())?;
@@ -99,9 +202,8 @@ pub fn check_exact_session(conn: &mut Transaction, session: & impl Session) -> R
     Ok(None)
 }
 
-pub fn create_session(conn: &mut Transaction, session: & impl Session) -> Result<String, Error> {
+pub fn create_session(conn: &mut Transaction, session: & impl Session, is_guess: bool) -> Result<String, Error> {
     info!("create session id");
-
 
     // Check if we've already processed a session start with these exact values
     let maybe_id = check_exact_session(conn, session)?;
@@ -110,19 +212,40 @@ pub fn create_session(conn: &mut Transaction, session: & impl Session) -> Result
         return Ok(session_id)
     }
 
-    let session_id = uuid::Uuid::new_v4().to_string();
+    // If we aren't guessing, we still need to check to see if we've guessed before, and if we're
+    // about to create a new session when we should instead just take the ID of a guess
+    let session_id = if !is_guess {
+        // Find the next session. If it's a guess, create our session with that ID
+        // Otherwise, generate a new ID
+        let first_after = find_first_session_after(conn, session)?;
+
+        if let Some((session_id, was_guessed)) = first_after {
+            if was_guessed {
+                session_id
+            } else {
+                uuid::Uuid::new_v4().to_string()
+            }
+        } else {
+            uuid::Uuid::new_v4().to_string()
+        }
+    } else {
+        uuid::Uuid::new_v4().to_string()
+    };
 
     let query = format!("
        INSERT INTO {}
-          (session_id, {}, asset_id, create_time)
+          (session_id, {}, asset_id, create_time, is_guess)
           VALUES
-              (\"{}\", \"{}\", \"{}\", {})",
+              (\"{}\", \"{}\", \"{}\", {}, {})",
         session.get_table_name(),
         session.get_key_name(), session_id, session.get_key().replace("\\", "\\\\")
                             .replace("\"", "\\\"")
                             .replace("\'", "\\\'")
                             .replace("\n", "\\\n")
-                            .replace("\t", "\\\t"), session.get_asset_id(), session.get_timestamp()
+                            .replace("\t", "\\\t"),
+                        session.get_asset_id(),
+                        session.get_timestamp(),
+        is_guess
     );
 
     info!("create_session prep_exec {}", &query);
@@ -156,7 +279,18 @@ pub fn update_or_create(conn: &mut Transaction,
 
     if should_default {
         info!("Did not get session id. Creating session_id");
-        create_session(conn, session)
+        let latest_guess = find_latest_guess(conn, session)?;
+
+        match latest_guess {
+            Some(session_id) => {
+                info!("Guessed session_id");
+                Ok(session_id)
+            }
+            None => {
+                info!("Creating session, defaulting");
+                create_session(conn, session, true)
+            }
+        }
     } else {
         bail!("Failed to get the session id, did not default.")
     }
@@ -171,7 +305,8 @@ pub fn create_process_table(conn: &Pool) {
                     session_id      TEXT NOT NULL,
                     asset_id        TEXT NOT NULL,
                     pid             NUMERIC NOT NULL,
-                    create_time     NUMERIC NOT NULL
+                    create_time     BIGINT UNSIGNED NOT NULL,
+                    is_guess        BOOLEAN NOT NULL
                   )", &()).expect("process_history::create_table");
 }
 
@@ -184,7 +319,8 @@ pub fn create_file_table(conn: &Pool) {
                     session_id      TEXT NOT NULL,
                     asset_id        TEXT NOT NULL,
                     path            TEXT NOT NULL,
-                    create_time     NUMERIC NOT NULL
+                    create_time     BIGINT UNSIGNED NOT NULL,
+                    is_guess        BOOLEAN NOT NULL
                   )", &()).expect("file_history::create_table");
 }
 
@@ -197,7 +333,8 @@ pub fn create_connection_table(conn: &Pool) {
                     session_id      TEXT NOT NULL,
                     asset_id        TEXT NOT NULL,
                     dir_port_ip     TEXT NOT NULL,
-                    create_time     NUMERIC NOT NULL
+                    create_time     BIGINT UNSIGNED NOT NULL,
+                    is_guess        BOOLEAN NOT NULL
                   )", &()).expect("connection_history::create_table");
 }
 
@@ -213,7 +350,7 @@ pub fn attribute_session_node(conn: &mut Transaction,
             log_time!{
                 "create_session",
                 create_session(
-                    conn, &node
+                    conn, &node, false
                 )?
             }
         },

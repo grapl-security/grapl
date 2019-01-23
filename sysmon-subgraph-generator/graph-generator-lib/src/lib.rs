@@ -78,7 +78,9 @@ pub fn send_logs_to_generators(
     Ok(())
 }
 
-pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
+pub fn upload_subgraphs<S>(s3_client: &S, subgraphs: GeneratedSubgraphs) -> Result<(), Error>
+    where S: S3
+{
     // TODO: Preallocate buffers
     info!("upload_subgraphs");
     let mut proto = Vec::with_capacity(5000);
@@ -103,8 +105,6 @@ pub fn upload_subgraphs(subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
                       base16::encode_lower(&key)
     );
     info!("uploading unidentifed_subgraphs to {}", key);
-
-    let s3_client = S3Client::simple(Region::UsEast1);
 
     let mut compressed = Vec::with_capacity(proto.len());
     let mut proto = Cursor::new(&proto);

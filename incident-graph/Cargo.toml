@@ -32,6 +32,7 @@ dgraph_client = "0.1.0"
 failure = "0.1.2"
 sha2 = "0.8.0"
 sqs-lambda = "0.1.4"
+stopwatch = "0.0.7"
 
 
 [dependencies.uuid]
