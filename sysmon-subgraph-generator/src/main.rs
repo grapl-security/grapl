@@ -103,6 +103,7 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         .asset_id(process_start.header.computer.clone())
         .state(ProcessState::Existing)
         .pid(process_start.parent_process_id)
+        .image_name(process_start.parent_image.clone())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -150,6 +151,7 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
         .asset_id(file_create.header.computer.clone())
         .state(ProcessState::Existing)
         .pid(file_create.process_id)
+        .image_name(file_create.image.clone())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -182,6 +184,7 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
         .hostname(inbound_connection.source_hostname.clone())
         .state(ProcessState::Existing)
         .pid(inbound_connection.process_id)
+        .image_name(inbound_connection.image.clone())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -249,6 +252,7 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
         .hostname(outbound_connection.source_hostname.to_owned())
         .state(ProcessState::Existing)
         .pid(outbound_connection.process_id)
+        .image_name(outbound_connection.image.clone())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
