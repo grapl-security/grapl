@@ -253,6 +253,17 @@ def identity_mappings():
         },
     ]
 
+def vm_identity_mappings():
+    return [
+        {
+            "HostnameAsset": {
+                "hostname": 'DESKTOP-38EOTDT.attlocal.net',
+                "asset_id": "hardcoded_asset_id_0000",
+                "timestamp": 1544301466470,
+            }
+        }
+    ]
+
 
 def main():
 
@@ -284,9 +295,9 @@ def main():
     # raw_logs = generate_basic_process_logs()
     # print(raw_logs)
     # epoch = int(time.time())
-    #
-    # mapping_body = zstd.compress(json.dumps(identity_mappings()), 4)
-    # serialized_raw_logs = zstd.compress(json.dumps(raw_logs), 4)
+    # #
+    # mapping_body = zstd.compress(json.dumps(vm_identity_mappings()), 4)
+    # # serialized_raw_logs = zstd.compress(json.dumps(raw_logs), 4)
     #
     # s3 = boto3.client('s3')
     #
@@ -298,14 +309,14 @@ def main():
     #         str(epoch)
     # )
     # time.sleep(2)
-    #
+
     # s3.put_object(
     #     Body=serialized_raw_logs,
     #     Bucket="grapl-raw-log-bucket",
     #     Key=str(epoch - (epoch % (24 * 60 * 60))) + "/PROCESS_START/" + str(epoch)
     # )
-    #
-    # print(res)
+
+    print(res)
 
 
 if __name__ == '__main__':

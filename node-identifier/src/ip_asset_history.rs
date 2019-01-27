@@ -42,6 +42,37 @@ pub fn get_ip_asset_asset_id(conn: &mut Transaction,
     Ok(None)
 }
 
+pub fn get_hostname_asset_asset_id(conn: &mut Transaction,
+                             hostname: &str,
+                             timestamp: u64) -> Result<Option<String>, Error> {
+    info!("get_ip_asset_asset_id");
+    let query = format!(r#"
+       SELECT asset_id, create_time
+       FROM hostname_asset_history
+       WHERE hostname = "{}"
+             AND create_time <= {}
+       ORDER BY create_time DESC"#,
+                        hostname, &timestamp
+    );
+
+    let query_result = conn.prep_exec(
+        &query,
+        &()
+    )?;
+
+    for row in query_result {
+        let row = row.expect("row failed");
+        let a_time: u64 = row.get("create_time").expect("create_time");
+
+        if timestamp >= a_time {
+            return Ok(Some(row.get("asset_id").expect("asset_id")));
+        }
+    }
+
+    Ok(None)
+}
+
+
 
 pub fn create_table(conn: &Pool) {
     info!("Creating ip_asset_history table");
@@ -51,7 +82,7 @@ pub fn create_table(conn: &Pool) {
                 primary_key     SERIAL PRIMARY KEY,
                 asset_id        TEXT NOT NULL,
                 ip              BLOB NOT NULL,
-                create_time     NUMERIC NOT NULL
+                create_time     BIGINT UNSIGNED NOT NULL
               )", &()).expect("ip_asset_history::create_table");
 }
 
@@ -63,7 +94,7 @@ pub fn attribute_asset(conn: &mut Transaction, host_id: &HostId, timestamp: u64)
         HostId::Ip(ref ip) => {
             let asset_id = get_ip_asset_asset_id(
                 conn,ip, timestamp
-            )?.expect(&format!("Failed to retrieve asset id from ip address {}", ip));
+            )?.expect(&format!("Failed to retrieve asset id from ip address {:?}", str::from_utf8(ip)));
 
             Ok(asset_id)
         }
@@ -71,7 +102,11 @@ pub fn attribute_asset(conn: &mut Transaction, host_id: &HostId, timestamp: u64)
             Ok(asset_id.to_owned())
         }
         HostId::Hostname(ref hostname) => {
-            panic!("Attributing hostnames is not implemented")
+            let asset_id = get_hostname_asset_asset_id(
+                conn,hostname, timestamp
+            )?.expect(&format!("Failed to retrieve asset id from hostnameaddress {:?}", hostname));
+
+            Ok(asset_id)
         }
     }
 

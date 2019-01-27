@@ -179,7 +179,7 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
     );
 
     let process = ProcessDescriptionBuilder::default()
-        .host_ip(inbound_connection.source_hostname.clone().into_bytes())
+        .hostname(inbound_connection.source_hostname.clone())
         .state(ProcessState::Existing)
         .pid(inbound_connection.process_id)
         .last_seen_timestamp(timestamp)
@@ -188,16 +188,16 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
 
     // Inbound is the 'src', at least in sysmon
     let inbound = InboundConnectionBuilder::default()
-        .host_ip(inbound_connection.source_hostname.clone().into_bytes())
+        .hostname(inbound_connection.source_hostname.clone())
         .state(ConnectionState::Created)
         .port(inbound_connection.source_port)
         .created_timestamp(timestamp)
         .build()
         .unwrap();
 
-    if is_internal_ip(&inbound_connection.destination_hostname.clone().into_bytes()) {
+    if is_internal_ip(&inbound_connection.destination_ip.clone().into_bytes()) {
         let outbound = InboundConnectionBuilder::default()
-            .host_ip(inbound_connection.destination_hostname.clone().into_bytes())
+            .hostname(inbound_connection.destination_hostname.clone())
             .state(ConnectionState::Created)
             .port(inbound_connection.source_port)
             .created_timestamp(timestamp)
@@ -212,7 +212,7 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
     } else {
         let external_ip = IpAddressDescription::new(
             timestamp,
-            inbound_connection.destination_hostname.clone().into_bytes()
+            inbound_connection.destination_ip.clone().into_bytes()
         );
 
         graph.add_edge("external_connection",
@@ -246,7 +246,7 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
     // Another process must have an inbound connection to src_port
     // Or the other process is external/ not running the instrumentation
     let process = ProcessDescriptionBuilder::default()
-        .host_ip(outbound_connection.source_hostname.to_owned().into_bytes())
+        .hostname(outbound_connection.source_hostname.to_owned())
         .state(ProcessState::Existing)
         .pid(outbound_connection.process_id)
         .last_seen_timestamp(timestamp)
@@ -254,7 +254,7 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
         .unwrap();
 
     let outbound = OutboundConnectionBuilder::default()
-        .host_ip(outbound_connection.source_hostname.to_owned().into_bytes())
+        .hostname(outbound_connection.source_hostname.to_owned())
         .state(ConnectionState::Created)
         .port(outbound_connection.source_port)
         .created_timestamp(timestamp)
@@ -262,9 +262,9 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
         .unwrap();
 
 
-    if is_internal_ip(&outbound_connection.destination_hostname.to_owned().into_bytes()) {
+    if is_internal_ip(&outbound_connection.destination_ip.to_owned().into_bytes()) {
         let inbound = InboundConnectionBuilder::default()
-            .host_ip(outbound_connection.destination_hostname.to_owned().into_bytes())
+            .hostname(outbound_connection.destination_hostname.to_owned())
             .state(ConnectionState::Existing)
             .port(outbound_connection.destination_port)
             .last_seen_timestamp(timestamp)
@@ -278,7 +278,7 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
     } else {
         let external_ip = IpAddressDescription::new(
             timestamp,
-            outbound_connection.destination_hostname.to_owned().into_bytes()
+            outbound_connection.destination_ip.to_owned().into_bytes()
         );
 
         graph.add_edge("external_connection",
