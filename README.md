@@ -1,5 +1,5 @@
 # grapl
-Graph platform for Detection, Forensics, and Incident Response
+Graph platform for Detection and Response
 
 Grapl aims to describe a network, and actions taking place on that network, as a graph.
 
