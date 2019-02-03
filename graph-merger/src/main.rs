@@ -1,30 +1,40 @@
-extern crate openssl_probe;
-extern crate stopwatch;
-extern crate lambda_runtime as lambda;
 extern crate aws_lambda_events;
-extern crate simple_logger;
+extern crate base64;
+extern crate base16;
 extern crate dgraph_rs;
 #[macro_use]
 extern crate failure;
 extern crate futures;
 extern crate graph_descriptions;
 extern crate grpc;
+extern crate lambda_runtime as lambda;
 #[macro_use]
 extern crate log;
+extern crate openssl_probe;
+extern crate prost;
 extern crate rusoto_core;
 extern crate rusoto_s3;
+extern crate rusoto_sns;
 extern crate rusoto_sqs;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
+extern crate sha2;
+extern crate simple_logger;
 extern crate sqs_lambda;
+extern crate stopwatch;
 
 use std::collections::HashMap;
+use std::io::Cursor;
 use std::sync::Arc;
+use std::time::Duration;
 use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
+use futures::Future;
+use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
 use dgraph_rs::protos::api;
 use dgraph_rs::protos::api_grpc::{Dgraph, DgraphClient};
 use dgraph_rs::protos::api_grpc;
@@ -33,20 +43,22 @@ use failure::Error;
 use graph_descriptions::graph_description::*;
 use grpc::{Client, ClientStub};
 use grpc::ClientConf;
+use lambda::Context;
+use lambda::error::HandlerError;
+use lambda::lambda;
+use prost::Message;
 use rusoto_core::Region;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
 use rusoto_s3::{S3, S3Client};
-use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
-use sqs_lambda::NopSqsCompletionHandler;
+use rusoto_sns::{Sns, SnsClient};
+use rusoto_sns::PublishInput;
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
+use sha2::{Digest, Sha256};
 use sqs_lambda::EventHandler;
 use sqs_lambda::events_from_s3_sns_sqs;
+use sqs_lambda::NopSqsCompletionHandler;
 use sqs_lambda::S3EventRetriever;
 use sqs_lambda::SqsService;
 use sqs_lambda::ZstdProtoDecoder;
-use lambda::Context;
-use lambda::lambda;
-use lambda::error::HandlerError;
-
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -341,28 +353,6 @@ fn generate_edge_insert(to: &str, from: &str, edge_name: &str) -> String {
     }).to_string()
 }
 
-//
-//enum NodeType {
-//    Process,
-//    File,
-//    OutboundNetwork,
-//    InboundNetwork,
-//    IpAddress,
-//}
-//
-//struct OutputMetadata {
-//    node_key: String,
-//    uid: String,
-//    node_type: NodeType,
-//    was_created: bool,
-//}
-//
-//struct MergeResults {
-//    meta: Vec<OutputMetadata>,
-//    earliest: u64,
-//    latest: u64,
-//}
-
 
 fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> {
 
@@ -385,6 +375,55 @@ fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> 
     }
 }
 
+pub fn subgraph_to_sns<S>(sns_client: &S, subgraphs: &GraphDescription) -> Result<(), Error>
+    where S: Sns
+{
+    // TODO: Preallocate buffers
+    info!("upload_subgraphs");
+    let mut proto = Vec::with_capacity(5000);
+    subgraphs.encode(&mut proto)?;
+
+    let mut hasher = Sha256::default();
+    hasher.input(&proto);
+
+    let key = base16::encode_lower(hasher.result().as_ref());
+
+    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+    let subgraph_merged_topic_arn = std::env::var("SUBGRAPH_MERGED_TOPIC_ARN").expect("SUBGRAPH_MERGED_TOPIC_ARN");
+
+    let bucket = bucket_prefix + "-subgraph-merged-bucket";
+    let epoch = SystemTime::now()
+        .duration_since(UNIX_EPOCH).unwrap().as_secs();
+
+    // Bucket by day
+    let day = epoch - (epoch % (24 * 60 * 60));
+
+    let key = format!("{}/{}",
+                      day,
+                      base16::encode_lower(&key)
+    );
+    info!("uploading unidentifed_subgraphs to {}", key);
+
+    let mut compressed = Vec::with_capacity(proto.len());
+    let mut proto = Cursor::new(&proto);
+    zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
+        .expect("compress zstd capnp");
+
+    let message = base64::encode(&compressed);
+
+    sns_client.publish(
+        &PublishInput {
+            message,
+            topic_arn: subgraph_merged_topic_arn.into(),
+            ..Default::default()
+        }
+    )
+        .with_timeout(Duration::from_secs(2))
+        .wait()?;
+
+    Ok(())
+}
+
 
 #[derive(Clone)]
 struct GraphMerger;
@@ -392,6 +431,12 @@ struct GraphMerger;
 impl EventHandler<GraphDescription> for GraphMerger {
     fn handle_event(&self, subgraph: GraphDescription) -> Result<(), Error> {
         println!("handling new subgraph");
+
+        if subgraph.is_empty() {
+            warn!("Attempted to merge empty subgraph. Short circuiting.");
+            return Ok(())
+        }
+
         let mg_client = &api_grpc::DgraphClient::with_client(
             Arc::new(
                 Client::new_plain("db.mastergraph", 9080, ClientConf {
@@ -415,7 +460,11 @@ impl EventHandler<GraphDescription> for GraphMerger {
             log_time!("upsert_all", upserter.upsert_all())
         });
 
-        with_retries(|| {
+        if upserter.node_key_to_uid.is_empty() {
+            bail!("Failed to attribute uids to any of {} node keys", subgraph.nodes.len());
+        }
+
+        let edge_res = with_retries(|| {
             let edges: Vec<_> = subgraph.edges.values().map(|e| &e.edges).flatten().collect();
             if edges.is_empty() {
                 return Ok(())
@@ -424,10 +473,18 @@ impl EventHandler<GraphDescription> for GraphMerger {
             info!("inserting {} edges", edges.len());
 
             log_time!("insert_edges", insert_edges(&mg_client, edges, &upserter.node_key_to_uid))
-        })?;
+        });
 
-        // Retry any upserts that failed
-        upsert_res
+        // If our node_key_to_uid map isn't empty we must have merged at least a single node,
+        // so even if all edges failed, or even if some upserts failed, we should output the graph
+        // TODO: Track which nodes / edges were successful, and only output those
+        let sns_client = SnsClient::simple(Region::UsEast1);
+        subgraph_to_sns(&sns_client, &subgraph)?;
+
+        upsert_res?;
+        edge_res?;
+
+        Ok(())
     }
 }
 

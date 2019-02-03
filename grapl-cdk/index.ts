@@ -7,15 +7,14 @@ import ec2 = require('@aws-cdk/aws-ec2');
 import rds = require('@aws-cdk/aws-rds');
 import lambda = require('@aws-cdk/aws-lambda');
 import iam = require('@aws-cdk/aws-iam');
-import {SubnetType, VpcNetwork, VpcNetworkRef} from "@aws-cdk/aws-ec2";
+import {SubnetType, VpcNetworkRef} from "@aws-cdk/aws-ec2";
 import {Token} from "@aws-cdk/cdk";
 import {Bucket, BucketRef} from "@aws-cdk/aws-s3";
 import {Topic, TopicRef} from "@aws-cdk/aws-sns";
 import {DatabaseCluster} from "@aws-cdk/aws-rds";
-import {QueueRef} from "@aws-cdk/aws-sqs";
+import {Runtime} from "@aws-cdk/aws-lambda";
 
-
-var env = require('node-env-file');
+const env = require('node-env-file');
 
 function get_history_db(stack: cdk.Stack, vpc: ec2.VpcNetworkRef, username: Token, password: Token): DatabaseCluster {
     return new rds.DatabaseCluster(stack, 'HistoryDb', {
@@ -65,7 +64,14 @@ class Service {
     event_retry_handler: lambda.Function;
     queues: Queues;
 
-    constructor(stack: cdk.Stack, name: string, environment?: any, vpc?: VpcNetworkRef, retry_code_name?: string) {
+    constructor(stack: cdk.Stack, name: string, environment?: any, vpc?: VpcNetworkRef, retry_code_name?: string, opt?: any) {
+        let runtime = null;
+        if (opt && opt.runtime) {
+            runtime = opt.runtime
+        } else {
+            runtime = {name: "provided", supportsInlineCode: true}
+        }
+
         const queues = new Queues(stack, name + '-queue');
 
         if (environment) {
@@ -74,7 +80,7 @@ class Service {
 
         let event_handler = new lambda.Function(
             stack, name, {
-                runtime: {name: "provided", supportsInlineCode: true},
+                runtime: runtime,
                 handler: name,
                 code: lambda.Code.asset(`./${name}.zip`),
                 vpc: vpc,
@@ -95,7 +101,7 @@ class Service {
 
         let event_retry_handler = new lambda.Function(
             stack, name + '-retry-handler', {
-                runtime: {name: "provided", supportsInlineCode: true},
+                runtime: runtime,
                 handler: retry_code_name,
                 code: lambda.Code.asset(`./${retry_code_name}.zip`),
                 vpc: vpc,
@@ -113,16 +119,19 @@ class Service {
         this.event_retry_handler = event_retry_handler;
     }
 
-    readsFrom(bucket: BucketRef) {
-        this.event_handler.addToRolePolicy(new iam.PolicyStatement()
+    readsFrom(bucket: BucketRef, with_list?: Boolean) {
+        let policy = new iam.PolicyStatement()
             .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket')
-            .addResource(bucket.bucketArn));
+            .addAction('s3:ActionGetBucket');
 
-        this.event_retry_handler.addToRolePolicy(new iam.PolicyStatement()
-            .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket')
-            .addResource(bucket.bucketArn));
+        if(with_list === true) {
+            policy.addAction('s3:ListObjects')
+        }
+
+        policy.addResource(bucket.bucketArn);
+
+        this.event_handler.addToRolePolicy(policy);
+        this.event_retry_handler.addToRolePolicy(policy);
 
         bucket.grantRead(this.event_handler.role);
         bucket.grantRead(this.event_retry_handler.role);
@@ -169,6 +178,8 @@ class EventEmitters extends cdk.Stack {
     identity_mappings_bucket: s3.BucketRefProps;
     unid_subgraphs_generated_bucket: s3.BucketRefProps;
     subgraphs_generated_bucket: s3.BucketRefProps;
+    analyzers_bucket: s3.BucketRefProps;
+    dispatched_analyzer_bucket: s3.BucketRefProps;
 
     incident_topic: sns.TopicRefProps;
     identity_mappings_topic: sns.TopicRefProps;
@@ -177,6 +188,8 @@ class EventEmitters extends cdk.Stack {
     unid_subgraphs_generated_topic: sns.TopicRefProps;
     subgraphs_generated_topic: sns.TopicRefProps;
     subgraph_merged_topic: sns.TopicRefProps;
+    dispatched_analyzer_topic: sns.TopicRefProps;
+    analyzer_matched_subgraphs_topic: sns.TopicRefProps;
 
     constructor(parent: cdk.App, id: string) {
         super(parent, id + '-stack');
@@ -213,6 +226,17 @@ class EventEmitters extends cdk.Stack {
                 bucketName: process.env.BUCKET_PREFIX + "-subgraphs-generated-bucket"
             });
 
+        let analyzers_bucket =
+            new s3.Bucket(this, id + '-analyzers-bucket', {
+                bucketName: process.env.BUCKET_PREFIX + "-analyzers-bucket"
+            });
+
+
+        let dispatched_analyzer_bucket =
+            new s3.Bucket(this, id + '-dispatched-analyzer-bucket', {
+                bucketName: process.env.BUCKET_PREFIX + "-dispatched-analyzer-bucket"
+            });
+
         // SNS Topics
         let incident_topic =
             new sns.Topic(this, id + '-incident-topic', {
@@ -242,6 +266,15 @@ class EventEmitters extends cdk.Stack {
             new sns.Topic(this, id + '-subgraphs-merged-topic', {
                 topicName: 'subgraphs-merged-topic'
             });
+        let dispatched_analyzer_topic  =
+            new sns.Topic(this, id + '-dispatched-analyzer-topic', {
+                topicName: 'dispatched-analyzer-topic'
+            });
+        let analyzer_matched_subgraphs_topic  =
+            new sns.Topic(this, id + '-analyzer-matched-subgraphs-topic', {
+                topicName: 'analyzer-matched-subgraphs-topic'
+            });
+
 
         // S3 -> SNS Events
 
@@ -255,12 +288,16 @@ class EventEmitters extends cdk.Stack {
             .onEvent(s3.EventType.ObjectCreated, unid_subgraphs_generated_topic);
         subgraphs_generated_bucket
             .onEvent(s3.EventType.ObjectCreated, subgraphs_generated_topic);
+        dispatched_analyzer_bucket
+            .onEvent(s3.EventType.ObjectCreated, dispatched_analyzer_topic);
 
         this.raw_logs_bucket = raw_logs_bucket.export();
         this.sysmon_logs_bucket = sysmon_logs_bucket.export();
         this.identity_mappings_bucket = identity_mappings_bucket.export();
         this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket.export();
         this.subgraphs_generated_bucket = subgraphs_generated_bucket.export();
+        this.analyzers_bucket = analyzers_bucket.export();
+        this.dispatched_analyzer_bucket = dispatched_analyzer_bucket.export();
 
         this.incident_topic = incident_topic.export();
         this.raw_logs_topic = raw_logs_topic.export();
@@ -269,6 +306,8 @@ class EventEmitters extends cdk.Stack {
         this.unid_subgraphs_generated_topic = unid_subgraphs_generated_topic.export();
         this.subgraphs_generated_topic = subgraphs_generated_topic.export();
         this.subgraph_merged_topic = subgraph_merged_topic.export();
+        this.dispatched_analyzer_topic = dispatched_analyzer_topic.export();
+        this.analyzer_matched_subgraphs_topic = analyzer_matched_subgraphs_topic.export();
     }
 }
 
@@ -519,8 +558,7 @@ class GraphMerger extends cdk.Stack {
         );
 
         const environment = {
-            "GRAPH_MERGER": process.env.GRAPH_MERGER_READ_BUCKET,
-            "GRAPH_MERGER_WRITE_TOPIC": process.env.GRAPH_MERGER_WRITE_TOPIC,
+            "SUBGRAPH_MERGED_TOPIC_ARN": publishes_to.topicArn,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX
         };
 
@@ -538,19 +576,33 @@ class GraphMerger extends cdk.Stack {
 }
 
 
-class EngagementCreationService extends cdk.Stack {
+class AnalyzerDispatch extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                event_producer_props: sns.TopicRefProps,
+                event_producer_props: sns.TopicRefProps,  // The SNS Topic that we must subscribe to our queue
+                writes_to_props: s3.BucketRefProps,
+                reads_from_props: s3.BucketRefProps,
                 vpc_props: ec2.VpcNetworkRefProps
     ) {
         super(parent, id + '-stack');
+
+        const reads_from = Bucket.import(
+            this,
+            'reads_from',
+            reads_from_props
+        );
 
         const event_producer = Topic.import(
             this,
             'event_producer',
             event_producer_props
+        );
+
+        const writes_to = s3.Bucket.import(
+            this,
+            'publishes_to',
+            writes_to_props
         );
 
         const vpc = ec2.VpcNetwork.import(
@@ -559,29 +611,132 @@ class EngagementCreationService extends cdk.Stack {
             vpc_props
         );
 
-        let engagement_creation_service = new lambda.Function(
-            this, 'engagement-creation-service', {
-                runtime: lambda.Runtime.Go1x,
-                handler: 'engagement-creation-service',
-                code: lambda.Code.asset('./engagement-creation-service.zip'),
-                vpc: vpc
-            }
-        );
+        const environment = {
+            "DISPATCHED_ANALYZER_BUCKET": writes_to.bucketName,
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+        };
 
-        let engagement_creation_service_queue =
-            new sqs.Queue(this, 'engagement-creation-service-queue');
+        const service = new Service(this, 'analyzer-dispatcher', environment, vpc);
+;
+        service.publishesTo(writes_to);
+        // We need the List capability to find each of the analyzers
+        service.readsFrom(reads_from, true);
 
-        // fn.addEventSource(new SqsEventSource(engagement_creation_service_queue));
-        // subscribe_lambda_to_queue(
-        //     this,
-        //     'engagementCreator',
-        //     engagement_creation_service,
-        //     engagement_creation_service_queue
-        // );
-        //
-        // event_producer.subscribeQueue(engagement_creation_service_queue);
+        event_producer.subscribeQueue(service.queues.queue);
+
+        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
     }
 }
+
+class AnalyzerExecutor extends cdk.Stack {
+
+    constructor(parent: cdk.App,
+                id: string,
+                event_producer_props: sns.TopicRefProps,
+                publishes_to_props: sns.TopicRefProps,
+                reads_analyzers_from_props: s3.BucketRefProps,
+                reads_events_from_props: s3.BucketRefProps,
+                vpc_props: ec2.VpcNetworkRefProps
+    ) {
+        super(parent, id + '-stack');
+
+        const reads_analyzers_from = Bucket.import(
+            this,
+            'reads_analyzers_from',
+            reads_analyzers_from_props
+        );
+
+        const reads_events_from = Bucket.import(
+            this,
+            'reads_events_from',
+            reads_events_from_props
+        );
+
+        const event_producer = Topic.import(
+            this,
+            'event_producer',
+            event_producer_props
+        );
+
+        const publishes_to = sns.Topic.import(
+            this,
+            'publishes_to',
+            publishes_to_props
+        );
+
+        const vpc = ec2.VpcNetwork.import(
+            this,
+            'vpc',
+            vpc_props
+        );
+
+        const environment = {
+            "ANALYZER_MATCH_TOPIC_ARN": publishes_to.topicArn,
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+        };
+
+        const service = new Service(this, 'analyzer-executor', environment, vpc, null, {
+            runtime: Runtime.Python37
+        });
+
+        service.publishesTo(publishes_to);
+        // We need the List capability to find each of the analyzers
+        service.readsFrom(reads_analyzers_from, true);
+        service.readsFrom(reads_events_from);
+
+        event_producer.subscribeQueue(service.queues.queue);
+
+        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+    }
+}
+
+
+// class EngagementCreationService extends cdk.Stack {
+//
+//     constructor(parent: cdk.App,
+//                 id: string,
+//                 event_producer_props: sns.TopicRefProps,
+//                 vpc_props: ec2.VpcNetworkRefProps
+//     ) {
+//         super(parent, id + '-stack');
+//
+//         const event_producer = Topic.import(
+//             this,
+//             'event_producer',
+//             event_producer_props
+//         );
+//
+//         const vpc = ec2.VpcNetwork.import(
+//             this,
+//             'vpc',
+//             vpc_props
+//         );
+//
+//         let engagement_creation_service = new lambda.Function(
+//             this, 'engagement-creation-service', {
+//                 runtime: lambda.Runtime.Go1x,
+//                 handler: 'engagement-creation-service',
+//                 code: lambda.Code.asset('./engagement-creation-service.zip'),
+//                 vpc: vpc
+//             }
+//         );
+//
+//         let engagement_creation_service_queue =
+//             new sqs.Queue(this, 'engagement-creation-service-queue');
+//
+//         // fn.addEventSource(new SqsEventSource(engagement_creation_service_queue));
+//         // subscribe_lambda_to_queue(
+//         //     this,
+//         //     'engagementCreator',
+//         //     engagement_creation_service,
+//         //     engagement_creation_service_queue
+//         // );
+//         //
+//         // event_producer.subscribeQueue(engagement_creation_service_queue);
+//     }
+// }
 
 class Networks extends cdk.Stack {
     grapl_vpc: ec2.VpcNetworkRefProps;
@@ -679,6 +834,25 @@ class Grapl extends cdk.App {
             event_emitters.subgraphs_generated_bucket,
             event_emitters.subgraphs_generated_topic,
             event_emitters.subgraph_merged_topic,
+            network.grapl_vpc
+        );
+
+        new AnalyzerDispatch(
+            this,
+            'analyzer-dispatcher',
+            event_emitters.subgraph_merged_topic,
+            event_emitters.dispatched_analyzer_bucket,
+            event_emitters.analyzers_bucket,
+            network.grapl_vpc
+        );
+
+        new AnalyzerExecutor(
+            this,
+            'analyzer-executor',
+            event_emitters.dispatched_analyzer_topic,
+            event_emitters.analyzer_matched_subgraphs_topic,
+            event_emitters.analyzers_bucket,
+            event_emitters.dispatched_analyzer_bucket,
             network.grapl_vpc
         );
 

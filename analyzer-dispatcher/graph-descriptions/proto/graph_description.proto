@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+
+package graph_description;
+
+// Used to identify the system for a given node
+// for example, 'a process executed on cobrien-mbp'
+message Host {
+    oneof host_id {
+        // the hostname of the host
+        string hostname = 1;
+        // the ip address of the host
+        bytes ip = 2;
+
+        // The asset ID itself
+        // We expect this to be the variant once we have attributed the node
+        string asset_id = 3;
+    }
+}
+
+message NodeDescription {
+    oneof which_node {
+        ProcessDescription process_node = 1;
+        FileDescription file_node = 2;
+        IpAddressDescription ip_address_node = 3;
+        OutboundConnection outbound_connection_node = 4;
+        InboundConnection inbound_connection_node = 5;
+    }
+}
+
+message OutboundConnection {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.BytesValue host_ip = 4;
+    // 1 = Created, 2 = Terminated, 3 = Existing
+    uint32 state = 5;
+    uint64 created_timestamp = 6;
+    uint64 terminated_timestamp = 7;
+    uint64 last_seen_timestamp = 8;
+    uint32 port = 9;
+}
+
+message InboundConnection {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.BytesValue host_ip = 4;
+    // 1 = Created, 2 = Terminated, 3 = Existing
+    uint32 state = 5;
+    uint64 created_timestamp = 6;
+    uint64 terminated_timestamp = 7;
+    uint64 last_seen_timestamp = 8;
+    uint32 port = 9;
+}
+
+message ProcessDescription {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.BytesValue host_ip = 4;
+    uint32 state = 5;
+    uint64 pid = 6;
+    // When state == 1, create_time
+    // When state == 2, end_time
+    // When state == 3, seen_time
+    uint64 created_timestamp = 7;
+    uint64 terminated_timestamp = 8;
+    uint64 last_seen_timestamp = 9;
+    bytes image_name = 10;
+    bytes image_path = 11;
+}
+
+message FileDescription {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.BytesValue host_ip = 4;
+    // 1 = Created, 2 = Deleted, 3 = Referenced
+    uint32 state = 5;
+    uint64 created_timestamp = 6;
+    uint64 deleted_timestamp = 7;
+    uint64 last_seen_timestamp = 8;
+    bytes path = 9;
+}
+
+message IpAddressDescription {
+    string node_key = 1;
+    uint64 timestamp = 2;
+    bytes ip_address = 3;
+}
+
+message EdgeDescription {
+    string fromNeighborKey = 1;
+    string toNeighborKey = 2;
+    string edgeName = 3;
+}
+
+message EdgeList {
+    repeated EdgeDescription edges = 1;
+}
+
+message GraphDescription {
+    map <string, NodeDescription> nodes = 1;
+    map <string, EdgeList> edges = 2;
+    uint64 timestamp = 3;
+}
+
+message GeneratedSubgraphs {
+    repeated GraphDescription subgraphs = 1;
+}
+
+
+
+
