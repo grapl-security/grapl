@@ -1,3 +1,4 @@
+.mypy_cache/
 events.xml
 events2.xml
 events3.xml
