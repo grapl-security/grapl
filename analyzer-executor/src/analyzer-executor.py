@@ -4,7 +4,7 @@ import json
 
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
-from typing import Any, Union, Optional, Tuple
+from typing import Any, Union, Optional, Tuple, List
 
 import boto3
 
@@ -12,15 +12,37 @@ import graph_description_pb2
 
 
 class Subgraph(object):
-    def __init__(self, s: str):
+    def __init__(self, s: bytes):
         self.subgraph = graph_description_pb2.GraphDescription()
         self.subgraph.ParseFromString(s)
 
 
-class ExecutionHit(object):
-    def __init__(self, subgraph: Subgraph) -> None:
-        self.subgraph = subgraph
+class NodeRef(object):
+    def __init__(self, uid, node_type):
+        self.uid = uid
+        self.node_type = node_type
 
+    def to_dict(self):
+        # type: () -> Dict[str, Any]
+        return {
+            'uid': self.uid,
+            'node_type': self.node_type
+        }
+
+
+class ExecutionHit(object):
+    def __init__(self, node_refs: List[NodeRef], edges: List[Tuple[str, str, str]]) -> None:
+        self.node_refs = node_refs
+        self.edges = edges
+
+    def to_json(self):
+        # type: () -> str
+        return json.dumps(
+            {
+                'node_refs': [n.to_dict() for n in self.node_refs],
+                'edges': self.edges
+            }
+        )
 
 class ExecutionMiss(object):
     pass
@@ -52,30 +74,31 @@ def parse_s3_event(event) -> str:
     key = record['s3']['object']['key']
     return download_s3_file(bucket, key)
 
+
 def download_s3_file(bucket, key) -> str:
-    print('downloading {} {}'.format(bucket, key))
     s3 = boto3.resource('s3')
     obj = s3.Object(bucket, key)
     return obj.get()['Body'].read()
 
 
 def execute_file(file: str, graph: Subgraph, sender):
-    print('executing file')
-    print(file)
+    print('executing analyzer')
     exec(file, globals())
     print('File executed: {}'.format(analyzer(graph, sender)))  # type: ignore
 
 
 def emit_event(event: ExecutionHit) -> None:
     print('emitting event')
-    event_s = event.SerializeToString()
-    event_hash = hashlib.sha256(event_s)
-    key = base64.urlsafe_b64encode(event_hash)
+
+    event_s = event.to_json()
+    event_hash = hashlib.sha256(event_s.encode())
+    key = base64.urlsafe_b64encode(event_hash.digest()).decode('utf-8')
 
     s3 = boto3.resource('s3')
 
-    obj = s3.Object('grapl-analyzer-hits', key)
+    obj = s3.Object('grapl-analyzer-matched-subgraphs-bucket', key)
     obj.put(Body=event_s)
+
 
 def lambda_handler(events: Any, context: Any) -> None:
     # Parse sns message
@@ -99,14 +122,16 @@ def lambda_handler(events: Any, context: Any) -> None:
         print('running process')
         p.start()
 
-
         while True:
             print('waiting for results')
+            p_res = rx.poll(timeout=5)
+            if not p_res:
+                print('Polled for 5 seconds without result')
+                continue
             result = rx.recv()  # type: Optional[ExecutionResult]
-            # TODO: If we receive no result, assume process failed unexpectedly
-            assert result
 
             if isinstance(result, ExecutionComplete):
+                print('execution complete')
                 break
 
             # emit any hits to an S3 bucket
@@ -114,8 +139,7 @@ def lambda_handler(events: Any, context: Any) -> None:
                 print('emitting event for result: {}'.format(result))
                 emit_event(result)
 
+            assert result, 'Result was none. Analyzer failed.'
+
         p.join()
 
-
-if __name__ == '__main__':
-    print('started')

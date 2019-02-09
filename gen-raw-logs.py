@@ -253,6 +253,7 @@ def identity_mappings():
         },
     ]
 
+
 def vm_identity_mappings():
     return [
         {
@@ -288,26 +289,26 @@ def main():
         )
 
     # now = int(time.time())
-    #
+
     # time.sleep(1)
     # proc_generator = ProcessLogGenerator()
     #
     # raw_logs = generate_basic_process_logs()
     # print(raw_logs)
-    # epoch = int(time.time())
+    epoch = int(time.time())
     # #
-    # mapping_body = zstd.compress(json.dumps(vm_identity_mappings()), 4)
-    # # serialized_raw_logs = zstd.compress(json.dumps(raw_logs), 4)
-    #
-    # s3 = boto3.client('s3')
-    #
-    #
-    # res = s3.put_object(
-    #     Body=mapping_body,
-    #     Bucket="grapl-identity-mappings-bucket",
-    #     Key=str(epoch - (epoch % (24 * 60 * 60))) + "/ip_asset_mappings/" +
-    #         str(epoch)
-    # )
+    mapping_body = zstd.compress(json.dumps(vm_identity_mappings()), 4)
+    # serialized_raw_logs = zstd.compress(json.dumps(raw_logs), 4)
+
+    s3 = boto3.client('s3')
+
+
+    res = s3.put_object(
+        Body=mapping_body,
+        Bucket="grapl-identity-mappings-bucket",
+        Key=str(epoch - (epoch % (24 * 60 * 60))) + "/ip_asset_mappings/" +
+            str(epoch)
+    )
     # time.sleep(2)
 
     # s3.put_object(

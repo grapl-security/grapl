@@ -16,7 +16,7 @@ Grapl currently supports graph representations for:
 What you can do with Grapl today:
 * Send it data, given you provide a specific format
 * Query the db for graphs of Process trees and their associated files and network activity
-
+* Write attacker signatures using Python and Graphql+
 
 ### Example Use Case: Catching a malicious word macro
 
@@ -51,7 +51,7 @@ In the future it will be possible to interact with these engagements through
 an API targeting Jupyter notebooks. For now the feature is limited to a visual
 representation.
 
-Grapl can automatically expand signature hits out to scope the engagement by
+Grapl can expand signature hits out to scope the engagement by
 traversing the edges of the signature match, pulling relevant nodes into the
 engagement.
 
@@ -88,27 +88,12 @@ valid tomorrow. I do not intend to support migrations during Alpha.
 
 
 **What Doesn't Work**
-* No support for custom parsers
-* Analyzer concept is immature and bulky, going to be thrown out and reworked from scratch
-* Automated scoping of engagements is unreliable
+* Engagement creation, interaction
 
 Note that Grapl has not been given the security attention it deserves. I do not recommend
 using it without examining the generated Cloudformation stack and source code.
 
 Contributions very welcome.
-
-
-### Next Steps
-
-The immediate next steps are:
-* Support arbitrary log parsers
-* User and Asset nodes
-* Lower cost of writing analyzers, provide generic analyzer to host /load multiple signatures
-
-Eventually I intend to support:
-* Much better/ higher level libraries for writing parsers and analyzers
-* Engagement creation and automated scoping
-* Engagement interactions via Python API
 
 
 ## Architecture Diagram
@@ -167,18 +152,8 @@ BUCKET_PREFIX needs to be a unique string, valid for S3 bucket names.
 
 I recommend running `cdk diff` to see what resource changes you can expect.
 
-```
-cdk deploy vpcs-stack && \
-cdk deploy event-emitters-stack && \
-cdk deploy history-db-stack && \
-cdk deploy generic-subgraph-generator-stack && \
-cdk deploy node-identifier-stack && \
-cdk deploy graph-merger-stack && \
-cdk deploy word-macro-analyzer-stack && \
-cdk deploy engagement-creation-service-stack
-```
 Your DGraph cluster security groups will need to allow traffic from the graph-merger, any analyzers,
-and the engagement-creation-service.
+and the engagement-creator.
 
 In order to run the lambdas within their respective VPCs you may need to open a support request
 with AWS to reserve extra Elastic IPs (16 has been sufficient for me).

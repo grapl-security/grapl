@@ -141,6 +141,7 @@ impl<'a, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<'a, F>
             "creating tables",
             {
                 ip_asset_history::create_table(&pool);
+                hostname_asset_history::create_table(&pool);
                 session_history::create_process_table(&pool);
                 session_history::create_file_table(&pool);
                 session_history::create_connection_table(&pool);
@@ -213,7 +214,9 @@ impl<'a, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<'a, F>
             }
         }
 
-        (self.output_handler)(total_subgraph)?;
+        if !total_subgraph.is_empty() {
+            (self.output_handler)(total_subgraph)?;
+        }
 
         result
     }
