@@ -31,7 +31,8 @@ class NodeRef(object):
 
 
 class ExecutionHit(object):
-    def __init__(self, node_refs: List[NodeRef], edges: List[Tuple[str, str, str]]) -> None:
+    def __init__(self, label: str, node_refs: List[NodeRef], edges: List[Tuple[str, str, str]]) -> None:
+        self.label = label
         self.node_refs = node_refs
         self.edges = edges
 
@@ -39,10 +40,12 @@ class ExecutionHit(object):
         # type: () -> str
         return json.dumps(
             {
+                'label': self.label,
                 'node_refs': [n.to_dict() for n in self.node_refs],
                 'edges': self.edges
             }
         )
+
 
 class ExecutionMiss(object):
     pass

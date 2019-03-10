@@ -79,6 +79,10 @@ fn is_internal_ip(ip: &[u8]) -> bool {
     RE.is_match(ip)
 }
 
+fn get_image_name(image_path: &str) -> Option<&str> {
+    image_path.split("\\").last()
+}
+
 pub fn utc_to_epoch(utc: &str) -> Result<u64, Error> {
     let dt = NaiveDateTime::parse_from_str(
         utc, "%Y-%m-%d %H:%M:%S%.3f")?;
@@ -99,18 +103,21 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         timestamp
     );
 
+    
     let parent = ProcessDescriptionBuilder::default()
         .asset_id(process_start.header.computer.clone())
         .state(ProcessState::Existing)
         .pid(process_start.parent_process_id)
-        .image_name(process_start.parent_image.clone())
+        .image_path(process_start.parent_image.clone())
+        .image_name(get_image_name(&process_start.parent_image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
 
     let child = ProcessDescriptionBuilder::default()
         .asset_id(process_start.header.computer.clone())
-        .image_name(process_start.image.clone())
+        .image_path(process_start.image.clone())
+        .image_name(get_image_name(&process_start.image.clone()).unwrap())
         .state(ProcessState::Created)
         .pid(process_start.process_id)
         .created_timestamp(timestamp)
@@ -151,7 +158,8 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
         .asset_id(file_create.header.computer.clone())
         .state(ProcessState::Existing)
         .pid(file_create.process_id)
-        .image_name(file_create.image.clone())
+        .image_path(file_create.image.clone())
+        .image_name(get_image_name(&file_create.image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -180,11 +188,16 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
         timestamp
     );
 
+    if inbound_connection.source_hostname.is_empty() {
+        warn!("inbound connection source hostname is empty")
+    }
+
     let process = ProcessDescriptionBuilder::default()
         .hostname(inbound_connection.source_hostname.clone())
         .state(ProcessState::Existing)
         .pid(inbound_connection.process_id)
-        .image_name(inbound_connection.image.clone())
+        .image_path(inbound_connection.image.clone())
+        .image_name(get_image_name(&inbound_connection.image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -199,6 +212,10 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
         .unwrap();
 
     if is_internal_ip(&inbound_connection.destination_ip.clone().into_bytes()) {
+        if inbound_connection.source_hostname.is_empty() {
+            warn!("inbound connection dest hostname is empty")
+        }
+
         let outbound = InboundConnectionBuilder::default()
             .hostname(inbound_connection.destination_hostname.clone())
             .state(ConnectionState::Created)
@@ -245,6 +262,10 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
         timestamp
     );
 
+    if outbound_connection.source_hostname.is_empty() {
+        warn!("outbound connection source hostname is empty")
+    }
+
     // A process creates an outbound connection to dst_port
     // Another process must have an inbound connection to src_port
     // Or the other process is external/ not running the instrumentation
@@ -252,7 +273,8 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
         .hostname(outbound_connection.source_hostname.to_owned())
         .state(ProcessState::Existing)
         .pid(outbound_connection.process_id)
-        .image_name(outbound_connection.image.clone())
+        .image_path(outbound_connection.image.clone())
+        .image_name(get_image_name(&outbound_connection.image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -267,13 +289,25 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
 
 
     if is_internal_ip(&outbound_connection.destination_ip.to_owned().into_bytes()) {
-        let inbound = InboundConnectionBuilder::default()
-            .hostname(outbound_connection.destination_hostname.to_owned())
-            .state(ConnectionState::Existing)
-            .port(outbound_connection.destination_port)
-            .last_seen_timestamp(timestamp)
-            .build()
-            .unwrap();
+
+        let inbound = if outbound_connection.destination_hostname.is_empty() {
+            warn!("outbound connection dest hostname is empty {:?}", outbound_connection);
+            InboundConnectionBuilder::default()
+                .state(ConnectionState::Existing)
+                .port(outbound_connection.destination_port)
+                .last_seen_timestamp(timestamp)
+                .hostname(outbound_connection.destination_hostname.to_owned())
+                .build()
+                .unwrap()
+        } else {
+            InboundConnectionBuilder::default()
+                .state(ConnectionState::Existing)
+                .port(outbound_connection.destination_port)
+                .last_seen_timestamp(timestamp)
+                .host_ip(outbound_connection.destination_ip.to_owned().into_bytes())
+                .build()
+                .unwrap()
+        };
 
         graph.add_edge("connection",
                        outbound.clone_key(),
@@ -371,24 +405,25 @@ impl<S> EventHandler<Vec<u8>> for SysmonSubgraphGenerator<S>
                             }
                         }
                     }
-                    Event::InboundNetwork(event) => {
-                        match handle_inbound_connection(event) {
-                            Ok(event) => Some(event),
-                            Err(e) => {
-                                warn!("Failed to process inbound network event: {}", e);
-                                None
-                            }
-                        }
-                    }
-                    Event::OutboundNetwork(event) => {
-                        match handle_outbound_connection(event) {
-                            Ok(event) => Some(event),
-                            Err(e) => {
-                                warn!("Failed to process outbound network event: {}", e);
-                                None
-                            }
-                        }
-                    }
+                    _ => None
+//                    Event::InboundNetwork(event) => {
+//                        match handle_inbound_connection(event) {
+//                            Ok(event) => Some(event),
+//                            Err(e) => {
+//                                warn!("Failed to process inbound network event: {}", e);
+//                                None
+//                            }
+//                        }
+//                    }
+//                    Event::OutboundNetwork(event) => {
+//                        match handle_outbound_connection(event) {
+//                            Ok(event) => Some(event),
+//                            Err(e) => {
+//                                warn!("Failed to process outbound network event: {}", e);
+//                                None
+//                            }
+//                        }
+//                    }
                 }
             }).collect()
         );

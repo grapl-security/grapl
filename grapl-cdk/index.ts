@@ -794,7 +794,7 @@ class Networks extends cdk.Stack {
         super(parent, id + '-stack');
 
         const grapl_vpc = new ec2.VpcNetwork(this, 'GraplVPC', {
-            natGateways: 2,
+            natGateways: 1,
             enableDnsHostnames: true,
             enableDnsSupport: true,
         });
@@ -808,7 +808,7 @@ class GraphDB extends cdk.Stack {
     graph_security_group: ec2.SecurityGroup;
     id: string;
 
-    constructor(parent: cdk.App, id: string, vpc_props: ec2.VpcNetworkImportProps, dnsName: string, options?: any) {
+    constructor(parent: cdk.App, id: string, vpc_props: ec2.VpcNetworkImportProps, options?: any) {
         super(parent, id + '-stack');
         this.id = id;
 
@@ -932,16 +932,14 @@ class Grapl extends cdk.App {
         const master_graph = new GraphDB(
             this,
             'mastergraph',
-            network.grapl_vpc,
-            "ec2-3-87-59-85.compute-1.amazonaws.com", {
+            network.grapl_vpc,{
             allow_all_ssh: true
         });
 
         const engagement_graph = new GraphDB(
             this,
             'engagementgraph',
-            network.grapl_vpc,
-            "ip-10-0-190-70.ec2.internal", {
+            network.grapl_vpc, {
             allow_all_ssh: true
         });
 

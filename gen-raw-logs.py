@@ -258,10 +258,17 @@ def vm_identity_mappings():
     return [
         {
             "HostnameAsset": {
-                "hostname": 'DESKTOP-38EOTDT.attlocal.net',
-                "asset_id": "hardcoded_asset_id_0000",
+                "hostname": 'DESKTOP-34EOTDT.attlocal.net',
+                "asset_id": "hardcoded_asset_id_0001",
                 "timestamp": 1544301466470,
-            }
+            },
+        },
+        {
+            "HostnameAsset": {
+                "hostname": 'DESKTOP-34EOTDT',
+                "asset_id": "hardcoded_asset_id_0001",
+                "timestamp": 1544301466470,
+            },
         }
     ]
 
@@ -270,13 +277,14 @@ def main():
 
     s3 = boto3.client('s3')
 
-    with open('./events3.xml', 'r') as b:
+    with open('./events4.xml', 'r') as b:
         body = b.readlines()
+        body = [line for line in body if '2019-02-24' in line]
 
     def chunker(seq, size):
         return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
 
-    for chunks in chunker(body, 100):
+    for chunks in chunker(body, 20):
 
         c_body = zstd.compress("\n".join(chunks), 4)
         epoch = int(time.time())

@@ -629,6 +629,10 @@ impl ProcessDescription {
             j["image_name"] = Value::from(String::from_utf8_lossy(&self.image_name));
         }
 
+        if !self.image_path.is_empty() {
+            j["image_path"] = Value::from(String::from_utf8_lossy(&self.image_path));
+        }
+
         match ProcessState::from(self.state) {
             ProcessState::Created => j["created_time"] = self.created_timestamp.into(),
             ProcessState::Terminated => j["terminated_timestamp"] = self.terminated_timestamp.into(),

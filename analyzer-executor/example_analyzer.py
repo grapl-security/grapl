@@ -42,7 +42,11 @@ def make_hit(hit):
     svc_uid = NodeRef(hit['uid'], 'Process')
     parent_uid = NodeRef(hit['~children'][0]['uid'], 'Process')
 
-    return ExecutionHit([parent_uid, svc_uid], [(parent_uid.uid, "children", svc_uid.uid)])
+    return ExecutionHit(
+        'svchost-non-services-parent',
+        [parent_uid, svc_uid],
+        [(parent_uid.uid, "children", svc_uid.uid)]
+    )
 
 
 def analyzer(graph: Subgraph, sender: Connection):

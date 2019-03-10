@@ -299,7 +299,7 @@ fn insert_edges<'a>(client: &DgraphClient,
     mutation.set_json = bulk_insert.into_bytes();
 
 
-    info!("inesrt_edges {:?}", client.mutate(Default::default(), mutation).wait()?);
+    info!("insert_edges {:?}", client.mutate(Default::default(), mutation).wait()?);
 
     Ok(())
 }
@@ -445,10 +445,10 @@ impl EventHandler<GraphDescription> for GraphMerger {
             )
         );
 
-        set_process_schema(&mg_client);
-        set_file_schema(&mg_client);
-        set_ip_address_schema(&mg_client);
-        set_connection_schema(&mg_client);
+//        set_process_schema(&mg_client);
+//        set_file_schema(&mg_client);
+//        set_ip_address_schema(&mg_client);
+//        set_connection_schema(&mg_client);
 
         let mut upserter = BulkUpserter::new(
             &mg_client,
