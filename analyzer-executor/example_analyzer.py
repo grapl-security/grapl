@@ -5,25 +5,23 @@ from typing import Tuple, Any, Dict
 
 from pydgraph import DgraphClient, DgraphClientStub
 
+from graph import Process
+
+
 # Look for processes with svchost.exe in their name with non services.exe parents
-__example_analyzer_signature = """
-    query q0($a: string)
-    {
-      q0(func: eq(node_key, $a)) @cascade
-      @filter(alloftext(image_name, "svchost"))
-      {
-        uid,
-        ~children @filter(NOT alloftext(image_name, "services.exe")) {
-          uid,
-        }
-      }
-    }
-    """
+def signature_graph() -> str:
+    child = Process() \
+        .with_image_name(contains="svchost.exe") \
+        .with_node_key(eq='$a')
+
+    parent = Process() \
+        .with_image_name(contains=Not("services.exe"))
+    return parent.with_child(child).to_query()
 
 
 def _analyzer(client: DgraphClient, graph: Subgraph, sender: Connection):
     for node_key in graph.subgraph.nodes:
-        res = client.query(__example_analyzer_signature, variables={'$a': node_key})
+        res = client.query(signature_graph(), variables={'$a': node_key})
 
         if not (res and res.json):
             print('res was empty')
