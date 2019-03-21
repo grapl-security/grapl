@@ -53,7 +53,7 @@ Keeping your analyzers in code means you can:
 
 Grapl provides a tool for investigations called an Engagement. Engagements are an isolated graph representing a subgraph that your analyzers have deemed suspicious.
 
-Using AWS Sagemaker hosted Jupyter Notebooks, Grapl provides a Python library for interacting with the Engagement Graph, allowing you to pivot quickly and maintain a record of your investigation in code.
+Using AWS Sagemaker hosted Jupyter Notebooks, Grapl will (soon) provide a Python library for interacting with the Engagement Graph, allowing you to pivot quickly and maintain a record of your investigation in code.
 
 
 ![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553037156946_file.png)
