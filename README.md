@@ -1,5 +1,3 @@
-# Grapl README
-
 ## Grapl
 
 Grapl is a Graph Platform for Detection and Response. 
