@@ -25,7 +25,7 @@ This cuts down on storage costs and gives you central locations to view your dat
 ![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553026555668_image.png)
 
 
-**Analyzers**
+**Analyzers (Beta)**
 
 Analyzers are your attacker signatures. They’re Python modules, deployed to Grapl’s S3 bucket, that are orchestrated to execute upon changes to grapl’s Master Graph.
 
@@ -43,11 +43,11 @@ Grapl provides an analyzer library (alpha) so that you can write attacker signat
             .with_image_name(contains=Not("services.exe"))
         return parent.with_child(child).to_query()
 ```
-Keeping your analyzers is code means you can:
+Keeping your analyzers in code means you can:
 
 - Code review your alerts
 - Write tests, integrate into CI
-- Build abstractions, reuse logic
+- Build abstractions, reuse logic, and generally follow best practices for maintaining software
 
 **Engagements (alpha)**
 
@@ -72,7 +72,6 @@ This makes Grapl trivial to extend or integrate into your existing services.
 
 
 ![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553040197703_file.png)
-
 
 
 ## Setup
