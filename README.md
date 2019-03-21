@@ -1,160 +1,98 @@
-# grapl
-Graph platform for Detection and Response
+# Grapl README
 
-Grapl aims to describe a network, and actions taking place on that network, as a graph.
+## Grapl
 
-The graph representation makes it easy to express complex attacker signatures
-that span multiple discrete events. Automated contexting can be applied to
-arbitrary signature matches by expanding the graph surrounding the match,
-pulling in related information.
+Grapl is a Graph Platform for Detection and Response. 
 
-Grapl currently supports graph representations for:
-* Process Start/ Stop
-* File Create/Read/Write/Delete
-* Internal and External network traffic
+For a more in depth overview of Grapl, [read this](https://insanitybit.github.io/2019/03/09/grapl).
 
-What you can do with Grapl today:
-* Send it data, given you provide a specific format
-* Query the db for graphs of Process trees and their associated files and network activity
-* Write attacker signatures using Python and Graphql+
+In short, Grapl will take raw logs, convert them into graphs, and merge those graphs into a Master Graph. It will then orchestrate the execution of your attack signatures and provide tools for performing your investigations.
 
-### Example Use Case: Catching a malicious word macro
+Grapl supports nodes for:
 
-As an example, one can write a signature to catch a malicious word macro: 
-* Process with `image_name` "word.exe" executes
-* "word" executes a child process
+- Processes (Beta)
+- Files (Beta)
+- Networking (Alpha)
 
-```
-{
-  q(func: eq(image_name, "word")) @cascade
-  @filter(gt(create_time, 0) AND lt(create_time, 600))
-  {
-    uid, pid, create_time, image_name, terminate_time, node_key, asset_id
-    children {
-        expand(_all_),
-    }
-  }
-}
-```
-(This is dgraph's query language, [graphql+](https://docs.dgraph.io/query-language/) - in the future a Python wrapper will be provided)
+and currently parses Sysmon logs or a generic JSON log format to generate these graphs.
 
-This could return a graph like:
-![word_macro_hit](https://github.com/insanitybit/grapl/blob/master/images/word_child.png)
+## Key Features
+
+**Identity**
+If you’re familiar with log sources like Sysmon, one of the best features is that processes are given identities. Grapl applies the same concept but for any supported log type, taking psuedo identifiers such as process ids and discerning canonical identities.
+
+This cuts down on storage costs and gives you central locations to view your data, as opposed to having it spread across thousands of logs. As an example, given a process’s canonical identifier you can view all of the information for it by selecting the node.
+
+![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553026555668_image.png)
 
 
-When these analyzers find matches, engagements are created. Engagements are a graph
-representation of all of the events related to an incident. While a signature
-might give us Word and the dropped payload, our engagement might pull in files
-read by word, children of the 'payload' process, or other relevant information.
+**Analyzers**
+Analyzers are your attacker signatures. They’re Python modules, deployed to Grapl’s S3 bucket, that are orchestrated to execute upon changes to grapl’s Master Graph.
 
-In the future it will be possible to interact with these engagements through
-an API targeting Jupyter notebooks. For now the feature is limited to a visual
-representation.
+Analyzers execute in realtime as the master graph is updated.
 
-Grapl can expand signature hits out to scope the engagement by
-traversing the edges of the signature match, pulling relevant nodes into the
-engagement.
-
-Given the `word` and `payload` children we can recursively
-add subsequent children, find the files read by word, etc.
-
-Here we can see that:
-* Chrome downloaded the `malicious.doc` doc
-* Word read the `malicious.doc` file
-* Word connected to an external IP (red node)
-* Word created a `payload.exe` and executed it
-* `payload.exe` spawned `ssh`, and connected to another asset (yellow nodes)
-* `sshd` spawned a shell on the other asset
-
-![word_macro_graph](https://github.com/insanitybit/grapl/blob/master/images/word_macro_graph.png)
-
-Even in cases where your detections are built on discrete events Grapl should
-be able to provide benefits with its automated scoping.
+Grapl provides an analyzer library (alpha) so that you can write attacker signatures using pure Python:
 
 
-### Current State
+    def signature_graph() -> str:
+        child = Process() \
+            .with_image_name(contains="svchost.exe") \
+            .with_node_key(eq='$a')
+    
+        parent = Process() \
+            .with_image_name(contains=Not("services.exe"))
+        return parent.with_child(child).to_query()
 
-**Grapl is currently: Alpha Quality**
+Keeping your analyzers is code means you can:
 
-Alpha means that there will be a lot of code churn (total rewrites) and possibly
-data-format changes. This means that data you write to grapl today may not be
-valid tomorrow. I do not intend to support migrations during Alpha.
+- Code review your alerts
+- Write tests, integrate into CI
+- Build abstractions, reuse logic
 
-**What Works**
-* Can parse process and file events, if they conform to the 'generic' parser
-* Can connect processes across a network, given process + network attributed data
-* Can identify and merge generated subgraphs into master graph
-* Visualizing graphs via `dgraph-ratel`
+**Engagements (alpha)**
+Grapl provides a tool for investigations called an Engagement. Engagements are an isolated graph representing a subgraph that your analyzers have deemed suspicious.
 
-
-**What Doesn't Work**
-* Engagement creation, interaction
-
-Note that Grapl has not been given the security attention it deserves. I do not recommend
-using it without examining the generated Cloudformation stack and source code.
-
-Contributions very welcome.
+Using AWS Sagemaker hosted Jupyter Notebooks, Grapl provides a Python library for interacting with the Engagement Graph, allowing you to pivot quickly and maintain a record of your investigation in code.
 
 
-## Architecture Diagram
-
-Grapl has a lot of moving parts. This is the current architecture doc.
-
-[grapl_arch](https://github.com/insanitybit/grapl/blob/master/images/grapl_arch.png)
-
-As the diagram shows, Grapl is built primarily as a Pub Sub system. The goal is to make it easy to link
-your own services up, move Grapl's own services around, and extend the platform to match your need.
-
-Grapl is primarily built in Rust, with the Analyzers being built in Python.
-
-## Setting up Grapl
-
-### Building the binaries
-
-Built lambda packages are provided in the `grapl-cdk` directory. Otherwise, you can build them manually.
-
-In order to build the rust binaries for aws lambda you'll need to use the
-[rust-musl-builder](https://github.com/emk/rust-musl-builder/) project.
-(You'll need this patch https://github.com/emk/rust-musl-builder/pull/57#discussion_r225104037 )
-
-* Build the docker image so that it uses the rust nightly compiler.
-* Set up the `rust-musl-builder` alias as the readme suggests.
-* Modify `build.sh` to point to your built Docker image (`-t <your image id>`)
-* Run the `build.sh` to build files and place them in the `grapl-cdk` folder for later deployment. 
-
-### DGraph
-
-Grapl relies on DGraph, and expects two **separate** dgraph instances. Grapl expects these
-instances to be resolvable from the names:
-`db.mastergraph`
-`db.engagementgraph`
+![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553037156946_file.png)
 
 
-### Deploying
+There is no UI for the engagements yet but I hope to build one soon - a live updating view of the engagement graph as you interact with it in the notebook.
 
-The majority of Grapl infrastructure is managed via [aws-cdk](https://gitter.im/awslabs/aws-cdk).
-
-See `aws-cdk` docs for setup instructions.
-
-The one thing not provided by cdk is the S3 endpoint that you'll need for your lambdas to talk to
-S3. Just create one through the console/ your preferred means within the  GraplVpc vpc after running cdk.
+**Event Driven and Extendable**
+Grapl was built to be extended - no service can satisfy every organization’s needs. Every native Grapl service works by sending and receiving events, which means that in order to extend Grapl you only need to start subscribing to messages.
 
 
-Once the binaries are built you can zip them up, move them to the `grapl-cdk` folder, and deploy the stacks.
+![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553040182040_file.png)
 
-You'll need to provide a `.env` file with the following properties:
-```
-HISTORY_DB_USERNAME
-HISTORY_DB_PASSWORD
-BUCKET_PREFIX
-```
-BUCKET_PREFIX needs to be a unique string, valid for S3 bucket names.
 
-I recommend running `cdk diff` to see what resource changes you can expect.
 
-Your DGraph cluster security groups will need to allow traffic from the graph-merger, any analyzers,
-and the engagement-creator.
+![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553040197703_file.png)
 
-In order to run the lambdas within their respective VPCs you may need to open a support request
-with AWS to reserve extra Elastic IPs (16 has been sufficient for me).
- 
+
+
+## Setup
+
+Setting up a basic playground version of Grapl is pretty simple. 
+
+Clone the repo:
+
+    git clone https://github.com/insanitybit/grapl.git
+
+Change directories to the `grapl/grapl-cdk/` folder. There should already be build binaries.
+
+Add a `.env` file, and fill it in:
+
+    HISTORY_DB_USERNAME=username
+    HISTORY_DB_PASSWORD=password
+    BUCKET_PREFIX="<unique prefix to differentiate your buckets>"
+    GRAPH_DB_KEY_NAME=<name of SSH key, if debug mode is enabled, to SSH to graphdb>
+
+Run the deploy script
+`./deploy_all.sh`
+
+You’ll then need to [set up dgraph](https://docs.dgraph.io/deploy/) on the two EC2 instances that have been set up for you.
+
+This will give you a Grapl setup that’s adequate for testing out the service.
+
