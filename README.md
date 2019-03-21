@@ -19,6 +19,7 @@ and currently parses Sysmon logs or a generic JSON log format to generate these 
 ## Key Features
 
 **Identity**
+
 If you’re familiar with log sources like Sysmon, one of the best features is that processes are given identities. Grapl applies the same concept but for any supported log type, taking psuedo identifiers such as process ids and discerning canonical identities.
 
 This cuts down on storage costs and gives you central locations to view your data, as opposed to having it spread across thousands of logs. As an example, given a process’s canonical identifier you can view all of the information for it by selecting the node.
@@ -27,6 +28,7 @@ This cuts down on storage costs and gives you central locations to view your dat
 
 
 **Analyzers**
+
 Analyzers are your attacker signatures. They’re Python modules, deployed to Grapl’s S3 bucket, that are orchestrated to execute upon changes to grapl’s Master Graph.
 
 Analyzers execute in realtime as the master graph is updated.
@@ -50,6 +52,7 @@ Keeping your analyzers is code means you can:
 - Build abstractions, reuse logic
 
 **Engagements (alpha)**
+
 Grapl provides a tool for investigations called an Engagement. Engagements are an isolated graph representing a subgraph that your analyzers have deemed suspicious.
 
 Using AWS Sagemaker hosted Jupyter Notebooks, Grapl provides a Python library for interacting with the Engagement Graph, allowing you to pivot quickly and maintain a record of your investigation in code.
@@ -61,8 +64,10 @@ Using AWS Sagemaker hosted Jupyter Notebooks, Grapl provides a Python library fo
 There is no UI for the engagements yet but I hope to build one soon - a live updating view of the engagement graph as you interact with it in the notebook.
 
 **Event Driven and Extendable**
+
 Grapl was built to be extended - no service can satisfy every organization’s needs. Every native Grapl service works by sending and receiving events, which means that in order to extend Grapl you only need to start subscribing to messages.
 
+This makes Grapl trivial to extend or integrate into your existing services.
 
 ![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553040182040_file.png)
 
