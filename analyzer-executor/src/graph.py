@@ -1,15 +1,20 @@
 from abc import abstractmethod
 
-base_process_query = """
-    q1(func: has(pid)) @cascade
-     {root_filter}
-     
-    {{
-      uid,
-      {fields}
-      {children}
-    }}
-"""
+
+def base_query(root_key, root_filter, fields):
+    return """
+        q1(func: has({root_key})) @cascade
+         {root_filter}
+         
+        {{
+          uid,
+          {fields}
+        }}
+    """.format(
+            root_key=root_key,
+            root_filter=root_filter,
+            fields=fields,
+    )
 
 
 class Filter(object):
@@ -76,10 +81,10 @@ class Process(object):
     def to_query(self):
         # print(self.get_predicate_filters())
         # print(self.get_child_filters())
-        return base_process_query.format(
-            root_filter = self.get_predicate_filters(),
-            fields="",
-            children = self.get_child_filters()
+        return base_query(
+           "pid",
+            self.get_predicate_filters(),
+            self.get_child_filters()
         )
 
     def get_predicate_filters(self):
@@ -99,7 +104,7 @@ class Process(object):
         if not self.child:
             return ""
 
-        filter = """
+        return """
             children {} {{
                 uid,
                 {}
@@ -111,7 +116,24 @@ class Process(object):
             self.child.get_child_filters()
         )
 
-        return filter
+
+class File(object):
+    def __init__(self):
+        self.path = None
+        self.node_key = None
+
+    def with_path(self, eq=None, contains=None):
+        if eq:
+            self.path = Eq('path', eq)
+        elif contains:
+            self.path = Contains('path', contains)
+        else:
+            self.path = Has('path', None)
+        return self
+
+    def with_node_key(self, eq):
+        self.node_key = Eq('node_key', eq)
+        return self
 
 
 if __name__ == '__main__':
@@ -123,6 +145,9 @@ if __name__ == '__main__':
     parent = Process()\
         .with_image_name(contains=Not("services.exe"))
     parent.with_child(child)
+
+    file = File()\
+        .with_path(contains="C:\\Windows\\")
 
     query = parent.to_query()
     print(query)
