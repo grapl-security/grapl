@@ -20,6 +20,10 @@ extern crate stopwatch;
 extern crate uuid;
 extern crate zstd;
 extern crate simple_logger;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -141,7 +145,7 @@ impl<'a, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<'a, F>
             "creating tables",
             {
                 ip_asset_history::create_table(&pool);
-                hostname_asset_history::create_table(&pool);
+//                hostname_asset_history::create_table(&pool);
                 session_history::create_process_table(&pool);
                 session_history::create_file_table(&pool);
                 session_history::create_connection_table(&pool);
