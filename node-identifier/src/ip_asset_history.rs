@@ -235,24 +235,28 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
     let mut result = Ok(());
 
     for _node in unid_subgraph.nodes.clone() {
-        let node: NodeDescription = _node.1.into();
+        let node: NodeDescription = _node.1;
         match node.which() {
             Node::ProcessNode(mut node) => {
                 let old_id = node.clone_key().to_owned();
+
+                let host_id = match (&node.asset_id, &node.hostname, &node.host_ip) {
+                    (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
+                    (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
+                    (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
+                    (_, _, _) => {
+                        dead_node_keys.insert(old_id);
+                        result = (|| bail!("Missing host identifiers"))();
+                        error!("Must provide at least one of: asset_id, hostname, host_ip");
+                        continue
+                    }
+                };
 
                 let mut tx = conn.start_transaction(
                     false,
                     Some(IsolationLevel::Serializable),
                     Some(true)
                 ).expect("Failed to acquire transaction");
-
-
-                let host_id = match (&node.asset_id, &node.hostname, &node.host_ip) {
-                    (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
-                    (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
-                    (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
-                    (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
-                };
 
                 let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp());
 
@@ -284,7 +288,12 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
                     (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
                     (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
-                    (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
+                    (_, _, _) => {
+                        dead_node_keys.insert(old_id);
+                        result = (|| bail!("Missing host identifiers"))();
+                        error!("Must provide at least one of: asset_id, hostname, host_ip");
+                        continue
+                    }
                 };
 
                 let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp());
@@ -318,7 +327,13 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
                     (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
                     (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
-                    (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
+                    (_, _, _) => {
+
+                        dead_node_keys.insert(old_id);
+                        result = (|| bail!("Missing host identifiers"))();
+                        error!("Must provide at least one of: asset_id, hostname, host_ip");
+                        continue
+                    }
                 };
 
 
@@ -354,7 +369,12 @@ pub fn map_asset_ids_to_graph(conn: &Pool,
                     (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
                     (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
                     (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
-                    (_, _, _) => panic!("Must provide at least one of: asset_id, hostname, host_ip")
+                    (_, _, _) => {
+                        dead_node_keys.insert(old_id);
+                        result = (|| bail!("Missing host identifiers"))();
+                        error!("Must provide at least one of: asset_id, hostname, host_ip");
+                        continue
+                    }
                 };
 
                 let attribution_res = attribute_asset(&mut tx, &host_id, node.timestamp());

@@ -79,8 +79,10 @@ fn is_internal_ip(ip: &[u8]) -> bool {
     RE.is_match(ip)
 }
 
-fn get_image_name(image_path: &str) -> Option<&str> {
-    image_path.split("\\").last()
+fn get_image_name(image_path: &str) -> Option<String> {
+    image_path.split("\\").last().map(|name| {
+        name.replace("- ", "").replace("\\", "")
+    })
 }
 
 pub fn utc_to_epoch(utc: &str) -> Result<u64, Error> {
@@ -103,7 +105,10 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         timestamp
     );
 
-    
+    if process_start.image.contains("svc") {
+        info!("process_start {:?}", process_start)
+    }
+
     let parent = ProcessDescriptionBuilder::default()
         .asset_id(process_start.header.computer.clone())
         .state(ProcessState::Existing)
@@ -181,6 +186,7 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
 
     Ok(graph)
 }
+
 
 fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDescription, Error> {
     let timestamp = utc_to_epoch(&inbound_connection.utc_time)?;

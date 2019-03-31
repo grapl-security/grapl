@@ -272,26 +272,31 @@ def vm_identity_mappings():
         }
     ]
 
+import sys
 
 def main():
 
+    if len(sys.argv) == 1:
+        raise Exception('Pass in the bucket prefix')
+    else:
+        prefix = sys.argv[1]
+
     s3 = boto3.client('s3')
 
-    with open('./events4.xml', 'r') as b:
+    with open('./events6.xml', 'r') as b:
         body = b.readlines()
-        body = [line for line in body if '2019-02-24' in line]
+        body = [line for line in body]
 
     def chunker(seq, size):
         return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
 
     for chunks in chunker(body, 20):
-
         c_body = zstd.compress("\n".join(chunks), 4)
         epoch = int(time.time())
 
         res = s3.put_object(
             Body=c_body,
-            Bucket="grapl-sysmon-log-bucket",
+            Bucket="{}-sysmon-log-bucket".format(prefix),
             Key=str(epoch - (epoch % (24 * 60 * 60))) + "/sysmon/" +
                 str(epoch) + rand_str(3)
         )
@@ -303,20 +308,20 @@ def main():
     #
     # raw_logs = generate_basic_process_logs()
     # print(raw_logs)
-    epoch = int(time.time())
-    # #
-    mapping_body = zstd.compress(json.dumps(vm_identity_mappings()), 4)
-    # serialized_raw_logs = zstd.compress(json.dumps(raw_logs), 4)
-
-    s3 = boto3.client('s3')
-
-
-    res = s3.put_object(
-        Body=mapping_body,
-        Bucket="grapl-identity-mappings-bucket",
-        Key=str(epoch - (epoch % (24 * 60 * 60))) + "/ip_asset_mappings/" +
-            str(epoch)
-    )
+    # epoch = int(timeme.time())
+    # # #
+    # mapping_body = zstd.compress(json.dumps(vm_identity_mappings()), 4)
+    # # serialized_raw_logs = zstd.compress(json.dumps(raw_logs), 4)
+    #
+    # s3 = boto3.client('s3')
+    #
+    #
+    # res = s3.put_object(
+    #     Body=mapping_body,
+    #     Bucket="grapl-identity-mappings-bucket",
+    #     Key=str(epoch - (epoch % (24 * 60 * 60))) + "/ip_asset_mappings/" +
+    #         str(epoch)
+    # )
     # time.sleep(2)
 
     # s3.put_object(
@@ -325,7 +330,7 @@ def main():
     #     Key=str(epoch - (epoch % (24 * 60 * 60))) + "/PROCESS_START/" + str(epoch)
     # )
 
-    print(res)
+    # print(res)
 
 
 if __name__ == '__main__':

@@ -7,4 +7,5 @@ rm -rf ./dev/
 rm -rf ./etc/
 rm -rf ./proc/
 rm -rf ./sys/
+rm ./engagement-creator.zip
 date
