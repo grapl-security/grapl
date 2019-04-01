@@ -824,18 +824,19 @@ class GraphDB extends cdk.Stack {
             {vpc:this.vpc}
         );
 
+        const zone = new PrivateHostedZone(this, id + '-hosted-zone', {
+            zoneName: id,
+            vpc
+        });
+
         const db = new ec2.CfnInstance(this, id + "Ec2", {
-            instanceType: new ec2.InstanceTypePair(ec2.InstanceClass.M3, ec2.InstanceSize.Medium).toString(),
+            instanceType: new ec2.InstanceTypePair(ec2.InstanceClass.M3, ec2.InstanceSize.Large).toString(),
             securityGroupIds: [graph_security_group.securityGroupId],
             subnetId: vpc.publicSubnets[0].subnetId,
             imageId: "ami-0ac019f4fcb7cb7e6",
             keyName: process.env.GRAPH_DB_KEY_NAME
         });
 
-        const zone = new PrivateHostedZone(this, id + '-hosted-zone', {
-            zoneName: id,
-            vpc
-        });
 
         new route53.CnameRecord(
             this, id, {
@@ -1045,3 +1046,4 @@ new Grapl().run();
 // cdk diff graph-merger-stack && \
 // cdk diff word-macro-analyzer-stack && \
 // cdk diff engagement-creation-service-stack
+

@@ -1,14 +1,36 @@
 from abc import abstractmethod
 
 
+class Not(object):
+    def __init__(self, value):
+        self.value = value
+
+
+def strip_outer_curly(s):
+    s = s.replace("{", "", 1)
+    return s[::-1].replace("}", "", 1)[::-1]
+
+
+def batch_queries(queries):
+    stripped = [strip_outer_curly(query) for query in queries]
+    enumerated = [stripped_q.replace("q0", "q{}".format(i)) for i, stripped_q in enumerate(stripped)]
+    return """
+    {{
+    {}
+    }}
+    """.format("\n".join(enumerated))
+
+
 def base_query(root_key, root_filter, fields):
     return """
-        q1(func: has({root_key})) @cascade
+        {{
+        q0(func: has({root_key})) @cascade
          {root_filter}
          
         {{
           uid,
           {fields}
+        }}
         }}
     """.format(
             root_key=root_key,
@@ -35,8 +57,8 @@ class Has(Filter):
 class Contains(Filter):
     def build(self):
         if isinstance(self.value, Not):
-            return 'NOT alloftext({}, "{}")'.format(self.predicate, self.value.value)
-        return 'alloftext({}, "{}")'.format(self.predicate, self.value)
+            return 'NOT regexp({}, /{}/)'.format(self.predicate, self.value.value)
+        return 'regexp({}, /{}/)'.format(self.predicate, self.value)
 
 
 class Eq(Filter):
@@ -45,10 +67,6 @@ class Eq(Filter):
             return 'NOT eq({}, "{}")'.format(self.predicate, self.value.value)
         return 'eq({}, "{}")'.format(self.predicate, self.value)
 
-
-class Not(object):
-    def __init__(self, value):
-        self.value = value
 
 
 class Process(object):
@@ -69,23 +87,25 @@ class Process(object):
 
     def with_node_key(self, eq=None):
         if eq:
-            self.node_key = Eq("node_key", node_key)
+            self.node_key = Eq("node_key", eq)
         else:
-            self.node_key = Has("node_key", node_key)
+            self.node_key = Has("node_key", None)
 
         return self
 
     def with_child(self, child):
         self.child = child
+        return self
 
     def to_query(self):
         # print(self.get_predicate_filters())
         # print(self.get_child_filters())
-        return base_query(
+        query = base_query(
            "pid",
             self.get_predicate_filters(),
             self.get_child_filters()
         )
+        return query
 
     def get_predicate_filters(self):
         fields = [self.image_name, self.node_key]
