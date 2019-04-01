@@ -55,24 +55,3 @@ def analyzer(graph: Subgraph, sender: Connection):
     except Exception as e:
         print('analyzer failed: {}'.format(e))
         sender.send(None)
-
-
-# class MockNode(object):
-#     pass
-#
-#
-# class MockSubgraph(object):
-#     def __init__(self):
-#         self.nodes = {}
-#         self.edges = {}
-#
-# # # Testcase
-# # # Given: A graph with an svchost.exe process and a malware.exe parent process
-# # # When: We analyze a subgraph with the child process uid
-# # # Then: We will emit an ExecutionHit
-# #
-# # if __name__ == '__main__':
-# #     subgraph = MockSubgraph()
-# #     subgraph.nodes["uuid-nodekey"] = MockNode()
-# #     rx, tx = Pipe(duplex=False)  # type: Tuple[Connection, Connection]
-
