@@ -119,7 +119,7 @@ def create_process_schema(eg_client: DgraphClient):
 
 
 def get_engagement_key(label: str, uids: List[str]) -> str:
-    bucket = int(time.time()) - (int(time.time()) % 360)
+    bucket = int(time.time()) - (int(time.time()) % 7200)
     hasher = hashlib.sha1(label)
     hasher.update(str(bucket).encode())
     [hasher.update(str(uid).encode()) for uid in sorted(uids)]

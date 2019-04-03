@@ -7,7 +7,6 @@ target/
 node_modules/
 .idea/
 *.iml
-*.zip
 .env
 venv/
 
