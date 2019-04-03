@@ -4,7 +4,6 @@ from typing import Dict, Optional, List
 
 from pydgraph import DgraphClient, DgraphClientStub
 
-Process = int
 
 class NodeCopier(object):
 
