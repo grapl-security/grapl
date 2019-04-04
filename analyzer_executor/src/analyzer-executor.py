@@ -4,64 +4,11 @@ import json
 
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
-from typing import Any, Union, Optional, Tuple, List
+from typing import Any, Optional, Tuple
 
 import boto3
 
-import graph_description_pb2
-
-
-class Subgraph(object):
-    def __init__(self, s: bytes):
-        self.subgraph = graph_description_pb2.GraphDescription()
-        self.subgraph.ParseFromString(s)
-
-
-class NodeRef(object):
-    def __init__(self, uid, node_type):
-        self.uid = uid
-        self.node_type = node_type
-
-    def to_dict(self):
-        # type: () -> Dict[str, Any]
-        return {
-            'uid': self.uid,
-            'node_type': self.node_type
-        }
-
-
-class ExecutionHit(object):
-    def __init__(self, label: str, node_refs: List[NodeRef], edges: List[Tuple[str, str, str]]) -> None:
-        self.label = label
-        self.node_refs = node_refs
-        self.edges = edges
-
-    def to_json(self):
-        # type: () -> str
-        return json.dumps(
-            {
-                'label': self.label,
-                'node_refs': [n.to_dict() for n in self.node_refs],
-                'edges': self.edges
-            }
-        )
-
-
-class ExecutionMiss(object):
-    pass
-
-
-class ExecutionComplete(object):
-    pass
-
-
-ExecutionResult = Union[ExecutionHit, ExecutionMiss, ExecutionComplete]
-
-
-class ExecutionEvent(object):
-    def __init__(self, key: str, subgraph: Subgraph) -> None:
-        self.key = key
-        self.subgraph = subgraph
+from analyzerlib import Subgraph, ExecutionHit, ExecutionComplete
 
 
 def parse_s3_event(event) -> str:
