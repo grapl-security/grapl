@@ -34,10 +34,10 @@ Analyzers execute in realtime as the master graph is updated.
 Grapl provides an analyzer library (alpha) so that you can write attacker signatures using pure Python:
 
 ```python
-    def signature_graph() -> str:
+    def signature_graph(node_key: str) -> str:
         child = Process() \
             .with_image_name(contains="svchost.exe") \
-            .with_node_key(eq='$a')
+            .with_node_key(eq=node_key)
     
         parent = Process() \
             .with_image_name(contains=Not("services.exe"))
