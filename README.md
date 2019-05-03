@@ -59,7 +59,11 @@ Using AWS Sagemaker hosted Jupyter Notebooks, Grapl will (soon) provide a Python
 ![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553037156946_file.png)
 
 
-There is no UI for the engagements yet but I hope to build one soon - a live updating view of the engagement graph as you interact with it in the notebook.
+There is no public UI for the engagements yet but I hope to build one soon - a live updating view of the engagement graph as you interact with it in the notebook.
+
+
+![]
+(https://gfycat.com/ScarceAmbitiousAmbushbug)
 
 **Event Driven and Extendable**
 
