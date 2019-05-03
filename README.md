@@ -62,8 +62,7 @@ Using AWS Sagemaker hosted Jupyter Notebooks, Grapl will (soon) provide a Python
 There is no public UI for the engagements yet but I hope to build one soon - a live updating view of the engagement graph as you interact with it in the notebook.
 
 
-![]
-(https://gfycat.com/ScarceAmbitiousAmbushbug)
+![](https://gfycat.com/ScarceAmbitiousAmbushbug)
 
 **Event Driven and Extendable**
 
