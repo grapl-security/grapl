@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 npm run build &&
-cdk deploy vpcs-stack &&
-cdk deploy event-emitters-stack &&
-cdk deploy mastergraph-stack &&
-cdk deploy engagementgraph-stack &&
-cdk deploy historydb-stack &&
-cdk deploy node-identity-mapper-stack &&
-cdk deploy generic-subgraph-generator-stack &&
-cdk deploy sysmon-subgraph-generator-stack &&
-cdk deploy node-identifier-stack &&
-cdk deploy graph-merger-stack &&
-cdk deploy analyzer-dispatcher-stack &&
-cdk deploy analyzer-executor-stack &&
-cdk deploy engagement-creator-stack &&
+cdk deploy grapl-event-emitters-stack && \
+cdk deploy graplvpcs-stack && \
+cdk deploy graplhistorydb-stack && \
+cdk deploy graplmastergraph-stack && \
+cdk deploy graplengagementgraph-stack && \
+cdk deploy grapl-generic-subgraph-generator-stack && \
+cdk deploy grapl-sysmon-subgraph-generator-stack && \
+cdk deploy grapl-node-identity-mapper-stack && \
+cdk deploy grapl-node-identifier-stack && \
+cdk deploy grapl-graph-merger-stack && \
+cdk deploy grapl-analyzer-dispatcher-stack && \
+cdk deploy grapl-analyzer-executor-stack && \
+cdk deploy grapl-engagement-creator-stack && \
 
 # cdk deploy engagement-creation-service-stack
 

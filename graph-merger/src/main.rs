@@ -439,7 +439,7 @@ impl EventHandler<GraphDescription> for GraphMerger {
 
         let mg_client = &api_grpc::DgraphClient::with_client(
             Arc::new(
-                Client::new_plain("db.mastergraph", 9080, ClientConf {
+                Client::new_plain("db.graplmastergraph", 9080, ClientConf {
                     ..Default::default()
                 })?
             )
@@ -452,7 +452,7 @@ impl EventHandler<GraphDescription> for GraphMerger {
 
         let mut upserter = BulkUpserter::new(
             &mg_client,
-        subgraph.nodes.values()
+            subgraph.nodes.values()
         );
 
         // Even if some node upserts fail we should create edges for the ones that succeeded

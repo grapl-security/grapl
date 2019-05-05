@@ -28,7 +28,7 @@ def main(prefix):
     def chunker(seq, size):
         return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
 
-    for chunks in chunker(body, 20):
+    for chunks in chunker(body, 100):
         c_body = zstd.compress(b"\n".join(chunks), 4)
         epoch = int(time.time())
 

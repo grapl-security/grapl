@@ -1,4 +1,3 @@
-
 import route53 = require('@aws-cdk/aws-route53');
 import { PrivateHostedZone } from '@aws-cdk/aws-route53';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
@@ -7,39 +6,15 @@ import s3 = require('@aws-cdk/aws-s3');
 import sns = require('@aws-cdk/aws-sns');
 import sqs = require('@aws-cdk/aws-sqs');
 import ec2 = require('@aws-cdk/aws-ec2');
-import rds = require('@aws-cdk/aws-rds');
 import lambda = require('@aws-cdk/aws-lambda');
 import iam = require('@aws-cdk/aws-iam');
-import {SubnetType, VpcNetwork, IVpcNetwork} from "@aws-cdk/aws-ec2";
-import {Token} from "@aws-cdk/cdk";
-import {Bucket, BucketImportProps, IBucket} from "@aws-cdk/aws-s3";
+import {VpcNetwork, IVpcNetwork} from "@aws-cdk/aws-ec2";
+import {Bucket, IBucket} from "@aws-cdk/aws-s3";
 import {Topic, ITopic} from "@aws-cdk/aws-sns";
-import {DatabaseCluster} from "@aws-cdk/aws-rds";
 import {Runtime} from "@aws-cdk/aws-lambda";
+import dynamodb = require('@aws-cdk/aws-dynamodb');
 
 const env = require('node-env-file');
-
-function get_history_db(stack: cdk.Stack, vpc: ec2.IVpcNetwork, username: Token, password: Token): DatabaseCluster {
-    return new rds.DatabaseCluster(stack, 'HistoryDb', {
-        defaultDatabaseName: 'historydb',
-        masterUser: {
-            username: username.toString(),
-            password: password.toString(),
-        },
-        engine: rds.DatabaseClusterEngine.Aurora,
-        instanceProps: {
-            instanceType: new ec2.InstanceTypePair(
-                ec2.InstanceClass.Burstable2,
-                ec2.InstanceSize.Medium
-            ),
-            vpc: vpc,
-            vpcPlacement: {
-                subnetsToUse: SubnetType.Private
-            }
-        }
-    });
-
-}
 
 class Queues {
     queue: sqs.Queue;
@@ -86,6 +61,7 @@ class Service {
 
         if (environment) {
             environment.QUEUE_URL = queues.queue.queueUrl;
+            environment.RUST_BACKTRACE = "1";
         }
 
         let event_handler = new lambda.Function(
@@ -143,6 +119,7 @@ class Service {
         this.event_handler.addToRolePolicy(policy);
         this.event_retry_handler.addToRolePolicy(policy);
 
+        // TODO: This is adding more permissions than necessary
         bucket.grantRead(this.event_handler.role);
         bucket.grantRead(this.event_retry_handler.role);
     }
@@ -424,7 +401,6 @@ class NodeIdentityMapper extends cdk.Stack {
     constructor(parent: cdk.App, id: string,
                 reads_from_props: s3.BucketImportProps,
                 subscribes_to_props: sns.TopicImportProps,
-                history_db_props: rds.DatabaseClusterImportProps,
                 vpc_props: ec2.VpcNetworkImportProps
     ) {
         super(parent, id + '-stack');
@@ -432,12 +408,6 @@ class NodeIdentityMapper extends cdk.Stack {
             this,
             'reads_from',
             reads_from_props
-        );
-
-        const history_db = rds.DatabaseCluster.import(
-            this,
-            'history-db',
-            history_db_props
         );
 
         const subscribes_to = Topic.import(
@@ -453,9 +423,6 @@ class NodeIdentityMapper extends cdk.Stack {
         );
 
         const environment = {
-            "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
-            "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
-            "HISTORY_DB_ADDRESS": "db.historydb", // TODO: Derive this
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX
         };
 
@@ -464,15 +431,6 @@ class NodeIdentityMapper extends cdk.Stack {
 
         service.readsFrom(reads_from);
 
-        history_db.connections.allowDefaultPortFrom(
-            service.event_handler,
-            'node-identity-mapper-history-db'
-        );
-
-        history_db.connections.allowDefaultPortFrom(
-            service.event_retry_handler,
-            'node-identity-mapper-retry-handler-history-db'
-        );
         subscribes_to.subscribeQueue(service.queues.queue);
 
         service.event_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
@@ -487,7 +445,7 @@ class NodeIdentifier extends cdk.Stack {
                 reads_from_props: s3.BucketImportProps,
                 subscribes_to_props: sns.TopicImportProps,
                 writes_to_props: s3.BucketImportProps,
-                history_db_props: rds.DatabaseClusterImportProps,
+                history_db: HistoryDb,
                 vpc_props: ec2.VpcNetworkImportProps
     ) {
         super(parent, id + '-stack');
@@ -495,12 +453,6 @@ class NodeIdentifier extends cdk.Stack {
             this,
             'reads_from',
             reads_from_props
-        );
-
-        const history_db = rds.DatabaseCluster.import(
-            this,
-            'history-db',
-            history_db_props
         );
 
         const subscribes_to = Topic.import(
@@ -522,26 +474,14 @@ class NodeIdentifier extends cdk.Stack {
         );
             
         const environment = {
-            "HISTORY_DB_USERNAME": process.env.HISTORY_DB_USERNAME,
-            "HISTORY_DB_PASSWORD": process.env.HISTORY_DB_PASSWORD,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
-            "HISTORY_DB_ADDRESS": "db.historydb", // TODO: Derive this
             "IDENTITY_CACHE_PEPPER": process.env.IDENTITY_CACHE_PEPPER,
         };
 
         const service = new Service(this, 'node-identifier', environment, vpc, 'node-identifier-retry-handler');
         service.readsFrom(reads_from);
 
-        history_db.connections.allowDefaultPortFrom(
-            service.event_handler,
-            'node-identifier-history-db'
-        );
-
-        history_db.connections.allowDefaultPortFrom(
-            service.event_retry_handler,
-            'node-identifier-retry-handler-history-db'
-        );
-
+        history_db.allowReadWrite(service);
         service.publishesToBucket(writes_to);
         subscribes_to.subscribeQueue(service.queues.queue);
         service.event_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
@@ -873,42 +813,63 @@ class GraphDB extends cdk.Stack {
 
 class HistoryDb extends cdk.Stack {
 
-    db: rds.DatabaseClusterImportProps;
+    proc_history: dynamodb.Table;
+    file_history: dynamodb.Table;
+    asset_history: dynamodb.Table;
 
     constructor(parent: cdk.App,
                 id: string,
-                grapl_vpc_props: ec2.VpcNetworkImportProps,
-                username: cdk.Token,
-                password: cdk.Token
     ) {
         super(parent, id + '-stack');
 
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            grapl_vpc_props
-        );
-
-
-        const db = get_history_db(this, vpc, username, password);
-
-        // TODO: This should be dynamic, based on services that require access, and only for
-        //       the required ports
-        db.connections.allowFromAnyIPv4(new ec2.TcpAllPorts());
-
-        const zone = new PrivateHostedZone(this, id + '-hosted-zone', {
-            zoneName: id,
-            vpc
+        this.proc_history = new dynamodb.Table(this, 'process_history_table', {
+            tableName: "process_history_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.String
+            },
+            sortKey: {
+                name: 'create_time',
+                type: dynamodb.AttributeType.Number
+            },
+            billingMode: dynamodb.BillingMode.PayPerRequest,
         });
 
-        new route53.CnameRecord(
-            this, 'historydb', {
-                zone,
-                recordName: 'db.historydb',
-                recordValue: db.clusterEndpoint.hostname
-            }
-        );
-        this.db = db.export();
+        this.file_history = new dynamodb.Table(this, 'file_history_table', {
+            tableName: "file_history_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.String
+            },
+            sortKey: {
+                name: 'create_time',
+                type: dynamodb.AttributeType.Number
+            },
+            billingMode: dynamodb.BillingMode.PayPerRequest,
+        });
+
+        this.asset_history = new dynamodb.Table(this, 'asset_id_mappings', {
+            tableName: "asset_id_mappings",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.String
+            },
+            sortKey: {
+                name: 'c_timestamp',
+                type: dynamodb.AttributeType.Number
+            },
+            billingMode: dynamodb.BillingMode.PayPerRequest,
+        });
+    }
+
+    allowReadWrite(service: Service) {
+        this.proc_history.grantReadWriteData(service.event_handler.role);
+        this.file_history.grantReadWriteData(service.event_handler.role);
+        this.asset_history.grantReadWriteData(service.event_handler.role);
+
+        this.proc_history.grantReadWriteData(service.event_retry_handler.role);
+        this.file_history.grantReadWriteData(service.event_retry_handler.role);
+        this.asset_history.grantReadWriteData(service.event_retry_handler.role);
     }
 }
 
@@ -918,28 +879,26 @@ class Grapl extends cdk.App {
 
         const env_file = env(__dirname + '/.env');
 
-        const network = new Networks(this, 'vpcs');
+        let event_emitters = new EventEmitters(this, 'grapl-event-emitters');
+
+        const network = new Networks(this, 'graplvpcs');
 
         const history_db = new HistoryDb(
             this,
-            'historydb',
-            network.grapl_vpc,
-            new cdk.Token(process.env.HISTORY_DB_USERNAME),
-            new cdk.Token(process.env.HISTORY_DB_PASSWORD)
+            'graplhistorydb',
         );
 
-        let event_emitters = new EventEmitters(this, 'event-emitters');
 
         const master_graph = new GraphDB(
             this,
-            'mastergraph',
+            'graplmastergraph',
             network.grapl_vpc,{
             allow_all_ssh: true
         });
 
         const engagement_graph = new GraphDB(
             this,
-            'engagementgraph',
+            'graplengagementgraph',
             network.grapl_vpc, {
             allow_all_ssh: true
         });
@@ -947,7 +906,7 @@ class Grapl extends cdk.App {
         // TODO: Move subgraph generators to their own VPC
         new GenericSubgraphGenerator(
             this,
-            'generic-subgraph-generator',
+            'grapl-generic-subgraph-generator',
             event_emitters.raw_logs_bucket,
             event_emitters.raw_logs_topic,
             event_emitters.unid_subgraphs_generated_bucket
@@ -955,7 +914,7 @@ class Grapl extends cdk.App {
 
         new SysmonSubgraphGenerator(
             this,
-            'sysmon-subgraph-generator',
+            'grapl-sysmon-subgraph-generator',
             event_emitters.sysmon_logs_bucket,
             event_emitters.sysmon_logs_topic,
             event_emitters.unid_subgraphs_generated_bucket
@@ -964,26 +923,25 @@ class Grapl extends cdk.App {
 
         new NodeIdentityMapper(
             this,
-            'node-identity-mapper',
+            'grapl-node-identity-mapper',
             event_emitters.identity_mappings_bucket,
             event_emitters.identity_mappings_topic,
-            history_db.db,
             network.grapl_vpc
         );
 
         new NodeIdentifier(
             this,
-            'node-identifier',
+            'grapl-node-identifier',
             event_emitters.unid_subgraphs_generated_bucket,
             event_emitters.unid_subgraphs_generated_topic,
             event_emitters.subgraphs_generated_bucket,
-            history_db.db,
+            history_db,
             network.grapl_vpc
         );
 
         new GraphMerger(
             this,
-            'graph-merger',
+            'grapl-graph-merger',
             event_emitters.subgraphs_generated_bucket,
             event_emitters.subgraphs_generated_topic,
             event_emitters.subgraph_merged_topic,
@@ -993,7 +951,7 @@ class Grapl extends cdk.App {
 
         new AnalyzerDispatch(
             this,
-            'analyzer-dispatcher',
+            'grapl-analyzer-dispatcher',
             event_emitters.subgraph_merged_topic,
             event_emitters.dispatched_analyzer_bucket,
             event_emitters.analyzers_bucket,
@@ -1002,7 +960,7 @@ class Grapl extends cdk.App {
 
         new AnalyzerExecutor(
             this,
-            'analyzer-executor',
+            'grapl-analyzer-executor',
             event_emitters.dispatched_analyzer_topic,
             event_emitters.analyzers_bucket,
             event_emitters.dispatched_analyzer_bucket,
@@ -1013,7 +971,7 @@ class Grapl extends cdk.App {
 
         new EngagementCreator(
             this,
-            'engagement-creator',
+            'grapl-engagement-creator',
             event_emitters.analyzer_matched_subgraphs_bucket,
             event_emitters.analyzer_matched_subgraphs_topic,
             event_emitters.engagements_created_topic,
@@ -1025,25 +983,19 @@ class Grapl extends cdk.App {
 }
 
 new Grapl().run();
-//
-// cdk deploy vpcs-stack && \
-// cdk deploy event-emitters-stack && \
-// cdk deploy history-db-stack && \
-// cdk deploy generic-subgraph-generator-stack && \
-// cdk deploy node-identifier-stack && \
-// cdk deploy node-identity-mapper-stack && \
-// cdk deploy graph-merger-stack && \
-// cdk deploy word-macro-analyzer-stack && \
-// cdk deploy engagement-creation-service-stack
 
-//
-// cdk diff vpcs-stack && \
-// cdk diff event-emitters-stack && \
-// cdk diff history-db-stack && \
-// cdk diff generic-subgraph-generator-stack && \
-// cdk diff node-identifier-stack && \
-// cdk diff node-identity-mapper-stack && \
-// cdk diff graph-merger-stack && \
-// cdk diff word-macro-analyzer-stack && \
-// cdk diff engagement-creation-service-stack
+// cdk deploy graplvpcs-stack && \
+// cdk deploy graplhistorydb-stack && \
+// cdk deploy grapl-event-emitters-stack && \
+// cdk deploy graplmastergraph-stack && \
+// cdk deploy graplengagementgraph-stack && \
+// cdk deploy grapl-generic-subgraph-generator-stack && \
+// cdk deploy grapl-sysmon-subgraph-generator-stack && \
+// cdk deploy grapl-node-identity-mapper-stack && \
+// cdk deploy grapl-node-identifier-stack && \
+// cdk deploy grapl-graph-merger-stack && \
+// cdk deploy grapl-analyzer-dispatcher-stack && \
+// cdk deploy grapl-analyzer-executor-stack && \
+// cdk deploy grapl-engagement-creator-stack
+
 
