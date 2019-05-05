@@ -21,6 +21,7 @@
     "@aws-cdk/aws-s3-notifications": "^0.23.0",
     "@aws-cdk/aws-sns": "^0.23.0",
     "@aws-cdk/aws-sqs": "^0.23.0",
+    "@aws-cdk/aws-ecs": "^0.23.0",
     "@aws-cdk/cdk": "^0.23.0",
     "@types/node": "^10.12.21",
     "aws-cdk": "^0.23.0",
