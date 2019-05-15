@@ -6,6 +6,7 @@ import json
 
 from typing import Any, List, Dict
 
+import os
 import pydgraph
 from pydgraph import DgraphClient, DgraphClientStub
 
@@ -147,8 +148,14 @@ def should_throttle(engagement_key: str, dgraph_client: DgraphClient) -> bool:
 
 
 def lambda_handler(events: Any, context: Any) -> None:
-    mg_client = DgraphClient(DgraphClientStub('db.mastergraph:9080'))
-    eg_client = DgraphClient(DgraphClientStub('db.engagementgraph:9080'))
+    mg_alpha_names = os.environ['MG_ALPHAS'].split(",")
+    eg_alpha_names = os.environ['EG_ALPHAS'].split(",")
+
+    mg_client_stubs = [DgraphClientStub('{}:9080'.format(name)) for name in mg_alpha_names]
+    eg_client_stubs = [DgraphClientStub('{}:9080'.format(name)) for name in eg_alpha_names]
+
+    eg_client = DgraphClient(*eg_client_stubs)
+    mg_client = DgraphClient(*mg_client_stubs)
 
     create_process_schema(eg_client)
 

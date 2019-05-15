@@ -1,3 +1,4 @@
+extern crate rand;
 extern crate aws_lambda_events;
 extern crate base64;
 extern crate base16;
@@ -25,6 +26,9 @@ extern crate sha2;
 extern crate simple_logger;
 extern crate sqs_lambda;
 extern crate stopwatch;
+
+use rand::thread_rng;
+use rand::seq::SliceRandom;
 
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -402,7 +406,7 @@ pub fn subgraph_to_sns<S>(sns_client: &S, subgraphs: &GraphDescription) -> Resul
                       day,
                       base16::encode_lower(&key)
     );
-    info!("uploading unidentifed_subgraphs to {}", key);
+    info!("uploading merged subgraphs to {}", key);
 
     let mut compressed = Vec::with_capacity(proto.len());
     let mut proto = Cursor::new(&proto);
@@ -426,7 +430,9 @@ pub fn subgraph_to_sns<S>(sns_client: &S, subgraphs: &GraphDescription) -> Resul
 
 
 #[derive(Clone)]
-struct GraphMerger;
+struct GraphMerger {
+    mg_alphas: Vec<String>,
+}
 
 impl EventHandler<GraphDescription> for GraphMerger {
     fn handle_event(&self, subgraph: GraphDescription) -> Result<(), Error> {
@@ -437,9 +443,13 @@ impl EventHandler<GraphDescription> for GraphMerger {
             return Ok(())
         }
 
+        let mut rng = thread_rng();
+        let rand_alpha = self.mg_alphas.choose(&mut rng)
+            .expect("Empty rand_alpha");
+
         let mg_client = &api_grpc::DgraphClient::with_client(
             Arc::new(
-                Client::new_plain("db.graplmastergraph", 9080, ClientConf {
+                Client::new_plain(rand_alpha, 9080, ClientConf {
                     ..Default::default()
                 })?
             )
@@ -478,6 +488,7 @@ impl EventHandler<GraphDescription> for GraphMerger {
         // If our node_key_to_uid map isn't empty we must have merged at least a single node,
         // so even if all edges failed, or even if some upserts failed, we should output the graph
         // TODO: Track which nodes / edges were successful, and only output those
+
         let sns_client = SnsClient::simple(Region::UsEast1);
         subgraph_to_sns(&sns_client, &subgraph)?;
 
@@ -489,7 +500,18 @@ impl EventHandler<GraphDescription> for GraphMerger {
 }
 
 pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    let handler = GraphMerger{};
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+
+    let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS").expect("MG_ALPHAS")
+        .split(',')
+        .map(str::to_string)
+        .collect();
+
+    info!("Connecting to alphas: {:?}", mg_alphas);
+
+    let handler = GraphMerger{
+        mg_alphas
+    };
 
     let region = Region::UsEast1;
 //    info!("Creating sqs_client");
@@ -505,7 +527,7 @@ pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         ZstdProtoDecoder{},
     );
 
-    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+
 
     info!("Creating sqs_completion_handler");
     let sqs_completion_handler = NopSqsCompletionHandler::new(

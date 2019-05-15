@@ -82,6 +82,7 @@ def lambda_handler(events: Any, context: Any) -> None:
 
             if isinstance(result, ExecutionComplete):
                 print('execution complete')
+                # TODO: ACK Result
                 break
 
             # emit any hits to an S3 bucket

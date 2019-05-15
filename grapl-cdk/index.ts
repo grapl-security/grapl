@@ -6,13 +6,17 @@ import s3 = require('@aws-cdk/aws-s3');
 import sns = require('@aws-cdk/aws-sns');
 import sqs = require('@aws-cdk/aws-sqs');
 import ec2 = require('@aws-cdk/aws-ec2');
+import servicediscovery = require('@aws-cdk/aws-servicediscovery');
 import lambda = require('@aws-cdk/aws-lambda');
 import iam = require('@aws-cdk/aws-iam');
-import {VpcNetwork, IVpcNetwork} from "@aws-cdk/aws-ec2";
+import {VpcNetwork, IVpcNetwork, TcpPortRange} from "@aws-cdk/aws-ec2";
 import {Bucket, IBucket} from "@aws-cdk/aws-s3";
 import {Topic, ITopic} from "@aws-cdk/aws-sns";
 import {Runtime} from "@aws-cdk/aws-lambda";
 import dynamodb = require('@aws-cdk/aws-dynamodb');
+import ecs = require('@aws-cdk/aws-ecs');
+import cloudtrail = require('@aws-cdk/aws-cloudtrail');
+import {BaseService, NamespaceType, NetworkMode} from '@aws-cdk/aws-ecs';
 
 const env = require('node-env-file');
 
@@ -161,25 +165,25 @@ class SessionIdentityCache extends cdk.Stack {
 }
 
 class EventEmitters extends cdk.Stack {
-    raw_logs_bucket: s3.BucketImportProps;
-    sysmon_logs_bucket: s3.BucketImportProps;
-    identity_mappings_bucket: s3.BucketImportProps;
-    unid_subgraphs_generated_bucket: s3.BucketImportProps;
-    subgraphs_generated_bucket: s3.BucketImportProps;
-    analyzers_bucket: s3.BucketImportProps;
-    dispatched_analyzer_bucket: s3.BucketImportProps;
-    analyzer_matched_subgraphs_bucket: s3.BucketImportProps;
+    raw_logs_bucket: s3.BucketAttributes;
+    sysmon_logs_bucket: s3.BucketAttributes;
+    identity_mappings_bucket: s3.BucketAttributes;
+    unid_subgraphs_generated_bucket: s3.BucketAttributes;
+    subgraphs_generated_bucket: s3.BucketAttributes;
+    analyzers_bucket: s3.BucketAttributes;
+    dispatched_analyzer_bucket: s3.BucketAttributes;
+    analyzer_matched_subgraphs_bucket: s3.BucketAttributes;
 
-    incident_topic: sns.TopicImportProps;
-    identity_mappings_topic: sns.TopicImportProps;
-    raw_logs_topic: sns.TopicImportProps;
-    sysmon_logs_topic: sns.TopicImportProps;
-    unid_subgraphs_generated_topic: sns.TopicImportProps;
-    subgraphs_generated_topic: sns.TopicImportProps;
-    subgraph_merged_topic: sns.TopicImportProps;
-    dispatched_analyzer_topic: sns.TopicImportProps;
-    analyzer_matched_subgraphs_topic: sns.TopicImportProps;
-    engagements_created_topic: sns.TopicImportProps;
+    incident_topic: sns.TopicAttributes;
+    identity_mappings_topic: sns.TopicAttributes;
+    raw_logs_topic: sns.TopicAttributes;
+    sysmon_logs_topic: sns.TopicAttributes;
+    unid_subgraphs_generated_topic: sns.TopicAttributes;
+    subgraphs_generated_topic: sns.TopicAttributes;
+    subgraph_merged_topic: sns.TopicAttributes;
+    dispatched_analyzer_topic: sns.TopicAttributes;
+    analyzer_matched_subgraphs_topic: sns.TopicAttributes;
+    engagements_created_topic: sns.TopicAttributes;
 
     constructor(parent: cdk.App, id: string) {
         super(parent, id + '-stack');
@@ -319,25 +323,25 @@ class EventEmitters extends cdk.Stack {
 class SysmonSubgraphGenerator extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
-                reads_from_props: s3.BucketImportProps,
-                subscribes_to_props: sns.TopicImportProps,
-                writes_to_props: s3.BucketImportProps,
+                reads_from_props: s3.BucketAttributes,
+                subscribes_to_props: sns.TopicAttributes,
+                writes_to_props: s3.BucketAttributes,
     ) {
         super(parent, id + '-stack');
 
-        const reads_from = Bucket.import(
+        const reads_from = Bucket.fromBucketAttributes(
             this,
             'reads_from',
             reads_from_props
         );
 
-        const subscribes_to = Topic.import(
+        const subscribes_to = Topic.fromTopicAttributes(
             this,
             'subscribes_to',
             subscribes_to_props
         );
 
-        const writes_to = Bucket.import(
+        const writes_to = Bucket.fromBucketAttributes(
             this,
             'writes_to',
             writes_to_props
@@ -359,25 +363,25 @@ class SysmonSubgraphGenerator extends cdk.Stack {
 class GenericSubgraphGenerator extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
-                reads_from_props: s3.BucketImportProps,
-                subscribes_to_props: sns.TopicImportProps,
-                writes_to_props: s3.BucketImportProps,
+                reads_from_props: s3.BucketAttributes,
+                subscribes_to_props: sns.TopicAttributes,
+                writes_to_props: s3.BucketAttributes,
     ) {
         super(parent, id + '-stack');
 
-        const reads_from = Bucket.import(
+        const reads_from = Bucket.fromBucketAttributes(
             this,
             'reads_from',
             reads_from_props
         );
 
-        const subscribes_to = Topic.import(
+        const subscribes_to = Topic.fromTopicAttributes(
             this,
             'subscribes_to',
             subscribes_to_props
         );
 
-        const writes_to = Bucket.import(
+        const writes_to = Bucket.fromBucketAttributes(
             this,
             'writes_to',
             writes_to_props
@@ -399,18 +403,18 @@ class GenericSubgraphGenerator extends cdk.Stack {
 class NodeIdentityMapper extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
-                reads_from_props: s3.BucketImportProps,
-                subscribes_to_props: sns.TopicImportProps,
+                reads_from_props: s3.BucketAttributes,
+                subscribes_to_props: sns.TopicAttributes,
                 vpc_props: ec2.VpcNetworkImportProps
     ) {
         super(parent, id + '-stack');
-        const reads_from = Bucket.import(
+        const reads_from = Bucket.fromBucketAttributes(
             this,
             'reads_from',
             reads_from_props
         );
 
-        const subscribes_to = Topic.import(
+        const subscribes_to = Topic.fromTopicAttributes(
             this,
             'subscribes_to',
             subscribes_to_props
@@ -442,26 +446,26 @@ class NodeIdentityMapper extends cdk.Stack {
 class NodeIdentifier extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
-                reads_from_props: s3.BucketImportProps,
-                subscribes_to_props: sns.TopicImportProps,
-                writes_to_props: s3.BucketImportProps,
+                reads_from_props: s3.BucketAttributes,
+                subscribes_to_props: sns.TopicAttributes,
+                writes_to_props: s3.BucketAttributes,
                 history_db: HistoryDb,
                 vpc_props: ec2.VpcNetworkImportProps
     ) {
         super(parent, id + '-stack');
-        const reads_from = Bucket.import(
+        const reads_from = Bucket.fromBucketAttributes(
             this,
             'reads_from',
             reads_from_props
         );
 
-        const subscribes_to = Topic.import(
+        const subscribes_to = Topic.fromTopicAttributes(
             this,
             'subscribes_to',
             subscribes_to_props
         );
 
-        const writes_to = Bucket.import(
+        const writes_to = Bucket.fromBucketAttributes(
             this,
             'writes_to',
             writes_to_props
@@ -472,7 +476,7 @@ class NodeIdentifier extends cdk.Stack {
             'vpc',
             vpc_props
         );
-            
+
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
             "IDENTITY_CACHE_PEPPER": process.env.IDENTITY_CACHE_PEPPER,
@@ -494,27 +498,27 @@ class GraphMerger extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                reads_from_props: s3.BucketImportProps,
-                subscribes_to_props: sns.TopicImportProps,
-                publishes_to_props: sns.TopicImportProps,
-                master_graph: GraphDB,
+                reads_from_props: s3.BucketAttributes,
+                subscribes_to_props: sns.TopicAttributes,
+                publishes_to_props: sns.TopicAttributes,
+                master_graph: DGraphFargate,
                 vpc_props: ec2.VpcNetworkImportProps
     ) {
         super(parent, id + '-stack');
 
-        const reads_from = Bucket.import(
+        const reads_from = Bucket.fromBucketAttributes(
             this,
             'reads_from',
             reads_from_props
         );
 
-        const subscribes_to = Topic.import(
+        const subscribes_to = Topic.fromTopicAttributes(
             this,
             'subscribes_to',
             subscribes_to_props
         );
 
-        const publishes_to = sns.Topic.import(
+        const publishes_to = sns.Topic.fromTopicAttributes(
             this,
             'publishes_to',
             publishes_to_props
@@ -528,12 +532,13 @@ class GraphMerger extends cdk.Stack {
 
         const environment = {
             "SUBGRAPH_MERGED_TOPIC_ARN": publishes_to.topicArn,
-            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
+            "MG_ALPHAS": master_graph.alphaNames.join(",")
         };
 
         const service = new Service(this, 'graph-merger', environment, vpc);
 
-        master_graph.addAccessFrom(service);
+        // master_graph.addAccessFrom(service);
 
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
@@ -551,26 +556,26 @@ class AnalyzerDispatch extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                subscribes_to_props: sns.TopicImportProps,  // The SNS Topic that we must subscribe to our queue
-                writes_to_props: s3.BucketImportProps,
-                reads_from_props: s3.BucketImportProps,
+                subscribes_to_props: sns.TopicAttributes,  // The SNS Topic that we must subscribe to our queue
+                writes_to_props: s3.BucketAttributes,
+                reads_from_props: s3.BucketAttributes,
                 vpc_props: ec2.VpcNetworkImportProps
     ) {
         super(parent, id + '-stack');
 
-        const reads_from = Bucket.import(
+        const reads_from = Bucket.fromBucketAttributes(
             this,
             'reads_from',
             reads_from_props
         );
 
-        const subscribes_to = Topic.import(
+        const subscribes_to = Topic.fromTopicAttributes(
             this,
             'subscribes_to',
             subscribes_to_props
         );
 
-        const writes_to = s3.Bucket.import(
+        const writes_to = s3.Bucket.fromBucketAttributes(
             this,
             'publishes_to',
             writes_to_props
@@ -604,34 +609,34 @@ class AnalyzerExecutor extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                subscribes_to_props: sns.TopicImportProps,
-                reads_analyzers_from_props: s3.BucketImportProps,
-                reads_events_from_props: s3.BucketImportProps,
-                writes_events_to_props: s3.BucketImportProps,
-                master_graph: GraphDB,
+                subscribes_to_props: sns.TopicAttributes,
+                reads_analyzers_from_props: s3.BucketAttributes,
+                reads_events_from_props: s3.BucketAttributes,
+                writes_events_to_props: s3.BucketAttributes,
+                master_graph: DGraphFargate,
                 vpc_props: ec2.VpcNetworkImportProps
     ) {
         super(parent, id + '-stack');
 
-        const reads_analyzers_from = Bucket.import(
+        const reads_analyzers_from = Bucket.fromBucketAttributes(
             this,
             'reads_analyzers_from',
             reads_analyzers_from_props
         );
 
-        const reads_events_from = Bucket.import(
+        const reads_events_from = Bucket.fromBucketAttributes(
             this,
             'reads_events_from',
             reads_events_from_props
         );
 
-        const subscribes_to = Topic.import(
+        const subscribes_to = Topic.fromTopicAttributes(
             this,
             'subscribes_to',
             subscribes_to_props
         );
 
-        const writes_events_to = Bucket.import(
+        const writes_events_to = Bucket.fromBucketAttributes(
             this,
             'writes_events_to',
             writes_events_to_props
@@ -645,14 +650,15 @@ class AnalyzerExecutor extends cdk.Stack {
 
         const environment = {
             "ANALYZER_MATCH_BUCKET": writes_events_to.bucketName,
-            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
+            "MG_ALPHAS": master_graph.alphaNames.join(",")
         };
 
         const service = new Service(this, 'analyzer-executor', environment, vpc, null, {
             runtime: Runtime.Python37
         });
 
-        master_graph.addAccessFrom(service);
+        // master_graph.addAccessFrom(service);
 
         service.publishesToBucket(writes_events_to);
         // We need the List capability to find each of the analyzers
@@ -670,28 +676,28 @@ class EngagementCreator extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                reads_from_props: s3.BucketImportProps,
-                subscribes_to_props: sns.TopicImportProps,
-                publishes_to_props: sns.TopicImportProps,
-                master_graph: GraphDB,
-                engagement_graph: GraphDB,
+                reads_from_props: s3.BucketAttributes,
+                subscribes_to_props: sns.TopicAttributes,
+                publishes_to_props: sns.TopicAttributes,
+                master_graph: DGraphFargate,
+                engagement_graph: DGraphFargate,
                 vpc_props: ec2.VpcNetworkImportProps,
     ) {
         super(parent, id + '-stack');
 
-        const reads_from = Bucket.import(
+        const reads_from = Bucket.fromBucketAttributes(
             this,
             'reads_from',
             reads_from_props
         );
 
-        const subscribes_to = Topic.import(
+        const subscribes_to = Topic.fromTopicAttributes(
             this,
             'subscribes_to',
             subscribes_to_props
         );
 
-        const publishes_to = sns.Topic.import(
+        const publishes_to = sns.Topic.fromTopicAttributes(
             this,
             'publishes_to',
             publishes_to_props
@@ -706,14 +712,16 @@ class EngagementCreator extends cdk.Stack {
         const environment = {
             // TODO: I don't think this service reads or writes to S3
             // "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            "MG_ALPHAS": master_graph.alphaNames.join(","),
+            "EG_ALPHAS": engagement_graph.alphaNames.join(","),
         };
 
         const service = new Service(this, 'engagement-creator', environment, vpc, null, {
             runtime: Runtime.Python37
         });
 
-        master_graph.addAccessFrom(service);
-        engagement_graph.addAccessFrom(service);
+        // master_graph.addAccessFrom(service);
+        // engagement_graph.addAccessFrom(service);
 
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
@@ -743,14 +751,196 @@ class Networks extends cdk.Stack {
     }
 }
 
-class GraphDB extends cdk.Stack {
-    vpc: IVpcNetwork;
-    graph_security_group: ec2.SecurityGroup;
-    id: string;
 
-    constructor(parent: cdk.App, id: string, vpc_props: ec2.VpcNetworkImportProps, options?: any) {
-        super(parent, id + '-stack');
-        this.id = id;
+class Zero {
+    name: string;
+
+    constructor(
+        parent: cdk.App,
+        stack: cdk.Stack,
+        graph: string,
+        id: string,
+        cluster: ecs.Cluster,
+        peer: string,
+        idx) {
+
+        const zeroTask = new ecs.FargateTaskDefinition(
+            stack,
+            id,
+            {
+                cpu: '256',
+                memoryMiB: '2048',
+            }
+        );
+
+        let command = ["dgraph", "zero", `--my=${id}.${graph}.grapl:5080`,
+            "--replicas=3",
+            `--idx=${idx}`,
+            "--alsologtostderr"];
+
+        if (peer) {
+            command.push(`--peer=${peer}.${graph}.grapl:5080`);
+        }
+
+
+        const logDriver = new ecs.AwsLogDriver(stack, graph+id+'LogGroup', {
+            streamPrefix: graph+id,
+        });
+
+        const container = zeroTask.addContainer(id + 'Container', {
+
+            // --my is our own hostname (graph + id)
+            // --peer is the other dgraph zero hostname
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
+            command,
+            logging: logDriver
+        });
+
+        container.addPortMappings(
+            {
+                containerPort: 5080,
+                hostPort: 5080,
+                protocol: ecs.Protocol.Tcp
+            },
+            {
+                containerPort: 6080,
+                hostPort: 6080,
+                protocol: ecs.Protocol.Tcp
+            },
+            {
+                containerPort: 7080,
+                hostPort: 7080,
+                protocol: ecs.Protocol.Tcp
+            },
+            {
+                containerPort: 9080,
+                hostPort: 9080,
+                protocol: ecs.Protocol.Tcp
+            },
+            {
+                containerPort: 8080,
+                hostPort: 8080,
+                protocol: ecs.Protocol.Tcp
+            },
+        );
+
+
+        const zeroService = new ecs.FargateService(stack, id+'Service', {
+            cluster,  // Required
+            taskDefinition: zeroTask,
+        });
+
+        (zeroService as any).enableServiceDiscovery(
+            {
+                name: id,
+                dnsRecordType: servicediscovery.DnsRecordType.A,
+                dnsTtlSec: 300,
+                // customHealthCheck: {
+                //     failureThreshold: 1
+                // }
+            }
+
+        );
+
+        this.name = `${id}.${graph}.grapl`;
+
+        zeroService.connections.allowFromAnyIPv4(new ec2.TcpAllPorts());
+    }
+}
+
+
+class Alpha {
+    name: string;
+
+    constructor(
+        parent: cdk.App,
+        stack: cdk.Stack,
+        graph: string,
+        id: string,
+        cluster: ecs.Cluster,
+        zero: string) {
+
+        const alphaTask = new ecs.FargateTaskDefinition(
+            stack,
+            id,
+            {
+                cpu: '256',
+                memoryMiB: '2048'
+            }
+        );
+
+        const logDriver = new ecs.AwsLogDriver(stack, graph+id+'LogGroup', {
+            streamPrefix: graph+id,
+        });
+
+        const container = alphaTask.addContainer(id + graph + 'Container', {
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
+            command: ["dgraph", "alpha", `--my=${id}.${graph}.grapl:7080`,
+                "--lru_mb=1024", `--zero=${zero}.${graph}.grapl:5080`,
+                "--alsologtostderr"
+            ],
+            logging: logDriver
+        });
+
+        container.addPortMappings(
+            {
+                containerPort: 5080,
+                hostPort: 5080,
+                protocol: ecs.Protocol.Tcp
+            },
+            {
+                containerPort: 6080,
+                hostPort: 6080,
+                protocol: ecs.Protocol.Tcp
+            },
+            {
+                containerPort: 7080,
+                hostPort: 7080,
+                protocol: ecs.Protocol.Tcp
+            },
+            {
+                containerPort: 9080,
+                hostPort: 9080,
+                protocol: ecs.Protocol.Tcp
+            },
+            {
+                containerPort: 8080,
+                hostPort: 8080,
+                protocol: ecs.Protocol.Tcp
+            },
+        );
+
+        const alphaService = new ecs.FargateService(stack, id+'Service', {
+            cluster,  // Required
+            taskDefinition: alphaTask
+        });
+
+        (alphaService as any).enableServiceDiscovery(
+            {
+                name: id,
+                dnsRecordType: servicediscovery.DnsRecordType.A,
+                dnsTtlSec: 300,
+            }
+
+        );
+
+        this.name = `${id}.${graph}.grapl`;
+
+        alphaService.connections.allowFromAnyIPv4(new ec2.TcpAllPorts());
+    }
+}
+
+class DGraphFargate extends cdk.Stack {
+    alphaNames: string[];
+
+    constructor(
+        parent: cdk.App,
+        id: string,
+        vpc_props: ec2.VpcNetworkImportProps,
+        zeroCount,
+        alphaCount
+    ) {
+        super(parent, id+'-stack');
 
         const vpc = VpcNetwork.import(
             this,
@@ -758,58 +948,60 @@ class GraphDB extends cdk.Stack {
             vpc_props
         );
 
-        this.vpc = vpc;
-
-        let graph_security_group = new ec2.SecurityGroup(this, this.id +'-security-group',
-            {vpc:this.vpc}
-        );
-
-        const zone = new PrivateHostedZone(this, id + '-hosted-zone', {
-            zoneName: id,
-            vpc
-        });
-
-        const db = new ec2.CfnInstance(this, id + "Ec2", {
-            instanceType: new ec2.InstanceTypePair(ec2.InstanceClass.M3, ec2.InstanceSize.Large).toString(),
-            securityGroupIds: [graph_security_group.securityGroupId],
-            subnetId: vpc.publicSubnets[0].subnetId,
-            imageId: "ami-0ac019f4fcb7cb7e6",
-            keyName: process.env.GRAPH_DB_KEY_NAME
+        const cluster = new ecs.Cluster(this, id+'-FargateCluster', {
+            vpc: vpc
         });
 
 
-        new route53.CnameRecord(
-            this, id, {
-                zone,
-                recordName: 'db.' + id,
-                recordValue: db.instancePublicDnsName
+        const namespace = cluster.addDefaultCloudMapNamespace(
+            {
+                name: id + '.grapl',
+                type: NamespaceType.PrivateDns,
+                vpc
             }
         );
 
-        if (options.allow_all_ssh) {
-            graph_security_group.addIngressRule(new ec2.AnyIPv4(), new ec2.TcpAllPorts());
+        const zero0 = new Zero(
+            parent,
+            this,
+            id,
+            'zero0',
+            cluster,
+            null,
+            1
+        );
+
+        for (let i = 1; i < zeroCount ; i++) {
+            const zero0 = new Zero(
+                parent,
+                this,
+                id,
+                `zero${i}`,
+                cluster,
+                'zero0',
+                1
+            );
         }
 
-        this.graph_security_group = graph_security_group;
-    }
 
-    addAccessFrom(service: Service) {
-        // TODO: Don't allow all ports
+        this.alphaNames = [];
 
+        for (let i = 0; i < zeroCount ; i++) {
 
-        for (const security_group of service.event_retry_handler.connections.securityGroups) {
+            const alpha = new Alpha(
+                parent,
+                this,
+                id,
+                `alpha${i}`, // increment for each alpha
+                cluster,
+                "zero0"
+            );
 
-            // this.graph_security_group.addIngressRule(service.event_handler.sec, new ec2.TcpAllPorts());
-            security_group.addEgressRule(this.graph_security_group, new ec2.TcpAllPorts())
+            this.alphaNames.push(alpha.name);
         }
 
-        for (const security_group of service.event_handler.connections.securityGroups) {
-            // this.graph_security_group.addIngressRule(security_group, new ec2.TcpAllPorts());
-            security_group.addEgressRule(this.graph_security_group, new ec2.TcpAllPorts())
-        }
     }
 }
-
 
 class HistoryDb extends cdk.Stack {
 
@@ -877,7 +1069,12 @@ class Grapl extends cdk.App {
     constructor() {
         super();
 
-        const env_file = env(__dirname + '/.env');
+        env(__dirname + '/.env');
+
+        const mgZeroCount = Number(process.env.MG_ZEROS_COUNT) || 3;
+        const mgAlphaCount = Number(process.env.MG_ALPHAS_COUNT) || 5;
+        const egZeroCount = Number(process.env.EG_ZEROS_COUNT) || 3;
+        const egAlphaCount = Number(process.env.EG_ALPHAS_COUNT) || 5;
 
         let event_emitters = new EventEmitters(this, 'grapl-event-emitters');
 
@@ -888,20 +1085,21 @@ class Grapl extends cdk.App {
             'graplhistorydb',
         );
 
-
-        const master_graph = new GraphDB(
+        const master_graph = new DGraphFargate(
             this,
-            'graplmastergraph',
-            network.grapl_vpc,{
-            allow_all_ssh: true
-        });
+            'mastergraphcluster',
+            network.grapl_vpc,
+            mgZeroCount,
+            mgAlphaCount,
+    );
 
-        const engagement_graph = new GraphDB(
+        const engagement_graph = new DGraphFargate(
             this,
-            'graplengagementgraph',
-            network.grapl_vpc, {
-            allow_all_ssh: true
-        });
+            'engagementgraphcluster',
+            network.grapl_vpc,
+            egZeroCount,
+            egAlphaCount,
+    );
 
         // TODO: Move subgraph generators to their own VPC
         new GenericSubgraphGenerator(

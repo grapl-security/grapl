@@ -32,7 +32,7 @@ def main(prefix):
         c_body = zstd.compress(b"\n".join(chunks), 4)
         epoch = int(time.time())
 
-        res = s3.put_object(
+        s3.put_object(
             Body=c_body,
             Bucket="{}-sysmon-log-bucket".format(prefix),
             Key=str(epoch - (epoch % (24 * 60 * 60))) + "/sysmon/" +

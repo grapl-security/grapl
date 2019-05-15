@@ -83,8 +83,13 @@ class NodeCopier(object):
 class Engagement(object):
     def __init__(self, id: str):
         self.engagement_key = id
-        self.eg_client : DgraphClient = DgraphClient(DgraphClientStub("db.engagementgraph:9080"))
-        self.mg_client : DgraphClient = DgraphClient(DgraphClientStub("db.mastergraph:9080"))
+
+        self.eg_client : DgraphClient = DgraphClient(
+            DgraphClientStub("alpha0.engagementgraphcluster.grapl:9080")
+        )
+        self.mg_client : DgraphClient = DgraphClient(
+            DgraphClientStub("alpha0.mastergraphcluster.grapl:9080"))
+
         self.node_copier : NodeCopier = NodeCopier(id, self.mg_client, self.eg_client)
 
     def get_process_node(self, node_key) -> Process:
