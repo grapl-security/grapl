@@ -89,10 +89,8 @@ Change directories to the `grapl/grapl-cdk/` folder. There should already be bui
 
 Add a `.env` file, and fill it in:
 
-    HISTORY_DB_USERNAME=username
-    HISTORY_DB_PASSWORD=password
     BUCKET_PREFIX="<unique prefix to differentiate your buckets>"
-    GRAPH_DB_KEY_NAME=<name of SSH key, if debug mode is enabled, to SSH to graphdb>
+    GRAPH_DB_KEY_NAME=<name of SSH key, if you intend to SSH to the graphdb>
 
 Run the deploy script
 `./deploy_all.sh`
