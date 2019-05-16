@@ -87,6 +87,8 @@ Clone the repo:
 
 Change directories to the `grapl/grapl-cdk/` folder. There should already be build binaries.
 
+Execute `npm i` to install the aws-cdk dependencies.
+
 Add a `.env` file, and fill it in:
 
     BUCKET_PREFIX="<unique prefix to differentiate your buckets>"
