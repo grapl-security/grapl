@@ -986,7 +986,7 @@ class DGraphFargate extends cdk.Stack {
 
         this.alphaNames = [];
 
-        for (let i = 0; i < zeroCount ; i++) {
+        for (let i = 0; i < alphaCount ; i++) {
 
             const alpha = new Alpha(
                 parent,
