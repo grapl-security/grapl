@@ -94,7 +94,8 @@ Add a `.env` file, and fill it in:
 Run the deploy script
 `./deploy_all.sh`
 
-You’ll then need to [set up dgraph](https://docs.dgraph.io/deploy/) on the two EC2 instances that have been set up for you.
-
 This will give you a Grapl setup that’s adequate for testing out the service.
 
+You can send some test data up to the service by going to the root of the grapl repo and calling `python ./gen-raw-logs.py <your bucket prefix>`. 
+
+Note that this may impose charges to your AWS account.
