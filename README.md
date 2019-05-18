@@ -108,6 +108,9 @@ It will require confirming some changes to security groups, and will take a few 
 
 This will give you a Grapl setup that’s adequate for testing out the service.
 
-You can send some test data up to the service by going to the root of the grapl repo and calling `python ./gen-raw-logs.py <your bucket prefix>`. 
+You can send some test data up to the service by going to the root of the grapl repo and calling:
+`python ./gen-raw-logs.py <your bucket prefix>`. 
+
+This requires the [boto3](https://github.com/boto/boto3) and [zstd](https://pypi.org/project/zstd/) Python modules.
 
 Note that this may impose charges to your AWS account.
