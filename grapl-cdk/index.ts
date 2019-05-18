@@ -1,8 +1,7 @@
-import route53 = require('@aws-cdk/aws-route53');
-import { PrivateHostedZone } from '@aws-cdk/aws-route53';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import cdk = require('@aws-cdk/cdk');
 import s3 = require('@aws-cdk/aws-s3');
+import route53 = require('@aws-cdk/aws-route53');
 import sns = require('@aws-cdk/aws-sns');
 import sqs = require('@aws-cdk/aws-sqs');
 import ec2 = require('@aws-cdk/aws-ec2');
@@ -15,8 +14,9 @@ import {Topic, ITopic} from "@aws-cdk/aws-sns";
 import {Runtime} from "@aws-cdk/aws-lambda";
 import dynamodb = require('@aws-cdk/aws-dynamodb');
 import ecs = require('@aws-cdk/aws-ecs');
-import cloudtrail = require('@aws-cdk/aws-cloudtrail');
-import {BaseService, NamespaceType, NetworkMode} from '@aws-cdk/aws-ecs';
+import {NamespaceType} from '@aws-cdk/aws-ecs';
+import apigateway = require('@aws-cdk/aws-apigateway');
+import {PrivateHostedZone} from "@aws-cdk/aws-route53";
 
 const env = require('node-env-file');
 
@@ -40,6 +40,68 @@ class Queues {
 
     }
 }
+
+
+class ApiGatewayTriggeredLambda {
+    event_handler: lambda.Function;
+    constructor(
+        stack: cdk.Stack,
+        name: string,
+        hostname: string,
+        environment?: any,
+        vpc?: IVpcNetwork,
+        opt?: any) {
+
+        // Set up the API Gateway
+        // Set up the lambda
+
+        let runtime = {name: "provided", supportsInlineCode: true};
+        if (opt && opt.runtime) {
+            runtime = opt.runtime
+        }
+
+        let handler = name;
+        if (runtime === Runtime.Python37) {
+            handler = `${name}.lambda_handler`;
+        }
+
+        this.event_handler = new lambda.Function(
+            stack, name, {
+                runtime: runtime,
+                handler: handler,
+                code: lambda.Code.asset(`./${name}.zip`),
+                vpc: vpc,
+                environment: environment,
+                timeout: 10,
+                memorySize: 256,
+            }
+        );
+
+        const integration = new apigateway.LambdaRestApi(
+            stack,
+            name + 'Integration',
+            {
+                handler: this.event_handler,
+            }
+        );
+
+
+        const zone = new PrivateHostedZone(stack, name + '-hosted-zone', {
+            zoneName: name,
+            vpc
+        });
+
+
+        new route53.CnameRecord(
+            stack, name + '-record', {
+                zone,
+                recordName: hostname,
+                recordValue: db.instancePublicDnsName
+            }
+        );
+    }
+}
+
 
 class Service {
     event_handler: lambda.Function;

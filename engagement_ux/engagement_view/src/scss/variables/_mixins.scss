@@ -1,0 +1,19 @@
+/* ============
+background-cover()
+Applies a standard background-size cover
+============ */
+@mixin background-cover() {
+  background-position-x: center;
+  background-position-y: center;
+  background-repeat-x: no-repeat;
+  background-repeat-y: no-repeat;
+  background-size: cover;
+}
+
+/* ============
+transition()
+Default transition settings
+============ */
+@mixin transition($prop: all, $speed: $animation-speed-fast, $ease: $cubic-bezier) {
+  transition: $prop $speed $ease;
+}

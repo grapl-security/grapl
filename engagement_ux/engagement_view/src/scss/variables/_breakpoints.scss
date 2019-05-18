@@ -1,0 +1,11 @@
+$breakpoint-small: 576px;
+$breakpoint-medium: 768px;
+$breakpoint-large: 992px;
+$breakpoint-xlarge: 1400px;
+
+:export {
+  small: $breakpoint-small;
+  medium: $breakpoint-medium;
+  large: $breakpoint-large;
+  xlarge: $breakpoint-xlarge;
+}

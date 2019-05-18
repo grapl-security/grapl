@@ -1,0 +1,8 @@
+/* ============
+rem()
+Converts px value to rem
+Usage: font-size: rem(16);
+============ */
+@function rem($px) {
+  @return #{$px / 16}rem;
+}

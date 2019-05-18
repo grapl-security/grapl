@@ -14,6 +14,7 @@
   "dependencies": {
     "@aws-cdk/aws-ec2": "^0.31.0",
     "@aws-cdk/aws-cloudtrail": "^0.31.0",
+    "@aws-cdk/aws-apigateway": "^0.31.0",
     "@aws-cdk/aws-ecs": "^0.31.0",
     "@aws-cdk/aws-lambda": "^0.31.0",
     "@aws-cdk/aws-lambda-event-sources": "^0.31.0",
