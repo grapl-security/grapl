@@ -14,6 +14,9 @@ Grapl supports nodes for:
 
 and currently parses Sysmon logs or a generic JSON log format to generate these graphs.
 
+[Key Features](#Key Features)
+
+
 ## Key Features
 
 **Identity**
