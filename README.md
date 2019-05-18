@@ -88,6 +88,7 @@ Setting up a basic playground version of Grapl is pretty simple.
 To get started you'll need to install [npm](https://www.npmjs.com/), [typescript](https://www.typescriptlang.org/index.html#download-links), and the [aws-cdk](https://github.com/awslabs/aws-cdk#getting-started).
 
 Your aws-cdk version should match the version in [Grapl's package.json file](https://github.com/insanitybit/grapl/blob/readmeupdate1/grapl-cdk/package.json#L29).
+
 Clone the repo:
 
     git clone https://github.com/insanitybit/grapl.git
