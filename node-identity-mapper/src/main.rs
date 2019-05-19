@@ -20,6 +20,7 @@ extern crate stopwatch;
 extern crate uuid;
 extern crate sqs_lambda;
 
+use std::str::FromStr;
 use std::env;
 
 use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
@@ -130,7 +131,10 @@ impl EventHandler<Vec<Mapping>> for NodeIdentityMapper {
 
 pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     let handler = NodeIdentityMapper{};
-    let region = Region::UsEast1;
+    let region = {
+        let region_str = env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str).expect("Invalid Region")
+    };
 
     info!("Creating s3_client");
     let s3_client = Arc::new(S3Client::simple(region.clone()));

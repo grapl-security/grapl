@@ -23,6 +23,8 @@ extern crate simple_logger;
 extern crate sqs_lambda;
 extern crate stopwatch;
 
+use std::str::FromStr;
+
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::sync::Arc;
@@ -56,6 +58,7 @@ use sqs_lambda::NopSqsCompletionHandler;
 use sqs_lambda::SnsEventRetriever;
 use sqs_lambda::SqsService;
 use sqs_lambda::EventDecoder;
+use std::env;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -193,7 +196,11 @@ impl<S> EventHandler<GraphDescription> for AnalyzerDispatcher<S>
         let subgraph = encode_subgraph(&subgraph)?;
 
         info!("Creating sns_client");
-        let s3_client = S3Client::simple(Region::UsEast1);
+        let region = {
+            let region_str = env::var("AWS_REGION").expect("AWS_REGION");
+            Region::from_str(&region_str).expect("Invalid Region")
+        };
+        let s3_client = S3Client::simple(region);
 
         keys.into_iter()
             .map(|key| emit_dispatch_event(&s3_client,key?, &subgraph))
@@ -226,7 +233,10 @@ impl<E> EventDecoder<E> for Base64ZstdProtoDecoder
 
 
 pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    let region = Region::UsEast1;
+    let region = {
+        let region_str = env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str).expect("Invalid Region")
+    };
 
     info!("Creating s3_client");
     let s3_client = Arc::new(S3Client::simple(region.clone()));

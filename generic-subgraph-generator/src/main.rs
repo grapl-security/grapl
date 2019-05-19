@@ -21,6 +21,7 @@ extern crate simple_logger;
 extern crate sqs_lambda;
 extern crate uuid;
 
+use std::str::FromStr;
 use sqs_lambda::events_from_s3_sns_sqs;
 use sqs_lambda::BlockingSqsCompletionHandler;
 use sqs_lambda::EventHandler;
@@ -522,7 +523,10 @@ impl EventHandler<Vec<serde_json::Value>> for GenericSubgraphGenerator {
 }
 
 fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    let region = Region::UsEast1;
+    let region = {
+        let region_str = env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str).expect("Invalid Region")
+    };
     info!("Creating sqs_client");
     let sqs_client = Arc::new(SqsClient::simple(region.clone()));
 

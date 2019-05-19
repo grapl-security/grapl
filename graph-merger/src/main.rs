@@ -27,6 +27,7 @@ extern crate simple_logger;
 extern crate sqs_lambda;
 extern crate stopwatch;
 
+use std::str::FromStr;
 use rand::thread_rng;
 use rand::seq::SliceRandom;
 
@@ -434,6 +435,7 @@ struct GraphMerger {
     mg_alphas: Vec<String>,
 }
 
+
 impl EventHandler<GraphDescription> for GraphMerger {
     fn handle_event(&self, subgraph: GraphDescription) -> Result<(), Error> {
         println!("handling new subgraph");
@@ -488,8 +490,12 @@ impl EventHandler<GraphDescription> for GraphMerger {
         // If our node_key_to_uid map isn't empty we must have merged at least a single node,
         // so even if all edges failed, or even if some upserts failed, we should output the graph
         // TODO: Track which nodes / edges were successful, and only output those
+        let region = {
+            let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+            Region::from_str(&region_str).expect("Invalid Region")
+        };
 
-        let sns_client = SnsClient::simple(Region::UsEast1);
+        let sns_client = SnsClient::simple(region);
         subgraph_to_sns(&sns_client, &subgraph)?;
 
         upsert_res?;
@@ -512,8 +518,11 @@ pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     let handler = GraphMerger{
         mg_alphas
     };
+    let region: Region = {
+        let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str).expect("Invalid Region")
+    };
 
-    let region = Region::UsEast1;
 //    info!("Creating sqs_client");
 //    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
 

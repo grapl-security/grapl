@@ -1,15 +1,11 @@
 extern crate base64;
-#[macro_use] extern crate custom_derive;
 #[macro_use]
 extern crate derive_builder;
-#[macro_use]
-extern crate derive_more;
 extern crate hash_hasher;
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate maplit;
-#[macro_use] extern crate newtype_derive;
 extern crate prost;
 #[macro_use]
 extern crate prost_derive;
@@ -21,15 +17,10 @@ extern crate serde_json;
 extern crate sha3;
 extern crate uuid;
 
-use std::collections::HashMap;
-
 use graph_description::*;
 use graph_description::host::HostId;
 use graph_description::node_description::*;
-use hash_hasher::HashBuildHasher;
 use serde_json::Value;
-use sha3::Digest;
-use sha3::Keccak256;
 use uuid::Uuid;
 
 pub mod graph_description {
@@ -129,6 +120,10 @@ impl OutboundConnection {
         self.asset_id = Some(asset_id)
     }
 
+    pub fn get_asset_id(&self) -> Option<&String> {
+        self.asset_id.as_ref()
+    }
+
     pub fn merge(&mut self, other: &Self) {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two nodes with different keys. Dropping merge.");
@@ -223,6 +218,10 @@ impl InboundConnection {
 
     pub fn set_asset_id(&mut self, asset_id: String) {
         self.asset_id = Some(asset_id)
+    }
+
+    pub fn get_asset_id(&self) -> Option<&String> {
+        self.asset_id.as_ref()
     }
 
     pub fn merge(&mut self, other: &Self) {
@@ -436,6 +435,26 @@ impl NodeDescription {
         }
     }
 
+    pub fn get_asset_id(&self) -> Option<&String> {
+        match self.which_node.as_ref().unwrap() {
+            WhichNode::ProcessNode(ref node) => {
+                node.get_asset_id()
+            }
+            WhichNode::FileNode(ref node) => {
+                node.get_asset_id()
+            }
+            WhichNode::IpAddressNode(_) => {
+                None
+            }
+            WhichNode::OutboundConnectionNode(ref node) => {
+                node.get_asset_id()
+            }
+            WhichNode::InboundConnectionNode(ref node) => {
+                node.get_asset_id()
+            }
+        }
+    }
+
     pub fn set_key(&mut self, key: String) {
         match self.which_node.as_mut().unwrap() {
             WhichNode::ProcessNode(ref mut node) => {
@@ -610,6 +629,10 @@ impl ProcessDescription {
         self.asset_id = Some(asset_id)
     }
 
+    pub fn get_asset_id(&self) -> Option<&String> {
+        self.asset_id.as_ref()
+    }
+
     pub fn clone_key(&self) -> String {
         self.node_key.clone()
     }
@@ -740,6 +763,10 @@ impl FileDescription {
 
     pub fn set_asset_id(&mut self, asset_id: String) {
         self.asset_id = Some(asset_id)
+    }
+
+    pub fn get_asset_id(&self) -> Option<&String> {
+        self.asset_id.as_ref()
     }
 
     pub fn clone_key(&self) -> String {

@@ -37,6 +37,8 @@ extern crate stopwatch;
 extern crate uuid;
 extern crate zstd;
 
+use std::str::FromStr;
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::env;
@@ -374,6 +376,11 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
         F: (Fn(GraphDescription) -> Result<(), Error>) + Clone
 {
     fn handle_event(&self, subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
+        let region = {
+            let region_str = env::var("AWS_REGION").expect("AWS_REGION");
+            Region::from_str(&region_str)?
+        };
+
         let mut asset_id_failed = false;
 
         info!("Handling raw event");
@@ -384,7 +391,7 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
         }
 
         let asset_id_db = AssetIdDb::new(
-            DynamoDbClient::new(Region::UsEast1)
+            DynamoDbClient::new(region)
         );
 
         // Merge all of the subgraphs into one subgraph to avoid
@@ -501,8 +508,12 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
 
 pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error> {
     info!("Uploading identified subgraphs");
+    let region = {
+        let region_str = env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str)?
+    };
     let s3 = S3Client::new(
-        Region::UsEast1
+        region
     );
 
     let subgraph: GraphDescription = subgraph.into();
@@ -559,7 +570,10 @@ pub fn retry_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> 
 }
 
 fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), HandlerError> {
-    let region = Region::UsEast1;
+    let region = {
+        let region_str = env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str).expect("Invalid region")
+    };
 
     let dynamo = DynamoDbClient::new(region.clone());
 

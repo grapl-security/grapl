@@ -24,7 +24,7 @@ extern crate sysmon;
 use std::borrow::Cow;
 use std::marker::PhantomData;
 use std::sync::Arc;
-
+use std::str::FromStr;
 use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
 use chrono::prelude::*;
 use failure::bail;
@@ -449,7 +449,11 @@ impl<S> EventHandler<Vec<u8>> for SysmonSubgraphGenerator<S>
 
 
 fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    let region = Region::UsEast1;
+    let region = {
+        let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str).expect("Region error")
+    };
+
     info!("Creating sqs_client");
     let sqs_client = Arc::new(SqsClient::simple(region.clone()));
 
