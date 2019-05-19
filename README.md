@@ -14,6 +14,10 @@ Grapl supports nodes for:
 
 and currently parses Sysmon logs or a generic JSON log format to generate these graphs.
 
+[Key Features](https://github.com/insanitybit/grapl#key-features)
+
+[Setup](https://github.com/insanitybit/grapl#setup)
+
 ## Key Features
 
 **Identity**
@@ -81,11 +85,17 @@ This makes Grapl trivial to extend or integrate into your existing services.
 
 Setting up a basic playground version of Grapl is pretty simple. 
 
+To get started you'll need to install [npm](https://www.npmjs.com/), [typescript](https://www.typescriptlang.org/index.html#download-links), and the [aws-cdk](https://github.com/awslabs/aws-cdk#getting-started).
+
+Your aws-cdk version should match the version in [Grapl's package.json file](https://github.com/insanitybit/grapl/blob/readmeupdate1/grapl-cdk/package.json#L29).
+
 Clone the repo:
 
     git clone https://github.com/insanitybit/grapl.git
 
 Change directories to the `grapl/grapl-cdk/` folder. There should already be build binaries.
+
+Execute `npm i` to install the aws-cdk dependencies.
 
 Add a `.env` file, and fill it in:
 
@@ -94,7 +104,13 @@ Add a `.env` file, and fill it in:
 Run the deploy script
 `./deploy_all.sh`
 
-You’ll then need to [set up dgraph](https://docs.dgraph.io/deploy/) on the two EC2 instances that have been set up for you.
+It will require confirming some changes to security groups, and will take a few minutes to complete.
 
 This will give you a Grapl setup that’s adequate for testing out the service.
 
+You can send some test data up to the service by going to the root of the grapl repo and calling:
+`python ./gen-raw-logs.py <your bucket prefix>`. 
+
+This requires the [boto3](https://github.com/boto/boto3) and [zstd](https://pypi.org/project/zstd/) Python modules.
+
+Note that this may impose charges to your AWS account.

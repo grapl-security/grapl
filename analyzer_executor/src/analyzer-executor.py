@@ -33,6 +33,7 @@ def download_s3_file(bucket, key) -> str:
 
 def execute_file(file: str, graph: Subgraph, sender):
     print('executing analyzer')
+
     exec(file, globals())
     print('File executed: {}'.format(analyzer(graph, sender)))  # type: ignore
 

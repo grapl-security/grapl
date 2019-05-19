@@ -13,6 +13,7 @@ extern crate graph_descriptions;
 extern crate serde_json;
 extern crate zstd;
 
+use std::str::FromStr;
 use rusoto_core::Region;
 use rusoto_s3::{S3, S3Client, PutObjectRequest};
 use failure::Error;
@@ -63,8 +64,11 @@ pub fn send_logs_to_generators(
     };
 
     info!("Sending {} logs to {}", logs.len(), key);
-
-    let s3_client = S3Client::simple(Region::UsEast1);
+    let region = {
+        let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str).expect("Invalid Region")
+    };
+    let s3_client = S3Client::simple(region);
 
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 

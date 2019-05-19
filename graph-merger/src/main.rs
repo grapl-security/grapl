@@ -26,7 +26,9 @@ extern crate sha2;
 extern crate simple_logger;
 extern crate sqs_lambda;
 extern crate stopwatch;
+extern crate itertools;
 
+use std::str::FromStr;
 use rand::thread_rng;
 use rand::seq::SliceRandom;
 
@@ -63,6 +65,7 @@ use sqs_lambda::NopSqsCompletionHandler;
 use sqs_lambda::S3EventRetriever;
 use sqs_lambda::SqsService;
 use sqs_lambda::ZstdProtoDecoder;
+use itertools::Itertools;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -155,6 +158,7 @@ impl<'a> From<(usize, &'a NodeDescription)> for DgraphQuery<'a> {
     }
 }
 
+
 struct BulkUpserter<'a> {
     queries: Vec<DgraphQuery<'a>>,
     client: &'a DgraphClient,
@@ -209,6 +213,7 @@ impl<'a> BulkUpserter<'a> {
         let mut_res = log_time!("txn.mutate", txn.mutate(mutation)?);
 
         let txn_commit = log_time!("txn.commit", txn.commit()?);
+
         // We need to take the newly created uids and add them to our map
         self.node_key_to_uid.extend(mut_res.uids);
 
@@ -220,10 +225,8 @@ impl<'a> BulkUpserter<'a> {
         let all_queries = &mut self.query_buffer;
 
         all_queries.push_str("{");
-        self.queries.iter().for_each(|query| {
-            all_queries.push_str(&query.query);
-            all_queries.push_str(",");
-        });
+        let joined = self.queries.iter().map(|query| &query.query).join(",");
+        all_queries.push_str(&joined);
         all_queries.push_str("}");
 
     }
@@ -236,7 +239,7 @@ impl<'a> BulkUpserter<'a> {
         let resp = match resp {
             Ok(resp) => resp,
             Err(e) => {
-                error!("Query failed. Buffer: {:?}", self.query_buffer);
+                error!("Query failed with {}. Buffer: {:?}", e, self.query_buffer);
                 bail!(e);
             }
         };
@@ -329,9 +332,18 @@ fn generate_bulk_edge_insert<'a>(edges: impl IntoIterator<Item=&'a EdgeDescripti
 
         // TODO: Add better logs, with actual identifiers
         let (to, from) = match (to, from) {
-            (None, None) => {warn!("Failed to map node_key to uid for to and from"); continue},
-            (_, None) => {warn!("Failed to map node_key to uid for from"); continue},
-            (None, _) => {warn!("Failed to map node_key to uid for to"); continue},
+            (None, None) => {
+                warn!("Failed to map node_key to uid for to and from: {:?}", edge);
+                continue
+            },
+            (_, None) => {
+                warn!("Failed to map node_key to uid for from: {:?}", edge);
+                continue
+            },
+            (None, _) => {
+                warn!("Failed to map node_key to uid for to: {:?}", edge);
+                continue
+            },
             (Some(to), Some(from)) => (to, from),
         };
 
@@ -356,6 +368,7 @@ fn generate_edge_insert(to: &str, from: &str, edge_name: &str) -> String {
         }
     }).to_string()
 }
+
 
 
 fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> {
@@ -387,26 +400,7 @@ pub fn subgraph_to_sns<S>(sns_client: &S, subgraphs: &GraphDescription) -> Resul
     let mut proto = Vec::with_capacity(5000);
     subgraphs.encode(&mut proto)?;
 
-    let mut hasher = Sha256::default();
-    hasher.input(&proto);
-
-    let key = base16::encode_lower(hasher.result().as_ref());
-
-    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
     let subgraph_merged_topic_arn = std::env::var("SUBGRAPH_MERGED_TOPIC_ARN").expect("SUBGRAPH_MERGED_TOPIC_ARN");
-
-    let bucket = bucket_prefix + "-subgraph-merged-bucket";
-    let epoch = SystemTime::now()
-        .duration_since(UNIX_EPOCH).unwrap().as_secs();
-
-    // Bucket by day
-    let day = epoch - (epoch % (24 * 60 * 60));
-
-    let key = format!("{}/{}",
-                      day,
-                      base16::encode_lower(&key)
-    );
-    info!("uploading merged subgraphs to {}", key);
 
     let mut compressed = Vec::with_capacity(proto.len());
     let mut proto = Cursor::new(&proto);
@@ -415,15 +409,17 @@ pub fn subgraph_to_sns<S>(sns_client: &S, subgraphs: &GraphDescription) -> Resul
 
     let message = base64::encode(&compressed);
 
+    info!("Message is {} bytes", message.len());
+
     sns_client.publish(
-        &PublishInput {
+        PublishInput {
             message,
             topic_arn: subgraph_merged_topic_arn.into(),
             ..Default::default()
         }
     )
-        .with_timeout(Duration::from_secs(2))
-        .wait()?;
+        .with_timeout(Duration::from_secs(5))
+        .sync()?;
 
     Ok(())
 }
@@ -434,9 +430,10 @@ struct GraphMerger {
     mg_alphas: Vec<String>,
 }
 
+
 impl EventHandler<GraphDescription> for GraphMerger {
     fn handle_event(&self, subgraph: GraphDescription) -> Result<(), Error> {
-        println!("handling new subgraph");
+        println!("handling new subgraph with {} nodes", subgraph.nodes.len());
 
         if subgraph.is_empty() {
             warn!("Attempted to merge empty subgraph. Short circuiting.");
@@ -454,11 +451,6 @@ impl EventHandler<GraphDescription> for GraphMerger {
                 })?
             )
         );
-
-//        set_process_schema(&mg_client);
-//        set_file_schema(&mg_client);
-//        set_ip_address_schema(&mg_client);
-//        set_connection_schema(&mg_client);
 
         let mut upserter = BulkUpserter::new(
             &mg_client,
@@ -487,10 +479,15 @@ impl EventHandler<GraphDescription> for GraphMerger {
 
         // If our node_key_to_uid map isn't empty we must have merged at least a single node,
         // so even if all edges failed, or even if some upserts failed, we should output the graph
-        // TODO: Track which nodes / edges were successful, and only output those
+        let region = {
+            let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+            Region::from_str(&region_str).expect("Invalid Region")
+        };
 
-        let sns_client = SnsClient::simple(Region::UsEast1);
-        subgraph_to_sns(&sns_client, &subgraph)?;
+        let sns_client = SnsClient::new(region);
+        if let Err(e) = subgraph_to_sns(&sns_client, &subgraph) {
+            bail!("subgraph sns publish failed: {}", e)
+        };
 
         upsert_res?;
         edge_res?;
@@ -512,13 +509,16 @@ pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     let handler = GraphMerger{
         mg_alphas
     };
+    let region: Region = {
+        let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+        Region::from_str(&region_str).expect("Invalid Region")
+    };
 
-    let region = Region::UsEast1;
 //    info!("Creating sqs_client");
-//    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
+//    let sqs_client = Arc::new(SqsClient::new(region.clone()));
 
     info!("Creating s3_client");
-    let s3_client = Arc::new(S3Client::simple(region.clone()));
+    let s3_client = Arc::new(S3Client::new(region.clone()));
 
     info!("Creating retriever");
     let retriever = S3EventRetriever::new(
@@ -618,4 +618,3 @@ pub fn set_connection_schema(client: &DgraphClient) {
     ).to_string();
     client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
-
