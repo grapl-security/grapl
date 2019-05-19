@@ -30,16 +30,17 @@ class Queues {
 
         this.retry_queue = new sqs.Queue(stack, queue_name + '-retry', {
             deadLetterQueue: {queue: this.dead_letter_queue, maxReceiveCount: 10},
-            visibilityTimeoutSec: 65
+            visibilityTimeoutSec: 240
         });
 
         this.queue = new sqs.Queue(stack, queue_name, {
             deadLetterQueue: {queue: this.retry_queue, maxReceiveCount: 5},
-            visibilityTimeoutSec: 50
+            visibilityTimeoutSec: 180
         });
 
     }
 }
+
 
 class Service {
     event_handler: lambda.Function;
@@ -75,7 +76,7 @@ class Service {
                 code: lambda.Code.asset(`./${name}.zip`),
                 vpc: vpc,
                 environment: environment,
-                timeout: 45,
+                timeout: 180,
                 memorySize: 256,
             }
         );
@@ -96,7 +97,7 @@ class Service {
                 code: lambda.Code.asset(`./${retry_code_name}.zip`),
                 vpc: vpc,
                 environment: environment,
-                timeout: 60,
+                timeout: 240,
                 memorySize: 512,
             }
         );
@@ -768,8 +769,8 @@ class Zero {
             stack,
             id,
             {
-                cpu: '256',
-                memoryMiB: '2048',
+                cpu: '2048',
+                memoryMiB: '8192',
             }
         );
 
@@ -864,8 +865,8 @@ class Alpha {
             stack,
             id,
             {
-                cpu: '256',
-                memoryMiB: '2048'
+                cpu: '4096',
+                memoryMiB: '16384'
             }
         );
 
@@ -972,17 +973,16 @@ class DGraphFargate extends cdk.Stack {
         );
 
         for (let i = 1; i < zeroCount ; i++) {
-            const zero0 = new Zero(
+            new Zero(
                 parent,
                 this,
                 id,
                 `zero${i}`,
                 cluster,
                 'zero0',
-                1
+                1 + i
             );
         }
-
 
         this.alphaNames = [];
 
@@ -1008,6 +1008,7 @@ class HistoryDb extends cdk.Stack {
     proc_history: dynamodb.Table;
     file_history: dynamodb.Table;
     asset_history: dynamodb.Table;
+    node_id_retry_table: dynamodb.Table;
 
     constructor(parent: cdk.App,
                 id: string,
@@ -1052,16 +1053,29 @@ class HistoryDb extends cdk.Stack {
             },
             billingMode: dynamodb.BillingMode.PayPerRequest,
         });
+
+        this.node_id_retry_table = new dynamodb.Table(this, 'node_id_retry_table', {
+            tableName: "node_id_retry_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.String
+            },
+            billingMode: dynamodb.BillingMode.PayPerRequest,
+            ttlAttributeName: "ttl_ts"
+        });
+
     }
 
     allowReadWrite(service: Service) {
         this.proc_history.grantReadWriteData(service.event_handler.role);
         this.file_history.grantReadWriteData(service.event_handler.role);
         this.asset_history.grantReadWriteData(service.event_handler.role);
+        this.node_id_retry_table.grantReadWriteData(service.event_handler.role);
 
         this.proc_history.grantReadWriteData(service.event_retry_handler.role);
         this.file_history.grantReadWriteData(service.event_retry_handler.role);
         this.asset_history.grantReadWriteData(service.event_retry_handler.role);
+        this.node_id_retry_table.grantReadWriteData(service.event_retry_handler.role);
     }
 }
 

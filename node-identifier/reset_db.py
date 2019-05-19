@@ -3,7 +3,8 @@ import boto3
 
 table_names = [
     'process_history_table',
-    'file_history_table'
+    'file_history_table',
+    'node_id_retry_table'
 ]
 
 
@@ -15,9 +16,12 @@ for table_name in table_names:
 
     # delete table
 
-    dynamodb.delete_table(TableName=table_name)
+    try:
+        dynamodb.delete_table(TableName=table_name)
+    except Exception as e:
+        print('failed to delete')
 
-    time.sleep(5)
+    time.sleep(8)
 
     try:
         dynamodb.create_table(

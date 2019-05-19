@@ -349,13 +349,35 @@ impl HostIdentifier {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Node {
     ProcessNode(ProcessDescription),
     FileNode(FileDescription),
     IpAddressNode(IpAddressDescription),
     OutboundConnectionNode(OutboundConnection),
     InboundConnectionNode(InboundConnection),
+}
+
+impl Node {
+    pub fn get_key(&self) -> &str {
+        match &self {
+            Node::ProcessNode(ref node) => node.node_key.as_str(),
+            Node::FileNode(ref node) => node.node_key.as_str(),
+            Node::IpAddressNode(ref node) => node.node_key.as_str(),
+            Node::OutboundConnectionNode(ref node) => node.node_key.as_str(),
+            Node::InboundConnectionNode(ref node) => node.node_key.as_str(),
+        }
+    }
+
+    pub fn clone_key(&self) -> String {
+        match &self {
+            Node::ProcessNode(ref node) => node.node_key.clone(),
+            Node::FileNode(ref node) => node.node_key.clone(),
+            Node::IpAddressNode(ref node) => node.node_key.clone(),
+            Node::OutboundConnectionNode(ref node) => node.node_key.clone(),
+            Node::InboundConnectionNode(ref node) => node.node_key.clone(),
+        }
+    }
 }
 
 impl NodeDescription {

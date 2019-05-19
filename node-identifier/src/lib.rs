@@ -28,7 +28,9 @@ extern crate rusoto_sqs;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+
 extern crate serde_dynamodb;
+
 extern crate serde_json;
 extern crate sha2;
 extern crate simple_logger;
@@ -73,7 +75,7 @@ use failure::Error;
 use futures::future::Future;
 use rusoto_core::Region;
 use rusoto_dynamodb::{DynamoDbClient, DynamoDb};
-use sessions::UnidSession;
+use sessions::{UnidSession, shave_int};
 use sessiondb::SessionDb;
 use graph_descriptions::graph_description::host::*;
 use std::hash::Hash;
@@ -108,6 +110,7 @@ use std::ops::Deref;
 pub mod sessiondb;
 pub mod assetdb;
 pub mod sessions;
+pub mod retry_cache;
 
 
 #[derive(Clone)]
@@ -152,7 +155,7 @@ fn into_unid_session(
                 _ => false,
             };
             UnidSession {
-                pseudo_key: format!("{}{}", node.get_asset_id().unwrap(), node.pid),
+                pseudo_key: format!("{}{}", node.get_asset_id().expect("Missing asset id"), node.pid),
                 timestamp: node.timestamp(),
                 is_creation
             }.into()
@@ -165,7 +168,7 @@ fn into_unid_session(
             // TODO: Hash the path
             let key = std::str::from_utf8(&node.path).expect("node.path");
             UnidSession {
-                pseudo_key: format!("{}{}", node.get_asset_id().unwrap(), key),
+                pseudo_key: format!("{}{}", node.get_asset_id().expect("Missing asset id"), key),
                 timestamp: node.timestamp(),
                 is_creation
             }.into()
@@ -176,7 +179,7 @@ fn into_unid_session(
                 _ => false,
             };
             UnidSession {
-                pseudo_key: format!("{}{}outbound", node.get_asset_id().unwrap(), node.port),
+                pseudo_key: format!("{}{}outbound", node.get_asset_id().expect("Missing asset id"), node.port),
                 timestamp: node.timestamp(),
                 is_creation
             }.into()
@@ -187,7 +190,7 @@ fn into_unid_session(
                 _ => false,
             };
             UnidSession {
-                pseudo_key: format!("{}{}inbound", node.get_asset_id().unwrap(), node.port),
+                pseudo_key: format!("{}{}inbound", node.get_asset_id().expect("Missing asset id"), node.port),
                 timestamp: node.timestamp(),
                 is_creation
             }.into()
@@ -204,11 +207,13 @@ fn remove_dead_nodes(graph: &mut GraphDescription, dead_nodes: &HashSet<impl Der
     }
 }
 
-fn remove_dead_edges(graph: &mut GraphDescription, dead_nodes: &HashSet<&str>) {
-    for (node_key, edge_list) in graph.edges.iter_mut() {
+fn remove_dead_edges(graph: &mut GraphDescription) {
+    let edges = &mut graph.edges;
+    let nodes = &graph.nodes;
+    for (node_key, edge_list) in edges.iter_mut() {
         let live_edges: Vec<_> = edge_list.edges.clone().into_iter().filter(|edge| {
-            !(dead_nodes.contains(edge.to_neighbor_key.as_str())
-                || dead_nodes.contains(edge.from_neighbor_key.as_str()))
+            nodes.contains_key(&edge.to_neighbor_key) &&
+                nodes.contains_key(&edge.from_neighbor_key)
         }).collect();
 
         *edge_list = EdgeList {edges: live_edges};
@@ -240,7 +245,13 @@ fn remap_nodes(graph: &mut GraphDescription, unid_id_map: &HashMap<String, Strin
     for (node_key, mut node) in graph.nodes.iter_mut() {
         let new_key = &unid_id_map[node.get_key()];
         node.set_key(new_key.to_owned());
-        nodes.insert(new_key.to_owned(), node.clone());
+
+        // We may have actually had nodes with different unid node_keys that map to the
+        // same node_key. Therefor we must merge any nodes when there is a collision.
+        let old_node = nodes.insert(new_key.to_owned(), node.clone());
+        if let Some(ref old_node) = old_node {
+            nodes.get_mut(new_key).expect("New key not in map").merge(old_node);
+        }
     }
     graph.nodes = nodes;
 }
@@ -352,15 +363,13 @@ fn attribute_asset_ids(
             }
         };
 
-        info!("Attributed asset id: {}", asset_id);
-
         let mut node = node.to_owned();
         node.set_asset_id(asset_id);
         output_graph.add_node(node);
     }
 
     // There shouldn't be any dead nodes in our output_graph anyways
-    remove_dead_edges(&mut output_graph, &dead_nodes);
+    remove_dead_edges(&mut output_graph);
 
     if dead_nodes.is_empty() {
         info!("Attributed all asset ids");
@@ -370,6 +379,7 @@ fn attribute_asset_ids(
         Err(output_graph)
     }
 }
+
 
 impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
     where D: DynamoDb,
@@ -391,6 +401,11 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
         }
 
         let asset_id_db = AssetIdDb::new(
+            DynamoDbClient::new(region.clone())
+        );
+
+        let retry_cache = retry_cache::RetrySessionCache::new(
+            "node_id_retry_table",
             DynamoDbClient::new(region)
         );
 
@@ -433,8 +448,9 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
             bail!("No host_ids could be mapped to asset_ids");
         }
 
-        // TODO: Cache asset id based on node_key
-        let unid_sessions = output_subgraph.clone().nodes.into_iter()
+        let mut cached_node_ids = HashSet::new();
+
+        let unid_sessions: Vec<_> = output_subgraph.clone().nodes.into_iter()
             .map(|(_, n)| n)
             .map(NodeDescription::which)
             .flat_map(|node| {
@@ -442,16 +458,33 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
                     Some(unid) => Some((node, unid)),
                     None => None
                 }
-            });
+            })
+            .filter(|(node, unid)| {
+                let is_cached = retry_cache.in_cache(
+                    node.clone_key()
+                )
+                    .map_err(|e| warn!("Failed to retrieve from retry_cache: {}", e))
+                    .unwrap_or(false);
+
+                if is_cached {
+                    cached_node_ids.insert(node.clone_key());
+                }
+
+                !is_cached
+            })
+            .collect();
+
+        remove_dead_nodes(&mut output_subgraph, &cached_node_ids);
+        remove_dead_edges(&mut output_subgraph);
 
         // Mapping from old id to new id
         let mut unid_id_map = HashMap::new();
+        // Mapping from new id back to old id
+        let mut id_unid_map = HashSet::new();
         // IDs for nodes that did not get properly identified
         let mut dead_node_ids = HashSet::new();
 
         for (node, unid) in unid_sessions {
-
-            // TODO: cache the session id using timestamp % 100 and asset id+pid
             let session_id = match node {
                 Node::ProcessNode(node) => {
                     let session_db = SessionDb::new(&self.node_id_db, "process_history_table");
@@ -471,7 +504,8 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
 
             match session_id {
                 Ok((old_key, session_id)) => {
-                    unid_id_map.insert(old_key, session_id);
+                    unid_id_map.insert(old_key.clone(), session_id);
+                    id_unid_map.insert(old_key);
                 },
                 Err((failed_key, e)) => {
                     warn!("Node Identification failed with {}", e);
@@ -487,16 +521,26 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
             .collect();
 
         remove_dead_nodes(&mut output_subgraph, &dead_node_ids);
-        remove_dead_edges(&mut output_subgraph, &dead_node_ids);
-
-        remap_edges(&mut output_subgraph, &unid_id_map);
         remap_nodes(&mut output_subgraph, &unid_id_map);
+
+        remove_dead_edges(&mut output_subgraph);
+        remap_edges(&mut output_subgraph, &unid_id_map);
 
         if output_subgraph.is_empty() {
             bail!("Attribution failed for all nodes");
         }
 
         upload_identified_graphs(output_subgraph)?;
+
+        id_unid_map.iter()
+            .for_each(|old_key| {
+                retry_cache.put_cache(
+                    old_key
+                ).map_err(|e| {
+                    warn!("Failed to update retry cache: {}", e);
+                }).ok();
+            });
+
 
         if !dead_node_ids.is_empty() || asset_id_failed {
             bail!("Some node keys failed to ID")
@@ -536,7 +580,7 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
 
     let bucket = bucket_prefix + "-subgraphs-generated-bucket";
     let epoch = SystemTime::now()
-        .duration_since(UNIX_EPOCH).unwrap().as_secs();
+        .duration_since(UNIX_EPOCH).expect("System time before epoch").as_secs();
 
     let day = epoch - (epoch % (24 * 60 * 60));
 
@@ -545,6 +589,7 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
                       epoch,
                       key
     );
+
     info!("Uploading identified subgraphs to {}", key);
     wait_on!(s3.put_object(
         rusoto_s3::PutObjectRequest {
