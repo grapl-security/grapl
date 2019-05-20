@@ -521,9 +521,9 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
             .collect();
 
         remove_dead_nodes(&mut output_subgraph, &dead_node_ids);
-        remap_nodes(&mut output_subgraph, &unid_id_map);
-
         remove_dead_edges(&mut output_subgraph);
+
+        remap_nodes(&mut output_subgraph, &unid_id_map);
         remap_edges(&mut output_subgraph, &unid_id_map);
 
         if output_subgraph.is_empty() {
@@ -559,8 +559,6 @@ pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error>
     let s3 = S3Client::new(
         region
     );
-
-    let subgraph: GraphDescription = subgraph.into();
 
     let mut body = Vec::with_capacity(5000);
     subgraph.encode(&mut body).expect("Failed to encode subgraph");

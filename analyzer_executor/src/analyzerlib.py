@@ -83,3 +83,10 @@ def analyze_by_node_key(client: DgraphClient,
     batched = batch_queries(queries)
     response = json.loads(client.query(batched).json)
     return list(itertools.chain.from_iterable(response.values()))
+
+
+def analyze_by_signature(client: DgraphClient,
+                         signature_fn: Callable[[], str]) -> List[Dict[str, Any]]:
+
+    response = json.loads(client.query(signature_fn()).json)
+    return list(itertools.chain.from_iterable(response.values()))

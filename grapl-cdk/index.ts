@@ -16,7 +16,7 @@ import dynamodb = require('@aws-cdk/aws-dynamodb');
 import ecs = require('@aws-cdk/aws-ecs');
 import {NamespaceType} from '@aws-cdk/aws-ecs';
 import apigateway = require('@aws-cdk/aws-apigateway');
-import {PrivateHostedZone} from "@aws-cdk/aws-route53";
+import {PrivateHostedZone, PublicHostedZone} from "@aws-cdk/aws-route53";
 
 const env = require('node-env-file');
 
@@ -42,64 +42,59 @@ class Queues {
 }
 
 
-<<<<<<< HEAD
-class ApiGatewayTriggeredLambda {
+class EngagementEdge extends cdk.Stack {
     event_handler: lambda.Function;
     constructor(
-        stack: cdk.Stack,
+        parent: cdk.App,
         name: string,
         hostname: string,
-        environment?: any,
-        vpc?: IVpcNetwork,
-        opt?: any) {
-
+        engagement_graph: DGraphFargate,
+        vpc_props: ec2.VpcNetworkImportProps
+    ) {
+        super(parent, name + '-stack');
         // Set up the API Gateway
         // Set up the lambda
 
-        let runtime = {name: "provided", supportsInlineCode: true};
-        if (opt && opt.runtime) {
-            runtime = opt.runtime
-        }
-
-        let handler = name;
-        if (runtime === Runtime.Python37) {
-            handler = `${name}.lambda_handler`;
-        }
+        const vpc = ec2.VpcNetwork.import(
+            this,
+            'vpc',
+            vpc_props
+        );
 
         this.event_handler = new lambda.Function(
-            stack, name, {
-                runtime: runtime,
-                handler: handler,
-                code: lambda.Code.asset(`./${name}.zip`),
+            this, name, {
+                runtime: Runtime.Python37,
+                handler: `engagement_edge.lambda_handler`,
+                code: lambda.Code.asset(`./engagement_edge.zip`),
                 vpc: vpc,
-                environment: environment,
-                timeout: 10,
+                environment: {
+                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
+                },
+                timeout: 25,
                 memorySize: 256,
             }
         );
 
         const integration = new apigateway.LambdaRestApi(
-            stack,
+            this,
             name + 'Integration',
             {
                 handler: this.event_handler,
             }
         );
 
-
-        const zone = new PrivateHostedZone(stack, name + '-hosted-zone', {
-            zoneName: name,
-            vpc
-        });
-
-
-        new route53.CnameRecord(
-            stack, name + '-record', {
-                zone,
-                recordName: hostname,
-                recordValue: db.instancePublicDnsName
-            }
-        );
+        // const zone = new PublicHostedZone(this,  'engagementedge-hosted-zone', {
+        //     zoneName: name,
+        // });
+        //
+        //
+        // new route53.CnameRecord(
+        //     this, name + '-record', {
+        //         zone,
+        //         recordName: hostname,
+        //         recordValue: integration.
+        //     }
+        // );
     }
 }
 
@@ -1250,6 +1245,14 @@ class Grapl extends cdk.App {
             event_emitters.analyzer_matched_subgraphs_topic,
             event_emitters.engagements_created_topic,
             master_graph,
+            engagement_graph,
+            network.grapl_vpc
+        );
+
+        new EngagementEdge(
+            this,
+            'engagementedge' + process.env.BUCKET_PREFIX,
+            'engagementedge' + process.env.BUCKET_PREFIX,
             engagement_graph,
             network.grapl_vpc
         );
