@@ -22,15 +22,16 @@ class Seen(enum.Enum):
     Many = 2
 
 
-class ProcessPathCounter(object):
+# TODO: Cache responses for Many
+class ParentChildCounter(object):
     def __init__(self, dgraph_client: DgraphClient) -> None:
         self.dgraph_client = dgraph_client
 
     def get_count_for(
-        self,
-        image_name: str,
-        path: Optional[str] = None,
-        excluding: Optional[str] = None,
+            self,
+            parent_image_name: str,
+            child_image_name: Optional[str] = None,
+            excluding: Optional[str] = None,
     ) -> Seen:
         """
         Given an image name, and optionally a path, return the number of times
@@ -42,9 +43,9 @@ class ProcessPathCounter(object):
         count = (
             ProcessQuery()
             .only_first(2)
-            .with_image_name(eq=image_name)
+            .with_image_name(eq=parent_image_name)
             .with_node_key(eq=Not(excluding))
-            .with_bin_file(FileQuery().with_path(eq=path))
+            .with_child(ProcessQuery().with_image_name(eq=child_image_name))
             .get_count(self.dgraph_client)
         )
 
@@ -57,19 +58,25 @@ class ProcessPathCounter(object):
 
 
 def _analyzer(client: DgraphClient, graph: SubgraphView, sender: Any):
-    counter = ProcessPathCounter(client)
+    counter = ParentChildCounter(client)
 
     suspect_processes = []
 
     for process in graph.process_iter():
-        bin_file = process.get_bin_file()
-        if not bin_file: continue
+        image_name = process.get_image_name()
+
+        if 'cmd.exe' not in image_name:
+            continue
+
+        parent = process.get_parent()
 
         combo_count = counter.get_count_for(
-            process.image_name, process.bin_file.path, excluding=process.node_key
+            parent.image_name, process.image_name, excluding=process.node_key
         )
 
-        image_count = counter.get_count_for(process.image_name, excluding=process.node_key)
+        image_count = counter.get_count_for(parent.image_name, excluding=process.node_key)
 
         if combo_count == Seen.Once and image_count == Seen.Many:
             suspect_processes.append(process)
+
+

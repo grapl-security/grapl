@@ -1,19 +1,25 @@
 import json
+
+from typing import TypeVar, List
+
 from abc import abstractmethod
+
+from grapl_analyzer.entity_views import FileView, ProcessView
 
 
 class Not(object):
-    def __init__(self, value):
+    def __init__(self, value) -> None:
         self.value = value
 
 
-def strip_outer_curly(s):
+def strip_outer_curly(s) -> str:
     s = s.replace("{", "", 1)
     return s[::-1].replace("}", "", 1)[::-1]
 
 
-def batch_queries(queries):
-    stripped = [strip_outer_curly(query) for query in queries]
+def batch_queries(queries) -> str:
+    stripped = [strip_outer_curly(query_str) for query_str in queries]
+
     enumerated = [
         stripped_q.replace("q0", "q{}".format(i))
         for i, stripped_q in enumerate(stripped)
@@ -27,7 +33,7 @@ def batch_queries(queries):
     )
 
 
-def base_query(root_key, root_filter, fields, first=None, count=True):
+def base_query(root_key, root_filter, fields, first=None, count=True) -> str:
     count_var = ""
     if count:
         count_var = "u as"
@@ -66,49 +72,54 @@ def base_query(root_key, root_filter, fields, first=None, count=True):
 
 
 class Filter(object):
-    def __init__(self, predicate, value):
+    def __init__(self, predicate, value) -> None:
         self.predicate = predicate
         self.value = value
 
     @abstractmethod
-    def build(self):
+    def build(self) -> str:
         pass
 
 
 class Has(Filter):
-    def build(self):
+    def build(self) -> str:
         return "has({})".format(self.predicate)
 
 
 class Contains(Filter):
-    def build(self):
+    def build(self) -> str:
         if isinstance(self.value, Not):
             return "NOT regexp({}, /{}/)".format(self.predicate, self.value.value)
         return "regexp({}, /{}/)".format(self.predicate, self.value)
 
 
 class Eq(Filter):
-    def build(self):
+    def build(self) -> str:
         if isinstance(self.value, Not):
             return 'NOT eq({}, "{}")'.format(self.predicate, self.value.value)
         return 'eq({}, "{}")'.format(self.predicate, self.value)
 
 
+P = TypeVar('P', bound='ProcessQuery')
+F = TypeVar('F', bound='FileQuery')
+
+
 class ProcessQuery(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.image_name = None
         self.child = None
         self.node_key = None
         self.uid = None
         self.file_query = None
         self.create_time = None
+        self.deleted_files = None  # type: List[FileView]
         self.first = None
 
-    def only_first(self, count):
+    def only_first(self, count) -> P:
         self.first = count
         return self
 
-    def with_image_name(self, contains=None, eq=None):
+    def with_image_name(self, contains=None, eq=None) -> P:
         if contains:
             self.image_name = Contains("image_name", contains)
         elif eq:
@@ -118,7 +129,11 @@ class ProcessQuery(object):
 
         return self
 
-    def with_node_key(self, eq=None):
+    def with_deleted_files(self, file):
+        self.deleted_files = file
+        return self
+
+    def with_node_key(self, eq=None) -> P:
         if eq:
             self.node_key = Eq("node_key", eq)
         else:
@@ -126,7 +141,7 @@ class ProcessQuery(object):
 
         return self
 
-    def with_uid(self, eq=None):
+    def with_uid(self, eq=None) -> P:
         if eq:
             self.uid = Eq("uid", eq)
         else:
@@ -134,11 +149,11 @@ class ProcessQuery(object):
 
         return self
 
-    def with_bin_file(self, file_query):
+    def with_bin_file(self, file_query) -> P:
         self.file_query = file_query
         return self
 
-    def with_create_time(self, eq=None, before=None, after=None):
+    def with_create_time(self, eq=None, before=None, after=None) -> P:
         if eq:
             self.create_time = Eq("create_time", eq)
         else:
@@ -146,11 +161,11 @@ class ProcessQuery(object):
 
         return self
 
-    def with_child(self, child):
+    def with_child(self, child) -> P:
         self.child = child
         return self
 
-    def get_count(self, dgraph_client, only_count=True):
+    def get_count(self, dgraph_client, only_count=True) -> P:
         query_str = base_query(
             "pid", self.get_predicate_filters(), self.get_child_filters(),
             count=True,
@@ -160,11 +175,23 @@ class ProcessQuery(object):
             "count"
         ]
 
-    def query(self, dgraph_client):
+    def query(self, dgraph_client) -> List[P]:
         query_str = self.to_query()
-        return json.loads(dgraph_client.txn(read_only=True).query(query_str).json)['q0']
+        raw_views = json.loads(
+            dgraph_client
+            .txn(read_only=True)
+            .query(query_str)
+            .json
+        )['q0']
 
-    def to_query(self):
+        processes = []
+
+        for raw_process in raw_views:
+            processes.append(ProcessView.from_dict(dgraph_client, raw_process))
+
+        return processes
+
+    def to_query(self) -> str:
         # print(self.get_predicate_filters())
         # print(self.get_child_filters())
         query_str = base_query(
@@ -173,7 +200,7 @@ class ProcessQuery(object):
         )
         return query_str
 
-    def get_predicate_filters(self):
+    def get_predicate_filters(self) -> str:
         fields = [self.image_name, self.node_key]
         fields = [field.build() for field in fields if field]
         fields = " AND ".join(fields)
@@ -188,7 +215,7 @@ class ProcessQuery(object):
 
         return field_query
 
-    def get_child_filters(self):
+    def get_child_filters(self) -> str:
         if not self.child:
             return ""
 
@@ -206,11 +233,11 @@ class ProcessQuery(object):
 
 
 class FileQuery(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.path = None
         self.node_key = None
 
-    def with_path(self, eq=None, contains=None):
+    def with_path(self, eq=None, contains=None) -> F:
         if eq:
             self.path = Eq("path", eq)
         elif contains:
@@ -219,7 +246,7 @@ class FileQuery(object):
             self.path = Has("path", None)
         return self
 
-    def with_node_key(self, eq):
+    def with_node_key(self, eq) -> F:
         self.node_key = Eq("node_key", eq)
         return self
 
