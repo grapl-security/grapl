@@ -53,7 +53,7 @@ use sqs_lambda::S3EventRetriever;
 use sqs_lambda::SqsService;
 use sqs_lambda::ZstdDecoder;
 use sysmon::*;
-use regex::bytes::Regex;
+use regex::Regex;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -68,7 +68,7 @@ macro_rules! log_time {
     };
 }
 
-fn is_internal_ip(ip: &[u8]) -> bool {
+fn is_internal_ip(ip: &str) -> bool {
 
     lazy_static!(
         static ref RE: Regex = Regex::new(
@@ -112,19 +112,17 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
     let parent = ProcessDescriptionBuilder::default()
         .asset_id(process_start.header.computer.clone())
         .state(ProcessState::Existing)
-        .pid(process_start.parent_process_id)
-        .image_path(process_start.parent_image.clone())
-        .image_name(get_image_name(&process_start.parent_image.clone()).unwrap())
+        .process_id(process_start.parent_process_id)
+        .process_name(get_image_name(&process_start.parent_image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
 
     let child = ProcessDescriptionBuilder::default()
         .asset_id(process_start.header.computer.clone())
-        .image_path(process_start.image.clone())
-        .image_name(get_image_name(&process_start.image.clone()).unwrap())
+        .process_name(get_image_name(&process_start.image.clone()).unwrap())
         .state(ProcessState::Created)
-        .pid(process_start.process_id)
+        .process_id(process_start.process_id)
         .created_timestamp(timestamp)
         .build()
         .unwrap();
@@ -133,11 +131,11 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         .asset_id(process_start.header.computer.clone())
         .state(FileState::Existing)
         .last_seen_timestamp(timestamp)
-        .path(process_start.image)
+        .file_path(process_start.image)
         .build()
         .unwrap();
 
-        graph.add_edge("bin_file",
+        graph.add_edge("process_path",
                        child.clone_key(),
                        child_exe.clone_key()
         );
@@ -162,9 +160,8 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
     let creator = ProcessDescriptionBuilder::default()
         .asset_id(file_create.header.computer.clone())
         .state(ProcessState::Existing)
-        .pid(file_create.process_id)
-        .image_path(file_create.image.clone())
-        .image_name(get_image_name(&file_create.image.clone()).unwrap())
+        .process_id(file_create.process_id)
+        .process_name(get_image_name(&file_create.image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -172,7 +169,7 @@ fn handle_file_create(file_create: FileCreateEvent) -> Result<GraphDescription, 
     let file = FileDescriptionBuilder::default()
         .asset_id(file_create.header.computer.clone())
         .state(FileState::Created)
-        .path(file_create.target_filename)
+        .file_path(file_create.target_filename)
         .created_timestamp(timestamp)
         .build()
         .unwrap();
@@ -201,9 +198,8 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
     let process = ProcessDescriptionBuilder::default()
         .hostname(inbound_connection.source_hostname.clone())
         .state(ProcessState::Existing)
-        .pid(inbound_connection.process_id)
-        .image_path(inbound_connection.image.clone())
-        .image_name(get_image_name(&inbound_connection.image.clone()).unwrap())
+        .process_id(inbound_connection.process_id)
+        .process_name(get_image_name(&inbound_connection.image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -217,7 +213,7 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
         .build()
         .unwrap();
 
-    if is_internal_ip(&inbound_connection.destination_ip.clone().into_bytes()) {
+    if is_internal_ip(&inbound_connection.destination_ip.clone()) {
         if inbound_connection.source_hostname.is_empty() {
             warn!("inbound connection dest hostname is empty")
         }
@@ -238,7 +234,8 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
     } else {
         let external_ip = IpAddressDescription::new(
             timestamp,
-            inbound_connection.destination_ip.clone().into_bytes()
+            inbound_connection.destination_ip.clone(),
+            inbound_connection.protocol,
         );
 
         graph.add_edge("external_connection",
@@ -278,9 +275,8 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
     let process = ProcessDescriptionBuilder::default()
         .hostname(outbound_connection.source_hostname.to_owned())
         .state(ProcessState::Existing)
-        .pid(outbound_connection.process_id)
-        .image_path(outbound_connection.image.clone())
-        .image_name(get_image_name(&outbound_connection.image.clone()).unwrap())
+        .process_id(outbound_connection.process_id)
+        .process_name(get_image_name(&outbound_connection.image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -294,7 +290,7 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
         .unwrap();
 
 
-    if is_internal_ip(&outbound_connection.destination_ip.to_owned().into_bytes()) {
+    if is_internal_ip(&outbound_connection.destination_ip.to_owned()) {
 
         let inbound = if outbound_connection.destination_hostname.is_empty() {
             warn!("outbound connection dest hostname is empty {:?}", outbound_connection);
@@ -310,7 +306,7 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
                 .state(ConnectionState::Existing)
                 .port(outbound_connection.destination_port)
                 .last_seen_timestamp(timestamp)
-                .host_ip(outbound_connection.destination_ip.to_owned().into_bytes())
+                .host_ip(outbound_connection.destination_ip.to_owned())
                 .build()
                 .unwrap()
         };
@@ -322,7 +318,8 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
     } else {
         let external_ip = IpAddressDescription::new(
             timestamp,
-            outbound_connection.destination_ip.to_owned().into_bytes()
+            outbound_connection.destination_ip.to_owned(),
+            outbound_connection.protocol,
         );
 
         graph.add_edge("external_connection",
