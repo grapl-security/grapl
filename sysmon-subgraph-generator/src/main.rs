@@ -109,6 +109,8 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         info!("process_start {:?}", process_start)
     }
 
+//    let asset = AssetDescriptionBuilder::default();
+
     let parent = ProcessDescriptionBuilder::default()
         .asset_id(process_start.header.computer.clone())
         .state(ProcessState::Existing)

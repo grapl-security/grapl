@@ -90,6 +90,19 @@ fn main() {
     config.field_attribute(".graph_description.OutboundConnection.terminated_timestamp", "#[builder(default)]");
     config.field_attribute(".graph_description.OutboundConnection.last_seen_timestamp", "#[builder(default)]");
 
+    config.field_attribute(".graph_description.AssetDescription.node_key", "#[builder(field(private))]");
+    config.field_attribute(".graph_description.AssetDescription.node_key",
+                           "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]");
+
+    config.field_attribute(".graph_description.AssetDescription.asset_id", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_name", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_domain", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_fqdn", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_local_mac", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_ip", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.operating_system", "#[builder(default)]");
+
+
     config
         .compile_protos(&[
             "proto/graph_description.proto",
