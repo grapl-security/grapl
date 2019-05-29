@@ -8,11 +8,13 @@ fn main() {
     config.type_attribute(".", "#[derive(Eq, Serialize, Deserialize)]");
 
 
+    config.type_attribute(".graph_description.AssetDescription", "#[derive(Builder)]");
     config.type_attribute(".graph_description.FileDescription", "#[derive(Builder)]");
     config.type_attribute(".graph_description.ProcessDescription", "#[derive(Builder)]");
     config.type_attribute(".graph_description.InboundConnection", "#[derive(Builder)]");
     config.type_attribute(".graph_description.OutboundConnection", "#[derive(Builder)]");
 
+    config.type_attribute(".graph_description.AssetDescription", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.FileDescription", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.ProcessDescription", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.InboundConnection", "#[builder(setter(into))]");
@@ -89,6 +91,19 @@ fn main() {
     config.field_attribute(".graph_description.OutboundConnection.created_timestamp", "#[builder(default)]");
     config.field_attribute(".graph_description.OutboundConnection.terminated_timestamp", "#[builder(default)]");
     config.field_attribute(".graph_description.OutboundConnection.last_seen_timestamp", "#[builder(default)]");
+
+    config.field_attribute(".graph_description.AssetDescription.node_key", "#[builder(field(private))]");
+    config.field_attribute(".graph_description.AssetDescription.node_key",
+                           "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]");
+
+    config.field_attribute(".graph_description.AssetDescription.asset_id", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_name", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_domain", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_fqdn", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_local_mac", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.host_ip", "#[builder(default)]");
+    config.field_attribute(".graph_description.AssetDescription.operating_system", "#[builder(default)]");
+
 
     config
         .compile_protos(&[
