@@ -326,9 +326,9 @@ fn generate_bulk_edge_insert<'a>(edges: impl IntoIterator<Item=&'a EdgeDescripti
     bulk_insert.push_str("[");
     for edge in edges {
         let to = &key_uid
-            .get(edge.to_neighbor_key.as_str());
+            .get(edge.to.as_str());
         let from = &key_uid
-            .get(edge.from_neighbor_key.as_str());
+            .get(edge.from.as_str());
 
         // TODO: Add better logs, with actual identifiers
         let (to, from) = match (to, from) {
@@ -558,36 +558,60 @@ fn main() {
 pub fn set_process_schema(client: &DgraphClient) {
     let mut op_schema = api::Operation::new();
     op_schema.drop_all = false;
+
+
     op_schema.schema = concat!(
-       		"node_key: string @upsert @index(hash) .\n",
-       		"pid: int @index(int) .\n",
-       		"created_time: int @index(int) .\n",
-       		"asset_id: string @index(hash) .\n",
-       		"terminate_time: int @index(int) .\n",
-       		"image_name: string @index(hash) @index(fulltext) .\n",
-       		"arguments: string  @index(fulltext) .\n",
-       		"bin_file: uid @reverse .\n",
-       		"children: uid @reverse .\n",
-       		"created_files: uid @reverse .\n",
-            "deleted_files: uid @reverse .\n",
-            "read_files: uid @reverse .\n",
-            "wrote_files: uid @reverse .\n",
-            "created_connection: uid @reverse .\n",
-            "bound_connection: uid @reverse .\n",
-        ).to_string();
+        "node_key: string @upsert @index(hash) .\n",
+        "asset_id: string\n",
+        "process_id: int @index(int) \n",
+        "process_guid: string \n",
+        "created_timestamp: int @index(int) \n",
+        "terminated_timestamp: int @index(int) \n",
+        "last_seen_timestamp: int @index(int) \n",
+        "process_name: string \n",
+        "process_command_line: string \n",
+        "process_integrity_level: string \n",
+        "operating_system: string \n",
+        "process_path: uid \n",
+        "children: uid @reverse .\n",
+        "created_files: uid @reverse .\n",
+        "deleted_files: uid @reverse .\n",
+        "read_files: uid @reverse .\n",
+        "wrote_files: uid @reverse .\n",
+        "created_connection: uid @reverse .\n",
+        "bound_connection: uid @reverse .\n",
+    ).to_string();
+
     client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
 
 pub fn set_file_schema(client: &DgraphClient) {
     let mut op_schema = api::Operation::new();
     op_schema.drop_all = false;
+
     op_schema.schema = r#"
-       		node_key: string @upsert @index(hash) .
-       		asset_id: string @index(hash) .
-       		create_time: int @index(int) .
-       		delete_time: int @index(int) .
-       		path: string @index(hash) @index(fulltext) .
-        "#.to_string();
+    node_key: string @upsert @index(hash) .
+    asset_id: string @index(hash) .
+    created_timestamp: int @index(int) .
+    deleted_timestamp: int @index(int) .
+    last_seen_timestamp: int @index(int) .
+    file_name: string @index(hash) @index(fulltext) .
+    file_path: string @index(hash) @index(fulltext) .
+    file_extension: string @index(hash) @index(fulltext) .
+    file_mime_type: string @index(hash) @index(fulltext) .
+    file_size: int @index(int) .
+    file_version: string @index(hash) @index(fulltext) .
+    file_description: string @index(hash) @index(fulltext) .
+    file_product: string @index(hash) @index(fulltext) .
+    file_company: string @index(hash) @index(fulltext) .
+    file_directory: string @index(hash) @index(fulltext) .
+    file_inode: int @index(int) .
+    file_hard_links: int @index(int) .
+    md5_hash: string @index(hash) .
+    sha1_hash: string @index(hash) .
+    sha256_hash: string @index(hash) .
+    "#.to_owned();
+
     client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
 
@@ -619,11 +643,3 @@ pub fn set_connection_schema(client: &DgraphClient) {
     ).to_string();
     client.alter(Default::default(), op_schema).wait().expect("set schema");
 }
-
-sed  s/"34EOTDT"/"314KOTDT"/g ./events6.xml > events112.xml
-sed  s/"34EOTDT"/"315KOTDT"/g ./events6.xml > events113.xml
-sed  s/"34EOTDT"/"316KOTDT"/g ./events6.xml > events114.xml
-sed  s/"34EOTDT"/"317KOTDT"/g ./events6.xml > events115.xml
-sed  s/"34EOTDT"/"318KOTDT"/g ./events6.xml > events116.xml
-sed  s/"34EOTDT"/"319KOTDT"/g ./events6.xml > events117.xml
-sed  s/"34EOTDT"/"320KOTDT"/g ./events6.xml > events118.xml

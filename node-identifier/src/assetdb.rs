@@ -40,7 +40,7 @@ impl<D> AssetIdDb<D>
         let (table_key, pseudo_key) = match host_id {
             HostId::AssetId(asset_id) => return Ok(Some(asset_id.to_owned())),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
-            HostId::Ip(ip) => ("ip", std::str::from_utf8(ip)?),
+            HostId::Ip(ip) => ("ip", ip.as_str()),
         };
 
         let query = QueryInput {
@@ -85,7 +85,7 @@ impl<D> AssetIdDb<D>
         let (table_key, pseudo_key) = match host_id {
             HostId::AssetId(asset_id) => return Ok(Some(asset_id.to_owned())),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
-            HostId::Ip(ip) => ("ip", std::str::from_utf8(ip)?),
+            HostId::Ip(ip) => ("ip", ip.as_str()),
         };
 
         let query = QueryInput {
@@ -139,7 +139,7 @@ impl<D> AssetIdDb<D>
         let (table_key, host_id) = match host_id {
             HostId::AssetId(id) => return Ok(()),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
-            HostId::Ip(ip) => ("ip", std::str::from_utf8(ip)?),
+            HostId::Ip(ip) => ("ip", ip.as_str()),
         };
 
         let mapping = AssetIdMapping {
