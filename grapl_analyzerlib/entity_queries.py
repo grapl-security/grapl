@@ -144,14 +144,19 @@ def flatten_nodes(root: Any) -> List[Any]:
             break
 
         next_node = to_visit.pop()
+
         if next_node in already_visited:
             continue
+
         neighbors = next_node.get_neighbors()
 
-        node_list.extend(neighbors)
-
-        neighbors.extend(to_visit)
-        to_visit = neighbors
+        for neighbor in neighbors:
+            if isinstance(neighbor, list):
+                node_list.extend(neighbor)
+                to_visit.extend(neighbor)
+            else:
+                node_list.append(neighbor)
+                to_visit.append(neighbor)
 
         already_visited.add(next_node)
 
