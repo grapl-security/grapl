@@ -10,6 +10,10 @@ Grapl's Master or Engagement graphs.
 
 Entities are designed for pivoting off of query results.
 
+https://pypi.org/project/grapl-analyzerlib/
+
+`pip install grapl_analyzer`
+
 
 ### Querying
 ```python
