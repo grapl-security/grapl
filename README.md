@@ -40,7 +40,7 @@ p = (
 )
 if p:
     # We now have a ProcessView, representing a concrete subgraph
-    print(f"Found: { p.process_name} at path: { p.get_bin_file()}")
+    print(f"Found: {p.process_name} at path: {p.get_bin_file()}")
 
 ```
 
