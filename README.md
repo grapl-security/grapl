@@ -33,11 +33,7 @@ p = (
     ])
     .with_children(
         ProcessQuery()
-        .with_process_name()
-        .with_children(
-            ProcessQuery()
-            .with_process_name()
-        )
+        .with_process_name(ends_with="svchost.exe")
     )
     .query_first(mclient)
 )
@@ -47,6 +43,7 @@ p = (
 
 ### Entity Pivoting
 Given an entity `p`, such as from the above example.
+
 ```python
 parent = p.get_parent()
 siblings = parent.get_children()
