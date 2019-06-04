@@ -1,4 +1,6 @@
 import json
+from abc import abstractmethod
+from collections import defaultdict
 from copy import deepcopy
 from typing import Iterator, Tuple
 from typing import TypeVar, Optional, List, Dict, Any, Union, Set
@@ -18,6 +20,15 @@ FQ = TypeVar("FQ", bound="FileQuery")
 N = TypeVar("N", bound="NodeView")
 
 S = TypeVar("S", bound="SubgraphView")
+
+
+class EdgeView(object):
+    def __init__(
+            self, from_neighbor_key: str, to_neighbor_key: str, edge_name: str
+    ) -> None:
+        self.from_neighbor_key = from_neighbor_key
+        self.to_neighbor_key = to_neighbor_key
+        self.edge_name = edge_name
 
 
 class NodeView(object):
@@ -42,15 +53,6 @@ class NodeView(object):
         if isinstance(self, FileView):
             return self
         return None
-
-
-class EdgeView(object):
-    def __init__(
-        self, from_neighbor_key: str, to_neighbor_key: str, edge_name: str
-    ) -> None:
-        self.from_neighbor_key = from_neighbor_key
-        self.to_neighbor_key = to_neighbor_key
-        self.edge_name = edge_name
 
 
 class SubgraphView(object):
@@ -597,6 +599,22 @@ class ProcessView(NodeView):
 
         self.deleted_files = deleted_files[0].deleted_files
         return self.deleted_files
+
+    def get_neighbors(self) -> List[Any]:
+        neighbors = (self.parent, self.bin_file, self.children, self.deleted_files)
+
+        return [n for n in neighbors if n]
+
+    def get_edges(self) -> List[Tuple[str, Any]]:
+        neighbors = (
+            ("parent", self.parent) if self.parent else None,
+            ("bin_file", self.bin_file) if self.bin_file else None,
+            ("children", self.children) if self.children else None,
+            ("deleted_files", self.deleted_files) if self.deleted_files else None,
+        )
+
+        return [n for n in neighbors if n]
+
 
 
 class FileQuery(object):
