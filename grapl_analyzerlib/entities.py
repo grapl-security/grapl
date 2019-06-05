@@ -57,8 +57,12 @@ class NodeView(object):
     def serialize(self) -> str:
         all_nodes = entity_queries.flatten_nodes(self.node)
         node_dicts = []
-        for node in all_nodes:
-            node_dict = node.to_dict()
+
+        for i, node in enumerate(all_nodes):
+            root = False
+            if i == 0:
+                root = True
+            node_dict = node.to_dict(root)
             node_dicts.append(node_dict)
 
         return json.dumps(node_dicts)
@@ -101,6 +105,10 @@ class ProcessQuery(object):
         self._node_key = entity_queries.Has(
             "node_key"
         )  # type: Optional[entity_queries.Cmp]
+        self._uid = entity_queries.Has(
+            "uid"
+        )  # type: Optional[entity_queries.Cmp]
+
         self._process_name = []  # type: List[List[entity_queries.Cmp]]
         self._process_command_line = []  # type: List[List[entity_queries.Cmp]]
         self._process_guid = []  # type: List[List[entity_queries.Cmp]]
@@ -219,6 +227,7 @@ class ProcessQuery(object):
     def get_properties(self) -> List[str]:
         properties = (
             "node_key" if self._node_key else None,
+            "uid" if self._uid else None,
             "process_name" if self._process_name else None,
             "process_command_line" if self._process_command_line else None,
             "process_guid" if self._process_guid else None,
@@ -512,7 +521,7 @@ class ProcessView(NodeView):
         return ProcessView(
             dgraph_client=dgraph_client,
             node_key=d["node_key"],
-            uid=d.get("uid", None),
+            uid=d["uid"],
             process_name=d.get("process_name"),
             process_command_line=d.get("process_command_line"),
             process_guid=d.get("process_guid"),
@@ -624,9 +633,11 @@ class ProcessView(NodeView):
 
         return [n for n in neighbors if n]
 
-    def to_dict(self) -> str:
+    def to_dict(self, root=False) -> Dict[str, str]:
         node_dict = dict()
         node_dict['node_type'] = 'Process'
+        if root:
+            node_dict['root'] = True
         if self.node_key:
             node_dict['node_key'] = self.node_key
         if self.uid:
@@ -660,7 +671,14 @@ class ProcessView(NodeView):
 class FileQuery(object):
     def __init__(self) -> None:
         # Attributes
-        self._node_key = None  # type: Optional[entity_queries.Cmp]
+        self._node_key = entity_queries.Has(
+            "node_key"
+        )  # type: Optional[entity_queries.Cmp]
+
+        self._uid = entity_queries.Has(
+            "uid"
+        )  # type: Optional[entity_queries.Cmp]
+
         self._file_name = []  # type: List[List[entity_queries.Cmp]]
         self._file_path = []  # type: List[List[entity_queries.Cmp]]
         self._file_extension = []  # type: List[List[entity_queries.Cmp]]
@@ -919,6 +937,29 @@ class FileQuery(object):
 
         return f"@filter({'AND'.join(inner_filters)})"
 
+    def get_properties(self) -> List[str]:
+        properties = (
+            "node_key" if self._node_key else None,
+            "uid" if self._uid else None,
+            "file_name" if self._file_name else None,
+            "file_path" if self._file_path else None,
+            "file_extension" if self._file_extension else None,
+            "file_mime_type" if self._file_mime_type else None,
+            "file_size" if self._file_size else None,
+            "file_version" if self._file_version else None,
+            "file_description" if self._file_description else None,
+            "file_product" if self._file_product else None,
+            "file_company" if self._file_company else None,
+            "file_directory" if self._file_directory else None,
+            "file_inode" if self._file_inode else None,
+            "file_hard_links" if self._file_hard_links else None,
+            "md5_hash" if self._md5_hash else None,
+            "sha1_hash" if self._sha1_hash else None,
+            "sha256_hash" if self._sha256_hash else None,
+        )
+
+        return [p for p in properties if p]
+
     def get_neighbors(self) -> List[Any]:
         neighbors = (
             self._creator,
@@ -1022,7 +1063,7 @@ class FileView(NodeView):
         return FileView(
             dgraph_client=dgraph_client,
             node_key=d["node_key"],
-            uid=d.get("uid"),
+            uid=d["uid"],
             file_name=d.get("file_name"),
             file_path=d.get("file_path"),
             file_extension=d.get("file_extension"),
@@ -1046,8 +1087,11 @@ class FileView(NodeView):
             spawned_from=spawned_from,
         )
     
-    def to_dict(self) -> str:
+    def to_dict(self, root=False) -> Dict[str, str]:
         node_dict = dict()
+        if root:
+            node_dict['root'] = True
+
         if self.node_key:
             node_dict['node_key'] = self.node_key
 
