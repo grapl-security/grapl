@@ -54,18 +54,21 @@ class NodeView(object):
             return self.node
         return None
 
-    def serialize(self) -> str:
+    def to_dict(self) -> Dict[str, Any]:
         all_nodes = entity_queries.flatten_nodes(self.node)
-        node_dicts = []
-
+        node_dicts = defaultdict(dict)
+        edges = defaultdict(list)
         for i, node in enumerate(all_nodes):
             root = False
             if i == 0:
                 root = True
-            node_dict = node.to_dict(root)
-            node_dicts.append(node_dict)
 
-        return json.dumps(node_dicts)
+            node_dict = node.to_dict(root)
+            node_dicts[node_dict['node_key']] = node_dict
+
+            edges[node_dict['node_key']].append(node_dict['edges'])
+
+        return {'nodes': node_dicts, 'edges': edges}
 
 
 class SubgraphView(object):
@@ -704,7 +707,7 @@ class ProcessView(NodeView):
                     }
                 )
 
-        return {'nodes': node_dict, 'edges': edges}
+        return {'node': node_dict, 'edges': edges}
 
 
 class FileQuery(object):
@@ -1182,4 +1185,4 @@ class FileView(NodeView):
         if self.sha256_hash:
             node_dict['sha256_hash'] = self.sha256_hash
 
-        return {'nodes': node_dict, 'edges': []}  # TODO: Generate edges
+        return {'node': node_dict, 'edges': []}  # TODO: Generate edges
