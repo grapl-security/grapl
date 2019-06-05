@@ -45,13 +45,13 @@ class NodeView(object):
             raise Exception("Invalid Node Type")
 
     def as_process_view(self) -> Optional[P]:
-        if isinstance(self, ProcessView):
-            return self
+        if isinstance(self.node, ProcessView):
+            return self.node
         return None
 
     def as_file_view(self) -> Optional[F]:
-        if isinstance(self, FileView):
-            return self
+        if isinstance(self.node, FileView):
+            return self.node
         return None
 
     def serialize(self) -> str:
