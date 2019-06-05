@@ -136,6 +136,13 @@ class ProcessQuery(object):
             self._node_key = entity_queries.Has("node_key")
         return self
 
+    def with_uid(self, uid: Optional[Union[entity_queries.Not, str]] = None):
+        if uid:
+            self._uid = entity_queries.Eq("uid", uid)
+        else:
+            self._uid = entity_queries.Has("uid")
+        return self
+
     def only_first(self, first: int) -> PQ:
         self._first = first
         return self
@@ -480,6 +487,7 @@ class ProcessView(NodeView):
         self.last_seen_timestamp = last_seen_timestamp
         self.process_name = process_name  # type: Optional[str]
 
+        # TODO: Support created, deleted, written, read
         self.bin_file = bin_file  # type: Optional[F]
         self.children = children  # type: Optional[List[P]]
         self.parent = parent  # type: Optional[P]
@@ -633,8 +641,9 @@ class ProcessView(NodeView):
 
         return [n for n in neighbors if n]
 
-    def to_dict(self, root=False) -> Dict[str, str]:
+    def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
+        edges = defaultdict(list)
         node_dict['node_type'] = 'Process'
         if root:
             node_dict['root'] = True
@@ -656,16 +665,46 @@ class ProcessView(NodeView):
             node_dict['last_seen_timestamp'] = self.last_seen_timestamp
         if self.process_name:
             node_dict['process_name'] = self.process_name
+
         if self.bin_file:
             node_dict['bin_file'] = self.bin_file.node_key
-        if self.children:
-            node_dict['children'] = [n.node_key for n in self.children]
-        if self.parent:
-            node_dict['~parent'] = [n.node_key for n in self.parent]
-        if self.deleted_files:
-            node_dict['deleted_files'] = [n.node_key for n in self.deleted_files]
+            edges[self.node_key].append(
+                {
+                    'from': self.node_key,
+                    'edge_name': 'bin_file',
+                    'to': self.bin_file.node_key
+                }
+            )
 
-        return json.dumps(node_dict)
+        if self.children:
+            for child in self.children:
+                edges[self.node_key].append(
+                    {
+                        'from': self.node_key,
+                        'edge_name': 'children',
+                        'to': child.node_key
+                    }
+                )
+        if self.parent:
+            edges[self.node_key].append(
+                {
+                    'from': self.parent.node_key,
+                    'edge_name': 'children',
+                    'to': self.node_key
+                }
+            )
+
+        if self.deleted_files:
+            for deleted_file in self.deleted_files:
+                edges[self.node_key].append(
+                    {
+                        'from': self.node_key,
+                        'edge_name': 'deleted_files',
+                        'to': deleted_file.node_key
+                    }
+                )
+
+        return {'nodes': node_dict, 'edges': edges}
 
 
 class FileQuery(object):
@@ -1087,7 +1126,7 @@ class FileView(NodeView):
             spawned_from=spawned_from,
         )
     
-    def to_dict(self, root=False) -> Dict[str, str]:
+    def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
         if root:
             node_dict['root'] = True
@@ -1143,4 +1182,4 @@ class FileView(NodeView):
         if self.sha256_hash:
             node_dict['sha256_hash'] = self.sha256_hash
 
-        return node_dict
+        return {'nodes': node_dict, 'edges': []}  # TODO: Generate edges
