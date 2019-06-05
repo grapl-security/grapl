@@ -54,6 +54,15 @@ class NodeView(object):
             return self
         return None
 
+    def serialize(self) -> str:
+        all_nodes = entity_queries.flatten_nodes(self.node)
+        node_dicts = []
+        for node in all_nodes:
+            node_dict = node.to_dict()
+            node_dicts.append(node_dict)
+
+        return json.dumps(node_dicts)
+
 
 class SubgraphView(object):
     def __init__(
@@ -460,8 +469,8 @@ class ProcessView(NodeView):
         self.created_timestamp = created_timestamp
         self.terminated_timestamp = terminated_timestamp
         self.last_seen_timestamp = last_seen_timestamp
-
         self.process_name = process_name  # type: Optional[str]
+
         self.bin_file = bin_file  # type: Optional[F]
         self.children = children  # type: Optional[List[P]]
         self.parent = parent  # type: Optional[P]
@@ -615,6 +624,37 @@ class ProcessView(NodeView):
 
         return [n for n in neighbors if n]
 
+    def to_dict(self) -> str:
+        node_dict = dict()
+        node_dict['node_type'] = 'Process'
+        if self.node_key:
+            node_dict['node_key'] = self.node_key
+        if self.uid:
+            node_dict['uid'] = self.uid
+        if self.process_command_line:
+            node_dict['process_command_line'] = self.process_command_line
+        if self.process_guid:
+            node_dict['process_guid'] = self.process_guid
+        if self.process_id:
+            node_dict['process_id'] = self.process_id
+        if self.created_timestamp:
+            node_dict['created_timestamp'] = self.created_timestamp
+        if self.terminated_timestamp:
+            node_dict['terminated_timestamp'] = self.terminated_timestamp
+        if self.last_seen_timestamp:
+            node_dict['last_seen_timestamp'] = self.last_seen_timestamp
+        if self.process_name:
+            node_dict['process_name'] = self.process_name
+        if self.bin_file:
+            node_dict['bin_file'] = self.bin_file.node_key
+        if self.children:
+            node_dict['children'] = [n.node_key for n in self.children]
+        if self.parent:
+            node_dict['~parent'] = [n.node_key for n in self.parent]
+        if self.deleted_files:
+            node_dict['deleted_files'] = [n.node_key for n in self.deleted_files]
+
+        return json.dumps(node_dict)
 
 
 class FileQuery(object):
@@ -763,6 +803,12 @@ class FileQuery(object):
         readers._read_files = self
         return self
 
+    def with_spawned_from(self, spawned_from: PQ) -> FQ:
+        spawned_from = deepcopy(spawned_from)
+        self._readers = spawned_from
+        spawned_from._spawned_from = self
+        return self
+
     def _get_var_block(self, binding_num, root, already_converted) -> str:
         if self in already_converted:
             return ""
@@ -779,11 +825,15 @@ class FileQuery(object):
         )
 
         writers = entity_queries.get_var_block(
-            self._writers, "~wrote_files", binding_num, root, already_converted
+            self._writers, "~wrote_to_files", binding_num, root, already_converted
         )
 
         readers = entity_queries.get_var_block(
             self._readers, "~read_files", binding_num, root, already_converted
+        )
+
+        spawned_from = entity_queries.get_var_block(
+            self._spawned_from, "~bin_file", binding_num, root, already_converted
         )
 
         block = f"""
@@ -792,6 +842,7 @@ class FileQuery(object):
                 {deleter}
                 {writers}
                 {readers}
+                {spawned_from}
             }}
             """
 
@@ -901,6 +952,12 @@ class FileView(NodeView):
         md5_hash: Optional[str] = None,
         sha1_hash: Optional[str] = None,
         sha256_hash: Optional[str] = None,
+
+        creator: Optional[List[P]] = None,
+        deleter: Optional[List[P]] = None,
+        writers: Optional[List[P]] = None,
+        readers: Optional[List[P]] = None,
+        spawned_from: Optional[List[P]] = None,
     ) -> None:
         super(FileView, self).__init__(self)
         self.dgraph_client = dgraph_client  # type: DgraphClient
@@ -921,9 +978,47 @@ class FileView(NodeView):
         self.md5_hash = md5_hash
         self.sha1_hash = sha1_hash
         self.sha256_hash = sha256_hash
+        self.creator = creator
+        self.deleter = deleter
+        self.writers = writers
+        self.readers = readers
+        self.spawned_from = spawned_from
 
     @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> F:
+
+        raw_creator = d.get("~created_file", None)
+        raw_deleter = d.get("~deleted_file", None)
+        raw_writers = d.get("~wrote_to_files", None)
+        raw_readers = d.get("~read_files", None)
+        raw_spawned_from = d.get("~bin_file", None)
+
+        creator = None  # type: Optional[List[P]]
+        if raw_creator:
+            creator = ProcessView.from_dict(dgraph_client, raw_creator)
+
+        deleter = None  # type: Optional[List[P]]
+        if raw_deleter:
+            deleter = ProcessView.from_dict(dgraph_client, raw_deleter)
+
+        writers = None  # type: Optional[List[P]]
+        if raw_writers:
+            writers = [
+                ProcessView.from_dict(dgraph_client, raw) for raw in raw_writers
+            ]
+
+        readers = None  # type: Optional[List[P]]
+        if raw_readers:
+            readers = [
+                ProcessView.from_dict(dgraph_client, raw) for raw in raw_readers
+            ]
+
+        spawned_from = None  # type: Optional[List[P]]
+        if raw_spawned_from:
+            spawned_from = [
+                ProcessView.from_dict(dgraph_client, raw) for raw in raw_spawned_from
+            ]
+
         return FileView(
             dgraph_client=dgraph_client,
             node_key=d["node_key"],
@@ -943,4 +1038,65 @@ class FileView(NodeView):
             md5_hash=d.get("md5_hash"),
             sha1_hash=d.get("sha1_hash"),
             sha256_hash=d.get("sha256_hash"),
+
+            creator=creator,
+            deleter=deleter,
+            writers=writers,
+            readers=readers,
+            spawned_from=spawned_from,
         )
+    
+    def to_dict(self) -> str:
+        node_dict = dict()
+        if self.node_key:
+            node_dict['node_key'] = self.node_key
+
+        if self.uid:
+            node_dict['uid'] = self.uid
+
+        if self.file_name:
+            node_dict['file_name'] = self.file_name
+
+        if self.file_path:
+            node_dict['file_path'] = self.file_path
+
+        if self.file_extension:
+            node_dict['file_extension'] = self.file_extension
+
+        if self.file_mime_type:
+            node_dict['file_mime_type'] = self.file_mime_type
+
+        if self.file_size:
+            node_dict['file_size'] = self.file_size
+
+        if self.file_version:
+            node_dict['file_version'] = self.file_version
+
+        if self.file_description:
+            node_dict['file_description'] = self.file_description
+
+        if self.file_product:
+            node_dict['file_product'] = self.file_product
+
+        if self.file_company:
+            node_dict['file_company'] = self.file_company
+
+        if self.file_directory:
+            node_dict['file_directory'] = self.file_directory
+
+        if self.file_inode:
+            node_dict['file_inode'] = self.file_inode
+
+        if self.file_hard_links:
+            node_dict['file_hard_links'] = self.file_hard_links
+
+        if self.md5_hash:
+            node_dict['md5_hash'] = self.md5_hash
+
+        if self.sha1_hash:
+            node_dict['sha1_hash'] = self.sha1_hash
+
+        if self.sha256_hash:
+            node_dict['sha256_hash'] = self.sha256_hash
+
+        return node_dict
