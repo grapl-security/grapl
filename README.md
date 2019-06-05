@@ -25,6 +25,7 @@ from grapl_analyzerlib.entity_queries import Not
 
 mclient = DgraphClient(DgraphClientStub('alpha0.mastergraphcluster.grapl:9080'))
 
+# Query for suspicious svchost.exe's, based on the parent process not being whitelisted
 p = (
     ProcessQuery()
     .with_process_name(contains=[
@@ -37,6 +38,9 @@ p = (
     )
     .query_first(mclient)
 )
+if p:
+    # We now have a ProcessView, representing a concrete subgraph
+    print(f"Found: {p.process_name} at path: {p.get_bin_file()}")
 
 ```
 
@@ -61,9 +65,12 @@ Given an entity `p`, such as from the above example.
 
 ```python
 counter = ParentChildCounter(mclient)
-counter.get_count_for(
+count = counter.get_count_for(
     parent_process_name=p.process_name,
     child_process_name=p.children[0].process_name,
     excluding=p.node_key
 )
+
+if count <= Seen.Once:
+    print("Seen one time or never")
 ```
