@@ -1185,6 +1185,23 @@ class FileView(NodeView):
             spawned_from=spawned_from,
         )
 
+    def get_asset_id(self) -> Optional[str]:
+        if self.asset_id:
+            return self.asset_id
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_asset_id()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.asset_id = self_file[0].asset_id
+        return self.asset_id
+
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
         if root:
