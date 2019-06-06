@@ -66,7 +66,7 @@ class NodeView(object):
             node_dict = node.to_dict(root)
             node_dicts[node_dict['node']['node_key']] = node_dict['node']
 
-            edges[node_dict['node']['node_key']].append(node_dict['edges'])
+            edges[node_dict['node']['node_key']].extend(node_dict['edges'])
 
         return {'nodes': node_dicts, 'edges': edges}
 
@@ -1128,7 +1128,7 @@ class FileView(NodeView):
             readers=readers,
             spawned_from=spawned_from,
         )
-    
+
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
         if root:
@@ -1186,3 +1186,5 @@ class FileView(NodeView):
             node_dict['sha256_hash'] = self.sha256_hash
 
         return {'node': node_dict, 'edges': []}  # TODO: Generate edges
+
+
