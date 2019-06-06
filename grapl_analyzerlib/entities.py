@@ -64,9 +64,9 @@ class NodeView(object):
                 root = True
 
             node_dict = node.to_dict(root)
-            node_dicts[node_dict['node_key']] = node_dict
+            node_dicts[node_dict['node']['node_key']] = node_dict['node']
 
-            edges[node_dict['node_key']].append(node_dict['edges'])
+            edges[node_dict['node']['node_key']].append(node_dict['edges'])
 
         return {'nodes': node_dicts, 'edges': edges}
 
