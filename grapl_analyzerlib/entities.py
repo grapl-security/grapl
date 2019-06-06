@@ -54,7 +54,7 @@ class NodeView(object):
             return self.node
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_adjacency_list(self) -> Dict[str, Any]:
         all_nodes = entity_queries.flatten_nodes(self.node)
         node_dicts = defaultdict(dict)
         edges = defaultdict(list)
