@@ -112,6 +112,7 @@ class ProcessQuery(object):
             "uid"
         )  # type: Optional[entity_queries.Cmp]
 
+        self._asset_id = []  # type: List[List[entity_queries.Cmp]]
         self._process_name = []  # type: List[List[entity_queries.Cmp]]
         self._process_command_line = []  # type: List[List[entity_queries.Cmp]]
         self._process_guid = []  # type: List[List[entity_queries.Cmp]]
@@ -238,6 +239,7 @@ class ProcessQuery(object):
         properties = (
             "node_key" if self._node_key else None,
             "uid" if self._uid else None,
+            "asset_id" if self._asset_id else None,
             "process_name" if self._process_name else None,
             "process_command_line" if self._process_command_line else None,
             "process_guid" if self._process_guid else None,
@@ -263,6 +265,23 @@ class ProcessQuery(object):
         )
 
         return [n for n in neighbors if n]
+
+    def with_asset_id(
+            self,
+            eq: Optional[
+                Union[str, List[str], entity_queries.Not, List[entity_queries.Not]]
+            ] = None,
+            contains: Optional[
+                Union[str, List[str], entity_queries.Not, List[entity_queries.Not]]
+            ] = None,
+            ends_with: Optional[
+                Union[str, List[str], entity_queries.Not, List[entity_queries.Not]]
+            ] = None,
+    ) -> PQ:
+        self._asset_id.extend(
+            entity_queries._str_cmps("asset_id", eq, contains, ends_with)
+        )
+        return self
 
     def with_process_name(
         self,
@@ -383,6 +402,7 @@ class ProcessQuery(object):
 
     def _filters(self) -> str:
         inner_filters = (
+            entity_queries._generate_filter(self._asset_id),
             entity_queries._generate_filter(self._process_name),
             entity_queries._generate_filter(self._process_command_line),
             entity_queries._generate_filter(self._process_guid),
@@ -465,6 +485,7 @@ class ProcessView(NodeView):
         dgraph_client: DgraphClient,
         node_key: str,
         uid: Optional[str] = None,
+        asset_id: Optional[str] = None,
         process_name: Optional[str] = None,
         process_command_line: Optional[str] = None,
         process_guid: Optional[str] = None,
@@ -482,6 +503,7 @@ class ProcessView(NodeView):
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: str
         self.uid = uid  # type: Optional[str]
+        self.asset_id = asset_id
         self.process_command_line = process_command_line
         self.process_guid = process_guid
         self.process_id = process_id
@@ -533,6 +555,7 @@ class ProcessView(NodeView):
             dgraph_client=dgraph_client,
             node_key=d["node_key"],
             uid=d["uid"],
+            asset_id=d.get("asset_id"),
             process_name=d.get("process_name"),
             process_command_line=d.get("process_command_line"),
             process_guid=d.get("process_guid"),
@@ -545,6 +568,23 @@ class ProcessView(NodeView):
             children=children,
             parent=parent,
         )
+
+    def get_asset_id(self) -> Optional[str]:
+        if self.asset_id:
+            return self.asset_id
+
+        self_process = (
+            ProcessQuery()
+            .with_node_key(self.node_key)
+            .with_asset_id()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_process:
+            return None
+
+        self.asset_id = self_process[0].asset_id
+        return self.asset_id
 
     def get_process_name(self) -> Optional[str]:
         if self.process_name:
@@ -669,6 +709,9 @@ class ProcessView(NodeView):
         if self.process_name:
             node_dict['process_name'] = self.process_name
 
+        if self.asset_id:
+            node_dict['process_name'] = self.asset_id
+
         if self.bin_file:
             node_dict['bin_file'] = self.bin_file.node_key
             edges.append(
@@ -722,6 +765,7 @@ class FileQuery(object):
         )  # type: Optional[entity_queries.Cmp]
 
         self._file_name = []  # type: List[List[entity_queries.Cmp]]
+        self._asset_id = []  # type: List[List[entity_queries.Cmp]]
         self._file_path = []  # type: List[List[entity_queries.Cmp]]
         self._file_extension = []  # type: List[List[entity_queries.Cmp]]
         self._file_mime_type = []  # type: List[List[entity_queries.Cmp]]
@@ -756,6 +800,13 @@ class FileQuery(object):
             entity_queries._str_cmps("file_name", eq, contains, ends_with)
         )
         return self
+
+    def with_asset_id(self, eq=None, contains=None, ends_with=None) -> FQ:
+        self._asset_id.extend(
+            entity_queries._str_cmps("asset_id", eq, contains, ends_with)
+        )
+        return self
+
 
     def with_file_path(self, eq=None, contains=None, ends_with=None) -> FQ:
         self._file_path.extend(
@@ -957,6 +1008,7 @@ class FileQuery(object):
     def _filters(self) -> str:
         inner_filters = (
             entity_queries._generate_filter(self._file_name),
+            entity_queries._generate_filter(self._asset_id),
             entity_queries._generate_filter(self._file_path),
             entity_queries._generate_filter(self._file_extension),
             entity_queries._generate_filter(self._file_mime_type),
@@ -984,6 +1036,7 @@ class FileQuery(object):
             "node_key" if self._node_key else None,
             "uid" if self._uid else None,
             "file_name" if self._file_name else None,
+            "asset_id" if self._asset_id else None,
             "file_path" if self._file_path else None,
             "file_extension" if self._file_extension else None,
             "file_mime_type" if self._file_mime_type else None,
@@ -1020,6 +1073,7 @@ class FileView(NodeView):
         dgraph_client: DgraphClient,
         node_key: str,
         uid: Optional[str] = None,
+        asset_id: Optional[str] = None,
         file_name: Optional[str] = None,
         file_path: Optional[str] = None,
         file_extension: Optional[str] = None,
@@ -1046,6 +1100,7 @@ class FileView(NodeView):
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: Optional[str]
         self.uid = uid  # type: Optional[str]
+        self.asset_id = asset_id
         self.file_name = file_name
         self.file_path = file_path
         self.file_extension = file_extension
@@ -1106,6 +1161,7 @@ class FileView(NodeView):
             dgraph_client=dgraph_client,
             node_key=d["node_key"],
             uid=d["uid"],
+            asset_id=d.get("asset_id"),
             file_name=d.get("file_name"),
             file_path=d.get("file_path"),
             file_extension=d.get("file_extension"),
@@ -1139,6 +1195,9 @@ class FileView(NodeView):
 
         if self.uid:
             node_dict['uid'] = self.uid
+
+        if self.asset_id:
+            node_dict['asset_id'] = self.asset_id
 
         if self.file_name:
             node_dict['file_name'] = self.file_name
