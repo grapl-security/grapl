@@ -1,10 +1,14 @@
+import json
+
 from grapl_analyzerlib.entities import NodeView
 
 
 class ExecutionHit(object):
     def __init__(self, analyzer_name: str, node_view: NodeView, risk_score: int = 50):
+        node_dict = node_view.to_dict()
         self.analyzer_name = analyzer_name
-        self.node_view = node_view.to_dict()
+        self.nodes = json.dumps(node_dict['nodes'])
+        self.edges = json.dumps(node_dict['edges'])
         self.risk_score = risk_score
 
 
