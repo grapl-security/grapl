@@ -583,7 +583,7 @@ class ProcessView(NodeView):
         if not self_process:
             return None
 
-        self.asset_id = self_process[0].asset_id
+        self.asset_id = self_process.asset_id
         return self.asset_id
 
     def get_process_name(self) -> Optional[str]:
@@ -600,7 +600,7 @@ class ProcessView(NodeView):
         if not self_process:
             return None
 
-        self.process_name = self_process[0].process_name
+        self.process_name = self_process.process_name
         return self.process_name
 
     def get_parent(self) -> Optional[P]:
