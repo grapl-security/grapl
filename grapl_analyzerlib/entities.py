@@ -646,7 +646,7 @@ class ProcessView(NodeView):
 
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
-        edges = defaultdict(list)
+        edges = []
         node_dict['node_type'] = 'Process'
         if root:
             node_dict['root'] = True
@@ -671,7 +671,7 @@ class ProcessView(NodeView):
 
         if self.bin_file:
             node_dict['bin_file'] = self.bin_file.node_key
-            edges[self.node_key].append(
+            edges.append(
                 {
                     'from': self.node_key,
                     'edge_name': 'bin_file',
@@ -681,7 +681,7 @@ class ProcessView(NodeView):
 
         if self.children:
             for child in self.children:
-                edges[self.node_key].append(
+                edges.append(
                     {
                         'from': self.node_key,
                         'edge_name': 'children',
@@ -689,7 +689,7 @@ class ProcessView(NodeView):
                     }
                 )
         if self.parent:
-            edges[self.node_key].append(
+            edges.append(
                 {
                     'from': self.parent.node_key,
                     'edge_name': 'children',
@@ -699,7 +699,7 @@ class ProcessView(NodeView):
 
         if self.deleted_files:
             for deleted_file in self.deleted_files:
-                edges[self.node_key].append(
+                edges.append(
                     {
                         'from': self.node_key,
                         'edge_name': 'deleted_files',
