@@ -1,10 +1,10 @@
 import os
-import hashlib
 import boto3
 import json
 
 from typing import Any, List, Dict, Union, TypeVar, Optional
 
+from collections import defaultdict
 from grapl_analyzerlib.entities import ProcessView, FileView
 from pydgraph import DgraphClient, DgraphClientStub
 
@@ -31,10 +31,9 @@ def download_s3_file(bucket, key) -> str:
     return obj.get()['Body'].read()
 
 
-class NodeCopier(object):
+class EngagementCopier(object):
 
-    def __init__(self, engagement_key: str, mg_client: DgraphClient, eg_client: DgraphClient):
-        self.engagement_key = engagement_key
+    def __init__(self, mg_client: DgraphClient, eg_client: DgraphClient):
         self.mg_client = mg_client
         self.eg_client = eg_client
 
@@ -61,12 +60,10 @@ class NodeCopier(object):
                 node = props
             else:
                 # TODO: Merge lists of properties together
-
                 node = {**props, **node[0]}
 
             res = txn.mutate(set_obj=node, commit_now=True)
             uids = res.uids
-            print(uids)
             uid = uids['blank-0']
         finally:
             txn.discard()
@@ -98,10 +95,9 @@ class NodeCopier(object):
 
         # Prep node for upsert into engagement
         node.pop('uid', None)
-        node['engagement_key'] = str(self.engagement_key)
 
         # Insert node into engagement-graph
-        return NodeCopier.upsert(self.eg_client, node['node_key'], node)
+        return EngagementCopier.upsert(self.eg_client, node['node_key'], node)
 
     def copy_edge(self, from_uid: str, edge_name: str, to_uid: str):
         mut = {
@@ -114,13 +110,6 @@ class NodeCopier(object):
         print('edge mutation result is: {}'.format(res))
 
 
-def get_engagement_key(label: str, root: Dict[str, Any]) -> str:
-    hasher = hashlib.sha1(label.encode('utf8'))
-
-    hasher.update(str(root['node_key']).encode())
-    return str(hasher.hexdigest())
-
-
 def get_root(nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
     root = None
     for node in nodes:
@@ -131,33 +120,46 @@ def get_root(nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
     return root
 
 
-def should_throttle(engagement_key: str, dgraph_client: DgraphClient) -> bool:
+def should_throttle(
+        analyzer_name: str,
+        root_node_key: str,
+        dgraph_client: DgraphClient
+) -> bool:
     query = """
-            query q0($a: string)
+            query q0($a: string, $n: string)
             {
-              q0(func: eq(engagement_key, $a), first: 1) @cascade
+              q0(func: eq(node_key, $n), first: 1) @cascade
               {
                 uid,
                 ~scope {
-                    uid
+                    uid,
+                    risks @filter(eq(analyzer_name, $a)) {
+                        uid
+                    }
                 }
               }
             }
             """
 
-    res = json.loads(dgraph_client.txn(read_only=True).query(query, variables={'$a': engagement_key}).json)
+    variables = {
+        '$a': analyzer_name,
+        '$n': root_node_key
+    }
+
+    res = json.loads(dgraph_client.txn(read_only=True).
+                     query(query, variables=variables).json)
     if res['q0']:
         return True
     return False
 
 
-def into_process_views(raw_engagement) -> List[Union[ProcessView, FileView]]:
+def into_process_views(dgraph_client: DgraphClient, raw_scope) -> List[Union[ProcessView, FileView]]:
     scope = []
-    for scoped_node in raw_engagement.get('scope', []):
+    for scoped_node in raw_scope:
         if scoped_node.get('process_id'):
-            node = ProcessView(node_key=scoped_node['node_key'])
+            node = ProcessView(dgraph_client=dgraph_client, node_key=scoped_node['node_key'])
         elif scoped_node.get('file_path'):
-            node = FileView(node_key=scoped_node['node_key'])
+            node = FileView(dgraph_client=dgraph_client, node_key=scoped_node['node_key'])
         else:
             raise Exception('fInvalid scoped node type: {scoped_node}')
         scope.append(node)
@@ -172,28 +174,69 @@ class EngagementView(object):
     def __init__(
             self,
             client: DgraphClient,
-            lense: str,
+            lens: str,
             uid: str,
             scope: Optional[List[Union[ProcessView, FileView]]] = None
     ):
         self.client = client
-        self.lense = lense
+        self.lens = lens
         self.uid = uid
         self.scope = scope or []
 
     @staticmethod
-    def get_or_create(client, lense: str) -> EV:
+    def get(client, lens: str) -> Optional[EV]:
         query = """
         query q0($a: string)
         {
-          p as var(func: eq(lense, $a)) {
-            pred as _predicate_
+          p as var(func: eq(lens, $a)) {
           }
         
           q0(func: uid(p))
           {
             uid,
-            expand(val(pred))
+            score,
+            lens,
+            scope {
+                node_key,
+                uid,
+                process_id,
+                file_path
+            }
+          }
+        }
+        """
+
+        txn = client.txn(read_only=True)
+
+        try:
+            res = json.loads(txn.query(query, variables={'$a': lens}).json)
+            node = res['q0']
+            print(f'node is {node}')
+            if node:
+                return EngagementView(client,
+                                      lens=node[0]['lens'],
+                                      uid=node[0]['uid'],
+                                      scope=into_process_views(client, node[0].get('scope', [])),
+                                      )
+            else:
+                return None
+        finally:
+            txn.discard()
+
+
+    @staticmethod
+    def get_or_create(client, lens: str) -> EV:
+        query = """
+        query q0($a: string)
+        {
+          p as var(func: eq(lens, $a)) {
+          }
+        
+          q0(func: uid(p))
+          {
+            uid,
+            score,
+            lens,
             scope {
                 node_key,
                 uid,
@@ -207,30 +250,31 @@ class EngagementView(object):
         txn = client.txn(read_only=False)
 
         try:
-            res = json.loads(txn.query(query, variables={'$a': lense}).json)
+            res = json.loads(txn.query(query, variables={'$a': lens}).json)
             node = res['q0']
             print(f'node is {node}')
             if node:
                 return EngagementView(client,
-                                      lense=node[0]['lense'],
+                                      lens=node[0]['lens'],
                                       uid=node[0]['uid'],
-                                      scope=into_process_views(node[0]),
+                                      scope=into_process_views(client, node[0].get('scope', [])),
                                       )
             else:
-                node = {'lense': lense, 'score': 0}
+                node = {'lens': lens, 'score': 0}
             res = txn.mutate(set_obj=node, commit_now=True)
             uids = res.uids
-            print(uids)
+            print(f'lens upsert uids {uids}')
             uid = uids['blank-0']
             return EngagementView(client,
                                   uid=uid,
-                                  lense=lense,
+                                  lens=lens,
                                   scope=[],
                                   )
         finally:
             txn.discard()
 
     def attach_scope(self, root_node: Union[ProcessView, FileView]) -> EV:
+        self.scope.append(root_node)
         txn = self.client.txn(read_only=False)
 
         try:
@@ -249,6 +293,114 @@ class EngagementView(object):
 
         return self
 
+    def recalculate_score(self) -> int:
+        query = """
+            query q0($a: string, $b: string)
+            {
+              q0(func: eq(lens, $a), first: 1) @cascade
+              {
+                uid,
+                scope {
+                    node_key,
+                    risks {
+                        analyzer_name,
+                        risk_score
+                    }
+                }
+              }
+            }
+            """
+
+        variables = {
+            '$a': self.lens,
+        }
+        txn = self.client.txn(read_only=False)
+        res = json.loads(txn.query(query, variables=variables).json)
+
+        risk_map = defaultdict(list)
+        for root_node in res['q0'][0]['scope']:
+            for risk in root_node['risks']:
+                risk_map['node_key'].append(risk)
+
+        risk_score = 0
+
+        for node_key, risks in risk_map.items():
+            node_risk = 0
+            for risk in risks:
+                node_risk += risk['risk_score']
+            risk_multiplier = (0.10 * (len(risks) - 1))
+            node_risk = node_risk + (node_risk * risk_multiplier)
+            risk_score += node_risk
+
+        self.set_score(risk_score, txn=txn)
+
+        return risk_score
+
+    def set_score(self, new_score: int, txn=None) -> EV:
+        if not txn:
+            txn = self.client.txn(read_only=False)
+
+        try:
+            mutation = {
+                "uid": self.uid,
+                "score": new_score
+            }
+
+            print(f"mutation: {mutation}")
+
+            txn.mutate(set_obj=mutation, commit_now=True)
+        finally:
+            txn.discard()
+
+        return self
+
+def attach_risk(client: DgraphClient, node: Dict[str, Any], analyzer_name: str, risk_score: int):
+    txn = client.txn(read_only=False)
+    try:
+        query = """
+            query q0($a: string, $b: string)
+            {
+            
+              n as var(func: eq(node_key, $a), first: 1) {
+                uid
+              }
+            
+              q0(func: uid(n), first: 1)
+              {
+                uid,
+                risks @filter(
+                    eq(analyzer_name, $b)
+                )
+                {
+                    uid
+                }
+              }
+            }
+            """
+
+        variables = {
+            '$a': node['node_key'],
+            '$b': analyzer_name
+        }
+        txn = client.txn(read_only=False)
+        res = json.loads(txn.query(query, variables=variables).json)
+
+        if res['q0'] and res['q0'][0].get('risks'):
+            return
+
+        mutation = {
+            "uid": res['q0'][0]['uid'],
+            "risks": {
+                'analyzer_name': analyzer_name,
+                'risk_score': risk_score
+            }
+        }
+
+        print(f"mutation: {mutation}")
+
+        txn.mutate(set_obj=mutation, commit_now=True)
+    finally:
+        txn.discard()
 
 def lambda_handler(events: Any, context: Any) -> None:
     mg_alpha_names = os.environ['MG_ALPHAS'].split(",")
@@ -269,14 +421,14 @@ def lambda_handler(events: Any, context: Any) -> None:
         analyzer_name = incident_graph['analyzer_name']
         nodes = incident_graph['nodes']
         edges = incident_graph['edges']
+        risk_score = incident_graph['risk_score']
 
         print(f'nodes {nodes}')
         print(f'edges {edges}')
         # Key is root node + analyzer_name
         root = get_root(nodes.values())
-        engagement_key = get_engagement_key(analyzer_name, root)
 
-        if should_throttle(engagement_key, eg_client):
+        if should_throttle(analyzer_name, root['node_key'], eg_client):
             print('Throttling: {}'.format(nodes))
             continue
 
@@ -284,7 +436,7 @@ def lambda_handler(events: Any, context: Any) -> None:
         # If nodes have a list field, merge it
         # In particular, merge the 'analyzer_names' list
 
-        copier = NodeCopier(engagement_key, mg_client, eg_client)
+        copier = EngagementCopier(mg_client, eg_client)
 
         print('node_refs: {}'.format(nodes))
         print('edges: {}'.format(edges))
@@ -310,12 +462,16 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         asset_id = root_view.get_asset_id()
 
-        engagement = EngagementView.get_or_create(eg_client, lense=asset_id)
+        engagement = EngagementView.get_or_create(eg_client, lens=asset_id)
 
         engagement.attach_scope(root_view)
 
-        # TODO: Recalculate risk for engagement
+        for node in nodes.values():
+            attach_risk(
+                eg_client, node, analyzer_name, risk_score
+            )
+
+        score = engagement.recalculate_score()
+        print(f'Engagement has score: {score}')
 
     print('Engagement creation was successful')
-
-
