@@ -466,10 +466,9 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         engagement.attach_scope(root_view)
 
-        for node in nodes.values():
-            attach_risk(
-                eg_client, node, analyzer_name, risk_score
-            )
+        attach_risk(
+            eg_client, root, analyzer_name, risk_score
+        )
 
         score = engagement.recalculate_score()
         print(f'Engagement has score: {score}')
