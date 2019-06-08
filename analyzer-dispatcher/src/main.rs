@@ -101,7 +101,7 @@ fn get_s3_keys(s3_client: &impl S3, bucket: impl Into<String>) -> Result<impl In
         }
     )
         .with_timeout(Duration::from_secs(2))
-        .wait()?;
+        .sync()?;
 
     let contents = match list_res.contents {
         Some(contents) => contents,
@@ -175,7 +175,7 @@ fn emit_dispatch_event(
         ..Default::default()
     })
         .with_timeout(Duration::from_secs(2))
-        .wait()?;
+        .sync()?;
 
 
     Ok(())

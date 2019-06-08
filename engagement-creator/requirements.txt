@@ -1,2 +1,3 @@
 pydgraph
 boto3
+grapl-analyzerlib==0.1.29

@@ -155,7 +155,7 @@ fn into_unid_session(
                 _ => false,
             };
             UnidSession {
-                pseudo_key: format!("{}{}", node.get_asset_id().expect("Missing asset id"), node.pid),
+                pseudo_key: format!("{}{}", node.get_asset_id().expect("Missing asset id"), node.process_id),
                 timestamp: node.timestamp(),
                 is_creation
             }.into()
@@ -166,7 +166,7 @@ fn into_unid_session(
                 _ => false,
             };
             // TODO: Hash the path
-            let key = std::str::from_utf8(&node.path).expect("node.path");
+            let key = &node.file_path;
             UnidSession {
                 pseudo_key: format!("{}{}", node.get_asset_id().expect("Missing asset id"), key),
                 timestamp: node.timestamp(),
@@ -196,6 +196,7 @@ fn into_unid_session(
             }.into()
         },
         Node::IpAddressNode(node) => None,
+        Node::AssetNode(node) => unimplemented!(),
     }
 }
 
@@ -212,8 +213,8 @@ fn remove_dead_edges(graph: &mut GraphDescription) {
     let nodes = &graph.nodes;
     for (node_key, edge_list) in edges.iter_mut() {
         let live_edges: Vec<_> = edge_list.edges.clone().into_iter().filter(|edge| {
-            nodes.contains_key(&edge.to_neighbor_key) &&
-                nodes.contains_key(&edge.from_neighbor_key)
+            nodes.contains_key(&edge.to) &&
+                nodes.contains_key(&edge.from)
         }).collect();
 
         *edge_list = EdgeList {edges: live_edges};
@@ -223,14 +224,14 @@ fn remove_dead_edges(graph: &mut GraphDescription) {
 fn remap_edges(graph: &mut GraphDescription, unid_id_map: &HashMap<String, String>) {
     for (node_key, edge_list) in graph.edges.iter_mut() {
         for edge in edge_list.edges.iter_mut() {
-            let from_neighbor_key = unid_id_map.get(&edge.from_neighbor_key)
-                .expect("from_neighbor_key");
-            let to_neighbor_key = unid_id_map.get(&edge.to_neighbor_key)
-                .expect("to_neighbor_key");
+            let from = unid_id_map.get(&edge.from)
+                .expect("from");
+            let to = unid_id_map.get(&edge.to)
+                .expect("to");
 
             *edge = EdgeDescription {
-                from_neighbor_key: from_neighbor_key.to_owned(),
-                to_neighbor_key: to_neighbor_key.to_owned(),
+                from: from.to_owned(),
+                to: to.to_owned(),
                 edge_name: edge.edge_name.clone(),
             };
 
@@ -281,7 +282,7 @@ fn create_asset_id_mappings(assetid_db: &AssetIdDb<impl DynamoDb>,
 
                 assetid_db.create_mapping(
                     &HostId::AssetId(asset_id),
-                    String::from_utf8(host_ip)?,
+                    host_ip.clone(),
                     node.get_timestamp()
                 )?;
             },
@@ -298,7 +299,7 @@ fn create_asset_id_mappings(assetid_db: &AssetIdDb<impl DynamoDb>,
                 info!("Creating asset id mapping for: ip");
                 assetid_db.create_mapping(
                     &HostId::AssetId(asset_id),
-                    String::from_utf8(host_ip)?,
+                    host_ip.clone(),
                     node.get_timestamp()
                 )?;
             }

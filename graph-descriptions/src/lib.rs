@@ -59,7 +59,7 @@ impl OutboundConnection {
     pub fn new(
         asset_id: impl Into<Option<String>>,
         hostname: impl Into<Option<String>>,
-        host_ip: impl Into<Option<Vec<u8>>>,
+        host_ip: impl Into<Option<String>>,
         state: ConnectionState,
         port: u32,
         timestamp: u64,
@@ -155,7 +155,7 @@ impl InboundConnection {
     pub fn new(
         asset_id: impl Into<Option<String>>,
         hostname: impl Into<Option<String>>,
-        host_ip: impl Into<Option<Vec<u8>>>,
+        host_ip: impl Into<Option<String>>,
         state: ConnectionState,
         port: u32,
         timestamp: u64,
@@ -250,17 +250,6 @@ impl InboundConnection {
     }
 }
 
-enum IntoEdge {
-    //Process -> Process Edges
-    CreatedProcess,
-    //Process -> File Edges
-    CreatedFile,
-    DeletedFile,
-    ExecutedFromFile,
-    ReadFromFile,
-    WroteToFile,
-}
-
 macro_rules! node_from {
     ($t: ident, $n: ident) => (
         impl From<$t> for NodeDescription {
@@ -285,7 +274,7 @@ node_from!(InboundConnection, InboundConnectionNode);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum HostIdentifier {
-    IpAddress(Vec<u8>),
+    IpAddress(String),
     Hostname(String),
     AssetId(String),
 }
@@ -351,6 +340,7 @@ impl HostIdentifier {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Node {
+    AssetNode(AssetDescription),
     ProcessNode(ProcessDescription),
     FileNode(FileDescription),
     IpAddressNode(IpAddressDescription),
@@ -361,6 +351,7 @@ pub enum Node {
 impl Node {
     pub fn get_key(&self) -> &str {
         match &self {
+            Node::AssetNode(ref node) => node.node_key.as_str(),
             Node::ProcessNode(ref node) => node.node_key.as_str(),
             Node::FileNode(ref node) => node.node_key.as_str(),
             Node::IpAddressNode(ref node) => node.node_key.as_str(),
@@ -371,6 +362,7 @@ impl Node {
 
     pub fn clone_key(&self) -> String {
         match &self {
+            Node::AssetNode(ref node) => node.node_key.clone(),
             Node::ProcessNode(ref node) => node.node_key.clone(),
             Node::FileNode(ref node) => node.node_key.clone(),
             Node::IpAddressNode(ref node) => node.node_key.clone(),
@@ -383,6 +375,7 @@ impl Node {
 impl NodeDescription {
     pub fn which(self) -> Node {
         match self.which_node.clone().unwrap() {
+            WhichNode::AssetNode(n) => Node::AssetNode(n.into()),
             WhichNode::ProcessNode(n) => Node::ProcessNode(n.into()),
             WhichNode::FileNode(n) => Node::FileNode(n.into()),
             WhichNode::IpAddressNode(n) => Node::IpAddressNode(n.into()),
@@ -393,6 +386,7 @@ impl NodeDescription {
 
     pub fn get_key(&self) -> &str {
         match self.which_node.as_ref().unwrap() {
+            WhichNode::AssetNode(n) => n.node_key.as_ref(),
             WhichNode::ProcessNode(n) => n.node_key.as_ref(),
             WhichNode::FileNode(n) => n.node_key.as_ref(),
             WhichNode::IpAddressNode(n) => n.node_key.as_ref(),
@@ -403,6 +397,9 @@ impl NodeDescription {
 
     pub fn get_timestamp(&self) -> u64 {
         match self.which_node.as_ref().unwrap() {
+            WhichNode::AssetNode(ref node) => {
+                node.timestamp
+            }
             WhichNode::ProcessNode(ref node) => {
                 match ProcessState::from(node.state) {
                     ProcessState::Created => node.created_timestamp,
@@ -439,6 +436,9 @@ impl NodeDescription {
 
     pub fn set_asset_id(&mut self, asset_id: String) {
         match self.which_node.as_mut().unwrap() {
+            WhichNode::AssetNode(ref mut node) => {
+                node.node_key = asset_id
+            }
             WhichNode::ProcessNode(ref mut node) => {
                 node.asset_id = Some(asset_id)
             }
@@ -459,6 +459,9 @@ impl NodeDescription {
 
     pub fn get_asset_id(&self) -> Option<&String> {
         match self.which_node.as_ref().unwrap() {
+            WhichNode::AssetNode(ref node) => {
+                Some(&node.node_key)
+            }
             WhichNode::ProcessNode(ref node) => {
                 node.get_asset_id()
             }
@@ -479,6 +482,9 @@ impl NodeDescription {
 
     pub fn set_key(&mut self, key: String) {
         match self.which_node.as_mut().unwrap() {
+            WhichNode::AssetNode(ref mut node) => {
+                node.node_key = key;
+            }
             WhichNode::ProcessNode(ref mut node) => {
                 node.node_key = key;
             }
@@ -499,6 +505,10 @@ impl NodeDescription {
 
     pub fn into_json(self) -> Value {
         match self.which_node.unwrap() {
+            WhichNode::AssetNode(node) => {
+                let node: AssetDescription = node.into();
+                node.into_json()
+            }
             WhichNode::ProcessNode(node) => {
                 let node: ProcessDescription = node.into();
                 node.into_json()
@@ -606,15 +616,56 @@ impl From<FileState> for u32 {
     }
 }
 
+impl AssetDescription {
+
+    pub fn get_key(&self) -> &str {
+        &self.node_key
+    }
+
+    pub fn set_key(&mut self, key: String) {
+        self.node_key = key;
+    }
+
+    pub fn set_asset_id(&mut self, asset_id: String) {
+        self.node_key = asset_id
+    }
+
+    pub fn get_asset_id(&self) -> Option<&String> {
+        Some(&self.node_key)
+    }
+
+    pub fn clone_key(&self) -> String {
+        self.node_key.clone()
+    }
+
+    pub fn into_json(self) -> Value {
+            json!({
+            "node_key": self.node_key,
+            "asset_id": self.node_key,
+            "asset_id": self.asset_id,
+            "host_name": self.host_name,
+            "host_domain": self.host_domain,
+            "host_fqdn": self.host_fqdn,
+            "host_local_mac": self.host_local_mac,
+            "host_ip": self.host_ip,
+            "operating_system": self.operating_system,
+            "timestamp": self.timestamp,
+        })
+    }
+}
+
 impl ProcessDescription {
     pub fn new(asset_id: impl Into<Option<String>>,
                hostname: impl Into<Option<String>>,
-               host_ip: impl Into<Option<Vec<u8>>>,
+               host_ip: impl Into<Option<String>>,
                state: ProcessState,
-               pid: u64,
+               process_id: u64,
                timestamp: u64,
-               image_name: Vec<u8>,
-               image_path: Vec<u8>
+               process_name: String,
+               operating_system: String,
+               process_command_line: String,
+               process_guid: String,
+               process_integrity_level: String,
     ) -> ProcessDescription {
         let mut pd = Self {
             node_key: Uuid::new_v4().to_string(),
@@ -622,12 +673,15 @@ impl ProcessDescription {
             hostname: hostname.into(),
             host_ip: host_ip.into(),
             state: state.clone().into(),
-            pid,
-            image_name,
-            image_path,
+            process_id,
+            process_name,
             created_timestamp: 0,
             terminated_timestamp: 0,
             last_seen_timestamp: 0,
+            operating_system,
+            process_command_line,
+            process_guid,
+            process_integrity_level,
         };
 
         match state {
@@ -666,16 +720,12 @@ impl ProcessDescription {
             json!({
             "node_key": self.node_key,
             "asset_id": asset_id,
-            "pid": self.pid,
+            "process_id": self.process_id,
 
         });
 
-        if !self.image_name.is_empty() {
-            j["image_name"] = Value::from(String::from_utf8_lossy(&self.image_name));
-        }
-
-        if !self.image_path.is_empty() {
-            j["image_path"] = Value::from(String::from_utf8_lossy(&self.image_path));
+        if !self.process_name.is_empty() {
+            j["process_name"] = Value::from(self.process_name.to_owned());
         }
 
         match ProcessState::from(self.state) {
@@ -704,13 +754,10 @@ impl ProcessDescription {
             self.last_seen_timestamp = other.last_seen_timestamp;
         }
 
-        if self.image_name.is_empty() && !other.image_name.is_empty() {
-            self.image_name = other.image_name.clone();
+        if self.process_name.is_empty() && !other.process_name.is_empty() {
+            self.process_name = other.process_name.clone();
         }
 
-        if self.image_path.is_empty() && !other.image_path.is_empty() {
-            self.image_path = other.image_path.clone();
-        }
     }
 
     pub fn timestamp(&self) -> u64 {
@@ -749,10 +796,24 @@ impl FileDescription {
 impl FileDescription {
     pub fn new(asset_id: impl Into<Option<String>>,
                hostname: impl Into<Option<String>>,
-               host_ip: impl Into<Option<Vec<u8>>>,
+               host_ip: impl Into<Option<String>>,
                state: FileState,
                timestamp: u64,
-               path: Vec<u8>,
+               file_name: String,
+               file_path: String,
+               file_extension: String,
+               file_mime_type: String,
+               file_size: u64,
+               file_version: String,
+               file_description: String,
+               file_product: String,
+               file_company: String,
+               file_directory: String,
+               file_inode: u64,
+               file_hard_links: u64,
+               md5_hash: String,
+               sha1_hash: String,
+               sha256_hash: String,
     ) -> FileDescription {
         let mut fd = FileDescription {
             node_key: Uuid::new_v4().to_string(),
@@ -760,10 +821,24 @@ impl FileDescription {
             hostname: hostname.into(),
             host_ip: host_ip.into(),
             state: state.clone().into(),
-            path,
             created_timestamp: 0,
             deleted_timestamp: 0,
             last_seen_timestamp: 0,
+            file_name,
+            file_path,
+            file_extension,
+            file_mime_type,
+            file_size,
+            file_version,
+            file_description,
+            file_product,
+            file_company,
+            file_directory,
+            file_inode,
+            file_hard_links,
+            md5_hash,
+            sha1_hash,
+            sha256_hash,
         };
 
         match state {
@@ -802,8 +877,8 @@ impl FileDescription {
             "asset_id": asset_id,
         });
 
-        if !self.path.is_empty() {
-            j["path"] = Value::from(String::from_utf8_lossy(&self.path));
+        if !self.file_path.is_empty() {
+            j["file_path"] = Value::from(self.file_path.to_owned());
         }
 
         if self.created_timestamp!= 0 {
@@ -836,8 +911,8 @@ impl FileDescription {
             self.last_seen_timestamp = other.last_seen_timestamp;
         }
 
-        if self.path.is_empty() && !other.path.is_empty() {
-            self.path = other.path.clone();
+        if self.file_path.is_empty() && !other.file_path.is_empty() {
+            self.file_path = other.file_path.clone();
         }
     }
 
@@ -852,7 +927,8 @@ impl FileDescription {
 
 impl IpAddressDescription {
     pub fn new(timestamp: u64,
-               ip_address: Vec<u8>,
+               ip_address: String,
+               ip_proto: String,
     ) -> IpAddressDescription {
         // 20 is based on the max size of a base encoded ipv4 ip
         let mut node_key = String::with_capacity(20);
@@ -863,7 +939,8 @@ impl IpAddressDescription {
         IpAddressDescription {
             node_key,
             timestamp,
-            ip_address
+            ip_address,
+            ip_proto
         }
     }
 
@@ -953,8 +1030,8 @@ impl GraphDescription {
         let to = to.into();
         let edge_name = edge_name.into();
         let edge = EdgeDescription {
-            from_neighbor_key: from.clone(),
-            to_neighbor_key: to,
+            from: from.clone(),
+            to: to,
             edge_name
         };
 
