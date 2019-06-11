@@ -8,11 +8,13 @@ fn main() {
     config.type_attribute(".", "#[derive(Eq, Serialize, Deserialize)]");
 
 
+    config.type_attribute(".graph_description.AssetDescription", "#[derive(Builder)]");
     config.type_attribute(".graph_description.FileDescription", "#[derive(Builder)]");
     config.type_attribute(".graph_description.ProcessDescription", "#[derive(Builder)]");
     config.type_attribute(".graph_description.InboundConnection", "#[derive(Builder)]");
     config.type_attribute(".graph_description.OutboundConnection", "#[derive(Builder)]");
 
+    config.type_attribute(".graph_description.AssetDescription", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.FileDescription", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.ProcessDescription", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.InboundConnection", "#[builder(setter(into))]");

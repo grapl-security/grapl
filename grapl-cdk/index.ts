@@ -826,8 +826,8 @@ class Zero {
             stack,
             id,
             {
-                cpu: '2048',
-                memoryMiB: '8192',
+                cpu: '1024',
+                memoryMiB: '2048',
             }
         );
 
@@ -922,8 +922,8 @@ class Alpha {
             stack,
             id,
             {
-                cpu: '4096',
-                memoryMiB: '16384'
+                cpu: '2048',
+                memoryMiB: '8192'
             }
         );
 
@@ -940,33 +940,33 @@ class Alpha {
             logging: logDriver
         });
 
-        container.addPortMappings(
-            {
-                containerPort: 5080,
-                hostPort: 5080,
-                protocol: ecs.Protocol.Tcp
-            },
-            {
-                containerPort: 6080,
-                hostPort: 6080,
-                protocol: ecs.Protocol.Tcp
-            },
-            {
-                containerPort: 7080,
-                hostPort: 7080,
-                protocol: ecs.Protocol.Tcp
-            },
-            {
-                containerPort: 9080,
-                hostPort: 9080,
-                protocol: ecs.Protocol.Tcp
-            },
-            {
-                containerPort: 8080,
-                hostPort: 8080,
-                protocol: ecs.Protocol.Tcp
-            },
-        );
+        // container.addPortMappings(
+        //     {
+        //         containerPort: 5080,
+        //         hostPort: 5080,
+        //         protocol: ecs.Protocol.Tcp
+        //     },
+        //     {
+        //         containerPort: 6080,
+        //         hostPort: 6080,
+        //         protocol: ecs.Protocol.Tcp
+        //     },
+        //     {
+        //         containerPort: 7080,
+        //         hostPort: 7080,
+        //         protocol: ecs.Protocol.Tcp
+        //     },
+        //     {
+        //         containerPort: 9080,
+        //         hostPort: 9080,
+        //         protocol: ecs.Protocol.Tcp
+        //     },
+        //     {
+        //         containerPort: 8080,
+        //         hostPort: 8080,
+        //         protocol: ecs.Protocol.Tcp
+        //     },
+        // );
 
         const alphaService = new ecs.FargateService(stack, id+'Service', {
             cluster,  // Required
@@ -979,7 +979,6 @@ class Alpha {
                 dnsRecordType: servicediscovery.DnsRecordType.A,
                 dnsTtlSec: 300,
             }
-
         );
 
         this.name = `${id}.${graph}.grapl`;

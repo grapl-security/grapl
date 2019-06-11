@@ -961,7 +961,7 @@ impl IpAddressDescription {
         json!({
             "node_key": self.node_key,
             "last_seen": self.timestamp,
-            "ip_address": self.ip_address,
+            "external_ip": self.ip_address,
         })
     }
 

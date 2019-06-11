@@ -1,7 +1,7 @@
+extern crate lambda_runtime as lambda;
+extern crate node_identifier;
 extern crate openssl_probe;
 extern crate simple_logger;
-extern crate node_identifier;
-extern crate lambda_runtime as lambda;
 
 use node_identifier::retry_handler;
 

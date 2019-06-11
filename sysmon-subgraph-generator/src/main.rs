@@ -234,6 +234,8 @@ fn handle_inbound_connection(inbound_connection: NetworkEvent) -> Result<GraphDe
 
         graph.add_node(outbound);
     } else {
+        info!("Handling external ip {}", inbound_connection.destination_ip.clone());
+
         let external_ip = IpAddressDescription::new(
             timestamp,
             inbound_connection.destination_ip.clone(),
@@ -293,31 +295,33 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
 
 
     if is_internal_ip(&outbound_connection.destination_ip.to_owned()) {
-
-        let inbound = if outbound_connection.destination_hostname.is_empty() {
-            warn!("outbound connection dest hostname is empty {:?}", outbound_connection);
-            InboundConnectionBuilder::default()
-                .state(ConnectionState::Existing)
-                .port(outbound_connection.destination_port)
-                .last_seen_timestamp(timestamp)
-                .hostname(outbound_connection.destination_hostname.to_owned())
-                .build()
-                .unwrap()
-        } else {
-            InboundConnectionBuilder::default()
-                .state(ConnectionState::Existing)
-                .port(outbound_connection.destination_port)
-                .last_seen_timestamp(timestamp)
-                .host_ip(outbound_connection.destination_ip.to_owned())
-                .build()
-                .unwrap()
-        };
-
-        graph.add_edge("connection",
-                       outbound.clone_key(),
-                       inbound.clone_key());
-        graph.add_node(inbound);
+        bail!("Internal IP not supported");
+//        let inbound = if outbound_connection.destination_hostname.is_empty() {
+//            warn!("outbound connection dest hostname is empty {:?}", outbound_connection);
+//            InboundConnectionBuilder::default()
+//                .state(ConnectionState::Existing)
+//                .port(outbound_connection.destination_port)
+//                .last_seen_timestamp(timestamp)
+//                .hostname(outbound_connection.destination_hostname.to_owned())
+//                .build()
+//                .unwrap()
+//        } else {
+//            InboundConnectionBuilder::default()
+//                .state(ConnectionState::Existing)
+//                .port(outbound_connection.destination_port)
+//                .last_seen_timestamp(timestamp)
+//                .host_ip(outbound_connection.destination_ip.to_owned())
+//                .build()
+//                .unwrap()
+//        };
+//
+//        graph.add_edge("connection",
+//                       outbound.clone_key(),
+//                       inbound.clone_key());
+//        graph.add_node(inbound);
     } else {
+        info!("Handling external ip {}", outbound_connection.destination_ip.to_owned());
+
         let external_ip = IpAddressDescription::new(
             timestamp,
             outbound_connection.destination_ip.to_owned(),
@@ -410,7 +414,6 @@ impl<S> EventHandler<Vec<u8>> for SysmonSubgraphGenerator<S>
                             }
                         }
                     }
-                    _ => None
 //                    Event::InboundNetwork(event) => {
 //                        match handle_inbound_connection(event) {
 //                            Ok(event) => Some(event),
@@ -420,15 +423,16 @@ impl<S> EventHandler<Vec<u8>> for SysmonSubgraphGenerator<S>
 //                            }
 //                        }
 //                    }
-//                    Event::OutboundNetwork(event) => {
-//                        match handle_outbound_connection(event) {
-//                            Ok(event) => Some(event),
-//                            Err(e) => {
-//                                warn!("Failed to process outbound network event: {}", e);
-//                                None
-//                            }
-//                        }
-//                    }
+                    Event::OutboundNetwork(event) => {
+                        match handle_outbound_connection(event) {
+                            Ok(event) => Some(event),
+                            Err(e) => {
+                                warn!("Failed to process outbound network event: {}", e);
+                                None
+                            }
+                        }
+                    }
+                    _ => None
                 }
             }).collect()
         );

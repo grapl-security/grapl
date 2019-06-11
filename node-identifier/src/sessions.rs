@@ -1,15 +1,18 @@
 #![allow(dead_code, unused_variables)]
 use std::collections::HashMap;
 
-use failure::Error;
-use sha2::{Digest, Sha256};
 use base58::ToBase58;
-use rusoto_core::Region;
-use rusoto_dynamodb::{AttributeValue, ListTablesInput, Update, Condition, DynamoDb, DynamoDbClient, GetItemInput, PutItemInput, QueryInput, DeleteItemInput, UpdateItemInput};
-use uuid::Uuid;
-use std::time::Duration;
+use failure::Error;
 use futures::future::Future;
+use rusoto_core::Region;
+use rusoto_dynamodb::{
+    AttributeValue, Condition, DeleteItemInput, DynamoDb, DynamoDbClient, GetItemInput,
+    ListTablesInput, PutItemInput, QueryInput, Update, UpdateItemInput,
+};
+use sha2::{Digest, Sha256};
 use std::convert::TryFrom;
+use std::time::Duration;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UnidSession {
@@ -21,12 +24,12 @@ pub struct UnidSession {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Session {
     pub session_id: String,
-    pub pseudo_key: String,  // hostname-pid
+    pub pseudo_key: String, // hostname-pid
     pub create_time: u64,
     pub end_time: u64,
     pub is_create_canon: bool,
     pub is_end_canon: bool,
-    pub version: u64 // This is an atomic version used for transactions
+    pub version: u64, // This is an atomic version used for transactions
 }
 
 impl TryFrom<HashMap<String, AttributeValue>> for Session {

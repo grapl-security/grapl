@@ -1,8 +1,11 @@
 use graph_descriptions::graph_description::host::*;
 
-use rusoto_dynamodb::{AttributeValue, ListTablesInput, Update, Condition, DynamoDb, DynamoDbClient, GetItemInput, PutItemInput, QueryInput, DeleteItemInput, UpdateItemInput};
 use failure::Error;
 use futures::future::Future;
+use rusoto_dynamodb::{
+    AttributeValue, Condition, DeleteItemInput, DynamoDb, DynamoDbClient, GetItemInput,
+    ListTablesInput, PutItemInput, QueryInput, Update, UpdateItemInput,
+};
 use std::time::Duration;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,26 +20,27 @@ pub struct AssetIdMapping {
     pub c_timestamp: u64,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct AssetIdDb<D>
-    where D: DynamoDb
+where
+    D: DynamoDb,
 {
     dynamo: D,
 }
 
 impl<D> AssetIdDb<D>
-    where D: DynamoDb
+where
+    D: DynamoDb,
 {
     pub fn new(dynamo: D) -> Self {
-        Self {
-            dynamo,
-        }
+        Self { dynamo }
     }
 
-
-    pub fn find_first_mapping_after(&self, host_id: &HostId, ts: u64) -> Result<Option<String>, Error> {
-
+    pub fn find_first_mapping_after(
+        &self,
+        host_id: &HostId,
+        ts: u64,
+    ) -> Result<Option<String>, Error> {
         let (table_key, pseudo_key) = match host_id {
             HostId::AssetId(asset_id) => return Ok(Some(asset_id.to_owned())),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
@@ -47,19 +51,19 @@ impl<D> AssetIdDb<D>
             consistent_read: Some(true),
             limit: Some(1),
             table_name: "asset_id_mappings".to_owned(),
-            key_condition_expression: Some("pseudo_key = :pkey_val AND c_timestamp >= :c_timestamp".into()),
-            expression_attribute_values: Some(
-                hmap!{
-                    ":pkey_val".to_owned() => AttributeValue {
-                        s: format!("{}{}", table_key, pseudo_key).into(),
-                        ..Default::default()
-                    },
-                    ":c_timestamp".to_owned() => AttributeValue {
-                        n: ts.to_string().into(),
-                        ..Default::default()
-                    }
-                }
+            key_condition_expression: Some(
+                "pseudo_key = :pkey_val AND c_timestamp >= :c_timestamp".into(),
             ),
+            expression_attribute_values: Some(hmap! {
+                ":pkey_val".to_owned() => AttributeValue {
+                    s: format!("{}{}", table_key, pseudo_key).into(),
+                    ..Default::default()
+                },
+                ":c_timestamp".to_owned() => AttributeValue {
+                    n: ts.to_string().into(),
+                    ..Default::default()
+                }
+            }),
             ..Default::default()
         };
 
@@ -69,19 +73,22 @@ impl<D> AssetIdDb<D>
             match &items[..] {
                 [] => Ok(None),
                 [item] => {
-                    let asset_id: ResolvedAssetId =
-                        serde_dynamodb::from_hashmap(item.clone())?;
+                    let asset_id: ResolvedAssetId = serde_dynamodb::from_hashmap(item.clone())?;
                     Ok(Some(asset_id.asset_id))
                 }
-                _ => bail!("Unexpected number of items returned")
+                _ => bail!("Unexpected number of items returned"),
             }
         } else {
             Ok(None)
         }
     }
 
-    pub fn find_last_mapping_before(&self, host_id: &HostId, ts: u64) -> Result<Option<String>, Error> {
-//        info!("Finding last mapping before");
+    pub fn find_last_mapping_before(
+        &self,
+        host_id: &HostId,
+        ts: u64,
+    ) -> Result<Option<String>, Error> {
+        //        info!("Finding last mapping before");
         let (table_key, pseudo_key) = match host_id {
             HostId::AssetId(asset_id) => return Ok(Some(asset_id.to_owned())),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
@@ -93,19 +100,19 @@ impl<D> AssetIdDb<D>
             limit: Some(1),
             scan_index_forward: Some(false),
             table_name: "asset_id_mappings".to_owned(),
-            key_condition_expression: Some("pseudo_key = :pseudo_key AND c_timestamp <= :c_timestamp".into()),
-            expression_attribute_values: Some(
-                hmap!{
-                    ":pseudo_key".to_owned() => AttributeValue {
-                        s: format!("{}{}", table_key, pseudo_key).into(),
-                        ..Default::default()
-                    },
-                    ":c_timestamp".to_owned() => AttributeValue {
-                        n: ts.to_string().into(),
-                        ..Default::default()
-                    }
-                }
+            key_condition_expression: Some(
+                "pseudo_key = :pseudo_key AND c_timestamp <= :c_timestamp".into(),
             ),
+            expression_attribute_values: Some(hmap! {
+                ":pseudo_key".to_owned() => AttributeValue {
+                    s: format!("{}{}", table_key, pseudo_key).into(),
+                    ..Default::default()
+                },
+                ":c_timestamp".to_owned() => AttributeValue {
+                    n: ts.to_string().into(),
+                    ..Default::default()
+                }
+            }),
             ..Default::default()
         };
 
@@ -115,11 +122,10 @@ impl<D> AssetIdDb<D>
             match &items[..] {
                 [] => Ok(None),
                 [item] => {
-                    let asset_id: ResolvedAssetId =
-                        serde_dynamodb::from_hashmap(item.clone())?;
+                    let asset_id: ResolvedAssetId = serde_dynamodb::from_hashmap(item.clone())?;
                     Ok(Some(asset_id.asset_id))
                 }
-                _ => bail!("Unexpected number of items returned")
+                _ => bail!("Unexpected number of items returned"),
             }
         } else {
             Ok(None)
@@ -135,7 +141,6 @@ impl<D> AssetIdDb<D>
     }
 
     pub fn create_mapping(&self, host_id: &HostId, asset_id: String, ts: u64) -> Result<(), Error> {
-
         let (table_key, host_id) = match host_id {
             HostId::AssetId(id) => return Ok(()),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
@@ -156,12 +161,14 @@ impl<D> AssetIdDb<D>
 
         let put_item_response = wait_on!(self.dynamo.put_item(put_req))?;
 
-        info!("PutItemResponse for {:?} {}: {:?}", host_id, asset_id, put_item_response);
+        info!(
+            "PutItemResponse for {:?} {}: {:?}",
+            host_id, asset_id, put_item_response
+        );
 
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -176,22 +183,20 @@ mod tests {
         let region = Region::Custom {
             endpoint: "http://localhost:8000".to_owned(),
             name: "us-east-9".to_owned(),
-        } ;
+        };
 
-        let asset_id_db = AssetIdDb::new(
-            DynamoDbClient::new(region.clone())
-        );
+        let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
-        asset_id_db.create_mapping(
-            &HostId::Hostname("fakehostname".to_owned()),
-            "asset_id_a".into(),
-            1500,
-        ).expect("Mapping creation failed");
+        asset_id_db
+            .create_mapping(
+                &HostId::Hostname("fakehostname".to_owned()),
+                "asset_id_a".into(),
+                1500,
+            )
+            .expect("Mapping creation failed");
 
-        let mapping = asset_id_db.resolve_asset_id(
-            &HostId::Hostname("fakehostname".to_owned()),
-            1510
-        )
+        let mapping = asset_id_db
+            .resolve_asset_id(&HostId::Hostname("fakehostname".to_owned()), 1510)
             .expect("Failed to resolve asset id mapping")
             .expect("Failed to resolve asset id mapping");
 

@@ -114,7 +114,6 @@ impl<'a> DgraphQuery<'a> {
         &mut self.insert
     }
 
-
     fn get_insert(&mut self) -> & serde_json::Value {
         &self.insert
     }
