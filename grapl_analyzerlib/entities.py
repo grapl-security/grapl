@@ -681,6 +681,23 @@ class ProcessView(NodeView):
         self.deleted_files = deleted_files[0].deleted_files
         return self.deleted_files
 
+    def get_read_files(self) -> Optional[List[F]]:
+        if self.read_files:
+            return self.read_files
+
+        read_files = (
+            ProcessQuery()
+            .with_node_key(self.node_key)
+            .with_read_files(FileQuery().with_node_key())
+            .query()
+        )
+
+        if not read_files:
+            return None
+
+        self.read_files = read_files[0].read_files
+        return self.read_files
+
     def get_neighbors(self) -> List[Any]:
         neighbors = (self.parent, self.bin_file, self.children, self.deleted_files)
 
