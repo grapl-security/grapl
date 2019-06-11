@@ -497,6 +497,7 @@ class ProcessView(NodeView):
         parent: Optional[P] = None,
         children: Optional[List[P]] = None,
         deleted_files: Optional[List[F]] = None,
+        read_files: Optional[List[F]] = None,
     ) -> None:
         super(ProcessView, self).__init__(self)
 
@@ -517,6 +518,7 @@ class ProcessView(NodeView):
         self.children = children  # type: Optional[List[P]]
         self.parent = parent  # type: Optional[P]
         self.deleted_files = deleted_files  # type: Optional[List[F]]
+        self.read_files = read_files  # type: Optional[List[F]]
 
     @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> P:
@@ -543,6 +545,15 @@ class ProcessView(NodeView):
                 FileView.from_dict(dgraph_client, f) for f in d["deleted_files"]
             ]
 
+        raw_read_files = d.get("read_files", None)
+
+        read_files = None
+
+        if raw_read_files:
+            read_files = [
+                FileView.from_dict(dgraph_client, f) for f in d["read_files"]
+            ]
+
         raw_children = d.get("children", None)
 
         children = None  # type: Optional[List[P]]
@@ -565,6 +576,7 @@ class ProcessView(NodeView):
             last_seen_timestamp=d.get("last_seen_timestamp"),
             bin_file=bin_file,
             deleted_files=deleted_files,
+            read_files=read_files,
             children=children,
             parent=parent,
         )
