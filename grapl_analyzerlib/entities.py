@@ -151,8 +151,8 @@ class ProcessQuery(object):
         self._first = first
         return self
 
-    def get_count(self, dgraph_client: DgraphClient) -> int:
-        query_str = self._to_query(count=True, first=1)
+    def get_count(self, dgraph_client: DgraphClient, max=None) -> int:
+        query_str = self._to_query(count=True, first=max or 1)
         raw_count = json.loads(dgraph_client.txn(read_only=True)
                                .query(query_str).json)[
             "res"
