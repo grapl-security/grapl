@@ -273,6 +273,7 @@ fn create_asset_id_mappings(
     for node in unid_graph.nodes.values() {
         let ids = match node.clone().which() {
             Node::ProcessNode(node) => (node.asset_id, node.hostname, node.host_ip),
+            Node::OutboundConnectionNode(node) => (node.asset_id, node.hostname, node.host_ip),
             Node::FileNode(node) => (node.asset_id, node.hostname, node.host_ip),
             _ => continue,
         };
@@ -336,6 +337,7 @@ fn attribute_asset_ids(
         let ids = match node.clone().which() {
             Node::ProcessNode(node) => (node.asset_id, node.hostname, node.host_ip),
             Node::FileNode(node) => (node.asset_id, node.hostname, node.host_ip),
+            Node::OutboundConnectionNode(node) => (node.asset_id, node.hostname, node.host_ip),
             Node::IpAddressNode(_) => {
                 output_graph.add_node(node.to_owned());
                 continue;
@@ -463,6 +465,7 @@ where
             .map(NodeDescription::which)
             .flat_map(|node| {
                 if let Node::IpAddressNode(_) = node {
+                    info!("Unid IpAddressNode");
                     return Some((node, None));
                 }
                 match into_unid_session(node.clone()) {
@@ -471,6 +474,10 @@ where
                 }
             })
             .filter(|(node, unid)| {
+                if let Node::IpAddressNode(_) = node {
+                    return true;
+                }
+
                 let is_cached = retry_cache
                     .in_cache(node.clone_key())
                     .map_err(|e| warn!("Failed to retrieve from retry_cache: {}", e))
@@ -507,6 +514,16 @@ where
                 Node::FileNode(node) => {
                     let unid = unid.unwrap();
                     let session_db = SessionDb::new(&self.node_id_db, "file_history_table");
+                    session_db
+                        .handle_unid_session(unid, self.should_default)
+                        .map(|sid| (node.clone().node_key, sid))
+                        .map_err(|e| (node.node_key, e))
+                }
+                Node::OutboundConnectionNode(node) => {
+                    info!("Attributing OutboundConnectionNode");
+
+                    let unid = unid.unwrap();
+                    let session_db = SessionDb::new(&self.node_id_db, "outbound_connection_history_table");
                     session_db
                         .handle_unid_session(unid, self.should_default)
                         .map(|sid| (node.clone().node_key, sid))
@@ -666,3 +683,4 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
 
     Ok(())
 }
+

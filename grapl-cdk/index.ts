@@ -1063,6 +1063,7 @@ class HistoryDb extends cdk.Stack {
 
     proc_history: dynamodb.Table;
     file_history: dynamodb.Table;
+    outbound_connection_history: dynamodb.Table;
     asset_history: dynamodb.Table;
     node_id_retry_table: dynamodb.Table;
 
@@ -1086,6 +1087,19 @@ class HistoryDb extends cdk.Stack {
 
         this.file_history = new dynamodb.Table(this, 'file_history_table', {
             tableName: "file_history_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.String
+            },
+            sortKey: {
+                name: 'create_time',
+                type: dynamodb.AttributeType.Number
+            },
+            billingMode: dynamodb.BillingMode.PayPerRequest,
+        });
+
+        this.outbound_connection_history = new dynamodb.Table(this, 'outbound_connection_history_table', {
+            tableName: "outbound_connection_history_table",
             partitionKey: {
                 name: 'pseudo_key',
                 type: dynamodb.AttributeType.String
@@ -1125,11 +1139,13 @@ class HistoryDb extends cdk.Stack {
     allowReadWrite(service: Service) {
         this.proc_history.grantReadWriteData(service.event_handler.role);
         this.file_history.grantReadWriteData(service.event_handler.role);
+        this.outbound_connection_history.grantReadWriteData(service.event_handler.role);
         this.asset_history.grantReadWriteData(service.event_handler.role);
         this.node_id_retry_table.grantReadWriteData(service.event_handler.role);
 
         this.proc_history.grantReadWriteData(service.event_retry_handler.role);
         this.file_history.grantReadWriteData(service.event_retry_handler.role);
+        this.outbound_connection_history.grantReadWriteData(service.event_retry_handler.role);
         this.asset_history.grantReadWriteData(service.event_retry_handler.role);
         this.node_id_retry_table.grantReadWriteData(service.event_retry_handler.role);
     }

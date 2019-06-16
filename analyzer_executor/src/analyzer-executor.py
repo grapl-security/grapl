@@ -43,7 +43,9 @@ def execute_file(file: str, graph: SubgraphView, sender):
     client = DgraphClient(*client_stubs)
 
     exec(file, globals())
-    print("File executed: {}".format(analyzer(client, graph, sender)))  # type: ignore
+    for node in graph.node_iter():
+        # TODO: Check node + analyzer file hash in redis cache, avoid reprocess of hits
+        print("File executed: {}".format(analyzer(client, node, sender)))  # type: ignore
 
 
 def emit_event(event: ExecutionHit) -> None:
@@ -117,3 +119,5 @@ def lambda_handler(events: Any, context: Any) -> None:
             ), "Result was none. Analyzer failed."
 
         p.join()
+
+

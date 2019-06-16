@@ -277,7 +277,7 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
     // Another process must have an inbound connection to src_port
     // Or the other process is external/ not running the instrumentation
     let process = ProcessDescriptionBuilder::default()
-        .hostname(outbound_connection.source_hostname.to_owned())
+        .asset_id(outbound_connection.source_hostname.to_owned())
         .state(ProcessState::Existing)
         .process_id(outbound_connection.process_id)
         .process_name(get_image_name(&outbound_connection.image.clone()).unwrap())
@@ -286,7 +286,7 @@ fn handle_outbound_connection(outbound_connection: NetworkEvent) -> Result<Graph
         .unwrap();
 
     let outbound = OutboundConnectionBuilder::default()
-        .hostname(outbound_connection.source_hostname.to_owned())
+        .asset_id(outbound_connection.source_hostname.to_owned())
         .state(ConnectionState::Created)
         .port(outbound_connection.source_port)
         .created_timestamp(timestamp)

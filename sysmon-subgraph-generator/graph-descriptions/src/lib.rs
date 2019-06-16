@@ -95,7 +95,7 @@ impl OutboundConnection {
             "node_key": self.node_key,
             "asset_id": asset_id,
             "port": self.port,
-            "direction": "inbound",
+            "direction": "outbound",
         });
 
         if self.created_timestamp!= 0 {
@@ -961,7 +961,7 @@ impl IpAddressDescription {
         json!({
             "node_key": self.node_key,
             "last_seen": self.timestamp,
-            "ip_address": self.ip_address,
+            "external_ip": self.ip_address,
         })
     }
 

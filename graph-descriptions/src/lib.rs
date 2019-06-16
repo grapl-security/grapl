@@ -95,7 +95,7 @@ impl OutboundConnection {
             "node_key": self.node_key,
             "asset_id": asset_id,
             "port": self.port,
-            "direction": "inbound",
+            "direction": "outbound",
         });
 
         if self.created_timestamp!= 0 {
