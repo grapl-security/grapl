@@ -1,5 +1,5 @@
 import json
-from abc import abstractmethod
+
 from collections import defaultdict
 from copy import deepcopy
 from typing import Iterator, Tuple
@@ -15,6 +15,13 @@ PQ = TypeVar("PQ", bound="ProcessQuery")
 
 F = TypeVar("F", bound="FileView")
 FQ = TypeVar("FQ", bound="FileQuery")
+
+
+EIP = TypeVar("EIP", bound="ExternalIpView")
+EIPQ = TypeVar("EIPQ", bound="ExternalIpQuery")
+
+OC = TypeVar("OC", bound="OutboundConnectionView")
+OCQ = TypeVar("OCQ", bound="OutboundConnectionQuery")
 
 
 N = TypeVar("N", bound="NodeView")
@@ -89,6 +96,10 @@ class SubgraphView(object):
         }
         return SubgraphView(nodes, subgraph.edges)
 
+    def node_iter(self) -> Iterator[NodeView]:
+        for node in self.nodes.values():
+            yield node
+
     def process_iter(self) -> Iterator[P]:
         for node in self.nodes.values():
             maybe_node = node.as_process_view()
@@ -100,6 +111,148 @@ class SubgraphView(object):
             maybe_node = node.as_file_view()
             if maybe_node:
                 yield maybe_node
+
+
+class OutboundConnectionQuery(object):
+    def __init__(self) -> None:
+        self._node_key = entity_queries.Has(
+            "node_key"
+        )  # type: Optional[entity_queries.Cmp]
+        self._uid = entity_queries.Has(
+            "uid"
+        )  # type: Optional[entity_queries.Cmp]
+
+        self._create_time = []  # type: List[List[entity_queries.Cmp]]
+        self._terminate_time = []  # type: List[List[entity_queries.Cmp]]
+        self._last_seen_time = []  # type: List[List[entity_queries.Cmp]]
+        self._ip = []  # type: List[List[entity_queries.Cmp]]
+        self._port = []  # type: List[List[entity_queries.Cmp]]
+
+        # self._internal_connection = None  # type: Optional[Any]
+        self._external_connection = None  # type: Optional[EIPQ]
+        self._connecting_process = None  # type: Optional[PQ]
+
+
+class ExternalIpQuery(object):
+    def __init__(self) -> None:
+        self._node_key = entity_queries.Has(
+            "node_key"
+        )  # type: Optional[entity_queries.Cmp]
+        self._uid = entity_queries.Has(
+            "uid"
+        )  # type: Optional[entity_queries.Cmp]
+
+        self._external_ip = []  # type: List[List[entity_queries.Cmp]]
+
+        # Edges
+        self._connections_from = None  # type: Optional[OCQ]
+
+        # Meta
+        self._first = None  # type: Optional[int]
+
+    def with_external_ip(
+            self,
+            eq: Optional[
+                Union[str, List[str], entity_queries.Not, List[entity_queries.Not]]
+            ] = None,
+            contains: Optional[
+                Union[str, List[str], entity_queries.Not, List[entity_queries.Not]]
+            ] = None,
+            ends_with: Optional[
+                Union[str, List[str], entity_queries.Not, List[entity_queries.Not]]
+            ] = None,
+    ) -> EIPQ:
+        self._external_ip.extend(
+            entity_queries._str_cmps("external_ip", eq, contains, ends_with)
+        )
+        return self
+
+    def with_connections_from(
+            self,
+            process: PQ
+    ) -> EIPQ:
+        process = deepcopy(process)
+        process._created_connection = self
+        self._connections_from = process
+        return self
+
+    def get_properties(self) -> List[str]:
+        properties = (
+            "node_key" if self._node_key else None,
+            "uid" if self._uid else None,
+            "external_ip" if self._external_ip else None,
+        )
+
+        return [p for p in properties if p]
+
+    def get_neighbors(self) -> List[Any]:
+        neighbors = (self._connections_from,)
+
+        return [n for n in neighbors if n]
+
+    def get_edges(self) -> List[Tuple[str, Any]]:
+        neighbors = (
+            ("connections_from", self._connections_from) if self._connections_from else None,
+        )
+
+        return [n for n in neighbors if n]
+
+    def _get_var_block(
+            self, binding_num: int, root: Any, already_converted: Set[Any]
+    ) -> str:
+        if self in already_converted:
+            return ""
+        already_converted.add(self)
+
+        filters = self._filters()
+
+        connections_from = entity_queries.get_var_block(
+            self._connections_from, "~external_connections", binding_num, root, already_converted
+        )
+
+        block = f"""
+            {filters} {{
+                {connections_from}
+            }}
+            """
+
+        return block
+
+    def _get_var_block_root(
+            self, binding_num: int, root: Any, node_key: Optional[str] = None
+    ) -> str:
+        already_converted = {self}
+        root_var = ""
+        if self == root:
+            root_var = f"Binding{binding_num} as "
+
+        filters = self._filters()
+
+        connections_from = entity_queries.get_var_block(
+            self._connections_from, "~external_connections", binding_num, root, already_converted
+        )
+
+        func_filter = """has(external_ip)"""
+        if node_key:
+            func_filter = f'eq(node_key, "{node_key}")'
+
+        block = f"""
+            {root_var} var(func: {func_filter}) @cascade {filters} {{
+                {connections_from}
+            }}
+            """
+
+        return block
+
+    def _filters(self) -> str:
+        inner_filters = (
+            entity_queries._generate_filter(self._connections_from),
+        )
+
+        inner_filters = [i for i in inner_filters if i]
+        if not inner_filters:
+            return ""
+        return f"@filter({'AND'.join(inner_filters)})"
 
 
 class ProcessQuery(object):
@@ -130,6 +283,8 @@ class ProcessQuery(object):
         self._wrote_to_files = None  # type: Optional[FQ]
         self._read_files = None  # type: Optional[FQ]
 
+        self._created_connection = None  # type: Optional[OCQ]
+
         # Meta
         self._first = None  # type: Optional[int]
 
@@ -151,7 +306,12 @@ class ProcessQuery(object):
         self._first = first
         return self
 
-    def get_count(self, dgraph_client: DgraphClient, max=None) -> int:
+    def get_count(
+            self,
+            dgraph_client: DgraphClient,
+            max: Optional[int]=None,
+            contains_node_key: Optional[str]=None,
+    ) -> int:
         query_str = self._to_query(count=True, first=max or 1)
         raw_count = json.loads(dgraph_client.txn(read_only=True)
                                .query(query_str).json)[
@@ -456,6 +616,12 @@ class ProcessQuery(object):
         self._children = children
         return self
 
+    def with_created_connection(self, outbound_conn: OCQ) -> PQ:
+        outbound_conn = deepcopy(outbound_conn)
+        outbound_conn._connecting_process = self
+        self._created_files = outbound_conn
+        return self
+
     def _to_query(self, count: bool = False, first: Optional[int] = None) -> str:
         var_block = self._get_var_block_root(0, self)
 
@@ -497,6 +663,7 @@ class ProcessView(NodeView):
         parent: Optional[P] = None,
         children: Optional[List[P]] = None,
         deleted_files: Optional[List[F]] = None,
+        created_files: Optional[List[F]] = None,
         read_files: Optional[List[F]] = None,
     ) -> None:
         super(ProcessView, self).__init__(self)
@@ -518,6 +685,7 @@ class ProcessView(NodeView):
         self.children = children  # type: Optional[List[P]]
         self.parent = parent  # type: Optional[P]
         self.deleted_files = deleted_files  # type: Optional[List[F]]
+        self.created_files = created_files  # type: Optional[List[F]]
         self.read_files = read_files  # type: Optional[List[F]]
 
     @staticmethod
@@ -554,6 +722,15 @@ class ProcessView(NodeView):
                 FileView.from_dict(dgraph_client, f) for f in d["read_files"]
             ]
 
+        raw_created_files = d.get("created_files", None)
+
+        created_files = None
+
+        if raw_created_files:
+            created_files = [
+                FileView.from_dict(dgraph_client, f) for f in d["created_files"]
+            ]
+
         raw_children = d.get("children", None)
 
         children = None  # type: Optional[List[P]]
@@ -577,6 +754,7 @@ class ProcessView(NodeView):
             bin_file=bin_file,
             deleted_files=deleted_files,
             read_files=read_files,
+            created_files=created_files,
             children=children,
             parent=parent,
         )
