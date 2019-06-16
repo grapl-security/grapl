@@ -634,10 +634,20 @@ class ProcessQuery(object):
         self._children = children
         return self
 
-    def with_created_connection(self, outbound_conn: OCQ) -> PQ:
+    def with_created_connection(
+            self,
+            outbound_conn: Union[OCQ, EIPQ]
+    ) -> PQ:
         outbound_conn = deepcopy(outbound_conn)
+
+        if isinstance(outbound_conn, ExternalIpQuery):
+            outbound_conn = (
+                OutboundConnectionQuery()
+                .with_external_connection(outbound_conn)
+            )
         outbound_conn._connecting_process = self
-        self._created_files = outbound_conn
+
+        self._created_connection = outbound_conn
         return self
 
     def _to_query(self, count: bool = False, first: Optional[int] = None) -> str:
