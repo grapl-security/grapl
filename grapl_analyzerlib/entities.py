@@ -132,6 +132,24 @@ class OutboundConnectionQuery(object):
         self._external_connection = None  # type: Optional[EIPQ]
         self._connecting_process = None  # type: Optional[PQ]
 
+    def with_external_connection(
+            self,
+            external_ip: EIPQ
+    ) -> OCQ:
+        external_ip = deepcopy(external_ip)
+        external_ip._connections_from = self
+        self._external_connection = external_ip
+        return self
+
+    def with_connecting_process(
+            self,
+            process: PQ
+    ) -> OCQ:
+        process = deepcopy(process)
+        process._created_connection = self
+        self._connecting_process = process
+        return self
+
 
 class ExternalIpQuery(object):
     def __init__(self) -> None:
