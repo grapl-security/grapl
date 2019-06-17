@@ -845,7 +845,7 @@ class Zero {
             streamPrefix: graph+id,
         });
 
-        const container = zeroTask.addContainer(id + 'Container', {
+        zeroTask.addContainer(id + 'Container', {
 
             // --my is our own hostname (graph + id)
             // --peer is the other dgraph zero hostname
@@ -853,35 +853,6 @@ class Zero {
             command,
             logging: logDriver
         });
-
-        container.addPortMappings(
-            {
-                containerPort: 5080,
-                hostPort: 5080,
-                protocol: ecs.Protocol.Tcp
-            },
-            {
-                containerPort: 6080,
-                hostPort: 6080,
-                protocol: ecs.Protocol.Tcp
-            },
-            {
-                containerPort: 7080,
-                hostPort: 7080,
-                protocol: ecs.Protocol.Tcp
-            },
-            {
-                containerPort: 9080,
-                hostPort: 9080,
-                protocol: ecs.Protocol.Tcp
-            },
-            {
-                containerPort: 8080,
-                hostPort: 8080,
-                protocol: ecs.Protocol.Tcp
-            },
-        );
-
 
         const zeroService = new ecs.FargateService(stack, id+'Service', {
             cluster,  // Required
@@ -931,7 +902,7 @@ class Alpha {
             streamPrefix: graph+id,
         });
 
-        const container = alphaTask.addContainer(id + graph + 'Container', {
+        alphaTask.addContainer(id + graph + 'Container', {
             image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
             command: ["dgraph", "alpha", `--my=${id}.${graph}.grapl:7080`,
                 "--lru_mb=1024", `--zero=${zero}.${graph}.grapl:5080`,
@@ -939,34 +910,6 @@ class Alpha {
             ],
             logging: logDriver
         });
-
-        // container.addPortMappings(
-        //     {
-        //         containerPort: 5080,
-        //         hostPort: 5080,
-        //         protocol: ecs.Protocol.Tcp
-        //     },
-        //     {
-        //         containerPort: 6080,
-        //         hostPort: 6080,
-        //         protocol: ecs.Protocol.Tcp
-        //     },
-        //     {
-        //         containerPort: 7080,
-        //         hostPort: 7080,
-        //         protocol: ecs.Protocol.Tcp
-        //     },
-        //     {
-        //         containerPort: 9080,
-        //         hostPort: 9080,
-        //         protocol: ecs.Protocol.Tcp
-        //     },
-        //     {
-        //         containerPort: 8080,
-        //         hostPort: 8080,
-        //         protocol: ecs.Protocol.Tcp
-        //     },
-        // );
 
         const alphaService = new ecs.FargateService(stack, id+'Service', {
             cluster,  // Required
