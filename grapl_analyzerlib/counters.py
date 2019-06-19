@@ -8,7 +8,7 @@ from grapl_analyzerlib.entity_queries import Not
 from grapl_analyzerlib.entities import ProcessQuery
 
 
-class Seen(enum.Enum):
+class Seen(enum.OrderedEnum):
     Never = (0,)
     Once = (1,)
     Many = 2
