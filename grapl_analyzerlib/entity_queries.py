@@ -169,7 +169,6 @@ def _build_expansion(node: Union[Any, Any], already_visited: Set[Any]) -> str:
         return ""
     already_visited.add(node)
 
-    props = node.get_properties()
     edges = node.get_edges()
 
     expanded_edges = []
