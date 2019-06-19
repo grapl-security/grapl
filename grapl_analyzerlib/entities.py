@@ -1042,7 +1042,6 @@ class FileQuery(object):
         )
         return self
 
-
     def with_file_path(self, eq=None, contains=None, ends_with=None) -> FQ:
         self._file_path.extend(
             entity_queries._str_cmps("file_path", eq, contains, ends_with)
@@ -1332,7 +1331,7 @@ class FileQuery(object):
         if not raw_views:
             return None
 
-        return ProcessView.from_dict(dgraph_client, raw_views[0])
+        return FileView.from_dict(dgraph_client, raw_views[0])
 
 
 class FileView(NodeView):
