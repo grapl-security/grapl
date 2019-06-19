@@ -213,7 +213,7 @@ class ExternalIpQuery(object):
             ("connections_from", self._connections_from) if self._connections_from else None,
         )
 
-        return [n for n in neighbors if n]
+        return [n for n in neighbors if n[1]]
 
     def _get_var_block(
             self, binding_num: int, root: Any, already_converted: Set[Any]
@@ -442,7 +442,7 @@ class ProcessQuery(object):
             ("deleted_files", self._deleted_files) if self._deleted_files else None,
         )
 
-        return [n for n in neighbors if n]
+        return [n for n in neighbors if n[1]]
 
     def with_asset_id(
             self,
@@ -917,7 +917,7 @@ class ProcessView(NodeView):
             ("deleted_files", self.deleted_files) if self.deleted_files else None,
         )
 
-        return [n for n in neighbors if n]
+        return [n for n in neighbors if n[1]]
 
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
@@ -1301,7 +1301,6 @@ class FileQuery(object):
 
         return [n for n in neighbors if n]
 
-
     def get_edges(self) -> List[Tuple[str, Any]]:
         neighbors = (
             ("creator", self._creator if self._creator else None),
@@ -1311,7 +1310,7 @@ class FileQuery(object):
             ("spawned_from", self._spawned_from if self._spawned_from else None),
         )
 
-        return [n for n in neighbors if n]
+        return [n for n in neighbors if n[1]]
 
 class FileView(NodeView):
     def __init__(
