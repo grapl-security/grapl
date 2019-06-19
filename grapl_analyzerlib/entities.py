@@ -1303,14 +1303,36 @@ class FileQuery(object):
 
     def get_edges(self) -> List[Tuple[str, Any]]:
         neighbors = (
-            ("creator", self._creator) if self._creator else None,
-            ("deleter", self._deleter) if self._deleter else None,
-            ("writers", self._writers) if self._writers else None,
-            ("readers", self._readers) if self._readers else None,
-            ("spawned_from", self._spawned_from) if self._spawned_from else None,
+            ("~created_file", self._creator) if self._creator else None,
+            ("~deleted_file", self._deleter) if self._deleter else None,
+            ("~wrote_to_files", self._writers) if self._writers else None,
+            ("~read_files", self._readers) if self._readers else None,
+            ("~bin_file", self._spawned_from) if self._spawned_from else None,
         )
 
         return [n for n in neighbors if n]
+
+    def _to_query(self, count: bool = False, first: Optional[int] = None) -> str:
+        var_block = self._get_var_block_root(0, self)
+
+        return entity_queries.build_query(
+            self, [var_block], ["Binding0"], count=count, first=first
+        )
+
+    def query_first(self, dgraph_client, contains_node_key=None) -> Optional[P]:
+        if contains_node_key:
+            query_str = entity_queries.get_queries(self, node_key=contains_node_key)
+        else:
+            query_str = self._to_query(first=1)
+
+        raw_views = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
+            "res"
+        ]
+
+        if not raw_views:
+            return None
+
+        return ProcessView.from_dict(dgraph_client, raw_views[0])
 
 
 class FileView(NodeView):
