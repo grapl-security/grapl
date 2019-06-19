@@ -8,7 +8,29 @@ from grapl_analyzerlib.entity_queries import Not
 from grapl_analyzerlib.entities import ProcessQuery
 
 
-class Seen(enum.OrderedEnum):
+class OrderedEnum(enum.Enum):
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value >= other.value
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value > other.value
+        return NotImplemented
+
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value <= other.value
+        return NotImplemented
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
+
+
+class Seen(OrderedEnum):
     Never = (0,)
     Once = (1,)
     Many = 2
