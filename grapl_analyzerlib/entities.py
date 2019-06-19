@@ -1302,6 +1302,17 @@ class FileQuery(object):
         return [n for n in neighbors if n]
 
 
+    def get_edges(self) -> List[Tuple[str, Any]]:
+        neighbors = (
+            ("creator", self._creator if self._creator else None),
+            ("deleter", self._deleter if self._deleter else None),
+            ("writers", self._writers if self._writers else None),
+            ("readers", self._readers if self._readers else None),
+            ("spawned_from", self._spawned_from if self._spawned_from else None),
+        )
+
+        return [n for n in neighbors if n]
+
 class FileView(NodeView):
     def __init__(
         self,

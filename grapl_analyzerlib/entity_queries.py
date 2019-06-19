@@ -100,10 +100,10 @@ class Contains(Cmp):
         if isinstance(self.value, Not):
             value = self.value.value
             escaped_value = re.escape(value)
-            return "NOT regexp({}, /.*{}.*/i)".format(self.predicate, escaped_value)
+            return 'NOT alloftext({}, "{}")'.format(self.predicate, escaped_value)
         else:
             escaped_value = re.escape(self.value)
-            return "regexp({}, /.*{}.*/i)".format(self.predicate, escaped_value)
+            return 'alloftext({}, "{}")'.format(self.predicate, escaped_value)
 
 
 def get_var_block(
