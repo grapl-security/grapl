@@ -303,6 +303,7 @@ class EngagementView(object):
                 scope {
                     node_key,
                     risks {
+                        node_key,
                         analyzer_name,
                         risk_score
                     }
@@ -317,9 +318,13 @@ class EngagementView(object):
         txn = self.client.txn(read_only=False)
         res = json.loads(txn.query(query, variables=variables).json)
 
+        redundant_risks = set()
         risk_map = defaultdict(list)
         for root_node in res['q0'][0]['scope']:
             for risk in root_node['risks']:
+                if risk['node_key'] in redundant_risks:
+                    continue
+                redundant_risks.add(risk['node_key'])
                 risk_map['node_key'].append(risk)
 
         risk_score = 0
@@ -353,6 +358,7 @@ class EngagementView(object):
             txn.discard()
 
         return self
+
 
 def attach_risk(client: DgraphClient, node: Dict[str, Any], analyzer_name: str, risk_score: int):
     txn = client.txn(read_only=False)
@@ -466,9 +472,10 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         engagement.attach_scope(root_view)
 
-        attach_risk(
-            eg_client, root, analyzer_name, risk_score
-        )
+        for node in nodes.values():
+            attach_risk(
+                eg_client, node, analyzer_name, risk_score
+            )
 
         score = engagement.recalculate_score()
         print(f'Engagement has score: {score}')

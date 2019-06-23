@@ -12,7 +12,8 @@ cdk deploy --require-approval=never grapl-node-identifier-stack && \
 cdk deploy --require-approval=never grapl-graph-merger-stack && \
 cdk deploy --require-approval=never grapl-analyzer-dispatcher-stack && \
 cdk deploy --require-approval=never grapl-analyzer-executor-stack && \
-cdk deploy --require-approval=never grapl-engagement-creator-stack;
+cdk deploy --require-approval=never grapl-engagement-creator-stack && \
+cdk deploy --require-approval=never engagementedgegrapl-stack;
 
 # cdk deploy engagement-creation-service-stack
 

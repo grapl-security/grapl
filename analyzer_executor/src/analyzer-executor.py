@@ -1,16 +1,16 @@
 import base64
 import hashlib
 import json
+import os
+import traceback
 
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 from typing import Any, Optional, Tuple
 
 import boto3
-import os
 
 from grapl_analyzerlib.entities import SubgraphView
-
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
 from pydgraph import DgraphClientStub, DgraphClient
 
@@ -43,9 +43,15 @@ def execute_file(file: str, graph: SubgraphView, sender):
     client = DgraphClient(*client_stubs)
 
     exec(file, globals())
-    for node in graph.node_iter():
-        # TODO: Check node + analyzer file hash in redis cache, avoid reprocess of hits
-        print("File executed: {}".format(analyzer(client, node, sender)))  # type: ignore
+    try:
+        for node in graph.node_iter():
+            # TODO: Check node + analyzer file hash in redis cache, avoid reprocess of hits
+            analyzer(client, node, sender)  # type: ignore
+            sender.send(ExecutionComplete())
+    except Exception as e:
+        print(traceback.format_exc())
+        print(f'Execution failed with {e} {e.args}')
+        sender.send(ExecutionFailed())
 
 
 def emit_event(event: ExecutionHit) -> None:
@@ -85,6 +91,7 @@ def lambda_handler(events: Any, context: Any) -> None:
         message = json.loads(data)
 
         # TODO: Use env variable for s3 bucket
+        print(f'Executing Analyzer: {message["key"]}')
         analyzer = download_s3_file("grapl-analyzers-bucket", message["key"])
         subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
 
@@ -116,7 +123,7 @@ def lambda_handler(events: Any, context: Any) -> None:
 
             assert not isinstance(
                 result, ExecutionFailed
-            ), "Result was none. Analyzer failed."
+            ), "Analyzer failed."
 
         p.join()
 

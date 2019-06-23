@@ -1,3 +1,7 @@
+from typing import List, Dict, Any
+
+from pydgraph import DgraphClient
+
 print('import boto3')
 import boto3
 
@@ -13,14 +17,55 @@ import time
 from hashlib import sha256
 
 
+def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
+    client_stub = pydgraph.DgraphClientStub('alpha0.engagementgraphcluster.grapl:9080')
+    dg_client = pydgraph.DgraphClient(client_stub)
+
+    # DGraph query for all nodes with a 'lens' that matches the 'prefix'
+    if prefix:
+        query = """
+            query q0($a: string)
+            {
+                q0(func: alloftext(lens, $a), orderdesc: score)
+                {
+                    uid,
+                    node_key,
+                    lens,
+                    score
+                }
+            }"""
+
+        variables = {'$a': prefix}
+    else:
+        query = """
+            {
+                q0(func: has(lens), orderdesc: score)
+                {
+                    uid,
+                    node_key,
+                    lens,
+                    score
+                }
+            }"""
+
+        variables = {}
+
+    txn = dg_client.txn(read_only=True)
+
+    try:
+        res = json.loads(txn.query(query, variables=variables).json)
+        return res['q0']
+    finally:
+        txn.discard()
+
 # Just query the schema in the future
 process_properties = [
-    'pid', 'node_key', 'create_time', 'arguments',
-    'image_name'
+    'process_id', 'node_key', 'create_time', 'arguments',
+    'process_name'
 ]
 
 file_properties = [
-    'pid', 'node_key', 'path'
+    'node_key', 'file_path'
 ]
 
 
@@ -28,20 +73,28 @@ edge_names = [
     'children',
     'bin_file',
     'created_file',
+    'scope',
 ]
 
 
-def get_engagement_graph(dg_client, eg_id):
+def get_lens_scope(dg_client, lens):
     query = """
         query q0($a: string)
         {
-            q0(func: eq(engagement_id, $a)) {
+            q as var(func: eq(lens, $a)) {
+                scope {
+                    p as _predicate_
+                }
+            }
+        
+            q0(func: uid(q)) {
                 uid,
-                _predicate_,
-                expand(_forward_) {
+                node_key,
+                lens,
+                score,
+                scope {
                   uid,
-                  node_key,
-                  _predicate_
+                  expand(val(p))
                 }
             }
         }"""
@@ -49,7 +102,7 @@ def get_engagement_graph(dg_client, eg_id):
     txn = dg_client.txn(read_only=True)
 
     try:
-        variables = {'$a': eg_id}
+        variables = {'$a': lens}
         res = json.loads(txn.query(query, variables=variables).json)
         return res['q0']
     finally:
@@ -59,11 +112,11 @@ def get_engagement_graph(dg_client, eg_id):
 def hash_node(node):
     hash_str = str(node['uid'])
     print(node)
-    if node.get('pid'):
+    if node.get('process_id'):
         for prop in process_properties:
             hash_str += str(node.get(prop, ""))
 
-    if node.get('path'):
+    if node.get('file_path'):
         for prop in file_properties:
             hash_str += str(node.get(prop, ""))
 
@@ -74,40 +127,44 @@ def hash_node(node):
             hash_str += edge + '0'
 
     # return hash_str
-    return sha256(hash_str).hexdigest()
+    return sha256(hash_str.encode()).hexdigest()
 
 
-def get_updated_graph(dg_client, initial_graph, engagement_id):
-    current_graph = get_engagement_graph(dg_client, engagement_id)
+def get_updated_graph(dg_client, initial_graph, lens):
+    current_graph = get_lens_scope(dg_client, lens)
 
     new_or_modified = []
     for node in current_graph:
         if initial_graph.get(node['uid']):
             node_hash = initial_graph[node['uid']]
-            print("hashes")
-            print(hash_node(node))
-            print(node_hash)
-            print("post-hashes")
             if node_hash != hash_node(node):
                 new_or_modified.append(node)
         else:
             new_or_modified.append(node)
 
+    all_uids = []
+    for node in current_graph:
+        if node.get('scope'):
+            all_uids.extend([node['uid'] for node in node.get('scope')])
+        all_uids.append(node['uid'])
+
     removed_uids = set(initial_graph.keys()) - \
-                   set([node['uid'] for node in current_graph])
+                   set(all_uids)
 
     return new_or_modified, list(removed_uids)
 
 
 def try_get_updated_graph(body):
-    print('Tring to update graph')
-    client_stub = pydgraph.DgraphClientStub('alpha1.engagementgraphcluster.grapl:9080')
+    print('Trying to update graph')
+    client_stub = pydgraph.DgraphClientStub('alpha0.engagementgraphcluster.grapl:9080')
     dg_client = pydgraph.DgraphClient(client_stub)
 
-    engagement_id = body["engagement_id"]
+    lens = body["lens"]
 
     # Mapping from `uid` to node hash
     initial_graph = body["uid_hashes"]
+
+    print(f'lens: {lens} initial_graph: {initial_graph}')
 
     # Try for 20 seconds max
     max_time = int(time.time()) + 20
@@ -116,7 +173,7 @@ def try_get_updated_graph(body):
         updated_nodes, removed_nodes = get_updated_graph(
             dg_client,
             initial_graph,
-            engagement_id
+            lens
         )
 
         updates = {
@@ -142,18 +199,33 @@ def respond(err, res=None):
         'statusCode': '400' if err else '200',
         'body': err if err else json.dumps(res),
         'headers': {
+            'Access-Control-Allow-Origin': '*',
             'Content-Type': 'application/json',
+            'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+            'X-Requested-With': '*',
         },
     }
 
 
 def lambda_handler(event, context):
-    print("Received event: " + json.dumps(event, indent=2))
-
     try:
-        update = try_get_updated_graph(event["body"])
+        print(f"httpMethod: {event['httpMethod']}")
+        print(f"path: {event['path']}")
+
+        if event['httpMethod'] == 'OPTIONS':
+            return respond(None, {})
+
+        if '/update' in event['path']:
+            update = try_get_updated_graph(json.loads(event["body"]))
+            return respond(None, update)
+
+        if '/getLenses' in event['path']:
+            prefix = json.loads(event["body"]).get('prefix', '')
+            lenses = list_all_lenses(prefix)
+            return respond(None, {'lenses': lenses})
+
+        return respond(f"Invalid path: {event['path']}", {})
     except Exception as e:
         print('Failed with e {}'.format(e))
         return respond("Error fetching updates {}".format(e))
 
-    return respond(None, update)

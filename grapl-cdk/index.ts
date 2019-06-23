@@ -893,7 +893,7 @@ class Alpha {
             stack,
             id,
             {
-                cpu: '2048',
+                cpu: '4096',
                 memoryMiB: '8192'
             }
         );
