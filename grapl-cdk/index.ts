@@ -453,7 +453,7 @@ class SysmonSubgraphGenerator extends cdk.Stack {
         const service = new Service(this, 'sysmon-subgraph-generator', environment);
 
         service.readsFrom(reads_from);
-        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
         service.publishesToBucket(writes_to);
     }
 }
@@ -475,9 +475,23 @@ class GenericSubgraphGenerator extends cdk.Stack {
         const service = new Service(this, 'generic-subgraph-generator', environment);
 
         service.readsFrom(reads_from);
-        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+
         service.publishesToBucket(writes_to);
     }
+}
+
+function addSubscription(scope, topic, subscription) {
+    const config = subscription.bind(topic);
+
+    new sns.Subscription(scope, 'Subscription', {
+        topic: topic,
+        endpoint: config.endpoint,
+        filterPolicy: config.filterPolicy,
+        protocol: config.protocol,
+        rawMessageDelivery: config.rawMessageDelivery
+    });
 }
 
 
@@ -500,7 +514,7 @@ class NodeIdentityMapper extends cdk.Stack {
 
         service.readsFrom(reads_from);
 
-        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
 
         service.event_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
@@ -530,7 +544,7 @@ class NodeIdentifier extends cdk.Stack {
 
         history_db.allowReadWrite(service);
         service.publishesToBucket(writes_to);
-        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
         service.event_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
 
@@ -563,7 +577,7 @@ class GraphMerger extends cdk.Stack {
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
 
-        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
         //
         // service.event_handler.connections
         //     .allowToAnyIPv4(new ec2.Port({
@@ -594,12 +608,12 @@ class AnalyzerDispatch extends cdk.Stack {
         };
 
         const service = new Service(this, 'analyzer-dispatcher', environment, vpc);
-;
+
         service.publishesToBucket(writes_to);
         // We need the List capability to find each of the analyzers
         service.readsFrom(reads_from, true);
 
-        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
 
         service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
@@ -658,8 +672,7 @@ class AnalyzerExecutor extends cdk.Stack {
         service.event_handler.addToRolePolicy(policy);
         service.event_retry_handler.addToRolePolicy(policy);
 
-
-        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
 
         service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
@@ -696,7 +709,7 @@ class EngagementCreator extends cdk.Stack {
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
 
-        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
 
         service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
