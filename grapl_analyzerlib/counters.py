@@ -31,8 +31,8 @@ class OrderedEnum(enum.Enum):
 
 
 class Seen(OrderedEnum):
-    Never = (0,)
-    Once = (1,)
+    Never = 0
+    Once = 1
     Many = 2
 
 
