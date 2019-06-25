@@ -1,4 +1,5 @@
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
+import elasticache = require('@aws-cdk/aws-elasticache');
 import cdk = require('@aws-cdk/cdk');
 import s3 = require('@aws-cdk/aws-s3');
 import route53 = require('@aws-cdk/aws-route53');
@@ -19,6 +20,53 @@ import apigateway = require('@aws-cdk/aws-apigateway');
 import {PrivateHostedZone, PublicHostedZone} from "@aws-cdk/aws-route53";
 
 const env = require('node-env-file');
+
+
+class RedisCluster extends cdk.Construct {
+    securityGroup: ec2.SecurityGroup;
+    connections: ec2.Connections;
+    cluster: elasticache.CfnCacheCluster;
+
+    constructor(scope, id: string, vpc_props) {
+        super(scope, id);
+
+        const vpc = ec2.VpcNetwork.import(
+            this,
+            'vpc',
+            vpc_props
+        );
+
+
+        // Define a group for telling Elasticache which subnets to put cache nodes in.
+        const subnetGroup = new elasticache.CfnSubnetGroup(this, `${id}-subnet-group`, {
+            description: `List of subnets used for redis cache ${id}`,
+            subnetIds: vpc.privateSubnets.map(function(subnet) {
+                return subnet.subnetId;
+            })
+        });
+
+        // The security group that defines network level access to the cluster
+        this.securityGroup = new ec2.SecurityGroup(this, `${id}-security-group`, { vpc: vpc });
+
+        this.connections = new ec2.Connections({
+            securityGroups: [this.securityGroup],
+            defaultPortRange: new ec2.TcpPort(6379)
+        });
+
+        // The cluster resource itself.
+        this.cluster = new elasticache.CfnCacheCluster(this, `${id}-cluster`, {
+            cacheNodeType: 'cache.t2.small',
+            engine: 'redis',
+            numCacheNodes: 1,
+            autoMinorVersionUpgrade: true,
+            cacheSubnetGroupName: subnetGroup.subnetGroupName,
+            vpcSecurityGroupIds: [
+                this.securityGroup.securityGroupId
+            ]
+        });
+    }
+}
+
 
 class Queues {
     queue: sqs.Queue;
@@ -664,6 +712,8 @@ class AnalyzerDispatch extends cdk.Stack {
 }
 
 class AnalyzerExecutor extends cdk.Stack {
+    count_cache: RedisCluster;
+    message_cache: RedisCluster;
 
     constructor(parent: cdk.App,
                 id: string,
@@ -706,22 +756,42 @@ class AnalyzerExecutor extends cdk.Stack {
             vpc_props
         );
 
+        this.count_cache = new RedisCluster(this, id + 'countcache', vpc);
+        this.message_cache = new RedisCluster(this, id + 'msgcache', vpc);
+
         const environment = {
             "ANALYZER_MATCH_BUCKET": writes_events_to.bucketName,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
-            "MG_ALPHAS": master_graph.alphaNames.join(",")
+            "MG_ALPHAS": master_graph.alphaNames.join(","),
+            "COUNTCACHE_ADDR": this.count_cache.cluster.cacheClusterRedisEndpointAddress,
+            "COUNTCACHE_PORT": this.count_cache.cluster.cacheClusterRedisEndpointPort,
+            "MESSAGECACHE_ADDR": this.message_cache.cluster.cacheClusterRedisEndpointAddress,
+            "MESSAGECACHE_PORT": this.message_cache.cluster.cacheClusterRedisEndpointPort,
         };
 
         const service = new Service(this, 'analyzer-executor', environment, vpc, null, {
             runtime: Runtime.Python37
         });
 
+
+        // service.event_handler.add
         // master_graph.addAccessFrom(service);
 
         service.publishesToBucket(writes_events_to);
         // We need the List capability to find each of the analyzers
         service.readsFrom(reads_analyzers_from, true);
         service.readsFrom(reads_events_from);
+
+        // Need to be able to GetObject in order to HEAD, can be replaced with
+        // a cache later, but safe so long as there is no LIST
+        let policy = new iam.PolicyStatement()
+            .addAction('s3:GetObject');
+
+        policy.addResource(writes_events_to.bucketArn);
+
+        service.event_handler.addToRolePolicy(policy);
+        service.event_retry_handler.addToRolePolicy(policy);
+
 
         subscribes_to.subscribeQueue(service.queues.queue);
 
