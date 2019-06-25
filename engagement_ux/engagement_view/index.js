@@ -37,8 +37,11 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     console.log('DOMContentLoaded');
 
     const lenses = (await getLenses()).lenses;
-    console.log(lenses.lenses);
+    console.log(lenses);
 
+    if (lenses.length === 0) {
+        console.log("No active lenses");
+    }
     const s = nodeToTable(lenses[0]);
 
     const lenseTable = document.getElementById('LenseTable');

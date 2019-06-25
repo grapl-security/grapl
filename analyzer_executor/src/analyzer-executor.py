@@ -44,10 +44,17 @@ def execute_file(file: str, graph: SubgraphView, sender):
 
     exec(file, globals())
     try:
-        for node in graph.node_iter():
-            # TODO: Check node + analyzer file hash in redis cache, avoid reprocess of hits
-            analyzer(client, node, sender)  # type: ignore
-            sender.send(ExecutionComplete())
+        from multiprocessing.pool import ThreadPool
+        with ThreadPool(processes=12) as pool:
+            results = []
+            for node in graph.node_iter():
+                t = pool.apply_async(analyzer, (client, node, sender))
+                results.append(t)
+                # TODO: Check node + analyzer file hash in redis cache, avoid reprocess of hits
+            for result in results:
+                result.get(timeout=20)
+        sender.send(ExecutionComplete())
+
     except Exception as e:
         print(traceback.format_exc())
         print(f'Execution failed with {e} {e.args}')

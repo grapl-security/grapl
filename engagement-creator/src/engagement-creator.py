@@ -60,11 +60,13 @@ class EngagementCopier(object):
                 node = props
             else:
                 # TODO: Merge lists of properties together
-                node = {**props, **node[0]}
+                node = node[0]
+                node = {**props, **node}
 
             res = txn.mutate(set_obj=node, commit_now=True)
             uids = res.uids
-            uid = uids['blank-0']
+
+            uid = uids['blank-0'] or node['uid']
         finally:
             txn.discard()
 
@@ -77,12 +79,14 @@ class EngagementCopier(object):
             {
             
               q as var(func: uid($a)) {
+                  uid,
                   pred as _predicate_
               }
             
               q0(func: uid(q))
               {
-                  expand(val(pred))
+                uid,
+                expand(val(pred))
               }
             }
             """
@@ -295,7 +299,7 @@ class EngagementView(object):
 
     def recalculate_score(self) -> int:
         query = """
-            query q0($a: string, $b: string)
+            query q0($a: string)
             {
               q0(func: eq(lens, $a), first: 1) @cascade
               {
@@ -303,7 +307,6 @@ class EngagementView(object):
                 scope {
                     node_key,
                     risks {
-                        node_key,
                         analyzer_name,
                         risk_score
                     }
@@ -322,14 +325,14 @@ class EngagementView(object):
         risk_map = defaultdict(list)
         for root_node in res['q0'][0]['scope']:
             for risk in root_node['risks']:
-                if risk['node_key'] in redundant_risks:
+                if risk['analyzer_name'] in redundant_risks:
                     continue
-                redundant_risks.add(risk['node_key'])
-                risk_map['node_key'].append(risk)
+                redundant_risks.add(risk['analyzer_name'])
+                risk_map[risk['analyzer_name']].append(risk)
 
         risk_score = 0
 
-        for node_key, risks in risk_map.items():
+        for risks in risk_map.values():
             node_risk = 0
             for risk in risks:
                 node_risk += risk['risk_score']
@@ -434,9 +437,9 @@ def lambda_handler(events: Any, context: Any) -> None:
         # Key is root node + analyzer_name
         root = get_root(nodes.values())
 
-        if should_throttle(analyzer_name, root['node_key'], eg_client):
-            print('Throttling: {}'.format(nodes))
-            continue
+        # if should_throttle(analyzer_name, root['node_key'], eg_client):
+        #     print('Throttling: {}'.format(nodes))
+        #     continue
 
         # Upsert all of the nodes
         # If nodes have a list field, merge it
@@ -468,9 +471,19 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         asset_id = root_view.get_asset_id()
 
+        print(f'Creating engagement for {asset_id}')
         engagement = EngagementView.get_or_create(eg_client, lens=asset_id)
 
-        engagement.attach_scope(root_view)
+        print(f'Attaching scope {asset_id}')
+        for node in nodes.values():
+            if node['node_type'] == 'Process':
+                node_view = ProcessView(dgraph_client=eg_client, node_key=node['node_key'])
+            elif node['node_type'] == 'File':
+                node_view = FileView(dgraph_client=eg_client, node_key=node['node_key'])
+            else:
+                raise Exception(f"Invalid root node. Missing 'type': {root}.")
+
+            engagement.attach_scope(node_view)
 
         for node in nodes.values():
             attach_risk(
