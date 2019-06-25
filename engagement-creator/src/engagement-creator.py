@@ -1,4 +1,6 @@
 import os
+from copy import deepcopy
+
 import boto3
 import json
 
@@ -277,15 +279,15 @@ class EngagementView(object):
         finally:
             txn.discard()
 
-    def attach_scope(self, root_node: Union[ProcessView, FileView]) -> EV:
-        self.scope.append(root_node)
+    def attach_scope(self, scoped_node: Union[ProcessView, FileView]) -> EV:
+        self.scope.append(scoped_node)
         txn = self.client.txn(read_only=False)
 
         try:
             mutation = {
                 "uid": self.uid,
                 "scope": {
-                    "uid": root_node.get_uid()
+                    "uid": scoped_node.get_uid()
                 }
             }
 
@@ -481,8 +483,10 @@ def lambda_handler(events: Any, context: Any) -> None:
             elif node['node_type'] == 'File':
                 node_view = FileView(dgraph_client=eg_client, node_key=node['node_key'])
             else:
-                raise Exception(f"Invalid root node. Missing 'type': {root}.")
+                raise Exception(f"Invalid root node. Missing 'type': {node}.")
 
+            node_view.uid = None
+            print(f'Attaching scope {node["node_key"]} {node_view.get_uid()}')
             engagement.attach_scope(node_view)
 
         for node in nodes.values():
