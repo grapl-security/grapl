@@ -18,7 +18,7 @@
     "@aws-cdk/aws-ecs": "^0.36.0",
     "@aws-cdk/aws-lambda": "^0.36.0",
     "@aws-cdk/aws-lambda-event-sources": "^0.36.0",
-    "@aws-cdk/aws-elasticache": "latest",
+    "@aws-cdk/aws-elasticache": "^0.36.0",
     "@aws-cdk/aws-rds": "^0.36.0",
     "@aws-cdk/aws-route53": "^0.36.0",
     "@aws-cdk/aws-s3": "^0.36.0",
@@ -29,6 +29,7 @@
     "@aws-cdk/core": "^0.36.0",
     "@types/node": "^10.14.6",
     "aws-cdk": "^0.36.0",
-    "node-env-file": "^0.1.8"
+    "node-env-file": "^0.1.8",
+    "@aws-cdk/aws-cloudmap": "latest"
   }
 }

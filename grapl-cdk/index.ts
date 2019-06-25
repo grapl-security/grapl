@@ -1,23 +1,25 @@
-import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
+import cloudmap = require('@aws-cdk/aws-servicediscovery');
+import s3Subs = require('@aws-cdk/aws-s3-notifications');
+import snsSubs = require('@aws-cdk/aws-sns-subscriptions');
 import elasticache = require('@aws-cdk/aws-elasticache');
-import cdk = require('@aws-cdk/cdk');
+import cdk = require('@aws-cdk/core');
 import s3 = require('@aws-cdk/aws-s3');
-import route53 = require('@aws-cdk/aws-route53');
 import sns = require('@aws-cdk/aws-sns');
 import sqs = require('@aws-cdk/aws-sqs');
 import ec2 = require('@aws-cdk/aws-ec2');
 import servicediscovery = require('@aws-cdk/aws-servicediscovery');
 import lambda = require('@aws-cdk/aws-lambda');
 import iam = require('@aws-cdk/aws-iam');
-import {VpcNetwork, IVpcNetwork, TcpPortRange} from "@aws-cdk/aws-ec2";
-import {Bucket, IBucket} from "@aws-cdk/aws-s3";
-import {Topic, ITopic} from "@aws-cdk/aws-sns";
-import {Runtime} from "@aws-cdk/aws-lambda";
 import dynamodb = require('@aws-cdk/aws-dynamodb');
 import ecs = require('@aws-cdk/aws-ecs');
-import {NamespaceType} from '@aws-cdk/aws-ecs';
+
 import apigateway = require('@aws-cdk/aws-apigateway');
-import {PrivateHostedZone, PublicHostedZone} from "@aws-cdk/aws-route53";
+import {SqsEventSource} from '@aws-cdk/aws-lambda-event-sources';
+import {IVpc, Vpc} from "@aws-cdk/aws-ec2";
+import {IBucket} from "@aws-cdk/aws-s3";
+import {ITopic} from "@aws-cdk/aws-sns";
+import {Runtime} from "@aws-cdk/aws-lambda";
+import {Duration} from '@aws-cdk/core';
 
 const env = require('node-env-file');
 
@@ -27,15 +29,8 @@ class RedisCluster extends cdk.Construct {
     connections: ec2.Connections;
     cluster: elasticache.CfnCacheCluster;
 
-    constructor(scope, id: string, vpc_props) {
+    constructor(scope, id: string, vpc: ec2.Vpc) {
         super(scope, id);
-
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
-
 
         // Define a group for telling Elasticache which subnets to put cache nodes in.
         const subnetGroup = new elasticache.CfnSubnetGroup(this, `${id}-subnet-group`, {
@@ -50,7 +45,7 @@ class RedisCluster extends cdk.Construct {
 
         this.connections = new ec2.Connections({
             securityGroups: [this.securityGroup],
-            defaultPortRange: new ec2.TcpPort(6379)
+            defaultPort: ec2.Port.tcp(6479)
         });
 
         // The cluster resource itself.
@@ -59,7 +54,7 @@ class RedisCluster extends cdk.Construct {
             engine: 'redis',
             numCacheNodes: 1,
             autoMinorVersionUpgrade: true,
-            cacheSubnetGroupName: subnetGroup.subnetGroupName,
+            cacheSubnetGroupName: subnetGroup.cacheSubnetGroupName,
             vpcSecurityGroupIds: [
                 this.securityGroup.securityGroupId
             ]
@@ -78,12 +73,12 @@ class Queues {
 
         this.retry_queue = new sqs.Queue(stack, queue_name + '-retry', {
             deadLetterQueue: {queue: this.dead_letter_queue, maxReceiveCount: 10},
-            visibilityTimeoutSec: 240
+            visibilityTimeout: Duration.seconds(240)
         });
 
         this.queue = new sqs.Queue(stack, queue_name, {
             deadLetterQueue: {queue: this.retry_queue, maxReceiveCount: 5},
-            visibilityTimeoutSec: 180
+            visibilityTimeout: Duration.seconds(180)
         });
 
     }
@@ -97,28 +92,23 @@ class EngagementEdge extends cdk.Stack {
         name: string,
         hostname: string,
         engagement_graph: DGraphFargate,
-        vpc_props: ec2.VpcNetworkImportProps
+        vpc: ec2.Vpc
     ) {
         super(parent, name + '-stack');
         // Set up the API Gateway
         // Set up the lambda
 
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
 
         this.event_handler = new lambda.Function(
             this, name, {
-                runtime: Runtime.Python37,
+                runtime: Runtime.PYTHON_3_7,
                 handler: `engagement_edge.lambda_handler`,
                 code: lambda.Code.asset(`./engagement_edge.zip`),
                 vpc: vpc,
                 environment: {
                     "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                 },
-                timeout: 25,
+                timeout: Duration.seconds(25),
                 memorySize: 256,
             }
         );
@@ -152,7 +142,7 @@ class Service {
     event_retry_handler: lambda.Function;
     queues: Queues;
 
-    constructor(stack: cdk.Stack, name: string, environment?: any, vpc?: IVpcNetwork, retry_code_name?: string, opt?: any) {
+    constructor(stack: cdk.Stack, name: string, environment?: any, vpc?: IVpc, retry_code_name?: string, opt?: any) {
         let runtime = null;
         if (opt && opt.runtime) {
             runtime = opt.runtime
@@ -161,7 +151,7 @@ class Service {
         }
 
         let handler = null;
-        if (runtime === Runtime.Python37) {
+        if (runtime === Runtime.PYTHON_3_7) {
             handler = `${name}.lambda_handler`
         } else {
             handler = name
@@ -181,7 +171,7 @@ class Service {
                 code: lambda.Code.asset(`./${name}.zip`),
                 vpc: vpc,
                 environment: environment,
-                timeout: 180,
+                timeout: Duration.seconds(180),
                 memorySize: 256,
             }
         );
@@ -202,7 +192,7 @@ class Service {
                 code: lambda.Code.asset(`./${retry_code_name}.zip`),
                 vpc: vpc,
                 environment: environment,
-                timeout: 240,
+                timeout: Duration.seconds(240),
                 memorySize: 512,
             }
         );
@@ -216,15 +206,14 @@ class Service {
     }
 
     readsFrom(bucket: IBucket, with_list?: Boolean) {
-        let policy = new iam.PolicyStatement()
-            .addAction('s3:GetObject')
-            .addAction('s3:ActionGetBucket');
+        let policy = new iam.PolicyStatement();
+        policy.addActions('s3:GetObject', 's3:ActionGetBucket');
 
         if(with_list === true) {
-            policy.addAction('s3:ListObjects')
+            policy.addActions('s3:ListObjects')
         }
 
-        policy.addResource(bucket.bucketArn);
+        policy.addResources(bucket.bucketArn);
 
         this.event_handler.addToRolePolicy(policy);
         this.event_retry_handler.addToRolePolicy(policy);
@@ -235,13 +224,14 @@ class Service {
     }
 
     publishesToTopic(publishes_to: ITopic) {
-        this.event_handler.addToRolePolicy(new iam.PolicyStatement()
-            .addAction('sns:CreateTopic')
-            .addResource(publishes_to.topicArn));
+        const topicPolicy = new iam.PolicyStatement();
 
-        this.event_retry_handler.addToRolePolicy(new iam.PolicyStatement()
-            .addAction('sns:CreateTopic')
-            .addResource(publishes_to.topicArn));
+        topicPolicy.addActions('sns:CreateTopic');
+        topicPolicy.addResources(publishes_to.topicArn);
+
+        this.event_handler.addToRolePolicy(topicPolicy);
+
+        this.event_retry_handler.addToRolePolicy(topicPolicy);
 
         publishes_to.grantPublish(this.event_handler.role);
         publishes_to.grantPublish(this.event_retry_handler.role);
@@ -257,7 +247,7 @@ class Service {
 
 
 class SessionIdentityCache extends cdk.Stack {
-    constructor(parent: cdk.App, vpc_props: ec2.VpcNetworkImportProps) {
+    constructor(parent: cdk.App, vpc: ec2.Vpc) {
         super(parent, 'session-identity-cache-stack');
 
         // const zone = new route53.PrivateHostedZone(this, 'HostedZone', {
@@ -271,25 +261,25 @@ class SessionIdentityCache extends cdk.Stack {
 }
 
 class EventEmitters extends cdk.Stack {
-    raw_logs_bucket: s3.BucketAttributes;
-    sysmon_logs_bucket: s3.BucketAttributes;
-    identity_mappings_bucket: s3.BucketAttributes;
-    unid_subgraphs_generated_bucket: s3.BucketAttributes;
-    subgraphs_generated_bucket: s3.BucketAttributes;
-    analyzers_bucket: s3.BucketAttributes;
-    dispatched_analyzer_bucket: s3.BucketAttributes;
-    analyzer_matched_subgraphs_bucket: s3.BucketAttributes;
+    raw_logs_bucket: s3.Bucket;
+    sysmon_logs_bucket: s3.Bucket;
+    identity_mappings_bucket: s3.Bucket;
+    unid_subgraphs_generated_bucket: s3.Bucket;
+    subgraphs_generated_bucket: s3.Bucket;
+    analyzers_bucket: s3.Bucket;
+    dispatched_analyzer_bucket: s3.Bucket;
+    analyzer_matched_subgraphs_bucket: s3.Bucket;
 
-    incident_topic: sns.TopicAttributes;
-    identity_mappings_topic: sns.TopicAttributes;
-    raw_logs_topic: sns.TopicAttributes;
-    sysmon_logs_topic: sns.TopicAttributes;
-    unid_subgraphs_generated_topic: sns.TopicAttributes;
-    subgraphs_generated_topic: sns.TopicAttributes;
-    subgraph_merged_topic: sns.TopicAttributes;
-    dispatched_analyzer_topic: sns.TopicAttributes;
-    analyzer_matched_subgraphs_topic: sns.TopicAttributes;
-    engagements_created_topic: sns.TopicAttributes;
+    incident_topic: sns.Topic;
+    identity_mappings_topic: sns.Topic;
+    raw_logs_topic: sns.Topic;
+    sysmon_logs_topic: sns.Topic;
+    unid_subgraphs_generated_topic: sns.Topic;
+    subgraphs_generated_topic: sns.Topic;
+    subgraph_merged_topic: sns.Topic;
+    dispatched_analyzer_topic: sns.Topic;
+    analyzer_matched_subgraphs_topic: sns.Topic;
+    engagements_created_topic: sns.Topic;
 
     constructor(parent: cdk.App, id: string) {
         super(parent, id + '-stack');
@@ -390,68 +380,71 @@ class EventEmitters extends cdk.Stack {
         // S3 -> SNS Events
 
         raw_logs_bucket
-            .onEvent(s3.EventType.ObjectCreated, raw_logs_topic);
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(raw_logs_topic)
+            );
         sysmon_logs_bucket
-            .onEvent(s3.EventType.ObjectCreated, sysmon_logs_topic);
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(sysmon_logs_topic)
+            );
         identity_mappings_bucket
-            .onEvent(s3.EventType.ObjectCreated, identity_mappings_topic);
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(identity_mappings_topic)
+            );
         unid_subgraphs_generated_bucket
-            .onEvent(s3.EventType.ObjectCreated, unid_subgraphs_generated_topic);
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(unid_subgraphs_generated_topic)
+            );
         subgraphs_generated_bucket
-            .onEvent(s3.EventType.ObjectCreated, subgraphs_generated_topic);
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(subgraphs_generated_topic)
+            );
         dispatched_analyzer_bucket
-            .onEvent(s3.EventType.ObjectCreated, dispatched_analyzer_topic);
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(dispatched_analyzer_topic)
+            );
         analyzer_matched_subgraphs_bucket
-            .onEvent(s3.EventType.ObjectCreated, analyzer_matched_subgraphs_topic);
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(analyzer_matched_subgraphs_topic)
+            );
 
-        this.raw_logs_bucket = raw_logs_bucket.export();
-        this.sysmon_logs_bucket = sysmon_logs_bucket.export();
-        this.identity_mappings_bucket = identity_mappings_bucket.export();
-        this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket.export();
-        this.subgraphs_generated_bucket = subgraphs_generated_bucket.export();
-        this.analyzers_bucket = analyzers_bucket.export();
-        this.dispatched_analyzer_bucket = dispatched_analyzer_bucket.export();
-        this.analyzer_matched_subgraphs_bucket = analyzer_matched_subgraphs_bucket.export();
+        this.raw_logs_bucket = raw_logs_bucket;
+        this.sysmon_logs_bucket = sysmon_logs_bucket;
+        this.identity_mappings_bucket = identity_mappings_bucket;
+        this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket;
+        this.subgraphs_generated_bucket = subgraphs_generated_bucket;
+        this.analyzers_bucket = analyzers_bucket;
+        this.dispatched_analyzer_bucket = dispatched_analyzer_bucket;
+        this.analyzer_matched_subgraphs_bucket = analyzer_matched_subgraphs_bucket;
 
-        this.incident_topic = incident_topic.export();
-        this.raw_logs_topic = raw_logs_topic.export();
-        this.sysmon_logs_topic = sysmon_logs_topic.export();
-        this.identity_mappings_topic = identity_mappings_topic.export();
-        this.unid_subgraphs_generated_topic = unid_subgraphs_generated_topic.export();
-        this.subgraphs_generated_topic = subgraphs_generated_topic.export();
-        this.subgraph_merged_topic = subgraph_merged_topic.export();
-        this.dispatched_analyzer_topic = dispatched_analyzer_topic.export();
-        this.analyzer_matched_subgraphs_topic = analyzer_matched_subgraphs_topic.export();
-        this.engagements_created_topic = engagements_created_topic.export();
+        this.incident_topic = incident_topic;
+        this.raw_logs_topic = raw_logs_topic;
+        this.sysmon_logs_topic = sysmon_logs_topic;
+        this.identity_mappings_topic = identity_mappings_topic;
+        this.unid_subgraphs_generated_topic = unid_subgraphs_generated_topic;
+        this.subgraphs_generated_topic = subgraphs_generated_topic;
+        this.subgraph_merged_topic = subgraph_merged_topic;
+        this.dispatched_analyzer_topic = dispatched_analyzer_topic;
+        this.analyzer_matched_subgraphs_topic = analyzer_matched_subgraphs_topic;
+        this.engagements_created_topic = engagements_created_topic;
     }
 }
 
 class SysmonSubgraphGenerator extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
-                reads_from_props: s3.BucketAttributes,
-                subscribes_to_props: sns.TopicAttributes,
-                writes_to_props: s3.BucketAttributes,
+                reads_from: s3.IBucket,
+                subscribes_to: sns.Topic,
+                writes_to: s3.IBucket,
     ) {
         super(parent, id + '-stack');
-
-        const reads_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_from',
-            reads_from_props
-        );
-
-        const subscribes_to = Topic.fromTopicAttributes(
-            this,
-            'subscribes_to',
-            subscribes_to_props
-        );
-
-        const writes_to = Bucket.fromBucketAttributes(
-            this,
-            'writes_to',
-            writes_to_props
-        );
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
@@ -460,7 +453,7 @@ class SysmonSubgraphGenerator extends cdk.Stack {
         const service = new Service(this, 'sysmon-subgraph-generator', environment);
 
         service.readsFrom(reads_from);
-        subscribes_to.subscribeQueue(service.queues.queue);
+        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
         service.publishesToBucket(writes_to);
     }
 }
@@ -469,29 +462,11 @@ class SysmonSubgraphGenerator extends cdk.Stack {
 class GenericSubgraphGenerator extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
-                reads_from_props: s3.BucketAttributes,
-                subscribes_to_props: sns.TopicAttributes,
-                writes_to_props: s3.BucketAttributes,
+                reads_from: s3.IBucket,
+                subscribes_to: sns.Topic,
+                writes_to: s3.IBucket,
     ) {
         super(parent, id + '-stack');
-
-        const reads_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_from',
-            reads_from_props
-        );
-
-        const subscribes_to = Topic.fromTopicAttributes(
-            this,
-            'subscribes_to',
-            subscribes_to_props
-        );
-
-        const writes_to = Bucket.fromBucketAttributes(
-            this,
-            'writes_to',
-            writes_to_props
-        );
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX
@@ -500,7 +475,7 @@ class GenericSubgraphGenerator extends cdk.Stack {
         const service = new Service(this, 'generic-subgraph-generator', environment);
 
         service.readsFrom(reads_from);
-        subscribes_to.subscribeQueue(service.queues.queue);
+        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
         service.publishesToBucket(writes_to);
     }
 }
@@ -509,28 +484,12 @@ class GenericSubgraphGenerator extends cdk.Stack {
 class NodeIdentityMapper extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
-                reads_from_props: s3.BucketAttributes,
-                subscribes_to_props: sns.TopicAttributes,
-                vpc_props: ec2.VpcNetworkImportProps
+                reads_from: s3.IBucket,
+                subscribes_to: sns.Topic,
+                vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
-        const reads_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_from',
-            reads_from_props
-        );
 
-        const subscribes_to = Topic.fromTopicAttributes(
-            this,
-            'subscribes_to',
-            subscribes_to_props
-        );
-
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX
@@ -541,10 +500,10 @@ class NodeIdentityMapper extends cdk.Stack {
 
         service.readsFrom(reads_from);
 
-        subscribes_to.subscribeQueue(service.queues.queue);
+        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
 
-        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
     }
 }
 
@@ -552,36 +511,14 @@ class NodeIdentityMapper extends cdk.Stack {
 class NodeIdentifier extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
-                reads_from_props: s3.BucketAttributes,
-                subscribes_to_props: sns.TopicAttributes,
-                writes_to_props: s3.BucketAttributes,
+                reads_from: s3.IBucket,
+                subscribes_to: sns.Topic,
+                writes_to: s3.IBucket,
                 history_db: HistoryDb,
-                vpc_props: ec2.VpcNetworkImportProps
+                vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
-        const reads_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_from',
-            reads_from_props
-        );
 
-        const subscribes_to = Topic.fromTopicAttributes(
-            this,
-            'subscribes_to',
-            subscribes_to_props
-        );
-
-        const writes_to = Bucket.fromBucketAttributes(
-            this,
-            'writes_to',
-            writes_to_props
-        );
-
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
@@ -593,9 +530,9 @@ class NodeIdentifier extends cdk.Stack {
 
         history_db.allowReadWrite(service);
         service.publishesToBucket(writes_to);
-        subscribes_to.subscribeQueue(service.queues.queue);
-        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpPort(443), 'Allow outbound to S3');
+        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        service.event_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
 
     }
 }
@@ -604,37 +541,14 @@ class GraphMerger extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                reads_from_props: s3.BucketAttributes,
-                subscribes_to_props: sns.TopicAttributes,
-                publishes_to_props: sns.TopicAttributes,
+                reads_from: s3.IBucket,
+                subscribes_to: sns.ITopic,
+                publishes_to: sns.ITopic,
                 master_graph: DGraphFargate,
-                vpc_props: ec2.VpcNetworkImportProps
+                vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
 
-        const reads_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_from',
-            reads_from_props
-        );
-
-        const subscribes_to = Topic.fromTopicAttributes(
-            this,
-            'subscribes_to',
-            subscribes_to_props
-        );
-
-        const publishes_to = sns.Topic.fromTopicAttributes(
-            this,
-            'publishes_to',
-            publishes_to_props
-        );
-
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
 
         const environment = {
             "SUBGRAPH_MERGED_TOPIC_ARN": publishes_to.topicArn,
@@ -649,10 +563,14 @@ class GraphMerger extends cdk.Stack {
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
 
-        subscribes_to.subscribeQueue(service.queues.queue);
-
-        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
+        //
+        // service.event_handler.connections
+        //     .allowToAnyIPv4(new ec2.Port({
+        //
+        //     }), 'Allow outbound to S3');
+        // service.event_retry_handler.connections
+        //     .allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
 
     }
 }
@@ -662,36 +580,13 @@ class AnalyzerDispatch extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                subscribes_to_props: sns.TopicAttributes,  // The SNS Topic that we must subscribe to our queue
-                writes_to_props: s3.BucketAttributes,
-                reads_from_props: s3.BucketAttributes,
-                vpc_props: ec2.VpcNetworkImportProps
+                subscribes_to: sns.ITopic,  // The SNS Topic that we must subscribe to our queue
+                writes_to: s3.IBucket,
+                reads_from: s3.IBucket,
+                vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
 
-        const reads_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_from',
-            reads_from_props
-        );
-
-        const subscribes_to = Topic.fromTopicAttributes(
-            this,
-            'subscribes_to',
-            subscribes_to_props
-        );
-
-        const writes_to = s3.Bucket.fromBucketAttributes(
-            this,
-            'publishes_to',
-            writes_to_props
-        );
-
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
 
         const environment = {
             "DISPATCHED_ANALYZER_BUCKET": writes_to.bucketName,
@@ -704,10 +599,10 @@ class AnalyzerDispatch extends cdk.Stack {
         // We need the List capability to find each of the analyzers
         service.readsFrom(reads_from, true);
 
-        subscribes_to.subscribeQueue(service.queues.queue);
+        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
 
-        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
     }
 }
 
@@ -717,44 +612,15 @@ class AnalyzerExecutor extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                subscribes_to_props: sns.TopicAttributes,
-                reads_analyzers_from_props: s3.BucketAttributes,
-                reads_events_from_props: s3.BucketAttributes,
-                writes_events_to_props: s3.BucketAttributes,
+                subscribes_to: sns.ITopic,
+                reads_analyzers_from: s3.IBucket,
+                reads_events_from: s3.IBucket,
+                writes_events_to: s3.IBucket,
                 master_graph: DGraphFargate,
-                vpc_props: ec2.VpcNetworkImportProps
+                vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
 
-        const reads_analyzers_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_analyzers_from',
-            reads_analyzers_from_props
-        );
-
-        const reads_events_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_events_from',
-            reads_events_from_props
-        );
-
-        const subscribes_to = Topic.fromTopicAttributes(
-            this,
-            'subscribes_to',
-            subscribes_to_props
-        );
-
-        const writes_events_to = Bucket.fromBucketAttributes(
-            this,
-            'writes_events_to',
-            writes_events_to_props
-        );
-
-        const vpc = ec2.VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
 
         this.count_cache = new RedisCluster(this, id + 'countcache', vpc);
         this.message_cache = new RedisCluster(this, id + 'msgcache', vpc);
@@ -763,14 +629,14 @@ class AnalyzerExecutor extends cdk.Stack {
             "ANALYZER_MATCH_BUCKET": writes_events_to.bucketName,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
             "MG_ALPHAS": master_graph.alphaNames.join(","),
-            "COUNTCACHE_ADDR": this.count_cache.cluster.cacheClusterRedisEndpointAddress,
-            "COUNTCACHE_PORT": this.count_cache.cluster.cacheClusterRedisEndpointPort,
-            "MESSAGECACHE_ADDR": this.message_cache.cluster.cacheClusterRedisEndpointAddress,
-            "MESSAGECACHE_PORT": this.message_cache.cluster.cacheClusterRedisEndpointPort,
+            "COUNTCACHE_ADDR": this.count_cache.cluster.attrRedisEndpointAddress,
+            "COUNTCACHE_PORT": this.count_cache.cluster.attrRedisEndpointPort,
+            "MESSAGECACHE_ADDR": this.message_cache.cluster.attrRedisEndpointAddress,
+            "MESSAGECACHE_PORT": this.message_cache.cluster.attrRedisEndpointPort,
         };
 
         const service = new Service(this, 'analyzer-executor', environment, vpc, null, {
-            runtime: Runtime.Python37
+            runtime: Runtime.PYTHON_3_7
         });
 
 
@@ -784,19 +650,19 @@ class AnalyzerExecutor extends cdk.Stack {
 
         // Need to be able to GetObject in order to HEAD, can be replaced with
         // a cache later, but safe so long as there is no LIST
-        let policy = new iam.PolicyStatement()
-            .addAction('s3:GetObject');
+        let policy = new iam.PolicyStatement();
+        policy.addActions('s3:GetObject');
 
-        policy.addResource(writes_events_to.bucketArn);
+        policy.addResources(writes_events_to.bucketArn);
 
         service.event_handler.addToRolePolicy(policy);
         service.event_retry_handler.addToRolePolicy(policy);
 
 
-        subscribes_to.subscribeQueue(service.queues.queue);
+        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
 
-        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
     }
 }
 
@@ -804,38 +670,14 @@ class EngagementCreator extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
-                reads_from_props: s3.BucketAttributes,
-                subscribes_to_props: sns.TopicAttributes,
-                publishes_to_props: sns.TopicAttributes,
+                reads_from: s3.IBucket,
+                subscribes_to: sns.Topic,
+                publishes_to: sns.Topic,
                 master_graph: DGraphFargate,
                 engagement_graph: DGraphFargate,
-                vpc_props: ec2.VpcNetworkImportProps,
+                vpc: ec2.Vpc,
     ) {
         super(parent, id + '-stack');
-
-        const reads_from = Bucket.fromBucketAttributes(
-            this,
-            'reads_from',
-            reads_from_props
-        );
-
-        const subscribes_to = Topic.fromTopicAttributes(
-            this,
-            'subscribes_to',
-            subscribes_to_props
-        );
-
-        const publishes_to = sns.Topic.fromTopicAttributes(
-            this,
-            'publishes_to',
-            publishes_to_props
-        );
-
-        const vpc = VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
 
         const environment = {
             // TODO: I don't think this service reads or writes to S3
@@ -845,7 +687,7 @@ class EngagementCreator extends cdk.Stack {
         };
 
         const service = new Service(this, 'engagement-creator', environment, vpc, null, {
-            runtime: Runtime.Python37
+            runtime: Runtime.PYTHON_3_7
         });
 
         // master_graph.addAccessFrom(service);
@@ -854,28 +696,26 @@ class EngagementCreator extends cdk.Stack {
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
 
-        subscribes_to.subscribeQueue(service.queues.queue);
+        subscribes_to.addSubscription(new snsSubs.SqsSubscription(service.queues.queue));
 
-        service.event_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(new ec2.TcpAllPorts(), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
 
     }
 }
 
 
 class Networks extends cdk.Stack {
-    grapl_vpc: ec2.VpcNetworkImportProps;
+    grapl_vpc: ec2.Vpc;
 
     constructor(parent: cdk.App, id: string,) {
         super(parent, id + '-stack');
 
-        const grapl_vpc = new ec2.VpcNetwork(this, 'GraplVPC', {
+        this.grapl_vpc = new ec2.Vpc(this, 'GraplVPC', {
             natGateways: 1,
             enableDnsHostnames: true,
             enableDnsSupport: true,
         });
-
-        this.grapl_vpc = grapl_vpc.export();
     }
 }
 
@@ -896,8 +736,8 @@ class Zero {
             stack,
             id,
             {
-                cpu: '1024',
-                memoryMiB: '2048',
+                cpu: 1024,
+                memoryLimitMiB: 2048,
             }
         );
 
@@ -911,9 +751,9 @@ class Zero {
         }
 
 
-        const logDriver = new ecs.AwsLogDriver(stack, graph+id+'LogGroup', {
-            streamPrefix: graph+id,
-        });
+        // const logDriver = new ecs.AwsLogDriver(stack, graph+id+'LogGroup', {
+        //     streamPrefix: graph+id,
+        // });
 
         zeroTask.addContainer(id + 'Container', {
 
@@ -921,29 +761,26 @@ class Zero {
             // --peer is the other dgraph zero hostname
             image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
             command,
-            logging: logDriver
+            // logging: logDriver
         });
+
+
 
         const zeroService = new ecs.FargateService(stack, id+'Service', {
             cluster,  // Required
             taskDefinition: zeroTask,
-        });
-
-        (zeroService as any).enableServiceDiscovery(
-            {
+            cloudMapOptions: {
                 name: id,
                 dnsRecordType: servicediscovery.DnsRecordType.A,
-                dnsTtlSec: 300,
-                // customHealthCheck: {
-                //     failureThreshold: 1
-                // }
+                dnsTtl: Duration.seconds(300),
             }
-
-        );
+        });
 
         this.name = `${id}.${graph}.grapl`;
 
-        zeroService.connections.allowFromAnyIPv4(new ec2.TcpAllPorts());
+        zeroService.connections.allowFromAnyIPv4(
+            ec2.Port.allTcp()
+        );
     }
 }
 
@@ -963,14 +800,14 @@ class Alpha {
             stack,
             id,
             {
-                cpu: '4096',
-                memoryMiB: '8192'
+                cpu: 4096,
+                memoryLimitMiB: 8192,
             }
         );
 
-        const logDriver = new ecs.AwsLogDriver(stack, graph+id+'LogGroup', {
-            streamPrefix: graph+id,
-        });
+        // const logDriver = new ecs.AwsLogDriver(stack, graph+id+'LogGroup', {
+        //     streamPrefix: graph+id,
+        // });
 
         alphaTask.addContainer(id + graph + 'Container', {
             image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
@@ -978,25 +815,22 @@ class Alpha {
                 "--lru_mb=1024", `--zero=${zero}.${graph}.grapl:5080`,
                 "--alsologtostderr"
             ],
-            logging: logDriver
+            // logging: logDriver
         });
 
         const alphaService = new ecs.FargateService(stack, id+'Service', {
             cluster,  // Required
-            taskDefinition: alphaTask
-        });
-
-        (alphaService as any).enableServiceDiscovery(
-            {
+            taskDefinition: alphaTask,
+            cloudMapOptions: {
                 name: id,
                 dnsRecordType: servicediscovery.DnsRecordType.A,
-                dnsTtlSec: 300,
+                dnsTtl: Duration.seconds(300),
             }
-        );
+        });
 
         this.name = `${id}.${graph}.grapl`;
 
-        alphaService.connections.allowFromAnyIPv4(new ec2.TcpAllPorts());
+        alphaService.connections.allowFromAnyIPv4(ec2.Port.allTcp());
     }
 }
 
@@ -1006,17 +840,12 @@ class DGraphFargate extends cdk.Stack {
     constructor(
         parent: cdk.App,
         id: string,
-        vpc_props: ec2.VpcNetworkImportProps,
+        vpc: ec2.Vpc,
         zeroCount,
         alphaCount
     ) {
         super(parent, id+'-stack');
 
-        const vpc = VpcNetwork.import(
-            this,
-            'vpc',
-            vpc_props
-        );
 
         const cluster = new ecs.Cluster(this, id+'-FargateCluster', {
             vpc: vpc
@@ -1026,7 +855,7 @@ class DGraphFargate extends cdk.Stack {
         const namespace = cluster.addDefaultCloudMapNamespace(
             {
                 name: id + '.grapl',
-                type: NamespaceType.PrivateDns,
+                type: cloudmap.NamespaceType.DNS_PRIVATE,
                 vpc
             }
         );
@@ -1089,62 +918,62 @@ class HistoryDb extends cdk.Stack {
             tableName: "process_history_table",
             partitionKey: {
                 name: 'pseudo_key',
-                type: dynamodb.AttributeType.String
+                type: dynamodb.AttributeType.STRING
             },
             sortKey: {
                 name: 'create_time',
-                type: dynamodb.AttributeType.Number
+                type: dynamodb.AttributeType.NUMBER
             },
-            billingMode: dynamodb.BillingMode.PayPerRequest,
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
         });
 
         this.file_history = new dynamodb.Table(this, 'file_history_table', {
             tableName: "file_history_table",
             partitionKey: {
                 name: 'pseudo_key',
-                type: dynamodb.AttributeType.String
+                type: dynamodb.AttributeType.STRING
             },
             sortKey: {
                 name: 'create_time',
-                type: dynamodb.AttributeType.Number
+                type: dynamodb.AttributeType.NUMBER
             },
-            billingMode: dynamodb.BillingMode.PayPerRequest,
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
         });
 
         this.outbound_connection_history = new dynamodb.Table(this, 'outbound_connection_history_table', {
             tableName: "outbound_connection_history_table",
             partitionKey: {
                 name: 'pseudo_key',
-                type: dynamodb.AttributeType.String
+                type: dynamodb.AttributeType.STRING
             },
             sortKey: {
                 name: 'create_time',
-                type: dynamodb.AttributeType.Number
+                type: dynamodb.AttributeType.NUMBER
             },
-            billingMode: dynamodb.BillingMode.PayPerRequest,
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
         });
 
         this.asset_history = new dynamodb.Table(this, 'asset_id_mappings', {
             tableName: "asset_id_mappings",
             partitionKey: {
                 name: 'pseudo_key',
-                type: dynamodb.AttributeType.String
+                type: dynamodb.AttributeType.STRING
             },
             sortKey: {
                 name: 'c_timestamp',
-                type: dynamodb.AttributeType.Number
+                type: dynamodb.AttributeType.NUMBER
             },
-            billingMode: dynamodb.BillingMode.PayPerRequest,
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
         });
 
         this.node_id_retry_table = new dynamodb.Table(this, 'node_id_retry_table', {
             tableName: "node_id_retry_table",
             partitionKey: {
                 name: 'pseudo_key',
-                type: dynamodb.AttributeType.String
+                type: dynamodb.AttributeType.STRING
             },
-            billingMode: dynamodb.BillingMode.PayPerRequest,
-            ttlAttributeName: "ttl_ts"
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            timeToLiveAttribute: "ttl_ts"
         });
 
     }
@@ -1287,7 +1116,7 @@ class Grapl extends cdk.App {
     }
 }
 
-new Grapl().run();
+new Grapl().synth();
 
 // cdk deploy graplvpcs-stack && \
 // cdk deploy graplhistorydb-stack && \
