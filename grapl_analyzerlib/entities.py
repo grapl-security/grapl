@@ -579,13 +579,18 @@ class ProcessQuery(object):
         return self
 
     def _filters(self) -> str:
-        inner_filters = (
+        inner_filters = [
             entity_queries._generate_filter(self._asset_id),
             entity_queries._generate_filter(self._process_name),
             entity_queries._generate_filter(self._process_command_line),
             entity_queries._generate_filter(self._process_guid),
             entity_queries._generate_filter(self._process_id),
-        )
+        ]
+
+        if self._node_key:
+            inner_filters.append(
+                entity_queries._generate_filter([[self._node_key]])
+            )
 
         inner_filters = [i for i in inner_filters if i]
         if not inner_filters:
