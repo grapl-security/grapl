@@ -1010,7 +1010,7 @@ class Grapl extends cdk.App {
     constructor() {
         super();
 
-        // env(__dirname + '/.env');
+        env(__dirname + '/.env');
 
         const mgZeroCount = Number(process.env.MG_ZEROS_COUNT) || 3;
         const mgAlphaCount = Number(process.env.MG_ALPHAS_COUNT) || 5;
