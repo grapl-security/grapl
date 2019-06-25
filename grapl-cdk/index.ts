@@ -544,7 +544,7 @@ class NodeIdentifier extends cdk.Stack {
 
         history_db.allowReadWrite(service);
         service.publishesToBucket(writes_to);
-        addSubscription(this, subscribes_to,, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
         service.event_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
 
