@@ -580,7 +580,7 @@ class ProcessQuery(object):
 
     def _filters(self) -> str:
         inner_filters = [
-            entity_queries._generate_filter([[self._node_key]])
+            entity_queries._generate_filter([[self._node_key]]),
             entity_queries._generate_filter(self._asset_id),
             entity_queries._generate_filter(self._process_name),
             entity_queries._generate_filter(self._process_command_line),
