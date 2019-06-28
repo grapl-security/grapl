@@ -117,10 +117,10 @@ class OutboundConnectionQuery(object):
     def __init__(self) -> None:
         self._node_key = entity_queries.Has(
             "node_key"
-        )  # type: Optional[entity_queries.Cmp]
+        )  # type: entity_queries.Cmp
         self._uid = entity_queries.Has(
             "uid"
-        )  # type: Optional[entity_queries.Cmp]
+        )  # type: entity_queries.Cmp
 
         self._create_time = []  # type: List[List[entity_queries.Cmp]]
         self._terminate_time = []  # type: List[List[entity_queries.Cmp]]
@@ -155,10 +155,10 @@ class ExternalIpQuery(object):
     def __init__(self) -> None:
         self._node_key = entity_queries.Has(
             "node_key"
-        )  # type: Optional[entity_queries.Cmp]
+        )  # type: entity_queries.Cmp
         self._uid = entity_queries.Has(
             "uid"
-        )  # type: Optional[entity_queries.Cmp]
+        )  # type: entity_queries.Cmp
 
         self._external_ip = []  # type: List[List[entity_queries.Cmp]]
 
@@ -278,10 +278,10 @@ class ProcessQuery(object):
         # Properties
         self._node_key = entity_queries.Has(
             "node_key"
-        )  # type: Optional[entity_queries.Cmp]
+        )  # type: entity_queries.Cmp
         self._uid = entity_queries.Has(
             "uid"
-        )  # type: Optional[entity_queries.Cmp]
+        )  # type: entity_queries.Cmp
 
         self._asset_id = []  # type: List[List[entity_queries.Cmp]]
         self._process_name = []  # type: List[List[entity_queries.Cmp]]
@@ -580,17 +580,13 @@ class ProcessQuery(object):
 
     def _filters(self) -> str:
         inner_filters = [
+            entity_queries._generate_filter([[self._node_key]])
             entity_queries._generate_filter(self._asset_id),
             entity_queries._generate_filter(self._process_name),
             entity_queries._generate_filter(self._process_command_line),
             entity_queries._generate_filter(self._process_guid),
             entity_queries._generate_filter(self._process_id),
         ]
-
-        if self._node_key:
-            inner_filters.append(
-                entity_queries._generate_filter([[self._node_key]])
-            )
 
         inner_filters = [i for i in inner_filters if i]
         if not inner_filters:
@@ -928,8 +924,6 @@ class ProcessView(NodeView):
         node_dict = dict()
         edges = []
         node_dict['node_type'] = 'Process'
-        if root:
-            node_dict['root'] = True
         if self.node_key:
             node_dict['node_key'] = self.node_key
         if self.uid:
@@ -989,6 +983,8 @@ class ProcessView(NodeView):
                         'to': deleted_file.node_key
                     }
                 )
+        if root:
+            node_dict['root'] = True
 
         return {'node': node_dict, 'edges': edges}
 
@@ -998,11 +994,11 @@ class FileQuery(object):
         # Attributes
         self._node_key = entity_queries.Has(
             "node_key"
-        )  # type: Optional[entity_queries.Cmp]
+        )  # type: entity_queries.Cmp
 
         self._uid = entity_queries.Has(
             "uid"
-        )  # type: Optional[entity_queries.Cmp]
+        )  # type: entity_queries.Cmp
 
         self._file_name = []  # type: List[List[entity_queries.Cmp]]
         self._asset_id = []  # type: List[List[entity_queries.Cmp]]
@@ -1246,6 +1242,7 @@ class FileQuery(object):
 
     def _filters(self) -> str:
         inner_filters = (
+            entity_queries._generate_filter([[self._node_key]]),
             entity_queries._generate_filter(self._file_name),
             entity_queries._generate_filter(self._asset_id),
             entity_queries._generate_filter(self._file_path),
@@ -1476,8 +1473,6 @@ class FileView(NodeView):
 
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
-        if root:
-            node_dict['root'] = True
 
         if self.node_key:
             node_dict['node_key'] = self.node_key
@@ -1532,6 +1527,9 @@ class FileView(NodeView):
 
         if self.sha256_hash:
             node_dict['sha256_hash'] = self.sha256_hash
+
+        if root:
+            node_dict['root'] = True
 
         return {'node': node_dict, 'edges': []}  # TODO: Generate edges
 
