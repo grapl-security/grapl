@@ -838,6 +838,21 @@ class ProcessView(NodeView):
         self.parent = parent
         return self.parent
 
+    def get_children(self) -> Optional[List[P]]:
+        if self.children:
+            return self.children
+
+        self_node = (
+            ProcessQuery()
+            .with_node_key(self.node_key)
+            .with_children(ProcessQuery().with_node_key())
+            .query_first(self.dgraph_client)
+        )  # type: P
+
+        self.children = self_node.children or None
+
+        return self.children
+
     def get_uid(self):
         # type: () -> str
         if self.uid:
