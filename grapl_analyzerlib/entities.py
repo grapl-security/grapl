@@ -822,6 +822,24 @@ class ProcessView(NodeView):
         self.process_name = self_process.process_name
         return self.process_name
 
+    def get_process_command_line(self) -> Optional[str]:
+        if self.process_command_line:
+            return self.process_command_line
+
+        self_process = (
+            ProcessQuery()
+            .with_node_key(self.node_key)
+            .with_process_command_line()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_process:
+            return None
+
+        self.process_command_line = self_process.process_command_line
+        return self.process_command_line
+
+
     def get_parent(self) -> Optional[P]:
         if self.parent:
             return self.parent
