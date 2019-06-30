@@ -2,7 +2,7 @@
 
 console.log('Loaded index.js');
 
-const engagement_edge = "https://dzuo4ozud3.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "https://jd186mg5se.execute-api.us-east-1.amazonaws.com/prod/";
 
 const getLenses = async () => {
     const res = await fetch(`${engagement_edge}getLenses`, {

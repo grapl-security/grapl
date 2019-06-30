@@ -122,7 +122,8 @@ def get_root(nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
         if node.get('root'):
             root = node
             break
-    assert root, 'There must be a root node'
+
+    # Eventually the root node will be an obsolete construct anyway
     return root
 
 
@@ -437,7 +438,7 @@ def lambda_handler(events: Any, context: Any) -> None:
         print(f'nodes {nodes}')
         print(f'edges {edges}')
         # Key is root node + analyzer_name
-        root = get_root(nodes.values())
+        root = get_root(nodes.values()) or next(nodes.values().__iter__())
 
         # if should_throttle(analyzer_name, root['node_key'], eg_client):
         #     print('Throttling: {}'.format(nodes))
@@ -483,7 +484,7 @@ def lambda_handler(events: Any, context: Any) -> None:
             elif node['node_type'] == 'File':
                 node_view = FileView(dgraph_client=eg_client, node_key=node['node_key'])
             else:
-                raise Exception(f"Invalid root node. Missing 'type': {node}.")
+                raise Exception(f"Invalid node. Missing 'type': {node}.")
 
             node_view.uid = None
             print(f'Attaching scope {node["node_key"]} {node_view.get_uid()}')

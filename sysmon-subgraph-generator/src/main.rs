@@ -116,6 +116,7 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         .state(ProcessState::Existing)
         .process_id(process_start.parent_process_id)
         .process_name(get_image_name(&process_start.parent_image.clone()).unwrap())
+        .process_command_line(process_start.parent_command_line)
         .last_seen_timestamp(timestamp)
         .build()
         .unwrap();
@@ -123,6 +124,7 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
     let child = ProcessDescriptionBuilder::default()
         .asset_id(process_start.header.computer.clone())
         .process_name(get_image_name(&process_start.image.clone()).unwrap())
+        .process_command_line(process_start.command_line)
         .state(ProcessState::Created)
         .process_id(process_start.process_id)
         .created_timestamp(timestamp)

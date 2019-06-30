@@ -91,11 +91,11 @@ def emit_event(event: ExecutionHit) -> None:
     #     else:
     #         raise
 
-COUNTCACHE_ADDR = os.environ['COUNTCACHE_ADDR']
-COUNTCACHE_PORT = os.environ['COUNTCACHE_PORT']
-
-cache = redis.Redis(host=COUNTCACHE_ADDR, port=COUNTCACHE_PORT, db=0)
-
+# COUNTCACHE_ADDR = os.environ['COUNTCACHE_ADDR']
+# COUNTCACHE_PORT = os.environ['COUNTCACHE_PORT']
+#
+# cache = redis.Redis(host=COUNTCACHE_ADDR, port=COUNTCACHE_PORT, db=0)
+cache = {}
 
 def check_cache(file: str, node_key: str, msg_id: str) -> bool:
     to_hash = str(file) + str(node_key) + str(msg_id)
@@ -109,8 +109,8 @@ def check_cache(file: str, node_key: str, msg_id: str) -> bool:
 def update_cache(file: str, node_key: str, msg_id: str):
     to_hash = str(file) + str(node_key) + str(msg_id)
     event_hash = hashlib.sha256(to_hash.encode())
-    cache.set(event_hash, True)
-
+    # cache.set(event_hash, True)
+    cache[event_hash] = True
 
 def lambda_handler(events: Any, context: Any) -> None:
     # Parse sns message

@@ -1,3 +1,4 @@
 pydgraph
 boto3
-grapl-analyzerlib==0.1.47
+grapl-analyzerlib==0.1.49
+redis

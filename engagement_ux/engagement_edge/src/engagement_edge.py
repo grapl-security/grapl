@@ -82,9 +82,7 @@ def get_lens_scope(dg_client, lens):
         query q0($a: string)
         {
             q as var(func: eq(lens, $a)) {
-                scope {
-                    p as _predicate_
-                }
+               
             }
         
             q0(func: uid(q)) {
@@ -94,7 +92,7 @@ def get_lens_scope(dg_client, lens):
                 score,
                 scope {
                   uid,
-                  expand(val(p))
+                  expand(_all_)
                 }
             }
         }"""

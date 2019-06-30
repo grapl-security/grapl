@@ -21,26 +21,24 @@ def main(prefix):
 
     s3 = boto3.client('s3')
 
-    for i in range(6, 16):
+    with open('./events6.xml', 'rb') as b:
+        body = b.readlines()
+        body = [line for line in body]
 
-        with open('./events{}.xml'.format(i), 'rb') as b:
-            body = b.readlines()
-            body = [line for line in body]
+    def chunker(seq, size):
+        return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
 
-        def chunker(seq, size):
-            return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
+    for chunks in chunker(body, 200):
+        c_body = zstd.compress(b"\n".join(chunks), 4)
+        epoch = int(time.time())
 
-        for chunks in chunker(body, 200):
-            c_body = zstd.compress(b"\n".join(chunks), 4)
-            epoch = int(time.time())
-
-            s3.put_object(
-                Body=c_body,
-                Bucket="{}-sysmon-log-bucket".format(prefix),
-                Key=str(epoch - (epoch % (24 * 60 * 60))) + "/sysmon/" +
-                    str(epoch) + rand_str(3)
-            )
-
+        s3.put_object(
+            Body=c_body,
+            Bucket="{}-sysmon-log-bucket".format(prefix),
+            Key=str(epoch - (epoch % (24 * 60 * 60))) + "/sysmon/" +
+                str(epoch) + rand_str(3)
+        )
+        break
 
 if __name__ == '__main__':
 

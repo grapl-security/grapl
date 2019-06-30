@@ -11,8 +11,8 @@ class GraphManager {
         this.r = 20;
         this.color = d3.scaleOrdinal(d3.schemeCategory10);
         this.simulation = d3.forceSimulation()
-        // .force("x", d3.forceX(this.width/2))
-        // .force("y", d3.forceY(this.height/2))
+            .force("x", d3.forceX(this.width/2))
+            .force("y", d3.forceY(this.height/2))
             .force('collide', d3.forceCollide(this.r * 2))
             .force('charge', d3.forceManyBody()
                 .strength(-20))
@@ -387,7 +387,7 @@ const hashNode = async (node) => {
     ));
 };
 
-const engagement_edge = "https://dzuo4ozud3.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "https://jd186mg5se.execute-api.us-east-1.amazonaws.com/prod/";
 
 const retrieveGraph = async (graph, lens) => {
 
