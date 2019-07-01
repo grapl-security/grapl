@@ -4,7 +4,7 @@ from copy import deepcopy
 import boto3
 import json
 
-from typing import Any, List, Dict, Union, TypeVar, Optional
+from typing import Any, List, Dict, Union, TypeVar, Optional, Text
 
 from collections import defaultdict
 from grapl_analyzerlib.entities import ProcessView, FileView
@@ -127,39 +127,6 @@ def get_root(nodes: List[Dict[str, Any]]) -> Dict[str, Any]:
     return root
 
 
-def should_throttle(
-        analyzer_name: str,
-        root_node_key: str,
-        dgraph_client: DgraphClient
-) -> bool:
-    query = """
-            query q0($a: string, $n: string)
-            {
-              q0(func: eq(node_key, $n), first: 1) @cascade
-              {
-                uid,
-                ~scope {
-                    uid,
-                    risks @filter(eq(analyzer_name, $a)) {
-                        uid
-                    }
-                }
-              }
-            }
-            """
-
-    variables = {
-        '$a': analyzer_name,
-        '$n': root_node_key
-    }
-
-    res = json.loads(dgraph_client.txn(read_only=True).
-                     query(query, variables=variables).json)
-    if res['q0']:
-        return True
-    return False
-
-
 def into_process_views(dgraph_client: DgraphClient, raw_scope) -> List[Union[ProcessView, FileView]]:
     scope = []
     for scoped_node in raw_scope:
@@ -167,6 +134,9 @@ def into_process_views(dgraph_client: DgraphClient, raw_scope) -> List[Union[Pro
             node = ProcessView(dgraph_client=dgraph_client, node_key=scoped_node['node_key'])
         elif scoped_node.get('file_path'):
             node = FileView(dgraph_client=dgraph_client, node_key=scoped_node['node_key'])
+        elif scoped_node.get('external_ip'):
+            node = FileView(dgraph_client=dgraph_client, node_key=scoped_node['node_key'])
+
         else:
             raise Exception('fInvalid scoped node type: {scoped_node}')
         scope.append(node)
@@ -366,7 +336,7 @@ class EngagementView(object):
         return self
 
 
-def attach_risk(client: DgraphClient, node: Dict[str, Any], analyzer_name: str, risk_score: int):
+def attach_risk(client: DgraphClient, node: Union[FileView, ProcessView], analyzer_name: str, risk_score: int):
     txn = client.txn(read_only=False)
     try:
         query = """
@@ -391,7 +361,7 @@ def attach_risk(client: DgraphClient, node: Dict[str, Any], analyzer_name: str, 
             """
 
         variables = {
-            '$a': node['node_key'],
+            '$a': node.node_key,
             '$b': analyzer_name
         }
         txn = client.txn(read_only=False)
@@ -414,6 +384,16 @@ def attach_risk(client: DgraphClient, node: Dict[str, Any], analyzer_name: str, 
     finally:
         txn.discard()
 
+
+def node_from_dict(eg_client, node) -> Union[ProcessView, FileView]:
+    if node['node_type'] == 'Process':
+        return ProcessView(dgraph_client=eg_client, node_key=node['node_key'])
+    elif node['node_type'] == 'File':
+        return FileView(dgraph_client=eg_client, node_key=node['node_key'])
+    else:
+        raise Exception(f"Invalid node. Missing 'type': {node}.")
+
+
 def lambda_handler(events: Any, context: Any) -> None:
     mg_alpha_names = os.environ['MG_ALPHAS'].split(",")
     eg_alpha_names = os.environ['EG_ALPHAS'].split(",")
@@ -435,23 +415,13 @@ def lambda_handler(events: Any, context: Any) -> None:
         edges = incident_graph['edges']
         risk_score = incident_graph['risk_score']
 
+        print(f'analyzer_name {analyzer_name}')
         print(f'nodes {nodes}')
         print(f'edges {edges}')
-        # Key is root node + analyzer_name
-        root = get_root(nodes.values()) or next(nodes.values().__iter__())
-
-        # if should_throttle(analyzer_name, root['node_key'], eg_client):
-        #     print('Throttling: {}'.format(nodes))
-        #     continue
-
-        # Upsert all of the nodes
-        # If nodes have a list field, merge it
-        # In particular, merge the 'analyzer_names' list
 
         copier = EngagementCopier(mg_client, eg_client)
 
-        print('node_refs: {}'.format(nodes))
-        print('edges: {}'.format(edges))
+        # Copy nodes from master graph to engagement graph
         for node in nodes.values():
             node.pop('root', None)
             node.pop('type', None)
@@ -460,42 +430,36 @@ def lambda_handler(events: Any, context: Any) -> None:
             uid_map[node['node_key']] = new_uid
             print('new_uid: {}'.format(new_uid))
 
+        # Copy edges from master graph to engagement graph
         for edge_list in edges.values():
             for edge in edge_list:
                 copier.copy_edge(uid_map[edge['from']], edge['edge_name'], uid_map[edge['to']])
+
         print('Copied engagement successfully')
 
-        if root['node_type'] == 'Process':
-            root_view = ProcessView(dgraph_client=eg_client, node_key=root['node_key'])
-        elif root['node_type'] == 'File':
-            root_view = FileView(dgraph_client=eg_client, node_key=root['node_key'])
-        else:
-            raise Exception(f"Invalid root node. Missing 'type': {root}.")
+        engagements = {}
 
-        asset_id = root_view.get_asset_id()
+        for raw_node in nodes.values():
+            node = node_from_dict(eg_client, raw_node)
 
-        print(f'Creating engagement for {asset_id}')
-        engagement = EngagementView.get_or_create(eg_client, lens=asset_id)
+            asset_id = node.get_asset_id()
 
-        print(f'Attaching scope {asset_id}')
-        for node in nodes.values():
-            if node['node_type'] == 'Process':
-                node_view = ProcessView(dgraph_client=eg_client, node_key=node['node_key'])
-            elif node['node_type'] == 'File':
-                node_view = FileView(dgraph_client=eg_client, node_key=node['node_key'])
+            print(f'Creating engagement for {asset_id}')
+
+            if engagements.get(asset_id):
+                engagement = engagements[asset_id]
             else:
-                raise Exception(f"Invalid node. Missing 'type': {node}.")
+                engagement = EngagementView.get_or_create(eg_client, lens=asset_id)
+                engagements[asset_id] = engagement
 
-            node_view.uid = None
-            print(f'Attaching scope {node["node_key"]} {node_view.get_uid()}')
-            engagement.attach_scope(node_view)
+            print(f'Attaching scope {node.node_key} {node.get_uid()}')
+            engagement.attach_scope(node)
 
-        for node in nodes.values():
             attach_risk(
                 eg_client, node, analyzer_name, risk_score
             )
 
-        score = engagement.recalculate_score()
-        print(f'Engagement has score: {score}')
+            score = engagement.recalculate_score()
+            print(f'Engagement has score: {score}')
 
-    print('Engagement creation was successful')
+        print('Engagement creation was successful')

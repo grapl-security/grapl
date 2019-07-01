@@ -92,8 +92,11 @@ def get_lens_scope(dg_client, lens):
                 score,
                 scope {
                   uid,
-                  expand(_all_)
-                }
+                  expand(_forward_) {
+                      uid,
+                      expand(_forward_) {uid, node_key, analyzer_name, score}
+                    }
+                  }
             }
         }"""
 

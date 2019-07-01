@@ -13,9 +13,9 @@ class GraphManager {
         this.simulation = d3.forceSimulation()
             .force("x", d3.forceX(this.width/2))
             .force("y", d3.forceY(this.height/2))
-            .force('collide', d3.forceCollide(this.r * 2))
-            .force('charge', d3.forceManyBody()
-                .strength(-20))
+            .force('collide', d3.forceCollide(this.r * 4))
+            // .force('charge', d3.forceManyBody()
+            //     .strength(-40))
             .force('link', d3.forceLink()
                 .id(d => d.uid));
 
@@ -48,7 +48,7 @@ class GraphManager {
     }
 
     updateNode = (newNode) => {
-        console.log('nodes', this.graph.nodes);
+        if (newNode.uid === undefined) {return}
         for (let node of this.graph.nodes) {
             if (node.name === newNode.name) {
                 node = newNode;
@@ -82,7 +82,6 @@ class GraphManager {
 
     removeLink = (uid) => {
         for (let i = 0; i < this.graph.links.length; i++) {
-            console.log('link', this.graph.links[i]);
             if (this.graph.links[i].source.uid === uid) {
                 this.graph.links.splice(i, 1);
                 continue
@@ -206,7 +205,7 @@ class GraphManager {
 
         this.ctx.fillStyle = 'black';
         this.ctx.font = '16px Arial';
-        this.ctx.fillText(d.nodeLabel, d.x + this.r, d.y + this.r);
+        this.ctx.fillText(d.nodeLabel, d.x - this.r, d.y + 35);
     };
 
     drawLink = (l) => {
@@ -239,14 +238,62 @@ const edgeLinksFromNode = (node) => {
     return links;
 };
 
+const getNeighbors = (node) => {
+    const neighbors = [];
+
+    for (const edgeName of edgeNames) {
+        if (node[edgeName] !== undefined) {
+            for (const targetNode of node[edgeName]) {
+                const targetNodeType = getNodeType(targetNode);
+                const targetNodeLabel = getNodeLabel(targetNodeType, targetNode);
+                console.log('target', targetNode);
+                console.log('targetNodeType', targetNodeType);
+                console.log('targetNodeLabel', targetNodeLabel);
+
+                if(targetNode.risks !== undefined) {
+                    console.log('targetNode.risks ', targetNode.risks);
+                    let score = 0;
+                    const risks = [];
+
+                    for (const risk of targetNode.risks) {
+                        score += risk.risk_score;
+                        risks.push(risk.analyzer_name);
+                    }
+                    targetNode.score = score;
+                    targetNode.risk_name = risks;
+                    delete targetNode.risks
+                }
+
+                neighbors.push({
+                    ...targetNode,
+                    nodeType: targetNodeType,
+                    nodeLabel: targetNodeLabel,
+                });
+            }
+        }
+    }
+
+    return neighbors
+};
+
 const dgraphNodesToD3Format = (dgraphNodes) => {
     const nodes = [];
     const links = [];
 
     for (const node of dgraphNodes) {
+        if (node.uid === undefined) {
+            console.log('Skipping undefiend node ' + JSON.stringify(node));
+            continue
+        }
+
+        if(node.risks !== undefined) {
+            node.score = node.risks.score;
+            node.risk_name = node.risks.analyzer_name;
+            delete node.risks
+        }
+
         const nodeType = getNodeType(node);
         const nodeLabel = getNodeLabel(nodeType, node);
-
         nodes.push({
             name: node.uid,
             ...node,
@@ -256,24 +303,28 @@ const dgraphNodesToD3Format = (dgraphNodes) => {
             y: 150 + randomInt(1, 50),
         });
 
-        for (const edgeName of edgeNames) {
-            if (node[edgeName] !== undefined) {
-                for (const targetNode of node[edgeName]) {
-                    const targetNodeType = getNodeType(targetNode);
-                    const targetNodeLabel = getNodeLabel(targetNodeType, targetNode);
-                    console.log('target', targetNode);
-                    console.log('targetNodeType', targetNodeType);
-                    console.log('targetNodeLabel', targetNodeLabel);
-                    nodes.push({
-                        name: targetNode.uid,
-                        ...targetNode,
-                        nodeType: targetNodeType,
-                        nodeLabel: targetNodeLabel,
-                        x: 200 + randomInt(1, 50),
-                        y: 150 + randomInt(1, 50),
-                    });
-                }
+        const neighbors = getNeighbors(node);
+
+        for (const neighbor of neighbors) {
+            nodes.push({
+                name: neighbor.uid,
+                ...neighbor,
+                x: 200 + randomInt(1, 50),
+                y: 150 + randomInt(1, 50),
+            });
+
+            const nextNeighbors = getNeighbors(neighbor);
+
+            for (const nextNeighbor in nextNeighbors) {
+                nodes.push({
+                    name: nextNeighbor.uid,
+                    ...nextNeighbor,
+                    x: 200 + randomInt(1, 50),
+                    y: 150 + randomInt(1, 50),
+                });
             }
+
+            edgeLinksFromNode(neighbor).forEach(link => links.push(link));
         }
 
         edgeLinksFromNode(node).forEach(link => links.push(link));
@@ -294,6 +345,14 @@ const getNodeLabel = (nodeType, node) => {
         return node.file_path;
     }
 
+    if (nodeType === 'ExternalIp') {
+        return node.external_ip;
+    }
+
+    if (nodeType === 'Connect') {
+        return node.port;
+    }
+
     if (nodeType === 'Lens') {
         return node.lens;
     }
@@ -309,6 +368,14 @@ const getNodeType = (node) => {
         return 'File';
     }
 
+    if (node.external_ip !== undefined) {
+        return 'ExternalIp';
+    }
+
+    if (node.port !== undefined) {
+        return 'Connect';
+    }
+
     if (node.scope !== undefined) {
         return 'Lens';
     }
@@ -320,18 +387,19 @@ const getNodeType = (node) => {
 
 const nodeToTable = (node) => {
     const hidden = new Set(['uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']);
+    edgeNames.forEach((name) => hidden.add(name));
 
     let header = '<thead class="thead"><tr>';
     let output = '<tbody><tr>';
 
     for (const [field, value] of Object.entries(node)) {
-        if (hidden.has(field)) {
+        if (hidden.has(field) || node.uid === undefined) {
             continue
         }
 
         header += `<th scope="col">${field}</th>`;
 
-        if (field.includes('_timestamp')) {
+        if (field.includes('_time')) {
             output += `<td>${new Date(value).toLocaleString()}</td>>`;
         } else {
             output += `<td>${value}</td>>`;
@@ -359,7 +427,7 @@ const buf2hex = (buffer) => { // buffer is an ArrayBuffer
 
 const hashNode = async (node) => {
     let nodeStr = "" + node.uid;
-    console.log(node)
+
     if (node.nodeType === "Process") {
         for (const prop of processProperties) {
             nodeStr += node[prop] || ''
@@ -387,14 +455,16 @@ const hashNode = async (node) => {
     ));
 };
 
-const engagement_edge = "https://jd186mg5se.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "https://6hsytthq0l.execute-api.us-east-1.amazonaws.com/prod/";
 
 const retrieveGraph = async (graph, lens) => {
 
     let uidHashes = {};
 
     for (const node of graph.nodes) {
-        uidHashes[node.uid] = await hashNode(node);
+        if (node.uid !== undefined) {
+            uidHashes[node.uid] = await hashNode(node);
+        }
     }
 
     console.log("Getting graph");
@@ -408,7 +478,7 @@ const retrieveGraph = async (graph, lens) => {
     });
 
     const json_res = await res.json();
-    console.info(json_res);
+    console.info('jsonres ' + json_res);
     const updated_nodes = json_res['updated_nodes'];
     const removed_nodes = json_res['removed_nodes'];
 

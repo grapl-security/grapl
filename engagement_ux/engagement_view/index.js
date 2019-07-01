@@ -2,7 +2,7 @@
 
 console.log('Loaded index.js');
 
-const engagement_edge = "https://jd186mg5se.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "https://6hsytthq0l.execute-api.us-east-1.amazonaws.com/prod/";
 
 const getLenses = async () => {
     const res = await fetch(`${engagement_edge}getLenses`, {
@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     if (lenses.length === 0) {
         console.log("No active lenses");
+        return
     }
     const s = nodeToTable(lenses[0]);
 
