@@ -37,7 +37,8 @@ class RedisCluster extends cdk.Construct {
             description: `List of subnets used for redis cache ${id}`,
             subnetIds: vpc.privateSubnets.map(function(subnet) {
                 return subnet.subnetId;
-            })
+            }),
+            cacheSubnetGroupName: id + 'SubnetGroupName'
         });
 
         // The security group that defines network level access to the cluster
@@ -159,7 +160,6 @@ class Service {
 
         const queues = new Queues(stack, name + '-queue');
 
-        console.log(queues.queue.queueUrl);
         if (environment) {
             environment.QUEUE_URL = queues.queue.queueUrl;
             environment.RUST_BACKTRACE = "1";
@@ -625,8 +625,8 @@ class AnalyzerDispatch extends cdk.Stack {
 }
 
 class AnalyzerExecutor extends cdk.Stack {
-    // count_cache: RedisCluster;
-    // message_cache: RedisCluster;
+    count_cache: RedisCluster;
+    message_cache: RedisCluster;
 
     constructor(parent: cdk.App,
                 id: string,
@@ -640,17 +640,17 @@ class AnalyzerExecutor extends cdk.Stack {
         super(parent, id + '-stack');
 
 
-        // this.count_cache = new RedisCluster(this, id + 'countcache', vpc);
-        // this.message_cache = new RedisCluster(this, id + 'msgcache', vpc);
+        this.count_cache = new RedisCluster(this, id + 'countcache', vpc);
+        this.message_cache = new RedisCluster(this, id + 'msgcache', vpc);
 
         const environment = {
             "ANALYZER_MATCH_BUCKET": writes_events_to.bucketName,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
             "MG_ALPHAS": master_graph.alphaNames.join(","),
-            // "COUNTCACHE_ADDR": this.count_cache.cluster.attrRedisEndpointAddress,
-            // "COUNTCACHE_PORT": this.count_cache.cluster.attrRedisEndpointPort,
-            // "MESSAGECACHE_ADDR": this.message_cache.cluster.attrRedisEndpointAddress,
-            // "MESSAGECACHE_PORT": this.message_cache.cluster.attrRedisEndpointPort,
+            "COUNTCACHE_ADDR": this.count_cache.cluster.attrRedisEndpointAddress,
+            "COUNTCACHE_PORT": this.count_cache.cluster.attrRedisEndpointPort,
+            "MESSAGECACHE_ADDR": this.message_cache.cluster.attrRedisEndpointAddress,
+            "MESSAGECACHE_PORT": this.message_cache.cluster.attrRedisEndpointPort,
         };
 
         const service = new Service(this, 'analyzer-executor', environment, vpc, null, {
