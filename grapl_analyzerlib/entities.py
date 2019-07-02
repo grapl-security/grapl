@@ -45,8 +45,12 @@ class NodeView(object):
     @staticmethod
     def from_raw(dgraph_client: DgraphClient, node: Any) -> N:
         if node.process_node:
+            if not node.process_node.node_key:
+                print(f'{vars(node)}  {vars(node.process_node)}')
             return NodeView(ProcessView(dgraph_client, node.process_node.node_key))
         elif node.file_node:
+            if not node.file_node.node_key:
+                print(f'{vars(node)}  {vars(node.file_node)}')
             return NodeView(FileView(dgraph_client, node.file_node.node_key))
         else:
             raise Exception("Invalid Node Type")
@@ -838,7 +842,6 @@ class ProcessView(NodeView):
 
         self.process_command_line = self_process.process_command_line
         return self.process_command_line
-
 
     def get_parent(self) -> Optional[P]:
         if self.parent:
