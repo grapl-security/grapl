@@ -49,9 +49,9 @@ class NodeView(object):
         elif node.HasField("file_node"):
             return NodeView(FileView(dgraph_client, node.file_node.node_key))
         elif node.HasField("ip_address_node"):
-            return NodeView(ExternalIpView(dgraph_client, node.file_node.node_key))
+            return NodeView(ExternalIpView(dgraph_client, node.ip_address_node.node_key))
         elif node.HasField("outbound_connection_node"):
-            return NodeView(OutboundConnectionView(dgraph_client, node.file_node.node_key))
+            return NodeView(OutboundConnectionView(dgraph_client, node.outbound_connection_node.node_key))
 
         else:
             raise Exception("Invalid Node Type")
