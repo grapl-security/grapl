@@ -46,11 +46,11 @@ class NodeView(object):
     def from_raw(dgraph_client: DgraphClient, node: Any) -> N:
         if node.process_node:
             if not node.process_node.node_key:
-                print(f'{vars(node)}  {vars(node.process_node)}')
+                print(f'{json.dumps(node)}  {vars(node.process_node)} {node.process_node.node_key}')
             return NodeView(ProcessView(dgraph_client, node.process_node.node_key))
         elif node.file_node:
             if not node.file_node.node_key:
-                print(f'{vars(node)}  {vars(node.file_node)}')
+                print(f'{json.dumps(node)}  {vars(node.file_node)}')
             return NodeView(FileView(dgraph_client, node.file_node.node_key))
         else:
             raise Exception("Invalid Node Type")
