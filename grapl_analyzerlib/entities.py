@@ -39,7 +39,7 @@ class EdgeView(object):
 
 
 class NodeView(object):
-    def __init__(self, node: Union[P, F]):
+    def __init__(self, node: Union[P, F, EIP, OC]):
         self.node = node
 
     @staticmethod
@@ -54,6 +54,11 @@ class NodeView(object):
             return NodeView(ProcessView(dgraph_client, node.process_node.node_key))
         elif node.HasField("file_node"):
             return NodeView(FileView(dgraph_client, node.file_node.node_key))
+        elif node.HasField("ip_address_node"):
+            return NodeView(ExternalIpView(dgraph_client, node.file_node.node_key))
+        elif node.HasField("outbound_connection_node"):
+            return NodeView(OutboundConnectionView(dgraph_client, node.file_node.node_key))
+
         else:
             raise Exception("Invalid Node Type")
 
@@ -1372,6 +1377,31 @@ class FileQuery(object):
             return None
 
         return FileView.from_dict(dgraph_client, raw_views[0])
+
+
+class ExternalIpView(NodeView):
+    def __init__(self, dgraph_client: DgraphClient, node_key: str, uid: Optional[str] = None,
+                 external_ip: Optional[str] = None) -> None:
+        super(ExternalIpView, self).__init__(self)
+        self.dgraph_client = dgraph_client
+        self.node_key = node_key
+        self.uid = uid
+        self.external_ip = external_ip
+
+
+class OutboundConnectionView(NodeView):
+    def __init__(self,
+                 dgraph_client: DgraphClient,
+                 node_key: str,
+                 uid: Optional[str] = None,
+                 port: Optional[str] = None
+                 ) -> None:
+        super(OutboundConnectionView, self).__init__(self)
+
+        self.dgraph_client = dgraph_client
+        self.node_key = node_key
+        self.uid = uid
+        self.port = port
 
 
 class FileView(NodeView):
