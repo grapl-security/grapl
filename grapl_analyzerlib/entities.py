@@ -1442,13 +1442,13 @@ class FileView(NodeView):
         self.file_path = file_path
         self.file_extension = file_extension
         self.file_mime_type = file_mime_type
-        self.file_size = int(file_size)
+        self.file_size = int(file_size) if file_size else None
         self.file_version = file_version
         self.file_description = file_description
         self.file_product = file_product
         self.file_company = file_company
         self.file_directory = file_directory
-        self.file_inode = int(file_inode)
+        self.file_inode = int(file_inode) if file_inode else None
         self.file_hard_links = file_hard_links
         self.md5_hash = md5_hash
         self.sha1_hash = sha1_hash
