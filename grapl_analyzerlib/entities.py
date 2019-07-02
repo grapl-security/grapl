@@ -44,6 +44,13 @@ class NodeView(object):
 
     @staticmethod
     def from_raw(dgraph_client: DgraphClient, node: Any) -> N:
+        try:
+            print(f'{node.HasField("process_node")}')
+            print(f'{node.HasField("file_node")}')
+            print(f' {str(node)} {vars(node.process_node)} {node.process_node.node_key}')
+            print(f' {vars(node.file_node)}')
+        except Exception as e:
+            print(f'failed with {e}')
         if node.process_node:
             if not node.process_node.node_key:
                 print(f' {str(node)} {vars(node.process_node)} {node.process_node.node_key}')
