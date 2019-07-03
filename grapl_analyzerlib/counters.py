@@ -37,14 +37,16 @@ class Seen(OrderedEnum):
 
 
 class ParentChildCounter(object):
-    def __init__(self, dgraph_client: DgraphClient) -> None:
+    def __init__(self, dgraph_client: DgraphClient, cache: Any = None) -> None:
         self.dgraph_client = dgraph_client
+        self.cache = cache
 
     def get_count_for(
         self,
         parent_process_name: str,
         child_process_name: Optional[str] = None,
         excluding: Optional[str] = None,
+        max_count: int = 4,
     ) -> Seen:
         """
         Given an image name, and optionally a path, return the number of times
@@ -53,9 +55,22 @@ class ParentChildCounter(object):
         If no path is provided, just count the process_name.
         """
 
+        if self.cache:
+            key = parent_process_name + child_process_name or ""
+
+            cached_count = self.cache.get(key)
+            if cached_count and cached_count >= max_count:
+                print(f'Cached count: {cached_count}')
+                if cached_count == 0:
+                    return Seen.Never
+                if cached_count == 1:
+                    return Seen.Once
+                else:
+                    return Seen.Many
+
         query = (
             ProcessQuery()
-            .only_first(2)
+            .only_first(max_count)
             .with_process_name(eq=parent_process_name)
             .with_children(ProcessQuery().with_process_name(eq=child_process_name))
         )
@@ -64,6 +79,13 @@ class ParentChildCounter(object):
             query.with_node_key(Not(excluding))
 
         count = query.get_count(self.dgraph_client)
+
+        if self.cache:
+            if count >= max_count:
+                if not cached_count:
+                    self.cache.set(key, count)
+                elif count >= cached_count:
+                    self.cache.set(key, count)
 
         if count == 0:
             return Seen.Never
