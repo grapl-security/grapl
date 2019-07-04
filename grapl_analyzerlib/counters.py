@@ -81,11 +81,10 @@ class ParentChildCounter(object):
         count = query.get_count(self.dgraph_client)
 
         if self.cache:
-            if count >= max_count:
-                if not cached_count:
-                    self.cache.set(key, count)
-                elif count >= cached_count:
-                    self.cache.set(key, count)
+            if not cached_count:
+                self.cache.set(key, count)
+            elif count >= cached_count:
+                self.cache.set(key, count)
 
         if count == 0:
             return Seen.Never
