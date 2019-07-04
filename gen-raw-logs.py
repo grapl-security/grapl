@@ -39,7 +39,6 @@ def main(prefix):
                 str(epoch) + rand_str(3)
         )
 
-
 if __name__ == '__main__':
 
     if len(sys.argv) != 2:

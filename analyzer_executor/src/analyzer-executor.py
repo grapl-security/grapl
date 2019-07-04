@@ -6,13 +6,15 @@ import traceback
 
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
+from multiprocessing.pool import ThreadPool
+
 from typing import Any, Optional, Tuple
 
 import boto3
 import redis
 from botocore.exceptions import ClientError
 
-from grapl_analyzerlib.entities import SubgraphView
+from grapl_analyzerlib.entities import SubgraphView, ProcessView, FileView
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
 from pydgraph import DgraphClientStub, DgraphClient
 
@@ -40,24 +42,37 @@ def download_s3_file(bucket, key) -> str:
 def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
     alpha_names = os.environ["MG_ALPHAS"].split(",")
 
-    client_stubs = [DgraphClientStub("{}:9080".format(name)) for name in alpha_names]
+    client_stubs = [DgraphClientStub(f"{name}:9080") for name in alpha_names]
     client = DgraphClient(*client_stubs)
 
     exec(file, globals())
     try:
-        from multiprocessing.pool import ThreadPool
-        with ThreadPool(processes=64) as pool:
-            results = []
-            for node in graph.node_iter():
-                if check_cache(file, node.node.node_key, msg_id):
-                    print('cache hit')
-                    continue
+        pool = ThreadPool(processes=64)
+        results = []
+        for node in graph.node_iter():
+            if not node.node.node_key:
+                print(f'missing key {vars(node.node.node)} type: {type(node.node)}')
+                continue
 
-                t = pool.apply_async(analyzer, (client, node, sender))
-                results.append(t)
-                # TODO: Check node + analyzer file hash in redis cache, avoid reprocess of hits
-            for result in results:
-                result.get()
+            if check_msg_cache(file, node.node.node_key, msg_id):
+                print('cache hit - already processed')
+                continue
+
+            if check_hit_cache(name, node.node.node_key):
+                print('cache hit - already matched')
+                continue
+
+            def exec_analyzer(analyzer, client, node, sender):
+                analyzer(client, node, sender)
+                return node
+
+            t = pool.apply_async(exec_analyzer, (analyzer, client, node, sender))
+            results.append(t)
+
+        for result in results:
+            node = result.get()
+            update_msg_cache(file, node.node.node_key, msg_id)
+
         sender.send(ExecutionComplete())
 
     except Exception as e:
@@ -91,26 +106,41 @@ def emit_event(event: ExecutionHit) -> None:
     #     else:
     #         raise
 
-# COUNTCACHE_ADDR = os.environ['COUNTCACHE_ADDR']
-# COUNTCACHE_PORT = os.environ['COUNTCACHE_PORT']
-#
-# cache = redis.Redis(host=COUNTCACHE_ADDR, port=COUNTCACHE_PORT, db=0)
-cache = {}
 
-def check_cache(file: str, node_key: str, msg_id: str) -> bool:
+MESSAGECACHE_ADDR = os.environ['MESSAGECACHE_ADDR']
+MESSAGECACHE_PORT = os.environ['MESSAGECACHE_PORT']
+
+message_cache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
+
+HITCACHE_ADDR = os.environ['HITCACHE_ADDR']
+HITCACHE_PORT = os.environ['HITCACHE_PORT']
+
+hit_cache = redis.Redis(host=HITCACHE_ADDR, port=HITCACHE_PORT, db=0)
+
+
+def check_msg_cache(file: str, node_key: str, msg_id: str) -> bool:
     to_hash = str(file) + str(node_key) + str(msg_id)
-    event_hash = hashlib.sha256(to_hash.encode())
-    if cache.get(event_hash):
-        return True
-    else:
-        return False
+    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+    return bool(message_cache.get(event_hash))
 
 
-def update_cache(file: str, node_key: str, msg_id: str):
+def update_msg_cache(file: str, node_key: str, msg_id: str):
     to_hash = str(file) + str(node_key) + str(msg_id)
-    event_hash = hashlib.sha256(to_hash.encode())
-    # cache.set(event_hash, True)
-    cache[event_hash] = True
+    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+    message_cache.set(event_hash, "1")
+
+
+def check_hit_cache(file: str, node_key: str) -> bool:
+    to_hash = str(file) + str(node_key)
+    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+    return bool(hit_cache.get(event_hash))
+
+
+def update_hit_cache(file: str, node_key: str):
+    to_hash = str(file) + str(node_key)
+    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+    hit_cache.set(event_hash, "1")
+
 
 def lambda_handler(events: Any, context: Any) -> None:
     # Parse sns message
@@ -133,37 +163,35 @@ def lambda_handler(events: Any, context: Any) -> None:
         analyzer = download_s3_file("grapl-analyzers-bucket", message["key"])
         analyzer_name = message["key"].split("/")[-2]
         subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
-
+        
         # TODO: Validate signature of S3 file
-        print("creating queue")
         rx, tx = Pipe(duplex=False)  # type: Tuple[Connection, Connection]
-        print("creating process")
         p = Process(target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, event['messageId']))
-        print("running process")
-        p.start()
 
+        p.start()
+        t = 0
         while True:
-            print("waiting for results")
             p_res = rx.poll(timeout=5)
             if not p_res:
-                print("Polled for 5 seconds without result")
+                t += 1
+                print(f"Polled {analyzer_name} for {t * 5} seconds without result")
                 continue
             result = rx.recv()  # type: Optional[Any]
 
             if isinstance(result, ExecutionComplete):
                 print("execution complete")
-                for node in subgraph.node_iter():
-                    update_cache(analyzer, node.node.node_key, event['messageId'])
+                break
 
             # emit any hits to an S3 bucket
             if isinstance(result, ExecutionHit):
-                print(f"emitting event for {analyzer_name}")
+                print(f"emitting event for {analyzer_name} {result.root_node_key}")
                 emit_event(result)
-                update_cache(analyzer, result.root_node_key, event['messageId'])
+                update_msg_cache(analyzer, result.root_node_key, message['key'])
+                update_hit_cache(analyzer_name, result.root_node_key)
 
             assert not isinstance(
                 result, ExecutionFailed
-            ), "Analyzer failed."
+            ), f"Analyzer {analyzer_name} failed."
 
         p.join()
 

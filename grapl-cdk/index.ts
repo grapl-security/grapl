@@ -15,7 +15,7 @@ import ecs = require('@aws-cdk/aws-ecs');
 
 import apigateway = require('@aws-cdk/aws-apigateway');
 import {SqsEventSource} from '@aws-cdk/aws-lambda-event-sources';
-import {IVpc, Vpc} from "@aws-cdk/aws-ec2";
+import {IVpc, Port, Vpc} from "@aws-cdk/aws-ec2";
 import {IBucket} from "@aws-cdk/aws-s3";
 import {ITopic} from "@aws-cdk/aws-sns";
 import {Runtime} from "@aws-cdk/aws-lambda";
@@ -35,18 +35,18 @@ class RedisCluster extends cdk.Construct {
         // Define a group for telling Elasticache which subnets to put cache nodes in.
         const subnetGroup = new elasticache.CfnSubnetGroup(this, `${id}-subnet-group`, {
             description: `List of subnets used for redis cache ${id}`,
-            subnetIds: vpc.privateSubnets.map(function(subnet) {
+            subnetIds: vpc.privateSubnets.map(function (subnet) {
                 return subnet.subnetId;
             }),
             cacheSubnetGroupName: id + 'SubnetGroupName'
         });
 
         // The security group that defines network level access to the cluster
-        this.securityGroup = new ec2.SecurityGroup(this, `${id}-security-group`, { vpc: vpc });
+        this.securityGroup = new ec2.SecurityGroup(this, `${id}-security-group`, {vpc: vpc});
 
         this.connections = new ec2.Connections({
             securityGroups: [this.securityGroup],
-            defaultPort: ec2.Port.tcp(6479)
+            defaultPort: ec2.Port.tcp(6379)
         });
 
         // The cluster resource itself.
@@ -88,6 +88,7 @@ class Queues {
 
 class EngagementEdge extends cdk.Stack {
     event_handler: lambda.Function;
+
     constructor(
         parent: cdk.App,
         name: string,
@@ -213,7 +214,7 @@ class Service {
         let policy = new iam.PolicyStatement();
         policy.addActions('s3:GetObject', 's3:ActionGetBucket');
 
-        if(with_list === true) {
+        if (with_list === true) {
             policy.addActions('s3:ListObjects')
         }
 
@@ -342,19 +343,19 @@ class EventEmitters extends cdk.Stack {
                 topicName: 'incident-topic'
             });
         let raw_logs_topic =
-            new sns.Topic(this, id +  '-raw-log-topic', {
+            new sns.Topic(this, id + '-raw-log-topic', {
                 topicName: 'raw-log-topic'
             });
         let sysmon_logs_topic =
-            new sns.Topic(this, id +  '-sysmon-log-topic', {
+            new sns.Topic(this, id + '-sysmon-log-topic', {
                 topicName: 'sysmon-log-topic'
             });
         let identity_mappings_topic =
-            new sns.Topic(this, id +  '-identity-mappings-topic', {
+            new sns.Topic(this, id + '-identity-mappings-topic', {
                 topicName: 'identity-mappings-topic'
             });
         let unid_subgraphs_generated_topic =
-            new sns.Topic(this, id +  '-unid-subgraphs-generated-topic', {
+            new sns.Topic(this, id + '-unid-subgraphs-generated-topic', {
                 topicName: 'unid-subgraphs-generated-topic'
             });
         let subgraphs_generated_topic =
@@ -365,20 +366,19 @@ class EventEmitters extends cdk.Stack {
             new sns.Topic(this, id + '-subgraphs-merged-topic', {
                 topicName: 'subgraphs-merged-topic'
             });
-        let dispatched_analyzer_topic  =
+        let dispatched_analyzer_topic =
             new sns.Topic(this, id + '-dispatched-analyzer-topic', {
                 topicName: 'dispatched-analyzer-topic'
             });
 
-        let analyzer_matched_subgraphs_topic  =
+        let analyzer_matched_subgraphs_topic =
             new sns.Topic(this, id + '-analyzer-matched-subgraphs-topic', {
                 topicName: 'analyzer-matched-subgraphs-topic'
             });
-        let engagements_created_topic  =
+        let engagements_created_topic =
             new sns.Topic(this, id + '-engagements-created-topic', {
                 topicName: 'engagements-created-topic'
             });
-
 
 
         // S3 -> SNS Events
@@ -627,6 +627,7 @@ class AnalyzerDispatch extends cdk.Stack {
 class AnalyzerExecutor extends cdk.Stack {
     count_cache: RedisCluster;
     message_cache: RedisCluster;
+    hit_cache: RedisCluster;
 
     constructor(parent: cdk.App,
                 id: string,
@@ -641,6 +642,7 @@ class AnalyzerExecutor extends cdk.Stack {
 
 
         this.count_cache = new RedisCluster(this, id + 'countcache', vpc);
+        this.hit_cache = new RedisCluster(this, id + 'hitcache', vpc);
         this.message_cache = new RedisCluster(this, id + 'msgcache', vpc);
 
         const environment = {
@@ -651,15 +653,17 @@ class AnalyzerExecutor extends cdk.Stack {
             "COUNTCACHE_PORT": this.count_cache.cluster.attrRedisEndpointPort,
             "MESSAGECACHE_ADDR": this.message_cache.cluster.attrRedisEndpointAddress,
             "MESSAGECACHE_PORT": this.message_cache.cluster.attrRedisEndpointPort,
+            "HITCACHE_ADDR": this.hit_cache.cluster.attrRedisEndpointAddress,
+            "HITCACHE_PORT": this.hit_cache.cluster.attrRedisEndpointPort,
         };
 
         const service = new Service(this, 'analyzer-executor', environment, vpc, null, {
             runtime: Runtime.PYTHON_3_7
         });
 
-
-        // service.event_handler.add
-        // master_graph.addAccessFrom(service);
+        this.count_cache.connections.allowFromAnyIPv4(Port.tcp(6379));
+        this.hit_cache.connections.allowFromAnyIPv4(Port.tcp(6379));
+        this.message_cache.connections.allowFromAnyIPv4(Port.tcp(6379));
 
         service.publishesToBucket(writes_events_to);
         // We need the List capability to find each of the analyzers
@@ -697,8 +701,6 @@ class EngagementCreator extends cdk.Stack {
         super(parent, id + '-stack');
 
         const environment = {
-            // TODO: I don't think this service reads or writes to S3
-            // "BUCKET_PREFIX": process.env.BUCKET_PREFIX
             "MG_ALPHAS": master_graph.alphaNames.join(","),
             "EG_ALPHAS": engagement_graph.alphaNames.join(","),
         };
@@ -782,8 +784,7 @@ class Zero {
         });
 
 
-
-        const zeroService = new ecs.FargateService(stack, id+'Service', {
+        const zeroService = new ecs.FargateService(stack, id + 'Service', {
             cluster,  // Required
             taskDefinition: zeroTask,
             cloudMapOptions: {
@@ -835,7 +836,7 @@ class Alpha {
             // logging: logDriver
         });
 
-        const alphaService = new ecs.FargateService(stack, id+'Service', {
+        const alphaService = new ecs.FargateService(stack, id + 'Service', {
             cluster,  // Required
             taskDefinition: alphaTask,
             cloudMapOptions: {
@@ -861,10 +862,10 @@ class DGraphFargate extends cdk.Stack {
         zeroCount,
         alphaCount
     ) {
-        super(parent, id+'-stack');
+        super(parent, id + '-stack');
 
 
-        const cluster = new ecs.Cluster(this, id+'-FargateCluster', {
+        const cluster = new ecs.Cluster(this, id + '-FargateCluster', {
             vpc: vpc
         });
 
@@ -887,7 +888,7 @@ class DGraphFargate extends cdk.Stack {
             1
         );
 
-        for (let i = 1; i < zeroCount ; i++) {
+        for (let i = 1; i < zeroCount; i++) {
             new Zero(
                 parent,
                 this,
@@ -901,7 +902,7 @@ class DGraphFargate extends cdk.Stack {
 
         this.alphaNames = [];
 
-        for (let i = 0; i < alphaCount ; i++) {
+        for (let i = 0; i < alphaCount; i++) {
 
             const alpha = new Alpha(
                 parent,
@@ -1036,7 +1037,7 @@ class Grapl extends cdk.App {
             network.grapl_vpc,
             mgZeroCount,
             mgAlphaCount,
-    );
+        );
 
         const engagement_graph = new DGraphFargate(
             this,
@@ -1044,9 +1045,8 @@ class Grapl extends cdk.App {
             network.grapl_vpc,
             egZeroCount,
             egAlphaCount,
-    );
+        );
 
-        // TODO: Move subgraph generators to their own VPC
         new GenericSubgraphGenerator(
             this,
             'grapl-generic-subgraph-generator',

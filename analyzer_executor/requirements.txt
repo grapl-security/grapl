@@ -1,4 +1,4 @@
 pydgraph
 boto3
-grapl-analyzerlib==0.1.49
+grapl-analyzerlib==0.1.64
 redis
