@@ -58,7 +58,7 @@ class ParentChildCounter(object):
         if self.cache:
             key = parent_process_name + child_process_name or ""
 
-            cached_count = self.cache.get(key)
+            cached_count = int(self.cache.get(key))
             if cached_count and cached_count >= max_count:
                 print(f'Cached count: {cached_count}')
                 if cached_count == 0:
