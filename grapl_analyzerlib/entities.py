@@ -699,6 +699,7 @@ class ProcessView(NodeView):
         deleted_files: Optional[List[F]] = None,
         created_files: Optional[List[F]] = None,
         read_files: Optional[List[F]] = None,
+        created_connections: Optional[List[EIP]] = None,
     ) -> None:
         super(ProcessView, self).__init__(self)
 
@@ -721,6 +722,7 @@ class ProcessView(NodeView):
         self.deleted_files = deleted_files  # type: Optional[List[F]]
         self.created_files = created_files  # type: Optional[List[F]]
         self.read_files = read_files  # type: Optional[List[F]]
+        self.created_connections = created_connections  # type: Optional[List[EIP]]
 
     @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> P:
@@ -1188,8 +1190,8 @@ class FileQuery(object):
 
     def with_spawned_from(self, spawned_from: PQ) -> FQ:
         spawned_from = deepcopy(spawned_from)
-        self._readers = spawned_from
-        spawned_from._spawned_from = self
+        self._spawned_from = spawned_from
+        spawned_from._bin_file = self
         return self
 
     def _get_var_block(self, binding_num, root, already_converted) -> str:
