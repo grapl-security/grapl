@@ -726,7 +726,7 @@ class ProcessView(NodeView):
 
     @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> P:
-        raw_created_connections = d.get("created_connections", None)
+        raw_created_connections = d.get("created_connection", None)
 
         created_connections = None
 
