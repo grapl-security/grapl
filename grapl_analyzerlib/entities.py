@@ -726,6 +726,17 @@ class ProcessView(NodeView):
 
     @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> P:
+        raw_created_connections = d.get("created_connections", None)
+
+        created_connections = None
+
+        if raw_created_connections:
+            created_connections = [
+                OutboundConnectionView.from_dict(dgraph_client, c)
+                for c in raw_created_connections
+            ]
+
+
         raw_bin_file = d.get("bin_file", None)
 
         bin_file = None
@@ -793,6 +804,7 @@ class ProcessView(NodeView):
             created_files=created_files,
             children=children,
             parent=parent,
+            created_connections=created_connections,
         )
 
     def get_asset_id(self) -> Optional[str]:
@@ -1384,13 +1396,24 @@ class ExternalIpView(NodeView):
         self.uid = uid
         self.external_ip = external_ip
 
+    @staticmethod
+    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> EIP:
+
+        return ExternalIpView(
+            dgraph_client=dgraph_client,
+            node_key=d['node_key'],
+            uid=d['uid'],
+            external_ip=d.get('external_ip', None),
+        )
+
 
 class OutboundConnectionView(NodeView):
     def __init__(self,
                  dgraph_client: DgraphClient,
                  node_key: str,
                  uid: Optional[str] = None,
-                 port: Optional[str] = None
+                 port: Optional[str] = None,
+                 external_connections: Optional[ExternalIpView] = None,
                  ) -> None:
         super(OutboundConnectionView, self).__init__(self)
 
@@ -1398,6 +1421,24 @@ class OutboundConnectionView(NodeView):
         self.node_key = node_key
         self.uid = uid
         self.port = port
+
+        self.external_connections = external_connections
+
+    @staticmethod
+    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> OC:
+        raw_external_connection = d.get('external_connection', None)
+
+        external_connection = None  # type: Optional[EIP]
+        if raw_external_connection:
+            external_connection = ExternalIpView.from_dict(dgraph_client, raw_external_connection[0])
+
+        return OutboundConnectionView(
+            dgraph_client=dgraph_client,
+            node_key=d['node_key'],
+            uid=d['uid'],
+            port=d.get('port'),
+            external_connections=external_connection,
+        )
 
 
 class FileView(NodeView):
