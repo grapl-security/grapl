@@ -1495,8 +1495,8 @@ class FileView(NodeView):
             node_key=d["node_key"],
             uid=d["uid"],
             asset_id=d.get("asset_id"),
-            file_name=d.get("file_name"),
             file_path=d.get("file_path"),
+            file_name=d.get("file_name"),
             file_extension=d.get("file_extension"),
             file_mime_type=d.get("file_mime_type"),
             file_size=d.get("file_size"),
@@ -1517,6 +1517,264 @@ class FileView(NodeView):
             readers=readers,
             spawned_from=spawned_from,
         )
+
+    def get_file_name(self) -> Optional[str]:
+        if self.file_name:
+            return self.file_name
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_name()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_name = self_file[0].file_name
+        return self.file_name
+
+    def get_file_extension(self) -> Optional[str]:
+        if self.file_extension:
+            return self.file_extension
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_extension()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_extension = self_file[0].file_extension
+        return self.file_extension
+
+    def get_file_mime_type(self) -> Optional[str]:
+        if self.file_mime_type:
+            return self.file_mime_type
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_mime_type()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_mime_type = self_file[0].file_mime_type
+        return self.file_mime_type
+
+    def get_file_size(self) -> Optional[int]:
+        if self.file_size:
+            return self.file_size
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_size()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        if not self_file[0].file_size:
+            return None
+
+        self.file_size = int(self_file[0].file_size)
+        return self.file_size
+
+    def get_file_version(self) -> Optional[str]:
+        if self.file_version:
+            return self.file_version
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_version()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_version = self_file[0].file_version
+        return self.file_version
+
+    def get_file_description(self) -> Optional[str]:
+        if self.file_description:
+            return self.file_description
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_description()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_description = self_file[0].file_description
+        return self.file_description
+
+    def get_file_product(self) -> Optional[str]:
+        if self.file_product:
+            return self.file_product
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_product()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_product = self_file[0].file_product
+        return self.file_product
+
+    def get_file_company(self) -> Optional[str]:
+        if self.file_company:
+            return self.file_company
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_company()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_company = self_file[0].file_company
+        return self.file_company
+
+    def get_file_directory(self) -> Optional[str]:
+        if self.file_directory:
+            return self.file_directory
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_directory()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_directory = self_file[0].file_directory
+        return self.file_directory
+
+    def get_file_inode(self) -> Optional[str]:
+        if self.file_inode:
+            return self.file_inode
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_inode()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_inode = self_file[0].file_inode
+        return self.file_inode
+
+    def get_file_hard_links(self) -> Optional[str]:
+        if self.file_hard_links:
+            return self.file_hard_links
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_hard_links()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_hard_links = self_file[0].file_hard_links
+        return self.file_hard_links
+
+    def get_md5_hash(self) -> Optional[str]:
+        if self.md5_hash:
+            return self.md5_hash
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_md5_hash()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.md5_hash = self_file[0].md5_hash
+        return self.md5_hash
+
+    def get_sha1_hash(self) -> Optional[str]:
+        if self.sha1_hash:
+            return self.sha1_hash
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_sha1_hash()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.sha1_hash = self_file[0].sha1_hash
+        return self.sha1_hash
+
+    def get_sha256_hash(self) -> Optional[str]:
+        if self.sha256_hash:
+            return self.sha256_hash
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_sha256_hash()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.sha256_hash = self_file[0].sha256_hash
+        return self.sha256_hash
+
+    def get_file_path(self) -> Optional[str]:
+        if self.file_path:
+            return self.file_path
+
+        self_file = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_file_path()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_path = self_file[0].file_path
+        return self.file_path
 
     def get_asset_id(self) -> Optional[str]:
         if self.asset_id:
