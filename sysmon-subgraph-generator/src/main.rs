@@ -139,7 +139,7 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         .build()
         .unwrap();
 
-        graph.add_edge("process_path",
+        graph.add_edge("bin_file",
                        child.clone_key(),
                        child_exe.clone_key()
         );
@@ -408,6 +408,7 @@ impl<S> EventHandler<Vec<u8>> for SysmonSubgraphGenerator<S>
                         }
                     }
                     Event::FileCreate(event) => {
+                        info!("FileCreate");
                         match handle_file_create(event) {
                             Ok(event) => Some(event),
                             Err(e) => {

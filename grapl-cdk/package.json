@@ -29,6 +29,7 @@
     "@aws-cdk/core": "^0.36.0",
     "@types/node": "^10.14.6",
     "aws-cdk": "^0.36.0",
-    "node-env-file": "^0.1.8"
+    "node-env-file": "^0.1.8",
+    "@aws-cdk/aws-sagemaker": "^0.36.0"
   }
 }

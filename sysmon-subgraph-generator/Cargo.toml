@@ -6,7 +6,7 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 [dependencies]
 graph-generator-lib = { path = "./graph-generator-lib/" }
 graph-descriptions = { path = "./graph-descriptions/" }
-sqs-lambda = "0.1.*"
+    sqs-lambda = "0.1.*"
 #sqs-lambda = {path = "./sqs-lambda/"}
 serde_json = "*"
 serde = "1.0.71"

@@ -1,3 +1,4 @@
+import sagemaker = require('@aws-cdk/aws-sagemaker');
 import cloudmap = require('@aws-cdk/aws-servicediscovery');
 import s3Subs = require('@aws-cdk/aws-s3-notifications');
 import snsSubs = require('@aws-cdk/aws-sns-subscriptions');
@@ -918,6 +919,39 @@ class DGraphFargate extends cdk.Stack {
 
     }
 }
+
+
+// class EngagementNotebook extends cdk.Stack {
+//     securityGroup: ec2.SecurityGroup;
+//     connections: ec2.Connections;
+//
+//     constructor(parent: cdk.App,
+//                 id: string,
+//                 vpc: ec2.Vpc,
+//     ) {
+//         super(parent, id + '-stack');
+//
+//         this.securityGroup = new ec2.SecurityGroup(this, `${id}-security-group`, {vpc: vpc});
+//
+//         this.connections = new ec2.Connections({
+//             securityGroups: [this.securityGroup],
+//             defaultPort: ec2.Port.tcp(6379)
+//         });
+//
+//         const notebook = new sagemaker.CfnNotebookInstance(
+//             this,
+//             id + '-sagemaker-endpoint',
+//             {
+//                 instanceType: 'ml.c4.2xlarge',
+//                 securityGroupIds: [this.securityGroup.securityGroupId],
+//                 subnetId: vpc.privateSubnets[0].subnetId,
+//                 directInternetAccess: true,
+//             }
+//         );
+//
+//
+//     }
+// }
 
 class HistoryDb extends cdk.Stack {
 
