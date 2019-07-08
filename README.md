@@ -35,17 +35,20 @@ Analyzers are your attacker signatures. They’re Python modules, deployed to Gr
 
 Analyzers execute in realtime as the master graph is updated.
 
-Grapl provides an analyzer library (alpha) so that you can write attacker signatures using pure Python:
+Grapl provides an analyzer library (alpha) so that you can write attacker signatures using pure Python. See this [repo for examples](https://github.com/insanitybit/grapl-analyzers).
 
+Here is a brief example of how to detect a suspicious execution of `svchost.exe`,
 ```python
-    def signature_graph(node_key: str) -> str:
-        child = Process() \
-            .with_image_name(contains="svchost.exe") \
-            .with_node_key(eq=node_key)
-    
-        parent = Process() \
-            .with_image_name(contains=Not("services.exe"))
-        return parent.with_child(child).to_query()
+    valid_parents = get_svchost_valid_parents()
+    p = (
+        ProcessQuery()
+        .with_process_name(eq=valid_parents)
+        .with_children(
+            ProcessQuery().with_process_name(eq="svchost.exe")
+        )
+        .query_first(client, contains_node_key=process.node_key)
+    )
+
 ```
 Keeping your analyzers in code means you can:
 
@@ -63,7 +66,7 @@ Using AWS Sagemaker hosted Jupyter Notebooks, Grapl will (soon) provide a Python
 ![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553037156946_file.png)
 
 
-There is no public UI for the engagements yet but I hope to build one soon - a live updating view of the engagement graph as you interact with it in the notebook.
+Grapl provides a live updating view of the engagement graph as you interact with it in the notebook, currently in alpha.
 
 
 ![](https://raw.githubusercontent.com/insanitybit/grapl/master/images/engagement.gif)
