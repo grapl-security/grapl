@@ -1,3 +1,13 @@
+import abc
+import json
+
+from collections import defaultdict
+from copy import deepcopy
+from typing import Optional, Union, Dict, List, TypeVar, Any, Tuple, Set, Generic, Type, overload
+
+from pydgraph import DgraphClient
+
+
 import re
 
 from typing import Optional, List, Union, Any, Set
@@ -107,7 +117,7 @@ class Contains(Cmp):
 
 
 def get_var_block(
-    node: Any, edge_name: str, binding_num: int, root: Any, already_converted: Set[Any]
+        node: Any, edge_name: str, binding_num: int, root: Any, already_converted: Set[Any]
 ) -> str:
     var_block = ""
     if node and node not in already_converted:
@@ -164,7 +174,7 @@ def flatten_nodes(root: Any) -> List[Any]:
     return list(dict.fromkeys(node_list))
 
 
-def _build_expansion(node: Union[Any, Any], already_visited: Set[Any]) -> str:
+def __build_expansion(node: Union[Any, Any], already_visited: Set[Any]) -> str:
     if node in already_visited:
         return ""
     already_visited.add(node)
@@ -182,7 +192,7 @@ def _build_expansion(node: Union[Any, Any], already_visited: Set[Any]) -> str:
                 
                     {edge} {{
                         {",".join(neighbor_props)},
-                        {_build_expansion(neighbor, already_visited)}
+                        {__build_expansion(neighbor, already_visited)}
                     }}
                 
             """
@@ -192,8 +202,8 @@ def _build_expansion(node: Union[Any, Any], already_visited: Set[Any]) -> str:
     return ",".join([x for x in expanded_edges if x])
 
 
-def build_expansion(node: Union[Any, Any]) -> str:
-    props = node.get_properties()
+def _build_expansion_root(node: Union[Any, Any]) -> str:
+    props = node.get_property_names()
     edges = node.get_edges()
 
     expanded_edges = []
@@ -201,16 +211,17 @@ def build_expansion(node: Union[Any, Any]) -> str:
     already_visited = {node}
 
     for edge, neighbor in edges:
-        neighbor_props = neighbor.get_properties()
+        neighbor_props = neighbor.get_property_names()
         expanded_edge = f"""
                 {edge} {{
                     {",".join([x for x in neighbor_props if x])},
                      
-                    {_build_expansion(neighbor, already_visited)}
+                    {__build_expansion(neighbor, already_visited)}
                 
                 }}
             """
         expanded_edges.append(expanded_edge)
+
 
     return f"""
             {",".join(props)},
@@ -218,17 +229,17 @@ def build_expansion(node: Union[Any, Any]) -> str:
     """
 
 
-def build_query(
-    node: Any,
-    var_blocks: List[str],
-    bindings: List[str],
-    count: bool = False,
-    first: Optional[int] = None,
+def _build_query(
+        node: Any,
+        var_blocks: List[str],
+        bindings: List[str],
+        count: bool = False,
+        first: Optional[int] = None,
 ) -> str:
 
     joined_vars = "\n".join(var_blocks)
     if not count:
-        expansion = build_expansion(node)
+        expansion = _build_expansion_root(node)
     else:
         expansion = "count(uid) as c"
 
@@ -250,7 +261,7 @@ def build_query(
     return query
 
 
-def get_queries(process_query: Any, node_key: str, count: bool = False):
+def _get_queries(process_query: Any, node_key: str, count: bool = False):
     all_nodes = flatten_nodes(process_query)
     bindings = []
     var_blocks = []
@@ -261,14 +272,14 @@ def get_queries(process_query: Any, node_key: str, count: bool = False):
             node._get_var_block_root(i, root=process_query, node_key=node_key)
         )
 
-    return build_query(process_query, var_blocks, bindings, count)
+    return _build_query(process_query, var_blocks, bindings, count)
 
 
 def _str_cmps(
-    predicate: str,
-    eq: Optional[Union[str, List[str], Not, List[Not]]] = None,
-    contains: Optional[Union[str, List[str], Not, List[Not]]] = None,
-    ends_with: Optional[Union[str, List[str], Not, List[Not]]] = None,
+        predicate: str,
+        eq: Optional[Union[str, List[str], Not, List[Not]]] = None,
+        contains: Optional[Union[str, List[str], Not, List[Not]]] = None,
+        ends_with: Optional[Union[str, List[str], Not, List[Not]]] = None,
 ):
     cmps = []
 
@@ -308,10 +319,10 @@ def _str_cmps(
 
 
 def _int_cmps(
-    predicate: str,
-    eq: Optional[Union[int, List, Not, List[Not]]] = None,
-    gt: Optional[Union[int, List, Not, List[Not]]] = None,
-    lt: Optional[Union[int, List, Not, List[Not]]] = None,
+        predicate: str,
+        eq: Optional[Union[int, List, Not, List[Not]]] = None,
+        gt: Optional[Union[int, List, Not, List[Not]]] = None,
+        lt: Optional[Union[int, List, Not, List[Not]]] = None,
 ) -> List[List[Cmp]]:
     cmps = []
 
@@ -351,102 +362,184 @@ def _int_cmps(
     return cmps
 
 
-#
-# import unittest
-# import re
-#
-#
-# class Test(unittest.TestCase):
-#     @staticmethod
-#     def format_query(query):
-#         return re.sub(" +", " ", (query.replace("\t", "").replace("\n", "").strip()))
-#
-#         # return (
-#         #     query
-#         #     .replace("\t", "")
-#         #     .replace("\n", "")# )
-#
-#     def test_any_process_key_opt(self):
-#         p = ProcessQuery()
-#         queries = self.format_query(get_queries(p, node_key="keyA"))
-#
-#         expected = self.format_query(
-#             """
-#             {
-#                 Binding0 as var(func: eq(node_key, "keyA")) { }
-#                 res(func: uid(Binding0), first: 1) {
-#                     expand(_all_) {}
-#                 }
-#             }"""
-#         )
-#         assert queries == expected, "\n" + queries + "\n" + expected
-#
-#     def test_has_process_name(self):
-#         ProcessQuery().with_process_name()
-#         p = ProcessQuery()
-#         queries = self.format_query(get_queries(p, node_key="keyA"))
-#
-#         expected = self.format_query(
-#             """
-#         {
-#             Binding0 as var(func: eq(node_key, "keyA")) { }
-#             res(func: uid(Binding0), first: 1) {
-#                 expand(_all_) {}
-#             }
-#         }
-#         """
-#         )
-#         assert queries == expected, "\n" + queries + "\n" + expected
-#
-#     def test_has_bin_file(self):
-#
-#         p = ProcessQuery().with_bin_file(FileQuery())
-#         queries = self.format_query(get_queries(p, node_key="keyA"))
-#
-#         expected = self.format_query(
-#             """
-#         {
-#             Binding0 as var(func: eq(node_key, "keyA")) {
-#                 bin_file { }
-#             }
-#
-#             var(func: eq(node_key, "keyA")) {
-#                 Binding1 as ~bin_file { }
-#             }
-#             res(func: uid(Binding0, Binding1), first: 1) {
-#                 expand(_all_) {expand(_all_) {}}
-#             }
-#         }
-#         """
-#         )
-#         assert queries == expected, "\n" + queries + "\n" + expected
-#
-#     def test_has_bin_file_with_path(self):
-#
-#         p = ProcessQuery().with_bin_file(FileQuery().with_file_path(eq="foo"))
-#         queries = self.format_query(get_queries(p, node_key="keyA"))
-#
-#         expected = self.format_query(
-#             """
-#         {
-#             Binding0 as var(func: eq(node_key, "keyA")) {
-#                 bin_file @filter(((eq(file_path, "foo")))) { }
-#             }
-#             var(func: eq(node_key, "keyA")) @filter(((eq(file_path, "foo"))))  {
-#                 Binding1 as ~bin_file { }
-#             }
-#
-#             res(func: uid(Binding0, Binding1), first: 1) {
-#                 expand(_all_) {expand(_all_) {}}
-#             }
-#         }
-#         """
-#         )
-#         assert queries == expected, "\n" + queries + "\n" + expected
-#
-#
-# if __name__ == "__main__":
-#     unittest.main()
-#     # main()
-#
-#
+
+PropertyFilter = List[List[Cmp]]
+StrCmp = Union[str, List[str], Not, List[Not]]
+IntCmp = Union[int, List[int], Not, List[Not]]
+
+EdgeFilter = Optional[Any]
+
+V = TypeVar('V', bound='Viewable')
+
+
+class Viewable(abc.ABC):
+    @staticmethod
+    @abc.abstractmethod
+    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> V:
+        pass
+
+
+Q = TypeVar('Q', bound='Queryable')
+
+
+class Queryable(abc.ABC):
+
+    @abc.abstractmethod
+    def get_unique_predicate(self) -> Optional[str]:
+        pass
+
+    @abc.abstractmethod
+    def get_node_type_name(self) -> Optional[str]:
+        pass
+
+    @abc.abstractmethod
+    def get_node_key_filter(self) -> PropertyFilter:
+        pass
+
+    @abc.abstractmethod
+    def get_uid_filter(self) -> PropertyFilter:
+        pass
+
+    @abc.abstractmethod
+    def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
+        pass
+
+    @abc.abstractmethod
+    def get_forward_edges(self) -> List[Tuple[str, Any]]:
+        pass
+
+    @abc.abstractmethod
+    def get_reverse_edges(self) -> List[Tuple[str, Any]]:
+        pass
+
+    def get_property_names(self) -> List[str]:
+        return [p[0]for p in self.get_properties()]
+
+    def get_edges(self) -> List[Tuple[str, Any]]:
+        all_edges = []
+        all_edges.extend(self.get_forward_edges())
+        all_edges.extend(self.get_reverse_edges())
+        return all_edges
+
+    def get_neighbors(self) -> List[Q]:
+        return [e[1] for e in self.get_edges()]
+
+    def _query_first(self, dgraph_client, cls: Type[V], contains_node_key=None) -> Optional[V]:
+        if contains_node_key:
+            query_str = _get_queries(self, node_key=contains_node_key)
+        else:
+            query_str = self._to_query(first=1)
+        print(query_str)
+        raw_views = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
+            "res"
+        ]
+
+        if not raw_views:
+            return None
+
+        return cls().from_dict(dgraph_client, raw_views[0])
+
+    def get_count(
+            self,
+            dgraph_client: DgraphClient,
+            max: Optional[int]=None,
+            contains_node_key: Optional[str]=None,
+    ) -> int:
+        if contains_node_key:
+            query_str = _get_queries(self, node_key=contains_node_key, count=True)
+        else:
+            query_str = self._to_query(count=True, first=max or 1000)
+
+        raw_count = json.loads(dgraph_client.txn(read_only=True)
+                               .query(query_str).json)[
+            "res"
+        ]
+
+        if not raw_count:
+            return 0
+        else:
+            return raw_count[0].get('count', 0)
+
+    def _to_query(self, count: bool = False, first: Optional[int] = None) -> str:
+        var_block = self._get_var_block_root(0, root=self)
+
+        return _build_query(
+            self, [var_block], ["Binding0"], count=count, first=first
+        )
+
+    def _filters(self) -> str:
+        inner_filters = []
+
+        for prop in self.get_properties():
+            _generate_filter(prop[1])
+
+        if not inner_filters:
+            return ""
+
+        return f"@filter({'AND'.join(inner_filters)})"
+
+    def _get_var_block(
+            self, binding_num: int, root: Any, already_converted: Set[Any]
+    ) -> str:
+        if self in already_converted:
+            return ""
+        already_converted.add(self)
+
+        filters = self._filters()
+
+        edge_var_blocks = []
+
+        for edge_name, edge in self.get_edges():
+            var_block = get_var_block(
+                edge, edge_name, binding_num, root, already_converted
+            )
+            edge_var_blocks.append(var_block)
+
+        edge_var_blocks = "\n".join(edge_var_blocks)
+
+        block = f"""
+            {filters} {{
+                {edge_var_blocks}
+            }}
+            """
+
+        return block
+
+
+    def _get_var_block_root(
+            self, binding_num: int, root: Any, node_key: Optional[str] = None
+    ):
+        already_converted = {self}
+        root_var = ""
+        if self == root:
+            root_var = f"Binding{binding_num} as "
+
+        filters = self._filters()
+
+        edge_var_blocks = []
+
+        for edge_name, edge in self.get_edges():
+            var_block = get_var_block(
+                edge, edge_name, binding_num, root, already_converted
+            )
+            edge_var_blocks.append(var_block)
+
+        type_name = self.get_node_type_name()
+        if type_name:
+            func_filter = f'eq(node_type, "{self.get_node_type_name()}")'
+        else:
+            func_filter = f'has({self.get_unique_predicate()})'
+
+        if node_key:
+            func_filter = f'eq(node_key, "{node_key}")'
+
+        edge_var_blocks = "\n".join(edge_var_blocks)
+
+        block = f"""
+            {root_var} var(func: {func_filter}) @cascade {filters} {{
+                {edge_var_blocks}
+            }}
+            """
+
+        return block
+
