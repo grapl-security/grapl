@@ -412,7 +412,6 @@ class Viewable(abc.ABC):
             dgraph_client=dgraph_client,
             node_key=d['node_key'],
             uid=d['uid'],
-            arn=d.get('arn'),
             **properties,
             **edges
         )
