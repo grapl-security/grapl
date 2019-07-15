@@ -1,3 +1,4 @@
+from copy import deepcopy
 from collections import defaultdict
 from typing import Iterator, TypeVar, Set
 from typing import Optional, List, Dict, Any, Union
