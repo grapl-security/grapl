@@ -431,7 +431,7 @@ class Queryable(abc.ABC):
         if not raw_views:
             return None
 
-        return cls().from_dict(dgraph_client, raw_views[0])
+        return cls.from_dict(dgraph_client, raw_views[0])
 
     def get_count(
             self,
