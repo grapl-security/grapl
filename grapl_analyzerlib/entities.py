@@ -1,7 +1,7 @@
 import json
 from copy import deepcopy
 from collections import defaultdict
-from typing import Iterator, TypeVar, Set, Callable
+from typing import Iterator, TypeVar, Set, Callable, Type
 from typing import Optional, List, Dict, Any, Union
 from typing import Tuple
 
@@ -493,62 +493,39 @@ class FileView(Viewable):
         self.spawned_from = spawned_from
 
     @staticmethod
+    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+        return [
+            ("asset_id", str),
+            ("file_path", str),
+            ("file_name", str),
+            ("file_extension", str),
+            ("file_mime_type", str),
+            ("file_size", int),
+            ("file_version", str),
+            ("file_description", str),
+            ("file_product", str),
+            ("file_company", str),
+            ("file_directory", str),
+            ("file_inode", int),
+            ("file_hard_links", str),
+            ("md5_hash", str),
+            ("sha1_hash", str),
+            ("sha256_hash", str),
+        ]
+
+    @staticmethod
+    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+        return [
+            ("~created_file", ProcessView),
+            ("~deleted_file", ProcessView),
+            ("~wrote_to_files", ProcessView),
+            ("~read_files", ProcessView),
+            ("~bin_file", ProcessView),
+        ]
+
+    @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> "FV":
-
-        raw_creator = d.get("~created_file", None)
-        raw_deleter = d.get("~deleted_file", None)
-        raw_writers = d.get("~wrote_to_files", None)
-        raw_readers = d.get("~read_files", None)
-        raw_spawned_from = d.get("~bin_file", None)
-
-        creator = None  # type: Optional[List['PV']]
-        if raw_creator:
-            creator = ProcessView.from_dict(dgraph_client, raw_creator)
-
-        deleter = None  # type: Optional[List['PV']]
-        if raw_deleter:
-            deleter = ProcessView.from_dict(dgraph_client, raw_deleter)
-
-        writers = None  # type: Optional[List['PV']]
-        if raw_writers:
-            writers = [ProcessView.from_dict(dgraph_client, raw) for raw in raw_writers]
-
-        readers = None  # type: Optional[List['PV']]
-        if raw_readers:
-            readers = [ProcessView.from_dict(dgraph_client, raw) for raw in raw_readers]
-
-        spawned_from = None  # type: Optional[List['PV']]
-        if raw_spawned_from:
-            spawned_from = [
-                ProcessView.from_dict(dgraph_client, raw) for raw in raw_spawned_from
-            ]
-
-        return FileView(
-            dgraph_client=dgraph_client,
-            node_key=d["node_key"],
-            uid=d["uid"],
-            asset_id=d.get("asset_id"),
-            file_path=d.get("file_path"),
-            file_name=d.get("file_name"),
-            file_extension=d.get("file_extension"),
-            file_mime_type=d.get("file_mime_type"),
-            file_size=d.get("file_size"),
-            file_version=d.get("file_version"),
-            file_description=d.get("file_description"),
-            file_product=d.get("file_product"),
-            file_company=d.get("file_company"),
-            file_directory=d.get("file_directory"),
-            file_inode=d.get("file_inode"),
-            file_hard_links=d.get("file_hard_links"),
-            md5_hash=d.get("md5_hash"),
-            sha1_hash=d.get("sha1_hash"),
-            sha256_hash=d.get("sha256_hash"),
-            creator=creator,
-            deleter=deleter,
-            writers=writers,
-            readers=readers,
-            spawned_from=spawned_from,
-        )
+        return Viewable._from_dict(dgraph_client, d, FileView)
 
     def get_file_name(self) -> Optional[str]:
         if self.file_name:
@@ -1473,22 +1450,20 @@ class OutboundConnectionView(Viewable):
         self.external_connections = external_connections
 
     @staticmethod
+    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+        return [
+            ("port", str)
+        ]
+
+    @staticmethod
+    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+        return [
+            ("external_connections", [ExternalIpView]),
+        ]
+
+    @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> "OCV":
-        raw_external_connection = d.get("external_connection", None)
-
-        external_connection = None  # type: Optional[EIPV]
-        if raw_external_connection:
-            external_connection = ExternalIpView.from_dict(
-                dgraph_client, raw_external_connection[0]
-            )
-
-        return OutboundConnectionView(
-            dgraph_client=dgraph_client,
-            node_key=d["node_key"],
-            uid=d["uid"],
-            port=d.get("port"),
-            external_connections=external_connection,
-        )
+        return Viewable._from_dict(dgraph_client, d, OutboundConnectionView)
 
 
 class ExternalIpQuery(Queryable):
@@ -1562,13 +1537,18 @@ class ExternalIpView(Viewable):
         self.external_ip = external_ip
 
     @staticmethod
+    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+        return [
+            ("external_ip", str)
+        ]
+
+    @staticmethod
+    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+        return []
+
+    @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> EIPV:
-        return ExternalIpView(
-            dgraph_client=dgraph_client,
-            node_key=d["node_key"],
-            uid=d["uid"],
-            external_ip=d.get("external_ip", None),
-        )
+        return Viewable._from_dict(dgraph_client, d, ExternalIpView)
 
 
 if __name__ == "__main__":

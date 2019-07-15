@@ -374,7 +374,7 @@ class Viewable(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[V], V]]]:
+    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         pass
 
     @staticmethod
@@ -415,7 +415,6 @@ class Viewable(abc.ABC):
             **properties,
             **edges
         )
-
 
 
 Q = TypeVar('Q', bound='Queryable')
