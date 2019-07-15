@@ -1,7 +1,7 @@
 import json
 from copy import deepcopy
 from collections import defaultdict
-from typing import Iterator, TypeVar, Set
+from typing import Iterator, TypeVar, Set, Callable
 from typing import Optional, List, Dict, Any, Union
 from typing import Tuple
 
@@ -1161,84 +1161,33 @@ class ProcessView(Viewable):
         self.created_connections = created_connections  # type: Optional[List['EIPV']]
 
     @staticmethod
+    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+        return [
+            ("asset_id", str),
+            ("process_name", str),
+            ("process_command_line", str),
+            ("process_guid", str),
+            ("process_id", str),
+            ("created_timestamp", str),
+            ("terminated_timestamp", str),
+            ("last_seen_timestamp", str),
+        ]
+
+    @staticmethod
+    def get_edge_tuples() -> List[Tuple[str, Union[List[V], V]]]:
+        return [
+            ("bin_file", FV),
+            ("parent", PV),
+            ("children", [PV]),
+            ("deleted_files", [FV]),
+            ("created_files", [FV]),
+            ("read_files", [FV]),
+            ("created_connections", [EIPV]),
+        ]
+
+    @staticmethod
     def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> "PV":
-        raw_created_connections = d.get("created_connection", None)
-
-        created_connections = None
-
-        if raw_created_connections:
-            created_connections = [
-                OutboundConnectionView.from_dict(dgraph_client, c)
-                for c in raw_created_connections
-            ]
-
-        raw_bin_file = d.get("bin_file", None)
-
-        bin_file = None
-
-        if raw_bin_file:
-            bin_file = FileView.from_dict(dgraph_client, raw_bin_file[0])
-
-        raw_parent = d.get("~children", None)
-
-        parent = None
-
-        if raw_parent:
-            parent = ProcessView.from_dict(dgraph_client, raw_parent[0])
-
-        raw_deleted_files = d.get("deleted_files", None)
-
-        deleted_files = None
-
-        if raw_deleted_files:
-            deleted_files = [
-                FileView.from_dict(dgraph_client, f) for f in d["deleted_files"]
-            ]
-
-        raw_read_files = d.get("read_files", None)
-
-        read_files = None
-
-        if raw_read_files:
-            read_files = [FileView.from_dict(dgraph_client, f) for f in d["read_files"]]
-
-        raw_created_files = d.get("created_files", None)
-
-        created_files = None
-
-        if raw_created_files:
-            created_files = [
-                FileView.from_dict(dgraph_client, f) for f in d["created_files"]
-            ]
-
-        raw_children = d.get("children", None)
-
-        children = None  # type: Optional[List['PV']]
-        if raw_children:
-            children = [
-                ProcessView.from_dict(dgraph_client, child) for child in d["children"]
-            ]
-
-        return ProcessView(
-            dgraph_client=dgraph_client,
-            node_key=d["node_key"],
-            uid=d["uid"],
-            asset_id=d.get("asset_id"),
-            process_name=d.get("process_name"),
-            process_command_line=d.get("process_command_line"),
-            process_guid=d.get("process_guid"),
-            process_id=d.get("process_id"),
-            created_timestamp=d.get("created_timestamp"),
-            terminated_timestamp=d.get("terminated_timestamp"),
-            last_seen_timestamp=d.get("last_seen_timestamp"),
-            bin_file=bin_file,
-            deleted_files=deleted_files,
-            read_files=read_files,
-            created_files=created_files,
-            children=children,
-            parent=parent,
-            created_connections=created_connections,
-        )
+        return Viewable._from_dict(dgraph_client, d, ProcessView)
 
     def get_asset_id(self) -> Optional[str]:
         if self.asset_id:
