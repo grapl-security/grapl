@@ -469,7 +469,7 @@ class Queryable(abc.ABC):
             query_str = _get_queries(self, node_key=contains_node_key)
         else:
             query_str = self._to_query(first=1)
-        print(query_str)
+
         raw_views = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
             "res"
         ]
