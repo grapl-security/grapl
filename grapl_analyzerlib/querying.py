@@ -499,7 +499,6 @@ class Queryable(abc.ABC):
 
         return block
 
-
     def _get_var_block_root(
             self, binding_num: int, root: Any, node_key: Optional[str] = None
     ):
