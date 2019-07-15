@@ -1,13 +1,11 @@
-import json
 from copy import deepcopy
 from typing import List, Optional, Any, Tuple, Dict
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.node_types import PQ, FQ, FV, PV
 import grapl_analyzerlib.process_node as process_node
-from grapl_analyzerlib.querying import Has, Cmp, Queryable, Eq, _str_cmps, get_var_block, _generate_filter, _build_query, \
-    _get_queries, Viewable, PropertyFilter
+import grapl_analyzerlib.node_types as node_types
+from grapl_analyzerlib.querying import Has, Cmp, Queryable, Eq, _str_cmps, Viewable, PropertyFilter
 
 
 class FileQuery(Queryable):
@@ -39,11 +37,11 @@ class FileQuery(Queryable):
         self._sha256_hash = []  # type: List[List[Cmp]]
 
         # Edges
-        self._creator = None  # type: Optional[PQ]
-        self._deleter = None  # type: Optional[PQ]
-        self._writers = None  # type: Optional[PQ]
-        self._readers = None  # type: Optional[PQ]
-        self._spawned_from = None  # type: Optional[PQ]
+        self._creator = None  # type: Optional['node_types.PQ']
+        self._deleter = None  # type: Optional['node_types.PQ']
+        self._writers = None  # type: Optional[ 'node_types.Q']
+        self._readers = None  # type: Optional['node_types.PQ']
+        self._spawned_from = None  # type: Optional['node_types.PQ']
 
     def with_node_key(self, node_key: Optional[str] = None):
         if node_key:
@@ -52,125 +50,125 @@ class FileQuery(Queryable):
             self._node_key = Has("node_key")
         return self
 
-    def with_file_name(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_name(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_name.extend(
             _str_cmps("file_name", eq, contains, ends_with)
         )
         return self
 
-    def with_asset_id(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_asset_id(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._asset_id.extend(
             _str_cmps("asset_id", eq, contains, ends_with)
         )
         return self
 
-    def with_file_path(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_path(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_path.extend(
             _str_cmps("file_path", eq, contains, ends_with)
         )
         return self
 
-    def with_file_extension(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_extension(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_extension.extend(
             _str_cmps("file_extension", eq, contains, ends_with)
         )
         return self
 
-    def with_file_mime_type(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_mime_type(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_mime_type.extend(
             _str_cmps("file_mime_type", eq, contains, ends_with)
         )
         return self
 
-    def with_file_size(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_size(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_size.extend(
             _str_cmps("file_size", eq, contains, ends_with)
         )
         return self
 
-    def with_file_version(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_version(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_version.extend(
             _str_cmps("file_version", eq, contains, ends_with)
         )
         return self
 
-    def with_file_description(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_description(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_description.extend(
             _str_cmps("file_description", eq, contains, ends_with)
         )
         return self
 
-    def with_file_product(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_product(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_product.extend(
             _str_cmps("file_product", eq, contains, ends_with)
         )
         return self
 
-    def with_file_company(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_company(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_company.extend(
             _str_cmps("file_company", eq, contains, ends_with)
         )
         return self
 
-    def with_file_directory(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_directory(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_directory.extend(
             _str_cmps("file_directory", eq, contains, ends_with)
         )
         return self
 
-    def with_file_inode(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_inode(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_inode.extend(
             _str_cmps("file_inode", eq, contains, ends_with)
         )
         return self
 
-    def with_file_hard_links(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_file_hard_links(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._file_hard_links.extend(
             _str_cmps("file_hard_links", eq, contains, ends_with)
         )
         return self
 
-    def with_md5_hash(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_md5_hash(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._md5_hash.extend(
             _str_cmps("md5_hash", eq, contains, ends_with)
         )
         return self
 
-    def with_sha1_hash(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_sha1_hash(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._sha1_hash.extend(
             _str_cmps("sha1_hash", eq, contains, ends_with)
         )
         return self
 
-    def with_sha256_hash(self, eq=None, contains=None, ends_with=None) -> FQ:
+    def with_sha256_hash(self, eq=None, contains=None, ends_with=None) ->  'node_types.FQ':
         self._sha256_hash.extend(
             _str_cmps("sha256_hash", eq, contains, ends_with)
         )
         return self
 
-    def with_creator(self, creator: PQ) -> FQ:
+    def with_creator(self, creator: 'node_types.PQ') ->  'node_types.FQ':
         creator = deepcopy(creator)
         self._creator = creator
         return self
 
-    def with_deleter(self, deleter: PQ) -> FQ:
+    def with_deleter(self, deleter: 'node_types.PQ') ->  'node_types.FQ':
         deleter = deepcopy(deleter)
         self._deleter = deleter
         deleter._deleted_files = self
         return self
 
-    def with_writers(self, writers: PQ) -> FQ:
+    def with_writers(self, writers: 'node_types.PQ') ->  'node_types.FQ':
         writers = deepcopy(writers)
         self._writers = writers
         return self
 
-    def with_readers(self, readers: PQ) -> FQ:
+    def with_readers(self, readers: 'node_types.PQ') ->  'node_types.FQ':
         readers = deepcopy(readers)
         self._readers = readers
         readers._read_files = self
         return self
 
-    def with_spawned_from(self, spawned_from: PQ) -> FQ:
+    def with_spawned_from(self, spawned_from: 'node_types.PQ') ->  'node_types.FQ':
         spawned_from = deepcopy(spawned_from)
         self._spawned_from = spawned_from
         spawned_from._bin_file = self
@@ -237,7 +235,7 @@ class FileQuery(Queryable):
 
         return [n for n in neighbors if n]
 
-    def query_first(self, dgraph_client, contains_node_key=None) -> Optional[FV]:
+    def query_first(self, dgraph_client, contains_node_key=None) -> Optional['node_types.FV']:
         return super(FileQuery, self)._query_first(dgraph_client, FileView, contains_node_key)
 
 
@@ -264,11 +262,11 @@ class FileView(Viewable):
             sha1_hash: Optional[str] = None,
             sha256_hash: Optional[str] = None,
 
-            creator: Optional[List[PV]] = None,
-            deleter: Optional[List[PV]] = None,
-            writers: Optional[List[PV]] = None,
-            readers: Optional[List[PV]] = None,
-            spawned_from: Optional[List[PV]] = None,
+            creator: Optional[List['node_types.PV']] = None,
+            deleter: Optional[List['node_types.PV']] = None,
+            writers: Optional[List['node_types.PV']] = None,
+            readers: Optional[List['node_types.PV']] = None,
+            spawned_from: Optional[List['node_types.PV']] = None,
     ) -> None:
         super(FileView, self).__init__(self)
         self.dgraph_client = dgraph_client  # type: DgraphClient
@@ -297,7 +295,7 @@ class FileView(Viewable):
         self.spawned_from = spawned_from
 
     @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> FV:
+    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'node_types.FV':
 
         raw_creator = d.get("~created_file", None)
         raw_deleter = d.get("~deleted_file", None)
@@ -305,27 +303,27 @@ class FileView(Viewable):
         raw_readers = d.get("~read_files", None)
         raw_spawned_from = d.get("~bin_file", None)
 
-        creator = None  # type: Optional[List[PV]]
+        creator = None  # type: Optional[List['node_types.PV']]
         if raw_creator:
             creator = process_node.ProcessView.from_dict(dgraph_client, raw_creator)
 
-        deleter = None  # type: Optional[List[PV]]
+        deleter = None  # type: Optional[List['node_types.PV']]
         if raw_deleter:
             deleter = process_node.ProcessView.from_dict(dgraph_client, raw_deleter)
 
-        writers = None  # type: Optional[List[PV]]
+        writers = None  # type: Optional[List['node_types.PV']]
         if raw_writers:
             writers = [
                 process_node.ProcessView.from_dict(dgraph_client, raw) for raw in raw_writers
             ]
 
-        readers = None  # type: Optional[List[PV]]
+        readers = None  # type: Optional[List['node_types.PV']]
         if raw_readers:
             readers = [
                 process_node.ProcessView.from_dict(dgraph_client, raw) for raw in raw_readers
             ]
 
-        spawned_from = None  # type: Optional[List[PV]]
+        spawned_from = None  # type: Optional[List['node_types.PV']]
         if raw_spawned_from:
             spawned_from = [
                 process_node.ProcessView.from_dict(dgraph_client, raw) for raw in raw_spawned_from

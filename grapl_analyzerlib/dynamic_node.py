@@ -3,10 +3,11 @@ from typing import Dict, List, Tuple, Any, Optional
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.node_types import DNQ
-from grapl_analyzerlib.querying import PropertyFilter, StrCmp, IntCmp, EdgeFilter, Has, Cmp, _str_cmps, _int_cmps
+import grapl_analyzerlib.node_types as node_types
+from grapl_analyzerlib.querying import PropertyFilter, StrCmp, IntCmp, EdgeFilter, Has, Cmp, _str_cmps, _int_cmps, \
+    Queryable
 from grapl_analyzerlib.querying import Viewable
-from test import Queryable
+
 
 
 class DynamicNodeQuery(Queryable):
@@ -26,23 +27,23 @@ class DynamicNodeQuery(Queryable):
         self.edge_filters = dict()
         self.reverse_edge_filters = dict()
 
-    def with_property_str_filter(self, prop_name: str, eq=StrCmp, contains=StrCmp, ends_with=StrCmp) -> DNQ:
+    def with_property_str_filter(self, prop_name: str, eq=StrCmp, contains=StrCmp, ends_with=StrCmp) -> 'node_types.DNQ':
         self.property_filters[prop_name].extend(
             _str_cmps(prop_name, eq, contains, ends_with)
         )
         return self
 
-    def with_property_int_filter(self, prop_name: str, eq=IntCmp, contains=IntCmp, ends_with=IntCmp) -> DNQ:
+    def with_property_int_filter(self, prop_name: str, eq=IntCmp, contains=IntCmp, ends_with=IntCmp) -> 'node_types.DNQ':
         self.property_filters[prop_name].extend(
             _int_cmps(prop_name, eq, contains, ends_with)
         )
         return self
 
-    def with_edge_filter(self, edge: str, edge_filter: EdgeFilter) -> DNQ:
+    def with_edge_filter(self, edge: str, edge_filter: EdgeFilter) -> 'node_types.DNQ':
         self.edge_filters[edge] = edge_filter
         return self
 
-    def with_reverse_edge_filter(self, edge: str, edge_filter: EdgeFilter) -> DNQ:
+    def with_reverse_edge_filter(self, edge: str, edge_filter: EdgeFilter) -> 'node_types.DNQ':
         self.reverse_edge_filters[edge] = edge_filter
         return self
 

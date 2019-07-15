@@ -3,8 +3,8 @@ from typing import List, Optional, Any, Dict, Tuple
 
 from pydgraph import DgraphClient
 
+import grapl_analyzerlib.node_types as node_types
 import grapl_analyzerlib.external_ip_node as external_ip_node
-from grapl_analyzerlib.node_types import PQ, EIPQ, OCQ, EIPV, OCV
 from grapl_analyzerlib.querying import Has, Cmp, Queryable, Viewable, PropertyFilter
 
 
@@ -55,13 +55,13 @@ class OutboundConnectionQuery(Queryable):
         self._port = []  # type: List[List[Cmp]]
 
         # self._internal_connection = None  # type: Optional[Any]
-        self._external_connection = None  # type: Optional[EIPQ]
-        self._connecting_process = None  # type: Optional[PQ]
+        self._external_connection = None  # type: 'Optional[node_types.EIPQ]'
+        self._connecting_process = None  # type: 'Optional[node_types.PQ]'
 
     def with_external_connection(
             self,
-            external_ip: EIPQ
-    ) -> OCQ:
+            external_ip: 'node_types.EIPQ'
+    ) -> 'node_types.OCQ':
         external_ip = deepcopy(external_ip)
         external_ip._connections_from = self
         self._external_connection = external_ip
@@ -69,8 +69,8 @@ class OutboundConnectionQuery(Queryable):
 
     def with_connecting_process(
             self,
-            process: PQ
-    ) -> OCQ:
+            process: 'node_types.PQ'
+    ) -> 'node_types.OCQ':
         process = deepcopy(process)
         process._created_connection = self
         self._connecting_process = process
@@ -83,7 +83,7 @@ class OutboundConnectionView(Viewable):
                  node_key: str,
                  uid: Optional[str] = None,
                  port: Optional[str] = None,
-                 external_connections: Optional[EIPV] = None,
+                 external_connections: 'Optional[node_types.EIPV]' = None,
                  ) -> None:
         super(OutboundConnectionView, self).__init__(self)
 
@@ -95,10 +95,10 @@ class OutboundConnectionView(Viewable):
         self.external_connections = external_connections
 
     @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> OCV:
+    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'node_types.OCV':
         raw_external_connection = d.get('external_connection', None)
 
-        external_connection = None  # type: Optional[EIPV]
+        external_connection = None  # type: Optional[node_types.EIPV]
         if raw_external_connection:
             external_connection = external_ip_node.ExternalIpView.from_dict(dgraph_client, raw_external_connection[0])
 

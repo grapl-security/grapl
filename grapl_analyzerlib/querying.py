@@ -1,16 +1,10 @@
 import abc
 import json
-
-from collections import defaultdict
-from copy import deepcopy
-from typing import Optional, Union, Dict, List, TypeVar, Any, Tuple, Set, Generic, Type, overload
+import re
+from typing import Dict, TypeVar, Tuple, Type
+from typing import Optional, List, Union, Any, Set
 
 from pydgraph import DgraphClient
-
-
-import re
-
-from typing import Optional, List, Union, Any, Set
 
 
 class Not(object):

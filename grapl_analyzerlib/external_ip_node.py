@@ -1,12 +1,10 @@
-import json
 from copy import deepcopy
 from typing import List, Optional, Any, Tuple, Union, Dict, Set
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.node_types import PQ, FQ, OCQ, EIPQ, EIPV
-from grapl_analyzerlib.querying import Has, Cmp, Queryable, Eq, _str_cmps, get_var_block, _generate_filter, _build_query, \
-    _get_queries, Viewable, Not
+import grapl_analyzerlib.node_types as node_types
+from grapl_analyzerlib.querying import Has, Cmp, Queryable, _str_cmps, get_var_block, _generate_filter, Viewable, Not
 
 
 class ExternalIpQuery(Queryable):
@@ -21,7 +19,7 @@ class ExternalIpQuery(Queryable):
         self._external_ip = []  # type: List[List[Cmp]]
 
         # Edges
-        self._connections_from = None  # type: Optional[OCQ]
+        self._connections_from = None  # type: 'Optional[node_types.OCQ]/
 
         # Meta
         self._first = None  # type: Optional[int]
@@ -37,7 +35,7 @@ class ExternalIpQuery(Queryable):
             ends_with: Optional[
                 Union[str, List[str], Not, List[Not]]
             ] = None,
-    ) -> EIPQ:
+    ) -> 'node_types.EIPQ':
         self._external_ip.extend(
             _str_cmps("external_ip", eq, contains, ends_with)
         )
@@ -45,8 +43,8 @@ class ExternalIpQuery(Queryable):
 
     def with_connections_from(
             self,
-            process: PQ
-    ) -> EIPQ:
+            process: node_types.PQ
+    ) -> 'node_types.EIPQ':
         process = deepcopy(process)
         process._created_connection = self
         self._connections_from = process
@@ -142,7 +140,7 @@ class ExternalIpView(Viewable):
         self.external_ip = external_ip
 
     @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> EIPV:
+    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> node_types.EIPV:
 
         return ExternalIpView(
             dgraph_client=dgraph_client,

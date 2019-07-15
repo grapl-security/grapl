@@ -1,17 +1,14 @@
 from collections import defaultdict
-from typing import Iterator, Type
+from typing import Iterator
 from typing import Optional, List, Dict, Any, Union
 
-import grapl_analyzerlib.entity_queries as entity_queries
 from pydgraph import DgraphClient
 
 import grapl_analyzerlib.external_ip_node
-from grapl_analyzerlib import graph_description_pb2
-from grapl_analyzerlib.file_node import FileView
-from grapl_analyzerlib.node_types import *
-from grapl_analyzerlib.outbound_connection_node import OutboundConnectionView
-from grapl_analyzerlib.dynamic_node import DynamicNodeView
-from grapl_analyzerlib.process_node import ProcessView
+import grapl_analyzerlib.node_types as node_types
+import grapl_analyzerlib.outbound_connection_node as outbound_connection_node
+from grapl_analyzerlib import graph_description_pb2, process_node, file_node, dynamic_node
+from grapl_analyzerlib.querying import flatten_nodes
 
 
 class EdgeView(object):
@@ -24,41 +21,41 @@ class EdgeView(object):
 
 
 class NodeView(object):
-    def __init__(self, node: Union[PV, FV, EIPV, OCV, DNV]):
+    def __init__(self, node: Union['node_types.PV', 'node_types.FV', 'node_types.EIPV', 'node_types.OCV', 'node_types.DNV']):
         self.node = node
 
     @staticmethod
-    def from_raw(dgraph_client: DgraphClient, node: Any) -> N:
+    def from_raw(dgraph_client: DgraphClient, node: Any) -> 'node_types.N':
         if node.HasField("process_node"):
-            return NodeView(ProcessView(dgraph_client, node.process_node.node_key))
+            return NodeView(process_node.ProcessView(dgraph_client, node.process_node.node_key))
         elif node.HasField("file_node"):
-            return NodeView(FileView(dgraph_client, node.file_node.node_key))
+            return NodeView(file_node.FileView(dgraph_client, node.file_node.node_key))
         elif node.HasField("ip_address_node"):
             return NodeView(grapl_analyzerlib.external_ip_node.ExternalIpView(dgraph_client, node.ip_address_node.node_key))
         elif node.HasField("outbound_connection_node"):
-            return NodeView(OutboundConnectionView(dgraph_client, node.outbound_connection_node.node_key))
+            return NodeView(outbound_connection_node.OutboundConnectionView(dgraph_client, node.outbound_connection_node.node_key))
         elif node.HasField("dynamic_node"):
-            return NodeView(DynamicNodeView(dgraph_client, node.dynamic_node.node_key, node.dynamic_node.node_type))
+            return NodeView(dynamic_node.DynamicNodeView(dgraph_client, node.dynamic_node.node_key, node.dynamic_node.node_type))
         else:
             raise Exception("Invalid Node Type")
 
-    def as_process_view(self) -> Optional[PV]:
-        if isinstance(self.node, ProcessView):
+    def as_process_view(self) -> Optional['node_types.PV']:
+        if isinstance(self.node, process_node.ProcessView):
             return self.node
         return None
 
-    def as_file_view(self) -> Optional[FV]:
-        if isinstance(self.node, FileView):
+    def as_file_view(self) -> Optional['node_types.FV']:
+        if isinstance(self.node, file_node.FileView):
             return self.node
         return None
 
-    def as_dynamic_node(self) -> Optional[DNV]:
-        if isinstance(self.node, DynamicNodeView):
+    def as_dynamic_node(self) -> Optional['node_types.DNV']:
+        if isinstance(self.node, dynamic_node.DynamicNodeView):
             return self.node
         return None
 
     def to_adjacency_list(self) -> Dict[str, Any]:
-        all_nodes = entity_queries.flatten_nodes(self.node)
+        all_nodes = flatten_nodes(self.node)
         node_dicts = defaultdict(dict)
         edges = defaultdict(list)
         for i, node in enumerate(all_nodes):
@@ -82,7 +79,7 @@ class SubgraphView(object):
         self.edges = edges
 
     @staticmethod
-    def from_proto(dgraph_client: DgraphClient, s: bytes) -> S:
+    def from_proto(dgraph_client: DgraphClient, s: bytes) -> 'node_types.S':
         subgraph = graph_description_pb2.GraphDescription()
         subgraph.ParseFromString(s)
 
@@ -96,13 +93,13 @@ class SubgraphView(object):
         for node in self.nodes.values():
             yield node
 
-    def process_iter(self) -> Iterator[PV]:
+    def process_iter(self) -> Iterator['node_types.PV']:
         for node in self.nodes.values():
             maybe_node = node.as_process_view()
             if maybe_node:
                 yield maybe_node
 
-    def file_iter(self) -> Iterator[FV]:
+    def file_iter(self) -> Iterator['node_types.FV']:
         for node in self.nodes.values():
             maybe_node = node.as_file_view()
             if maybe_node:

@@ -6,12 +6,260 @@ from pydgraph import DgraphClient
 
 import grapl_analyzerlib.external_ip_node as external_ip_node 
 import grapl_analyzerlib.file_node as file_node
-from grapl_analyzerlib.node_types import FV, PQ, FQ, OCQ, EIPV, EIPQ, PV
 import grapl_analyzerlib.outbound_connection_node as outbound_connection_node
+import grapl_analyzerlib.node_types as node_types
 from grapl_analyzerlib.querying import Has, Cmp, Queryable, Eq, _str_cmps, Viewable, PropertyFilter, Not, _int_cmps
 
 
 class ProcessQuery(Queryable):
+    def __init__(self) -> None:
+        super(ProcessQuery, self).__init__()
+        # Properties
+        self._node_key = Has(
+            "node_key"
+        )  # type: Cmp
+        self._uid = Has(
+            "uid"
+        )  # type: Cmp
+
+        self._asset_id = []  # type: List[List[Cmp]]
+        self._process_name = []  # type: List[List[Cmp]]
+        self._process_command_line = []  # type: List[List[Cmp]]
+        self._process_guid = []  # type: List[List[Cmp]]
+        self._process_id = []  # type: List[List[Cmp]]
+        self._created_timestamp = []  # type: List[List[Cmp]]
+        self._terminated_timestamp = []  # type: List[List[Cmp]]
+        self._last_seen_timestamp = []  # type: List[List[Cmp]]
+
+        # Edges
+        self._bin_file = None  # type: Optional[node_types.FQ]
+        self._children = None  # type: Optional[node_types.PQ]
+        self._deleted_files = None  # type: Optional[node_types.FQ]
+        self._created_files = None  # type: Optional[node_types.FQ]
+        self._wrote_to_files = None  # type: Optional[node_types.FQ]
+        self._read_files = None  # type: Optional[node_types.FQ]
+        self._created_connection = None  # type: Optional[ 'node_types.OCQ']
+
+        self._parent = None  # type: Optional[node_types.PQ]
+
+        # Meta
+        self._first = None  # type: Optional[int]
+
+    def with_node_key(self, node_key: Optional[Union[Not, str]] = None):
+        if node_key:
+            self._node_key = Eq("node_key", node_key)
+        else:
+            self._node_key = Has("node_key")
+        return self
+
+    def with_uid(self, uid: Optional[Union[Not, str]] = None):
+        if uid:
+            self._uid = Eq("uid", uid)
+        else:
+            self._uid = Has("uid")
+        return self
+
+    def only_first(self, first: int) -> 'node_types.PQ':
+        self._first = first
+        return self
+
+    def with_asset_id(
+            self,
+            eq: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+            contains: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+            ends_with: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+    ) -> 'node_types.PQ':
+        self._asset_id.extend(
+            _str_cmps("asset_id", eq, contains, ends_with)
+        )
+        return self
+
+    def with_process_name(
+            self,
+            eq: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+            contains: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+            ends_with: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+    ) -> 'node_types.PQ':
+        self._process_name.extend(
+            _str_cmps("process_name", eq, contains, ends_with)
+        )
+        return self
+
+    def with_process_command_line(
+            self,
+            eq: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+            contains: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+            ends_with: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+    ) -> 'node_types.PQ':
+        self._process_command_line.extend(
+            _str_cmps("process_command_line", eq, contains, ends_with)
+        )
+        return self
+
+    def with_process_guid(
+            self,
+            eq: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+            contains: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+            ends_with: Optional[
+                Union[str, List[str], Not, List[Not]]
+            ] = None,
+    ) -> 'node_types.PQ':
+        self._process_guid.extend(
+            _str_cmps("process_guid", eq, contains, ends_with)
+        )
+        return self
+
+    def with_process_id(
+            self,
+            eq: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+            gt: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+            lt: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+    ) -> 'node_types.PQ':
+        self._process_id.extend(_int_cmps("process_id", eq, gt, lt))
+        return self
+
+    def with_created_timestamp(
+            self,
+            eq: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+            gt: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+            lt: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+    ) -> 'node_types.PQ':
+        self._created_timestamp.extend(
+            _int_cmps("created_timestamp", eq, gt, lt)
+        )
+        return self
+
+    def with_terminated_timestamp(
+            self,
+            eq: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+            gt: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+            lt: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+    ) -> 'node_types.PQ':
+        self._terminated_timestamp.extend(
+            _int_cmps("terminated_timestamp", eq, gt, lt)
+        )
+        return self
+
+    def with_last_seen_timestamp(
+            self,
+            eq: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+            gt: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+            lt: Optional[
+                Union[str, List[int], Not, List[Not]]
+            ] = None,
+    ) -> 'node_types.PQ':
+        self._last_seen_timestamp.extend(
+            _int_cmps("last_seen_timestamp", eq, gt, lt)
+        )
+        return self
+
+    def with_parent(self, process: 'node_types.PQ') -> 'node_types.PQ':
+        process: 'node_types.PQ' = deepcopy(process)
+        process._children = self
+        self._parent = process
+        return self
+
+    def with_bin_file(self, file: 'node_types.FQ') -> 'node_types.PQ':
+        file = deepcopy(file)
+        file._spawned_from = self
+        self._bin_file = file
+        return self
+
+    def with_deleted_files(self, file: 'node_types.FQ') -> 'node_types.PQ':
+        file = deepcopy(file)
+        file._deleter = self
+        self._deleted_files = file
+        return self
+
+    def with_created_files(self, file: 'node_types.FQ') -> 'node_types.PQ':
+        file = deepcopy(file)
+        file._creator = self
+        self._created_files = file
+        return self
+
+    def with_written_files(self, file: 'node_types.FQ') -> 'node_types.PQ':
+        file = deepcopy(file)
+        file._writers = self
+        self._wrote_to_files = file
+        return self
+
+    def with_read_files(self, file: 'node_types.FQ') -> 'node_types.PQ':
+        file = deepcopy(file)
+        file._readers = self
+        self._read_files = file
+        return self
+
+    def with_children(self, children: 'node_types.PQ') -> 'node_types.PQ':
+        children = deepcopy(children)
+        children._parent = self
+        self._children = children
+        return self
+
+    def with_created_connection(
+            self,
+            outbound_conn: Union[ 'node_types.OCQ', 'node_types.EIPQ']
+    ) -> 'node_types.PQ':
+        outbound_conn = deepcopy(outbound_conn)
+
+        if isinstance(outbound_conn, external_ip_node.ExternalIpQuery):
+            outbound_conn = (
+                outbound_connection_node.OutboundConnectionQuery()
+                .with_external_connection(outbound_conn)
+            )
+        outbound_conn._connecting_process = self
+
+        self._created_connection = outbound_conn
+        return self
+
+    def query_first(self, dgraph_client, contains_node_key=None) -> Optional['node_types.PV']:
+        return super(ProcessQuery, self)._query_first(
+            dgraph_client, ProcessView, contains_node_key
+        )
+
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
         properties = []
         if self._asset_id:
@@ -69,254 +317,6 @@ class ProcessQuery(Queryable):
         return [e for e in edges if e]
 
 
-    def __init__(self) -> None:
-        super(ProcessQuery, self).__init__()
-        # Properties
-        self._node_key = Has(
-            "node_key"
-        )  # type: Cmp
-        self._uid = Has(
-            "uid"
-        )  # type: Cmp
-
-        self._asset_id = []  # type: List[List[Cmp]]
-        self._process_name = []  # type: List[List[Cmp]]
-        self._process_command_line = []  # type: List[List[Cmp]]
-        self._process_guid = []  # type: List[List[Cmp]]
-        self._process_id = []  # type: List[List[Cmp]]
-        self._created_timestamp = []  # type: List[List[Cmp]]
-        self._terminated_timestamp = []  # type: List[List[Cmp]]
-        self._last_seen_timestamp = []  # type: List[List[Cmp]]
-
-        # Edges
-        self._bin_file = None  # type: Optional[FQ]
-        self._children = None  # type: Optional[PQ]
-        self._deleted_files = None  # type: Optional[FQ]
-        self._created_files = None  # type: Optional[FQ]
-        self._wrote_to_files = None  # type: Optional[FQ]
-        self._read_files = None  # type: Optional[FQ]
-        self._created_connection = None  # type: Optional[OCQ]
-
-        self._parent = None  # type: Optional[PQ]
-
-        # Meta
-        self._first = None  # type: Optional[int]
-
-    def with_node_key(self, node_key: Optional[Union[Not, str]] = None):
-        if node_key:
-            self._node_key = Eq("node_key", node_key)
-        else:
-            self._node_key = Has("node_key")
-        return self
-
-    def with_uid(self, uid: Optional[Union[Not, str]] = None):
-        if uid:
-            self._uid = Eq("uid", uid)
-        else:
-            self._uid = Has("uid")
-        return self
-
-    def only_first(self, first: int) -> PQ:
-        self._first = first
-        return self
-
-    def with_asset_id(
-            self,
-            eq: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-            contains: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-            ends_with: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-    ) -> PQ:
-        self._asset_id.extend(
-            _str_cmps("asset_id", eq, contains, ends_with)
-        )
-        return self
-
-    def with_process_name(
-            self,
-            eq: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-            contains: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-            ends_with: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-    ) -> PQ:
-        self._process_name.extend(
-            _str_cmps("process_name", eq, contains, ends_with)
-        )
-        return self
-
-    def with_process_command_line(
-            self,
-            eq: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-            contains: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-            ends_with: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-    ) -> PQ:
-        self._process_command_line.extend(
-            _str_cmps("process_command_line", eq, contains, ends_with)
-        )
-        return self
-
-    def with_process_guid(
-            self,
-            eq: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-            contains: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-            ends_with: Optional[
-                Union[str, List[str], Not, List[Not]]
-            ] = None,
-    ) -> PQ:
-        self._process_guid.extend(
-            _str_cmps("process_guid", eq, contains, ends_with)
-        )
-        return self
-
-    def with_process_id(
-            self,
-            eq: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-            gt: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-            lt: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-    ) -> PQ:
-        self._process_id.extend(_int_cmps("process_id", eq, gt, lt))
-        return self
-
-    def with_created_timestamp(
-            self,
-            eq: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-            gt: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-            lt: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-    ) -> PQ:
-        self._created_timestamp.extend(
-            _int_cmps("created_timestamp", eq, gt, lt)
-        )
-        return self
-
-    def with_terminated_timestamp(
-            self,
-            eq: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-            gt: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-            lt: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-    ) -> PQ:
-        self._terminated_timestamp.extend(
-            _int_cmps("terminated_timestamp", eq, gt, lt)
-        )
-        return self
-
-    def with_last_seen_timestamp(
-            self,
-            eq: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-            gt: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-            lt: Optional[
-                Union[str, List[int], Not, List[Not]]
-            ] = None,
-    ) -> PQ:
-        self._last_seen_timestamp.extend(
-            _int_cmps("last_seen_timestamp", eq, gt, lt)
-        )
-        return self
-
-    def with_parent(self, process: PQ) -> PQ:
-        process: PQ = deepcopy(process)
-        process._children = self
-        self._parent = process
-        return self
-
-    def with_bin_file(self, file: FQ) -> PQ:
-        file = deepcopy(file)
-        file._spawned_from = self
-        self._bin_file = file
-        return self
-
-    def with_deleted_files(self, file: FQ) -> PQ:
-        file = deepcopy(file)
-        file._deleter = self
-        self._deleted_files = file
-        return self
-
-    def with_created_files(self, file: FQ) -> PQ:
-        file = deepcopy(file)
-        file._creator = self
-        self._created_files = file
-        return self
-
-    def with_written_files(self, file: FQ) -> PQ:
-        file = deepcopy(file)
-        file._writers = self
-        self._wrote_to_files = file
-        return self
-
-    def with_read_files(self, file: FQ) -> PQ:
-        file = deepcopy(file)
-        file._readers = self
-        self._read_files = file
-        return self
-
-    def with_children(self, children: PQ) -> PQ:
-        children = deepcopy(children)
-        children._parent = self
-        self._children = children
-        return self
-
-    def with_created_connection(
-            self,
-            outbound_conn: Union[OCQ, EIPQ]
-    ) -> PQ:
-        outbound_conn = deepcopy(outbound_conn)
-
-        if isinstance(outbound_conn, external_ip_node.ExternalIpQuery):
-            outbound_conn = (
-                outbound_connection_node.OutboundConnectionQuery()
-                .with_external_connection(outbound_conn)
-            )
-        outbound_conn._connecting_process = self
-
-        self._created_connection = outbound_conn
-        return self
-
-    def query_first(self, dgraph_client, contains_node_key=None) -> Optional[PV]:
-        return super(ProcessQuery, self)._query_first(
-            dgraph_client, ProcessView, contains_node_key
-        )
-
 
 class ProcessView(Viewable):
     def __init__(
@@ -332,13 +332,13 @@ class ProcessView(Viewable):
             created_timestamp: Optional[str] = None,
             terminated_timestamp: Optional[str] = None,
             last_seen_timestamp: Optional[str] = None,
-            bin_file: Optional[FV] = None,
-            parent: Optional[PV] = None,
-            children: Optional[List[PV]] = None,
-            deleted_files: Optional[List[FV]] = None,
-            created_files: Optional[List[FV]] = None,
-            read_files: Optional[List[FV]] = None,
-            created_connections: Optional[List[EIPV]] = None,
+            bin_file: Optional['node_types.FV'] = None,
+            parent: Optional['node_types.PV'] = None,
+            children: Optional[List['node_types.PV']] = None,
+            deleted_files: Optional[List['node_types.FV']] = None,
+            created_files: Optional[List['node_types.FV']] = None,
+            read_files: Optional[List['node_types.FV']] = None,
+            created_connections: Optional[List['node_types.EIPV']] = None,
     ) -> None:
         super(ProcessView, self).__init__(self)
 
@@ -355,23 +355,23 @@ class ProcessView(Viewable):
         self.process_name = process_name  # type: Optional[str]
 
         # TODO: Support created, deleted, written, read
-        self.bin_file = bin_file  # type: Optional[FV]
-        self.children = children  # type: Optional[List[PV]]
-        self.parent = parent  # type: Optional[PV]
-        self.deleted_files = deleted_files  # type: Optional[List[FV]]
-        self.created_files = created_files  # type: Optional[List[FV]]
-        self.read_files = read_files  # type: Optional[List[FV]]
-        self.created_connections = created_connections  # type: Optional[List[EIPV]]
+        self.bin_file = bin_file  # type: Optional['node_types.FV']
+        self.children = children  # type: Optional[List['node_types.PV']]
+        self.parent = parent  # type: Optional['node_types.PV']
+        self.deleted_files = deleted_files  # type: Optional[List['node_types.FV']]
+        self.created_files = created_files  # type: Optional[List['node_types.FV']]
+        self.read_files = read_files  # type: Optional[List['node_types.FV']]
+        self.created_connections = created_connections  # type: Optional[List['node_types.EIPV']]
 
     @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> PV:
+    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'node_types.PV':
         raw_created_connections = d.get("created_connection", None)
 
         created_connections = None
 
         if raw_created_connections:
             created_connections = [
-                OutboundConnectionView.from_dict(dgraph_client, c)
+                outbound_connection_node.OutboundConnectionView.from_dict(dgraph_client, c)
                 for c in raw_created_connections
             ]
 
@@ -419,7 +419,7 @@ class ProcessView(Viewable):
 
         raw_children = d.get("children", None)
 
-        children = None  # type: Optional[List[PV]]
+        children = None  # type: Optional[List['node_types.PV']]
         if raw_children:
             children = [
                 ProcessView.from_dict(dgraph_client, child) for child in d["children"]
@@ -497,7 +497,7 @@ class ProcessView(Viewable):
         self.process_command_line = self_process.process_command_line
         return self.process_command_line
 
-    def get_parent(self) -> Optional[PV]:
+    def get_parent(self) -> Optional['node_types.PV']:
         if self.parent:
             return self.parent
 
@@ -513,7 +513,7 @@ class ProcessView(Viewable):
         self.parent = parent
         return self.parent
 
-    def get_children(self) -> Optional[List[PV]]:
+    def get_children(self) -> Optional[List['node_types.PV']]:
         if self.children:
             return self.children
 
@@ -522,7 +522,7 @@ class ProcessView(Viewable):
                 .with_node_key(self.node_key)
                 .with_children(ProcessQuery().with_node_key())
                 .query_first(self.dgraph_client)
-        )  # type: PV
+        )  # type: 'node_types.PV'
 
         self.children = self_node.children or None
 
@@ -544,7 +544,7 @@ class ProcessView(Viewable):
         self.uid = process.uid
         return process.uid
 
-    def get_bin_file(self) -> Optional[FV]:
+    def get_bin_file(self) -> Optional['node_types.FV']:
         if self.bin_file:
             return self.bin_file
 
@@ -561,7 +561,7 @@ class ProcessView(Viewable):
         self.bin_file = file_node.FileView.from_dict(self.dgraph_client, bin_file[0])
         return self.bin_file
 
-    def get_deleted_files(self) -> Optional[List[FV]]:
+    def get_deleted_files(self) -> Optional[List['node_types.FV']]:
         if self.deleted_files:
             return self.deleted_files
 
@@ -578,7 +578,7 @@ class ProcessView(Viewable):
         self.deleted_files = deleted_files[0].deleted_files
         return self.deleted_files
 
-    def get_read_files(self) -> Optional[List[FV]]:
+    def get_read_files(self) -> Optional[List['node_types.FV']]:
         if self.read_files:
             return self.read_files
 
