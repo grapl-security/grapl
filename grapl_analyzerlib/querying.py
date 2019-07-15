@@ -1,7 +1,7 @@
 import abc
 import json
 import re
-from typing import Dict, TypeVar, Tuple, Type
+from typing import Dict, TypeVar, Tuple, Type, Callable
 from typing import Optional, List, Union, Any, Set
 
 from pydgraph import DgraphClient
@@ -356,7 +356,6 @@ def _int_cmps(
     return cmps
 
 
-
 PropertyFilter = List[List[Cmp]]
 StrCmp = Union[str, List[str], Not, List[Not]]
 IntCmp = Union[int, List[int], Not, List[Not]]
@@ -367,10 +366,57 @@ V = TypeVar('V', bound='Viewable')
 
 
 class Viewable(abc.ABC):
+
     @staticmethod
     @abc.abstractmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> V:
+    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_edge_tuples() -> List[Tuple[str, Union[List[V], V]]]:
+        pass
+
+    @staticmethod
+    def _from_dict(dgraph_client: DgraphClient, d: Dict[str, Any], cls: Type[V]) -> V:
+        properties = {}
+        for prop, into in cls.get_property_tuples():
+            val = d.get(prop)
+            if val:
+                val = into(val)
+                properties[prop] = val
+
+        edges = {}
+        for edge_name, ty in cls.get_edge_tuples():
+            raw_edge = d.get(edge_name, None)
+
+            if not raw_edge:
+                continue
+
+            if isinstance(ty, List):
+                ty = ty[0]
+
+                if d.get(edge_name, None):
+                    _edges = [
+                        ty.from_dict(dgraph_client, f) for f in d[edge_name]
+                    ]
+                    edges[edge_name] = _edges
+
+            else:
+                edge = ty.from_dict(
+                    dgraph_client, raw_edge[0]
+                )
+                edges[edge_name] = edge
+
+        return cls(
+            dgraph_client=dgraph_client,
+            node_key=d['node_key'],
+            uid=d['uid'],
+            arn=d.get('arn'),
+            **properties,
+            **edges
+        )
+
 
 
 Q = TypeVar('Q', bound='Queryable')
