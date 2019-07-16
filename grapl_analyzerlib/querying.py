@@ -255,7 +255,7 @@ def _build_query(
     return query
 
 
-def _get_queries(process_query: Any, node_key: str, count: bool = False):
+def _get_queries(process_query: Any, node_key: str, count: bool = False, first: bool = True):
     all_nodes = flatten_nodes(process_query)
     bindings = []
     var_blocks = []
@@ -266,7 +266,7 @@ def _get_queries(process_query: Any, node_key: str, count: bool = False):
             node._get_var_block_root(i, root=process_query, node_key=node_key)
         )
 
-    return _build_query(process_query, var_blocks, bindings, count)
+    return _build_query(process_query, var_blocks, bindings, count, first=first)
 
 
 def _str_cmps(
@@ -367,6 +367,11 @@ V = TypeVar('V', bound='Viewable')
 
 class Viewable(abc.ABC):
 
+    def __init__(self, dgraph_client: DgraphClient, node_key: str, uid: str):
+        self.dgraph_client = dgraph_client
+        self.node_key = node_key
+        self.uid = uid
+
     @staticmethod
     @abc.abstractmethod
     def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
@@ -377,8 +382,85 @@ class Viewable(abc.ABC):
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         pass
 
-    @staticmethod
-    def _from_dict(dgraph_client: DgraphClient, d: Dict[str, Any], cls: Type[V]) -> V:
+    def get_property(self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]) -> Optional[Union[str, int]]:
+        query = f"""
+            {{
+                query(func: uid(uid, "{self.uid}")) {{
+                    {prop_name}
+                }}
+            
+            }}
+        """
+        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
+
+        raw_prop = res["q0"].get(prop_name)
+        if not raw_prop:
+            return None
+        prop = prop_type(raw_prop)
+
+        return prop
+
+    def get_properties(self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]):
+        query = f"""
+            {{
+                query(func: uid(uid, "{self.uid}")) {{
+                    {prop_name}
+                }}
+            
+            }}
+        """
+        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
+
+        raw_props = res["q0"].get(prop_name, [])
+        props = [
+            prop_type(p) for p in raw_props
+        ]
+
+        return props
+
+    def get_edge(self, edge_name: str, edge_type: V) -> Optional[V]:
+        query = f"""
+            {{
+                query(func: uid("{self.uid}")) {{
+                    {edge_name} {{
+                        uid,
+                        node_key,
+                    }}
+                }}
+            
+            }}
+        """
+        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
+
+        raw_edge = res["q0"].get(edge_name)
+        if not raw_edge:
+            return None
+        edge = edge_type.from_dict(self.dgraph_client, raw_edge)
+        return edge
+
+    def get_edges(self, edge_name: str, edge_type: Type[V]) -> List[V]:
+        query = f"""
+            {{
+                query(func: uid(uid, "{self.uid}")) {{
+                    {edge_name} {{
+                        uid,
+                        node_key,
+                    }}
+                }}
+            
+            }}
+        """
+        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
+
+        raw_edges = res["q0"].get(edge_name, [])
+        edges = [
+            edge_type.from_dict(self.dgraph_client, f) for f in raw_edges
+        ]
+
+        return edges
+
+    @classmethod
+    def from_dict(cls: Type[V], dgraph_client: DgraphClient, d: Dict[str, Any]) -> V:
         properties = {}
         for prop, into in cls.get_property_tuples():
             val = d.get(prop)
@@ -419,8 +501,11 @@ class Viewable(abc.ABC):
 
 Q = TypeVar('Q', bound='Queryable')
 
-
 class Queryable(abc.ABC):
+    def __init__(self, view_type: Type[V]) -> None:
+        self._node_key = Has("node_key")  # type: Cmp
+        self._uid = Has("uid")  # type: Cmp
+        self.view_type = view_type
 
     @abc.abstractmethod
     def get_unique_predicate(self) -> Optional[str]:
@@ -450,6 +535,14 @@ class Queryable(abc.ABC):
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
         pass
 
+    def with_node_key(self: Q, node_key: str) -> Q:
+        self._node_key = Eq("node_key", node_key)
+        return self
+
+    def with_uid(self: Q, uid: str) -> Q:
+        self._uid = Eq("uid", uid)
+        return self
+
     def get_property_names(self) -> List[str]:
         return [p[0]for p in self.get_properties()]
 
@@ -462,9 +555,9 @@ class Queryable(abc.ABC):
     def get_neighbors(self) -> List[Q]:
         return [e[1] for e in self.get_edges()]
 
-    def _query_first(self, dgraph_client, cls: Type[V], contains_node_key=None) -> Optional[V]:
+    def query_first(self, dgraph_client, contains_node_key: Optional[str]=None) -> Optional[V]:
         if contains_node_key:
-            query_str = _get_queries(self, node_key=contains_node_key)
+            query_str = _get_queries(self, node_key=contains_node_key, first=True)
         else:
             query_str = self._to_query(first=1)
 
@@ -475,7 +568,7 @@ class Queryable(abc.ABC):
         if not raw_views:
             return None
 
-        return cls.from_dict(dgraph_client, raw_views[0])
+        return self.view_type.from_dict(dgraph_client, raw_views[0])
 
     def get_count(
             self,
@@ -498,7 +591,7 @@ class Queryable(abc.ABC):
         else:
             return raw_count[0].get('count', 0)
 
-    def _to_query(self, count: bool = False, first: Optional[int] = None) -> str:
+    def to_query(self, count: bool = False, first: Optional[int] = None) -> str:
         var_block = self._get_var_block_root(0, root=self)
 
         return _build_query(
@@ -562,13 +655,16 @@ class Queryable(abc.ABC):
             edge_var_blocks.append(var_block)
 
         type_name = self.get_node_type_name()
-        if type_name:
-            func_filter = f'eq(node_type, "{self.get_node_type_name()}")'
-        else:
-            func_filter = f'has({self.get_unique_predicate()})'
 
         if node_key:
             func_filter = f'eq(node_key, "{node_key}")'
+        elif type_name:
+            func_filter = f'eq(node_type, "{self.get_node_type_name()}")'
+        elif self.get_unique_predicate():
+            func_filter = f'has({self.get_unique_predicate()})'
+        else:
+            # worst case, we have to search every node :(
+            func_filter = 'has(node_keY)'
 
         edge_var_blocks = "\n".join(edge_var_blocks)
 

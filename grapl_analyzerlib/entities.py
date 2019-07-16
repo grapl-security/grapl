@@ -1,4 +1,5 @@
 import json
+from abc import ABC
 from copy import deepcopy
 from collections import defaultdict
 from typing import Iterator, TypeVar, Set, Callable, Type
@@ -154,8 +155,10 @@ class SubgraphView(object):
 
 
 class DynamicNodeQuery(Queryable):
-    def __init__(self, node_type: str) -> None:
+    def __init__(self, node_type: Optional[str], view_type: Type[V]) -> None:
+        super(DynamicNodeQuery, self).__init__(view_type)
         self.node_type = node_type
+        self.view_type = view_type
         self._node_key = Has("node_key")  # type: Cmp
         self._uid = Has("uid")  # type: Cmp
 
@@ -166,6 +169,9 @@ class DynamicNodeQuery(Queryable):
         self.edge_filters = dict()
         self.reverse_edge_filters = dict()
 
+    def get_unique_predicate(self) -> Optional[str]:
+        return None
+
     def with_property_str_filter(
         self, prop_name: str, eq=StrCmp, contains=StrCmp, ends_with=StrCmp
     ) -> "DNQ":
@@ -175,10 +181,13 @@ class DynamicNodeQuery(Queryable):
         return self
 
     def with_property_int_filter(
-        self, prop_name: str, eq=IntCmp, contains=IntCmp, ends_with=IntCmp
+        self, prop_name: str,
+        eq: Optional[Union[int, List, Not, List[Not]]] = None,
+        gt: Optional[Union[int, List, Not, List[Not]]] = None,
+        lt: Optional[Union[int, List, Not, List[Not]]] = None,
     ) -> "DNQ":
         self.property_filters[prop_name].extend(
-            _int_cmps(prop_name, eq, contains, ends_with)
+            _int_cmps(prop_name, eq, gt, lt)
         )
         return self
 
@@ -191,7 +200,7 @@ class DynamicNodeQuery(Queryable):
         return self
 
     # Querable Interface Implementation
-    def get_node_type_name(self) -> str:
+    def get_node_type_name(self) -> Optional[str]:
         return self.node_type
 
     def get_node_key_filter(self) -> PropertyFilter:
@@ -226,13 +235,10 @@ class DynamicNodeView(Viewable):
         self.node_type = node_type
         self.asset_id = asset_id
 
-    @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> V:
-        raise NotImplementedError
-
 
 class FileQuery(Queryable):
     def __init__(self) -> None:
+        super(FileQuery, self).__init__(FileView)
         # Attributes
         self._node_key = Has("node_key")  # type: Cmp
 
@@ -432,11 +438,6 @@ class FileQuery(Queryable):
 
         return [n for n in neighbors if n[1]]
 
-    def query_first(self, dgraph_client, contains_node_key=None) -> Optional["FV"]:
-        return super(FileQuery, self)._query_first(
-            dgraph_client, FileView, contains_node_key
-        )
-
 
 class FileView(Viewable):
     def __init__(
@@ -522,10 +523,6 @@ class FileView(Viewable):
             ("~read_files", ProcessView),
             ("~bin_file", ProcessView),
         ]
-
-    @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> "FV":
-        return Viewable._from_dict(dgraph_client, d, FileView)
 
     def get_file_name(self) -> Optional[str]:
         if self.file_name:
@@ -867,7 +864,7 @@ class FileView(Viewable):
 
 class ProcessQuery(Queryable):
     def __init__(self) -> None:
-        super(ProcessQuery, self).__init__()
+        super(ProcessQuery, self).__init__(ProcessView)
         # Properties
         self._node_key = Has("node_key")  # type: Cmp
         self._uid = Has("uid")  # type: Cmp
@@ -1041,11 +1038,6 @@ class ProcessQuery(Queryable):
         self._created_connection = outbound_conn
         return self
 
-    def query_first(self, dgraph_client, contains_node_key=None) -> Optional["PV"]:
-        return super(ProcessQuery, self)._query_first(
-            dgraph_client, ProcessView, contains_node_key
-        )
-
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
         properties = [
             ("node_key", self.get_node_key_filter()),
@@ -1161,10 +1153,6 @@ class ProcessView(Viewable):
             ("read_files", [FV]),
             ("created_connections", [EIPV]),
         ]
-
-    @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> "PV":
-        return Viewable._from_dict(dgraph_client, d, ProcessView)
 
     def get_asset_id(self) -> Optional[str]:
         if self.asset_id:
@@ -1374,6 +1362,7 @@ class ProcessView(Viewable):
 
 class OutboundConnectionQuery(Queryable):
     def __init__(self) -> None:
+        super(OutboundConnectionQuery, self).__init__(OutboundConnectionView)
         self._node_key = Has("node_key")  # type: Cmp
         self._uid = Has("uid")  # type: Cmp
 
@@ -1461,13 +1450,10 @@ class OutboundConnectionView(Viewable):
             ("external_connections", [ExternalIpView]),
         ]
 
-    @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> "OCV":
-        return Viewable._from_dict(dgraph_client, d, OutboundConnectionView)
-
 
 class ExternalIpQuery(Queryable):
     def __init__(self) -> None:
+        super(ExternalIpQuery, self).__init__(ExternalIpView)
         self._node_key = Has("node_key")  # type: Cmp
         self._uid = Has("uid")  # type: Cmp
 
@@ -1545,10 +1531,6 @@ class ExternalIpView(Viewable):
     @staticmethod
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return []
-
-    @staticmethod
-    def from_dict(dgraph_client: DgraphClient, d: Dict[str, Any]) -> EIPV:
-        return Viewable._from_dict(dgraph_client, d, ExternalIpView)
 
 
 if __name__ == "__main__":
