@@ -160,7 +160,7 @@ class DynamicNodeQuery(Queryable):
         self.node_type = node_type
         self.view_type = view_type
         self._node_key = Has("node_key")  # type: Cmp
-        self._uid = Has("uid")  # type: Cmp
+        self._uid = None  # type: Optional[Cmp]
 
         # Dict of property name to its associated filters
         self.property_filters = defaultdict(list)  # type: Dict[str, PropertyFilter]
@@ -207,6 +207,8 @@ class DynamicNodeQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
+        if not self._uid:
+            return []
         return [[self._uid]]
 
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
@@ -245,7 +247,7 @@ class FileQuery(Queryable):
         # Attributes
         self._node_key = Has("node_key")  # type: Cmp
 
-        self._uid = Has("uid")  # type: Cmp
+        self._uid = None  # type: Optional[Cmp]
 
         self._file_name = []  # type: List[List[Cmp]]
         self._asset_id = []  # type: List[List[Cmp]]
@@ -390,6 +392,8 @@ class FileQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
+        if not self._uid:
+            return []
         return [[self._uid]]
 
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
@@ -870,7 +874,7 @@ class ProcessQuery(Queryable):
         super(ProcessQuery, self).__init__(ProcessView)
         # Properties
         self._node_key = Has("node_key")  # type: Cmp
-        self._uid = Has("uid")  # type: Cmp
+        self._uid = None  # type: Optional[Cmp]
 
         self._asset_id = []  # type: List[List[Cmp]]
         self._process_name = []  # type: List[List[Cmp]]
@@ -902,11 +906,9 @@ class ProcessQuery(Queryable):
             self._node_key = Has("node_key")
         return self
 
-    def with_uid(self, uid: Optional[Union[Not, str]] = None):
-        if uid:
-            self._uid = Eq("uid", uid)
-        else:
-            self._uid = Has("uid")
+    def with_uid(self, eq: Union[Not, str]):
+        if eq:
+            self._uid = Eq("uid", eq)
         return self
 
     def only_first(self, first: int) -> "PQ":
@@ -1067,6 +1069,8 @@ class ProcessQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
+        if not self._uid:
+            return []
         return [[self._uid]]
 
     def get_forward_edges(self) -> List[Tuple[str, Any]]:
@@ -1367,7 +1371,7 @@ class OutboundConnectionQuery(Queryable):
     def __init__(self) -> None:
         super(OutboundConnectionQuery, self).__init__(OutboundConnectionView)
         self._node_key = Has("node_key")  # type: Cmp
-        self._uid = Has("uid")  # type: Cmp
+        self._uid = None  # type: Optional[Cmp]
 
         self._create_time = []  # type: List[List[Cmp]]
         self._terminate_time = []  # type: List[List[Cmp]]
@@ -1389,6 +1393,8 @@ class OutboundConnectionQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
+        if not self._uid:
+            return []
         return [[self._uid]]
 
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
@@ -1458,7 +1464,7 @@ class ExternalIpQuery(Queryable):
     def __init__(self) -> None:
         super(ExternalIpQuery, self).__init__(ExternalIpView)
         self._node_key = Has("node_key")  # type: Cmp
-        self._uid = Has("uid")  # type: Cmp
+        self._uid = None  # type: Optional[Cmp]
 
         self._external_ip = []  # type: List[List[Cmp]]
 
@@ -1487,6 +1493,8 @@ class ExternalIpQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
+        if not self._uid:
+            return []
         return [[self._uid]]
 
     def get_forward_edges(self) -> List[Tuple[str, Any]]:

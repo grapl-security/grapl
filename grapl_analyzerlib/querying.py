@@ -520,7 +520,7 @@ Q = TypeVar('Q', bound='Queryable')
 class Queryable(abc.ABC):
     def __init__(self, view_type: Type[V]) -> None:
         self._node_key = Has("node_key")  # type: Cmp
-        self._uid = Has("uid")  # type: Cmp
+        self._uid = None  # type: Optional[Cmp]
         self.view_type = view_type
 
     @abc.abstractmethod
@@ -618,12 +618,6 @@ class Queryable(abc.ABC):
         inner_filters = []
 
         for prop in self.get_properties():
-            if prop[0] == 'uid':
-                print(prop[1])
-                if len(prop[1]) == 1:
-                    if isinstance(prop[1], Has):
-                        continue
-
             f = _generate_filter(prop[1])
             inner_filters.append(f)
 
