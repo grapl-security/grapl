@@ -621,7 +621,6 @@ class Queryable(abc.ABC):
         inner_filters = []
 
         for prop in self.get_properties():
-            print(f'prop {prop}')
             if not prop[1]:
                 continue
             f = _generate_filter(prop[1])
