@@ -393,14 +393,15 @@ class Viewable(abc.ABC):
         """
         res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
 
-        raw_prop = res["q0"].get(prop_name)
+        raw_prop = res["q0"]
         if not raw_prop:
             return None
-        prop = prop_type(raw_prop)
+
+        prop = prop_type(raw_prop[0][prop_name])
 
         return prop
 
-    def get_properties(self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]):
+    def get_properties(self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]) -> List[str]:
         query = f"""
             {{
                 q0(func: uid("{self.uid}")) {{
@@ -411,9 +412,13 @@ class Viewable(abc.ABC):
         """
         res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
 
-        raw_props = res["q0"].get(prop_name, [])
+        raw_props = res["q0"]
+
+        if not raw_props:
+            return []
+
         props = [
-            prop_type(p) for p in raw_props
+            prop_type(p[prop_name]) for p in raw_props
         ]
 
         return props
@@ -432,10 +437,11 @@ class Viewable(abc.ABC):
         """
         res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
 
-        raw_edge = res["q0"].get(edge_name)
+        raw_edge = res["q0"]
         if not raw_edge:
             return None
-        edge = edge_type.from_dict(self.dgraph_client, raw_edge)
+
+        edge = edge_type.from_dict(self.dgraph_client, raw_edge[0][edge_name])
         return edge
 
     def get_edges(self, edge_name: str, edge_type: Type[V]) -> List[V]:
@@ -452,9 +458,12 @@ class Viewable(abc.ABC):
         """
         res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
 
-        raw_edges = res["q0"].get(edge_name, [])
+        raw_edges = res["q0"]
+
+        if not raw_edges:
+            return []
         edges = [
-            edge_type.from_dict(self.dgraph_client, f) for f in raw_edges
+            edge_type.from_dict(self.dgraph_client, f[edge_name]) for f in raw_edges
         ]
 
         return edges
