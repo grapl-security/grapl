@@ -618,6 +618,8 @@ class Queryable(abc.ABC):
         inner_filters = []
 
         for prop in self.get_properties():
+            if prop[0] == 'uid' and isinstance(prop[1], Has):
+                continue
             filter = _generate_filter(prop[1])
             inner_filters.append(filter)
 
