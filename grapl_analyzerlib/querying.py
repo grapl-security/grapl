@@ -429,6 +429,7 @@ class Viewable(abc.ABC):
                 q0(func: uid("{self.uid}")) {{
                     {edge_name} {{
                         uid,
+                        node_type,
                         node_key,
                     }}
                 }}
@@ -450,6 +451,7 @@ class Viewable(abc.ABC):
                 q0(func: uid("{self.uid}")) {{
                     {edge_name} {{
                         uid,
+                        node_type,
                         node_key,
                     }}
                 }}
