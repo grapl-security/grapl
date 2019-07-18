@@ -463,7 +463,7 @@ class Viewable(abc.ABC):
         if not raw_edges:
             return []
 
-        print(f'edge_name {raw_edges[0]}')
+        print(f'{edge_name} -> {raw_edges}')
         edges = [
             edge_type.from_dict(self.dgraph_client, f[edge_name]) for f in raw_edges
         ]
