@@ -385,7 +385,7 @@ class Viewable(abc.ABC):
     def get_property(self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]) -> Optional[Union[str, int]]:
         query = f"""
             {{
-                query(func: uid(uid, "{self.uid}")) {{
+                query(func: uid("{self.uid}")) {{
                     {prop_name}
                 }}
             
@@ -403,7 +403,7 @@ class Viewable(abc.ABC):
     def get_properties(self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]):
         query = f"""
             {{
-                query(func: uid(uid, "{self.uid}")) {{
+                query(func: uid("{self.uid}")) {{
                     {prop_name}
                 }}
             
@@ -441,7 +441,7 @@ class Viewable(abc.ABC):
     def get_edges(self, edge_name: str, edge_type: Type[V]) -> List[V]:
         query = f"""
             {{
-                query(func: uid(uid, "{self.uid}")) {{
+                query(func: uid("{self.uid}")) {{
                     {edge_name} {{
                         uid,
                         node_key,
