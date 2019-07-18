@@ -129,6 +129,9 @@ def _generate_filter(comparisons_list: List[List[Cmp]]) -> str:
 
     for comparisons in comparisons_list:
         filters = [comparison.to_filter() for comparison in comparisons]
+        filters = [f for f in filters if f]
+        if not filters:
+            continue
         and_filter = "(" + " AND ".join(filters) + ")"
         and_filters.append(and_filter)
 
@@ -555,8 +558,8 @@ class Queryable(abc.ABC):
         self._node_key = Eq("node_key", node_key)
         return self
 
-    def with_uid(self: Q, uid: str) -> Q:
-        self._uid = Eq("uid", uid)
+    def with_uid(self: Q, eq: Union[str, Not]) -> Q:
+        self._uid = Eq("uid", eq)
         return self
 
     def get_property_names(self) -> List[str]:
@@ -618,6 +621,8 @@ class Queryable(abc.ABC):
         inner_filters = []
 
         for prop in self.get_properties():
+            if not prop[1]:
+                continue
             f = _generate_filter(prop[1])
             inner_filters.append(f)
 
