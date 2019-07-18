@@ -228,12 +228,15 @@ class DynamicNodeView(Viewable):
         dgraph_client: DgraphClient,
         node_key: str,
         node_type: str,
+        uid: str,
         asset_id: Optional[str] = None,
     ):
+        super(DynamicNodeView, self).__init__(dgraph_client, node_key, uid)
         self.dgraph_client = dgraph_client
         self.node_key = node_key
         self.node_type = node_type
         self.asset_id = asset_id
+        self.uid = uid
 
 
 class FileQuery(Queryable):

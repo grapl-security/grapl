@@ -477,7 +477,7 @@ class Viewable(abc.ABC):
         properties = {}
         if d.get('node_type'):
             properties['node_type'] = d['node_type']
-    
+
         for prop, into in cls.get_property_tuples():
             val = d.get(prop)
             if val:
@@ -618,7 +618,8 @@ class Queryable(abc.ABC):
         inner_filters = []
 
         for prop in self.get_properties():
-            _generate_filter(prop[1])
+            filter = _generate_filter(prop[1])
+            inner_filters.append(filter)
 
         if not inner_filters:
             return ""
