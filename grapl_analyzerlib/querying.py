@@ -559,7 +559,7 @@ class Queryable(abc.ABC):
         if contains_node_key:
             query_str = _get_queries(self, node_key=contains_node_key, first=True)
         else:
-            query_str = self._to_query(first=1)
+            query_str = self.to_query(first=1)
 
         raw_views = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
             "res"
@@ -579,7 +579,7 @@ class Queryable(abc.ABC):
         if contains_node_key:
             query_str = _get_queries(self, node_key=contains_node_key, count=True)
         else:
-            query_str = self._to_query(count=True, first=max or 1000)
+            query_str = self.to_query(count=True, first=max or 1000)
 
         raw_count = json.loads(dgraph_client.txn(read_only=True)
                                .query(query_str).json)[
