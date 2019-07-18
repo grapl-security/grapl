@@ -461,7 +461,7 @@ class Viewable(abc.ABC):
         res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
 
         raw_edges = res["q0"]
-
+        print(f'r {raw_edges}')
         if not raw_edges:
             return []
 
