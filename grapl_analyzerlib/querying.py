@@ -461,12 +461,11 @@ class Viewable(abc.ABC):
         res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
 
         raw_edges = res["q0"]
-        print(f'r {raw_edges}')
+
         if not raw_edges:
             return []
 
         raw_edges = raw_edges[0][edge_name]
-        print(f'{raw_edges}')
         edges = [
             edge_type.from_dict(self.dgraph_client, f) for f in raw_edges
         ]
@@ -476,6 +475,9 @@ class Viewable(abc.ABC):
     @classmethod
     def from_dict(cls: Type[V], dgraph_client: DgraphClient, d: Dict[str, Any]) -> V:
         properties = {}
+        if d.get('node_type'):
+            properties['node_type'] = d['node_type']
+    
         for prop, into in cls.get_property_tuples():
             val = d.get(prop)
             if val:
