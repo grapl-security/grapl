@@ -132,8 +132,6 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
 
     );
 
-    eprintln!("{}", q.to_string());
-
     q.into()
 
 }
