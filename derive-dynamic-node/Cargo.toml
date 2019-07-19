@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
+description = "Derive macro work creating Grapl plugins"
+license = "MIT"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
