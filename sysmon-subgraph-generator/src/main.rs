@@ -9,7 +9,6 @@ extern crate graph_descriptions;
 extern crate graph_generator_lib;
 extern crate lambda_runtime as lambda;
 extern crate log;
-extern crate openssl_probe;
 extern crate rayon;
 extern crate regex;
 extern crate rusoto_core;
@@ -461,10 +460,10 @@ fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     };
 
     info!("Creating sqs_client");
-    let sqs_client = Arc::new(SqsClient::simple(region.clone()));
+    let sqs_client = Arc::new(SqsClient::new(region.clone()));
 
     info!("Creating s3_client");
-    let s3_client = Arc::new(S3Client::simple(region.clone()));
+    let s3_client = Arc::new(S3Client::new(region.clone()));
 
     info!("Creating retriever");
     let retriever = S3EventRetriever::new(
@@ -499,7 +498,6 @@ fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 }
 
 fn main()  -> Result<(), Box<dyn std::error::Error>> {
-    openssl_probe::init_ssl_cert_env_vars();
     simple_logger::init_with_level(log::Level::Info).unwrap();
 
     info!("Starting lambda");

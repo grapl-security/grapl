@@ -15,19 +15,20 @@ use uuid::Uuid;
 
 use sessions::*;
 
-pub struct SessionDb<'a, D>
+#[derive(Debug, Clone)]
+pub struct SessionDb<D>
 where
     D: DynamoDb,
 {
-    dynamo: &'a D,
+    dynamo: D,
     table_name: String,
 }
 
-impl<'a, D> SessionDb<'a, D>
+impl<D> SessionDb<D>
 where
     D: DynamoDb,
 {
-    pub fn new(dynamo: &'a D, table_name: impl Into<String>) -> Self {
+    pub fn new(dynamo: D, table_name: impl Into<String>) -> Self {
         Self {
             dynamo,
             table_name: table_name.into(),

@@ -1,14 +1,7 @@
 #![allow(unused_variables, unused_imports, dead_code)]
 
-#[cfg(test)]
-extern crate quickcheck;
-#[cfg(test)]
-#[macro_use(quickcheck)]
-extern crate quickcheck_macros;
-
 extern crate aws_lambda_events;
 extern crate base58;
-extern crate tokio;
 #[macro_use]
 extern crate failure;
 extern crate futures;
@@ -22,6 +15,11 @@ extern crate lru_time_cache;
 #[macro_use]
 extern crate mysql;
 extern crate prost;
+#[cfg(test)]
+extern crate quickcheck;
+#[cfg(test)]
+#[macro_use(quickcheck)]
+extern crate quickcheck_macros;
 extern crate rusoto_core;
 extern crate rusoto_dynamodb;
 extern crate rusoto_s3;
@@ -29,23 +27,23 @@ extern crate rusoto_sqs;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-
 extern crate serde_dynamodb;
-
 extern crate serde_json;
 extern crate sha2;
 extern crate simple_logger;
 extern crate sqs_lambda;
 extern crate stopwatch;
+extern crate tokio;
 extern crate uuid;
 extern crate zstd;
-
-use std::str::FromStr;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::env;
+use std::hash::Hash;
 use std::io::Cursor;
+use std::ops::Deref;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -54,32 +52,33 @@ use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
 use base58::ToBase58;
-use graph_descriptions::graph_description::*;
+use failure::Error;
+use futures::future::Future;
 use graph_descriptions::*;
-use lambda::error::HandlerError;
+use graph_descriptions::graph_description::*;
+use graph_descriptions::graph_description::host::*;
 use lambda::Context;
+use lambda::error::HandlerError;
 use lru_time_cache::LruCache;
 use mysql as my;
 use prost::Message;
-use rusoto_s3::{S3Client, S3};
+use rusoto_core::Region;
+use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
+use rusoto_s3::{S3, S3Client};
 use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
 use sha2::{Digest, Sha256};
-use sqs_lambda::events_from_s3_sns_sqs;
 use sqs_lambda::EventHandler;
+use sqs_lambda::events_from_s3_sns_sqs;
 use sqs_lambda::NopSqsCompletionHandler;
 use sqs_lambda::S3EventRetriever;
 use sqs_lambda::SqsService;
 use sqs_lambda::ZstdProtoDecoder;
 use stopwatch::Stopwatch;
 
-use failure::Error;
-use futures::future::Future;
-use graph_descriptions::graph_description::host::*;
-use rusoto_core::Region;
-use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
+use assetdb::{AssetIdDb, AssetIdentifier};
 use sessiondb::SessionDb;
 use sessions::{shave_int, UnidSession};
-use std::hash::Hash;
+use dynamic_sessiondb::{DynamicNodeIdentifier, DynamicMappingDb};
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -100,10 +99,8 @@ macro_rules! wait_on {
     }};
 }
 
-use assetdb::AssetIdDb;
-use std::ops::Deref;
-
 pub mod assetdb;
+pub mod dynamic_sessiondb;
 pub mod retry_cache;
 pub mod sessiondb;
 pub mod sessions;
@@ -111,10 +108,12 @@ pub mod sessions;
 #[derive(Clone)]
 struct NodeIdentifier<D, F>
 where
-    D: DynamoDb,
+    D: DynamoDb + Clone,
     F: (Fn(GraphDescription) -> Result<(), Error>) + Clone,
 {
     asset_mapping_db: AssetIdDb<D>,
+    dynamic_identifier: DynamicNodeIdentifier<D>,
+    asset_identifier: AssetIdentifier<D>,
     node_id_db: D,
     should_default: bool,
     output_handler: F,
@@ -122,17 +121,21 @@ where
 
 impl<D, F> NodeIdentifier<D, F>
 where
-    D: DynamoDb,
+    D: DynamoDb + Clone,
     F: (Fn(GraphDescription) -> Result<(), Error>) + Clone,
 {
     pub fn new(
         asset_mapping_db: AssetIdDb<D>,
+        dynamic_identifier: DynamicNodeIdentifier<D>,
+        asset_identifier: AssetIdentifier<D>,
         node_id_db: D,
         output_handler: F,
         should_default: bool,
     ) -> Self {
         Self {
             asset_mapping_db,
+            dynamic_identifier,
+            asset_identifier,
             node_id_db,
             should_default,
             output_handler,
@@ -204,6 +207,9 @@ fn into_unid_session(node: impl Into<Node>) -> Option<UnidSession> {
             }
             .into()
         }
+        Node::DynamicNode(node) => {
+            None
+        },
         Node::IpAddressNode(node) => None,
         Node::AssetNode(node) => unimplemented!(),
     }
@@ -234,8 +240,15 @@ fn remove_dead_edges(graph: &mut GraphDescription) {
 fn remap_edges(graph: &mut GraphDescription, unid_id_map: &HashMap<String, String>) {
     for (node_key, edge_list) in graph.edges.iter_mut() {
         for edge in edge_list.edges.iter_mut() {
-            let from = unid_id_map.get(&edge.from).expect("from");
-            let to = unid_id_map.get(&edge.to).expect("to");
+            let from = match unid_id_map.get(&edge.from) {
+                Some(from) => from,
+                None => continue
+            };
+
+            let to = match unid_id_map.get(&edge.to) {
+                Some(to) => to,
+                None => continue
+            };
 
             *edge = EdgeDescription {
                 from: from.to_owned(),
@@ -249,8 +262,19 @@ fn remap_edges(graph: &mut GraphDescription, unid_id_map: &HashMap<String, Strin
 fn remap_nodes(graph: &mut GraphDescription, unid_id_map: &HashMap<String, String>) {
     let mut nodes = HashMap::with_capacity(graph.nodes.len());
 
-    for (node_key, mut node) in graph.nodes.iter_mut() {
-        let new_key = &unid_id_map[node.get_key()];
+    for (node_key, node) in graph.nodes.iter_mut() {
+        // DynamicNodes are identified in-place
+        if let Node::DynamicNode(n) = node.clone().which() {
+            let old_node = nodes.insert(node.get_key().to_owned(), node.clone());
+            if let Some(ref old_node) = old_node {
+                nodes
+                    .get_mut(node.get_key())
+                    .expect("New key not in map")
+                    .merge(old_node);
+            }
+            continue
+        }
+        let new_key = unid_id_map.get(node.get_key()).expect("node_key mapping did not exist");
         node.set_key(new_key.to_owned());
 
         // We may have actually had nodes with different unid node_keys that map to the
@@ -318,12 +342,13 @@ fn create_asset_id_mappings(
     Ok(())
 }
 
+
 // Takes a GraphDescription, attributes all nodes with an asset id
 // When atribution fails, attribution continues, but the Graph returned will contain
 // only the nodes that were successful
 // Edges will also be fixed up
 fn attribute_asset_ids(
-    assetid_db: &AssetIdDb<impl DynamoDb>,
+    asset_identifier: &AssetIdentifier<impl DynamoDb>,
     unid_graph: GraphDescription,
 ) -> Result<GraphDescription, GraphDescription> {
     info!("Attributing asset ids");
@@ -331,44 +356,34 @@ fn attribute_asset_ids(
     let mut output_graph = GraphDescription::new(unid_graph.timestamp);
     output_graph.edges = unid_graph.edges;
 
+
     let node_asset_ids: HashMap<String, String> = HashMap::new();
 
     for node in unid_graph.nodes.values() {
-        let ids = match node.clone().which() {
-            Node::ProcessNode(node) => (node.asset_id, node.hostname, node.host_ip),
-            Node::FileNode(node) => (node.asset_id, node.hostname, node.host_ip),
-            Node::OutboundConnectionNode(node) => (node.asset_id, node.hostname, node.host_ip),
-            Node::IpAddressNode(_) => {
-                output_graph.add_node(node.to_owned());
-                continue;
+        match node.clone().which() {
+            Node::IpAddressNode(n) => {
+                output_graph.add_node(n);
+                continue
+            },
+            Node::DynamicNode(n) => {
+                if !n.requires_asset_identification() {
+                    output_graph.add_node(n);
+                    continue
+                }
             }
-            _ => continue,
-        };
+            _ => ()
+        }
 
-        let host_id = match ids {
-            (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
-            (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
-            (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
-            (_, _, _) => {
-                dead_nodes.insert(node.get_key());
-                error!("Must provide at least one of: asset_id, hostname, host_ip");
-                continue;
-            }
-        };
+        let asset_id = asset_identifier.attribute_asset_id(
+            node.clone(),
+        );
 
-        // map host_id to asset_id
-        // If we don't find an asset id we'll have to mark the node as dead
-        let asset_id = match assetid_db.resolve_asset_id(&host_id, node.get_timestamp()) {
-            Ok(Some(asset_id)) => asset_id,
-            Ok(None) => {
-                dead_nodes.insert(node.get_key());
-                warn!("AssetId was not found for {:?}", host_id);
-                continue;
-            }
+        let asset_id = match asset_id {
+            Ok(asset_id) => asset_id,
             Err(e) => {
-                dead_nodes.insert(node.get_key());
-                warn!("HostId '{:?}' to AssetId mapping failed: {}", host_id, e);
-                continue;
+                warn!("Failed to attribute asset it: {}", e);
+                dead_nodes.insert(node.get_key().to_owned());
+                continue
             }
         };
 
@@ -390,9 +405,8 @@ fn attribute_asset_ids(
 }
 
 impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
-where
-    D: DynamoDb,
-    F: (Fn(GraphDescription) -> Result<(), Error>) + Clone,
+    where D: DynamoDb + Clone,
+          F: (Fn(GraphDescription) -> Result<(), Error>) + Clone,
 {
     fn handle_event(&self, subgraphs: GeneratedSubgraphs) -> Result<(), Error> {
         let region = {
@@ -400,7 +414,7 @@ where
             Region::from_str(&region_str)?
         };
 
-        let mut asset_id_failed = false;
+        let mut attribution_failure = false;
 
         info!("Handling raw event");
 
@@ -410,6 +424,12 @@ where
         }
 
         let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+        let dynamo = DynamoDbClient::new(region.clone());
+        let dyn_session_db = SessionDb::new(
+            dynamo.clone(),
+            "dynamic_session_table"
+        );
+        let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
 
         let retry_cache =
             retry_cache::RetrySessionCache::new("node_id_retry_table", DynamoDbClient::new(region));
@@ -440,13 +460,11 @@ where
         // identification.
         // If there is a failure, we'll mark this execute as failed, but continue
         // with whatever subgraph has succeeded
-        let mut output_subgraph = match attribute_asset_ids(&asset_id_db, unid_subgraph) {
+
+        let output_subgraph = match attribute_asset_ids(&self.asset_identifier, unid_subgraph) {
             Ok(unid_subgraph) => unid_subgraph,
             Err(unid_subgraph) => {
-                if unid_subgraph.is_empty() {
-                    bail!("Asset attribution failed for all nodes")
-                }
-                asset_id_failed = true;
+                attribution_failure = true;
                 unid_subgraph
             }
         };
@@ -454,6 +472,19 @@ where
         if output_subgraph.is_empty() {
             bail!("No host_ids could be mapped to asset_ids");
         }
+
+        let mut unid_id_map = HashMap::new();
+
+        let mut output_subgraph = match self.dynamic_identifier.attribute_dynamic_nodes(output_subgraph, &mut unid_id_map) {
+          Ok(unid_subgraph) => unid_subgraph,
+            Err(unid_subgraph) => {
+                if unid_subgraph.is_empty() {
+                    bail!("Asset attribution failed for all nodes")
+                }
+                attribution_failure = true;
+                unid_subgraph
+            }
+        };
 
         let mut cached_node_ids = HashSet::new();
 
@@ -491,11 +522,13 @@ where
             })
             .collect();
 
+        info!("Removing dead nodes");
         remove_dead_nodes(&mut output_subgraph, &cached_node_ids);
+        info!("Removing dead edges");
         remove_dead_edges(&mut output_subgraph);
 
         // Mapping from old id to new id
-        let mut unid_id_map = HashMap::new();
+
         // Mapping from new id back to old id
         let mut id_unid_map = HashSet::new();
         // IDs for nodes that did not get properly identified
@@ -505,7 +538,7 @@ where
             let session_id = match node {
                 Node::ProcessNode(node) => {
                     let unid = unid.unwrap();
-                    let session_db = SessionDb::new(&self.node_id_db, "process_history_table");
+                    let session_db = SessionDb::new(self.node_id_db.clone(), "process_history_table");
                     session_db
                         .handle_unid_session(unid, self.should_default)
                         .map(|sid| (node.clone().node_key, sid))
@@ -513,7 +546,7 @@ where
                 }
                 Node::FileNode(node) => {
                     let unid = unid.unwrap();
-                    let session_db = SessionDb::new(&self.node_id_db, "file_history_table");
+                    let session_db = SessionDb::new(self.node_id_db.clone(), "file_history_table");
                     session_db
                         .handle_unid_session(unid, self.should_default)
                         .map(|sid| (node.clone().node_key, sid))
@@ -523,7 +556,7 @@ where
                     info!("Attributing OutboundConnectionNode");
 
                     let unid = unid.unwrap();
-                    let session_db = SessionDb::new(&self.node_id_db, "outbound_connection_history_table");
+                    let session_db = SessionDb::new(self.node_id_db.clone(), "outbound_connection_history_table");
                     session_db
                         .handle_unid_session(unid, self.should_default)
                         .map(|sid| (node.clone().node_key, sid))
@@ -554,10 +587,14 @@ where
         // Remove dead nodes and edges from output_graph
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
 
+        info!("removing dead nodes2");
         remove_dead_nodes(&mut output_subgraph, &dead_node_ids);
+        info!("removing dead edges2");
         remove_dead_edges(&mut output_subgraph);
 
+        info!("remapping nodes2");
         remap_nodes(&mut output_subgraph, &unid_id_map);
+        info!("remapping edges2");
         remap_edges(&mut output_subgraph, &unid_id_map);
 
         if output_subgraph.is_empty() {
@@ -575,7 +612,7 @@ where
                 .ok();
         });
 
-        if !dead_node_ids.is_empty() || asset_id_failed {
+        if !dead_node_ids.is_empty() || attribution_failure {
             bail!("Some node keys failed to ID")
         }
 
@@ -584,7 +621,10 @@ where
 }
 
 pub fn upload_identified_graphs(subgraph: GraphDescription) -> Result<(), Error> {
-    info!("Uploading identified subgraphs");
+    info!("Uploading identified subgraphs: {} nodes {} edges",
+        subgraph.nodes.len(),
+        subgraph.edges.len(),
+    );
     let region = {
         let region_str = env::var("AWS_REGION").expect("AWS_REGION");
         Region::from_str(&region_str)?
@@ -649,9 +689,31 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
 
     let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
+    let dynamo = DynamoDbClient::new(region.clone());
+    let dyn_session_db = SessionDb::new(
+        dynamo.clone(),
+        "dynamic_session_table"
+    );
+    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
+    let asset_identifier = AssetIdentifier::new(asset_id_db);
+
+    let dyn_node_identifier = DynamicNodeIdentifier::new(
+        asset_identifier,
+        dyn_session_db,
+        dyn_mapping_db,
+        should_default,
+    );
+
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+
+    let asset_identifier = AssetIdentifier::new(asset_id_db);
+
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
     let handler = NodeIdentifier::new(
         asset_id_db,
-        dynamo,
+        dyn_node_identifier,
+        asset_identifier,
+        dynamo.clone(),
         upload_identified_graphs,
         should_default,
     );

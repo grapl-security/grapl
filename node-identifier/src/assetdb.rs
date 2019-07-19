@@ -1,3 +1,5 @@
+use graph_descriptions::graph_description::*;
+use graph_descriptions::*;
 use graph_descriptions::graph_description::host::*;
 
 use failure::Error;
@@ -169,6 +171,60 @@ where
         Ok(())
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct AssetIdentifier<D>
+    where D: DynamoDb
+{
+    assetdb: AssetIdDb<D>,
+}
+
+impl<D> AssetIdentifier<D>
+    where D: DynamoDb
+{
+    pub fn new(
+        assetdb: AssetIdDb<D>
+    ) -> Self {
+        Self {assetdb}
+    }
+
+    pub fn attribute_asset_id(
+        &self,
+        node: NodeDescription,
+    ) -> Result<String, Error> {
+        let ids = match node.clone().which() {
+            Node::ProcessNode(node) => (node.asset_id, node.hostname, node.host_ip),
+            Node::FileNode(node) => (node.asset_id, node.hostname, node.host_ip),
+            Node::OutboundConnectionNode(node) => (node.asset_id, node.hostname, node.host_ip),
+            Node::DynamicNode(node) => (node.asset_id, node.hostname, node.host_ip),
+            Node::IpAddressNode(_) => {
+                bail!("Can not call attribute_asset_id with IpAddressNode")
+            }
+            _ => panic!("Unsupported node type"),
+        };
+
+        let host_id = match ids {
+            (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
+            (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
+            (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
+            (_, _, _) => {
+                bail!("Must provide at least one of: asset_id, hostname, host_ip");
+            }
+        };
+
+        // map host_id to asset_id
+        // If we don't finya oim talking ad an asset id we'll have to mark the node as dead
+        let asset_id = self.assetdb.resolve_asset_id(&host_id, node.get_timestamp());
+
+        match asset_id {
+            Ok(Some(asset_id)) => Ok(asset_id),
+            Ok(None) => bail!("Failed to resolve assetid"),
+            Err(e) => bail!("Failed to resolve assetid {}", e),
+        }
+
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

@@ -394,9 +394,8 @@ fn with_retries<T>(mut f: impl FnMut() -> Result<T, Error>) -> Result<T, Error> 
 pub fn subgraph_to_sns<S>(sns_client: &S, subgraphs: &GraphDescription) -> Result<(), Error>
     where S: Sns
 {
-    // TODO: Preallocate buffers
     info!("upload_subgraphs");
-    let mut proto = Vec::with_capacity(5000);
+    let mut proto = Vec::with_capacity(8192);
     subgraphs.encode(&mut proto)?;
 
     let subgraph_merged_topic_arn = std::env::var("SUBGRAPH_MERGED_TOPIC_ARN").expect("SUBGRAPH_MERGED_TOPIC_ARN");
@@ -432,12 +431,12 @@ struct GraphMerger {
 
 impl EventHandler<GraphDescription> for GraphMerger {
     fn handle_event(&self, subgraph: GraphDescription) -> Result<(), Error> {
-        println!("handling new subgraph with {} nodes", subgraph.nodes.len());
-
         if subgraph.is_empty() {
             warn!("Attempted to merge empty subgraph. Short circuiting.");
             return Ok(())
         }
+
+        println!("handling new subgraph with {} nodes {} edges", subgraph.nodes.len(), subgraph.edges.len());
 
         let mut rng = thread_rng();
         let rand_alpha = self.mg_alphas.choose(&mut rng)

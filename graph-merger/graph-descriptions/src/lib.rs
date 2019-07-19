@@ -269,6 +269,7 @@ node_from!(ProcessDescription, ProcessNode);
 node_from!(FileDescription, FileNode);
 node_from!(OutboundConnection, OutboundConnectionNode);
 node_from!(InboundConnection, InboundConnectionNode);
+node_from!(DynamicNode, DynamicNode);
 
 
 
@@ -346,6 +347,7 @@ pub enum Node {
     IpAddressNode(IpAddressDescription),
     OutboundConnectionNode(OutboundConnection),
     InboundConnectionNode(InboundConnection),
+    DynamicNode(DynamicNode),
 }
 
 impl Node {
@@ -357,6 +359,7 @@ impl Node {
             Node::IpAddressNode(ref node) => node.node_key.as_str(),
             Node::OutboundConnectionNode(ref node) => node.node_key.as_str(),
             Node::InboundConnectionNode(ref node) => node.node_key.as_str(),
+            Node::DynamicNode(ref node) => node.node_key.as_str(),
         }
     }
 
@@ -368,6 +371,7 @@ impl Node {
             Node::IpAddressNode(ref node) => node.node_key.clone(),
             Node::OutboundConnectionNode(ref node) => node.node_key.clone(),
             Node::InboundConnectionNode(ref node) => node.node_key.clone(),
+            Node::DynamicNode(ref node) => node.node_key.clone(),
         }
     }
 }
@@ -381,6 +385,7 @@ impl NodeDescription {
             WhichNode::IpAddressNode(n) => Node::IpAddressNode(n.into()),
             WhichNode::OutboundConnectionNode(n) => Node::OutboundConnectionNode(n.into()),
             WhichNode::InboundConnectionNode(n) => Node::InboundConnectionNode(n.into()),
+            WhichNode::DynamicNode(n) => Node::DynamicNode(n.into()),
         }
     }
 
@@ -392,6 +397,7 @@ impl NodeDescription {
             WhichNode::IpAddressNode(n) => n.node_key.as_ref(),
             WhichNode::OutboundConnectionNode(n) => n.node_key.as_ref(),
             WhichNode::InboundConnectionNode(n) => n.node_key.as_ref(),
+            WhichNode::DynamicNode(n) => n.node_key.as_ref(),
         }
     }
 
@@ -431,6 +437,9 @@ impl NodeDescription {
                     ConnectionState::Existing => node.last_seen_timestamp,
                 }
             }
+            WhichNode::DynamicNode(ref node) => {
+                node.seen_at
+            }
         }
     }
 
@@ -452,6 +461,9 @@ impl NodeDescription {
                 node.asset_id = Some(asset_id)
             }
             WhichNode::InboundConnectionNode(ref mut node) => {
+                node.asset_id = Some(asset_id)
+            }
+            WhichNode::DynamicNode(ref mut node) => {
                 node.asset_id = Some(asset_id)
             }
         }
@@ -477,6 +489,9 @@ impl NodeDescription {
             WhichNode::InboundConnectionNode(ref node) => {
                 node.get_asset_id()
             }
+            WhichNode::DynamicNode(ref node) => {
+                node.get_asset_id()
+            }
         }
     }
 
@@ -498,6 +513,9 @@ impl NodeDescription {
                 node.node_key = key;
             }
             WhichNode::InboundConnectionNode(ref mut node) => {
+                node.node_key = key;
+            }
+            WhichNode::DynamicNode(ref mut node) => {
                 node.node_key = key;
             }
         }
@@ -529,6 +547,10 @@ impl NodeDescription {
                 let node: InboundConnection = node.into();
                 node.into_json()
             }
+            WhichNode::DynamicNode(node) => {
+                let node: DynamicNode = node.into();
+                node.into_json()
+            }
         }
     }
 
@@ -539,6 +561,7 @@ impl NodeDescription {
             (WhichNode::IpAddressNode(node),            WhichNode::IpAddressNode(other)) => node.merge(other),
             (WhichNode::OutboundConnectionNode(node),   WhichNode::OutboundConnectionNode(other)) => node.merge(other),
             (WhichNode::InboundConnectionNode(node),    WhichNode::InboundConnectionNode(other)) => node.merge(other),
+            (WhichNode::DynamicNode(node),    WhichNode::DynamicNode(other)) => node.merge(other.clone()),
 
             _ => warn!("Attempted to merge two nodes of different type"),
         }
@@ -546,6 +569,106 @@ impl NodeDescription {
 
 }
 
+
+
+impl DynamicNode {
+
+    pub fn set_key(&mut self, key: String) {
+        self.node_key = key;
+    }
+
+    pub fn clone_key(&self) -> String {
+        self.node_key.clone()
+    }
+
+    pub fn get_asset_id(&self) -> Option<&String> {
+        self.asset_id.as_ref()
+    }
+
+    pub fn set_asset_id(&mut self, asset_id: String) {
+        self.asset_id = Some(asset_id)
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        self.properties.extend(other.properties)
+    }
+
+    pub fn into_json(self) -> Value {
+        let mut j = json!({
+            "node_key": self.node_key,
+            "node_type": self.node_type,
+            "seen_at": self.seen_at,
+        });
+
+        if let Some(asset_id) = self.asset_id {
+            j["asset_id"] = asset_id.into();
+        }
+
+        for (key, prop) in self.properties {
+            let prop = match prop.property {
+                Some(node_property::Property::Intprop(i)) => Value::from(i),
+                Some(node_property::Property::Strprop(s)) => Value::from(s),
+                None => panic!("Invalid property on DynamicNode: {}", self.node_key),
+            };
+
+            j[key] = prop;
+        }
+
+        j
+    }
+
+    pub fn get_id_strategies(&self) -> &[IdStrategy] {
+        &self.id_strategy[..]
+    }
+
+
+    pub fn requires_asset_identification(&self) -> bool {
+        for strategy in self.get_id_strategies() {
+            match strategy.strategy.as_ref().unwrap() {
+                id_strategy::Strategy::Session(ref strategy) => {
+                    if strategy.primary_key_requires_asset_id {
+                        return true
+                    }
+                }
+                id_strategy::Strategy::Static(ref strategy) => {
+                    if strategy.primary_key_requires_asset_id {
+                        return true
+                    }
+                }
+            }
+        }
+
+        false
+    }
+
+}
+
+impl From<String> for NodeProperty {
+    fn from(s: String) -> NodeProperty {
+        NodeProperty {
+            property: Some(node_property::Property::Strprop(s))
+        }
+    }
+}
+
+impl From<i64> for NodeProperty {
+    fn from(i: i64) -> NodeProperty {
+        NodeProperty {
+            property: Some(node_property::Property::Intprop(i))
+        }
+    }
+}
+
+impl std::string::ToString for NodeProperty {
+    fn to_string(&self) -> String {
+        let prop = match &self.property {
+            Some(node_property::Property::Intprop(i)) => i.to_string(),
+            Some(node_property::Property::Strprop(s)) => s.to_string(),
+            None => panic!("Invalid property : {:?}", self),
+        };
+        prop
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum ProcessState {
@@ -642,7 +765,6 @@ impl AssetDescription {
             json!({
             "node_key": self.node_key,
             "asset_id": self.node_key,
-            "asset_id": self.asset_id,
             "host_name": self.host_name,
             "host_domain": self.host_domain,
             "host_fqdn": self.host_fqdn,
@@ -927,9 +1049,11 @@ impl FileDescription {
 
 impl IpAddressDescription {
     pub fn new(timestamp: u64,
-               ip_address: String,
-               ip_proto: String,
+               ip_address: impl Into<String>,
+               ip_proto: impl Into<String>,
     ) -> IpAddressDescription {
+        let ip_address = ip_address.into();
+        let ip_proto = ip_proto.into();
         // 20 is based on the max size of a base encoded ipv4 ip
         let mut node_key = String::with_capacity(20);
         base64::encode_config_buf(&ip_address,
@@ -940,7 +1064,7 @@ impl IpAddressDescription {
             node_key,
             timestamp,
             ip_address,
-            ip_proto
+            ip_proto,
         }
     }
 

@@ -20,7 +20,6 @@ fn main() {
     config.type_attribute(".graph_description.InboundConnection", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.OutboundConnection", "#[builder(setter(into))]");
 
-
     config.field_attribute(".graph_description.FileDescription.node_key", "#[builder(field(private))]");
     config.field_attribute(".graph_description.FileDescription.node_key",
                            "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]");

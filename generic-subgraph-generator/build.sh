@@ -7,3 +7,4 @@ zip "./generic-subgraph-generator.zip" "./bootstrap" &&
 cp "./generic-subgraph-generator.zip" "../grapl-cdk/"
 rm "./generic-subgraph-generator.zip"
 rm "./bootstrap"
+date

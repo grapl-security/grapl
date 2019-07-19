@@ -1,6 +1,5 @@
 #[macro_use] extern crate log;
 
-extern crate aws_lambda as lambda;
 extern crate failure;
 extern crate futures;
 extern crate base16;
@@ -27,20 +26,9 @@ use sha2::{Digest, Sha256};
 
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-//use sqs_microservice::*;
 
 use graph_descriptions::graph_description::*;
 use std::io::Cursor;
-//
-//#[inline(always)]
-//pub fn handle_json_encoded_logs(f: impl (Fn(Vec<Value>)
-//    -> Result<Vec<GraphDescription>, Error>) + Clone + Send + 'static)
-//{
-//    handle_s3_sns_sqs_json(f, move |subgraphs| {
-//        info!("Uploading {} subgraphs", subgraphs.len());
-//        upload_subgraphs(GeneratedSubgraphs::new(subgraphs))
-//    });
-//}
 
 
 pub fn send_logs_to_generators(
@@ -68,11 +56,11 @@ pub fn send_logs_to_generators(
         let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
         Region::from_str(&region_str).expect("Invalid Region")
     };
-    let s3_client = S3Client::simple(region);
+    let s3_client = S3Client::new(region);
 
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-    s3_client.put_object(&PutObjectRequest {
+    s3_client.put_object(PutObjectRequest {
         bucket: bucket_prefix + "-grapl-raw-log-bucket",
         key,
         body: Some(logs.into()),
@@ -85,7 +73,6 @@ pub fn send_logs_to_generators(
 pub fn upload_subgraphs<S>(s3_client: &S, subgraphs: GeneratedSubgraphs) -> Result<(), Error>
     where S: S3
 {
-    // TODO: Preallocate buffers
     info!("upload_subgraphs");
     let mut proto = Vec::with_capacity(5000);
     subgraphs.encode(&mut proto)?;
@@ -115,7 +102,7 @@ pub fn upload_subgraphs<S>(s3_client: &S, subgraphs: GeneratedSubgraphs) -> Resu
     zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
         .expect("compress zstd capnp");
 
-    s3_client.put_object(&PutObjectRequest {
+    s3_client.put_object(PutObjectRequest {
         bucket,
         key,
         body: Some(compressed.into()),
@@ -137,7 +124,6 @@ mod tests {
     }
 }
 
-//rust-musl-builder cargo build --release && cp ./target/x86_64-unknown-linux-musl/release/generic-subgraph-generator . && zip ./generic-subgraph-generator.zip ./generic-subgraph-generator && cp ./generic-subgraph-generator.zip ~/workspace/grapl/grapl-cdk/ && rm ./generic-subgraph-generator.zip
 
 
 

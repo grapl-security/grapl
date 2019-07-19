@@ -39,6 +39,7 @@ message NodeDescription {
         IpAddressDescription ip_address_node = 4;
         OutboundConnection outbound_connection_node = 5;
         InboundConnection inbound_connection_node = 6;
+        DynamicNode dynamic_node = 7;
     }
 }
 
@@ -121,6 +122,46 @@ message IpAddressDescription {
     uint64 timestamp = 2;
     string ip_address = 3;
     string ip_proto = 4;
+}
+
+message Session {
+    // Such as the pid + assetid
+    repeated string primary_key_properties = 1;
+    bool primary_key_requires_asset_id = 2;
+    uint64 created_time = 3;
+    uint64 last_seen_time = 4;
+    uint64 terminated_time = 5;
+}
+
+message Static {
+    repeated string primary_key_properties = 1;
+    bool primary_key_requires_asset_id = 2;
+}
+
+message IdStrategy {
+    oneof strategy {
+        Session session = 1;
+        Static static = 2;
+    }
+}
+
+message NodeProperty {
+    oneof property {
+        int64 intprop = 1;
+        uint64 uintprop = 2;
+        string strprop = 3;
+    }
+}
+
+message DynamicNode {
+    map<string, NodeProperty> properties = 1;
+    string node_key = 2;
+    string node_type = 3;
+    uint64 seen_at = 4;
+    google.protobuf.StringValue asset_id = 5;
+    google.protobuf.StringValue hostname = 6;
+    google.protobuf.StringValue host_ip = 7;
+    repeated IdStrategy id_strategy = 8;
 }
 
 message EdgeDescription {

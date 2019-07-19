@@ -266,6 +266,30 @@ class SessionIdentityCache extends cdk.Stack {
 
 }
 
+class EventEmitter {
+    bucket: s3.Bucket;
+    topic: sns.Topic;
+    constructor(stack: cdk.Stack, eventName: string) {
+
+        this.bucket =
+            new s3.Bucket(stack, eventName + '-bucket', {
+                bucketName: process.env.BUCKET_PREFIX+ eventName + "-bucket"
+            });
+
+        // SNS Topics
+        this.topic =
+            new sns.Topic(stack, `${eventName}-topic`, {
+                topicName: `${eventName}-topic`
+            });
+
+        this.bucket
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(this.topic)
+            );
+    }
+}
+
 class EventEmitters extends cdk.Stack {
     raw_logs_bucket: s3.Bucket;
     sysmon_logs_bucket: s3.Bucket;
@@ -961,6 +985,9 @@ class HistoryDb extends cdk.Stack {
     asset_history: dynamodb.Table;
     node_id_retry_table: dynamodb.Table;
 
+    dynamic_session_table: dynamodb.Table;
+    static_mapping_table: dynamodb.Table;
+
     constructor(parent: cdk.App,
                 id: string,
     ) {
@@ -1018,6 +1045,30 @@ class HistoryDb extends cdk.Stack {
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
         });
 
+
+        this.dynamic_session_table = new dynamodb.Table(this, 'dynamic_session_table', {
+            tableName: "dynamic_session_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.STRING
+            },
+            sortKey: {
+                name: 'create_time',
+                type: dynamodb.AttributeType.NUMBER
+            },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        });
+
+
+        this.static_mapping_table = new dynamodb.Table(this, 'static_mapping_table', {
+            tableName: "static_mapping_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.STRING
+            },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        });
+
         this.node_id_retry_table = new dynamodb.Table(this, 'node_id_retry_table', {
             tableName: "node_id_retry_table",
             partitionKey: {
@@ -1036,12 +1087,16 @@ class HistoryDb extends cdk.Stack {
         this.outbound_connection_history.grantReadWriteData(service.event_handler.role);
         this.asset_history.grantReadWriteData(service.event_handler.role);
         this.node_id_retry_table.grantReadWriteData(service.event_handler.role);
+        this.static_mapping_table.grantReadWriteData(service.event_handler.role);
+        this.dynamic_session_table.grantReadWriteData(service.event_handler.role);
 
         this.proc_history.grantReadWriteData(service.event_retry_handler.role);
         this.file_history.grantReadWriteData(service.event_retry_handler.role);
         this.outbound_connection_history.grantReadWriteData(service.event_retry_handler.role);
         this.asset_history.grantReadWriteData(service.event_retry_handler.role);
         this.node_id_retry_table.grantReadWriteData(service.event_retry_handler.role);
+        this.static_mapping_table.grantReadWriteData(service.event_retry_handler.role);
+        this.dynamic_session_table.grantReadWriteData(service.event_retry_handler.role);
     }
 }
 

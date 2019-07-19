@@ -6,7 +6,7 @@ extern crate graph_descriptions;
 extern crate lambda_runtime as lambda;
 #[macro_use] extern crate log;
 #[macro_use] extern crate mysql;
-extern crate openssl_probe;
+
 extern crate prost;
 #[macro_use] extern crate prost_derive;
 extern crate rusoto_core;
@@ -137,7 +137,7 @@ pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     };
 
     info!("Creating s3_client");
-    let s3_client = Arc::new(S3Client::simple(region.clone()));
+    let s3_client = Arc::new(S3Client::new(region.clone()));
 
     info!("Creating retriever");
     let retriever = S3EventRetriever::new(
@@ -168,7 +168,6 @@ pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
 
 fn main() {
-    openssl_probe::init_ssl_cert_env_vars();
     simple_logger::init_with_level(log::Level::Info).unwrap();
     lambda!(handler);
 }
