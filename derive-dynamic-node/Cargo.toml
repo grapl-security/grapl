@@ -17,7 +17,7 @@ syn = "0.15.39"
 quote = "0.6.13"
 proc-macro2 = "0.4.30"
 
-grapl-graph-descriptions = "*"
+grapl-graph-descriptions = "0.1.*"
 uuid = "0.7.4"
 serde_derive = "1.0.97"
 serde = "1.0.97"
