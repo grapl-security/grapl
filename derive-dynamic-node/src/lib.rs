@@ -175,7 +175,7 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
             acc
         });
 
-    assert!(id_fields.to_string().len() >= 0);
+    assert!(id_fields.to_string().len() > 0);
 
     let struct_name = &input.ident;
 
