@@ -111,7 +111,7 @@ class Contains(Cmp):
 
 
 def get_var_block(
-        node: Any, edge_name: str, binding_num: int, root: Any, already_converted: Set[Any]
+    node: Any, edge_name: str, binding_num: int, root: Any, already_converted: Set[Any]
 ) -> str:
     var_block = ""
     if node and node not in already_converted:
@@ -226,11 +226,11 @@ def _build_expansion_root(node: Union[Any, Any]) -> str:
 
 
 def _build_query(
-        node: Any,
-        var_blocks: List[str],
-        bindings: List[str],
-        count: bool = False,
-        first: Optional[int] = None,
+    node: Any,
+    var_blocks: List[str],
+    bindings: List[str],
+    count: bool = False,
+    first: Optional[int] = None,
 ) -> str:
 
     joined_vars = "\n".join(var_blocks)
@@ -259,10 +259,7 @@ def _build_query(
 
 
 def _get_queries(
-        process_query: Any,
-        node_key: str,
-        count: bool = False,
-        first: Optional[int] = None
+    process_query: Any, node_key: str, count: bool = False, first: Optional[int] = None
 ):
     if not first:
         first = 1
@@ -281,10 +278,10 @@ def _get_queries(
 
 
 def _str_cmps(
-        predicate: str,
-        eq: Optional[Union[str, List[str], Not, List[Not]]] = None,
-        contains: Optional[Union[str, List[str], Not, List[Not]]] = None,
-        ends_with: Optional[Union[str, List[str], Not, List[Not]]] = None,
+    predicate: str,
+    eq: Optional[Union[str, List[str], Not, List[Not]]] = None,
+    contains: Optional[Union[str, List[str], Not, List[Not]]] = None,
+    ends_with: Optional[Union[str, List[str], Not, List[Not]]] = None,
 ):
     cmps = []
 
@@ -324,10 +321,10 @@ def _str_cmps(
 
 
 def _int_cmps(
-        predicate: str,
-        eq: Optional[Union[int, List, Not, List[Not]]] = None,
-        gt: Optional[Union[int, List, Not, List[Not]]] = None,
-        lt: Optional[Union[int, List, Not, List[Not]]] = None,
+    predicate: str,
+    eq: Optional[Union[int, List, Not, List[Not]]] = None,
+    gt: Optional[Union[int, List, Not, List[Not]]] = None,
+    lt: Optional[Union[int, List, Not, List[Not]]] = None,
 ) -> List[List[Cmp]]:
     cmps = []
 
@@ -373,11 +370,10 @@ IntCmp = Union[int, List[int], Not, List[Not]]
 
 EdgeFilter = Optional[Any]
 
-V = TypeVar('V', bound='Viewable')
+V = TypeVar("V", bound="Viewable")
 
 
 class Viewable(abc.ABC):
-
     def __init__(self, dgraph_client: DgraphClient, node_key: str, uid: str):
         self.dgraph_client = dgraph_client
         self.node_key = node_key
@@ -393,7 +389,9 @@ class Viewable(abc.ABC):
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         pass
 
-    def get_property(self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]) -> Optional[Union[str, int]]:
+    def get_property(
+        self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]
+    ) -> Optional[Union[str, int]]:
         query = f"""
             {{
                 q0(func: uid("{self.uid}")) {{
@@ -413,7 +411,9 @@ class Viewable(abc.ABC):
 
         return prop
 
-    def get_properties(self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]) -> List[str]:
+    def get_properties(
+        self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]
+    ) -> List[str]:
         query = f"""
             {{
                 q0(func: uid("{self.uid}")) {{
@@ -430,9 +430,7 @@ class Viewable(abc.ABC):
         if not raw_props:
             return []
 
-        props = [
-            prop_type(p[prop_name]) for p in raw_props
-        ]
+        props = [prop_type(p[prop_name]) for p in raw_props]
 
         return props
 
@@ -481,17 +479,15 @@ class Viewable(abc.ABC):
             return []
 
         raw_edges = raw_edges[0][edge_name]
-        edges = [
-            edge_type.from_dict(self.dgraph_client, f) for f in raw_edges
-        ]
+        edges = [edge_type.from_dict(self.dgraph_client, f) for f in raw_edges]
 
         return edges
 
     @classmethod
     def from_dict(cls: Type[V], dgraph_client: DgraphClient, d: Dict[str, Any]) -> V:
         properties = {}
-        if d.get('node_type'):
-            properties['node_type'] = d['node_type']
+        if d.get("node_type"):
+            properties["node_type"] = d["node_type"]
 
         for prop, into in cls.get_property_tuples():
             val = d.get(prop)
@@ -510,27 +506,24 @@ class Viewable(abc.ABC):
                 ty = ty[0]
 
                 if d.get(edge_name, None):
-                    _edges = [
-                        ty.from_dict(dgraph_client, f) for f in d[edge_name]
-                    ]
+                    _edges = [ty.from_dict(dgraph_client, f) for f in d[edge_name]]
                     edges[edge_name] = _edges
 
             else:
-                edge = ty.from_dict(
-                    dgraph_client, raw_edge[0]
-                )
+                edge = ty.from_dict(dgraph_client, raw_edge[0])
                 edges[edge_name] = edge
 
         return cls(
             dgraph_client=dgraph_client,
-            node_key=d['node_key'],
-            uid=d['uid'],
+            node_key=d["node_key"],
+            uid=d["uid"],
             **properties,
-            **edges
+            **edges,
         )
 
 
-Q = TypeVar('Q', bound='Queryable')
+Q = TypeVar("Q", bound="Queryable")
+
 
 class Queryable(abc.ABC):
     def __init__(self, view_type: Type[V]) -> None:
@@ -575,7 +568,7 @@ class Queryable(abc.ABC):
         return self
 
     def get_property_names(self) -> List[str]:
-        return [p[0]for p in self.get_properties()]
+        return [p[0] for p in self.get_properties()]
 
     def get_edges(self) -> List[Tuple[str, Any]]:
         all_edges = []
@@ -587,10 +580,10 @@ class Queryable(abc.ABC):
         return [e[1] for e in self.get_edges()]
 
     def query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = None,
+        self,
+        dgraph_client: DgraphClient,
+        contains_node_key: Optional[str] = None,
+        first: Optional[int] = None,
     ) -> List[V]:
         if contains_node_key:
             query_str = _get_queries(self, node_key=contains_node_key, first=first or 1)
@@ -604,46 +597,43 @@ class Queryable(abc.ABC):
         if not raw_views:
             return []
 
-        return [self.view_type.from_dict(dgraph_client, raw_view) for raw_view in raw_views]
+        return [
+            self.view_type.from_dict(dgraph_client, raw_view) for raw_view in raw_views
+        ]
 
     def query_first(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None
+        self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
     ) -> Optional[V]:
-        return self.query(
-            dgraph_client,
-            contains_node_key,
-            first=1
-        ) or None
+        res = self.query(dgraph_client, contains_node_key, first=1)
+        if res:
+            return res[0]
+        else:
+            return None
 
     def get_count(
-            self,
-            dgraph_client: DgraphClient,
-            max: Optional[int] = None,
-            contains_node_key: Optional[str] = None,
+        self,
+        dgraph_client: DgraphClient,
+        max: Optional[int] = None,
+        contains_node_key: Optional[str] = None,
     ) -> int:
         if contains_node_key:
             query_str = _get_queries(self, node_key=contains_node_key, count=True)
         else:
             query_str = self.to_query(count=True, first=max or 1000)
 
-        raw_count = json.loads(dgraph_client.txn(read_only=True)
-                               .query(query_str).json)[
+        raw_count = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
             "res"
         ]
 
         if not raw_count:
             return 0
         else:
-            return raw_count[0].get('count', 0)
+            return raw_count[0].get("count", 0)
 
     def to_query(self, count: bool = False, first: Optional[int] = None) -> str:
         var_block = self._get_var_block_root(0, root=self)
 
-        return _build_query(
-            self, [var_block], ["Binding0"], count=count, first=first
-        )
+        return _build_query(self, [var_block], ["Binding0"], count=count, first=first)
 
     def _filters(self) -> str:
         inner_filters = []
@@ -660,7 +650,7 @@ class Queryable(abc.ABC):
         return f"@filter({'AND'.join(inner_filters)})"
 
     def _get_var_block(
-            self, binding_num: int, root: Any, already_converted: Set[Any]
+        self, binding_num: int, root: Any, already_converted: Set[Any]
     ) -> str:
         if self in already_converted:
             return ""
@@ -687,7 +677,7 @@ class Queryable(abc.ABC):
         return block
 
     def _get_var_block_root(
-            self, binding_num: int, root: Any, node_key: Optional[str] = None
+        self, binding_num: int, root: Any, node_key: Optional[str] = None
     ):
         already_converted = {self}
         root_var = ""
@@ -711,10 +701,10 @@ class Queryable(abc.ABC):
         elif type_name:
             func_filter = f'eq(node_type, "{self.get_node_type_name()}")'
         elif self.get_unique_predicate():
-            func_filter = f'has({self.get_unique_predicate()})'
+            func_filter = f"has({self.get_unique_predicate()})"
         else:
             # worst case, we have to search every node :(
-            func_filter = 'has(node_keY)'
+            func_filter = "has(node_keY)"
 
         edge_var_blocks = "\n".join(edge_var_blocks)
 
@@ -726,4 +716,3 @@ class Queryable(abc.ABC):
             """
 
         return block
-
