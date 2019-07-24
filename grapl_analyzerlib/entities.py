@@ -87,6 +87,9 @@ class NodeView(object):
         else:
             raise Exception("Invalid Node Type")
 
+    def get_node_key(self) -> str:
+        return self.node.node_key
+
     def as_process_view(self) -> Optional["PV"]:
         if isinstance(self.node, ProcessView):
             return self.node

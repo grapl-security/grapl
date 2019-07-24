@@ -184,14 +184,14 @@ def __build_expansion(node: Union[Any, Any], already_visited: Set[Any]) -> str:
         if neighbor in already_visited:
             continue
         already_visited.add(neighbor)
-        neighbor_props = neighbor.get_properties()
+        neighbor_props = neighbor.get_property_names()
         expanded_edge = f"""
                 
                     {edge} {{
                         uid,
                         {",".join(neighbor_props)},
                         {__build_expansion(neighbor, already_visited)}
-                    }}
+                    }}  
                 
             """
         expanded_edges.append(expanded_edge)
