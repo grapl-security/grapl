@@ -1292,7 +1292,7 @@ class ProcessView(Viewable):
             ProcessQuery()
             .with_node_key(self.node_key)
             .with_deleted_files(FileQuery().with_node_key())
-            .query()
+            .query_first()
         )
 
         if not deleted_files:
@@ -1309,7 +1309,7 @@ class ProcessView(Viewable):
             ProcessQuery()
             .with_node_key(self.node_key)
             .with_read_files(FileQuery().with_node_key())
-            .query()
+            .query_first()
         )
 
         if not read_files:
