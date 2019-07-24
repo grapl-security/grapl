@@ -250,7 +250,8 @@ def _build_query(
                 {joined_vars}
             
             res(func: uid({", ".join(bindings)}) {first}) {{
-                 {expansion}
+                uid,
+                {expansion}
             }}
            
            }}
@@ -440,6 +441,7 @@ class Viewable(abc.ABC):
         query = f"""
             {{
                 q0(func: uid("{self.uid}")) {{
+                    uid,
                     {edge_name} {{
                         uid,
                         node_type,
@@ -462,6 +464,7 @@ class Viewable(abc.ABC):
         query = f"""
             {{
                 q0(func: uid("{self.uid}")) {{
+                    uid,
                     {edge_name} {{
                         uid,
                         node_type,
