@@ -526,7 +526,7 @@ class Viewable(abc.ABC):
             node_key=d["node_key"],
             uid=d["uid"],
             **properties,
-            **edges,
+            **cleaned_edges,
         )
 
 
