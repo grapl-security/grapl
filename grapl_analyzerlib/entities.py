@@ -474,7 +474,11 @@ class FileView(Viewable):
         readers: Optional[List["PV"]] = None,
         spawned_from: Optional[List["PV"]] = None,
     ) -> None:
-        super(FileView, self).__init__()
+        super(FileView, self).__init__(
+            dgraph_client,
+            node_key,
+            uid,
+        )
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: Optional[str]
         self.uid = uid  # type: Optional[str]
@@ -1114,7 +1118,11 @@ class ProcessView(Viewable):
         read_files: Optional[List["FV"]] = None,
         created_connections: Optional[List["EIPV"]] = None,
     ) -> None:
-        super(ProcessView, self).__init__()
+        super(ProcessView, self).__init__(
+            dgraph_client,
+            node_key,
+            uid,
+        )
 
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: str
@@ -1438,7 +1446,11 @@ class OutboundConnectionView(Viewable):
         port: Optional[str] = None,
         external_connections: "Optional[EIPV]" = None,
     ) -> None:
-        super(OutboundConnectionView, self).__init__()
+        super(OutboundConnectionView, self).__init__(
+            dgraph_client,
+            node_key,
+            uid,
+        )
 
         self.dgraph_client = dgraph_client
         self.node_key = node_key
@@ -1527,7 +1539,11 @@ class ExternalIpView(Viewable):
         uid: Optional[str] = None,
         external_ip: Optional[str] = None,
     ) -> None:
-        super(ExternalIpView, self).__init__()
+        super(ExternalIpView, self).__init__(
+            dgraph_client,
+            node_key,
+            uid,
+        )
         self.dgraph_client = dgraph_client
         self.node_key = node_key
         self.uid = uid
