@@ -1309,7 +1309,7 @@ class ProcessView(Viewable):
             ProcessQuery()
             .with_node_key(self.node_key)
             .with_bin_file(FileQuery())
-            .query_first()
+            .query_first(self.dgraph_client)
         )
         if not self_node:
             return None
@@ -1325,7 +1325,7 @@ class ProcessView(Viewable):
             ProcessQuery()
             .with_node_key(self.node_key)
             .with_deleted_files(FileQuery().with_node_key())
-            .query_first()
+            .query_first(self.dgraph_client)
         )
 
         if not deleted_files:
@@ -1342,7 +1342,7 @@ class ProcessView(Viewable):
             ProcessQuery()
             .with_node_key(self.node_key)
             .with_read_files(FileQuery().with_node_key())
-            .query_first()
+            .query_first(self.dgraph_client)
         )
 
         if not read_files:
