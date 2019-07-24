@@ -258,7 +258,15 @@ def _build_query(
     return query
 
 
-def _get_queries(process_query: Any, node_key: str, count: bool = False, first: bool = True):
+def _get_queries(
+        process_query: Any,
+        node_key: str,
+        count: bool = False,
+        first: Optional[int] = None
+):
+    if not first:
+        first = 1
+
     all_nodes = flatten_nodes(process_query)
     bindings = []
     var_blocks = []
@@ -573,6 +581,26 @@ class Queryable(abc.ABC):
 
     def get_neighbors(self) -> List[Q]:
         return [e[1] for e in self.get_edges()]
+
+    def query(
+            self,
+            dgraph_client: DgraphClient,
+            contains_node_key: Optional[str]=None,
+            first: Optional[int]=None,
+    ) -> List[V]:
+        if contains_node_key:
+            query_str = _get_queries(self, node_key=contains_node_key, first=first or 1)
+        else:
+            query_str = self.to_query(first=first)
+
+        raw_views = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
+            "res"
+        ]
+
+        if not raw_views:
+            return []
+
+        return self.view_type.from_dict(dgraph_client, raw_views[0])
 
     def query_first(self, dgraph_client, contains_node_key: Optional[str]=None) -> Optional[V]:
         if contains_node_key:
