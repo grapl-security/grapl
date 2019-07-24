@@ -471,11 +471,11 @@ class FileView(Viewable):
         md5_hash: Optional[str] = None,
         sha1_hash: Optional[str] = None,
         sha256_hash: Optional[str] = None,
-        creator: Optional[List["PV"]] = None,
-        deleter: Optional[List["PV"]] = None,
-        writers: Optional[List["PV"]] = None,
-        readers: Optional[List["PV"]] = None,
-        spawned_from: Optional[List["PV"]] = None,
+        created_files: Optional["PV"] = None,
+        deleted_files: Optional["PV"] = None,
+        wrote_to_files: Optional[List["PV"]] = None,
+        read_files: Optional[List["PV"]] = None,
+        bin_file: Optional[List["PV"]] = None,
     ) -> None:
         super(FileView, self).__init__(
             dgraph_client,
@@ -501,11 +501,11 @@ class FileView(Viewable):
         self.md5_hash = md5_hash
         self.sha1_hash = sha1_hash
         self.sha256_hash = sha256_hash
-        self.creator = creator
-        self.deleter = deleter
-        self.writers = writers
-        self.readers = readers
-        self.spawned_from = spawned_from
+        self.creator = created_files
+        self.deleter = deleted_files
+        self.writers = wrote_to_files
+        self.readers = read_files
+        self.spawned_from = bin_file
 
     @staticmethod
     def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
