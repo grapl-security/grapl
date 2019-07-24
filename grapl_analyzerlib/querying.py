@@ -246,7 +246,7 @@ def _build_query(
 
     query = f"""
             {{
-                {joined_vars}
+            {joined_vars}
             
             res(func: uid({", ".join(bindings)}) {first}) {{
                 uid,
@@ -671,6 +671,7 @@ class Queryable(abc.ABC):
 
         block = f"""
             {filters} {{
+                uid,
                 {edge_var_blocks}
             }}
             """
