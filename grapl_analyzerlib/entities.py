@@ -1189,21 +1189,25 @@ class ProcessView(Viewable):
         self.asset_id = self_process.asset_id
         return self.asset_id
 
-    def get_descendents(self) -> List['ProcessView']:
+    def get_descendents(self, max=5, limit=50) -> List['ProcessView']:
         descendents = []
         self.children = self.get_children()
         for child in self.children:
             descendents.append(child)
             # noinspection PyProtectedMember
-            child._get_descendents(descendents)
+            child._get_descendents(descendents, max, limit)
         return descendents
 
-    def _get_descendents(self, descendents):
+    def _get_descendents(self, descendents, max_depth, limit, depth=0):
+        if len(descendents) >= limit:
+            return
+        if depth >= max_depth:
+            return
         self.children = self.get_children()
         for child in self.children:
             descendents.append(child)
             # noinspection PyProtectedMember
-            child._get_descendents(descendents)
+            child._get_descendents(descendents, depth + 1)
 
     def traverse_descendents(self) -> Iterable['ProcessView']:
         if not self.children:

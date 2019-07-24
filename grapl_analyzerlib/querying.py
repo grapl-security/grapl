@@ -515,6 +515,12 @@ class Viewable(abc.ABC):
                 edge = ty.from_dict(dgraph_client, raw_edge[0])
                 edges[edge_name] = edge
 
+        cleaned_edges = {}
+        for edge_name, edge in edges.items():
+            if edge_name[0] == '~':
+                edge_name == edge_name[1:]
+            cleaned_edges[edge_name] = edge
+
         return cls(
             dgraph_client=dgraph_client,
             node_key=d["node_key"],
