@@ -397,6 +397,7 @@ class Viewable(abc.ABC):
         query = f"""
             {{
                 q0(func: uid("{self.uid}")) {{
+                    uid,
                     {prop_name}
                 }}
             
@@ -416,6 +417,7 @@ class Viewable(abc.ABC):
         query = f"""
             {{
                 q0(func: uid("{self.uid}")) {{
+                    uid,
                     {prop_name}
                 }}
             
@@ -720,6 +722,7 @@ class Queryable(abc.ABC):
 
         block = f"""
             {root_var} var(func: {func_filter}) @cascade {filters} {{
+                uid,
                 {edge_var_blocks}
             }}
             """
