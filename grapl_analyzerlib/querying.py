@@ -518,7 +518,7 @@ class Viewable(abc.ABC):
         cleaned_edges = {}
         for edge_name, edge in edges.items():
             if edge_name[0] == '~':
-                edge_name == edge_name[1:]
+                edge_name = edge_name[1:]
             cleaned_edges[edge_name] = edge
 
         return cls(
