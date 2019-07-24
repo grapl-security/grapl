@@ -1140,7 +1140,7 @@ class ProcessView(Viewable):
         self.process_name = process_name  # type: Optional[str]
 
         self.bin_file = bin_file  # type: Optional['FV']
-        self.children = children  # type: List['PV']
+        self.children = children or []  # type: List['PV']
         self.parent = parent  # type: Optional['PV']
         self.deleted_files = deleted_files  # type: Optional[List['FV']]
         self.created_files = created_files  # type: Optional[List['FV']]
@@ -1272,7 +1272,7 @@ class ProcessView(Viewable):
             .with_node_key(self.node_key)
             .with_children(ProcessQuery().with_node_key())
             .query_first(self.dgraph_client)
-        )  # type: 'PV'
+        )  # type: Optional['PV']
 
         if not self_node:
             return []
