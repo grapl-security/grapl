@@ -506,11 +506,11 @@ class Viewable(abc.ABC):
                 ty = ty[0]
 
                 if d.get(edge_name, None):
-                    _edges = [ty.from_dict(dgraph_client, f) for f in d[edge_name]]
+                    _edges = [cls.from_dict(dgraph_client, f) for f in d[edge_name]]
                     edges[edge_name] = _edges
 
             else:
-                edge = ty.from_dict(dgraph_client, raw_edge[0])
+                edge = cls.from_dict(dgraph_client, raw_edge[0])
                 edges[edge_name] = edge
 
         return cls(
@@ -642,7 +642,8 @@ class Queryable(abc.ABC):
             if not prop[1]:
                 continue
             f = _generate_filter(prop[1])
-            inner_filters.append(f)
+            if f:
+                inner_filters.append(f)
 
         if not inner_filters:
             return ""
