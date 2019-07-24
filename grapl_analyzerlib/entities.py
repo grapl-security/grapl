@@ -2,7 +2,7 @@ import json
 from abc import ABC
 from copy import deepcopy
 from collections import defaultdict
-from typing import Iterator, TypeVar, Set, Callable, Type
+from typing import Iterator, TypeVar, Set, Callable, Type, Iterable
 from typing import Optional, List, Dict, Any, Union
 from typing import Tuple
 
@@ -1204,6 +1204,12 @@ class ProcessView(Viewable):
             descendents.append(child)
             # noinspection PyProtectedMember
             child._get_descendents(descendents)
+
+    def traverse_descendents(self) -> Iterable['ProcessView']:
+        for child in self.children:
+            yield child
+            for c in child.traverse_descendents():
+                yield c
 
     def get_process_name(self) -> Optional[str]:
         if self.process_name:
