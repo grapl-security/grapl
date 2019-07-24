@@ -180,7 +180,8 @@ def __build_expansion(node: Union[Any, Any], already_visited: Set[Any]) -> str:
 
     expanded_edges = []
 
-    for edge, neighbor in edges:
+    for edge_tuple in edges:
+        edge, neighbor = edge_tuple[0], edge_tuple[1]
         if neighbor in already_visited:
             continue
         already_visited.add(neighbor)
@@ -208,7 +209,9 @@ def _build_expansion_root(node: Union[Any, Any]) -> str:
 
     already_visited = {node}
 
-    for edge, neighbor in edges:
+    for edge_tuple in edges:
+        edge, neighbor = edge_tuple[0], edge_tuple[1]
+
         neighbor_props = neighbor.get_property_names()
         expanded_edge = f"""
                 {edge} {{
