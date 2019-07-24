@@ -498,7 +498,8 @@ class Viewable(abc.ABC):
                 properties[prop] = val
 
         edges = {}
-        for edge_name, ty in cls.get_edge_tuples():
+        for edge_tuple in cls.get_edge_tuples():
+            edge_name, ty = edge_tuple[0], edge_tuple[1]
             raw_edge = d.get(edge_name, None)
 
             if not raw_edge:
@@ -509,11 +510,17 @@ class Viewable(abc.ABC):
 
                 if d.get(edge_name, None):
                     _edges = [ty.from_dict(dgraph_client, f) for f in d[edge_name]]
-                    edges[edge_name] = _edges
+                    if len(edge_tuple) == 3:
+                        edges[edge_tuple[2]] = _edges
+                    else:
+                        edges[edge_name] = _edges
 
             else:
                 edge = ty.from_dict(dgraph_client, raw_edge[0])
-                edges[edge_name] = edge
+                if len(edge_tuple) == 3:
+                    edges[edge_tuple[2]] = _edges
+                else:
+                    edges[edge_name] = _edges
 
         cleaned_edges = {}
         for edge_name, edge in edges.items():

@@ -440,10 +440,10 @@ class FileQuery(Queryable):
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
         neighbors = (
             ("~created_files", self._creator),
-            ("~deleted_files", self._deleter),
-            ("~wrote_to_files", self._writers),
-            ("~read_files", self._readers),
-            ("~bin_file", self._spawned_from),
+            ("~deleted_files"),
+            ("~wrote_to_files"),
+            ("~read_files"),
+            ("~bin_file"),
         )
 
         return [n for n in neighbors if n[1]]
@@ -471,11 +471,11 @@ class FileView(Viewable):
         md5_hash: Optional[str] = None,
         sha1_hash: Optional[str] = None,
         sha256_hash: Optional[str] = None,
-        created_files: Optional["PV"] = None,
-        deleted_files: Optional["PV"] = None,
-        wrote_to_files: Optional[List["PV"]] = None,
-        read_files: Optional[List["PV"]] = None,
-        bin_file: Optional[List["PV"]] = None,
+        creator: Optional["PV"] = None,
+        deleter: Optional["PV"] = None,
+        writers: Optional[List["PV"]] = None,
+        readers: Optional[List["PV"]] = None,
+        spawned_from: Optional[List["PV"]] = None,
     ) -> None:
         super(FileView, self).__init__(
             dgraph_client,
@@ -501,11 +501,11 @@ class FileView(Viewable):
         self.md5_hash = md5_hash
         self.sha1_hash = sha1_hash
         self.sha256_hash = sha256_hash
-        self.creator = created_files
-        self.deleter = deleted_files
-        self.writers = wrote_to_files
-        self.readers = read_files
-        self.spawned_from = bin_file
+        self.creator = creator
+        self.deleter = deleter
+        self.writers = writers
+        self.readers = readers
+        self.spawned_from = spawned_from
 
     @staticmethod
     def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
@@ -531,11 +531,11 @@ class FileView(Viewable):
     @staticmethod
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return [
-            ("~created_files", ProcessView),
-            ("~deleted_files", ProcessView),
-            ("~wrote_to_files", ProcessView),
-            ("~read_files", ProcessView),
-            ("~bin_file", ProcessView),
+            ("~created_files", ProcessView, "creator"),
+            ("~deleted_files", ProcessView, "deleter"),
+            ("~wrote_to_files", ProcessView, "writers"),
+            ("~read_files", ProcessView, "readers"),
+            ("~bin_file", ProcessView, "spawned_from"),
         ]
 
     def get_file_name(self) -> Optional[str]:
@@ -1164,12 +1164,12 @@ class ProcessView(Viewable):
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return [
             ("bin_file", FileView),
-            ("~children", ProcessView),
             ("children", [ProcessView]),
             ("deleted_files", [FileView]),
             ("created_files", [FileView]),
             ("read_files", [FileView]),
             ("created_connections", [ExternalIpView]),
+            ("~children", ProcessView, 'parent'),
         ]
 
     def get_asset_id(self) -> Optional[str]:
@@ -1305,17 +1305,16 @@ class ProcessView(Viewable):
         if self.bin_file:
             return self.bin_file
 
-        query = (
+        self_node = (
             ProcessQuery()
             .with_node_key(self.node_key)
             .with_bin_file(FileQuery())
-            .to_query()
+            .query_first()
         )
+        if not self_node:
+            return None
 
-        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
-
-        bin_file = res["q0"]["bin_file"]
-        self.bin_file = FileView.from_dict(self.dgraph_client, bin_file[0])
+        self.bin_file = self_node.bin_file
         return self.bin_file
 
     def get_deleted_files(self) -> Optional[List["FV"]]:
