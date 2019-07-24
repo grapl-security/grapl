@@ -440,10 +440,10 @@ class FileQuery(Queryable):
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
         neighbors = (
             ("~created_files", self._creator),
-            ("~deleted_files", self._deleted_files),
-            ("~wrote_to_files", self._wrote_to_files),
-            ("~read_files", self._read_files),
-            ("~bin_file", self._bin_file),
+            ("~deleted_files", self._deleter),
+            ("~wrote_to_files", self._writers),
+            ("~read_files", self._readers),
+            ("~bin_file", self._spawned_from),
         )
 
         return [n for n in neighbors if n[1]]
