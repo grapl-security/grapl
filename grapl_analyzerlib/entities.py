@@ -181,13 +181,14 @@ class DynamicNodeQuery(Queryable):
         return self
 
     def with_property_int_filter(
-        self,
-        prop_name: str,
+        self, prop_name: str,
         eq: Optional[Union[int, List, Not, List[Not]]] = None,
         gt: Optional[Union[int, List, Not, List[Not]]] = None,
         lt: Optional[Union[int, List, Not, List[Not]]] = None,
     ) -> "DNQ":
-        self.property_filters[prop_name].extend(_int_cmps(prop_name, eq, gt, lt))
+        self.property_filters[prop_name].extend(
+            _int_cmps(prop_name, eq, gt, lt)
+        )
         return self
 
     def with_edge_filter(self, edge: str, edge_filter: EdgeFilter) -> "DNQ":
@@ -473,7 +474,11 @@ class FileView(Viewable):
         readers: Optional[List["PV"]] = None,
         spawned_from: Optional[List["PV"]] = None,
     ) -> None:
-        super(FileView, self).__init__(dgraph_client, node_key, uid)
+        super(FileView, self).__init__(
+            dgraph_client,
+            node_key,
+            uid,
+        )
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: Optional[str]
         self.uid = uid  # type: Optional[str]
@@ -1113,7 +1118,11 @@ class ProcessView(Viewable):
         read_files: Optional[List["FV"]] = None,
         created_connections: Optional[List["EIPV"]] = None,
     ) -> None:
-        super(ProcessView, self).__init__(dgraph_client, node_key, uid)
+        super(ProcessView, self).__init__(
+            dgraph_client,
+            node_key,
+            uid,
+        )
 
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: str
@@ -1149,15 +1158,15 @@ class ProcessView(Viewable):
         ]
 
     @staticmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[V], V]]]:
+    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return [
-            ("bin_file", FV),
-            ("parent", PV),
-            ("children", [PV]),
-            ("deleted_files", [FV]),
-            ("created_files", [FV]),
-            ("read_files", [FV]),
-            ("created_connections", [EIPV]),
+            ("bin_file", FileView),
+            ("~children", ProcessView),
+            ("children", [ProcessView]),
+            ("deleted_files", [FileView]),
+            ("created_files", [FileView]),
+            ("read_files", [FileView]),
+            ("created_connections", [ExternalIpView]),
         ]
 
     def get_asset_id(self) -> Optional[str]:
@@ -1353,7 +1362,11 @@ class ProcessView(Viewable):
         for edge_name, edge in self.get_edges():
             node_dict[edge_name] = edge.node_key
             edges.append(
-                {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
+                {
+                    "from": self.node_key,
+                    "edge_name": edge_name,
+                    "to": edge.node_key,
+                }
             )
 
         if root:
@@ -1433,7 +1446,11 @@ class OutboundConnectionView(Viewable):
         port: Optional[str] = None,
         external_connections: "Optional[EIPV]" = None,
     ) -> None:
-        super(OutboundConnectionView, self).__init__(dgraph_client, node_key, uid)
+        super(OutboundConnectionView, self).__init__(
+            dgraph_client,
+            node_key,
+            uid,
+        )
 
         self.dgraph_client = dgraph_client
         self.node_key = node_key
@@ -1444,11 +1461,15 @@ class OutboundConnectionView(Viewable):
 
     @staticmethod
     def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
-        return [("port", str)]
+        return [
+            ("port", str)
+        ]
 
     @staticmethod
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
-        return [("external_connections", [ExternalIpView])]
+        return [
+            ("external_connections", [ExternalIpView]),
+        ]
 
 
 class ExternalIpQuery(Queryable):
@@ -1518,7 +1539,11 @@ class ExternalIpView(Viewable):
         uid: Optional[str] = None,
         external_ip: Optional[str] = None,
     ) -> None:
-        super(ExternalIpView, self).__init__(dgraph_client, node_key, uid)
+        super(ExternalIpView, self).__init__(
+            dgraph_client,
+            node_key,
+            uid,
+        )
         self.dgraph_client = dgraph_client
         self.node_key = node_key
         self.uid = uid
@@ -1526,7 +1551,9 @@ class ExternalIpView(Viewable):
 
     @staticmethod
     def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
-        return [("external_ip", str)]
+        return [
+            ("external_ip", str)
+        ]
 
     @staticmethod
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:

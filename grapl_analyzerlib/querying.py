@@ -506,11 +506,11 @@ class Viewable(abc.ABC):
                 ty = ty[0]
 
                 if d.get(edge_name, None):
-                    _edges = [cls.from_dict(dgraph_client, f) for f in d[edge_name]]
+                    _edges = [ty.from_dict(dgraph_client, f) for f in d[edge_name]]
                     edges[edge_name] = _edges
 
             else:
-                edge = cls.from_dict(dgraph_client, raw_edge[0])
+                edge = ty.from_dict(dgraph_client, raw_edge[0])
                 edges[edge_name] = edge
 
         return cls(
