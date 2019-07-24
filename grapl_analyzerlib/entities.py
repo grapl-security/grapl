@@ -813,6 +813,23 @@ class FileView(Viewable):
         self.asset_id = self_file[0].asset_id
         return self.asset_id
 
+    def get_creator(self) -> Optional["PV"]:
+        if self.creator:
+            return self.parent
+
+        self_node = (
+            FileQuery()
+            .with_node_key(self.node_key)
+            .with_creator(ProcessQuery())
+            .query_first(self.dgraph_client)
+        )
+
+        if not self_node:
+            return None
+
+        self.creator = self_node.creator
+        return self.creator
+
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
 
