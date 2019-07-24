@@ -1274,6 +1274,9 @@ class ProcessView(Viewable):
             .query_first(self.dgraph_client)
         )  # type: 'PV'
 
+        if not self_node:
+            return []
+
         self.children = self_node.children or []
 
         return self.children
