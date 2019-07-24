@@ -1356,16 +1356,6 @@ class ProcessView(Viewable):
 
         return [n for n in neighbors if n]
 
-    def get_edges(self) -> List[Tuple[str, Any]]:
-        neighbors = (
-            ("parent", self.parent),
-            ("bin_file", self.bin_file),
-            ("children", self.children),
-            ("deleted_files", self.deleted_files),
-        )
-
-        return [n for n in neighbors if n[1]]
-
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
         edges = []

@@ -676,7 +676,8 @@ class Queryable(abc.ABC):
 
         edge_var_blocks = []
 
-        for edge_name, edge in self.get_edges():
+        for edge_tuple in self.get_edges():
+            edge_name, edge = edge_tuple[0], edge_tuple[1]
             var_block = get_var_block(
                 edge, edge_name, binding_num, root, already_converted
             )
@@ -705,7 +706,8 @@ class Queryable(abc.ABC):
 
         edge_var_blocks = []
 
-        for edge_name, edge in self.get_edges():
+        for edge_tuple in self.get_edges():
+            edge_name, edge = edge_tuple[0], edge_tuple[1]
             var_block = get_var_block(
                 edge, edge_name, binding_num, root, already_converted
             )
