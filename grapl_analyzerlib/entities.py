@@ -1206,6 +1206,8 @@ class ProcessView(Viewable):
             child._get_descendents(descendents)
 
     def traverse_descendents(self) -> Iterable['ProcessView']:
+        if not self.children:
+            self.get_descendents()
         for child in self.children:
             yield child
             for c in child.traverse_descendents():
