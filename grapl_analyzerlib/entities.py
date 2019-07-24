@@ -1189,6 +1189,22 @@ class ProcessView(Viewable):
         self.asset_id = self_process.asset_id
         return self.asset_id
 
+    def get_descendents(self) -> List['ProcessView']:
+        descendents = []
+        self.children = self.get_children()
+        for child in self.children:
+            descendents.append(child)
+            # noinspection PyProtectedMember
+            child._get_descendents(descendents)
+        return descendents
+
+    def _get_descendents(self, descendents):
+        self.children = self.get_children()
+        for child in self.children:
+            descendents.append(child)
+            # noinspection PyProtectedMember
+            child._get_descendents(descendents)
+
     def get_process_name(self) -> Optional[str]:
         if self.process_name:
             return self.process_name
