@@ -521,9 +521,9 @@ class Viewable(abc.ABC):
             else:
                 edge = ty.from_dict(dgraph_client, raw_edge[0])
                 if len(edge_tuple) == 3:
-                    edges[edge_tuple[2]] = _edges
+                    edges[edge_tuple[2]] = edge
                 else:
-                    edges[edge_name] = _edges
+                    edges[edge_name] = edge
 
         cleaned_edges = {}
         for edge_name, edge in edges.items():
