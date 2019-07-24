@@ -585,7 +585,7 @@ class Queryable(abc.ABC):
         self,
         dgraph_client: DgraphClient,
         contains_node_key: Optional[str] = None,
-        first: Optional[int] = None,
+        first: Optional[int] = 1000,
     ) -> List[V]:
         if contains_node_key:
             query_str = _get_queries(self, node_key=contains_node_key, first=first or 1)
