@@ -221,10 +221,10 @@ class DynamicNodeQuery(Queryable):
         return properties
 
     def get_forward_edges(self) -> List[Tuple[str, Any]]:
-        return [(e, f) for (e, f) in self.edge_filters.items()]
+        return [t for t in self.edge_filters.items()]
 
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
-        return [(e, f) for (e, f) in self.reverse_edge_filters.items()]
+        return [t for t in self.reverse_edge_filters.items()]
 
 
 class DynamicNodeView(Viewable):
