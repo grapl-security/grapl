@@ -219,7 +219,6 @@ def _build_expansion_root(node: Union[Any, Any]) -> str:
             """
         expanded_edges.append(expanded_edge)
 
-
     return f"""
             {",".join(props)},
             {", ".join([x for x in expanded_edges if x])}
@@ -590,8 +589,8 @@ class Queryable(abc.ABC):
     def query(
             self,
             dgraph_client: DgraphClient,
-            contains_node_key: Optional[str]=None,
-            first: Optional[int]=None,
+            contains_node_key: Optional[str] = None,
+            first: Optional[int] = None,
     ) -> List[V]:
         if contains_node_key:
             query_str = _get_queries(self, node_key=contains_node_key, first=first or 1)
@@ -605,28 +604,24 @@ class Queryable(abc.ABC):
         if not raw_views:
             return []
 
-        return self.view_type.from_dict(dgraph_client, raw_views[0])
+        return [self.view_type.from_dict(dgraph_client, raw_view) for raw_view in raw_views]
 
-    def query_first(self, dgraph_client, contains_node_key: Optional[str]=None) -> Optional[V]:
-        if contains_node_key:
-            query_str = _get_queries(self, node_key=contains_node_key, first=True)
-        else:
-            query_str = self.to_query(first=1)
-
-        raw_views = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
-            "res"
-        ]
-
-        if not raw_views:
-            return None
-
-        return self.view_type.from_dict(dgraph_client, raw_views[0])
+    def query_first(
+            self,
+            dgraph_client: DgraphClient,
+            contains_node_key: Optional[str] = None
+    ) -> Optional[V]:
+        return self.query(
+            dgraph_client,
+            contains_node_key,
+            first=1
+        ) or None
 
     def get_count(
             self,
             dgraph_client: DgraphClient,
-            max: Optional[int]=None,
-            contains_node_key: Optional[str]=None,
+            max: Optional[int] = None,
+            contains_node_key: Optional[str] = None,
     ) -> int:
         if contains_node_key:
             query_str = _get_queries(self, node_key=contains_node_key, count=True)
