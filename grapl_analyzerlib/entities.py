@@ -439,8 +439,8 @@ class FileQuery(Queryable):
 
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
         neighbors = (
-            ("~created_file", self._creator),
-            ("~deleted_file", self._deleter),
+            ("~created_files", self._creator),
+            ("~deleted_files", self._deleter),
             ("~wrote_to_files", self._writers),
             ("~read_files", self._readers),
             ("~bin_file", self._spawned_from),
@@ -531,8 +531,8 @@ class FileView(Viewable):
     @staticmethod
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return [
-            ("~created_file", ProcessView),
-            ("~deleted_file", ProcessView),
+            ("~created_files", ProcessView),
+            ("~deleted_files", ProcessView),
             ("~wrote_to_files", ProcessView),
             ("~read_files", ProcessView),
             ("~bin_file", ProcessView),
