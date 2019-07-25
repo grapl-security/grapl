@@ -268,6 +268,7 @@ def _get_queries(
     if not first:
         first = 1
 
+
     all_nodes = flatten_nodes(node_query)
     bindings = []
     var_blocks = []
@@ -603,7 +604,7 @@ class Queryable(abc.ABC):
         first: Optional[int] = 1000,
     ) -> List[V]:
         if contains_node_key:
-            query_str = _get_queries(self, node_key=contains_node_key, first=first or 1)
+            query_str = _get_queries(self, node_key=contains_node_key, first=1)
         else:
             query_str = self.to_query(first=first)
 

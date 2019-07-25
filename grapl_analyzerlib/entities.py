@@ -79,6 +79,7 @@ class NodeView(object):
                     dgraph_client,
                     node.dynamic_node.node_key,
                     node.dynamic_node.node_type,
+                    node.dynamic_node.uid,
                 )
             )
         else:
