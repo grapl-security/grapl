@@ -1,18 +1,15 @@
-import json
-from abc import ABC
-from copy import deepcopy
 from collections import defaultdict
-from typing import Iterator, TypeVar, Set, Callable, Type, Iterable
+from copy import deepcopy
+from typing import Iterator, TypeVar, Callable, Type, Iterable
 from typing import Optional, List, Dict, Any, Union
 from typing import Tuple
 
-from grapl_analyzerlib import graph_description_pb2
 from pydgraph import DgraphClient
 
+from grapl_analyzerlib import graph_description_pb2
 from grapl_analyzerlib.querying import (
     PropertyFilter,
     StrCmp,
-    IntCmp,
     EdgeFilter,
     Has,
     Cmp,
@@ -184,14 +181,13 @@ class DynamicNodeQuery(Queryable):
         return self
 
     def with_property_int_filter(
-        self, prop_name: str,
+        self,
+        prop_name: str,
         eq: Optional[Union[int, List, Not, List[Not]]] = None,
         gt: Optional[Union[int, List, Not, List[Not]]] = None,
         lt: Optional[Union[int, List, Not, List[Not]]] = None,
     ) -> "DNQ":
-        self.property_filters[prop_name].extend(
-            _int_cmps(prop_name, eq, gt, lt)
-        )
+        self.property_filters[prop_name].extend(_int_cmps(prop_name, eq, gt, lt))
         return self
 
     def with_edge_filter(self, edge: str, edge_filter: EdgeFilter) -> "DNQ":
@@ -359,6 +355,7 @@ class FileQuery(Queryable):
 
     def with_creator(self, creator: "PQ") -> "FQ":
         creator = deepcopy(creator)
+        creator._created_files = self
         self._creator = creator
         return self
 
@@ -477,11 +474,7 @@ class FileView(Viewable):
         readers: Optional[List["PV"]] = None,
         spawned_from: Optional[List["PV"]] = None,
     ) -> None:
-        super(FileView, self).__init__(
-            dgraph_client,
-            node_key,
-            uid,
-        )
+        super(FileView, self).__init__(dgraph_client, node_key, uid)
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: Optional[str]
         self.uid = uid  # type: Optional[str]
@@ -815,7 +808,7 @@ class FileView(Viewable):
 
     def get_creator(self) -> Optional["PV"]:
         if self.creator:
-            return self.parent
+            return self.creator
 
         self_node = (
             FileQuery()
@@ -1138,11 +1131,7 @@ class ProcessView(Viewable):
         read_files: Optional[List["FV"]] = None,
         created_connections: Optional[List["EIPV"]] = None,
     ) -> None:
-        super(ProcessView, self).__init__(
-            dgraph_client,
-            node_key,
-            uid,
-        )
+        super(ProcessView, self).__init__(dgraph_client, node_key, uid)
 
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: str
@@ -1186,7 +1175,7 @@ class ProcessView(Viewable):
             ("created_files", [FileView]),
             ("read_files", [FileView]),
             ("created_connections", [ExternalIpView]),
-            ("~children", ProcessView, 'parent'),
+            ("~children", ProcessView, "parent"),
         ]
 
     def get_asset_id(self) -> Optional[str]:
@@ -1206,7 +1195,7 @@ class ProcessView(Viewable):
         self.asset_id = self_process.asset_id
         return self.asset_id
 
-    def get_descendents(self, max=5, limit=50) -> List['ProcessView']:
+    def get_descendents(self, max=5, limit=50) -> List["ProcessView"]:
         descendents = []
         self.children = self.get_children()
         for child in self.children:
@@ -1226,7 +1215,7 @@ class ProcessView(Viewable):
             # noinspection PyProtectedMember
             child._get_descendents(descendents, depth + 1)
 
-    def traverse_descendents(self) -> Iterable['ProcessView']:
+    def traverse_descendents(self) -> Iterable["ProcessView"]:
         if not self.children:
             self.get_descendents()
         for child in self.children:
@@ -1402,11 +1391,7 @@ class ProcessView(Viewable):
         for edge_name, edge in self.get_edges():
             node_dict[edge_name] = edge.node_key
             edges.append(
-                {
-                    "from": self.node_key,
-                    "edge_name": edge_name,
-                    "to": edge.node_key,
-                }
+                {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
             )
 
         if root:
@@ -1486,11 +1471,7 @@ class OutboundConnectionView(Viewable):
         port: Optional[str] = None,
         external_connections: "Optional[EIPV]" = None,
     ) -> None:
-        super(OutboundConnectionView, self).__init__(
-            dgraph_client,
-            node_key,
-            uid,
-        )
+        super(OutboundConnectionView, self).__init__(dgraph_client, node_key, uid)
 
         self.dgraph_client = dgraph_client
         self.node_key = node_key
@@ -1501,15 +1482,11 @@ class OutboundConnectionView(Viewable):
 
     @staticmethod
     def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
-        return [
-            ("port", str)
-        ]
+        return [("port", str)]
 
     @staticmethod
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
-        return [
-            ("external_connections", [ExternalIpView]),
-        ]
+        return [("external_connections", [ExternalIpView])]
 
 
 class ExternalIpQuery(Queryable):
@@ -1579,11 +1556,7 @@ class ExternalIpView(Viewable):
         uid: Optional[str] = None,
         external_ip: Optional[str] = None,
     ) -> None:
-        super(ExternalIpView, self).__init__(
-            dgraph_client,
-            node_key,
-            uid,
-        )
+        super(ExternalIpView, self).__init__(dgraph_client, node_key, uid)
         self.dgraph_client = dgraph_client
         self.node_key = node_key
         self.uid = uid
@@ -1591,14 +1564,8 @@ class ExternalIpView(Viewable):
 
     @staticmethod
     def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
-        return [
-            ("external_ip", str)
-        ]
+        return [("external_ip", str)]
 
     @staticmethod
     def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return []
-
-
-if __name__ == "__main__":
-    ProcessQuery().query_first(None, "119895c8-f222-4e0b-906a-b33149ce6de1")

@@ -237,7 +237,6 @@ def _build_query(
     count: bool = False,
     first: Optional[int] = None,
 ) -> str:
-
     joined_vars = "\n".join(var_blocks)
     if not count:
         expansion = _build_expansion_root(node)
@@ -264,22 +263,22 @@ def _build_query(
 
 
 def _get_queries(
-    process_query: Any, node_key: str, count: bool = False, first: Optional[int] = None
+    node_query: Any, node_key: str, count: bool = False, first: Optional[int] = None
 ):
     if not first:
         first = 1
 
-    all_nodes = flatten_nodes(process_query)
+    all_nodes = flatten_nodes(node_query)
     bindings = []
     var_blocks = []
 
     for i, node in enumerate(all_nodes):
         bindings.append(f"Binding{i}")
         var_blocks.append(
-            node._get_var_block_root(i, root=process_query, node_key=node_key)
+            node._get_var_block_root(i, root=node_query, node_key=node_key)
         )
 
-    return _build_query(process_query, var_blocks, bindings, count, first=first)
+    return _build_query(node_query, var_blocks, bindings, count, first=first)
 
 
 def _str_cmps(
@@ -527,7 +526,7 @@ class Viewable(abc.ABC):
 
         cleaned_edges = {}
         for edge_name, edge in edges.items():
-            if edge_name[0] == '~':
+            if edge_name[0] == "~":
                 edge_name = edge_name[1:]
             cleaned_edges[edge_name] = edge
 
