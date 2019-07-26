@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from copy import deepcopy
 from typing import Iterator, TypeVar, Callable, Type, Iterable
@@ -43,6 +44,26 @@ DNV = TypeVar("DNV", bound="dynamic_node.DynamicNodeView")
 
 PluginNodeView = TypeVar("PluginNodeView")
 
+def get_uid(client: DgraphClient, node_key: str) -> str:
+    txn = client.txn(read_only=True)
+    try:
+        query = """
+            query res($a: string)
+            {
+              res(func: eq(node_key, $a), first: 1) @cascade
+               {
+                 uid,
+               }
+             }"""
+        res = txn.query(
+            query, variables={'$a': node_key}
+        )
+        res = json.loads(res.json)
+        return res['res'][0]['uid']
+
+    finally:
+        txn.discard()
+
 
 class EdgeView(object):
     def __init__(
@@ -75,21 +96,33 @@ class NodeView(Viewable):
     @staticmethod
     def from_raw(dgraph_client: DgraphClient, node: Any) -> "N":
         if node.HasField("process_node"):
+            if not node.process_node.HasField('uid'):
+                node.process_node.uid = get_uid(dgraph_client, node.process_node.node_key)
+
             return NodeView(
                 dgraph_client, node.process_node.node_key, node.process_node.uid,
                 ProcessView(dgraph_client, node.process_node.node_key, node.process_node.uid)
             )
         elif node.HasField("file_node"):
+            if not node.file_node.HasField('uid'):
+                node.file_node.uid = get_uid(dgraph_client, node.file_node.node_key)
+
             return NodeView(
                 dgraph_client, node.file_node.node_key, node.file_node.uid,
                 FileView(dgraph_client, node.file_node.node_key, node.file_node.uid)
             )
         elif node.HasField("ip_address_node"):
+            if not node.ip_address_node.HasField('uid'):
+                node.ip_address_node.uid = get_uid(dgraph_client, node.ip_address_node.node_key)
+
             return NodeView(
                 dgraph_client, node.ip_address_node.node_key, node.ip_address_node.uid,
                 ExternalIpView(dgraph_client, node.ip_address_node.node_key, node.ip_address_node.uid)
             )
         elif node.HasField("outbound_connection_node"):
+            if not node.outbound_connection_node.HasField('uid'):
+                node.outbound_connection_node.uid = get_uid(dgraph_client, node.outbound_connection_node.node_key)
+
             return NodeView(
                 dgraph_client, node.outbound_connection_node.node_key, node.outbound_connection_node.uid,
                 OutboundConnectionView(
@@ -97,6 +130,9 @@ class NodeView(Viewable):
                 )
             )
         elif node.HasField("dynamic_node"):
+            if not node.dynamic_node.HasField('uid'):
+                node.dynamic_node.uid = get_uid(dgraph_client, node.dynamic_node.node_key)
+
             return NodeView(
                 dgraph_client,
                 node.dynamic_node.node_key,
