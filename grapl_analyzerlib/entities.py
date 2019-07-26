@@ -175,8 +175,6 @@ class DynamicNodeQuery(Queryable):
         super(DynamicNodeQuery, self).__init__(view_type)
         self.node_type = node_type
         self.view_type = view_type
-        self._node_key = Has("node_key")  # type: Cmp
-        self._uid = None  # type: Optional[Cmp]
 
         # Dict of property name to its associated filters
         self.property_filters = defaultdict(list)  # type: Dict[str, PropertyFilter]
@@ -233,10 +231,10 @@ class DynamicNodeQuery(Queryable):
         return properties
 
     def get_forward_edges(self) -> List[Tuple[str, Any]]:
-        return [t for t in self.edge_filters.items()]
+        return [t for t in self.edge_filters.items() if t[1]]
 
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
-        return [t for t in self.reverse_edge_filters.items()]
+        return [t for t in self.reverse_edge_filters.items() if t[1]]
 
 
 class DynamicNodeView(Viewable):
@@ -260,13 +258,9 @@ class FileQuery(Queryable):
     def __init__(self) -> None:
         super(FileQuery, self).__init__(FileView)
         # Attributes
-        self._node_key = Has("node_key")  # type: Cmp
-
-        self._uid = None  # type: Optional[Cmp]
-
         self._file_name = []  # type: List[List[Cmp]]
         self._asset_id = []  # type: List[List[Cmp]]
-        self._file_path = []  # type: List[List[Cmp]]
+        self._file_path = [[Has("file_path")]]  # type: List[List[Cmp]]
         self._file_extension = []  # type: List[List[Cmp]]
         self._file_mime_type = []  # type: List[List[Cmp]]
         self._file_size = []  # type: List[List[Cmp]]
@@ -906,14 +900,12 @@ class ProcessQuery(Queryable):
     def __init__(self) -> None:
         super(ProcessQuery, self).__init__(ProcessView)
         # Properties
-        self._node_key = Has("node_key")  # type: Cmp
-        self._uid = None  # type: Optional[Cmp]
 
         self._asset_id = []  # type: List[List[Cmp]]
         self._process_name = []  # type: List[List[Cmp]]
         self._process_command_line = []  # type: List[List[Cmp]]
         self._process_guid = []  # type: List[List[Cmp]]
-        self._process_id = []  # type: List[List[Cmp]]
+        self._process_id = [[Has('process_id')]]  # type: List[List[Cmp]]
         self._created_timestamp = []  # type: List[List[Cmp]]
         self._terminated_timestamp = []  # type: List[List[Cmp]]
         self._last_seen_timestamp = []  # type: List[List[Cmp]]
@@ -932,9 +924,9 @@ class ProcessQuery(Queryable):
         # Meta
         self._first = None  # type: Optional[int]
 
-    def with_node_key(self, node_key: Optional[Union[Not, str]] = None):
-        if node_key:
-            self._node_key = Eq("node_key", node_key)
+    def with_node_key(self, eq: Optional[Union[Not, str]] = None):
+        if eq:
+            self._node_key = Eq("node_key", eq)
         else:
             self._node_key = Has("node_key")
         return self
@@ -1257,6 +1249,23 @@ class ProcessView(Viewable):
         self.process_name = self_process.process_name
         return self.process_name
 
+    def get_process_id(self) -> Optional[str]:
+        if self.process_id:
+            return self.process_id
+
+        self_process = (
+            ProcessQuery()
+                .with_node_key(self.node_key)
+                .with_process_id()
+                .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_process:
+            return None
+
+        self.process_id = self_process.process_id
+        return self.process_id
+
     def get_process_command_line(self) -> Optional[str]:
         if self.process_command_line:
             return self.process_command_line
@@ -1420,8 +1429,6 @@ class ProcessView(Viewable):
 class OutboundConnectionQuery(Queryable):
     def __init__(self) -> None:
         super(OutboundConnectionQuery, self).__init__(OutboundConnectionView)
-        self._node_key = Has("node_key")  # type: Cmp
-        self._uid = None  # type: Optional[Cmp]
 
         self._create_time = []  # type: List[List[Cmp]]
         self._terminate_time = []  # type: List[List[Cmp]]
@@ -1509,9 +1516,6 @@ class OutboundConnectionView(Viewable):
 class ExternalIpQuery(Queryable):
     def __init__(self) -> None:
         super(ExternalIpQuery, self).__init__(ExternalIpView)
-        self._node_key = Has("node_key")  # type: Cmp
-        self._uid = None  # type: Optional[Cmp]
-
         self._external_ip = []  # type: List[List[Cmp]]
 
         # Edges

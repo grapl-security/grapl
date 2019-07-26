@@ -561,14 +561,6 @@ class Queryable(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_node_key_filter(self) -> PropertyFilter:
-        pass
-
-    @abc.abstractmethod
-    def get_uid_filter(self) -> PropertyFilter:
-        pass
-
-    @abc.abstractmethod
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
         pass
 
@@ -579,6 +571,14 @@ class Queryable(abc.ABC):
     @abc.abstractmethod
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
         pass
+
+    def get_node_key_filter(self) -> PropertyFilter:
+        return [[self._node_key]]
+
+    def get_uid_filter(self) -> PropertyFilter:
+        if not self._uid:
+            return []
+        return [[self._uid]]
 
     def with_node_key(self: Q, node_key: str) -> Q:
         self._node_key = Eq("node_key", node_key)
