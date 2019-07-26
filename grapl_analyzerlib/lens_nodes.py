@@ -273,7 +273,7 @@ class EngagementView(Viewable):
             node_key: str,
             uid: str,
             lens: str,
-            scope: List[NodeView] = None,
+            scope: Optional[List[NodeView]] = None,
             **kwargs,
     ):
         super().__init__(dgraph_client, node_key, uid)
@@ -333,6 +333,64 @@ class EngagementView(Viewable):
 
         return EngagementQuery().with_name(eq=name).query_first(engagement_client)
 
+    def remove_node(self, node_key: str):
+        node_uid = None
+        for ix, node in enumerate(self.scope):
+            if node.get_node_key() == node_key:
+                self.scope.pop(ix)
+                node_uid = node.uid
+
+        if not node_uid:
+            node_uid = (
+                ProcessQuery()
+                .with_node_key(node_key)
+                .query_first(self.engagement_client.dst_client)
+            )
+
+            if not node_uid:
+                return
+            node_uid = node_uid.uid
+        # Remove edge between engagement and node
+        txn = self.engagement_client.dst_client.txn(read_only=False)
+        try:
+            txn.mutate(
+                del_obj={
+                    "uid": self.uid,
+                    "scope": {
+                        "uid": node_uid
+                    }
+                }, commit_now=True)
+        finally:
+            txn.discard()
+
+        txn = self.engagement_client.dst_client.txn(read_only=False)
+        try:
+            query = """
+            query res($a: string)
+            {
+              res(func: uid($a), first: 1) @cascade
+               {
+                ~scope {
+                    uid
+                }
+               }
+             }"""
+            res = txn.query(
+                query, variables={'$a': node_uid}
+            )
+            res = json.loads(res.json)['res']
+
+            if not res:
+                txn.mutate(
+                    del_obj={'uid': node_uid},
+                    commit_now=True
+                )
+
+        finally:
+            txn.discard()
+
+        # If node is not a part of any scope, remove it
+
     def get_process(self, node_key: str, copy=True) -> Optional['PV']:
         for node in self.scope:
             if node.get_node_key() == node_key:
@@ -345,10 +403,10 @@ class EngagementView(Viewable):
 
         p = (
             ProcessQuery()
-            .with_node_key(node_key)
-            .with_process_id()
-            .with_process_name()
-            .query_first(client)
+                .with_node_key(node_key)
+                .with_process_id()
+                .with_process_name()
+                .query_first(client)
         )  # type: Optional[ProcessView]
 
         if not p:

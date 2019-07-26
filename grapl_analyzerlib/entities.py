@@ -75,21 +75,32 @@ class NodeView(Viewable):
     @staticmethod
     def from_raw(dgraph_client: DgraphClient, node: Any) -> "N":
         if node.HasField("process_node"):
-            return NodeView(ProcessView(dgraph_client, node.node_key))
+            return NodeView(
+                dgraph_client, node.process_node.node_key, node.process_node.uid,
+                ProcessView(dgraph_client, node.process_node.node_key, node.process_node.uid)
+            )
         elif node.HasField("file_node"):
-            return NodeView(FileView(dgraph_client, node.node_key))
+            return NodeView(
+                dgraph_client, node.file_node.node_key, node.file_node.uid,
+                FileView(dgraph_client, node.file_node.node_key, node.file_node.uid)
+            )
         elif node.HasField("ip_address_node"):
             return NodeView(
-                ExternalIpView(dgraph_client, node.ip_address_node.node_key)
+                dgraph_client, node.ip_address_node.node_key, node.ip_address_node.uid,
+                ExternalIpView(dgraph_client, node.ip_address_node.node_key, node.ip_address_node.uid)
             )
         elif node.HasField("outbound_connection_node"):
             return NodeView(
+                dgraph_client, node.outbound_connection_node.node_key, node.outbound_connection_node.uid,
                 OutboundConnectionView(
-                    dgraph_client, node.outbound_connection_node.node_key
+                    dgraph_client, node.outbound_connection_node.node_key, node.outbound_connection_node.uid
                 )
             )
         elif node.HasField("dynamic_node"):
             return NodeView(
+                dgraph_client,
+                node.dynamic_node.node_key,
+                node.dynamic_node.uid,
                 DynamicNodeView(
                     dgraph_client,
                     node.dynamic_node.node_key,
@@ -1574,7 +1585,7 @@ class ExternalIpView(Viewable):
         self,
         dgraph_client: DgraphClient,
         node_key: str,
-        uid: Optional[str] = None,
+        uid: str,
         external_ip: Optional[str] = None,
     ) -> None:
         super(ExternalIpView, self).__init__(dgraph_client, node_key, uid)
