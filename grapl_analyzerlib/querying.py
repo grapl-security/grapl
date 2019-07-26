@@ -6,6 +6,9 @@ from typing import Optional, List, Union, Any, Set
 
 from pydgraph import DgraphClient
 
+class Or(object):
+    def __init__(self, *values: Union[str, int]):
+        self.values = values
 
 class Not(object):
     def __init__(self, value: Union[str, int]) -> None:
@@ -718,7 +721,9 @@ class Queryable(abc.ABC):
 
         type_name = self.get_node_type_name()
 
-        if node_key:
+        if self._node_key:
+            func_filter = self._node_key.to_filter()
+        elif node_key:
             func_filter = f'eq(node_key, "{node_key}")'
         elif type_name:
             func_filter = f'eq(node_type, "{self.get_node_type_name()}")'
@@ -726,7 +731,7 @@ class Queryable(abc.ABC):
             func_filter = f"has({self.get_unique_predicate()})"
         else:
             # worst case, we have to search every node :(
-            func_filter = "has(node_keY)"
+            func_filter = "has(node_key)"
 
         edge_var_blocks = "\n".join(edge_var_blocks)
 

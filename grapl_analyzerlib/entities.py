@@ -53,9 +53,24 @@ class EdgeView(object):
         self.edge_name = edge_name
 
 
-class NodeView(object):
-    def __init__(self, node: Union["PV", "FV", "EIPV", "OCV", "DNV"]):
+class NodeView(Viewable):
+    def __init__(
+            self,
+            dgraph_client: DgraphClient,
+            node_key: str,
+            uid: str,
+            node: Union["PV", "FV", "EIPV", "OCV", "DNV"]
+    ):
+        super().__init__(dgraph_client, node_key, uid)
         self.node = node
+
+    @staticmethod
+    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+        return []
+
+    @staticmethod
+    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+        return []
 
     @staticmethod
     def from_raw(dgraph_client: DgraphClient, node: Any) -> "N":
@@ -1115,7 +1130,7 @@ class ProcessView(Viewable):
         self,
         dgraph_client: DgraphClient,
         node_key: str,
-        uid: Optional[str] = None,
+        uid: str,
         asset_id: Optional[str] = None,
         process_name: Optional[str] = None,
         process_command_line: Optional[str] = None,
@@ -1131,6 +1146,7 @@ class ProcessView(Viewable):
         created_files: Optional[List["FV"]] = None,
         read_files: Optional[List["FV"]] = None,
         created_connections: Optional[List["EIPV"]] = None,
+        **kwargs,
     ) -> None:
         super(ProcessView, self).__init__(dgraph_client, node_key, uid)
 
