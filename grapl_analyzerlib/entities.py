@@ -142,6 +142,12 @@ class NodeView(Viewable):
         else:
             raise Exception("Invalid Node Type")
 
+    @staticmethod
+    def from_view(v: 'Viewable'):
+        if isinstance(v, NodeView):
+            return v
+        return NodeView(v.dgraph_client, v.node_key, v.uid, v)
+
     def get_node_key(self) -> str:
         return self.node.node_key
 
