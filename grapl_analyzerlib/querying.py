@@ -271,7 +271,6 @@ def _get_queries(
     if not first:
         first = 1
 
-
     all_nodes = flatten_nodes(node_query)
     bindings = []
     var_blocks = []
@@ -729,7 +728,7 @@ class Queryable(abc.ABC):
 
         type_name = self.get_node_type_name()
 
-        if self._node_key:
+        if self._node_key and isinstance(self._node_key, Eq):
             func_filter = self._node_key.to_filter()
         elif node_key:
             func_filter = f'eq(node_key, "{node_key}")'
