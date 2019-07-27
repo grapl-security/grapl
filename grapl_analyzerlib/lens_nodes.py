@@ -282,12 +282,26 @@ class EngagementView(Viewable):
         self.scope = scope or []
 
     @staticmethod
-    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+    def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         return [('lens', str)]
 
     @staticmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+    def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return [('scope', [NodeView])]
+
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        props = [
+
+        ]
+
+        return [p for p in props if p[1]]
+
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
+        edges = [
+
+        ]
+
+        return [e for e in edges if e[1]]
 
     @staticmethod
     def get_or_create(name: str, copy_client: CopyingDgraphClient) -> 'EngagementView':

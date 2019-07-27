@@ -389,12 +389,20 @@ class Viewable(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+    def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         pass
 
     @staticmethod
     @abc.abstractmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+    def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+        pass
+
+    @abc.abstractmethod
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        pass
+
+    @abc.abstractmethod
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
         pass
 
     def get_property(
@@ -497,14 +505,14 @@ class Viewable(abc.ABC):
         if d.get("node_type"):
             properties["node_type"] = d["node_type"]
 
-        for prop, into in cls.get_property_tuples():
+        for prop, into in cls.get_property_types():
             val = d.get(prop)
             if val:
                 val = into(val)
                 properties[prop] = val
 
         edges = {}
-        for edge_tuple in cls.get_edge_tuples():
+        for edge_tuple in cls.get_edge_types():
             edge_name, ty = edge_tuple[0], edge_tuple[1]
             raw_edge = d.get(edge_name, None)
 
@@ -569,7 +577,7 @@ class Queryable(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_reverse_edges(self) -> List[Tuple[str, Any]]:
+    def get_reverse_edges(self) -> List[Tuple[str, Any, str]]:
         pass
 
     def get_node_key_filter(self) -> PropertyFilter:

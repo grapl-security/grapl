@@ -86,11 +86,11 @@ class NodeView(Viewable):
         self.node = node
 
     @staticmethod
-    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+    def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         return []
 
     @staticmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+    def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return []
 
     @staticmethod
@@ -559,7 +559,7 @@ class FileView(Viewable):
         self.spawned_from = spawned_from
 
     @staticmethod
-    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+    def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         return [
             ("asset_id", str),
             ("file_path", str),
@@ -580,7 +580,7 @@ class FileView(Viewable):
         ]
 
     @staticmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+    def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return [
             ("~created_files", ProcessView, "creator"),
             ("~deleted_files", ProcessView, "deleter"),
@@ -884,59 +884,8 @@ class FileView(Viewable):
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
 
-        if self.node_key:
-            node_dict["node_key"] = self.node_key
-
-        if self.uid:
-            node_dict["uid"] = self.uid
-
-        if self.asset_id:
-            node_dict["asset_id"] = self.asset_id
-
-        if self.file_name:
-            node_dict["file_name"] = self.file_name
-
-        if self.file_path:
-            node_dict["file_path"] = self.file_path
-
-        if self.file_extension:
-            node_dict["file_extension"] = self.file_extension
-
-        if self.file_mime_type:
-            node_dict["file_mime_type"] = self.file_mime_type
-
-        if self.file_size:
-            node_dict["file_size"] = self.file_size
-
-        if self.file_version:
-            node_dict["file_version"] = self.file_version
-
-        if self.file_description:
-            node_dict["file_description"] = self.file_description
-
-        if self.file_product:
-            node_dict["file_product"] = self.file_product
-
-        if self.file_company:
-            node_dict["file_company"] = self.file_company
-
-        if self.file_directory:
-            node_dict["file_directory"] = self.file_directory
-
-        if self.file_inode:
-            node_dict["file_inode"] = self.file_inode
-
-        if self.file_hard_links:
-            node_dict["file_hard_links"] = self.file_hard_links
-
-        if self.md5_hash:
-            node_dict["md5_hash"] = self.md5_hash
-
-        if self.sha1_hash:
-            node_dict["sha1_hash"] = self.sha1_hash
-
-        if self.sha256_hash:
-            node_dict["sha256_hash"] = self.sha256_hash
+        for prop_name, prop in self.get_property_tuples():
+            node_dict[prop_name] = prop
 
         if root:
             node_dict["root"] = True
@@ -1159,8 +1108,8 @@ class ProcessQuery(Queryable):
 
         return [e for e in edges if e[1]]
 
-    def get_reverse_edges(self) -> List[Tuple[str, Any]]:
-        edges = [("~children", self._parent)]
+    def get_reverse_edges(self) -> List[Tuple[str, Any, str]]:
+        edges = [("~children", self._parent, 'parent')]
 
         return [e for e in edges if e[1]]
 
@@ -1211,7 +1160,7 @@ class ProcessView(Viewable):
         self.created_connections = created_connections  # type: Optional[List['EIPV']]
 
     @staticmethod
-    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+    def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         return [
             ("asset_id", str),
             ("process_name", str),
@@ -1224,7 +1173,7 @@ class ProcessView(Viewable):
         ]
 
     @staticmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+    def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return [
             ("bin_file", FileView),
             ("children", [ProcessView]),
@@ -1440,29 +1389,11 @@ class ProcessView(Viewable):
         node_dict = dict()
         edges = []
         node_dict["node_type"] = "Process"
-        if self.node_key:
-            node_dict["node_key"] = self.node_key
-        if self.uid:
-            node_dict["uid"] = self.uid
-        if self.process_command_line:
-            node_dict["process_command_line"] = self.process_command_line
-        if self.process_guid:
-            node_dict["process_guid"] = self.process_guid
-        if self.process_id:
-            node_dict["process_id"] = self.process_id
-        if self.created_timestamp:
-            node_dict["created_timestamp"] = self.created_timestamp
-        if self.terminated_timestamp:
-            node_dict["terminated_timestamp"] = self.terminated_timestamp
-        if self.last_seen_timestamp:
-            node_dict["last_seen_timestamp"] = self.last_seen_timestamp
-        if self.process_name:
-            node_dict["process_name"] = self.process_name
 
-        if self.asset_id:
-            node_dict["process_name"] = self.asset_id
+        for prop_name, prop in self.get_property_tuples():
+            node_dict[prop_name] = prop
 
-        for edge_name, edge in self.get_edges():
+        for edge_name, edge in self.get_edge_tuples():
             node_dict[edge_name] = edge.node_key
             edges.append(
                 {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
@@ -1553,11 +1484,11 @@ class OutboundConnectionView(Viewable):
         self.external_connections = external_connections
 
     @staticmethod
-    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+    def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         return [("port", str)]
 
     @staticmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+    def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return [("external_connections", [ExternalIpView])]
 
 
@@ -1632,9 +1563,9 @@ class ExternalIpView(Viewable):
         self.external_ip = external_ip
 
     @staticmethod
-    def get_property_tuples() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+    def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         return [("external_ip", str)]
 
     @staticmethod
-    def get_edge_tuples() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+    def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return []
