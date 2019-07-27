@@ -1,11 +1,10 @@
 import enum
-
 from typing import Optional, Any
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.entity_queries import Not
 from grapl_analyzerlib.entities import ProcessQuery
+from grapl_analyzerlib.querying import Not
 
 
 class OrderedEnum(enum.Enum):
