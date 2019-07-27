@@ -75,6 +75,12 @@ class EdgeView(object):
 
 
 class NodeView(Viewable):
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        return []
+
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
+        return []
+
     def __init__(
             self,
             dgraph_client: DgraphClient,
@@ -505,6 +511,40 @@ class FileQuery(Queryable):
 
 
 class FileView(Viewable):
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        props = (
+            ("node_key", self.node_key),
+            ("uid", self.uid),
+            ("asset_id", self.asset_id),
+            ("file_name", self.file_name),
+            ("file_path", self.file_path),
+            ("file_extension", self.file_extension),
+            ("file_mime_type", self.file_mime_type),
+            ("file_size", self.file_size),
+            ("file_version", self.file_version),
+            ("file_description", self.file_description),
+            ("file_product", self.file_product),
+            ("file_company", self.file_company),
+            ("file_directory", self.file_directory),
+            ("file_inode", self.file_inode),
+            ("file_hard_links", self.file_hard_links),
+            ("md5_hash", self.md5_hash),
+            ("sha1_hash", self.sha1_hash),
+            ("sha256_hash", self.sha256_hash),
+        )
+
+        return [p for p in props if p[1]]
+
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
+        edges = (
+            ("creator", self.creator),
+            ("deleter", self.deleter),
+            ("writers", self.writers),
+            ("readers", self.readers),
+            ("spawned_from", self.spawned_from),
+        )
+        return [e for e in edges if e[1]]
+
     def __init__(
         self,
         dgraph_client: DgraphClient,
@@ -1385,6 +1425,34 @@ class ProcessView(Viewable):
 
         return [n for n in neighbors if n]
 
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        props = (
+            ("node_key", self.node_key),
+            ("uid", self.uid),
+            ("asset_id", self.asset_id),
+            ("process_command_line", self.process_command_line),
+            ("process_guid", self.process_guid),
+            ("process_id", self.process_id),
+            ("created_timestamp", self.created_timestamp),
+            ("terminated_timestamp", self.terminated_timestamp),
+            ("last_seen_timestamp", self.last_seen_timestamp),
+            ("process_name", self.process_name),
+        )
+
+        return [p for p in props if p[1]]
+
+    def get_edge_tuples(self):
+        edges = (
+            ("bin_file", self.bin_file),
+            ("children", self.children),
+            ("deleted_files", self.deleted_files),
+            ("created_files", self.created_files),
+            ("read_files", self.read_files),
+            ("created_connections", self.created_connections),
+            ("children", self.children),
+        )
+        return [e for e in edges if e[1]]
+
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
         edges = []
@@ -1483,6 +1551,20 @@ class OutboundConnectionView(Viewable):
 
         self.external_connections = external_connections
 
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        props = (
+            ("node_key", self.node_key),
+            ("uid", self.uid),
+            ("port", self.port),
+        )
+        return [p for p in props if p[1]]
+
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
+        edges = (
+            ('external_connections', self.external_connections)
+        )
+        return [e for e in edges if e[1]]
+
     @staticmethod
     def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
         return [("port", str)]
@@ -1561,6 +1643,17 @@ class ExternalIpView(Viewable):
         self.node_key = node_key
         self.uid = uid
         self.external_ip = external_ip
+
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        props = (
+                ("node_key", self.node_key),
+                ("uid", self.uid),
+                ("external_ip", self.external_ip),
+        )
+        return [p for p in props if p[1]]
+
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
+        return []
 
     @staticmethod
     def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
