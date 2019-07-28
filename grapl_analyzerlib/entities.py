@@ -1352,6 +1352,10 @@ class ProcessView(Viewable):
 
         self.children = self_node.children or []
 
+        # Get the process name by default
+        for child in self.children:
+            child.get_process_name()
+
         return self.children
 
     def get_uid(self):
@@ -1385,6 +1389,32 @@ class ProcessView(Viewable):
 
         self.bin_file = self_node.bin_file
         return self.bin_file
+
+    def get_created_connections(self) -> List["OCV"]:
+        self_node = (
+            ProcessQuery()
+            .with_node_key(self.node_key)
+            .created_connections(OutboundConnectionQuery())
+            .query_first(self.dgraph_client)
+        )
+        if not self_node:
+            return []
+
+        self.created_connections = self_node.created_connections
+        return self.created_connections
+
+    def get_external_connections(self) -> List["OCV"]:
+        self_node = (
+            ProcessQuery()
+                .with_node_key(self.node_key)
+                .created_connections(ExternalIpQuery())
+                .query_first(self.dgraph_client)
+        )
+        if not self_node:
+            return []
+
+        self.created_connections = self_node.created_connections
+        return self.created_connections
 
     def get_deleted_files(self) -> Optional[List["FV"]]:
         if self.deleted_files:
