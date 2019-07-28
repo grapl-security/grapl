@@ -274,9 +274,9 @@ class DynamicNodeQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
-        if not self._uid:
-            return []
-        return [[self._uid]]
+        if isinstance(self._uid, Eq):
+            return [[self._uid]]
+        return []
 
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
         properties = [(p, f) for (p, f) in self.property_filters.items()]
@@ -456,9 +456,9 @@ class FileQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
-        if not self._uid:
-            return []
-        return [[self._uid]]
+        if isinstance(self._uid, Eq):
+            return [[self._uid]]
+        return []
 
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
         properties = (
@@ -1131,9 +1131,9 @@ class ProcessQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
-        if not self._uid:
-            return []
-        return [[self._uid]]
+        if isinstance(self._uid, Eq):
+            return [[self._uid]]
+        return []
 
     def get_forward_edges(self) -> List[Tuple[str, Any]]:
         edges = [
@@ -1358,22 +1358,6 @@ class ProcessView(Viewable):
 
         return self.children
 
-    def get_uid(self):
-        # type: () -> str
-        if self.uid:
-            return self.uid
-
-        process = (
-            ProcessQuery()
-            .with_node_key(self.node_key)
-            .with_uid()
-            .query_first(self.dgraph_client)
-        )
-
-        assert process
-        self.uid = process.uid
-        return process.uid
-
     def get_bin_file(self) -> Optional["FV"]:
         if self.bin_file:
             return self.bin_file
@@ -1535,9 +1519,9 @@ class OutboundConnectionQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
-        if not self._uid:
-            return []
-        return [[self._uid]]
+        if isinstance(self._uid, Eq):
+            return [[self._uid]]
+        return []
 
     def get_properties(self) -> List[Tuple[str, PropertyFilter]]:
         properties = (
@@ -1642,9 +1626,9 @@ class ExternalIpQuery(Queryable):
         return [[self._node_key]]
 
     def get_uid_filter(self) -> PropertyFilter:
-        if not self._uid:
-            return []
-        return [[self._uid]]
+        if isinstance(self._uid, Eq):
+            return [[self._uid]]
+        return []
 
     def get_forward_edges(self) -> List[Tuple[str, Any]]:
         return []
