@@ -1462,10 +1462,18 @@ class ProcessView(Viewable):
             node_dict[prop_name] = prop
 
         for edge_name, edge in self.get_edge_tuples():
-            node_dict[edge_name] = edge.node_key
-            edges.append(
-                {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
-            )
+            if isinstance(edge, list):
+                for e in edge:
+                    node_dict[edge_name] = e.node_key
+                    edges.append(
+                        {"from": self.node_key, "edge_name": edge_name, "to": e.node_key}
+                    )
+            else:
+                node_dict[edge_name] = edge.node_key
+
+                edges.append(
+                    {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
+                )
 
         if root:
             node_dict["root"] = True
