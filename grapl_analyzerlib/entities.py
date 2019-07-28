@@ -1394,7 +1394,7 @@ class ProcessView(Viewable):
         self_node = (
             ProcessQuery()
             .with_node_key(self.node_key)
-            .created_connections(OutboundConnectionQuery())
+            .with_created_connection(OutboundConnectionQuery())
             .query_first(self.dgraph_client)
         )
         if not self_node:
@@ -1406,9 +1406,9 @@ class ProcessView(Viewable):
     def get_external_connections(self) -> List["OCV"]:
         self_node = (
             ProcessQuery()
-                .with_node_key(self.node_key)
-                .created_connections(ExternalIpQuery())
-                .query_first(self.dgraph_client)
+            .with_node_key(self.node_key)
+            .with_created_connection(ExternalIpQuery())
+            .query_first(self.dgraph_client)
         )
         if not self_node:
             return []
