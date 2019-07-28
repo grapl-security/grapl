@@ -596,16 +596,16 @@ class Queryable(abc.ABC):
         return self
 
     def get_property_names(self) -> List[str]:
-        return [p[0] for p in self.get_properties()]
+        return [p[0] for p in self.get_properties() if p and p[1]]
 
     def get_edges(self) -> List[Tuple[str, Any]]:
         all_edges = []
         all_edges.extend(self.get_forward_edges())
         all_edges.extend(self.get_reverse_edges())
-        return all_edges
+        return [e for e in all_edges if e and e[1]]
 
     def get_neighbors(self) -> List[Q]:
-        return [e[1] for e in self.get_edges()]
+        return [e[1] for e in self.get_edges() if e and e[1]]
 
     def query(
         self,
