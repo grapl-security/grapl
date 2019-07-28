@@ -1537,10 +1537,12 @@ class OutboundConnectionQuery(Queryable):
         return [p for p in properties if p[1]]
 
     def get_forward_edges(self) -> List[Tuple[str, Any]]:
-        return [("external_connection", self._external_connection)]
+        edges = [("external_connection", self._external_connection)]
+        return [e for e in edges if e[1]]
 
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
-        return [("~connected_to", self._connecting_process)]
+        edges = [("~connected_to", self._connecting_process)]
+        return [e for e in edges if e[1]]
 
     def with_external_connection(self, external_ip: "EIPQ") -> "OCQ":
         external_ip = deepcopy(external_ip)
@@ -1634,7 +1636,8 @@ class ExternalIpQuery(Queryable):
         return []
 
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
-        return [("connections_from", self._connections_from)]
+        edges = [("connections_from", self._connections_from)]
+        return [e for e in edges if e[1]]
 
     def with_external_ip(
         self,
@@ -1684,3 +1687,4 @@ class ExternalIpView(Viewable):
     @staticmethod
     def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return []
+
