@@ -148,19 +148,20 @@ message IdStrategy {
 message NodeProperty {
     oneof property {
         int64 intprop = 1;
-        string strprop = 2;
+        uint64 uintprop = 2;
+        string strprop = 3;
     }
 }
 
-// If asset_id is present, resolve that first
 message DynamicNode {
     map<string, NodeProperty> properties = 1;
     string node_key = 2;
-    uint64 seen_at = 3;
-    google.protobuf.StringValue asset_id = 4;
-    google.protobuf.StringValue hostname = 5;
-    google.protobuf.StringValue host_ip = 6;
-    repeated IdStrategy id_strategy = 7;
+    string node_type = 3;
+    uint64 seen_at = 4;
+    google.protobuf.StringValue asset_id = 5;
+    google.protobuf.StringValue hostname = 6;
+    google.protobuf.StringValue host_ip = 7;
+    repeated IdStrategy id_strategy = 8;
 }
 
 message EdgeDescription {

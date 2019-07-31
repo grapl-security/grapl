@@ -148,7 +148,8 @@ message IdStrategy {
 message NodeProperty {
     oneof property {
         int64 intprop = 1;
-        string strprop = 2;
+        uint64 uintprop = 2;
+        string strprop = 3;
     }
 }
 

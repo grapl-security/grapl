@@ -1,18 +1,12 @@
 FROM python:3.7
-RUN apt-get update && apt-get install -y zip
+RUN apt-get update && apt-get install --upgrade -y zip
 WORKDIR /lambda
 
 # Add the requiremts
 ADD requirements.txt /tmp
 RUN pip install --upgrade --quiet -t /lambda -r /tmp/requirements.txt 
-#&& \
-#    find /lambda -type d | xargs chmod ugo+rx && \
- #   find /lambda -type f | xargs chmod ugo+r
-
 # Add your source code
 ADD src/ /lambda/
-#RUN find /lambda -type d | xargs chmod ugo+rx && \
-#    find /lambda -type f | xargs chmod ugo+r
 
 # compile the lot.
 RUN python -m compileall -q /lambda

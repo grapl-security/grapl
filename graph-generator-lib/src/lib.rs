@@ -1,35 +1,29 @@
-#[macro_use] extern crate log;
-
+extern crate base16;
 extern crate failure;
 extern crate futures;
-extern crate base16;
+extern crate graph_descriptions;
+#[macro_use] extern crate log;
 extern crate prost;
-extern crate sha2;
+extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate rusoto_sqs;
-extern crate rusoto_core;
-extern crate graph_descriptions;
 extern crate serde_json;
+extern crate sha2;
 extern crate zstd;
 
+use std::io::Cursor;
 use std::str::FromStr;
-use rusoto_core::Region;
-use rusoto_s3::{S3, S3Client, PutObjectRequest};
-use failure::Error;
-use prost::Message;
-
-use serde_json::Value;
-
-use futures::future::Future;
-
-use sha2::{Digest, Sha256};
-
-use std::time::SystemTime;
+use std::time::{SystemTime, Duration};
 use std::time::UNIX_EPOCH;
 
+use failure::Error;
+use futures::future::Future;
 use graph_descriptions::graph_description::*;
-use std::io::Cursor;
-
+use prost::Message;
+use rusoto_core::Region;
+use rusoto_s3::{PutObjectRequest, S3, S3Client};
+use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 pub fn send_logs_to_generators(
     sourcetype: impl AsRef<str>,
@@ -65,7 +59,7 @@ pub fn send_logs_to_generators(
         key,
         body: Some(logs.into()),
         ..Default::default()
-    }).wait()?;
+    }).sync()?;
     info!("Uploaded raw-logs");
     Ok(())
 }
@@ -95,19 +89,20 @@ pub fn upload_subgraphs<S>(s3_client: &S, subgraphs: GeneratedSubgraphs) -> Resu
                       day,
                       base16::encode_lower(&key)
     );
-    info!("uploading unidentifed_subgraphs to {}", key);
 
     let mut compressed = Vec::with_capacity(proto.len());
     let mut proto = Cursor::new(&proto);
     zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
         .expect("compress zstd capnp");
 
+    info!("uploading unidentifed_subgraphs to {}", key);
+
     s3_client.put_object(PutObjectRequest {
         bucket,
         key,
         body: Some(compressed.into()),
         ..Default::default()
-    }).wait()?;
+    }).with_timeout(Duration::from_secs(5)).sync()?;
 
     info!("uploaded unidentified subgraphs");
 

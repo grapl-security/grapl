@@ -1,6 +1,7 @@
 // Stylesheets
-
 console.log('entry.js init');
+
+const engagement_edge = "";
 
 class GraphManager {
     constructor(graph) {
@@ -455,13 +456,14 @@ const hashNode = async (node) => {
     ));
 };
 
-const engagement_edge = "https://6hsytthq0l.execute-api.us-east-1.amazonaws.com/prod/";
-
 const retrieveGraph = async (graph, lens) => {
 
     let uidHashes = {};
 
     for (const node of graph.nodes) {
+        if (node.lens !== undefined) {
+            continue
+        }
         if (node.uid !== undefined) {
             uidHashes[node.uid] = await hashNode(node);
         }

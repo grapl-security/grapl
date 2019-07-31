@@ -1,6 +1,8 @@
+const child_process = require("child_process");
 import sagemaker = require('@aws-cdk/aws-sagemaker');
 import cloudmap = require('@aws-cdk/aws-servicediscovery');
 import s3Subs = require('@aws-cdk/aws-s3-notifications');
+import s3deploy = require('@aws-cdk/aws-s3-deployment');
 import snsSubs = require('@aws-cdk/aws-sns-subscriptions');
 import elasticache = require('@aws-cdk/aws-elasticache');
 import cdk = require('@aws-cdk/core');
@@ -13,6 +15,7 @@ import lambda = require('@aws-cdk/aws-lambda');
 import iam = require('@aws-cdk/aws-iam');
 import dynamodb = require('@aws-cdk/aws-dynamodb');
 import ecs = require('@aws-cdk/aws-ecs');
+import route53 = require('@aws-cdk/aws-route53');
 
 import apigateway = require('@aws-cdk/aws-apigateway');
 import {SqsEventSource} from '@aws-cdk/aws-lambda-event-sources';
@@ -21,6 +24,7 @@ import {IBucket} from "@aws-cdk/aws-s3";
 import {ITopic} from "@aws-cdk/aws-sns";
 import {Runtime} from "@aws-cdk/aws-lambda";
 import {Duration} from '@aws-cdk/core';
+import {PublicHostedZone} from "@aws-cdk/aws-route53";
 
 const env = require('node-env-file');
 
@@ -89,6 +93,7 @@ class Queues {
 
 class EngagementEdge extends cdk.Stack {
     event_handler: lambda.Function;
+    integration: apigateway.LambdaRestApi;
 
     constructor(
         parent: cdk.App,
@@ -116,7 +121,7 @@ class EngagementEdge extends cdk.Stack {
             }
         );
 
-        const integration = new apigateway.LambdaRestApi(
+        this.integration = new apigateway.LambdaRestApi(
             this,
             name + 'Integration',
             {
@@ -124,18 +129,6 @@ class EngagementEdge extends cdk.Stack {
             }
         );
 
-        // const zone = new PublicHostedZone(this,  'engagementedge-hosted-zone', {
-        //     zoneName: name,
-        // });
-        //
-        //
-        // new route53.CnameRecord(
-        //     this, name + '-record', {
-        //         zone,
-        //         recordName: hostname,
-        //         recordValue: integration.
-        //     }
-        // );
     }
 }
 
@@ -545,8 +538,8 @@ class NodeIdentityMapper extends cdk.Stack {
 
         addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
 
-        service.event_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
     }
 }
 
@@ -574,8 +567,8 @@ class NodeIdentifier extends cdk.Stack {
         history_db.allowReadWrite(service);
         service.publishesToBucket(writes_to);
         addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
-        service.event_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.tcp(443), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
 
     }
 }
@@ -592,7 +585,6 @@ class GraphMerger extends cdk.Stack {
     ) {
         super(parent, id + '-stack');
 
-
         const environment = {
             "SUBGRAPH_MERGED_TOPIC_ARN": publishes_to.topicArn,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
@@ -601,19 +593,17 @@ class GraphMerger extends cdk.Stack {
 
         const service = new Service(this, 'graph-merger', environment, vpc);
 
-        // master_graph.addAccessFrom(service);
-
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
 
         addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
         //
         // service.event_handler.connections
-        //     .allowToAnyIPv4(new ec2.Port({
+        //     .allowToAnyIpv4(new ec2.Port({
         //
         //     }), 'Allow outbound to S3');
         // service.event_retry_handler.connections
-        //     .allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        //     .allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
 
     }
 }
@@ -644,8 +634,8 @@ class AnalyzerDispatch extends cdk.Stack {
 
         addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
 
-        service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
     }
 }
 
@@ -665,7 +655,6 @@ class AnalyzerExecutor extends cdk.Stack {
     ) {
         super(parent, id + '-stack');
 
-
         this.count_cache = new RedisCluster(this, id + 'countcache', vpc);
         this.hit_cache = new RedisCluster(this, id + 'hitcache', vpc);
         this.message_cache = new RedisCluster(this, id + 'msgcache', vpc);
@@ -680,15 +669,16 @@ class AnalyzerExecutor extends cdk.Stack {
             "MESSAGECACHE_PORT": this.message_cache.cluster.attrRedisEndpointPort,
             "HITCACHE_ADDR": this.hit_cache.cluster.attrRedisEndpointAddress,
             "HITCACHE_PORT": this.hit_cache.cluster.attrRedisEndpointPort,
+            "GRPC_ENABLE_FORK_SUPPORT": "1",
         };
 
         const service = new Service(this, 'analyzer-executor', environment, vpc, null, {
             runtime: Runtime.PYTHON_3_7
         });
 
-        this.count_cache.connections.allowFromAnyIPv4(Port.tcp(6379));
-        this.hit_cache.connections.allowFromAnyIPv4(Port.tcp(6379));
-        this.message_cache.connections.allowFromAnyIPv4(Port.tcp(6379));
+        this.count_cache.connections.allowFromAnyIpv4(Port.tcp(6379));
+        this.hit_cache.connections.allowFromAnyIpv4(Port.tcp(6379));
+        this.message_cache.connections.allowFromAnyIpv4(Port.tcp(6379));
 
         service.publishesToBucket(writes_events_to);
         // We need the List capability to find each of the analyzers
@@ -707,8 +697,8 @@ class AnalyzerExecutor extends cdk.Stack {
 
         addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
 
-        service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTraffic(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTraffic(), 'Allow outbound to S3');
     }
 }
 
@@ -742,8 +732,8 @@ class EngagementCreator extends cdk.Stack {
 
         addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
 
-        service.event_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIPv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
+        service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
 
     }
 }
@@ -821,7 +811,7 @@ class Zero {
 
         this.name = `${id}.${graph}.grapl`;
 
-        zeroService.connections.allowFromAnyIPv4(
+        zeroService.connections.allowFromAnyIpv4(
             ec2.Port.allTcp()
         );
     }
@@ -873,11 +863,12 @@ class Alpha {
 
         this.name = `${id}.${graph}.grapl`;
 
-        alphaService.connections.allowFromAnyIPv4(ec2.Port.allTcp());
+        alphaService.connections.allowFromAnyIpv4(ec2.Port.allTcp());
     }
 }
 
 class DGraphFargate extends cdk.Stack {
+    cluster: ecs.Cluster;
     alphaNames: string[];
 
     constructor(
@@ -889,11 +880,12 @@ class DGraphFargate extends cdk.Stack {
     ) {
         super(parent, id + '-stack');
 
-
         const cluster = new ecs.Cluster(this, id + '-FargateCluster', {
             vpc: vpc
         });
+        cluster.connections.allowInternally(Port.allTcp());
 
+        this.cluster = cluster;
 
         const namespace = cluster.addDefaultCloudMapNamespace(
             {
@@ -945,37 +937,93 @@ class DGraphFargate extends cdk.Stack {
 }
 
 
-// class EngagementNotebook extends cdk.Stack {
-//     securityGroup: ec2.SecurityGroup;
-//     connections: ec2.Connections;
-//
-//     constructor(parent: cdk.App,
-//                 id: string,
-//                 vpc: ec2.Vpc,
-//     ) {
-//         super(parent, id + '-stack');
-//
-//         this.securityGroup = new ec2.SecurityGroup(this, `${id}-security-group`, {vpc: vpc});
-//
-//         this.connections = new ec2.Connections({
-//             securityGroups: [this.securityGroup],
-//             defaultPort: ec2.Port.tcp(6379)
-//         });
-//
-//         const notebook = new sagemaker.CfnNotebookInstance(
-//             this,
-//             id + '-sagemaker-endpoint',
-//             {
-//                 instanceType: 'ml.c4.2xlarge',
-//                 securityGroupIds: [this.securityGroup.securityGroupId],
-//                 subnetId: vpc.privateSubnets[0].subnetId,
-//                 directInternetAccess: true,
-//             }
-//         );
-//
-//
-//     }
-// }
+class EngagementNotebook extends cdk.Stack {
+    securityGroup: ec2.SecurityGroup;
+    connections: ec2.Connections;
+
+    constructor(parent: cdk.App,
+                id: string,
+                vpc: ec2.Vpc,
+    ) {
+        super(parent, id + '-notebook-stack');
+
+        this.securityGroup = new ec2.SecurityGroup(this, `${id}-notebook-security-group`, {vpc: vpc});
+
+        this.connections = new ec2.Connections({
+            securityGroups: [this.securityGroup],
+            defaultPort: ec2.Port.allTcp()
+        });
+
+        const role = new iam.Role(
+            this,
+            id + 'notebook-role',
+            {
+                assumedBy: new iam.ServicePrincipal('sagemaker.amazonaws.com')
+            }
+        );
+
+        const notebook = new sagemaker.CfnNotebookInstance(
+            this,
+            id + '-sagemaker-endpoint',
+            {
+                instanceType: 'ml.c4.2xlarge',
+                securityGroupIds: [this.securityGroup.securityGroupId],
+                subnetId: vpc.privateSubnets[0].subnetId,
+                directInternetAccess: 'Enabled',
+                roleArn: role.roleArn
+            }
+        );
+
+
+    }
+}
+
+const fs = require('fs'),
+      path = require('path');
+
+const replaceInFile = (toModify, toReplace, replaceWith) => {
+    return fs.readFile(toModify, 'utf8', (err, data) => {
+        if (err) {
+            return console.log(err);
+        }
+        const replaced = data.replace(toReplace, replaceWith);
+
+        fs.writeFile(toModify, replaced, 'utf8', (err) => {
+            if (err) return console.log(err);
+        });
+    });
+}
+
+class EngagementUx extends cdk.Stack {
+    constructor(parent: cdk.App,
+                id: string,
+                edge: EngagementEdge,
+    ) {
+        super(parent, id + '-stack');
+        const bucketName = process.env.BUCKET_PREFIX + "-engagement-ux";
+
+        const edgeBucket = new s3.Bucket(this, id + '-engagement-ux', {
+            bucketName,
+            publicReadAccess: true,
+            websiteIndexDocument: 'index.html',
+        });
+
+        const edgeDomainName = edge.integration.domainName;
+        const filesToModify = [path.join(__dirname, 'edge_ux/index.js'), path.join(__dirname, 'edge_ux/lens.js')];
+        const toReplace = 'const engagement_edge = "";';
+        const replacement = `const engagement_edge = "${edgeDomainName}";`;
+
+        for (const toModify of filesToModify) {
+            replaceInFile(toModify, toReplace, replacement)
+        }
+
+        new s3deploy.BucketDeployment(this, 'DeployWebsite', {
+            source: s3deploy.Source.asset(path.join(__dirname, 'edge_ux/')),
+            destinationBucket: edgeBucket,
+            destinationKeyPrefix: 'web/static'
+        });
+    }
+}
 
 class HistoryDb extends cdk.Stack {
 
@@ -1212,12 +1260,24 @@ class Grapl extends cdk.App {
             network.grapl_vpc
         );
 
-        new EngagementEdge(
+        const engagement_edge = new EngagementEdge(
             this,
             'engagementedge' + process.env.BUCKET_PREFIX,
             'engagementedge' + process.env.BUCKET_PREFIX,
             engagement_graph,
             network.grapl_vpc
+        );
+
+        new EngagementNotebook(
+            this,
+            'engagements',
+            network.grapl_vpc
+        );
+
+        new EngagementUx(
+            this,
+            'engagementux',
+            engagement_edge
         );
     }
 }
@@ -1237,5 +1297,4 @@ new Grapl().synth();
 // cdk deploy grapl-analyzer-dispatcher-stack && \
 // cdk deploy grapl-analyzer-executor-stack && \
 // cdk deploy grapl-engagement-creator-stack
-
 

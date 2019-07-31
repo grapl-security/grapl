@@ -42,9 +42,6 @@ def download_s3_file(bucket, key) -> str:
 def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
     alpha_names = os.environ["MG_ALPHAS"].split(",")
 
-    client_stubs = [DgraphClientStub(f"{name}:9080") for name in alpha_names]
-    client = DgraphClient(*client_stubs)
-
     exec(file, globals())
     try:
         pool = ThreadPool(processes=64)
@@ -62,12 +59,24 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
                 print('cache hit - already matched')
                 continue
 
-            def exec_analyzer(analyzer, client, node, sender):
-                analyzer(client, node, sender)
-                return node
+            def exec_analyzer(analyzer, node, sender):
+                try:
+                    client_stubs = [DgraphClientStub(f"{a_name}:9080") for a_name in alpha_names]
+                    client = DgraphClient(*client_stubs)
 
-            t = pool.apply_async(exec_analyzer, (analyzer, client, node, sender))
+                    analyzer(client, node, sender)
+                    return node
+                except Exception as e:
+                    print(traceback.format_exc())
+                    print(f'Execution of {name} failed with {e} {e.args}')
+                    sender.send(ExecutionFailed())
+                    raise
+
+            exec_analyzer(analyzer, node, sender)
+            t = pool.apply_async(exec_analyzer, (analyzer, node, sender))
             results.append(t)
+
+        pool.close()
 
         for result in results:
             node = result.get()
@@ -79,6 +88,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
         print(traceback.format_exc())
         print(f'Execution of {name} failed with {e} {e.args}')
         sender.send(ExecutionFailed())
+        raise
 
 
 def emit_event(event: ExecutionHit) -> None:
@@ -160,10 +170,10 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         # TODO: Use env variable for s3 bucket
         print(f'Executing Analyzer: {message["key"]}')
-        analyzer = download_s3_file("grapl-analyzers-bucket", message["key"])
+        analyzer = download_s3_file(f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"])
         analyzer_name = message["key"].split("/")[-2]
         subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
-        
+
         # TODO: Validate signature of S3 file
         rx, tx = Pipe(duplex=False)  # type: Tuple[Connection, Connection]
         p = Process(target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, event['messageId']))
@@ -194,5 +204,3 @@ def lambda_handler(events: Any, context: Any) -> None:
             ), f"Analyzer {analyzer_name} failed."
 
         p.join()
-
-

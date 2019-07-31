@@ -885,6 +885,20 @@ impl ProcessDescription {
             j["process_name"] = Value::from(self.process_name.to_owned());
         }
 
+        if !self.operating_system.is_empty() {
+            j["operating_system"] = Value::from(self.operating_system.to_owned());
+        }
+        if !self.process_command_line.is_empty() {
+            j["process_command_line"] = Value::from(self.process_command_line.to_owned());
+        }
+        if !self.process_guid.is_empty() {
+            j["process_guid"] = Value::from(self.process_guid.to_owned());
+        }
+        if !self.process_integrity_level.is_empty() {
+            j["process_integrity_level"] = Value::from(self.process_integrity_level.to_owned());
+        }
+
+
         match ProcessState::from(self.state) {
             ProcessState::Created => j["created_time"] = self.created_timestamp.into(),
             ProcessState::Terminated => j["terminated_timestamp"] = self.terminated_timestamp.into(),
@@ -1034,8 +1048,64 @@ impl FileDescription {
             "asset_id": asset_id,
         });
 
+        if !self.file_name.is_empty() {
+            j["file_name"] = Value::from(self.file_name.to_owned());
+        }
+
         if !self.file_path.is_empty() {
             j["file_path"] = Value::from(self.file_path.to_owned());
+        }
+
+        if !self.file_extension.is_empty() {
+            j["file_extension"] = Value::from(self.file_extension.to_owned());
+        }
+
+        if !self.file_mime_type.is_empty() {
+            j["file_mime_type"] = Value::from(self.file_mime_type.to_owned());
+        }
+
+        if self.file_size != 0 {
+            j["file_size"] = Value::from(self.file_size.to_owned());
+        }
+
+        if !self.file_version.is_empty() {
+            j["file_version"] = Value::from(self.file_version.to_owned());
+        }
+
+        if !self.file_description.is_empty() {
+            j["file_description"] = Value::from(self.file_description.to_owned());
+        }
+
+        if !self.file_product.is_empty() {
+            j["file_product"] = Value::from(self.file_product.to_owned());
+        }
+
+        if !self.file_company.is_empty() {
+            j["file_company"] = Value::from(self.file_company.to_owned());
+        }
+
+        if !self.file_directory.is_empty() {
+            j["file_directory"] = Value::from(self.file_directory.to_owned());
+        }
+
+        if self.file_inode != 0 {
+            j["file_inode"] = Value::from(self.file_inode.to_owned());
+        }
+
+        if self.file_hard_links != 0 {
+            j["file_hard_links"] = Value::from(self.file_hard_links.to_owned());
+        }
+
+        if !self.md5_hash.is_empty() {
+            j["md5_hash"] = Value::from(self.md5_hash.to_owned());
+        }
+
+        if !self.sha1_hash.is_empty() {
+            j["sha1_hash"] = Value::from(self.sha1_hash.to_owned());
+        }
+
+        if !self.sha256_hash.is_empty() {
+            j["sha256_hash"] = Value::from(self.sha256_hash.to_owned());
         }
 
         if self.created_timestamp!= 0 {

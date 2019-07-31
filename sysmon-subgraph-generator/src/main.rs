@@ -104,10 +104,6 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         timestamp
     );
 
-    if process_start.image.contains("svc") {
-        info!("process_start {:?}", process_start)
-    }
-
 //    let asset = AssetDescriptionBuilder::default();
 
     let parent = ProcessDescriptionBuilder::default()
@@ -138,10 +134,10 @@ fn handle_process_start(process_start: ProcessCreateEvent) -> Result<GraphDescri
         .build()
         .unwrap();
 
-        graph.add_edge("bin_file",
-                       child.clone_key(),
-                       child_exe.clone_key()
-        );
+    graph.add_edge("bin_file",
+                   child.clone_key(),
+                   child_exe.clone_key()
+    );
 
     graph.add_node(child_exe);
 
@@ -398,6 +394,7 @@ impl<S> EventHandler<Vec<u8>> for SysmonSubgraphGenerator<S>
 
                 match event {
                     Event::ProcessCreate(event) => {
+                        info!("Handling process create");
                         match handle_process_start(event) {
                             Ok(event) => Some(event),
                             Err(e) => {
@@ -434,7 +431,7 @@ impl<S> EventHandler<Vec<u8>> for SysmonSubgraphGenerator<S>
                             }
                         }
                     }
-                    _ => None
+                    catch => {warn!("Unsupported event_type: {:?}", catch); None}
                 }
             }).collect()
         );

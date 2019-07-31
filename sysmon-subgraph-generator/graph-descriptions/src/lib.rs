@@ -27,7 +27,6 @@ pub mod graph_description {
     include!(concat!(env!("OUT_DIR"), "/graph_description.rs"));
 }
 
-
 impl GeneratedSubgraphs {
     pub fn new(subgraphs: Vec<GraphDescription>) -> GeneratedSubgraphs {
         GeneratedSubgraphs {
@@ -572,6 +571,16 @@ impl NodeDescription {
 
 
 impl DynamicNode {
+    pub fn set_property(
+        &mut self,
+        name: impl Into<String>,
+        value: impl Into<NodeProperty>
+    ) {
+        self.properties.insert(
+            name.into(),
+            value.into().into(),
+        );
+    }
 
     pub fn set_key(&mut self, key: String) {
         self.node_key = key;
@@ -596,6 +605,7 @@ impl DynamicNode {
     pub fn into_json(self) -> Value {
         let mut j = json!({
             "node_key": self.node_key,
+            "node_type": self.node_type,
             "seen_at": self.seen_at,
         });
 
@@ -606,6 +616,7 @@ impl DynamicNode {
         for (key, prop) in self.properties {
             let prop = match prop.property {
                 Some(node_property::Property::Intprop(i)) => Value::from(i),
+                Some(node_property::Property::Uintprop(i)) => Value::from(i),
                 Some(node_property::Property::Strprop(s)) => Value::from(s),
                 None => panic!("Invalid property on DynamicNode: {}", self.node_key),
             };
@@ -642,6 +653,22 @@ impl DynamicNode {
 
 }
 
+impl From<Static> for IdStrategy {
+    fn from(strategy: Static) -> IdStrategy {
+        IdStrategy {
+            strategy: Some(id_strategy::Strategy::Static(strategy))
+        }
+    }
+}
+
+impl From<Session> for IdStrategy {
+    fn from(strategy: Session) -> IdStrategy {
+        IdStrategy {
+            strategy: Some(id_strategy::Strategy::Session(strategy))
+        }
+    }
+}
+
 impl From<String> for NodeProperty {
     fn from(s: String) -> NodeProperty {
         NodeProperty {
@@ -658,10 +685,19 @@ impl From<i64> for NodeProperty {
     }
 }
 
+impl From<u64> for NodeProperty {
+    fn from(i: u64) -> NodeProperty {
+        NodeProperty {
+            property: Some(node_property::Property::Uintprop(i))
+        }
+    }
+}
+
 impl std::string::ToString for NodeProperty {
     fn to_string(&self) -> String {
         let prop = match &self.property {
             Some(node_property::Property::Intprop(i)) => i.to_string(),
+            Some(node_property::Property::Uintprop(i)) => i.to_string(),
             Some(node_property::Property::Strprop(s)) => s.to_string(),
             None => panic!("Invalid property : {:?}", self),
         };
@@ -849,6 +885,20 @@ impl ProcessDescription {
             j["process_name"] = Value::from(self.process_name.to_owned());
         }
 
+        if !self.operating_system.is_empty() {
+            j["operating_system"] = Value::from(self.operating_system.to_owned());
+        }
+        if !self.process_command_line.is_empty() {
+            j["process_command_line"] = Value::from(self.process_command_line.to_owned());
+        }
+        if !self.process_guid.is_empty() {
+            j["process_guid"] = Value::from(self.process_guid.to_owned());
+        }
+        if !self.process_integrity_level.is_empty() {
+            j["process_integrity_level"] = Value::from(self.process_integrity_level.to_owned());
+        }
+
+
         match ProcessState::from(self.state) {
             ProcessState::Created => j["created_time"] = self.created_timestamp.into(),
             ProcessState::Terminated => j["terminated_timestamp"] = self.terminated_timestamp.into(),
@@ -998,8 +1048,64 @@ impl FileDescription {
             "asset_id": asset_id,
         });
 
+        if !self.file_name.is_empty() {
+            j["file_name"] = Value::from(self.file_name.to_owned());
+        }
+
         if !self.file_path.is_empty() {
             j["file_path"] = Value::from(self.file_path.to_owned());
+        }
+
+        if !self.file_extension.is_empty() {
+            j["file_extension"] = Value::from(self.file_extension.to_owned());
+        }
+
+        if !self.file_mime_type.is_empty() {
+            j["file_mime_type"] = Value::from(self.file_mime_type.to_owned());
+        }
+
+        if self.file_size != 0 {
+            j["file_size"] = Value::from(self.file_size.to_owned());
+        }
+
+        if !self.file_version.is_empty() {
+            j["file_version"] = Value::from(self.file_version.to_owned());
+        }
+
+        if !self.file_description.is_empty() {
+            j["file_description"] = Value::from(self.file_description.to_owned());
+        }
+
+        if !self.file_product.is_empty() {
+            j["file_product"] = Value::from(self.file_product.to_owned());
+        }
+
+        if !self.file_company.is_empty() {
+            j["file_company"] = Value::from(self.file_company.to_owned());
+        }
+
+        if !self.file_directory.is_empty() {
+            j["file_directory"] = Value::from(self.file_directory.to_owned());
+        }
+
+        if self.file_inode != 0 {
+            j["file_inode"] = Value::from(self.file_inode.to_owned());
+        }
+
+        if self.file_hard_links != 0 {
+            j["file_hard_links"] = Value::from(self.file_hard_links.to_owned());
+        }
+
+        if !self.md5_hash.is_empty() {
+            j["md5_hash"] = Value::from(self.md5_hash.to_owned());
+        }
+
+        if !self.sha1_hash.is_empty() {
+            j["sha1_hash"] = Value::from(self.sha1_hash.to_owned());
+        }
+
+        if !self.sha256_hash.is_empty() {
+            j["sha256_hash"] = Value::from(self.sha256_hash.to_owned());
         }
 
         if self.created_timestamp!= 0 {
@@ -1048,9 +1154,11 @@ impl FileDescription {
 
 impl IpAddressDescription {
     pub fn new(timestamp: u64,
-               ip_address: String,
-               ip_proto: String,
+               ip_address: impl Into<String>,
+               ip_proto: impl Into<String>,
     ) -> IpAddressDescription {
+        let ip_address = ip_address.into();
+        let ip_proto = ip_proto.into();
         // 20 is based on the max size of a base encoded ipv4 ip
         let mut node_key = String::with_capacity(20);
         base64::encode_config_buf(&ip_address,
@@ -1061,7 +1169,7 @@ impl IpAddressDescription {
             node_key,
             timestamp,
             ip_address,
-            ip_proto
+            ip_proto,
         }
     }
 

@@ -21,7 +21,7 @@ def main(prefix):
 
     s3 = boto3.client('s3')
 
-    with open('./events6.xml', 'rb') as b:
+    with open('./eventlog.xml', 'rb') as b:
         body = b.readlines()
         body = [line for line in body]
 
