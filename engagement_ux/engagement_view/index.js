@@ -3,6 +3,7 @@
 console.log('Loaded index.js');
 
 const engagement_edge = "";
+console.log(`Connecting to ${engagement_edge}`);
 
 const getLenses = async () => {
     const res = await fetch(`${engagement_edge}getLenses`, {

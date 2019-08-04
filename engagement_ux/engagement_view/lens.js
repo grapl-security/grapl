@@ -3,6 +3,8 @@ console.log('entry.js init');
 
 const engagement_edge = "";
 
+console.log(`Connecting to ${engagement_edge}`);
+
 class GraphManager {
     constructor(graph) {
         this.canvas = d3.select('#network');

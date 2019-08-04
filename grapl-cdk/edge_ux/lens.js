@@ -1,6 +1,9 @@
 // Stylesheets
-
 console.log('entry.js init');
+
+const engagement_edge = "";
+
+console.log(`Connecting to ${engagement_edge}`);
 
 class GraphManager {
     constructor(graph) {
@@ -454,8 +457,6 @@ const hashNode = async (node) => {
         new TextEncoder().encode(nodeStr)
     ));
 };
-
-const engagement_edge = "https://6b2xq3e3g9.execute-api.us-east-1.amazonaws.com/prod/";
 
 const retrieveGraph = async (graph, lens) => {
 

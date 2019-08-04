@@ -1,4 +1,6 @@
+const AWS = require('aws-sdk');
 const child_process = require("child_process");
+
 import sagemaker = require('@aws-cdk/aws-sagemaker');
 import cloudmap = require('@aws-cdk/aws-servicediscovery');
 import s3Subs = require('@aws-cdk/aws-s3-notifications');
@@ -23,7 +25,7 @@ import {IVpc, Port, Vpc} from "@aws-cdk/aws-ec2";
 import {IBucket} from "@aws-cdk/aws-s3";
 import {ITopic} from "@aws-cdk/aws-sns";
 import {Runtime} from "@aws-cdk/aws-lambda";
-import {Duration} from '@aws-cdk/core';
+import {Duration, Token} from '@aws-cdk/core';
 import {PublicHostedZone} from "@aws-cdk/aws-route53";
 
 const env = require('node-env-file');
@@ -94,6 +96,8 @@ class Queues {
 class EngagementEdge extends cdk.Stack {
     event_handler: lambda.Function;
     integration: apigateway.LambdaRestApi;
+    name: string;
+    integrationName: string;
 
     constructor(
         parent: cdk.App,
@@ -103,9 +107,8 @@ class EngagementEdge extends cdk.Stack {
         vpc: ec2.Vpc
     ) {
         super(parent, name + '-stack');
-        // Set up the API Gateway
-        // Set up the lambda
-
+        this.name = name;
+        this.integrationName = name + 'Integration';
 
         this.event_handler = new lambda.Function(
             this, name, {
@@ -123,12 +126,12 @@ class EngagementEdge extends cdk.Stack {
 
         this.integration = new apigateway.LambdaRestApi(
             this,
-            name + 'Integration',
+            this.integrationName,
             {
                 handler: this.event_handler,
-            }
-        );
+            },
 
+        );
     }
 }
 
@@ -987,12 +990,31 @@ const replaceInFile = (toModify, toReplace, replaceWith) => {
             return console.log(err);
         }
         const replaced = data.replace(toReplace, replaceWith);
-
+        if (replaced === data) {
+            console.log(`No replaced text - did you forget to build engagement ux?`)
+        }
         fs.writeFile(toModify, replaced, 'utf8', (err) => {
             if (err) return console.log(err);
         });
     });
-}
+};
+
+const getEdgeGatewayId = (integrationName: string, cb) =>{
+    let apigateway = new AWS.APIGateway();
+
+    apigateway.getRestApis({}, function(err, data) {
+        if (err) {console.log('Error getting edge gateway ID', err);}
+
+        for (const item of data.items) {
+            if (item.name === integrationName) {
+                console.log(`restApi ID ${item.id}`);
+                cb(item.id);
+                return
+            }
+        }
+        console.assert(false, 'Could not find any integrations. Ensure you have deployed engagement edge.')
+    });
+};
 
 class EngagementUx extends cdk.Stack {
     constructor(parent: cdk.App,
@@ -1000,27 +1022,33 @@ class EngagementUx extends cdk.Stack {
                 edge: EngagementEdge,
     ) {
         super(parent, id + '-stack');
-        const bucketName = process.env.BUCKET_PREFIX + "-engagement-ux";
+        const bucketName = process.env.BUCKET_PREFIX + id + '-bucket';
 
-        const edgeBucket = new s3.Bucket(this, id + '-engagement-ux', {
+        const edgeBucket = new s3.Bucket(this, bucketName, {
             bucketName,
             publicReadAccess: true,
             websiteIndexDocument: 'index.html',
         });
 
-        const edgeDomainName = edge.integration.domainName;
-        const filesToModify = [path.join(__dirname, 'edge_ux/index.js'), path.join(__dirname, 'edge_ux/lens.js')];
-        const toReplace = 'const engagement_edge = "";';
-        const replacement = `const engagement_edge = "${edgeDomainName}";`;
+        const _this = this;
+        getEdgeGatewayId(
+            edge.name + 'Integration',
+            (gatewayId) => {
+                const edgeUrl = `https://${gatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
 
-        for (const toModify of filesToModify) {
-            replaceInFile(toModify, toReplace, replacement)
-        }
+                const filesToModify = [path.join(__dirname, 'edge_ux/index.js'), path.join(__dirname, 'edge_ux/lens.js')];
+                const toReplace = 'const engagement_edge = "";';
+                const replacement = `const engagement_edge = "${edgeUrl}";`;
 
-        new s3deploy.BucketDeployment(this, 'DeployWebsite', {
-            source: s3deploy.Source.asset(path.join(__dirname, 'edge_ux/')),
-            destinationBucket: edgeBucket,
-            destinationKeyPrefix: 'web/static'
+                for (const toModify of filesToModify) {
+                    replaceInFile(toModify, toReplace, replacement)
+                }
+                console.log(path.join(__dirname, 'edge_ux/'));
+                new s3deploy.BucketDeployment(_this, id + 'Ux', {
+                    source: s3deploy.Source.asset('./edge_ux'),
+                    destinationBucket: edgeBucket,
+                    destinationKeyPrefix: 'web/static'
+                });
         });
     }
 }
@@ -1276,7 +1304,7 @@ class Grapl extends cdk.App {
 
         new EngagementUx(
             this,
-            'engagementux',
+            'engagement-ux',
             engagement_edge
         );
     }
@@ -1297,4 +1325,3 @@ new Grapl().synth();
 // cdk deploy grapl-analyzer-dispatcher-stack && \
 // cdk deploy grapl-analyzer-executor-stack && \
 // cdk deploy grapl-engagement-creator-stack
-

@@ -2,7 +2,8 @@
 
 console.log('Loaded index.js');
 
-const engagement_edge = "https://6b2xq3e3g9.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "";
+console.log(`Connecting to ${engagement_edge}`);
 
 const getLenses = async () => {
     const res = await fetch(`${engagement_edge}getLenses`, {
@@ -49,15 +50,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     const lenseTable = document.getElementById('LenseTable');
 
-    let lensRows = "";
+    const lensRows = [];
 
     for (const lens of lenses) {
         const s = nodeToTable(lens);
-        lensRows += s;
+        lensRows.push(s);
     }
-
-
-    lenseTable.innerHTML = `<table>${lensRows}</table>`;
+    // Sort the lenses by their score
+    lensRows.sort((row_a, row_b) => {
+       return row_a.score - row_b.score
+    });
+    const lensRowsStr = lensRows.join("")
+    lenseTable.innerHTML = `<table>${lensRowsStr}</table>`;
 
 
 });
