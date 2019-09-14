@@ -1258,16 +1258,17 @@ class ProcessView(Viewable):
         return self.process_command_line
 
     def get_parent(self) -> Optional["PV"]:
-        parent = (
+        self_node = (
             ProcessQuery()
-            .with_children(ProcessQuery().with_node_key(self.node_key))
+            .with_node_key(self.node_key)
+            .with_parent(ProcessQuery())
             .query_first(self.dgraph_client)
         )
 
-        if not parent:
+        if (not self_node) and (not self_node.parent):
             return None
 
-        self.parent = parent
+        self.parent = self_node.parent
         return self.parent
 
     def get_children(self) -> List["PV"]:
