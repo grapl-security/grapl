@@ -1276,6 +1276,20 @@ class ProcessView(Viewable):
 
         return self.parent
 
+    def get_created_files(self) -> Optional[List["FV"]]:
+        created_files = (
+            ProcessQuery()
+                .with_node_key(self.node_key)
+                .with_created_files(FileQuery().with_node_key())
+                .query_first(self.dgraph_client)
+        )
+
+        if not created_files:
+            return None
+
+        self.created_files = created_files[0].read_files
+        return self.created_files
+
     def get_children(self) -> List["PV"]:
         self_node = (
             ProcessQuery()
