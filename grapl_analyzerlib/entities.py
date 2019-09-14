@@ -1265,7 +1265,10 @@ class ProcessView(Viewable):
             .query_first(self.dgraph_client)
         )
 
-        if (not self_node) and (not self_node.parent):
+        if not self_node:
+            return None
+
+        if not self_node.parent:
             return None
 
         self.parent = self_node.parent
