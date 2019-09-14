@@ -630,9 +630,6 @@ class FileView(Viewable):
         ]
 
     def get_file_name(self) -> Optional[str]:
-        if self.file_name:
-            return self.file_name
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -647,9 +644,6 @@ class FileView(Viewable):
         return self.file_name
 
     def get_file_extension(self) -> Optional[str]:
-        if self.file_extension:
-            return self.file_extension
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -664,9 +658,6 @@ class FileView(Viewable):
         return self.file_extension
 
     def get_file_mime_type(self) -> Optional[str]:
-        if self.file_mime_type:
-            return self.file_mime_type
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -681,9 +672,6 @@ class FileView(Viewable):
         return self.file_mime_type
 
     def get_file_size(self) -> Optional[int]:
-        if self.file_size:
-            return self.file_size
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -701,9 +689,6 @@ class FileView(Viewable):
         return self.file_size
 
     def get_file_version(self) -> Optional[str]:
-        if self.file_version:
-            return self.file_version
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -718,9 +703,6 @@ class FileView(Viewable):
         return self.file_version
 
     def get_file_description(self) -> Optional[str]:
-        if self.file_description:
-            return self.file_description
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -735,9 +717,6 @@ class FileView(Viewable):
         return self.file_description
 
     def get_file_product(self) -> Optional[str]:
-        if self.file_product:
-            return self.file_product
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -752,9 +731,6 @@ class FileView(Viewable):
         return self.file_product
 
     def get_file_company(self) -> Optional[str]:
-        if self.file_company:
-            return self.file_company
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -769,9 +745,6 @@ class FileView(Viewable):
         return self.file_company
 
     def get_file_directory(self) -> Optional[str]:
-        if self.file_directory:
-            return self.file_directory
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -786,9 +759,6 @@ class FileView(Viewable):
         return self.file_directory
 
     def get_file_inode(self) -> Optional[str]:
-        if self.file_inode:
-            return self.file_inode
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -803,9 +773,6 @@ class FileView(Viewable):
         return self.file_inode
 
     def get_file_hard_links(self) -> Optional[str]:
-        if self.file_hard_links:
-            return self.file_hard_links
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -820,9 +787,6 @@ class FileView(Viewable):
         return self.file_hard_links
 
     def get_md5_hash(self) -> Optional[str]:
-        if self.md5_hash:
-            return self.md5_hash
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -837,9 +801,6 @@ class FileView(Viewable):
         return self.md5_hash
 
     def get_sha1_hash(self) -> Optional[str]:
-        if self.sha1_hash:
-            return self.sha1_hash
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -854,9 +815,6 @@ class FileView(Viewable):
         return self.sha1_hash
 
     def get_sha256_hash(self) -> Optional[str]:
-        if self.sha256_hash:
-            return self.sha256_hash
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -871,9 +829,6 @@ class FileView(Viewable):
         return self.sha256_hash
 
     def get_file_path(self) -> Optional[str]:
-        if self.file_path:
-            return self.file_path
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -888,9 +843,6 @@ class FileView(Viewable):
         return self.file_path
 
     def get_asset_id(self) -> Optional[str]:
-        if self.asset_id:
-            return self.asset_id
-
         self_file = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -905,9 +857,6 @@ class FileView(Viewable):
         return self.asset_id
 
     def get_creator(self) -> Optional["PV"]:
-        if self.creator:
-            return self.creator
-
         self_node = (
             FileQuery()
             .with_node_key(self.node_key)
@@ -1225,9 +1174,6 @@ class ProcessView(Viewable):
         ]
 
     def get_asset_id(self) -> Optional[str]:
-        if self.asset_id:
-            return self.asset_id
-
         self_process = (
             ProcessQuery()
             .with_node_key(self.node_key)
@@ -1259,7 +1205,7 @@ class ProcessView(Viewable):
         for child in self.children:
             descendents.append(child)
             # noinspection PyProtectedMember
-            child._get_descendents(descendents, depth + 1)
+            child._get_descendents(descendents, max_depth, limit, depth + 1)
 
     def traverse_descendents(self) -> Iterable["ProcessView"]:
         if not self.children:
@@ -1270,9 +1216,6 @@ class ProcessView(Viewable):
                 yield c
 
     def get_process_name(self) -> Optional[str]:
-        if self.process_name:
-            return self.process_name
-
         self_process = (
             ProcessQuery()
             .with_node_key(self.node_key)
@@ -1287,9 +1230,6 @@ class ProcessView(Viewable):
         return self.process_name
 
     def get_process_id(self) -> Optional[str]:
-        if self.process_id:
-            return self.process_id
-
         self_process = (
             ProcessQuery()
                 .with_node_key(self.node_key)
@@ -1304,9 +1244,6 @@ class ProcessView(Viewable):
         return self.process_id
 
     def get_process_command_line(self) -> Optional[str]:
-        if self.process_command_line:
-            return self.process_command_line
-
         self_process = (
             ProcessQuery()
             .with_node_key(self.node_key)
@@ -1321,9 +1258,6 @@ class ProcessView(Viewable):
         return self.process_command_line
 
     def get_parent(self) -> Optional["PV"]:
-        if self.parent:
-            return self.parent
-
         parent = (
             ProcessQuery()
             .with_children(ProcessQuery().with_node_key(self.node_key))
@@ -1337,9 +1271,6 @@ class ProcessView(Viewable):
         return self.parent
 
     def get_children(self) -> List["PV"]:
-        if self.children:
-            return self.children
-
         self_node = (
             ProcessQuery()
             .with_node_key(self.node_key)
@@ -1359,9 +1290,6 @@ class ProcessView(Viewable):
         return self.children
 
     def get_bin_file(self) -> Optional["FV"]:
-        if self.bin_file:
-            return self.bin_file
-
         self_node = (
             ProcessQuery()
             .with_node_key(self.node_key)
@@ -1401,9 +1329,6 @@ class ProcessView(Viewable):
         return self.created_connections
 
     def get_deleted_files(self) -> Optional[List["FV"]]:
-        if self.deleted_files:
-            return self.deleted_files
-
         deleted_files = (
             ProcessQuery()
             .with_node_key(self.node_key)
@@ -1418,9 +1343,6 @@ class ProcessView(Viewable):
         return self.deleted_files
 
     def get_read_files(self) -> Optional[List["FV"]]:
-        if self.read_files:
-            return self.read_files
-
         read_files = (
             ProcessQuery()
             .with_node_key(self.node_key)
@@ -1687,4 +1609,3 @@ class ExternalIpView(Viewable):
     @staticmethod
     def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return []
-
