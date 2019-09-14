@@ -1269,6 +1269,8 @@ class ProcessView(Viewable):
             return None
 
         self.parent = self_node.parent
+        self.parent.get_process_name()
+
         return self.parent
 
     def get_children(self) -> List["PV"]:
