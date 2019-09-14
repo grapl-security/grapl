@@ -870,6 +870,19 @@ class FileView(Viewable):
         self.creator = self_node.creator
         return self.creator
 
+    def get_spawned_from(self) -> Optional["PV"]:
+        self_node = (
+            FileQuery().with_node_key(self.node_key)
+            .with_spawned_from(ProcessQuery())
+            .query_first(self.dgraph_client)
+        )
+
+        if not self_node:
+            return None
+
+        self.spawned_from = self_node.spawned_from
+        return self.spawned_from
+
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
 
