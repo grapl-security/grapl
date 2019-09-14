@@ -875,7 +875,7 @@ class FileView(Viewable):
             FileQuery().with_node_key(self.node_key)
             .with_spawned_from(ProcessQuery())
             .query_first(self.dgraph_client)
-        )
+        )  # type: Optional['FileView']
 
         if not self_node:
             return None
@@ -1169,9 +1169,9 @@ class ProcessView(Viewable):
             ("process_command_line", str),
             ("process_guid", str),
             ("process_id", str),
-            ("created_timestamp", str),
-            ("terminated_timestamp", str),
-            ("last_seen_timestamp", str),
+            ("created_timestamp", int),
+            ("terminated_timestamp", int),
+            ("last_seen_timestamp", int),
         ]
 
     @staticmethod
@@ -1199,6 +1199,48 @@ class ProcessView(Viewable):
 
         self.asset_id = self_process.asset_id
         return self.asset_id
+
+    def get_created_timestamp(self) -> Optional[int]:
+        self_process = (
+            ProcessQuery()
+                .with_node_key(self.node_key)
+                .with_created_timestamp()
+                .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_process:
+            return None
+
+        self.created_timestamp = self_process.created_timestamp
+        return self.created_timestamp
+
+    def get_terminated_timestamp(self) -> Optional[int]:
+        self_process = (
+                ProcessQuery()
+                    .with_node_key(self.node_key)
+                    .with_terminated_timestamp()
+                    .query_first(dgraph_client=self.dgraph_client)
+            )
+
+        if not self_process:
+            return None
+
+        self.terminated_timestamp = self_process.terminated_timestamp
+        return self.terminated_timestamp
+
+    def get_last_seen_timestamp(self) -> Optional[int]:
+        self_process = (
+            ProcessQuery()
+                .with_node_key(self.node_key)
+                .with_last_seen_timestamp()
+                .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_process:
+            return None
+
+        self.last_seen_timestamp = self_process.last_seen_timestamp
+        return self.last_seen_timestamp
 
     def get_descendents(self, max=5, limit=50) -> List["ProcessView"]:
         descendents = []
@@ -1286,6 +1328,8 @@ class ProcessView(Viewable):
 
         self.parent = self_node.parent
         self.parent.get_process_name()
+        self.parent.get_created_timestamp()
+        self.parent.get_last_seen_timestamp()
 
         return self.parent
 
@@ -1319,6 +1363,8 @@ class ProcessView(Viewable):
         # Get the process name by default
         for child in self.children:
             child.get_process_name()
+            child.get_created_timestamp()
+            child.get_last_seen_timestamp()
 
         return self.children
 
