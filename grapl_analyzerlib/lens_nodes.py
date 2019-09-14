@@ -152,12 +152,22 @@ class CopyingTransaction(Txn):
                 dst_txn.discard()
 
         for from_edge, edge_name, to_edge in edges:
-            mu = {
-                'uid': uid_map[from_edge],
-                edge_name: {
-                    'uid': uid_map[to_edge]
+            if edge_name[0] == '~':
+                edge_name = edge_name[1:]
+                mu = {
+                    'uid': uid_map[to_edge],
+                    edge_name: {
+                        'uid': uid_map[from_edge]
+                    }
                 }
-            }
+
+            else:
+                mu = {
+                    'uid': uid_map[from_edge],
+                    edge_name: {
+                        'uid': uid_map[to_edge]
+                    }
+                }
 
             dst_txn = self.dst_client.txn(read_only=False)
             dst_txn.mutate(set_obj=mu, commit_now=True)
