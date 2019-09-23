@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 try:
     from typing import Any, Dict, Union, Optional
 except:

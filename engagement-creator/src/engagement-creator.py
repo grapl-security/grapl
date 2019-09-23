@@ -206,8 +206,7 @@ class EngagementView(object):
         query = """
         query q0($a: string)
         {
-          p as var(func: eq(lens, $a)) {
-          }
+          p as var(func: eq(lens, $a)) {}
         
           q0(func: uid(p))
           {

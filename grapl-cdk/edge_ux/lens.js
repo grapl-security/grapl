@@ -1,7 +1,11 @@
 // Stylesheets
 console.log('entry.js init');
 
-const engagement_edge = "";
+const engagement_edge = "https://jzfee2ecp8.execute-api.us-east-1.amazonaws.com/prod/";
+
+if (engagement_edge.length === 0) {
+    console.assert("Engagement Edge URL can not be empty. Run build.sh");
+}
 
 console.log(`Connecting to ${engagement_edge}`);
 
@@ -220,12 +224,14 @@ class GraphManager {
 const edgeNames = [
     'children',
     'bin_file',
-    'created_file',
+    'created_files',
     'scope',
 ];
 
 const edgeLinksFromNode = (node) => {
     const links = [];
+
+    if (node.lens) { return [] }
 
     for (const edgeName of edgeNames) {
         if (node[edgeName] !== undefined) {
@@ -420,7 +426,7 @@ const processProperties = [
 ];
 
 const fileProperties = [
-    'process_id', 'node_key', 'file_path'
+    'node_key', 'file_path'
 ];
 
 

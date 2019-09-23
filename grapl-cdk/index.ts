@@ -727,9 +727,6 @@ class EngagementCreator extends cdk.Stack {
             runtime: Runtime.PYTHON_3_7
         });
 
-        // master_graph.addAccessFrom(service);
-        // engagement_graph.addAccessFrom(service);
-
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
 
@@ -788,19 +785,18 @@ class Zero {
         }
 
 
-        // const logDriver = new ecs.AwsLogDriver(stack, graph+id+'LogGroup', {
-        //     streamPrefix: graph+id,
-        // });
+        const logDriver = new ecs.AwsLogDriver({
+            streamPrefix: `ecs${graph+id}`,
+        });
 
         zeroTask.addContainer(id + 'Container', {
 
             // --my is our own hostname (graph + id)
             // --peer is the other dgraph zero hostname
-            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.0.17"),
             command,
-            // logging: logDriver
+            logging: logDriver
         });
-
 
         const zeroService = new ecs.FargateService(stack, id + 'Service', {
             cluster,  // Required
@@ -841,17 +837,17 @@ class Alpha {
             }
         );
 
-        // const logDriver = new ecs.AwsLogDriver(stack, graph+id+'LogGroup', {
-        //     streamPrefix: graph+id,
-        // });
+        const logDriver = new ecs.AwsLogDriver({
+            streamPrefix: `ecs${graph+id}`,
+        });
 
         alphaTask.addContainer(id + graph + 'Container', {
-            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.0.17"),
             command: ["dgraph", "alpha", `--my=${id}.${graph}.grapl:7080`,
                 "--lru_mb=1024", `--zero=${zero}.${graph}.grapl:5080`,
                 "--alsologtostderr"
             ],
-            // logging: logDriver
+            logging: logDriver
         });
 
         const alphaService = new ecs.FargateService(stack, id + 'Service', {
@@ -1030,7 +1026,6 @@ class EngagementUx extends cdk.Stack {
             websiteIndexDocument: 'index.html',
         });
 
-        const _this = this;
         getEdgeGatewayId(
             edge.name + 'Integration',
             (gatewayId) => {
@@ -1043,12 +1038,12 @@ class EngagementUx extends cdk.Stack {
                 for (const toModify of filesToModify) {
                     replaceInFile(toModify, toReplace, replacement)
                 }
-                console.log(path.join(__dirname, 'edge_ux/'));
-                new s3deploy.BucketDeployment(_this, id + 'Ux', {
-                    source: s3deploy.Source.asset('./edge_ux'),
-                    destinationBucket: edgeBucket,
-                    destinationKeyPrefix: 'web/static'
-                });
+        });
+        console.log(path.join(__dirname, 'edge_ux/'));
+        new s3deploy.BucketDeployment(this, id + 'Ux', {
+            source: s3deploy.Source.asset('./edge_ux'),
+            destinationBucket: edgeBucket,
+            destinationKeyPrefix: 'web/static/v0/'
         });
     }
 }
