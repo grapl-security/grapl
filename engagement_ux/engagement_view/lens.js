@@ -114,7 +114,6 @@ class GraphManager {
             .links(this.graph.links);
 
         console.log("Removed nodes and links ", this.graph.nodes, this.graph.links);
-        this.update();
     };
 
     updateGraph = (newGraph) => {
@@ -130,7 +129,6 @@ class GraphManager {
         this.simulation.force('link')
             .links(this.graph.links);
 
-        this.update();
     };
 
     update = () => {
@@ -219,88 +217,138 @@ class GraphManager {
         this.ctx.moveTo(l.source.x, l.source.y);
         this.ctx.lineTo(l.target.x, l.target.y);
     };
+
 }
 
-const edgeNames = [
-    'children',
-    'bin_file',
-    'created_files',
-    'scope',
-];
+const mapNodeProps = (node, f) => {
+    for (const prop in node) {
+        if (Object.prototype.hasOwnProperty.call(node, prop)) {
+            if(Array.isArray(node[prop])) {
+                if (node[prop].length > 0) {
+                    if (node[prop][0].uid === undefined) {
+                        f(prop)
+                    }
+                }
+            } else {
+                f(prop)
+            }
+        }
+    }
+};
+
+const mapEdgeProps = (node, f) => {
+    for (const prop in node) {
+        if (Object.prototype.hasOwnProperty.call(node, prop)) {
+            if(Array.isArray(node[prop])) {
+                for (const neighbor of node[prop]) {
+                    if (neighbor.uid !== undefined) {
+                        f(prop, neighbor)
+                    }
+                }
+            }
+        }
+    }
+};
+
+const _mapGraph = (node, visited, f) => {
+    if (visited.has(node.uid)) {
+        return
+    }
+    visited.add(node.uid);
+    mapEdgeProps(node, (edgeName, neighbor) => {
+        f(node, edgeName, neighbor);
+        _mapGraph(neighbor, visited, f)
+    })
+};
+
+const mapGraph = (node, f) => {
+  const visited = new Set();
+  mapEdgeProps(node, (edgeName, neighbor) => {
+      f(node, edgeName, neighbor);
+      _mapGraph(neighbor, visited, f)
+  })
+};
+
 
 const edgeLinksFromNode = (node) => {
     const links = [];
 
     if (node.lens) { return [] }
 
-    for (const edgeName of edgeNames) {
-        if (node[edgeName] !== undefined) {
-            for (const targetNode of node[edgeName]) {
-                const target = targetNode.uid;
-                links.push({
-                    source: node.uid,
-                    target,
-                });
-            }
-        }
-    }
+    mapEdgeProps(node, (edgeName, targetNode) => {
+        const target = targetNode.uid;
+        links.push({
+            source: node.uid,
+            target,
+        });
+    });
     return links;
 };
 
-const getNeighbors = (node) => {
-    const neighbors = [];
 
-    for (const edgeName of edgeNames) {
-        if (node[edgeName] !== undefined) {
-            for (const targetNode of node[edgeName]) {
-                const targetNodeType = getNodeType(targetNode);
-                const targetNodeLabel = getNodeLabel(targetNodeType, targetNode);
-                console.log('target', targetNode);
-                console.log('targetNodeType', targetNodeType);
-                console.log('targetNodeLabel', targetNodeLabel);
+const lensToAdjacencyMatrix = (lens) => {
+    console.log('lensNode', lens);
+    const nodes = new Map();
+    const links = new Map();
 
-                if(targetNode.risks !== undefined) {
-                    console.log('targetNode.risks ', targetNode.risks);
-                    let score = 0;
-                    const risks = [];
+    mapGraph(lens, (fromNode, edgeName, toNode) => {
+        nodes.set(fromNode.uid, fromNode);
+        nodes.set(toNode.uid, toNode);
+        let edgeList = links.get(fromNode.uid);
+        if (edgeList === undefined) {
+            edgeList = new Map();
+            edgeList.set(
+                fromNode.uid + edgeName + toNode.uid,
+                [fromNode.uid, edgeName, toNode.uid]
+            );
 
-                    for (const risk of targetNode.risks) {
-                        score += risk.risk_score;
-                        risks.push(risk.analyzer_name);
-                    }
-                    targetNode.score = score;
-                    targetNode.risk_name = risks;
-                    delete targetNode.risks
+        } else {
+            edgeList.set(
+                fromNode.uid + edgeName + toNode.uid,
+                [fromNode.uid, edgeName, toNode.uid]
+            );
+        }
+        links.set(fromNode.uid, edgeList)
+    });
+
+    return {
+        nodes, links
+    }
+};
+
+const dgraphNodesToD3Format = (dgraphNodes) => {
+    const graph = lensToAdjacencyMatrix(dgraphNodes[0]);
+
+    // Calculate risks and attach to nodes
+    for (const node of graph.nodes.values()) {
+        const edges = graph.links.get(node.uid) || new Map();
+        for (const edge of edges.values()) {
+            if (edge[1] === 'risks') {
+                const riskNode = graph.nodes.get(edge[2]);
+                if (!riskNode.risk_score) {
+                    continue
                 }
-
-                neighbors.push({
-                    ...targetNode,
-                    nodeType: targetNodeType,
-                    nodeLabel: targetNodeLabel,
-                });
+                if (node.risk === undefined) {
+                    node.risk = riskNode.risk_score
+                    node.analyzers = riskNode.analyzer_name
+                } else {
+                    node.risk += riskNode.risk_score
+                    if (node.analyzers.indexOf(riskNode.analyzer_name) === -1) {
+                        node.analyzers += ', ' + riskNode.analyzer_name
+                    }
+                }
             }
         }
     }
 
-    return neighbors
-};
-
-const dgraphNodesToD3Format = (dgraphNodes) => {
+    // Flatten nodes
     const nodes = [];
-    const links = [];
 
-    for (const node of dgraphNodes) {
-        if (node.uid === undefined) {
-            console.log('Skipping undefiend node ' + JSON.stringify(node));
+    for (const node of graph.nodes.values()) {
+        console.log('node', node);
+        if (node.risk_score || node.analyzer_name) {
             continue
         }
-
-        if(node.risks !== undefined) {
-            node.score = node.risks.score;
-            node.risk_name = node.risks.analyzer_name;
-            delete node.risks
-        }
-
         const nodeType = getNodeType(node);
         const nodeLabel = getNodeLabel(nodeType, node);
         nodes.push({
@@ -311,33 +359,47 @@ const dgraphNodesToD3Format = (dgraphNodes) => {
             x: 200 + randomInt(1, 50),
             y: 150 + randomInt(1, 50),
         });
+    }
 
-        const neighbors = getNeighbors(node);
+    // Flatten links
+    const links = [];
 
-        for (const neighbor of neighbors) {
-            nodes.push({
-                name: neighbor.uid,
-                ...neighbor,
-                x: 200 + randomInt(1, 50),
-                y: 150 + randomInt(1, 50),
-            });
+    for (const linkMap_ of graph.links) {
+        const nodeId = linkMap_[0];
+        const node = graph.nodes.get(nodeId);
 
-            const nextNeighbors = getNeighbors(neighbor);
+        if (node && node.lens) {
+            // Don't link lens nodes, it's ugly
+            continue
+        }
+        const linkMap = linkMap_[1];
+        for (const links_ of linkMap.values()) {
+            if (links_[1] === 'risks') {
+                continue
+            }
+            if (links_[1] === '~scope') {
+                continue
+            }
 
-            for (const nextNeighbor in nextNeighbors) {
-                nodes.push({
-                    name: nextNeighbor.uid,
-                    ...nextNeighbor,
-                    x: 200 + randomInt(1, 50),
-                    y: 150 + randomInt(1, 50),
+            if (links_[1][0] === '~') {
+                links.push({
+                    source: links_[2],
+                    label: links_[1].substr(1),
+                    target: links_[0],
+                });
+            } else {
+                links.push({
+                    source: links_[0],
+                    label: links_[1],
+                    target: links_[2],
                 });
             }
 
-            edgeLinksFromNode(neighbor).forEach(link => links.push(link));
         }
-
-        edgeLinksFromNode(node).forEach(link => links.push(link));
     }
+
+    console.log('links', links);
+
 
     return {
         nodes,
@@ -395,8 +457,10 @@ const getNodeType = (node) => {
 
 
 const nodeToTable = (node) => {
-    const hidden = new Set(['uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']);
-    edgeNames.forEach((name) => hidden.add(name));
+    const hidden = new Set(['risks','uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']);
+    mapEdgeProps(node, (edgeName, neighbor) => {
+        hidden.add(edgeName)
+    })
 
     let header = '<thead class="thead"><tr>';
     let output = '<tbody><tr>';
@@ -420,15 +484,6 @@ const nodeToTable = (node) => {
 };
 
 
-const processProperties = [
-    'process_id', 'node_key', 'create_time', 'arguments',
-    'process_name'
-];
-
-const fileProperties = [
-    'process_id', 'node_key', 'file_path'
-];
-
 
 const buf2hex = (buffer) => { // buffer is an ArrayBuffer
     return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
@@ -437,25 +492,35 @@ const buf2hex = (buffer) => { // buffer is an ArrayBuffer
 const hashNode = async (node) => {
     let nodeStr = "" + node.uid;
 
-    if (node.nodeType === "Process") {
-        for (const prop of processProperties) {
-            nodeStr += node[prop] || ''
+    const props = [];
+
+    mapNodeProps(node, (prop) => {
+        props.push(prop + node[prop]);
+    });
+
+    props.sort();
+    nodeStr += props.join("");
+
+    const edges = [];
+
+    for (const prop in node) {
+        if (Object.prototype.hasOwnProperty.call(node, prop)) {
+            if(Array.isArray(node[prop])) {
+                const edgeUids = [];
+                for (const neighbor of node[prop]) {
+                    if (neighbor.uid !== undefined) {
+                        edgeUids.push(prop + neighbor.uid);
+                    }
+                }
+
+                edgeUids.sort();
+                edges.push(edgeUids.join(""))
+            }
         }
     }
 
-    if (node.nodeType === "File") {
-        for (const prop of fileProperties) {
-            nodeStr += node[prop] || ''
-        }
-    }
-
-    for (const edge of edgeNames) {
-        if (node[edge] !== undefined) {
-            nodeStr += edge + node[edge].length
-        } else {
-            nodeStr += edge + '0'
-        }
-    }
+    edges.sort();
+    nodeStr += edges.join("");
 
     // return nodeStr
     return buf2hex(await window.crypto.subtle.digest(
@@ -463,6 +528,7 @@ const hashNode = async (node) => {
         new TextEncoder().encode(nodeStr)
     ));
 };
+
 
 const retrieveGraph = async (graph, lens) => {
 
@@ -503,21 +569,23 @@ const updateLoop = async (graphManager, lens) => {
             graphManager.graph, lens
         );
 
+        console.log('removed_nodes', removed_nodes);
         if (updated_nodes.length !== 0) {
             graphManager.updateGraph(dgraphNodesToD3Format(updated_nodes));
         }
 
         if (removed_nodes.length !== 0) {
-            graphManager.removeNodesAndLinks(removed_nodes);
+            // graphManager.removeNodesAndLinks(removed_nodes);
         }
     } catch (e) {
         console.warn("Failed to fetch updates ", e)
     }
 
-    setTimeout(async () => {
-        await updateLoop(graphManager, lens);
-        graphManager.update();
-    }, 1000)
+    graphManager.update();
+    // setTimeout(async () => {
+    //     await updateLoop(graphManager, lens);
+    //     graphManager.update();
+    // }, 1000)
 };
 
 function randomInt(min, max) // min and max included

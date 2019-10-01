@@ -76,29 +76,46 @@ edge_names = [
     'scope',
 ]
 
-
+# Get all nodes in a lens scope, and all of the edges from nodes in the scope to other nodes in the scope
 def get_lens_scope(dg_client, lens):
     query = """
-        query q0($a: string)
-        {
-            q as var(func: eq(lens, $a)) {
-               
+    query q0($a: string)
+    {
+        # Find the lens node, get its scope uids
+        var(func: eq(lens, $a)) {
+            scope {
+                p as _predicate_
             }
+        }
         
-            q0(func: uid(q)) {
+     
+        q0(func: eq(lens, $a)) {
+            uid,
+            node_key,
+            lens,
+            score,
+            scope {
                 uid,
-                node_key,
-                lens,
-                score,
-                scope {
-                  uid,
-                  expand(_forward_) {
-                      uid,
-                      expand(_forward_) {uid, node_key, analyzer_name, score}
+                expand(_forward_) {
+                    uid,
+                    expand(_forward_) {
+                        uid,
+                        analyzer_name,
+                        risk_score,
+                        expand(val(p)),
+
+                        ~scope @filter(eq(lens, $a) OR has(risk_score)) {
+                            uid, node_key, analyzer_name, risk_score,
+                        }
                     }
-                  }
+                    
+                    ~scope @filter(eq(lens, $a) OR has(risk_score)) {
+                        uid, node_key, analyzer_name, risk_score,
+                    }
+                }
             }
-        }"""
+        }
+    }"""
 
     txn = dg_client.txn(read_only=True)
 
@@ -113,20 +130,35 @@ def get_lens_scope(dg_client, lens):
 def hash_node(node):
     hash_str = str(node['uid'])
     print(node)
-    if node.get('process_id'):
-        for prop in process_properties:
-            hash_str += str(node.get(prop, ""))
+    props = []
+    for prop_name, prop_value in node:
+        if isinstance(prop_value, list):
+            if len(prop_value) > 0 and isinstance(prop_value[0], dict):
+                if prop_value[0].get('uid'):
+                    continue
 
-    if node.get('file_path'):
-        for prop in file_properties:
-            hash_str += str(node.get(prop, ""))
+        props.append(prop_name + str(prop_value))
 
-    for edge in edge_names:
-        if node.get(edge):
-            hash_str += edge + str(len(node[edge]))
-        else:
-            hash_str += edge + '0'
+    props.sort()
+    hash_str += "".join(props)
 
+    edges = []
+
+    for prop_name, prop_value in node:
+        if isinstance(prop_value, list):
+            if len(prop_value) > 0 and isinstance(prop_value[0], dict):
+                if not prop_value[0].get('uid'):
+                    continue
+                edge_uids = []
+                for edge in prop_value:
+                    edges.append(prop_name + edge['uid'])
+
+                edge_uids.sort()
+                edges.append("".join(edge_uids))
+
+    edges.sort()
+    print(edges)
+    hash_str += "".join(edges)
     # return hash_str
     return sha256(hash_str.encode()).hexdigest()
 
