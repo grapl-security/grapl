@@ -832,8 +832,8 @@ class Alpha {
             stack,
             id,
             {
-                cpu: 4096,
-                memoryLimitMiB: 8192,
+                cpu: 2048,
+                memoryLimitMiB: 4096,
             }
         );
 

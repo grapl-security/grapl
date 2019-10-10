@@ -12,8 +12,7 @@ extern crate lambda_runtime as lambda;
 #[macro_use]
 extern crate log;
 extern crate lru_time_cache;
-#[macro_use]
-extern crate mysql;
+
 extern crate prost;
 #[cfg(test)]
 extern crate quickcheck;
@@ -60,7 +59,7 @@ use graph_descriptions::graph_description::host::*;
 use lambda::Context;
 use lambda::error::HandlerError;
 use lru_time_cache::LruCache;
-use mysql as my;
+
 use prost::Message;
 use rusoto_core::Region;
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
@@ -381,7 +380,7 @@ fn attribute_asset_ids(
         let asset_id = match asset_id {
             Ok(asset_id) => asset_id,
             Err(e) => {
-                warn!("Failed to attribute asset it: {}", e);
+                warn!("Failed to attribute to asset id: {:?} {}", node, e);
                 dead_nodes.insert(node.get_key().to_owned());
                 continue
             }

@@ -29,7 +29,7 @@ where
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs()
-            + 86400;
+            + 900;
         Self {
             table_name: table_name.into(),
             ttl_ts,

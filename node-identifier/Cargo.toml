@@ -21,7 +21,7 @@ prost = "0.4.0"
 prost-derive = "0.4"
 prost-types = "*"
 tokio-core = "0.1"
-#postgres = "0.15.2"
+
 base64 = "0.9.2"
 
 rusoto_s3 = "0.37.0"
@@ -54,6 +54,3 @@ quickcheck_macros = "0.8.0"
 version = "0.6.*"
 features = ["v4"]
 
-[dependencies.mysql]
-version = "*"
-features = ["ssl"]

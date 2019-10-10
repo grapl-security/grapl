@@ -200,6 +200,7 @@ impl<D> AssetIdentifier<D>
             Node::IpAddressNode(_) => {
                 bail!("Can not call attribute_asset_id with IpAddressNode")
             }
+            Node::InboundConnectionNode(node) =>  (node.asset_id, node.hostname, node.host_ip),
             _ => panic!("Unsupported node type"),
         };
 
@@ -213,7 +214,7 @@ impl<D> AssetIdentifier<D>
         };
 
         // map host_id to asset_id
-        // If we don't finya oim talking ad an asset id we'll have to mark the node as dead
+        // If we don't find an asset id we'll have to mark the node as dead
         let asset_id = self.assetdb.resolve_asset_id(&host_id, node.get_timestamp());
 
         match asset_id {
