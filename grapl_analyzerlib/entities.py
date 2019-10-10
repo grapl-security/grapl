@@ -839,7 +839,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_path = self_file[0].file_path
+        self.file_path = self_file.file_path
         return self.file_path
 
     def get_asset_id(self) -> Optional[str]:
@@ -853,7 +853,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.asset_id = self_file[0].asset_id
+        self.asset_id = self_file.asset_id
         return self.asset_id
 
     def get_creator(self) -> Optional["PV"]:
