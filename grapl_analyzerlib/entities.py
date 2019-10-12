@@ -498,13 +498,13 @@ class FileQuery(Queryable):
     def get_forward_edges(self) -> List[Tuple[str, Any]]:
         return []
 
-    def get_reverse_edges(self) -> List[Tuple[str, Any]]:
+    def get_reverse_edges(self) -> List[Tuple[str, Any, str]]:
         neighbors = (
-            ("~created_files", self._creator),
-            ("~deleted_files", self._deleter),
-            ("~wrote_to_files", self._writers),
-            ("~read_files", self._readers),
-            ("~bin_file", self._spawned_from),
+            ("~created_files", self._creator, "creator"),
+            ("~deleted_files", self._deleter, "deleter"),
+            ("~wrote_to_files", self._writers, "writers"),
+            ("~read_files", self._readers, "readers"),
+            ("~bin_file", self._spawned_from, "spawned_from"),
         )
 
         return [n for n in neighbors if n[1]]
@@ -629,6 +629,20 @@ class FileView(Viewable):
             ("~bin_file", ProcessView, "spawned_from"),
         ]
 
+    def get_file_path(self) -> Optional[str]:
+        self_file = (
+            FileQuery()
+                .with_node_key(self.node_key)
+                .with_file_path()
+                .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_file:
+            return None
+
+        self.file_path = self_file.file_path
+        return self.file_path
+
     def get_file_name(self) -> Optional[str]:
         self_file = (
             FileQuery()
@@ -640,7 +654,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_name = self_file[0].file_name
+        self.file_name = self_file.file_name
         return self.file_name
 
     def get_file_extension(self) -> Optional[str]:
@@ -654,7 +668,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_extension = self_file[0].file_extension
+        self.file_extension = self_file.file_extension
         return self.file_extension
 
     def get_file_mime_type(self) -> Optional[str]:
@@ -668,7 +682,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_mime_type = self_file[0].file_mime_type
+        self.file_mime_type = self_file.file_mime_type
         return self.file_mime_type
 
     def get_file_size(self) -> Optional[int]:
@@ -682,10 +696,10 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        if not self_file[0].file_size:
+        if not self_file.file_size:
             return None
 
-        self.file_size = int(self_file[0].file_size)
+        self.file_size = int(self_file.file_size)
         return self.file_size
 
     def get_file_version(self) -> Optional[str]:
@@ -699,7 +713,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_version = self_file[0].file_version
+        self.file_version = self_file.file_version
         return self.file_version
 
     def get_file_description(self) -> Optional[str]:
@@ -713,7 +727,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_description = self_file[0].file_description
+        self.file_description = self_file.file_description
         return self.file_description
 
     def get_file_product(self) -> Optional[str]:
@@ -727,7 +741,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_product = self_file[0].file_product
+        self.file_product = self_file.file_product
         return self.file_product
 
     def get_file_company(self) -> Optional[str]:
@@ -741,7 +755,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_company = self_file[0].file_company
+        self.file_company = self_file.file_company
         return self.file_company
 
     def get_file_directory(self) -> Optional[str]:
@@ -755,7 +769,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_directory = self_file[0].file_directory
+        self.file_directory = self_file.file_directory
         return self.file_directory
 
     def get_file_inode(self) -> Optional[str]:
@@ -769,7 +783,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_inode = self_file[0].file_inode
+        self.file_inode = self_file.file_inode
         return self.file_inode
 
     def get_file_hard_links(self) -> Optional[str]:
@@ -783,7 +797,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.file_hard_links = self_file[0].file_hard_links
+        self.file_hard_links = self_file.file_hard_links
         return self.file_hard_links
 
     def get_md5_hash(self) -> Optional[str]:
@@ -797,7 +811,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.md5_hash = self_file[0].md5_hash
+        self.md5_hash = self_file.md5_hash
         return self.md5_hash
 
     def get_sha1_hash(self) -> Optional[str]:
@@ -811,7 +825,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.sha1_hash = self_file[0].sha1_hash
+        self.sha1_hash = self_file.sha1_hash
         return self.sha1_hash
 
     def get_sha256_hash(self) -> Optional[str]:
@@ -825,7 +839,7 @@ class FileView(Viewable):
         if not self_file:
             return None
 
-        self.sha256_hash = self_file[0].sha256_hash
+        self.sha256_hash = self_file.sha256_hash
         return self.sha256_hash
 
     def get_file_path(self) -> Optional[str]:
