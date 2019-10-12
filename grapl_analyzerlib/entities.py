@@ -511,40 +511,6 @@ class FileQuery(Queryable):
 
 
 class FileView(Viewable):
-    def get_property_tuples(self) -> List[Tuple[str, Any]]:
-        props = (
-            ("node_key", self.node_key),
-            ("uid", self.uid),
-            ("asset_id", self.asset_id),
-            ("file_name", self.file_name),
-            ("file_path", self.file_path),
-            ("file_extension", self.file_extension),
-            ("file_mime_type", self.file_mime_type),
-            ("file_size", self.file_size),
-            ("file_version", self.file_version),
-            ("file_description", self.file_description),
-            ("file_product", self.file_product),
-            ("file_company", self.file_company),
-            ("file_directory", self.file_directory),
-            ("file_inode", self.file_inode),
-            ("file_hard_links", self.file_hard_links),
-            ("md5_hash", self.md5_hash),
-            ("sha1_hash", self.sha1_hash),
-            ("sha256_hash", self.sha256_hash),
-        )
-
-        return [p for p in props if p[1]]
-
-    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
-        edges = (
-            ("creator", self.creator),
-            ("deleter", self.deleter),
-            ("writers", self.writers),
-            ("readers", self.readers),
-            ("spawned_from", self.spawned_from),
-        )
-        return [e for e in edges if e[1]]
-
     def __init__(
         self,
         dgraph_client: DgraphClient,
@@ -597,6 +563,41 @@ class FileView(Viewable):
         self.writers = writers
         self.readers = readers
         self.spawned_from = spawned_from
+
+
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        props = (
+            ("node_key", self.node_key),
+            ("uid", self.uid),
+            ("asset_id", self.asset_id),
+            ("file_name", self.file_name),
+            ("file_path", self.file_path),
+            ("file_extension", self.file_extension),
+            ("file_mime_type", self.file_mime_type),
+            ("file_size", self.file_size),
+            ("file_version", self.file_version),
+            ("file_description", self.file_description),
+            ("file_product", self.file_product),
+            ("file_company", self.file_company),
+            ("file_directory", self.file_directory),
+            ("file_inode", self.file_inode),
+            ("file_hard_links", self.file_hard_links),
+            ("md5_hash", self.md5_hash),
+            ("sha1_hash", self.sha1_hash),
+            ("sha256_hash", self.sha256_hash),
+        )
+
+        return [p for p in props if p[1]]
+
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
+        edges = (
+            ("creator", self.creator),
+            ("deleter", self.deleter),
+            ("writers", self.writers),
+            ("readers", self.readers),
+            ("spawned_from", self.spawned_from),
+        )
+        return [e for e in edges if e[1]]
 
     @staticmethod
     def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
@@ -871,12 +872,19 @@ class FileView(Viewable):
         return self.asset_id
 
     def get_creator(self) -> Optional["PV"]:
-        self_node = (
-            FileQuery()
-            .with_node_key(self.node_key)
-            .with_creator(ProcessQuery())
+        creator = (
+            ProcessQuery()
+            .with_created_files(FileQuery().with_node_key(self.node_key))
             .query_first(self.dgraph_client)
-        )
+        )  # type: Optional[ProcessView]
+
+        if not creator:
+            return None
+
+        if not creator.created_files:
+            return None
+
+        self_node = creator.created_files[0]
 
         if not self_node:
             return None
