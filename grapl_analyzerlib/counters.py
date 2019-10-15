@@ -44,9 +44,8 @@ class ParentChildCounter(object):
         self,
         parent_process_name: str,
         child_process_name: Optional[str] = None,
-        excluding: Optional[str] = None,
         max_count: int = 4,
-    ) -> Seen:
+    ) -> int:
         """
         Given an image name, and optionally a path, return the number of times
         they occur (alongside one another) in the table.
@@ -61,13 +60,7 @@ class ParentChildCounter(object):
             if cached_count:
                 cached_count = int(cached_count)
             if cached_count and cached_count >= max_count:
-                print(f"Cached count: {cached_count}")
-                if cached_count == 0:
-                    return Seen.Never
-                if cached_count == 1:
-                    return Seen.Once
-                else:
-                    return Seen.Many
+                return cached_count
 
         query = (
             ProcessQuery()
@@ -75,9 +68,6 @@ class ParentChildCounter(object):
             .with_process_name(eq=parent_process_name)
             .with_children(ProcessQuery().with_process_name(eq=child_process_name))
         )
-
-        if excluding:
-            query.with_node_key(eq=Not(excluding))
 
         count = query.get_count(self.dgraph_client)
 
@@ -87,9 +77,4 @@ class ParentChildCounter(object):
             elif count >= cached_count:
                 self.cache.set(key, count)
 
-        if count == 0:
-            return Seen.Never
-        if count == 1:
-            return Seen.Once
-        else:
-            return Seen.Many
+        return count
