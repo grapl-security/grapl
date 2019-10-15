@@ -1,10 +1,10 @@
 import json
 
-from grapl_analyzerlib.entities import NodeView
+from grapl_analyzerlib.entities import NodeView, NodeViewT
 
 
 class ExecutionHit(object):
-    def __init__(self, analyzer_name: str, node_view: NodeView, risk_score: int = 50):
+    def __init__(self, analyzer_name: str, node_view: NodeViewT, risk_score):
         node_view = NodeView.from_view(node_view)
         self.root_node_key = node_view.node.node_key
 

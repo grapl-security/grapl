@@ -74,6 +74,9 @@ class EdgeView(object):
         self.edge_name = edge_name
 
 
+NodeViewT = Union["PV", "FV", "EIPV", "OCV", "DNV"]
+
+
 class NodeView(Viewable):
     def get_property_tuples(self) -> List[Tuple[str, Any]]:
         return []

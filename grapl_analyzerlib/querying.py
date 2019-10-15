@@ -6,6 +6,9 @@ from typing import Optional, List, Union, Any, Set
 
 from pydgraph import DgraphClient
 
+from grapl_analyzerlib.retry import retry
+
+
 class Or(object):
     def __init__(self, *values: Union[str, int]):
         self.values = values
@@ -428,6 +431,7 @@ class Viewable(abc.ABC):
 
         return prop
 
+    @retry(delay=0.05)
     def get_properties(
         self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]
     ) -> List[str]:
@@ -451,6 +455,7 @@ class Viewable(abc.ABC):
 
         return props
 
+    @retry(delay=0.05)
     def get_edge(self, edge_name: str, edge_type: V) -> Optional[V]:
         query = f"""
             {{
@@ -474,6 +479,7 @@ class Viewable(abc.ABC):
         edge = edge_type.from_dict(self.dgraph_client, raw_edge[0][edge_name])
         return edge
 
+    @retry(delay=0.05)
     def get_edges(self, edge_name: str, edge_type: Type[V]) -> List[V]:
         query = f"""
             {{
@@ -609,6 +615,7 @@ class Queryable(abc.ABC):
     def get_neighbors(self) -> List[Q]:
         return [e[1] for e in self.get_edges() if e and e[1]]
 
+    @retry(delay=0.05)
     def query(
         self,
         dgraph_client: DgraphClient,
@@ -640,6 +647,7 @@ class Queryable(abc.ABC):
         else:
             return None
 
+    @retry(delay=0.05)
     def get_count(
         self,
         dgraph_client: DgraphClient,
