@@ -5,7 +5,7 @@ from functools import wraps
 def retry(
     ExceptionToCheck: Exception = Exception,
     on_falsey: bool = True,
-    tries: int = 4,
+    tries: int = 3,
     delay: int = 0.5,
     backoff: int = 2,
 ):
@@ -40,7 +40,8 @@ def retry(
                         time.sleep(mdelay)
                         mtries -= 1
                         mdelay *= backoff
-
+                    else:
+                        return result
                 except ExceptionToCheck:
                     time.sleep(mdelay)
                     mtries -= 1
