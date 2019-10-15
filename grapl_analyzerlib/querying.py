@@ -762,3 +762,22 @@ class Queryable(abc.ABC):
             """
 
         return block
+
+
+def _traverse_query(node: Queryable, f: Callable[[Queryable], None], visited: Set[Queryable]):
+    if node in visited:
+        return
+
+    visited.add(node)
+
+    f(node)
+    for neighbor in node.get_neighbors():
+        _traverse_query(neighbor, f, visited)
+
+
+def traverse_query(node: Queryable, f: Callable[[Queryable], None]):
+    f(node)
+    visited = set()
+    visited.add(node)
+    for neighbor in node.get_neighbors():
+        _traverse_query(neighbor, f, visited)
