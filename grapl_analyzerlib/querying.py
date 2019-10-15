@@ -117,13 +117,13 @@ class Contains(Cmp):
 
 
 def get_var_block(
-    node: Any, edge_name: str, binding_num: int, root: Any, already_converted: Set[Any]
+    node: Any, result_name: str, edge_name: str, binding_num: int, root: Any, already_converted: Set[Any]
 ) -> str:
     var_block = ""
     if node and node not in already_converted:
-        var_block = node._get_var_block(binding_num, root, already_converted)
+        var_block = node._get_var_block(binding_num, result_name, root, already_converted)
         if node == root:
-            var_block = f"Binding{binding_num} as {edge_name} {var_block}"
+            var_block = f"Binding{result_name}{binding_num} as {edge_name} {var_block}"
         else:
             var_block = f"{edge_name} {var_block}"
 
@@ -283,9 +283,9 @@ def _get_queries(
     var_blocks = []
 
     for i, node in enumerate(all_nodes):
-        bindings.append(f"Binding{i}")
+        bindings.append(f"Binding{result_name}{i}")
         var_blocks.append(
-            node._get_var_block_root(i, root=node_query, node_key=node_key)
+            node._get_var_block_root(i, result_name, root=node_query, node_key=node_key)
         )
 
     return _build_query(node_query, var_blocks, bindings, count, first=first, result_name=result_name)
@@ -671,9 +671,9 @@ class Queryable(abc.ABC):
             return raw_count[0].get("count", 0)
 
     def to_query(self, count: bool = False, first: Optional[int] = None) -> str:
-        var_block = self._get_var_block_root(0, root=self)
+        var_block = self._get_var_block_root(0, 'res', root=self)
 
-        return _build_query(self, [var_block], ["Binding0"], count=count, first=first)
+        return _build_query(self, [var_block], ["Bindingres0"], count=count, first=first)
 
     def _filters(self) -> str:
         inner_filters = []
@@ -691,7 +691,7 @@ class Queryable(abc.ABC):
         return f"@filter({'AND'.join(inner_filters)})"
 
     def _get_var_block(
-        self, binding_num: int, root: Any, already_converted: Set[Any]
+        self, result_name: str, binding_num: int, root: Any, already_converted: Set[Any]
     ) -> str:
         if self in already_converted:
             return ""
@@ -704,7 +704,7 @@ class Queryable(abc.ABC):
         for edge_tuple in self.get_edges():
             edge_name, edge = edge_tuple[0], edge_tuple[1]
             var_block = get_var_block(
-                edge, edge_name, binding_num, root, already_converted
+                edge, result_name, edge_name, binding_num, root, already_converted
             )
             edge_var_blocks.append(var_block)
 
@@ -720,12 +720,12 @@ class Queryable(abc.ABC):
         return block
 
     def _get_var_block_root(
-        self, binding_num: int, root: Any, node_key: Optional[str] = None
+        self, binding_num: int, result_name: str, root: Any, node_key: Optional[str] = None
     ):
         already_converted = {self}
         root_var = ""
         if self == root:
-            root_var = f"Binding{binding_num} as "
+            root_var = f"Binding{result_name}{binding_num} as "
 
         filters = self._filters()
 
@@ -734,7 +734,7 @@ class Queryable(abc.ABC):
         for edge_tuple in self.get_edges():
             edge_name, edge = edge_tuple[0], edge_tuple[1]
             var_block = get_var_block(
-                edge, edge_name, binding_num, root, already_converted
+                edge, result_name, edge_name, binding_num, root, already_converted
             )
             edge_var_blocks.append(var_block)
 
