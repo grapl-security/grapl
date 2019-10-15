@@ -1567,7 +1567,7 @@ class OutboundConnectionQuery(Queryable):
         return [e for e in edges if e[1]]
 
     def get_reverse_edges(self) -> List[Tuple[str, Any]]:
-        edges = [("~connected_to", self._connecting_process)]
+        edges = [("~created_connection", self._connecting_process)]
         return [e for e in edges if e[1]]
 
     def with_external_connection(self, external_ip: "EIPQ") -> "OCQ":
