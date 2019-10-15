@@ -77,7 +77,7 @@ class ParentChildCounter(object):
         )
 
         if excluding:
-            query.with_node_key(Not(excluding))
+            query.with_node_key(eq=Not(excluding))
 
         count = query.get_count(self.dgraph_client)
 
