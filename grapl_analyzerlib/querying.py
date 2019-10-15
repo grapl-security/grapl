@@ -131,6 +131,8 @@ def _generate_filter(comparisons_list: List[List[Cmp]]) -> str:
     and_filters = []
 
     for comparisons in comparisons_list:
+        if len(comparisons) > 1:
+            comparisons = [c for c in comparisons if not isinstance(c, Has)]
         filters = [comparison.to_filter() for comparison in comparisons]
         filters = [f for f in filters if f]
         if not filters:

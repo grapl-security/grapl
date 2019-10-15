@@ -314,7 +314,7 @@ class FileQuery(Queryable):
         # Attributes
         self._file_name = []  # type: List[List[Cmp]]
         self._asset_id = []  # type: List[List[Cmp]]
-        self._file_path = [[Has("file_path")]]  # type: List[List[Cmp]]
+        self._file_path = []  # type: List[List[Cmp]]
         self._file_extension = []  # type: List[List[Cmp]]
         self._file_mime_type = []  # type: List[List[Cmp]]
         self._file_size = []  # type: List[List[Cmp]]
@@ -633,9 +633,9 @@ class FileView(Viewable):
     def get_file_path(self) -> Optional[str]:
         self_file = (
             FileQuery()
-                .with_node_key(self.node_key)
-                .with_file_path()
-                .query_first(dgraph_client=self.dgraph_client)
+            .with_node_key(self.node_key)
+            .with_file_path()
+            .query_first(dgraph_client=self.dgraph_client)
         )
 
         if not self_file:
@@ -926,7 +926,7 @@ class ProcessQuery(Queryable):
         self._process_name = []  # type: List[List[Cmp]]
         self._process_command_line = []  # type: List[List[Cmp]]
         self._process_guid = []  # type: List[List[Cmp]]
-        self._process_id = [[Has('process_id')]]  # type: List[List[Cmp]]
+        self._process_id = []  # type: List[List[Cmp]]
         self._created_timestamp = []  # type: List[List[Cmp]]
         self._terminated_timestamp = []  # type: List[List[Cmp]]
         self._last_seen_timestamp = []  # type: List[List[Cmp]]
