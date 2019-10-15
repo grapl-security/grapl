@@ -19,9 +19,8 @@ class Analyzer(abc.ABC):
         self.dgraph_client = dgraph_client
 
     @classmethod
-    @abc.abstractmethod
     def build(cls: Type[A], dgraph_client: DgraphClient) -> A:
-        pass
+        return cls(dgraph_client)
 
     @abc.abstractmethod
     def get_queries(self) -> OneOrMany[Queryable]:
