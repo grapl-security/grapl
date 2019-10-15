@@ -905,16 +905,37 @@ class FileView(Viewable):
         self.spawned_from = self_node.spawned_from
         return self.spawned_from
 
+    def get_neighbors(self) -> List[Any]:
+        neighbors = (self.creator, self.deleter, self.readers, self.writers, self.spawned_from)
+
+        return [n for n in neighbors if n]
+
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
+        edges = []
+        node_dict["node_type"] = "File"
 
         for prop_name, prop in self.get_property_tuples():
             node_dict[prop_name] = prop
 
+        for edge_name, edge in self.get_edge_tuples():
+            if isinstance(edge, list):
+                for e in edge:
+                    node_dict[edge_name] = e.node_key
+                    edges.append(
+                        {"from": self.node_key, "edge_name": edge_name, "to": e.node_key}
+                    )
+            else:
+                node_dict[edge_name] = edge.node_key
+
+                edges.append(
+                    {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
+                )
+
         if root:
             node_dict["root"] = True
 
-        return {"node": node_dict, "edges": []}  # TODO: Generate edges
+        return {"node": node_dict, "edges": edges}
 
 
 class ProcessQuery(Queryable):
