@@ -68,7 +68,7 @@ class ExampleAnalyzer(Analyzer):
     def build(cls, client: DgraphClient):
         return ExampleAnalyzer(client, "otherdep")
 
-    def get_query(self):
+    def get_queries(self):
         return ProcessQuery().with_process_name(eq="evil.exe")
 
     def on_response(self, response: ProcessView, output: Any):

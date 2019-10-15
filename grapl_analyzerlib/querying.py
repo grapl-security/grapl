@@ -244,6 +244,7 @@ def _build_query(
     bindings: List[str],
     count: bool = False,
     first: Optional[int] = None,
+    result_name='res'
 ) -> str:
     joined_vars = "\n".join(var_blocks)
     if not count:
@@ -260,7 +261,7 @@ def _build_query(
             {{
             {joined_vars}
             
-            res(func: uid({", ".join(bindings)}) {first}) {{
+            {result_name}(func: uid({", ".join(bindings)}) {first}) {{
                 uid,
                 {expansion}
             }}
@@ -271,7 +272,8 @@ def _build_query(
 
 
 def _get_queries(
-    node_query: Any, node_key: str, count: bool = False, first: Optional[int] = None
+    node_query: Any, node_key: str, count: bool = False, first: Optional[int] = None,
+    result_name='res',
 ):
     if not first:
         first = 1
@@ -286,7 +288,7 @@ def _get_queries(
             node._get_var_block_root(i, root=node_query, node_key=node_key)
         )
 
-    return _build_query(node_query, var_blocks, bindings, count, first=first)
+    return _build_query(node_query, var_blocks, bindings, count, first=first, result_name=result_name)
 
 
 def _str_cmps(
