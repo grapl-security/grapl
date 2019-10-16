@@ -1,6 +1,4 @@
 import json
-from collections import Mapping
-from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Optional, Union, Type, Callable
 
 from pydgraph import DgraphClient, Txn
@@ -8,6 +6,30 @@ from pydgraph import DgraphClient, Txn
 from grapl_analyzerlib.entities import NodeView, ProcessView, PV, ProcessQuery
 from grapl_analyzerlib.querying import Queryable, Viewable, PropertyFilter, V, StrCmp, Cmp, _str_cmps, Has, Eq, Not
 
+
+def get_node_view(client: DgraphClient, node_key: str) -> Optional['NodeView']:
+    f"""
+        {{
+            nv as var(func: eq(node_key, "{node_key}"), first: 1) {{
+                p as _predicate_
+            }}
+        
+            res(func: uid(nv), first: 1) {{
+                uid,
+                expand(val(p))
+            }}
+        }}
+    """
+
+    txn = client.txn(read_only=True, best_effort=False)
+    try:
+        res = json.loads(txn.query())['res']
+    finally:
+        txn.discard()
+    if not res:
+        return None
+    else:
+        return NodeView.from_dict(client, res[0])
 
 def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
     func_filter = f'eq(node_key, "{node["node_key"]}")'
@@ -424,6 +446,39 @@ class EngagementView(Viewable):
             client = self.engagement_client
         else:
             client = self.engagement_client.dst_client
+
+        p = (
+            ProcessQuery()
+                .with_node_key(node_key)
+                .with_process_id()
+                .with_process_name()
+                .query_first(client)
+        )  # type: Optional[ProcessView]
+
+        if not p:
+            return None
+
+        self.scope.append(
+            NodeView(
+                self.engagement_client,
+                node_key,
+                p.uid,
+                p
+            )
+        )
+
+        return p
+
+    def get_node(self, node_key: str, copy=True) -> Optional['NodeView']:
+        for node in self.scope:
+            if node.get_node_key() == node_key:
+                return node
+
+        if copy:
+            client = self.engagement_client
+        else:
+            client = self.engagement_client.dst_client
+
 
         p = (
             ProcessQuery()

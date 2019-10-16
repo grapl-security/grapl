@@ -157,6 +157,23 @@ class NodeView(Viewable):
             return v
         return NodeView(v.dgraph_client, v.node_key, v.uid, v)
 
+    @classmethod
+    def from_dict(cls: Type[V], dgraph_client: DgraphClient, d: Dict[str, Any]) -> V:
+
+        if d.get('process_id', d.get('process_name')):
+            node = ProcessView.from_dict(dgraph_client, d)
+        elif d.get('file_path'):
+            node = FileView.from_dict(dgraph_client, d)
+        elif d.get('external_ip'):
+            node = FileView.from_dict(dgraph_client, d)
+        elif d.get('node_type'):
+            node = DynamicNodeView.from_dict(dgraph_client, d)
+
+        else:
+            raise Exception(f'Invalid scoped node type: {d}')
+
+        return NodeView(dgraph_client, node.node_key, node.uid, node)
+
     def get_node_key(self) -> str:
         return self.node_key
 
