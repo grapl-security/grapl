@@ -157,6 +157,31 @@ class NodeView(Viewable):
             return v
         return NodeView(v.dgraph_client, v.node_key, v.uid, v)
 
+    @staticmethod
+    def from_node_key(client, node_key):
+        f"""
+            {{
+                nv as var(func: eq(node_key, "{node_key}"), first: 1) {{
+                    p as _predicate_
+                }}
+            
+                res(func: uid(nv), first: 1) {{
+                    uid,
+                    expand(val(p))
+                }}
+            }}
+        """
+
+        txn = client.txn(read_only=True, best_effort=False)
+        try:
+            res = json.loads(txn.query())['res']
+        finally:
+            txn.discard()
+        if not res:
+            return None
+        else:
+            return NodeView.from_dict(client, res[0])
+
     @classmethod
     def from_dict(cls: Type[V], dgraph_client: DgraphClient, d: Dict[str, Any]) -> V:
 
