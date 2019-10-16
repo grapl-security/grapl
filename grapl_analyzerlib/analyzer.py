@@ -26,3 +26,29 @@ class Analyzer(abc.ABC):
     @abc.abstractmethod
     def on_response(self, response: Viewable, output: Any):
         pass
+
+# class HistoryRemovalAnalyzer(Analyzer):
+#     def __init__(self, dgraph_client: DgraphClient) -> None:
+#         super(HistoryRemovalAnalyzer).__init__(dgraph_client)
+#
+#     @classmethod
+#     def build(cls, dgraph_client: DgraphClient) -> A:
+#         return HistoryRemovalAnalyzer(dgraph_client)
+#
+#     def get_queries(self) -> ProcessQuery:
+#         return (
+#             ProcessQuery()
+#             .with_deleted_files(
+#                 FileQuery()
+#                 .with_file_path(ends_with="_history")
+#             )
+#         )
+#
+#     def on_response(self, response: ProcessView, output: Any):
+#         output.send(
+#             ExecutionHit(
+#                 analyzer_name="HistoryRemoval",
+#                 node_view=response,
+#                 risk_score=75
+#             )
+#         )
