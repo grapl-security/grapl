@@ -7,30 +7,6 @@ from grapl_analyzerlib.entities import NodeView, ProcessView, PV, ProcessQuery
 from grapl_analyzerlib.querying import Queryable, Viewable, PropertyFilter, V, StrCmp, Cmp, _str_cmps, Has, Eq, Not
 
 
-def get_node_view(client: DgraphClient, node_key: str) -> Optional['NodeView']:
-    f"""
-        {{
-            nv as var(func: eq(node_key, "{node_key}"), first: 1) {{
-                p as _predicate_
-            }}
-        
-            res(func: uid(nv), first: 1) {{
-                uid,
-                expand(val(p))
-            }}
-        }}
-    """
-
-    txn = client.txn(read_only=True, best_effort=False)
-    try:
-        res = json.loads(txn.query())['res']
-    finally:
-        txn.discard()
-    if not res:
-        return None
-    else:
-        return NodeView.from_dict(client, res[0])
-
 def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
     func_filter = f'eq(node_key, "{node["node_key"]}")'
     return f"""
@@ -479,25 +455,11 @@ class EngagementView(Viewable):
         else:
             client = self.engagement_client.dst_client
 
+        node = NodeView.from_node_key(client, node_key)
 
-        p = (
-            ProcessQuery()
-                .with_node_key(node_key)
-                .with_process_id()
-                .with_process_name()
-                .query_first(client)
-        )  # type: Optional[ProcessView]
-
-        if not p:
+        if not node:
             return None
 
-        self.scope.append(
-            NodeView(
-                self.engagement_client,
-                node_key,
-                p.uid,
-                p
-            )
-        )
+        self.scope.append(node)
 
-        return p
+        return node
