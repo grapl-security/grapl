@@ -3,6 +3,8 @@ from typing import Any, Type, TypeVar, List, Union
 
 from pydgraph import DgraphClient
 
+from grapl_analyzerlib.entities import ProcessQuery, FileQuery, ProcessView
+from grapl_analyzerlib.execution import ExecutionHit
 from grapl_analyzerlib.querying import Viewable, Queryable
 
 A = TypeVar("A", bound="Analyzer")
@@ -27,14 +29,8 @@ class Analyzer(abc.ABC):
     def on_response(self, response: Viewable, output: Any):
         pass
 
+
 # class HistoryRemovalAnalyzer(Analyzer):
-#     def __init__(self, dgraph_client: DgraphClient) -> None:
-#         super(HistoryRemovalAnalyzer).__init__(dgraph_client)
-#
-#     @classmethod
-#     def build(cls, dgraph_client: DgraphClient) -> A:
-#         return HistoryRemovalAnalyzer(dgraph_client)
-#
 #     def get_queries(self) -> ProcessQuery:
 #         return (
 #             ProcessQuery()

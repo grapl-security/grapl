@@ -158,7 +158,7 @@ class NodeView(Viewable):
         return NodeView(v.dgraph_client, v.node_key, v.uid, v)
 
     def get_node_key(self) -> str:
-        return self.node.node_key
+        return self.node_key
 
     def as_process_view(self) -> Optional["PV"]:
         if isinstance(self.node, ProcessView):
@@ -547,7 +547,7 @@ class FileView(Viewable):
         self.uid = uid  # type: Optional[str]
         self.asset_id = asset_id
         self.file_name = file_name
-        self.file_path = file_path
+        self.file_path = file_path or self.get_file_path()
         self.file_extension = file_extension
         self.file_mime_type = file_mime_type
         self.file_size = int(file_size) if file_size else None
@@ -924,13 +924,10 @@ class FileView(Viewable):
         for edge_name, edge in self.get_edge_tuples():
             if isinstance(edge, list):
                 for e in edge:
-                    node_dict[edge_name] = e.node_key
                     edges.append(
                         {"from": self.node_key, "edge_name": edge_name, "to": e.node_key}
                     )
             else:
-                node_dict[edge_name] = edge.node_key
-
                 edges.append(
                     {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
                 )
@@ -1025,9 +1022,9 @@ class ProcessQuery(Queryable):
 
     def with_process_id(
         self,
-        eq: Optional[Union[str, List[int], Not, List[Not]]] = None,
-        gt: Optional[Union[str, List[int], Not, List[Not]]] = None,
-        lt: Optional[Union[str, List[int], Not, List[Not]]] = None,
+        eq: Optional[Union[int, List[int], Not, List[Not]]] = None,
+        gt: Optional[Union[int, List[int], Not, List[Not]]] = None,
+        lt: Optional[Union[int, List[int], Not, List[Not]]] = None,
     ) -> "PQ":
         self._process_id.extend(_int_cmps("process_id", eq, gt, lt))
         return self
@@ -1193,7 +1190,7 @@ class ProcessView(Viewable):
         self.asset_id = asset_id
         self.process_command_line = process_command_line
         self.process_guid = process_guid
-        self.process_id = process_id
+        self.process_id = process_id or self.get_process_id()
         self.created_timestamp = created_timestamp
         self.terminated_timestamp = terminated_timestamp
         self.last_seen_timestamp = last_seen_timestamp
@@ -1214,7 +1211,7 @@ class ProcessView(Viewable):
             ("process_name", str),
             ("process_command_line", str),
             ("process_guid", str),
-            ("process_id", str),
+            ("process_id", int),
             ("created_timestamp", int),
             ("terminated_timestamp", int),
             ("last_seen_timestamp", int),
@@ -1330,7 +1327,7 @@ class ProcessView(Viewable):
         self.process_name = self_process.process_name
         return self.process_name
 
-    def get_process_id(self) -> Optional[str]:
+    def get_process_id(self) -> Optional[int]:
         self_process = (
             ProcessQuery()
                 .with_node_key(self.node_key)
@@ -1341,7 +1338,8 @@ class ProcessView(Viewable):
         if not self_process:
             return None
 
-        self.process_id = self_process.process_id
+        if self_process.process_id:
+            self.process_id = int(self_process.process_id)
         return self.process_id
 
     def get_process_command_line(self) -> Optional[str]:
@@ -1528,13 +1526,10 @@ class ProcessView(Viewable):
         for edge_name, edge in self.get_edge_tuples():
             if isinstance(edge, list):
                 for e in edge:
-                    node_dict[edge_name] = e.node_key
                     edges.append(
                         {"from": self.node_key, "edge_name": edge_name, "to": e.node_key}
                     )
             else:
-                node_dict[edge_name] = edge.node_key
-
                 edges.append(
                     {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
                 )
