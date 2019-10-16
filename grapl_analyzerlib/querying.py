@@ -122,7 +122,6 @@ def get_var_block(
     var_block = ""
     if node and node not in already_converted:
         var_block = node._get_var_block(
-            edge_name=edge_name,
             binding_num=binding_num,
             root=root,
             already_converted=already_converted,
