@@ -435,7 +435,7 @@ class Viewable(abc.ABC):
         finally:
             txn.discard()
         raw_prop = res["q0"]
-        if not raw_prop and not raw_prop[0].get(prop_name):
+        if not raw_prop or not raw_prop[0].get(prop_name):
             return None
 
         prop = prop_type(raw_prop[0][prop_name])
@@ -492,7 +492,7 @@ class Viewable(abc.ABC):
             txn.discard()
 
         raw_edge = res["q0"]
-        if not raw_edge and not raw_edge[0].get(edge_name):
+        if not raw_edge or not raw_edge[0].get(edge_name):
             return None
 
         edge = edge_type.from_dict(self.dgraph_client, raw_edge[0][edge_name])
@@ -521,7 +521,7 @@ class Viewable(abc.ABC):
 
         raw_edges = res["q0"]
 
-        if not raw_edges and not raw_edges[0].get(edge_name):
+        if not raw_edges or not raw_edges[0].get(edge_name):
             return []
 
         raw_edges = raw_edges[0][edge_name]

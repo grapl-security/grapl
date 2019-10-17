@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="grapl_analyzerlib",
-    version="0.1.160",
+    version="0.1.161",
     description="Library for Grapl Analyzers",
     url="https://github.com/insanitybit/grapl/",
     author="insanitybit",
