@@ -159,7 +159,7 @@ class NodeView(Viewable):
 
     @staticmethod
     def from_node_key(client, node_key):
-        f"""
+        query = f"""
             {{
                 nv as var(func: eq(node_key, "{node_key}"), first: 1) {{
                     p as _predicate_
@@ -174,7 +174,7 @@ class NodeView(Viewable):
 
         txn = client.txn(read_only=True, best_effort=False)
         try:
-            res = json.loads(txn.query())['res']
+            res = json.loads(txn.query(query))['res']
         finally:
             txn.discard()
         if not res:
