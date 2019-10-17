@@ -174,7 +174,7 @@ class NodeView(Viewable):
 
         txn = client.txn(read_only=True, best_effort=False)
         try:
-            res = json.loads(txn.query(query))['res']
+            res = json.loads(txn.query(query).json)['res']
         finally:
             txn.discard()
         if not res:
