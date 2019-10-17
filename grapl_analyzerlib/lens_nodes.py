@@ -102,10 +102,13 @@ class CopyingTransaction(Txn):
 
         # Otherwise, try to copy from src to dst
         # Query source
-        res = (
-            self.src_client.txn(read_only=True).query(query, variables, timeout, metadata, credentials)
-        )
-
+        txn = self.src_client.txn(read_only=True)
+        try:
+            res = (
+                txn.query(query, variables, timeout, metadata, credentials)
+            )
+        finally:
+            txn.discard()
         # If it isn't in the source, return the empty response
         _res = json.loads(res.json)
 
@@ -127,9 +130,13 @@ class CopyingTransaction(Txn):
             try:
                 dst_txn = self.dst_client.txn(read_only=False, best_effort=False)  # type: Txn
 
-                res = (
-                    self.dst_client.txn(read_only=False).query(query, variables, timeout, metadata, credentials)
-                ).json
+                _txn = self.dst_client.txn(read_only=False)
+                try:
+                    res = (
+                        _txn.query(query, variables, timeout, metadata, credentials)
+                    ).json
+                finally:
+                    _txn.discard()
 
                 res = json.loads(res)['res']
 
@@ -171,10 +178,12 @@ class CopyingTransaction(Txn):
             dst_txn.mutate(set_obj=mu, commit_now=True)
 
         # Query dst_graph again
-        return (
-            super().query(query, variables, timeout, metadata, credentials)
-        )
-
+        txn = super()
+        try:
+            qr = txn.query(query, variables, timeout, metadata, credentials)
+        finally:
+            txn.discard()
+        return qr
 
 class CopyingDgraphClient(DgraphClient):
     def __init__(self, src_client: DgraphClient, dst_client: DgraphClient) -> None:

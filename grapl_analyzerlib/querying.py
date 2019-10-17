@@ -428,8 +428,12 @@ class Viewable(abc.ABC):
             
             }}
         """
-        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
 
+        txn = self.dgraph_client.txn(read_only=True)
+        try:
+            res = json.loads(txn.query(query).json)
+        finally:
+            txn.discard()
         raw_prop = res["q0"]
         if not raw_prop:
             return None
@@ -451,8 +455,11 @@ class Viewable(abc.ABC):
             
             }}
         """
-        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
-
+        txn = self.dgraph_client.txn(read_only=True)
+        try:
+            res = json.loads(txn.query(query).json)
+        finally:
+            txn.discard()
         raw_props = res["q0"]
 
         if not raw_props:
@@ -477,7 +484,12 @@ class Viewable(abc.ABC):
             
             }}
         """
-        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
+
+        txn = self.dgraph_client.txn(read_only=True)
+        try:
+            res = json.loads(txn.query(query).json)
+        finally:
+            txn.discard()
 
         raw_edge = res["q0"]
         if not raw_edge:
@@ -501,7 +513,11 @@ class Viewable(abc.ABC):
             
             }}
         """
-        res = json.loads(self.dgraph_client.txn(read_only=True).query(query).json)
+        txn = self.dgraph_client.txn(read_only=True)
+        try:
+            res = json.loads(txn.query(query).json)
+        finally:
+            txn.discard()
 
         raw_edges = res["q0"]
 
@@ -634,9 +650,11 @@ class Queryable(abc.ABC):
         else:
             query_str = self.to_query(first=first)
 
-        raw_views = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
-            "res"
-        ]
+        txn = dgraph_client.txn(read_only=True)
+        try:
+            raw_views = json.loads(txn.query(query_str).json)['res']
+        finally:
+            txn.discard()
 
         if not raw_views:
             return []
@@ -666,10 +684,12 @@ class Queryable(abc.ABC):
         else:
             query_str = self.to_query(count=True, first=max or 1000)
 
-        raw_count = json.loads(dgraph_client.txn(read_only=True).query(query_str).json)[
-            "res"
-        ]
-
+        txn = dgraph_client.txn(read_only=True)
+        try:
+            raw_count = json.loads(txn.query(query_str).json)['res']
+        finally:
+            txn.discard()
+            
         if not raw_count:
             return 0
         else:
