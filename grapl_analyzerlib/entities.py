@@ -161,16 +161,13 @@ class NodeView(Viewable):
     @staticmethod
     def from_node_key(client, node_key):
         query = f"""
-            {{
-                nv as var(func: eq(node_key, "{node_key}"), first: 1) {{
-                    p as _predicate_
-                }}
-            
-                res(func: uid(nv), first: 1) {{
-                    uid,
-                    expand(val(p))
-                }}
+        {{
+
+            res(func: eq(node_key, "{node_key}"), first: 1) {{
+                uid,
+                expand(_forward_)
             }}
+        }}
         """
 
         txn = client.txn(read_only=True, best_effort=False)
