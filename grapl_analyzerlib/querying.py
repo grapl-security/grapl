@@ -421,7 +421,7 @@ class Viewable(abc.ABC):
     ) -> Optional[Union[str, int]]:
         query = f"""
             {{
-                q0(func: uid("{self.uid}")) {{
+                q0(func: uid("{self.uid}")) @cascade {{
                     uid,
                     {prop_name}
                 }}
@@ -448,7 +448,7 @@ class Viewable(abc.ABC):
     ) -> List[str]:
         query = f"""
             {{
-                q0(func: uid("{self.uid}")) {{
+                q0(func: uid("{self.uid}")) @cascade {{
                     uid,
                     {prop_name}
                 }}
@@ -492,7 +492,7 @@ class Viewable(abc.ABC):
             txn.discard()
 
         raw_edge = res["q0"]
-        if not raw_edge:
+        if not raw_edge and not raw_edge[0].get(edge_name):
             return None
 
         edge = edge_type.from_dict(self.dgraph_client, raw_edge[0][edge_name])
@@ -521,7 +521,7 @@ class Viewable(abc.ABC):
 
         raw_edges = res["q0"]
 
-        if not raw_edges:
+        if not raw_edges and not raw_edges[0].get(edge_name):
             return []
 
         raw_edges = raw_edges[0][edge_name]
@@ -689,7 +689,7 @@ class Queryable(abc.ABC):
             raw_count = json.loads(txn.query(query_str).json)['res']
         finally:
             txn.discard()
-            
+
         if not raw_count:
             return 0
         else:
