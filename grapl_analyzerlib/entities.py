@@ -78,11 +78,6 @@ NodeViewT = Union["PV", "FV", "EIPV", "OCV", "DNV"]
 
 
 class NodeView(Viewable):
-    def get_property_tuples(self) -> List[Tuple[str, Any]]:
-        return []
-
-    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
-        return []
 
     def __init__(
             self,
@@ -93,6 +88,12 @@ class NodeView(Viewable):
     ):
         super().__init__(dgraph_client, node_key, uid)
         self.node = node
+
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        return []
+
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
+        return []
 
     @staticmethod
     def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
@@ -958,7 +959,6 @@ class FileView(Viewable):
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
         edges = []
-        node_dict["node_type"] = "File"
 
         for prop_name, prop in self.get_property_tuples():
             node_dict[prop_name] = prop
@@ -1568,7 +1568,6 @@ class ProcessView(Viewable):
     def to_dict(self, root=False) -> Dict[str, Any]:
         node_dict = dict()
         edges = []
-        node_dict["node_type"] = "Process"
 
         for prop_name, prop in self.get_property_tuples():
             node_dict[prop_name] = prop
