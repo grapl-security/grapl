@@ -1525,7 +1525,15 @@ class ProcessView(Viewable):
         return self.read_files
 
     def get_neighbors(self) -> List[Any]:
-        neighbors = (self.parent, self.bin_file, self.children, self.deleted_files)
+        neighbors = (
+            self.bin_file,
+            self.children,
+            self.deleted_files,
+            self.created_files,
+            self.read_files,
+            self.created_connections,
+            self.children,
+        )
 
         return [n for n in neighbors if n]
 

@@ -435,7 +435,7 @@ class Viewable(abc.ABC):
         finally:
             txn.discard()
         raw_prop = res["q0"]
-        if not raw_prop:
+        if not raw_prop and not raw_prop[0].get(prop_name):
             return None
 
         prop = prop_type(raw_prop[0][prop_name])
