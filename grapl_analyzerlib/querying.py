@@ -13,6 +13,7 @@ class Or(object):
     def __init__(self, *values: Union[str, int]):
         self.values = values
 
+
 class Not(object):
     def __init__(self, value: Union[str, int]) -> None:
         self.value = value
@@ -108,12 +109,9 @@ class Contains(Cmp):
 
     def to_filter(self) -> str:
         if isinstance(self.value, Not):
-            value = self.value.value
-            escaped_value = re.escape(value)
-            return 'NOT alloftext({}, "{}")'.format(self.predicate, escaped_value)
+            return 'NOT alloftext({}, "{}")'.format(self.predicate, self.value.value)
         else:
-            escaped_value = re.escape(self.value)
-            return 'alloftext({}, "{}")'.format(self.predicate, escaped_value)
+            return 'alloftext({}, "{}")'.format(self.predicate, self.value)
 
 
 def get_var_block(
