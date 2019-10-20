@@ -1,21 +1,24 @@
 import base64
 import hashlib
+import inspect
 import json
 import os
+import random
+import sys
 import traceback
-
+from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
-
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, List, Dict, Type, Set
 
 import boto3
 import redis
-from botocore.exceptions import ClientError
-
-from grapl_analyzerlib.entities import SubgraphView, ProcessView, FileView
+from collections import defaultdict
+from grapl_analyzerlib.analyzer import Analyzer
+from grapl_analyzerlib.entities import SubgraphView, NodeView
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
+from grapl_analyzerlib.querying import _get_queries, Viewable, Queryable, traverse_query
 from pydgraph import DgraphClientStub, DgraphClient
 
 
@@ -39,48 +42,159 @@ def download_s3_file(bucket, key) -> str:
     return obj.get()["Body"].read()
 
 
+def is_analyzer(analyzer_name, analyzer_cls):
+    if analyzer_name == 'Analyzer':
+        return False
+    return hasattr(analyzer_cls, 'get_queries') and \
+           hasattr(analyzer_cls, 'build') and \
+           hasattr(analyzer_cls, 'on_response')
+
+
+def get_analyzer_objects(dgraph_client: DgraphClient) -> Dict[str, Analyzer]:
+    clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+    return {an[0]: an[1].build(dgraph_client) for an in clsmembers if is_analyzer(an[0], an[1])}
+
+
+def check_caches(file_hash: str, msg_id: str, node_key: str, analyzer_name: str) -> bool:
+    if check_msg_cache(file_hash, node_key, msg_id):
+        print('cache hit - already processed')
+        return True
+
+    if check_hit_cache(analyzer_name, node_key):
+        print('cache hit - already matched')
+        return True
+
+    return False
+
+def handle_result_graphs(analyzer, result_graphs, sender):
+    print(f'Result graph: {type(analyzer)} {result_graphs[0]}')
+    for result_graph in result_graphs:
+        analyzer.on_response(result_graph, sender)
+
+
+def get_analyzer_query_types(query: Queryable) -> Set[Type[Queryable]]:
+    query_types = set()
+    traverse_query(query, lambda node: query_types.add(node.view_type))
+    return query_types
+
+
+def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], analyzers: Dict[str, Analyzer], sender: Any):
+    if not analyzers:
+        print('Received empty dict of analyzers')
+        return
+
+    if not nodes:
+        print("Received empty array of nodes")
+
+    result_name_to_analyzer = {}
+    query_str = ""
+
+    for node in nodes:
+        querymap = defaultdict(list)
+
+        for an_name, analyzer in analyzers.items():
+            if check_caches(file, msg_id, node.node_key, an_name):
+                continue
+
+            analyzer = analyzer  # type: Analyzer
+            queries = analyzer.get_queries()
+            if isinstance(queries, list):
+
+                querymap[an_name].extend(queries)
+            else:
+                querymap[an_name].append(queries)
+
+        for an_name, queries in querymap.items():
+            analyzer = analyzers[an_name]
+            print(f'Analyzer name: {an_name}, analyzer: {analyzer}')
+            for i, query in enumerate(queries):
+                analyzer_query_types = get_analyzer_query_types(query)
+                if type(node.node) not in analyzer_query_types:
+                    continue
+                r = str(random.randint(10, 100))
+                result_name = f'{an_name}u{int(node.uid, 16)}i{i}r{r}'.strip().lower()
+                result_name_to_analyzer[result_name] = (an_name, analyzer)
+                query_str += '\n'
+                query_str += _get_queries(query, node_key=node.node_key, first=1, result_name=result_name)
+
+    if not query_str:
+        print('No nodes to query')
+        return
+
+    txn = dg_client.txn(read_only=True)
+    try:
+        response = json.loads(txn.query(query_str).json)
+    finally:
+        txn.discard()
+
+    print(f'query to analyzer map {result_name_to_analyzer}')
+
+    analyzer_to_results = defaultdict(list)
+    for result_name, results in response.items():
+        for result in results:
+            an_name, analyzer = result_name_to_analyzer[result_name]  # type: Tuple[str, Analyzer]
+
+            response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get('response', NodeView)
+            if response_ty == Viewable or response_ty == NodeView:
+                print('Got Viewable or NodeType')
+                result_graph = NodeView.from_dict(dg_client, result)
+            else:
+                result_graph = response_ty.from_dict(dg_client, result)
+
+            analyzer_to_results[an_name].append(result_graph)
+
+    with ThreadPoolExecutor(max_workers=6) as executor:
+
+        for an_name, result_graphs in analyzer_to_results.items():
+            analyzer = analyzers[an_name]
+            executor.submit(handle_result_graphs, analyzer, result_graphs, sender)
+        executor.shutdown(wait=True)
+
+
+def chunker(seq, size):
+    return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
+
+
 def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
     alpha_names = os.environ["MG_ALPHAS"].split(",")
 
-    exec(file, globals())
     try:
-        pool = ThreadPool(processes=64)
+        pool = ThreadPool(processes=4)
+
+        exec(file, globals())
+        client_stubs = [DgraphClientStub(f"{a_name}:9080") for a_name in alpha_names]
+        client = DgraphClient(*client_stubs)
+
+        analyzers = get_analyzer_objects(client)
+        if not analyzers:
+            print(f'Got no analyzers for file: {name}')
+
+        print(f'Executing analyzers: {[an for an in analyzers.keys()]}')
+
         results = []
-        for node in graph.node_iter():
-            if not node.node.node_key:
-                print(f'missing key {vars(node.node.node)} type: {type(node.node)}')
-                continue
+        for nodes in chunker([n for n in graph.node_iter()], 300):
+            print(f'Querying {len(nodes)} nodes')
 
-            if check_msg_cache(file, node.node.node_key, msg_id):
-                print('cache hit - already processed')
-                continue
-
-            if check_hit_cache(name, node.node.node_key):
-                print('cache hit - already matched')
-                continue
-
-            def exec_analyzer(analyzer, node, sender):
+            def exec_analyzer(nodes, sender):
                 try:
-                    client_stubs = [DgraphClientStub(f"{a_name}:9080") for a_name in alpha_names]
-                    client = DgraphClient(*client_stubs)
+                    exec_analyzers(client, file, msg_id, nodes, analyzers, sender)
 
-                    analyzer(client, node, sender)
-                    return node
+                    return nodes
                 except Exception as e:
                     print(traceback.format_exc())
                     print(f'Execution of {name} failed with {e} {e.args}')
                     sender.send(ExecutionFailed())
                     raise
 
-            exec_analyzer(analyzer, node, sender)
-            t = pool.apply_async(exec_analyzer, (analyzer, node, sender))
-            results.append(t)
+            exec_analyzer(nodes, sender)
+            pool.apply_async(exec_analyzer, args=(nodes, sender))
 
         pool.close()
-
         for result in results:
-            node = result.get()
-            update_msg_cache(file, node.node.node_key, msg_id)
+            for node in result.get():
+                update_msg_cache(file, node.node.node_key, msg_id)
+
+        pool.join()
 
         sender.send(ExecutionComplete())
 
@@ -92,7 +206,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
 
 def emit_event(event: ExecutionHit) -> None:
-    print("emitting event")
+    print(f"emitting event for: {event.analyzer_name}")
 
     event_s = json.dumps(
         {
@@ -194,7 +308,7 @@ def lambda_handler(events: Any, context: Any) -> None:
 
             # emit any hits to an S3 bucket
             if isinstance(result, ExecutionHit):
-                print(f"emitting event for {analyzer_name} {result.root_node_key}")
+                print(f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}")
                 emit_event(result)
                 update_msg_cache(analyzer, result.root_node_key, message['key'])
                 update_hit_cache(analyzer_name, result.root_node_key)
@@ -204,3 +318,4 @@ def lambda_handler(events: Any, context: Any) -> None:
             ), f"Analyzer {analyzer_name} failed."
 
         p.join()
+

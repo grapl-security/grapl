@@ -85,8 +85,10 @@ pub fn upload_subgraphs<S>(s3_client: &S, subgraphs: GeneratedSubgraphs) -> Resu
     // Bucket by day
     let day = epoch - (epoch % (24 * 60 * 60));
 
-    let key = format!("{}/{}",
+    // Key is day/time-hash
+    let key = format!("{}/{}-{}",
                       day,
+                      epoch,
                       base16::encode_lower(&key)
     );
 

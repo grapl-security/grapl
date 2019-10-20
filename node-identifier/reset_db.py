@@ -2,9 +2,9 @@ import time
 import boto3
 
 table_names = [
-#    'process_history_table',
-#    'file_history_table',
-    'node_id_retry_table'
+   'process_history_table',
+   'file_history_table',
+   'node_id_retry_table'
 ]
 
 

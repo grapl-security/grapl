@@ -98,7 +98,7 @@ impl OutboundConnection {
         });
 
         if self.created_timestamp!= 0 {
-            j["created_time"] = self.created_timestamp.into()
+            j["created_timestamp"] = self.created_timestamp.into()
         }
 
         if self.terminated_timestamp != 0 {

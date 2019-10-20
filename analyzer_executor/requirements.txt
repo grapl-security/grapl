@@ -1,5 +1,5 @@
 pydgraph==1.2.*
 boto3
-grapl-analyzerlib==0.1.120
+grapl-analyzerlib==0.1.163
 redis
 grpcio

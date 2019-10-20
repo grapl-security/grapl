@@ -79,43 +79,34 @@ edge_names = [
 # Get all nodes in a lens scope, and all of the edges from nodes in the scope to other nodes in the scope
 def get_lens_scope(dg_client, lens):
     query = """
-    query q0($a: string)
-    {
-        # Find the lens node, get its scope uids
-        var(func: eq(lens, $a)) {
-            scope {
-                p as _predicate_
-            }
-        }
-        
-     
-        q0(func: eq(lens, $a)) {
-            uid,
-            node_key,
-            lens,
-            score,
-            scope {
+        query q0($a: string)
+        {  
+            q0(func: eq(lens, $a)) {
                 uid,
-                expand(_forward_) {
+                node_key,
+                lens,
+                score,
+                scope {
                     uid,
                     expand(_forward_) {
-                        uid,
+                        uid,    
+                        node_key,
+                        process_name,
+                        process_id,
+                        file_path,
+                        node_type,
+                        port,
+                        created_timestamp,
                         analyzer_name,
                         risk_score,
-                        expand(val(p)),
-
                         ~scope @filter(eq(lens, $a) OR has(risk_score)) {
                             uid, node_key, analyzer_name, risk_score,
+                            lens, score
                         }
                     }
-                    
-                    ~scope @filter(eq(lens, $a) OR has(risk_score)) {
-                        uid, node_key, analyzer_name, risk_score,
-                    }
                 }
-            }
-        }
-    }"""
+            }  
+      }"""
 
     txn = dg_client.txn(read_only=True)
 
@@ -163,8 +154,29 @@ def hash_node(node):
     return sha256(hash_str.encode()).hexdigest()
 
 
+def strip_graph(graph, lens, edgename='scope'):
+    for outer_node in graph.get(edgename, []):
+        for prop, val in outer_node.items():
+            if prop == 'risks' or prop == '~risks':
+                continue
+
+            if isinstance(val, list) and isinstance(val[0], dict):
+                new_vals = []
+                for inner_val in val:
+                    rev_scope = inner_val.get('~scope', [])
+                    to_keep = False
+                    for n in rev_scope:
+                        if (n.get('lens') == lens) or n.get('analyzer_name'):
+                            to_keep = True
+                    if to_keep:
+                        new_vals.append(inner_val)
+                outer_node[prop] = new_vals
+
+
 def get_updated_graph(dg_client, initial_graph, lens):
     current_graph = get_lens_scope(dg_client, lens)
+    for graph in current_graph:
+        strip_graph(graph, lens)
 
     new_or_modified = []
     for node in current_graph:

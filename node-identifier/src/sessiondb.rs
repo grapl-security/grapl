@@ -283,7 +283,7 @@ where
             // If the timestamps are the same, we've found the session_id
             // No need to update the database here - it's already canonical,
             // with an accurate timestamp
-            if unid.timestamp == session.create_time {
+            if skewed_cmp(unid.timestamp, session.create_time) {
                 info!("Found existing session with exact create time");
                 return Ok(session.session_id);
             }
@@ -348,7 +348,7 @@ where
         // Look for last session where session.create_time <= unid.create_time
         let session = self.find_last_session_before(&unid)?;
         if let Some(mut session) = session {
-            if unid.timestamp <= session.end_time {
+            if unid.timestamp < session.end_time || skewed_cmp(unid.timestamp, session.end_time) {
                 info!("Identified session because it fell within a timeline.");
                 return Ok(session.session_id);
             }
@@ -401,7 +401,7 @@ where
         mut unid: UnidSession,
         should_default: bool,
     ) -> Result<String, Error> {
-        unid.timestamp = shave_int(unid.timestamp, 2);
+        unid.timestamp = shave_int(unid.timestamp, 3);
         if unid.is_creation {
             self.handle_creation_event(unid)
         } else {
@@ -411,7 +411,7 @@ where
 }
 
 pub fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
-    (ts_1 - (ts_1 % 100)) == (ts_2 - (ts_2 % 100))
+    ts_1 - 10000 < ts_2 && ts_1 + 10000 > ts_2
 }
 
 #[cfg(test)]

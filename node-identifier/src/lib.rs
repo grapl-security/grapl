@@ -149,13 +149,21 @@ fn into_unid_session(node: impl Into<Node>) -> Option<UnidSession> {
                 ProcessState::Created => true,
                 _ => false,
             };
+
+            let timestamp = if node.created_timestamp > 1 {
+                info!("Process was not created, but we have the creation time: {}", node.created_timestamp);
+                node.created_timestamp
+            } else {
+                node.timestamp()
+            };
+
             UnidSession {
                 pseudo_key: format!(
                     "{}{}",
                     node.get_asset_id().expect("Missing asset id"),
                     node.process_id
                 ),
-                timestamp: node.timestamp(),
+                timestamp,
                 is_creation,
             }
             .into()
