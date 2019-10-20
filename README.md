@@ -1,6 +1,6 @@
 ## Grapl
 
-Grapl is a Graph Platform for Detection and Response with a focus on helping Detection Engineers stop fighting their data and start working with it. At its core, Grapl leverages graph data structures to ensure that you can and connect your data efficiently, model attacker behaviors, and easily expand suspicious behaviors to encompass a full attack scope. 
+Grapl is a Graph Platform for Detection and Response with a focus on helping Detection Engineers stop fighting their data and start connecting it. At its core, Grapl leverages graph data structures to ensure that you can and connect your data efficiently, model attacker behaviors, and easily expand suspicious behaviors to encompass a full attack scope. 
 
 For a more in depth overview of Grapl, [read this](https://insanitybit.github.io/2019/03/09/grapl).
 
