@@ -4,9 +4,9 @@ Grapl is a Graph Platform for Detection and Response with a focus on helping Det
 
 For a more in depth overview of Grapl, [read this](https://insanitybit.github.io/2019/03/09/grapl).
 
-Essentially, Grapl will take raw logs, convert them into graphs, and merge those graphs into a Master Graph. It will then orchestrate the execution of your attack signatures, and provide tools for performing your investigations.
+Essentially, Grapl will take raw logs, convert them into graphs, and merge those graphs into a Master Graph. It will then orchestrate the execution of your attack signatures, and provide tools for performing your investigations. Or watch [this talk at BSidesLV](https://www.youtube.com/watch?v=LjCtbpXQA9U&t=8028s).
 
-Grapl supports nodes for:
+Grapl natively supports nodes for:
 
 - Processes
 - Files 
