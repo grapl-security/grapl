@@ -1,16 +1,17 @@
 ## Grapl
 
-Grapl is a Graph Platform for Detection and Response. 
+Grapl is a Graph Platform for Detection and Response with a focus on helping Detection Engineers stop fighting their data and start working with it. At its core, Grapl leverages graph data structures to ensure that you can and connect your data efficiently, model attacker behaviors, and easily expand suspicious behaviors to encompass a full attack scope. 
 
 For a more in depth overview of Grapl, [read this](https://insanitybit.github.io/2019/03/09/grapl).
 
-In short, Grapl will take raw logs, convert them into graphs, and merge those graphs into a Master Graph. It will then orchestrate the execution of your attack signatures and provide tools for performing your investigations.
+Essentially, Grapl will take raw logs, convert them into graphs, and merge those graphs into a Master Graph. It will then orchestrate the execution of your attack signatures, and provide tools for performing your investigations.
 
 Grapl supports nodes for:
 
-- Processes (Beta)
-- Files (Beta)
-- Networking (Alpha)
+- Processes
+- Files 
+- Networking
+- Plugin nodes, which can be used to arbitrarily extend the graph
 
 and currently parses Sysmon logs or a generic JSON log format to generate these graphs.
 
@@ -24,31 +25,54 @@ and currently parses Sysmon logs or a generic JSON log format to generate these 
 
 If you’re familiar with log sources like Sysmon, one of the best features is that processes are given identities. Grapl applies the same concept but for any supported log type, taking psuedo identifiers such as process ids and discerning canonical identities.
 
+Grapl then combines this identity concept with its graph approach, making it easy to reason about entities and their behaviors. Further, this identity property means that Grapl stores only unique information from your logs, meaning that your data storage grows sublinear to the log volume.
+
 This cuts down on storage costs and gives you central locations to view your data, as opposed to having it spread across thousands of logs. As an example, given a process’s canonical identifier you can view all of the information for it by selecting the node.
 
 ![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553026555668_image.png)
 
 
-**Analyzers (Beta)**
+**Analyzers**
 
 Analyzers are your attacker signatures. They’re Python modules, deployed to Grapl’s S3 bucket, that are orchestrated to execute upon changes to grapl’s Master Graph.
 
-Analyzers execute in realtime as the master graph is updated.
+Rather than analyzers attempting to determine a binary "Good" or "Bad" value for attack behaviors Grapl leverges a concept of Risk, and then automatically correlates risks to surface the riskiest parts of your environment.
 
-Grapl provides an analyzer library (alpha) so that you can write attacker signatures using pure Python. See this [repo for examples](https://github.com/insanitybit/grapl-analyzers).
+Analyzers execute in realtime as the master graph is updated, using constant time operations. Grapl's Analyzer harness will automatically batch, parallelize, and optimize your queries. By leveraging constant time and sublinear operations Grapl ensures that as your organization grows, and as your data volume grows with it, you can still rely on your queries executing efficiently.
+
+Grapl provides an analyzer library so that you can write attacker signatures using pure Python. See this [repo for examples](https://github.com/insanitybit/grapl-analyzers).
 
 Here is a brief example of how to detect a suspicious execution of `svchost.exe`,
 ```python
-    valid_parents = get_svchost_valid_parents()
-    p = (
-        ProcessQuery()
-        .with_process_name(eq=valid_parents)
-        .with_children(
-            ProcessQuery().with_process_name(eq="svchost.exe")
-        )
-        .query_first(client, contains_node_key=process.node_key)
-    )
+class SuspiciousSvchost(Analyzer):
 
+    def get_queries(self) -> OneOrMany[ProcessQuery]:
+        invalid_parents = [
+            Not("services.exe"),
+            Not("smss.exe"),
+            Not("ngentask.exe"),
+            Not("userinit.exe"),
+            Not("GoogleUpdate.exe"),
+            Not("conhost.exe"),
+            Not("MpCmdRun.exe"),
+        ]
+
+        return (
+            ProcessQuery()
+            .with_process_name(eq=invalid_parents)
+            .with_children(
+                ProcessQuery().with_process_name(eq="svchost.exe")
+            )
+        )
+
+    def on_response(self, response: ProcessView, output: Any):
+        output.send(
+            ExecutionHit(
+                analyzer_name="Suspicious svchost",
+                node_view=response,
+                risk_score=75,
+            )
+        )
 ```
 Keeping your analyzers in code means you can:
 
@@ -56,20 +80,16 @@ Keeping your analyzers in code means you can:
 - Write tests, integrate into CI
 - Build abstractions, reuse logic, and generally follow best practices for maintaining software
 
-**Engagements (alpha)**
+Check out Grapl's [analyzer deployer plugin](https://github.com/insanitybit/grapl-analyzer-deployer) to see how you can keep your analyzers in a git repo that automatically deploys them upon a push to master.
+
+**Engagements**
 
 Grapl provides a tool for investigations called an Engagement. Engagements are an isolated graph representing a subgraph that your analyzers have deemed suspicious.
 
-Using AWS Sagemaker hosted Jupyter Notebooks, Grapl will (soon) provide a Python library for interacting with the Engagement Graph, allowing you to pivot quickly and maintain a record of your investigation in code.
+Using AWS Sagemaker hosted Jupyter Notebooks and Grapl's provided Python library you can expand out any suspicious subgraph to encompass the full scope of an attack.
+As you expand the attack scope with your Jupyter notebook the Engagement Graph will update, visually representing the attack scope.
 
-
-![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553037156946_file.png)
-
-
-Grapl provides a live updating view of the engagement graph as you interact with it in the notebook, currently in alpha.
-
-
-![](https://raw.githubusercontent.com/insanitybit/grapl/master/images/engagement.gif)
+![](https://s3.amazonaws.com/media-p.slid.es/uploads/650602/images/6646682/Screenshot_from_2019-10-11_20-24-34.png)
 
 **Event Driven and Extendable**
 
@@ -77,12 +97,7 @@ Grapl was built to be extended - no service can satisfy every organization’s n
 
 This makes Grapl trivial to extend or integrate into your existing services.
 
-![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553040182040_file.png)
-
-
-
-![](https://d2mxuefqeaa7sj.cloudfront.net/s_7CBC3A8B36A73886DC59F4792258C821D6717C3DB02DA354DE68418C9DCF5C29_1553040197703_file.png)
-
+Grapl also provides a Plugin system, currently in beta, that allows you to expand the platforms capabilities - adding custom nodes and querying capabilities.
 
 ## Setup
 
@@ -110,6 +125,12 @@ Run the deploy script
 It will require confirming some changes to security groups, and will take a few minutes to complete.
 
 This will give you a Grapl setup that’s adequate for testing out the service.
+
+At this point you just need to provision the Graph databases. You can use the Graph Provision notebook in this repo, and
+the newly created 'engagement' notebook in your AWS account.
+
+![](https://s3.amazonaws.com/media-p.slid.es/uploads/650602/images/6396963/Screenshot_from_2019-07-27_22-27-35.png)
+
 
 You can send some test data up to the service by going to the root of the grapl repo and calling:
 `python ./gen-raw-logs.py <your bucket prefix>`. 
