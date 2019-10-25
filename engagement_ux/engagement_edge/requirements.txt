@@ -1,2 +1,3 @@
-pydgraph
+pydgraph==1.2.0
 boto3
+pyjwt

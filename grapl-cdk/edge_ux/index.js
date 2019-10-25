@@ -1,68 +1,74 @@
-// Stylesheets
-
-console.log('Loaded index.js');
-
 const engagement_edge = "https://jzfee2ecp8.execute-api.us-east-1.amazonaws.com/prod/";
 
-console.log(`Connecting to ${engagement_edge}`);
+if (engagement_edge.length === 0) {
+    console.assert("Engagement Edge URL can not be empty. Run build.sh");
+}
 
-const getLenses = async () => {
-    const res = await fetch(`${engagement_edge}getLenses`, {
+async function sha256(message) {
+    // encode as UTF-8
+    const msgBuffer = new TextEncoder('utf-8').encode(message);
+
+    // hash the message
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+
+    // convert ArrayBuffer to Array
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+    // convert bytes to hex string
+    return hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
+}
+
+
+const sha256WithPepper = async (message) => {
+    // The pepper only exists to prevent rainbow tables for extremely weak passwords
+    // Client side hashing itself is only to prevent cases where the password is
+    // exposed before it makes it into the password database
+    const pepper = "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254";
+    let hashed = await sha256(message + pepper);
+
+    for (let i = 0; i < 5000; i++) {
+        hashed = await sha256(hashed)
+    }
+    return hashed
+};
+
+
+const checkLogin = async () => {
+    const res = await fetch(`${engagement_edge}checkLogin`, {
+        method: 'get',
+    });
+
+    const body = await res.json();
+
+    return body === 'True';
+};
+
+const login = async (username, password) => {
+    const res = await fetch(`${engagement_edge}login`, {
         method: 'post',
         body: JSON.stringify({
-            'prefix': '',
+            'username': username,
+            'password': password
         })
     });
 
-    return await res.json();
-};
+    const body = await res.json();
 
-const nodeToTable = (lens) => {
-
-    let header = '<thead class="thead"><tr>';
-    let output = '<tbody><tr>';
-    header += `<th scope="col">lens</th>`;
-    header += `<th scope="col">score</th>`;
-    header += `<th scope="col">link</th>`;
-
-    output += `<td>${lens.lens}</td>>`;
-    output += `<td>${lens.score}</td>>`;
-    // output += `<td><a href="${engagement_edge}lens.html?lens=${lens.lens}">link</td></a>>`;
-    output += `<td><a href="lens.html?lens=${lens.lens}">link</td></a>>`;
-
-
-    return `${header}</tr></thead>` + `${output}</tr><tbody>`;
-};
-
-const getLensesLoop = () => {
-
+    return body === 'True';
 };
 
 document.addEventListener('DOMContentLoaded', async (event) => {
-    console.log('DOMContentLoaded');
-
-    const lenses = (await getLenses()).lenses;
-    console.log(lenses);
-
-    if (lenses.length === 0) {
-        console.log("No active lenses");
-        return
+    if (await checkLogin()) {
+        // Redirect to lenses.html if we have a valid JWT
+        window.location.href = 'lenses.html';
+    } else {
+        $('#submitbtn').click(async (submit) => {
+            const username = $("#uname").val();
+            const password = await sha256WithPepper($("#psw").val());
+            console.log(`logging in with password: ${password}`);
+            const succ = await login(username, password);
+            console.log(`login success ${succ}`)
+            // window.location.href = 'lenses.html';
+        })
     }
-
-    const lenseTable = document.getElementById('LenseTable');
-
-    const lensRows = [];
-
-    for (const lens of lenses) {
-        const s = nodeToTable(lens);
-        lensRows.push(s);
-    }
-    // Sort the lenses by their score
-    lensRows.sort((row_a, row_b) => {
-       return row_a.score - row_b.score
-    });
-    const lensRowsStr = lensRows.join("")
-    lenseTable.innerHTML = `<table>${lensRowsStr}</table>`;
-
-
 });

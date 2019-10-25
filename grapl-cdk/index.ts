@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const child_process = require("child_process");
+const uuidv4 = require('uuid/v4');
 
 import sagemaker = require('@aws-cdk/aws-sagemaker');
 import cloudmap = require('@aws-cdk/aws-servicediscovery');
@@ -92,6 +92,47 @@ class Queues {
     }
 }
 
+class UserAuthDb extends cdk.Stack {
+
+    user_auth_table: dynamodb.Table;
+
+    constructor(parent: cdk.App,
+                id: string,
+    ) {
+        super(parent, id + '-stack');
+
+        this.user_auth_table = new dynamodb.Table(this, 'user_auth_table', {
+            tableName: "user_auth_table",
+            partitionKey: {
+                name: 'username',
+                type: dynamodb.AttributeType.STRING
+            },
+            serverSideEncryption: true,
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        });
+    }
+
+    allowRead(service: Service) {
+        this.user_auth_table.grantReadData(service.event_handler.role);
+
+        this.user_auth_table.grantReadData(service.event_retry_handler.role);
+    }
+
+    allowReadWrite(service: Service) {
+        this.user_auth_table.grantReadData(service.event_handler.role);
+
+        this.user_auth_table.grantReadData(service.event_retry_handler.role);
+    }
+
+    allowReadFromRole(role: iam.IRole) {
+        this.user_auth_table.grantReadData(role);
+    }
+
+    allowReadWriteFromRole(role: iam.IRole) {
+        this.user_auth_table.grantReadWriteData(role);
+    }
+
+}
 
 class EngagementEdge extends cdk.Stack {
     event_handler: lambda.Function;
@@ -103,8 +144,10 @@ class EngagementEdge extends cdk.Stack {
         parent: cdk.App,
         name: string,
         hostname: string,
+        jwt_secret: string,
         engagement_graph: DGraphFargate,
-        vpc: ec2.Vpc
+        user_auth_table: UserAuthDb,
+        vpc: ec2.Vpc,
     ) {
         super(parent, name + '-stack');
         this.name = name;
@@ -118,11 +161,15 @@ class EngagementEdge extends cdk.Stack {
                 vpc: vpc,
                 environment: {
                     "EG_ALPHAS": engagement_graph.alphaNames.join(","),
+                    "JWT_SECRET": jwt_secret,
+                    "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName
                 },
                 timeout: Duration.seconds(25),
                 memorySize: 256,
             }
         );
+
+        user_auth_table.allowReadFromRole(this.event_handler.role);
 
         this.integration = new apigateway.LambdaRestApi(
             this,
@@ -134,6 +181,7 @@ class EngagementEdge extends cdk.Stack {
         );
     }
 }
+
 
 
 class Service {
@@ -942,6 +990,7 @@ class EngagementNotebook extends cdk.Stack {
 
     constructor(parent: cdk.App,
                 id: string,
+                user_auth_db: UserAuthDb,
                 vpc: ec2.Vpc,
     ) {
         super(parent, id + '-notebook-stack');
@@ -961,7 +1010,9 @@ class EngagementNotebook extends cdk.Stack {
             }
         );
 
-        const notebook = new sagemaker.CfnNotebookInstance(
+        user_auth_db.allowReadWriteFromRole(role);
+
+        const _notebook = new sagemaker.CfnNotebookInstance(
             this,
             id + '-sagemaker-endpoint',
             {
@@ -972,7 +1023,6 @@ class EngagementNotebook extends cdk.Stack {
                 roleArn: role.roleArn
             }
         );
-
 
     }
 }
@@ -1031,7 +1081,11 @@ class EngagementUx extends cdk.Stack {
             (gatewayId) => {
                 const edgeUrl = `https://${gatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
 
-                const filesToModify = [path.join(__dirname, 'edge_ux/index.js'), path.join(__dirname, 'edge_ux/lens.js')];
+                const filesToModify = [
+                    path.join(__dirname, 'edge_ux/index.js'),
+                    path.join(__dirname, 'edge_ux/lenses.js'),
+                    path.join(__dirname, 'edge_ux/lens.js')
+                ];
                 const toReplace = 'const engagement_edge = "";';
                 const replacement = `const engagement_edge = "${edgeUrl}";`;
 
@@ -1041,7 +1095,7 @@ class EngagementUx extends cdk.Stack {
         });
         console.log(path.join(__dirname, 'edge_ux/'));
         new s3deploy.BucketDeployment(this, id + 'Ux', {
-            source: s3deploy.Source.asset('./edge_ux'),
+            sources: [s3deploy.Source.asset('./edge_ux')],
             destinationBucket: edgeBucket,
             destinationKeyPrefix: 'web/static/v0/'
         });
@@ -1182,6 +1236,8 @@ class Grapl extends cdk.App {
         const egZeroCount = Number(process.env.EG_ZEROS_COUNT) || 3;
         const egAlphaCount = Number(process.env.EG_ALPHAS_COUNT) || 5;
 
+        const jwtSecret = process.env.JWT_SECRET || uuidv4();
+
         let event_emitters = new EventEmitters(this, 'grapl-event-emitters');
 
         const network = new Networks(this, 'graplvpcs');
@@ -1283,17 +1339,22 @@ class Grapl extends cdk.App {
             network.grapl_vpc
         );
 
+        const user_auth_table = new UserAuthDb(this, 'grapl-user-auth-table');
+
         const engagement_edge = new EngagementEdge(
             this,
             'engagementedge' + process.env.BUCKET_PREFIX,
             'engagementedge' + process.env.BUCKET_PREFIX,
+            jwtSecret,
             engagement_graph,
-            network.grapl_vpc
+            user_auth_table,
+            network.grapl_vpc,
         );
 
         new EngagementNotebook(
             this,
             'engagements',
+            user_auth_table,
             network.grapl_vpc
         );
 

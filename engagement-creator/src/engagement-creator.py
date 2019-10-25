@@ -202,7 +202,7 @@ def lambda_handler(events: Any, context: Any) -> None:
 
             print(f'Getting lens for: {asset_id}')
             lens = lenses.get(asset_id) or LensView.get_or_create(asset_id, cclient)
-            lens[asset_id] = lens
+            lenses[asset_id] = lens
 
             copied_node = lens.get_node(node.node_key)
             # Attach to scope
@@ -213,9 +213,6 @@ def lambda_handler(events: Any, context: Any) -> None:
 
             copied_nodes[copied_node.node_key] = copied_node.uid
 
-        for lens in lenses.keys():
-            recalculate_score(eg_client, lens)
-
         for node in nodes:
             attach_risk(eg_client, node.node, analyzer_name, risk_score)
 
@@ -225,3 +222,6 @@ def lambda_handler(events: Any, context: Any) -> None:
                 edge_name = edge['edge_name']
                 to_uid = copied_nodes[edge['to']]
                 copy_edge(eg_client, from_uid, edge_name, to_uid)
+
+        for lens in lenses.values():
+            recalculate_score(eg_client, lens)

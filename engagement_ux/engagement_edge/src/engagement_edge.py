@@ -1,21 +1,19 @@
+import os
 from typing import List, Dict, Any
 
-from pydgraph import DgraphClient
+from random import uniform
+from hashlib import sha256, blake2b
+from hmac import compare_digest
 
-print('import boto3')
 import boto3
-
-print('import pydgraph')
+from pydgraph import DgraphClient
+import jwt
 import pydgraph
-
-print('import json')
 import json
-
-print('import time')
 import time
 
-from hashlib import sha256
-
+JWT_SECRET = os.environ['JWT_SECRET']
+DYNAMO = None
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
     client_stub = pydgraph.DgraphClientStub('alpha0.engagementgraphcluster.grapl:9080')
@@ -239,26 +237,146 @@ def try_get_updated_graph(body):
         time.sleep(0.75)
 
 
-def respond(err, res=None):
+def respond(err, res=None, headers=None):
+    if not headers:
+        headers = {}
     return {
         'statusCode': '400' if err else '200',
-        'body': err if err else json.dumps(res),
+        'body': {'error': err} if err else json.dumps({'success': res}),
         'headers': {
             'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': True,
             'Content-Type': 'application/json',
             'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
             'X-Requested-With': '*',
+            **headers
         },
     }
 
 
-def lambda_handler(event, context):
-    try:
-        print(f"httpMethod: {event['httpMethod']}")
-        print(f"path: {event['path']}")
+def get_salt_and_pw(table, username):
+    print(f'Getting salt for user: {username}')
+    response = table.get_item(
+        Key={
+            'username': username,
+        }
+    )
 
+    if not response.get('Item'):
+        return None, None
+
+    return response['Item']['salt'].value, response['Item']['password'].value
+
+
+def hash_password(cleartext, salt) -> str:
+    print('initial hash')
+    hashed = sha256(cleartext).digest()
+
+    hasher = blake2b(salt=salt)
+    hasher.update(hashed)
+    return hasher.digest()
+
+
+def user_auth_table():
+    global DYNAMO
+    DYNAMO = DYNAMO or boto3.resource('dynamodb')
+
+    return DYNAMO.Table(os.environ['USER_AUTH_TABLE'])
+
+
+def create_user(username, cleartext):
+    table = user_auth_table()
+    # We hash before calling 'hashed_password' because the frontend will also perform
+    # client side hashing
+    pepper = "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254";
+
+    hashed = sha256(cleartext + pepper).digest()
+    for i in range(0, 5000):
+        hashed = sha256(hashed).digest()
+
+    salt = os.urandom(blake2b.SALT_SIZE)
+    password = hash_password(hashed, salt)
+
+    table.put_item(
+        Item={
+            'username': username,
+            'salt': salt,
+            'password': password
+        }
+    )
+
+
+def login(username, password):
+    # Connect to dynamodb table
+    table = user_auth_table()
+
+    # Get salt for username
+    salt, true_pw = get_salt_and_pw(table, username)
+    if not salt or not true_pw:
+        return None
+
+    print(f'hashing password {password}')
+    # Hash password
+    to_check = hash_password(password.encode('utf8'), salt)
+    print('hashed')
+
+    if not compare_digest(to_check, true_pw):
+        time.sleep(round(uniform(0.1, 3.0), 2))
+        return None
+
+    # Use JWT to generate token
+    return jwt.encode({'username': username}, JWT_SECRET, algorithm='HS256').decode('utf8')
+
+
+def check_jwt(headers):
+    encoded_jwt = None
+    print(f'headers: {headers}')
+    for cookie in headers.get('Cookie', '').split(';'):
+        if 'grapl_jwt=' in cookie:
+            encoded_jwt = cookie.split('grapl_jwt=')[1].strip()
+
+    if not encoded_jwt:
+        return False
+
+    try:
+        jwt.decode(encoded_jwt, JWT_SECRET, algorithms=['HS256'])
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
+def lambda_login(event):
+    body = json.loads(event['body'])
+    print(f'body: {body}')
+    login_res = login(body['username'], body['password'])
+    # Clear out the password from the dict, to avoid accidentally logging it
+    body['password'] = ''
+    print(f'login_res: {login_res}')
+    if login_res:
+        return respond(None, 'True', headers={'Set-Cookie': 'grapl_jwt=' + login_res})
+    else:
+        return respond('Invalid user or password')
+
+
+def lambda_handler(event, context):
+
+    try:
         if event['httpMethod'] == 'OPTIONS':
             return respond(None, {})
+
+        if '/login' in event['path']:
+            return lambda_login(event)
+
+        if '/checkLogin' in event['path']:
+            print('logging in')
+            if check_jwt(event['headers']):
+                return respond(None, 'True')
+            else:
+                return respond(None, 'False')
+
+        if not check_jwt(event['headers']):
+            return respond("Must log in")
 
         if '/update' in event['path']:
             update = try_get_updated_graph(json.loads(event["body"]))
@@ -272,5 +390,5 @@ def lambda_handler(event, context):
         return respond(f"Invalid path: {event['path']}", {})
     except Exception as e:
         print('Failed with e {}'.format(e))
-        return respond("Error fetching updates {}".format(e))
+        return respond("UnknownError")
 
