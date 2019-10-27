@@ -1,4 +1,6 @@
-grapl-cdk/edge_ux
+grapl-cdk/edge_ux/*.js
+
+edge_ux/
 .mypy_cache/
 events.xml
 events2.xml
