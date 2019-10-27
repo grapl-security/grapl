@@ -128,10 +128,16 @@ It will require confirming some changes to security groups, and will take a few 
 
 This will give you a Grapl setup that’s adequate for testing out the service.
 
-At this point you just need to provision the Graph databases. You can use the Graph Provision notebook in this repo, and
+At this point you just need to provision the Graph databases and create a user. You can use the `Grapl Provision` notebook in this repo, and
 the newly created 'engagement' notebook in your AWS account.
 
 ![](https://s3.amazonaws.com/media-p.slid.es/uploads/650602/images/6396963/Screenshot_from_2019-07-27_22-27-35.png)
+
+Go to your AWS Sagemaker Console, open the Jupyter Notebook Grapl created for you, and upload the `Grapl Provision.ipynb` in this repository.
+
+Run the notebook, and it will:
+* Set up the schemas for your graph database
+* Create a username, as well as a password, which you can use to log into your Grapl instance.
 
 
 You can send some test data up to the service by going to the root of the grapl repo and calling:
@@ -139,4 +145,6 @@ You can send some test data up to the service by going to the root of the grapl 
 
 This requires the [boto3](https://github.com/boto/boto3) and [zstd](https://pypi.org/project/zstd/) Python modules.
 
-Note that this may impose charges to your AWS account.
+*Note that this may impose charges to your AWS account.*
+
+To use the Grapl UX you must navigate to the `index.html` in the grapl ux bucket.
