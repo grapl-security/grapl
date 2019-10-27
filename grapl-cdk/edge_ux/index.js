@@ -1,4 +1,4 @@
-const engagement_edge = "https://jzfee2ecp8.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "";
 
 if (engagement_edge.length === 0) {
     console.assert("Engagement Edge URL can not be empty. Run build.sh");
@@ -36,39 +36,50 @@ const sha256WithPepper = async (message) => {
 const checkLogin = async () => {
     const res = await fetch(`${engagement_edge}checkLogin`, {
         method: 'get',
+        credentials: 'include',
     });
 
     const body = await res.json();
 
-    return body === 'True';
+    return body['success'] === 'True';
 };
 
 const login = async (username, password) => {
-    const res = await fetch(`${engagement_edge}login`, {
-        method: 'post',
-        body: JSON.stringify({
-            'username': username,
-            'password': password
-        })
-    });
+    try {
+        const res = await fetch(`${engagement_edge}login`, {
+            method: 'post',
+            body: JSON.stringify({
+                'username': username,
+                'password': password
+            }),
+            credentials: 'include',
+        });
 
-    const body = await res.json();
+        console.log(res.headers);
+        const body = await res.json();
+        return body['success'] === 'True';
 
-    return body === 'True';
+    } catch (e) {
+        console.log(e);
+        return false
+    }
+
 };
 
 document.addEventListener('DOMContentLoaded', async (event) => {
     if (await checkLogin()) {
+        console.log('logged in');
         // Redirect to lenses.html if we have a valid JWT
-        window.location.href = 'lenses.html';
+        window.location = 'lenses.html';
     } else {
+        console.log("not logged in");
         $('#submitbtn').click(async (submit) => {
             const username = $("#uname").val();
             const password = await sha256WithPepper($("#psw").val());
             console.log(`logging in with password: ${password}`);
             const succ = await login(username, password);
             console.log(`login success ${succ}`)
-            // window.location.href = 'lenses.html';
+            window.location.href = 'lenses.html';
         })
     }
 });

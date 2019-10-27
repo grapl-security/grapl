@@ -1,7 +1,7 @@
 // Stylesheets
 console.log('entry.js init');
 
-const engagement_edge = "https://jzfee2ecp8.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "";
 
 if (engagement_edge.length === 0) {
     console.assert("Engagement Edge URL can not be empty. Run build.sh");
@@ -995,13 +995,14 @@ const retrieveGraph = async (graph, lens) => {
         body: JSON.stringify({
             'lens': lens,
             'uid_hashes': uidHashes,
-        })
+        }),
+        credentials: 'include',
     });
 
     const json_res = await res.json();
-    // console.info('jsonres ' + json_res);
-    const updated_nodes = json_res['updated_nodes'];
-    const removed_nodes = json_res['removed_nodes'];
+
+    const updated_nodes = json_res['success']['updated_nodes'];
+    const removed_nodes = json_res['success']['removed_nodes'];
 
     return [updated_nodes, removed_nodes]
 };

@@ -2,7 +2,7 @@
 
 console.log('Loaded index.js');
 
-const engagement_edge = "https://jzfee2ecp8.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "";
 
 console.log(`Connecting to ${engagement_edge}`);
 

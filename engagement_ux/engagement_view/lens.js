@@ -1,7 +1,7 @@
 // Stylesheets
 console.log('entry.js init');
 
-const engagement_edge = "https://jzfee2ecp8.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "";
 
 if (engagement_edge.length === 0) {
     console.assert("Engagement Edge URL can not be empty. Run build.sh");

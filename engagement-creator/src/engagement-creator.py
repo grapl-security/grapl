@@ -225,3 +225,4 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         for lens in lenses.values():
             recalculate_score(eg_client, lens)
+

@@ -1231,10 +1231,10 @@ class Grapl extends cdk.App {
 
         env(__dirname + '/.env');
 
-        const mgZeroCount = Number(process.env.MG_ZEROS_COUNT) || 3;
-        const mgAlphaCount = Number(process.env.MG_ALPHAS_COUNT) || 5;
-        const egZeroCount = Number(process.env.EG_ZEROS_COUNT) || 3;
-        const egAlphaCount = Number(process.env.EG_ALPHAS_COUNT) || 5;
+        const mgZeroCount = Number(process.env.MG_ZEROS_COUNT) || 1;
+        const mgAlphaCount = Number(process.env.MG_ALPHAS_COUNT) || 1;
+        const egZeroCount = Number(process.env.EG_ZEROS_COUNT) || 1;
+        const egAlphaCount = Number(process.env.EG_ALPHAS_COUNT) || 1;
 
         const jwtSecret = process.env.JWT_SECRET || uuidv4();
 
