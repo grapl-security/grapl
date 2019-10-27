@@ -1344,7 +1344,7 @@ class Grapl extends cdk.App {
         const engagement_edge = new EngagementEdge(
             this,
             'engagementedge' + process.env.BUCKET_PREFIX,
-            'engagementedge' + process.env.BUCKET_PREFIX,
+            'engagementedge',
             jwtSecret,
             engagement_graph,
             user_auth_table,

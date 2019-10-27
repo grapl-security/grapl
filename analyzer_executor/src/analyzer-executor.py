@@ -113,7 +113,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
                     continue
                 r = str(random.randint(10, 100))
                 result_name = f'{an_name}u{int(node.uid, 16)}i{i}r{r}'.strip().lower()
-                result_name_to_analyzer[result_name] = (an_name, analyzer)
+                result_name_to_analyzer[result_name] = (an_name, analyzer, query.view_type)
                 query_str += '\n'
                 query_str += _get_queries(query, node_key=node.node_key, first=1, result_name=result_name)
 
@@ -132,14 +132,16 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
     analyzer_to_results = defaultdict(list)
     for result_name, results in response.items():
         for result in results:
-            an_name, analyzer = result_name_to_analyzer[result_name]  # type: Tuple[str, Analyzer]
+            analyzer_meta = result_name_to_analyzer[result_name]  # type: Tuple[str, Analyzer, Type[Viewable]]
+            an_name, analyzer, view_type = analyzer_meta[0], analyzer_meta[1], analyzer_meta[2]
 
-            response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get('response', NodeView)
-            if response_ty == Viewable or response_ty == NodeView:
-                print('Got Viewable or NodeType')
-                result_graph = NodeView.from_dict(dg_client, result)
-            else:
-                result_graph = response_ty.from_dict(dg_client, result)
+            result_graph = view_type.from_dict(dg_client, result)
+
+            response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get('response')
+
+            if response_ty == NodeView:
+                print('Analyzer on_response is expecting a NodeView')
+                result_graph = NodeView.from_view(result_graph)
 
             analyzer_to_results[an_name].append(result_graph)
 
