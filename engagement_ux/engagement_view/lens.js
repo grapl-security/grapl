@@ -996,7 +996,6 @@ const retrieveGraph = async (graph, lens) => {
             'lens': lens,
             'uid_hashes': uidHashes,
         }),
-        credentials: 'include',
     });
 
     const json_res = await res.json();
