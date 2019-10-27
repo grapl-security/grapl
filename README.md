@@ -101,7 +101,7 @@ Grapl also provides a Plugin system, currently in beta, that allows you to expan
 
 ## Setup
 
-NOTE that setting up Grapl *will* incur AWS charges! This can amount to hundreds of dollars a month based on the configuration.
+NOTE that setting up Grapl *will* incur AWS charges! This can amount to hundreds of dollars a month based on the configuration. This setup script is designed for testing, and may include breaking changes in future versions, increased charges in future versions, or may otherwise require manually working with CloudFormation. If you need a way to set up Grapl in a stable, forwards compatible manner, please get in contact with me directly.
 
 Setting up a basic playground version of Grapl is pretty simple.
 
