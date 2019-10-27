@@ -101,7 +101,9 @@ Grapl also provides a Plugin system, currently in beta, that allows you to expan
 
 ## Setup
 
-Setting up a basic playground version of Grapl is pretty simple. 
+NOTE that setting up Grapl *will* incur AWS charges! This can amount to hundreds of dollars a month based on the configuration.
+
+Setting up a basic playground version of Grapl is pretty simple.
 
 To get started you'll need to install [npm](https://www.npmjs.com/), [typescript](https://www.typescriptlang.org/index.html#download-links), and the [aws-cdk](https://github.com/awslabs/aws-cdk#getting-started).
 
