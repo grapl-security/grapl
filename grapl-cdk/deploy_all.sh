@@ -15,8 +15,8 @@ cdk deploy --require-approval=never grapl-analyzer-executor-stack && \
 cdk deploy --require-approval=never grapl-engagement-creator-stack && \
 cdk deploy --require-approval=never grapl-user-auth-table-stack && \
 cdk deploy --require-approval=never engagementedgegrapl-stack && \
-cdk deploy --require-approval=never engagements-notebook-stack && \
 cdk deploy --require-approval=never engagement-ux-stack && \
+cdk deploy --require-approval=never engagements-notebook-stack && \
 
 
 # cdk deploy engagement-creation-service-stack

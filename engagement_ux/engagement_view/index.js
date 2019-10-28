@@ -36,6 +36,7 @@ const sha256WithPepper = async (message) => {
 const checkLogin = async () => {
     const res = await fetch(`${engagement_edge}checkLogin`, {
         method: 'get',
+        credentials: 'include',
     });
 
     const body = await res.json();
@@ -51,6 +52,7 @@ const login = async (username, password) => {
                 'username': username,
                 'password': password
             }),
+            credentials: 'include',
         });
 
         console.log(res.headers);

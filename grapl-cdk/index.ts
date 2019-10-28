@@ -1,3 +1,5 @@
+import {CorsRule, HttpMethods} from "@aws-cdk/aws-s3/lib/bucket";
+
 const AWS = require('aws-sdk');
 const uuidv4 = require('uuid/v4');
 
@@ -162,7 +164,8 @@ class EngagementEdge extends cdk.Stack {
                 environment: {
                     "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                     "JWT_SECRET": jwt_secret,
-                    "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName
+                    "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
+                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
                 },
                 timeout: Duration.seconds(25),
                 memorySize: 256,
@@ -177,11 +180,9 @@ class EngagementEdge extends cdk.Stack {
             {
                 handler: this.event_handler,
             },
-
         );
     }
 }
-
 
 
 class Service {
@@ -313,11 +314,12 @@ class SessionIdentityCache extends cdk.Stack {
 class EventEmitter {
     bucket: s3.Bucket;
     topic: sns.Topic;
+
     constructor(stack: cdk.Stack, eventName: string) {
 
         this.bucket =
             new s3.Bucket(stack, eventName + '-bucket', {
-                bucketName: process.env.BUCKET_PREFIX+ eventName + "-bucket"
+                bucketName: process.env.BUCKET_PREFIX + eventName + "-bucket"
             });
 
         // SNS Topics
@@ -834,7 +836,7 @@ class Zero {
 
 
         const logDriver = new ecs.AwsLogDriver({
-            streamPrefix: `ecs${graph+id}`,
+            streamPrefix: `ecs${graph + id}`,
         });
 
         zeroTask.addContainer(id + 'Container', {
@@ -886,7 +888,7 @@ class Alpha {
         );
 
         const logDriver = new ecs.AwsLogDriver({
-            streamPrefix: `ecs${graph+id}`,
+            streamPrefix: `ecs${graph + id}`,
         });
 
         alphaTask.addContainer(id + graph + 'Container', {
@@ -1028,7 +1030,7 @@ class EngagementNotebook extends cdk.Stack {
 }
 
 const fs = require('fs'),
-      path = require('path');
+    path = require('path');
 
 const replaceInFile = (toModify, toReplace, replaceWith) => {
     return fs.readFile(toModify, 'utf8', (err, data) => {
@@ -1045,11 +1047,13 @@ const replaceInFile = (toModify, toReplace, replaceWith) => {
     });
 };
 
-const getEdgeGatewayId = (integrationName: string, cb) =>{
+const getEdgeGatewayId = (integrationName: string, cb) => {
     let apigateway = new AWS.APIGateway();
 
-    apigateway.getRestApis({}, function(err, data) {
-        if (err) {console.log('Error getting edge gateway ID', err);}
+    apigateway.getRestApis({}, function (err, data) {
+        if (err) {
+            console.log('Error getting edge gateway ID', err);
+        }
 
         for (const item of data.items) {
             if (item.name === integrationName) {
@@ -1076,6 +1080,21 @@ class EngagementUx extends cdk.Stack {
             websiteIndexDocument: 'index.html',
         });
 
+        // edgeBucket.addCorsRule(
+        //     {
+        //         allowedOrigins: [bucketName],
+        //         allowedMethods: [
+        //             HttpMethods.HEAD,
+        //             HttpMethods.GET,
+        //             HttpMethods.PUT,
+        //             HttpMethods.POST,
+        //             HttpMethods.DELETE
+        //         ],
+        //         allowedHeaders: ['*'],
+        //
+        //     }
+        // );
+
         getEdgeGatewayId(
             edge.name + 'Integration',
             (gatewayId) => {
@@ -1086,13 +1105,13 @@ class EngagementUx extends cdk.Stack {
                     path.join(__dirname, 'edge_ux/lenses.js'),
                     path.join(__dirname, 'edge_ux/lens.js')
                 ];
-                const toReplace = 'const engagement_edge = "";';
+                const toReplace = /const engagement_edge = ".+";/;
                 const replacement = `const engagement_edge = "${edgeUrl}";`;
 
                 for (const toModify of filesToModify) {
                     replaceInFile(toModify, toReplace, replacement)
                 }
-        });
+            });
         console.log(path.join(__dirname, 'edge_ux/'));
         new s3deploy.BucketDeployment(this, id + 'Ux', {
             sources: [s3deploy.Source.asset('./edge_ux')],

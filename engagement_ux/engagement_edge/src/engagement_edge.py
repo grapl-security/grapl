@@ -1,18 +1,17 @@
+import json
 import os
-from typing import List, Dict, Any
-
-from random import uniform
+import time
 from hashlib import sha256, blake2b
 from hmac import compare_digest
+from random import uniform
+from typing import List, Dict, Any
 
 import boto3
-from pydgraph import DgraphClient
 import jwt
 import pydgraph
-import json
-import time
 
 JWT_SECRET = os.environ['JWT_SECRET']
+ORIGIN = "https://" + os.environ['BUCKET_PREFIX'] + "engagement-ux-bucket.s3.amazonaws.com"
 DYNAMO = None
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
@@ -244,7 +243,7 @@ def respond(err, res=None, headers=None):
         'statusCode': '400' if err else '200',
         'body': {'error': err} if err else json.dumps({'success': res}),
         'headers': {
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': ORIGIN,
             'Access-Control-Allow-Credentials': True,
             'Content-Type': 'application/json',
             'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
