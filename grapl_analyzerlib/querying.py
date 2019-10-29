@@ -524,10 +524,7 @@ class Queryable(abc.ABC):
 
         txn = dgraph_client.txn(read_only=True)
         try:
-            variables = {}
-            if contains_node_key:
-                variables = {"$node_key": contains_node_key}
-            raw_views = json.loads(txn.query(query_str, variables=variables).json)['res']
+            raw_views = json.loads(txn.query(query_str).json)['res']
         finally:
             txn.discard()
 
@@ -710,7 +707,7 @@ def generate_root_var(query: Queryable, root: Queryable, root_binding: str, node
         formatted_binding = root_binding + " as "
 
     if node_key:
-        func = "eq(node_key, $node_key), first: 1"
+        func = f'eq(node_key, "{node_key}"), first: 1'
     else:
         func = func_filter(query)
 
@@ -847,7 +844,7 @@ def generate_query(
 
     query_header = ""
     if contains_node_key:
-        query_header = f"{query_name}($node_key: string)"
+        query_header = f"{query_name}"
 
     if contains_node_key:
         # node_key is a unique property
