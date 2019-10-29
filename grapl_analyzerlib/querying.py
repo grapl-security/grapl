@@ -63,11 +63,9 @@ class Rex(Cmp):
     def to_filter(self) -> str:
         if isinstance(self.value, Not):
             value = self.value.value
-            escaped_value = re.escape(value)
-            return f"NOT regexp({self.predicate}, /{escaped_value}/)"
+            return f"NOT regexp({self.predicate}, /{value}/)"
         else:
-            escaped_value = re.escape(self.value)
-            return f"regexp({self.predicate}, /{escaped_value}/)"
+            return f"regexp({self.predicate}, /{self.value}/)"
 
 
 class Gt(Cmp):
@@ -108,11 +106,12 @@ class Contains(Cmp):
         self.value = value
 
     def to_filter(self) -> str:
-        if isinstance(self.value, Not):
-            return 'NOT alloftext({}, "{}")'.format(self.predicate, self.value.value)
-        else:
-            return 'alloftext({}, "{}")'.format(self.predicate, self.value)
 
+        if isinstance(self.value, Not):
+            value = self.value.value
+            return f"NOT regexp({self.predicate}, /{value}/)"
+        else:
+            return f"regexp({self.predicate}, /{self.value}/)"
 
 
 def _generate_filter(comparisons_list: List[List[Cmp]]) -> str:
@@ -647,6 +646,7 @@ def check_edge(query, edge_name, neighbor, visited):
             visited.add((query, edge_name, neighbor))
     return False
 
+
 def generate_var_block(
         query: Queryable,
         root: Queryable,
@@ -675,7 +675,10 @@ def generate_var_block(
         neighbor_block = generate_var_block(neighbor, root, root_binding, visited, should_filter)
 
         neighbor_prop = neighbor.get_unique_predicate()
-        prop_names = ", ".join([q for q in root.get_property_names() if q not in ('node_key', root.get_unique_predicate())])
+        prop_names = ", ".join(
+            [q for q in neighbor.get_property_names()
+             if q not in ('node_key', neighbor.get_unique_predicate())]
+        )
 
         formatted_binding = ""
         if neighbor == root and root_binding:
