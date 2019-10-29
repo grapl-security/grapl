@@ -291,7 +291,7 @@ class Viewable(abc.ABC):
             node_key_prop = "node_key"
         query = f"""
             {{
-                q0(func: uid("{self.uid}")) @cascade {{
+                res(func: uid("{self.uid}")) @cascade {{
                     uid,
                     {node_key_prop},
                     {prop_name}
@@ -305,7 +305,7 @@ class Viewable(abc.ABC):
             res = json.loads(txn.query(query).json)
         finally:
             txn.discard()
-        raw_prop = res["q0"]
+        raw_prop = res["res"]
         if not raw_prop or not raw_prop[0].get(prop_name):
             return None
 
@@ -319,7 +319,7 @@ class Viewable(abc.ABC):
     ) -> List[str]:
         query = f"""
             {{
-                q0(func: uid("{self.uid}")) @cascade {{
+                res(func: uid("{self.uid}")) @cascade {{
                     uid,
                     node_key,
                     {prop_name}
@@ -332,7 +332,7 @@ class Viewable(abc.ABC):
             res = json.loads(txn.query(query).json)
         finally:
             txn.discard()
-        raw_props = res["q0"]
+        raw_props = res["res"]
 
         if not raw_props:
             return []
@@ -345,7 +345,7 @@ class Viewable(abc.ABC):
     def get_edge(self, edge_name: str, edge_type: V) -> Optional[V]:
         query = f"""
             {{
-                q0(func: uid("{self.uid}")) {{
+                res(func: uid("{self.uid}")) {{
                     uid,
                     node_key,
                     {edge_name} {{
@@ -364,7 +364,7 @@ class Viewable(abc.ABC):
         finally:
             txn.discard()
 
-        raw_edge = res["q0"]
+        raw_edge = res["res"]
         if not raw_edge or not raw_edge[0].get(edge_name):
             return None
 
@@ -375,7 +375,7 @@ class Viewable(abc.ABC):
     def get_edges(self, edge_name: str, edge_type: Type[V]) -> List[V]:
         query = f"""
             {{
-                q0(func: uid("{self.uid}")) {{
+                res(func: uid("{self.uid}")) {{
                     uid,
                     node_key,
                     {edge_name} {{
@@ -393,7 +393,7 @@ class Viewable(abc.ABC):
         finally:
             txn.discard()
 
-        raw_edges = res["q0"]
+        raw_edges = res["res"]
 
         if not raw_edges or not raw_edges[0].get(edge_name):
             return []
