@@ -286,10 +286,14 @@ class Viewable(abc.ABC):
     def get_property(
         self, prop_name: str, prop_type: Callable[[Any], Union[str, int]]
     ) -> Optional[Union[str, int]]:
+        node_key_prop = ""
+        if prop_name != "node_key":
+            node_key_prop = "node_key"
         query = f"""
             {{
                 q0(func: uid("{self.uid}")) @cascade {{
                     uid,
+                    {node_key_prop},
                     {prop_name}
                 }}
             
@@ -317,6 +321,7 @@ class Viewable(abc.ABC):
             {{
                 q0(func: uid("{self.uid}")) @cascade {{
                     uid,
+                    node_key,
                     {prop_name}
                 }}
             
@@ -342,6 +347,7 @@ class Viewable(abc.ABC):
             {{
                 q0(func: uid("{self.uid}")) {{
                     uid,
+                    node_key,
                     {edge_name} {{
                         uid,
                         node_type,
@@ -371,6 +377,7 @@ class Viewable(abc.ABC):
             {{
                 q0(func: uid("{self.uid}")) {{
                     uid,
+                    node_key,
                     {edge_name} {{
                         uid,
                         node_type,
