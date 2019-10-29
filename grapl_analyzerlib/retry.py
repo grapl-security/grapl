@@ -36,16 +36,17 @@ def retry(
             while mtries > 1:
                 try:
                     result = f(*args, **kwargs)
+
                     if on_falsey and not result:
                         time.sleep(mdelay)
-                        mtries -= 1
-                        mdelay *= backoff
                     else:
                         return result
                 except ExceptionToCheck:
                     time.sleep(mdelay)
+                finally:
                     mtries -= 1
                     mdelay *= backoff
+
             return f(*args, **kwargs)
 
         return f_retry  # true decorator

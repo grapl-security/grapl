@@ -1,7 +1,7 @@
 import abc
 import json
 import re
-from typing import Dict, TypeVar, Tuple, Type, Callable
+from typing import Dict, TypeVar, Tuple, Type, Callable, Iterable
 from typing import Optional, List, Union, Any, Set
 
 from pydgraph import DgraphClient
@@ -114,24 +114,6 @@ class Contains(Cmp):
             return 'alloftext({}, "{}")'.format(self.predicate, self.value)
 
 
-def get_var_block(
-    node: Any, result_name: str, edge_name: str, binding_num: int, root: Any, already_converted: Set[Any]
-) -> str:
-    var_block = ""
-    if node and node not in already_converted:
-        var_block = node._get_var_block(
-            binding_num=binding_num,
-            root=root,
-            already_converted=already_converted,
-            result_name=result_name
-        )
-        if node == root:
-            var_block = f"Binding{result_name}{binding_num} as {edge_name} {var_block}"
-        else:
-            var_block = f"{edge_name} {var_block}"
-
-    return var_block
-
 
 def _generate_filter(comparisons_list: List[List[Cmp]]) -> str:
     and_filters = []
@@ -180,118 +162,6 @@ def flatten_nodes(root: Any) -> List[Any]:
 
     # Maintaining order is a convenience
     return list(dict.fromkeys(node_list))
-
-
-def __build_expansion(node: Union[Any, Any], already_visited: Set[Any]) -> str:
-    if node in already_visited:
-        return ""
-    already_visited.add(node)
-
-    edges = node.get_edges()
-
-    expanded_edges = []
-
-    for edge_tuple in edges:
-        edge, neighbor = edge_tuple[0], edge_tuple[1]
-        if neighbor in already_visited:
-            continue
-        already_visited.add(neighbor)
-        neighbor_props = neighbor.get_property_names()
-        expanded_edge = f"""
-                
-                    {edge} {{
-                        uid,
-                        {",".join(neighbor_props)},
-                        {__build_expansion(neighbor, already_visited)}
-                    }}  
-                
-            """
-        expanded_edges.append(expanded_edge)
-    if not expanded_edges:
-        return ""
-    return ",".join([x for x in expanded_edges if x])
-
-
-def _build_expansion_root(node: Union[Any, Any]) -> str:
-    props = node.get_property_names()
-    edges = node.get_edges()
-
-    expanded_edges = []
-
-    already_visited = {node}
-
-    for edge_tuple in edges:
-        edge, neighbor = edge_tuple[0], edge_tuple[1]
-
-        neighbor_props = neighbor.get_property_names()
-        expanded_edge = f"""
-                {edge} {{
-                    uid,
-                    {",".join([x for x in neighbor_props if x])},
-                     
-                    {__build_expansion(neighbor, already_visited)}
-                
-                }}
-            """
-        expanded_edges.append(expanded_edge)
-
-    return f"""
-            {",".join(props)},
-            {", ".join([x for x in expanded_edges if x])}
-    """
-
-
-def _build_query(
-    node: Any,
-    var_blocks: List[str],
-    bindings: List[str],
-    count: bool = False,
-    first: Optional[int] = None,
-    result_name='res'
-) -> str:
-    joined_vars = "\n".join(var_blocks)
-    if not count:
-        expansion = _build_expansion_root(node)
-    else:
-        expansion = "count(uid) as c"
-
-    if not first:
-        first = ""
-    else:
-        first = f", first: {first}"
-
-    query = f"""
-            {{
-            {joined_vars}
-            
-            {result_name}(func: uid({", ".join(bindings)}) {first}) {{
-                uid,
-                {expansion}
-            }}
-           
-           }}
-        """
-    return query
-
-
-def _get_queries(
-    node_query: Any, node_key: str, count: bool = False, first: Optional[int] = None,
-    result_name='res',
-):
-    if not first:
-        first = 1
-
-    all_nodes = flatten_nodes(node_query)
-    bindings = []
-    var_blocks = []
-
-    for i, node in enumerate(all_nodes):
-        bindings.append(f"Binding{result_name}{i}")
-        var_blocks.append(
-            node._get_var_block_root(i, result_name=result_name, root=node_query, node_key=node_key)
-        )
-
-    return _build_query(node_query, var_blocks, bindings, count, first=first, result_name=result_name)
 
 
 def _str_cmps(
@@ -644,13 +514,21 @@ class Queryable(abc.ABC):
         first: Optional[int] = 1000,
     ) -> List[V]:
         if contains_node_key:
-            query_str = _get_queries(self, node_key=contains_node_key, first=1)
-        else:
-            query_str = self.to_query(first=first)
+            first = 1
+        query_str = generate_query(
+            query_name="res",
+            binding_modifier="res",
+            root=self,
+            contains_node_key=contains_node_key,
+            first=first
+        )
 
         txn = dgraph_client.txn(read_only=True)
         try:
-            raw_views = json.loads(txn.query(query_str).json)['res']
+            variables = {}
+            if contains_node_key:
+                variables = {"$node_key": contains_node_key}
+            raw_views = json.loads(txn.query(query_str, variables=variables).json)['res']
         finally:
             txn.discard()
 
@@ -674,13 +552,18 @@ class Queryable(abc.ABC):
     def get_count(
         self,
         dgraph_client: DgraphClient,
-        max: Optional[int] = None,
+        first: Optional[int] = None,
         contains_node_key: Optional[str] = None,
     ) -> int:
-        if contains_node_key:
-            query_str = _get_queries(self, node_key=contains_node_key, count=True)
-        else:
-            query_str = self.to_query(count=True, first=max or 1000)
+        query_str = generate_query(
+            query_name="res",
+            binding_modifier="res",
+            root=self,
+            contains_node_key=contains_node_key,
+            first=first,
+            count=True
+        )
+
 
         txn = dgraph_client.txn(read_only=True)
         try:
@@ -694,9 +577,13 @@ class Queryable(abc.ABC):
             return raw_count[0].get("count", 0)
 
     def to_query(self, count: bool = False, first: Optional[int] = None) -> str:
-        var_block = self._get_var_block_root(binding_num=0, result_name='res', root=self)
-
-        return _build_query(self, [var_block], ["Bindingres0"], count=count, first=first, result_name='res')
+        return generate_query(
+                query_name="res",
+                binding_modifier="res",
+                root=self,
+                first=first,
+                count=count
+            )
 
     def _filters(self) -> str:
         inner_filters = []
@@ -713,88 +600,242 @@ class Queryable(abc.ABC):
 
         return f"@filter({'AND'.join(inner_filters)})"
 
-    def _get_var_block(
-        self, result_name: str, binding_num: int, root: Any, already_converted: Set[Any]
-    ) -> str:
-        if self in already_converted:
-            return ""
-        already_converted.add(self)
 
-        filters = self._filters()
+def get_single_equals_predicate(query: Queryable) -> Optional[Cmp]:
+    for prop in query.get_properties():
+        prop_name, prop = prop
+        # prop is missing or has OR logic
+        if not prop or len(prop) != 1:
+            continue
 
-        edge_var_blocks = []
+        if len(prop[0]) != 1:
+            continue
 
-        for edge_tuple in self.get_edges():
-            edge_name, edge = edge_tuple[0], edge_tuple[1]
-            var_block = get_var_block(
-                node=edge,
-                edge_name=edge_name,
-                binding_num=binding_num,
-                root=root,
-                already_converted=already_converted,
-                result_name=result_name
-            )
-            edge_var_blocks.append(var_block)
+        if isinstance(prop[0][0], Eq):
+            return prop[0][0]
 
-        edge_var_blocks = "\n".join(edge_var_blocks)
+    return None
 
-        block = f"""
-            {filters} {{
-                uid,
-                {edge_var_blocks}
-            }}
-            """
 
-        return block
+def func_filter(query: Queryable) -> str:
+    type_name = query.get_node_type_name()
+    single_predicate = get_single_equals_predicate(query)
+    if query._node_key and isinstance(query._node_key, Eq):
+        return query._node_key.to_filter()
+    elif type_name:
+        return f'eq(node_type, "{type_name}")'
+    elif single_predicate:
+        return single_predicate.to_filter()
+    elif query.get_unique_predicate():
+        return f"has({query.get_unique_predicate()})"
+    else:
+        # worst case, we have to search every node :(
+        return "has(node_key)"
 
-    def _get_var_block_root(
-        self, binding_num: int, result_name: str, root: Any, node_key: Optional[str] = None
-    ):
-        already_converted = {self}
-        root_var = ""
-        if self == root:
-            root_var = f"Binding{result_name}{binding_num} as "
 
-        filters = self._filters()
-
-        edge_var_blocks = []
-
-        for edge_tuple in self.get_edges():
-            edge_name, edge = edge_tuple[0], edge_tuple[1]
-            var_block = get_var_block(
-                node=edge,
-                edge_name=edge_name,
-                binding_num=binding_num,
-                root=root,
-                already_converted=already_converted,
-                result_name=result_name
-            )
-            edge_var_blocks.append(var_block)
-
-        type_name = self.get_node_type_name()
-
-        if self._node_key and isinstance(self._node_key, Eq):
-            func_filter = self._node_key.to_filter()
-        elif node_key:
-            func_filter = f'eq(node_key, "{node_key}")'
-        elif type_name:
-            func_filter = f'eq(node_type, "{self.get_node_type_name()}")'
-        elif self.get_unique_predicate():
-            func_filter = f"has({self.get_unique_predicate()})"
+def check_edge(query, edge_name, neighbor, visited):
+    if edge_name[0] == '~':
+        if (neighbor, edge_name[1:], query) in visited:
+            return True
         else:
-            # worst case, we have to search every node :(
-            func_filter = "has(node_key)"
+            visited.add((neighbor, edge_name[1:], query))
 
-        edge_var_blocks = "\n".join(edge_var_blocks)
+    else:
+        if (query, edge_name, neighbor) in visited:
+            return True
+        else:
+            visited.add((query, edge_name, neighbor))
+    return False
+
+
+
+def generate_var_block(
+        query: Queryable,
+        root: Queryable,
+        root_binding: str,
+        visited=None,
+        should_filter=False
+) -> str:
+    """
+    Generate a var block for this node's query, including all nested neighbors
+    """
+    if not visited:
+        visited = set()
+
+    if query in visited:
+        return ""
+
+    visited.add(query)
+
+    all_blocks = []
+    for edge in query.get_edges():
+        edge_name, neighbor = edge[0], edge[1]
+
+        if check_edge(query, edge_name, neighbor, visited):
+            continue
+
+        neighbor_block = generate_var_block(neighbor, root, root_binding, visited, should_filter)
+
+        neighbor_prop = neighbor.get_unique_predicate()
+
+        formatted_binding = ""
+        if neighbor == root and root_binding:
+            formatted_binding = root_binding + " as "
+
+        filters = ""
+        if should_filter:
+            filters = neighbor._filters()
 
         block = f"""
-            {root_var} var(func: {func_filter}) @cascade {filters} {{
+            {formatted_binding}{edge_name} {filters} {{
                 uid,
-                {edge_var_blocks}
+                node_key,
+                {neighbor_prop}
+                {neighbor_block}
             }}
-            """
+        """
+        all_blocks.append(block)
 
-        return block
+    return "\n".join(all_blocks)
+
+
+
+def generate_root_var(query: Queryable, root: Queryable, root_binding: str, node_key=None) -> str:
+    blocks = generate_var_block(query, root, root_binding)
+
+    formatted_binding = ""
+    if query == root and root_binding:
+        formatted_binding = root_binding + " as "
+
+    if node_key:
+        func = "eq(node_key, $node_key), first: 1"
+    else:
+        func = func_filter(query)
+
+    prop_names = ", ".join([q for q in query.get_property_names() if q not in ('node_key', query.get_unique_predicate())])
+    var_block = f"""
+        {formatted_binding}var(func: {func}) @cascade {{
+            uid,
+            node_key,
+            {prop_names}
+            {query.get_unique_predicate()}
+            {blocks}
+        }}
+    """
+
+    return var_block
+
+
+
+def generate_root_vars(
+        query: Queryable,
+        binding_modifier: str,
+        contains_node_key=None,
+) -> Tuple[str, List[str]]:
+    """
+        Generates root var blocks, and returns bindings associated with the blocks
+    """
+    var_blocks = []
+    root_bindings = []
+    for i, node_query in enumerate(traverse_query_iter(query)):
+        root_binding = f"RootBinding{binding_modifier}{i}"
+        var_block = generate_root_var(node_query, query, root_binding, contains_node_key)
+        var_blocks.append(var_block)
+        root_bindings.append(root_binding)
+
+    return "\n".join(var_blocks), root_bindings
+
+
+
+def generate_inner_query(
+        query_name: str,
+        root: Queryable,
+        root_bindings: List[str],
+        first=None,
+        count=False
+) -> str:
+    cs_bindings = ', '.join(root_bindings)
+
+    filtered_var_blocks = generate_var_block(
+        root,
+        root,
+        "",
+        should_filter=True,
+    )
+    root_filters = root._filters()
+
+    fmt_first = ""
+    if first:
+        fmt_first = f", first: {first}"
+
+    fmt_count = ""
+    if count:
+        fmt_count = "count(uid)"
+
+    prop_names = ", ".join([q for q in root.get_property_names() if q not in ('node_key', root.get_unique_predicate())])
+
+    return f"""
+        {query_name}(func: uid({cs_bindings}) {fmt_first})
+        @cascade
+
+        {root_filters}
+
+        {{
+            uid,
+            {fmt_count},
+            {prop_names},
+            node_key,
+            {root.get_unique_predicate()},
+            {filtered_var_blocks}
+        }}
+      """
+
+def generate_query(
+        query_name: str,
+        root: Queryable,
+        binding_modifier: str,
+        contains_node_key=None,
+        first=None,
+        count=False,
+) -> str:
+
+    var_blocks, root_bindings = generate_root_vars(
+        root,
+        binding_modifier,
+        contains_node_key
+    )
+
+    query_header = ""
+    if contains_node_key:
+        query_header = f"{query_name}($node_key: string)"
+
+    if contains_node_key:
+        # node_key is a unique property
+        first = 1
+
+    return f"""
+        query {query_header}
+        {{
+            {var_blocks}
+            {generate_inner_query(query_name, root, root_bindings, first, count)}
+        }}
+    """
+
+def _traverse_query_iter(node: Queryable, visited: Set[Queryable]) -> Iterable[Queryable]:
+    if node in visited:
+        return
+
+    visited.add(node)
+
+    yield node
+    for neighbor in node.get_neighbors():
+        for t in _traverse_query_iter(neighbor, visited):
+            yield t
+
+
+def traverse_query_iter(node: Queryable) -> Iterable[Queryable]:
+    for t in _traverse_query_iter(node, visited=set()):
+        yield t
 
 
 def _traverse_query(node: Queryable, f: Callable[[Queryable], None], visited: Set[Queryable]):

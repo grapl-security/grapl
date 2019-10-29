@@ -886,20 +886,6 @@ class FileView(Viewable):
         self.sha256_hash = self_file.sha256_hash
         return self.sha256_hash
 
-    def get_file_path(self) -> Optional[str]:
-        self_file = (
-            FileQuery()
-            .with_node_key(self.node_key)
-            .with_file_path()
-            .query_first(dgraph_client=self.dgraph_client)
-        )
-
-        if not self_file:
-            return None
-
-        self.file_path = self_file.file_path
-        return self.file_path
-
     def get_asset_id(self) -> Optional[str]:
         self_file = (
             FileQuery()
@@ -1193,7 +1179,9 @@ class ProcessQuery(Queryable):
         return [e for e in edges if e[1]]
 
     def get_reverse_edges(self) -> List[Tuple[str, Any, str]]:
-        edges = [("~children", self._parent, 'parent')]
+        edges = [
+            ("~children", self._parent, 'parent')
+        ]
 
         return [e for e in edges if e[1]]
 
@@ -1778,3 +1766,4 @@ class ExternalIpView(Viewable):
     @staticmethod
     def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
         return []
+
