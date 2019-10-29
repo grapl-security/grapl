@@ -647,8 +647,6 @@ def check_edge(query, edge_name, neighbor, visited):
             visited.add((query, edge_name, neighbor))
     return False
 
-
-
 def generate_var_block(
         query: Queryable,
         root: Queryable,
@@ -677,6 +675,7 @@ def generate_var_block(
         neighbor_block = generate_var_block(neighbor, root, root_binding, visited, should_filter)
 
         neighbor_prop = neighbor.get_unique_predicate()
+        prop_names = ", ".join([q for q in root.get_property_names() if q not in ('node_key', root.get_unique_predicate())])
 
         formatted_binding = ""
         if neighbor == root and root_binding:
@@ -690,6 +689,7 @@ def generate_var_block(
             {formatted_binding}{edge_name} {filters} {{
                 uid,
                 node_key,
+                {prop_names}
                 {neighbor_prop}
                 {neighbor_block}
             }}
@@ -697,7 +697,6 @@ def generate_var_block(
         all_blocks.append(block)
 
     return "\n".join(all_blocks)
-
 
 
 def generate_root_var(query: Queryable, root: Queryable, root_binding: str, node_key=None) -> str:
@@ -746,6 +745,38 @@ def generate_root_vars(
     return "\n".join(var_blocks), root_bindings
 
 
+def generate_coalescing_query(
+        query_name: str,
+        root: Queryable,
+        root_bindings: List[str],
+) -> str:
+    cs_bindings = ', '.join(root_bindings)
+
+    filtered_var_blocks = generate_var_block(
+        root,
+        root,
+        "",
+        should_filter=True,
+    )
+    root_filters = root._filters()
+
+    prop_names = ", ".join([q for q in root.get_property_names() if q not in ('node_key', root.get_unique_predicate())])
+
+    return f"""
+            {query_name}Coalesce as var(func: uid({cs_bindings}))
+            @cascade
+    
+            {root_filters}
+    
+            {{
+                uid,
+                {prop_names},
+                node_key,
+                {root.get_unique_predicate()},
+                {filtered_var_blocks}
+            }}
+          """
+
 
 def generate_inner_query(
         query_name: str,
@@ -754,8 +785,6 @@ def generate_inner_query(
         first=None,
         count=False
 ) -> str:
-    cs_bindings = ', '.join(root_bindings)
-
     filtered_var_blocks = generate_var_block(
         root,
         root,
@@ -774,8 +803,16 @@ def generate_inner_query(
 
     prop_names = ", ".join([q for q in root.get_property_names() if q not in ('node_key', root.get_unique_predicate())])
 
+    coalesce_var = generate_coalescing_query(
+        query_name,
+        root,
+        root_bindings,
+    )
+
     return f"""
-        {query_name}(func: uid({cs_bindings}) {fmt_first})
+        {coalesce_var}
+    
+        {query_name}(func: uid({query_name}Coalesce) {fmt_first})
         @cascade
 
         {root_filters}
@@ -855,3 +892,4 @@ def traverse_query(node: Queryable, f: Callable[[Queryable], None]):
     visited.add(node)
     for neighbor in node.get_neighbors():
         _traverse_query(neighbor, f, visited)
+
