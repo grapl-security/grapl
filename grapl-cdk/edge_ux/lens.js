@@ -152,8 +152,8 @@ const graph3d = (elem) => {
         .linkThreeObjectExtend(true)
         .nodeThreeObjectExtend(true)
         .linkOpacity(0.5)
-        .linkDirectionalArrowLength(6)
-        .linkDirectionalArrowRelPos(1.05)
+        .linkDirectionalArrowLength(2)
+        .linkDirectionalArrowRelPos(1.8)
         .linkThreeObject(link => {
             const sprite = new SpriteText(mapLabel(link.label));
             sprite.color = 'cyan';
@@ -174,9 +174,9 @@ const graph3d = (elem) => {
                 new THREE.SphereGeometry(4),
                 new THREE.MeshBasicMaterial({ depthWrite: false, transparent: false, opacity: 1 })
             );
-            // add text sprite as child
 
-            const sprite = new SpriteText(node.nodeLabel);
+            // add text sprite as child
+            const sprite = new SpriteText('   ' + node.nodeLabel + '   ');
 
             sprite.color = 'red';
             sprite.textHeight = 4;
@@ -188,6 +188,7 @@ const graph3d = (elem) => {
     return viz
 };
 
+
 const mapLabel = (label) => {
     if (label === 'children') {
         return 'executed'
@@ -195,11 +196,13 @@ const mapLabel = (label) => {
     return label
 };
 
+
 const percentToColor = (percentile) => {
     const hue = (100 - percentile) * 40 / 100;
 
     return `hsl(${hue}, 100%, 50%)`;
 };
+
 
 const calcNodeRiskPercentile = (_nodeRisk, _allRisks) => {
     let nodeRisk = _nodeRisk;
@@ -225,20 +228,20 @@ const calcNodeRiskPercentile = (_nodeRisk, _allRisks) => {
     return Math.floor((riskIndex / allRisks.length) * 100)
 };
 
+
 const nodeSize = (node, Graph) => {
     const nodes = [...Graph.graphData().nodes].map(node => node.risk);
     const riskPercentile = calcNodeRiskPercentile(node.risk, nodes);
 
     if (riskPercentile >= 75) {
-        return 10
-    } else if (riskPercentile >= 50) {
-        return 8
-    } else if (riskPercentile >= 25) {
         return 6
+    } else if (riskPercentile >= 25) {
+        return 5
     } else {
         return 4
     }
 };
+
 
 const riskColor = (node, Graph, colorHash) => {
     const nodes = [...Graph.graphData().nodes].map(node => node.risk);
@@ -273,6 +276,7 @@ const calcLinkRisk = (link, Graph) => {
     return Math.round((srcRisk + dstRisk) / 2)
 };
 
+
 const calcLinkRiskPercentile = (link, Graph) => {
     const linkRisk = calcLinkRisk(link, Graph);
     const nodes = [...Graph.graphData().nodes].map(node => node.risk);
@@ -280,26 +284,27 @@ const calcLinkRiskPercentile = (link, Graph) => {
     return calcNodeRiskPercentile(linkRisk, nodes);
 };
 
+
 const calcLinkParticleWidth = (link, Graph) => {
     const linkRiskPercentile = calcLinkRiskPercentile(link, Graph);
     if (linkRiskPercentile >= 75) {
-        return 8
-    } else if (linkRiskPercentile >= 50) {
-        return 7
-    }  else if (linkRiskPercentile >= 25) {
-        return 6
-    } else if (linkRiskPercentile >= 0) {
         return 5
-    } else {
+    } else if (linkRiskPercentile >= 50) {
         return 4
+    }  else if (linkRiskPercentile >= 25) {
+        return 3
+    } else {
+        return 2
     }
 };
+
 
 const calcLinkColor = (link, Graph) => {
     const risk = calcLinkRiskPercentile(link, Graph);
     if (risk === 0) {return undefined}
     return percentToColor(risk);
 };
+
 
 const calcNodeRgb = (node, colorHash) => {
     if (node.nodeType === 'Process') {
@@ -346,11 +351,11 @@ const calcLinkDirectionalArrowRelPos = (link, Graph) => {
     if (riskPercentile === 0) {return 1.0}
 
     if (riskPercentile >= 75) {
-        return 0.8
+        return 0.95
     } else if (riskPercentile >= 50) {
         return 0.9
     } else if (riskPercentile >= 25) {
-        return 0.95
+        return 0.85
     } else {
         return 1.0
     }
@@ -413,7 +418,10 @@ const graph2d = (elem) => {
             const fontSize = Math.min(MAX_FONT_SIZE, maxTextLength / ctx.measureText(label).width);
             ctx.font = `${fontSize + 5}px Sans-Serif`;
 
-            const textWidth = ctx.measureText(label).width;
+            let textWidth = ctx.measureText(label).width;
+
+            textWidth += Math.round(textWidth * 0.25);
+
             const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
             // draw text label (with background rect)
             ctx.save();
@@ -434,7 +442,7 @@ const graph2d = (elem) => {
 
             // Risk outline color
             ctx.beginPath();
-            ctx.arc(node.x, node.y, NODE_R * 1.4, 0, 2 * Math.PI, false);
+            ctx.arc(node.x, node.y, NODE_R * 1.3, 0, 2 * Math.PI, false);
             ctx.fillStyle = riskColor(node, Graph, colorHash);
             ctx.fill();
             ctx.restore();
@@ -458,6 +466,7 @@ const graph2d = (elem) => {
             ctx.font = `${fontSize}px Sans-Serif`;
 
             const textWidth = ctx.measureText(label).width;
+
             const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';

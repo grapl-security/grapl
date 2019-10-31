@@ -150,12 +150,7 @@ fn into_unid_session(node: impl Into<Node>) -> Option<UnidSession> {
                 _ => false,
             };
 
-            let timestamp = if node.created_timestamp > 1 {
-                info!("Process was not created, but we have the creation time: {}", node.created_timestamp);
-                node.created_timestamp
-            } else {
-                node.timestamp()
-            };
+            let timestamp = node.timestamp();
 
             UnidSession {
                 pseudo_key: format!(

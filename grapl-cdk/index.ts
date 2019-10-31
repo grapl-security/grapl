@@ -23,12 +23,13 @@ import route53 = require('@aws-cdk/aws-route53');
 
 import apigateway = require('@aws-cdk/aws-apigateway');
 import {SqsEventSource} from '@aws-cdk/aws-lambda-event-sources';
-import {IVpc, Port, Vpc} from "@aws-cdk/aws-ec2";
+import {InstanceType, IVpc, Port, Vpc} from "@aws-cdk/aws-ec2";
 import {IBucket} from "@aws-cdk/aws-s3";
 import {ITopic} from "@aws-cdk/aws-sns";
 import {Runtime} from "@aws-cdk/aws-lambda";
 import {Duration, Token} from '@aws-cdk/core';
 import {PublicHostedZone} from "@aws-cdk/aws-route53";
+import {NetworkMode, PlacementConstraint} from "@aws-cdk/aws-ecs";
 
 const env = require('node-env-file');
 
@@ -147,7 +148,7 @@ class EngagementEdge extends cdk.Stack {
         name: string,
         hostname: string,
         jwt_secret: string,
-        engagement_graph: DGraphFargate,
+        engagement_graph: DGraphEcs,
         user_auth_table: UserAuthDb,
         vpc: ec2.Vpc,
     ) {
@@ -633,7 +634,7 @@ class GraphMerger extends cdk.Stack {
                 reads_from: s3.IBucket,
                 subscribes_to: sns.ITopic,
                 publishes_to: sns.ITopic,
-                master_graph: DGraphFargate,
+                master_graph: DGraphEcs,
                 vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
@@ -703,7 +704,7 @@ class AnalyzerExecutor extends cdk.Stack {
                 reads_analyzers_from: s3.IBucket,
                 reads_events_from: s3.IBucket,
                 writes_events_to: s3.IBucket,
-                master_graph: DGraphFargate,
+                master_graph: DGraphEcs,
                 vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
@@ -762,8 +763,8 @@ class EngagementCreator extends cdk.Stack {
                 reads_from: s3.IBucket,
                 subscribes_to: sns.Topic,
                 publishes_to: sns.Topic,
-                master_graph: DGraphFargate,
-                engagement_graph: DGraphFargate,
+                master_graph: DGraphEcs,
+                engagement_graph: DGraphEcs,
                 vpc: ec2.Vpc,
     ) {
         super(parent, id + '-stack');
@@ -816,12 +817,14 @@ class Zero {
         peer: string,
         idx) {
 
-        const zeroTask = new ecs.FargateTaskDefinition(
+        const zeroTask = new ecs.Ec2TaskDefinition(
             stack,
             id,
             {
-                cpu: 1024,
-                memoryLimitMiB: 2048,
+                networkMode: NetworkMode.AWS_VPC,
+                // placementConstraints: [
+                //     PlacementConstraint.distinctInstances()
+                // ]
             }
         );
 
@@ -845,10 +848,11 @@ class Zero {
             // --peer is the other dgraph zero hostname
             image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.0.17"),
             command,
-            logging: logDriver
+            logging: logDriver,
+            memoryReservationMiB: 1024,
         });
 
-        const zeroService = new ecs.FargateService(stack, id + 'Service', {
+        const zeroService = new ecs.Ec2Service(stack, id + 'Service', {
             cluster,  // Required
             taskDefinition: zeroTask,
             cloudMapOptions: {
@@ -878,12 +882,14 @@ class Alpha {
         cluster: ecs.Cluster,
         zero: string) {
 
-        const alphaTask = new ecs.FargateTaskDefinition(
+        const alphaTask = new ecs.Ec2TaskDefinition(
             stack,
             id,
             {
-                cpu: 2048,
-                memoryLimitMiB: 4096,
+                networkMode: NetworkMode.AWS_VPC,
+                // placementConstraints: [
+                //     PlacementConstraint.distinctInstances()
+                // ]
             }
         );
 
@@ -893,14 +899,16 @@ class Alpha {
 
         alphaTask.addContainer(id + graph + 'Container', {
             image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.0.17"),
-            command: ["dgraph", "alpha", `--my=${id}.${graph}.grapl:7080`,
+            command: [
+                "dgraph", "alpha", `--my=${id}.${graph}.grapl:7080`,
                 "--lru_mb=1024", `--zero=${zero}.${graph}.grapl:5080`,
                 "--alsologtostderr"
             ],
-            logging: logDriver
+            logging: logDriver,
+            memoryReservationMiB: 2048,
         });
 
-        const alphaService = new ecs.FargateService(stack, id + 'Service', {
+        const alphaService = new ecs.Ec2Service(stack, id + 'Service', {
             cluster,  // Required
             taskDefinition: alphaTask,
             cloudMapOptions: {
@@ -916,7 +924,7 @@ class Alpha {
     }
 }
 
-class DGraphFargate extends cdk.Stack {
+class DGraphEcs extends cdk.Stack {
     cluster: ecs.Cluster;
     alphaNames: string[];
 
@@ -929,9 +937,10 @@ class DGraphFargate extends cdk.Stack {
     ) {
         super(parent, id + '-stack');
 
-        const cluster = new ecs.Cluster(this, id + '-FargateCluster', {
+        const cluster = new ecs.Cluster(this, id + '-EcsCluster', {
             vpc: vpc
         });
+
         cluster.connections.allowInternally(Port.allTcp());
 
         this.cluster = cluster;
@@ -941,6 +950,15 @@ class DGraphFargate extends cdk.Stack {
                 name: id + '.grapl',
                 type: cloudmap.NamespaceType.DNS_PRIVATE,
                 vpc
+            }
+        );
+
+        cluster.addCapacity(id + "ZeroGroupCapacity",
+            {
+                instanceType: new ec2.InstanceType("t3a.small"),
+                minCapacity: zeroCount,
+                desiredCapacity: zeroCount,
+                maxCapacity: zeroCount,
             }
         );
 
@@ -967,6 +985,15 @@ class DGraphFargate extends cdk.Stack {
         }
 
         this.alphaNames = [];
+
+        cluster.addCapacity(id + "AlphaGroupCapacity",
+            {
+                instanceType: new ec2.InstanceType("t3a.medium"),
+                minCapacity: alphaCount,
+                desiredCapacity: alphaCount,
+                maxCapacity: alphaCount,
+            }
+        );
 
         for (let i = 0; i < alphaCount; i++) {
 
@@ -1018,7 +1045,7 @@ class EngagementNotebook extends cdk.Stack {
             this,
             id + '-sagemaker-endpoint',
             {
-                instanceType: 'ml.c4.2xlarge',
+                instanceType: 'ml.t2.medium',
                 securityGroupIds: [this.securityGroup.securityGroupId],
                 subnetId: vpc.privateSubnets[0].subnetId,
                 directInternetAccess: 'Enabled',
@@ -1032,7 +1059,7 @@ class EngagementNotebook extends cdk.Stack {
 const fs = require('fs'),
     path = require('path');
 
-const replaceInFile = (toModify, toReplace, replaceWith) => {
+const replaceInFile = (toModify, toReplace, replaceWith, outputFile) => {
     return fs.readFile(toModify, 'utf8', (err, data) => {
         if (err) {
             return console.log(err);
@@ -1041,9 +1068,16 @@ const replaceInFile = (toModify, toReplace, replaceWith) => {
         if (replaced === data) {
             console.log(`No replaced text - did you forget to build engagement ux?`)
         }
-        fs.writeFile(toModify, replaced, 'utf8', (err) => {
-            if (err) return console.log(err);
-        });
+        if (outputFile) {
+            fs.writeFile(outputFile, replaced, 'utf8', (err) => {
+                if (err) return console.log(err);
+            });
+        } else {
+            fs.writeFile(toModify, replaced, 'utf8', (err) => {
+                if (err) return console.log(err);
+            });
+        }
+
     });
 };
 
@@ -1080,41 +1114,37 @@ class EngagementUx extends cdk.Stack {
             websiteIndexDocument: 'index.html',
         });
 
-        // edgeBucket.addCorsRule(
-        //     {
-        //         allowedOrigins: [bucketName],
-        //         allowedMethods: [
-        //             HttpMethods.HEAD,
-        //             HttpMethods.GET,
-        //             HttpMethods.PUT,
-        //             HttpMethods.POST,
-        //             HttpMethods.DELETE
-        //         ],
-        //         allowedHeaders: ['*'],
-        //
-        //     }
-        // );
-
         getEdgeGatewayId(
             edge.name + 'Integration',
             (gatewayId) => {
                 const edgeUrl = `https://${gatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
 
-                const filesToModify = [
-                    path.join(__dirname, 'edge_ux/index.js'),
-                    path.join(__dirname, 'edge_ux/lenses.js'),
-                    path.join(__dirname, 'edge_ux/lens.js')
-                ];
-                const toReplace = /const engagement_edge = ".+";/;
+                const filesToModify = ["index.js", "lenses.js", "lens.js"];
+
+                const toReplace = /const engagement_edge = ".*";/;
                 const replacement = `const engagement_edge = "${edgeUrl}";`;
 
-                for (const toModify of filesToModify) {
-                    replaceInFile(toModify, toReplace, replacement)
+                for (const toModifyName of filesToModify) {
+                    const toModify = path.join(__dirname, 'edge_ux/', toModifyName);
+                    replaceInFile(
+                        toModify,
+                        toReplace,
+                        replacement,
+                        path.join(__dirname, 'edge_ux_package/', toModifyName)
+                    )
                 }
             });
-        console.log(path.join(__dirname, 'edge_ux/'));
+
+        for (const toCopyName of ['index.html', 'lenses.html', 'lens.html']) {
+            const srcPath = path.join(__dirname, 'edge_ux/', toCopyName);
+            const dstPath = path.join(__dirname, 'edge_ux_package/', toCopyName);
+            fs.copyFile(srcPath, dstPath, (err) => {
+                if (err) throw err;
+            });
+        }
+
         new s3deploy.BucketDeployment(this, id + 'Ux', {
-            sources: [s3deploy.Source.asset('./edge_ux')],
+            sources: [s3deploy.Source.asset('./edge_ux_package')],
             destinationBucket: edgeBucket,
             destinationKeyPrefix: 'web/static/v0/'
         });
@@ -1225,6 +1255,7 @@ class HistoryDb extends cdk.Stack {
 
     }
 
+
     allowReadWrite(service: Service) {
         this.proc_history.grantReadWriteData(service.event_handler.role);
         this.file_history.grantReadWriteData(service.event_handler.role);
@@ -1243,6 +1274,7 @@ class HistoryDb extends cdk.Stack {
         this.dynamic_session_table.grantReadWriteData(service.event_retry_handler.role);
     }
 }
+
 
 class Grapl extends cdk.App {
     constructor() {
@@ -1266,7 +1298,7 @@ class Grapl extends cdk.App {
             'graplhistorydb',
         );
 
-        const master_graph = new DGraphFargate(
+        const master_graph = new DGraphEcs(
             this,
             'mastergraphcluster',
             network.grapl_vpc,
@@ -1274,7 +1306,7 @@ class Grapl extends cdk.App {
             mgAlphaCount,
         );
 
-        const engagement_graph = new DGraphFargate(
+        const engagement_graph = new DGraphEcs(
             this,
             'engagementgraphcluster',
             network.grapl_vpc,

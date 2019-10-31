@@ -351,9 +351,9 @@ def lambda_login(event):
     login_res = login(body['username'], body['password'])
     # Clear out the password from the dict, to avoid accidentally logging it
     body['password'] = ''
-    print(f'login_res: {login_res}')
+    cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None"
     if login_res:
-        return respond(None, 'True', headers={'Set-Cookie': 'grapl_jwt=' + login_res})
+        return respond(None, 'True', headers={'Set-Cookie': cookie})
     else:
         return respond('Invalid user or password')
 

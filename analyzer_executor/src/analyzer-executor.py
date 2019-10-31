@@ -18,7 +18,7 @@ from collections import defaultdict
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.entities import SubgraphView, NodeView
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
-from grapl_analyzerlib.querying import _get_queries, Viewable, Queryable, traverse_query
+from grapl_analyzerlib.querying import generate_query, Viewable, Queryable, traverse_query
 from pydgraph import DgraphClientStub, DgraphClient
 
 
@@ -115,7 +115,12 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
                 result_name = f'{an_name}u{int(node.uid, 16)}i{i}r{r}'.strip().lower()
                 result_name_to_analyzer[result_name] = (an_name, analyzer, query.view_type)
                 query_str += '\n'
-                query_str += _get_queries(query, node_key=node.node_key, first=1, result_name=result_name)
+                query_str += generate_query(
+                    query_name=result_name,
+                    binding_modifier=result_name,
+                    root=query,
+                    contains_node_key=node.node_key,
+                )
 
     if not query_str:
         print('No nodes to query')
@@ -320,4 +325,3 @@ def lambda_handler(events: Any, context: Any) -> None:
             ), f"Analyzer {analyzer_name} failed."
 
         p.join()
-
