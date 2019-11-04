@@ -108,10 +108,26 @@ class Contains(Cmp):
     def to_filter(self) -> str:
 
         if isinstance(self.value, Not):
-            value = self.value.value
+            value = re.escape(self.value.value)
             return f"NOT regexp({self.predicate}, /{value}/)"
         else:
-            return f"regexp({self.predicate}, /{self.value}/)"
+            value = re.escape(self.value)
+            return f"regexp({self.predicate}, /{value}/)"
+
+
+class Regexp(Cmp):
+    def __init__(self, predicate: str, value: Union[str, Not]) -> None:
+        self.predicate = predicate
+        self.value = value
+
+    def to_filter(self) -> str:
+
+        if isinstance(self.value, Not):
+            value = self.value.value.replace("/", "\\/")
+            return f"NOT regexp({self.predicate}, /{value}/)"
+        else:
+            value = self.value.replace("/", "\\/")
+            return f"regexp({self.predicate}, /{value}/)"
 
 
 def _generate_filter(comparisons_list: List[List[Cmp]]) -> str:
