@@ -54,7 +54,7 @@ class ParentChildCounter(object):
         """
 
         if self.cache:
-            key = parent_process_name + child_process_name or ""
+            key = type(self).__name__ + parent_process_name + child_process_name or ""
 
             cached_count = self.cache.get(key)
             if cached_count:
@@ -98,7 +98,7 @@ class GrandParentGrandChildCounter(object):
         If no path is provided, just count the process_name.
         """
 
-        key = grand_parent_process_name + grand_child_process_name or ""
+        key = type(self).__name__ + grand_parent_process_name + grand_child_process_name or ""
 
         cached_count = None
         if self.cache:
