@@ -88,6 +88,10 @@ message ProcessDescription {
     // integrity level is a Windows only concept
     string process_integrity_level = 13;
     string operating_system = 14;
+    // uid associated with the process
+    uint64 uid = 15;
+    // auid associated with process - Linux only
+    uint64 auid = 16;
 }
 
 message FileDescription {
@@ -122,6 +126,15 @@ message IpAddressDescription {
     uint64 timestamp = 2;
     string ip_address = 3;
     string ip_proto = 4;
+}
+
+message IPCDescription {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.StringValue host_ip = 4;
+    string ipc_type = 5;
+    string access_timestamp = 6;
 }
 
 message Session {

@@ -826,6 +826,8 @@ impl ProcessDescription {
                process_command_line: String,
                process_guid: String,
                process_integrity_level: String,
+               uid: u64,
+               auid: u64,
     ) -> ProcessDescription {
         let mut pd = Self {
             node_key: Uuid::new_v4().to_string(),
@@ -842,6 +844,8 @@ impl ProcessDescription {
             process_command_line,
             process_guid,
             process_integrity_level,
+            uid,
+            auid,
         };
 
         match state {
