@@ -827,8 +827,8 @@ impl ProcessDescription {
                process_command_line: String,
                process_guid: String,
                process_integrity_level: String,
-               uid: u64,
-               auid: u64,
+               user_id: impl Into<Option<u64>>,
+               auid: impl Into<Option<u64>>,
     ) -> ProcessDescription {
         let mut pd = Self {
             node_key: Uuid::new_v4().to_string(),
@@ -845,8 +845,8 @@ impl ProcessDescription {
             process_command_line,
             process_guid,
             process_integrity_level,
-            uid,
-            auid,
+            user_id: user_id.into(),
+            auid: auid.into(),
         };
 
         match state {
@@ -902,10 +902,18 @@ impl ProcessDescription {
         if !self.process_guid.is_empty() {
             j["process_guid"] = Value::from(self.process_guid.to_owned());
         }
+
         if !self.process_integrity_level.is_empty() {
             j["process_integrity_level"] = Value::from(self.process_integrity_level.to_owned());
         }
 
+        if let Some(user_id) = self.user_id {
+            j["user_id"] = Value::from(user_id);
+        }
+
+        if let Some(auid) = self.auid {
+            j["auid"] = Value::from(auid);
+        }
 
         match ProcessState::from(self.state) {
             ProcessState::Created => j["created_time"] = self.created_timestamp.into(),
