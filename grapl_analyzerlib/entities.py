@@ -976,6 +976,8 @@ class ProcessQuery(Queryable):
         self._created_timestamp = []  # type: List[List[Cmp]]
         self._terminated_timestamp = []  # type: List[List[Cmp]]
         self._last_seen_timestamp = []  # type: List[List[Cmp]]
+        self._user_id = []  # type: List[List[Cmp]]
+        self._auid = []  # type: List[List[Cmp]]
 
         # Edges
         self._bin_file = None  # type: Optional[FQ]
@@ -1001,6 +1003,17 @@ class ProcessQuery(Queryable):
     def with_uid(self, eq: Union[Not, str]):
         if eq:
             self._uid = Eq("uid", eq)
+        return self
+
+    def with_user_id(self, eq: Union[Not, int]):
+        if eq:
+            self._user_id = Eq("user_id", eq)
+        return self
+
+
+    def with_auid(self, eq: Union[Not, int]):
+        if eq:
+            self._auid = Eq("auid", eq)
         return self
 
     def only_first(self, first: int) -> "PQ":
@@ -1147,6 +1160,8 @@ class ProcessQuery(Queryable):
             ("created_timestamp", self._created_timestamp),
             ("terminated_timestamp", self._terminated_timestamp),
             ("last_seen_timestamp", self._last_seen_timestamp),
+            ("uid", self._uid),
+            ("auid", self._auid),
         ]
 
         return [p for p in properties if p[1]]
@@ -1200,6 +1215,8 @@ class ProcessView(Viewable):
         created_timestamp: Optional[str] = None,
         terminated_timestamp: Optional[str] = None,
         last_seen_timestamp: Optional[str] = None,
+        user_id: Optional[int] = None,
+        auid: Optional[int] = None,
         bin_file: Optional["FV"] = None,
         parent: Optional["PV"] = None,
         children: Optional[List["PV"]] = None,
@@ -1214,6 +1231,8 @@ class ProcessView(Viewable):
         self.dgraph_client = dgraph_client  # type: DgraphClient
         self.node_key = node_key  # type: str
         self.uid = uid  # type: Optional[str]
+        self.user_id = user_id  # type: Optional[int]
+        self.auid = auid  # type: Optional[int]
         self.asset_id = asset_id
         self.process_command_line = process_command_line
         self.process_guid = process_guid
@@ -1242,6 +1261,8 @@ class ProcessView(Viewable):
             ("created_timestamp", int),
             ("terminated_timestamp", int),
             ("last_seen_timestamp", int),
+            ("user_id", int),
+            ("auid", int),
         ]
 
     @staticmethod
@@ -1311,6 +1332,37 @@ class ProcessView(Viewable):
 
         self.last_seen_timestamp = self_process.last_seen_timestamp
         return self.last_seen_timestamp
+
+
+    def get_user_id(self) -> Optional[int]:
+        self_process = (
+            ProcessQuery()
+            .with_node_key(self.node_key)
+            .with_user_id()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_process:
+            return None
+        if self_process.user_id:
+            self.user_id = int(self_process.user_id)
+
+        return self.user_id
+
+    def get_auid(self) -> Optional[int]:
+        self_process = (
+            ProcessQuery()
+            .with_node_key(self.node_key)
+            .with_auid()
+            .query_first(dgraph_client=self.dgraph_client)
+        )
+
+        if not self_process:
+            return None
+
+        if self_process.auid:        
+            self.auid = int(self_process.auid)
+        return self.auid
 
     def get_descendents(self, max=5, limit=50) -> List["ProcessView"]:
         descendents = []
@@ -1534,6 +1586,8 @@ class ProcessView(Viewable):
             ("terminated_timestamp", self.terminated_timestamp),
             ("last_seen_timestamp", self.last_seen_timestamp),
             ("process_name", self.process_name),
+            ("user_id", self.user_id),
+            ("auid", self.auid),
         )
 
         return [p for p in props if p[1]]

@@ -88,6 +88,10 @@ message ProcessDescription {
     // integrity level is a Windows only concept
     string process_integrity_level = 13;
     string operating_system = 14;
+    // uid associated with the process
+    google.protobuf.UInt64Value user_id = 15;
+    // auid associated with process - Linux only
+    google.protobuf.UInt64Value auid = 16;
 }
 
 message FileDescription {
@@ -148,7 +152,8 @@ message IdStrategy {
 message NodeProperty {
     oneof property {
         int64 intprop = 1;
-        string strprop = 2;
+        uint64 uintprop = 2;
+        string strprop = 3;
     }
 }
 
