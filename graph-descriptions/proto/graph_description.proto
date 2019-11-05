@@ -128,15 +128,6 @@ message IpAddressDescription {
     string ip_proto = 4;
 }
 
-message IPCDescription {
-    string node_key = 1;
-    google.protobuf.StringValue asset_id = 2;
-    google.protobuf.StringValue hostname = 3;
-    google.protobuf.StringValue host_ip = 4;
-    string ipc_type = 5;
-    string access_timestamp = 6;
-}
-
 message Session {
     // Such as the pid + assetid
     repeated string primary_key_properties = 1;
