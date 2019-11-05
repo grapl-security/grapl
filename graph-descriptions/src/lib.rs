@@ -1,11 +1,10 @@
 extern crate base64;
 #[macro_use]
 extern crate derive_builder;
-extern crate hash_hasher;
+
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate maplit;
+
 extern crate prost;
 #[macro_use]
 extern crate prost_derive;
@@ -14,8 +13,10 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
-extern crate sha3;
+
 extern crate uuid;
+
+use std::collections::HashMap;
 
 use graph_description::*;
 use graph_description::host::HostId;
@@ -1211,8 +1212,8 @@ impl IpAddressDescription {
 impl GraphDescription {
     pub fn new(timestamp: u64) -> Self {
         GraphDescription {
-            nodes: hashmap![],
-            edges: hashmap![],
+            nodes: HashMap::new(),
+            edges: HashMap::new(),
             timestamp
         }
     }
