@@ -505,9 +505,15 @@ fn handle_log(raw_log: Value) -> Result<GraphDescription, Error> {
 }
 
 #[derive(Clone)]
-struct GenericSubgraphGenerator;
+struct GenericSubgraphGenerator<S>
+    where S: S3
+{
+    s3: Arc<S>,
+}
 
-impl EventHandler<Vec<serde_json::Value>> for GenericSubgraphGenerator {
+impl<S> EventHandler<Vec<serde_json::Value>> for GenericSubgraphGenerator<S>
+    where S: S3
+{
     fn handle_event(&self, event: Vec<serde_json::Value>) -> Result<(), Error> {
         let subgraphs: Vec<_> = event
             .into_iter()
@@ -521,7 +527,7 @@ impl EventHandler<Vec<serde_json::Value>> for GenericSubgraphGenerator {
             .flat_map(Result::ok)
             .collect();
 
-//        upload_subgraphs(GeneratedSubgraphs::new(subgraphs))?;
+        upload_subgraphs(self.s3.as_ref(), GeneratedSubgraphs::new(subgraphs))?;
         Ok(())
     }
 }
@@ -539,7 +545,7 @@ fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
     info!("Creating retriever");
     let retriever = S3EventRetriever::new(
-        s3_client,
+        s3_client.clone(),
         |d| {
             info!("Parsing: {:?}", d);
             events_from_s3_sns_sqs(d)
@@ -554,7 +560,7 @@ fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     info!("Creating sqs_completion_handler");
     let sqs_completion_handler = BlockingSqsCompletionHandler::new(sqs_client, queue_url);
 
-    let handler = GenericSubgraphGenerator {};
+    let handler = GenericSubgraphGenerator {s3: s3_client};
 
     let mut sqs_service = SqsService::new(retriever, handler, sqs_completion_handler);
 
@@ -567,10 +573,4 @@ fn my_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 fn main() {
     simple_logger::init_with_level(log::Level::Info).unwrap();
     lambda!(my_handler);
-    //    handle_json_encoded_logs(
-    //        move |raw_logs| {
-    //            info!("Handling raw log");
-    //            raw_logs.into_iter().map(handle_log).collect()
-    //        }
-    //    );
 }

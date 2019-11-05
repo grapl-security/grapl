@@ -141,6 +141,9 @@ impl OutboundConnection {
     }
 
     pub fn timestamp(&self) -> u64 {
+
+
+
         match ConnectionState::from(self.state) {
             ConnectionState::Created => self.created_timestamp,
             ConnectionState::Terminated => self.terminated_timestamp,

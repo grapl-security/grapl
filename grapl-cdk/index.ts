@@ -988,7 +988,7 @@ class DGraphEcs extends cdk.Stack {
 
         cluster.addCapacity(id + "AlphaGroupCapacity",
             {
-                instanceType: new ec2.InstanceType("t3a.medium"),
+                instanceType: new ec2.InstanceType("t3a.large"),
                 minCapacity: alphaCount,
                 desiredCapacity: alphaCount,
                 maxCapacity: alphaCount,
