@@ -340,6 +340,48 @@ impl HostIdentifier {
     }
 }
 
+impl From<Node> for NodeDescription {
+    fn from(node: Node) -> NodeDescription {
+        match node {
+            Node::AssetNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::AssetNode (node))
+                }
+            }
+            Node::ProcessNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::ProcessNode (node))
+                }
+            }
+            Node::FileNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::FileNode (node))
+                }
+            }
+            Node::IpAddressNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::IpAddressNode (node))
+                }
+            }
+            Node::OutboundConnectionNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::OutboundConnectionNode (node))
+                }
+            }
+            Node::InboundConnectionNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::InboundConnectionNode (node))
+                }
+            }
+            Node::DynamicNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::DynamicNode (node))
+                }
+            }
+        }
+    }
+}
+
 
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -1288,7 +1330,6 @@ impl GraphDescription {
             .edges.push(edge);
     }
 }
-
 
 #[cfg(test)]
 mod tests {
