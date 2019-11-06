@@ -1005,13 +1005,13 @@ class ProcessQuery(Queryable):
             self._uid = Eq("uid", eq)
         return self
 
-    def with_user_id(self, eq: Union[Not, int]):
+    def with_user_id(self, eq: Optional[Union[Not, int]] = None):
         if eq:
             self._user_id = Eq("user_id", eq)
         return self
 
 
-    def with_auid(self, eq: Union[Not, int]):
+    def with_auid(self, eq: Optional[Union[Not, int]] = None):
         if eq:
             self._auid = Eq("auid", eq)
         return self
