@@ -740,7 +740,7 @@ def generate_root_var(query: Queryable, root: Queryable, root_binding: str, node
             uid,
             node_key,
             {prop_names}
-            {query.get_unique_predicate()}
+            {query.get_unique_predicate() or ""}
             {blocks}
         }}
     """
@@ -795,7 +795,7 @@ def generate_coalescing_query(
                 uid,
                 {prop_names},
                 node_key,
-                {root.get_unique_predicate()},
+                {root.get_unique_predicate() or ""},
                 {filtered_var_blocks}
             }}
           """
@@ -845,7 +845,7 @@ def generate_inner_query(
             {fmt_count},
             {prop_names},
             node_key,
-            {root.get_unique_predicate()},
+            {root.get_unique_predicate() or ""},
             {filtered_var_blocks}
         }}
       """
