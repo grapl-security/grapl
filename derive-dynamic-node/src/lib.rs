@@ -55,7 +55,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
             dynamic_node: grapl_graph_descriptions::graph_description::DynamicNode,
         }
 
-        trait #node_trait_name {
+        pub trait #node_trait_name {
             fn get_mut_dynamic_node(&mut self) -> &mut DynamicNode;
 
             #methods
