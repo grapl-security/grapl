@@ -189,7 +189,7 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     let q = quote!(
 
         impl #node_name {
-            fn static_strategy() -> IdStrategy {
+            pub fn static_strategy() -> IdStrategy {
                 Static {
                     primary_key_properties: vec![
                         #id_fields
