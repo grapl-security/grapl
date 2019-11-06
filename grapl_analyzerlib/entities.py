@@ -1,6 +1,5 @@
 import abc
 import json
-from abc import ABC
 from collections import defaultdict
 from copy import deepcopy
 from typing import Iterator, TypeVar, Callable, Type, Iterable
@@ -336,15 +335,15 @@ class DynamicNodeQuery(Queryable):
         return [t for t in self.reverse_edge_filters.items() if t[1]]
 
 
-class DynamicNodeView(Viewable, ABC):
+class DynamicNodeView(Viewable):
 
     def __init__(
-        self,
-        dgraph_client: DgraphClient,
-        node_key: str,
-        node_type: str,
-        uid: str,
-        asset_id: Optional[str] = None,
+            self,
+            dgraph_client: DgraphClient,
+            node_key: str,
+            node_type: str,
+            uid: str,
+            asset_id: Optional[str] = None,
     ):
         super(DynamicNodeView, self).__init__(dgraph_client, node_key, uid)
         self.dgraph_client = dgraph_client
@@ -352,6 +351,25 @@ class DynamicNodeView(Viewable, ABC):
         self.node_type = node_type
         self.asset_id = asset_id
         self.uid = uid
+        
+    @staticmethod
+    @abc.abstractmethod
+    def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_edge_types() -> List[Tuple[str, Union[List[Type[V]], Type[V]]]]:
+        pass
+
+    @abc.abstractmethod
+    def get_property_tuples(self) -> List[Tuple[str, Any]]:
+        pass
+
+    @abc.abstractmethod
+    def get_edge_tuples(self) -> List[Tuple[str, Any]]:
+        pass
+
 
 
 class FileQuery(Queryable):
