@@ -335,7 +335,7 @@ class DynamicNodeQuery(Queryable):
         return [t for t in self.reverse_edge_filters.items() if t[1]]
 
 
-class DynamicNodeView(Viewable):
+class DynamicNodeView(Viewable, abc.ABC):
 
     def __init__(
             self,
@@ -351,7 +351,7 @@ class DynamicNodeView(Viewable):
         self.node_type = node_type
         self.asset_id = asset_id
         self.uid = uid
-        
+
     @staticmethod
     @abc.abstractmethod
     def get_property_types() -> List[Tuple[str, Callable[[Any], Union[str, int]]]]:
