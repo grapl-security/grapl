@@ -59,6 +59,8 @@ fn main() {
     config.field_attribute(".graph_description.ProcessDescription.process_command_line", "#[builder(default)]");
     config.field_attribute(".graph_description.ProcessDescription.process_integrity_level", "#[builder(default)]");
     config.field_attribute(".graph_description.ProcessDescription.operating_system", "#[builder(default)]");
+    config.field_attribute(".graph_description.ProcessDescription.user_id", "#[builder(default)]");
+    config.field_attribute(".graph_description.ProcessDescription.auid", "#[builder(default)]");
 
 
     config.field_attribute(".graph_description.ProcessDescription.asset_id", "#[builder(default)]");
