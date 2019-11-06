@@ -1,4 +1,6 @@
+import abc
 import json
+from abc import ABC
 from collections import defaultdict
 from copy import deepcopy
 from typing import Iterator, TypeVar, Callable, Type, Iterable
@@ -150,7 +152,7 @@ class NodeView(Viewable):
                 )
             )
         else:
-            raise Exception("Invalid Node Type")
+            raise Exception(f"Invalid Node Type : {node}")
 
     @staticmethod
     def from_view(v: 'Viewable'):
@@ -334,7 +336,8 @@ class DynamicNodeQuery(Queryable):
         return [t for t in self.reverse_edge_filters.items() if t[1]]
 
 
-class DynamicNodeView(Viewable):
+class DynamicNodeView(Viewable, ABC):
+
     def __init__(
         self,
         dgraph_client: DgraphClient,
