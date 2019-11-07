@@ -987,6 +987,14 @@ impl ProcessDescription {
             self.process_name = other.process_name.clone();
         }
 
+        if self.user_id.is_none() && other.user_id.is_some() {
+            self.user_id = other.user_id.clone();
+        }
+
+        if self.auid.is_none() && other.auid.is_some() {
+            self.auid = other.auid.clone();
+        }
+
     }
 
     pub fn timestamp(&self) -> u64 {
@@ -1333,6 +1341,7 @@ impl GraphDescription {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
