@@ -1,6 +1,6 @@
 import json
 
-from grapl_analyzerlib.nodes import NodeView
+from grapl_analyzerlib.prelude import NodeView
 
 
 class ExecutionHit(object):

@@ -3,9 +3,7 @@ from typing import Optional, Any
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes import ProcessQuery
-
-from grapl_analyzerlib.nodes import Queryable
+from grapl_analyzerlib.prelude import ProcessQuery
 
 
 class OrderedEnum(enum.Enum):

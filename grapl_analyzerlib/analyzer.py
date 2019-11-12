@@ -1,7 +1,8 @@
 import abc
 from typing import Any, Type, TypeVar, List, Union
 
-from grapl_analyzerlib.nodes import Viewable, Queryable
+from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.nodes.queryable import Queryable
 from pydgraph import DgraphClient
 
 A = TypeVar("A", bound="Analyzer")
