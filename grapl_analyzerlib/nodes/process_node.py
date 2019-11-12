@@ -339,7 +339,7 @@ class _ProcessView(Viewable[T]):
         return self.deleted_files
 
     def get_parent(self) -> Optional['ProcessView']:
-        self.parent = cast('Optional[ProcessView]', self.fetch_edge('~parent', ProcessView))
+        self.parent = cast('Optional[ProcessView]', self.fetch_edge('~children', ProcessView))
         return self.parent
 
     @staticmethod
