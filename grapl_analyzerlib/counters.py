@@ -3,8 +3,9 @@ from typing import Optional, Any
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.entities import ProcessQuery
-from grapl_analyzerlib.querying import Not
+from grapl_analyzerlib.nodes import ProcessQuery
+
+from grapl_analyzerlib.nodes import Queryable
 
 
 class OrderedEnum(enum.Enum):
@@ -35,6 +36,49 @@ class Seen(OrderedEnum):
     Many = 2
 
 
+# class SubgraphCounter(object):
+#     def __init__(self, dgraph_client: DgraphClient, cache: Any = None) -> None:
+#         self.dgraph_client = dgraph_client
+#         self.cache = cache
+#
+#     def get_count_for(
+#             self,
+#             query: Queryable[Any],
+#             max_count: int = 4,
+#     ) -> int:
+#         """
+#         Given a subgraph with only 'eq' fields set and no OR logic, get a count
+#
+#         # TODO: OR logic could be supported as well, but not now.
+#
+#         If no path is provided, just count the process_name.
+#         """
+#
+#         eqs = {}
+#
+#         key = type(self).__name__
+#         cached_count = None
+#
+#         if self.cache:
+#
+#             cached_count = self.cache.get(key)
+#             if cached_count:
+#                 cached_count = int(cached_count)
+#             if cached_count and cached_count >= max_count:
+#                 return cached_count
+#
+#         count = query.get_count(self.dgraph_client)
+#
+#         if self.cache:
+#             if not cached_count:
+#                 self.cache.set(key, count)
+#             elif count >= cached_count:
+#                 self.cache.set(key, count)
+#
+#         return count
+
+
+
 class ParentChildCounter(object):
     def __init__(self, dgraph_client: DgraphClient, cache: Any = None) -> None:
         self.dgraph_client = dgraph_client
@@ -53,8 +97,10 @@ class ParentChildCounter(object):
         If no path is provided, just count the process_name.
         """
 
+        key = type(self).__name__ + parent_process_name + (child_process_name or "")
+        cached_count = None
+
         if self.cache:
-            key = type(self).__name__ + parent_process_name + child_process_name or ""
 
             cached_count = self.cache.get(key)
             if cached_count:
@@ -64,7 +110,6 @@ class ParentChildCounter(object):
 
         query = (
             ProcessQuery()
-            .only_first(max_count)
             .with_process_name(eq=parent_process_name)
             .with_children(ProcessQuery().with_process_name(eq=child_process_name))
         )
@@ -110,12 +155,12 @@ class GrandParentGrandChildCounter(object):
 
         query = (
             ProcessQuery()
-            .only_first(max_count)
             .with_process_name(eq=grand_parent_process_name)
             .with_children(
                 ProcessQuery()
                 .with_children(
-                    ProcessQuery().with_process_name(eq=grand_child_process_name)
+                    ProcessQuery()
+                        .with_process_name(eq=grand_child_process_name)
                 )
             )
         )
