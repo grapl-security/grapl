@@ -1,8 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="grapl_analyzerlib",
-    version="0.1.213",
+    version="0.1.214",
     description="Library for Grapl Analyzers",
     url="https://github.com/insanitybit/grapl/",
     author="insanitybit",
@@ -13,7 +13,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
     ],
-    packages=["grapl_analyzerlib"],
+    packages=find_packages(),
     include_package_data=True,
     install_requires=["pydgraph"],
 )
