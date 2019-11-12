@@ -240,7 +240,7 @@ class _ProcessView(Viewable[T]):
             dgraph_client: DgraphClient,
             uid: str,
             node_key: str,
-            process_id: int,
+            process_id: Optional[int] = None,
             created_timestamp: Optional[int] = None,
             asset_id: Optional[str] = None,
             terminate_time: Optional[int] = None,
