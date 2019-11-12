@@ -288,3 +288,4 @@ from grapl_analyzerlib.prelude import ProcessView, FileView, ExternalIpView, Dyn
 from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpView
 from grapl_analyzerlib.nodes.file_node import _FileView
 from grapl_analyzerlib.nodes.process_node import _ProcessView
+from grapl_analyzerlib.nodes.dynamic_node import _DynamicNodeView
