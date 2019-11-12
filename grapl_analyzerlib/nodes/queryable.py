@@ -108,7 +108,16 @@ class Queryable(abc.ABC, Generic[T]):
     ) -> None:
         self.dynamic_property_filters[property_name].extend(cast(Any, property_filter))
 
+    @abc.abstractmethod
     def query(
+            self,
+            dgraph_client: DgraphClient,
+            contains_node_key: Optional[str] = None,
+            first: Optional[int] = 1000,
+    ) -> List['Any']:
+        pass
+
+    def _query(
             self,
             dgraph_client: DgraphClient,
             contains_node_key: Optional[str] = None,
@@ -137,7 +146,13 @@ class Queryable(abc.ABC, Generic[T]):
             self.view_type.from_dict(dgraph_client, raw_view) for raw_view in raw_views
         ]
 
+    @abc.abstractmethod
     def query_first(
+            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
+    ) -> Optional[Any]:
+        pass
+
+    def _query_first(
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
     ) -> Optional['Viewable[T]']:
         res = self.query(dgraph_client, contains_node_key, first=1)

@@ -87,7 +87,8 @@ class Viewable(abc.ABC, Generic[T]):
     def set_dynamic_forward_edge(
             self, edge_name: str, edge: 'ForwardEdgeView[T]'
     ) -> None:
-        self.dynamic_forward_edges[edge_name] = edge
+        if edge:
+            self.dynamic_forward_edges[edge_name] = edge
 
     def set_dynamic_reverse_edge(
             self, edge_name: str, reverse_edge:  'ReverseEdgeView[T]'
@@ -98,13 +99,13 @@ class Viewable(abc.ABC, Generic[T]):
         return {**self._get_properties(), **self.dynamic_properties}
 
     def get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':
-        return {**self._get_forward_edges(), **self.dynamic_forward_edges}
+        return {k: v for k, v in {**self._get_forward_edges(), **self.dynamic_forward_edges}.items() if v}
 
     def get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView[T]]':
-        return {**self._get_reverse_edges(), **self.dynamic_reverse_edges}
+        return {k: v for k, v in {**self._get_reverse_edges(), **self.dynamic_reverse_edges}.items() if v[0]}
 
     def get_edges(self) -> 'Mapping[str, EdgeView[T]]':
-        return {**self._get_forward_edges(), **self._get_reverse_edges()}
+        return {**self.get_forward_edges(), **self.get_reverse_edges()}
 
     def fetch_property(
             self, prop_name: str, prop_type: Callable[['Property'], 'Property']
@@ -305,7 +306,8 @@ class Viewable(abc.ABC, Generic[T]):
         )
 
     def to_dict(self) -> Dict[str, Any]:
-        node_dict = self.get_properties()
+        node_dict = dict(self.get_properties())
+        node_dict["node_key"] = self.node_key
         edges = []
 
         for edge_name, edge in self.get_edges().items():

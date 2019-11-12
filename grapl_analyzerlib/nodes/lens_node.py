@@ -280,6 +280,24 @@ class _LensQuery(Queryable[T]):
         return {}
 
 
+    def query(
+            self,
+            dgraph_client: DgraphClient,
+            contains_node_key: Optional[str] = None,
+            first: Optional[int] = 1000,
+    ) -> List['LensView']:
+        return self._query(
+            dgraph_client,
+            contains_node_key,
+            first
+        )
+
+    def query_first(
+            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
+    ) -> Optional['LensView']:
+        return self._query_first(dgraph_client, contains_node_key)
+
+
 class _LensView(Viewable[T]):
 
     def __init__(

@@ -1,11 +1,13 @@
 import json
+from typing import Any, TypeVar, Dict, Type, Optional, Mapping, Tuple
 
-from typing import *
+from pydgraph import DgraphClient, DgraphClientStub
 
-from pydgraph import DgraphClientStub, DgraphClient
-
-from grapl_analyzerlib.prelude import *
-
+from grapl_analyzerlib.execution import ExecutionHit
+from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
+from grapl_analyzerlib.nodes.process_node import ProcessQuery, _ProcessView, ProcessView
+from grapl_analyzerlib.nodes.types import Property, PropertyT
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 T = TypeVar('T')
 
@@ -25,12 +27,12 @@ def create_edge(client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
 
     txn = client.txn(read_only=False)
     try:
-        return txn.mutate(set_obj=mut, commit_now=True)
+        txn.mutate(set_obj=mut, commit_now=True)
     finally:
         txn.discard()
 
 
-def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
+def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
     if node_dict.get('uid'):
         node_dict.pop('uid')
     node_dict['uid'] = '_:blank-0'
@@ -62,26 +64,26 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
         return str(new_uid)
 
     finally:
-        txn.discard()
+            txn.discard()
 
 
 def upsert(
         client: DgraphClient,
-        view_type,
+        view_type: Type[Viewable[T]],
         node_key: str,
-        node_props: Dict[str, Any]
-):
+        node_props: Dict[str, Property]
+) -> Viewable[T]:
     node_props['node_key'] = node_key
     uid = _upsert(client, node_props)
-    print(f'uid: {uid}')
+    # print(f'uid: {uid}')
     node_props['uid'] = uid
-    print(node_props['node_key'])
+    # print(node_props['node_key'])
     return view_type.from_dict(client, node_props)
 
 
 class IpcQuery(DynamicNodeQuery):
     def __init__(self) -> None:
-        super(IpcQuery, self).__init__('IpcQuery', IpcView)
+        super(IpcQuery, self).__init__('Ipc', IpcView)
 
 
 class IpcView(DynamicNodeView):
@@ -91,7 +93,7 @@ class IpcView(DynamicNodeView):
             uid: str,
             node_key: str,
     ):
-        super(IpcView, self).__init__(dgraph_client, node_key, uid, 'IpcQuery')
+        super(IpcView, self).__init__(dgraph_client, node_key, uid, 'Ipc')
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
@@ -129,14 +131,14 @@ def main() -> None:
 
     parent_view = upsert(
         local_client,
-        ProcessView,
+        _ProcessView,
         'ea75f056-61a1-479d-9ca2-f632d2c67205',
         parent
     )
 
     child_view = upsert(
         local_client,
-        ProcessView,
+        _ProcessView,
         '10f585c2-cf31-41e2-8ca5-d477e78be3ac',
         child
     )
@@ -145,22 +147,29 @@ def main() -> None:
     create_edge(local_client, parent_view.uid, 'children', child_view.uid)
 
 
-    # queried_child_0 = ProcessQuery().with_process_id(eq=1234).query_first(local_client)  # type: Optional[ProcessView[Any]]
-    #
-    # assert queried_child_0
-    # assert queried_child_0.node_key == child_view.node_key
-    #
-    # queried_child_1 = (
-    #     ProcessQuery()
-    #         .with_process_id(eq=1234)
-    #         .query_first(local_client, contains_node_key='10f585c2-cf31-41e2-8ca5-d477e78be3ac')
-    # )
-    #
-    # assert queried_child_1
-    # assert queried_child_1.node_key == child_view.node_key
-    # assert queried_child_1.node_key == queried_child_0.node_key
+    queried_child_0 = ProcessQuery().with_process_id(eq=1234).query_first(local_client)
+
+    assert queried_child_0
+    assert queried_child_0.node_key == child_view.node_key
+
+    queried_child_1 = (
+        ProcessQuery()
+            .with_process_id(eq=1234)
+            .query_first(local_client, contains_node_key='10f585c2-cf31-41e2-8ca5-d477e78be3ac')
+    )
+
+    assert queried_child_1
+    assert queried_child_1.node_key == child_view.node_key
+    assert queried_child_1.node_key == queried_child_0.node_key
+
+    p = ProcessQuery().with_parent().query_first(local_client)
+    assert p
+    ExecutionHit(
+        analyzer_name="Rare GrandParent of SSH",
+        node_view=p,
+        risk_score=15,
+    )
 
 
-    print(ProcessQuery().with_children(ProcessQuery()).query_first(local_client))
-
-main()
+if __name__ == '__main__':
+    main()

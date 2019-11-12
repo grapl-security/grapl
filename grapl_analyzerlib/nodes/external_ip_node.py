@@ -42,6 +42,23 @@ class _ExternalIpQuery(Queryable[T]):
 
         return {fe[0]: (fe[1][0], fe[1][1]) for fe in reverse_edges.items() if fe[1][0] is not None}
 
+    def query(
+            self,
+            dgraph_client: DgraphClient,
+            contains_node_key: Optional[str] = None,
+            first: Optional[int] = 1000,
+    ) -> List['ExternalIpView']:
+        return self._query(
+            dgraph_client,
+            contains_node_key,
+            first
+        )
+
+    def query_first(
+            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
+    ) -> Optional['ExternalIpView']:
+        return self._query_first(dgraph_client, contains_node_key)
+
 
 class _ExternalIpView(Viewable[T]):
 

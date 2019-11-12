@@ -15,7 +15,7 @@ class SubgraphView(object):
 
     @staticmethod
     def from_proto(dgraph_client: DgraphClient, s: bytes) -> "SubgraphView":
-        from grapl_analyzerlib.nodes import NodeView
+        from grapl_analyzerlib.prelude import NodeView
 
         subgraph = graph_description_pb2.GraphDescription()
         subgraph.ParseFromString(s)
@@ -42,4 +42,4 @@ class SubgraphView(object):
             if maybe_node:
                 yield maybe_node
 
-from grapl_analyzerlib.nodes import NodeView, ProcessView, FileView
+from grapl_analyzerlib.prelude import NodeView, ProcessView, FileView

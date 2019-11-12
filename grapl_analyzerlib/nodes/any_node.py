@@ -93,6 +93,23 @@ class _NodeQuery(Queryable[T]):
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
         return self.dynamic_reverse_edge_filters
 
+    def query(
+            self,
+            dgraph_client: DgraphClient,
+            contains_node_key: Optional[str] = None,
+            first: Optional[int] = 1000,
+    ) -> List['NodeView']:
+        return self._query(
+            dgraph_client,
+            contains_node_key,
+            first
+        )
+
+    def query_first(
+            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
+    ) -> Optional['NodeView']:
+        return self._query_first(dgraph_client, contains_node_key)
+
 
 class _NodeView(Viewable[T]):
     def __init__(

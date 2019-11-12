@@ -241,6 +241,23 @@ class _FileQuery(Queryable[T]):
 
         return cast('Mapping[str, Tuple[Queryable[T], str]]', filtered)
 
+    def query(
+            self,
+            dgraph_client: DgraphClient,
+            contains_node_key: Optional[str] = None,
+            first: Optional[int] = 1000,
+    ) -> List['FileView']:
+        return self._query(
+            dgraph_client,
+            contains_node_key,
+            first
+        )
+
+    def query_first(
+            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
+    ) -> Optional['FileView']:
+        return self._query_first(dgraph_client, contains_node_key)
+
 
 class _FileView(Viewable[T]):
     def __init__(

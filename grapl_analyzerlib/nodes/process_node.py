@@ -5,8 +5,7 @@ from typing import *
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.queryable import Queryable
-from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable
 
 T = TypeVar("T")
 
@@ -200,7 +199,7 @@ class _ProcessQuery(Queryable[T]):
         self._parent = parent
         return self
 
-    def _get_unique_predicate(self) -> Optional[Tuple[str, PropertyT]]:
+    def _get_unique_predicate(self) -> Optional[Tuple[str, 'PropertyT']]:
         return "process_id", int
 
     def _get_node_type_name(self) -> Optional[str]:
@@ -231,6 +230,23 @@ class _ProcessQuery(Queryable[T]):
         }
 
         return {fe[0]: (fe[1][0], fe[1][1]) for fe in reverse_edges.items() if fe[1][0] is not None}
+
+    def query(
+            self,
+            dgraph_client: DgraphClient,
+            contains_node_key: Optional[str] = None,
+            first: Optional[int] = 1000,
+    ) -> List['ProcessView']:
+        return self._query(
+            dgraph_client,
+            contains_node_key,
+            first
+        )
+
+    def query_first(
+            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
+    ) -> Optional['ProcessView']:
+        return self._query_first(dgraph_client, contains_node_key)
 
 
 class _ProcessView(Viewable[T]):
@@ -398,7 +414,7 @@ class _ProcessView(Viewable[T]):
         }
 
         forward_edges = {name: value for name, value in f_edges.items() if value is not None}
-        return cast(Mapping[str, ForwardEdgeView[T]], forward_edges)
+        return cast('Mapping[str, ForwardEdgeView[T]]', forward_edges)
 
     def _get_reverse_edges(self) -> 'Mapping[str, ReverseEdgeView[T]]':
         _reverse_edges = {
@@ -406,10 +422,14 @@ class _ProcessView(Viewable[T]):
         }
 
         reverse_edges = {name: value for name, value in _reverse_edges.items() if value[0] is not None}
-        return cast(Mapping[str, ReverseEdgeView[T]], reverse_edges)
+        return cast('Mapping[str, ReverseEdgeView[T]]', reverse_edges)
+
+
 
 ProcessQuery = _ProcessQuery[Any]
 ProcessView = _ProcessView[Any]
 
 from grapl_analyzerlib.nodes.file_node import _FileView, _FileQuery, FileQuery, FileView
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps, IntCmp, _int_cmps
+from grapl_analyzerlib.nodes.types import PropertyT, Property
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
