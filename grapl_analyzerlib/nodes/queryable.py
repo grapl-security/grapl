@@ -130,7 +130,6 @@ class Queryable(abc.ABC, Generic[T]):
         finally:
             txn.discard()
 
-        print(raw_views)
         if not raw_views:
             return []
 
