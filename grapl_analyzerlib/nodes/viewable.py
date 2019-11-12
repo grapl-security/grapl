@@ -4,7 +4,6 @@ from typing import Union, Mapping, TypeVar, Tuple, Dict, List, Type, Generic, Op
 
 # noinspection Mypy
 from pydgraph import DgraphClient
-from typing_extensions import Final
 from grapl_analyzerlib.nodes.types import PropertyT, OneOrMany, Property
 
 T = TypeVar("T")
@@ -289,7 +288,7 @@ class Viewable(abc.ABC, Generic[T]):
                 else:
                     edges[edge_name] = edge
 
-        cleaned_edges = {}  # type: Final[Dict[str, Union[Viewable[T], List[Viewable[T]]]]]
+        cleaned_edges = {}  # type: Dict[str, Union[Viewable[T], List[Viewable[T]]]]
         for _edge in edges.items():
             edge_name = _edge[0]
             cleaned_edge = _edge[1]  # type: Union[Viewable[T], List[Viewable[T]]]
