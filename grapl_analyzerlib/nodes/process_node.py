@@ -4,7 +4,6 @@ from typing import *
 # noinspection Mypy
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpQuery
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
 
@@ -433,4 +432,5 @@ ProcessView = _ProcessView[Any]
 from grapl_analyzerlib.nodes.file_node import _FileView, _FileQuery, FileQuery, FileView
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps, IntCmp, _int_cmps
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpQuery
