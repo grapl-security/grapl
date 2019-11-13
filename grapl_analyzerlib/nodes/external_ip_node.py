@@ -30,7 +30,7 @@ class _ExternalIpQuery(Queryable[T]):
         }
 
         pfs = {p[0]: p[1] for p in _pfs.items() if p[1]}
-        
+
         return cast('Mapping[str, PropertyFilter[Property]]', pfs)
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
