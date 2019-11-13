@@ -181,15 +181,10 @@ def main() -> None:
         .with_parent()
         .with_created_connection()
         .query_first(local_client)
-     )
+     )  # type: Optional[ProcessView]
 
     assert p
-    print(p.to_dict())
-    ExecutionHit(
-        analyzer_name="Rare GrandParent of SSH",
-        node_view=p,
-        risk_score=15,
-    )
+    print(p.get_properties())
 
 
 if __name__ == '__main__':
