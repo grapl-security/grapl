@@ -219,14 +219,21 @@ class _ProcessQuery(Queryable[T]):
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
         forward_edges = {
-            "children": self._children
+            "children": self._children,
+            "bin_file": self._bin_file,
+            "created_files": self._created_files,
+            "deleted_files": self._deleted_files,
+            "read_files": self._read_files,
+            "wrote_files": self._wrote_files,
+            "created_connections": self._created_connections,
+            "bound_connection": self._bound_connection,
         }
 
         return {fe[0]: fe[1] for fe in forward_edges.items() if fe[1] is not None}
 
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
         reverse_edges = {
-            "~children": (self._parent, "parent")
+            "~children": (self._parent, "parent"),
         }
 
         return {fe[0]: (fe[1][0], fe[1][1]) for fe in reverse_edges.items() if fe[1][0] is not None}
