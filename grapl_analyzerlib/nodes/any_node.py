@@ -39,6 +39,7 @@ def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[st
         {{
             res(func: uid("{uid}"), first: 1) {{
                 uid,
+                node_key,
                 process_id,
                 file_path,
                 external_ip,
@@ -63,6 +64,7 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
         {{
             res(func: eq(node_key, "{node_key}"), first: 1) {{
                 uid,
+                node_key,
                 process_id,
                 file_path,
                 external_ip,
