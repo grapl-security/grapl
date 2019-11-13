@@ -18,7 +18,6 @@ from typing import (
 
 from pydgraph import DgraphClient
 
-
 from grapl_analyzerlib.nodes.retry import retry
 
 T = TypeVar("T")

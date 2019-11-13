@@ -357,7 +357,7 @@ class _LensView(Viewable[T]):
             .with_lens_name(eq=lens_name)
             .query_first(engagement_client)
         )
-        assert isinstance(self_lens, _LensQuery), 'Lens must exist'
+        assert isinstance(self_lens, _LensView), 'Lens must exist'
         return self_lens
         
 
