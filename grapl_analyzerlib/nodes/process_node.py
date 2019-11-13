@@ -4,6 +4,7 @@ from typing import *
 # noinspection Mypy
 from pydgraph import DgraphClient
 
+from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpQuery
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
 
@@ -166,18 +167,18 @@ class _ProcessQuery(Queryable[T]):
         self._wrote_files = wrote_files
         return self
 
-    # def with_created_connection(
-    #         self,
-    #         created_connection_query: Optional['_ProcessQuery[T]']  = None
-    # ) -> '_ProcessQuery[T]':
-    #     if created_connection_query is None:
-    #         created_connections = ProcessQuery()  # type: _ProcessQuery[T]
-    #     else:
-    #         created_connections = deepcopy(created_connection_query)
-    #     children._parent = self
-    #     self._children = created_connection
-    #     return self
-    #
+    def with_created_connection(
+            self,
+            created_connection_query: Optional['_ExternalIpQuery[T]']  = None
+    ) -> '_ProcessQuery[T]':
+        if created_connection_query is None:
+            created_connections = _ExternalIpQuery()  # type: _ExternalIpQuery[T]
+        else:
+            created_connections = deepcopy(created_connection_query)
+        created_connections._connections_from = self
+        self._created_connections = created_connections
+        return self
+
     # def with_bound_connection(
     #         self,
     #         bound_connection_query: Optional['_ProcessQuery[T]'] = None

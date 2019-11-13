@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Optional, TypeVar, Mapping, Tuple, Any, List, cast
 
 # noinspection Mypy
@@ -194,6 +195,32 @@ class _FileQuery(Queryable[T]):
         self._sha256_hash.extend(_str_cmps('sha256_hash', eq, contains, ends_with))
         return self
 
+    def with_spawned_from(self, spawned_from_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
+        if spawned_from_query is None:
+            spawned_from = ProcessQuery()  # type: ProcessQuery
+        else:
+            spawned_from = deepcopy(spawned_from_query)
+        spawned_from._bin_file = self
+        self._spawned_from = spawned_from
+        return self
+
+    def with_creator(self, creator_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
+        if creator_query is None:
+            creator = ProcessQuery()  # type: ProcessQuery
+        else:
+            creator = deepcopy(creator_query)
+        creator._created_files = self
+        self._creator = creator
+        return self
+
+    def with_readers(self, reader_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
+        if reader_query is None:
+            reader = ProcessQuery()  # type: ProcessQuery
+        else:
+            reader = deepcopy(reader_query)
+        reader._read_files = self
+        self._readers = reader
+        return self
 
 
     def _get_unique_predicate(self) -> Optional[Tuple[str, 'PropertyT']]:
@@ -235,6 +262,7 @@ class _FileQuery(Queryable[T]):
             '~wrote_files': (self._writers, 'writers'),
             '~readers': (self._readers, 'readers'),
             '~deleter': (self._deleter, 'deleter'),
+            '~bin_file': (self._spawned_from, 'spawned_from'),
         }
 
         filtered = {re[0]: re[1] for re in reverse_edges.items() if re[1][0] is not None}
@@ -247,16 +275,18 @@ class _FileQuery(Queryable[T]):
             contains_node_key: Optional[str] = None,
             first: Optional[int] = 1000,
     ) -> List['FileView']:
-        return self._query(
+        res = self._query(
             dgraph_client,
             contains_node_key,
             first
         )
+        return cast('List[FileView]', res)
 
     def query_first(
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
     ) -> Optional['FileView']:
-        return self._query_first(dgraph_client, contains_node_key)
+        res = self._query_first(dgraph_client, contains_node_key)
+        return cast('Optional[FileView]', res)
 
 
 class _FileView(Viewable[T]):
@@ -286,6 +316,7 @@ class _FileView(Viewable[T]):
             writers: Optional[List['_ProcessView[T]']] = None,
             readers: Optional[List['_ProcessView[T]']] = None,
             deleter: Optional['_ProcessView[T]'] = None,
+            spawned_from: Optional[List['_ProcessView[T]']] = None,
     ) -> None:
         super(_FileView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
 
@@ -314,6 +345,7 @@ class _FileView(Viewable[T]):
         self.writers = writers or []
         self.readers = readers or []
         self.deleter = deleter
+        self.spawned_from = spawned_from or []
 
 
     @staticmethod
@@ -395,4 +427,4 @@ class _FileView(Viewable[T]):
 FileQuery = _FileQuery[Any]
 FileView = _FileView[Any]
 
-from grapl_analyzerlib.nodes.process_node import _ProcessView, _ProcessQuery
+from grapl_analyzerlib.nodes.process_node import _ProcessView, _ProcessQuery, ProcessQuery
