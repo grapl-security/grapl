@@ -87,7 +87,6 @@ class Queryable(abc.ABC, Generic[T]):
 
     def get_property_names(self) -> List[str]:
         prop_names = [p[0] for p in self.get_property_filters().items() if p[1] is not None]
-        prop_names.append('uid')
         prop_names.append('node_key')
         return list(set(prop_names))
 
