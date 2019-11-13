@@ -347,6 +347,108 @@ class _FileView(Viewable[T]):
         self.deleter = deleter
         self.spawned_from = spawned_from or []
 
+    def get_file_path(self) -> Optional[str]:
+        if self.file_path is not None:
+            return self.file_path
+        self.file_path = cast(str, self.fetch_property('file_path', str))
+        return self.file_path
+
+    def get_asset_id(self) -> Optional[str]:
+        if self.asset_id is not None:
+            return self.asset_id
+        self.asset_id = cast(str, self.fetch_property('asset_id', str))
+        return self.asset_id
+
+    def get_file_extension(self) -> Optional[str]:
+        if self.file_extension is not None:
+            return self.file_extension
+        self.file_extension = cast(str, self.fetch_property('file_extension', str))
+        return self.file_extension
+
+    def get_file_mime_type(self) -> Optional[str]:
+        if self.file_mime_type is not None:
+            return self.file_mime_type
+        self.file_mime_type = cast(str, self.fetch_property('file_mime_type', str))
+        return self.file_mime_type
+
+    def get_file_size(self) -> Optional[int]:
+        if self.file_size is not None:
+            return self.file_size
+        self.file_size = cast(int, self.fetch_property('file_size', int))
+        return self.file_size
+
+    def get_file_version(self) -> Optional[str]:
+        if self.file_version is not None:
+            return self.file_version
+        self.file_version = cast(str, self.fetch_property('file_version', str))
+        return self.file_version
+
+    def get_file_description(self) -> Optional[str]:
+        if self.file_description is not None:
+            return self.file_description
+        self.file_description = cast(str, self.fetch_property('file_description', str))
+        return self.file_description
+
+    def get_file_product(self) -> Optional[str]:
+        if self.file_product is not None:
+            return self.file_product
+        self.file_product = cast(str, self.fetch_property('file_product', str))
+        return self.file_product
+
+    def get_file_company(self) -> Optional[str]:
+        if self.file_company is not None:
+            return self.file_company
+        self.file_company = cast(str, self.fetch_property('file_company', str))
+        return self.file_company
+
+    def get_file_directory(self) -> Optional[str]:
+        if self.file_directory is not None:
+            return self.file_directory
+        self.file_directory = cast(str, self.fetch_property('file_directory', str))
+        return self.file_directory
+
+    def get_file_inode(self) -> Optional[int]:
+        if self.file_inode is not None:
+            return self.file_inode
+        self.file_inode = cast(int, self.fetch_property('file_inode', int))
+        return self.file_inode
+
+    def get_file_hard_links(self) -> Optional[str]:
+        if self.file_hard_links is not None:
+            return self.file_hard_links
+        self.file_hard_links = cast(str, self.fetch_property('file_hard_links', str))
+        return self.file_hard_links
+
+    def get_signed(self) -> Optional[str]:
+        if self.signed is not None:
+            return self.signed
+        self.signed = cast(str, self.fetch_property('signed', str))
+        return self.signed
+
+    def get_signed_status(self) -> Optional[str]:
+        if self.signed_status is not None:
+            return self.signed_status
+        self.signed_status = cast(str, self.fetch_property('signed_status', str))
+        return self.signed_status
+
+    def get_md5_hash(self) -> Optional[str]:
+        if self.md5_hash is not None:
+            return self.md5_hash
+        self.md5_hash = cast(str, self.fetch_property('md5_hash', str))
+        return self.md5_hash
+
+    def get_sha1_hash(self) -> Optional[str]:
+        if self.sha1_hash is not None:
+            return self.sha1_hash
+        self.sha1_hash = cast(str, self.fetch_property('sha1_hash', str))
+        return self.sha1_hash
+
+    def get_sha256_hash(self) -> Optional[str]:
+        if self.sha256_hash is not None:
+            return self.sha256_hash
+        self.sha256_hash = cast(str, self.fetch_property('sha256_hash', str))
+        return self.sha256_hash
+
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:

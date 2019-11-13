@@ -286,16 +286,26 @@ class _LensQuery(Queryable[T]):
             contains_node_key: Optional[str] = None,
             first: Optional[int] = 1000,
     ) -> List['LensView']:
-        return self._query(
+        query_res = self._query(
             dgraph_client,
             contains_node_key,
             first
         )
+        if not query_res:
+            return []
+
+        assert isinstance(query_res, list)
+        assert isinstance(query_res[0], _LensView)
+        return cast("List[LensView]", query_res)
 
     def query_first(
-            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional['LensView']:
-        return self._query_first(dgraph_client, contains_node_key)
+                self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
+        ) -> Optional['LensView']:
+        query_res = self._query_first(dgraph_client, contains_node_key)
+        if not query_res:
+            return None
+        assert isinstance(query_res, _LensView)
+        return query_res
 
 
 class _LensView(Viewable[T]):
@@ -313,7 +323,7 @@ class _LensView(Viewable[T]):
         self.scope = scope or []
 
     @staticmethod
-    def get_or_create(copy_client: CopyingDgraphClient, lens_name: str) -> 'LensQuery':
+    def get_or_create(copy_client: CopyingDgraphClient, lens_name: str) -> 'LensView':
         eg_txn = copy_client.dst_client.txn(read_only=False)
         try:
             query = """
@@ -359,7 +369,6 @@ class _LensView(Viewable[T]):
         )
         assert isinstance(self_lens, _LensView), 'Lens must exist'
         return self_lens
-        
 
     def get_lens_name(self) -> Optional[str]:
         if self.lens is not None:
