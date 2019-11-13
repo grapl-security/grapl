@@ -5,6 +5,7 @@ from pydgraph import DgraphClient, DgraphClientStub
 
 from grapl_analyzerlib.execution import ExecutionHit
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
+from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpView
 from grapl_analyzerlib.nodes.process_node import ProcessQuery, _ProcessView, ProcessView
 from grapl_analyzerlib.nodes.types import Property, PropertyT
 from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
@@ -127,6 +128,10 @@ def main() -> None:
         'process_name': 'cmd.exe'
     }  # type: Dict[str, Property]
 
+    external_ip = {
+        'external_ip': '56.123.14.24',
+    }  # type: Dict[str, Property]
+
 
 
     parent_view = upsert(
@@ -143,8 +148,16 @@ def main() -> None:
         child
     )
 
+    external_ip_view = upsert(
+        local_client,
+        _ExternalIpView,
+        '8bc20354-e8c5-49fc-a984-2927b24c1a29',
+        external_ip
+    )
 
+    print(external_ip_view)
     create_edge(local_client, parent_view.uid, 'children', child_view.uid)
+    create_edge(local_client, child_view.uid, 'created_connections', external_ip_view.uid)
 
 
     queried_child_0 = ProcessQuery().with_process_id(eq=1234).query_first(local_client)
@@ -162,8 +175,16 @@ def main() -> None:
     assert queried_child_1.node_key == child_view.node_key
     assert queried_child_1.node_key == queried_child_0.node_key
 
-    p = ProcessQuery().with_parent().query_first(local_client)
+    p = (
+        ProcessQuery()
+        .with_process_name(eq="cmd.exe")
+        .with_parent()
+        .with_created_connection()
+        .query_first(local_client)
+     )
+
     assert p
+    print(p.to_dict())
     ExecutionHit(
         analyzer_name="Rare GrandParent of SSH",
         node_view=p,
