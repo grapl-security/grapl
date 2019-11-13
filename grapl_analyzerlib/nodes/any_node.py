@@ -34,6 +34,46 @@ def get_uid(client: DgraphClient, node_key: str) -> str:
     finally:
         txn.discard()
 
+def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[str, Any]]:
+    query = f"""
+        {{
+            res(func: uid("{uid}"), first: 1) {{
+                uid,
+                expand(_forward_)
+            }}
+        }}
+        """
+
+    txn = dgraph_client.txn(read_only=True, best_effort=False)
+    try:
+        res = json.loads(txn.query(query).json)['res']
+    finally:
+        txn.discard()
+    if not res:
+        return None
+    else:
+        return res[0]
+
+
+def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Optional[Dict[str, Any]]:
+    query = f"""
+        {{
+            res(func: eq(node_key, "{node_key}"), first: 1) {{
+                uid,
+                expand(_forward_)
+            }}
+        }}
+        """
+
+    txn = dgraph_client.txn(read_only=True, best_effort=False)
+    try:
+        res = json.loads(txn.query(query).json)['res']
+    finally:
+        txn.discard()
+    if not res:
+        return None
+    else:
+        return res[0]
 
 def flatten_nodes(
         root: Viewable
@@ -136,24 +176,19 @@ class _NodeView(Viewable[T]):
 
     @staticmethod
     def from_node_key(client, node_key):
-        query = f"""
-        {{
-            res(func: eq(node_key, "{node_key}"), first: 1) {{
-                uid,
-                expand(_forward_)
-            }}
-        }}
-        """
-
-        txn = client.txn(read_only=True, best_effort=False)
-        try:
-            res = json.loads(txn.query(query).json)['res']
-        finally:
-            txn.discard()
+        res = raw_node_from_node_key(client, node_key)
         if not res:
             return None
         else:
-            return NodeView.from_dict(client, res[0])
+            return NodeView.from_dict(client, res)
+
+    @staticmethod
+    def from_uid(client, uid):
+        res = raw_node_from_uid(client, uid)
+        if not res:
+            return None
+        else:
+            return NodeView.from_dict(client, res)
 
     @classmethod
     def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NodeView':

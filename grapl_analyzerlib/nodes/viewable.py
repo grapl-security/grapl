@@ -96,7 +96,12 @@ class Viewable(abc.ABC, Generic[T]):
         self.dynamic_reverse_edges[edge_name] = reverse_edge
 
     def get_properties(self) -> Mapping[str, 'Property']:
-        return {**self._get_properties(), **self.dynamic_properties}
+        return {
+            **self._get_properties(),
+            **self.dynamic_properties,
+            'node_key': self.node_key,
+            'uid': self.uid,
+        }
 
     def get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':
         return {k: v for k, v in {**self._get_forward_edges(), **self.dynamic_forward_edges}.items() if v}

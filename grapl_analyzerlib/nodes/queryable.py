@@ -86,7 +86,10 @@ class Queryable(abc.ABC, Generic[T]):
         return {**prop_filters, **self.dynamic_property_filters}
 
     def get_property_names(self) -> List[str]:
-        return [p[0] for p in self.get_property_filters().items() if p[1] is not None]
+        prop_names = [p[0] for p in self.get_property_filters().items() if p[1] is not None]
+        prop_names.append('uid')
+        prop_names.append('node_key')
+        return list(set(prop_names))
 
     def set_forward_edge_filter(
         self, edge_name: str, edge_filter: "Queryable[T]"
