@@ -260,8 +260,8 @@ class _FileQuery(Queryable[T]):
         reverse_edges = {
             '~created_files': (self._creator, 'creator'),
             '~wrote_files': (self._writers, 'writers'),
-            '~readers': (self._readers, 'readers'),
-            '~deleter': (self._deleter, 'deleter'),
+            '~read_files': (self._readers, 'readers'),
+            '~deleted_files': (self._deleter, 'deleter'),
             '~bin_file': (self._spawned_from, 'spawned_from'),
         }
 
@@ -481,8 +481,8 @@ class _FileView(Viewable[T]):
         return {
             '~created_files': (_ProcessView, 'creator'),
             '~wrote_files': ([_ProcessView], 'writers'),
-            '~readers': ([_ProcessView], 'readers'),
-            '~deleter': (_ProcessView, 'deleter'),
+            '~read_files': ([_ProcessView], 'readers'),
+            '~deleted_files': (_ProcessView, 'deleter'),
         }
 
     def _get_properties(self) -> Mapping[str, 'Property']:
@@ -518,7 +518,7 @@ class _FileView(Viewable[T]):
             '~created_files': (self.creator, 'creator'),
             '~wrote_files': (self.writers, 'writers'),
             '~readers': (self.readers, 'readers'),
-            '~deleter': (self.deleter, 'deleter'),
+            '~deleted_files': (self.deleter, 'deleter'),
         }
 
         filtered = {re[0]: re[1] for re in reverse_edges.items() if re[1][0] is not None}

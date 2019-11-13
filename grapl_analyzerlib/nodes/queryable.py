@@ -225,6 +225,7 @@ def check_edge(
         # Store that we have visited the reverse edge as well as the edge name
         visited.add((query, edge_name, neighbor))
         visited.add((neighbor, edge_name[1:], query))
+        visited.add((query, edge_name[1:], neighbor))
         visited.add((neighbor, edge_name, query))
     else:
         already_seen = already_seen or ((query, edge_name, neighbor) in visited)
@@ -232,6 +233,7 @@ def check_edge(
 
         visited.add((query, edge_name, neighbor))
         visited.add((neighbor, '~' + edge_name, query))
+        visited.add((query, '~' + edge_name, neighbor))
         visited.add((neighbor, edge_name, query))
 
     return already_seen
