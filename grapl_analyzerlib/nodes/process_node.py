@@ -28,7 +28,7 @@ class _ProcessQuery(Queryable[T]):
         self._deleted_files = None  # type: Optional['_FileQuery[T]']
         self._read_files = None  # type: Optional['_FileQuery[T]']
         self._wrote_files = None  # type: Optional['_FileQuery[T]']
-        self._created_connections = None  # type: Optional['_ProcessQuery[T]']
+        self._created_connections = None  # type: Optional['_ExternalIpQuery[T]']
         self._bound_connection = None  # type: Optional['_ProcessQuery[T]']
 
         # Reverse edges
@@ -174,6 +174,7 @@ class _ProcessQuery(Queryable[T]):
             created_connections = _ExternalIpQuery()  # type: _ExternalIpQuery[T]
         else:
             created_connections = deepcopy(created_connection_query)
+            assert created_connections
         created_connections._connections_from = self
         self._created_connections = created_connections
         return self

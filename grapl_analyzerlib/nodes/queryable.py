@@ -244,6 +244,7 @@ def _generate_filter(comparisons_list: 'PropertyFilter[Property]') -> str:
     for comparisons in comparisons_list:
         if len(comparisons) > 1:
             comparisons = [c for c in comparisons if not isinstance(c, Has)]
+        print(comparisons)
         filters = [comparison.to_filter() for comparison in comparisons]
         filters = [f for f in filters if f]
         if not filters:
@@ -359,6 +360,7 @@ def generate_var_block(
         filters = ""
         if should_filter:
             prop_filters = [pf for pf in neighbor.get_property_filters().values()]
+            print(neighbor, prop_filters)
             filters = _format_filters(prop_filters)
 
         block = f"""
