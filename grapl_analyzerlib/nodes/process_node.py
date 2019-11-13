@@ -208,8 +208,13 @@ class _ProcessQuery(Queryable[T]):
 
     def _get_property_filters(self) -> Mapping[str, 'PropertyFilter[Property]']:
         props = {
-            "process_id": self._process_id,
-            "process_name": self._process_name,
+            'process_id': self._process_id,
+            'process_name': self._process_name,
+            'created_timestamp': self._created_timestamp,
+            'asset_id': self._asset_id,
+            'terminate_time': self._terminate_time,
+            'image_name': self._image_name,
+            'arguments': self._arguments,
         }
         combined = {}
         for prop_name, prop_filter in props.items():
