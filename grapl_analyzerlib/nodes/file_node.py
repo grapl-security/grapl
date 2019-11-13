@@ -250,7 +250,7 @@ class _FileQuery(Queryable[T]):
             'sha256_hash': self._sha256_hash,
         }
 
-        prop_filters = {p[0]: p[1] for p in _prop_filters if p[1]}
+        prop_filters = {p[0]: p[1] for p in _prop_filters.items() if p[1]}
         return cast('Mapping[str, PropertyFilter[Property]]', prop_filters)
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
