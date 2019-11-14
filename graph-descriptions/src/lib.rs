@@ -869,8 +869,6 @@ impl ProcessDescription {
                process_command_line: String,
                process_guid: String,
                process_integrity_level: String,
-               user_id: impl Into<Option<u64>>,
-               auid: impl Into<Option<u64>>,
     ) -> ProcessDescription {
         let mut pd = Self {
             node_key: Uuid::new_v4().to_string(),
@@ -887,8 +885,6 @@ impl ProcessDescription {
             process_command_line,
             process_guid,
             process_integrity_level,
-            user_id: user_id.into(),
-            auid: auid.into(),
         };
 
         match state {
@@ -949,14 +945,6 @@ impl ProcessDescription {
             j["process_integrity_level"] = Value::from(self.process_integrity_level.to_owned());
         }
 
-        if let Some(user_id) = self.user_id {
-            j["user_id"] = Value::from(user_id);
-        }
-
-        if let Some(auid) = self.auid {
-            j["auid"] = Value::from(auid);
-        }
-
         match ProcessState::from(self.state) {
             ProcessState::Created => j["created_time"] = self.created_timestamp.into(),
             ProcessState::Terminated => j["terminated_timestamp"] = self.terminated_timestamp.into(),
@@ -985,14 +973,6 @@ impl ProcessDescription {
 
         if self.process_name.is_empty() && !other.process_name.is_empty() {
             self.process_name = other.process_name.clone();
-        }
-
-        if self.user_id.is_none() && other.user_id.is_some() {
-            self.user_id = other.user_id.clone();
-        }
-
-        if self.auid.is_none() && other.auid.is_some() {
-            self.auid = other.auid.clone();
         }
 
     }
