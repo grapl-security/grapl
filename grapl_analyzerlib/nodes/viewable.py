@@ -70,6 +70,21 @@ class Viewable(abc.ABC, Generic[T]):
             **cls._get_reverse_edge_types()
         }
 
+
+    @classmethod
+    def get_forward_edge_types(cls) -> Mapping[str, "EdgeViewT[T]"]:
+        return {
+            **cls._get_forward_edge_types(),
+            **cls.dynamic_forward_edge_types,
+        }
+
+    @classmethod
+    def get_reverse_edge_types(cls) -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+        return {
+            **cls.dynamic_reverse_edge_types,
+            **cls._get_reverse_edge_types()
+        }
+
     def set_dynamic_property_type(self, prop_name: str, prop_type: "PropertyT") -> None:
         self.dynamic_property_types[prop_name] = prop_type
 
@@ -138,7 +153,7 @@ class Viewable(abc.ABC, Generic[T]):
         finally:
             txn.discard()
         raw_prop = res["res"]
-        if raw_prop is None:
+        if not raw_prop:
             return None
 
         if raw_prop[0].get(prop_name) is None:
