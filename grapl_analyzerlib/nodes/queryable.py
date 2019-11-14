@@ -157,8 +157,10 @@ class Queryable(abc.ABC, Generic[T]):
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
     ) -> Optional['Viewable[T]']:
         res = self.query(dgraph_client, contains_node_key, first=1)
-        if res:
+        if isinstance(res, list):
             return res[0]
+        if isinstance(res, dict):
+            return res
         else:
             return None
 
@@ -187,8 +189,10 @@ class Queryable(abc.ABC, Generic[T]):
         if not raw_count:
             return 0
         else:
-            return int(raw_count[0].get("count", 0))
-
+            if isinstance(raw_count, list):
+                return int(raw_count[0].get("count", 0))
+            if isinstance(raw_count, dict):
+                return int(raw_count.get("count", 0))
 
 def traverse_query_iter(
     node: Queryable[T], visited: Optional[Set[Queryable[T]]] = None

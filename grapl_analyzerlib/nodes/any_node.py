@@ -28,7 +28,10 @@ def get_uid(client: DgraphClient, node_key: str) -> str:
             query, variables={'$a': node_key}
         )
         res = json.loads(res.json)
-        return res['res'][0]['uid']
+        if isinstance(res['res'], list):
+            return res['res'][0]['uid']
+        else:
+            return res['res']['uid']
 
     finally:
         txn.discard()
@@ -55,7 +58,10 @@ def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[st
     if not res:
         return None
     else:
-        return res[0]
+        if isinstance(res, list):
+            return res[0]
+        else:
+            return res
 
 
 def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Optional[Dict[str, Any]]:
@@ -80,7 +86,10 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
     if not res:
         return None
     else:
-        return res[0]
+        if isinstance(res, list):
+            return res[0]
+        else:
+            return res
 
 def flatten_nodes(
         root: Viewable

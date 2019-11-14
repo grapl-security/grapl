@@ -15,18 +15,18 @@ def set_process_schema(client: DgraphClient, engagement: bool = False):
     process_name: string @index(exact, hash, trigram, fulltext) .
     arguments: string  @index(fulltext)  @index(trigram) .
     bin_file: uid @reverse .
-    children: uid @reverse .
-    created_files: uid @reverse .
-    deleted_files: uid @reverse .
-    read_files: uid @reverse .
-    wrote_files: uid @reverse .
-    created_connections: uid @reverse .
-    bound_connection: uid @reverse .
+    children: [uid] @reverse .
+    created_files: [uid] @reverse .
+    deleted_files: [uid] @reverse .
+    read_files: [uid] @reverse .
+    wrote_files: [uid] @reverse .
+    created_connections: [uid] @reverse .
+    bound_connections: [uid] @reverse .
     """
     
     if engagement:
         schema += "\n"
-        schema += "risks: uid @reverse ."
+        schema += "risks: [uid] @reverse ."
         
     # unstable
     schema += """
@@ -78,7 +78,7 @@ def set_outbound_connection_schema(client, engagement=False):
     """
     if engagement:
         schema += "\n"
-        schema += "risks: uid @reverse ."
+        schema += "risks: [uid] @reverse ."
         
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
@@ -92,7 +92,7 @@ def set_inbound_connection_schema(client, engagement=False):
     """
     if engagement:
         schema += "\n"
-        schema += "risks: uid @reverse ."
+        schema += "risks: [uid] @reverse ."
         
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
@@ -106,7 +106,7 @@ def set_external_ip_schema(client, engagement=False):
     """
     if engagement:
         schema += "\n"
-        schema += "risks: uid @reverse ."
+        schema += "risks: [uid] @reverse ."
         
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
@@ -122,7 +122,7 @@ def set_risk_schema(client, engagement=False):
     
 def set_lens_schema(client, engagement=False):
     schema = """
-        scope: uid @reverse .
+        scope: [uid] @reverse .
         lens: string @upsert @index(exact, trigram, hash) .
         score: int @index(int) .
     """
@@ -144,7 +144,7 @@ def set_ipc_schema(client, engagement=False):
     
     if engagement:
         schema += "\n"
-        schema += "risks: uid @reverse ."
+        schema += "risks: [uid] @reverse ."
         
     op = pydgraph.Operation(schema=schema)
     client.alter(op)

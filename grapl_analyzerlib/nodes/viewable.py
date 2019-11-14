@@ -153,11 +153,13 @@ class Viewable(abc.ABC, Generic[T]):
         raw_prop = res["res"]
         if not raw_prop:
             return None
+        if isinstance(raw_prop, list):
+            raw_prop = raw_prop[0]
 
-        if raw_prop[0].get(prop_name) is None:
+        if raw_prop.get(prop_name) is None:
             return None
 
-        prop = prop_type(raw_prop[0][prop_name])
+        prop = prop_type(raw_prop[prop_name])
 
         return prop
 
@@ -211,10 +213,20 @@ class Viewable(abc.ABC, Generic[T]):
             txn.discard()
 
         raw_edge = res["res"]
-        if not raw_edge or not raw_edge[0].get(edge_name):
+        if not raw_edge:
             return None
 
-        edge = edge_type.from_dict(self.dgraph_client, raw_edge[0][edge_name][0])  # type: Viewable[T]
+        if isinstance(raw_edge, list):
+            raw_edge = raw_edge[0]
+
+        if not raw_edge.get(edge_name):
+            return None
+
+        neighbor = raw_edge[edge_name]
+        if isinstance(neighbor, list):
+            neighbor = neighbor[0]
+
+        edge = edge_type.from_dict(self.dgraph_client, neighbor)  # type: Viewable[T]
         return edge
 
     def fetch_edges(self, edge_name: str, edge_type: Type['Viewable[T]']) -> List['Viewable[T]']:
@@ -243,7 +255,11 @@ class Viewable(abc.ABC, Generic[T]):
         if not raw_edges or not raw_edges[0].get(edge_name):
             return []
 
-        raw_edges = raw_edges[0][edge_name]
+        if isinstance(raw_edges, list):
+            raw_edges = raw_edges[0][edge_name]
+        else:
+            raw_edges = raw_edges[edge_name]
+
         edges = [edge_type.from_dict(self.dgraph_client, f) for f in raw_edges]  # type: List[Viewable[T]]
 
         return edges
