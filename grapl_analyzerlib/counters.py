@@ -3,6 +3,7 @@ from typing import Optional, Any
 
 from pydgraph import DgraphClient
 
+from grapl_analyzerlib.nodes.queryable import Queryable, generate_query
 from grapl_analyzerlib.prelude import ProcessQuery
 
 
@@ -34,46 +35,48 @@ class Seen(OrderedEnum):
     Many = 2
 
 
-# class SubgraphCounter(object):
-#     def __init__(self, dgraph_client: DgraphClient, cache: Any = None) -> None:
-#         self.dgraph_client = dgraph_client
-#         self.cache = cache
-#
-#     def get_count_for(
-#             self,
-#             query: Queryable[Any],
-#             max_count: int = 4,
-#     ) -> int:
-#         """
-#         Given a subgraph with only 'eq' fields set and no OR logic, get a count
-#
-#         # TODO: OR logic could be supported as well, but not now.
-#
-#         If no path is provided, just count the process_name.
-#         """
-#
-#         eqs = {}
-#
-#         key = type(self).__name__
-#         cached_count = None
-#
-#         if self.cache:
-#
-#             cached_count = self.cache.get(key)
-#             if cached_count:
-#                 cached_count = int(cached_count)
-#             if cached_count and cached_count >= max_count:
-#                 return cached_count
-#
-#         count = query.get_count(self.dgraph_client)
-#
-#         if self.cache:
-#             if not cached_count:
-#                 self.cache.set(key, count)
-#             elif count >= cached_count:
-#                 self.cache.set(key, count)
-#
-#         return count
+class SubgraphCounter(object):
+    def __init__(self, dgraph_client: DgraphClient, cache: Any = None) -> None:
+        self.dgraph_client = dgraph_client
+        self.cache = cache
+
+    def get_count_for(
+            self,
+            query: Queryable[Any],
+            max_count: int = 4,
+    ) -> int:
+        """
+            Generic caching for a subgraph query
+        """
+
+        query_str = generate_query(
+            query_name="res",
+            binding_modifier="res",
+            root=query,
+            first=1,
+            count=True
+        )
+
+        key = type(self).__name__ + query_str
+        cached_count = None
+
+        if self.cache:
+
+            cached_count = self.cache.get(key)
+            if cached_count:
+                cached_count = int(cached_count)
+            if cached_count and cached_count >= max_count:
+                return cached_count
+
+        count = query.get_count(self.dgraph_client, first=max_count)
+
+        if self.cache:
+            if not cached_count:
+                self.cache.set(key, count)
+            elif count >= cached_count:
+                self.cache.set(key, count)
+
+        return count
 
 
 
