@@ -6,7 +6,7 @@ from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
 
 T = TypeVar("T")
 
@@ -110,16 +110,16 @@ class _ExternalIpView(Viewable[T]):
         return props
 
 
-    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
         pass
 
-    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
         _reverse_edges = {
             '~created_connections': (self.connections_from, 'connections_from')
         }
 
         reverse_edges = {name: value for name, value in _reverse_edges.items() if value[0] is not None}
-        return cast(Mapping[str, ReverseEdgeView[T]], reverse_edges)
+        return cast(Mapping[str, _ReverseEdgeView[T]], reverse_edges)
 
 
 ExternalIpQuery = _ExternalIpQuery[Any]

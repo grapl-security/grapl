@@ -3,7 +3,7 @@ from typing import Optional, TypeVar, Tuple, Type, Mapping, Any, Union, cast, Li
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.queryable import Queryable
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
 
 # noinspection Mypy
 
@@ -78,10 +78,10 @@ class _DynamicNodeView(Viewable[T]):
     def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {}
 
-    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
         return {}
 
-    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
         return {}
 
     def _get_properties(self, fetch: bool = False) -> Mapping[str, Union[str, int]]:

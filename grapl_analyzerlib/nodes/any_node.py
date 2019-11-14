@@ -324,10 +324,10 @@ class _NodeView(Viewable[T]):
     def _get_properties(self) -> Mapping[str, 'Property']:
         return self._get_properties()
 
-    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
         return self._get_forward_edges()
 
-    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
         return self._get_reverse_edges()
 
     def to_adjacency_list(self) -> Dict[str, Any]:
@@ -353,4 +353,4 @@ from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpView
 from grapl_analyzerlib.nodes.file_node import _FileView
 from grapl_analyzerlib.nodes.process_node import _ProcessView
 from grapl_analyzerlib.nodes.dynamic_node import _DynamicNodeView
-from grapl_analyzerlib.nodes.viewable import ForwardEdgeView, EdgeViewT, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import _ForwardEdgeView, EdgeViewT, _ReverseEdgeView

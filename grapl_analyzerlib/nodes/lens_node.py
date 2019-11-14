@@ -6,7 +6,7 @@ from pydgraph import DgraphClient, Txn
 
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
 
 T = TypeVar("T")
 
@@ -402,15 +402,15 @@ class _LensView(Viewable[T]):
 
         return props
 
-    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
         f_edges = {
             'scope': self.scope,
         }
 
         forward_edges = {name: value for name, value in f_edges.items() if value is not None}
-        return cast(Mapping[str, ForwardEdgeView[T]], forward_edges)
+        return cast(Mapping[str, _ForwardEdgeView[T]], forward_edges)
 
-    def _get_reverse_edges(self) -> 'Mapping[str, ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str, _ReverseEdgeView[T]]':
         return {}
 
 LensQuery = _LensQuery[Any]

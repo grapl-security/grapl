@@ -7,7 +7,7 @@ from pydgraph import DgraphClient
 from grapl_analyzerlib.nodes.comparators import Cmp, PropertyFilter, StrCmp, _str_cmps, IntCmp, _int_cmps
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
 
 T = TypeVar("T")
 
@@ -510,10 +510,10 @@ class _FileView(Viewable[T]):
 
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
-    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
         return dict()
 
-    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
         reverse_edges = {
             '~created_files': (self.creator, 'creator'),
             '~wrote_files': (self.writers, 'writers'),
@@ -523,7 +523,7 @@ class _FileView(Viewable[T]):
 
         filtered = {re[0]: re[1] for re in reverse_edges.items() if re[1][0] is not None}
 
-        return cast('Mapping[str,  ReverseEdgeView[T]]', filtered)
+        return cast('Mapping[str,  _ReverseEdgeView[T]]', filtered)
 
 
 FileQuery = _FileQuery[Any]

@@ -416,7 +416,7 @@ class _ProcessView(Viewable[T]):
 
         return props
 
-    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
         f_edges = {
             'children': self.children,
             'created_files': self.created_files,
@@ -427,15 +427,15 @@ class _ProcessView(Viewable[T]):
         }
 
         forward_edges = {name: value for name, value in f_edges.items() if value is not None}
-        return cast('Mapping[str, ForwardEdgeView[T]]', forward_edges)
+        return cast('Mapping[str, _ForwardEdgeView[T]]', forward_edges)
 
-    def _get_reverse_edges(self) -> 'Mapping[str, ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str, _ReverseEdgeView[T]]':
         _reverse_edges = {
             '~children': (self.parent, 'parent')
         }
 
         reverse_edges = {name: value for name, value in _reverse_edges.items() if value[0] is not None}
-        return cast('Mapping[str, ReverseEdgeView[T]]', reverse_edges)
+        return cast('Mapping[str, _ReverseEdgeView[T]]', reverse_edges)
 
 
 
@@ -445,5 +445,5 @@ ProcessView = _ProcessView[Any]
 from grapl_analyzerlib.nodes.file_node import _FileView, _FileQuery, FileQuery, FileView
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps, IntCmp, _int_cmps
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import _EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
 from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpQuery
