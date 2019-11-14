@@ -8,3 +8,4 @@ from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
 from grapl_analyzerlib.nodes.comparators import Not
 
+from grapl_analyzerlib.execution import ExecutionHit

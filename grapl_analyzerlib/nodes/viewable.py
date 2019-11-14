@@ -58,6 +58,9 @@ class Viewable(abc.ABC, Generic[T]):
     def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView[T]]':
         pass
 
+    def get_node_type(self) -> Optional[str]:
+        return None
+
     @classmethod
     def get_edge_types(cls) -> Mapping[str, Union["EdgeViewT[T]", Tuple["EdgeViewT[T]", str]]]:
         return {

@@ -63,6 +63,9 @@ class _DynamicNodeView(Viewable[T]):
         self.node_type = node_type
         self.args = args
 
+    def get_node_type(self) -> str:
+        return self.node_type
+
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
         return {}
