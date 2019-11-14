@@ -384,7 +384,7 @@ class _ProcessView(Viewable[T]):
         }
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
         return {
             'children': [_ProcessView],
             'bin_file': _FileView,
@@ -395,7 +395,7 @@ class _ProcessView(Viewable[T]):
         }
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
         return {
             '~children': (_ProcessView, 'parent')
         }
@@ -445,5 +445,5 @@ ProcessView = _ProcessView[Any]
 from grapl_analyzerlib.nodes.file_node import _FileView, _FileQuery, FileQuery, FileView
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps, IntCmp, _int_cmps
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import _EdgeViewT, ForwardEdgeView, ReverseEdgeView
 from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpQuery

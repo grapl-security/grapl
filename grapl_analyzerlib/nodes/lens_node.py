@@ -6,7 +6,7 @@ from pydgraph import DgraphClient, Txn
 
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 T = TypeVar("T")
 
@@ -383,13 +383,13 @@ class _LensView(Viewable[T]):
         }
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
         return {
             'scope': [NodeView],
         }
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
         return {}
 
     def _get_properties(self, fetch: bool = False) -> Mapping[str, Union[str, int]]:

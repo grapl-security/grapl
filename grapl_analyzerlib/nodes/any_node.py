@@ -6,8 +6,7 @@ from pydgraph import DgraphClient
 
 from grapl_analyzerlib.graph_description_pb2 import NodeDescription
 from grapl_analyzerlib.nodes.queryable import Queryable
-from grapl_analyzerlib.nodes.viewable import Viewable, ForwardEdgeView, EdgeViewT, ReverseEdgeView
-
+from grapl_analyzerlib.nodes.viewable import Viewable
 # noinspection Mypy
 
 T = TypeVar("T")
@@ -305,16 +304,21 @@ class _NodeView(Viewable[T]):
             return self.node
         return None
 
+    def as_dynamic(self) -> Optional['DynamicNodeView']:
+        if isinstance(self.node, _DynamicNodeView):
+            return self.node
+        return None
+
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
         return {}
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         return {}
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         pass
 
     def _get_properties(self) -> Mapping[str, 'Property']:
@@ -349,3 +353,4 @@ from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpView
 from grapl_analyzerlib.nodes.file_node import _FileView
 from grapl_analyzerlib.nodes.process_node import _ProcessView
 from grapl_analyzerlib.nodes.dynamic_node import _DynamicNodeView
+from grapl_analyzerlib.nodes.viewable import ForwardEdgeView, EdgeViewT, ReverseEdgeView

@@ -10,7 +10,7 @@ from grapl_analyzerlib.nodes.file_node import FileQuery
 from grapl_analyzerlib.nodes.process_node import ProcessQuery, _ProcessView, ProcessView
 from grapl_analyzerlib.nodes.queryable import generate_query
 from grapl_analyzerlib.nodes.types import Property, PropertyT
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 T = TypeVar('T')
 
@@ -103,11 +103,11 @@ class IpcView(DynamicNodeView):
         pass
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
         pass
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
         pass
 
     def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':

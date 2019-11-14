@@ -71,11 +71,11 @@ class _DynamicNodeView(Viewable[T]):
         return {}
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         return {}
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {}
 
     def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView[T]]':

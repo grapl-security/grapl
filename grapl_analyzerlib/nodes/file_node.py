@@ -7,7 +7,7 @@ from pydgraph import DgraphClient
 from grapl_analyzerlib.nodes.comparators import Cmp, PropertyFilter, StrCmp, _str_cmps, IntCmp, _int_cmps
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 T = TypeVar("T")
 
@@ -473,11 +473,11 @@ class _FileView(Viewable[T]):
         }
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
         return {}
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
         return {
             '~created_files': (_ProcessView, 'creator'),
             '~wrote_files': ([_ProcessView], 'writers'),

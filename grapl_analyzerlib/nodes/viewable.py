@@ -8,12 +8,10 @@ from grapl_analyzerlib.nodes.types import PropertyT, OneOrMany, Property
 
 T = TypeVar("T")
 
-EdgeViewT = Union[List[Type["Viewable[T]"]], Type["Viewable[T]"]]
-
 class Viewable(abc.ABC, Generic[T]):
 
-    dynamic_forward_edge_types = {}  # type: Dict[str, EdgeViewT[T]]
-    dynamic_reverse_edge_types = {}  # type: Dict[str, Tuple[EdgeViewT[T], str]]
+    dynamic_forward_edge_types = {}  # type: Dict[str, _EdgeViewT[T]]
+    dynamic_reverse_edge_types = {}  # type: Dict[str, Tuple[_EdgeViewT[T], str]]
     dynamic_property_types = {}  # type: Dict[str, PropertyT]
 
     def __init__(
@@ -35,12 +33,12 @@ class Viewable(abc.ABC, Generic[T]):
 
     @staticmethod
     @abc.abstractmethod
-    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
         pass
 
     @staticmethod
     @abc.abstractmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
         """
         :return: Mapping of reverse edge name to Tuple of edge type and forward edge name
         """
@@ -62,7 +60,7 @@ class Viewable(abc.ABC, Generic[T]):
         return None
 
     @classmethod
-    def get_edge_types(cls) -> Mapping[str, Union["EdgeViewT[T]", Tuple["EdgeViewT[T]", str]]]:
+    def get_edge_types(cls) -> Mapping[str, Union["_EdgeViewT[T]", Tuple["_EdgeViewT[T]", str]]]:
         return {
             **cls._get_forward_edge_types(),
             **cls.dynamic_forward_edge_types,
@@ -72,14 +70,14 @@ class Viewable(abc.ABC, Generic[T]):
 
 
     @classmethod
-    def get_forward_edge_types(cls) -> Mapping[str, "EdgeViewT[T]"]:
+    def get_forward_edge_types(cls) -> Mapping[str, "_EdgeViewT[T]"]:
         return {
             **cls._get_forward_edge_types(),
             **cls.dynamic_forward_edge_types,
         }
 
     @classmethod
-    def get_reverse_edge_types(cls) -> Mapping[str, Tuple["EdgeViewT[T]", str]]:
+    def get_reverse_edge_types(cls) -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
         return {
             **cls.dynamic_reverse_edge_types,
             **cls._get_reverse_edge_types()
@@ -90,12 +88,12 @@ class Viewable(abc.ABC, Generic[T]):
 
     @classmethod
     def set_dynamic_forward_edge_type(
-        cls, edge_name: str, edge_type: "EdgeViewT[T]"
+        cls, edge_name: str, edge_type: "_EdgeViewT[T]"
     ) -> None:
         cls.dynamic_forward_edge_types[edge_name] = edge_type
 
     def set_dynamic_reverse_edge_type(
-        self, edge_name: str, edge_type: "EdgeViewT[T]", forward_name: str
+        self, edge_name: str, edge_type: "_EdgeViewT[T]", forward_name: str
     ) -> None:
         self.dynamic_reverse_edge_types[edge_name] = edge_type, forward_name
 
@@ -271,7 +269,7 @@ class Viewable(abc.ABC, Generic[T]):
             edge_name = edge_tuple[0]  # type: str
             forward_name = None  # type: Optional[str]
             if isinstance(edge_tuple[1], tuple):
-                ty = edge_tuple[1][0]  # type: EdgeViewT[T]
+                ty = edge_tuple[1][0]  # type: _EdgeViewT[T]
                 forward_name = edge_tuple[1][1]
             else:
                 ty = edge_tuple[1]
@@ -366,3 +364,5 @@ ForwardEdgeView = OneOrMany['Viewable[T]']
 ReverseEdgeView = Tuple[OneOrMany['Viewable[T]'], str]
 EdgeView = Union['ForwardEdgeView[T]', 'ReverseEdgeView[T]']
 
+_EdgeViewT = Union[List[Type[Viewable[T]]], Type[Viewable[T]]]
+EdgeViewT = _EdgeViewT[Any]
