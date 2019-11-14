@@ -120,16 +120,14 @@ def flatten_nodes(
 
 
 class _NodeQuery(Queryable[T]):
-    def __init__(self, node: Queryable[T]) -> None:
+    def __init__(self) -> None:
         super(_NodeQuery, self).__init__(_NodeView)
-        self._node = node
-        self.node_key = node._node_key
 
     def _get_unique_predicate(self) -> 'Optional[Tuple[str, PropertyT]]':
         return None
 
     def _get_node_type_name(self) -> Optional[str]:
-        return self._node._get_node_type_name()
+        return None
 
     def _get_property_filters(self) -> Mapping[str, 'PropertyFilter[Property]']:
         return self.dynamic_property_filters
