@@ -282,6 +282,7 @@ class _ProcessView(Viewable[T]):
             read_files: Optional[List['_FileView[T]']] = None,
             wrote_to_files: Optional[List['_FileView[T]']] = None,
             deleted_files: Optional[List['_FileView[T]']] = None,
+            created_connections: Optional[List['_ExternalIpView[T]']] = None,
             parent: Optional['_ProcessView[T]'] = None,
     ) -> None:
         super(_ProcessView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
@@ -298,6 +299,7 @@ class _ProcessView(Viewable[T]):
         self.read_files = read_files or []
         self.wrote_to_files = wrote_to_files or []
         self.deleted_files = deleted_files or []
+        self.created_connections = created_connections or []
         self.bin_file = bin_file
         self.parent = parent
 
@@ -347,6 +349,13 @@ class _ProcessView(Viewable[T]):
         self.children = cast('List[ProcessView]', self.fetch_edges('children', ProcessView))
         return self.children
 
+    def get_created_connections(self) -> 'List[ExternalIpView]':
+        self.created_connections = cast(
+            'List[ExternalIpView]',
+            self.fetch_edges('created_connections', ExternalIpView)
+        )
+        return self.created_connections
+
     def get_bin_file(self) -> 'Optional[FileView]':
         self.bin_file = cast('Optional[FileView]', self.fetch_edge('bin_file', FileView))
         return self.bin_file
@@ -389,6 +398,7 @@ class _ProcessView(Viewable[T]):
             'children': [_ProcessView],
             'bin_file': _FileView,
             'created_files': [_FileView],
+            'created_connections': [_ExternalIpView],
             'read_files': [_FileView],
             'wrote_to_files': [_FileView],
             'deleted_files': [_FileView],
@@ -420,6 +430,7 @@ class _ProcessView(Viewable[T]):
         f_edges = {
             'children': self.children,
             'created_files': self.created_files,
+            'created_connections': self.created_connections,
             'read_files': self.read_files,
             'wrote_to_files': self.wrote_to_files,
             'deleted_files': self.deleted_files,
@@ -446,4 +457,4 @@ from grapl_analyzerlib.nodes.file_node import _FileView, _FileQuery, FileQuery, 
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps, IntCmp, _int_cmps
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
-from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpQuery
+from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpQuery, ExternalIpView, _ExternalIpView
