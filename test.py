@@ -120,91 +120,76 @@ class IpcView(DynamicNodeView):
 def main() -> None:
     local_client = DgraphClient(DgraphClientStub('localhost:9080'))
 
-    # parent = {
-    #     'process_id': 100,
-    #     'process_name': 'word.exe'
-    # }  # type: Dict[str, Property]
-    #
-    # child = {
-    #     'process_id': 1234,
-    #     'process_name': 'cmd.exe'
-    # }  # type: Dict[str, Property]
-    #
-    # external_ip = {
-    #     'external_ip': '56.123.14.24',
-    # }  # type: Dict[str, Property]
-    #
-    #
-    #
-    # parent_view = upsert(
-    #     local_client,
-    #     _ProcessView,
-    #     'ea75f056-61a1-479d-9ca2-f632d2c67205',
-    #     parent
-    # )
-    #
-    # child_view = upsert(
-    #     local_client,
-    #     _ProcessView,
-    #     '10f585c2-cf31-41e2-8ca5-d477e78be3ac',
-    #     child
-    # )
-    #
-    # external_ip_view = upsert(
-    #     local_client,
-    #     _ExternalIpView,
-    #     '8bc20354-e8c5-49fc-a984-2927b24c1a29',
-    #     external_ip
-    # )
-    #
-    # print(external_ip_view)
-    # create_edge(local_client, parent_view.uid, 'children', child_view.uid)
-    # create_edge(local_client, child_view.uid, 'created_connections', external_ip_view.uid)
-    #
-    #
-    # queried_child_0 = ProcessQuery().with_process_id(eq=1234).query_first(local_client)
-    #
-    # assert queried_child_0
-    # assert queried_child_0.node_key == child_view.node_key
-    #
-    # queried_child_1 = (
-    #     ProcessQuery()
-    #         .with_process_id(eq=1234)
-    #         .query_first(local_client, contains_node_key='10f585c2-cf31-41e2-8ca5-d477e78be3ac')
-    # )
-    #
-    # assert queried_child_1
-    # assert queried_child_1.node_key == child_view.node_key
-    # assert queried_child_1.node_key == queried_child_0.node_key
-    #
-    # p = (
-    #     ProcessQuery()
-    #     .with_process_name(eq="cmd.exe")
-    #     .with_parent()
-    #     .with_created_connection()
-    #     .query_first(local_client)
-    #  )  # type: Optional[ProcessView]
-    #
-    # assert p
-    # print(p.get_properties())
+    parent = {
+        'process_id': 100,
+        'process_name': 'word.exe'
+    }  # type: Dict[str, Property]
 
-    query = (
+    child = {
+        'process_id': 1234,
+        'process_name': 'cmd.exe'
+    }  # type: Dict[str, Property]
+
+    external_ip = {
+        'external_ip': '56.123.14.24',
+    }  # type: Dict[str, Property]
+
+
+
+    parent_view = upsert(
+        local_client,
+        _ProcessView,
+        'ea75f056-61a1-479d-9ca2-f632d2c67205',
+        parent
+    )
+
+    child_view = upsert(
+        local_client,
+        _ProcessView,
+        '10f585c2-cf31-41e2-8ca5-d477e78be3ac',
+        child
+    )
+
+    external_ip_view = upsert(
+        local_client,
+        _ExternalIpView,
+        '8bc20354-e8c5-49fc-a984-2927b24c1a29',
+        external_ip
+    )
+
+    print(external_ip_view)
+    create_edge(local_client, parent_view.uid, 'children', child_view.uid)
+    create_edge(local_client, child_view.uid, 'created_connections', external_ip_view.uid)
+
+
+    queried_child_0 = ProcessQuery().with_process_id(eq=1234).query_first(local_client)
+
+    assert queried_child_0
+    assert queried_child_0.node_key == child_view.node_key
+
+    queried_child_1 = (
         ProcessQuery()
-        .with_deleted_files(
-            FileQuery()
-            .with_spawned_from()
-        )
+            .with_process_id(eq=1234)
+            .query_first(local_client, contains_node_key='10f585c2-cf31-41e2-8ca5-d477e78be3ac')
     )
 
-    query_str = generate_query(
-        query_name="res",
-        binding_modifier="res",
-        root=query,
-        contains_node_key='contains_node_key',
-        first=1
-    )
+    assert queried_child_1
+    assert queried_child_1.node_key == child_view.node_key
+    assert queried_child_1.node_key == queried_child_0.node_key
 
-    print(query_str)
+    p = (
+        ProcessQuery()
+        .with_process_name(eq="cmd.exe")
+        .with_parent()
+        .with_created_connection()
+        .query_first(local_client)
+     )  # type: Optional[ProcessView]
+
+    assert p
+    print(p.get_properties())
+
+    print(p.to_dict())
+
 
 
 if __name__ == '__main__':

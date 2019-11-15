@@ -365,12 +365,12 @@ class Viewable(abc.ABC, Generic[T]):
                 # One reverse edge
                 else:
                     edges.append(
-                        {"from": edge[0].node_key, "edge_name": edge_name, "to": edge[0].node_key}
+                        {"from": self.node_key, "edge_name": edge_name, "to": edge[0].node_key}
                     )
             # One forward edge
             else:
                 edges.append(
-                    {"from": edge.node_key, "edge_name": edge_name, "to": edge.node_key}
+                    {"from": self.node_key, "edge_name": edge_name, "to": edge.node_key}
                 )
 
         return {"node": node_dict, "edges": edges}
