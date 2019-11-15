@@ -651,7 +651,7 @@ impl DynamicNode {
     pub fn into_json(self) -> Value {
         let mut j = json!({
             "node_key": self.node_key,
-            "node_type": self.node_type,
+            "dgraph.type": self.node_type,
             "seen_at": self.seen_at,
         });
 
