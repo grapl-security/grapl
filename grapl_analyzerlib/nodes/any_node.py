@@ -28,6 +28,7 @@ def get_uid(client: DgraphClient, node_key: str) -> str:
             query, variables={'$a': node_key}
         )
         res = json.loads(res.json)
+        print(res)
         if isinstance(res['res'], list):
             return res['res'][0]['uid']
         else:

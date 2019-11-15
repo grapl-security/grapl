@@ -157,9 +157,9 @@ class Queryable(abc.ABC, Generic[T]):
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
     ) -> Optional['Viewable[T]']:
         res = self.query(dgraph_client, contains_node_key, first=1)
-        if isinstance(res, list):
+        if res and isinstance(res, list):
             return res[0]
-        if isinstance(res, dict):
+        if res:
             return res
         else:
             return None
