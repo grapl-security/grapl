@@ -34,10 +34,14 @@ class Eq(Cmp[T]):
 
     def to_filter(self) -> str:
         if isinstance(self.value, str):
+            if self.predicate == "dgraph.type":
+                return f'type({self.value})'
             return 'eq({}, "{}")'.format(self.predicate, self.value)
         if isinstance(self.value, int):
             return "eq({}, {})".format(self.predicate, self.value)
         if isinstance(self.value, Not) and isinstance(self.value.value, str):
+            if self.predicate == "dgraph.type":
+                return f'NOT type({self.value})'
             return 'NOT eq({}, "{}")'.format(self.predicate, self.value.value)
         if isinstance(self.value, Not) and isinstance(self.value.value, int):
             return "NOT eq({}, {})".format(self.predicate, self.value.value)

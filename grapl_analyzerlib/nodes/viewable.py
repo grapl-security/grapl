@@ -267,8 +267,8 @@ class Viewable(abc.ABC, Generic[T]):
     @classmethod
     def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'Viewable[T]':
         properties = {}
-        if d.get("node_type"):
-            properties["node_type"] = d["node_type"]
+        if d.get("node_type") or d.get('dgraph.type'):
+            properties["node_type"] = d.get("node_type") or d['dgraph.type']
 
         for prop, into in cls._get_property_types().items():
             val = d.get(prop)

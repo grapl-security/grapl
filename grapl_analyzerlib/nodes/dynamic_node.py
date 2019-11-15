@@ -15,7 +15,7 @@ class _DynamicNodeQuery(Queryable[T]):
         super(_DynamicNodeQuery, self).__init__(view_type)
         self.node_type = node_type
         self.view_type = view_type
-        self.set_str_property_filter('node_type', _str_cmps('node_type', eq=self.node_type))
+        self.set_str_property_filter('dgraph.type', _str_cmps('dgraph.type', eq=self.node_type))
 
     def _get_unique_predicate(self) -> 'Optional[Tuple[str, PropertyT]]':
         return None

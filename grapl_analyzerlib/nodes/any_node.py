@@ -214,7 +214,7 @@ class _NodeView(Viewable[T]):
             node = FileView.from_dict(dgraph_client, d)
         elif d.get('external_ip'):
             node = ExternalIpView.from_dict(dgraph_client, d)
-        elif d.get('node_type'):
+        elif d.get('dgraph.type'):
             node = DynamicNodeView.from_dict(dgraph_client, d)
         else:
             raise Exception(f'Invalid scoped node type: {d}')

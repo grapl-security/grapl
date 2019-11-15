@@ -131,10 +131,19 @@ def set_lens_schema(client, engagement=False):
     
 def set_ipc_schema(client, engagement=False):
     schema = """
+
+        type Ipc {
+            node_key: string
+            key: string
+            ipc_type: string
+            src_pid: int
+            dst_pid: int
+            ipc_creator: uid
+            ipc_recipient: uid
+        }
+
         node_key: string @upsert @index(hash) .
-        node_type: string @index(hash) .
-        key: string @index(hash) .
-        node_type: string @index(hash) .
+
         ipc_type: string @index(hash) .
         src_pid: int @index(int) .
         dst_pid: int @index(int) .

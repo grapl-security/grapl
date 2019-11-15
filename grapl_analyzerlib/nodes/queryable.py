@@ -300,7 +300,7 @@ def _func_filter(query: Queryable[T]) -> str:
     if query._node_key and isinstance(query._node_key, Eq):
         return query._node_key.to_filter()
     elif type_name:
-        return f'eq(node_type, "{type_name}")'
+        return f'type("{type_name}")'
     elif single_predicate:
         return single_predicate.to_filter()
     elif query._get_unique_predicate_name():
@@ -353,10 +353,13 @@ def generate_var_block(
             [
                 q
                 for q in neighbor.get_property_names()
-                if q not in ("node_key", neighbor._get_unique_predicate_name()) and q
+                if q not in ("node_key", 'dgraph.type', neighbor._get_unique_predicate_name()) and q
             ]
         )
 
+        node_type = ""
+        if 'dgraph.type' in neighbor.get_property_names():
+            node_type = "node_type: dgraph.type"
         formatted_binding = ""
         if neighbor == root and root_binding:
             formatted_binding = root_binding + " as "
@@ -370,7 +373,8 @@ def generate_var_block(
             {formatted_binding}{edge_name} {filters} {{
                 uid,
                 node_key,
-                {prop_names}
+                {prop_names + ","}
+                {node_type + ","}
                 {neighbor_prop}
                 {neighbor_block}
             }}
@@ -400,8 +404,14 @@ def generate_root_var(
     _prop_names = [
         q
         for q in query.get_property_names()
-        if q not in ("node_key", query._get_unique_predicate_name())
+        if q not in ("node_key", 'dgraph.type', query._get_unique_predicate_name())
     ]
+
+
+    node_type = ""
+    if 'dgraph.type' in query.get_property_names():
+        node_type = "node_type: dgraph.type"
+
     prop_names = ", ".join(_prop_names)
 
     var_block = f"""
@@ -409,6 +419,7 @@ def generate_root_var(
             uid,
             node_key,
             {prop_names}
+            {node_type}
             {query._get_unique_predicate_name() or ""}
             {blocks}
         }}
@@ -456,9 +467,14 @@ def generate_coalescing_query(
         [
             q
             for q in root.get_property_names()
-            if q not in ("node_key", root._get_unique_predicate_name())
+            if q not in ("node_key", "dgraph.type", root._get_unique_predicate_name())
         ]
     )
+
+
+    node_type = ""
+    if 'dgraph.type' in root.get_property_names():
+        node_type = "node_type: dgraph.type"
 
     if prop_names:
         fmt_prop_names = prop_names + ","
@@ -474,6 +490,7 @@ def generate_coalescing_query(
                 uid,
                 {fmt_prop_names}
                 node_key,
+                {node_type}
                 {root._get_unique_predicate_name() or ""},
                 {filtered_var_blocks}
             }}
@@ -505,11 +522,16 @@ def generate_inner_query(
         [
             q
             for q in root.get_property_names()
-            if q not in ("node_key", root._get_unique_predicate_name())
+            if q not in ("node_key", 'dgraph.type', root._get_unique_predicate_name())
         ]
     )
 
+    node_type = ""
+    if 'dgraph.type' in root.get_property_names():
+        node_type = "node_type: dgraph.type"
+
     coalesce_var = generate_coalescing_query(query_name, root, root_bindings)
+
     return f"""
         {coalesce_var}
     
@@ -522,6 +544,7 @@ def generate_inner_query(
             uid,
             {fmt_count},
             {prop_names},
+            {node_type}
             node_key,
             {root._get_unique_predicate_name() or ""},
             {filtered_var_blocks}
@@ -537,6 +560,7 @@ def generate_query(
     first: Optional[int] = None,
     count: bool = False,
 ) -> str:
+
     var_blocks, root_bindings = generate_root_vars(
         root, binding_modifier, contains_node_key
     )
