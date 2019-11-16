@@ -79,8 +79,9 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
                 Self { dynamic_node }
             }
 
-            pub fn with_asset_id(&mut self, asset_id: impl Into<Option<String>>) {
+            pub fn with_asset_id(&mut self, asset_id: impl Into<Option<String>>) -> &mut Self {
                 self.dynamic_node.asset_id = asset_id.into();
+                self
             }
 
             pub fn get_node_key(&self) -> &str {
