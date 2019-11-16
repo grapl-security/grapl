@@ -6,7 +6,6 @@ class OutboundConnectionSchema(NodeSchema):
         super(OutboundConnectionSchema, self).__init__()
         (
             self
-            .with_str_prop('node_key', ["hash"])
             .with_int_prop('create_time')
             .with_int_prop('terminate_time')
             .with_int_prop('last_seen_time')

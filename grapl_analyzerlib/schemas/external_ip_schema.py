@@ -6,7 +6,6 @@ class ExternalIpSchema(NodeSchema):
         super(ExternalIpSchema, self).__init__()
         (
             self
-            .with_str_prop('node_key', ["hash"])
             .with_str_prop('external_ip')
         )
 

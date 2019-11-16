@@ -1,5 +1,6 @@
 import abc
 from typing import Union, List, Tuple, Sequence, Type
+
 from typing_extensions import Literal
 
 StrIndex = Union[

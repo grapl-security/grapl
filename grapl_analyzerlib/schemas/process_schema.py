@@ -6,7 +6,6 @@ class ProcessSchema(NodeSchema):
         super(ProcessSchema, self).__init__()
         (
             self
-                .with_str_prop('node_key', ["hash"])
                 .with_int_prop('process_id')
                 .with_int_prop('created_timestamp')
                 .with_str_prop('asset_id')
