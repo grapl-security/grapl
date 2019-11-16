@@ -69,7 +69,6 @@ def set_file_schema(client: DgraphClient, engagement: bool=False) -> None:
     
 def set_outbound_connection_schema(client, engagement=False):
     schema = """
-    
         create_time: int @index(int) .
         terminate_time: int @index(int) .
         last_seen_time: int @index(int) .

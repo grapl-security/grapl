@@ -1,4 +1,5 @@
-from typing import Union, List, Tuple, Sequence
+import abc
+from typing import Union, List, Tuple, Sequence, Type
 from typing_extensions import Literal
 
 StrIndex = Union[
@@ -8,70 +9,141 @@ StrIndex = Union[
 ]
 
 
-class DynamicNodeSchema(object):
+def format(s: str, indent: int = 4, cur_indent: int = 2, output: str = "") -> str:
+    if not s:
+        return output
+    nl_index = s.find('\n')
+    # print('ix', nl_index)
+
+    if nl_index == -1:
+        nl_index = len(s)
+
+    line = s[:nl_index].strip()
+    if not line:
+        return format(s[nl_index + 1:], indent, cur_indent, output=output)
+
+    if "}" in line:
+        cur_indent -= indent
+
+    space_buf = " " * cur_indent
+
+    if "{" in line:
+        cur_indent += indent
+
+    output = output + space_buf + line + "\n"
+    return format(s[nl_index + 1:], indent, cur_indent, output=output)
+
+
+class NodeSchema(abc.ABC):
     def __init__(self) -> None:
+        self.node_type = self.self_type()
         self.str_props = []  # type: List[Tuple[str, Sequence[StrIndex]]]
         self.int_props = []  # type: List[str]
-        self.forward_edges = []  # type: List[str]
+        self.bool_props = []  # type: List[str]
+        self.forward_edges = []  # type: List[Tuple[str, UidType]]
+
+    @staticmethod
+    @abc.abstractmethod
+    def self_type() -> str:
+        pass
 
     def with_str_prop(
             self,
             prop_name: str,
             indexes: Sequence[StrIndex] = ()
-    ) -> 'DynamicNodeSchema':
+    ) -> 'NodeSchema':
         if indexes is ():
             indexes = ["trigram", "exact", "hash"]
         self.str_props.append((prop_name, indexes))
         return self
 
-    def with_int_prop(self, prop_name: str) -> 'DynamicNodeSchema':
+    def with_int_prop(self, prop_name: str) -> 'NodeSchema':
         self.int_props.append(prop_name)
         return self
 
-    def with_forward_edge(self, edge_name: str) -> 'DynamicNodeSchema':
-        self.forward_edges.append(edge_name)
+    def with_bool_prop(self, prop_name: str) -> 'NodeSchema':
+        self.bool_props.append(prop_name)
         return self
 
-    def to_schema_str(self, engagement: bool) -> str:
-        str_prop_schema = ""
+    def with_forward_edge(self, edge_name: str, edge: 'UidType') -> 'NodeSchema':
+        self.forward_edges.append((edge_name, edge))
+        return self
+
+    def generate_type(self) -> str:
+        str_types = ""
+        int_types = ""
+        bool_types = ""
+        edge_types = ""
+
+        for prop_name, _indexes in self.str_props:
+            str_types += f"{prop_name}: string\n"
+
+        for prop_name in self.int_props:
+            int_types += f"{prop_name}: int\n"
+
+        for prop_name in self.bool_props:
+            bool_types += f"{prop_name}: bool\n"
+
+        for prop_name, edge_type in self.forward_edges:
+
+            if isinstance(edge_type, list):
+                type_name = edge_type[0].self_type()
+                edge_types += f"{prop_name}: [uid]  # type: {type_name}\n"
+            else:
+                type_name = edge_type.self_type()
+                edge_types += f"{prop_name}: uid  # type: {type_name}\n"
+
+        type_def = f"""
+            type {self.node_type} {{
+            
+                {str_types}
+                {int_types}
+                {bool_types}
+                {edge_types}
+            
+            }}
+        """
+
+        formatted_typedef = format(type_def)
+        assert formatted_typedef
+        return formatted_typedef
+
+
+    def to_schema_str(self) -> str:
+        _str_prop_schema = []
         for prop_name, indexes in self.str_props:
             fmt_indexes = ", ".join(indexes)
-            str_prop_schema += f"{prop_name}: string @index({fmt_indexes}) .\n"
+            _str_prop_schema.append(f"{prop_name}: string @index({fmt_indexes}) .\n")
+
+        str_prop_schema = "\n".join(_str_prop_schema)
 
         int_prop_schema = ""
         for prop_name in self.int_props:
-            int_prop_schema += f"{prop_name}: string @index(int) .\n"
+            int_prop_schema += f"{prop_name}: int @index(int) .\n"
+
+        bool_prop_schema = ""
+        for prop_name in self.bool_props:
+            bool_prop_schema += f"{prop_name}: bool @index(bool) .\n"
 
         edge_prop_schema = ""
-        for edge_name in self.forward_edges:
-            edge_prop_schema += f"{edge_name}: uid @reverse .\n"
+        for edge_name, edge_type in self.forward_edges:
+            if isinstance(edge_type, list):
+                edge_prop_schema += f"{edge_name}: [uid] @reverse .\n"
+            else:
+                edge_prop_schema += f"{edge_name}: uid @reverse .\n"
 
         schema = f"""
             node_key: string @upsert @index(hash) .
-            node_type: string @index(hash) .
             
             {str_prop_schema}
             {int_prop_schema} 
+            {bool_prop_schema} 
             {edge_prop_schema}        
-        """.replace("  ", "").replace("\n\n\n", "\n\n").strip()
+        """.replace("  ", "")
 
-        if engagement:
-            schema += "\n"
-            schema += "risks: uid @reverse ."
-
-        return schema
+        return format(schema)
 
 
-if __name__ == '__main__':
+from grapl_analyzerlib.prelude import Viewable, ProcessView
 
-    ipc_schema = (
-        DynamicNodeSchema()
-        .with_str_prop('ipc_type', ["hash"])
-        .with_int_prop('src_pid')
-        .with_int_prop('dst_pid')
-        .with_forward_edge('ipc_creator')
-        .with_forward_edge('ipc_recipient')
-    )
-
-    print(ipc_schema.to_schema_str(False))
-    # print(ipc_schema.to_schema_str(True))
+UidType = Union[Type[NodeSchema], List[Type[NodeSchema]]]
