@@ -144,6 +144,4 @@ class NodeSchema(abc.ABC):
         return format(schema)
 
 
-from grapl_analyzerlib.prelude import Viewable, ProcessView
-
 UidType = Union[Type[NodeSchema], List[Type[NodeSchema]]]
