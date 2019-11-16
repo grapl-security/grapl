@@ -98,10 +98,7 @@ class _ProcessQuery(Queryable[T]):
         return self
 
     def with_children(self, child_query: Optional['_ProcessQuery[T]'] = None) -> '_ProcessQuery[T]':
-        if child_query is None:
-            children = ProcessQuery()  # type: _ProcessQuery[T]
-        else:
-            children = deepcopy(child_query)
+        children = child_query or ProcessQuery()  # type: _ProcessQuery[T]
         children._parent = self
         self._children = children
         return self
@@ -110,10 +107,7 @@ class _ProcessQuery(Queryable[T]):
             self,
             bin_file_query: Optional['_FileQuery[T]'] = None
     ) -> '_ProcessQuery[T]':
-        if bin_file_query is None:
-            bin_file = FileQuery()  # type: _FileQuery[T]
-        else:
-            bin_file = deepcopy(bin_file_query)
+        bin_file = bin_file_query or FileQuery()  # type: _FileQuery[T]
         bin_file._spawned_from = self
         self._bin_file = bin_file
         return self
@@ -122,10 +116,7 @@ class _ProcessQuery(Queryable[T]):
             self,
             created_files_query: Optional['_FileQuery[T]'] = None
     ) -> '_ProcessQuery[T]':
-        if created_files_query is None:
-            created_files = FileQuery()
-        else:
-            created_files = deepcopy(created_files_query)
+        created_files = created_files_query or FileQuery()
         created_files._creator = self
         self._created_files = created_files
         return self
@@ -134,10 +125,7 @@ class _ProcessQuery(Queryable[T]):
             self,
             deleted_files_query: Optional['_FileQuery[T]'] = None
     ) -> '_ProcessQuery[T]':
-        if deleted_files_query is None:
-            deleted_files = FileQuery()
-        else:
-            deleted_files = deepcopy(deleted_files_query)
+        deleted_files = deleted_files_query or FileQuery()
         deleted_files._deleter = self
         self._deleted_files = deleted_files
         return self
@@ -146,10 +134,9 @@ class _ProcessQuery(Queryable[T]):
             self,
             read_files_query: Optional['_FileQuery[T]'] = None
     ) -> '_ProcessQuery[T]':
-        if read_files_query is None:
-            read_files = FileQuery()
-        else:
-            read_files = deepcopy(read_files_query)
+
+        read_files = read_files_query or FileQuery()
+
         read_files._readers = self
         self._read_files = read_files
         return self
@@ -158,10 +145,8 @@ class _ProcessQuery(Queryable[T]):
             self,
             wrote_files_query: Optional['_FileQuery[T]'] = None
     ) -> '_ProcessQuery[T]':
-        if wrote_files_query is None:
-            wrote_files = FileQuery()
-        else:
-            wrote_files = deepcopy(wrote_files_query)
+        wrote_files = wrote_files_query or FileQuery()
+
         wrote_files._writers = self
         self._wrote_files = wrote_files
         return self
@@ -170,11 +155,7 @@ class _ProcessQuery(Queryable[T]):
             self,
             created_connection_query: Optional['_ExternalIpQuery[T]']  = None
     ) -> '_ProcessQuery[T]':
-        if created_connection_query is None:
-            created_connections = _ExternalIpQuery()  # type: _ExternalIpQuery[T]
-        else:
-            created_connections = deepcopy(created_connection_query)
-            assert created_connections
+        created_connections = created_connection_query or  _ExternalIpQuery()  # type: _ExternalIpQuery[T]
         created_connections._connections_from = self
         self._created_connections = created_connections
         return self
@@ -192,10 +173,8 @@ class _ProcessQuery(Queryable[T]):
     #     return self
 
     def with_parent(self, parent_query: Optional['_ProcessQuery[T]'] = None) -> '_ProcessQuery[T]':
-        if parent_query is None:
-            parent = ProcessQuery()  # type: _ProcessQuery[T]
-        else:
-            parent = deepcopy(parent_query)
+        parent = parent_query or ProcessQuery()  # type: _ProcessQuery[T]
+
         parent._children = self
         self._parent = parent
         return self

@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Optional, TypeVar, Mapping, Tuple, Any, List, cast
 
 # noinspection Mypy
@@ -196,28 +195,20 @@ class _FileQuery(Queryable[T]):
         return self
 
     def with_spawned_from(self, spawned_from_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
-        if spawned_from_query is None:
-            spawned_from = ProcessQuery()  # type: ProcessQuery
-        else:
-            spawned_from = deepcopy(spawned_from_query)
+        spawned_from = spawned_from_query or ProcessQuery()  # type: ProcessQuery
+
         spawned_from._bin_file = self
         self._spawned_from = spawned_from
         return self
 
     def with_creator(self, creator_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
-        if creator_query is None:
-            creator = ProcessQuery()  # type: ProcessQuery
-        else:
-            creator = deepcopy(creator_query)
+        creator = creator_query or ProcessQuery()  # type: ProcessQuery
         creator._created_files = self
         self._creator = creator
         return self
 
     def with_readers(self, reader_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
-        if reader_query is None:
-            reader = ProcessQuery()  # type: ProcessQuery
-        else:
-            reader = deepcopy(reader_query)
+        reader = reader_query or ProcessQuery()  # type: ProcessQuery
         reader._read_files = self
         self._readers = reader
         return self

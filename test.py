@@ -157,7 +157,7 @@ class IpcView(DynamicNodeView):
         super(IpcView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
         )
-        print('kwargs', kwargs)
+
         self.node_type = node_type
         self.src_pid = src_pid
         self.dst_pid = dst_pid
@@ -198,15 +198,15 @@ def test_ipc(local_client: DgraphClient):
     )
 
     qv = IpcQuery().with_ipc_type(eq="UNIX_DOMAIN")
-    print(
-        generate_query(
-            query_name='qname',
-            root=qv,
-            binding_modifier='bm',
-        )
-    )
-    print(qv.query_first(local_client))
-    # print(qv)
+    # print(
+    #     generate_query(
+    #         query_name='qname',
+    #         root=qv,
+    #         binding_modifier='bm',
+    #     )
+    # )
+    # print(qv.query_first(local_client))
+    # # print(qv)
     # print(ipc)
     # print(ipc_view)
 
@@ -252,7 +252,7 @@ def main() -> None:
         external_ip
     )
 
-    print(external_ip_view)
+
     create_edge(local_client, parent_view.uid, 'children', child_view.uid)
     create_edge(local_client, child_view.uid, 'created_connections', external_ip_view.uid)
 
@@ -281,9 +281,6 @@ def main() -> None:
      )  # type: Optional[ProcessView]
 
     assert p
-    print(p.get_properties())
-
-    print(p.to_dict())
 
 
 
