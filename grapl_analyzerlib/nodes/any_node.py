@@ -214,10 +214,10 @@ class _NodeView(Viewable[T]):
         if isinstance(node_type, list):
             node_type = node_type[0]
 
-        if not node_type:
-            _d = raw_node_from_uid(dgraph_client, d.get('uid'))
-            if _d:
-                d = {**d, **_d}
+        _d = raw_node_from_uid(dgraph_client, d.get('uid'))
+        if _d:
+            d = {**d, **_d}
+
 
         if d.get('process_id', d.get('process_name')) or node_type == 'Process':
             node = ProcessView.from_dict(dgraph_client, d)
