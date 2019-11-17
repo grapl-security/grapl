@@ -96,7 +96,7 @@ class NodeSchema(abc.ABC):
 
         type_def = f"""
             type {self.node_type} {{
-            
+                node_key: string
                 {str_types}
                 {int_types}
                 {bool_types}
