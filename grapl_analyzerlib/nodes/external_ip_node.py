@@ -67,11 +67,13 @@ class _ExternalIpView(Viewable[T]):
             dgraph_client: DgraphClient,
             node_key: str,
             uid: str,
+            node_type: Optional[str] = None,
             external_ip: Optional[str] = None,
             connections_from: Optional[List['ProcessView']] = None
     ):
         super(_ExternalIpView, self).__init__(dgraph_client, node_key, uid)
         self.external_ip = external_ip
+        self.node_type = node_type
         self.connections_from = connections_from or []
 
     def get_external_ip(self) -> Optional[str]:

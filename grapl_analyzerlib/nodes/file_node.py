@@ -286,6 +286,7 @@ class _FileView(Viewable[T]):
             dgraph_client: DgraphClient,
             node_key: str,
             uid: str,
+            node_type: Optional[str] = None,
             file_path: Optional[str] = None,
             asset_id: Optional[str] = None,
             file_extension: Optional[str] = None,
@@ -314,6 +315,7 @@ class _FileView(Viewable[T]):
         self.dgraph_client = dgraph_client
         self.node_key = node_key
         self.uid = uid
+        self.node_type = node_type
         self.file_path = file_path
         self.asset_id = asset_id
         self.file_extension = file_extension

@@ -315,11 +315,13 @@ class _LensView(Viewable[T]):
             dgraph_client: DgraphClient,
             uid: str,
             node_key: str,
+            node_type: Optional[str] = None,
             lens: Optional[str] = None,
             scope: Optional[List['NodeView']] = None
     ) -> None:
         super(_LensView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
         self.lens = lens
+        self.node_type = node_type
         self.scope = scope or []
 
     @staticmethod
