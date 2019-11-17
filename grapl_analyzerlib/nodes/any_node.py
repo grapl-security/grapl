@@ -42,7 +42,8 @@ def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[st
         {{
             res(func: uid("{uid}"), first: 1) {{
                 uid,
-                expand(_all_)
+                expand(_all_),
+                node_type: dgraph.type
             }}
         }}
         """
@@ -56,8 +57,12 @@ def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[st
         return None
     else:
         if isinstance(res, list):
+            if isinstance(res[0]['node_type'], list) and res[0]['node_type']:
+                res[0]['node_type'] = res[0]['node_type'][0]
             return res[0]
         else:
+            if isinstance(res['node_type'], list) and res['node_type']:
+                res['node_type'] = res['node_type'][0]
             return res
 
 
@@ -66,7 +71,8 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
         {{
             res(func: eq(node_key, "{node_key}"), first: 1) {{
                 uid,
-                expand(_all_)
+                expand(_all_),
+                node_type: dgraph.type
             }}
         }}
         """
@@ -200,9 +206,14 @@ class _NodeView(Viewable[T]):
     @classmethod
     def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NodeView':
 
-        node_type = d.get('node_type', d.get('dgraph.type', ''))  # type: str
+        node_type = d.get('node_type', d.get('dgraph.type', ''))  # type: Optional[str]
         if isinstance(node_type, list):
             node_type = node_type[0]
+
+        if not node_type:
+            _d = raw_node_from_uid(dgraph_client, d.get('uid'))
+            if _d:
+                d = _d
 
         if d.get('process_id', d.get('process_name')) or node_type == 'Process':
             node = ProcessView.from_dict(dgraph_client, d)
