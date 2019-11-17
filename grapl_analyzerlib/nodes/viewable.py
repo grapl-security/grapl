@@ -117,6 +117,7 @@ class Viewable(abc.ABC, Generic[T]):
             **self.dynamic_properties,
             'node_key': self.node_key,
             'uid': self.uid,
+            'dgraph.type': self.node_type,
         }
 
     def get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
