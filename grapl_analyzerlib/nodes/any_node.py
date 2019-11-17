@@ -42,11 +42,7 @@ def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[st
         {{
             res(func: uid("{uid}"), first: 1) {{
                 uid,
-                node_key,
-                process_id,
-                file_path,
-                external_ip,
-                node_type,
+                expand(_all_)
             }}
         }}
         """
@@ -70,11 +66,7 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
         {{
             res(func: eq(node_key, "{node_key}"), first: 1) {{
                 uid,
-                node_key,
-                process_id,
-                file_path,
-                external_ip,
-                node_type,
+                expand(_all_)
             }}
         }}
         """
@@ -208,13 +200,15 @@ class _NodeView(Viewable[T]):
     @classmethod
     def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NodeView':
 
-        if d.get('process_id', d.get('process_name')):
+        node_type = d.get('node_type', d.get('dgraph.type', ''))  # type: str
+
+        if d.get('process_id', d.get('process_name')) or node_type == 'Process':
             node = ProcessView.from_dict(dgraph_client, d)
-        elif d.get('file_path'):
+        elif d.get('file_path') or node_type == 'File':
             node = FileView.from_dict(dgraph_client, d)
-        elif d.get('external_ip'):
+        elif d.get('external_ip') or node_type == 'ExternalIp':
             node = ExternalIpView.from_dict(dgraph_client, d)
-        elif d.get('dgraph.type'):
+        elif node_type:
             node = DynamicNodeView.from_dict(dgraph_client, d)
         else:
             raise Exception(f'Invalid scoped node type: {d}')
