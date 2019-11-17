@@ -266,6 +266,7 @@ class _ProcessView(Viewable[T]):
     ) -> None:
         super(_ProcessView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
         self.process_id = process_id
+        self.node_type = node_type
         self.created_timestamp = created_timestamp
         self.asset_id = asset_id
         self.terminate_time = terminate_time
