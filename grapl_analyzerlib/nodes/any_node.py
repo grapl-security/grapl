@@ -42,7 +42,7 @@ def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[st
         {{
             res(func: uid("{uid}"), first: 1) {{
                 uid,
-                expand(_all_),
+                expand(_forward_),
                 node_type: dgraph.type
             }}
         }}
@@ -71,7 +71,7 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
         {{
             res(func: eq(node_key, "{node_key}"), first: 1) {{
                 uid,
-                expand(_all_),
+                expand(_forward_),
                 node_type: dgraph.type
             }}
         }}
@@ -85,6 +85,7 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
     if not res:
         return None
     else:
+        res['node_key'] = node_key
         if isinstance(res, list):
             if isinstance(res[0]['node_type'], list) and res[0]['node_type']:
                 res[0]['node_type'] = res[0]['node_type'][0]
@@ -184,12 +185,16 @@ class _NodeView(Viewable[T]):
     def from_view(v: Union["ProcessView", "FileView", "ExternalIpView", "DynamicNodeView", "NodeView"]):
         if isinstance(v, _NodeView):
             return v
-        return NodeView(
-            v.dgraph_client,
-            v.node_key,
-            v.uid,
-            v,
-        )
+        try:
+            return NodeView(
+                v.dgraph_client,
+                v.node_key,
+                v.uid,
+                v,
+            )
+        except Exception as e:
+            print(f"ERROR from_view failed for : {v}")
+            raise e
 
     @staticmethod
     def from_node_key(client, node_key):
@@ -197,7 +202,11 @@ class _NodeView(Viewable[T]):
         if not res:
             return None
         else:
-            return NodeView.from_dict(client, res)
+            try:
+                return NodeView.from_dict(client, res)
+            except Exception as e:
+                print(f'ERROR from_node_key failed: {node_key} {res}')
+                raise e
 
     @staticmethod
     def from_uid(client, uid):
@@ -205,7 +214,11 @@ class _NodeView(Viewable[T]):
         if not res:
             return None
         else:
-            return NodeView.from_dict(client, res)
+            try:
+                return NodeView.from_dict(client, res)
+            except Exception as e:
+                print(f'ERROR from_node_uid failed: {uid} {res}')
+                raise e
 
     @classmethod
     def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NodeView':
