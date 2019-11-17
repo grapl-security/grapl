@@ -84,18 +84,18 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
         txn.discard()
     if not res:
         return None
-    else:
-        if isinstance(res, list):
-            if isinstance(res[0]['node_type'], list) and res[0]['node_type']:
-                res[0]['node_type'] = res[0]['node_type'][0]
-            res[0]['node_key'] = node_key
+
+    if isinstance(res, list):
+        if isinstance(res[0]['node_type'], list) and res[0]['node_type']:
+            res[0]['node_type'] = res[0]['node_type'][0]
+        res[0]['node_key'] = node_key
 
         return res[0]
-        else:
-            if isinstance(res['node_type'], list) and res['node_type']:
-                res['node_type'] = res['node_type'][0]
-                res['node_key'] = node_key
-            return res
+
+    if isinstance(res['node_type'], list) and res['node_type']:
+        res['node_type'] = res['node_type'][0]
+        res['node_key'] = node_key
+    return res
 
 def flatten_nodes(
         root: Viewable
