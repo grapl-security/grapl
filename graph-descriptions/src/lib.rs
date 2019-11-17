@@ -96,6 +96,7 @@ impl OutboundConnection {
             "asset_id": asset_id,
             "port": self.port,
             "direction": "outbound",
+            "dgraph.type": "OutboundConnection"
         });
 
         if self.created_timestamp!= 0 {
@@ -199,6 +200,7 @@ impl InboundConnection {
             "asset_id": asset_id,
             "port": self.port,
             "direction": "inbound",
+            "dgraph.type": "InboundConnection"
         });
 
         if self.created_timestamp!= 0 {
@@ -853,6 +855,7 @@ impl AssetDescription {
             "host_ip": self.host_ip,
             "operating_system": self.operating_system,
             "timestamp": self.timestamp,
+            "dgraph.type": "Asset",
         })
     }
 }
@@ -924,7 +927,7 @@ impl ProcessDescription {
             "node_key": self.node_key,
             "asset_id": asset_id,
             "process_id": self.process_id,
-
+            "dgraph.type": "Process"
         });
 
         if !self.process_name.is_empty() {
@@ -1092,6 +1095,7 @@ impl FileDescription {
         let mut j = json!({
             "node_key": self.node_key,
             "asset_id": asset_id,
+            "dgraph.type": "File"
         });
 
         if !self.file_name.is_empty() {
@@ -1237,6 +1241,7 @@ impl IpAddressDescription {
             "node_key": self.node_key,
             "last_seen": self.timestamp,
             "external_ip": self.ip_address,
+            "dgraph.type": "ExternalIp"
         })
     }
 
