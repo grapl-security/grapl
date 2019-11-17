@@ -198,7 +198,7 @@ class Viewable(abc.ABC, Generic[T]):
                     node_key,
                     {edge_name} {{
                         uid,
-                        node_type,
+                        node_type: dgraph.type,
                         node_key,
                     }}
                 }}
@@ -237,7 +237,7 @@ class Viewable(abc.ABC, Generic[T]):
                     node_key,
                     {edge_name} {{
                         uid,
-                        node_type,
+                        node_type: dgraph.type,
                         node_key,
                     }}
                 }}
@@ -267,8 +267,15 @@ class Viewable(abc.ABC, Generic[T]):
     @classmethod
     def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'Viewable[T]':
         properties = {}
-        if d.get("node_type") or d.get('dgraph.type'):
-            properties["node_type"] = d.get("node_type") or d['dgraph.type']
+        node_type = d.get("node_type") or d.get('dgraph.type')
+        if node_type:
+            if isinstance(node_type, list):
+                if len(node_type) > 1:
+                    print(f"WARN: Node has multiple types: {node_type}, narrowing to: {node_type[0]}")
+                node_type = node_type[0]
+            properties["node_type"] = node_type
+        else:
+            print(f"WARN: Node is missing type: {d.get('node_key', d.get('uid'))}")
 
         for prop, into in cls._get_property_types().items():
             val = d.get(prop)

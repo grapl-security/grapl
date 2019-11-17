@@ -201,6 +201,8 @@ class _NodeView(Viewable[T]):
     def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NodeView':
 
         node_type = d.get('node_type', d.get('dgraph.type', ''))  # type: str
+        if isinstance(node_type, list):
+            node_type = node_type[0]
 
         if d.get('process_id', d.get('process_name')) or node_type == 'Process':
             node = ProcessView.from_dict(dgraph_client, d)
