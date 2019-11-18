@@ -80,7 +80,11 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
             }
 
             pub fn with_asset_id(&mut self, asset_id: impl Into<Option<String>>) -> &mut Self {
-                self.dynamic_node.asset_id = asset_id.into();
+                let asset_id = asset_id.into();
+                self.dynamic_node.asset_id = asset_id.clone();
+                if let Some(asset_id) = asset_id {
+                    self.dynamic_node.properties.insert("asset_id".to_owned(), asset_id.into());
+                }
                 self
             }
 
