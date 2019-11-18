@@ -61,7 +61,9 @@ class _DynamicNodeView(Viewable[T]):
     ):
         super(_DynamicNodeView, self).__init__(dgraph_client=dgraph_client, node_key=node_key, uid=uid)
         self.node_type = node_type
-        self.args = args
+        if args:
+            for arg_name, arg_value in args.items():
+                setattr(self, arg_name, arg_value)
 
     def get_node_type(self) -> str:
         return self.node_type
