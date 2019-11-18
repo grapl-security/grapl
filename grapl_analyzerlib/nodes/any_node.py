@@ -57,12 +57,20 @@ def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[st
         return None
     else:
         if isinstance(res, list):
-            if isinstance(res[0]['node_type'], list) and res[0]['node_type']:
+            node_type = res[0].get('node_type')
+            if node_type:
                 res[0]['node_type'] = res[0]['node_type'][0]
+            else:
+                print(f"WARN: node_type missing from {uid}")
+
             return res[0]
         else:
-            if isinstance(res['node_type'], list) and res['node_type']:
+            node_type = res.get('node_type')
+            if node_type:
                 res['node_type'] = res['node_type'][0]
+            else:
+                print(f"WARN: node_type missing from {uid}")
+
             return res
 
 
