@@ -95,16 +95,21 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
 
     try:
         if isinstance(res, list):
-            if isinstance(res[0]['node_type'], list) and res[0]['node_type']:
+            node_type = res[0].get('node_type')
+            if node_type:
                 res[0]['node_type'] = res[0]['node_type'][0]
-            res[0]['node_key'] = node_key
+            else:
+                print(f"WARN: node_type missing from {node_key}")
 
             return res[0]
+        else:
+            node_type = res.get('node_type')
+            if node_type:
+                res['node_type'] = res['node_type'][0]
+            else:
+                print(f"WARN: node_type missing from {node_key}")
 
-        if isinstance(res['node_type'], list) and res['node_type']:
-            res['node_type'] = res['node_type'][0]
-            res['node_key'] = node_key
-        return res
+            return res
     except Exception as e:
         print(f"WARN: raw_node_from_node_key {node_key} {res} {e}")
         raise e
