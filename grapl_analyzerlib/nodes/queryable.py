@@ -194,6 +194,7 @@ class Queryable(abc.ABC, Generic[T]):
             if isinstance(raw_count, dict):
                 return int(raw_count.get("count", 0))
 
+
 def traverse_query_iter(
     node: Queryable[T], visited: Optional[Set[Queryable[T]]] = None
 ) -> Iterable[Union["Queryable[T]", Tuple["Queryable[T]", str]]]:
@@ -357,9 +358,6 @@ def generate_var_block(
             ]
         )
 
-        node_type = ""
-        if 'dgraph.type' in neighbor.get_property_names():
-            node_type = "node_type: dgraph.type"
         formatted_binding = ""
         if neighbor == root and root_binding:
             formatted_binding = root_binding + " as "
@@ -373,8 +371,8 @@ def generate_var_block(
             {formatted_binding}{edge_name} {filters} {{
                 uid,
                 node_key,
+                node_type: dgraph.type,
                 {prop_names + ","}
-                {node_type + ","}
                 {neighbor_prop}
                 {neighbor_block}
             }}
@@ -407,19 +405,14 @@ def generate_root_var(
         if q not in ("node_key", 'dgraph.type', query._get_unique_predicate_name())
     ]
 
-
-    node_type = ""
-    if 'dgraph.type' in query.get_property_names():
-        node_type = "node_type: dgraph.type"
-
     prop_names = ", ".join(_prop_names)
 
     var_block = f"""
         {formatted_binding}var(func: {func}) @cascade {{
             uid,
             node_key,
+            node_type: dgraph.type,
             {prop_names}
-            {node_type}
             {query._get_unique_predicate_name() or ""}
             {blocks}
         }}
@@ -471,11 +464,6 @@ def generate_coalescing_query(
         ]
     )
 
-
-    node_type = ""
-    if 'dgraph.type' in root.get_property_names():
-        node_type = "node_type: dgraph.type"
-
     if prop_names:
         fmt_prop_names = prop_names + ","
     else:
@@ -490,7 +478,7 @@ def generate_coalescing_query(
                 uid,
                 {fmt_prop_names}
                 node_key,
-                {node_type}
+                node_type: dgraph.type,
                 {root._get_unique_predicate_name() or ""},
                 {filtered_var_blocks}
             }}
@@ -526,10 +514,6 @@ def generate_inner_query(
         ]
     )
 
-    node_type = ""
-    if 'dgraph.type' in root.get_property_names():
-        node_type = "node_type: dgraph.type"
-
     coalesce_var = generate_coalescing_query(query_name, root, root_bindings)
 
     return f"""
@@ -544,7 +528,7 @@ def generate_inner_query(
             uid,
             {fmt_count},
             {prop_names},
-            {node_type}
+            node_type: dgraph.type,
             node_key,
             {root._get_unique_predicate_name() or ""},
             {filtered_var_blocks}

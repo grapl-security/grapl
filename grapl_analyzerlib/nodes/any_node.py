@@ -114,6 +114,7 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
         print(f"WARN: raw_node_from_node_key {node_key} {res} {e}")
         raise e
 
+
 def flatten_nodes(
         root: Viewable
 ) -> List[Viewable]:
