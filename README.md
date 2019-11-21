@@ -114,6 +114,8 @@ To get started you'll need to install [npm](https://www.npmjs.com/), [typescript
 
 Your aws-cdk version should match the version in [Grapl's package.json file](https://github.com/insanitybit/grapl/blob/readmeupdate1/grapl-cdk/package.json#L29).
 
+You'll also need to have local aws credentials, and a configuration profile. Instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
+
 Clone the repo:
 
     git clone https://github.com/insanitybit/grapl.git
