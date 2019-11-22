@@ -1,11 +1,10 @@
 extern crate base64;
 #[macro_use]
 extern crate derive_builder;
-extern crate hash_hasher;
+
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate maplit;
+
 extern crate prost;
 #[macro_use]
 extern crate prost_derive;
@@ -14,8 +13,10 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
-extern crate sha3;
+
 extern crate uuid;
+
+use std::collections::HashMap;
 
 use graph_description::*;
 use graph_description::host::HostId;
@@ -95,6 +96,7 @@ impl OutboundConnection {
             "asset_id": asset_id,
             "port": self.port,
             "direction": "outbound",
+            "dgraph.type": "OutboundConnection"
         });
 
         if self.created_timestamp!= 0 {
@@ -198,6 +200,7 @@ impl InboundConnection {
             "asset_id": asset_id,
             "port": self.port,
             "direction": "inbound",
+            "dgraph.type": "InboundConnection"
         });
 
         if self.created_timestamp!= 0 {
@@ -335,6 +338,48 @@ impl HostIdentifier {
         match self {
             HostIdentifier::AssetId(asset_id) => Some(asset_id.as_ref()),
             _ => None
+        }
+    }
+}
+
+impl From<Node> for NodeDescription {
+    fn from(node: Node) -> NodeDescription {
+        match node {
+            Node::AssetNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::AssetNode (node))
+                }
+            }
+            Node::ProcessNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::ProcessNode (node))
+                }
+            }
+            Node::FileNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::FileNode (node))
+                }
+            }
+            Node::IpAddressNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::IpAddressNode (node))
+                }
+            }
+            Node::OutboundConnectionNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::OutboundConnectionNode (node))
+                }
+            }
+            Node::InboundConnectionNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::InboundConnectionNode (node))
+                }
+            }
+            Node::DynamicNode(node) => {
+                NodeDescription {
+                    which_node: Some(WhichNode::DynamicNode (node))
+                }
+            }
         }
     }
 }
@@ -608,7 +653,7 @@ impl DynamicNode {
     pub fn into_json(self) -> Value {
         let mut j = json!({
             "node_key": self.node_key,
-            "node_type": self.node_type,
+            "dgraph.type": self.node_type,
             "seen_at": self.seen_at,
         });
 
@@ -810,6 +855,7 @@ impl AssetDescription {
             "host_ip": self.host_ip,
             "operating_system": self.operating_system,
             "timestamp": self.timestamp,
+            "dgraph.type": "Asset",
         })
     }
 }
@@ -826,8 +872,6 @@ impl ProcessDescription {
                process_command_line: String,
                process_guid: String,
                process_integrity_level: String,
-               uid: u64,
-               auid: u64,
     ) -> ProcessDescription {
         let mut pd = Self {
             node_key: Uuid::new_v4().to_string(),
@@ -844,8 +888,6 @@ impl ProcessDescription {
             process_command_line,
             process_guid,
             process_integrity_level,
-            uid,
-            auid,
         };
 
         match state {
@@ -885,7 +927,7 @@ impl ProcessDescription {
             "node_key": self.node_key,
             "asset_id": asset_id,
             "process_id": self.process_id,
-
+            "dgraph.type": "Process"
         });
 
         if !self.process_name.is_empty() {
@@ -901,10 +943,10 @@ impl ProcessDescription {
         if !self.process_guid.is_empty() {
             j["process_guid"] = Value::from(self.process_guid.to_owned());
         }
+
         if !self.process_integrity_level.is_empty() {
             j["process_integrity_level"] = Value::from(self.process_integrity_level.to_owned());
         }
-
 
         match ProcessState::from(self.state) {
             ProcessState::Created => j["created_time"] = self.created_timestamp.into(),
@@ -1053,6 +1095,7 @@ impl FileDescription {
         let mut j = json!({
             "node_key": self.node_key,
             "asset_id": asset_id,
+            "dgraph.type": "File"
         });
 
         if !self.file_name.is_empty() {
@@ -1198,6 +1241,7 @@ impl IpAddressDescription {
             "node_key": self.node_key,
             "last_seen": self.timestamp,
             "external_ip": self.ip_address,
+            "dgraph.type": "ExternalIp"
         })
     }
 
@@ -1211,8 +1255,8 @@ impl IpAddressDescription {
 impl GraphDescription {
     pub fn new(timestamp: u64) -> Self {
         GraphDescription {
-            nodes: hashmap![],
-            edges: hashmap![],
+            nodes: HashMap::new(),
+            edges: HashMap::new(),
             timestamp
         }
     }
@@ -1280,9 +1324,9 @@ impl GraphDescription {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);

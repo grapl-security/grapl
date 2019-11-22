@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='graph_description.proto',
   package='graph_description',
   syntax='proto3',
-  serialized_pb=_b('\n\x17graph_description.proto\x12\x11graph_description\x1a\x1egoogle/protobuf/wrappers.proto\"G\n\x04Host\x12\x12\n\x08hostname\x18\x01 \x01(\tH\x00\x12\x0c\n\x02ip\x18\x02 \x01(\tH\x00\x12\x12\n\x08\x61sset_id\x18\x03 \x01(\tH\x00\x42\t\n\x07host_id\"\xfb\x02\n\x10\x41ssetDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12.\n\x08\x61sset_id\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12/\n\thost_name\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x31\n\x0bhost_domain\x18\x05 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12/\n\thost_fqdn\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x34\n\x0ehost_local_mac\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x18\n\x10operating_system\x18\t \x01(\t\"\xe2\x03\n\x0fNodeDescription\x12\x39\n\nasset_node\x18\x01 \x01(\x0b\x32#.graph_description.AssetDescriptionH\x00\x12=\n\x0cprocess_node\x18\x02 \x01(\x0b\x32%.graph_description.ProcessDescriptionH\x00\x12\x37\n\tfile_node\x18\x03 \x01(\x0b\x32\".graph_description.FileDescriptionH\x00\x12\x42\n\x0fip_address_node\x18\x04 \x01(\x0b\x32\'.graph_description.IpAddressDescriptionH\x00\x12I\n\x18outbound_connection_node\x18\x05 \x01(\x0b\x32%.graph_description.OutboundConnectionH\x00\x12G\n\x17inbound_connection_node\x18\x06 \x01(\x0b\x32$.graph_description.InboundConnectionH\x00\x12\x36\n\x0c\x64ynamic_node\x18\x07 \x01(\x0b\x32\x1e.graph_description.DynamicNodeH\x00\x42\x0c\n\nwhich_node\"\xa8\x02\n\x12OutboundConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x0c\n\x04port\x18\t \x01(\r\"\xa7\x02\n\x11InboundConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x0c\n\x04port\x18\t \x01(\r\"\xce\x03\n\x12ProcessDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x12\n\nprocess_id\x18\x06 \x01(\x04\x12\x14\n\x0cprocess_guid\x18\x07 \x01(\t\x12\x19\n\x11\x63reated_timestamp\x18\x08 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\t \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\n \x01(\x04\x12\x14\n\x0cprocess_name\x18\x0b \x01(\t\x12\x1c\n\x14process_command_line\x18\x0c \x01(\t\x12\x1f\n\x17process_integrity_level\x18\r \x01(\t\x12\x18\n\x10operating_system\x18\x0e \x01(\t\x12\x0b\n\x03uid\x18\x0f \x01(\x04\x12\x0c\n\x04\x61uid\x18\x10 \x01(\x04\"\xd8\x04\n\x0f\x46ileDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x19\n\x11\x64\x65leted_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x11\n\tfile_name\x18\t \x01(\t\x12\x11\n\tfile_path\x18\n \x01(\t\x12\x16\n\x0e\x66ile_extension\x18\x0b \x01(\t\x12\x16\n\x0e\x66ile_mime_type\x18\x0c \x01(\t\x12\x11\n\tfile_size\x18\r \x01(\x04\x12\x14\n\x0c\x66ile_version\x18\x0e \x01(\t\x12\x18\n\x10\x66ile_description\x18\x0f \x01(\t\x12\x14\n\x0c\x66ile_product\x18\x10 \x01(\t\x12\x14\n\x0c\x66ile_company\x18\x11 \x01(\t\x12\x16\n\x0e\x66ile_directory\x18\x12 \x01(\t\x12\x12\n\nfile_inode\x18\x13 \x01(\x04\x12\x17\n\x0f\x66ile_hard_links\x18\x14 \x01(\x04\x12\x10\n\x08md5_hash\x18\x15 \x01(\t\x12\x11\n\tsha1_hash\x18\x16 \x01(\t\x12\x13\n\x0bsha256_hash\x18\x17 \x01(\t\"a\n\x14IpAddressDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12\x12\n\nip_address\x18\x03 \x01(\t\x12\x10\n\x08ip_proto\x18\x04 \x01(\t\"\xdd\x01\n\x0eIPCDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x10\n\x08ipc_type\x18\x05 \x01(\t\x12\x18\n\x10\x61\x63\x63\x65ss_timestamp\x18\x06 \x01(\t\"\x97\x01\n\x07Session\x12\x1e\n\x16primary_key_properties\x18\x01 \x03(\t\x12%\n\x1dprimary_key_requires_asset_id\x18\x02 \x01(\x08\x12\x14\n\x0c\x63reated_time\x18\x03 \x01(\x04\x12\x16\n\x0elast_seen_time\x18\x04 \x01(\x04\x12\x17\n\x0fterminated_time\x18\x05 \x01(\x04\"O\n\x06Static\x12\x1e\n\x16primary_key_properties\x18\x01 \x03(\t\x12%\n\x1dprimary_key_requires_asset_id\x18\x02 \x01(\x08\"t\n\nIdStrategy\x12-\n\x07session\x18\x01 \x01(\x0b\x32\x1a.graph_description.SessionH\x00\x12+\n\x06static\x18\x02 \x01(\x0b\x32\x19.graph_description.StaticH\x00\x42\n\n\x08strategy\"T\n\x0cNodeProperty\x12\x11\n\x07intprop\x18\x01 \x01(\x03H\x00\x12\x12\n\x08uintprop\x18\x02 \x01(\x04H\x00\x12\x11\n\x07strprop\x18\x03 \x01(\tH\x00\x42\n\n\x08property\"\x9e\x03\n\x0b\x44ynamicNode\x12\x42\n\nproperties\x18\x01 \x03(\x0b\x32..graph_description.DynamicNode.PropertiesEntry\x12\x10\n\x08node_key\x18\x02 \x01(\t\x12\x11\n\tnode_type\x18\x03 \x01(\t\x12\x0f\n\x07seen_at\x18\x04 \x01(\x04\x12.\n\x08\x61sset_id\x18\x05 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x32\n\x0bid_strategy\x18\x08 \x03(\x0b\x32\x1d.graph_description.IdStrategy\x1aR\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12.\n\x05value\x18\x02 \x01(\x0b\x32\x1f.graph_description.NodeProperty:\x02\x38\x01\"=\n\x0f\x45\x64geDescription\x12\x0c\n\x04\x66rom\x18\x01 \x01(\t\x12\n\n\x02to\x18\x02 \x01(\t\x12\x10\n\x08\x65\x64geName\x18\x03 \x01(\t\"=\n\x08\x45\x64geList\x12\x31\n\x05\x65\x64ges\x18\x01 \x03(\x0b\x32\".graph_description.EdgeDescription\"\xc0\x02\n\x10GraphDescription\x12=\n\x05nodes\x18\x01 \x03(\x0b\x32..graph_description.GraphDescription.NodesEntry\x12=\n\x05\x65\x64ges\x18\x02 \x03(\x0b\x32..graph_description.GraphDescription.EdgesEntry\x12\x11\n\ttimestamp\x18\x03 \x01(\x04\x1aP\n\nNodesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x31\n\x05value\x18\x02 \x01(\x0b\x32\".graph_description.NodeDescription:\x02\x38\x01\x1aI\n\nEdgesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.graph_description.EdgeList:\x02\x38\x01\"L\n\x12GeneratedSubgraphs\x12\x36\n\tsubgraphs\x18\x01 \x03(\x0b\x32#.graph_description.GraphDescriptionb\x06proto3')
+  serialized_pb=_b('\n\x17graph_description.proto\x12\x11graph_description\x1a\x1egoogle/protobuf/wrappers.proto\"G\n\x04Host\x12\x12\n\x08hostname\x18\x01 \x01(\tH\x00\x12\x0c\n\x02ip\x18\x02 \x01(\tH\x00\x12\x12\n\x08\x61sset_id\x18\x03 \x01(\tH\x00\x42\t\n\x07host_id\"\xfb\x02\n\x10\x41ssetDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12.\n\x08\x61sset_id\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12/\n\thost_name\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x31\n\x0bhost_domain\x18\x05 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12/\n\thost_fqdn\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x34\n\x0ehost_local_mac\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x18\n\x10operating_system\x18\t \x01(\t\"\xe2\x03\n\x0fNodeDescription\x12\x39\n\nasset_node\x18\x01 \x01(\x0b\x32#.graph_description.AssetDescriptionH\x00\x12=\n\x0cprocess_node\x18\x02 \x01(\x0b\x32%.graph_description.ProcessDescriptionH\x00\x12\x37\n\tfile_node\x18\x03 \x01(\x0b\x32\".graph_description.FileDescriptionH\x00\x12\x42\n\x0fip_address_node\x18\x04 \x01(\x0b\x32\'.graph_description.IpAddressDescriptionH\x00\x12I\n\x18outbound_connection_node\x18\x05 \x01(\x0b\x32%.graph_description.OutboundConnectionH\x00\x12G\n\x17inbound_connection_node\x18\x06 \x01(\x0b\x32$.graph_description.InboundConnectionH\x00\x12\x36\n\x0c\x64ynamic_node\x18\x07 \x01(\x0b\x32\x1e.graph_description.DynamicNodeH\x00\x42\x0c\n\nwhich_node\"\xa8\x02\n\x12OutboundConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x0c\n\x04port\x18\t \x01(\r\"\xa7\x02\n\x11InboundConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x0c\n\x04port\x18\t \x01(\r\"\xb3\x03\n\x12ProcessDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x12\n\nprocess_id\x18\x06 \x01(\x04\x12\x14\n\x0cprocess_guid\x18\x07 \x01(\t\x12\x19\n\x11\x63reated_timestamp\x18\x08 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\t \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\n \x01(\x04\x12\x14\n\x0cprocess_name\x18\x0b \x01(\t\x12\x1c\n\x14process_command_line\x18\x0c \x01(\t\x12\x1f\n\x17process_integrity_level\x18\r \x01(\t\x12\x18\n\x10operating_system\x18\x0e \x01(\t\"\xd8\x04\n\x0f\x46ileDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x19\n\x11\x64\x65leted_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x11\n\tfile_name\x18\t \x01(\t\x12\x11\n\tfile_path\x18\n \x01(\t\x12\x16\n\x0e\x66ile_extension\x18\x0b \x01(\t\x12\x16\n\x0e\x66ile_mime_type\x18\x0c \x01(\t\x12\x11\n\tfile_size\x18\r \x01(\x04\x12\x14\n\x0c\x66ile_version\x18\x0e \x01(\t\x12\x18\n\x10\x66ile_description\x18\x0f \x01(\t\x12\x14\n\x0c\x66ile_product\x18\x10 \x01(\t\x12\x14\n\x0c\x66ile_company\x18\x11 \x01(\t\x12\x16\n\x0e\x66ile_directory\x18\x12 \x01(\t\x12\x12\n\nfile_inode\x18\x13 \x01(\x04\x12\x17\n\x0f\x66ile_hard_links\x18\x14 \x01(\x04\x12\x10\n\x08md5_hash\x18\x15 \x01(\t\x12\x11\n\tsha1_hash\x18\x16 \x01(\t\x12\x13\n\x0bsha256_hash\x18\x17 \x01(\t\"a\n\x14IpAddressDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12\x12\n\nip_address\x18\x03 \x01(\t\x12\x10\n\x08ip_proto\x18\x04 \x01(\t\"\x97\x01\n\x07Session\x12\x1e\n\x16primary_key_properties\x18\x01 \x03(\t\x12%\n\x1dprimary_key_requires_asset_id\x18\x02 \x01(\x08\x12\x14\n\x0c\x63reated_time\x18\x03 \x01(\x04\x12\x16\n\x0elast_seen_time\x18\x04 \x01(\x04\x12\x17\n\x0fterminated_time\x18\x05 \x01(\x04\"O\n\x06Static\x12\x1e\n\x16primary_key_properties\x18\x01 \x03(\t\x12%\n\x1dprimary_key_requires_asset_id\x18\x02 \x01(\x08\"t\n\nIdStrategy\x12-\n\x07session\x18\x01 \x01(\x0b\x32\x1a.graph_description.SessionH\x00\x12+\n\x06static\x18\x02 \x01(\x0b\x32\x19.graph_description.StaticH\x00\x42\n\n\x08strategy\"T\n\x0cNodeProperty\x12\x11\n\x07intprop\x18\x01 \x01(\x03H\x00\x12\x12\n\x08uintprop\x18\x02 \x01(\x04H\x00\x12\x11\n\x07strprop\x18\x03 \x01(\tH\x00\x42\n\n\x08property\"\x9e\x03\n\x0b\x44ynamicNode\x12\x42\n\nproperties\x18\x01 \x03(\x0b\x32..graph_description.DynamicNode.PropertiesEntry\x12\x10\n\x08node_key\x18\x02 \x01(\t\x12\x11\n\tnode_type\x18\x03 \x01(\t\x12\x0f\n\x07seen_at\x18\x04 \x01(\x04\x12.\n\x08\x61sset_id\x18\x05 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x32\n\x0bid_strategy\x18\x08 \x03(\x0b\x32\x1d.graph_description.IdStrategy\x1aR\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12.\n\x05value\x18\x02 \x01(\x0b\x32\x1f.graph_description.NodeProperty:\x02\x38\x01\"=\n\x0f\x45\x64geDescription\x12\x0c\n\x04\x66rom\x18\x01 \x01(\t\x12\n\n\x02to\x18\x02 \x01(\t\x12\x10\n\x08\x65\x64geName\x18\x03 \x01(\t\"=\n\x08\x45\x64geList\x12\x31\n\x05\x65\x64ges\x18\x01 \x03(\x0b\x32\".graph_description.EdgeDescription\"\xc0\x02\n\x10GraphDescription\x12=\n\x05nodes\x18\x01 \x03(\x0b\x32..graph_description.GraphDescription.NodesEntry\x12=\n\x05\x65\x64ges\x18\x02 \x03(\x0b\x32..graph_description.GraphDescription.EdgesEntry\x12\x11\n\ttimestamp\x18\x03 \x01(\x04\x1aP\n\nNodesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x31\n\x05value\x18\x02 \x01(\x0b\x32\".graph_description.NodeDescription:\x02\x38\x01\x1aI\n\nEdgesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.graph_description.EdgeList:\x02\x38\x01\"L\n\x12GeneratedSubgraphs\x12\x36\n\tsubgraphs\x18\x01 \x03(\x0b\x32#.graph_description.GraphDescriptionb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_wrappers__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -518,20 +518,6 @@ _PROCESSDESCRIPTION = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
-    _descriptor.FieldDescriptor(
-      name='uid', full_name='graph_description.ProcessDescription.uid', index=14,
-      number=15, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='auid', full_name='graph_description.ProcessDescription.auid', index=15,
-      number=16, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
   ],
   extensions=[
   ],
@@ -545,7 +531,7 @@ _PROCESSDESCRIPTION = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=1616,
-  serialized_end=2078,
+  serialized_end=2051,
 )
 
 
@@ -729,8 +715,8 @@ _FILEDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2081,
-  serialized_end=2681,
+  serialized_start=2054,
+  serialized_end=2654,
 )
 
 
@@ -781,74 +767,8 @@ _IPADDRESSDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2683,
-  serialized_end=2780,
-)
-
-
-_IPCDESCRIPTION = _descriptor.Descriptor(
-  name='IPCDescription',
-  full_name='graph_description.IPCDescription',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='node_key', full_name='graph_description.IPCDescription.node_key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='asset_id', full_name='graph_description.IPCDescription.asset_id', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='hostname', full_name='graph_description.IPCDescription.hostname', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_ip', full_name='graph_description.IPCDescription.host_ip', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='ipc_type', full_name='graph_description.IPCDescription.ipc_type', index=4,
-      number=5, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='access_timestamp', full_name='graph_description.IPCDescription.access_timestamp', index=5,
-      number=6, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=2783,
-  serialized_end=3004,
+  serialized_start=2656,
+  serialized_end=2753,
 )
 
 
@@ -906,8 +826,8 @@ _SESSION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3007,
-  serialized_end=3158,
+  serialized_start=2756,
+  serialized_end=2907,
 )
 
 
@@ -944,8 +864,8 @@ _STATIC = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3160,
-  serialized_end=3239,
+  serialized_start=2909,
+  serialized_end=2988,
 )
 
 
@@ -985,8 +905,8 @@ _IDSTRATEGY = _descriptor.Descriptor(
       name='strategy', full_name='graph_description.IdStrategy.strategy',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=3241,
-  serialized_end=3357,
+  serialized_start=2990,
+  serialized_end=3106,
 )
 
 
@@ -1033,8 +953,8 @@ _NODEPROPERTY = _descriptor.Descriptor(
       name='property', full_name='graph_description.NodeProperty.property',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=3359,
-  serialized_end=3443,
+  serialized_start=3108,
+  serialized_end=3192,
 )
 
 
@@ -1071,8 +991,8 @@ _DYNAMICNODE_PROPERTIESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3778,
-  serialized_end=3860,
+  serialized_start=3527,
+  serialized_end=3609,
 )
 
 _DYNAMICNODE = _descriptor.Descriptor(
@@ -1150,8 +1070,8 @@ _DYNAMICNODE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3446,
-  serialized_end=3860,
+  serialized_start=3195,
+  serialized_end=3609,
 )
 
 
@@ -1195,8 +1115,8 @@ _EDGEDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3862,
-  serialized_end=3923,
+  serialized_start=3611,
+  serialized_end=3672,
 )
 
 
@@ -1226,8 +1146,8 @@ _EDGELIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3925,
-  serialized_end=3986,
+  serialized_start=3674,
+  serialized_end=3735,
 )
 
 
@@ -1264,8 +1184,8 @@ _GRAPHDESCRIPTION_NODESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4154,
-  serialized_end=4234,
+  serialized_start=3903,
+  serialized_end=3983,
 )
 
 _GRAPHDESCRIPTION_EDGESENTRY = _descriptor.Descriptor(
@@ -1301,8 +1221,8 @@ _GRAPHDESCRIPTION_EDGESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4236,
-  serialized_end=4309,
+  serialized_start=3985,
+  serialized_end=4058,
 )
 
 _GRAPHDESCRIPTION = _descriptor.Descriptor(
@@ -1345,8 +1265,8 @@ _GRAPHDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3989,
-  serialized_end=4309,
+  serialized_start=3738,
+  serialized_end=4058,
 )
 
 
@@ -1376,8 +1296,8 @@ _GENERATEDSUBGRAPHS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4311,
-  serialized_end=4387,
+  serialized_start=4060,
+  serialized_end=4136,
 )
 
 _HOST.oneofs_by_name['host_id'].fields.append(
@@ -1435,9 +1355,6 @@ _PROCESSDESCRIPTION.fields_by_name['host_ip'].message_type = google_dot_protobuf
 _FILEDESCRIPTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
 _FILEDESCRIPTION.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
 _FILEDESCRIPTION.fields_by_name['host_ip'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_IPCDESCRIPTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_IPCDESCRIPTION.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_IPCDESCRIPTION.fields_by_name['host_ip'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
 _IDSTRATEGY.fields_by_name['session'].message_type = _SESSION
 _IDSTRATEGY.fields_by_name['static'].message_type = _STATIC
 _IDSTRATEGY.oneofs_by_name['strategy'].fields.append(
@@ -1478,7 +1395,6 @@ DESCRIPTOR.message_types_by_name['InboundConnection'] = _INBOUNDCONNECTION
 DESCRIPTOR.message_types_by_name['ProcessDescription'] = _PROCESSDESCRIPTION
 DESCRIPTOR.message_types_by_name['FileDescription'] = _FILEDESCRIPTION
 DESCRIPTOR.message_types_by_name['IpAddressDescription'] = _IPADDRESSDESCRIPTION
-DESCRIPTOR.message_types_by_name['IPCDescription'] = _IPCDESCRIPTION
 DESCRIPTOR.message_types_by_name['Session'] = _SESSION
 DESCRIPTOR.message_types_by_name['Static'] = _STATIC
 DESCRIPTOR.message_types_by_name['IdStrategy'] = _IDSTRATEGY
@@ -1544,13 +1460,6 @@ IpAddressDescription = _reflection.GeneratedProtocolMessageType('IpAddressDescri
   # @@protoc_insertion_point(class_scope:graph_description.IpAddressDescription)
   ))
 _sym_db.RegisterMessage(IpAddressDescription)
-
-IPCDescription = _reflection.GeneratedProtocolMessageType('IPCDescription', (_message.Message,), dict(
-  DESCRIPTOR = _IPCDESCRIPTION,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.IPCDescription)
-  ))
-_sym_db.RegisterMessage(IPCDescription)
 
 Session = _reflection.GeneratedProtocolMessageType('Session', (_message.Message,), dict(
   DESCRIPTOR = _SESSION,

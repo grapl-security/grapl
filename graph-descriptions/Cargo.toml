@@ -1,23 +1,21 @@
 [package]
-name = "graph-descriptions"
-version = "0.1.0"
+name = "grapl-graph-descriptions"
+version = "0.1.9"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
+description = "A library for interacting with Grapl graphs"
+license = "MIT"
 
 
 [dependencies]
-base64 = "*"
+
 futures = "0.1"
 bytes = "0.4"
 prost = "0.4"
 prost-derive = "0.4"
 
 typed-builder= "0.1.1"
-sha3="*"
 
 derive_more = "0.10.*"
-newtype_derive = "*"
-maplit="*"
-hash_hasher="*"
 custom_derive = "0.1.7"
 
 serde = "1.0.66"
@@ -25,10 +23,11 @@ serde_json = "1.0.20"
 serde_derive = "1.0.66"
 derive_builder = "0.7.0"
 log = "0.4.6"
+base64 = "0.11.0"
 
 
 [dependencies.uuid]
-version = "*"
+version = "0.8.1"
 features = ["v4"]
 
 

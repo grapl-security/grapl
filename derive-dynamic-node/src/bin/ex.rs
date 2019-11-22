@@ -58,6 +58,7 @@ fn main() {
 
     let mut ec2 = AwsEc2InstanceNode::new(AwsEc2InstanceNode::static_strategy(), log.launch_time);
     ec2.with_arn(log.arn).with_launch_time(log.launch_time);
+    ec2.with_asset_id("".to_string());
 
     let mut graph = GraphDescription::new(log.launch_time);
     graph.add_node(ec2);

@@ -60,7 +60,6 @@ fn main() {
     config.field_attribute(".graph_description.ProcessDescription.process_integrity_level", "#[builder(default)]");
     config.field_attribute(".graph_description.ProcessDescription.operating_system", "#[builder(default)]");
 
-
     config.field_attribute(".graph_description.ProcessDescription.asset_id", "#[builder(default)]");
     config.field_attribute(".graph_description.ProcessDescription.hostname", "#[builder(default)]");
     config.field_attribute(".graph_description.ProcessDescription.host_ip", "#[builder(default)]");

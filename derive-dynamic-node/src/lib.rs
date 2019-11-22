@@ -55,7 +55,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
             dynamic_node: grapl_graph_descriptions::graph_description::DynamicNode,
         }
 
-        trait #node_trait_name {
+        pub trait #node_trait_name {
             fn get_mut_dynamic_node(&mut self) -> &mut DynamicNode;
 
             #methods
@@ -77,6 +77,15 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
                 };
 
                 Self { dynamic_node }
+            }
+
+            pub fn with_asset_id(&mut self, asset_id: impl Into<Option<String>>) -> &mut Self {
+                let asset_id = asset_id.into();
+                self.dynamic_node.asset_id = asset_id.clone();
+                if let Some(asset_id) = asset_id {
+                    self.dynamic_node.properties.insert("asset_id".to_owned(), asset_id.into());
+                }
+                self
             }
 
             pub fn get_node_key(&self) -> &str {
@@ -189,7 +198,7 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     let q = quote!(
 
         impl #node_name {
-            fn static_strategy() -> IdStrategy {
+            pub fn static_strategy() -> IdStrategy {
                 Static {
                     primary_key_properties: vec![
                         #id_fields

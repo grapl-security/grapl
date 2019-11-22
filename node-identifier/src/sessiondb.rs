@@ -411,7 +411,7 @@ where
 }
 
 pub fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
-    ts_1 - 10000 < ts_2 && ts_1 + 10000 > ts_2
+    ts_1 - 100 < ts_2 && ts_1 + 100 > ts_2
 }
 
 #[cfg(test)]

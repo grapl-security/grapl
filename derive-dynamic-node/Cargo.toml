@@ -1,6 +1,6 @@
 [package]
 name = "derive-dynamic-node"
-version = "0.1.2"
+version = "0.1.7"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
@@ -18,8 +18,12 @@ quote = "0.6.13"
 proc-macro2 = "0.4.30"
 
 grapl-graph-descriptions = "0.1.*"
-uuid = "0.7.4"
 serde_derive = "1.0.97"
 serde = "1.0.97"
 serde_json = "1.0.40"
 log = "0.4.7"
+
+
+[dependencies.uuid]
+version = "0.7.4"
+features = ["v4"]

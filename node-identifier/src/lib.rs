@@ -1,4 +1,4 @@
-#![allow(unused_variables, unused_imports, dead_code)]
+#![allow(warnings, unused_variables, unused_imports, dead_code)]
 
 extern crate aws_lambda_events;
 extern crate base58;
@@ -140,6 +140,57 @@ where
             output_handler,
         }
     }
+
+    fn attribute_node_key(&self, node: NodeDescription) -> Result<Node, Error> {
+        let node: Node = node.which();
+
+        match node {
+            Node::ProcessNode(ref process_node) => {
+                let unid = into_unid_session(node.clone()).expect("Processes map to sessions");
+                let session_db = SessionDb::new(self.node_id_db.clone(), "process_history_table");
+                let node_key = session_db.handle_unid_session(unid, self.should_default)?;
+                let mut process_node = process_node.clone();
+                process_node.set_key(node_key);
+                Ok(Node::ProcessNode(process_node))
+            }
+            Node::FileNode(ref file_node) => {
+                let unid = into_unid_session(node.clone()).expect("Processes map to sessions");
+                let session_db = SessionDb::new(self.node_id_db.clone(), "file_history_table");
+                let node_key = session_db.handle_unid_session(unid, self.should_default)?;
+                let mut file_node = file_node.clone();
+                file_node.set_key(node_key);
+                Ok(Node::FileNode(file_node))
+            }
+            Node::InboundConnectionNode(ref inbound_node) => {
+                let unid = into_unid_session(node.clone()).expect("Processes map to sessions");
+                let session_db = SessionDb::new(self.node_id_db.clone(), "outbound_connection_history_table");
+                let node_key = session_db.handle_unid_session(unid, self.should_default)?;
+                let mut inbound_node = inbound_node.clone();
+                inbound_node.set_key(node_key);
+                Ok(Node::InboundConnectionNode(inbound_node))
+            }
+            Node::OutboundConnectionNode(ref outbound_node) => {
+                let unid = into_unid_session(node.clone()).expect("Processes map to sessions");
+                let session_db = SessionDb::new(self.node_id_db.clone(), "inbound_connection_history_table");
+                let node_key = session_db.handle_unid_session(unid, self.should_default)?;
+                let mut outbound_node = outbound_node.clone();
+                outbound_node.set_key(node_key);
+                Ok(Node::OutboundConnectionNode(outbound_node))
+            }
+            Node::AssetNode(ref process_node) => {
+                unimplemented!()
+            }
+            Node::IpAddressNode(_) => {
+                Ok(node)
+            }
+
+            Node::DynamicNode(ref dynamic_node) => {
+                let new_node = self.dynamic_identifier.attribute_dynamic_node(&dynamic_node)?;
+                Ok(Node::DynamicNode(new_node))
+            }
+        }
+
+    }
 }
 
 fn into_unid_session(node: impl Into<Node>) -> Option<UnidSession> {
@@ -244,12 +295,18 @@ fn remap_edges(graph: &mut GraphDescription, unid_id_map: &HashMap<String, Strin
         for edge in edge_list.edges.iter_mut() {
             let from = match unid_id_map.get(&edge.from) {
                 Some(from) => from,
-                None => continue
+                None => {
+                    println!("Failed to lookup from node in unid_id_map {}", &edge.edge_name);
+                    continue
+                }
             };
 
             let to = match unid_id_map.get(&edge.to) {
                 Some(to) => to,
-                None => continue
+                None => {
+                    println!("Failed to lookup to node in unid_id_map {}", &edge.edge_name);
+                    continue
+                }
             };
 
             *edge = EdgeDescription {
@@ -276,17 +333,18 @@ fn remap_nodes(graph: &mut GraphDescription, unid_id_map: &HashMap<String, Strin
             }
             continue
         }
-        let new_key = unid_id_map.get(node.get_key()).expect("node_key mapping did not exist");
-        node.set_key(new_key.to_owned());
+        if let Some(new_key) = unid_id_map.get(node.get_key()) {
+            node.set_key(new_key.to_owned());
 
-        // We may have actually had nodes with different unid node_keys that map to the
-        // same node_key. Therefor we must merge any nodes when there is a collision.
-        let old_node = nodes.insert(new_key.to_owned(), node.clone());
-        if let Some(ref old_node) = old_node {
-            nodes
-                .get_mut(new_key)
-                .expect("New key not in map")
-                .merge(old_node);
+            // We may have actually had nodes with different unid node_keys that map to the
+            // same node_key. Therefor we must merge any nodes when there is a collision.
+            let old_node = nodes.insert(new_key.to_owned(), node.clone());
+            if let Some(ref old_node) = old_node {
+                nodes
+                    .get_mut(new_key)
+                    .expect("New key not in map")
+                    .merge(old_node);
+            }
         }
     }
     graph.nodes = nodes;
@@ -425,6 +483,18 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
             return Ok(());
         }
 
+        for subgraph in subgraphs.clone().subgraphs {
+            for (_, node) in subgraph.nodes.clone() {
+                if let Node::DynamicNode(_) = node.clone().which() {
+                    println!("printing dynamic node");
+                    println!("{}", node.clone().into_json());
+                    for edge_list in subgraph.edges.get(node.get_key()).map(|e| &e.edges[..]).unwrap_or(&[]) {
+                        dbg!(&edge_list);
+                    }
+                }
+            }
+        }
+
         let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
         let dynamo = DynamoDbClient::new(region.clone());
         let dyn_session_db = SessionDb::new(
@@ -458,6 +528,18 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
             bail!(e)
         }
 
+        for (_, node) in unid_subgraph.nodes.clone() {
+            if let Node::DynamicNode(_) = node.clone().which() {
+                println!("printing dynamic node");
+                println!("{}", node.clone().into_json());
+
+                    if !unid_subgraph.edges.get(node.get_key()).map(|e| &e.edges[..]).unwrap_or(&[]).is_empty() {
+                        println!("Post merge: Still have edges for dynamic node")
+                    }
+
+            }
+        }
+
         // Map all host_ids into asset_ids. This has to happen before node key
         // identification.
         // If there is a failure, we'll mark this execute as failed, but continue
@@ -471,148 +553,101 @@ impl<D, F> EventHandler<GeneratedSubgraphs> for NodeIdentifier<D, F>
             }
         };
 
-        if output_subgraph.is_empty() {
-            bail!("No host_ids could be mapped to asset_ids");
-        }
 
+        let mut dead_node_ids = HashSet::new();
         let mut unid_id_map = HashMap::new();
 
-        let mut output_subgraph = match self.dynamic_identifier.attribute_dynamic_nodes(output_subgraph, &mut unid_id_map) {
-          Ok(unid_subgraph) => unid_subgraph,
-            Err(unid_subgraph) => {
-                if unid_subgraph.is_empty() {
-                    bail!("Asset attribution failed for all nodes")
-                }
-                attribution_failure = true;
-                unid_subgraph
-            }
-        };
-
-        let mut cached_node_ids = HashSet::new();
-
-        let unid_sessions: Vec<_> = output_subgraph
-            .clone()
-            .nodes
-            .into_iter()
-            .map(|(_, n)| n)
-            .map(NodeDescription::which)
-            .flat_map(|node| {
-                if let Node::IpAddressNode(_) = node {
-                    info!("Unid IpAddressNode");
-                    return Some((node, None));
-                }
-                match into_unid_session(node.clone()) {
-                    Some(unid) => Some((node, Some(unid))),
-                    None => None,
-                }
-            })
-            .filter(|(node, unid)| {
-                if let Node::IpAddressNode(_) = node {
-                    return true;
+        // new method
+        let mut identified_graph = GraphDescription::new(output_subgraph.timestamp);
+        for (old_node_key, old_node) in output_subgraph.nodes.iter() {
+            let node = old_node.clone();
+            let node = match self.attribute_node_key(node.clone()) {
+                Ok(node) => node,
+                Err(e) => {
+                    warn!("Failed to attribute node_key with: {}", e);
+                    dead_node_ids.insert(node.clone().which().clone_key());
+                    attribution_failure = true;
+                    continue
                 }
 
-                let is_cached = retry_cache
-                    .in_cache(node.clone_key())
-                    .map_err(|e| warn!("Failed to retrieve from retry_cache: {}", e))
-                    .unwrap_or(false);
-
-                if is_cached {
-                    cached_node_ids.insert(node.clone_key());
-                }
-
-                !is_cached
-            })
-            .collect();
-
-        info!("Removing dead nodes");
-        remove_dead_nodes(&mut output_subgraph, &cached_node_ids);
-        info!("Removing dead edges");
-        remove_dead_edges(&mut output_subgraph);
-
-        // Mapping from old id to new id
-
-        // Mapping from new id back to old id
-        let mut id_unid_map = HashSet::new();
-        // IDs for nodes that did not get properly identified
-        let mut dead_node_ids = HashSet::new();
-
-        for (node, unid) in unid_sessions {
-            let session_id = match node {
-                Node::ProcessNode(node) => {
-                    let unid = unid.unwrap();
-                    let session_db = SessionDb::new(self.node_id_db.clone(), "process_history_table");
-                    session_db
-                        .handle_unid_session(unid, self.should_default)
-                        .map(|sid| (node.clone().node_key, sid))
-                        .map_err(|e| (node.node_key, e))
-                }
-                Node::FileNode(node) => {
-                    let unid = unid.unwrap();
-                    let session_db = SessionDb::new(self.node_id_db.clone(), "file_history_table");
-                    session_db
-                        .handle_unid_session(unid, self.should_default)
-                        .map(|sid| (node.clone().node_key, sid))
-                        .map_err(|e| (node.node_key, e))
-                }
-                Node::OutboundConnectionNode(node) => {
-                    info!("Attributing OutboundConnectionNode");
-
-                    let unid = unid.unwrap();
-                    let session_db = SessionDb::new(self.node_id_db.clone(), "outbound_connection_history_table");
-                    session_db
-                        .handle_unid_session(unid, self.should_default)
-                        .map(|sid| (node.clone().node_key, sid))
-                        .map_err(|e| (node.node_key, e))
-                }
-                Node::IpAddressNode(node) => {
-                    info!("Attributing IpAddressNode");
-                    Ok((node.node_key.clone(), node.node_key))
-                }
-                _ => {
-                    warn!("Unsupported node type");
-                    continue;
-                }
             };
+            unid_id_map.insert(old_node_key.to_owned(), node.clone_key());
+            identified_graph.add_node(node);
+        }
 
-            match session_id {
-                Ok((old_key, session_id)) => {
-                    unid_id_map.insert(old_key.clone(), session_id);
-                    id_unid_map.insert(old_key);
-                }
-                Err((failed_key, e)) => {
-                    warn!("Node Identification failed with {}", e);
-                    dead_node_ids.insert(failed_key);
+        println!("PRE: identified_graph.edges.len() {}", identified_graph.edges.len());
+
+
+        for (old_key, edge_list) in output_subgraph.edges.iter() {
+            if dead_node_ids.contains(old_key) { continue };
+
+            for edge in &edge_list.edges {
+                let from_key = unid_id_map.get(&edge.from);
+                let to_key = unid_id_map.get(&edge.to);
+
+                let (from_key, to_key) = match (from_key, to_key) {
+                    (Some(from_key), Some(to_key)) =>  (from_key, to_key),
+                    _ => continue
+                };
+
+                identified_graph.add_edge(
+                    edge.edge_name.to_owned(),
+                    from_key.to_owned(),
+                    to_key.to_owned(),
+                );
+            }
+        }
+
+        println!("POST: identified_graph.edges.len() {}", identified_graph.edges.len());
+
+        for (_, node) in identified_graph.nodes.clone() {
+            if let Node::DynamicNode(_) = node.clone().which() {
+                println!("printing dynamic node");
+                println!("{}", node.clone().into_json());
+                if !identified_graph.edges.get(node.get_key()).map(|e| &e.edges[..]).unwrap_or(&[]).is_empty() {
+                    println!("Post attribute asset ids: Still have edges for dynamic node");
                 }
             }
         }
+
+        info!("remapping nodes2");
+//        remap_nodes(&mut output_subgraph, &unid_id_map);
+//        info!("remapping edges2");
+//        remap_edges(&mut output_subgraph, &unid_id_map);
 
         // Remove dead nodes and edges from output_graph
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
 
-        info!("removing dead nodes2");
-        remove_dead_nodes(&mut output_subgraph, &dead_node_ids);
-        info!("removing dead edges2");
-        remove_dead_edges(&mut output_subgraph);
+//        info!("removing dead nodes2");
+//        remove_dead_nodes(&mut output_subgraph, &dead_node_ids);
+//        info!("removing dead edges2");
+//        remove_dead_edges(&mut output_subgraph);
 
-        info!("remapping nodes2");
-        remap_nodes(&mut output_subgraph, &unid_id_map);
-        info!("remapping edges2");
-        remap_edges(&mut output_subgraph, &unid_id_map);
+        for (_, node) in identified_graph.nodes.clone() {
+            if let Node::DynamicNode(_) = node.clone().which() {
+                println!("printing dynamic node");
+                println!("{}", node.clone().into_json());
+                if !identified_graph.edges.get(node.get_key()).map(|e| &e.edges[..]).unwrap_or(&[]).is_empty() {
+                    println!("Post unid attribution with removal and remap: Still have edges for dynamic node");
+                }
+            }
+        }
 
-        if output_subgraph.is_empty() {
+
+        if identified_graph.is_empty() {
             bail!("Attribution failed for all nodes");
         }
 
-        upload_identified_graphs(output_subgraph)?;
+        upload_identified_graphs(identified_graph)?;
 
-        id_unid_map.iter().for_each(|old_key| {
-            retry_cache
-                .put_cache(old_key)
-                .map_err(|e| {
-                    warn!("Failed to update retry cache: {}", e);
-                })
-                .ok();
-        });
+//        id_unid_map.iter().for_each(|old_key| {
+//            retry_cache
+//                .put_cache(old_key)
+//                .map_err(|e| {
+//                    warn!("Failed to update retry cache: {}", e);
+//                })
+//                .ok();
+//        });
 
         if !dead_node_ids.is_empty() || attribution_failure {
             bail!("Some node keys failed to ID")

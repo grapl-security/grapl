@@ -88,10 +88,7 @@ message ProcessDescription {
     // integrity level is a Windows only concept
     string process_integrity_level = 13;
     string operating_system = 14;
-    // uid associated with the process
-    uint64 uid = 15;
-    // auid associated with process - Linux only
-    uint64 auid = 16;
+
 }
 
 message FileDescription {

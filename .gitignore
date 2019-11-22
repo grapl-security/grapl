@@ -1,4 +1,6 @@
 grapl-cdk/edge_ux_package/*
+__pycache__/
+*.pyc
 .mypy_cache/
 events.xml
 events2.xml
