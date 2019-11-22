@@ -1,6 +1,6 @@
 ## Grapl
 
-Grapl is a Graph Platform for Detection and Response with a focus on helping Detection Engineers stop fighting their data and start connecting it. At its core, Grapl leverages graph data structures to ensure that you can and connect your data efficiently, model attacker behaviors, and easily expand suspicious behaviors to encompass a full attack scope. 
+Grapl is a Graph Platform for Detection and Response with a focus on helping Detection Engineers and Incident Responders stop fighting their data and start connecting it. Grapl leverages graph data structures at its core to ensure that you can query and connect your data efficiently, model complex attacker behaviors for detection, and easily expand suspicious behaviors to encompass the full scope of an ongoing intrusion.
 
 For a more in depth overview of Grapl, [read this](https://insanitybit.github.io/2019/03/09/grapl).
 
@@ -113,6 +113,8 @@ Setting up a basic playground version of Grapl is pretty simple.
 To get started you'll need to install [npm](https://www.npmjs.com/), [typescript](https://www.typescriptlang.org/index.html#download-links), and the [aws-cdk](https://github.com/awslabs/aws-cdk#getting-started).
 
 Your aws-cdk version should match the version in [Grapl's package.json file](https://github.com/insanitybit/grapl/blob/readmeupdate1/grapl-cdk/package.json#L29).
+
+You'll also need to have local aws credentials, and a configuration profile. Instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)
 
 Clone the repo:
 
