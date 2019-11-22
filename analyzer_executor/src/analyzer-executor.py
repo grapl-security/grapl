@@ -16,10 +16,14 @@ import boto3
 import redis
 from collections import defaultdict
 from grapl_analyzerlib.analyzer import Analyzer
-from grapl_analyzerlib.entities import SubgraphView, NodeView
+
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
-from grapl_analyzerlib.querying import generate_query, Viewable, Queryable, traverse_query
+from grapl_analyzerlib.nodes.any_node import NodeView
+from grapl_analyzerlib.nodes.queryable import Queryable, traverse_query_iter, generate_query
+from grapl_analyzerlib.nodes.subgraph_view import SubgraphView
 from pydgraph import DgraphClientStub, DgraphClient
+
+IS_RETRY = os.environ['IS_RETRY']
 
 
 def parse_s3_event(event) -> str:
@@ -66,15 +70,22 @@ def check_caches(file_hash: str, msg_id: str, node_key: str, analyzer_name: str)
 
     return False
 
+
 def handle_result_graphs(analyzer, result_graphs, sender):
     print(f'Result graph: {type(analyzer)} {result_graphs[0]}')
     for result_graph in result_graphs:
-        analyzer.on_response(result_graph, sender)
+        try:
+            analyzer.on_response(result_graph, sender)
+        except Exception as e:
+            print(f'Analyzer {analyzer} failed with {e}')
+            sender.send(ExecutionFailed)
+            raise e
 
 
 def get_analyzer_query_types(query: Queryable) -> Set[Type[Queryable]]:
     query_types = set()
-    traverse_query(query, lambda node: query_types.add(node.view_type))
+    for node in traverse_query_iter(query):
+        query_types.add(node.view_type)
     return query_types
 
 
@@ -98,7 +109,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
 
             analyzer = analyzer  # type: Analyzer
             queries = analyzer.get_queries()
-            if isinstance(queries, list):
+            if isinstance(queries, list) or isinstance(queries, tuple):
 
                 querymap[an_name].extend(queries)
             else:
@@ -106,7 +117,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
 
         for an_name, queries in querymap.items():
             analyzer = analyzers[an_name]
-            print(f'Analyzer name: {an_name}, analyzer: {analyzer}')
+
             for i, query in enumerate(queries):
                 analyzer_query_types = get_analyzer_query_types(query)
                 if type(node.node) not in analyzer_query_types:
@@ -142,6 +153,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
 
             result_graph = view_type.from_dict(dg_client, result)
 
+            # next(inspect.getfullargspec(analyzer.on_response).annotations.values().__iter__())
             response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get('response')
 
             if response_ty == NodeView:
@@ -179,7 +191,13 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
         print(f'Executing analyzers: {[an for an in analyzers.keys()]}')
 
         results = []
-        for nodes in chunker([n for n in graph.node_iter()], 300):
+
+        chunk_size = 100
+
+        if IS_RETRY == "True":
+            chunk_size = 10
+
+        for nodes in chunker([n for n in graph.node_iter()], chunk_size):
             print(f'Querying {len(nodes)} nodes')
 
             def exec_analyzer(nodes, sender):
@@ -213,7 +231,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
 
 def emit_event(event: ExecutionHit) -> None:
-    print(f"emitting event for: {event.analyzer_name}")
+    print(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     event_s = json.dumps(
         {
@@ -239,14 +257,14 @@ def emit_event(event: ExecutionHit) -> None:
 
 
 MESSAGECACHE_ADDR = os.environ['MESSAGECACHE_ADDR']
-MESSAGECACHE_PORT = os.environ['MESSAGECACHE_PORT']
+MESSAGECACHE_PORT = int(os.environ['MESSAGECACHE_PORT'])
 
 message_cache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
 
 HITCACHE_ADDR = os.environ['HITCACHE_ADDR']
 HITCACHE_PORT = os.environ['HITCACHE_PORT']
 
-hit_cache = redis.Redis(host=HITCACHE_ADDR, port=HITCACHE_PORT, db=0)
+hit_cache = redis.Redis(host=HITCACHE_ADDR, port=int(HITCACHE_PORT), db=0)
 
 
 def check_msg_cache(file: str, node_key: str, msg_id: str) -> bool:
@@ -293,6 +311,7 @@ def lambda_handler(events: Any, context: Any) -> None:
         print(f'Executing Analyzer: {message["key"]}')
         analyzer = download_s3_file(f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"])
         analyzer_name = message["key"].split("/")[-2]
+
         subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
 
         # TODO: Validate signature of S3 file
@@ -301,6 +320,7 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         p.start()
         t = 0
+
         while True:
             p_res = rx.poll(timeout=5)
             if not p_res:

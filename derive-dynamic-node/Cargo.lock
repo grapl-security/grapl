@@ -123,7 +123,7 @@ dependencies = [
 
 [[package]]
 name = "derive-dynamic-node"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "grapl-graph-descriptions 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",

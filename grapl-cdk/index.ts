@@ -153,7 +153,7 @@ class EngagementEdge extends cdk.Stack {
         vpc: ec2.Vpc,
     ) {
         super(parent, name + '-stack');
-        this.name = name;
+        this.name = name + process.env.BUCKET_PREFIX;
         this.integrationName = name + 'Integration';
 
         this.event_handler = new lambda.Function(
@@ -219,7 +219,10 @@ class Service {
                 handler: handler,
                 code: lambda.Code.asset(`./${name}.zip`),
                 vpc: vpc,
-                environment: environment,
+                environment: {
+                    IS_RETRY: "False",
+                    ...environment
+                },
                 timeout: Duration.seconds(180),
                 memorySize: 256,
             }
@@ -240,8 +243,11 @@ class Service {
                 handler: handler,
                 code: lambda.Code.asset(`./${retry_code_name}.zip`),
                 vpc: vpc,
-                environment: environment,
-                timeout: Duration.seconds(240),
+                environment: {
+                    IS_RETRY: "True",
+                    ...environment
+                },
+                timeout: Duration.seconds(360),
                 memorySize: 512,
             }
         );
@@ -846,7 +852,7 @@ class Zero {
 
             // --my is our own hostname (graph + id)
             // --peer is the other dgraph zero hostname
-            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.0.17"),
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
             command,
             logging: logDriver,
             memoryReservationMiB: 1024,
@@ -898,7 +904,7 @@ class Alpha {
         });
 
         alphaTask.addContainer(id + graph + 'Container', {
-            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.0.17"),
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
             command: [
                 "dgraph", "alpha", `--my=${id}.${graph}.grapl:7080`,
                 "--lru_mb=1024", `--zero=${zero}.${graph}.grapl:5080`,
@@ -988,7 +994,7 @@ class DGraphEcs extends cdk.Stack {
 
         cluster.addCapacity(id + "AlphaGroupCapacity",
             {
-                instanceType: new ec2.InstanceType("t3a.large"),
+                instanceType: new ec2.InstanceType("t3a.2xlarge"),
                 minCapacity: alphaCount,
                 desiredCapacity: alphaCount,
                 maxCapacity: alphaCount,
@@ -1394,7 +1400,7 @@ class Grapl extends cdk.App {
 
         const engagement_edge = new EngagementEdge(
             this,
-            'engagementedge' + process.env.BUCKET_PREFIX,
+            'engagementedge',
             'engagementedge',
             jwtSecret,
             engagement_graph,

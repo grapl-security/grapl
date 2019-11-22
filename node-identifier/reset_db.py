@@ -4,7 +4,11 @@ import boto3
 table_names = [
    'process_history_table',
    'file_history_table',
-   'node_id_retry_table'
+   'node_id_retry_table',
+   'outbound_connection_history_table',
+   'asset_id_mappings',
+   'dynamic_session_table',
+   'static_mapping_table',
 ]
 
 
@@ -38,7 +42,8 @@ for table_name in table_names:
 
         )
     except:
-        time.sleep(5)
+        time.sleep(15)
+
         dynamodb.create_table(
             TableName=table_name,
             AttributeDefinitions=table_description['Table']['AttributeDefinitions'],
@@ -48,3 +53,4 @@ for table_name in table_names:
             KeySchema=table_description['Table']['KeySchema'],
 
         )
+

@@ -140,7 +140,6 @@ impl<D> DynamicNodeIdentifier<D>
                 }
             };
 
-
             primary_key.push_str(&asset_id);
             node.set_asset_id(asset_id);
         }
@@ -155,6 +154,9 @@ impl<D> DynamicNodeIdentifier<D>
             )
             }
         }
+
+        // Push node type, as a natural partition
+        primary_key.push_str(&node.node_key);
 
         Ok(primary_key)
     }
@@ -187,6 +189,7 @@ impl<D> DynamicNodeIdentifier<D>
             )
             }
         }
+        primary_key.push_str(&node.node_type);
 
         Ok(primary_key)
     }
@@ -313,8 +316,10 @@ impl<D> DynamicNodeIdentifier<D>
             output_graph.add_node(new_node);
         }
 
-        remap_edges(&mut output_graph, &unid_id_map);
-        remove_dead_edges(&mut output_graph);
+    //
+    //        remap_nodes(&mut output_graph, &unid_id_map);
+    //        remap_edges(&mut output_graph, &unid_id_map);
+//        remove_dead_edges(&mut output_graph);
 
         if dead_nodes.is_empty() {
             info!("Attributed all dynamic nodes");

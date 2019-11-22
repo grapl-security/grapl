@@ -1,7 +1,7 @@
 // Stylesheets
 console.log('entry.js init');
 
-const engagement_edge = "";
+const engagement_edge = "https://jzfee2ecp8.execute-api.us-east-1.amazonaws.com/prod/";
 
 if (engagement_edge.length === 0) {
     console.assert("Engagement Edge URL can not be empty. Run build.sh");
@@ -578,7 +578,7 @@ class GraphManager {
                 if (tgt === newLink.target) {
                     // if (link.label === newLink.label) {
 
-                        return false;
+                    return false;
                     // }
                 }
             }
@@ -724,30 +724,66 @@ const edgeLinksFromNode = (node) => {
 };
 
 
-const lensToAdjacencyMatrix = (lens) => {
+const lensToAdjacencyMatrix = (matricies) => {
     const nodes = new Map();
     const links = new Map();
 
-    mapGraph(lens, (fromNode, edgeName, toNode) => {
-        nodes.set(fromNode.uid, fromNode);
-        nodes.set(toNode.uid, toNode);
+    const key_uid = new Map();
 
-        let edgeList = links.get(fromNode.uid);
-        if (edgeList === undefined) {
-            edgeList = new Map();
-            edgeList.set(
-                fromNode.uid + edgeName + toNode.uid,
-                [fromNode.uid, edgeName, toNode.uid]
-            );
-
-        } else {
-            edgeList.set(
-                fromNode.uid + edgeName + toNode.uid,
-                [fromNode.uid, edgeName, toNode.uid]
-            );
+    for (const matrix of matricies) {
+        const node_key = matrix.node['node_key'];
+        const uid = matrix.node['uid'];
+        if (matrix.node["analyzer_name"]) {
+            continue
         }
-        links.set(fromNode.uid, edgeList)
-    });
+        key_uid.set(node_key, uid);
+        console.log(node_key);
+        nodes.set(uid, matrix.node);
+    }
+
+    for (const matrix of matricies) {
+        const node_key = matrix.node['node_key'];
+        const uid = matrix.node['uid'];
+
+        for (const edge of matrix.edges) {
+            let edgeList = links.get(uid);
+            const to_uid = key_uid.get(edge['to']);
+
+            const edge_name = edge['edge_name'];
+            if (edge_name === "risks") {
+                const node = nodes.get(key_uid.get(edge['from']));
+                for (const risk of matrix.node.risks) {
+                    node.risk = risk.risk_score + (node.risk || 0)
+                    if (node.analyzers) {
+                        if (node.analyzers.indexOf(risk.analyzer_name) === -1) {
+                            node.analyzers += ', ' + risk.analyzer_name
+                        }
+                    } else {
+                        node.analyzers = risk.analyzer_name
+                    }
+                }
+
+                continue
+            }
+
+            if (edgeList === undefined) {
+                edgeList = new Map();
+                edgeList.set(
+                    uid +  + to_uid,
+                    [uid, edge_name, to_uid]
+                );
+
+            } else {
+                edgeList.set(
+                    uid + edge_name + to_uid,
+                    [uid, edge_name, to_uid]
+                );
+            }
+            links.set(uid, edgeList)
+        }
+    }
+
+    console.log(links)
 
     return {
         nodes, links
@@ -755,7 +791,7 @@ const lensToAdjacencyMatrix = (lens) => {
 };
 
 const dgraphNodesToD3Format = (dgraphNodes) => {
-    const graph = lensToAdjacencyMatrix(dgraphNodes[0]);
+    const graph = lensToAdjacencyMatrix(dgraphNodes);
 
     // Calculate risks and attach to nodes
     for (const node of graph.nodes.values()) {
@@ -772,7 +808,7 @@ const dgraphNodesToD3Format = (dgraphNodes) => {
                     node.analyzers = riskNode.analyzer_name;
                 } else {
                     node.risk += riskNode.risk_score;
-                    if (node.analyzers.indexOf(riskNode.analyzer_name) === -1) {
+                    if (node.analyzers && node.analyzers.indexOf(riskNode.analyzer_name) === -1) {
                         node.analyzers += ', ' + riskNode.analyzer_name;
                     }
                 }
@@ -864,7 +900,7 @@ const getNodeLabel = (nodeType, node) => {
         return node.lens;
     }
 
-    return '';
+    return node.node_type || '';
 };
 
 const getNodeType = (node) => {
