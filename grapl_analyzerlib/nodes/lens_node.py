@@ -331,7 +331,7 @@ class _LensView(Viewable[T]):
             query = """
             query res($a: string)
             {
-              res(func: eq(lens, $a), first: 1) @cascade
+              res(func: eq(lens, $a)) @cascade
                {
                  uid,
                  node_key,
@@ -350,6 +350,7 @@ class _LensView(Viewable[T]):
                     set_obj={
                         "lens": lens_name,
                         "node_key": lens_name,
+                        "dgraph.type": "Lens",
                         "score": 0,
                     }, commit_now=True)
                 uids = m_res.uids
