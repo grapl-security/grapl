@@ -190,8 +190,6 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
         print(f'Executing analyzers: {[an for an in analyzers.keys()]}')
 
-        results = []
-
         chunk_size = 100
 
         if IS_RETRY == "True":
@@ -215,9 +213,6 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
             pool.apply_async(exec_analyzer, args=(nodes, sender))
 
         pool.close()
-        for result in results:
-            for node in result.get():
-                update_msg_cache(file, node.node.node_key, msg_id)
 
         pool.join()
 
@@ -273,7 +268,7 @@ def check_msg_cache(file: str, node_key: str, msg_id: str) -> bool:
     return bool(message_cache.get(event_hash))
 
 
-def update_msg_cache(file: str, node_key: str, msg_id: str):
+def update_msg_cache(file: str, node_key: str, msg_id: str) -> None:
     to_hash = str(file) + str(node_key) + str(msg_id)
     event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
     message_cache.set(event_hash, "1")
@@ -285,7 +280,7 @@ def check_hit_cache(file: str, node_key: str) -> bool:
     return bool(hit_cache.get(event_hash))
 
 
-def update_hit_cache(file: str, node_key: str):
+def update_hit_cache(file: str, node_key: str) -> None:
     to_hash = str(file) + str(node_key)
     event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
     hit_cache.set(event_hash, "1")
@@ -307,7 +302,6 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         message = json.loads(data)
 
-        # TODO: Use env variable for s3 bucket
         print(f'Executing Analyzer: {message["key"]}')
         analyzer = download_s3_file(f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"])
         analyzer_name = message["key"].split("/")[-2]
