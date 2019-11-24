@@ -32,9 +32,10 @@ def get_edges(node) -> List[Tuple[str, str, str]]:
             )
         elif isinstance(value, list):
             for neighbor in value:
-                edges.append(
-                    (node['uid'], key, neighbor['uid'])
-                )
+                if isinstance(neighbor, dict):
+                    edges.append(
+                        (node['uid'], key, neighbor['uid'])
+                    )
 
     return edges
 
@@ -331,7 +332,7 @@ class _LensView(Viewable[T]):
             query = """
             query res($a: string)
             {
-              res(func: eq(lens, $a)) @cascade
+              res(func: eq(lens, $a), first: 1) @cascade
                {
                  uid,
                  node_key,
