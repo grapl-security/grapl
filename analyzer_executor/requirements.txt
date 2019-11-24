@@ -1,7 +1,7 @@
 pydgraph==2.0.*
 boto3
-grapl-analyzerlib==0.1.270
-grapl_os_user_analyzer_plugin
+grapl-analyzerlib==0.1.273
+grapl_os_user_analyzer_plugin==0.1.9
 grapl_ipc_analyzer_plugin==0.0.2
 redis
 grpcio
