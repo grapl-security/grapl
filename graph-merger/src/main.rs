@@ -70,6 +70,7 @@ use sqs_lambda::ZstdProtoDecoder;
 
 use crate::futures::FutureExt;
 use serde_json::Value;
+use std::iter::FromIterator;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -159,7 +160,6 @@ async fn upsert_node(dg: &DgraphClient, node: &NodeDescription) -> Result<String
     } else {
         match node_key_to_uid(dg, node.get_key()).await? {
             Some(uid) => {
-                info!("Attributed {:?} to {:?} with {:?}", node, &uid, set_json.to_string());
                 Ok(uid)
             },
             None => bail!("Could not retrieve uid after upsert"),
@@ -168,33 +168,104 @@ async fn upsert_node(dg: &DgraphClient, node: &NodeDescription) -> Result<String
 }
 
 
-pub fn subgraph_to_sns<S>(sns_client: &S, subgraphs: &GraphDescription) -> Result<(), Error>
+fn chunk<T, U>(data: U, count: usize) -> Vec<U>
+    where U: IntoIterator<Item=T>,
+          U: FromIterator<T>,
+          <U as IntoIterator>::IntoIter: ExactSizeIterator
+{
+
+    let mut iter = data.into_iter();
+    let iter = iter.by_ref();
+
+    let chunk_len = (iter.len() / count) as usize + 1;
+
+    let mut chunks = Vec::new();
+    for _ in 0..count {
+        chunks.push(iter.take(chunk_len).collect())
+    }
+    chunks
+}
+
+pub fn subgraph_to_sns<S>(sns_client: &S, mut subgraphs: GraphDescription) -> Result<(), Error>
     where S: Sns
 {
-    info!("upload_subgraphs");
     let mut proto = Vec::with_capacity(8192);
-    subgraphs.encode(&mut proto)?;
-
-    let subgraph_merged_topic_arn = std::env::var("SUBGRAPH_MERGED_TOPIC_ARN").expect("SUBGRAPH_MERGED_TOPIC_ARN");
-
     let mut compressed = Vec::with_capacity(proto.len());
-    let mut proto = Cursor::new(&proto);
-    zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-        .expect("compress zstd capnp");
 
-    let message = base64::encode(&compressed);
-
-    info!("Message is {} bytes", message.len());
-
-    sns_client.publish(
-        PublishInput {
-            message,
-            topic_arn: subgraph_merged_topic_arn.into(),
-            ..Default::default()
+    for nodes in chunk(subgraphs.nodes, 1000) {
+        proto.clear();
+        compressed.clear();
+        let mut edges = HashMap::new();
+        for node in nodes.keys() {
+            let node_edges = subgraphs.edges.remove(node);
+            if let Some(node_edges) = node_edges {
+                edges.insert(node.to_owned(), node_edges);
+            }
         }
-    )
-        .with_timeout(Duration::from_secs(5))
-        .sync()?;
+        let subgraph = GraphDescription {
+            nodes,
+            edges,
+            timestamp: subgraphs.timestamp
+        };
+
+        subgraph.encode(&mut proto)?;
+
+        let subgraph_merged_topic_arn = std::env::var("SUBGRAPH_MERGED_TOPIC_ARN").expect("SUBGRAPH_MERGED_TOPIC_ARN");
+
+        let mut proto = Cursor::new(&proto);
+        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
+            .expect("compress zstd capnp");
+
+        let message = base64::encode(&compressed);
+
+        info!("Message is {} bytes", message.len());
+
+        sns_client.publish(
+            PublishInput {
+                message,
+                topic_arn: subgraph_merged_topic_arn.into(),
+                ..Default::default()
+            }
+        )
+            .with_timeout(Duration::from_secs(5))
+            .sync()?;
+    }
+
+    // If we still have edges, but the nodes were not part of the subgraph, emit those as another event
+    if !subgraphs.edges.is_empty() {
+        for edges in chunk(subgraphs.edges, 1000) {
+            proto.clear();
+            compressed.clear();
+            let subgraph = GraphDescription {
+                nodes: HashMap::new(),
+                edges,
+                timestamp: subgraphs.timestamp
+            };
+
+            subgraph.encode(&mut proto)?;
+
+            let subgraph_merged_topic_arn = std::env::var("SUBGRAPH_MERGED_TOPIC_ARN").expect("SUBGRAPH_MERGED_TOPIC_ARN");
+
+            let mut proto = Cursor::new(&proto);
+            zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
+                .expect("compress zstd capnp");
+
+            let message = base64::encode(&compressed);
+
+            info!("Message is {} bytes", message.len());
+
+            sns_client.publish(
+                PublishInput {
+                    message,
+                    topic_arn: subgraph_merged_topic_arn.into(),
+                    ..Default::default()
+                }
+            )
+                .with_timeout(Duration::from_secs(5))
+                .sync()?;
+
+        }
+    }
 
     Ok(())
 }
@@ -286,7 +357,9 @@ async fn async_handler(mg_client: DgraphClient, subgraph: GraphDescription) -> R
     };
 
     let sns_client = SnsClient::new(region);
-    if let Err(e) = subgraph_to_sns(&sns_client, &subgraph) {
+
+
+    if let Err(e) = subgraph_to_sns(&sns_client, subgraph) {
         bail!("subgraph sns publish failed: {}", e)
     };
 
