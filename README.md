@@ -108,7 +108,7 @@ Grapl also provides a Plugin system, currently in beta, that allows you to expan
 NOTE that setting up Grapl *will* incur AWS charges! This can amount to hundreds of dollars a month based on the configuration. This setup script is designed for testing, and may include breaking changes in future versions, increased charges in future versions, or may otherwise require manually working with CloudFormation. 
 If you need a way to set up Grapl in a stable, forwards compatible manner, please get in contact with me directly.
 
-Setting up a basic playground version of Grapl is pretty simple.
+Setting up a basic playground version of Grapl is pretty simple, though currently setup is only supported on Linux (setting up an Ubuntu EC2 instance is likely the easiest way to get access to a supported system).
 
 To get started you'll need to install [npm](https://www.npmjs.com/), [typescript](https://www.typescriptlang.org/index.html#download-links), and the [aws-cdk](https://github.com/awslabs/aws-cdk#getting-started).
 
