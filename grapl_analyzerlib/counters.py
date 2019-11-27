@@ -42,7 +42,7 @@ class SubgraphCounter(object):
 
     def get_count_for(
             self,
-            query: Queryable[Any],
+            query: Queryable,
             max_count: int = 4,
     ) -> int:
         """
@@ -66,7 +66,7 @@ class SubgraphCounter(object):
             if cached_count:
                 cached_count = int(cached_count)
             if cached_count and cached_count >= max_count:
-                return cached_count
+                return int(cached_count)
 
         count = query.get_count(self.dgraph_client, first=max_count)
 
@@ -76,7 +76,7 @@ class SubgraphCounter(object):
             elif count >= cached_count:
                 self.cache.set(key, count)
 
-        return count
+        return int(count)
 
 
 
@@ -107,7 +107,7 @@ class ParentChildCounter(object):
             if cached_count:
                 cached_count = int(cached_count)
             if cached_count and cached_count >= max_count:
-                return cached_count
+                return int(cached_count)
 
         query = (
             ProcessQuery()
@@ -123,7 +123,7 @@ class ParentChildCounter(object):
             elif count >= cached_count:
                 self.cache.set(key, count)
 
-        return count
+        return int(count)
 
 
 class GrandParentGrandChildCounter(object):
@@ -152,7 +152,7 @@ class GrandParentGrandChildCounter(object):
             if cached_count:
                 cached_count = int(cached_count)
             if cached_count and cached_count >= max_count:
-                return cached_count
+                return int(cached_count)
 
         query = (
             ProcessQuery()
@@ -174,4 +174,4 @@ class GrandParentGrandChildCounter(object):
             elif count >= cached_count:
                 self.cache.set(key, count)
 
-        return count
+        return int(count)

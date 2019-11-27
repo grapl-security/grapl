@@ -20,22 +20,21 @@ from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.retry import retry
 
-T = TypeVar("T")
 U = TypeVar('U', bound=Union[str, int])
 
 
-class Queryable(abc.ABC, Generic[T]):
-    def __init__(self, view_type: Type['Viewable[T]']) -> None:
+class Queryable(abc.ABC):
+    def __init__(self, view_type: Type['Viewable']) -> None:
         self._node_key = Has("node_key")  # type: Cmp[str]
         self._uid = None  # type: Optional[Cmp[str]]
         self._query_id = str(uuid.uuid4())
 
         self.view_type = view_type
 
-        self.dynamic_forward_edge_filters = {}  # type: Dict[str, 'Queryable[T]']
+        self.dynamic_forward_edge_filters = {}  # type: Dict[str, 'Queryable']
         self.dynamic_reverse_edge_filters = (
             {}
-        )  # type: Dict[str, Tuple['Queryable[T]', str]]
+        )  # type: Dict[str, Tuple['Queryable', str]]
         self.dynamic_property_filters = defaultdict(
             list
         )  # type: Dict[str, 'PropertyFilter[Property]']
@@ -53,11 +52,11 @@ class Queryable(abc.ABC, Generic[T]):
         pass
 
     @abc.abstractmethod
-    def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
+    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
         pass
 
     @abc.abstractmethod
-    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         pass
 
     def _get_unique_predicate_name(self) -> Optional[str]:
@@ -67,17 +66,17 @@ class Queryable(abc.ABC, Generic[T]):
 
         return unique_pred[0]
 
-    def get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
+    def get_forward_edges(self) -> Mapping[str, "Queryable"]:
         forward_edges = self._get_forward_edges()
         return {**forward_edges, **self.dynamic_forward_edge_filters}
 
-    def get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
+    def get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         reverse_edges = self._get_reverse_edges()
         return {**reverse_edges, **self.dynamic_reverse_edge_filters}
 
     def get_edge_filters(
         self
-    ) -> Mapping[str, Union["Queryable[T]", Tuple["Queryable[T]", str]]]:
+    ) -> Mapping[str, Union["Queryable", Tuple["Queryable", str]]]:
         return {**self.get_forward_edges(), **self.get_reverse_edges()}
 
     def get_property_filters(self) -> Mapping[str, 'PropertyFilter[Property]']:
@@ -90,12 +89,12 @@ class Queryable(abc.ABC, Generic[T]):
         return list(set(prop_names))
 
     def set_forward_edge_filter(
-        self, edge_name: str, edge_filter: "Queryable[T]"
+        self, edge_name: str, edge_filter: "Queryable"
     ) -> None:
         self.dynamic_forward_edge_filters[edge_name] = edge_filter
 
     def set_reverse_edge_filter(
-        self, edge_name: str, edge_filter: "Queryable[T]", forward_name: str
+        self, edge_name: str, edge_filter: "Queryable", forward_name: str
     ) -> None:
         self.dynamic_reverse_edge_filters[edge_name] = edge_filter, forward_name
 
@@ -123,7 +122,7 @@ class Queryable(abc.ABC, Generic[T]):
             dgraph_client: DgraphClient,
             contains_node_key: Optional[str] = None,
             first: Optional[int] = 1000,
-    ) -> List['Viewable[T]']:
+    ) -> List['Viewable']:
         if contains_node_key:
             first = 1
         query_str = generate_query(
@@ -155,12 +154,12 @@ class Queryable(abc.ABC, Generic[T]):
 
     def _query_first(
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional['Viewable[T]']:
+    ) -> Optional['Viewable']:
         res = self.query(dgraph_client, contains_node_key, first=1)
         if res and isinstance(res, list):
-            return res[0]
+            return cast('Viewable', res[0])
         if res:
-            return res
+            return cast('Viewable', res)
         else:
             return None
 
@@ -193,11 +192,11 @@ class Queryable(abc.ABC, Generic[T]):
                 return int(raw_count[0].get("count", 0))
             if isinstance(raw_count, dict):
                 return int(raw_count.get("count", 0))
-
+            raise TypeError("raw_count is not list or dict")
 
 def traverse_query_iter(
-    node: Queryable[T], visited: Optional[Set[Queryable[T]]] = None
-) -> Iterable[Union["Queryable[T]", Tuple["Queryable[T]", str]]]:
+    node: Queryable, visited: Optional[Set[Queryable]] = None
+) -> Iterable[Union["Queryable", Tuple["Queryable", str]]]:
 
     if visited is None:
         visited = set()
@@ -217,10 +216,10 @@ def traverse_query_iter(
 
 
 def check_edge(
-    query: Queryable[T],
+    query: Queryable,
     edge_name: str,
-    neighbor: Queryable[T],
-    visited: Set[Union[Queryable[T], Tuple[Queryable[T], str, Queryable[T]]]],
+    neighbor: Queryable,
+    visited: Set[Union[Queryable, Tuple[Queryable, str, Queryable]]],
 ) -> bool:
     already_seen = False
     if edge_name[0] == '~':
@@ -278,7 +277,7 @@ def _format_filters(property_filters: List['PropertyFilter[Property]']) -> str:
     return f"@filter({'AND'.join(inner_filters)})"
 
 
-def _get_single_equals_predicate(query: Queryable[T]) -> Optional['Cmp[Property]']:
+def _get_single_equals_predicate(query: Queryable) -> Optional['Cmp[Property]']:
     for prop_name, prop_filter in query.get_property_filters().items():
 
         # prop is missing or has OR logic
@@ -294,7 +293,7 @@ def _get_single_equals_predicate(query: Queryable[T]) -> Optional['Cmp[Property]
     return None
 
 
-def _func_filter(query: Queryable[T]) -> str:
+def _func_filter(query: Queryable) -> str:
     type_name = query._get_node_type_name()
     single_predicate = _get_single_equals_predicate(query)
 
@@ -312,10 +311,10 @@ def _func_filter(query: Queryable[T]) -> str:
 
 
 def generate_var_block(
-    query: Queryable[T],
-    root: Queryable[T],
+    query: Queryable,
+    root: Queryable,
     root_binding: str,
-    visited: Optional[Set[Union[Queryable[T], Tuple[Queryable[T], str, Queryable[T]]]]] = None,
+    visited: Optional[Set[Union[Queryable, Tuple[Queryable, str, Queryable]]]] = None,
     should_filter: bool = False,
 ) -> str:
     """
@@ -383,8 +382,8 @@ def generate_var_block(
 
 
 def generate_root_var(
-    query: Queryable[T],
-    root: Queryable[T],
+    query: Queryable,
+    root: Queryable,
     root_binding: str,
     node_key: Optional[str] = None,
 ) -> str:
@@ -422,7 +421,7 @@ def generate_root_var(
 
 
 def generate_root_vars(
-    query: Queryable[T], binding_modifier: str, contains_node_key: Optional[str] = None
+    query: Queryable, binding_modifier: str, contains_node_key: Optional[str] = None
 ) -> Tuple[str, List[str]]:
     """
         Generates root var blocks, and returns bindings associated with the blocks
@@ -447,7 +446,7 @@ def generate_root_vars(
 
 
 def generate_coalescing_query(
-    query_name: str, root: Queryable[T], root_bindings: List[str]
+    query_name: str, root: Queryable, root_bindings: List[str]
 ) -> str:
     cs_bindings = ", ".join(root_bindings)
 
@@ -487,7 +486,7 @@ def generate_coalescing_query(
 
 def generate_inner_query(
     query_name: str,
-    root: Queryable[T],
+    root: Queryable,
     root_bindings: List[str],
     first: Optional[int] = None,
     count: bool = False,
@@ -538,7 +537,7 @@ def generate_inner_query(
 
 def generate_query(
     query_name: str,
-    root: Queryable[T],
+    root: Queryable,
     binding_modifier: str,
     contains_node_key: Optional[str] = None,
     first: Optional[int] = None,

@@ -6,7 +6,7 @@ from pydgraph import DgraphClient, Txn
 
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 T = TypeVar("T")
 
@@ -22,7 +22,7 @@ def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
     """
 
 
-def get_edges(node) -> List[Tuple[str, str, str]]:
+def get_edges(node: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     edges = []
 
     for key, value in node.items():
@@ -242,10 +242,10 @@ class EngagementClient(CopyingDgraphClient):
 
 
 
-class _LensQuery(Queryable[T]):
+class LensQuery(Queryable):
     def __init__(self) -> None:
 
-        super(_LensQuery, self).__init__(_LensView)
+        super(LensQuery, self).__init__(LensView)
         self._lens = []  # type: List[List[Cmp[str]]]
 
     def with_lens_name(
@@ -253,7 +253,7 @@ class _LensQuery(Queryable[T]):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> '_LensQuery[T]':
+    ) -> 'LensQuery':
         self._lens.extend(_str_cmps("lens", eq, contains, ends_with))
         return self
 
@@ -274,10 +274,10 @@ class _LensQuery(Queryable[T]):
 
         return combined
 
-    def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
+    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
         return {}
 
-    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         return {}
 
 
@@ -296,7 +296,7 @@ class _LensQuery(Queryable[T]):
             return []
 
         assert isinstance(query_res, list)
-        assert isinstance(query_res[0], _LensView)
+        assert isinstance(query_res[0], LensView)
         return cast("List[LensView]", query_res)
 
     def query_first(
@@ -305,11 +305,11 @@ class _LensQuery(Queryable[T]):
         query_res = self._query_first(dgraph_client, contains_node_key)
         if not query_res:
             return None
-        assert isinstance(query_res, _LensView)
+        assert isinstance(query_res, LensView)
         return query_res
 
 
-class _LensView(Viewable[T]):
+class LensView(Viewable):
 
     def __init__(
             self,
@@ -320,7 +320,7 @@ class _LensView(Viewable[T]):
             lens: Optional[str] = None,
             scope: Optional[List['NodeView']] = None
     ) -> None:
-        super(_LensView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
+        super(LensView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
         self.lens = lens
         self.node_type = node_type
         self.scope = scope or []
@@ -387,13 +387,13 @@ class _LensView(Viewable[T]):
         }
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         return {
             'scope': [NodeView],
         }
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {}
 
     def _get_properties(self, fetch: bool = False) -> Mapping[str, Union[str, int]]:
@@ -406,19 +406,17 @@ class _LensView(Viewable[T]):
 
         return props
 
-    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
         f_edges = {
             'scope': self.scope,
         }
 
         forward_edges = {name: value for name, value in f_edges.items() if value is not None}
-        return cast(Mapping[str, _ForwardEdgeView[T]], forward_edges)
+        return cast(Mapping[str, ForwardEdgeView], forward_edges)
 
-    def _get_reverse_edges(self) -> 'Mapping[str, _ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str, ReverseEdgeView]':
         return {}
 
-LensQuery = _LensQuery[Any]
-LensView = _LensView[Any]
 
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps
 from grapl_analyzerlib.prelude import NodeView

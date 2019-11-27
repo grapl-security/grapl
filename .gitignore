@@ -1,4 +1,5 @@
 # Byte-compiled / optimized / DLL files
+.dmypy.json
 source_env
 test.py
 p/

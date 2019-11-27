@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from typing import Optional, TypeVar, Tuple, Mapping, Any, Union, Type, Dict, List, Set
+from typing import Optional, TypeVar, Tuple, Mapping, Any, Union, Type, Dict, List, Set, cast
 
 from pydgraph import DgraphClient
 
@@ -30,9 +30,9 @@ def get_uid(client: DgraphClient, node_key: str) -> str:
         res = json.loads(res.json)
 
         if isinstance(res['res'], list):
-            return res['res'][0]['uid']
+            return str(res['res'][0]['uid'])
         else:
-            return res['res']['uid']
+            return str(res['res']['uid'])
 
     finally:
         txn.discard()
@@ -152,9 +152,9 @@ def flatten_nodes(
     return list(dict.fromkeys(node_list))
 
 
-class _NodeQuery(Queryable[T]):
+class NodeQuery(Queryable):
     def __init__(self) -> None:
-        super(_NodeQuery, self).__init__(_NodeView)
+        super(NodeQuery, self).__init__(NodeView)
 
     def _get_unique_predicate(self) -> 'Optional[Tuple[str, PropertyT]]':
         return None
@@ -165,10 +165,10 @@ class _NodeQuery(Queryable[T]):
     def _get_property_filters(self) -> Mapping[str, 'PropertyFilter[Property]']:
         return self.dynamic_property_filters
 
-    def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
+    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
         return self.dynamic_forward_edge_filters
 
-    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         return self.dynamic_reverse_edge_filters
 
     def query(
@@ -177,19 +177,27 @@ class _NodeQuery(Queryable[T]):
             contains_node_key: Optional[str] = None,
             first: Optional[int] = 1000,
     ) -> List['NodeView']:
-        return self._query(
+        res = self._query(
             dgraph_client,
             contains_node_key,
             first
         )
 
+        if not res:
+            return []
+
+        assert isinstance(res[0], NodeView)
+        return cast('List[NodeView]', res)
+
     def query_first(
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
     ) -> Optional['NodeView']:
-        return self._query_first(dgraph_client, contains_node_key)
+        res = self._query_first(dgraph_client, contains_node_key)
+        assert (res is None) or isinstance(res, NodeView)
+        return res
 
 
-class _NodeView(Viewable[T]):
+class NodeView(Viewable):
     def __init__(
             self,
             dgraph_client: DgraphClient,
@@ -197,13 +205,13 @@ class _NodeView(Viewable[T]):
             uid: str,
             node: Union["ProcessView", "FileView", "ExternalIpView", "DynamicNodeView"]
     ):
-        super(_NodeView, self).__init__(dgraph_client=dgraph_client, node_key=node_key, uid=uid)
+        super(NodeView, self).__init__(dgraph_client=dgraph_client, node_key=node_key, uid=uid)
         self.node = node
 
 
     @staticmethod
     def from_view(v: Union["ProcessView", "FileView", "ExternalIpView", "DynamicNodeView", "NodeView"]):
-        if isinstance(v, _NodeView):
+        if isinstance(v, NodeView):
             return v
         try:
             return NodeView(
@@ -241,13 +249,17 @@ class _NodeView(Viewable[T]):
                 raise e
 
     @classmethod
-    def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NodeView':
+    def from_dict(cls: Type['Viewable'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NodeView':
 
         node_type = d.get('node_type', d.get('dgraph.type', ''))  # type: Optional[str]
         if isinstance(node_type, list):
             node_type = node_type[0]
 
-        _d = raw_node_from_uid(dgraph_client, d.get('uid'))
+        _d = None
+        uid = d.get('uid')  # type: Optional[str]
+        if uid:
+            _d = raw_node_from_uid(dgraph_client, uid)
+
         if _d:
             d = {**d, **_d}
 
@@ -264,10 +276,10 @@ class _NodeView(Viewable[T]):
             raise Exception(f'Invalid scoped node type: {d}')
 
         assert (
-                isinstance(node, _ProcessView) or
-                isinstance(node, _FileView) or
-                isinstance(node, _ExternalIpView) or
-                isinstance(node, _DynamicNodeView)
+                isinstance(node, ProcessView) or
+                isinstance(node, FileView) or
+                isinstance(node, ExternalIpView) or
+                isinstance(node, DynamicNodeView)
         )
 
         return NodeView(
@@ -347,17 +359,17 @@ class _NodeView(Viewable[T]):
             raise Exception(f"Invalid Node Type : {node}")
 
     def as_process(self) -> Optional['ProcessView']:
-        if isinstance(self.node, _ProcessView):
+        if isinstance(self.node, ProcessView):
             return self.node
         return None
 
     def as_file(self) -> Optional['FileView']:
-        if isinstance(self.node, _FileView):
+        if isinstance(self.node, FileView):
             return self.node
         return None
 
     def as_dynamic(self) -> Optional['DynamicNodeView']:
-        if isinstance(self.node, _DynamicNodeView):
+        if isinstance(self.node, DynamicNodeView):
             return self.node
         return None
 
@@ -376,10 +388,10 @@ class _NodeView(Viewable[T]):
     def _get_properties(self) -> Mapping[str, 'Property']:
         return self._get_properties()
 
-    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
         return self._get_forward_edges()
 
-    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView]':
         return self._get_reverse_edges()
 
     def to_adjacency_list(self) -> Dict[str, Any]:
@@ -395,14 +407,12 @@ class _NodeView(Viewable[T]):
 
         return {"nodes": node_dicts, "edges": edges}
 
-NodeQuery = _NodeQuery[Any]
-NodeView = _NodeView[Any]
 
 from grapl_analyzerlib.nodes.comparators import PropertyFilter
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.prelude import ProcessView, FileView, ExternalIpView, DynamicNodeView
-from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpView
-from grapl_analyzerlib.nodes.file_node import _FileView
-from grapl_analyzerlib.nodes.process_node import _ProcessView
-from grapl_analyzerlib.nodes.dynamic_node import _DynamicNodeView
-from grapl_analyzerlib.nodes.viewable import _ForwardEdgeView, EdgeViewT, _ReverseEdgeView
+from grapl_analyzerlib.nodes.external_ip_node import ExternalIpView
+from grapl_analyzerlib.nodes.file_node import FileView
+from grapl_analyzerlib.nodes.process_node import ProcessView
+from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
+from grapl_analyzerlib.nodes.viewable import ForwardEdgeView, EdgeViewT, ReverseEdgeView

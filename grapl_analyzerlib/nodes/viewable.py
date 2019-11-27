@@ -1,29 +1,27 @@
 import abc
 import json
-from typing import Union, Mapping, TypeVar, Tuple, Dict, List, Type, Generic, Optional, Callable, Any
+from typing import Union, Mapping, TypeVar, Tuple, Dict, List, Type, Generic, Optional, Callable, Any, cast
 
 # noinspection Mypy
 from pydgraph import DgraphClient
 from grapl_analyzerlib.nodes.types import PropertyT, OneOrMany, Property
 
-T = TypeVar("T")
+class Viewable(abc.ABC):
 
-class Viewable(abc.ABC, Generic[T]):
-
-    dynamic_forward_edge_types = {}  # type: Dict[str, _EdgeViewT[T]]
-    dynamic_reverse_edge_types = {}  # type: Dict[str, Tuple[_EdgeViewT[T], str]]
+    dynamic_forward_edge_types = {}  # type: Dict[str, EdgeViewT]
+    dynamic_reverse_edge_types = {}  # type: Dict[str, Tuple[EdgeViewT, str]]
     dynamic_property_types = {}  # type: Dict[str, PropertyT]
 
     def __init__(
-        self: "Viewable[T]", dgraph_client: DgraphClient, node_key: str, uid: str,
+        self: "Viewable", dgraph_client: DgraphClient, node_key: str, uid: str,
             **args: Any
     ) -> None:
         self.dgraph_client = dgraph_client
         self.node_key = node_key
         self.uid = uid
 
-        self.dynamic_forward_edges = {}  # type: Dict[str, _ForwardEdgeView]
-        self.dynamic_reverse_edges = {}  # type: Dict[str,  _ReverseEdgeView]
+        self.dynamic_forward_edges = {}  # type: Dict[str, ForwardEdgeView]
+        self.dynamic_reverse_edges = {}  # type: Dict[str,  ReverseEdgeView]
         self.dynamic_properties = {}  # type: Dict[str, Property]
 
     @staticmethod
@@ -33,12 +31,12 @@ class Viewable(abc.ABC, Generic[T]):
 
     @staticmethod
     @abc.abstractmethod
-    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         pass
 
     @staticmethod
     @abc.abstractmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         """
         :return: Mapping of reverse edge name to Tuple of edge type and forward edge name
         """
@@ -49,18 +47,18 @@ class Viewable(abc.ABC, Generic[T]):
         pass
 
     @abc.abstractmethod
-    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
         pass
 
     @abc.abstractmethod
-    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView]':
         pass
 
     def get_node_type(self) -> Optional[str]:
         return None
 
     @classmethod
-    def get_edge_types(cls) -> Mapping[str, Union["_EdgeViewT[T]", Tuple["_EdgeViewT[T]", str]]]:
+    def get_edge_types(cls) -> Mapping[str, Union["EdgeViewT", Tuple["EdgeViewT", str]]]:
         return {
             **cls._get_forward_edge_types(),
             **cls.dynamic_forward_edge_types,
@@ -70,14 +68,14 @@ class Viewable(abc.ABC, Generic[T]):
 
 
     @classmethod
-    def get_forward_edge_types(cls) -> Mapping[str, "_EdgeViewT[T]"]:
+    def get_forward_edge_types(cls) -> Mapping[str, "EdgeViewT"]:
         return {
             **cls._get_forward_edge_types(),
             **cls.dynamic_forward_edge_types,
         }
 
     @classmethod
-    def get_reverse_edge_types(cls) -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
+    def get_reverse_edge_types(cls) -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {
             **cls.dynamic_reverse_edge_types,
             **cls._get_reverse_edge_types()
@@ -88,12 +86,12 @@ class Viewable(abc.ABC, Generic[T]):
 
     @classmethod
     def set_dynamic_forward_edge_type(
-        cls, edge_name: str, edge_type: "_EdgeViewT[T]"
+        cls, edge_name: str, edge_type: "EdgeViewT"
     ) -> None:
         cls.dynamic_forward_edge_types[edge_name] = edge_type
 
     def set_dynamic_reverse_edge_type(
-        self, edge_name: str, edge_type: "_EdgeViewT[T]", forward_name: str
+        self, edge_name: str, edge_type: "EdgeViewT", forward_name: str
     ) -> None:
         self.dynamic_reverse_edge_types[edge_name] = edge_type, forward_name
 
@@ -101,32 +99,32 @@ class Viewable(abc.ABC, Generic[T]):
         self.dynamic_properties[prop_name] = prop
 
     def set_dynamic_forward_edge(
-            self, edge_name: str, edge: '_ForwardEdgeView[T]'
+            self, edge_name: str, edge: 'ForwardEdgeView'
     ) -> None:
         if edge:
             self.dynamic_forward_edges[edge_name] = edge
 
     def set_dynamic_reverse_edge(
-            self, edge_name: str, reverse_edge: '_ReverseEdgeView[T]'
+            self, edge_name: str, reverse_edge: 'ReverseEdgeView'
     ) -> None:
         self.dynamic_reverse_edges[edge_name] = reverse_edge
 
     def get_properties(self) -> Mapping[str, 'Property']:
-        return {
+        return cast("Mapping[str, 'Property']", {
             **self._get_properties(),
             **self.dynamic_properties,
             'node_key': self.node_key,
             'uid': self.uid,
-            'dgraph.type': self.node_type,
-        }
+            'dgraph.type': self.get_node_type(),
+        })
 
-    def get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
+    def get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
         return {k: v for k, v in {**self._get_forward_edges(), **self.dynamic_forward_edges}.items() if v}
 
-    def get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
+    def get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView]':
         return {k: v for k, v in {**self._get_reverse_edges(), **self.dynamic_reverse_edges}.items() if v[0]}
 
-    def get_edges(self) -> 'Mapping[str, _EdgeView[T]]':
+    def get_edges(self) -> 'Mapping[str, EdgeView]':
         return {**self.get_forward_edges(), **self.get_reverse_edges()}
 
     def fetch_property(
@@ -191,7 +189,7 @@ class Viewable(abc.ABC, Generic[T]):
 
         return props
 
-    def fetch_edge(self, edge_name: str, edge_type: Type['Viewable[T]']) -> Optional['Viewable[T]']:
+    def fetch_edge(self, edge_name: str, edge_type: Type['Viewable']) -> Optional['Viewable']:
         query = f"""
             {{
                 res(func: uid("{self.uid}"), first: 1) {{
@@ -227,10 +225,10 @@ class Viewable(abc.ABC, Generic[T]):
         if isinstance(neighbor, list):
             neighbor = neighbor[0]
 
-        edge = edge_type.from_dict(self.dgraph_client, neighbor)  # type: Viewable[T]
+        edge = edge_type.from_dict(self.dgraph_client, neighbor)  # type: Viewable
         return edge
 
-    def fetch_edges(self, edge_name: str, edge_type: Type['Viewable[T]']) -> List['Viewable[T]']:
+    def fetch_edges(self, edge_name: str, edge_type: Type['Viewable']) -> List['Viewable']:
         query = f"""
             {{
                 res(func: uid("{self.uid}")) {{
@@ -261,12 +259,12 @@ class Viewable(abc.ABC, Generic[T]):
         else:
             raw_edges = raw_edges[edge_name]
 
-        edges = [edge_type.from_dict(self.dgraph_client, f) for f in raw_edges]  # type: List[Viewable[T]]
+        edges = [edge_type.from_dict(self.dgraph_client, f) for f in raw_edges]  # type: List[Viewable]
 
         return edges
 
     @classmethod
-    def from_dict(cls: Type['Viewable[T]'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'Viewable[T]':
+    def from_dict(cls: Type['Viewable'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'Viewable':
         properties = {}
         node_type = d.get("node_type") or d.get('dgraph.type')
         if node_type:
@@ -288,12 +286,12 @@ class Viewable(abc.ABC, Generic[T]):
                     val = int(val)
                 properties[prop] = val
 
-        edges = {}  # type: Dict[str, Union[Viewable[T], List[Viewable[T]]]]
+        edges = {}  # type: Dict[str, Union[Viewable, List[Viewable]]]
         for edge_tuple in cls.get_edge_types().items():
             edge_name = edge_tuple[0]  # type: str
             forward_name = None  # type: Optional[str]
             if isinstance(edge_tuple[1], tuple):
-                ty = edge_tuple[1][0]  # type: _EdgeViewT[T]
+                ty = edge_tuple[1][0]  # type: EdgeViewT
                 forward_name = edge_tuple[1][1]
             else:
                 ty = edge_tuple[1]
@@ -334,10 +332,10 @@ class Viewable(abc.ABC, Generic[T]):
                 else:
                     edges[edge_name] = edge
 
-        cleaned_edges = {}  # type: Dict[str, Union[Viewable[T], List[Viewable[T]]]]
+        cleaned_edges = {}  # type: Dict[str, Union[Viewable, List[Viewable]]]
         for _edge in edges.items():
             edge_name = _edge[0]
-            cleaned_edge = _edge[1]  # type: Union[Viewable[T], List[Viewable[T]]]
+            cleaned_edge = _edge[1]  # type: Union[Viewable, List[Viewable]]
             if edge_name[0] == "~":
                 edge_name = edge_name[1:]
             cleaned_edges[edge_name] = cleaned_edge
@@ -384,14 +382,7 @@ class Viewable(abc.ABC, Generic[T]):
         return {"node": node_dict, "edges": edges}
 
 
-_ForwardEdgeView = OneOrMany[Viewable[T]]
-_ReverseEdgeView = Tuple[OneOrMany[Viewable[T]], str]
-_EdgeView = Union[_ForwardEdgeView[T], _ReverseEdgeView[T]]
-
-_EdgeViewT = Union[List[Type[Viewable[T]]], Type[Viewable[T]]]
-
-ForwardEdgeView = _ForwardEdgeView[Any]
-ReverseEdgeView = _ReverseEdgeView[Any]
-EdgeView = _EdgeView[Any]
-
-EdgeViewT = _EdgeViewT[Any]
+ForwardEdgeView = OneOrMany[Viewable]
+ReverseEdgeView = Tuple[OneOrMany[Viewable], str]
+EdgeView = Union[ForwardEdgeView, ReverseEdgeView]
+EdgeViewT = Union[List[Type[Viewable]], Type[Viewable]]

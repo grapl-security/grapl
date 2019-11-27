@@ -5,17 +5,17 @@ from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 T = TypeVar("T")
 
 
-class _ExternalIpQuery(Queryable[T]):
+class ExternalIpQuery(Queryable):
     def __init__(self) -> None:
-        super(_ExternalIpQuery, self).__init__(_ExternalIpView)
+        super(ExternalIpQuery, self).__init__(ExternalIpView)
         self._external_ip = []  # type: List[List[Cmp[str]]]
 
-        self._connections_from = None  # type: Optional['_ProcessQuery[T]']
+        self._connections_from = None  # type: Optional['ProcessQuery']
 
     def _get_unique_predicate(self) -> Optional[Tuple[str, 'PropertyT']]:
         return 'external_ip', str
@@ -32,10 +32,10 @@ class _ExternalIpQuery(Queryable[T]):
 
         return cast('Mapping[str, PropertyFilter[Property]]', pfs)
 
-    def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
+    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
         return {}
 
-    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         reverse_edges = {
             "~created_connections": (self._connections_from, "connections_from")
         }
@@ -48,19 +48,27 @@ class _ExternalIpQuery(Queryable[T]):
             contains_node_key: Optional[str] = None,
             first: Optional[int] = 1000,
     ) -> List['ExternalIpView']:
-        return self._query(
+        res = self._query(
             dgraph_client,
             contains_node_key,
             first
         )
+        if not res:
+            return []
+
+        assert isinstance(res[0], ExternalIpView)
+        return cast(List['ExternalIpView'], res)
 
     def query_first(
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
     ) -> Optional['ExternalIpView']:
-        return self._query_first(dgraph_client, contains_node_key)
+        res = self._query_first(dgraph_client, contains_node_key)
+
+        assert (res is None) or isinstance(res, ExternalIpView)
+        return res
 
 
-class _ExternalIpView(Viewable[T]):
+class ExternalIpView(Viewable):
 
     def __init__(
             self,
@@ -71,7 +79,7 @@ class _ExternalIpView(Viewable[T]):
             external_ip: Optional[str] = None,
             connections_from: Optional[List['ProcessView']] = None
     ):
-        super(_ExternalIpView, self).__init__(dgraph_client, node_key, uid)
+        super(ExternalIpView, self).__init__(dgraph_client, node_key, uid)
         self.external_ip = external_ip
         self.node_type = node_type
         self.connections_from = connections_from or []
@@ -92,11 +100,11 @@ class _ExternalIpView(Viewable[T]):
         }
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         return {}
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {
             '~created_connections': ([ProcessView], 'connections_from')
         }
@@ -111,20 +119,17 @@ class _ExternalIpView(Viewable[T]):
         return props
 
 
-    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
         pass
 
-    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView]':
         _reverse_edges = {
             '~created_connections': (self.connections_from, 'connections_from')
         }
 
         reverse_edges = {name: value for name, value in _reverse_edges.items() if value[0] is not None}
-        return cast(Mapping[str, _ReverseEdgeView[T]], reverse_edges)
+        return cast(Mapping[str, ReverseEdgeView], reverse_edges)
 
 
-ExternalIpQuery = _ExternalIpQuery[Any]
-ExternalIpView = _ExternalIpView[Any]
-
-from grapl_analyzerlib.nodes.process_node import ProcessView, _ProcessQuery
+from grapl_analyzerlib.nodes.process_node import ProcessView, ProcessQuery
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps, IntCmp, _int_cmps

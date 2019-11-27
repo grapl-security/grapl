@@ -3,16 +3,16 @@ from typing import Optional, TypeVar, Tuple, Type, Mapping, Any, Union, cast, Li
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.queryable import Queryable
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 # noinspection Mypy
 
 T = TypeVar("T")
 
 
-class _DynamicNodeQuery(Queryable[T]):
-    def __init__(self, node_type: Optional[str], view_type: Type[Viewable[T]]) -> None:
-        super(_DynamicNodeQuery, self).__init__(view_type)
+class DynamicNodeQuery(Queryable):
+    def __init__(self, node_type: Optional[str], view_type: Type[Viewable]) -> None:
+        super(DynamicNodeQuery, self).__init__(view_type)
         self.node_type = node_type
         self.view_type = view_type
         self.set_str_property_filter('dgraph.type', _str_cmps('dgraph.type', eq=self.node_type))
@@ -26,10 +26,10 @@ class _DynamicNodeQuery(Queryable[T]):
     def _get_property_filters(self) -> Mapping[str, 'PropertyFilter[Property]']:
         return self.dynamic_property_filters
 
-    def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
+    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
         return self.dynamic_forward_edge_filters
 
-    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         return self.dynamic_reverse_edge_filters
 
     def query(
@@ -50,7 +50,7 @@ class _DynamicNodeQuery(Queryable[T]):
         return self._query_first(dgraph_client, contains_node_key)
 
 
-class _DynamicNodeView(Viewable[T]):
+class DynamicNodeView(Viewable):
     def __init__(
             self,
             dgraph_client: DgraphClient,
@@ -59,7 +59,7 @@ class _DynamicNodeView(Viewable[T]):
             node_type: str,
             **args: Any,
     ):
-        super(_DynamicNodeView, self).__init__(dgraph_client=dgraph_client, node_key=node_key, uid=uid)
+        super(DynamicNodeView, self).__init__(dgraph_client=dgraph_client, node_key=node_key, uid=uid)
         self.node_type = node_type
         if args:
             for arg_name, arg_value in args.items():
@@ -80,18 +80,15 @@ class _DynamicNodeView(Viewable[T]):
     def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {}
 
-    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
         return {}
 
-    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView]':
         return {}
 
     def _get_properties(self, fetch: bool = False) -> Mapping[str, Union[str, int]]:
         return cast(Mapping[str, Union[str, int]], {k: v for k, v in self.dynamic_property_types.items()})
 
-
-DynamicNodeQuery = _DynamicNodeQuery[Any]
-DynamicNodeView = _DynamicNodeView[Any]
 
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, _str_cmps
 from grapl_analyzerlib.nodes.types import PropertyT, Property

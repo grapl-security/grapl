@@ -6,16 +6,16 @@ from pydgraph import DgraphClient
 from grapl_analyzerlib.nodes.comparators import Cmp, PropertyFilter, StrCmp, _str_cmps, IntCmp, _int_cmps
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 T = TypeVar("T")
 
 
-class _FileQuery(Queryable[T]):
+class FileQuery(Queryable):
     def __init__(
             self,
     ) -> None:
-        super(_FileQuery, self).__init__(_FileView)
+        super(FileQuery, self).__init__(FileView)
         self._file_path = []    # type: List[List[Cmp[str]]]
         self._asset_id = []    # type: List[List[Cmp[str]]]
         self._file_extension = []    # type: List[List[Cmp[str]]]
@@ -34,11 +34,11 @@ class _FileQuery(Queryable[T]):
         self._sha1_hash = []    # type: List[List[Cmp[str]]]
         self._sha256_hash = []    # type: List[List[Cmp[str]]]
 
-        self._creator = None  # type: Optional['_ProcessQuery[T]']
-        self._writers = None  # type: Optional['_ProcessQuery[T]']
-        self._readers = None  # type: Optional['_ProcessQuery[T]']
-        self._deleter = None  # type: Optional['_ProcessQuery[T]']
-        self._spawned_from = None  # type: Optional['_ProcessQuery[T]']
+        self._creator = None  # type: Optional['ProcessQuery']
+        self._writers = None  # type: Optional['ProcessQuery']
+        self._readers = None  # type: Optional['ProcessQuery']
+        self._deleter = None  # type: Optional['ProcessQuery']
+        self._spawned_from = None  # type: Optional['ProcessQuery']
 
 
     def with_file_path(
@@ -244,10 +244,10 @@ class _FileQuery(Queryable[T]):
         prop_filters = {p[0]: p[1] for p in _prop_filters.items() if p[1]}
         return cast('Mapping[str, PropertyFilter[Property]]', prop_filters)
 
-    def _get_forward_edges(self) -> Mapping[str, "Queryable[T]"]:
+    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
         return {}
 
-    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[T]", str]]:
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         reverse_edges = {
             '~created_files': (self._creator, 'creator'),
             '~wrote_files': (self._writers, 'writers'),
@@ -258,7 +258,7 @@ class _FileQuery(Queryable[T]):
 
         filtered = {re[0]: re[1] for re in reverse_edges.items() if re[1][0] is not None}
 
-        return cast('Mapping[str, Tuple[Queryable[T], str]]', filtered)
+        return cast('Mapping[str, Tuple[Queryable, str]]', filtered)
 
     def query(
             self,
@@ -280,7 +280,7 @@ class _FileQuery(Queryable[T]):
         return cast('Optional[FileView]', res)
 
 
-class _FileView(Viewable[T]):
+class FileView(Viewable):
     def __init__(
             self,
             dgraph_client: DgraphClient,
@@ -304,13 +304,13 @@ class _FileView(Viewable[T]):
             md5_hash: Optional[str] = None,
             sha1_hash: Optional[str] = None,
             sha256_hash: Optional[str] = None,
-            creator: Optional['_ProcessView[T]'] = None,
-            writers: Optional[List['_ProcessView[T]']] = None,
-            readers: Optional[List['_ProcessView[T]']] = None,
-            deleter: Optional['_ProcessView[T]'] = None,
-            spawned_from: Optional[List['_ProcessView[T]']] = None,
+            creator: Optional['ProcessView'] = None,
+            writers: Optional[List['ProcessView']] = None,
+            readers: Optional[List['ProcessView']] = None,
+            deleter: Optional['ProcessView'] = None,
+            spawned_from: Optional[List['ProcessView']] = None,
     ) -> None:
-        super(_FileView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
+        super(FileView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
 
         self.dgraph_client = dgraph_client
         self.node_key = node_key
@@ -466,16 +466,16 @@ class _FileView(Viewable[T]):
         }
 
     @staticmethod
-    def _get_forward_edge_types() -> Mapping[str, "_EdgeViewT[T]"]:
+    def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         return {}
 
     @staticmethod
-    def _get_reverse_edge_types() -> Mapping[str, Tuple["_EdgeViewT[T]", str]]:
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {
-            '~created_files': (_ProcessView, 'creator'),
-            '~wrote_files': ([_ProcessView], 'writers'),
-            '~read_files': ([_ProcessView], 'readers'),
-            '~deleted_files': (_ProcessView, 'deleter'),
+            '~created_files': (ProcessView, 'creator'),
+            '~wrote_files': ([ProcessView], 'writers'),
+            '~read_files': ([ProcessView], 'readers'),
+            '~deleted_files': (ProcessView, 'deleter'),
         }
 
     def _get_properties(self) -> Mapping[str, 'Property']:
@@ -503,10 +503,10 @@ class _FileView(Viewable[T]):
 
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
-    def _get_forward_edges(self) -> 'Mapping[str, _ForwardEdgeView[T]]':
+    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
         return dict()
 
-    def _get_reverse_edges(self) -> 'Mapping[str,  _ReverseEdgeView[T]]':
+    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView]':
         reverse_edges = {
             '~created_files': (self.creator, 'creator'),
             '~wrote_files': (self.writers, 'writers'),
@@ -516,10 +516,7 @@ class _FileView(Viewable[T]):
 
         filtered = {re[0]: re[1] for re in reverse_edges.items() if re[1][0] is not None}
 
-        return cast('Mapping[str,  _ReverseEdgeView[T]]', filtered)
+        return cast('Mapping[str,  ReverseEdgeView]', filtered)
 
 
-FileQuery = _FileQuery[Any]
-FileView = _FileView[Any]
-
-from grapl_analyzerlib.nodes.process_node import _ProcessView, _ProcessQuery, ProcessQuery
+from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView

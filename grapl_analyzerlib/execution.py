@@ -31,17 +31,17 @@ class ExecutionComplete(object):
 class ExecutionFailed(object):
     pass
 
-from grapl_analyzerlib.nodes.any_node import _NodeView
-from grapl_analyzerlib.nodes.dynamic_node import _DynamicNodeView
-from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpView
-from grapl_analyzerlib.nodes.file_node import _FileView
-from grapl_analyzerlib.nodes.process_node import _ProcessView
+from grapl_analyzerlib.nodes.any_node import NodeView
+from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
+from grapl_analyzerlib.nodes.external_ip_node import ExternalIpView
+from grapl_analyzerlib.nodes.file_node import FileView
+from grapl_analyzerlib.nodes.process_node import ProcessView
 from grapl_analyzerlib.prelude import NodeView
 
 Accepts = Union[
-    _NodeView,
-    _ProcessView,
-    _FileView,
-    _DynamicNodeView,
-    _ExternalIpView,
+    NodeView,
+    ProcessView,
+    FileView,
+    DynamicNodeView,
+    ExternalIpView,
 ]

@@ -6,7 +6,7 @@ def retry(
     ExceptionToCheck: Exception = Exception,
     on_falsey: bool = True,
     tries: int = 3,
-    delay: int = 0.5,
+    delay: float = 0.5,
     backoff: int = 2,
 ):
     """Retry calling the decorated function using an exponential backoff.

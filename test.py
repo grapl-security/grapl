@@ -4,15 +4,12 @@ from typing import *
 
 from pydgraph import DgraphClient, DgraphClientStub
 
-from grapl_analyzerlib.execution import ExecutionHit
 from grapl_analyzerlib.nodes.comparators import IntCmp, _str_cmps, StrCmp, _int_cmps
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
-from grapl_analyzerlib.nodes.external_ip_node import _ExternalIpView
-from grapl_analyzerlib.nodes.file_node import FileQuery
-from grapl_analyzerlib.nodes.process_node import ProcessQuery, _ProcessView, ProcessView
-from grapl_analyzerlib.nodes.queryable import generate_query
+from grapl_analyzerlib.nodes.external_ip_node import ExternalIpView
+from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
 from grapl_analyzerlib.nodes.types import Property, PropertyT
-from grapl_analyzerlib.nodes.viewable import Viewable, _EdgeViewT, _ForwardEdgeView, _ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView
 
 T = TypeVar('T')
 
@@ -74,10 +71,10 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
 
 def upsert(
         client: DgraphClient,
-        view_type: Type[Viewable[T]],
+        view_type: Type[Viewable],
         node_key: str,
         node_props: Dict[str, Property]
-) -> Viewable[T]:
+) -> Viewable:
     node_props['node_key'] = node_key
     uid = _upsert(client, node_props)
     # print(f'uid: {uid}')
@@ -233,21 +230,21 @@ def main() -> None:
 
     parent_view = upsert(
         local_client,
-        _ProcessView,
+        ProcessView,
         'ea75f056-61a1-479d-9ca2-f632d2c67205',
         parent
     )
 
     child_view = upsert(
         local_client,
-        _ProcessView,
+        ProcessView,
         '10f585c2-cf31-41e2-8ca5-d477e78be3ac',
         child
     )
 
     external_ip_view = upsert(
         local_client,
-        _ExternalIpView,
+        ExternalIpView,
         '8bc20354-e8c5-49fc-a984-2927b24c1a29',
         external_ip
     )
