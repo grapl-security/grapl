@@ -1120,6 +1120,10 @@ class EngagementUx extends cdk.Stack {
             websiteIndexDocument: 'index.html',
         });
 
+        if (!fs.existsSync(path.join(__dirname, 'edge_ux_package/'))) {
+            fs.mkdirSync(path.join(__dirname, 'edge_ux_package/'));
+        }
+
         getEdgeGatewayId(
             edge.name + 'Integration',
             (gatewayId) => {
