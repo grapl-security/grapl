@@ -84,7 +84,7 @@ class Queues {
 
         this.retry_queue = new sqs.Queue(stack, queue_name + '-retry', {
             deadLetterQueue: {queue: this.dead_letter_queue, maxReceiveCount: 10},
-            visibilityTimeout: Duration.seconds(240)
+            visibilityTimeout: Duration.seconds(360)
         });
 
         this.queue = new sqs.Queue(stack, queue_name, {
