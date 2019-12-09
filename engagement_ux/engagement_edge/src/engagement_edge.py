@@ -300,7 +300,6 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
 
     expanded_dynamic_nodes = []
     for dynamic_node in dynamic_nodes:
-        print('aaa')
         expanded = expand_dynamic_node(dynamic_node)
         expanded_dynamic_nodes.append(expanded)
 
@@ -458,7 +457,6 @@ def login(username, password):
 
 def check_jwt(headers):
     encoded_jwt = None
-    print(f'headers: {headers}')
     for cookie in headers.get('Cookie', '').split(';'):
         if 'grapl_jwt=' in cookie:
             encoded_jwt = cookie.split('grapl_jwt=')[1].strip()
@@ -476,7 +474,6 @@ def check_jwt(headers):
 
 def lambda_login(event):
     body = json.loads(event['body'])
-    print(f'body: {body}')
     login_res = login(body['username'], body['password'])
     # Clear out the password from the dict, to avoid accidentally logging it
     body['password'] = ''
