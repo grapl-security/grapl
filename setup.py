@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="grapl_analyzerlib",
-    version="0.1.276",
+    version="0.1.277",
     description="Library for Grapl Analyzers",
     url="https://github.com/insanitybit/grapl_analyzerlib/",
     author="insanitybit",
@@ -19,7 +19,6 @@ setup(
         'grapl_analyzerlib': ["py.typed"],
         'grapl_analyzerlib.nodes': ["nodes/py.typed"],
         'grapl_analyzerlib.schemas': ["schemas/py.typed"],
-
     },
     include_package_data=True,
     install_requires=["pydgraph"],

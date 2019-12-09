@@ -3,13 +3,16 @@ from typing import *
 # noinspection Mypy
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.queryable import Queryable
-from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.nodes.queryable import Queryable, NQ
+from grapl_analyzerlib.nodes.viewable import Viewable, NV
 
-T = TypeVar("T")
+T = TypeVar('T')
+
+IProcessQuery = TypeVar('IProcessQuery', bound='ProcessQuery')
+IProcessView = TypeVar('IProcessView', bound='ProcessView')
 
 
-class ProcessQuery(Queryable):
+class ProcessQuery(Queryable[IProcessView]):
     def __init__(self) -> None:
 
         super(ProcessQuery, self).__init__(ProcessView)
@@ -34,135 +37,138 @@ class ProcessQuery(Queryable):
         self._parent = None  # type: Optional['ProcessQuery']
 
     def with_process_name(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'ProcessQuery':
-        self._process_name.extend(_str_cmps("process_name", eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('ProcessQuery', self)._process_name.extend(_str_cmps("process_name", eq, contains, ends_with))
         return self
 
     def with_process_id(
-            self,
+            self: 'NQ',
             eq: Optional['IntCmp'] = None,
             gt: Optional['IntCmp'] = None,
             lt: Optional['IntCmp'] = None,
-    ) -> 'ProcessQuery':
-        self._process_id.extend(_int_cmps("process_id", eq, gt, lt))
+    ) -> 'NQ':
+        cast('ProcessQuery', self)._process_id.extend(_int_cmps("process_id", eq, gt, lt))
         return self
 
     def with_created_timestamp(
-            self,
+            self: 'NQ',
             eq: Optional['IntCmp'] = None,
             gt: Optional['IntCmp'] = None,
             lt: Optional['IntCmp'] = None,
-    ) -> 'ProcessQuery':
-        self._created_timestamp.extend(_int_cmps('created_timestamp', eq, gt, lt))
+    ) -> 'NQ':
+        cast('ProcessQuery', self)._created_timestamp.extend(_int_cmps('created_timestamp', eq, gt, lt))
         return self
 
     def with_asset_id(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'ProcessQuery':
-        self._asset_id.extend(_str_cmps('asset_id', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('ProcessQuery', self)._asset_id.extend(_str_cmps('asset_id', eq, contains, ends_with))
         return self
 
     def with_terminate_time(
-            self,
+            self: 'NQ',
             eq: Optional['IntCmp'] = None,
             gt: Optional['IntCmp'] = None,
             lt: Optional['IntCmp'] = None,
-    ) -> 'ProcessQuery':
-        self._terminate_time.extend(_int_cmps('terminate_time', eq, gt, lt))
+    ) -> 'NQ':
+        cast('ProcessQuery', self)._terminate_time.extend(_int_cmps('terminate_time', eq, gt, lt))
         return self
 
     def with_image_name(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'ProcessQuery':
-        self._image_name.extend(_str_cmps('image_name', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('ProcessQuery', self)._image_name.extend(_str_cmps('image_name', eq, contains, ends_with))
         return self
 
     def with_arguments(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'ProcessQuery':
-        self._arguments.extend(_str_cmps('arguments', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('ProcessQuery', self)._arguments.extend(_str_cmps('arguments', eq, contains, ends_with))
         return self
 
-    def with_children(self, child_query: Optional['ProcessQuery'] = None) -> 'ProcessQuery':
+    def with_children(
+            self: 'NQ',
+            child_query: Optional['IProcessQuery'] = None
+    ) -> 'NQ':
         children = child_query or ProcessQuery()  # type: ProcessQuery
-        children._parent = self
-        self._children = children
+        children._parent = cast('ProcessQuery', self)
+        cast('ProcessQuery', self)._children = children
         return self
 
     def with_bin_file(
-            self,
-            bin_file_query: Optional['FileQuery'] = None
-    ) -> 'ProcessQuery':
+            self: 'NQ',
+            bin_file_query: Optional['IFileQuery'] = None
+    ) -> 'NQ':
         bin_file = bin_file_query or FileQuery()  # type: FileQuery
-        bin_file._spawned_from = self
-        self._bin_file = bin_file
+        bin_file._spawned_from = cast('ProcessQuery', self)
+        cast('ProcessQuery', self)._bin_file = bin_file
         return self
 
     def with_created_files(
-            self,
-            created_files_query: Optional['FileQuery'] = None
-    ) -> 'ProcessQuery':
+            self: 'NQ',
+            created_files_query: Optional['IFileQuery'] = None
+    ) -> 'NQ':
         created_files = created_files_query or FileQuery()
-        created_files._creator = self
-        self._created_files = created_files
+        created_files._creator = cast('ProcessQuery', self)
+        cast('ProcessQuery', self)._created_files = created_files
         return self
 
     def with_deleted_files(
-            self,
-            deleted_files_query: Optional['FileQuery'] = None
-    ) -> 'ProcessQuery':
+            self: 'NQ',
+            deleted_files_query: Optional['IFileQuery'] = None
+    ) -> 'NQ':
         deleted_files = deleted_files_query or FileQuery()
-        deleted_files._deleter = self
-        self._deleted_files = deleted_files
+        deleted_files._deleter = cast('ProcessQuery', self)
+        cast('ProcessQuery', self)._deleted_files = deleted_files
         return self
 
     def with_read_files(
-            self,
-            read_files_query: Optional['FileQuery'] = None
-    ) -> 'ProcessQuery':
+            self: 'NQ',
+            read_files_query: Optional['IFileQuery'] = None
+    ) -> 'NQ':
 
         read_files = read_files_query or FileQuery()
 
-        read_files._readers = self
-        self._read_files = read_files
+        read_files._readers = cast('ProcessQuery', self)
+        cast('ProcessQuery', self)._read_files = read_files
         return self
 
     def with_wrote_files(
-            self,
-            wrote_files_query: Optional['FileQuery'] = None
-    ) -> 'ProcessQuery':
+            self: 'NQ',
+            wrote_files_query: Optional['IFileQuery'] = None
+    ) -> 'NQ':
         wrote_files = wrote_files_query or FileQuery()
 
-        wrote_files._writers = self
-        self._wrote_files = wrote_files
+        wrote_files._writers = cast('ProcessQuery', self)
+        cast('ProcessQuery', self)._wrote_files = wrote_files
         return self
 
     def with_created_connection(
-            self,
-            created_connection_query: Optional['ExternalIpQuery']  = None
-    ) -> 'ProcessQuery':
+            self: 'NQ',
+            created_connection_query: Optional['IExternalIpQuery'] = None
+    ) -> 'NQ':
         created_connections = created_connection_query or ExternalIpQuery()  # type: ExternalIpQuery
-        created_connections._connections_from = self
-        self._created_connections = created_connections
+        created_connections._connections_from = cast('ProcessQuery', self)
+        cast('ProcessQuery', self)._created_connections = created_connections
         return self
 
     # def with_bound_connection(
-    #         self,
-    #         bound_connection_query: Optional['ProcessQuery'] = None
-    # ) -> 'ProcessQuery':
+    #         self: 'NQ',
+    #         bound_connection_query: Optional['IProcessQuery'] = None
+    # ) -> 'NQ':
     #     if bound_connection_query is None:
     #         bound_connection = ProcessQuery()  # type: ProcessQuery
     #     else:
@@ -171,11 +177,14 @@ class ProcessQuery(Queryable):
     #     self._children = bound_connection
     #     return self
 
-    def with_parent(self, parent_query: Optional['ProcessQuery'] = None) -> 'ProcessQuery':
+    def with_parent(
+            self: 'NQ',
+            parent_query: Optional['IProcessQuery'] = None
+    ) -> 'NQ':
         parent = parent_query or ProcessQuery()  # type: ProcessQuery
 
-        parent._children = self
-        self._parent = parent
+        parent._children = cast('ProcessQuery', self)
+        cast('ProcessQuery', self)._parent = parent
         return self
 
     def _get_unique_predicate(self) -> Optional[Tuple[str, 'PropertyT']]:
@@ -222,32 +231,6 @@ class ProcessQuery(Queryable):
 
         return {fe[0]: (fe[1][0], fe[1][1]) for fe in reverse_edges.items() if fe[1][0] is not None}
 
-    def query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = 1000,
-    ) -> List['ProcessView']:
-        res = self._query(
-            dgraph_client,
-            contains_node_key,
-            first
-        )
-
-        if not res:
-            return []
-
-        assert (res is None) or isinstance(res[0], ProcessView)
-        return cast('List[ProcessView]', res)
-
-    def query_first(
-            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional['ProcessView']:
-        res = self._query_first(dgraph_client, contains_node_key)
-
-        assert (res is None) or isinstance(res, ProcessView)
-        return res
-
 
 class ProcessView(Viewable):
 
@@ -264,14 +247,14 @@ class ProcessView(Viewable):
             image_name: Optional[str] = None,
             process_name: Optional[str] = None,
             arguments: Optional[str] = None,
-            children: Optional[List['ProcessView']] = None,
+            children: Optional[List['NV']] = None,
             bin_file: Optional['FileView'] = None,
             created_files: Optional[List['FileView']] = None,
             read_files: Optional[List['FileView']] = None,
             wrote_to_files: Optional[List['FileView']] = None,
             deleted_files: Optional[List['FileView']] = None,
             created_connections: Optional[List['ExternalIpView']] = None,
-            parent: Optional['ProcessView'] = None,
+            parent: Optional['NV'] = None,
     ) -> None:
         super(ProcessView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
         self.process_id = process_id
@@ -292,82 +275,116 @@ class ProcessView(Viewable):
         self.bin_file = bin_file
         self.parent = parent
 
-    def get_process_id(self) -> Optional[int]:
-        if self.process_id is not None:
-            return self.process_id
-        self.process_id = cast(int, self.fetch_property('process_id', int))
-        return self.process_id
+    def get_process_id(self: 'NV') -> Optional[int]:
+        if cast('ProcessView', self).process_id is not None:
+            return cast('ProcessView', self).process_id
+        cast('ProcessView', self).process_id = cast(int, self.fetch_property('process_id', int))
+        return cast('ProcessView', self).process_id
 
-    def get_process_name(self) -> Optional[str]:
-        if self.process_name is not None:
-            return self.process_name
-        self.process_name = cast(str, self.fetch_property('process_name', str))
-        return self.process_name
+    def get_process_name(self: 'NV') -> Optional[str]:
+        if cast('ProcessView', self).process_name is not None:
+            return cast('ProcessView', self).process_name
+        cast('ProcessView', self).process_name = cast(str, self.fetch_property('process_name', str))
+        return cast('ProcessView', self).process_name
 
-    def get_created_timestamp(self) -> Optional[int]:
-        if self.created_timestamp is not None:
-            return self.created_timestamp
-        self.created_timestamp = cast(int, self.fetch_property('created_timestamp', int))
-        return self.created_timestamp
+    def get_created_timestamp(self: 'NV') -> Optional[int]:
+        if cast('ProcessView', self).created_timestamp is not None:
+            return cast('ProcessView', self).created_timestamp
+        cast('ProcessView', self).created_timestamp = cast(int, self.fetch_property('created_timestamp', int))
+        return cast('ProcessView', self).created_timestamp
 
-    def get_asset_id(self) -> Optional[str]:
-        if self.asset_id is not None:
-            return self.asset_id
-        self.asset_id = cast(str, self.fetch_property('asset_id', str))
-        return self.asset_id
+    def get_asset_id(self: 'NV') -> Optional[str]:
+        if cast('ProcessView', self).asset_id is not None:
+            return cast('ProcessView', self).asset_id
+        cast('ProcessView', self).asset_id = cast(str, self.fetch_property('asset_id', str))
+        return cast('ProcessView', self).asset_id
 
-    def get_terminate_time(self) -> Optional[int]:
-        if self.terminate_time is not None:
-            return self.terminate_time
-        self.terminate_time = cast(int, self.fetch_property('terminate_time', int))
-        return self.terminate_time
+    def get_terminate_time(self: 'NV') -> Optional[int]:
+        if cast('ProcessView', self).terminate_time is not None:
+            return cast('ProcessView', self).terminate_time
+        cast('ProcessView', self).terminate_time = cast(int, self.fetch_property('terminate_time', int))
+        return cast('ProcessView', self).terminate_time
 
-    def get_image_name(self) -> Optional[str]:
-        if self.image_name is not None:
-            return self.image_name
-        self.image_name = cast(str, self.fetch_property('image_name', str))
-        return self.image_name
+    def get_image_name(self: 'NV') -> Optional[str]:
+        if cast('ProcessView', self).image_name is not None:
+            return cast('ProcessView', self).image_name
+        cast('ProcessView', self).image_name = cast(str, self.fetch_property('image_name', str))
+        return cast('ProcessView', self).image_name
 
-    def get_arguments(self) -> Optional[str]:
-        if self.arguments is not None:
-            return self.arguments
-        self.arguments = cast(str, self.fetch_property('arguments', str))
-        return self.arguments
+    def get_arguments(self: 'NV') -> Optional[str]:
+        if cast('ProcessView', self).arguments is not None:
+            return cast('ProcessView', self).arguments
+        cast('ProcessView', self).arguments = cast(str, self.fetch_property('arguments', str))
+        return cast('ProcessView', self).arguments
 
-    def get_children(self) -> 'List[ProcessView]':
-        self.children = cast('List[ProcessView]', self.fetch_edges('children', ProcessView))
-        return self.children
+    def get_children(
+            self: 'NV',
+            match_children: Optional['IProcessQuery'] = None
+    ) -> 'List[NV]':
+        query = ProcessQuery()
+        query.view_type = type(self)
+        _match_children = match_children or ProcessQuery()  # type: ProcessQuery
+        _match_children.view_type = type(self)
 
-    def get_created_connections(self) -> 'List[ExternalIpView]':
-        self.created_connections = cast(
+        self_node = (
+            ProcessQuery()
+            .with_node_key(eq=self.node_key)
+            .with_children(_match_children or ProcessQuery())
+            .query_first(self.dgraph_client)
+        )
+
+        if self_node:
+            cast('ProcessView', self).children = self_node.children
+
+        return cast('ProcessView', self).children
+
+    def get_created_connections(self: 'NV') -> 'List[ExternalIpView]':
+        cast('ProcessView', self).created_connections = cast(
             'List[ExternalIpView]',
             self.fetch_edges('created_connections', ExternalIpView)
         )
-        return self.created_connections
+        return cast('ProcessView', self).created_connections
 
-    def get_bin_file(self) -> 'Optional[FileView]':
-        self.bin_file = cast('Optional[FileView]', self.fetch_edge('bin_file', FileView))
-        return self.bin_file
+    def get_bin_file(self: 'NV') -> 'Optional[FileView]':
+        cast('ProcessView', self).bin_file = cast('Optional[FileView]', self.fetch_edge('bin_file', FileView))
+        return cast('ProcessView', self).bin_file
 
-    def get_created_files(self) -> 'List[FileView]':
-        self.created_files = cast('List[FileView]', self.fetch_edges('created_files', FileView))
-        return self.created_files
+    def get_created_files(self: 'NV') -> 'List[FileView]':
+        cast('ProcessView', self).created_files = cast('List[FileView]', self.fetch_edges('created_files', FileView))
+        return cast('ProcessView', self).created_files
 
-    def get_read_files(self) -> 'List[FileView]':
-        self.read_files = cast('List[FileView]', self.fetch_edges('read_files', FileView))
-        return self.read_files
+    def get_read_files(self: 'NV') -> 'List[FileView]':
+        cast('ProcessView', self).read_files = cast('List[FileView]', self.fetch_edges('read_files', FileView))
+        return cast('ProcessView', self).read_files
 
-    def get_wrote_to_files(self) -> 'List[FileView]':
-        self.wrote_to_files = cast('List[FileView]', self.fetch_edges('wrote_to_files', FileView))
-        return self.wrote_to_files
+    def get_wrote_to_files(self: 'NV') -> 'List[FileView]':
+        cast('ProcessView', self).wrote_to_files = cast('List[FileView]', self.fetch_edges('wrote_to_files', FileView))
+        return cast('ProcessView', self).wrote_to_files
 
-    def get_deleted_files(self) -> 'List[FileView]':
-        self.deleted_files = cast('List[FileView]', self.fetch_edges('deleted_files', FileView))
-        return self.deleted_files
+    def get_deleted_files(self: 'NV') -> 'List[FileView]':
+        cast('ProcessView', self).deleted_files = cast('List[FileView]', self.fetch_edges('deleted_files', FileView))
+        return cast('ProcessView', self).deleted_files
 
-    def get_parent(self) -> Optional['ProcessView']:
-        self.parent = cast('Optional[ProcessView]', self.fetch_edge('~children', ProcessView))
-        return self.parent
+    def get_parent(
+            self: 'NV',
+            match_parent: Optional['IProcessQuery'] = None
+    ) -> Optional['NV']:
+        query = ProcessQuery()
+        query.view_type = type(self)
+        _match_parent = match_parent or ProcessQuery()  # type: ProcessQuery
+        _match_parent.view_type = type(self)
+
+        self_node = (
+            ProcessQuery()
+            .with_node_key(eq=self.node_key)
+            .with_parent(_match_parent or ProcessQuery())
+            .query_first(self.dgraph_client)
+        )
+
+        if self_node:
+            cast('ProcessView', self).parent = self_node.parent
+
+        return cast('ProcessView', self).parent
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
@@ -438,8 +455,8 @@ class ProcessView(Viewable):
         return cast('Mapping[str, ReverseEdgeView]', reverse_edges)
 
 
-from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
+from grapl_analyzerlib.nodes.file_node import FileQuery, FileView, IFileQuery
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps, IntCmp, _int_cmps
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, ReverseEdgeView
-from grapl_analyzerlib.nodes.external_ip_node import ExternalIpQuery, ExternalIpView
+from grapl_analyzerlib.nodes.external_ip_node import ExternalIpQuery, ExternalIpView, IExternalIpQuery

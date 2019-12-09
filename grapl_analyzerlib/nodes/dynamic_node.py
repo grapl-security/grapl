@@ -3,15 +3,15 @@ from typing import Optional, TypeVar, Tuple, Type, Mapping, Any, Union, cast, Li
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.queryable import Queryable
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView, NV
 
 # noinspection Mypy
 
 T = TypeVar("T")
 
 
-class DynamicNodeQuery(Queryable):
-    def __init__(self, node_type: Optional[str], view_type: Type[Viewable]) -> None:
+class DynamicNodeQuery(Queryable[NV]):
+    def __init__(self, node_type: Optional[str], view_type: Type[NV]) -> None:
         super(DynamicNodeQuery, self).__init__(view_type)
         self.node_type = node_type
         self.view_type = view_type
@@ -31,23 +31,6 @@ class DynamicNodeQuery(Queryable):
 
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         return self.dynamic_reverse_edge_filters
-
-    def query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = 1000,
-    ) -> List['Any']:
-        return self._query(
-            dgraph_client,
-            contains_node_key,
-            first
-        )
-
-    def query_first(
-            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional['Any']:
-        return self._query_first(dgraph_client, contains_node_key)
 
 
 class DynamicNodeView(Viewable):

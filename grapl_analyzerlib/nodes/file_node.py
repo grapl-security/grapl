@@ -4,14 +4,17 @@ from typing import Optional, TypeVar, Mapping, Tuple, Any, List, cast
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.comparators import Cmp, PropertyFilter, StrCmp, _str_cmps, IntCmp, _int_cmps
-from grapl_analyzerlib.nodes.queryable import Queryable
+from grapl_analyzerlib.nodes.queryable import Queryable, NQ
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
 T = TypeVar("T")
 
+IFileQuery = TypeVar('IFileQuery', bound='FileQuery')
+IFileView = TypeVar('IFileView', bound='FileView')
 
-class FileQuery(Queryable):
+
+class FileQuery(Queryable['FileView']):
     def __init__(
             self,
     ) -> None:
@@ -40,177 +43,185 @@ class FileQuery(Queryable):
         self._deleter = None  # type: Optional['ProcessQuery']
         self._spawned_from = None  # type: Optional['ProcessQuery']
 
-
     def with_file_path(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_path.extend(_str_cmps('file_path', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_path.extend(_str_cmps('file_path', eq, contains, ends_with))
         return self
 
     def with_asset_id(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._asset_id.extend(_str_cmps('asset_id', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._asset_id.extend(_str_cmps('asset_id', eq, contains, ends_with))
         return self
 
     def with_file_extension(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_extension.extend(_str_cmps('file_extension', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_extension.extend(_str_cmps('file_extension', eq, contains, ends_with))
         return self
 
     def with_file_mime_type(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_mime_type.extend(_str_cmps('file_mime_type', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_mime_type.extend(_str_cmps('file_mime_type', eq, contains, ends_with))
         return self
 
     def with_file_size(
-            self,
+            self: 'NQ',
             eq: Optional['IntCmp'] = None,
             gt: Optional['IntCmp'] = None,
             lt: Optional['IntCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_size.extend(_int_cmps('file_size', eq, gt, lt))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_size.extend(_int_cmps('file_size', eq, gt, lt))
         return self
 
     def with_file_version(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_version.extend(_str_cmps('file_version', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_version.extend(_str_cmps('file_version', eq, contains, ends_with))
         return self
 
     def with_file_description(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_description.extend(_str_cmps('file_description', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_description.extend(_str_cmps('file_description', eq, contains, ends_with))
         return self
 
     def with_file_product(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_product.extend(_str_cmps('file_product', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_product.extend(_str_cmps('file_product', eq, contains, ends_with))
         return self
 
     def with_file_company(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_company.extend(_str_cmps('file_company', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_company.extend(_str_cmps('file_company', eq, contains, ends_with))
         return self
 
     def with_file_directory(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_directory.extend(_str_cmps('file_directory', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_directory.extend(_str_cmps('file_directory', eq, contains, ends_with))
         return self
 
     def with_file_inode(
-            self,
+            self: 'NQ',
             eq: Optional['IntCmp'] = None,
             gt: Optional['IntCmp'] = None,
             lt: Optional['IntCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_inode.extend(_int_cmps('file_inode', eq, gt, lt))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_inode.extend(_int_cmps('file_inode', eq, gt, lt))
         return self
 
     def with_file_hard_links(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._file_hard_links.extend(_str_cmps('file_hard_links', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._file_hard_links.extend(_str_cmps('file_hard_links', eq, contains, ends_with))
         return self
 
     def with_signed(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._signed.extend(_str_cmps('signed', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._signed.extend(_str_cmps('signed', eq, contains, ends_with))
         return self
 
     def with_signed_status(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._signed_status.extend(_str_cmps('signed_status', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._signed_status.extend(_str_cmps('signed_status', eq, contains, ends_with))
         return self
 
     def with_md5_hash(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._md5_hash.extend(_str_cmps('md5_hash', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._md5_hash.extend(_str_cmps('md5_hash', eq, contains, ends_with))
         return self
 
     def with_sha1_hash(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._sha1_hash.extend(_str_cmps('sha1_hash', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._sha1_hash.extend(_str_cmps('sha1_hash', eq, contains, ends_with))
         return self
 
     def with_sha256_hash(
-            self,
+            self: 'NQ',
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
-    ) -> 'FileQuery':
-        self._sha256_hash.extend(_str_cmps('sha256_hash', eq, contains, ends_with))
+    ) -> 'NQ':
+        cast('FileQuery', self)._sha256_hash.extend(_str_cmps('sha256_hash', eq, contains, ends_with))
         return self
 
-    def with_spawned_from(self, spawned_from_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
+    def with_spawned_from(
+            self: 'NQ',
+            spawned_from_query: Optional['ProcessQuery'] = None
+    ) -> 'NQ':
         spawned_from = spawned_from_query or ProcessQuery()  # type: ProcessQuery
 
-        spawned_from._bin_file = self
-        self._spawned_from = spawned_from
+        spawned_from._bin_file = cast('FileQuery', self)
+        cast('FileQuery', self)._spawned_from = spawned_from
         return self
 
-    def with_creator(self, creator_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
+    def with_creator(
+            self: 'NQ',
+            creator_query: Optional['ProcessQuery'] = None
+    ) -> 'NQ':
         creator = creator_query or ProcessQuery()  # type: ProcessQuery
-        creator._created_files = self
-        self._creator = creator
+        creator._created_files = cast('FileQuery', self)
+        cast('FileQuery', self)._creator = creator
         return self
 
-    def with_readers(self, reader_query: Optional['ProcessQuery'] = None) -> 'FileQuery':
+    def with_readers(
+            self: 'NQ',
+            reader_query: Optional['ProcessQuery'] = None
+    ) -> 'NQ':
         reader = reader_query or ProcessQuery()  # type: ProcessQuery
-        reader._read_files = self
-        self._readers = reader
+        reader._read_files = cast('FileQuery', self)
+        cast('FileQuery', self)._readers = reader
         return self
 
 
@@ -259,25 +270,6 @@ class FileQuery(Queryable):
         filtered = {re[0]: re[1] for re in reverse_edges.items() if re[1][0] is not None}
 
         return cast('Mapping[str, Tuple[Queryable, str]]', filtered)
-
-    def query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = 1000,
-    ) -> List['FileView']:
-        res = self._query(
-            dgraph_client,
-            contains_node_key,
-            first
-        )
-        return cast('List[FileView]', res)
-
-    def query_first(
-            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional['FileView']:
-        res = self._query_first(dgraph_client, contains_node_key)
-        return cast('Optional[FileView]', res)
 
 
 class FileView(Viewable):

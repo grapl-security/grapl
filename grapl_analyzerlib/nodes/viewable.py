@@ -6,6 +6,8 @@ from typing import Union, Mapping, TypeVar, Tuple, Dict, List, Type, Generic, Op
 from pydgraph import DgraphClient
 from grapl_analyzerlib.nodes.types import PropertyT, OneOrMany, Property
 
+NV = TypeVar('NV', bound='Viewable')
+
 class Viewable(abc.ABC):
 
     dynamic_forward_edge_types = {}  # type: Dict[str, EdgeViewT]
@@ -23,6 +25,9 @@ class Viewable(abc.ABC):
         self.dynamic_forward_edges = {}  # type: Dict[str, ForwardEdgeView]
         self.dynamic_reverse_edges = {}  # type: Dict[str,  ReverseEdgeView]
         self.dynamic_properties = {}  # type: Dict[str, Property]
+
+    def extend(self, extended_type: Type[NV]) -> NV:
+        return extended_type(self.dgraph_client, self.node_key, self.uid)
 
     @staticmethod
     @abc.abstractmethod
@@ -189,7 +194,7 @@ class Viewable(abc.ABC):
 
         return props
 
-    def fetch_edge(self, edge_name: str, edge_type: Type['Viewable']) -> Optional['Viewable']:
+    def fetch_edge(self, edge_name: str, edge_type: Type['NV']) -> Optional['NV']:
         query = f"""
             {{
                 res(func: uid("{self.uid}"), first: 1) {{
@@ -225,10 +230,10 @@ class Viewable(abc.ABC):
         if isinstance(neighbor, list):
             neighbor = neighbor[0]
 
-        edge = edge_type.from_dict(self.dgraph_client, neighbor)  # type: Viewable
+        edge = edge_type.from_dict(self.dgraph_client, neighbor)  # type: NV
         return edge
 
-    def fetch_edges(self, edge_name: str, edge_type: Type['Viewable']) -> List['Viewable']:
+    def fetch_edges(self, edge_name: str, edge_type: Type['NV']) -> List['NV']:
         query = f"""
             {{
                 res(func: uid("{self.uid}")) {{
@@ -259,12 +264,12 @@ class Viewable(abc.ABC):
         else:
             raw_edges = raw_edges[edge_name]
 
-        edges = [edge_type.from_dict(self.dgraph_client, f) for f in raw_edges]  # type: List[Viewable]
+        edges = [edge_type.from_dict(self.dgraph_client, f) for f in raw_edges]  # type: List[NV]
 
         return edges
 
     @classmethod
-    def from_dict(cls: Type['Viewable'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'Viewable':
+    def from_dict(cls: Type['NV'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NV':
         properties = {}
         node_type = d.get("node_type") or d.get('dgraph.type')
         if node_type:

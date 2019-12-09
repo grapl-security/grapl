@@ -10,6 +10,10 @@ from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeVie
 
 T = TypeVar("T")
 
+ILensQuery = TypeVar('ILensQuery', bound='LensQuery')
+ILensView = TypeVar('ILensView', bound='LensView')
+
+
 def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
     func_filter = f'eq(node_key, "{node["node_key"]}")'
     return f"""
@@ -242,7 +246,7 @@ class EngagementClient(CopyingDgraphClient):
 
 
 
-class LensQuery(Queryable):
+class LensQuery(Queryable['LensView']):
     def __init__(self) -> None:
 
         super(LensQuery, self).__init__(LensView)
@@ -280,33 +284,6 @@ class LensQuery(Queryable):
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         return {}
 
-
-    def query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = 1000,
-    ) -> List['LensView']:
-        query_res = self._query(
-            dgraph_client,
-            contains_node_key,
-            first
-        )
-        if not query_res:
-            return []
-
-        assert isinstance(query_res, list)
-        assert isinstance(query_res[0], LensView)
-        return cast("List[LensView]", query_res)
-
-    def query_first(
-                self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-        ) -> Optional['LensView']:
-        query_res = self._query_first(dgraph_client, contains_node_key)
-        if not query_res:
-            return None
-        assert isinstance(query_res, LensView)
-        return query_res
 
 
 class LensView(Viewable):

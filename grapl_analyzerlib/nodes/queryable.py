@@ -21,15 +21,17 @@ from pydgraph import DgraphClient
 from grapl_analyzerlib.nodes.retry import retry
 
 U = TypeVar('U', bound=Union[str, int])
+NQ = TypeVar('NQ', bound='Queryable')
+NV = TypeVar('NV', bound='Viewable')
 
 
-class Queryable(abc.ABC):
-    def __init__(self, view_type: Type['Viewable']) -> None:
+class Queryable(abc.ABC, Generic[NV]):
+    def __init__(self, view_type: Type['NV']) -> None:
         self._node_key = Has("node_key")  # type: Cmp[str]
         self._uid = None  # type: Optional[Cmp[str]]
         self._query_id = str(uuid.uuid4())
 
-        self.view_type = view_type
+        self.view_type = view_type  # type: Type[NV]
 
         self.dynamic_forward_edge_filters = {}  # type: Dict[str, 'Queryable']
         self.dynamic_reverse_edge_filters = (
@@ -38,6 +40,12 @@ class Queryable(abc.ABC):
         self.dynamic_property_filters = defaultdict(
             list
         )  # type: Dict[str, 'PropertyFilter[Property]']
+
+    def extend(self, extended_type: Type[NQ]) -> NQ:
+        return extended_type(self.view_type)
+
+    def with_node_key(self, eq: str):
+        self._node_key = Eq('node_key', eq)
 
     @abc.abstractmethod
     def _get_unique_predicate(self) -> Optional[Tuple[str, 'PropertyT']]:
@@ -108,21 +116,12 @@ class Queryable(abc.ABC):
     ) -> None:
         self.dynamic_property_filters[property_name].extend(cast(Any, property_filter))
 
-    @abc.abstractmethod
     def query(
             self,
             dgraph_client: DgraphClient,
             contains_node_key: Optional[str] = None,
             first: Optional[int] = 1000,
-    ) -> List['Any']:
-        pass
-
-    def _query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = 1000,
-    ) -> List['Viewable']:
+    ) -> List['NV']:
         if contains_node_key:
             first = 1
         query_str = generate_query(
@@ -146,20 +145,14 @@ class Queryable(abc.ABC):
             self.view_type.from_dict(dgraph_client, raw_view) for raw_view in raw_views
         ]
 
-    @abc.abstractmethod
     def query_first(
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional[Any]:
-        pass
-
-    def _query_first(
-            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional['Viewable']:
+    ) -> Optional['NV']:
         res = self.query(dgraph_client, contains_node_key, first=1)
         if res and isinstance(res, list):
-            return cast('Viewable', res[0])
+            return cast('NV', res[0])
         if res:
-            return cast('Viewable', res)
+            return cast('NV', res)
         else:
             return None
 
@@ -567,4 +560,4 @@ def generate_query(
 from grapl_analyzerlib.nodes.comparators import Has, Cmp, PropertyFilter, Eq
 
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.nodes.viewable import Viewable, NV

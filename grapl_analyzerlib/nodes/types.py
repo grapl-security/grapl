@@ -1,5 +1,6 @@
 from typing import Type, Union, List, TypeVar
 
+
 T = TypeVar('T')
 
 OneOrMany = Union[T, List[T]]

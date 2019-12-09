@@ -9,8 +9,11 @@ from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeVie
 
 T = TypeVar("T")
 
+IExternalIpQuery = TypeVar('IExternalIpQuery', bound='ExternalIpQuery')
+IExternalIpView = TypeVar('IExternalIpView', bound='ExternalIpView')
 
-class ExternalIpQuery(Queryable):
+
+class ExternalIpQuery(Queryable['ExternalIpView']):
     def __init__(self) -> None:
         super(ExternalIpQuery, self).__init__(ExternalIpView)
         self._external_ip = []  # type: List[List[Cmp[str]]]
@@ -41,31 +44,6 @@ class ExternalIpQuery(Queryable):
         }
 
         return {fe[0]: (fe[1][0], fe[1][1]) for fe in reverse_edges.items() if fe[1][0] is not None}
-
-    def query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = 1000,
-    ) -> List['ExternalIpView']:
-        res = self._query(
-            dgraph_client,
-            contains_node_key,
-            first
-        )
-        if not res:
-            return []
-
-        assert isinstance(res[0], ExternalIpView)
-        return cast(List['ExternalIpView'], res)
-
-    def query_first(
-            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional['ExternalIpView']:
-        res = self._query_first(dgraph_client, contains_node_key)
-
-        assert (res is None) or isinstance(res, ExternalIpView)
-        return res
 
 
 class ExternalIpView(Viewable):

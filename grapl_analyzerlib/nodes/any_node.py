@@ -63,15 +63,15 @@ def raw_node_from_uid(dgraph_client: DgraphClient, uid: str) -> Optional[Dict[st
             else:
                 print(f"WARN: node_type missing from {uid}")
 
-            return res[0]
+            return cast(Dict[str, Any], res[0])
         else:
             node_type = res.get('node_type')
             if node_type:
                 res['node_type'] = res['node_type'][0]
             else:
                 print(f"WARN: node_type missing from {uid}")
+            return cast(Dict[str, Any], res)
 
-            return res
 
 
 def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Optional[Dict[str, Any]]:
@@ -101,7 +101,7 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
             else:
                 print(f"WARN: node_type missing from {node_key}")
 
-            return res[0]
+            return cast(Dict[str, Any], res[0])
         else:
             node_type = res.get('node_type')
             if node_type:
@@ -109,7 +109,7 @@ def raw_node_from_node_key(dgraph_client: DgraphClient, node_key: str) -> Option
             else:
                 print(f"WARN: node_type missing from {node_key}")
 
-            return res
+            return cast(Dict[str, Any], res)
     except Exception as e:
         print(f"WARN: raw_node_from_node_key {node_key} {res} {e}")
         raise e
@@ -177,7 +177,7 @@ class NodeQuery(Queryable):
             contains_node_key: Optional[str] = None,
             first: Optional[int] = 1000,
     ) -> List['NodeView']:
-        res = self._query(
+        res = self.query(
             dgraph_client,
             contains_node_key,
             first
@@ -192,7 +192,7 @@ class NodeQuery(Queryable):
     def query_first(
             self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
     ) -> Optional['NodeView']:
-        res = self._query_first(dgraph_client, contains_node_key)
+        res = self.query_first(dgraph_client, contains_node_key)
         assert (res is None) or isinstance(res, NodeView)
         return res
 
@@ -263,9 +263,9 @@ class NodeView(Viewable):
         if _d:
             d = {**d, **_d}
 
-
         if d.get('process_id', d.get('process_name')) or node_type == 'Process':
-            node = ProcessView.from_dict(dgraph_client, d)
+            # Type is Any but we assert the type below
+            node = ProcessView.from_dict(dgraph_client, d)  # type: Any
         elif d.get('file_path') or node_type == 'File':
             node = FileView.from_dict(dgraph_client, d)
         elif d.get('external_ip') or node_type == 'ExternalIp':

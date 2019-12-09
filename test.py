@@ -7,7 +7,7 @@ from pydgraph import DgraphClient, DgraphClientStub
 from grapl_analyzerlib.nodes.comparators import IntCmp, _str_cmps, StrCmp, _int_cmps
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
 from grapl_analyzerlib.nodes.external_ip_node import ExternalIpView
-from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
+from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView, IProcessView
 from grapl_analyzerlib.nodes.types import Property, PropertyT
 from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView
 
@@ -124,19 +124,6 @@ class IpcQuery(DynamicNodeQuery):
         ipc_recipient.set_reverse_edge_filter("~ipc_recipient", self, "ipc_recipient")
         return self
 
-    def query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = 1000,
-    ) -> List["IpcView"]:
-        return self._query(dgraph_client, contains_node_key, first)
-
-    def query_first(
-            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional["IpcView"]:
-        return self._query_first(dgraph_client, contains_node_key)
-
 
 class IpcView(DynamicNodeView):
     def __init__(
@@ -147,10 +134,10 @@ class IpcView(DynamicNodeView):
             node_type: str,
             src_pid: Optional[int] = None,
             dst_pid: Optional[int] = None,
-            ipc_creator: Optional[ProcessQuery] = None,
-            ipc_recipient: Optional[ProcessQuery] = None,
+            ipc_creator: Optional[IProcessView] = None,
+            ipc_recipient: Optional[IProcessView] = None,
             **kwargs
-    ):
+    ) -> None:
         super(IpcView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
         )

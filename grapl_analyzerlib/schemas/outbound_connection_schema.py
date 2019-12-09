@@ -1,4 +1,4 @@
-from grapl_analyzerlib.schemas.schema_builder import NodeSchema
+from grapl_analyzerlib.schemas.schema_builder import NodeSchema, OneToMany
 
 
 class OutboundConnectionSchema(NodeSchema):
@@ -11,7 +11,7 @@ class OutboundConnectionSchema(NodeSchema):
             .with_int_prop('last_seen_time')
             .with_str_prop('ip')
             .with_str_prop('port')
-            .with_forward_edge('external_connection', ExternalIpSchema)
+            .with_forward_edge('external_connection', OneToMany(ExternalIpSchema), 'connections')
         )
 
     @staticmethod

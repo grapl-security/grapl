@@ -113,7 +113,7 @@ class ParentChildCounter(object):
             ProcessQuery()
             .with_process_name(eq=parent_process_name)
             .with_children(ProcessQuery().with_process_name(eq=child_process_name))
-        )
+        )  # type: ProcessQuery
 
         count = query.get_count(self.dgraph_client)
 
@@ -161,10 +161,10 @@ class GrandParentGrandChildCounter(object):
                 ProcessQuery()
                 .with_children(
                     ProcessQuery()
-                        .with_process_name(eq=grand_child_process_name)
+                    .with_process_name(eq=grand_child_process_name)
                 )
             )
-        )
+        )  # type: ProcessQuery
 
         count = query.get_count(self.dgraph_client)
 
