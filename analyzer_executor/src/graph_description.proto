@@ -37,7 +37,7 @@ message NodeDescription {
         ProcessDescription process_node = 2;
         FileDescription file_node = 3;
         IpAddressDescription ip_address_node = 4;
-        OutboundConnection outbound_connection_node = 5;
+        ProcessNetworkConnection outbound_connection_node = 5;
         InboundConnection inbound_connection_node = 6;
         DynamicNode dynamic_node = 7;
     }

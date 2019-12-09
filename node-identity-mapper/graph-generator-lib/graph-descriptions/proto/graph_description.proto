@@ -24,7 +24,7 @@ message NodeDescription {
         ProcessDescription process_node = 1;
         FileDescription file_node = 2;
         IpAddressDescription ip_address_node = 3;
-        OutboundConnection outbound_connection_node = 4;
+        ProcessNetworkConnection outbound_connection_node = 4;
         InboundConnection inbound_connection_node = 5;
     }
 }

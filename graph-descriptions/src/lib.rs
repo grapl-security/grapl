@@ -55,7 +55,7 @@ impl Into<u32> for ConnectionState {
 }
 
 
-impl OutboundConnection {
+impl ProcessOutboundConnection {
     pub fn new(
         asset_id: impl Into<Option<String>>,
         hostname: impl Into<Option<String>>,
@@ -63,7 +63,7 @@ impl OutboundConnection {
         state: ConnectionState,
         port: u32,
         timestamp: u64,
-    ) -> OutboundConnection {
+    ) -> ProcessOutboundConnection {
         let mut ic = Self {
             node_key: Uuid::new_v4().to_string(),
             asset_id: asset_id.into(),
@@ -96,7 +96,7 @@ impl OutboundConnection {
             "asset_id": asset_id,
             "port": self.port,
             "direction": "outbound",
-            "dgraph.type": "OutboundConnection"
+            "dgraph.type": "ProcessOutboundConnection"
         });
 
         if self.created_timestamp!= 0 {
@@ -272,7 +272,7 @@ macro_rules! node_from {
 node_from!(IpAddressDescription, IpAddressNode);
 node_from!(ProcessDescription, ProcessNode);
 node_from!(FileDescription, FileNode);
-node_from!(OutboundConnection, OutboundConnectionNode);
+node_from!(ProcessOutboundConnection, ProcessOutboundConnectionNode);
 node_from!(InboundConnection, InboundConnectionNode);
 node_from!(DynamicNode, DynamicNode);
 
@@ -365,9 +365,9 @@ impl From<Node> for NodeDescription {
                     which_node: Some(WhichNode::IpAddressNode (node))
                 }
             }
-            Node::OutboundConnectionNode(node) => {
+            Node::ProcessOutboundConnectionNode(node) => {
                 NodeDescription {
-                    which_node: Some(WhichNode::OutboundConnectionNode (node))
+                    which_node: Some(WhichNode::ProcessOutboundConnectionNode (node))
                 }
             }
             Node::InboundConnectionNode(node) => {
@@ -392,7 +392,7 @@ pub enum Node {
     ProcessNode(ProcessDescription),
     FileNode(FileDescription),
     IpAddressNode(IpAddressDescription),
-    OutboundConnectionNode(OutboundConnection),
+    ProcessOutboundConnectionNode(ProcessOutboundConnection),
     InboundConnectionNode(InboundConnection),
     DynamicNode(DynamicNode),
 }
@@ -404,7 +404,7 @@ impl Node {
             Node::ProcessNode(ref node) => node.node_key.as_str(),
             Node::FileNode(ref node) => node.node_key.as_str(),
             Node::IpAddressNode(ref node) => node.node_key.as_str(),
-            Node::OutboundConnectionNode(ref node) => node.node_key.as_str(),
+            Node::ProcessOutboundConnectionNode(ref node) => node.node_key.as_str(),
             Node::InboundConnectionNode(ref node) => node.node_key.as_str(),
             Node::DynamicNode(ref node) => node.node_key.as_str(),
         }
@@ -416,7 +416,7 @@ impl Node {
             Node::ProcessNode(ref node) => node.node_key.clone(),
             Node::FileNode(ref node) => node.node_key.clone(),
             Node::IpAddressNode(ref node) => node.node_key.clone(),
-            Node::OutboundConnectionNode(ref node) => node.node_key.clone(),
+            Node::ProcessOutboundConnectionNode(ref node) => node.node_key.clone(),
             Node::InboundConnectionNode(ref node) => node.node_key.clone(),
             Node::DynamicNode(ref node) => node.node_key.clone(),
         }
@@ -430,7 +430,7 @@ impl NodeDescription {
             WhichNode::ProcessNode(n) => Node::ProcessNode(n.into()),
             WhichNode::FileNode(n) => Node::FileNode(n.into()),
             WhichNode::IpAddressNode(n) => Node::IpAddressNode(n.into()),
-            WhichNode::OutboundConnectionNode(n) => Node::OutboundConnectionNode(n.into()),
+            WhichNode::ProcessOutboundConnectionNode(n) => Node::ProcessOutboundConnectionNode(n.into()),
             WhichNode::InboundConnectionNode(n) => Node::InboundConnectionNode(n.into()),
             WhichNode::DynamicNode(n) => Node::DynamicNode(n.into()),
         }
@@ -442,7 +442,7 @@ impl NodeDescription {
             WhichNode::ProcessNode(n) => n.node_key.as_ref(),
             WhichNode::FileNode(n) => n.node_key.as_ref(),
             WhichNode::IpAddressNode(n) => n.node_key.as_ref(),
-            WhichNode::OutboundConnectionNode(n) => n.node_key.as_ref(),
+            WhichNode::ProcessOutboundConnectionNode(n) => n.node_key.as_ref(),
             WhichNode::InboundConnectionNode(n) => n.node_key.as_ref(),
             WhichNode::DynamicNode(n) => n.node_key.as_ref(),
         }
@@ -470,7 +470,7 @@ impl NodeDescription {
             WhichNode::IpAddressNode(ref node) => {
                 node.timestamp
             }
-            WhichNode::OutboundConnectionNode(ref node) => {
+            WhichNode::ProcessOutboundConnectionNode(ref node) => {
                 match ConnectionState::from(node.state) {
                     ConnectionState::Created => node.created_timestamp,
                     ConnectionState::Terminated => node.terminated_timestamp,
@@ -504,7 +504,7 @@ impl NodeDescription {
             WhichNode::IpAddressNode(_) => {
                 panic!("ip address node has no asset id")
             }
-            WhichNode::OutboundConnectionNode(ref mut node) => {
+            WhichNode::ProcessOutboundConnectionNode(ref mut node) => {
                 node.asset_id = Some(asset_id)
             }
             WhichNode::InboundConnectionNode(ref mut node) => {
@@ -530,7 +530,7 @@ impl NodeDescription {
             WhichNode::IpAddressNode(_) => {
                 None
             }
-            WhichNode::OutboundConnectionNode(ref node) => {
+            WhichNode::ProcessOutboundConnectionNode(ref node) => {
                 node.get_asset_id()
             }
             WhichNode::InboundConnectionNode(ref node) => {
@@ -556,7 +556,7 @@ impl NodeDescription {
             WhichNode::IpAddressNode(ref mut node) => {
                 node.node_key = key;
             }
-            WhichNode::OutboundConnectionNode(ref mut node) => {
+            WhichNode::ProcessOutboundConnectionNode(ref mut node) => {
                 node.node_key = key;
             }
             WhichNode::InboundConnectionNode(ref mut node) => {
@@ -586,8 +586,8 @@ impl NodeDescription {
                 let node: IpAddressDescription = node.into();
                 node.into_json()
             }
-            WhichNode::OutboundConnectionNode(node) => {
-                let node: OutboundConnection = node.into();
+            WhichNode::ProcessOutboundConnectionNode(node) => {
+                let node: ProcessOutboundConnection = node.into();
                 node.into_json()
             }
             WhichNode::InboundConnectionNode(node) => {
@@ -606,7 +606,7 @@ impl NodeDescription {
             (WhichNode::ProcessNode(node),              WhichNode::ProcessNode(other)) => node.merge(other),
             (WhichNode::FileNode(node),                 WhichNode::FileNode(other)) => node.merge(other),
             (WhichNode::IpAddressNode(node),            WhichNode::IpAddressNode(other)) => node.merge(other),
-            (WhichNode::OutboundConnectionNode(node),   WhichNode::OutboundConnectionNode(other)) => node.merge(other),
+            (WhichNode::ProcessOutboundConnectionNode(node),   WhichNode::ProcessOutboundConnectionNode(other)) => node.merge(other),
             (WhichNode::InboundConnectionNode(node),    WhichNode::InboundConnectionNode(other)) => node.merge(other),
             (WhichNode::DynamicNode(node),    WhichNode::DynamicNode(other)) => node.merge(other.clone()),
 
@@ -989,7 +989,7 @@ impl ProcessDescription {
     }
 }
 
-impl OutboundConnection {
+impl ProcessOutboundConnection {
     pub fn asset_id(&self) -> &str {
         self.asset_id.as_ref().unwrap()
     }
