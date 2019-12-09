@@ -240,7 +240,7 @@ def emit_event(event: ExecutionHit) -> None:
     key = base64.urlsafe_b64encode(event_hash.digest()).decode("utf-8")
 
     s3 = boto3.resource("s3")
-    obj = s3.Object("grapl-analyzer-matched-subgraphs-bucket", key)
+    obj = s3.Object(f"{os.environ['BUCKET_PREFIX']}-analyzer-matched-subgraphs-bucket", key)
     obj.put(Body=event_s)
 
     # try:
