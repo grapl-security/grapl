@@ -1,9 +1,8 @@
 import abc
 from collections import defaultdict
-from typing import Union, List, Tuple, Sequence, Type, NewType, TypeVar, Dict, Set, DefaultDict
+from typing import Union, List, Tuple, Sequence, Type, Set, DefaultDict
 
 from typing_extensions import Literal
-
 
 StrIndex = Union[
     Literal["trigram"],
@@ -620,7 +619,6 @@ def generate_plugin_view_extensions(plugin_schema: NodeSchema) -> str:
 
 
 def main() -> None:
-    from grapl_analyzerlib.schemas import FileSchema
     from grapl_analyzerlib.schemas import ProcessSchema
     class AuidSchema(NodeSchema):
         def __init__(self):
