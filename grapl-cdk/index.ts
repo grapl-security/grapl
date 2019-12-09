@@ -154,7 +154,7 @@ class EngagementEdge extends cdk.Stack {
     ) {
         super(parent, name + '-stack');
         this.name = name + process.env.BUCKET_PREFIX;
-        this.integrationName = name + 'Integration';
+        this.integrationName = name + process.env.BUCKET_PREFIX + 'Integration';
 
         this.event_handler = new lambda.Function(
             this, name, {
