@@ -41,8 +41,21 @@ class ProcessQuery(Queryable[IProcessView]):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('ProcessQuery', self)._process_name.extend(_str_cmps("process_name", eq, contains, ends_with))
+        cast('ProcessQuery', self)._process_name.extend(
+            _str_cmps(
+                "process_name",
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+        )
         return self
 
     def with_process_id(
@@ -68,8 +81,21 @@ class ProcessQuery(Queryable[IProcessView]):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('ProcessQuery', self)._asset_id.extend(_str_cmps('asset_id', eq, contains, ends_with))
+        cast('ProcessQuery', self)\
+            ._asset_id.extend(
+                _str_cmps(
+                    'asset_id',
+                    eq=eq,
+                    contains=contains,
+                    ends_with=ends_with,
+                    starts_with=starts_with,
+                    regexp=regexp,
+                    distance=distance)
+        )
         return self
 
     def with_terminate_time(
@@ -86,8 +112,21 @@ class ProcessQuery(Queryable[IProcessView]):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('ProcessQuery', self)._image_name.extend(_str_cmps('image_name', eq, contains, ends_with))
+        cast('ProcessQuery', self)._image_name.extend(
+            _str_cmps(
+                'image_name',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+        )
         return self
 
     def with_arguments(
@@ -95,8 +134,21 @@ class ProcessQuery(Queryable[IProcessView]):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('ProcessQuery', self)._arguments.extend(_str_cmps('arguments', eq, contains, ends_with))
+        cast('ProcessQuery', self)._arguments.extend(
+            _str_cmps(
+                'arguments',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+        )
         return self
 
     def with_children(

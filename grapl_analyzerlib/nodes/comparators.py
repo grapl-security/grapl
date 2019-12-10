@@ -1,5 +1,5 @@
 import re
-from typing import List, Union, TypeVar, Generic, Optional, Sequence, Any, cast
+from typing import List, Union, TypeVar, Generic, Optional, Sequence, Any, cast, Tuple
 
 from grapl_analyzerlib.nodes.types import PropertyT
 
@@ -61,6 +61,21 @@ class EndsWith(Cmp[str]):
         else:
             escaped_value = re.escape(self.value)
             return "regexp({}, /.*{}/i)".format(self.predicate, escaped_value)
+
+
+class StartsWith(Cmp[str]):
+    def __init__(self, predicate: str, value: Union[str, Not[str]]) -> None:
+        self.predicate = predicate
+        self.value = value  # type: Union[str, Not[str]]
+
+    def to_filter(self) -> str:
+        if isinstance(self.value, Not):
+            value = self.value.value
+            escaped_value = re.escape(value)
+            return "NOT regexp({}, /{}.*/i)".format(self.predicate, escaped_value)
+        else:
+            escaped_value = re.escape(self.value)
+            return "regexp({}, /{}.*/i)".format(self.predicate, escaped_value)
 
 
 class Rex(Cmp[str]):
@@ -138,11 +153,30 @@ class Regexp(Cmp[str]):
             return f"regexp({self.predicate}, /{value}/)"
 
 
+class Distance(Cmp[str]):
+    def __init__(self, predicate: str, value: Union[str, Not[str]], distance: int) -> None:
+        self.predicate = predicate
+        self.value = value
+        self.distance = distance
+
+    def to_filter(self) -> str:
+
+        if isinstance(self.value, Not):
+            value = self.value.value
+            return f'NOT match({self.predicate}, "{value}", {self.distance})'
+        else:
+            value = self.value
+            return f'match({self.predicate}, "{value}", {self.distance})'
+
+
 def _str_cmps(
         predicate: str,
         eq: Optional[StrCmp] = None,
         contains: Optional[StrCmp] = None,
         ends_with: Optional[StrCmp] = None,
+        starts_with: Optional[StrCmp] = None,
+        regexp: Optional[StrCmp] = None,
+        distance: Optional[Tuple[StrCmp, int]] = None,
 ) -> List[List[Cmp[str]]]:
     cmps = []  # type: List[Sequence[Cmp[str]]]
 
@@ -165,7 +199,27 @@ def _str_cmps(
         _ends_with = [EndsWith(predicate, e) for e in ends_with]
         cmps.append(_ends_with)
 
-    if not (eq or contains or ends_with):
+    if isinstance(starts_with, str) or isinstance(starts_with, Not):
+        cmps.append([StartsWith(predicate, starts_with)])
+    elif isinstance(starts_with, list):
+        _starts_with = [StartsWith(predicate, e) for e in starts_with]
+        cmps.append(_starts_with)
+
+    if isinstance(regexp, str) or isinstance(regexp, Not):
+        cmps.append([Rex(predicate, regexp)])
+    elif isinstance(regexp, list):
+        _regexp = [Rex(predicate, e) for e in regexp]
+        cmps.append(_regexp)
+
+    if distance:
+        if isinstance(distance[0], str) or isinstance(distance[0], Not):
+            cmps.append([Distance(predicate, distance[0], distance[1])])
+        elif isinstance(distance, list):
+            _distance = [Distance(predicate, e[0], e[1]) for e in distance]
+            cmps.append(_distance)
+
+
+    if not cmps:
         cmps.append([Has(predicate)])
 
     return cast(List[List[Cmp[str]]], cmps)

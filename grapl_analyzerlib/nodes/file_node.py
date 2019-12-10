@@ -48,8 +48,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._file_path.extend(_str_cmps('file_path', eq, contains, ends_with))
+        cast('FileQuery', self)._file_path.extend(
+            _str_cmps(
+                'file_path',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                                  )
         return self
 
     def with_asset_id(
@@ -66,8 +79,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._file_extension.extend(_str_cmps('file_extension', eq, contains, ends_with))
+        cast('FileQuery', self)._file_extension.extend(
+            _str_cmps(
+                'file_extension',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                                       )
         return self
 
     def with_file_mime_type(
@@ -75,8 +101,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._file_mime_type.extend(_str_cmps('file_mime_type', eq, contains, ends_with))
+        cast('FileQuery', self)._file_mime_type.extend(
+            _str_cmps(
+                'file_mime_type',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                                       )
         return self
 
     def with_file_size(
@@ -93,8 +132,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._file_version.extend(_str_cmps('file_version', eq, contains, ends_with))
+        cast('FileQuery', self)._file_version.extend(
+            _str_cmps(
+                'file_version',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                                     )
         return self
 
     def with_file_description(
@@ -102,8 +154,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._file_description.extend(_str_cmps('file_description', eq, contains, ends_with))
+        cast('FileQuery', self)._file_description.extend(
+            _str_cmps(
+                'file_description',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                                         )
         return self
 
     def with_file_product(
@@ -111,8 +176,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._file_product.extend(_str_cmps('file_product', eq, contains, ends_with))
+        cast('FileQuery', self)._file_product.extend(
+            _str_cmps(
+                'file_product',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                                     )
         return self
 
     def with_file_company(
@@ -120,8 +198,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._file_company.extend(_str_cmps('file_company', eq, contains, ends_with))
+        cast('FileQuery', self)._file_company.extend(
+            _str_cmps(
+                'file_company',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                                     )
         return self
 
     def with_file_directory(
@@ -129,8 +220,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._file_directory.extend(_str_cmps('file_directory', eq, contains, ends_with))
+        cast('FileQuery', self)._file_directory.extend(
+            _str_cmps(
+                'file_directory',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                                       )
         return self
 
     def with_file_inode(
@@ -156,8 +260,21 @@ class FileQuery(Queryable['FileView']):
             eq: Optional['StrCmp'] = None,
             contains: Optional['StrCmp'] = None,
             ends_with: Optional['StrCmp'] = None,
+            starts_with: Optional['StrCmp'] = None,
+            regexp: Optional['StrCmp'] = None,
+            distance: Optional[Tuple['StrCmp', int]] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._signed.extend(_str_cmps('signed', eq, contains, ends_with))
+        cast('FileQuery', self)._signed.extend(
+            _str_cmps(
+                'signed',
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
+                                               )
         return self
 
     def with_signed_status(
@@ -172,28 +289,22 @@ class FileQuery(Queryable['FileView']):
     def with_md5_hash(
             self: 'NQ',
             eq: Optional['StrCmp'] = None,
-            contains: Optional['StrCmp'] = None,
-            ends_with: Optional['StrCmp'] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._md5_hash.extend(_str_cmps('md5_hash', eq, contains, ends_with))
+        cast('FileQuery', self)._md5_hash.extend(_str_cmps('md5_hash', eq))
         return self
 
     def with_sha1_hash(
             self: 'NQ',
             eq: Optional['StrCmp'] = None,
-            contains: Optional['StrCmp'] = None,
-            ends_with: Optional['StrCmp'] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._sha1_hash.extend(_str_cmps('sha1_hash', eq, contains, ends_with))
+        cast('FileQuery', self)._sha1_hash.extend(_str_cmps('sha1_hash', eq))
         return self
 
     def with_sha256_hash(
             self: 'NQ',
             eq: Optional['StrCmp'] = None,
-            contains: Optional['StrCmp'] = None,
-            ends_with: Optional['StrCmp'] = None,
     ) -> 'NQ':
-        cast('FileQuery', self)._sha256_hash.extend(_str_cmps('sha256_hash', eq, contains, ends_with))
+        cast('FileQuery', self)._sha256_hash.extend(_str_cmps('sha256_hash', eq))
         return self
 
     def with_spawned_from(
