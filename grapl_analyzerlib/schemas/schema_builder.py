@@ -186,7 +186,7 @@ def generate_with_str_prop_method(
             ends_with: Optional['StrCmp'] = None,
     ) -> 'NQ':
         self.set_str_property_filter(
-            "{prop_name}", _str_cmps("{prop_name}", eq=eq, gt=gt, lt=lt)
+            "{prop_name}", _str_cmps("{prop_name}", eq=eq, contains=contains, ends_with=ends_with)
         )
         return self
     """
@@ -436,7 +436,7 @@ def generate_get_forward_edge_types(plugin_schema: NodeSchema) -> str:
 {formatted}
         }}  # type: Dict[str, Optional["EdgeViewT"]]
 
-        return cast('Mapping[str, "EdgeViewT"]', {{
+        return cast(Mapping[str, "EdgeViewT"], {{
             fe[0]: fe[1] for fe in f_edges.items() if fe[1]
         }})
     """
@@ -524,7 +524,7 @@ def generate_query_extension_method(
     ) -> 'NQ':
         {r_edge_name} = {r_edge_name}_query or {self_type}Query()
         {r_edge_name}.with_{f_edge_name}(
-            cast('{extension_name}', self)
+            cast({extension_name}, self)
         )
 
         return self
@@ -578,7 +578,7 @@ def generate_view_extension_method(
     def get_{r_edge_name}(
         self,
     ) -> '{self_type}View':
-        return cast('{self_type}View', self.fetch_edge("~{f_edge_name}", {self_type}View))
+        return cast({self_type}View, self.fetch_edge("~{f_edge_name}", {self_type}View))
     """
 
     return method
