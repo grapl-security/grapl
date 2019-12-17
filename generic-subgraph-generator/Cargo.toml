@@ -5,8 +5,11 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-graph-generator-lib = { path = "./graph-generator-lib/" }
-graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
+#graph-generator-lib = { path = "./graph-generator-lib/" }
+graph-generator-lib = { path = "../graph-generator-lib/" }
+#graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
+graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions" , version="*"}
+
 
 sqs-lambda = "0.6.*"
 

@@ -43,9 +43,16 @@ use dgraph_rs::protos::api_grpc;
 use failure::Error;
 use futures::Future;
 use futures::future::join_all;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::graph_description::node_description::*;
-use graph_descriptions::Node;
+
+use graph_descriptions::node::NodeT;
+use graph_descriptions::graph_description::{Graph, Node};
+use graph_descriptions::graph_description::node::WhichNode;
+use graph_descriptions::process::ProcessState;
+use graph_descriptions::file::FileState;
+use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use graph_descriptions::network_connection::NetworkConnectionState;
+
 use grpc::{Client, ClientStub};
 use grpc::ClientConf;
 use itertools::Itertools;
@@ -127,14 +134,15 @@ async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<Str
     Ok(uid)
 }
 
-async fn upsert_node(dg: &DgraphClient, node: &NodeDescription) -> Result<String, Error> {
+async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     let query = format!(r#"
                 {{
                   p as var(func: eq(node_key, "{}"), first: 1)
                 }}
-                "#, node.get_key());
+                "#, node.get_node_key());
 
-    let mut set_json = node.clone().into_json();
+    let node_key = node.clone_node_key();
+    let mut set_json = node.into_json();
     set_json["uid"] = "uid(p)".into();
 
 
@@ -158,7 +166,7 @@ async fn upsert_node(dg: &DgraphClient, node: &NodeDescription) -> Result<String
     if let Some(uid) = upsert_res.uids.values().next() {
         Ok(uid.to_owned())
     } else {
-        match node_key_to_uid(dg, node.get_key()).await? {
+        match node_key_to_uid(dg, &node_key).await? {
             Some(uid) => {
                 Ok(uid)
             },
@@ -186,7 +194,7 @@ fn chunk<T, U>(data: U, count: usize) -> Vec<U>
     chunks
 }
 
-pub fn subgraph_to_sns<S>(sns_client: &S, mut subgraphs: GraphDescription) -> Result<(), Error>
+pub fn subgraph_to_sns<S>(sns_client: &S, mut subgraphs: Graph) -> Result<(), Error>
     where S: Sns
 {
     let mut proto = Vec::with_capacity(8192);
@@ -202,7 +210,7 @@ pub fn subgraph_to_sns<S>(sns_client: &S, mut subgraphs: GraphDescription) -> Re
                 edges.insert(node.to_owned(), node_edges);
             }
         }
-        let subgraph = GraphDescription {
+        let subgraph = Graph {
             nodes,
             edges,
             timestamp: subgraphs.timestamp
@@ -236,7 +244,7 @@ pub fn subgraph_to_sns<S>(sns_client: &S, mut subgraphs: GraphDescription) -> Re
         for edges in chunk(subgraphs.edges, 1000) {
             proto.clear();
             compressed.clear();
-            let subgraph = GraphDescription {
+            let subgraph = Graph {
                 nodes: HashMap::new(),
                 edges,
                 timestamp: subgraphs.timestamp
@@ -285,14 +293,14 @@ async fn upsert_edge(mg_client: &DgraphClient, mu: api::Mutation) -> Result<(), 
     Ok(())
 }
 
-async fn async_handler(mg_client: DgraphClient, subgraph: GraphDescription) -> Result<(), Error> {
+async fn async_handler(mg_client: DgraphClient, subgraph: Graph) -> Result<(), Error> {
     let mut upsert_res = None;
     let mut edge_res = None;
 
     let mut node_key_to_uid = HashMap::new();
 
     let upserts = subgraph.nodes.values().map(|node| {
-        upsert_node(&mg_client, node).map(move |u| (node.get_key(), u))
+        upsert_node(&mg_client, node.clone()).map(move |u| (node.get_node_key(), u))
     });
 
     let upserts = log_time!("All upserts", join_all(upserts).await);
@@ -376,8 +384,8 @@ async fn async_handler(mg_client: DgraphClient, subgraph: GraphDescription) -> R
 
 }
 
-impl EventHandler<GraphDescription> for GraphMerger {
-    fn handle_event(&self, subgraph: GraphDescription) -> Result<(), Error> {
+impl EventHandler<Graph> for GraphMerger {
+    fn handle_event(&self, subgraph: Graph) -> Result<(), Error> {
         if subgraph.is_empty() {
             warn!("Attempted to merge empty subgraph. Short circuiting.");
             return Ok(())

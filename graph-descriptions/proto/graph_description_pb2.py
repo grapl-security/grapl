@@ -20,756 +20,12 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='graph_description.proto',
   package='graph_description',
   syntax='proto3',
-  serialized_pb=_b('\n\x17graph_description.proto\x12\x11graph_description\x1a\x1egoogle/protobuf/wrappers.proto\"G\n\x04Host\x12\x12\n\x08hostname\x18\x01 \x01(\tH\x00\x12\x0c\n\x02ip\x18\x02 \x01(\tH\x00\x12\x12\n\x08\x61sset_id\x18\x03 \x01(\tH\x00\x42\t\n\x07host_id\"\xfb\x02\n\x10\x41ssetDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12.\n\x08\x61sset_id\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12/\n\thost_name\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x31\n\x0bhost_domain\x18\x05 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12/\n\thost_fqdn\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x34\n\x0ehost_local_mac\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x08 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x18\n\x10operating_system\x18\t \x01(\t\"\xe2\x03\n\x0fNodeDescription\x12\x39\n\nasset_node\x18\x01 \x01(\x0b\x32#.graph_description.AssetDescriptionH\x00\x12=\n\x0cprocess_node\x18\x02 \x01(\x0b\x32%.graph_description.ProcessDescriptionH\x00\x12\x37\n\tfile_node\x18\x03 \x01(\x0b\x32\".graph_description.FileDescriptionH\x00\x12\x42\n\x0fip_address_node\x18\x04 \x01(\x0b\x32\'.graph_description.IpAddressDescriptionH\x00\x12I\n\x18outbound_connection_node\x18\x05 \x01(\x0b\x32%.graph_description.OutboundConnectionH\x00\x12G\n\x17inbound_connection_node\x18\x06 \x01(\x0b\x32$.graph_description.InboundConnectionH\x00\x12\x36\n\x0c\x64ynamic_node\x18\x07 \x01(\x0b\x32\x1e.graph_description.DynamicNodeH\x00\x42\x0c\n\nwhich_node\"\xa8\x02\n\x12OutboundConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x0c\n\x04port\x18\t \x01(\r\"\xa7\x02\n\x11InboundConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x0c\n\x04port\x18\t \x01(\r\"\xb3\x03\n\x12ProcessDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x12\n\nprocess_id\x18\x06 \x01(\x04\x12\x14\n\x0cprocess_guid\x18\x07 \x01(\t\x12\x19\n\x11\x63reated_timestamp\x18\x08 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\t \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\n \x01(\x04\x12\x14\n\x0cprocess_name\x18\x0b \x01(\t\x12\x1c\n\x14process_command_line\x18\x0c \x01(\t\x12\x1f\n\x17process_integrity_level\x18\r \x01(\t\x12\x18\n\x10operating_system\x18\x0e \x01(\t\"\xd8\x04\n\x0f\x46ileDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x05 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x06 \x01(\x04\x12\x19\n\x11\x64\x65leted_timestamp\x18\x07 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x08 \x01(\x04\x12\x11\n\tfile_name\x18\t \x01(\t\x12\x11\n\tfile_path\x18\n \x01(\t\x12\x16\n\x0e\x66ile_extension\x18\x0b \x01(\t\x12\x16\n\x0e\x66ile_mime_type\x18\x0c \x01(\t\x12\x11\n\tfile_size\x18\r \x01(\x04\x12\x14\n\x0c\x66ile_version\x18\x0e \x01(\t\x12\x18\n\x10\x66ile_description\x18\x0f \x01(\t\x12\x14\n\x0c\x66ile_product\x18\x10 \x01(\t\x12\x14\n\x0c\x66ile_company\x18\x11 \x01(\t\x12\x16\n\x0e\x66ile_directory\x18\x12 \x01(\t\x12\x12\n\nfile_inode\x18\x13 \x01(\x04\x12\x17\n\x0f\x66ile_hard_links\x18\x14 \x01(\x04\x12\x10\n\x08md5_hash\x18\x15 \x01(\t\x12\x11\n\tsha1_hash\x18\x16 \x01(\t\x12\x13\n\x0bsha256_hash\x18\x17 \x01(\t\"a\n\x14IpAddressDescription\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12\x12\n\nip_address\x18\x03 \x01(\t\x12\x10\n\x08ip_proto\x18\x04 \x01(\t\"\x97\x01\n\x07Session\x12\x1e\n\x16primary_key_properties\x18\x01 \x03(\t\x12%\n\x1dprimary_key_requires_asset_id\x18\x02 \x01(\x08\x12\x14\n\x0c\x63reated_time\x18\x03 \x01(\x04\x12\x16\n\x0elast_seen_time\x18\x04 \x01(\x04\x12\x17\n\x0fterminated_time\x18\x05 \x01(\x04\"O\n\x06Static\x12\x1e\n\x16primary_key_properties\x18\x01 \x03(\t\x12%\n\x1dprimary_key_requires_asset_id\x18\x02 \x01(\x08\"t\n\nIdStrategy\x12-\n\x07session\x18\x01 \x01(\x0b\x32\x1a.graph_description.SessionH\x00\x12+\n\x06static\x18\x02 \x01(\x0b\x32\x19.graph_description.StaticH\x00\x42\n\n\x08strategy\"T\n\x0cNodeProperty\x12\x11\n\x07intprop\x18\x01 \x01(\x03H\x00\x12\x12\n\x08uintprop\x18\x02 \x01(\x04H\x00\x12\x11\n\x07strprop\x18\x03 \x01(\tH\x00\x42\n\n\x08property\"\x9e\x03\n\x0b\x44ynamicNode\x12\x42\n\nproperties\x18\x01 \x03(\x0b\x32..graph_description.DynamicNode.PropertiesEntry\x12\x10\n\x08node_key\x18\x02 \x01(\t\x12\x11\n\tnode_type\x18\x03 \x01(\t\x12\x0f\n\x07seen_at\x18\x04 \x01(\x04\x12.\n\x08\x61sset_id\x18\x05 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x32\n\x0bid_strategy\x18\x08 \x03(\x0b\x32\x1d.graph_description.IdStrategy\x1aR\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12.\n\x05value\x18\x02 \x01(\x0b\x32\x1f.graph_description.NodeProperty:\x02\x38\x01\"=\n\x0f\x45\x64geDescription\x12\x0c\n\x04\x66rom\x18\x01 \x01(\t\x12\n\n\x02to\x18\x02 \x01(\t\x12\x10\n\x08\x65\x64geName\x18\x03 \x01(\t\"=\n\x08\x45\x64geList\x12\x31\n\x05\x65\x64ges\x18\x01 \x03(\x0b\x32\".graph_description.EdgeDescription\"\xc0\x02\n\x10GraphDescription\x12=\n\x05nodes\x18\x01 \x03(\x0b\x32..graph_description.GraphDescription.NodesEntry\x12=\n\x05\x65\x64ges\x18\x02 \x03(\x0b\x32..graph_description.GraphDescription.EdgesEntry\x12\x11\n\ttimestamp\x18\x03 \x01(\x04\x1aP\n\nNodesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x31\n\x05value\x18\x02 \x01(\x0b\x32\".graph_description.NodeDescription:\x02\x38\x01\x1aI\n\nEdgesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.graph_description.EdgeList:\x02\x38\x01\"L\n\x12GeneratedSubgraphs\x12\x36\n\tsubgraphs\x18\x01 \x03(\x0b\x32#.graph_description.GraphDescriptionb\x06proto3')
+  serialized_pb=_b('\n\x17graph_description.proto\x12\x11graph_description\x1a\x1egoogle/protobuf/wrappers.proto\"\x97\x01\n\x07Session\x12\x1e\n\x16primary_key_properties\x18\x01 \x03(\t\x12%\n\x1dprimary_key_requires_asset_id\x18\x02 \x01(\x08\x12\x14\n\x0c\x63reated_time\x18\x03 \x01(\x04\x12\x16\n\x0elast_seen_time\x18\x04 \x01(\x04\x12\x17\n\x0fterminated_time\x18\x05 \x01(\x04\"O\n\x06Static\x12\x1e\n\x16primary_key_properties\x18\x01 \x03(\t\x12%\n\x1dprimary_key_requires_asset_id\x18\x02 \x01(\x08\"t\n\nIdStrategy\x12-\n\x07session\x18\x01 \x01(\x0b\x32\x1a.graph_description.SessionH\x00\x12+\n\x06static\x18\x02 \x01(\x0b\x32\x19.graph_description.StaticH\x00\x42\n\n\x08strategy\"9\n\x04Host\x12\x12\n\x08hostname\x18\x01 \x01(\tH\x00\x12\x12\n\x08\x61sset_id\x18\x02 \x01(\tH\x00\x42\t\n\x07host_id\"\xc5\x04\n\x04Node\x12.\n\nasset_node\x18\x01 \x01(\x0b\x32\x18.graph_description.AssetH\x00\x12\x32\n\x0cprocess_node\x18\x02 \x01(\x0b\x32\x1a.graph_description.ProcessH\x00\x12,\n\tfile_node\x18\x03 \x01(\x0b\x32\x17.graph_description.FileH\x00\x12\x37\n\x0fip_address_node\x18\x04 \x01(\x0b\x32\x1c.graph_description.IpAddressH\x00\x12X\n process_outbound_connection_node\x18\x05 \x01(\x0b\x32,.graph_description.ProcessOutboundConnectionH\x00\x12V\n\x1fprocess_inbound_connection_node\x18\x06 \x01(\x0b\x32+.graph_description.ProcessInboundConnectionH\x00\x12\x31\n\x0cip_port_node\x18\x07 \x01(\x0b\x32\x19.graph_description.IpPortH\x00\x12G\n\x17network_connection_node\x18\x08 \x01(\x0b\x32$.graph_description.NetworkConnectionH\x00\x12\x36\n\x0c\x64ynamic_node\x18\t \x01(\x0b\x32\x1e.graph_description.DynamicNodeH\x00\x42\x0c\n\nwhich_node\"\xe7\x01\n\x05\x41sset\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x31\n\x0bmac_address\x18\x04 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x1c\n\x14\x66irst_seen_timestamp\x18\x05 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x06 \x01(\x04\"\xf0\x01\n\x11NetworkConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x16\n\x0esrc_ip_address\x18\x02 \x01(\t\x12\x16\n\x0e\x64st_ip_address\x18\x03 \x01(\t\x12\x10\n\x08protocol\x18\x04 \x01(\t\x12\x10\n\x08src_port\x18\x05 \x01(\r\x12\x10\n\x08\x64st_port\x18\x06 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x07 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x08 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\t \x01(\x04\x12\r\n\x05state\x18\n \x01(\r\"N\n\x06IpPort\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x12\n\nip_address\x18\x02 \x01(\t\x12\x0c\n\x04port\x18\x03 \x01(\r\x12\x10\n\x08protocol\x18\x04 \x01(\t\"\x94\x02\n\x19ProcessOutboundConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x04 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x05 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x06 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x07 \x01(\x04\x12\x0c\n\x04port\x18\x08 \x01(\r\x12\x12\n\nip_address\x18\t \x01(\t\"\x93\x02\n\x18ProcessInboundConnection\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x04 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x05 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x06 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x07 \x01(\x04\x12\x0c\n\x04port\x18\x08 \x01(\r\x12\x12\n\nip_address\x18\t \x01(\t\"\xd8\x02\n\x07Process\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x04 \x01(\r\x12\x12\n\nprocess_id\x18\x05 \x01(\x04\x12\x14\n\x0cprocess_guid\x18\x06 \x01(\t\x12\x19\n\x11\x63reated_timestamp\x18\x07 \x01(\x04\x12\x1c\n\x14terminated_timestamp\x18\x08 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\t \x01(\x04\x12\x14\n\x0cprocess_name\x18\n \x01(\t\x12\x1c\n\x14process_command_line\x18\x0b \x01(\t\x12\x18\n\x10operating_system\x18\x0c \x01(\t\"\x9e\x04\n\x04\x46ile\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12.\n\x08\x61sset_id\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\r\n\x05state\x18\x04 \x01(\r\x12\x19\n\x11\x63reated_timestamp\x18\x05 \x01(\x04\x12\x19\n\x11\x64\x65leted_timestamp\x18\x06 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x07 \x01(\x04\x12\x11\n\tfile_name\x18\x08 \x01(\t\x12\x11\n\tfile_path\x18\t \x01(\t\x12\x16\n\x0e\x66ile_extension\x18\n \x01(\t\x12\x16\n\x0e\x66ile_mime_type\x18\x0b \x01(\t\x12\x11\n\tfile_size\x18\x0c \x01(\x04\x12\x14\n\x0c\x66ile_version\x18\r \x01(\t\x12\x18\n\x10\x66ile_description\x18\x0e \x01(\t\x12\x14\n\x0c\x66ile_product\x18\x0f \x01(\t\x12\x14\n\x0c\x66ile_company\x18\x10 \x01(\t\x12\x16\n\x0e\x66ile_directory\x18\x11 \x01(\t\x12\x12\n\nfile_inode\x18\x12 \x01(\x04\x12\x17\n\x0f\x66ile_hard_links\x18\x13 \x01(\x04\x12\x10\n\x08md5_hash\x18\x14 \x01(\t\x12\x11\n\tsha1_hash\x18\x15 \x01(\t\x12\x13\n\x0bsha256_hash\x18\x16 \x01(\t\"l\n\tIpAddress\x12\x10\n\x08node_key\x18\x01 \x01(\t\x12\x12\n\nip_address\x18\x02 \x01(\t\x12\x1c\n\x14\x66irst_seen_timestamp\x18\x03 \x01(\x04\x12\x1b\n\x13last_seen_timestamp\x18\x04 \x01(\x04\"T\n\x0cNodeProperty\x12\x11\n\x07intprop\x18\x01 \x01(\x03H\x00\x12\x12\n\x08uintprop\x18\x02 \x01(\x04H\x00\x12\x11\n\x07strprop\x18\x03 \x01(\tH\x00\x42\n\n\x08property\"\x9e\x03\n\x0b\x44ynamicNode\x12\x42\n\nproperties\x18\x01 \x03(\x0b\x32..graph_description.DynamicNode.PropertiesEntry\x12\x10\n\x08node_key\x18\x02 \x01(\t\x12\x11\n\tnode_type\x18\x03 \x01(\t\x12\x0f\n\x07seen_at\x18\x04 \x01(\x04\x12.\n\x08\x61sset_id\x18\x05 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12.\n\x08hostname\x18\x06 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12-\n\x07host_ip\x18\x07 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\x32\n\x0bid_strategy\x18\x08 \x03(\x0b\x32\x1d.graph_description.IdStrategy\x1aR\n\x0fPropertiesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12.\n\x05value\x18\x02 \x01(\x0b\x32\x1f.graph_description.NodeProperty:\x02\x38\x01\"2\n\x04\x45\x64ge\x12\x0c\n\x04\x66rom\x18\x01 \x01(\t\x12\n\n\x02to\x18\x02 \x01(\t\x12\x10\n\x08\x65\x64geName\x18\x03 \x01(\t\"2\n\x08\x45\x64geList\x12&\n\x05\x65\x64ges\x18\x01 \x03(\x0b\x32\x17.graph_description.Edge\"\x94\x02\n\x05Graph\x12\x32\n\x05nodes\x18\x01 \x03(\x0b\x32#.graph_description.Graph.NodesEntry\x12\x32\n\x05\x65\x64ges\x18\x02 \x03(\x0b\x32#.graph_description.Graph.EdgesEntry\x12\x11\n\ttimestamp\x18\x03 \x01(\x04\x1a\x45\n\nNodesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12&\n\x05value\x18\x02 \x01(\x0b\x32\x17.graph_description.Node:\x02\x38\x01\x1aI\n\nEdgesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x1b.graph_description.EdgeList:\x02\x38\x01\"A\n\x12GeneratedSubgraphs\x12+\n\tsubgraphs\x18\x01 \x03(\x0b\x32\x18.graph_description.Graphb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_wrappers__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
-
-
-_HOST = _descriptor.Descriptor(
-  name='Host',
-  full_name='graph_description.Host',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='hostname', full_name='graph_description.Host.hostname', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='ip', full_name='graph_description.Host.ip', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='asset_id', full_name='graph_description.Host.asset_id', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-    _descriptor.OneofDescriptor(
-      name='host_id', full_name='graph_description.Host.host_id',
-      index=0, containing_type=None, fields=[]),
-  ],
-  serialized_start=78,
-  serialized_end=149,
-)
-
-
-_ASSETDESCRIPTION = _descriptor.Descriptor(
-  name='AssetDescription',
-  full_name='graph_description.AssetDescription',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='node_key', full_name='graph_description.AssetDescription.node_key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='timestamp', full_name='graph_description.AssetDescription.timestamp', index=1,
-      number=2, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='asset_id', full_name='graph_description.AssetDescription.asset_id', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_name', full_name='graph_description.AssetDescription.host_name', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_domain', full_name='graph_description.AssetDescription.host_domain', index=4,
-      number=5, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_fqdn', full_name='graph_description.AssetDescription.host_fqdn', index=5,
-      number=6, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_local_mac', full_name='graph_description.AssetDescription.host_local_mac', index=6,
-      number=7, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_ip', full_name='graph_description.AssetDescription.host_ip', index=7,
-      number=8, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='operating_system', full_name='graph_description.AssetDescription.operating_system', index=8,
-      number=9, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=152,
-  serialized_end=531,
-)
-
-
-_NODEDESCRIPTION = _descriptor.Descriptor(
-  name='NodeDescription',
-  full_name='graph_description.NodeDescription',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='asset_node', full_name='graph_description.NodeDescription.asset_node', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='process_node', full_name='graph_description.NodeDescription.process_node', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_node', full_name='graph_description.NodeDescription.file_node', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='ip_address_node', full_name='graph_description.NodeDescription.ip_address_node', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='outbound_connection_node', full_name='graph_description.NodeDescription.outbound_connection_node', index=4,
-      number=5, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='inbound_connection_node', full_name='graph_description.NodeDescription.inbound_connection_node', index=5,
-      number=6, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='dynamic_node', full_name='graph_description.NodeDescription.dynamic_node', index=6,
-      number=7, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-    _descriptor.OneofDescriptor(
-      name='which_node', full_name='graph_description.NodeDescription.which_node',
-      index=0, containing_type=None, fields=[]),
-  ],
-  serialized_start=534,
-  serialized_end=1016,
-)
-
-
-_OUTBOUNDCONNECTION = _descriptor.Descriptor(
-  name='OutboundConnection',
-  full_name='graph_description.OutboundConnection',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='node_key', full_name='graph_description.OutboundConnection.node_key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='asset_id', full_name='graph_description.OutboundConnection.asset_id', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='hostname', full_name='graph_description.OutboundConnection.hostname', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_ip', full_name='graph_description.OutboundConnection.host_ip', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='state', full_name='graph_description.OutboundConnection.state', index=4,
-      number=5, type=13, cpp_type=3, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='created_timestamp', full_name='graph_description.OutboundConnection.created_timestamp', index=5,
-      number=6, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='terminated_timestamp', full_name='graph_description.OutboundConnection.terminated_timestamp', index=6,
-      number=7, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='last_seen_timestamp', full_name='graph_description.OutboundConnection.last_seen_timestamp', index=7,
-      number=8, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='port', full_name='graph_description.OutboundConnection.port', index=8,
-      number=9, type=13, cpp_type=3, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1019,
-  serialized_end=1315,
-)
-
-
-_INBOUNDCONNECTION = _descriptor.Descriptor(
-  name='InboundConnection',
-  full_name='graph_description.InboundConnection',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='node_key', full_name='graph_description.InboundConnection.node_key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='asset_id', full_name='graph_description.InboundConnection.asset_id', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='hostname', full_name='graph_description.InboundConnection.hostname', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_ip', full_name='graph_description.InboundConnection.host_ip', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='state', full_name='graph_description.InboundConnection.state', index=4,
-      number=5, type=13, cpp_type=3, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='created_timestamp', full_name='graph_description.InboundConnection.created_timestamp', index=5,
-      number=6, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='terminated_timestamp', full_name='graph_description.InboundConnection.terminated_timestamp', index=6,
-      number=7, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='last_seen_timestamp', full_name='graph_description.InboundConnection.last_seen_timestamp', index=7,
-      number=8, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='port', full_name='graph_description.InboundConnection.port', index=8,
-      number=9, type=13, cpp_type=3, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1318,
-  serialized_end=1613,
-)
-
-
-_PROCESSDESCRIPTION = _descriptor.Descriptor(
-  name='ProcessDescription',
-  full_name='graph_description.ProcessDescription',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='node_key', full_name='graph_description.ProcessDescription.node_key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='asset_id', full_name='graph_description.ProcessDescription.asset_id', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='hostname', full_name='graph_description.ProcessDescription.hostname', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_ip', full_name='graph_description.ProcessDescription.host_ip', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='state', full_name='graph_description.ProcessDescription.state', index=4,
-      number=5, type=13, cpp_type=3, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='process_id', full_name='graph_description.ProcessDescription.process_id', index=5,
-      number=6, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='process_guid', full_name='graph_description.ProcessDescription.process_guid', index=6,
-      number=7, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='created_timestamp', full_name='graph_description.ProcessDescription.created_timestamp', index=7,
-      number=8, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='terminated_timestamp', full_name='graph_description.ProcessDescription.terminated_timestamp', index=8,
-      number=9, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='last_seen_timestamp', full_name='graph_description.ProcessDescription.last_seen_timestamp', index=9,
-      number=10, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='process_name', full_name='graph_description.ProcessDescription.process_name', index=10,
-      number=11, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='process_command_line', full_name='graph_description.ProcessDescription.process_command_line', index=11,
-      number=12, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='process_integrity_level', full_name='graph_description.ProcessDescription.process_integrity_level', index=12,
-      number=13, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='operating_system', full_name='graph_description.ProcessDescription.operating_system', index=13,
-      number=14, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1616,
-  serialized_end=2051,
-)
-
-
-_FILEDESCRIPTION = _descriptor.Descriptor(
-  name='FileDescription',
-  full_name='graph_description.FileDescription',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='node_key', full_name='graph_description.FileDescription.node_key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='asset_id', full_name='graph_description.FileDescription.asset_id', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='hostname', full_name='graph_description.FileDescription.hostname', index=2,
-      number=3, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='host_ip', full_name='graph_description.FileDescription.host_ip', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='state', full_name='graph_description.FileDescription.state', index=4,
-      number=5, type=13, cpp_type=3, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='created_timestamp', full_name='graph_description.FileDescription.created_timestamp', index=5,
-      number=6, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='deleted_timestamp', full_name='graph_description.FileDescription.deleted_timestamp', index=6,
-      number=7, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='last_seen_timestamp', full_name='graph_description.FileDescription.last_seen_timestamp', index=7,
-      number=8, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_name', full_name='graph_description.FileDescription.file_name', index=8,
-      number=9, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_path', full_name='graph_description.FileDescription.file_path', index=9,
-      number=10, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_extension', full_name='graph_description.FileDescription.file_extension', index=10,
-      number=11, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_mime_type', full_name='graph_description.FileDescription.file_mime_type', index=11,
-      number=12, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_size', full_name='graph_description.FileDescription.file_size', index=12,
-      number=13, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_version', full_name='graph_description.FileDescription.file_version', index=13,
-      number=14, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_description', full_name='graph_description.FileDescription.file_description', index=14,
-      number=15, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_product', full_name='graph_description.FileDescription.file_product', index=15,
-      number=16, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_company', full_name='graph_description.FileDescription.file_company', index=16,
-      number=17, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_directory', full_name='graph_description.FileDescription.file_directory', index=17,
-      number=18, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_inode', full_name='graph_description.FileDescription.file_inode', index=18,
-      number=19, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='file_hard_links', full_name='graph_description.FileDescription.file_hard_links', index=19,
-      number=20, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='md5_hash', full_name='graph_description.FileDescription.md5_hash', index=20,
-      number=21, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='sha1_hash', full_name='graph_description.FileDescription.sha1_hash', index=21,
-      number=22, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='sha256_hash', full_name='graph_description.FileDescription.sha256_hash', index=22,
-      number=23, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=2054,
-  serialized_end=2654,
-)
-
-
-_IPADDRESSDESCRIPTION = _descriptor.Descriptor(
-  name='IpAddressDescription',
-  full_name='graph_description.IpAddressDescription',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='node_key', full_name='graph_description.IpAddressDescription.node_key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='timestamp', full_name='graph_description.IpAddressDescription.timestamp', index=1,
-      number=2, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='ip_address', full_name='graph_description.IpAddressDescription.ip_address', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='ip_proto', full_name='graph_description.IpAddressDescription.ip_proto', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=2656,
-  serialized_end=2753,
-)
 
 
 _SESSION = _descriptor.Descriptor(
@@ -826,8 +82,8 @@ _SESSION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2756,
-  serialized_end=2907,
+  serialized_start=79,
+  serialized_end=230,
 )
 
 
@@ -864,8 +120,8 @@ _STATIC = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2909,
-  serialized_end=2988,
+  serialized_start=232,
+  serialized_end=311,
 )
 
 
@@ -905,8 +161,863 @@ _IDSTRATEGY = _descriptor.Descriptor(
       name='strategy', full_name='graph_description.IdStrategy.strategy',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=2990,
-  serialized_end=3106,
+  serialized_start=313,
+  serialized_end=429,
+)
+
+
+_HOST = _descriptor.Descriptor(
+  name='Host',
+  full_name='graph_description.Host',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='hostname', full_name='graph_description.Host.hostname', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='asset_id', full_name='graph_description.Host.asset_id', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+    _descriptor.OneofDescriptor(
+      name='host_id', full_name='graph_description.Host.host_id',
+      index=0, containing_type=None, fields=[]),
+  ],
+  serialized_start=431,
+  serialized_end=488,
+)
+
+
+_NODE = _descriptor.Descriptor(
+  name='Node',
+  full_name='graph_description.Node',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='asset_node', full_name='graph_description.Node.asset_node', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='process_node', full_name='graph_description.Node.process_node', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_node', full_name='graph_description.Node.file_node', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip_address_node', full_name='graph_description.Node.ip_address_node', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='process_outbound_connection_node', full_name='graph_description.Node.process_outbound_connection_node', index=4,
+      number=5, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='process_inbound_connection_node', full_name='graph_description.Node.process_inbound_connection_node', index=5,
+      number=6, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip_port_node', full_name='graph_description.Node.ip_port_node', index=6,
+      number=7, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='network_connection_node', full_name='graph_description.Node.network_connection_node', index=7,
+      number=8, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='dynamic_node', full_name='graph_description.Node.dynamic_node', index=8,
+      number=9, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+    _descriptor.OneofDescriptor(
+      name='which_node', full_name='graph_description.Node.which_node',
+      index=0, containing_type=None, fields=[]),
+  ],
+  serialized_start=491,
+  serialized_end=1072,
+)
+
+
+_ASSET = _descriptor.Descriptor(
+  name='Asset',
+  full_name='graph_description.Asset',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_key', full_name='graph_description.Asset.node_key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='asset_id', full_name='graph_description.Asset.asset_id', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='hostname', full_name='graph_description.Asset.hostname', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='mac_address', full_name='graph_description.Asset.mac_address', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='first_seen_timestamp', full_name='graph_description.Asset.first_seen_timestamp', index=4,
+      number=5, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='last_seen_timestamp', full_name='graph_description.Asset.last_seen_timestamp', index=5,
+      number=6, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1075,
+  serialized_end=1306,
+)
+
+
+_NETWORKCONNECTION = _descriptor.Descriptor(
+  name='NetworkConnection',
+  full_name='graph_description.NetworkConnection',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_key', full_name='graph_description.NetworkConnection.node_key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='src_ip_address', full_name='graph_description.NetworkConnection.src_ip_address', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='dst_ip_address', full_name='graph_description.NetworkConnection.dst_ip_address', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='protocol', full_name='graph_description.NetworkConnection.protocol', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='src_port', full_name='graph_description.NetworkConnection.src_port', index=4,
+      number=5, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='dst_port', full_name='graph_description.NetworkConnection.dst_port', index=5,
+      number=6, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='created_timestamp', full_name='graph_description.NetworkConnection.created_timestamp', index=6,
+      number=7, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='terminated_timestamp', full_name='graph_description.NetworkConnection.terminated_timestamp', index=7,
+      number=8, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='last_seen_timestamp', full_name='graph_description.NetworkConnection.last_seen_timestamp', index=8,
+      number=9, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='state', full_name='graph_description.NetworkConnection.state', index=9,
+      number=10, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1309,
+  serialized_end=1549,
+)
+
+
+_IPPORT = _descriptor.Descriptor(
+  name='IpPort',
+  full_name='graph_description.IpPort',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_key', full_name='graph_description.IpPort.node_key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip_address', full_name='graph_description.IpPort.ip_address', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='port', full_name='graph_description.IpPort.port', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='protocol', full_name='graph_description.IpPort.protocol', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1551,
+  serialized_end=1629,
+)
+
+
+_PROCESSOUTBOUNDCONNECTION = _descriptor.Descriptor(
+  name='ProcessOutboundConnection',
+  full_name='graph_description.ProcessOutboundConnection',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_key', full_name='graph_description.ProcessOutboundConnection.node_key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='asset_id', full_name='graph_description.ProcessOutboundConnection.asset_id', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='hostname', full_name='graph_description.ProcessOutboundConnection.hostname', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='state', full_name='graph_description.ProcessOutboundConnection.state', index=3,
+      number=4, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='created_timestamp', full_name='graph_description.ProcessOutboundConnection.created_timestamp', index=4,
+      number=5, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='terminated_timestamp', full_name='graph_description.ProcessOutboundConnection.terminated_timestamp', index=5,
+      number=6, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='last_seen_timestamp', full_name='graph_description.ProcessOutboundConnection.last_seen_timestamp', index=6,
+      number=7, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='port', full_name='graph_description.ProcessOutboundConnection.port', index=7,
+      number=8, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip_address', full_name='graph_description.ProcessOutboundConnection.ip_address', index=8,
+      number=9, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1632,
+  serialized_end=1908,
+)
+
+
+_PROCESSINBOUNDCONNECTION = _descriptor.Descriptor(
+  name='ProcessInboundConnection',
+  full_name='graph_description.ProcessInboundConnection',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_key', full_name='graph_description.ProcessInboundConnection.node_key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='asset_id', full_name='graph_description.ProcessInboundConnection.asset_id', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='hostname', full_name='graph_description.ProcessInboundConnection.hostname', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='state', full_name='graph_description.ProcessInboundConnection.state', index=3,
+      number=4, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='created_timestamp', full_name='graph_description.ProcessInboundConnection.created_timestamp', index=4,
+      number=5, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='terminated_timestamp', full_name='graph_description.ProcessInboundConnection.terminated_timestamp', index=5,
+      number=6, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='last_seen_timestamp', full_name='graph_description.ProcessInboundConnection.last_seen_timestamp', index=6,
+      number=7, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='port', full_name='graph_description.ProcessInboundConnection.port', index=7,
+      number=8, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip_address', full_name='graph_description.ProcessInboundConnection.ip_address', index=8,
+      number=9, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1911,
+  serialized_end=2186,
+)
+
+
+_PROCESS = _descriptor.Descriptor(
+  name='Process',
+  full_name='graph_description.Process',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_key', full_name='graph_description.Process.node_key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='asset_id', full_name='graph_description.Process.asset_id', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='hostname', full_name='graph_description.Process.hostname', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='state', full_name='graph_description.Process.state', index=3,
+      number=4, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='process_id', full_name='graph_description.Process.process_id', index=4,
+      number=5, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='process_guid', full_name='graph_description.Process.process_guid', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='created_timestamp', full_name='graph_description.Process.created_timestamp', index=6,
+      number=7, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='terminated_timestamp', full_name='graph_description.Process.terminated_timestamp', index=7,
+      number=8, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='last_seen_timestamp', full_name='graph_description.Process.last_seen_timestamp', index=8,
+      number=9, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='process_name', full_name='graph_description.Process.process_name', index=9,
+      number=10, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='process_command_line', full_name='graph_description.Process.process_command_line', index=10,
+      number=11, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='operating_system', full_name='graph_description.Process.operating_system', index=11,
+      number=12, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2189,
+  serialized_end=2533,
+)
+
+
+_FILE = _descriptor.Descriptor(
+  name='File',
+  full_name='graph_description.File',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_key', full_name='graph_description.File.node_key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='asset_id', full_name='graph_description.File.asset_id', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='hostname', full_name='graph_description.File.hostname', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='state', full_name='graph_description.File.state', index=3,
+      number=4, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='created_timestamp', full_name='graph_description.File.created_timestamp', index=4,
+      number=5, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='deleted_timestamp', full_name='graph_description.File.deleted_timestamp', index=5,
+      number=6, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='last_seen_timestamp', full_name='graph_description.File.last_seen_timestamp', index=6,
+      number=7, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_name', full_name='graph_description.File.file_name', index=7,
+      number=8, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_path', full_name='graph_description.File.file_path', index=8,
+      number=9, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_extension', full_name='graph_description.File.file_extension', index=9,
+      number=10, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_mime_type', full_name='graph_description.File.file_mime_type', index=10,
+      number=11, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_size', full_name='graph_description.File.file_size', index=11,
+      number=12, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_version', full_name='graph_description.File.file_version', index=12,
+      number=13, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_description', full_name='graph_description.File.file_description', index=13,
+      number=14, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_product', full_name='graph_description.File.file_product', index=14,
+      number=15, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_company', full_name='graph_description.File.file_company', index=15,
+      number=16, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_directory', full_name='graph_description.File.file_directory', index=16,
+      number=17, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_inode', full_name='graph_description.File.file_inode', index=17,
+      number=18, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='file_hard_links', full_name='graph_description.File.file_hard_links', index=18,
+      number=19, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='md5_hash', full_name='graph_description.File.md5_hash', index=19,
+      number=20, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='sha1_hash', full_name='graph_description.File.sha1_hash', index=20,
+      number=21, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='sha256_hash', full_name='graph_description.File.sha256_hash', index=21,
+      number=22, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=2536,
+  serialized_end=3078,
+)
+
+
+_IPADDRESS = _descriptor.Descriptor(
+  name='IpAddress',
+  full_name='graph_description.IpAddress',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='node_key', full_name='graph_description.IpAddress.node_key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip_address', full_name='graph_description.IpAddress.ip_address', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='first_seen_timestamp', full_name='graph_description.IpAddress.first_seen_timestamp', index=2,
+      number=3, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='last_seen_timestamp', full_name='graph_description.IpAddress.last_seen_timestamp', index=3,
+      number=4, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=3080,
+  serialized_end=3188,
 )
 
 
@@ -953,8 +1064,8 @@ _NODEPROPERTY = _descriptor.Descriptor(
       name='property', full_name='graph_description.NodeProperty.property',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=3108,
-  serialized_end=3192,
+  serialized_start=3190,
+  serialized_end=3274,
 )
 
 
@@ -991,8 +1102,8 @@ _DYNAMICNODE_PROPERTIESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3527,
-  serialized_end=3609,
+  serialized_start=3609,
+  serialized_end=3691,
 )
 
 _DYNAMICNODE = _descriptor.Descriptor(
@@ -1070,34 +1181,34 @@ _DYNAMICNODE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3195,
-  serialized_end=3609,
+  serialized_start=3277,
+  serialized_end=3691,
 )
 
 
-_EDGEDESCRIPTION = _descriptor.Descriptor(
-  name='EdgeDescription',
-  full_name='graph_description.EdgeDescription',
+_EDGE = _descriptor.Descriptor(
+  name='Edge',
+  full_name='graph_description.Edge',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='from', full_name='graph_description.EdgeDescription.from', index=0,
+      name='from', full_name='graph_description.Edge.from', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='to', full_name='graph_description.EdgeDescription.to', index=1,
+      name='to', full_name='graph_description.Edge.to', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='edgeName', full_name='graph_description.EdgeDescription.edgeName', index=2,
+      name='edgeName', full_name='graph_description.Edge.edgeName', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1115,8 +1226,8 @@ _EDGEDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3611,
-  serialized_end=3672,
+  serialized_start=3693,
+  serialized_end=3743,
 )
 
 
@@ -1146,27 +1257,27 @@ _EDGELIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3674,
-  serialized_end=3735,
+  serialized_start=3745,
+  serialized_end=3795,
 )
 
 
-_GRAPHDESCRIPTION_NODESENTRY = _descriptor.Descriptor(
+_GRAPH_NODESENTRY = _descriptor.Descriptor(
   name='NodesEntry',
-  full_name='graph_description.GraphDescription.NodesEntry',
+  full_name='graph_description.Graph.NodesEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='graph_description.GraphDescription.NodesEntry.key', index=0,
+      name='key', full_name='graph_description.Graph.NodesEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='value', full_name='graph_description.GraphDescription.NodesEntry.value', index=1,
+      name='value', full_name='graph_description.Graph.NodesEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1184,26 +1295,26 @@ _GRAPHDESCRIPTION_NODESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3903,
-  serialized_end=3983,
+  serialized_start=3930,
+  serialized_end=3999,
 )
 
-_GRAPHDESCRIPTION_EDGESENTRY = _descriptor.Descriptor(
+_GRAPH_EDGESENTRY = _descriptor.Descriptor(
   name='EdgesEntry',
-  full_name='graph_description.GraphDescription.EdgesEntry',
+  full_name='graph_description.Graph.EdgesEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='graph_description.GraphDescription.EdgesEntry.key', index=0,
+      name='key', full_name='graph_description.Graph.EdgesEntry.key', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='value', full_name='graph_description.GraphDescription.EdgesEntry.value', index=1,
+      name='value', full_name='graph_description.Graph.EdgesEntry.value', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1221,33 +1332,33 @@ _GRAPHDESCRIPTION_EDGESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3985,
-  serialized_end=4058,
+  serialized_start=4001,
+  serialized_end=4074,
 )
 
-_GRAPHDESCRIPTION = _descriptor.Descriptor(
-  name='GraphDescription',
-  full_name='graph_description.GraphDescription',
+_GRAPH = _descriptor.Descriptor(
+  name='Graph',
+  full_name='graph_description.Graph',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='nodes', full_name='graph_description.GraphDescription.nodes', index=0,
+      name='nodes', full_name='graph_description.Graph.nodes', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='edges', full_name='graph_description.GraphDescription.edges', index=1,
+      name='edges', full_name='graph_description.Graph.edges', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='timestamp', full_name='graph_description.GraphDescription.timestamp', index=2,
+      name='timestamp', full_name='graph_description.Graph.timestamp', index=2,
       number=3, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -1256,7 +1367,7 @@ _GRAPHDESCRIPTION = _descriptor.Descriptor(
   ],
   extensions=[
   ],
-  nested_types=[_GRAPHDESCRIPTION_NODESENTRY, _GRAPHDESCRIPTION_EDGESENTRY, ],
+  nested_types=[_GRAPH_NODESENTRY, _GRAPH_EDGESENTRY, ],
   enum_types=[
   ],
   options=None,
@@ -1265,8 +1376,8 @@ _GRAPHDESCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3738,
-  serialized_end=4058,
+  serialized_start=3798,
+  serialized_end=4074,
 )
 
 
@@ -1296,65 +1407,10 @@ _GENERATEDSUBGRAPHS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4060,
-  serialized_end=4136,
+  serialized_start=4076,
+  serialized_end=4141,
 )
 
-_HOST.oneofs_by_name['host_id'].fields.append(
-  _HOST.fields_by_name['hostname'])
-_HOST.fields_by_name['hostname'].containing_oneof = _HOST.oneofs_by_name['host_id']
-_HOST.oneofs_by_name['host_id'].fields.append(
-  _HOST.fields_by_name['ip'])
-_HOST.fields_by_name['ip'].containing_oneof = _HOST.oneofs_by_name['host_id']
-_HOST.oneofs_by_name['host_id'].fields.append(
-  _HOST.fields_by_name['asset_id'])
-_HOST.fields_by_name['asset_id'].containing_oneof = _HOST.oneofs_by_name['host_id']
-_ASSETDESCRIPTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_ASSETDESCRIPTION.fields_by_name['host_name'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_ASSETDESCRIPTION.fields_by_name['host_domain'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_ASSETDESCRIPTION.fields_by_name['host_fqdn'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_ASSETDESCRIPTION.fields_by_name['host_local_mac'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_ASSETDESCRIPTION.fields_by_name['host_ip'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_NODEDESCRIPTION.fields_by_name['asset_node'].message_type = _ASSETDESCRIPTION
-_NODEDESCRIPTION.fields_by_name['process_node'].message_type = _PROCESSDESCRIPTION
-_NODEDESCRIPTION.fields_by_name['file_node'].message_type = _FILEDESCRIPTION
-_NODEDESCRIPTION.fields_by_name['ip_address_node'].message_type = _IPADDRESSDESCRIPTION
-_NODEDESCRIPTION.fields_by_name['outbound_connection_node'].message_type = _OUTBOUNDCONNECTION
-_NODEDESCRIPTION.fields_by_name['inbound_connection_node'].message_type = _INBOUNDCONNECTION
-_NODEDESCRIPTION.fields_by_name['dynamic_node'].message_type = _DYNAMICNODE
-_NODEDESCRIPTION.oneofs_by_name['which_node'].fields.append(
-  _NODEDESCRIPTION.fields_by_name['asset_node'])
-_NODEDESCRIPTION.fields_by_name['asset_node'].containing_oneof = _NODEDESCRIPTION.oneofs_by_name['which_node']
-_NODEDESCRIPTION.oneofs_by_name['which_node'].fields.append(
-  _NODEDESCRIPTION.fields_by_name['process_node'])
-_NODEDESCRIPTION.fields_by_name['process_node'].containing_oneof = _NODEDESCRIPTION.oneofs_by_name['which_node']
-_NODEDESCRIPTION.oneofs_by_name['which_node'].fields.append(
-  _NODEDESCRIPTION.fields_by_name['file_node'])
-_NODEDESCRIPTION.fields_by_name['file_node'].containing_oneof = _NODEDESCRIPTION.oneofs_by_name['which_node']
-_NODEDESCRIPTION.oneofs_by_name['which_node'].fields.append(
-  _NODEDESCRIPTION.fields_by_name['ip_address_node'])
-_NODEDESCRIPTION.fields_by_name['ip_address_node'].containing_oneof = _NODEDESCRIPTION.oneofs_by_name['which_node']
-_NODEDESCRIPTION.oneofs_by_name['which_node'].fields.append(
-  _NODEDESCRIPTION.fields_by_name['outbound_connection_node'])
-_NODEDESCRIPTION.fields_by_name['outbound_connection_node'].containing_oneof = _NODEDESCRIPTION.oneofs_by_name['which_node']
-_NODEDESCRIPTION.oneofs_by_name['which_node'].fields.append(
-  _NODEDESCRIPTION.fields_by_name['inbound_connection_node'])
-_NODEDESCRIPTION.fields_by_name['inbound_connection_node'].containing_oneof = _NODEDESCRIPTION.oneofs_by_name['which_node']
-_NODEDESCRIPTION.oneofs_by_name['which_node'].fields.append(
-  _NODEDESCRIPTION.fields_by_name['dynamic_node'])
-_NODEDESCRIPTION.fields_by_name['dynamic_node'].containing_oneof = _NODEDESCRIPTION.oneofs_by_name['which_node']
-_OUTBOUNDCONNECTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_OUTBOUNDCONNECTION.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_OUTBOUNDCONNECTION.fields_by_name['host_ip'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_INBOUNDCONNECTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_INBOUNDCONNECTION.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_INBOUNDCONNECTION.fields_by_name['host_ip'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_PROCESSDESCRIPTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_PROCESSDESCRIPTION.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_PROCESSDESCRIPTION.fields_by_name['host_ip'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_FILEDESCRIPTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_FILEDESCRIPTION.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
-_FILEDESCRIPTION.fields_by_name['host_ip'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
 _IDSTRATEGY.fields_by_name['session'].message_type = _SESSION
 _IDSTRATEGY.fields_by_name['static'].message_type = _STATIC
 _IDSTRATEGY.oneofs_by_name['strategy'].fields.append(
@@ -1363,6 +1419,59 @@ _IDSTRATEGY.fields_by_name['session'].containing_oneof = _IDSTRATEGY.oneofs_by_n
 _IDSTRATEGY.oneofs_by_name['strategy'].fields.append(
   _IDSTRATEGY.fields_by_name['static'])
 _IDSTRATEGY.fields_by_name['static'].containing_oneof = _IDSTRATEGY.oneofs_by_name['strategy']
+_HOST.oneofs_by_name['host_id'].fields.append(
+  _HOST.fields_by_name['hostname'])
+_HOST.fields_by_name['hostname'].containing_oneof = _HOST.oneofs_by_name['host_id']
+_HOST.oneofs_by_name['host_id'].fields.append(
+  _HOST.fields_by_name['asset_id'])
+_HOST.fields_by_name['asset_id'].containing_oneof = _HOST.oneofs_by_name['host_id']
+_NODE.fields_by_name['asset_node'].message_type = _ASSET
+_NODE.fields_by_name['process_node'].message_type = _PROCESS
+_NODE.fields_by_name['file_node'].message_type = _FILE
+_NODE.fields_by_name['ip_address_node'].message_type = _IPADDRESS
+_NODE.fields_by_name['process_outbound_connection_node'].message_type = _PROCESSOUTBOUNDCONNECTION
+_NODE.fields_by_name['process_inbound_connection_node'].message_type = _PROCESSINBOUNDCONNECTION
+_NODE.fields_by_name['ip_port_node'].message_type = _IPPORT
+_NODE.fields_by_name['network_connection_node'].message_type = _NETWORKCONNECTION
+_NODE.fields_by_name['dynamic_node'].message_type = _DYNAMICNODE
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['asset_node'])
+_NODE.fields_by_name['asset_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['process_node'])
+_NODE.fields_by_name['process_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['file_node'])
+_NODE.fields_by_name['file_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['ip_address_node'])
+_NODE.fields_by_name['ip_address_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['process_outbound_connection_node'])
+_NODE.fields_by_name['process_outbound_connection_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['process_inbound_connection_node'])
+_NODE.fields_by_name['process_inbound_connection_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['ip_port_node'])
+_NODE.fields_by_name['ip_port_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['network_connection_node'])
+_NODE.fields_by_name['network_connection_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_NODE.oneofs_by_name['which_node'].fields.append(
+  _NODE.fields_by_name['dynamic_node'])
+_NODE.fields_by_name['dynamic_node'].containing_oneof = _NODE.oneofs_by_name['which_node']
+_ASSET.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_ASSET.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_ASSET.fields_by_name['mac_address'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_PROCESSOUTBOUNDCONNECTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_PROCESSOUTBOUNDCONNECTION.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_PROCESSINBOUNDCONNECTION.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_PROCESSINBOUNDCONNECTION.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_PROCESS.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_PROCESS.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_FILE.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
+_FILE.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
 _NODEPROPERTY.oneofs_by_name['property'].fields.append(
   _NODEPROPERTY.fields_by_name['intprop'])
 _NODEPROPERTY.fields_by_name['intprop'].containing_oneof = _NODEPROPERTY.oneofs_by_name['property']
@@ -1379,87 +1488,33 @@ _DYNAMICNODE.fields_by_name['asset_id'].message_type = google_dot_protobuf_dot_w
 _DYNAMICNODE.fields_by_name['hostname'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
 _DYNAMICNODE.fields_by_name['host_ip'].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
 _DYNAMICNODE.fields_by_name['id_strategy'].message_type = _IDSTRATEGY
-_EDGELIST.fields_by_name['edges'].message_type = _EDGEDESCRIPTION
-_GRAPHDESCRIPTION_NODESENTRY.fields_by_name['value'].message_type = _NODEDESCRIPTION
-_GRAPHDESCRIPTION_NODESENTRY.containing_type = _GRAPHDESCRIPTION
-_GRAPHDESCRIPTION_EDGESENTRY.fields_by_name['value'].message_type = _EDGELIST
-_GRAPHDESCRIPTION_EDGESENTRY.containing_type = _GRAPHDESCRIPTION
-_GRAPHDESCRIPTION.fields_by_name['nodes'].message_type = _GRAPHDESCRIPTION_NODESENTRY
-_GRAPHDESCRIPTION.fields_by_name['edges'].message_type = _GRAPHDESCRIPTION_EDGESENTRY
-_GENERATEDSUBGRAPHS.fields_by_name['subgraphs'].message_type = _GRAPHDESCRIPTION
-DESCRIPTOR.message_types_by_name['Host'] = _HOST
-DESCRIPTOR.message_types_by_name['AssetDescription'] = _ASSETDESCRIPTION
-DESCRIPTOR.message_types_by_name['NodeDescription'] = _NODEDESCRIPTION
-DESCRIPTOR.message_types_by_name['OutboundConnection'] = _OUTBOUNDCONNECTION
-DESCRIPTOR.message_types_by_name['InboundConnection'] = _INBOUNDCONNECTION
-DESCRIPTOR.message_types_by_name['ProcessDescription'] = _PROCESSDESCRIPTION
-DESCRIPTOR.message_types_by_name['FileDescription'] = _FILEDESCRIPTION
-DESCRIPTOR.message_types_by_name['IpAddressDescription'] = _IPADDRESSDESCRIPTION
+_EDGELIST.fields_by_name['edges'].message_type = _EDGE
+_GRAPH_NODESENTRY.fields_by_name['value'].message_type = _NODE
+_GRAPH_NODESENTRY.containing_type = _GRAPH
+_GRAPH_EDGESENTRY.fields_by_name['value'].message_type = _EDGELIST
+_GRAPH_EDGESENTRY.containing_type = _GRAPH
+_GRAPH.fields_by_name['nodes'].message_type = _GRAPH_NODESENTRY
+_GRAPH.fields_by_name['edges'].message_type = _GRAPH_EDGESENTRY
+_GENERATEDSUBGRAPHS.fields_by_name['subgraphs'].message_type = _GRAPH
 DESCRIPTOR.message_types_by_name['Session'] = _SESSION
 DESCRIPTOR.message_types_by_name['Static'] = _STATIC
 DESCRIPTOR.message_types_by_name['IdStrategy'] = _IDSTRATEGY
+DESCRIPTOR.message_types_by_name['Host'] = _HOST
+DESCRIPTOR.message_types_by_name['Node'] = _NODE
+DESCRIPTOR.message_types_by_name['Asset'] = _ASSET
+DESCRIPTOR.message_types_by_name['NetworkConnection'] = _NETWORKCONNECTION
+DESCRIPTOR.message_types_by_name['IpPort'] = _IPPORT
+DESCRIPTOR.message_types_by_name['ProcessOutboundConnection'] = _PROCESSOUTBOUNDCONNECTION
+DESCRIPTOR.message_types_by_name['ProcessInboundConnection'] = _PROCESSINBOUNDCONNECTION
+DESCRIPTOR.message_types_by_name['Process'] = _PROCESS
+DESCRIPTOR.message_types_by_name['File'] = _FILE
+DESCRIPTOR.message_types_by_name['IpAddress'] = _IPADDRESS
 DESCRIPTOR.message_types_by_name['NodeProperty'] = _NODEPROPERTY
 DESCRIPTOR.message_types_by_name['DynamicNode'] = _DYNAMICNODE
-DESCRIPTOR.message_types_by_name['EdgeDescription'] = _EDGEDESCRIPTION
+DESCRIPTOR.message_types_by_name['Edge'] = _EDGE
 DESCRIPTOR.message_types_by_name['EdgeList'] = _EDGELIST
-DESCRIPTOR.message_types_by_name['GraphDescription'] = _GRAPHDESCRIPTION
+DESCRIPTOR.message_types_by_name['Graph'] = _GRAPH
 DESCRIPTOR.message_types_by_name['GeneratedSubgraphs'] = _GENERATEDSUBGRAPHS
-
-Host = _reflection.GeneratedProtocolMessageType('Host', (_message.Message,), dict(
-  DESCRIPTOR = _HOST,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.Host)
-  ))
-_sym_db.RegisterMessage(Host)
-
-AssetDescription = _reflection.GeneratedProtocolMessageType('AssetDescription', (_message.Message,), dict(
-  DESCRIPTOR = _ASSETDESCRIPTION,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.AssetDescription)
-  ))
-_sym_db.RegisterMessage(AssetDescription)
-
-NodeDescription = _reflection.GeneratedProtocolMessageType('NodeDescription', (_message.Message,), dict(
-  DESCRIPTOR = _NODEDESCRIPTION,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.NodeDescription)
-  ))
-_sym_db.RegisterMessage(NodeDescription)
-
-OutboundConnection = _reflection.GeneratedProtocolMessageType('OutboundConnection', (_message.Message,), dict(
-  DESCRIPTOR = _OUTBOUNDCONNECTION,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.OutboundConnection)
-  ))
-_sym_db.RegisterMessage(OutboundConnection)
-
-InboundConnection = _reflection.GeneratedProtocolMessageType('InboundConnection', (_message.Message,), dict(
-  DESCRIPTOR = _INBOUNDCONNECTION,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.InboundConnection)
-  ))
-_sym_db.RegisterMessage(InboundConnection)
-
-ProcessDescription = _reflection.GeneratedProtocolMessageType('ProcessDescription', (_message.Message,), dict(
-  DESCRIPTOR = _PROCESSDESCRIPTION,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.ProcessDescription)
-  ))
-_sym_db.RegisterMessage(ProcessDescription)
-
-FileDescription = _reflection.GeneratedProtocolMessageType('FileDescription', (_message.Message,), dict(
-  DESCRIPTOR = _FILEDESCRIPTION,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.FileDescription)
-  ))
-_sym_db.RegisterMessage(FileDescription)
-
-IpAddressDescription = _reflection.GeneratedProtocolMessageType('IpAddressDescription', (_message.Message,), dict(
-  DESCRIPTOR = _IPADDRESSDESCRIPTION,
-  __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.IpAddressDescription)
-  ))
-_sym_db.RegisterMessage(IpAddressDescription)
 
 Session = _reflection.GeneratedProtocolMessageType('Session', (_message.Message,), dict(
   DESCRIPTOR = _SESSION,
@@ -1481,6 +1536,76 @@ IdStrategy = _reflection.GeneratedProtocolMessageType('IdStrategy', (_message.Me
   # @@protoc_insertion_point(class_scope:graph_description.IdStrategy)
   ))
 _sym_db.RegisterMessage(IdStrategy)
+
+Host = _reflection.GeneratedProtocolMessageType('Host', (_message.Message,), dict(
+  DESCRIPTOR = _HOST,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.Host)
+  ))
+_sym_db.RegisterMessage(Host)
+
+Node = _reflection.GeneratedProtocolMessageType('Node', (_message.Message,), dict(
+  DESCRIPTOR = _NODE,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.Node)
+  ))
+_sym_db.RegisterMessage(Node)
+
+Asset = _reflection.GeneratedProtocolMessageType('Asset', (_message.Message,), dict(
+  DESCRIPTOR = _ASSET,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.Asset)
+  ))
+_sym_db.RegisterMessage(Asset)
+
+NetworkConnection = _reflection.GeneratedProtocolMessageType('NetworkConnection', (_message.Message,), dict(
+  DESCRIPTOR = _NETWORKCONNECTION,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.NetworkConnection)
+  ))
+_sym_db.RegisterMessage(NetworkConnection)
+
+IpPort = _reflection.GeneratedProtocolMessageType('IpPort', (_message.Message,), dict(
+  DESCRIPTOR = _IPPORT,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.IpPort)
+  ))
+_sym_db.RegisterMessage(IpPort)
+
+ProcessOutboundConnection = _reflection.GeneratedProtocolMessageType('ProcessOutboundConnection', (_message.Message,), dict(
+  DESCRIPTOR = _PROCESSOUTBOUNDCONNECTION,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.ProcessOutboundConnection)
+  ))
+_sym_db.RegisterMessage(ProcessOutboundConnection)
+
+ProcessInboundConnection = _reflection.GeneratedProtocolMessageType('ProcessInboundConnection', (_message.Message,), dict(
+  DESCRIPTOR = _PROCESSINBOUNDCONNECTION,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.ProcessInboundConnection)
+  ))
+_sym_db.RegisterMessage(ProcessInboundConnection)
+
+Process = _reflection.GeneratedProtocolMessageType('Process', (_message.Message,), dict(
+  DESCRIPTOR = _PROCESS,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.Process)
+  ))
+_sym_db.RegisterMessage(Process)
+
+File = _reflection.GeneratedProtocolMessageType('File', (_message.Message,), dict(
+  DESCRIPTOR = _FILE,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.File)
+  ))
+_sym_db.RegisterMessage(File)
+
+IpAddress = _reflection.GeneratedProtocolMessageType('IpAddress', (_message.Message,), dict(
+  DESCRIPTOR = _IPADDRESS,
+  __module__ = 'graph_description_pb2'
+  # @@protoc_insertion_point(class_scope:graph_description.IpAddress)
+  ))
+_sym_db.RegisterMessage(IpAddress)
 
 NodeProperty = _reflection.GeneratedProtocolMessageType('NodeProperty', (_message.Message,), dict(
   DESCRIPTOR = _NODEPROPERTY,
@@ -1504,12 +1629,12 @@ DynamicNode = _reflection.GeneratedProtocolMessageType('DynamicNode', (_message.
 _sym_db.RegisterMessage(DynamicNode)
 _sym_db.RegisterMessage(DynamicNode.PropertiesEntry)
 
-EdgeDescription = _reflection.GeneratedProtocolMessageType('EdgeDescription', (_message.Message,), dict(
-  DESCRIPTOR = _EDGEDESCRIPTION,
+Edge = _reflection.GeneratedProtocolMessageType('Edge', (_message.Message,), dict(
+  DESCRIPTOR = _EDGE,
   __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.EdgeDescription)
+  # @@protoc_insertion_point(class_scope:graph_description.Edge)
   ))
-_sym_db.RegisterMessage(EdgeDescription)
+_sym_db.RegisterMessage(Edge)
 
 EdgeList = _reflection.GeneratedProtocolMessageType('EdgeList', (_message.Message,), dict(
   DESCRIPTOR = _EDGELIST,
@@ -1518,28 +1643,28 @@ EdgeList = _reflection.GeneratedProtocolMessageType('EdgeList', (_message.Messag
   ))
 _sym_db.RegisterMessage(EdgeList)
 
-GraphDescription = _reflection.GeneratedProtocolMessageType('GraphDescription', (_message.Message,), dict(
+Graph = _reflection.GeneratedProtocolMessageType('Graph', (_message.Message,), dict(
 
   NodesEntry = _reflection.GeneratedProtocolMessageType('NodesEntry', (_message.Message,), dict(
-    DESCRIPTOR = _GRAPHDESCRIPTION_NODESENTRY,
+    DESCRIPTOR = _GRAPH_NODESENTRY,
     __module__ = 'graph_description_pb2'
-    # @@protoc_insertion_point(class_scope:graph_description.GraphDescription.NodesEntry)
+    # @@protoc_insertion_point(class_scope:graph_description.Graph.NodesEntry)
     ))
   ,
 
   EdgesEntry = _reflection.GeneratedProtocolMessageType('EdgesEntry', (_message.Message,), dict(
-    DESCRIPTOR = _GRAPHDESCRIPTION_EDGESENTRY,
+    DESCRIPTOR = _GRAPH_EDGESENTRY,
     __module__ = 'graph_description_pb2'
-    # @@protoc_insertion_point(class_scope:graph_description.GraphDescription.EdgesEntry)
+    # @@protoc_insertion_point(class_scope:graph_description.Graph.EdgesEntry)
     ))
   ,
-  DESCRIPTOR = _GRAPHDESCRIPTION,
+  DESCRIPTOR = _GRAPH,
   __module__ = 'graph_description_pb2'
-  # @@protoc_insertion_point(class_scope:graph_description.GraphDescription)
+  # @@protoc_insertion_point(class_scope:graph_description.Graph)
   ))
-_sym_db.RegisterMessage(GraphDescription)
-_sym_db.RegisterMessage(GraphDescription.NodesEntry)
-_sym_db.RegisterMessage(GraphDescription.EdgesEntry)
+_sym_db.RegisterMessage(Graph)
+_sym_db.RegisterMessage(Graph.NodesEntry)
+_sym_db.RegisterMessage(Graph.EdgesEntry)
 
 GeneratedSubgraphs = _reflection.GeneratedProtocolMessageType('GeneratedSubgraphs', (_message.Message,), dict(
   DESCRIPTOR = _GENERATEDSUBGRAPHS,
@@ -1551,8 +1676,8 @@ _sym_db.RegisterMessage(GeneratedSubgraphs)
 
 _DYNAMICNODE_PROPERTIESENTRY.has_options = True
 _DYNAMICNODE_PROPERTIESENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
-_GRAPHDESCRIPTION_NODESENTRY.has_options = True
-_GRAPHDESCRIPTION_NODESENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
-_GRAPHDESCRIPTION_EDGESENTRY.has_options = True
-_GRAPHDESCRIPTION_EDGESENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
+_GRAPH_NODESENTRY.has_options = True
+_GRAPH_NODESENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
+_GRAPH_EDGESENTRY.has_options = True
+_GRAPH_EDGESENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
 # @@protoc_insertion_point(module_scope)

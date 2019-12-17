@@ -9,6 +9,7 @@ use rusoto_dynamodb::{
     ListTablesInput, PutItemInput, QueryInput, Update, UpdateItemInput,
 };
 use std::time::Duration;
+use graph_descriptions::graph_description::node::WhichNode;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResolvedAssetId {
@@ -16,9 +17,10 @@ pub struct ResolvedAssetId {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AssetIdMapping {
+pub struct AssetIdMapping<'a> {
     pub pseudo_key: String,
-    pub asset_id: String,
+    #[serde(borrow)]
+    pub asset_id: &'a str,
     pub c_timestamp: u64,
 }
 
@@ -46,7 +48,6 @@ where
         let (table_key, pseudo_key) = match host_id {
             HostId::AssetId(asset_id) => return Ok(Some(asset_id.to_owned())),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
-            HostId::Ip(ip) => ("ip", ip.as_str()),
         };
 
         let query = QueryInput {
@@ -71,17 +72,14 @@ where
 
         let res = wait_on!(self.dynamo.query(query))?;
 
-        if let Some(items) = res.items {
-            match &items[..] {
-                [] => Ok(None),
-                [item] => {
-                    let asset_id: ResolvedAssetId = serde_dynamodb::from_hashmap(item.clone())?;
-                    Ok(Some(asset_id.asset_id))
-                }
-                _ => bail!("Unexpected number of items returned"),
+        match res.items {
+            Some(mut items) if items.len() == 1 => {
+                let item = items.remove(0);
+                let asset_id: ResolvedAssetId = serde_dynamodb::from_hashmap(item)?;
+                Ok(Some(asset_id.asset_id))
             }
-        } else {
-            Ok(None)
+            Some(items) => bail!("Unexpected number of items returned"),
+            None => Ok(None)
         }
     }
 
@@ -94,7 +92,6 @@ where
         let (table_key, pseudo_key) = match host_id {
             HostId::AssetId(asset_id) => return Ok(Some(asset_id.to_owned())),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
-            HostId::Ip(ip) => ("ip", ip.as_str()),
         };
 
         let query = QueryInput {
@@ -146,12 +143,11 @@ where
         let (table_key, host_id) = match host_id {
             HostId::AssetId(id) => return Ok(()),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
-            HostId::Ip(ip) => ("ip", ip.as_str()),
         };
 
         let mapping = AssetIdMapping {
             pseudo_key: format!("{}{}", table_key, host_id),
-            asset_id: asset_id.clone(),
+            asset_id: &asset_id,
             c_timestamp: ts,
         };
 
@@ -190,32 +186,45 @@ impl<D> AssetIdentifier<D>
 
     pub fn attribute_asset_id(
         &self,
-        node: NodeDescription,
+        node: &Node,
     ) -> Result<String, Error> {
-        let ids = match node.clone().which() {
-            Node::ProcessNode(node) => (node.asset_id, node.hostname, node.host_ip),
-            Node::FileNode(node) => (node.asset_id, node.hostname, node.host_ip),
-            Node::OutboundConnectionNode(node) => (node.asset_id, node.hostname, node.host_ip),
-            Node::DynamicNode(node) => (node.asset_id, node.hostname, node.host_ip),
-            Node::IpAddressNode(_) => {
+
+        let ids = match &node.which_node {
+            Some(WhichNode::AssetNode(ref node)) =>
+                (&node.asset_id, &node.hostname, node.first_seen_timestamp),
+            Some(WhichNode::ProcessNode(ref node)) =>
+                (&node.asset_id, &node.hostname, node.created_timestamp),
+            Some(WhichNode::FileNode(ref node)) =>
+                (&node.asset_id, &node.hostname, node.created_timestamp),
+            Some(WhichNode::ProcessOutboundConnectionNode(ref node)) =>
+                (&node.asset_id, &node.hostname, node.created_timestamp),
+            Some(WhichNode::DynamicNode(ref node)) =>
+                (&node.asset_id, &node.hostname, node.seen_at),
+            Some(WhichNode::ProcessInboundConnectionNode(ref node)) =>
+                (&node.asset_id, &node.hostname, node.created_timestamp),
+            Some(WhichNode::IpAddressNode(_)) => {
                 bail!("Can not call attribute_asset_id with IpAddressNode")
             }
-            Node::InboundConnectionNode(node) =>  (node.asset_id, node.hostname, node.host_ip),
-            _ => panic!("Unsupported node type"),
+            Some(WhichNode::IpPortNode(_)) => {
+                bail!("Can not call attribute_asset_id with IpPortNode")
+            }
+            Some(WhichNode::NetworkConnectionNode(_)) => {
+                bail!("Can not call attribute_asset_id with NetworkConnectionNode")
+            }
+            None => bail!("Could not determine node variant")
         };
 
-        let host_id = match ids {
-            (Some(asset_id), _, _) => HostId::AssetId(asset_id.clone()),
-            (_, Some(hostname), _) => HostId::Hostname(hostname.clone()),
-            (_, _, Some(host_ip)) => HostId::Ip(host_ip.clone()),
-            (_, _, _) => {
+        let (host_id, timestamp) = match ids {
+            (Some(asset_id), _, timestamp) => return Ok(asset_id.clone()),
+            (_, Some(hostname), timestamp) => (HostId::Hostname(hostname.clone()), timestamp),
+            (_,_,_) => {
                 bail!("Must provide at least one of: asset_id, hostname, host_ip");
             }
         };
 
         // map host_id to asset_id
         // If we don't find an asset id we'll have to mark the node as dead
-        let asset_id = self.assetdb.resolve_asset_id(&host_id, node.get_timestamp());
+        let asset_id = self.assetdb.resolve_asset_id(&host_id, timestamp);
 
         match asset_id {
             Ok(Some(asset_id)) => Ok(asset_id),

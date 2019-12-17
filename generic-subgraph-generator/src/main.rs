@@ -1,3 +1,4 @@
+extern crate aws_lambda_events;
 #[macro_use]
 extern crate failure;
 extern crate graph_descriptions;
@@ -8,55 +9,57 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate regex;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate aws_lambda_events;
 extern crate rusoto_core;
 extern crate rusoto_s3;
 extern crate rusoto_sqs;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_json;
 extern crate simple_logger;
 extern crate sqs_lambda;
 extern crate uuid;
 
+use std::marker::PhantomData;
 use std::str::FromStr;
-use sqs_lambda::events_from_s3_sns_sqs;
+use std::sync::Arc;
+
+use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
+use failure::Error;
+use lambda::Context;
+use lambda::error::HandlerError;
+use lambda::Handler;
+use lambda::lambda;
+use regex::Regex;
+use rusoto_core::Region;
+use rusoto_s3::{GetObjectRequest, S3};
+use rusoto_s3::S3Client;
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
+use serde_json::Value;
 use sqs_lambda::BlockingSqsCompletionHandler;
 use sqs_lambda::EventHandler;
+use sqs_lambda::events_from_s3_sns_sqs;
 use sqs_lambda::S3EventRetriever;
 use sqs_lambda::SqsService;
 use sqs_lambda::ZstdJsonDecoder;
-use std::marker::PhantomData;
 
-use lambda::error::HandlerError;
-use lambda::lambda;
-use lambda::Context;
-use lambda::Handler;
-
-use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
-
-use rusoto_core::Region;
-use rusoto_s3::S3Client;
-use rusoto_s3::{GetObjectRequest, S3};
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
-
-use failure::Error;
-use graph_descriptions::graph_description::*;
 use graph_descriptions::*;
+use graph_descriptions::file::FileState;
+use graph_descriptions::graph_description::*;
+use graph_descriptions::network_connection::NetworkConnectionState;
+use graph_descriptions::process::ProcessState;
+use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use graph_generator_lib::upload_subgraphs;
-use regex::Regex;
-use serde_json::Value;
-use std::sync::Arc;
+
+use crate::graph_descriptions::node::NodeT;
 
 #[derive(Serialize, Deserialize)]
 pub struct ProcessStart {
-    pid: u64,
-    ppid: u64,
+    process_id: u64,
+    parent_process_id: u64,
     name: String,
-    ip: Option<String>,
-    hostname: Option<String>,
-    asset_id: String,
+    hostname: String,
     arguments: String,
     timestamp: u64,
     exe: Option<String>,
@@ -65,47 +68,39 @@ pub struct ProcessStart {
 
 #[derive(Serialize, Deserialize)]
 pub struct ProcessStop {
-    pid: u64,
+    process_id: u64,
     name: String,
-    ip: Option<String>,
-    hostname: Option<String>,
-    asset_id: String,
+    hostname: String,
     timestamp: u64,
     sourcetype: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct FileCreate {
-    creator_pid: u64,
-    creator_name: String,
+    creator_process_id: u64,
+    creator_process_name: Option<String>,
     path: String,
-    ip: Option<String>,
-    hostname: Option<String>,
-    asset_id: String,
+    hostname: String,
     timestamp: u64,
     sourcetype: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct FileDelete {
-    deleter_pid: u64,
-    deleter_name: String,
+    deleter_process_id: u64,
+    deleter_process_name: Option<String>,
     path: String,
-    ip: Option<String>,
-    hostname: Option<String>,
-    asset_id: String,
+    hostname: String,
     timestamp: u64,
     sourcetype: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct FileRead {
-    reader_pid: u64,
-    reader_name: String,
+    reader_process_id: u64,
+    reader_process_name: Option<String>,
     path: String,
-    ip: Option<String>,
-    hostname: Option<String>,
-    asset_id: String,
+    hostname: String,
     timestamp: u64,
     sourcetype: String,
 }
@@ -113,39 +108,46 @@ pub struct FileRead {
 #[derive(Serialize, Deserialize)]
 pub struct FileWrite {
     writer_pid: u64,
-    writer_name: String,
+    writer_process_name: Option<String>,
     path: String,
-    ip: Option<String>,
-    hostname: Option<String>,
-    asset_id: String,
+    hostname: String,
     timestamp: u64,
     sourcetype: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct OutboundConnectionLog {
+pub struct ProcessOutboundConnectionLog {
     pid: u64,
     protocol: String,
     src_port: u32,
     dst_port: u32,
-    src_addr: String,
-    dst_addr: String,
-    src_asset_id: Option<String>,
-    dst_asset_id: Option<String>,
+    src_hostname: String,
+    src_ip_addr: String,
+    dst_ip_addr: String,
+    timestamp: u64,
+    sourcetype: String,
+}
+
+// In an inbound connection "src" is where the connection is coming from
+#[derive(Serialize, Deserialize)]
+pub struct ProcessInboundConnectionLog {
+    /// The pid of the process receiving the connection
+    pid: u64,
+    src_ip_addr: String,
+    src_port: u32,
+    dst_port: u32,
+    dst_hostname: String,
+    dst_ip_addr: String,
+    protocol: String,
     timestamp: u64,
     sourcetype: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct InboundConnectionLog {
+pub struct ProcessPortBindLog {
     pid: u64,
-    protocol: String,
-    src_port: u32,
-    dst_port: u32,
-    src_addr: String,
-    dst_addr: String,
-    src_asset_id: Option<String>,
-    dst_asset_id: Option<String>,
+    bound_port: u64,
+    hostname: String,
     timestamp: u64,
     sourcetype: String,
 }
@@ -160,159 +162,263 @@ fn is_internal_ip(ip: &str) -> bool {
     RE.is_match(ip)
 }
 
-fn handle_outbound_traffic(conn_log: OutboundConnectionLog) -> GraphDescription {
-    let mut graph = GraphDescription::new(conn_log.timestamp);
+fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
+    let mut graph = Graph::new(conn_log.timestamp);
+
+    let asset = AssetBuilder::default()
+        .hostname(conn_log.src_hostname.clone())
+        .build()
+        .unwrap();
 
     // A process creates an outbound connection to dst_port
-    // Another process must have an inbound connection to src_port
-    // Or the other process is external/ not running the instrumentation
-    let process = ProcessDescriptionBuilder::default()
-        .asset_id(conn_log.src_asset_id.clone())
-        .host_ip(conn_log.src_addr.to_owned())
+    let process = ProcessBuilder::default()
+        .asset_id(conn_log.src_hostname.clone())
         .state(ProcessState::Existing)
         .process_id(conn_log.pid)
         .last_seen_timestamp(conn_log.timestamp)
         .build()
         .unwrap();
 
-    let outbound = OutboundConnectionBuilder::default()
-        .asset_id(conn_log.src_asset_id)
-        .host_ip(conn_log.src_addr.to_owned())
-        .state(ConnectionState::Created)
+    let outbound = ProcessOutboundConnectionBuilder::default()
+        .asset_id(conn_log.src_hostname.clone())
+        .state(ProcessOutboundConnectionState::Connected)
         .port(conn_log.src_port)
         .created_timestamp(conn_log.timestamp)
         .build()
         .unwrap();
 
-    if is_internal_ip(&conn_log.dst_addr.to_owned()) {
-        let inbound = InboundConnectionBuilder::default()
-            .asset_id(conn_log.dst_asset_id)
-            .host_ip(conn_log.dst_addr.to_owned())
-            .state(ConnectionState::Existing)
-            .port(conn_log.dst_port)
-            .last_seen_timestamp(conn_log.timestamp)
-            .build()
-            .unwrap();
+    let src_ip = IpAddressBuilder::default()
+        .ip_address(conn_log.src_ip_addr.clone())
+        .last_seen_timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
-        graph.add_edge("connection", outbound.clone_key(), inbound.clone_key());
-        graph.add_node(inbound);
-    } else {
-        let external_ip = IpAddressDescription::new(
-            conn_log.timestamp,
-            conn_log.dst_addr.to_owned(),
-            "TCP",
-        );
+    let dst_ip = IpAddressBuilder::default()
+        .ip_address(conn_log.dst_ip_addr.clone())
+        .last_seen_timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
-        graph.add_edge(
-            "external_connection",
-            outbound.clone_key(),
-            external_ip.clone_key(),
-        );
+    let src_port = IpPortBuilder::default()
+        .ip_address(conn_log.src_ip_addr.clone())
+        .port(conn_log.src_port)
+        .protocol(conn_log.protocol.clone())
+        .build()
+        .unwrap();
 
-        graph.add_node(external_ip);
-    }
+    let dst_port = IpPortBuilder::default()
+        .ip_address(conn_log.dst_ip_addr.clone())
+        .port(conn_log.dst_port)
+        .protocol(conn_log.protocol.clone())
+        .build()
+        .unwrap();
 
+    let network_connection = NetworkConnectionBuilder::default()
+        .state(NetworkConnectionState::Created)
+        .src_ip_address(conn_log.src_ip_addr)
+        .src_port(conn_log.src_port)
+        .dst_ip_address(conn_log.dst_ip_addr)
+        .dst_port(conn_log.dst_port)
+        .protocol(conn_log.protocol)
+        .created_timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
+
+    // An asset is assigned an IP
     graph.add_edge(
-        "created_connection",
-        process.clone_key(),
-        outbound.clone_key(),
+        "asset_ip",
+        asset.clone_node_key(),
+        src_ip.clone_node_key(),
     );
 
-    graph.add_node(outbound);
+    // A process spawns on an asset
+    graph.add_edge(
+        "asset_processes",
+        asset.clone_node_key(),
+        process.clone_node_key(),
+    );
+
+    // A process creates a connection
+    graph.add_edge(
+        "created_connection",
+        process.clone_node_key(),
+        outbound.clone_node_key(),
+    );
+
+    // The connection is over an IP + Port
+    graph.add_edge(
+        "connected_over",
+        outbound.clone_node_key(),
+        src_port.clone_node_key(),
+    );
+
+    // The connection is to a dst ip + port
+    graph.add_edge(
+        "external_connection",
+        outbound.clone_node_key(),
+        dst_port.clone_node_key(),
+    );
+
+    // There is a network connection between the src and dst ports
+    graph.add_edge(
+        "connected_to",
+        src_port.clone_node_key(),
+        dst_port.clone_node_key(),
+    );
+
+    graph.add_node(asset);
     graph.add_node(process);
+    graph.add_node(outbound);
+    graph.add_node(src_ip);
+    graph.add_node(dst_ip);
+    graph.add_node(src_port);
+    graph.add_node(dst_port);
+    graph.add_node(network_connection);
 
     graph
 }
 
-fn handle_inbound_traffic(conn_log: InboundConnectionLog) -> GraphDescription {
-    let mut graph = GraphDescription::new(conn_log.timestamp);
+fn handle_inbound_traffic(conn_log: ProcessInboundConnectionLog) -> Graph {
+    let mut graph = Graph::new(conn_log.timestamp);
 
-    let process = ProcessDescriptionBuilder::default()
-        .asset_id(conn_log.src_asset_id.clone())
-        .host_ip(conn_log.src_addr.clone())
+    let asset = AssetBuilder::default()
+        .hostname(conn_log.dst_hostname.clone())
+        .build()
+        .unwrap();
+
+    // A process creates an outbound connection to dst_port
+    let process = ProcessBuilder::default()
+        .asset_id(conn_log.dst_hostname.clone())
         .state(ProcessState::Existing)
         .process_id(conn_log.pid)
         .last_seen_timestamp(conn_log.timestamp)
         .build()
         .unwrap();
 
-    // Inbound is the 'src', at least in sysmon
-    let inbound = InboundConnectionBuilder::default()
-        .asset_id(conn_log.src_asset_id.clone())
-        .host_ip(conn_log.src_addr.clone())
-        .state(ConnectionState::Created)
-        .port(conn_log.src_port)
+    let inbound = ProcessInboundConnectionBuilder::default()
+        .asset_id(conn_log.dst_hostname.clone())
+        .state(ProcessInboundConnectionState::Existing)
+        .port(conn_log.dst_port)
         .created_timestamp(conn_log.timestamp)
         .build()
         .unwrap();
 
-    if is_internal_ip(&conn_log.dst_addr.clone()) {
-        let outbound = InboundConnectionBuilder::default()
-            .asset_id(conn_log.dst_asset_id.clone())
-            .host_ip(conn_log.dst_addr.clone())
-            .state(ConnectionState::Created)
-            .port(conn_log.src_port)
-            .last_seen_timestamp(conn_log.timestamp)
-            .build()
-            .unwrap();
+    let dst_ip = IpAddressBuilder::default()
+        .ip_address(conn_log.dst_ip_addr.clone())
+        .last_seen_timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
-        graph.add_edge("connection", outbound.clone_key(), inbound.clone_key());
+    let src_ip = IpAddressBuilder::default()
+        .ip_address(conn_log.src_ip_addr.clone())
+        .last_seen_timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
-        graph.add_node(outbound);
-    } else {
-        let external_ip =
-            IpAddressDescription::new(
-                conn_log.timestamp,
-                conn_log.dst_addr.clone(),
-                "TCP"
-            );
+    let src_port = IpPortBuilder::default()
+        .ip_address(conn_log.src_ip_addr.clone())
+        .port(conn_log.src_port)
+        .build()
+        .unwrap();
 
-        graph.add_edge(
-            "external_connection",
-            inbound.clone_key(),
-            external_ip.clone_key(),
-        );
+    let dst_port = IpPortBuilder::default()
+        .ip_address(conn_log.dst_ip_addr.clone())
+        .port(conn_log.dst_port)
+        .build()
+        .unwrap();
 
-        graph.add_node(external_ip);
-    }
+    let network_connection = NetworkConnectionBuilder::default()
+        .state(NetworkConnectionState::Created)
+        .src_ip_address(conn_log.src_ip_addr)
+        .src_port(conn_log.src_port)
+        .dst_ip_address(conn_log.dst_ip_addr)
+        .dst_port(conn_log.dst_port)
+        .protocol(conn_log.protocol)
+        .created_timestamp(conn_log.timestamp)
+        .build()
+        .unwrap();
 
-    graph.add_edge("bound_connection", process.clone_key(), inbound.clone_key());
+    // An asset is assigned an IP
+    graph.add_edge(
+        "asset_ip",
+        asset.clone_node_key(),
+        dst_ip.clone_node_key(),
+    );
 
-    graph.add_node(inbound);
+    // A process spawns on an asset
+    graph.add_edge(
+        "asset_processes",
+        asset.clone_node_key(),
+        process.clone_node_key(),
+    );
+
+    // A process creates a connection
+    graph.add_edge(
+        "received_connection",
+        process.clone_node_key(),
+        inbound.clone_node_key(),
+    );
+
+    // The connection is over an IP + Port
+    graph.add_edge(
+        "bound_port",
+        inbound.clone_node_key(),
+        src_port.clone_node_key(),
+    );
+
+    // The connection is to a dst ip + port
+    graph.add_edge(
+        "external_connection",
+        inbound.clone_node_key(),
+        dst_port.clone_node_key(),
+    );
+
+    // There is a network connection between the src and dst ports
+    graph.add_edge(
+        "connected_to",
+        src_port.clone_node_key(),
+        dst_port.clone_node_key(),
+    );
+
+    graph.add_node(asset);
     graph.add_node(process);
+    graph.add_node(inbound);
+    graph.add_node(dst_ip);
+    graph.add_node(src_ip);
+    graph.add_node(src_port);
+    graph.add_node(dst_port);
+    graph.add_node(network_connection);
 
-    println!("generated inbound subgraph {:#?}", graph);
     graph
 }
 
-fn handle_process_start(process_start: ProcessStart) -> GraphDescription {
-    let mut graph = GraphDescription::new(process_start.timestamp);
+fn handle_process_start(process_start: ProcessStart) -> Graph {
+    let mut graph = Graph::new(process_start.timestamp);
 
-    let parent = ProcessDescriptionBuilder::default()
-        .asset_id(process_start.asset_id.clone())
-        .host_ip(process_start.ip.clone())
+    let asset = AssetBuilder::default()
+        .hostname(process_start.hostname.clone())
+        .build()
+        .unwrap();
+
+    let parent = ProcessBuilder::default()
         .hostname(process_start.hostname.clone())
         .state(ProcessState::Existing)
-        .process_id(process_start.ppid)
+        .process_id(process_start.parent_process_id)
         .last_seen_timestamp(process_start.timestamp)
         .build()
         .unwrap();
 
-    let child = ProcessDescriptionBuilder::default()
-        .asset_id(process_start.asset_id.clone())
-        .host_ip(process_start.ip.clone())
+    let child = ProcessBuilder::default()
         .hostname(process_start.hostname.clone())
         .process_name(process_start.name)
         .state(ProcessState::Created)
-        .process_id(process_start.pid)
+        .process_id(process_start.process_id)
         .created_timestamp(process_start.timestamp)
         .build()
         .unwrap();
 
     if let Some(exe_path) = process_start.exe {
-        let child_exe = FileDescriptionBuilder::default()
-            .asset_id(process_start.asset_id)
-            .host_ip(process_start.ip)
+        let child_exe = FileBuilder::default()
             .hostname(process_start.hostname)
             .state(FileState::Existing)
             .last_seen_timestamp(process_start.timestamp)
@@ -320,54 +426,59 @@ fn handle_process_start(process_start: ProcessStart) -> GraphDescription {
             .build()
             .unwrap();
 
-        graph.add_edge("bin_file", child.clone_key(), child_exe.clone_key());
+        graph.add_edge("bin_file", child.clone_node_key(), child_exe.clone_node_key());
         info!("child_exe: {}", child_exe.clone().into_json());
         graph.add_node(child_exe);
     }
 
-    info!("parent: {}", parent.clone().into_json());
-    info!("child: {}", child.clone().into_json());
+    graph.add_edge(
+        "asset_processes",
+        asset.clone_node_key(),
+        parent.clone_node_key(),
+    );
 
-    graph.add_edge("children", parent.clone_key(), child.clone_key());
+    graph.add_edge(
+        "asset_processes",
+        asset.clone_node_key(),
+        child.clone_node_key(),
+    );
+
+    graph.add_edge("children", parent.clone_node_key(), child.clone_node_key());
     graph.add_node(parent);
     graph.add_node(child);
 
     graph
 }
 
-fn handle_process_stop(process_stop: ProcessStop) -> GraphDescription {
-    let terminated_process = ProcessDescriptionBuilder::default()
+
+fn handle_process_stop(process_stop: ProcessStop) -> Graph {
+    let terminated_process = ProcessBuilder::default()
         .process_name(process_stop.name)
-        .asset_id(process_stop.asset_id)
-        .host_ip(process_stop.ip)
         .hostname(process_stop.hostname)
         .state(ProcessState::Terminated)
-        .process_id(process_stop.pid)
+        .process_id(process_stop.process_id)
         .terminated_timestamp(process_stop.timestamp)
         .build()
         .unwrap();
 
-    let mut graph = GraphDescription::new(process_stop.timestamp);
+    let mut graph = Graph::new(process_stop.timestamp);
     graph.add_node(terminated_process);
 
     graph
 }
 
-fn handle_file_delete(file_delete: FileDelete) -> GraphDescription {
-    let deleter = ProcessDescriptionBuilder::default()
-        .asset_id(file_delete.asset_id.clone())
-        .host_ip(file_delete.ip.clone())
+
+fn handle_file_delete(file_delete: FileDelete) -> Graph {
+    let deleter = ProcessBuilder::default()
         .hostname(file_delete.hostname.clone())
         .state(ProcessState::Existing)
-        .process_name(file_delete.deleter_name)
-        .process_id(file_delete.deleter_pid)
+        .process_name(file_delete.deleter_process_name)
+        .process_id(file_delete.deleter_process_id)
         .last_seen_timestamp(file_delete.timestamp)
         .build()
         .unwrap();
 
-    let file = FileDescriptionBuilder::default()
-        .asset_id(file_delete.asset_id)
-        .host_ip(file_delete.ip)
+    let file = FileBuilder::default()
         .hostname(file_delete.hostname)
         .state(FileState::Deleted)
         .deleted_timestamp(file_delete.timestamp)
@@ -375,30 +486,27 @@ fn handle_file_delete(file_delete: FileDelete) -> GraphDescription {
         .build()
         .unwrap();
 
-    let mut graph = GraphDescription::new(file_delete.timestamp);
+    let mut graph = Graph::new(file_delete.timestamp);
 
-    graph.add_edge("deleted", deleter.clone_key(), file.clone_key());
+    graph.add_edge("deleted", deleter.clone_node_key(), file.clone_node_key());
     graph.add_node(deleter);
     graph.add_node(file);
 
     graph
 }
 
-fn handle_file_create(file_creator: FileCreate) -> GraphDescription {
-    let creator = ProcessDescriptionBuilder::default()
-        .asset_id(file_creator.asset_id.clone())
-        .host_ip(file_creator.ip.clone())
+
+fn handle_file_create(file_creator: FileCreate) -> Graph {
+    let creator = ProcessBuilder::default()
         .hostname(file_creator.hostname.clone())
-        .process_name(file_creator.creator_name)
+        .process_name(file_creator.creator_process_name)
         .state(ProcessState::Existing)
-        .process_id(file_creator.creator_pid)
+        .process_id(file_creator.creator_process_id)
         .last_seen_timestamp(file_creator.timestamp)
         .build()
         .unwrap();
 
-    let file = FileDescriptionBuilder::default()
-        .asset_id(file_creator.asset_id)
-        .host_ip(file_creator.ip)
+    let file = FileBuilder::default()
         .hostname(file_creator.hostname)
         .state(FileState::Created)
         .created_timestamp(file_creator.timestamp)
@@ -408,20 +516,18 @@ fn handle_file_create(file_creator: FileCreate) -> GraphDescription {
 
     info!("file {}", file.clone().into_json());
 
-    let mut graph = GraphDescription::new(file_creator.timestamp);
+    let mut graph = Graph::new(file_creator.timestamp);
 
-    graph.add_edge("created_files", creator.clone_key(), file.clone_key());
+    graph.add_edge("created_files", creator.clone_node_key(), file.clone_node_key());
     graph.add_node(creator);
     graph.add_node(file);
 
     graph
 }
 
-fn handle_file_write(file_write: FileWrite) -> GraphDescription {
-    let deleter = ProcessDescriptionBuilder::default()
-        .process_name(file_write.writer_name)
-        .asset_id(file_write.asset_id.clone())
-        .host_ip(file_write.ip.clone())
+fn handle_file_write(file_write: FileWrite) -> Graph {
+    let deleter = ProcessBuilder::default()
+        .process_name(file_write.writer_process_name)
         .hostname(file_write.hostname.clone())
         .state(ProcessState::Existing)
         .process_id(file_write.writer_pid)
@@ -429,9 +535,7 @@ fn handle_file_write(file_write: FileWrite) -> GraphDescription {
         .build()
         .unwrap();
 
-    let file = FileDescriptionBuilder::default()
-        .asset_id(file_write.asset_id)
-        .host_ip(file_write.ip)
+    let file = FileBuilder::default()
         .hostname(file_write.hostname)
         .state(FileState::Existing)
         .last_seen_timestamp(file_write.timestamp)
@@ -439,30 +543,26 @@ fn handle_file_write(file_write: FileWrite) -> GraphDescription {
         .build()
         .unwrap();
 
-    let mut graph = GraphDescription::new(file_write.timestamp);
+    let mut graph = Graph::new(file_write.timestamp);
 
-    graph.add_edge("wrote_files", deleter.clone_key(), file.clone_key());
+    graph.add_edge("wrote_files", deleter.clone_node_key(), file.clone_node_key());
     graph.add_node(deleter);
     graph.add_node(file);
 
     graph
 }
 
-fn handle_file_read(file_read: FileRead) -> GraphDescription {
-    let deleter = ProcessDescriptionBuilder::default()
-        .process_name(file_read.reader_name)
-        .asset_id(file_read.asset_id.clone())
-        .host_ip(file_read.ip.clone())
+fn handle_file_read(file_read: FileRead) -> Graph {
+    let deleter = ProcessBuilder::default()
+        .process_name(file_read.reader_process_name)
         .hostname(file_read.hostname.clone())
         .state(ProcessState::Existing)
-        .process_id(file_read.reader_pid)
+        .process_id(file_read.reader_process_id)
         .last_seen_timestamp(file_read.timestamp)
         .build()
         .unwrap();
 
-    let file = FileDescriptionBuilder::default()
-        .asset_id(file_read.asset_id)
-        .host_ip(file_read.ip)
+    let file = FileBuilder::default()
         .hostname(file_read.hostname)
         .state(FileState::Existing)
         .last_seen_timestamp(file_read.timestamp)
@@ -470,16 +570,16 @@ fn handle_file_read(file_read: FileRead) -> GraphDescription {
         .build()
         .unwrap();
 
-    let mut graph = GraphDescription::new(file_read.timestamp);
+    let mut graph = Graph::new(file_read.timestamp);
 
-    graph.add_edge("read_files", deleter.clone_key(), file.clone_key());
+    graph.add_edge("read_files", deleter.clone_node_key(), file.clone_node_key());
     graph.add_node(deleter);
     graph.add_node(file);
 
     graph
 }
 
-fn handle_log(raw_log: Value) -> Result<GraphDescription, Error> {
+fn handle_log(raw_log: Value) -> Result<Graph, Error> {
     let sourcetype = match raw_log
         .get("sourcetype")
         .and_then(|sourcetype| sourcetype.as_str())

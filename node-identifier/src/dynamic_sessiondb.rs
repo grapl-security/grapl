@@ -18,6 +18,7 @@ use ::{remove_dead_edges, remove_dead_nodes};
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 use ::{remap_edges, remap_nodes};
+use graph_descriptions::node::NodeT;
 
 
 #[derive(Debug, Clone)]
@@ -135,7 +136,7 @@ impl<D> DynamicNodeIdentifier<D>
                 Some(asset_id) => asset_id.to_owned(),
                 None => {
                     self.asset_identifier.attribute_asset_id(
-                        node.clone().into(),
+                        &node.clone().into(),
                     )?
                 }
             };
@@ -170,7 +171,7 @@ impl<D> DynamicNodeIdentifier<D>
                 Some(asset_id) => asset_id.to_owned(),
                 None => {
                     self.asset_identifier.attribute_asset_id(
-                        node.clone().into(),
+                        &node.clone().into(),
                     )?
                 }
             };
@@ -284,15 +285,15 @@ impl<D> DynamicNodeIdentifier<D>
         Ok(attributed_node)
     }
 
-    pub fn attribute_dynamic_nodes(&self, unid_graph: GraphDescription, unid_id_map: &mut HashMap<String, String>) -> Result<GraphDescription, GraphDescription> {
+    pub fn attribute_dynamic_nodes(&self, unid_graph: Graph, unid_id_map: &mut HashMap<String, String>) -> Result<Graph, Graph> {
         let mut unid_id_map = HashMap::new();
         let mut dead_nodes = HashSet::new();
-        let mut output_graph = GraphDescription::new(unid_graph.timestamp);
+        let mut output_graph = Graph::new(unid_graph.timestamp);
         output_graph.edges = unid_graph.edges;
 
         for node in unid_graph.nodes.values() {
-            let dynamic_node = match node.clone().which() {
-                Node::DynamicNode(n) => {
+            let dynamic_node = match node.as_dynamic_node() {
+                Some(n) => {
                     n
                 }
                 _ => {
@@ -305,14 +306,14 @@ impl<D> DynamicNodeIdentifier<D>
                 Ok(node) => node,
                 Err(e) => {
                     warn!("Failed to attribute dynamic node: {}", e);
-                    dead_nodes.insert(node.get_key());
+                    dead_nodes.insert(node.get_node_key());
                     continue
                 }
             };
 
             info!("Attributed DynamicNode");
 
-            unid_id_map.insert(node.get_key().to_string(), new_node.clone_key());
+            unid_id_map.insert(node.clone_node_key(), new_node.clone_node_key());
             output_graph.add_node(new_node);
         }
 

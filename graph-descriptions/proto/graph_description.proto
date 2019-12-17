@@ -40,48 +40,51 @@ message Host {
     }
 }
 
-message AssetDescription {
-    string node_key = 1;
-    uint64 timestamp = 2;
-    google.protobuf.StringValue asset_id = 3;
-    google.protobuf.StringValue hostname = 4;
-    google.protobuf.StringValue host_local_mac = 5;
-    string operating_system = 6;
-}
-
-message NodeDescription {
+message Node {
     oneof which_node {
-        AssetDescription asset_node = 1;
-        ProcessDescription process_node = 2;
-        FileDescription file_node = 3;
-        IpAddressDescription ip_address_node = 4;
-        ProcessOutboundConnection outbound_connection_node = 5;
-        InboundConnection inbound_connection_node = 6;
-        DynamicNode dynamic_node = 7;
+        Asset asset_node = 1;
+        Process process_node = 2;
+        File file_node = 3;
+        IpAddress ip_address_node = 4;
+        ProcessOutboundConnection process_outbound_connection_node = 5;
+        ProcessInboundConnection process_inbound_connection_node = 6;
+        IpPort ip_port_node = 7;
+        NetworkConnection network_connection_node = 8;
+        DynamicNode dynamic_node = 9;
     }
 }
 
-message IpOutboundConnection {
-    string node_key = 1;
-    string created_timestamp = 2;
-    string terminated_timestamp = 3;
-    string last_seen_timestamp = 4;
-}
-
-message ProcessOutboundConnection {
+message Asset {
     string node_key = 1;
     google.protobuf.StringValue asset_id = 2;
     google.protobuf.StringValue hostname = 3;
-    google.protobuf.StringValue ip_address = 4;
-    // 1 = Created, 2 = Terminated, 3 = Existing
-    uint32 state = 5;
-    uint64 created_timestamp = 6;
-    uint64 terminated_timestamp = 7;
-    uint64 last_seen_timestamp = 8;
-    uint32 port = 9;
+    google.protobuf.StringValue mac_address = 4;
+    uint64 first_seen_timestamp = 5;
+    uint64 last_seen_timestamp = 6;
 }
 
-message InboundConnection {
+message NetworkConnection {
+    string node_key = 1;
+    string src_ip_address = 2;
+    string dst_ip_address = 3;
+    string protocol = 4;
+    uint32 src_port = 5;
+    uint32 dst_port = 6;
+    uint64 created_timestamp = 7;
+    uint64 terminated_timestamp = 8;
+    uint64 last_seen_timestamp = 9;
+    uint32 state = 10;
+}
+
+message IpPort {
+    string node_key = 1;
+    string ip_address = 2;
+    uint32 port = 3;
+    string protocol = 4;
+}
+
+// Identity = Session(asset_id + port + ip_address, created_timestamp)
+message ProcessOutboundConnection {
     string node_key = 1;
     google.protobuf.StringValue asset_id = 2;
     google.protobuf.StringValue hostname = 3;
@@ -91,9 +94,26 @@ message InboundConnection {
     uint64 terminated_timestamp = 6;
     uint64 last_seen_timestamp = 7;
     uint32 port = 8;
+    string ip_address = 9;
+    string protocol = 10;
 }
 
-message ProcessDescription {
+// Identity = Session(asset_id + port + ip_address, created_timestamp)
+message ProcessInboundConnection {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    // 1 = Created, 2 = Terminated, 3 = Existing
+    uint32 state = 4;
+    uint64 created_timestamp = 5;
+    uint64 terminated_timestamp = 6;
+    uint64 last_seen_timestamp = 7;
+    uint32 port = 8;
+    string ip_address = 9;
+    string protocol = 10;
+}
+
+message Process {
     string node_key = 1;
     google.protobuf.StringValue asset_id = 2;
     google.protobuf.StringValue hostname = 3;
@@ -109,10 +129,9 @@ message ProcessDescription {
     string process_name = 10;
     string process_command_line = 11;
     string operating_system = 12;
-
 }
 
-message FileDescription {
+message File {
     string node_key = 1;
     google.protobuf.StringValue asset_id = 2;
     google.protobuf.StringValue hostname = 3;
@@ -138,7 +157,7 @@ message FileDescription {
     string sha256_hash = 22;
 }
 
-message IpAddressDescription {
+message IpAddress {
     string node_key = 1;
     string ip_address = 2;
     uint64 first_seen_timestamp = 3;
@@ -164,22 +183,22 @@ message DynamicNode {
     repeated IdStrategy id_strategy = 8;
 }
 
-message EdgeDescription {
+message Edge {
     string from = 1;
     string to = 2;
     string edgeName = 3;
 }
 
 message EdgeList {
-    repeated EdgeDescription edges = 1;
+    repeated Edge edges = 1;
 }
 
-message GraphDescription {
-    map <string, NodeDescription> nodes = 1;
+message Graph {
+    map <string, Node> nodes = 1;
     map <string, EdgeList> edges = 2;
     uint64 timestamp = 3;
 }
 
 message GeneratedSubgraphs {
-    repeated GraphDescription subgraphs = 1;
+    repeated Graph subgraphs = 1;
 }

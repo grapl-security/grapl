@@ -16,7 +16,8 @@ path = "src/bin/node-identifier-retry-handler.rs"
 [dependencies]
 bytes = "0.4"
 failure = "*"
-graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
+#graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
+graph-descriptions = {path="../graph-descriptions", package="grapl-graph-descriptions" , version="*"}
 prost = "0.4.0"
 prost-derive = "0.4"
 prost-types = "*"
@@ -49,6 +50,7 @@ serde_dynamodb = "0.2.2"
 tokio = "0.1.18"
 quickcheck = "0.8.2"
 quickcheck_macros = "0.8.0"
+hex = "0.4.0"
 
 [dependencies.uuid]
 version = "0.6.*"

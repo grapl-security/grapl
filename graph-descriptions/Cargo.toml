@@ -9,6 +9,7 @@ license = "MIT"
 [dependencies]
 
 futures = "0.1"
+thiserror = "1.0.9"
 bytes = "0.4"
 prost = "0.4"
 prost-derive = "0.4"
