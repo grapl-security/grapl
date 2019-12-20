@@ -1,4 +1,4 @@
-use graph_description::{Node, Asset, Process, File, IpAddress, ProcessOutboundConnection, ProcessInboundConnection, IpPort, NetworkConnection, DynamicNode};
+use graph_description::{Node, Asset, Process, File, IpAddress, ProcessOutboundConnection, ProcessInboundConnection, IpPort, NetworkConnection, DynamicNode, IpConnection};
 
 use graph_description::node::WhichNode;
 use serde_json::Value;
@@ -23,6 +23,18 @@ pub trait NodeT {
     fn merge(&mut self, other: &Self) -> bool;
 
     fn merge_into(&mut self, other: Self) -> bool;
+}
+
+impl From<IpConnection> for Node {
+    fn from(ip_connection: IpConnection) -> Self {
+        Self {
+            which_node: Some(
+                WhichNode::IpConnectionNode(
+                    ip_connection
+                )
+            )
+        }
+    }
 }
 
 impl From<Asset> for Node {
@@ -421,6 +433,46 @@ impl Node {
         }
     }
 
+
+    pub fn as_ip_connection(&self) -> Option<&IpConnection> {
+        let which_node = match self.which_node {
+            Some(ref which_node) => which_node,
+            None => return None
+        };
+
+        if let WhichNode::IpConnectionNode(ref ip_connection) = which_node {
+            Some(ip_connection)
+        } else {
+            None
+        }
+    }
+
+    pub fn into_ip_connection(self) -> Option<IpConnection> {
+        let which_node = match self.which_node {
+            Some(which_node) => which_node,
+            None => return None
+        };
+
+        if let WhichNode::IpConnectionNode(ip_connection) = which_node {
+            Some(ip_connection)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_mut_ip_connection(&mut self) -> Option<&mut IpConnection> {
+        let which_node = match self.which_node {
+            Some(ref mut which_node) => which_node,
+            None => return None
+        };
+
+        if let WhichNode::IpConnectionNode(ref mut ip_connection) = which_node {
+            Some(ip_connection)
+        } else {
+            None
+        }
+    }
+
     pub fn as_dynamic_node(&self) -> Option<&DynamicNode> {
         let which_node = match self.which_node {
             Some(ref which_node) => which_node,
@@ -496,6 +548,9 @@ impl Node {
             WhichNode::NetworkConnectionNode(network_connection_node) => {
                 network_connection_node.into_json()
             },
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                ip_connection_node.into_json()
+            },
             WhichNode::DynamicNode(dynamic_node) => {
                 dynamic_node.into_json()
             },
@@ -540,6 +595,9 @@ impl NodeT for Node {
             WhichNode::NetworkConnectionNode(network_connection_node) => {
                 network_connection_node.get_asset_id()
             },
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                ip_connection_node.get_asset_id()
+            },
             WhichNode::DynamicNode(dynamic_node) => {
                 dynamic_node.get_asset_id()
             },
@@ -580,6 +638,9 @@ impl NodeT for Node {
             WhichNode::NetworkConnectionNode(ref mut network_connection_node) => {
                 network_connection_node.set_asset_id(asset_id.into())
             },
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                ip_connection_node.set_asset_id(asset_id.into())
+            },
             WhichNode::DynamicNode(ref mut dynamic_node) => {
                 dynamic_node.set_asset_id(asset_id.into())
             },
@@ -618,6 +679,9 @@ impl NodeT for Node {
             },
             WhichNode::NetworkConnectionNode(network_connection_node) => {
                 network_connection_node.get_node_key()
+            },
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                ip_connection_node.get_node_key()
             },
             WhichNode::DynamicNode(dynamic_node) => {
                 dynamic_node.get_node_key()
@@ -659,6 +723,9 @@ impl NodeT for Node {
             },
             WhichNode::NetworkConnectionNode(ref mut network_connection_node) => {
                 network_connection_node.set_node_key(node_key.into())
+            },
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                ip_connection_node.set_node_key(node_key.into())
             },
             WhichNode::DynamicNode(ref mut dynamic_node) => {
                 dynamic_node.set_node_key(node_key.into())
@@ -737,6 +804,14 @@ impl NodeT for Node {
                     network_connection_node.merge(other)
                 } else {
                     warn!("Attempted to merge NetworkConnectionNode with non-NetworkConnectionNode ");
+                    false
+                }
+            },
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                if let Some(WhichNode::IpConnectionNode(ref other)) = other.which_node {
+                    ip_connection_node.merge(other)
+                } else {
+                    warn!("Attempted to merge IpConnectionNode with non-NetworkConnectionNode ");
                     false
                 }
             },
@@ -822,6 +897,14 @@ impl NodeT for Node {
                     network_connection_node.merge_into(other)
                 } else {
                     warn!("Attempted to merge NetworkConnectionNode with non-NetworkConnectionNode ");
+                    false
+                }
+            },
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                if let Some(WhichNode::IpConnectionNode(other)) = other.which_node {
+                    ip_connection_node.merge_into(other)
+                } else {
+                    warn!("Attempted to merge IpConnectionNode with non-NetworkConnectionNode ");
                     false
                 }
             },

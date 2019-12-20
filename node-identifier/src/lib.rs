@@ -89,6 +89,7 @@ use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionSt
 use graph_descriptions::network_connection::NetworkConnectionState;
 
 use std::convert::TryFrom;
+use graph_descriptions::ip_connection::IpConnectionState;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -194,7 +195,7 @@ impl<D, F> NodeIdentifier<D, F>
                     Some(unid) => unid,
                     None => bail!("Could not identify ProcessOutboundConnectionNode")
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "inbound_connection_history_table");
+                let session_db = SessionDb::new(self.node_id_db.clone(), "outbound_connection_history_table");
                 let node_key = session_db.handle_unid_session(unid, self.should_default)?;
 
                 outbound_node.set_node_key(node_key);
@@ -231,8 +232,27 @@ impl<D, F> NodeIdentifier<D, F>
 
                 Ok(ip_port.into())
             }
-            Some(WhichNode::NetworkConnectionNode(_)) => {
-                Ok(node)
+            Some(WhichNode::NetworkConnectionNode(mut network_connection_node)) => {
+                let unid = match unid {
+                    Some(unid) => unid,
+                    None => bail!("Could not identify NetworkConnectionNode")
+                };
+                let session_db = SessionDb::new(self.node_id_db.clone(), "network_connection_history_table");
+                let node_key = session_db.handle_unid_session(unid, self.should_default)?;
+
+                network_connection_node.set_node_key(node_key);
+                Ok(network_connection_node.into())
+            }
+            Some(WhichNode::IpConnectionNode(mut ip_connection_node)) => {
+                let unid = match unid {
+                    Some(unid) => unid,
+                    None => bail!("Could not identify IpConnectionNode")
+                };
+                let session_db = SessionDb::new(self.node_id_db.clone(), "ip_connection_history_table");
+                let node_key = session_db.handle_unid_session(unid, self.should_default)?;
+
+                ip_connection_node.set_node_key(node_key);
+                Ok(ip_connection_node.into())
             }
             Some(WhichNode::DynamicNode(ref dynamic_node)) => {
                 let new_node = self.dynamic_identifier.attribute_dynamic_node(&dynamic_node)?;
@@ -347,7 +367,30 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
                     }
                 )
             )
-        }
+        },
+
+        Some(WhichNode::IpConnectionNode(node)) => {
+            let (is_creation, timestamp) = match IpConnectionState::try_from(node.state)? {
+                IpConnectionState::Created => (true, node.created_timestamp),
+                _ => (false, node.last_seen_timestamp),
+            };
+
+            let pseudo_key = format!(
+                "{}{}{}ip_network_connection",
+                node.src_ip_address,
+                node.dst_ip_address,
+                node.protocol,
+            );
+            Ok(
+                Some(
+                    UnidSession {
+                        pseudo_key,
+                        timestamp,
+                        is_creation,
+                    }
+                )
+            )
+        },
         // IpAddressNode is not a session
         Some(WhichNode::IpAddressNode(node)) => Ok(None),
 
@@ -470,16 +513,19 @@ fn create_asset_id_mappings(
             Some(WhichNode::AssetNode(ref node)) => {
                 (&node.asset_id, &node.hostname, node.first_seen_timestamp)
             }
-            Some(WhichNode::NetworkConnectionNode(ref node)) => {
+            Some(WhichNode::NetworkConnectionNode(ref _node)) => {
                 continue;
             }
-            Some(WhichNode::IpAddressNode(ref node)) => {
+            Some(WhichNode::IpConnectionNode(ref _node)) => {
                 continue;
             }
-            Some(WhichNode::IpPortNode(ref node)) => {
+            Some(WhichNode::IpAddressNode(ref _node)) => {
                 continue;
             }
-            Some(WhichNode::DynamicNode(ref node)) => {
+            Some(WhichNode::IpPortNode(ref _node)) => {
+                continue;
+            }
+            Some(WhichNode::DynamicNode(ref _node)) => {
                 continue;
             }
             None => bail!("Failed to handle node variant")

@@ -233,7 +233,16 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         .src_port(conn_log.event_data.source_port)
         .dst_ip_address(conn_log.event_data.destination_ip.clone())
         .dst_port(conn_log.event_data.destination_port)
-        .protocol(conn_log.event_data.protocol)
+        .protocol(conn_log.event_data.protocol.clone())
+        .created_timestamp(timestamp)
+        .build()
+        .unwrap();
+
+    let ip_connection = IpConnectionBuilder::default()
+        .state(NetworkConnectionState::Created)
+        .src_ip_address(conn_log.event_data.source_ip.clone())
+        .dst_ip_address(conn_log.event_data.destination_ip.clone())
+        .protocol(conn_log.event_data.protocol.clone())
         .created_timestamp(timestamp)
         .build()
         .unwrap();
@@ -266,7 +275,7 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         src_port.clone_node_key(),
     );
 
-    // The connection is to a dst ip + port
+    // The outbound process connection is to a dst ip + port
     graph.add_edge(
         "external_connection",
         outbound.clone_node_key(),
@@ -275,10 +284,30 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
 
     // There is a network connection between the src and dst ports
     graph.add_edge(
-        "connected_to",
+        "outbound_connection_to",
         src_port.clone_node_key(),
+        network_connection.clone_node_key(),
+    );
+
+    graph.add_edge(
+        "inbound_connection_to",
+        network_connection.clone_node_key(),
         dst_port.clone_node_key(),
     );
+
+    // There is also a connection between the two IP addresses
+
+    graph.add_edge(
+        "ip_connection_to",
+        src_ip.clone_node_key(),
+        ip_connection.clone_node_key(),
+    );
+
+    graph.add_edge(
+        "ip_connection_to",
+        ip_connection.clone_node_key(),
+        dst_ip.clone_node_key(),
+    )
 
     graph.add_node(asset);
     graph.add_node(process);
@@ -288,6 +317,7 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
     graph.add_node(src_port);
     graph.add_node(dst_port);
     graph.add_node(network_connection);
+    graph.add_node(ip_connection);
 
     Ok(graph)
 }
@@ -393,8 +423,14 @@ fn handle_inbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
 
     // There is a network connection between the src and dst ports
     graph.add_edge(
-        "connected_to",
+        "outbound_connection_to",
         src_port.clone_node_key(),
+        network_connection.clone_node_key(),
+    );
+
+    graph.add_edge(
+        "inbound_connection_to",
+        network_connection.clone_node_key(),
         dst_port.clone_node_key(),
     );
 

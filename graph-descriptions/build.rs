@@ -16,6 +16,7 @@ fn main() {
     config.type_attribute(".graph_description.IpAddress", "#[derive(Builder)]");
     config.type_attribute(".graph_description.IpPort", "#[derive(Builder)]");
     config.type_attribute(".graph_description.NetworkConnection", "#[derive(Builder)]");
+    config.type_attribute(".graph_description.IpConnection", "#[derive(Builder)]");
 
     config.type_attribute(".graph_description.Asset", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.File", "#[builder(setter(into))]");
@@ -25,6 +26,7 @@ fn main() {
     config.type_attribute(".graph_description.IpAddress", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.IpPort", "#[builder(setter(into))]");
     config.type_attribute(".graph_description.NetworkConnection", "#[builder(setter(into))]");
+    config.type_attribute(".graph_description.IpConnection", "#[builder(setter(into))]");
 
 
     config.field_attribute(".graph_description.File.node_key", "#[builder(field(private))]");
@@ -131,6 +133,13 @@ fn main() {
     config.field_attribute(".graph_description.NetworkConnection.terminated_timestamp", "#[builder(default)]");
     config.field_attribute(".graph_description.NetworkConnection.last_seen_timestamp", "#[builder(default)]");
 
+    config.field_attribute(".graph_description.IpConnection.node_key", "#[builder(field(private))]");
+    config.field_attribute(".graph_description.IpConnection.node_key",
+                           "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]");
+
+    config.field_attribute(".graph_description.IpConnection.created_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.IpConnection.terminated_timestamp", "#[builder(default)]");
+    config.field_attribute(".graph_description.IpConnection.last_seen_timestamp", "#[builder(default)]");
 
 
     config

@@ -12,4 +12,6 @@ pub enum Error {
     InvalidFileState(u32),
     #[error("InvalidNetworkConnectionState: {0}")]
     InvalidNetworkConnectionState(u32),
+    #[error("InvalidIpConnectionState: {0}")]
+    InvalidIpConnectionState(u32),
 }

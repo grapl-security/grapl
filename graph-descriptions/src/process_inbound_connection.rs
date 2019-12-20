@@ -42,12 +42,14 @@ impl ProcessInboundConnection {
         state: ProcessInboundConnectionState,
         port: u16,
         ip_address: impl Into<String>,
+        protocol: impl Into<String>,
         created_timestamp: u64,
         terminated_timestamp: u64,
         last_seen_timestamp: u64,
     ) -> Self {
         let asset_id = asset_id.into();
         let hostname = hostname.into();
+        let protocol = protocol.into();
 
         if hostname.is_none() && asset_id.is_none() {
             panic!("ProcessInboundConnection must have at least asset_id or hostname");
@@ -60,6 +62,7 @@ impl ProcessInboundConnection {
             ip_address,
             asset_id,
             hostname,
+            protocol,
             created_timestamp,
             terminated_timestamp,
             last_seen_timestamp,
@@ -69,10 +72,25 @@ impl ProcessInboundConnection {
     }
 
     pub fn into_json(self) -> Value {
-        json!({
+        let mut j = json!({
             "node_key": self.node_key,
             "dgraph.type": "ProcessInboundConnection",
-        })
+            "asset_id": self.asset_id.unwrap(),
+            "protocol": self.protocol,
+            "port": self.port,
+        });
+
+        if self.created_timestamp != 0 {
+            j["created_timestamp"] = self.created_timestamp.into();
+        }
+        if self.terminated_timestamp != 0 {
+            j["terminated_timestamp"] = self.terminated_timestamp.into();
+        }
+        if self.last_seen_timestamp != 0 {
+            j["last_seen_timestamp"] = self.last_seen_timestamp.into();
+        }
+
+        j
     }
 }
 
@@ -81,8 +99,8 @@ impl NodeT for ProcessInboundConnection {
         None
     }
 
-    fn set_asset_id(&mut self, _asset_id: impl Into<String>) {
-        panic!("Can not set asset_id on ProcessInboundConnection");
+    fn set_asset_id(&mut self, asset_id: impl Into<String>) {
+        self.asset_id = Some(asset_id.into());
     }
 
     fn get_node_key(&self) -> &str {
@@ -95,12 +113,12 @@ impl NodeT for ProcessInboundConnection {
 
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
-            warn!("Attempted to merge two IpAddress Nodes with differing node_keys");
+            warn!("Attempted to merge two ProcessInboundConnection Nodes with differing node_keys");
             return false
         }
 
         if self.ip_address != other.ip_address {
-            warn!("Attempted to merge two IpAddress Nodes with differing IPs");
+            warn!("Attempted to merge two ProcessInboundConnection Nodes with differing IPs");
             return false;
         }
 

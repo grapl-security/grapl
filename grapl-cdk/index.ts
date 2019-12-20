@@ -1166,6 +1166,9 @@ class HistoryDb extends cdk.Stack {
     proc_history: dynamodb.Table;
     file_history: dynamodb.Table;
     outbound_connection_history: dynamodb.Table;
+    inbound_connection_history: dynamodb.Table;
+    network_connection_history: dynamodb.Table;
+    ip_connection_history: dynamodb.Table;
     asset_history: dynamodb.Table;
     node_id_retry_table: dynamodb.Table;
 
@@ -1205,6 +1208,45 @@ class HistoryDb extends cdk.Stack {
 
         this.outbound_connection_history = new dynamodb.Table(this, 'outbound_connection_history_table', {
             tableName: "outbound_connection_history_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.STRING
+            },
+            sortKey: {
+                name: 'create_time',
+                type: dynamodb.AttributeType.NUMBER
+            },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        });
+
+        this.inbound_connection_history = new dynamodb.Table(this, 'inbound_connection_history_table', {
+            tableName: "inbound_connection_history_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.STRING
+            },
+            sortKey: {
+                name: 'create_time',
+                type: dynamodb.AttributeType.NUMBER
+            },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        });
+
+        this.network_connection_history = new dynamodb.Table(this, 'network_connection_history', {
+            tableName: "network_connection_history_table",
+            partitionKey: {
+                name: 'pseudo_key',
+                type: dynamodb.AttributeType.STRING
+            },
+            sortKey: {
+                name: 'create_time',
+                type: dynamodb.AttributeType.NUMBER
+            },
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        });
+
+        this.ip_connection_history = new dynamodb.Table(this, 'ip_connection_history_table', {
+            tableName: "ip_connection_history_table",
             partitionKey: {
                 name: 'pseudo_key',
                 type: dynamodb.AttributeType.STRING
@@ -1270,6 +1312,9 @@ class HistoryDb extends cdk.Stack {
         this.proc_history.grantReadWriteData(service.event_handler.role);
         this.file_history.grantReadWriteData(service.event_handler.role);
         this.outbound_connection_history.grantReadWriteData(service.event_handler.role);
+        this.inbound_connection_history.grantReadWriteData(service.event_handler.role);
+        this.network_connection_history.grantReadWriteData(service.event_handler.role);
+        this.ip_connection_history.grantReadWriteData(service.event_handler.role);
         this.asset_history.grantReadWriteData(service.event_handler.role);
         this.node_id_retry_table.grantReadWriteData(service.event_handler.role);
         this.static_mapping_table.grantReadWriteData(service.event_handler.role);
@@ -1278,6 +1323,9 @@ class HistoryDb extends cdk.Stack {
         this.proc_history.grantReadWriteData(service.event_retry_handler.role);
         this.file_history.grantReadWriteData(service.event_retry_handler.role);
         this.outbound_connection_history.grantReadWriteData(service.event_retry_handler.role);
+        this.inbound_connection_history.grantReadWriteData(service.event_retry_handler.role);
+        this.network_connection_history.grantReadWriteData(service.event_retry_handler.role);
+        this.ip_connection_history.grantReadWriteData(service.event_retry_handler.role);
         this.asset_history.grantReadWriteData(service.event_retry_handler.role);
         this.node_id_retry_table.grantReadWriteData(service.event_retry_handler.role);
         this.static_mapping_table.grantReadWriteData(service.event_retry_handler.role);

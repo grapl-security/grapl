@@ -28,6 +28,7 @@ pub mod file;
 pub mod asset;
 pub mod ip_address;
 pub mod ip_port;
+pub mod ip_connection;
 pub mod network_connection;
 pub mod process_outbound_connection;
 pub mod process_inbound_connection;

@@ -261,8 +261,14 @@ fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
 
     // There is a network connection between the src and dst ports
     graph.add_edge(
-        "connected_to",
+        "outbound_connection_to",
         src_port.clone_node_key(),
+        network_connection.clone_node_key(),
+    );
+
+    graph.add_edge(
+        "inbound_connection_to",
+        network_connection.clone_node_key(),
         dst_port.clone_node_key(),
     );
 
@@ -375,8 +381,14 @@ fn handle_inbound_traffic(conn_log: ProcessInboundConnectionLog) -> Graph {
 
     // There is a network connection between the src and dst ports
     graph.add_edge(
-        "connected_to",
+        "outbound_connection_to",
         src_port.clone_node_key(),
+        network_connection.clone_node_key(),
+    );
+
+    graph.add_edge(
+        "inbound_connection_to",
+        network_connection.clone_node_key(),
         dst_port.clone_node_key(),
     );
 

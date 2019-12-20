@@ -50,7 +50,8 @@ message Node {
         ProcessInboundConnection process_inbound_connection_node = 6;
         IpPort ip_port_node = 7;
         NetworkConnection network_connection_node = 8;
-        DynamicNode dynamic_node = 9;
+        IpConnection ip_connection_node = 9;
+        DynamicNode dynamic_node = 10;
     }
 }
 
@@ -61,6 +62,17 @@ message Asset {
     google.protobuf.StringValue mac_address = 4;
     uint64 first_seen_timestamp = 5;
     uint64 last_seen_timestamp = 6;
+}
+
+message IpConnection {
+    string node_key = 1;
+    string src_ip_address = 2;
+    string dst_ip_address = 3;
+    string protocol = 4;
+    uint64 created_timestamp = 5;
+    uint64 terminated_timestamp = 6;
+    uint64 last_seen_timestamp = 7;
+    uint32 state = 8;
 }
 
 message NetworkConnection {

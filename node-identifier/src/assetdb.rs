@@ -211,6 +211,9 @@ impl<D> AssetIdentifier<D>
             Some(WhichNode::NetworkConnectionNode(_)) => {
                 bail!("Can not call attribute_asset_id with NetworkConnectionNode")
             }
+            Some(WhichNode::IpConnectionNode(_)) => {
+                bail!("Can not call attribute_asset_id with IpConnectionNode")
+            }
             None => bail!("Could not determine node variant")
         };
 
