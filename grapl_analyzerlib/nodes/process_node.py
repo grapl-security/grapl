@@ -212,28 +212,30 @@ class ProcessQuery(Queryable[IProcessView]):
         cast(ProcessQuery, self)._wrote_files = wrote_files
         return self
 
-    def with_created_connection(
+    def with_created_connections(
         self: "NQ",
         created_connection_query: Optional[
             "IProcessOutboundNetworkConnectionQuery"
         ] = None,
     ) -> "NQ":
+        from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionQuery
         created_connections = (
-            created_connection_query or grapl_analyzerlib.nodes.process_outbound_network_connection.ProcessOutboundNetworkConnectionQuery()
-        )  # type: grapl_analyzerlib.nodes.process_outbound_network_connection.ProcessOutboundNetworkConnectionQuery
+            created_connection_query or ProcessOutboundNetworkConnectionQuery()
+        )  # type: ProcessOutboundNetworkConnectionQuery
         created_connections._process_outbound_connection = self
         self._created_connections = created_connections
         return self
 
-    def with_inbound_connection(
+    def with_inbound_connections(
         self: "NQ",
         inbound_connection_query: Optional[
             "IProcessInboundNetworkConnectionQuery"
         ] = None,
     ) -> "NQ":
+        from grapl_analyzerlib.nodes.process_inbound_network_connection import ProcessInboundNetworkConnectionQuery
         inbound_connection = (
-            inbound_connection_query or grapl_analyzerlib.nodes.process_inbound_network_connection.ProcessInboundNetworkConnectionQuery()
-        )  # type: grapl_analyzerlib.nodes.process_inbound_network_connection.ProcessInboundNetworkConnectionQuery
+            inbound_connection_query or ProcessInboundNetworkConnectionQuery()
+        )  # type: ProcessInboundNetworkConnectionQuery
         inbound_connection._bound_by = self
         self._inbound_connections = inbound_connection
         return self
