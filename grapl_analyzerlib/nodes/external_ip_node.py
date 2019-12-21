@@ -116,12 +116,5 @@ class ExternalIpView(Viewable):
         return cast(Mapping[str, ReverseEdgeView], reverse_edges)
 
 
-from grapl_analyzerlib.nodes.process_node import ProcessView, ProcessQuery
-from grapl_analyzerlib.nodes.comparators import (
-    PropertyFilter,
-    Cmp,
-    StrCmp,
-    _str_cmps,
-    IntCmp,
-    _int_cmps,
-)
+from grapl_analyzerlib.nodes.process_node import ProcessView
+from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp

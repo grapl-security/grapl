@@ -40,21 +40,13 @@ class SubgraphCounter(object):
         self.dgraph_client = dgraph_client
         self.cache = cache
 
-    def get_count_for(
-            self,
-            query: Queryable,
-            max_count: int = 4,
-    ) -> int:
+    def get_count_for(self, query: Queryable, max_count: int = 4) -> int:
         """
             Generic caching for a subgraph query
         """
 
         query_str = generate_query(
-            query_name="res",
-            binding_modifier="res",
-            root=query,
-            first=1,
-            count=True
+            query_name="res", binding_modifier="res", root=query, first=1, count=True
         )
 
         key = type(self).__name__ + query_str
@@ -77,7 +69,6 @@ class SubgraphCounter(object):
                 self.cache.set(key, count)
 
         return int(count)
-
 
 
 class ParentChildCounter(object):
@@ -132,10 +123,10 @@ class GrandParentGrandChildCounter(object):
         self.cache = cache
 
     def get_count_for(
-            self,
-            grand_parent_process_name: str,
-            grand_child_process_name: str,
-            max_count: int = 4,
+        self,
+        grand_parent_process_name: str,
+        grand_child_process_name: str,
+        max_count: int = 4,
     ) -> int:
         """
         Given an image name, and optionally a path, return the number of times
@@ -144,7 +135,10 @@ class GrandParentGrandChildCounter(object):
         If no path is provided, just count the process_name.
         """
 
-        key = type(self).__name__ + grand_parent_process_name + grand_child_process_name or ""
+        key = (
+            type(self).__name__ + grand_parent_process_name + grand_child_process_name
+            or ""
+        )
 
         cached_count = None
         if self.cache:
@@ -158,10 +152,8 @@ class GrandParentGrandChildCounter(object):
             ProcessQuery()
             .with_process_name(eq=grand_parent_process_name)
             .with_children(
-                ProcessQuery()
-                .with_children(
-                    ProcessQuery()
-                    .with_process_name(eq=grand_child_process_name)
+                ProcessQuery().with_children(
+                    ProcessQuery().with_process_name(eq=grand_child_process_name)
                 )
             )
         )  # type: ProcessQuery

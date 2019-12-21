@@ -1,12 +1,7 @@
 from typing import *
 
-from grapl_analyzerlib.nodes.process_inbound_network_connection import (
-    ProcessInboundNetworkConnectionQuery,
-    IProcessInboundNetworkConnectionQuery,
-    ProcessInboundNetworkConnectionView,
-)
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
+from pydgraph import DgraphClient
+
 from grapl_analyzerlib.nodes.comparators import (
     Cmp,
     IntCmp,
@@ -14,10 +9,9 @@ from grapl_analyzerlib.nodes.comparators import (
     StrCmp,
     _str_cmps,
 )
+from grapl_analyzerlib.nodes.types import PropertyT
+from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 from grapl_analyzerlib.prelude import *
-
-from pydgraph import DgraphClient
-
 from grapl_analyzerlib.schemas import NodeSchema
 
 
@@ -38,21 +32,6 @@ class IpAddressSchema(NodeSchema):
     def self_type() -> str:
         return "IpAddress"
 
-
-from typing import *
-
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.nodes.comparators import (
-    Cmp,
-    IntCmp,
-    _int_cmps,
-    StrCmp,
-    _str_cmps,
-)
-from grapl_analyzerlib.prelude import *
-
-from pydgraph import DgraphClient
 
 IIpAddressQuery = TypeVar("IIpAddressQuery", bound="IpAddressQuery")
 
@@ -258,6 +237,13 @@ from grapl_analyzerlib.schemas.schema_builder import (
     generate_plugin_query,
     ManyToMany,
 )
+
+from grapl_analyzerlib.nodes.process_inbound_network_connection import (
+    ProcessInboundNetworkConnectionQuery,
+    IProcessInboundNetworkConnectionQuery,
+    ProcessInboundNetworkConnectionView,
+)
+
 
 if __name__ == "__main__":
     main()

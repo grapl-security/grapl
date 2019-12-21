@@ -3,16 +3,6 @@ from typing import *
 # noinspection Mypy
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.process_inbound_network_connection import (
-    IProcessInboundNetworkConnectionQuery,
-    ProcessInboundNetworkConnectionQuery,
-    ProcessInboundNetworkConnectionView,
-)
-from grapl_analyzerlib.nodes.process_outbound_network_connection import (
-    IProcessOutboundNetworkConnectionQuery,
-    ProcessOutboundNetworkConnectionQuery,
-    ProcessOutboundNetworkConnectionView,
-)
 from grapl_analyzerlib.nodes.queryable import Queryable, NQ
 from grapl_analyzerlib.nodes.viewable import Viewable, NV
 
@@ -584,3 +574,15 @@ from grapl_analyzerlib.nodes.comparators import (
 )
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, ReverseEdgeView
+
+
+from grapl_analyzerlib.nodes.process_inbound_network_connection import (
+    IProcessInboundNetworkConnectionQuery,
+    ProcessInboundNetworkConnectionQuery,
+    ProcessInboundNetworkConnectionView,
+)
+from grapl_analyzerlib.nodes.process_outbound_network_connection import (
+    IProcessOutboundNetworkConnectionQuery,
+    ProcessOutboundNetworkConnectionQuery,
+    ProcessOutboundNetworkConnectionView,
+)

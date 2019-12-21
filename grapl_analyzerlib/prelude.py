@@ -1,6 +1,16 @@
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView, DynamicNodeQuery
-from grapl_analyzerlib.nodes.process_node import ProcessView, ProcessQuery, IProcessView, IProcessQuery
-from grapl_analyzerlib.nodes.external_ip_node import ExternalIpView, ExternalIpQuery, IExternalIpView, IExternalIpQuery
+from grapl_analyzerlib.nodes.process_node import (
+    ProcessView,
+    ProcessQuery,
+    IProcessView,
+    IProcessQuery,
+)
+from grapl_analyzerlib.nodes.external_ip_node import (
+    ExternalIpView,
+    ExternalIpQuery,
+    IExternalIpView,
+    IExternalIpQuery,
+)
 from grapl_analyzerlib.nodes.file_node import FileView, FileQuery, IFileView, IFileQuery
 from grapl_analyzerlib.nodes.any_node import NodeQuery, NodeView
 from grapl_analyzerlib.nodes.lens_node import LensView, LensQuery, CopyingDgraphClient

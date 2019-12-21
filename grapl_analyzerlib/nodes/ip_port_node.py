@@ -1,5 +1,17 @@
 from typing import *
 
+from pydgraph import DgraphClient
+
+from grapl_analyzerlib.nodes.comparators import (
+    Cmp,
+    IntCmp,
+    _int_cmps,
+    StrCmp,
+    _str_cmps,
+)
+from grapl_analyzerlib.nodes.types import PropertyT
+from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
+from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schemas import NodeSchema
 
 
@@ -22,20 +34,6 @@ class IpPortSchema(NodeSchema):
     @staticmethod
     def self_type() -> str:
         return "IpPort"
-
-
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.nodes.comparators import (
-    Cmp,
-    IntCmp,
-    _int_cmps,
-    StrCmp,
-    _str_cmps,
-)
-from grapl_analyzerlib.prelude import *
-
-from pydgraph import DgraphClient
 
 
 IIpPortQuery = TypeVar("IIpPortQuery", bound="IpPortQuery")

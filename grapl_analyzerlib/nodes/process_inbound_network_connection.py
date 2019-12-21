@@ -1,4 +1,19 @@
+from typing import *
+
+from pydgraph import DgraphClient
+
+from grapl_analyzerlib.nodes.comparators import (
+    Cmp,
+    IntCmp,
+    _int_cmps,
+    StrCmp,
+    _str_cmps,
+)
+from grapl_analyzerlib.nodes.types import PropertyT
+from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
+from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schemas import NodeSchema
+
 
 class ProcessInboundNetworkConnectionSchema(NodeSchema):
     def __init__(self):
@@ -28,21 +43,6 @@ class ProcessInboundNetworkConnectionSchema(NodeSchema):
     def self_type() -> str:
         return "ProcessInboundNetworkConnection"
 
-
-from typing import *
-
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.nodes.comparators import (
-    Cmp,
-    IntCmp,
-    _int_cmps,
-    StrCmp,
-    _str_cmps,
-)
-from grapl_analyzerlib.prelude import *
-
-from pydgraph import DgraphClient
 
 IProcessInboundNetworkConnectionQuery = TypeVar(
     "IProcessInboundNetworkConnectionQuery",
@@ -313,12 +313,7 @@ def main():
 if __name__ == "__main__":
     main()
 
-from grapl_analyzerlib.nodes.ip_address_node import (
-    IpAddressSchema,
-    IIpAddressQuery,
-    IpAddressQuery,
-    IpAddressView,
-)
+from grapl_analyzerlib.nodes.ip_address_node import IpAddressSchema
 from grapl_analyzerlib.nodes.ip_port_node import (
     IpPortSchema,
     IIpPortQuery,
@@ -331,6 +326,5 @@ from grapl_analyzerlib.schemas.schema_builder import (
     generate_plugin_view,
     generate_plugin_query_extensions,
     generate_plugin_view_extensions,
-    ManyToOne,
     ManyToMany,
 )

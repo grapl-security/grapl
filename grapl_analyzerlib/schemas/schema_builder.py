@@ -5,17 +5,13 @@ from typing import Union, List, Tuple, Sequence, Type, Set, DefaultDict
 from typing_extensions import Literal
 
 
-StrIndex = Union[
-    Literal["trigram"],
-    Literal["exact"],
-    Literal["hash"],
-]
+StrIndex = Union[Literal["trigram"], Literal["exact"], Literal["hash"]]
 
 
 def format(s: str, indent: int = 4, cur_indent: int = 2, output: str = "") -> str:
     if not s:
         return output
-    nl_index = s.find('\n')
+    nl_index = s.find("\n")
     # print('ix', nl_index)
 
     if nl_index == -1:
@@ -23,7 +19,7 @@ def format(s: str, indent: int = 4, cur_indent: int = 2, output: str = "") -> st
 
     line = s[:nl_index].strip()
     if not line:
-        return format(s[nl_index + 1:], indent, cur_indent, output=output)
+        return format(s[nl_index + 1 :], indent, cur_indent, output=output)
 
     if "}" in line:
         cur_indent -= indent
@@ -34,7 +30,7 @@ def format(s: str, indent: int = 4, cur_indent: int = 2, output: str = "") -> st
         cur_indent += indent
 
     output = output + space_buf + line + "\n"
-    return format(s[nl_index + 1:], indent, cur_indent, output=output)
+    return format(s[nl_index + 1 :], indent, cur_indent, output=output)
 
 
 class NodeSchema(abc.ABC):
@@ -52,28 +48,30 @@ class NodeSchema(abc.ABC):
         pass
 
     def with_str_prop(
-            self,
-            prop_name: str,
-            indexes: Sequence[StrIndex] = ()
-    ) -> 'NodeSchema':
+        self, prop_name: str, indexes: Sequence[StrIndex] = ()
+    ) -> "NodeSchema":
         if indexes is ():
             indexes = ["trigram", "exact", "hash"]
         self.str_props.append((prop_name, indexes))
         return self
 
-    def with_int_prop(self, prop_name: str) -> 'NodeSchema':
+    def with_int_prop(self, prop_name: str) -> "NodeSchema":
         self.int_props.append(prop_name)
         return self
 
-    def with_bool_prop(self, prop_name: str) -> 'NodeSchema':
+    def with_bool_prop(self, prop_name: str) -> "NodeSchema":
         self.bool_props.append(prop_name)
         return self
 
-    def with_forward_edge(self, edge_name: str, edge: 'UidType', reverse_name: str) -> 'NodeSchema':
+    def with_forward_edge(
+        self, edge_name: str, edge: "UidType", reverse_name: str
+    ) -> "NodeSchema":
         self.forward_edges.append((edge_name, edge, reverse_name))
         return self
 
-    def with_reverse_edge(self, reverse_name: str, edge: 'UidType', forward_name: str) -> 'NodeSchema':
+    def with_reverse_edge(
+        self, reverse_name: str, edge: "UidType", forward_name: str
+    ) -> "NodeSchema":
         self.reverse_edges.append((reverse_name, edge, forward_name))
         return self
 
@@ -116,7 +114,6 @@ class NodeSchema(abc.ABC):
         assert formatted_typedef
         return formatted_typedef
 
-
     def to_schema_str(self) -> str:
         _str_prop_schema = []
         for prop_name, indexes in self.str_props:
@@ -147,7 +144,9 @@ class NodeSchema(abc.ABC):
             {int_prop_schema} 
             {bool_prop_schema} 
             {edge_prop_schema}        
-        """.replace("  ", "")
+        """.replace(
+            "  ", ""
+        )
 
         return format(schema)
 
@@ -175,10 +174,7 @@ class OneToOne(object):
 UidType = Union[ManyToOne, ManyToMany, OneToMany, OneToOne]
 
 
-def generate_with_str_prop_method(
-        node_type: str,
-        prop_name: str,
-) -> str:
+def generate_with_str_prop_method(node_type: str, prop_name: str) -> str:
     return f"""
     def with_{prop_name}(
             self,
@@ -204,10 +200,7 @@ def generate_with_str_prop_method(
     """
 
 
-def generate_with_int_prop_method(
-        node_type: str,
-        prop_name: str,
-) -> str:
+def generate_with_int_prop_method(node_type: str, prop_name: str) -> str:
     return f"""
     def with_{prop_name}(
             self: 'NQ',
@@ -223,10 +216,7 @@ def generate_with_int_prop_method(
 
 
 def generate_with_f_edge_method(
-        node_type: str,
-        f_edge_name: str,
-        r_edge_name: str,
-        edge_type: Union[UidType],
+    node_type: str, f_edge_name: str, r_edge_name: str, edge_type: Union[UidType]
 ) -> str:
     edge_type_str = f"{edge_type._inner_type.self_type()}Query"
 
@@ -242,6 +232,7 @@ def generate_with_f_edge_method(
         return self        
         """
 
+
 def generate_imports(schema: NodeSchema) -> str:
     imports = """\
 from typing import *
@@ -254,7 +245,6 @@ from grapl_analyzerlib.prelude import *
 from pydgraph import DgraphClient
     """
     return imports
-
 
 
 def generate_plugin_query(plugin_schema: NodeSchema) -> str:
@@ -294,9 +284,10 @@ def generate_plugin_query(plugin_schema: NodeSchema) -> str:
 
     f_edge_methods = ""
     for f_edge in plugin_schema.forward_edges:
-        method = generate_with_f_edge_method(plugin_schema.self_type(), f_edge[0], f_edge[2], f_edge[1])
+        method = generate_with_f_edge_method(
+            plugin_schema.self_type(), f_edge[0], f_edge[2], f_edge[1]
+        )
         f_edge_methods += method + "\n"
-
 
     query = f"""
 {generate_imports(plugin_schema)}
@@ -334,10 +325,16 @@ def plugin_view_init(plugin_schema: NodeSchema) -> str:
 
     for f_edge_name, edge_type, r_edge_name in plugin_schema.forward_edges:
         if isinstance(edge_type, OneToOne) or isinstance(edge_type, ManyToOne):
-            args += spaces + f"{f_edge_name}:' Optional[{edge_type._inner_type.self_type()}View]' = None,\n"
+            args += (
+                spaces
+                + f"{f_edge_name}:' Optional[{edge_type._inner_type.self_type()}View]' = None,\n"
+            )
 
         elif isinstance(edge_type, OneToMany) or isinstance(edge_type, ManyToMany):
-            args += spaces + f"{f_edge_name}: 'Optional[List[{edge_type._inner_type.self_type()}View]]' = None,\n"
+            args += (
+                spaces
+                + f"{f_edge_name}: 'Optional[List[{edge_type._inner_type.self_type()}View]]' = None,\n"
+            )
 
     spaces = "        "
     self_assignments = ""
@@ -408,7 +405,7 @@ def generate_get_property_types(plugin_schema: NodeSchema) -> str:
     spaces = "                "
     property_types = []
     for prop_name in plugin_schema.int_props:
-        property_types .append(spaces + f"'{prop_name}': int,")
+        property_types.append(spaces + f"'{prop_name}': int,")
 
     for prop_name, _indices in plugin_schema.str_props:
         property_types.append(spaces + f"'{prop_name}': str,")
@@ -434,13 +431,9 @@ def generate_get_forward_edge_types(plugin_schema: NodeSchema) -> str:
     for f_edge_name, edge_type, r_edge_name in plugin_schema.forward_edges:
         edge_type_name = edge_type._inner_type.self_type()
         if isinstance(edge_type, OneToOne) or isinstance(edge_type, ManyToOne):
-            f_edges.append(
-                spaces + f"'{f_edge_name}': {edge_type_name}View,"
-            )
+            f_edges.append(spaces + f"'{f_edge_name}': {edge_type_name}View,")
         elif isinstance(edge_type, OneToMany) or isinstance(edge_type, ManyToMany):
-            f_edges.append(
-                spaces + f"'{f_edge_name}': [{edge_type_name}View],"
-            )
+            f_edges.append(spaces + f"'{f_edge_name}': [{edge_type_name}View],")
 
     formatted = "\n".join(f_edges)
     query = f"""
@@ -464,9 +457,7 @@ def generate_get_forward_edges(plugin_schema: NodeSchema) -> str:
     f_edges = []
 
     for f_edge_name, _edge_type, _r_edge_name in plugin_schema.forward_edges:
-        f_edges.append(
-            spaces + f"'{f_edge_name}': self.{f_edge_name},"
-        )
+        f_edges.append(spaces + f"'{f_edge_name}': self.{f_edge_name},")
 
     formatted = "\n".join(f_edges)
 
@@ -489,14 +480,10 @@ def generate_get_properties(plugin_schema: NodeSchema) -> str:
     spaces = "                "
     properties = []
     for prop_name in plugin_schema.int_props:
-        properties.append(
-            spaces + f"'{prop_name}': self.{prop_name},"
-        )
+        properties.append(spaces + f"'{prop_name}': self.{prop_name},")
 
     for prop_name, _indices in plugin_schema.str_props:
-        properties.append(
-            spaces + f"'{prop_name}': self.{prop_name},"
-        )
+        properties.append(spaces + f"'{prop_name}': self.{prop_name},")
 
     formatted = "\n".join(properties)
 
@@ -525,11 +512,9 @@ def generate_plugin_view(plugin_schema: NodeSchema) -> str:
 
     return query
 
+
 def generate_query_extension_method(
-        self_type: str,
-        extension_name: str,
-        f_edge_name: str,
-        r_edge_name: str
+    self_type: str, extension_name: str, f_edge_name: str, r_edge_name: str
 ) -> str:
 
     method = f"""\
@@ -549,14 +534,14 @@ def generate_query_extension_method(
 
 
 def generate_plugin_query_extensions(plugin_schema: NodeSchema) -> str:
-    extended_types = defaultdict(set)  # type: DefaultDict[Type[NodeSchema], Set[Tuple[str, UidType, str]]]
+    extended_types = defaultdict(
+        set
+    )  # type: DefaultDict[Type[NodeSchema], Set[Tuple[str, UidType, str]]]
 
     for f_edge_name, edge_type, r_edge_name in plugin_schema.forward_edges:
         extended_type = edge_type._inner_type
 
-        extended_types[extended_type].add(
-            (f_edge_name, edge_type, r_edge_name)
-        )
+        extended_types[extended_type].add((f_edge_name, edge_type, r_edge_name))
 
     extensions = []
 
@@ -570,23 +555,18 @@ def generate_plugin_query_extensions(plugin_schema: NodeSchema) -> str:
                 plugin_schema.self_type(),
                 extended_type.self_type() + "Query",
                 f_edge_name,
-                r_edge_name
+                r_edge_name,
             )
 
             extension += "\n" + extension_method
 
-        extensions.append(
-            extension
-        )
+        extensions.append(extension)
 
     return "\n".join(extensions)
 
 
 def generate_view_extension_method(
-        self_type: str,
-        extension_name: str,
-        f_edge_name: str,
-        r_edge_name: str
+    self_type: str, extension_name: str, f_edge_name: str, r_edge_name: str
 ) -> str:
 
     method = f"""\
@@ -600,14 +580,14 @@ def generate_view_extension_method(
 
 
 def generate_plugin_view_extensions(plugin_schema: NodeSchema) -> str:
-    extended_types = defaultdict(set)  # type: DefaultDict[Type[NodeSchema], Set[Tuple[str, UidType, str]]]
+    extended_types = defaultdict(
+        set
+    )  # type: DefaultDict[Type[NodeSchema], Set[Tuple[str, UidType, str]]]
 
     for f_edge_name, edge_type, r_edge_name in plugin_schema.forward_edges:
         extended_type = edge_type._inner_type
 
-        extended_types[extended_type].add(
-            (f_edge_name, edge_type, r_edge_name)
-        )
+        extended_types[extended_type].add((f_edge_name, edge_type, r_edge_name))
 
     extensions = []
 
@@ -621,14 +601,12 @@ def generate_plugin_view_extensions(plugin_schema: NodeSchema) -> str:
                 plugin_schema.self_type(),
                 extended_type.self_type() + "View",
                 f_edge_name,
-                r_edge_name
+                r_edge_name,
             )
 
             extension += "\n" + extension_method
 
-        extensions.append(
-            extension
-        )
+        extensions.append(extension)
 
     return "\n".join(extensions)
 

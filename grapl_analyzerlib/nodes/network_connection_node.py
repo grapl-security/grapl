@@ -1,7 +1,7 @@
 from typing import *
 
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
+from pydgraph import DgraphClient
+
 from grapl_analyzerlib.nodes.comparators import (
     Cmp,
     IntCmp,
@@ -9,10 +9,9 @@ from grapl_analyzerlib.nodes.comparators import (
     StrCmp,
     _str_cmps,
 )
+from grapl_analyzerlib.nodes.types import PropertyT
+from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 from grapl_analyzerlib.prelude import *
-
-from pydgraph import DgraphClient
-
 from grapl_analyzerlib.schemas import NodeSchema
 
 
@@ -37,22 +36,6 @@ class NetworkConnectionSchema(NodeSchema):
     @staticmethod
     def self_type() -> str:
         return "NetworkConnection"
-
-
-from typing import *
-
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.nodes.comparators import (
-    Cmp,
-    IntCmp,
-    _int_cmps,
-    StrCmp,
-    _str_cmps,
-)
-from grapl_analyzerlib.prelude import *
-
-from pydgraph import DgraphClient
 
 
 INetworkConnectionQuery = TypeVar(
