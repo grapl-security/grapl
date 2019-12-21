@@ -1,5 +1,3 @@
-from grapl_analyzerlib.nodes.process_inbound_network_connection import ProcessInboundNetworkConnectionSchema
-from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionSchema
 from grapl_analyzerlib.schemas.schema_builder import NodeSchema, OneToMany, ManyToOne, ManyToMany
 
 
@@ -32,4 +30,5 @@ class ProcessSchema(NodeSchema):
 
 
 from grapl_analyzerlib.schemas.file_schema import FileSchema
-from grapl_analyzerlib.schemas.outbound_connection_schema import OutboundConnectionSchema
+from grapl_analyzerlib.nodes.process_inbound_network_connection import ProcessInboundNetworkConnectionSchema
+from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionSchema

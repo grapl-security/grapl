@@ -1,6 +1,5 @@
 from grapl_analyzerlib.schemas import NodeSchema
 
-
 class ProcessInboundNetworkConnectionSchema(NodeSchema):
     def __init__(self):
         super(ProcessInboundNetworkConnectionSchema, self).__init__()
