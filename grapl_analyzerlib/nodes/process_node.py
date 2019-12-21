@@ -32,10 +32,10 @@ class ProcessQuery(Queryable[IProcessView]):
         self._wrote_files = None  # type: Optional['FileQuery']
         self._created_connections = (
             None
-        )  # type: Optional['grapl_analyzerlib.nodes.process_outbound_network_connection.IProcessOutboundNetworkConnectionQuery']
+        )  # type: Optional['IProcessOutboundNetworkConnectionQuery']
         self._inbound_connections = (
             None
-        )  # type: Optional['grapl_analyzerlib.nodes.process_inbound_network_connection.IProcessInboundNetworkConnectionQuery']
+        )  # type: Optional['IProcessInboundNetworkConnectionQuery']
 
         # Reverse edges
         self._parent = None  # type: Optional['ProcessQuery']
@@ -222,7 +222,7 @@ class ProcessQuery(Queryable[IProcessView]):
         created_connections = (
             created_connection_query or ProcessOutboundNetworkConnectionQuery()
         )  # type: ProcessOutboundNetworkConnectionQuery
-        created_connections._process_outbound_connection = self
+        created_connections._connecting_processes = self
         self._created_connections = created_connections
         return self
 
@@ -426,7 +426,7 @@ class ProcessView(Viewable):
         )
 
         cast(ProcessView, self).created_connections = cast(
-            "List[ProcessOutboundNetworkConnectionView]",
+            List[ProcessOutboundNetworkConnectionView],
             self.fetch_edges(
                 "created_connections", ProcessOutboundNetworkConnectionView
             ),
@@ -437,9 +437,9 @@ class ProcessView(Viewable):
         self: "NV"
     ) -> "List[ProcessInboundNetworkConnectionView]":
         cast(ProcessView, self).created_connections = cast(
-            "List[ProcessInboundNetworkConnectionView]",
+            List[ProcessInboundNetworkConnectionView],
             self.fetch_edges(
-                "inbound_connections", grapl_analyzerlib.nodes.process_inbound_network_connection.ProcessInboundNetworkConnectionView
+                "inbound_connections", ProcessInboundNetworkConnectionView
             ),
         )
         return cast(ProcessView, self).created_connections
@@ -588,6 +588,7 @@ from grapl_analyzerlib.nodes.comparators import (
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
-from grapl_analyzerlib.nodes.process_inbound_network_connection import IProcessInboundNetworkConnectionQuery
+from grapl_analyzerlib.nodes.process_inbound_network_connection import IProcessInboundNetworkConnectionQuery, \
+    ProcessInboundNetworkConnectionView
 from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionView, \
     IProcessOutboundNetworkConnectionQuery
