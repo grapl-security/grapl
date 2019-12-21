@@ -293,15 +293,6 @@ class ProcessQuery(Queryable[IProcessView]):
 
 
 class ProcessView(Viewable):
-    from grapl_analyzerlib.nodes.process_inbound_network_connection import (
-        ProcessInboundNetworkConnectionQuery,
-        ProcessInboundNetworkConnectionView,
-    )
-    from grapl_analyzerlib.nodes.process_outbound_network_connection import (
-        ProcessOutboundNetworkConnectionQuery,
-        ProcessOutboundNetworkConnectionView,
-    )
-
     def __init__(
         self,
         dgraph_client: DgraphClient,
@@ -322,10 +313,10 @@ class ProcessView(Viewable):
         wrote_to_files: Optional[List["FileView"]] = None,
         deleted_files: Optional[List["FileView"]] = None,
         created_connections: Optional[
-            List["ProcessOutboundNetworkConnectionQuery"]
+            List["grapl_analyzerlib.nodes.process_outbound_network_connection.ProcessOutboundNetworkConnectionQuery"]
         ] = None,
         inbound_connections: Optional[
-            List["ProcessInboundNetworkConnectionQuery"]
+            List["grapl_analyzerlib.nodes.process_inbound_network_connection.ProcessInboundNetworkConnectionQuery"]
         ] = None,
         parent: Optional["NV"] = None,
     ) -> None:
