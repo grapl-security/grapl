@@ -296,7 +296,7 @@ def _func_filter(query: Queryable) -> str:
     if query._node_key and isinstance(query._node_key, Eq):
         return query._node_key.to_filter()
     elif type_name:
-        return f'type("{type_name}")'
+        return f'eq(dgraph.type, "{type_name}")'
     elif single_predicate:
         return single_predicate.to_filter()
     elif query._get_unique_predicate_name():

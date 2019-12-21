@@ -12,17 +12,11 @@ class ProcessOutboundNetworkConnectionSchema(NodeSchema):
                 .with_int_prop("last_seen_timestamp")
                 .with_int_prop("port")
                 .with_forward_edge(
-                "process_outbound_connection",
-                # The IP + Port that was connected to
-                ManyToOne(IpPortSchema),
-                "connections_from_processes",
-            )
-                .with_forward_edge(
-                "connected_over",
-                # The IP + Port that was connected to
-                ManyToOne(IpPortSchema),
-                "process_connections",
-            )
+                    "connected_over",
+                    # The IP + Port that was connected to
+                    ManyToOne(IpPortSchema),
+                    "process_connections",
+                )
         )
 
     @staticmethod

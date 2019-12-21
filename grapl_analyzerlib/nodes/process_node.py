@@ -251,7 +251,7 @@ class ProcessQuery(Queryable[IProcessView]):
         return "process_id", int
 
     def _get_node_type_name(self) -> Optional[str]:
-        return None
+        return 'Process'
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         props = {

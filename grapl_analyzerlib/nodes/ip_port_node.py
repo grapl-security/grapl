@@ -8,17 +8,17 @@ from grapl_analyzerlib.nodes.comparators import (
     _int_cmps,
     StrCmp,
     _str_cmps,
-)
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
+    PropertyFilter)
+from grapl_analyzerlib.nodes.queryable import Queryable, NQ
+from grapl_analyzerlib.nodes.types import PropertyT, Property
+from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Viewable, ReverseEdgeView
 
 IIpPortQuery = TypeVar("IIpPortQuery", bound="IpPortQuery")
 
 
-class IpPortQuery(DynamicNodeQuery):
+class IpPortQuery(Queryable):
     def __init__(self):
-        super(IpPortQuery, self).__init__("IpPort", IpPortView)
+        super(IpPortQuery, self).__init__(IpPortView)
         self._port = []  # type: List[List[Cmp[int]]]
         self._first_seen_timestamp = []  # type: List[List[Cmp[int]]]
         self._last_seen_timestamp = []  # type: List[List[Cmp[int]]]
@@ -144,11 +144,43 @@ class IpPortQuery(DynamicNodeQuery):
 
         return self
 
+    def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
+        return None
+
+    def _get_node_type_name(self) -> Optional[str]:
+        return "IpPort"
+
+    def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
+        props = {
+            "port": self._port,
+            "first_seen_timestamp": self._first_seen_timestamp,
+            "last_seen_timestamp": self._last_seen_timestamp,
+            "ip_address": self._ip_address,
+            "protocol": self._protocol,
+        }
+
+        combined = {}
+        for prop_name, prop_filter in props.items():
+            if prop_filter:
+                combined[prop_name] = cast(PropertyFilter[Property], prop_filter)
+
+        return combined
+
+    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
+        forward_edges = {
+            "network_connections": self._network_connections,
+        }
+
+        return {fe[0]: fe[1] for fe in forward_edges.items() if fe[1] is not None}
+
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
+        return {}
+
 
 IIpPortView = TypeVar("IIpPortView", bound="IpPortView")
 
 
-class IpPortView(DynamicNodeView):
+class IpPortView(Viewable):
     def __init__(
         self,
         dgraph_client: DgraphClient,
@@ -161,6 +193,9 @@ class IpPortView(DynamicNodeView):
         ip_address: Optional[str] = None,
         protocol: Optional[str] = None,
         network_connections: "Optional[List[NetworkConnectionView]]" = None,
+        bound_by: "Optional[List[ProcessInboundNetworkConnectionView]]" = None,
+        process_connections: "Optional[List[ProcessOutboundNetworkConnectionView]]" = None,
+        process_connects: "Optional[List[ProcessOutboundNetworkConnectionView]]" = None,
     ):
         super(IpPortView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
@@ -175,7 +210,17 @@ class IpPortView(DynamicNodeView):
         self.last_seen_timestamp = last_seen_timestamp
         self.ip_address = ip_address
         self.protocol = protocol
+
+        # Forward edges
         self.network_connections = network_connections
+
+        # Reverse edges
+        # Processes that have bound this iP + Port
+        self.bound_by = bound_by
+        # Connections created by processes
+        self.process_connections = process_connections
+        # Process connects overt his port
+        self.process_connects = process_connects
 
     def get_port(self) -> Optional[int]:
         if not self.port:
@@ -220,7 +265,7 @@ class IpPortView(DynamicNodeView):
             self.fetch_edges("~bound_port", ProcessInboundNetworkConnectionView),
         )
 
-    def get_process_connections(self,) -> "List[ProcessOutboundNetworkConnectionView]":
+    def get_process_connects(self,) -> "List[ProcessOutboundNetworkConnectionView]":
         return cast(
             List[ProcessOutboundNetworkConnectionView],
             self.fetch_edges("~connected_over", ProcessOutboundNetworkConnectionView),
@@ -246,6 +291,17 @@ class IpPortView(DynamicNodeView):
             "protocol": str,
         }
 
+    def _get_properties(self, fetch: bool = False) -> Mapping[str, Union[str, int]]:
+        props = {
+            "port": self.port,
+            "first_seen_timestamp": self.first_seen_timestamp,
+            "last_seen_timestamp": self.last_seen_timestamp,
+            "ip_address": self.ip_address,
+            "protocol": self.protocol,
+        }
+
+        return {p[0]: p[1] for p in props.items() if p[1] is not None}
+
     @staticmethod
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         f_edges = {
@@ -262,38 +318,26 @@ class IpPortView(DynamicNodeView):
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
         return cast(
-            "Mapping[str, ForwardEdgeView]",
+            Mapping[str, ForwardEdgeView],
             {fe[0]: fe[1] for fe in f_edges.items() if fe[1]},
         )
 
-    def _get_properties(self, fetch: bool = False) -> Mapping[str, Union[str, int]]:
-        props = {
-            "port": self.port,
-            "first_seen_timestamp": self.first_seen_timestamp,
-            "last_seen_timestamp": self.last_seen_timestamp,
-            "ip_address": self.ip_address,
-            "protocol": self.protocol,
+    @staticmethod
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
+        return {
+            "~bound_port": ([ProcessInboundNetworkConnectionView], "bound_by"),
+            "~connected_over": ([ProcessInboundNetworkConnectionView], "bound_by"),
         }
 
-        return {p[0]: p[1] for p in props.items() if p[1] is not None}
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
+        reverse_edges = {"~created_connections": (self.connecting_processes, "connecting_processes")}
 
+        return {
+            fe[0]: (fe[1][0], fe[1][1])
+            for fe in reverse_edges.items()
+            if fe[1][0] is not None
+        }
 
-# def main():
-#     schema = IpPortSchema()
-# 
-#     query = generate_plugin_query(schema)
-#     view = generate_plugin_view(schema)
-#     query_extensions = generate_plugin_query_extensions(schema)
-#     view_extensions = generate_plugin_view_extensions(schema)
-# 
-#     print(query)
-#     print(view)
-#     print(query_extensions)
-#     print(view_extensions)
-# 
-# 
-# if __name__ == "__main__":
-#     main()
 
 from grapl_analyzerlib.nodes.network_connection_node import (
     NetworkConnectionView,

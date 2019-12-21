@@ -8,11 +8,11 @@ from grapl_analyzerlib.nodes.comparators import (
     _int_cmps,
     StrCmp,
     _str_cmps,
-)
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
-from grapl_analyzerlib.nodes.queryable import NQ
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
+    PropertyFilter)
+
+from grapl_analyzerlib.nodes.queryable import NQ, Queryable
+from grapl_analyzerlib.nodes.types import PropertyT, Property
+from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Viewable
 
 IProcessOutboundNetworkConnectionQuery = TypeVar(
     "IProcessOutboundNetworkConnectionQuery",
@@ -20,21 +20,22 @@ IProcessOutboundNetworkConnectionQuery = TypeVar(
 )
 
 
-class ProcessOutboundNetworkConnectionQuery(DynamicNodeQuery):
+class ProcessOutboundNetworkConnectionQuery(Queryable):
     def __init__(self):
         super(ProcessOutboundNetworkConnectionQuery, self).__init__(
-            "ProcessOutboundNetworkConnection", ProcessOutboundNetworkConnectionView
+            ProcessOutboundNetworkConnectionView
         )
         self._created_timestamp = []  # type: List[List[Cmp[int]]]
         self._terminated_timestamp = []  # type: List[List[Cmp[int]]]
         self._last_seen_timestamp = []  # type: List[List[Cmp[int]]]
         self._port = []  # type: List[List[Cmp[int]]]
-
         self._ip_address = []  # type: List[List[Cmp[str]]]
         self._protocol = []  # type: List[List[Cmp[str]]]
 
-        self._process_outbound_connection = None  # type: Optional[IIpPortQuery]
         self._connected_over = None  # type: Optional[IIpPortQuery]
+
+        # Reverse edge
+        self._connecting_processes = None  # type: Optional[IProcessQuery]
 
     def with_ip_address(
         self,
@@ -125,21 +126,18 @@ class ProcessOutboundNetworkConnectionQuery(DynamicNodeQuery):
         self.set_int_property_filter("port", _int_cmps("port", eq=eq, gt=gt, lt=lt))
         return self
 
-    def with_process_outbound_connection(
-        self: "NQ", process_outbound_connection_query: Optional["IIpPortQuery"] = None
+    def with_connecting_processess(
+        self: "NQ", connecting_processess_query: Optional["ProcessQuery"] = None
     ) -> "NQ":
-        process_outbound_connection = process_outbound_connection_query or IpPortQuery()
+        connecting_processess = connecting_processess_query or IpPortQuery()
+        connecting_processess._created_connections = self
 
-        self.set_forward_edge_filter(
-            "process_outbound_connection", process_outbound_connection
-        )
-        process_outbound_connection.set_reverse_edge_filter(
-            "~process_outbound_connection", self, "process_outbound_connection"
-        )
+        cast(ProcessOutboundNetworkConnectionQuery, self)._connecting_processes = connecting_processess
+
         return self
 
     def with_connected_over(
-        self: "NQ", connected_over_query: Optional["IIpPortQuery"] = None
+        self: "NQ", connected_over_query: Optional["IpPortQuery"] = None
     ) -> "NQ":
         connected_over = connected_over_query or IpPortQuery()
 
@@ -149,6 +147,44 @@ class ProcessOutboundNetworkConnectionQuery(DynamicNodeQuery):
         )
         return self
 
+    def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
+        return None
+
+    def _get_node_type_name(self) -> Optional[str]:
+        return "ProcessOutboundNetworkConnection"
+
+    def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
+        props = {
+            "created_timestamp": self._created_timestamp,
+            "terminated_timestamp": self._terminated_timestamp,
+            "last_seen_timestamp": self._last_seen_timestamp,
+            "port": self._port,
+            "ip_address": self._ip_address,
+            "protocol": self._protocol,
+        }
+
+        combined = {}
+        for prop_name, prop_filter in props.items():
+            if prop_filter:
+                combined[prop_name] = cast(PropertyFilter[Property], prop_filter)
+
+        return combined
+
+    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
+        forward_edges = {
+            "connected_over": self._connected_over,
+        }
+
+        return {fe[0]: fe[1] for fe in forward_edges.items() if fe[1] is not None}
+
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
+        reverse_edges = {"~created_connections": (self._connecting_processes, "connecting_processes")}
+
+        return {
+            fe[0]: (fe[1][0], fe[1][1])
+            for fe in reverse_edges.items()
+            if fe[1][0] is not None
+        }
 
 IProcessOutboundNetworkConnectionView = TypeVar(
     "IProcessOutboundNetworkConnectionView",
@@ -156,7 +192,7 @@ IProcessOutboundNetworkConnectionView = TypeVar(
 )
 
 
-class ProcessOutboundNetworkConnectionView(DynamicNodeView):
+class ProcessOutboundNetworkConnectionView(Viewable):
     def __init__(
         self,
         dgraph_client: DgraphClient,
@@ -169,7 +205,7 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
         port: Optional[int] = None,
         ip_address: Optional[str] = None,
         protocol: Optional[str] = None,
-        process_outbound_connection: "Optional[IpPortView]" = None,
+        connecting_processes: "Optional[IProcessView]" = None,
         connected_over: "Optional[IpPortView]" = None,
     ):
         super(ProcessOutboundNetworkConnectionView, self).__init__(
@@ -186,7 +222,7 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
         self.port = port
         self.ip_address = ip_address
         self.protocol = protocol
-        self.process_outbound_connection = process_outbound_connection
+        self.connecting_processes = connecting_processes
         self.connected_over = connected_over
 
     def get_created_timestamp(self) -> Optional[int]:
@@ -227,6 +263,12 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
             self.protocol = cast(Optional[str], self.fetch_property("protocol", str))
         return self.protocol
 
+    def get_connecting_processes(self):
+        return cast(
+            List[ProcessOutboundNetworkConnectionView],
+            self.fetch_edges("~created_connections", ProcessOutboundNetworkConnectionView),
+        )
+
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
         return {
@@ -241,7 +283,6 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
     @staticmethod
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         f_edges = {
-            "process_outbound_connection": IpPortView,
             "connected_over": IpPortView,
         }  # type: Dict[str, Optional["EdgeViewT"]]
 
@@ -251,7 +292,6 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
 
     def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
         f_edges = {
-            "process_outbound_connection": self.process_outbound_connection,
             "connected_over": self.connected_over,
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
@@ -272,19 +312,18 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
 
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
+    @staticmethod
+    def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
+        return {"~created_connections": ([ProcessView], "connecting_processes")}
 
-# def main():
-#     schema = ProcessOutboundNetworkConnectionSchema()
-#
-#     query = generate_plugin_query(schema)
-#     view = generate_plugin_view(schema)
-#     query_extensions = generate_plugin_query_extensions(schema)
-#     view_extensions = generate_plugin_view_extensions(schema)
-#
-#     print(query)
-#     print(view)
-#     print(query_extensions)
-#     print(view_extensions)
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
+        reverse_edges = {"~created_connections": (self.connecting_processes, "connecting_processes")}
+
+        return {
+            fe[0]: (fe[1][0], fe[1][1])
+            for fe in reverse_edges.items()
+            if fe[1][0] is not None
+        }
 
 
 from grapl_analyzerlib.nodes.ip_port_node import (
@@ -293,5 +332,4 @@ from grapl_analyzerlib.nodes.ip_port_node import (
     IIpPortQuery,
 )
 
-# if __name__ == "__main__":
-#     main()
+from grapl_analyzerlib.nodes.process_node import IProcessQuery, ProcessQuery, ProcessView, IProcessView

@@ -341,7 +341,7 @@ class FileQuery(Queryable["FileView"]):
         return "file_path", str
 
     def _get_node_type_name(self) -> Optional[str]:
-        return None
+        return 'File'
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         _prop_filters = {
