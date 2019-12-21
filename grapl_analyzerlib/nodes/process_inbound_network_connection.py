@@ -14,7 +14,6 @@ from grapl_analyzerlib.nodes.queryable import NQ
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 
-
 IProcessInboundNetworkConnectionQuery = TypeVar(
     "IProcessInboundNetworkConnectionQuery",
     bound="ProcessInboundNetworkConnectionQuery",
@@ -271,14 +270,6 @@ from grapl_analyzerlib.nodes.ip_port_node import (
     IIpPortQuery,
     IpPortQuery,
     IpPortView,
-)
-
-from grapl_analyzerlib.schemas.schema_builder import (
-    generate_plugin_query,
-    generate_plugin_view,
-    generate_plugin_query_extensions,
-    generate_plugin_view_extensions,
-    ManyToMany,
 )
 
 from grapl_analyzerlib.nodes.process_node import IProcessQuery, ProcessQuery, ProcessView
