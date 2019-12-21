@@ -34,11 +34,9 @@ class ExecutionFailed(object):
     pass
 
 
-from grapl_analyzerlib.nodes.any_node import NodeView
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
-from grapl_analyzerlib.nodes.external_ip_node import ExternalIpView
 from grapl_analyzerlib.nodes.file_node import FileView
 from grapl_analyzerlib.nodes.process_node import ProcessView
 from grapl_analyzerlib.prelude import NodeView
 
-Accepts = Union[NodeView, ProcessView, FileView, DynamicNodeView, ExternalIpView]
+Accepts = Union[NodeView, ProcessView, FileView, DynamicNodeView]

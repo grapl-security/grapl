@@ -17,6 +17,12 @@ from typing import (
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.graph_description_pb2 import Node
+from grapl_analyzerlib.nodes.ip_address_node import IpAddressView
+from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionView
+from grapl_analyzerlib.nodes.ip_port_node import IpPortView
+from grapl_analyzerlib.nodes.network_connection_node import NetworkConnectionView
+from grapl_analyzerlib.nodes.process_inbound_network_connection import ProcessInboundNetworkConnectionView
+from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionView
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
 
@@ -212,7 +218,7 @@ class NodeView(Viewable):
         dgraph_client: DgraphClient,
         node_key: str,
         uid: str,
-        node: Union["ProcessView", "FileView", "ExternalIpView", "DynamicNodeView"],
+        node: Viewable,
     ):
         super(NodeView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid
@@ -221,9 +227,7 @@ class NodeView(Viewable):
 
     @staticmethod
     def from_view(
-        v: Union[
-            "ProcessView", "FileView", "ExternalIpView", "DynamicNodeView", "NodeView"
-        ]
+        v: Viewable
     ):
         if isinstance(v, NodeView):
             return v
@@ -279,8 +283,18 @@ class NodeView(Viewable):
             node = ProcessView.from_dict(dgraph_client, d)  # type: Any
         elif d.get("file_path") or node_type == "File":
             node = FileView.from_dict(dgraph_client, d)
-        elif d.get("external_ip") or node_type == "ExternalIp":
-            node = ExternalIpView.from_dict(dgraph_client, d)
+        elif node_type == "IpAddress":
+            node = IpAddressView.from_dict(dgraph_client, d)
+        elif node_type == "IpPort":
+            node = IpPortView.from_dict(dgraph_client, d)
+        elif node_type == "ProcessOutboundNetworkConnection":
+            node = ProcessOutboundNetworkConnectionView.from_dict(dgraph_client, d)
+        elif node_type == "ProcessInboundNetworkConnection":
+            node = ProcessInboundNetworkConnectionView.from_dict(dgraph_client, d)
+        elif node_type == "IpConnection":
+            node = IpConnectionView.from_dict(dgraph_client, d)
+        elif node_type == "NetworkConnection":
+            node = NetworkConnectionView.from_dict(dgraph_client, d)
         elif node_type:
             node = DynamicNodeView.from_dict(dgraph_client, d)
         else:
@@ -289,7 +303,7 @@ class NodeView(Viewable):
         assert (
             isinstance(node, ProcessView)
             or isinstance(node, FileView)
-            or isinstance(node, ExternalIpView)
+            or isinstance(node, IpAddressView)
             or isinstance(node, DynamicNodeView)
         )
 
@@ -336,21 +350,63 @@ class NodeView(Viewable):
                 dgraph_client,
                 node.ip_address_node.node_key,
                 uid,
-                ExternalIpView(
+                IpAddressView(
                     dgraph_client=dgraph_client,
                     uid=uid,
                     node_key=node.ip_address_node.node_key,
+                    node_type="IpAddress",
                 ),
             )
-        elif node.HasField("outbound_connection_node"):
-            # uid = get_uid(dgraph_client, node.outbound_connection_node.node_key)
-            raise NotImplementedError
-            # return NodeView(
-            #     dgraph_client, node.outbound_connection_node.node_key, uid,
-            #     OutboundConnectionView(
-            #         dgraph_client, node.outbound_connection_node.node_key, uid
-            #     )
-            # )
+        elif node.HasField("ip_port_node"):
+            uid = get_uid(dgraph_client, node.ip_address_node.node_key)
+
+            return NodeView(
+                dgraph_client,
+                node.ip_address_node.node_key,
+                uid,
+                IpPortView(
+                    dgraph_client=dgraph_client,
+                    uid=uid,
+                    node_key=node.ip_address_node.node_key,
+                    node_type="IpPort",
+                ),
+            )
+        elif node.HasField("process_outbound_connection_node"):
+            uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
+            return NodeView(
+                dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                ProcessOutboundNetworkConnectionView(
+                    dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                    'ProcessOutboundNetworkConnection'
+                )
+            )
+        elif node.HasField("process_inbound_connection_node"):
+            uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
+            return NodeView(
+                dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                ProcessInboundNetworkConnectionView(
+                    dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                    'ProcessInboundNetworkConnection'
+                )
+            )
+        elif node.HasField("ip_connection_node"):
+            uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
+            return NodeView(
+                dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                IpConnectionView(
+                    dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                    'IpConnection'
+                )
+            )
+        elif node.HasField("network_connection_node"):
+            uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
+            return NodeView(
+                dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                NetworkConnectionView(
+                    dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                    'IpConnection'
+                )
+            )
         elif node.HasField("dynamic_node"):
             uid = get_uid(dgraph_client, node.dynamic_node.node_key)
 
@@ -420,13 +476,7 @@ class NodeView(Viewable):
 
 from grapl_analyzerlib.nodes.comparators import PropertyFilter
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.prelude import (
-    ProcessView,
-    FileView,
-    ExternalIpView,
-    DynamicNodeView,
-)
-from grapl_analyzerlib.nodes.external_ip_node import ExternalIpView
+
 from grapl_analyzerlib.nodes.file_node import FileView
 from grapl_analyzerlib.nodes.process_node import ProcessView
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
