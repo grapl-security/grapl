@@ -8,7 +8,7 @@ from grapl_analyzerlib.graph_description_pb2 import EdgeList
 
 class SubgraphView(object):
     def __init__(
-            self, nodes: Dict[str, 'NodeView'], edges: MutableMapping[str, EdgeList]
+        self, nodes: Dict[str, "NodeView"], edges: MutableMapping[str, EdgeList]
     ) -> None:
         self.nodes = nodes
         self.edges = edges
@@ -17,7 +17,7 @@ class SubgraphView(object):
     def from_proto(dgraph_client: DgraphClient, s: bytes) -> "SubgraphView":
         from grapl_analyzerlib.prelude import NodeView
 
-        subgraph = graph_description_pb2.GraphDescription()
+        subgraph = graph_description_pb2.Graph()
         subgraph.ParseFromString(s)
 
         nodes = {
@@ -26,7 +26,7 @@ class SubgraphView(object):
         }
         return SubgraphView(nodes, subgraph.edges)
 
-    def node_iter(self) -> Iterator['NodeView']:
+    def node_iter(self) -> Iterator["NodeView"]:
         for node in self.nodes.values():
             yield node
 
@@ -41,5 +41,6 @@ class SubgraphView(object):
             maybe_node = node.as_file()
             if maybe_node:
                 yield maybe_node
+
 
 from grapl_analyzerlib.prelude import NodeView, ProcessView, FileView

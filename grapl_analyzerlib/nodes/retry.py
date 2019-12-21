@@ -2,14 +2,15 @@ import time
 from functools import wraps
 from typing import TypeVar, Any, Union, Callable
 
-F = TypeVar('F')
+F = TypeVar("F")
+
 
 def retry(
-        ExceptionToCheck: Any = Exception,
-        on_falsey: bool = True,
-        tries: int = 3,
-        delay: Union[float, int] = 0.5,
-        backoff: int = 2,
+    ExceptionToCheck: Any = Exception,
+    on_falsey: bool = True,
+    tries: int = 3,
+    delay: Union[float, int] = 0.5,
+    backoff: int = 2,
 ) -> Callable[[Any], Any]:
     """Retry calling the decorated function using an exponential backoff.
 

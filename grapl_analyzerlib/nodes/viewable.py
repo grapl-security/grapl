@@ -1,12 +1,26 @@
 import abc
 import json
-from typing import Union, Mapping, TypeVar, Tuple, Dict, List, Type, Generic, Optional, Callable, Any, cast
+from typing import (
+    Union,
+    Mapping,
+    TypeVar,
+    Tuple,
+    Dict,
+    List,
+    Type,
+    Generic,
+    Optional,
+    Callable,
+    Any,
+    cast,
+)
 
 # noinspection Mypy
 from pydgraph import DgraphClient
 from grapl_analyzerlib.nodes.types import PropertyT, OneOrMany, Property
 
-NV = TypeVar('NV', bound='Viewable')
+NV = TypeVar("NV", bound="Viewable")
+
 
 class Viewable(abc.ABC):
 
@@ -15,8 +29,11 @@ class Viewable(abc.ABC):
     dynamic_property_types = {}  # type: Dict[str, PropertyT]
 
     def __init__(
-        self: "Viewable", dgraph_client: DgraphClient, node_key: str, uid: str,
-            **args: Any
+        self: "Viewable",
+        dgraph_client: DgraphClient,
+        node_key: str,
+        uid: str,
+        **args: Any,
     ) -> None:
         self.dgraph_client = dgraph_client
         self.node_key = node_key
@@ -48,43 +65,38 @@ class Viewable(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _get_properties(self) -> Mapping[str, 'Property']:
+    def _get_properties(self) -> Mapping[str, "Property"]:
         pass
 
     @abc.abstractmethod
-    def _get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
+    def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
         pass
 
     @abc.abstractmethod
-    def _get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView]':
+    def _get_reverse_edges(self) -> "Mapping[str,  ReverseEdgeView]":
         pass
 
     def get_node_type(self) -> Optional[str]:
         return None
 
     @classmethod
-    def get_edge_types(cls) -> Mapping[str, Union["EdgeViewT", Tuple["EdgeViewT", str]]]:
+    def get_edge_types(
+        cls
+    ) -> Mapping[str, Union["EdgeViewT", Tuple["EdgeViewT", str]]]:
         return {
             **cls._get_forward_edge_types(),
             **cls.dynamic_forward_edge_types,
             **cls.dynamic_reverse_edge_types,
-            **cls._get_reverse_edge_types()
+            **cls._get_reverse_edge_types(),
         }
-
 
     @classmethod
     def get_forward_edge_types(cls) -> Mapping[str, "EdgeViewT"]:
-        return {
-            **cls._get_forward_edge_types(),
-            **cls.dynamic_forward_edge_types,
-        }
+        return {**cls._get_forward_edge_types(), **cls.dynamic_forward_edge_types}
 
     @classmethod
     def get_reverse_edge_types(cls) -> Mapping[str, Tuple["EdgeViewT", str]]:
-        return {
-            **cls.dynamic_reverse_edge_types,
-            **cls._get_reverse_edge_types()
-        }
+        return {**cls.dynamic_reverse_edge_types, **cls._get_reverse_edge_types()}
 
     def set_dynamic_property_type(self, prop_name: str, prop_type: "PropertyT") -> None:
         self.dynamic_property_types[prop_name] = prop_type
@@ -103,37 +115,52 @@ class Viewable(abc.ABC):
     def set_dynamic_property(self, prop_name: str, prop: "Property") -> None:
         self.dynamic_properties[prop_name] = prop
 
-    def set_dynamic_forward_edge(
-            self, edge_name: str, edge: 'ForwardEdgeView'
-    ) -> None:
+    def set_dynamic_forward_edge(self, edge_name: str, edge: "ForwardEdgeView") -> None:
         if edge:
             self.dynamic_forward_edges[edge_name] = edge
 
     def set_dynamic_reverse_edge(
-            self, edge_name: str, reverse_edge: 'ReverseEdgeView'
+        self, edge_name: str, reverse_edge: "ReverseEdgeView"
     ) -> None:
         self.dynamic_reverse_edges[edge_name] = reverse_edge
 
-    def get_properties(self) -> Mapping[str, 'Property']:
-        return cast("Mapping[str, 'Property']", {
-            **self._get_properties(),
-            **self.dynamic_properties,
-            'node_key': self.node_key,
-            'uid': self.uid,
-            'dgraph.type': self.get_node_type(),
-        })
+    def get_properties(self) -> Mapping[str, "Property"]:
+        return cast(
+            "Mapping[str, 'Property']",
+            {
+                **self._get_properties(),
+                **self.dynamic_properties,
+                "node_key": self.node_key,
+                "uid": self.uid,
+                "dgraph.type": self.get_node_type(),
+            },
+        )
 
-    def get_forward_edges(self) -> 'Mapping[str, ForwardEdgeView]':
-        return {k: v for k, v in {**self._get_forward_edges(), **self.dynamic_forward_edges}.items() if v}
+    def get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
+        return {
+            k: v
+            for k, v in {
+                **self._get_forward_edges(),
+                **self.dynamic_forward_edges,
+            }.items()
+            if v
+        }
 
-    def get_reverse_edges(self) -> 'Mapping[str,  ReverseEdgeView]':
-        return {k: v for k, v in {**self._get_reverse_edges(), **self.dynamic_reverse_edges}.items() if v[0]}
+    def get_reverse_edges(self) -> "Mapping[str,  ReverseEdgeView]":
+        return {
+            k: v
+            for k, v in {
+                **self._get_reverse_edges(),
+                **self.dynamic_reverse_edges,
+            }.items()
+            if v[0]
+        }
 
-    def get_edges(self) -> 'Mapping[str, EdgeView]':
+    def get_edges(self) -> "Mapping[str, EdgeView]":
         return {**self.get_forward_edges(), **self.get_reverse_edges()}
 
     def fetch_property(
-            self, prop_name: str, prop_type: Callable[['Property'], 'Property']
+        self, prop_name: str, prop_type: Callable[["Property"], "Property"]
     ) -> Optional[Union[str, int]]:
         node_key_prop = ""
         if prop_name != "node_key":
@@ -168,8 +195,8 @@ class Viewable(abc.ABC):
         return prop
 
     def fetch_properties(
-            self, prop_name: str, prop_type: Callable[['Property'], 'Property']
-    ) -> List['Property']:
+        self, prop_name: str, prop_type: Callable[["Property"], "Property"]
+    ) -> List["Property"]:
         query = f"""
             {{
                 res(func: uid("{self.uid}")) @cascade {{
@@ -194,7 +221,7 @@ class Viewable(abc.ABC):
 
         return props
 
-    def fetch_edge(self, edge_name: str, edge_type: Type['NV']) -> Optional['NV']:
+    def fetch_edge(self, edge_name: str, edge_type: Type["NV"]) -> Optional["NV"]:
         query = f"""
             {{
                 res(func: uid("{self.uid}"), first: 1) {{
@@ -233,7 +260,7 @@ class Viewable(abc.ABC):
         edge = edge_type.from_dict(self.dgraph_client, neighbor)  # type: NV
         return edge
 
-    def fetch_edges(self, edge_name: str, edge_type: Type['NV']) -> List['NV']:
+    def fetch_edges(self, edge_name: str, edge_type: Type["NV"]) -> List["NV"]:
         query = f"""
             {{
                 res(func: uid("{self.uid}")) {{
@@ -264,18 +291,24 @@ class Viewable(abc.ABC):
         else:
             raw_edges = raw_edges[edge_name]
 
-        edges = [edge_type.from_dict(self.dgraph_client, f) for f in raw_edges]  # type: List[NV]
+        edges = [
+            edge_type.from_dict(self.dgraph_client, f) for f in raw_edges
+        ]  # type: List[NV]
 
         return edges
 
     @classmethod
-    def from_dict(cls: Type['NV'], dgraph_client: DgraphClient, d: Dict[str, Any]) -> 'NV':
+    def from_dict(
+        cls: Type["NV"], dgraph_client: DgraphClient, d: Dict[str, Any]
+    ) -> "NV":
         properties = {}
-        node_type = d.get("node_type") or d.get('dgraph.type')
+        node_type = d.get("node_type") or d.get("dgraph.type")
         if node_type:
             if isinstance(node_type, list):
                 if len(node_type) > 1:
-                    print(f"WARN: Node has multiple types: {node_type}, narrowing to: {node_type[0]}")
+                    print(
+                        f"WARN: Node has multiple types: {node_type}, narrowing to: {node_type[0]}"
+                    )
                 node_type = node_type[0]
             properties["node_type"] = node_type
         else:
@@ -316,7 +349,7 @@ class Viewable(abc.ABC):
                     elif isinstance(f_edge, dict):
                         _edges = [ty.from_dict(dgraph_client, f_edge)]
                     else:
-                        raise TypeError(f'Edge {edge_name} must be list or dict')
+                        raise TypeError(f"Edge {edge_name} must be list or dict")
 
                     if forward_name:
                         edges[forward_name] = _edges
@@ -329,8 +362,7 @@ class Viewable(abc.ABC):
                 elif isinstance(raw_edge, dict):
                     edge = ty.from_dict(dgraph_client, raw_edge)
                 else:
-                    raise TypeError(f'Edge {edge_name} must be list or dict')
-
+                    raise TypeError(f"Edge {edge_name} must be list or dict")
 
                 if forward_name:
                     edges[forward_name] = edge
@@ -363,7 +395,11 @@ class Viewable(abc.ABC):
             if isinstance(edge, list):
                 for e in edge:
                     edges.append(
-                        {"from": self.node_key, "edge_name": edge_name, "to": e.node_key}
+                        {
+                            "from": self.node_key,
+                            "edge_name": edge_name,
+                            "to": e.node_key,
+                        }
                     )
             # One or Many reverse edges
             elif isinstance(edge, tuple):
@@ -371,12 +407,20 @@ class Viewable(abc.ABC):
                 if isinstance(edge[0], list):
                     for e in edge[0]:
                         edges.append(
-                            {"from": self.node_key, "edge_name": edge_name, "to": e.node_key}
+                            {
+                                "from": self.node_key,
+                                "edge_name": edge_name,
+                                "to": e.node_key,
+                            }
                         )
                 # One reverse edge
                 else:
                     edges.append(
-                        {"from": self.node_key, "edge_name": edge_name, "to": edge[0].node_key}
+                        {
+                            "from": self.node_key,
+                            "edge_name": edge_name,
+                            "to": edge[0].node_key,
+                        }
                     )
             # One forward edge
             else:

@@ -36,348 +36,6 @@ builtin___float = float
 builtin___int = int
 
 
-class Host(google___protobuf___message___Message):
-    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    hostname = ... # type: typing___Text
-    ip = ... # type: typing___Text
-    asset_id = ... # type: typing___Text
-
-    def __init__(self,
-        *,
-        hostname : typing___Optional[typing___Text] = None,
-        ip : typing___Optional[typing___Text] = None,
-        asset_id : typing___Optional[typing___Text] = None,
-        ) -> None: ...
-    @classmethod
-    def FromString(cls, s: builtin___bytes) -> Host: ...
-    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_id",u"hostname",u"ip"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_id",u"hostname",u"ip"]) -> None: ...
-    else:
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_id",b"host_id",u"hostname",b"hostname",u"ip",b"ip"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_id",b"host_id",u"hostname",b"hostname",u"ip",b"ip"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions___Literal[u"host_id",b"host_id"]) -> typing_extensions___Literal["hostname","ip","asset_id"]: ...
-
-class AssetDescription(google___protobuf___message___Message):
-    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    node_key = ... # type: typing___Text
-    timestamp = ... # type: builtin___int
-    operating_system = ... # type: typing___Text
-
-    @property
-    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_name(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_domain(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_fqdn(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_local_mac(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_ip(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    def __init__(self,
-        *,
-        node_key : typing___Optional[typing___Text] = None,
-        timestamp : typing___Optional[builtin___int] = None,
-        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_name : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_domain : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_fqdn : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_local_mac : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_ip : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        operating_system : typing___Optional[typing___Text] = None,
-        ) -> None: ...
-    @classmethod
-    def FromString(cls, s: builtin___bytes) -> AssetDescription: ...
-    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_domain",u"host_fqdn",u"host_ip",u"host_local_mac",u"host_name"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_domain",u"host_fqdn",u"host_ip",u"host_local_mac",u"host_name",u"node_key",u"operating_system",u"timestamp"]) -> None: ...
-    else:
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_domain",b"host_domain",u"host_fqdn",b"host_fqdn",u"host_ip",b"host_ip",u"host_local_mac",b"host_local_mac",u"host_name",b"host_name"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_domain",b"host_domain",u"host_fqdn",b"host_fqdn",u"host_ip",b"host_ip",u"host_local_mac",b"host_local_mac",u"host_name",b"host_name",u"node_key",b"node_key",u"operating_system",b"operating_system",u"timestamp",b"timestamp"]) -> None: ...
-
-class NodeDescription(google___protobuf___message___Message):
-    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-
-    @property
-    def asset_node(self) -> AssetDescription: ...
-
-    @property
-    def process_node(self) -> ProcessDescription: ...
-
-    @property
-    def file_node(self) -> FileDescription: ...
-
-    @property
-    def ip_address_node(self) -> IpAddressDescription: ...
-
-    @property
-    def outbound_connection_node(self) -> OutboundConnection: ...
-
-    @property
-    def inbound_connection_node(self) -> InboundConnection: ...
-
-    @property
-    def dynamic_node(self) -> DynamicNode: ...
-
-    def __init__(self,
-        *,
-        asset_node : typing___Optional[AssetDescription] = None,
-        process_node : typing___Optional[ProcessDescription] = None,
-        file_node : typing___Optional[FileDescription] = None,
-        ip_address_node : typing___Optional[IpAddressDescription] = None,
-        outbound_connection_node : typing___Optional[OutboundConnection] = None,
-        inbound_connection_node : typing___Optional[InboundConnection] = None,
-        dynamic_node : typing___Optional[DynamicNode] = None,
-        ) -> None: ...
-    @classmethod
-    def FromString(cls, s: builtin___bytes) -> NodeDescription: ...
-    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_node",u"dynamic_node",u"file_node",u"inbound_connection_node",u"ip_address_node",u"outbound_connection_node",u"process_node",u"which_node"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_node",u"dynamic_node",u"file_node",u"inbound_connection_node",u"ip_address_node",u"outbound_connection_node",u"process_node",u"which_node"]) -> None: ...
-    else:
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_node",b"asset_node",u"dynamic_node",b"dynamic_node",u"file_node",b"file_node",u"inbound_connection_node",b"inbound_connection_node",u"ip_address_node",b"ip_address_node",u"outbound_connection_node",b"outbound_connection_node",u"process_node",b"process_node",u"which_node",b"which_node"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_node",b"asset_node",u"dynamic_node",b"dynamic_node",u"file_node",b"file_node",u"inbound_connection_node",b"inbound_connection_node",u"ip_address_node",b"ip_address_node",u"outbound_connection_node",b"outbound_connection_node",u"process_node",b"process_node",u"which_node",b"which_node"]) -> None: ...
-    def WhichOneof(self, oneof_group: typing_extensions___Literal[u"which_node",b"which_node"]) -> typing_extensions___Literal["asset_node","process_node","file_node","ip_address_node","outbound_connection_node","inbound_connection_node","dynamic_node"]: ...
-
-class OutboundConnection(google___protobuf___message___Message):
-    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    node_key = ... # type: typing___Text
-    state = ... # type: builtin___int
-    created_timestamp = ... # type: builtin___int
-    terminated_timestamp = ... # type: builtin___int
-    last_seen_timestamp = ... # type: builtin___int
-    port = ... # type: builtin___int
-
-    @property
-    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_ip(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    def __init__(self,
-        *,
-        node_key : typing___Optional[typing___Text] = None,
-        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_ip : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        state : typing___Optional[builtin___int] = None,
-        created_timestamp : typing___Optional[builtin___int] = None,
-        terminated_timestamp : typing___Optional[builtin___int] = None,
-        last_seen_timestamp : typing___Optional[builtin___int] = None,
-        port : typing___Optional[builtin___int] = None,
-        ) -> None: ...
-    @classmethod
-    def FromString(cls, s: builtin___bytes) -> OutboundConnection: ...
-    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_ip",u"hostname"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"created_timestamp",u"host_ip",u"hostname",u"last_seen_timestamp",u"node_key",u"port",u"state",u"terminated_timestamp"]) -> None: ...
-    else:
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_ip",b"host_ip",u"hostname",b"hostname"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"created_timestamp",b"created_timestamp",u"host_ip",b"host_ip",u"hostname",b"hostname",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key",u"port",b"port",u"state",b"state",u"terminated_timestamp",b"terminated_timestamp"]) -> None: ...
-
-class InboundConnection(google___protobuf___message___Message):
-    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    node_key = ... # type: typing___Text
-    state = ... # type: builtin___int
-    created_timestamp = ... # type: builtin___int
-    terminated_timestamp = ... # type: builtin___int
-    last_seen_timestamp = ... # type: builtin___int
-    port = ... # type: builtin___int
-
-    @property
-    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_ip(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    def __init__(self,
-        *,
-        node_key : typing___Optional[typing___Text] = None,
-        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_ip : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        state : typing___Optional[builtin___int] = None,
-        created_timestamp : typing___Optional[builtin___int] = None,
-        terminated_timestamp : typing___Optional[builtin___int] = None,
-        last_seen_timestamp : typing___Optional[builtin___int] = None,
-        port : typing___Optional[builtin___int] = None,
-        ) -> None: ...
-    @classmethod
-    def FromString(cls, s: builtin___bytes) -> InboundConnection: ...
-    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_ip",u"hostname"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"created_timestamp",u"host_ip",u"hostname",u"last_seen_timestamp",u"node_key",u"port",u"state",u"terminated_timestamp"]) -> None: ...
-    else:
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_ip",b"host_ip",u"hostname",b"hostname"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"created_timestamp",b"created_timestamp",u"host_ip",b"host_ip",u"hostname",b"hostname",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key",u"port",b"port",u"state",b"state",u"terminated_timestamp",b"terminated_timestamp"]) -> None: ...
-
-class ProcessDescription(google___protobuf___message___Message):
-    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    node_key = ... # type: typing___Text
-    state = ... # type: builtin___int
-    process_id = ... # type: builtin___int
-    process_guid = ... # type: typing___Text
-    created_timestamp = ... # type: builtin___int
-    terminated_timestamp = ... # type: builtin___int
-    last_seen_timestamp = ... # type: builtin___int
-    process_name = ... # type: typing___Text
-    process_command_line = ... # type: typing___Text
-    process_integrity_level = ... # type: typing___Text
-    operating_system = ... # type: typing___Text
-
-    @property
-    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_ip(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    def __init__(self,
-        *,
-        node_key : typing___Optional[typing___Text] = None,
-        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_ip : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        state : typing___Optional[builtin___int] = None,
-        process_id : typing___Optional[builtin___int] = None,
-        process_guid : typing___Optional[typing___Text] = None,
-        created_timestamp : typing___Optional[builtin___int] = None,
-        terminated_timestamp : typing___Optional[builtin___int] = None,
-        last_seen_timestamp : typing___Optional[builtin___int] = None,
-        process_name : typing___Optional[typing___Text] = None,
-        process_command_line : typing___Optional[typing___Text] = None,
-        process_integrity_level : typing___Optional[typing___Text] = None,
-        operating_system : typing___Optional[typing___Text] = None,
-        ) -> None: ...
-    @classmethod
-    def FromString(cls, s: builtin___bytes) -> ProcessDescription: ...
-    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_ip",u"hostname"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"created_timestamp",u"host_ip",u"hostname",u"last_seen_timestamp",u"node_key",u"operating_system",u"process_command_line",u"process_guid",u"process_id",u"process_integrity_level",u"process_name",u"state",u"terminated_timestamp"]) -> None: ...
-    else:
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_ip",b"host_ip",u"hostname",b"hostname"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"created_timestamp",b"created_timestamp",u"host_ip",b"host_ip",u"hostname",b"hostname",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key",u"operating_system",b"operating_system",u"process_command_line",b"process_command_line",u"process_guid",b"process_guid",u"process_id",b"process_id",u"process_integrity_level",b"process_integrity_level",u"process_name",b"process_name",u"state",b"state",u"terminated_timestamp",b"terminated_timestamp"]) -> None: ...
-
-class FileDescription(google___protobuf___message___Message):
-    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    node_key = ... # type: typing___Text
-    state = ... # type: builtin___int
-    created_timestamp = ... # type: builtin___int
-    deleted_timestamp = ... # type: builtin___int
-    last_seen_timestamp = ... # type: builtin___int
-    file_name = ... # type: typing___Text
-    file_path = ... # type: typing___Text
-    file_extension = ... # type: typing___Text
-    file_mime_type = ... # type: typing___Text
-    file_size = ... # type: builtin___int
-    file_version = ... # type: typing___Text
-    file_description = ... # type: typing___Text
-    file_product = ... # type: typing___Text
-    file_company = ... # type: typing___Text
-    file_directory = ... # type: typing___Text
-    file_inode = ... # type: builtin___int
-    file_hard_links = ... # type: builtin___int
-    md5_hash = ... # type: typing___Text
-    sha1_hash = ... # type: typing___Text
-    sha256_hash = ... # type: typing___Text
-
-    @property
-    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    @property
-    def host_ip(self) -> google___protobuf___wrappers_pb2___StringValue: ...
-
-    def __init__(self,
-        *,
-        node_key : typing___Optional[typing___Text] = None,
-        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        host_ip : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
-        state : typing___Optional[builtin___int] = None,
-        created_timestamp : typing___Optional[builtin___int] = None,
-        deleted_timestamp : typing___Optional[builtin___int] = None,
-        last_seen_timestamp : typing___Optional[builtin___int] = None,
-        file_name : typing___Optional[typing___Text] = None,
-        file_path : typing___Optional[typing___Text] = None,
-        file_extension : typing___Optional[typing___Text] = None,
-        file_mime_type : typing___Optional[typing___Text] = None,
-        file_size : typing___Optional[builtin___int] = None,
-        file_version : typing___Optional[typing___Text] = None,
-        file_description : typing___Optional[typing___Text] = None,
-        file_product : typing___Optional[typing___Text] = None,
-        file_company : typing___Optional[typing___Text] = None,
-        file_directory : typing___Optional[typing___Text] = None,
-        file_inode : typing___Optional[builtin___int] = None,
-        file_hard_links : typing___Optional[builtin___int] = None,
-        md5_hash : typing___Optional[typing___Text] = None,
-        sha1_hash : typing___Optional[typing___Text] = None,
-        sha256_hash : typing___Optional[typing___Text] = None,
-        ) -> None: ...
-    @classmethod
-    def FromString(cls, s: builtin___bytes) -> FileDescription: ...
-    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    if sys.version_info >= (3,):
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_ip",u"hostname"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"created_timestamp",u"deleted_timestamp",u"file_company",u"file_description",u"file_directory",u"file_extension",u"file_hard_links",u"file_inode",u"file_mime_type",u"file_name",u"file_path",u"file_product",u"file_size",u"file_version",u"host_ip",u"hostname",u"last_seen_timestamp",u"md5_hash",u"node_key",u"sha1_hash",u"sha256_hash",u"state"]) -> None: ...
-    else:
-        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_ip",b"host_ip",u"hostname",b"hostname"]) -> builtin___bool: ...
-        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"created_timestamp",b"created_timestamp",u"deleted_timestamp",b"deleted_timestamp",u"file_company",b"file_company",u"file_description",b"file_description",u"file_directory",b"file_directory",u"file_extension",b"file_extension",u"file_hard_links",b"file_hard_links",u"file_inode",b"file_inode",u"file_mime_type",b"file_mime_type",u"file_name",b"file_name",u"file_path",b"file_path",u"file_product",b"file_product",u"file_size",b"file_size",u"file_version",b"file_version",u"host_ip",b"host_ip",u"hostname",b"hostname",u"last_seen_timestamp",b"last_seen_timestamp",u"md5_hash",b"md5_hash",u"node_key",b"node_key",u"sha1_hash",b"sha1_hash",u"sha256_hash",b"sha256_hash",u"state",b"state"]) -> None: ...
-
-class IpAddressDescription(google___protobuf___message___Message):
-    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
-    node_key = ... # type: typing___Text
-    timestamp = ... # type: builtin___int
-    ip_address = ... # type: typing___Text
-    ip_proto = ... # type: typing___Text
-
-    def __init__(self,
-        *,
-        node_key : typing___Optional[typing___Text] = None,
-        timestamp : typing___Optional[builtin___int] = None,
-        ip_address : typing___Optional[typing___Text] = None,
-        ip_proto : typing___Optional[typing___Text] = None,
-        ) -> None: ...
-    @classmethod
-    def FromString(cls, s: builtin___bytes) -> IpAddressDescription: ...
-    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
-    if sys.version_info >= (3,):
-        def ClearField(self, field_name: typing_extensions___Literal[u"ip_address",u"ip_proto",u"node_key",u"timestamp"]) -> None: ...
-    else:
-        def ClearField(self, field_name: typing_extensions___Literal[u"ip_address",b"ip_address",u"ip_proto",b"ip_proto",u"node_key",b"node_key",u"timestamp",b"timestamp"]) -> None: ...
-
 class Session(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
     primary_key_properties = ... # type: google___protobuf___internal___containers___RepeatedScalarFieldContainer[typing___Text]
@@ -447,6 +105,425 @@ class IdStrategy(google___protobuf___message___Message):
         def HasField(self, field_name: typing_extensions___Literal[u"session",b"session",u"static",b"static",u"strategy",b"strategy"]) -> builtin___bool: ...
         def ClearField(self, field_name: typing_extensions___Literal[u"session",b"session",u"static",b"static",u"strategy",b"strategy"]) -> None: ...
     def WhichOneof(self, oneof_group: typing_extensions___Literal[u"strategy",b"strategy"]) -> typing_extensions___Literal["session","static"]: ...
+
+class Host(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    hostname = ... # type: typing___Text
+    asset_id = ... # type: typing___Text
+
+    def __init__(self,
+        *,
+        hostname : typing___Optional[typing___Text] = None,
+        asset_id : typing___Optional[typing___Text] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> Host: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_id",u"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"host_id",u"hostname"]) -> None: ...
+    else:
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_id",b"host_id",u"hostname",b"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_id",b"host_id",u"hostname",b"hostname"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions___Literal[u"host_id",b"host_id"]) -> typing_extensions___Literal["hostname","asset_id"]: ...
+
+class Node(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+
+    @property
+    def asset_node(self) -> Asset: ...
+
+    @property
+    def process_node(self) -> Process: ...
+
+    @property
+    def file_node(self) -> File: ...
+
+    @property
+    def ip_address_node(self) -> IpAddress: ...
+
+    @property
+    def process_outbound_connection_node(self) -> ProcessOutboundConnection: ...
+
+    @property
+    def process_inbound_connection_node(self) -> ProcessInboundConnection: ...
+
+    @property
+    def ip_port_node(self) -> IpPort: ...
+
+    @property
+    def network_connection_node(self) -> NetworkConnection: ...
+
+    @property
+    def ip_connection_node(self) -> IpConnection: ...
+
+    @property
+    def dynamic_node(self) -> DynamicNode: ...
+
+    def __init__(self,
+        *,
+        asset_node : typing___Optional[Asset] = None,
+        process_node : typing___Optional[Process] = None,
+        file_node : typing___Optional[File] = None,
+        ip_address_node : typing___Optional[IpAddress] = None,
+        process_outbound_connection_node : typing___Optional[ProcessOutboundConnection] = None,
+        process_inbound_connection_node : typing___Optional[ProcessInboundConnection] = None,
+        ip_port_node : typing___Optional[IpPort] = None,
+        network_connection_node : typing___Optional[NetworkConnection] = None,
+        ip_connection_node : typing___Optional[IpConnection] = None,
+        dynamic_node : typing___Optional[DynamicNode] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> Node: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_node",u"dynamic_node",u"file_node",u"ip_address_node",u"ip_connection_node",u"ip_port_node",u"network_connection_node",u"process_inbound_connection_node",u"process_node",u"process_outbound_connection_node",u"which_node"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_node",u"dynamic_node",u"file_node",u"ip_address_node",u"ip_connection_node",u"ip_port_node",u"network_connection_node",u"process_inbound_connection_node",u"process_node",u"process_outbound_connection_node",u"which_node"]) -> None: ...
+    else:
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_node",b"asset_node",u"dynamic_node",b"dynamic_node",u"file_node",b"file_node",u"ip_address_node",b"ip_address_node",u"ip_connection_node",b"ip_connection_node",u"ip_port_node",b"ip_port_node",u"network_connection_node",b"network_connection_node",u"process_inbound_connection_node",b"process_inbound_connection_node",u"process_node",b"process_node",u"process_outbound_connection_node",b"process_outbound_connection_node",u"which_node",b"which_node"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_node",b"asset_node",u"dynamic_node",b"dynamic_node",u"file_node",b"file_node",u"ip_address_node",b"ip_address_node",u"ip_connection_node",b"ip_connection_node",u"ip_port_node",b"ip_port_node",u"network_connection_node",b"network_connection_node",u"process_inbound_connection_node",b"process_inbound_connection_node",u"process_node",b"process_node",u"process_outbound_connection_node",b"process_outbound_connection_node",u"which_node",b"which_node"]) -> None: ...
+    def WhichOneof(self, oneof_group: typing_extensions___Literal[u"which_node",b"which_node"]) -> typing_extensions___Literal["asset_node","process_node","file_node","ip_address_node","process_outbound_connection_node","process_inbound_connection_node","ip_port_node","network_connection_node","ip_connection_node","dynamic_node"]: ...
+
+class Asset(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    first_seen_timestamp = ... # type: builtin___int
+    last_seen_timestamp = ... # type: builtin___int
+
+    @property
+    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    @property
+    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    @property
+    def mac_address(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        mac_address : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        first_seen_timestamp : typing___Optional[builtin___int] = None,
+        last_seen_timestamp : typing___Optional[builtin___int] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> Asset: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"hostname",u"mac_address"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"first_seen_timestamp",u"hostname",u"last_seen_timestamp",u"mac_address",u"node_key"]) -> None: ...
+    else:
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"hostname",b"hostname",u"mac_address",b"mac_address"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"first_seen_timestamp",b"first_seen_timestamp",u"hostname",b"hostname",u"last_seen_timestamp",b"last_seen_timestamp",u"mac_address",b"mac_address",u"node_key",b"node_key"]) -> None: ...
+
+class IpConnection(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    src_ip_address = ... # type: typing___Text
+    dst_ip_address = ... # type: typing___Text
+    protocol = ... # type: typing___Text
+    created_timestamp = ... # type: builtin___int
+    terminated_timestamp = ... # type: builtin___int
+    last_seen_timestamp = ... # type: builtin___int
+    state = ... # type: builtin___int
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        src_ip_address : typing___Optional[typing___Text] = None,
+        dst_ip_address : typing___Optional[typing___Text] = None,
+        protocol : typing___Optional[typing___Text] = None,
+        created_timestamp : typing___Optional[builtin___int] = None,
+        terminated_timestamp : typing___Optional[builtin___int] = None,
+        last_seen_timestamp : typing___Optional[builtin___int] = None,
+        state : typing___Optional[builtin___int] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> IpConnection: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def ClearField(self, field_name: typing_extensions___Literal[u"created_timestamp",u"dst_ip_address",u"last_seen_timestamp",u"node_key",u"protocol",u"src_ip_address",u"state",u"terminated_timestamp"]) -> None: ...
+    else:
+        def ClearField(self, field_name: typing_extensions___Literal[u"created_timestamp",b"created_timestamp",u"dst_ip_address",b"dst_ip_address",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key",u"protocol",b"protocol",u"src_ip_address",b"src_ip_address",u"state",b"state",u"terminated_timestamp",b"terminated_timestamp"]) -> None: ...
+
+class NetworkConnection(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    src_ip_address = ... # type: typing___Text
+    dst_ip_address = ... # type: typing___Text
+    protocol = ... # type: typing___Text
+    src_port = ... # type: builtin___int
+    dst_port = ... # type: builtin___int
+    created_timestamp = ... # type: builtin___int
+    terminated_timestamp = ... # type: builtin___int
+    last_seen_timestamp = ... # type: builtin___int
+    state = ... # type: builtin___int
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        src_ip_address : typing___Optional[typing___Text] = None,
+        dst_ip_address : typing___Optional[typing___Text] = None,
+        protocol : typing___Optional[typing___Text] = None,
+        src_port : typing___Optional[builtin___int] = None,
+        dst_port : typing___Optional[builtin___int] = None,
+        created_timestamp : typing___Optional[builtin___int] = None,
+        terminated_timestamp : typing___Optional[builtin___int] = None,
+        last_seen_timestamp : typing___Optional[builtin___int] = None,
+        state : typing___Optional[builtin___int] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> NetworkConnection: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def ClearField(self, field_name: typing_extensions___Literal[u"created_timestamp",u"dst_ip_address",u"dst_port",u"last_seen_timestamp",u"node_key",u"protocol",u"src_ip_address",u"src_port",u"state",u"terminated_timestamp"]) -> None: ...
+    else:
+        def ClearField(self, field_name: typing_extensions___Literal[u"created_timestamp",b"created_timestamp",u"dst_ip_address",b"dst_ip_address",u"dst_port",b"dst_port",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key",u"protocol",b"protocol",u"src_ip_address",b"src_ip_address",u"src_port",b"src_port",u"state",b"state",u"terminated_timestamp",b"terminated_timestamp"]) -> None: ...
+
+class IpPort(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    ip_address = ... # type: typing___Text
+    port = ... # type: builtin___int
+    protocol = ... # type: typing___Text
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        ip_address : typing___Optional[typing___Text] = None,
+        port : typing___Optional[builtin___int] = None,
+        protocol : typing___Optional[typing___Text] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> IpPort: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def ClearField(self, field_name: typing_extensions___Literal[u"ip_address",u"node_key",u"port",u"protocol"]) -> None: ...
+    else:
+        def ClearField(self, field_name: typing_extensions___Literal[u"ip_address",b"ip_address",u"node_key",b"node_key",u"port",b"port",u"protocol",b"protocol"]) -> None: ...
+
+class ProcessOutboundConnection(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    state = ... # type: builtin___int
+    created_timestamp = ... # type: builtin___int
+    terminated_timestamp = ... # type: builtin___int
+    last_seen_timestamp = ... # type: builtin___int
+    port = ... # type: builtin___int
+    ip_address = ... # type: typing___Text
+    protocol = ... # type: typing___Text
+
+    @property
+    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    @property
+    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        state : typing___Optional[builtin___int] = None,
+        created_timestamp : typing___Optional[builtin___int] = None,
+        terminated_timestamp : typing___Optional[builtin___int] = None,
+        last_seen_timestamp : typing___Optional[builtin___int] = None,
+        port : typing___Optional[builtin___int] = None,
+        ip_address : typing___Optional[typing___Text] = None,
+        protocol : typing___Optional[typing___Text] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> ProcessOutboundConnection: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"created_timestamp",u"hostname",u"ip_address",u"last_seen_timestamp",u"node_key",u"port",u"protocol",u"state",u"terminated_timestamp"]) -> None: ...
+    else:
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"hostname",b"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"created_timestamp",b"created_timestamp",u"hostname",b"hostname",u"ip_address",b"ip_address",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key",u"port",b"port",u"protocol",b"protocol",u"state",b"state",u"terminated_timestamp",b"terminated_timestamp"]) -> None: ...
+
+class ProcessInboundConnection(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    state = ... # type: builtin___int
+    created_timestamp = ... # type: builtin___int
+    terminated_timestamp = ... # type: builtin___int
+    last_seen_timestamp = ... # type: builtin___int
+    port = ... # type: builtin___int
+    ip_address = ... # type: typing___Text
+    protocol = ... # type: typing___Text
+
+    @property
+    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    @property
+    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        state : typing___Optional[builtin___int] = None,
+        created_timestamp : typing___Optional[builtin___int] = None,
+        terminated_timestamp : typing___Optional[builtin___int] = None,
+        last_seen_timestamp : typing___Optional[builtin___int] = None,
+        port : typing___Optional[builtin___int] = None,
+        ip_address : typing___Optional[typing___Text] = None,
+        protocol : typing___Optional[typing___Text] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> ProcessInboundConnection: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"created_timestamp",u"hostname",u"ip_address",u"last_seen_timestamp",u"node_key",u"port",u"protocol",u"state",u"terminated_timestamp"]) -> None: ...
+    else:
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"hostname",b"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"created_timestamp",b"created_timestamp",u"hostname",b"hostname",u"ip_address",b"ip_address",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key",u"port",b"port",u"protocol",b"protocol",u"state",b"state",u"terminated_timestamp",b"terminated_timestamp"]) -> None: ...
+
+class Process(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    state = ... # type: builtin___int
+    process_id = ... # type: builtin___int
+    process_guid = ... # type: typing___Text
+    created_timestamp = ... # type: builtin___int
+    terminated_timestamp = ... # type: builtin___int
+    last_seen_timestamp = ... # type: builtin___int
+    process_name = ... # type: typing___Text
+    process_command_line = ... # type: typing___Text
+    operating_system = ... # type: typing___Text
+
+    @property
+    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    @property
+    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        state : typing___Optional[builtin___int] = None,
+        process_id : typing___Optional[builtin___int] = None,
+        process_guid : typing___Optional[typing___Text] = None,
+        created_timestamp : typing___Optional[builtin___int] = None,
+        terminated_timestamp : typing___Optional[builtin___int] = None,
+        last_seen_timestamp : typing___Optional[builtin___int] = None,
+        process_name : typing___Optional[typing___Text] = None,
+        process_command_line : typing___Optional[typing___Text] = None,
+        operating_system : typing___Optional[typing___Text] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> Process: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"created_timestamp",u"hostname",u"last_seen_timestamp",u"node_key",u"operating_system",u"process_command_line",u"process_guid",u"process_id",u"process_name",u"state",u"terminated_timestamp"]) -> None: ...
+    else:
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"hostname",b"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"created_timestamp",b"created_timestamp",u"hostname",b"hostname",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key",u"operating_system",b"operating_system",u"process_command_line",b"process_command_line",u"process_guid",b"process_guid",u"process_id",b"process_id",u"process_name",b"process_name",u"state",b"state",u"terminated_timestamp",b"terminated_timestamp"]) -> None: ...
+
+class File(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    state = ... # type: builtin___int
+    created_timestamp = ... # type: builtin___int
+    deleted_timestamp = ... # type: builtin___int
+    last_seen_timestamp = ... # type: builtin___int
+    file_name = ... # type: typing___Text
+    file_path = ... # type: typing___Text
+    file_extension = ... # type: typing___Text
+    file_mime_type = ... # type: typing___Text
+    file_size = ... # type: builtin___int
+    file_version = ... # type: typing___Text
+    file_description = ... # type: typing___Text
+    file_product = ... # type: typing___Text
+    file_company = ... # type: typing___Text
+    file_directory = ... # type: typing___Text
+    file_inode = ... # type: builtin___int
+    file_hard_links = ... # type: builtin___int
+    md5_hash = ... # type: typing___Text
+    sha1_hash = ... # type: typing___Text
+    sha256_hash = ... # type: typing___Text
+
+    @property
+    def asset_id(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    @property
+    def hostname(self) -> google___protobuf___wrappers_pb2___StringValue: ...
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        asset_id : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        hostname : typing___Optional[google___protobuf___wrappers_pb2___StringValue] = None,
+        state : typing___Optional[builtin___int] = None,
+        created_timestamp : typing___Optional[builtin___int] = None,
+        deleted_timestamp : typing___Optional[builtin___int] = None,
+        last_seen_timestamp : typing___Optional[builtin___int] = None,
+        file_name : typing___Optional[typing___Text] = None,
+        file_path : typing___Optional[typing___Text] = None,
+        file_extension : typing___Optional[typing___Text] = None,
+        file_mime_type : typing___Optional[typing___Text] = None,
+        file_size : typing___Optional[builtin___int] = None,
+        file_version : typing___Optional[typing___Text] = None,
+        file_description : typing___Optional[typing___Text] = None,
+        file_product : typing___Optional[typing___Text] = None,
+        file_company : typing___Optional[typing___Text] = None,
+        file_directory : typing___Optional[typing___Text] = None,
+        file_inode : typing___Optional[builtin___int] = None,
+        file_hard_links : typing___Optional[builtin___int] = None,
+        md5_hash : typing___Optional[typing___Text] = None,
+        sha1_hash : typing___Optional[typing___Text] = None,
+        sha256_hash : typing___Optional[typing___Text] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> File: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",u"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",u"created_timestamp",u"deleted_timestamp",u"file_company",u"file_description",u"file_directory",u"file_extension",u"file_hard_links",u"file_inode",u"file_mime_type",u"file_name",u"file_path",u"file_product",u"file_size",u"file_version",u"hostname",u"last_seen_timestamp",u"md5_hash",u"node_key",u"sha1_hash",u"sha256_hash",u"state"]) -> None: ...
+    else:
+        def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"hostname",b"hostname"]) -> builtin___bool: ...
+        def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"created_timestamp",b"created_timestamp",u"deleted_timestamp",b"deleted_timestamp",u"file_company",b"file_company",u"file_description",b"file_description",u"file_directory",b"file_directory",u"file_extension",b"file_extension",u"file_hard_links",b"file_hard_links",u"file_inode",b"file_inode",u"file_mime_type",b"file_mime_type",u"file_name",b"file_name",u"file_path",b"file_path",u"file_product",b"file_product",u"file_size",b"file_size",u"file_version",b"file_version",u"hostname",b"hostname",u"last_seen_timestamp",b"last_seen_timestamp",u"md5_hash",b"md5_hash",u"node_key",b"node_key",u"sha1_hash",b"sha1_hash",u"sha256_hash",b"sha256_hash",u"state",b"state"]) -> None: ...
+
+class IpAddress(google___protobuf___message___Message):
+    DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
+    node_key = ... # type: typing___Text
+    ip_address = ... # type: typing___Text
+    first_seen_timestamp = ... # type: builtin___int
+    last_seen_timestamp = ... # type: builtin___int
+
+    def __init__(self,
+        *,
+        node_key : typing___Optional[typing___Text] = None,
+        ip_address : typing___Optional[typing___Text] = None,
+        first_seen_timestamp : typing___Optional[builtin___int] = None,
+        last_seen_timestamp : typing___Optional[builtin___int] = None,
+        ) -> None: ...
+    @classmethod
+    def FromString(cls, s: builtin___bytes) -> IpAddress: ...
+    def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
+    if sys.version_info >= (3,):
+        def ClearField(self, field_name: typing_extensions___Literal[u"first_seen_timestamp",u"ip_address",u"last_seen_timestamp",u"node_key"]) -> None: ...
+    else:
+        def ClearField(self, field_name: typing_extensions___Literal[u"first_seen_timestamp",b"first_seen_timestamp",u"ip_address",b"ip_address",u"last_seen_timestamp",b"last_seen_timestamp",u"node_key",b"node_key"]) -> None: ...
 
 class NodeProperty(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
@@ -538,7 +615,7 @@ class DynamicNode(google___protobuf___message___Message):
         def HasField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_ip",b"host_ip",u"hostname",b"hostname"]) -> builtin___bool: ...
         def ClearField(self, field_name: typing_extensions___Literal[u"asset_id",b"asset_id",u"host_ip",b"host_ip",u"hostname",b"hostname",u"id_strategy",b"id_strategy",u"node_key",b"node_key",u"node_type",b"node_type",u"properties",b"properties",u"seen_at",b"seen_at"]) -> None: ...
 
-class EdgeDescription(google___protobuf___message___Message):
+class Edge(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
     to = ... # type: typing___Text
     edgeName = ... # type: typing___Text
@@ -549,7 +626,7 @@ class EdgeDescription(google___protobuf___message___Message):
         edgeName : typing___Optional[typing___Text] = None,
         ) -> None: ...
     @classmethod
-    def FromString(cls, s: builtin___bytes) -> EdgeDescription: ...
+    def FromString(cls, s: builtin___bytes) -> Edge: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
@@ -561,11 +638,11 @@ class EdgeList(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
 
     @property
-    def edges(self) -> google___protobuf___internal___containers___RepeatedCompositeFieldContainer[EdgeDescription]: ...
+    def edges(self) -> google___protobuf___internal___containers___RepeatedCompositeFieldContainer[Edge]: ...
 
     def __init__(self,
         *,
-        edges : typing___Optional[typing___Iterable[EdgeDescription]] = None,
+        edges : typing___Optional[typing___Iterable[Edge]] = None,
         ) -> None: ...
     @classmethod
     def FromString(cls, s: builtin___bytes) -> EdgeList: ...
@@ -576,22 +653,22 @@ class EdgeList(google___protobuf___message___Message):
     else:
         def ClearField(self, field_name: typing_extensions___Literal[u"edges",b"edges"]) -> None: ...
 
-class GraphDescription(google___protobuf___message___Message):
+class Graph(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
     class NodesEntry(google___protobuf___message___Message):
         DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
         key = ... # type: typing___Text
 
         @property
-        def value(self) -> NodeDescription: ...
+        def value(self) -> Node: ...
 
         def __init__(self,
             *,
             key : typing___Optional[typing___Text] = None,
-            value : typing___Optional[NodeDescription] = None,
+            value : typing___Optional[Node] = None,
             ) -> None: ...
         @classmethod
-        def FromString(cls, s: builtin___bytes) -> GraphDescription.NodesEntry: ...
+        def FromString(cls, s: builtin___bytes) -> Graph.NodesEntry: ...
         def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
         def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
         if sys.version_info >= (3,):
@@ -614,7 +691,7 @@ class GraphDescription(google___protobuf___message___Message):
             value : typing___Optional[EdgeList] = None,
             ) -> None: ...
         @classmethod
-        def FromString(cls, s: builtin___bytes) -> GraphDescription.EdgesEntry: ...
+        def FromString(cls, s: builtin___bytes) -> Graph.EdgesEntry: ...
         def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
         def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
         if sys.version_info >= (3,):
@@ -627,19 +704,19 @@ class GraphDescription(google___protobuf___message___Message):
     timestamp = ... # type: builtin___int
 
     @property
-    def nodes(self) -> typing___MutableMapping[typing___Text, NodeDescription]: ...
+    def nodes(self) -> typing___MutableMapping[typing___Text, Node]: ...
 
     @property
     def edges(self) -> typing___MutableMapping[typing___Text, EdgeList]: ...
 
     def __init__(self,
         *,
-        nodes : typing___Optional[typing___Mapping[typing___Text, NodeDescription]] = None,
+        nodes : typing___Optional[typing___Mapping[typing___Text, Node]] = None,
         edges : typing___Optional[typing___Mapping[typing___Text, EdgeList]] = None,
         timestamp : typing___Optional[builtin___int] = None,
         ) -> None: ...
     @classmethod
-    def FromString(cls, s: builtin___bytes) -> GraphDescription: ...
+    def FromString(cls, s: builtin___bytes) -> Graph: ...
     def MergeFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     def CopyFrom(self, other_msg: google___protobuf___message___Message) -> None: ...
     if sys.version_info >= (3,):
@@ -651,11 +728,11 @@ class GeneratedSubgraphs(google___protobuf___message___Message):
     DESCRIPTOR: google___protobuf___descriptor___Descriptor = ...
 
     @property
-    def subgraphs(self) -> google___protobuf___internal___containers___RepeatedCompositeFieldContainer[GraphDescription]: ...
+    def subgraphs(self) -> google___protobuf___internal___containers___RepeatedCompositeFieldContainer[Graph]: ...
 
     def __init__(self,
         *,
-        subgraphs : typing___Optional[typing___Iterable[GraphDescription]] = None,
+        subgraphs : typing___Optional[typing___Iterable[Graph]] = None,
         ) -> None: ...
     @classmethod
     def FromString(cls, s: builtin___bytes) -> GeneratedSubgraphs: ...

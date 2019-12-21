@@ -1,3 +1,5 @@
+from grapl_analyzerlib.nodes.process_inbound_network_connection import ProcessInboundNetworkConnectionSchema
+from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionSchema
 from grapl_analyzerlib.schemas.schema_builder import NodeSchema, OneToMany, ManyToOne, ManyToMany
 
 
@@ -19,7 +21,8 @@ class ProcessSchema(NodeSchema):
                 .with_forward_edge('deleted_files', OneToMany(FileSchema), 'deleter')
                 .with_forward_edge('read_files', ManyToMany(FileSchema), 'readers')
                 .with_forward_edge('wrote_files', ManyToMany(FileSchema), 'writers')
-                .with_forward_edge('created_connections', ManyToMany(OutboundConnectionSchema), 'connections_from')
+                .with_forward_edge('created_connections', ManyToMany(ProcessOutboundNetworkConnectionSchema), 'connections_from')
+                .with_forward_edge('inbound_connections', ManyToMany(ProcessInboundNetworkConnectionSchema), 'bound_by')
             # .with_forward_edge('bound_connections', [uid])
         )
 

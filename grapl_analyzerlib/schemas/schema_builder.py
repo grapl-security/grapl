@@ -4,6 +4,7 @@ from typing import Union, List, Tuple, Sequence, Type, Set, DefaultDict
 
 from typing_extensions import Literal
 
+
 StrIndex = Union[
     Literal["trigram"],
     Literal["exact"],
@@ -181,12 +182,23 @@ def generate_with_str_prop_method(
     return f"""
     def with_{prop_name}(
             self,
-            eq: Optional['StrCmp'] = None,
-            contains: Optional['StrCmp'] = None,
-            ends_with: Optional['StrCmp'] = None,
+            eq: Optional[StrCmp] = None,
+            contains: Optional[StrCmp] = None,
+            ends_with: Optional[StrCmp] = None,
+            starts_with: Optional[StrCmp] = None,
+            regexp: Optional[StrCmp] = None,
+            distance: Optional[Tuple[StrCmp, int]] = None,
     ) -> 'NQ':
         self.set_str_property_filter(
-            "{prop_name}", _str_cmps("{prop_name}", eq=eq, contains=contains, ends_with=ends_with)
+            "{prop_name}", _str_cmps(
+                "{prop_name}",
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+                regexp=regexp,
+                distance=distance,
+            )
         )
         return self
     """
@@ -363,6 +375,7 @@ def plugin_view_init(plugin_schema: NodeSchema) -> str:
 
     return query
 
+
 def generate_plugin_view_get_methods(plugin_schema: NodeSchema) -> str:
 
     methods = ""
@@ -390,6 +403,7 @@ def generate_plugin_view_get_methods(plugin_schema: NodeSchema) -> str:
 
     return methods
 
+
 def generate_get_property_types(plugin_schema: NodeSchema) -> str:
     spaces = "                "
     property_types = []
@@ -410,6 +424,7 @@ def generate_get_property_types(plugin_schema: NodeSchema) -> str:
 
     """
     return method
+
 
 def generate_get_forward_edge_types(plugin_schema: NodeSchema) -> str:
     spaces = "                "
@@ -618,61 +633,60 @@ def generate_plugin_view_extensions(plugin_schema: NodeSchema) -> str:
     return "\n".join(extensions)
 
 
-def main() -> None:
-    from grapl_analyzerlib.schemas import ProcessSchema
-    class AuidSchema(NodeSchema):
-        def __init__(self):
-            super(AuidSchema, self).__init__()
-            (
-                self
-                .with_int_prop("auid")
-            )
-
-        @staticmethod
-        def self_type() -> str:
-            return "Auid"
-
-    class AuidAssumptionSchema(NodeSchema):
-        def __init__(self):
-            super(AuidAssumptionSchema, self).__init__()
-            (
-                self.with_int_prop("assumed_timestamp")
-                    .with_int_prop("assuming_process_id")
-                    .with_forward_edge("assumed_auid", ManyToOne(AuidSchema), 'auid_assumptions')
-                    .with_forward_edge("assuming_process", OneToOne(ProcessSchema), 'assumed_auid')
-            )
-
-        @staticmethod
-        def self_type() -> str:
-            return "AuidAssumption"
-
-
-    auid_assumption_schema = AuidAssumptionSchema()
-
-    auid_assumption_query = generate_plugin_query(auid_assumption_schema)
-    auid_assumption_view = generate_plugin_view(auid_assumption_schema)
-    auid_assumption_query_extensions = generate_plugin_query_extensions(auid_assumption_schema)
-    auid_assumption_view_extensions = generate_plugin_view_extensions(auid_assumption_schema)
-
-    auid_schema = AuidSchema()
-    auid_query = generate_plugin_query(auid_schema)
-    auid_view = generate_plugin_view(auid_schema)
-    auid_query_extensions = generate_plugin_query_extensions(auid_schema)
-    auid_view_extensions = generate_plugin_view_extensions(auid_schema)
-
-    print(auid_query)
-    print(auid_view)
-
-    print(auid_assumption_query)
-    print(auid_assumption_view)
-
-    print(auid_assumption_query_extensions)
-    print(auid_assumption_view_extensions)
-
-    print(auid_query_extensions)
-    print(auid_view_extensions)
-
-
-
-if __name__ == '__main__':
-    main()
+# def main() -> None:
+#     from grapl_analyzerlib.schemas import ProcessSchema
+#     class AuidSchema(NodeSchema):
+#         def __init__(self):
+#             super(AuidSchema, self).__init__()
+#             (
+#                 self
+#                 .with_int_prop("auid")
+#             )
+#
+#         @staticmethod
+#         def self_type() -> str:
+#             return "Auid"
+#
+#     class AuidAssumptionSchema(NodeSchema):
+#         def __init__(self):
+#             super(AuidAssumptionSchema, self).__init__()
+#             (
+#                 self.with_int_prop("assumed_timestamp")
+#                     .with_int_prop("assuming_process_id")
+#                     .with_forward_edge("assumed_auid", ManyToOne(AuidSchema), 'auid_assumptions')
+#                     .with_forward_edge("assuming_process", OneToOne(ProcessSchema), 'assumed_auid')
+#             )
+#
+#         @staticmethod
+#         def self_type() -> str:
+#             return "AuidAssumption"
+#
+#
+#     auid_assumption_schema = AuidAssumptionSchema()
+#
+#     auid_assumption_query = generate_plugin_query(auid_assumption_schema)
+#     auid_assumption_view = generate_plugin_view(auid_assumption_schema)
+#     auid_assumption_query_extensions = generate_plugin_query_extensions(auid_assumption_schema)
+#     auid_assumption_view_extensions = generate_plugin_view_extensions(auid_assumption_schema)
+#
+#     auid_schema = AuidSchema()
+#     auid_query = generate_plugin_query(auid_schema)
+#     auid_view = generate_plugin_view(auid_schema)
+#     auid_query_extensions = generate_plugin_query_extensions(auid_schema)
+#     auid_view_extensions = generate_plugin_view_extensions(auid_schema)
+#
+#     print(auid_query)
+#     print(auid_view)
+#     print(auid_query_extensions)
+#     print(auid_view_extensions)
+#
+#
+#     print(auid_assumption_query)
+#     print(auid_assumption_view)
+#
+#     print(auid_assumption_query_extensions)
+#     print(auid_assumption_view_extensions)
+#
+#
+# if __name__ == '__main__':
+#     main()

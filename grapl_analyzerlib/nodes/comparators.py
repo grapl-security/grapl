@@ -6,8 +6,8 @@ from grapl_analyzerlib.nodes.types import PropertyT
 T = TypeVar("T", bound=Union[str, int])
 
 PropertyFilter = List[List["Cmp[T]"]]
-StrCmp = Union[str, List[str], List[Union[str, 'Not[str]']]]
-IntCmp = Union[int, List[int], List[Union[int, 'Not[int]']]]
+StrCmp = Union[str, List[str], List[Union[str, "Not[str]"]]]
+IntCmp = Union[int, List[int], List[Union[int, "Not[int]"]]]
 
 
 class Or(object):
@@ -26,22 +26,20 @@ class Cmp(Generic[T]):
 
 
 class Eq(Cmp[T]):
-    def __init__(
-        self, predicate: str, value: Union[T, Not[T]]
-    ) -> None:
+    def __init__(self, predicate: str, value: Union[T, Not[T]]) -> None:
         self.predicate = predicate
         self.value = value
 
     def to_filter(self) -> str:
         if isinstance(self.value, str):
             if self.predicate == "dgraph.type":
-                return f'type({self.value})'
+                return f"type({self.value})"
             return 'eq({}, "{}")'.format(self.predicate, self.value)
         if isinstance(self.value, int):
             return "eq({}, {})".format(self.predicate, self.value)
         if isinstance(self.value, Not) and isinstance(self.value.value, str):
             if self.predicate == "dgraph.type":
-                return f'NOT type({self.value})'
+                return f"NOT type({self.value})"
             return 'NOT eq({}, "{}")'.format(self.predicate, self.value.value)
         if isinstance(self.value, Not) and isinstance(self.value.value, int):
             return "NOT eq({}, {})".format(self.predicate, self.value.value)
@@ -154,7 +152,9 @@ class Regexp(Cmp[str]):
 
 
 class Distance(Cmp[str]):
-    def __init__(self, predicate: str, value: Union[str, Not[str]], distance: int) -> None:
+    def __init__(
+        self, predicate: str, value: Union[str, Not[str]], distance: int
+    ) -> None:
         self.predicate = predicate
         self.value = value
         self.distance = distance
@@ -170,13 +170,13 @@ class Distance(Cmp[str]):
 
 
 def _str_cmps(
-        predicate: str,
-        eq: Optional[StrCmp] = None,
-        contains: Optional[StrCmp] = None,
-        ends_with: Optional[StrCmp] = None,
-        starts_with: Optional[StrCmp] = None,
-        regexp: Optional[StrCmp] = None,
-        distance: Optional[Tuple[StrCmp, int]] = None,
+    predicate: str,
+    eq: Optional[StrCmp] = None,
+    contains: Optional[StrCmp] = None,
+    ends_with: Optional[StrCmp] = None,
+    starts_with: Optional[StrCmp] = None,
+    regexp: Optional[StrCmp] = None,
+    distance: Optional[Tuple[StrCmp, int]] = None,
 ) -> List[List[Cmp[str]]]:
     cmps = []  # type: List[Sequence[Cmp[str]]]
 
@@ -218,7 +218,6 @@ def _str_cmps(
             _distance = [Distance(predicate, e[0], e[1]) for e in distance]
             cmps.append(_distance)
 
-
     if not cmps:
         cmps.append([Has(predicate)])
 
@@ -226,10 +225,10 @@ def _str_cmps(
 
 
 def _int_cmps(
-        predicate: str,
-        eq: Optional[IntCmp] = None,
-        gt: Optional[IntCmp] = None,
-        lt: Optional[IntCmp] = None,
+    predicate: str,
+    eq: Optional[IntCmp] = None,
+    gt: Optional[IntCmp] = None,
+    lt: Optional[IntCmp] = None,
 ) -> List[List[Cmp[int]]]:
     cmps = []  # type: List[Sequence[Cmp[int]]]
 

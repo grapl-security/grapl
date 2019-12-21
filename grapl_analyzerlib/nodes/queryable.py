@@ -14,19 +14,21 @@ from typing import (
     Set,
     Iterable,
     Union,
-    cast, Any)
+    cast,
+    Any,
+)
 
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.nodes.retry import retry
 
-U = TypeVar('U', bound=Union[str, int])
-NQ = TypeVar('NQ', bound='Queryable')
-NV = TypeVar('NV', bound='Viewable')
+U = TypeVar("U", bound=Union[str, int])
+NQ = TypeVar("NQ", bound="Queryable")
+NV = TypeVar("NV", bound="Viewable")
 
 
 class Queryable(abc.ABC, Generic[NV]):
-    def __init__(self, view_type: Type['NV']) -> None:
+    def __init__(self, view_type: Type["NV"]) -> None:
         self._node_key = Has("node_key")  # type: Cmp[str]
         self._uid = None  # type: Optional[Cmp[str]]
         self._query_id = str(uuid.uuid4())
@@ -45,10 +47,10 @@ class Queryable(abc.ABC, Generic[NV]):
         return extended_type(self.view_type)
 
     def with_node_key(self, eq: str):
-        self._node_key = Eq('node_key', eq)
+        self._node_key = Eq("node_key", eq)
 
     @abc.abstractmethod
-    def _get_unique_predicate(self) -> Optional[Tuple[str, 'PropertyT']]:
+    def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         pass
 
     @abc.abstractmethod
@@ -56,7 +58,7 @@ class Queryable(abc.ABC, Generic[NV]):
         pass
 
     @abc.abstractmethod
-    def _get_property_filters(self) -> Mapping[str, 'PropertyFilter[Property]']:
+    def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         pass
 
     @abc.abstractmethod
@@ -87,18 +89,18 @@ class Queryable(abc.ABC, Generic[NV]):
     ) -> Mapping[str, Union["Queryable", Tuple["Queryable", str]]]:
         return {**self.get_forward_edges(), **self.get_reverse_edges()}
 
-    def get_property_filters(self) -> Mapping[str, 'PropertyFilter[Property]']:
+    def get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         prop_filters = self._get_property_filters()
         return {**prop_filters, **self.dynamic_property_filters}
 
     def get_property_names(self) -> List[str]:
-        prop_names = [p[0] for p in self.get_property_filters().items() if p[1] is not None]
-        prop_names.append('node_key')
+        prop_names = [
+            p[0] for p in self.get_property_filters().items() if p[1] is not None
+        ]
+        prop_names.append("node_key")
         return list(set(prop_names))
 
-    def set_forward_edge_filter(
-        self, edge_name: str, edge_filter: "Queryable"
-    ) -> None:
+    def set_forward_edge_filter(self, edge_name: str, edge_filter: "Queryable") -> None:
         self.dynamic_forward_edge_filters[edge_name] = edge_filter
 
     def set_reverse_edge_filter(
@@ -107,21 +109,21 @@ class Queryable(abc.ABC, Generic[NV]):
         self.dynamic_reverse_edge_filters[edge_name] = edge_filter, forward_name
 
     def set_str_property_filter(
-        self, property_name: str, property_filter: 'List[List[Cmp[str]]]'
+        self, property_name: str, property_filter: "List[List[Cmp[str]]]"
     ) -> None:
         self.dynamic_property_filters[property_name].extend(cast(Any, property_filter))
 
     def set_int_property_filter(
-            self, property_name: str, property_filter: 'List[List[Cmp[int]]]'
+        self, property_name: str, property_filter: "List[List[Cmp[int]]]"
     ) -> None:
         self.dynamic_property_filters[property_name].extend(cast(Any, property_filter))
 
     def query(
-            self,
-            dgraph_client: DgraphClient,
-            contains_node_key: Optional[str] = None,
-            first: Optional[int] = 1000,
-    ) -> List['NV']:
+        self,
+        dgraph_client: DgraphClient,
+        contains_node_key: Optional[str] = None,
+        first: Optional[int] = 1000,
+    ) -> List["NV"]:
         if contains_node_key:
             first = 1
         query_str = generate_query(
@@ -129,12 +131,12 @@ class Queryable(abc.ABC, Generic[NV]):
             binding_modifier="res",
             root=self,
             contains_node_key=contains_node_key,
-            first=first
+            first=first,
         )
 
         txn = dgraph_client.txn(read_only=True)
         try:
-            raw_views = json.loads(txn.query(query_str).json)['res']
+            raw_views = json.loads(txn.query(query_str).json)["res"]
         finally:
             txn.discard()
 
@@ -146,22 +148,22 @@ class Queryable(abc.ABC, Generic[NV]):
         ]
 
     def query_first(
-            self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional['NV']:
+        self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
+    ) -> Optional["NV"]:
         res = self.query(dgraph_client, contains_node_key, first=1)
         if res and isinstance(res, list):
-            return cast('NV', res[0])
+            return cast("NV", res[0])
         if res:
-            return cast('NV', res)
+            return cast("NV", res)
         else:
             return None
 
     @retry(delay=0.05)
     def get_count(
-            self,
-            dgraph_client: DgraphClient,
-            first: Optional[int] = None,
-            contains_node_key: Optional[str] = None,
+        self,
+        dgraph_client: DgraphClient,
+        first: Optional[int] = None,
+        contains_node_key: Optional[str] = None,
     ) -> int:
         query_str = generate_query(
             query_name="res",
@@ -169,12 +171,12 @@ class Queryable(abc.ABC, Generic[NV]):
             root=self,
             contains_node_key=contains_node_key,
             first=first,
-            count=True
+            count=True,
         )
 
         txn = dgraph_client.txn(read_only=True)
         try:
-            raw_count = json.loads(txn.query(query_str).json)['res']
+            raw_count = json.loads(txn.query(query_str).json)["res"]
         finally:
             txn.discard()
 
@@ -186,6 +188,7 @@ class Queryable(abc.ABC, Generic[NV]):
             if isinstance(raw_count, dict):
                 return int(raw_count.get("count", 0))
             raise TypeError("raw_count is not list or dict")
+
 
 def traverse_query_iter(
     node: Queryable, visited: Optional[Set[Queryable]] = None
@@ -215,7 +218,7 @@ def check_edge(
     visited: Set[Union[Queryable, Tuple[Queryable, str, Queryable]]],
 ) -> bool:
     already_seen = False
-    if edge_name[0] == '~':
+    if edge_name[0] == "~":
         already_seen = already_seen or ((query, edge_name, neighbor) in visited)
         already_seen = already_seen or ((neighbor, edge_name[1:], query) in visited)
 
@@ -226,17 +229,17 @@ def check_edge(
         visited.add((neighbor, edge_name, query))
     else:
         already_seen = already_seen or ((query, edge_name, neighbor) in visited)
-        already_seen = already_seen or ((neighbor, '~' + edge_name, query) in visited)
+        already_seen = already_seen or ((neighbor, "~" + edge_name, query) in visited)
 
         visited.add((query, edge_name, neighbor))
-        visited.add((neighbor, '~' + edge_name, query))
-        visited.add((query, '~' + edge_name, neighbor))
+        visited.add((neighbor, "~" + edge_name, query))
+        visited.add((query, "~" + edge_name, neighbor))
         visited.add((neighbor, edge_name, query))
 
     return already_seen
 
 
-def _generate_filter(comparisons_list: 'PropertyFilter[Property]') -> str:
+def _generate_filter(comparisons_list: "PropertyFilter[Property]") -> str:
     and_filters = []
 
     for comparisons in comparisons_list:
@@ -255,7 +258,7 @@ def _generate_filter(comparisons_list: 'PropertyFilter[Property]') -> str:
     return "(\n\t{}\n)".format(or_filters)
 
 
-def _format_filters(property_filters: List['PropertyFilter[Property]']) -> str:
+def _format_filters(property_filters: List["PropertyFilter[Property]"]) -> str:
     inner_filters = []
 
     for prop in property_filters:
@@ -270,7 +273,7 @@ def _format_filters(property_filters: List['PropertyFilter[Property]']) -> str:
     return f"@filter({'AND'.join(inner_filters)})"
 
 
-def _get_single_equals_predicate(query: Queryable) -> Optional['Cmp[Property]']:
+def _get_single_equals_predicate(query: Queryable) -> Optional["Cmp[Property]"]:
     for prop_name, prop_filter in query.get_property_filters().items():
 
         # prop is missing or has OR logic
@@ -346,7 +349,13 @@ def generate_var_block(
             [
                 q
                 for q in neighbor.get_property_names()
-                if q not in ("node_key", 'dgraph.type', neighbor._get_unique_predicate_name()) and q
+                if q
+                not in (
+                    "node_key",
+                    "dgraph.type",
+                    neighbor._get_unique_predicate_name(),
+                )
+                and q
             ]
         )
 
@@ -375,10 +384,7 @@ def generate_var_block(
 
 
 def generate_root_var(
-    query: Queryable,
-    root: Queryable,
-    root_binding: str,
-    node_key: Optional[str] = None,
+    query: Queryable, root: Queryable, root_binding: str, node_key: Optional[str] = None
 ) -> str:
     blocks = generate_var_block(query, root, root_binding)
 
@@ -394,7 +400,7 @@ def generate_root_var(
     _prop_names = [
         q
         for q in query.get_property_names()
-        if q not in ("node_key", 'dgraph.type', query._get_unique_predicate_name())
+        if q not in ("node_key", "dgraph.type", query._get_unique_predicate_name())
     ]
 
     prop_names = ", ".join(_prop_names)
@@ -446,7 +452,6 @@ def generate_coalescing_query(
     filtered_var_blocks = generate_var_block(root, root, "", should_filter=True)
     prop_filters = [pf for pf in root.get_property_filters().values()]
     root_filters = _format_filters(prop_filters)
-
 
     prop_names = ", ".join(
         [
@@ -502,7 +507,7 @@ def generate_inner_query(
         [
             q
             for q in root.get_property_names()
-            if q not in ("node_key", 'dgraph.type', root._get_unique_predicate_name())
+            if q not in ("node_key", "dgraph.type", root._get_unique_predicate_name())
         ]
     )
 
@@ -556,6 +561,7 @@ def generate_query(
             {generate_inner_query(query_name, root, root_bindings, first, count)}
         }}
     """
+
 
 from grapl_analyzerlib.nodes.comparators import Has, Cmp, PropertyFilter, Eq
 
