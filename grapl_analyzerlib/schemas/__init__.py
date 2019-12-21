@@ -3,4 +3,8 @@ from grapl_analyzerlib.schemas.schema_builder import NodeSchema
 from grapl_analyzerlib.schemas.process_schema import ProcessSchema
 from grapl_analyzerlib.schemas.file_schema import FileSchema
 from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionSchema
-from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionSchema
+from grapl_analyzerlib.nodes.ip_address_node import IpAddressSchema
+from grapl_analyzerlib.nodes.ip_port_node import IpPortSchema
+from grapl_analyzerlib.nodes.network_connection_node import NetworkConnectionSchema
+from grapl_analyzerlib.nodes.process_inbound_network_connection import ProcessInboundNetworkConnectionSchema
+from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionSchema
