@@ -315,10 +315,10 @@ class ProcessView(Viewable):
         wrote_to_files: Optional[List["FileView"]] = None,
         deleted_files: Optional[List["FileView"]] = None,
         created_connections: Optional[
-            List["grapl_analyzerlib.nodes.process_outbound_network_connection.ProcessOutboundNetworkConnectionQuery"]
+            List["ProcessOutboundNetworkConnectionQuery"]
         ] = None,
         inbound_connections: Optional[
-            List["grapl_analyzerlib.nodes.process_inbound_network_connection.ProcessInboundNetworkConnectionQuery"]
+            List["ProcessInboundNetworkConnectionQuery"]
         ] = None,
         parent: Optional["NV"] = None,
     ) -> None:
@@ -588,3 +588,6 @@ from grapl_analyzerlib.nodes.comparators import (
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
+from grapl_analyzerlib.nodes.process_inbound_network_connection import IProcessInboundNetworkConnectionQuery
+from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionView, \
+    IProcessOutboundNetworkConnectionQuery
