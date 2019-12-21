@@ -19,4 +19,4 @@ class IpAddressSchema(NodeSchema):
         return "IpAddress"
 
 
-from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionSchema
+from grapl_analyzerlib.schemas.ip_connection_schema import IpConnectionSchema

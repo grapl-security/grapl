@@ -1,4 +1,3 @@
-from grapl_analyzerlib.schemas.ip_port_schema import IpPortSchema
 from grapl_analyzerlib.schemas.schema_builder import NodeSchema, ManyToOne
 
 
@@ -29,3 +28,6 @@ class ProcessOutboundNetworkConnectionSchema(NodeSchema):
     @staticmethod
     def self_type() -> str:
         return "ProcessOutboundNetworkConnection"
+
+
+from grapl_analyzerlib.schemas.ip_port_schema import IpPortSchema
