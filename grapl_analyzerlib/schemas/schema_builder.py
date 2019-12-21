@@ -612,7 +612,7 @@ def generate_plugin_view_extensions(plugin_schema: NodeSchema) -> str:
 
 
 # def main() -> None:
-#     from grapl_analyzerlib.schemas import ProcessSchema
+#     from grapl_analyzerlib.schemas.process_schema import ProcessSchema
 #     class AuidSchema(NodeSchema):
 #         def __init__(self):
 #             super(AuidSchema, self).__init__()
