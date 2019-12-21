@@ -12,36 +12,6 @@ from grapl_analyzerlib.nodes.comparators import (
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 from grapl_analyzerlib.prelude import *
-from grapl_analyzerlib.schemas.schema_builder import NodeSchema
-
-
-class ProcessOutboundNetworkConnectionSchema(NodeSchema):
-    def __init__(self):
-        super(ProcessOutboundNetworkConnectionSchema, self).__init__()
-        (
-            self.with_str_prop("ip_address")
-            .with_str_prop("protocol")
-            .with_int_prop("created_timestamp")
-            .with_int_prop("terminated_timestamp")
-            .with_int_prop("last_seen_timestamp")
-            .with_int_prop("port")
-            .with_forward_edge(
-                "process_outbound_connection",
-                # The IP + Port that was connected to
-                ManyToOne(IpPortSchema),
-                "connections_from_processes",
-            )
-            .with_forward_edge(
-                "connected_over",
-                # The IP + Port that was connected to
-                ManyToOne(IpPortSchema),
-                "process_connections",
-            )
-        )
-
-    @staticmethod
-    def self_type() -> str:
-        return "ProcessOutboundNetworkConnection"
 
 
 IProcessOutboundNetworkConnectionQuery = TypeVar(
