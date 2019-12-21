@@ -9,9 +9,9 @@ from grapl_analyzerlib.nodes.comparators import (
     StrCmp,
     _str_cmps,
 )
+from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.prelude import *
 
 
 INetworkConnectionQuery = TypeVar(
@@ -156,7 +156,7 @@ class NetworkConnectionView(DynamicNodeView):
         src_port: Optional[str] = None,
         dst_ip_address: Optional[str] = None,
         dst_port: Optional[str] = None,
-        inbound_connection_to: " Optional[IpPortView]" = None,
+        inbound_connection_to: "Optional[IpPortView]" = None,
     ):
         super(NetworkConnectionView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type

@@ -9,9 +9,9 @@ from grapl_analyzerlib.nodes.comparators import (
     StrCmp,
     _str_cmps,
 )
+from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.prelude import *
 
 IIpConnectionQuery = TypeVar("IIpConnectionQuery", bound="IpConnectionQuery")
 
@@ -171,7 +171,7 @@ class IpConnectionView(DynamicNodeView):
         src_port: Optional[str] = None,
         dst_ip_address: Optional[str] = None,
         dst_port: Optional[str] = None,
-        inbound_connection_to: " Optional[IpAddressView]" = None,
+        inbound_connection_to: "Optional[IpAddressView]" = None,
     ):
         super(IpConnectionView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
@@ -286,19 +286,19 @@ class IpConnectionView(DynamicNodeView):
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
 
-def main():
-    schema = IpConnectionSchema()
-
-    query = generate_plugin_query(schema)
-    view = generate_plugin_view(schema)
-    query_extensions = generate_plugin_query_extensions(schema)
-    view_extensions = generate_plugin_view_extensions(schema)
-
-    print(query)
-    print(view)
-    print(query_extensions)
-    print(view_extensions)
-
+# def main():
+#     schema = IpConnectionSchema()
+#
+#     query = generate_plugin_query(schema)
+#     view = generate_plugin_view(schema)
+#     query_extensions = generate_plugin_query_extensions(schema)
+#     view_extensions = generate_plugin_view_extensions(schema)
+#
+#     print(query)
+#     print(view)
+#     print(query_extensions)
+#     print(view_extensions)
+#
 
 from grapl_analyzerlib.nodes.ip_address_node import (
     IIpAddressQuery,

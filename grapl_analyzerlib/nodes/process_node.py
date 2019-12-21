@@ -49,7 +49,7 @@ class ProcessQuery(Queryable[IProcessView]):
         regexp: Optional["StrCmp"] = None,
         distance: Optional[Tuple["StrCmp", int]] = None,
     ) -> "NQ":
-        cast("ProcessQuery", self)._process_name.extend(
+        cast(ProcessQuery, self)._process_name.extend(
             _str_cmps(
                 "process_name",
                 eq=eq,
@@ -68,7 +68,7 @@ class ProcessQuery(Queryable[IProcessView]):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        cast("ProcessQuery", self)._process_id.extend(
+        cast(ProcessQuery, self)._process_id.extend(
             _int_cmps("process_id", eq, gt, lt)
         )
         return self
@@ -79,7 +79,7 @@ class ProcessQuery(Queryable[IProcessView]):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        cast("ProcessQuery", self)._created_timestamp.extend(
+        cast(ProcessQuery, self)._created_timestamp.extend(
             _int_cmps("created_timestamp", eq, gt, lt)
         )
         return self
@@ -93,7 +93,7 @@ class ProcessQuery(Queryable[IProcessView]):
         regexp: Optional["StrCmp"] = None,
         distance: Optional[Tuple["StrCmp", int]] = None,
     ) -> "NQ":
-        cast("ProcessQuery", self)._asset_id.extend(
+        cast(ProcessQuery, self)._asset_id.extend(
             _str_cmps(
                 "asset_id",
                 eq=eq,
@@ -112,7 +112,7 @@ class ProcessQuery(Queryable[IProcessView]):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        cast("ProcessQuery", self)._terminate_time.extend(
+        cast(ProcessQuery, self)._terminate_time.extend(
             _int_cmps("terminate_time", eq, gt, lt)
         )
         return self
@@ -126,7 +126,7 @@ class ProcessQuery(Queryable[IProcessView]):
         regexp: Optional["StrCmp"] = None,
         distance: Optional[Tuple["StrCmp", int]] = None,
     ) -> "NQ":
-        cast("ProcessQuery", self)._image_name.extend(
+        cast(ProcessQuery, self)._image_name.extend(
             _str_cmps(
                 "image_name",
                 eq=eq,
@@ -148,7 +148,7 @@ class ProcessQuery(Queryable[IProcessView]):
         regexp: Optional["StrCmp"] = None,
         distance: Optional[Tuple["StrCmp", int]] = None,
     ) -> "NQ":
-        cast("ProcessQuery", self)._arguments.extend(
+        cast(ProcessQuery, self)._arguments.extend(
             _str_cmps(
                 "arguments",
                 eq=eq,
@@ -165,32 +165,32 @@ class ProcessQuery(Queryable[IProcessView]):
         self: "NQ", child_query: Optional["IProcessQuery"] = None
     ) -> "NQ":
         children = child_query or ProcessQuery()  # type: ProcessQuery
-        children._parent = cast("ProcessQuery", self)
-        cast("ProcessQuery", self)._children = children
+        children._parent = cast(ProcessQuery, self)
+        cast(ProcessQuery, self)._children = children
         return self
 
     def with_bin_file(
         self: "NQ", bin_file_query: Optional["IFileQuery"] = None
     ) -> "NQ":
         bin_file = bin_file_query or FileQuery()  # type: FileQuery
-        bin_file._spawned_from = cast("ProcessQuery", self)
-        cast("ProcessQuery", self)._bin_file = bin_file
+        bin_file._spawned_from = cast(ProcessQuery, self)
+        cast(ProcessQuery, self)._bin_file = bin_file
         return self
 
     def with_created_files(
         self: "NQ", created_files_query: Optional["IFileQuery"] = None
     ) -> "NQ":
         created_files = created_files_query or FileQuery()
-        created_files._creator = cast("ProcessQuery", self)
-        cast("ProcessQuery", self)._created_files = created_files
+        created_files._creator = cast(ProcessQuery, self)
+        cast(ProcessQuery, self)._created_files = created_files
         return self
 
     def with_deleted_files(
         self: "NQ", deleted_files_query: Optional["IFileQuery"] = None
     ) -> "NQ":
         deleted_files = deleted_files_query or FileQuery()
-        deleted_files._deleter = cast("ProcessQuery", self)
-        cast("ProcessQuery", self)._deleted_files = deleted_files
+        deleted_files._deleter = cast(ProcessQuery, self)
+        cast(ProcessQuery, self)._deleted_files = deleted_files
         return self
 
     def with_read_files(
@@ -199,8 +199,8 @@ class ProcessQuery(Queryable[IProcessView]):
 
         read_files = read_files_query or FileQuery()
 
-        read_files._readers = cast("ProcessQuery", self)
-        cast("ProcessQuery", self)._read_files = read_files
+        read_files._readers = cast(ProcessQuery, self)
+        cast(ProcessQuery, self)._read_files = read_files
         return self
 
     def with_wrote_files(
@@ -208,8 +208,8 @@ class ProcessQuery(Queryable[IProcessView]):
     ) -> "NQ":
         wrote_files = wrote_files_query or FileQuery()
 
-        wrote_files._writers = cast("ProcessQuery", self)
-        cast("ProcessQuery", self)._wrote_files = wrote_files
+        wrote_files._writers = cast(ProcessQuery, self)
+        cast(ProcessQuery, self)._wrote_files = wrote_files
         return self
 
     def with_created_connection(
@@ -241,8 +241,8 @@ class ProcessQuery(Queryable[IProcessView]):
     def with_parent(self: "NQ", parent_query: Optional["IProcessQuery"] = None) -> "NQ":
         parent = parent_query or ProcessQuery()  # type: ProcessQuery
 
-        parent._children = cast("ProcessQuery", self)
-        cast("ProcessQuery", self)._parent = parent
+        parent._children = cast(ProcessQuery, self)
+        cast(ProcessQuery, self)._parent = parent
         return self
 
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
@@ -264,7 +264,7 @@ class ProcessQuery(Queryable[IProcessView]):
         combined = {}
         for prop_name, prop_filter in props.items():
             if prop_filter:
-                combined[prop_name] = cast("PropertyFilter[Property]", prop_filter)
+                combined[prop_name] = cast(PropertyFilter[Property], prop_filter)
 
         return combined
 
@@ -341,60 +341,60 @@ class ProcessView(Viewable):
         self.parent = parent
 
     def get_process_id(self: "NV") -> Optional[int]:
-        if cast("ProcessView", self).process_id is not None:
-            return cast("ProcessView", self).process_id
-        cast("ProcessView", self).process_id = cast(
+        if cast(ProcessView, self).process_id is not None:
+            return cast(ProcessView, self).process_id
+        cast(ProcessView, self).process_id = cast(
             int, self.fetch_property("process_id", int)
         )
-        return cast("ProcessView", self).process_id
+        return cast(ProcessView, self).process_id
 
     def get_process_name(self: "NV") -> Optional[str]:
-        if cast("ProcessView", self).process_name is not None:
-            return cast("ProcessView", self).process_name
-        cast("ProcessView", self).process_name = cast(
+        if cast(ProcessView, self).process_name is not None:
+            return cast(ProcessView, self).process_name
+        cast(ProcessView, self).process_name = cast(
             str, self.fetch_property("process_name", str)
         )
-        return cast("ProcessView", self).process_name
+        return cast(ProcessView, self).process_name
 
     def get_created_timestamp(self: "NV") -> Optional[int]:
-        if cast("ProcessView", self).created_timestamp is not None:
-            return cast("ProcessView", self).created_timestamp
-        cast("ProcessView", self).created_timestamp = cast(
+        if cast(ProcessView, self).created_timestamp is not None:
+            return cast(ProcessView, self).created_timestamp
+        cast(ProcessView, self).created_timestamp = cast(
             int, self.fetch_property("created_timestamp", int)
         )
-        return cast("ProcessView", self).created_timestamp
+        return cast(ProcessView, self).created_timestamp
 
     def get_asset_id(self: "NV") -> Optional[str]:
-        if cast("ProcessView", self).asset_id is not None:
-            return cast("ProcessView", self).asset_id
-        cast("ProcessView", self).asset_id = cast(
+        if cast(ProcessView, self).asset_id is not None:
+            return cast(ProcessView, self).asset_id
+        cast(ProcessView, self).asset_id = cast(
             str, self.fetch_property("asset_id", str)
         )
-        return cast("ProcessView", self).asset_id
+        return cast(ProcessView, self).asset_id
 
     def get_terminate_time(self: "NV") -> Optional[int]:
-        if cast("ProcessView", self).terminate_time is not None:
-            return cast("ProcessView", self).terminate_time
-        cast("ProcessView", self).terminate_time = cast(
+        if cast(ProcessView, self).terminate_time is not None:
+            return cast(ProcessView, self).terminate_time
+        cast(ProcessView, self).terminate_time = cast(
             int, self.fetch_property("terminate_time", int)
         )
-        return cast("ProcessView", self).terminate_time
+        return cast(ProcessView, self).terminate_time
 
     def get_image_name(self: "NV") -> Optional[str]:
-        if cast("ProcessView", self).image_name is not None:
-            return cast("ProcessView", self).image_name
-        cast("ProcessView", self).image_name = cast(
+        if cast(ProcessView, self).image_name is not None:
+            return cast(ProcessView, self).image_name
+        cast(ProcessView, self).image_name = cast(
             str, self.fetch_property("image_name", str)
         )
-        return cast("ProcessView", self).image_name
+        return cast(ProcessView, self).image_name
 
     def get_arguments(self: "NV") -> Optional[str]:
-        if cast("ProcessView", self).arguments is not None:
-            return cast("ProcessView", self).arguments
-        cast("ProcessView", self).arguments = cast(
+        if cast(ProcessView, self).arguments is not None:
+            return cast(ProcessView, self).arguments
+        cast(ProcessView, self).arguments = cast(
             str, self.fetch_property("arguments", str)
         )
-        return cast("ProcessView", self).arguments
+        return cast(ProcessView, self).arguments
 
     def get_children(
         self: "NV", match_children: Optional["IProcessQuery"] = None
@@ -412,61 +412,61 @@ class ProcessView(Viewable):
         )
 
         if self_node:
-            cast("ProcessView", self).children = self_node.children
+            cast(ProcessView, self).children = self_node.children
 
-        return cast("ProcessView", self).children
+        return cast(ProcessView, self).children
 
     def get_created_connections(
         self: "NV"
     ) -> "List[ProcessOutboundNetworkConnectionView]":
-        cast("ProcessView", self).created_connections = cast(
+        cast(ProcessView, self).created_connections = cast(
             "List[ProcessOutboundNetworkConnectionView]",
             self.fetch_edges(
                 "created_connections", ProcessOutboundNetworkConnectionView
             ),
         )
-        return cast("ProcessView", self).created_connections
+        return cast(ProcessView, self).created_connections
 
     def get_inbound_connections(
         self: "NV"
     ) -> "List[ProcessInboundNetworkConnectionView]":
-        cast("ProcessView", self).created_connections = cast(
+        cast(ProcessView, self).created_connections = cast(
             "List[ProcessInboundNetworkConnectionView]",
             self.fetch_edges(
                 "inbound_connections", ProcessInboundNetworkConnectionView
             ),
         )
-        return cast("ProcessView", self).created_connections
+        return cast(ProcessView, self).created_connections
 
     def get_bin_file(self: "NV") -> "Optional[FileView]":
-        cast("ProcessView", self).bin_file = cast(
-            "Optional[FileView]", self.fetch_edge("bin_file", FileView)
+        cast(ProcessView, self).bin_file = cast(
+            Optional[FileView], self.fetch_edge("bin_file", FileView)
         )
-        return cast("ProcessView", self).bin_file
+        return cast(ProcessView, self).bin_file
 
     def get_created_files(self: "NV") -> "List[FileView]":
-        cast("ProcessView", self).created_files = cast(
-            "List[FileView]", self.fetch_edges("created_files", FileView)
+        cast(ProcessView, self).created_files = cast(
+            List[FileView], self.fetch_edges("created_files", FileView)
         )
-        return cast("ProcessView", self).created_files
+        return cast(ProcessView, self).created_files
 
     def get_read_files(self: "NV") -> "List[FileView]":
-        cast("ProcessView", self).read_files = cast(
-            "List[FileView]", self.fetch_edges("read_files", FileView)
+        cast(ProcessView, self).read_files = cast(
+            List[FileView], self.fetch_edges("read_files", FileView)
         )
-        return cast("ProcessView", self).read_files
+        return cast(ProcessView, self).read_files
 
     def get_wrote_to_files(self: "NV") -> "List[FileView]":
-        cast("ProcessView", self).wrote_to_files = cast(
-            "List[FileView]", self.fetch_edges("wrote_to_files", FileView)
+        cast(ProcessView, self).wrote_to_files = cast(
+            List[FileView], self.fetch_edges("wrote_to_files", FileView)
         )
-        return cast("ProcessView", self).wrote_to_files
+        return cast(ProcessView, self).wrote_to_files
 
     def get_deleted_files(self: "NV") -> "List[FileView]":
-        cast("ProcessView", self).deleted_files = cast(
-            "List[FileView]", self.fetch_edges("deleted_files", FileView)
+        cast(ProcessView, self).deleted_files = cast(
+            List[FileView], self.fetch_edges("deleted_files", FileView)
         )
-        return cast("ProcessView", self).deleted_files
+        return cast(ProcessView, self).deleted_files
 
     def get_parent(
         self: "NV", match_parent: Optional["IProcessQuery"] = None
@@ -484,9 +484,9 @@ class ProcessView(Viewable):
         )
 
         if self_node:
-            cast("ProcessView", self).parent = self_node.parent
+            cast(ProcessView, self).parent = self_node.parent
 
-        return cast("ProcessView", self).parent
+        return cast(ProcessView, self).parent
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
@@ -550,7 +550,7 @@ class ProcessView(Viewable):
         forward_edges = {
             name: value for name, value in f_edges.items() if value is not None
         }
-        return cast("Mapping[str, ForwardEdgeView]", forward_edges)
+        return cast(Mapping[str, ForwardEdgeView], forward_edges)
 
     def _get_reverse_edges(self) -> "Mapping[str, ReverseEdgeView]":
         _reverse_edges = {"~children": (self.parent, "parent")}
@@ -560,7 +560,7 @@ class ProcessView(Viewable):
             for name, value in _reverse_edges.items()
             if value[0] is not None
         }
-        return cast("Mapping[str, ReverseEdgeView]", reverse_edges)
+        return cast(Mapping[str, ReverseEdgeView], reverse_edges)
 
 
 from grapl_analyzerlib.nodes.file_node import FileQuery, FileView, IFileQuery

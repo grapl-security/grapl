@@ -9,10 +9,10 @@ from grapl_analyzerlib.nodes.comparators import (
     StrCmp,
     _str_cmps,
 )
+from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
+from grapl_analyzerlib.nodes.queryable import NQ
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.prelude import *
-
 
 IProcessOutboundNetworkConnectionQuery = TypeVar(
     "IProcessOutboundNetworkConnectionQuery",
@@ -169,8 +169,8 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
         port: Optional[int] = None,
         ip_address: Optional[str] = None,
         protocol: Optional[str] = None,
-        process_outbound_connection: " Optional[IpPortView]" = None,
-        connected_over: " Optional[IpPortView]" = None,
+        process_outbound_connection: "Optional[IpPortView]" = None,
+        connected_over: "Optional[IpPortView]" = None,
     ):
         super(ProcessOutboundNetworkConnectionView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
@@ -256,7 +256,7 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
         return cast(
-            "Mapping[str, ForwardEdgeView]",
+            Mapping[str, ForwardEdgeView],
             {fe[0]: fe[1] for fe in f_edges.items() if fe[1]},
         )
 
@@ -273,33 +273,25 @@ class ProcessOutboundNetworkConnectionView(DynamicNodeView):
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
 
-def main():
-    schema = ProcessOutboundNetworkConnectionSchema()
+# def main():
+#     schema = ProcessOutboundNetworkConnectionSchema()
+#
+#     query = generate_plugin_query(schema)
+#     view = generate_plugin_view(schema)
+#     query_extensions = generate_plugin_query_extensions(schema)
+#     view_extensions = generate_plugin_view_extensions(schema)
+#
+#     print(query)
+#     print(view)
+#     print(query_extensions)
+#     print(view_extensions)
 
-    query = generate_plugin_query(schema)
-    view = generate_plugin_view(schema)
-    query_extensions = generate_plugin_query_extensions(schema)
-    view_extensions = generate_plugin_view_extensions(schema)
 
-    print(query)
-    print(view)
-    print(query_extensions)
-    print(view_extensions)
-
-
-from grapl_analyzerlib.schemas.schema_builder import (
-    generate_plugin_query,
-    generate_plugin_view,
-    generate_plugin_query_extensions,
-    generate_plugin_view_extensions,
-    ManyToOne,
-)
 from grapl_analyzerlib.nodes.ip_port_node import (
-    IpPortSchema,
     IpPortView,
     IpPortQuery,
     IIpPortQuery,
 )
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
