@@ -107,7 +107,7 @@ fn main() {
     config.field_attribute(".graph_description.Asset.host_name", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.host_domain", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.host_fqdn", "#[builder(default)]");
-    config.field_attribute(".graph_description.Asset.host_local_mac", "#[builder(default)]");
+    config.field_attribute(".graph_description.Asset.mac_address", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.host_ip", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.operating_system", "#[builder(default)]");
 

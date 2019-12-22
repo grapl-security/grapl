@@ -26,7 +26,7 @@ impl Graph {
                 .and_modify(|node| {
                     node.merge(other_node);
                 })
-                .or_insert(other_node.clone());
+                .or_insert_with(|| other_node.clone());
         }
     }
 
