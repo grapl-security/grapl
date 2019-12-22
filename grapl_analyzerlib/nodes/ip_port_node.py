@@ -8,10 +8,16 @@ from grapl_analyzerlib.nodes.comparators import (
     _int_cmps,
     StrCmp,
     _str_cmps,
-    PropertyFilter)
+    PropertyFilter,
+)
 from grapl_analyzerlib.nodes.queryable import Queryable, NQ
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Viewable, ReverseEdgeView
+from grapl_analyzerlib.nodes.viewable import (
+    EdgeViewT,
+    ForwardEdgeView,
+    Viewable,
+    ReverseEdgeView,
+)
 
 IIpPortQuery = TypeVar("IIpPortQuery", bound="IpPortQuery")
 
@@ -167,9 +173,7 @@ class IpPortQuery(Queryable):
         return combined
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
-        forward_edges = {
-            "network_connections": self._network_connections,
-        }
+        forward_edges = {"network_connections": self._network_connections}
 
         return {fe[0]: fe[1] for fe in forward_edges.items() if fe[1] is not None}
 
@@ -330,7 +334,9 @@ class IpPortView(Viewable):
         }
 
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
-        reverse_edges = {"~created_connections": (self.connecting_processes, "connecting_processes")}
+        reverse_edges = {
+            "~created_connections": (self.connecting_processes, "connecting_processes")
+        }
 
         return {
             fe[0]: (fe[1][0], fe[1][1])

@@ -268,7 +268,7 @@ class IpConnectionView(DynamicNodeView):
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
         return cast(
-            "Mapping[str, ForwardEdgeView]",
+            Mapping[str, ForwardEdgeView],
             {fe[0]: fe[1] for fe in f_edges.items() if fe[1]},
         )
 

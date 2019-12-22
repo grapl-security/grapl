@@ -271,8 +271,4 @@ class NetworkConnectionView(DynamicNodeView):
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
 
-from grapl_analyzerlib.nodes.ip_port_node import (
-    IpPortView,
-    IpPortQuery,
-    IIpPortQuery,
-)
+from grapl_analyzerlib.nodes.ip_port_node import IpPortView, IpPortQuery, IIpPortQuery

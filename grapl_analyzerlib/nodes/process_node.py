@@ -68,9 +68,7 @@ class ProcessQuery(Queryable[IProcessView]):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        cast(ProcessQuery, self)._process_id.extend(
-            _int_cmps("process_id", eq, gt, lt)
-        )
+        cast(ProcessQuery, self)._process_id.extend(_int_cmps("process_id", eq, gt, lt))
         return self
 
     def with_created_timestamp(
@@ -218,7 +216,10 @@ class ProcessQuery(Queryable[IProcessView]):
             "IProcessOutboundNetworkConnectionQuery"
         ] = None,
     ) -> "NQ":
-        from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionQuery
+        from grapl_analyzerlib.nodes.process_outbound_network_connection import (
+            ProcessOutboundNetworkConnectionQuery,
+        )
+
         created_connections = (
             created_connection_query or ProcessOutboundNetworkConnectionQuery()
         )  # type: ProcessOutboundNetworkConnectionQuery
@@ -232,7 +233,10 @@ class ProcessQuery(Queryable[IProcessView]):
             "IProcessInboundNetworkConnectionQuery"
         ] = None,
     ) -> "NQ":
-        from grapl_analyzerlib.nodes.process_inbound_network_connection import ProcessInboundNetworkConnectionQuery
+        from grapl_analyzerlib.nodes.process_inbound_network_connection import (
+            ProcessInboundNetworkConnectionQuery,
+        )
+
         inbound_connection = (
             inbound_connection_query or ProcessInboundNetworkConnectionQuery()
         )  # type: ProcessInboundNetworkConnectionQuery
@@ -251,7 +255,7 @@ class ProcessQuery(Queryable[IProcessView]):
         return "process_id", int
 
     def _get_node_type_name(self) -> Optional[str]:
-        return 'Process'
+        return "Process"
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         props = {
@@ -588,7 +592,11 @@ from grapl_analyzerlib.nodes.comparators import (
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, ReverseEdgeView
 
-from grapl_analyzerlib.nodes.process_inbound_network_connection import IProcessInboundNetworkConnectionQuery, \
-    ProcessInboundNetworkConnectionView
-from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionView, \
-    IProcessOutboundNetworkConnectionQuery
+from grapl_analyzerlib.nodes.process_inbound_network_connection import (
+    IProcessInboundNetworkConnectionQuery,
+    ProcessInboundNetworkConnectionView,
+)
+from grapl_analyzerlib.nodes.process_outbound_network_connection import (
+    ProcessOutboundNetworkConnectionView,
+    IProcessOutboundNetworkConnectionQuery,
+)

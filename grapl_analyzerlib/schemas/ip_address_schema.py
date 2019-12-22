@@ -7,9 +7,9 @@ class IpAddressSchema(NodeSchema):
 
         (
             self.with_str_prop("ip_address")
-                .with_int_prop("first_seen_timestamp")
-                .with_int_prop("last_seen_timestamp")
-                .with_forward_edge(
+            .with_int_prop("first_seen_timestamp")
+            .with_int_prop("last_seen_timestamp")
+            .with_forward_edge(
                 "ip_connections", ManyToMany(IpConnectionSchema), "connecting_ips"
             )
         )

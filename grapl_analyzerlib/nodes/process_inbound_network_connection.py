@@ -266,10 +266,10 @@ class ProcessInboundNetworkConnectionView(DynamicNodeView):
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
 
-from grapl_analyzerlib.nodes.ip_port_node import (
-    IIpPortQuery,
-    IpPortQuery,
-    IpPortView,
-)
+from grapl_analyzerlib.nodes.ip_port_node import IIpPortQuery, IpPortQuery, IpPortView
 
-from grapl_analyzerlib.nodes.process_node import IProcessQuery, ProcessQuery, ProcessView
+from grapl_analyzerlib.nodes.process_node import (
+    IProcessQuery,
+    ProcessQuery,
+    ProcessView,
+)

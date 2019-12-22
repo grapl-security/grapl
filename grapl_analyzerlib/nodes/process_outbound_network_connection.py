@@ -8,7 +8,8 @@ from grapl_analyzerlib.nodes.comparators import (
     _int_cmps,
     StrCmp,
     _str_cmps,
-    PropertyFilter)
+    PropertyFilter,
+)
 
 from grapl_analyzerlib.nodes.queryable import NQ, Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
@@ -132,7 +133,9 @@ class ProcessOutboundNetworkConnectionQuery(Queryable):
         connecting_processess = connecting_processess_query or IpPortQuery()
         connecting_processess._created_connections = self
 
-        cast(ProcessOutboundNetworkConnectionQuery, self)._connecting_processes = connecting_processess
+        cast(
+            ProcessOutboundNetworkConnectionQuery, self
+        )._connecting_processes = connecting_processess
 
         return self
 
@@ -171,20 +174,21 @@ class ProcessOutboundNetworkConnectionQuery(Queryable):
         return combined
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
-        forward_edges = {
-            "connected_over": self._connected_over,
-        }
+        forward_edges = {"connected_over": self._connected_over}
 
         return {fe[0]: fe[1] for fe in forward_edges.items() if fe[1] is not None}
 
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
-        reverse_edges = {"~created_connections": (self._connecting_processes, "connecting_processes")}
+        reverse_edges = {
+            "~created_connections": (self._connecting_processes, "connecting_processes")
+        }
 
         return {
             fe[0]: (fe[1][0], fe[1][1])
             for fe in reverse_edges.items()
             if fe[1][0] is not None
         }
+
 
 IProcessOutboundNetworkConnectionView = TypeVar(
     "IProcessOutboundNetworkConnectionView",
@@ -266,7 +270,9 @@ class ProcessOutboundNetworkConnectionView(Viewable):
     def get_connecting_processes(self):
         return cast(
             List[ProcessOutboundNetworkConnectionView],
-            self.fetch_edges("~created_connections", ProcessOutboundNetworkConnectionView),
+            self.fetch_edges(
+                "~created_connections", ProcessOutboundNetworkConnectionView
+            ),
         )
 
     @staticmethod
@@ -283,7 +289,7 @@ class ProcessOutboundNetworkConnectionView(Viewable):
     @staticmethod
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         f_edges = {
-            "connected_over": IpPortView,
+            "connected_over": IpPortView
         }  # type: Dict[str, Optional["EdgeViewT"]]
 
         return cast(
@@ -292,7 +298,7 @@ class ProcessOutboundNetworkConnectionView(Viewable):
 
     def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
         f_edges = {
-            "connected_over": self.connected_over,
+            "connected_over": self.connected_over
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
         return cast(
@@ -317,7 +323,9 @@ class ProcessOutboundNetworkConnectionView(Viewable):
         return {"~created_connections": ([ProcessView], "connecting_processes")}
 
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
-        reverse_edges = {"~created_connections": (self.connecting_processes, "connecting_processes")}
+        reverse_edges = {
+            "~created_connections": (self.connecting_processes, "connecting_processes")
+        }
 
         return {
             fe[0]: (fe[1][0], fe[1][1])
@@ -326,10 +334,11 @@ class ProcessOutboundNetworkConnectionView(Viewable):
         }
 
 
-from grapl_analyzerlib.nodes.ip_port_node import (
-    IpPortView,
-    IpPortQuery,
-    IIpPortQuery,
-)
+from grapl_analyzerlib.nodes.ip_port_node import IpPortView, IpPortQuery, IIpPortQuery
 
-from grapl_analyzerlib.nodes.process_node import IProcessQuery, ProcessQuery, ProcessView, IProcessView
+from grapl_analyzerlib.nodes.process_node import (
+    IProcessQuery,
+    ProcessQuery,
+    ProcessView,
+    IProcessView,
+)

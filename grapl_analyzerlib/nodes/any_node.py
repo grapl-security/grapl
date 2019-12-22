@@ -21,8 +21,12 @@ from grapl_analyzerlib.nodes.ip_address_node import IpAddressView
 from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionView
 from grapl_analyzerlib.nodes.ip_port_node import IpPortView
 from grapl_analyzerlib.nodes.network_connection_node import NetworkConnectionView
-from grapl_analyzerlib.nodes.process_inbound_network_connection import ProcessInboundNetworkConnectionView
-from grapl_analyzerlib.nodes.process_outbound_network_connection import ProcessOutboundNetworkConnectionView
+from grapl_analyzerlib.nodes.process_inbound_network_connection import (
+    ProcessInboundNetworkConnectionView,
+)
+from grapl_analyzerlib.nodes.process_outbound_network_connection import (
+    ProcessOutboundNetworkConnectionView,
+)
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
 
@@ -214,11 +218,7 @@ class NodeQuery(Queryable):
 
 class NodeView(Viewable):
     def __init__(
-        self,
-        dgraph_client: DgraphClient,
-        node_key: str,
-        uid: str,
-        node: Viewable,
+        self, dgraph_client: DgraphClient, node_key: str, uid: str, node: Viewable
     ):
         super(NodeView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid
@@ -226,9 +226,7 @@ class NodeView(Viewable):
         self.node = node
 
     @staticmethod
-    def from_view(
-        v: Viewable
-    ):
+    def from_view(v: Viewable):
         if isinstance(v, NodeView):
             return v
         try:
@@ -374,38 +372,54 @@ class NodeView(Viewable):
         elif node.HasField("process_outbound_connection_node"):
             uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
             return NodeView(
-                dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                dgraph_client,
+                node.process_outbound_connection_node.node_key,
+                uid,
                 ProcessOutboundNetworkConnectionView(
-                    dgraph_client, node.process_outbound_connection_node.node_key, uid,
-                    'ProcessOutboundNetworkConnection'
-                )
+                    dgraph_client,
+                    node.process_outbound_connection_node.node_key,
+                    uid,
+                    "ProcessOutboundNetworkConnection",
+                ),
             )
         elif node.HasField("process_inbound_connection_node"):
             uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
             return NodeView(
-                dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                dgraph_client,
+                node.process_outbound_connection_node.node_key,
+                uid,
                 ProcessInboundNetworkConnectionView(
-                    dgraph_client, node.process_outbound_connection_node.node_key, uid,
-                    'ProcessInboundNetworkConnection'
-                )
+                    dgraph_client,
+                    node.process_outbound_connection_node.node_key,
+                    uid,
+                    "ProcessInboundNetworkConnection",
+                ),
             )
         elif node.HasField("ip_connection_node"):
             uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
             return NodeView(
-                dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                dgraph_client,
+                node.process_outbound_connection_node.node_key,
+                uid,
                 IpConnectionView(
-                    dgraph_client, node.process_outbound_connection_node.node_key, uid,
-                    'IpConnection'
-                )
+                    dgraph_client,
+                    node.process_outbound_connection_node.node_key,
+                    uid,
+                    "IpConnection",
+                ),
             )
         elif node.HasField("network_connection_node"):
             uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
             return NodeView(
-                dgraph_client, node.process_outbound_connection_node.node_key, uid,
+                dgraph_client,
+                node.process_outbound_connection_node.node_key,
+                uid,
                 NetworkConnectionView(
-                    dgraph_client, node.process_outbound_connection_node.node_key, uid,
-                    'IpConnection'
-                )
+                    dgraph_client,
+                    node.process_outbound_connection_node.node_key,
+                    uid,
+                    "IpConnection",
+                ),
             )
         elif node.HasField("dynamic_node"):
             uid = get_uid(dgraph_client, node.dynamic_node.node_key)

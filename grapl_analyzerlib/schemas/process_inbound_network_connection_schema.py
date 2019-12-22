@@ -6,18 +6,18 @@ class ProcessInboundNetworkConnectionSchema(NodeSchema):
         super(ProcessInboundNetworkConnectionSchema, self).__init__()
         (
             self.with_str_prop("ip_address")
-                .with_str_prop("protocol")
-                .with_int_prop("created_timestamp")
-                .with_int_prop("terminated_timestamp")
-                .with_int_prop("last_seen_timestamp")
-                .with_int_prop("port")
-                .with_forward_edge(
+            .with_str_prop("protocol")
+            .with_int_prop("created_timestamp")
+            .with_int_prop("terminated_timestamp")
+            .with_int_prop("last_seen_timestamp")
+            .with_int_prop("port")
+            .with_forward_edge(
                 "bound_port",
                 # The IP + Port that was bound
                 ManyToMany(IpPortSchema),
                 "bound_by",
             )
-                .with_forward_edge(
+            .with_forward_edge(
                 "bound_ip",
                 # The IP that was bound
                 ManyToMany(IpAddressSchema),

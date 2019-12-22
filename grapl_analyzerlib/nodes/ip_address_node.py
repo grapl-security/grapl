@@ -14,7 +14,6 @@ from grapl_analyzerlib.nodes.queryable import NQ
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 
-
 IIpAddressQuery = TypeVar("IIpAddressQuery", bound="IpAddressQuery")
 
 
@@ -178,7 +177,7 @@ class IpAddressView(DynamicNodeView):
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
         return cast(
-            "Mapping[str, ForwardEdgeView]",
+            Mapping[str, ForwardEdgeView],
             {fe[0]: fe[1] for fe in f_edges.items() if fe[1]},
         )
 
@@ -192,32 +191,10 @@ class IpAddressView(DynamicNodeView):
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
 
-def main():
-    schema = IpAddressSchema()
-
-    query = generate_plugin_query(schema)
-    view = generate_plugin_view(schema)
-    query_extensions = generate_plugin_query_extensions(schema)
-    view_extensions = generate_plugin_view_extensions(schema)
-
-    print(query)
-    print(view)
-    print(query_extensions)
-    print(view_extensions)
-
-
 from grapl_analyzerlib.nodes.ip_connection_node import (
-    IpConnectionSchema,
     IpConnectionView,
     IpConnectionQuery,
     IIpConnectionQuery,
-)
-from grapl_analyzerlib.schemas.schema_builder import (
-    generate_plugin_view_extensions,
-    generate_plugin_query_extensions,
-    generate_plugin_view,
-    generate_plugin_query,
-    ManyToMany,
 )
 
 from grapl_analyzerlib.nodes.process_inbound_network_connection import (
@@ -225,7 +202,3 @@ from grapl_analyzerlib.nodes.process_inbound_network_connection import (
     IProcessInboundNetworkConnectionQuery,
     ProcessInboundNetworkConnectionView,
 )
-
-
-if __name__ == "__main__":
-    main()
