@@ -96,7 +96,7 @@ impl ProcessOutboundConnection {
 
 impl NodeT for ProcessOutboundConnection {
     fn get_asset_id(&self) -> Option<&str> {
-        None
+        self.asset_id.as_ref().map(String::as_str)
     }
 
     fn set_asset_id(&mut self, asset_id: impl Into<String>) {
