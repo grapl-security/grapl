@@ -66,7 +66,7 @@ def raw_node_from_uid(
         {{
             res(func: uid("{uid}"), first: 1) {{
                 uid,
-                expand(_forward_),
+                expand(_all_),
                 node_type: dgraph.type
             }}
         }}
@@ -104,7 +104,7 @@ def raw_node_from_node_key(
         {{
             res(func: eq(node_key, "{node_key}"), first: 1) {{
                 uid,
-                expand(_forward_),
+                expand(_all_),
                 node_type: dgraph.type
             }}
         }}

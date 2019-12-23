@@ -168,7 +168,7 @@ class IpPortQuery(Queryable):
         combined = {}
         for prop_name, prop_filter in props.items():
             if prop_filter:
-                combined[prop_name] = cast(PropertyFilter[Property], prop_filter)
+                combined[prop_name] = cast("PropertyFilter[Property]", prop_filter)
 
         return combined
 

@@ -364,7 +364,7 @@ class LensView(Viewable):
         forward_edges = {
             name: value for name, value in f_edges.items() if value is not None
         }
-        return cast(Mapping[str, ForwardEdgeView], forward_edges)
+        return cast("Mapping[str, ForwardEdgeView]", forward_edges)
 
     def _get_reverse_edges(self) -> "Mapping[str, ReverseEdgeView]":
         return {}

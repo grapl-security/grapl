@@ -270,7 +270,7 @@ class ProcessQuery(Queryable[IProcessView]):
         combined = {}
         for prop_name, prop_filter in props.items():
             if prop_filter:
-                combined[prop_name] = cast(PropertyFilter[Property], prop_filter)
+                combined[prop_name] = cast("PropertyFilter[Property]", prop_filter)
 
         return combined
 
@@ -567,7 +567,7 @@ class ProcessView(Viewable):
         forward_edges = {
             name: value for name, value in f_edges.items() if value is not None
         }
-        return cast(Mapping[str, ForwardEdgeView], forward_edges)
+        return cast("Mapping[str, ForwardEdgeView]", forward_edges)
 
     def _get_reverse_edges(self) -> "Mapping[str, ReverseEdgeView]":
         _reverse_edges = {"~children": (self.parent, "parent")}
@@ -577,7 +577,7 @@ class ProcessView(Viewable):
             for name, value in _reverse_edges.items()
             if value[0] is not None
         }
-        return cast(Mapping[str, ReverseEdgeView], reverse_edges)
+        return cast("Mapping[str, ReverseEdgeView]", reverse_edges)
 
 
 from grapl_analyzerlib.nodes.file_node import FileQuery, FileView, IFileQuery
@@ -595,8 +595,8 @@ from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Reverse
 from grapl_analyzerlib.nodes.process_inbound_network_connection import (
     IProcessInboundNetworkConnectionQuery,
     ProcessInboundNetworkConnectionView,
-)
+    ProcessInboundNetworkConnectionQuery)
 from grapl_analyzerlib.nodes.process_outbound_network_connection import (
     ProcessOutboundNetworkConnectionView,
     IProcessOutboundNetworkConnectionQuery,
-)
+    ProcessOutboundNetworkConnectionQuery)
