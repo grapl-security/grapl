@@ -14,16 +14,16 @@ from grapl_analyzerlib.nodes.queryable import NQ
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 
-IProcessInboundNetworkConnectionQuery = TypeVar(
-    "IProcessInboundNetworkConnectionQuery",
-    bound="ProcessInboundNetworkConnectionQuery",
+IProcessInboundConnectionQuery = TypeVar(
+    "IProcessInboundConnectionQuery",
+    bound="ProcessInboundConnectionQuery",
 )
 
 
-class ProcessInboundNetworkConnectionQuery(DynamicNodeQuery):
+class ProcessInboundConnectionQuery(DynamicNodeQuery):
     def __init__(self):
-        super(ProcessInboundNetworkConnectionQuery, self).__init__(
-            "ProcessInboundNetworkConnection", ProcessInboundNetworkConnectionView
+        super(ProcessInboundConnectionQuery, self).__init__(
+            "ProcessInboundConnection", ProcessInboundConnectionView
         )
         self._created_timestamp = []  # type: List[List[Cmp[int]]]
         self._terminated_timestamp = []  # type: List[List[Cmp[int]]]
@@ -144,12 +144,12 @@ class ProcessInboundNetworkConnectionQuery(DynamicNodeQuery):
         return self
 
 
-IProcessInboundNetworkConnectionView = TypeVar(
-    "IProcessInboundNetworkConnectionView", bound="ProcessInboundNetworkConnectionView"
+IProcessInboundConnectionView = TypeVar(
+    "IProcessInboundConnectionView", bound="ProcessInboundConnectionView"
 )
 
 
-class ProcessInboundNetworkConnectionView(DynamicNodeView):
+class ProcessInboundConnectionView(DynamicNodeView):
     def __init__(
         self,
         dgraph_client: DgraphClient,
@@ -165,7 +165,7 @@ class ProcessInboundNetworkConnectionView(DynamicNodeView):
         bound_port: "Optional[List[IpPortView]]" = None,
         bound_by: "Optional[List[ProcessView]]" = None,
     ):
-        super(ProcessInboundNetworkConnectionView, self).__init__(
+        super(ProcessInboundConnectionView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
         )
         self.dgraph_client = dgraph_client

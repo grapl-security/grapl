@@ -25,12 +25,12 @@ class ProcessSchema(NodeSchema):
             .with_forward_edge("wrote_files", ManyToMany(FileSchema), "writers")
             .with_forward_edge(
                 "created_connections",
-                ManyToMany(ProcessOutboundNetworkConnectionSchema),
+                ManyToMany(ProcessOutboundConnectionSchema),
                 "connections_from",
             )
             .with_forward_edge(
                 "inbound_connections",
-                ManyToMany(ProcessInboundNetworkConnectionSchema),
+                ManyToMany(ProcessInboundConnectionSchema),
                 "bound_by",
             )
             # .with_forward_edge('bound_connections', [uid])
@@ -43,8 +43,8 @@ class ProcessSchema(NodeSchema):
 
 from grapl_analyzerlib.schemas.file_schema import FileSchema
 from grapl_analyzerlib.schemas.process_inbound_network_connection_schema import (
-    ProcessInboundNetworkConnectionSchema,
+    ProcessInboundConnectionSchema,
 )
 from grapl_analyzerlib.schemas.process_outbound_network_connection_schema import (
-    ProcessOutboundNetworkConnectionSchema,
+    ProcessOutboundConnectionSchema,
 )

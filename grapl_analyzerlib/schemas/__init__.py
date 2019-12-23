@@ -7,8 +7,8 @@ from grapl_analyzerlib.schemas.ip_address_schema import IpAddressSchema
 from grapl_analyzerlib.schemas.ip_port_schema import IpPortSchema
 from grapl_analyzerlib.schemas.network_connection_schema import NetworkConnectionSchema
 from grapl_analyzerlib.schemas.process_inbound_network_connection_schema import (
-    ProcessInboundNetworkConnectionSchema,
+    ProcessInboundConnectionSchema,
 )
 from grapl_analyzerlib.schemas.process_outbound_network_connection_schema import (
-    ProcessOutboundNetworkConnectionSchema,
+    ProcessOutboundConnectionSchema,
 )

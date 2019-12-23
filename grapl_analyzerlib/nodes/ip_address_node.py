@@ -84,9 +84,9 @@ class IpAddressQuery(DynamicNodeQuery):
 
     def with_bound_by(
         self: "NQ",
-        bound_by_query: Optional["IProcessInboundNetworkConnectionQuery"] = None,
+        bound_by_query: Optional["IProcessInboundConnectionQuery"] = None,
     ) -> "NQ":
-        bound_by = bound_by_query or ProcessInboundNetworkConnectionQuery()
+        bound_by = bound_by_query or ProcessInboundConnectionQuery()
         bound_by.with_bound_by(cast(IpAddressQuery, self))
 
         return self
@@ -147,10 +147,10 @@ class IpAddressView(DynamicNodeView):
             self.fetch_edges("~inbound_connection_to", List[IpConnectionView]),
         )
 
-    def get_bound_by(self,) -> "List[ProcessInboundNetworkConnectionView]":
+    def get_bound_by(self,) -> "List[ProcessInboundConnectionView]":
         return cast(
-            List[ProcessInboundNetworkConnectionView],
-            self.fetch_edges("~bound_by", ProcessInboundNetworkConnectionView),
+            List[ProcessInboundConnectionView],
+            self.fetch_edges("~bound_by", ProcessInboundConnectionView),
         )
 
     @staticmethod
@@ -198,7 +198,7 @@ from grapl_analyzerlib.nodes.ip_connection_node import (
 )
 
 from grapl_analyzerlib.nodes.process_inbound_network_connection import (
-    ProcessInboundNetworkConnectionQuery,
-    IProcessInboundNetworkConnectionQuery,
-    ProcessInboundNetworkConnectionView,
+    ProcessInboundConnectionQuery,
+    IProcessInboundConnectionQuery,
+    ProcessInboundConnectionView,
 )

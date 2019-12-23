@@ -15,16 +15,16 @@ from grapl_analyzerlib.nodes.queryable import NQ, Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Viewable
 
-IProcessOutboundNetworkConnectionQuery = TypeVar(
-    "IProcessOutboundNetworkConnectionQuery",
-    bound="ProcessOutboundNetworkConnectionQuery",
+IProcessOutboundConnectionQuery = TypeVar(
+    "IProcessOutboundConnectionQuery",
+    bound="ProcessOutboundConnectionQuery",
 )
 
 
-class ProcessOutboundNetworkConnectionQuery(Queryable):
+class ProcessOutboundConnectionQuery(Queryable):
     def __init__(self):
-        super(ProcessOutboundNetworkConnectionQuery, self).__init__(
-            ProcessOutboundNetworkConnectionView
+        super(ProcessOutboundConnectionQuery, self).__init__(
+            ProcessOutboundConnectionView
         )
         self._created_timestamp = []  # type: List[List[Cmp[int]]]
         self._terminated_timestamp = []  # type: List[List[Cmp[int]]]
@@ -134,7 +134,7 @@ class ProcessOutboundNetworkConnectionQuery(Queryable):
         connecting_processess._created_connections = self
 
         cast(
-            ProcessOutboundNetworkConnectionQuery, self
+            ProcessOutboundConnectionQuery, self
         )._connecting_processes = connecting_processess
 
         return self
@@ -154,7 +154,7 @@ class ProcessOutboundNetworkConnectionQuery(Queryable):
         return None
 
     def _get_node_type_name(self) -> Optional[str]:
-        return "ProcessOutboundNetworkConnection"
+        return "ProcessOutboundConnection"
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         props = {
@@ -190,13 +190,13 @@ class ProcessOutboundNetworkConnectionQuery(Queryable):
         }
 
 
-IProcessOutboundNetworkConnectionView = TypeVar(
-    "IProcessOutboundNetworkConnectionView",
-    bound="ProcessOutboundNetworkConnectionView",
+IProcessOutboundConnectionView = TypeVar(
+    "IProcessOutboundConnectionView",
+    bound="ProcessOutboundConnectionView",
 )
 
 
-class ProcessOutboundNetworkConnectionView(Viewable):
+class ProcessOutboundConnectionView(Viewable):
     def __init__(
         self,
         dgraph_client: DgraphClient,
@@ -212,7 +212,7 @@ class ProcessOutboundNetworkConnectionView(Viewable):
         connecting_processes: "Optional[IProcessView]" = None,
         connected_over: "Optional[IpPortView]" = None,
     ):
-        super(ProcessOutboundNetworkConnectionView, self).__init__(
+        super(ProcessOutboundConnectionView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
         )
         self.dgraph_client = dgraph_client
@@ -269,9 +269,9 @@ class ProcessOutboundNetworkConnectionView(Viewable):
 
     def get_connecting_processes(self):
         return cast(
-            List[ProcessOutboundNetworkConnectionView],
+            List[ProcessOutboundConnectionView],
             self.fetch_edges(
-                "~created_connections", ProcessOutboundNetworkConnectionView
+                "~created_connections", ProcessOutboundConnectionView
             ),
         )
 

@@ -115,9 +115,9 @@ class IpPortQuery(Queryable):
 
     def with_bound_by(
         self: "NQ",
-        bound_by_query: Optional["IProcessInboundNetworkConnectionQuery"] = None,
+        bound_by_query: Optional["IProcessInboundConnectionQuery"] = None,
     ) -> "NQ":
-        bound_by = bound_by_query or ProcessInboundNetworkConnectionQuery()
+        bound_by = bound_by_query or ProcessInboundConnectionQuery()
         bound_by.with_bound_port(cast(IpPortQuery, self))
 
         return self
@@ -125,11 +125,11 @@ class IpPortQuery(Queryable):
     def with_process_connections(
         self: "NQ",
         process_connections_query: Optional[
-            "IProcessOutboundNetworkConnectionQuery"
+            "IProcessOutboundConnectionQuery"
         ] = None,
     ) -> "NQ":
         process_connections = (
-            process_connections_query or ProcessOutboundNetworkConnectionQuery()
+            process_connections_query or ProcessOutboundConnectionQuery()
         )
         process_connections.with_connected_over(cast(IpPortQuery, self))
 
@@ -138,11 +138,11 @@ class IpPortQuery(Queryable):
     def with_connections_from_processes(
         self: "NQ",
         connections_from_processes_query: Optional[
-            "IProcessOutboundNetworkConnectionQuery"
+            "IProcessOutboundConnectionQuery"
         ] = None,
     ) -> "NQ":
         connections_from_processes = (
-            connections_from_processes_query or ProcessOutboundNetworkConnectionQuery()
+            connections_from_processes_query or ProcessOutboundConnectionQuery()
         )
         connections_from_processes.with_process_outbound_connection(
             cast(IpPortQuery, self)
@@ -197,9 +197,9 @@ class IpPortView(Viewable):
         ip_address: Optional[str] = None,
         protocol: Optional[str] = None,
         network_connections: "Optional[List[NetworkConnectionView]]" = None,
-        bound_by: "Optional[List[ProcessInboundNetworkConnectionView]]" = None,
-        process_connections: "Optional[List[ProcessOutboundNetworkConnectionView]]" = None,
-        process_connects: "Optional[List[ProcessOutboundNetworkConnectionView]]" = None,
+        bound_by: "Optional[List[ProcessInboundConnectionView]]" = None,
+        process_connections: "Optional[List[ProcessOutboundConnectionView]]" = None,
+        process_connects: "Optional[List[ProcessOutboundConnectionView]]" = None,
     ):
         super(IpPortView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
@@ -263,25 +263,25 @@ class IpPortView(Viewable):
             self.fetch_edges("~inbound_connection_to", NetworkConnectionView),
         )
 
-    def get_bound_by(self,) -> "List[ProcessInboundNetworkConnectionView]":
+    def get_bound_by(self,) -> "List[ProcessInboundConnectionView]":
         return cast(
-            List[ProcessInboundNetworkConnectionView],
-            self.fetch_edges("~bound_port", ProcessInboundNetworkConnectionView),
+            List[ProcessInboundConnectionView],
+            self.fetch_edges("~bound_port", ProcessInboundConnectionView),
         )
 
-    def get_process_connects(self,) -> "List[ProcessOutboundNetworkConnectionView]":
+    def get_process_connects(self,) -> "List[ProcessOutboundConnectionView]":
         return cast(
-            List[ProcessOutboundNetworkConnectionView],
-            self.fetch_edges("~connected_over", ProcessOutboundNetworkConnectionView),
+            List[ProcessOutboundConnectionView],
+            self.fetch_edges("~connected_over", ProcessOutboundConnectionView),
         )
 
     def get_connections_from_processes(
         self,
-    ) -> "List[ProcessOutboundNetworkConnectionView]":
+    ) -> "List[ProcessOutboundConnectionView]":
         return cast(
-            List[ProcessOutboundNetworkConnectionView],
+            List[ProcessOutboundConnectionView],
             self.fetch_edges(
-                "~process_outbound_connection", ProcessOutboundNetworkConnectionView
+                "~process_outbound_connection", ProcessOutboundConnectionView
             ),
         )
 
@@ -329,8 +329,8 @@ class IpPortView(Viewable):
     @staticmethod
     def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {
-            "~bound_port": ([ProcessInboundNetworkConnectionView], "bound_by"),
-            "~connected_over": ([ProcessInboundNetworkConnectionView], "bound_by"),
+            "~bound_port": ([ProcessInboundConnectionView], "bound_by"),
+            "~connected_over": ([ProcessInboundConnectionView], "bound_by"),
         }
 
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
@@ -352,13 +352,13 @@ from grapl_analyzerlib.nodes.network_connection_node import (
 )
 
 from grapl_analyzerlib.nodes.process_inbound_network_connection import (
-    ProcessInboundNetworkConnectionQuery,
-    IProcessInboundNetworkConnectionQuery,
-    ProcessInboundNetworkConnectionView,
+    ProcessInboundConnectionQuery,
+    IProcessInboundConnectionQuery,
+    ProcessInboundConnectionView,
 )
 
 from grapl_analyzerlib.nodes.process_outbound_network_connection import (
-    IProcessOutboundNetworkConnectionQuery,
-    ProcessOutboundNetworkConnectionQuery,
-    ProcessOutboundNetworkConnectionView,
+    IProcessOutboundConnectionQuery,
+    ProcessOutboundConnectionQuery,
+    ProcessOutboundConnectionView,
 )

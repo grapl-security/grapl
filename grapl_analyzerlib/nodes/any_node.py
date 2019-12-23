@@ -22,10 +22,10 @@ from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionView
 from grapl_analyzerlib.nodes.ip_port_node import IpPortView
 from grapl_analyzerlib.nodes.network_connection_node import NetworkConnectionView
 from grapl_analyzerlib.nodes.process_inbound_network_connection import (
-    ProcessInboundNetworkConnectionView,
+    ProcessInboundConnectionView,
 )
 from grapl_analyzerlib.nodes.process_outbound_network_connection import (
-    ProcessOutboundNetworkConnectionView,
+    ProcessOutboundConnectionView,
 )
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
@@ -285,10 +285,10 @@ class NodeView(Viewable):
             node = IpAddressView.from_dict(dgraph_client, d)
         elif node_type == "IpPort":
             node = IpPortView.from_dict(dgraph_client, d)
-        elif node_type == "ProcessOutboundNetworkConnection":
-            node = ProcessOutboundNetworkConnectionView.from_dict(dgraph_client, d)
-        elif node_type == "ProcessInboundNetworkConnection":
-            node = ProcessInboundNetworkConnectionView.from_dict(dgraph_client, d)
+        elif node_type == "ProcessOutboundConnection":
+            node = ProcessOutboundConnectionView.from_dict(dgraph_client, d)
+        elif node_type == "ProcessInboundConnection":
+            node = ProcessInboundConnectionView.from_dict(dgraph_client, d)
         elif node_type == "IpConnection":
             node = IpConnectionView.from_dict(dgraph_client, d)
         elif node_type == "NetworkConnection":
@@ -375,11 +375,11 @@ class NodeView(Viewable):
                 dgraph_client,
                 node.process_outbound_connection_node.node_key,
                 uid,
-                ProcessOutboundNetworkConnectionView(
+                ProcessOutboundConnectionView(
                     dgraph_client,
                     node.process_outbound_connection_node.node_key,
                     uid,
-                    "ProcessOutboundNetworkConnection",
+                    "ProcessOutboundConnection",
                 ),
             )
         elif node.HasField("process_inbound_connection_node"):
@@ -388,11 +388,11 @@ class NodeView(Viewable):
                 dgraph_client,
                 node.process_outbound_connection_node.node_key,
                 uid,
-                ProcessInboundNetworkConnectionView(
+                ProcessInboundConnectionView(
                     dgraph_client,
                     node.process_outbound_connection_node.node_key,
                     uid,
-                    "ProcessInboundNetworkConnection",
+                    "ProcessInboundConnection",
                 ),
             )
         elif node.HasField("ip_connection_node"):
