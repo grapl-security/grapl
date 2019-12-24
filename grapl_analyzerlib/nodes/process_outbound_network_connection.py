@@ -286,18 +286,18 @@ class ProcessOutboundConnectionView(Viewable):
             ),
         )
 
-    def get_connected_over(self) -> List['IpPortView']:
+    def get_connected_over(self) -> Optional['IpPortView']:
         return cast(
-            List[IpPortView],
-            self.fetch_edges(
+            Optional[IpPortView],
+            self.fetch_edge(
                 "connected_over", IpPortView
             ),
         )
 
-    def get_connected_to(self) -> List['IpPortView']:
+    def get_connected_to(self) -> Optional['IpPortView']:
         return cast(
-            List[IpPortView],
-            self.fetch_edges(
+            Optional[IpPortView],
+            self.fetch_edge(
                 "connected_to", IpPortView
             ),
         )
