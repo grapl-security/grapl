@@ -47,8 +47,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         regexp: Optional[StrCmp] = None,
         distance: Optional[Tuple[StrCmp, int]] = None,
     ) -> "NQ":
-        self.set_str_property_filter(
-            "ip_address",
+        cast('ProcessOutboundConnectionQuery', self)._ip_address.extend(
             _str_cmps(
                 "ip_address",
                 eq=eq,
@@ -70,8 +69,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         regexp: Optional[StrCmp] = None,
         distance: Optional[Tuple[StrCmp, int]] = None,
     ) -> "NQ":
-        self.set_str_property_filter(
-            "protocol",
+        cast('ProcessOutboundConnectionQuery', self)._protocol.extend(
             _str_cmps(
                 "protocol",
                 eq=eq,
@@ -82,6 +80,7 @@ class ProcessOutboundConnectionQuery(Queryable):
                 distance=distance,
             ),
         )
+
         return self
 
     def with_created_timestamp(
@@ -90,8 +89,8 @@ class ProcessOutboundConnectionQuery(Queryable):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        self.set_int_property_filter(
-            "created_timestamp", _int_cmps("created_timestamp", eq=eq, gt=gt, lt=lt)
+        cast('ProcessOutboundConnectionQuery', self)._created_timestamp.extend(
+            _int_cmps("created_timestamp", eq=eq, gt=gt, lt=lt)
         )
         return self
 
@@ -101,8 +100,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        self.set_int_property_filter(
-            "terminated_timestamp",
+        cast('ProcessOutboundConnectionQuery', self)._terminated_timestamp.extend(
             _int_cmps("terminated_timestamp", eq=eq, gt=gt, lt=lt),
         )
         return self
@@ -113,8 +111,8 @@ class ProcessOutboundConnectionQuery(Queryable):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        self.set_int_property_filter(
-            "last_seen_timestamp", _int_cmps("last_seen_timestamp", eq=eq, gt=gt, lt=lt)
+        cast('ProcessOutboundConnectionQuery', self)._last_seen_timestamp.extend(
+            _int_cmps("last_seen_timestamp", eq=eq, gt=gt, lt=lt)
         )
         return self
 
@@ -124,7 +122,9 @@ class ProcessOutboundConnectionQuery(Queryable):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        self.set_int_property_filter("port", _int_cmps("port", eq=eq, gt=gt, lt=lt))
+        cast('ProcessOutboundConnectionQuery', self)._port.extend(
+            _int_cmps("port", eq=eq, gt=gt, lt=lt)
+        )
         return self
 
     def with_connecting_processess(
@@ -317,6 +317,7 @@ class ProcessOutboundConnectionView(Viewable):
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         f_edges = {
             "connected_over": IpPortView
+            "connected_to": IpPortView
         }  # type: Dict[str, Optional["EdgeViewT"]]
 
         return cast(
@@ -326,6 +327,7 @@ class ProcessOutboundConnectionView(Viewable):
     def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
         f_edges = {
             "connected_over": self.connected_over
+            "connected_to": self.connected_over
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
         return cast(
