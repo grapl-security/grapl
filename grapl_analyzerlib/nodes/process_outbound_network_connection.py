@@ -316,7 +316,7 @@ class ProcessOutboundConnectionView(Viewable):
     @staticmethod
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         f_edges = {
-            "connected_over": IpPortView
+            "connected_over": IpPortView,
             "connected_to": IpPortView
         }  # type: Dict[str, Optional["EdgeViewT"]]
 
@@ -326,7 +326,7 @@ class ProcessOutboundConnectionView(Viewable):
 
     def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
         f_edges = {
-            "connected_over": self.connected_over
+            "connected_over": self.connected_over,
             "connected_to": self.connected_over
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
