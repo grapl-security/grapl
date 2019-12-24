@@ -290,7 +290,7 @@ class ProcessOutboundConnectionView(Viewable):
         return cast(
             List[IpPortView],
             self.fetch_edges(
-                "~connected_over", IpPortView
+                "connected_over", IpPortView
             ),
         )
 
@@ -298,7 +298,7 @@ class ProcessOutboundConnectionView(Viewable):
         return cast(
             List[IpPortView],
             self.fetch_edges(
-                "~connected_to", IpPortView
+                "connected_to", IpPortView
             ),
         )
 
