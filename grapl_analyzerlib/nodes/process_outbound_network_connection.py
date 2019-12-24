@@ -222,6 +222,7 @@ class ProcessOutboundConnectionView(Viewable):
         protocol: Optional[str] = None,
         connecting_processes: "Optional[IProcessView]" = None,
         connected_over: "Optional[IpPortView]" = None,
+        connected_to: "Optional[IpPortView]" = None,
     ):
         super(ProcessOutboundConnectionView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
@@ -239,6 +240,7 @@ class ProcessOutboundConnectionView(Viewable):
         self.protocol = protocol
         self.connecting_processes = connecting_processes
         self.connected_over = connected_over
+        self.connected_to = connected_to
 
     def get_created_timestamp(self) -> Optional[int]:
         if not self.created_timestamp:
