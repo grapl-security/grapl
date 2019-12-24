@@ -13,9 +13,15 @@ class ProcessOutboundConnectionSchema(NodeSchema):
             .with_int_prop("port")
             .with_forward_edge(
                 "connected_over",
-                # The IP + Port that was connected to
+                # The source IP + Port that was connected over
                 ManyToOne(IpPortSchema),
                 "process_connections",
+            )
+            .with_forward_edge(
+                "connected_to",
+                # The IP + Port that was connected to
+                ManyToOne(IpPortSchema),
+                "connections_from",
             )
         )
 
