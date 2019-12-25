@@ -29,7 +29,7 @@ for table_name in table_names:
         except Exception as e:
             print('failed to delete {}'.format(e))
 
-    time.sleep(8)
+    time.sleep(18)
 
     try:
         dynamodb.create_table(
@@ -42,7 +42,7 @@ for table_name in table_names:
 
         )
     except:
-        time.sleep(15)
+        time.sleep(22)
 
         dynamodb.create_table(
             TableName=table_name,

@@ -1,9 +1,6 @@
-#![allow(dead_code, unused_variables)]
-use std::collections::HashMap;
-
 use failure::Error;
 use futures::future::Future;
-use rusoto_core::Region;
+use rusoto_core::{Region, RusotoError};
 use rusoto_dynamodb::{
     AttributeValue, AttributeValueUpdate, Condition, Delete, DeleteItemInput, DynamoDb,
     DynamoDbClient, ExpectedAttributeValue, GetItemInput, ListTablesInput, Put, PutItemInput,
@@ -13,7 +10,7 @@ use std::convert::TryFrom;
 use std::time::Duration;
 use uuid::Uuid;
 
-use sessions::*;
+use crate::sessions::*;
 
 #[derive(Debug, Clone)]
 pub struct SessionDb<D>
@@ -35,7 +32,7 @@ where
         }
     }
 
-    pub fn find_first_session_after(&self, unid: &UnidSession) -> Result<Option<Session>, Error> {
+    pub async fn find_first_session_after(&self, unid: &UnidSession) -> Result<Option<Session>, Error> {
         info!("Finding first session after");
         let query = QueryInput {
             consistent_read: Some(true),
@@ -59,7 +56,7 @@ where
 
         let res = wait_on!(self.dynamo.query(query));
 
-        if let Err(QueryError::Unknown(ref e)) = res {
+        if let Err(RusotoError::Unknown(ref e)) = res {
             bail!("Query failed with error: {:?}", e);
         };
 
@@ -74,7 +71,7 @@ where
         }
     }
 
-    pub fn find_last_session_before(&self, unid: &UnidSession) -> Result<Option<Session>, Error> {
+    pub async fn find_last_session_before(&self, unid: &UnidSession) -> Result<Option<Session>, Error> {
         info!("Finding last session before");
         let query = QueryInput {
             consistent_read: Some(true),
@@ -114,7 +111,7 @@ where
     // Instead, in one transaction, the row must be deleted and recreated with the
     // new create_time
     // This method assumes that the `session` passed in has already been modified
-    pub fn update_session_create_time(
+    pub async fn update_session_create_time(
         &self,
         session: &Session,
         new_time: u64,
@@ -166,7 +163,7 @@ where
     }
 
     // Update version, and use it as a constraint
-    pub fn update_session_end_time(
+    pub async fn update_session_end_time(
         &self,
         session: &Session,
         new_time: u64,
@@ -225,8 +222,7 @@ where
         Ok(())
     }
 
-    #[inline(always)]
-    pub fn create_session(&self, session: &Session) -> Result<(), Error> {
+    pub async fn create_session(&self, session: &Session) -> Result<(), Error> {
         info!("create session");
         let put_req = PutItemInput {
             item: serde_dynamodb::to_hashmap(session).unwrap(),
@@ -239,8 +235,7 @@ where
         Ok(())
     }
 
-    #[inline(always)]
-    pub fn delete_session(&self, session: &Session) -> Result<(), Error> {
+    pub async fn delete_session(&self, session: &Session) -> Result<(), Error> {
         info!("delete session");
         let del_req = DeleteItemInput {
             key: hmap! {
@@ -261,14 +256,14 @@ where
         Ok(())
     }
 
-    pub fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
+    pub async fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
         info!(
             "Handling unid session creation, pseudo_key: {:?} seen at: {}.",
             unid.pseudo_key, unid.timestamp
         );
 
         // Look for first session where session.create_time >= unid.create_time
-        let session = self.find_first_session_after(&unid)?;
+        let session = self.find_first_session_after(&unid).await?;
 
         if let Some(session) = session {
             // If session.is_create_canon is false,
@@ -276,7 +271,7 @@ where
             // and we should consider this the canonical ID for that session
             if !session.is_create_canon {
                 info!("Extending session create_time");
-                self.update_session_create_time(&session, unid.timestamp, true)?;
+                self.update_session_create_time(&session, unid.timestamp, true).await?;
                 return Ok(session.session_id);
             }
 
@@ -300,7 +295,7 @@ where
         }
 
         // Look for last session where session.create_time <= unid.create_time
-        let session = self.find_last_session_before(&unid)?;
+        let session = self.find_last_session_before(&unid).await?;
 
         if let Some(session) = session {
             // If session.end_time >= unid.create_time (indicates overlapping sessions, error)
@@ -330,11 +325,11 @@ where
         };
 
         info!("Creating session");
-        self.create_session(&session)?;
+        self.create_session(&session).await?;
         Ok(session.session_id)
     }
 
-    pub fn handle_last_seen(
+    pub async fn handle_last_seen(
         &self,
         unid: UnidSession,
         should_default: bool,
@@ -346,7 +341,7 @@ where
 
         // Look for session where session.create_time <= unid.create_time <= session.end_time
         // Look for last session where session.create_time <= unid.create_time
-        let session = self.find_last_session_before(&unid)?;
+        let session = self.find_last_session_before(&unid).await?;
         if let Some(mut session) = session {
             if unid.timestamp < session.end_time || skewed_cmp(unid.timestamp, session.end_time) {
                 info!("Identified session because it fell within a timeline.");
@@ -362,12 +357,12 @@ where
             }
         }
 
-        let session = self.find_first_session_after(&unid)?;
+        let session = self.find_first_session_after(&unid).await?;
         if let Some(session) = session {
             if !session.is_create_canon {
                 info!("Found a later, non canonical session. Extending create_time..");
 
-                self.update_session_create_time(&session, unid.timestamp, false)?;
+                self.update_session_create_time(&session, unid.timestamp, false).await?;
                 return Ok(session.session_id);
             }
         }
@@ -384,7 +379,7 @@ where
                 version: 0,
                 pseudo_key: unid.pseudo_key,
             };
-            self.create_session(&session)?;
+            self.create_session(&session).await?;
 
             Ok(session_id)
         } else {
@@ -396,16 +391,16 @@ where
         }
     }
 
-    pub fn handle_unid_session(
+    pub async fn handle_unid_session(
         &self,
         mut unid: UnidSession,
         should_default: bool,
     ) -> Result<String, Error> {
         unid.timestamp = shave_int(unid.timestamp, 3);
         if unid.is_creation {
-            self.handle_creation_event(unid)
+            self.handle_creation_event(unid).await
         } else {
-            self.handle_last_seen(unid, should_default)
+            self.handle_last_seen(unid, should_default).await
         }
     }
 }

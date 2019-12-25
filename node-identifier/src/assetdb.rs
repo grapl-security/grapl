@@ -1,12 +1,12 @@
 use graph_descriptions::graph_description::*;
-use graph_descriptions::*;
+
 use graph_descriptions::graph_description::host::*;
 
 use failure::Error;
-use futures::future::Future;
+
 use rusoto_dynamodb::{
-    AttributeValue, Condition, DeleteItemInput, DynamoDb, DynamoDbClient, GetItemInput,
-    ListTablesInput, PutItemInput, QueryInput, Update, UpdateItemInput,
+    AttributeValue, DynamoDb,
+    PutItemInput, QueryInput,
 };
 use std::time::Duration;
 use graph_descriptions::graph_description::node::WhichNode;
@@ -40,7 +40,7 @@ where
         Self { dynamo }
     }
 
-    pub fn find_first_mapping_after(
+    pub async fn find_first_mapping_after(
         &self,
         host_id: &HostId,
         ts: u64,
@@ -83,7 +83,7 @@ where
         }
     }
 
-    pub fn find_last_mapping_before(
+    pub async fn find_last_mapping_before(
         &self,
         host_id: &HostId,
         ts: u64,
@@ -131,15 +131,15 @@ where
         }
     }
 
-    pub fn resolve_asset_id(&self, host_id: &HostId, ts: u64) -> Result<Option<String>, Error> {
-        if let Some(session_id) = self.find_last_mapping_before(host_id, ts)? {
+    pub async fn resolve_asset_id(&self, host_id: &HostId, ts: u64) -> Result<Option<String>, Error> {
+        if let Some(session_id) = self.find_last_mapping_before(host_id, ts).await? {
             Ok(Some(session_id))
         } else {
-            self.find_first_mapping_after(host_id, ts)
+            self.find_first_mapping_after(host_id, ts).await
         }
     }
 
-    pub fn create_mapping(&self, host_id: &HostId, asset_id: String, ts: u64) -> Result<(), Error> {
+    pub async fn create_mapping(&self, host_id: &HostId, asset_id: String, ts: u64) -> Result<(), Error> {
         let (table_key, host_id) = match host_id {
             HostId::AssetId(id) => return Ok(()),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
@@ -184,7 +184,7 @@ impl<D> AssetIdentifier<D>
         Self {assetdb}
     }
 
-    pub fn attribute_asset_id(
+    pub async fn attribute_asset_id(
         &self,
         node: &Node,
     ) -> Result<String, Error> {
@@ -227,7 +227,7 @@ impl<D> AssetIdentifier<D>
 
         // map host_id to asset_id
         // If we don't find an asset id we'll have to mark the node as dead
-        let asset_id = self.assetdb.resolve_asset_id(&host_id, timestamp);
+        let asset_id = self.assetdb.resolve_asset_id(&host_id, timestamp).await;
 
         match asset_id {
             Ok(Some(asset_id)) => Ok(asset_id),

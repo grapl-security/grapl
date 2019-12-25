@@ -1,7 +1,7 @@
 use failure::Error;
 use rusoto_dynamodb::{AttributeValue, DynamoDb, PutItemInput, QueryInput};
-use serde_dynamodb::ToQueryInput;
-use sessions::shave_int;
+
+
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,7 +37,7 @@ where
         }
     }
 
-    pub fn in_cache(&self, old_key: impl Into<String>) -> Result<bool, Error> {
+    pub async fn in_cache(&self, old_key: impl Into<String>) -> Result<bool, Error> {
         let query = QueryInput {
             limit: Some(1),
             table_name: self.table_name.clone(),
@@ -54,16 +54,13 @@ where
         let res = wait_on!(self.dynamo.query(query))?;
 
         if let Some(items) = res.items {
-            match &items[..] {
-                [item] => Ok(true),
-                _ => Ok(false),
-            }
+            Ok(!items.is_empty())
         } else {
             Ok(false)
         }
     }
 
-    pub fn put_cache(&self, old_key: impl AsRef<str>) -> Result<(), Error> {
+    pub async fn put_cache(&self, old_key: impl AsRef<str>) -> Result<(), Error> {
         let pseudo_key = CacheKey {
             pseudo_key: old_key.as_ref(),
             ttl_ts: self.ttl_ts,
