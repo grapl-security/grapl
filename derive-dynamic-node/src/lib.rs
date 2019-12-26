@@ -119,22 +119,22 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl Into<grapl_graph_descriptions::graph_description::NodeDescription> for #node_name {
-            fn into(self) -> NodeDescription {
+        impl Into<grapl_graph_descriptions::graph_description::Node> for #node_name {
+            fn into(self) -> Node {
                 self.dynamic_node.into()
             }
         }
 
 
-        impl Into<grapl_graph_descriptions::graph_description::NodeDescription> for & #node_name {
-            fn into(self) -> NodeDescription {
+        impl Into<grapl_graph_descriptions::graph_description::Node> for & #node_name {
+            fn into(self) -> Node {
                 self.dynamic_node.clone().into()
             }
         }
 
 
-        impl Into<grapl_graph_descriptions::graph_description::NodeDescription> for &mut #node_name {
-            fn into(self) -> NodeDescription {
+        impl Into<grapl_graph_descriptions::graph_description::Node> for &mut #node_name {
+            fn into(self) -> Node {
                 self.dynamic_node.clone().into()
             }
         }

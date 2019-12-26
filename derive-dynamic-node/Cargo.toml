@@ -17,11 +17,12 @@ syn = "0.15.39"
 quote = "0.6.13"
 proc-macro2 = "0.4.30"
 
-grapl-graph-descriptions = "0.1.*"
+
 serde_derive = "1.0.97"
 serde = "1.0.97"
 serde_json = "1.0.40"
 log = "0.4.7"
+grapl-graph-descriptions = "0.2.3"
 
 
 [dependencies.uuid]
