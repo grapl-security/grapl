@@ -39,10 +39,11 @@ class IpPortQuery(Queryable):
         eq: Optional["StrCmp"] = None,
         contains: Optional["StrCmp"] = None,
         ends_with: Optional["StrCmp"] = None,
+        starts_with: Optional["StrCmp"] = None,
     ) -> "NQ":
         self.set_str_property_filter(
             "ip_address",
-            _str_cmps("ip_address", eq=eq, contains=contains, ends_with=ends_with),
+            _str_cmps("ip_address", eq=eq, contains=contains, ends_with=ends_with, starts_with=starts_with),
         )
         return self
 
