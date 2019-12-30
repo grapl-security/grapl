@@ -336,7 +336,7 @@ class IpPortView(Viewable):
 
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         reverse_edges = {
-            "~created_connections": (self.connecting_processes, "connecting_processes")
+            "~created_connections": (self.process_connections, "connecting_processes")
         }
 
         return {

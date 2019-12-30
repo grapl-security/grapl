@@ -17,6 +17,7 @@ from typing import (
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.graph_description_pb2 import Node
+from grapl_analyzerlib.nodes.asset_node import AssetView
 from grapl_analyzerlib.nodes.ip_address_node import IpAddressView
 from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionView
 from grapl_analyzerlib.nodes.ip_port_node import IpPortView
@@ -339,6 +340,19 @@ class NodeView(Viewable):
                     uid=uid,
                     node_key=node.file_node.node_key,
                     file_path=node.file_node.file_path,
+                ),
+            )
+        elif node.HasField('asset_node'):
+            uid = get_uid(dgraph_client, node.file_node.node_key)
+
+            return NodeView(
+                dgraph_client,
+                node.file_node.node_key,
+                uid,
+                AssetView(
+                    dgraph_client=dgraph_client,
+                    uid=uid,
+                    node_key=node.file_node.node_key,
                 ),
             )
         elif node.HasField("ip_address_node"):
