@@ -346,7 +346,7 @@ class NodeView(Viewable):
                 ),
             )
         elif node.HasField('asset_node'):
-            uid = get_uid(dgraph_client, node.file_node.node_key)
+            uid = get_uid(dgraph_client, node.asset_node.node_key)
 
             return NodeView(
                 dgraph_client,
