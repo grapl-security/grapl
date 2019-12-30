@@ -66,17 +66,15 @@ class AssetView(Viewable):
             dgraph_client: DgraphClient,
             node_key: str,
             uid: str,
-            node_type: str,
             hostname: Optional[str] = None,
 
     ):
         super(AssetView, self).__init__(
-            dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
+            dgraph_client=dgraph_client, node_key=node_key, uid=uid
         )
         self.dgraph_client = dgraph_client
         self.node_key = node_key
         self.uid = uid
-        self.node_type = node_type
 
         self.hostname = hostname
 
