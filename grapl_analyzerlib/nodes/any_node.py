@@ -52,7 +52,10 @@ def get_uid(client: DgraphClient, node_key: str) -> str:
         res = json.loads(res.json)
 
         if isinstance(res["res"], list):
-            return str(res["res"][0]["uid"])
+            if res["res"]:
+                return str(res["res"][0]["uid"])
+            else:
+                raise Exception(f"get_uid failed for node_key: {node_key} {res}")
         else:
             return str(res["res"]["uid"])
 
