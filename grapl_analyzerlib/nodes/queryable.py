@@ -46,8 +46,9 @@ class Queryable(abc.ABC, Generic[NV]):
     def extend(self, extended_type: Type[NQ]) -> NQ:
         return extended_type(self.view_type)
 
-    def with_node_key(self, eq: str):
+    def with_node_key(self: 'NQ', eq: str) -> 'NQ':
         self._node_key = Eq("node_key", eq)
+        return self
 
     @abc.abstractmethod
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
