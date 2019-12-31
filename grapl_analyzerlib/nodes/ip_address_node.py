@@ -120,6 +120,9 @@ class IpAddressView(DynamicNodeView):
         self.ip_address = ip_address
         self.ip_connections = ip_connections
 
+    def get_node_type(self) -> Optional[str]:
+        return 'IpAddress'
+
     def get_first_seen_timestamp(self) -> Optional[int]:
         if not self.first_seen_timestamp:
             self.first_seen_timestamp = cast(

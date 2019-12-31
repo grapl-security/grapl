@@ -182,6 +182,9 @@ class ProcessInboundConnectionView(DynamicNodeView):
         self.bound_port = bound_port
         self.bound_by = bound_by
 
+    def get_node_type(self) -> Optional[str]:
+        return 'ProcessInboundConnection'
+
     def get_created_timestamp(self) -> Optional[int]:
         if not self.created_timestamp:
             self.created_timestamp = cast(

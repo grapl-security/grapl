@@ -346,6 +346,9 @@ class ProcessView(Viewable):
         self.bin_file = bin_file
         self.parent = parent
 
+    def get_node_type(self) -> Optional[str]:
+        return 'Process'
+
     def get_process_id(self: "NV") -> Optional[int]:
         if cast(ProcessView, self).process_id is not None:
             return cast(ProcessView, self).process_id

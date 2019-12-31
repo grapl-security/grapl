@@ -227,6 +227,9 @@ class IpPortView(Viewable):
         # Process connects overt his port
         self.process_connects = process_connects
 
+    def get_node_type(self) -> Optional[str]:
+        return 'IpPort'
+
     def get_port(self) -> Optional[int]:
         if not self.port:
             self.port = cast(Optional[int], self.fetch_property("port", int))

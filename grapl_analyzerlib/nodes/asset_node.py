@@ -78,6 +78,9 @@ class AssetView(Viewable):
 
         self.hostname = hostname
 
+    def get_node_type(self) -> Optional[str]:
+        return 'AssetView'
+
     def get_hostname(self) -> Optional[str]:
         if not self.hostname:
             self.hostname = cast(Optional[str], self.fetch_property("hostname", str))

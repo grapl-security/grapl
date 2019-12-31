@@ -446,6 +446,9 @@ class FileView(Viewable):
         self.deleter = deleter
         self.spawned_from = spawned_from or []
 
+    def get_node_type(self) -> Optional[str]:
+        return 'File'
+
     def get_file_path(self) -> Optional[str]:
         if self.file_path is not None:
             return self.file_path

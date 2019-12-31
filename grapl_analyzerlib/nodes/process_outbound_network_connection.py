@@ -242,6 +242,9 @@ class ProcessOutboundConnectionView(Viewable):
         self.connected_over = connected_over
         self.connected_to = connected_to
 
+    def get_node_type(self) -> Optional[str]:
+        return 'ProcessOutboundConnection'
+
     def get_created_timestamp(self) -> Optional[int]:
         if not self.created_timestamp:
             self.created_timestamp = cast(

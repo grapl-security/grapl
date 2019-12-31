@@ -175,6 +175,9 @@ class NetworkConnectionView(DynamicNodeView):
         self.dst_port = dst_port
         self.inbound_connection_to = inbound_connection_to
 
+    def get_node_type(self) -> Optional[str]:
+        return 'NetworkConnection'
+
     def get_created_timestamp(self) -> Optional[int]:
         if not self.created_timestamp:
             self.created_timestamp = cast(

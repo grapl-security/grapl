@@ -285,6 +285,9 @@ class LensView(Viewable):
         self.node_type = node_type
         self.scope = scope or []
 
+    def get_node_type(self) -> Optional[str]:
+        return 'Lens'
+
     @staticmethod
     def get_or_create(copy_client: CopyingDgraphClient, lens_name: str) -> "LensView":
         eg_txn = copy_client.dst_client.txn(read_only=False)
