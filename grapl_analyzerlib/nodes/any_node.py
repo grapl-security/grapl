@@ -483,13 +483,13 @@ class NodeView(Viewable):
         pass
 
     def _get_properties(self) -> Mapping[str, "Property"]:
-        return self._get_properties()
+        return self.node._get_properties()
 
     def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
-        return self._get_forward_edges()
+        return self.node._get_forward_edges()
 
     def _get_reverse_edges(self) -> "Mapping[str,  ReverseEdgeView]":
-        return self._get_reverse_edges()
+        return self.node._get_reverse_edges()
 
     def to_adjacency_list(self) -> Dict[str, Any]:
         all_nodes = flatten_nodes(self.node)
