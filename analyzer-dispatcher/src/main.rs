@@ -9,7 +9,7 @@ extern crate graph_descriptions;
 extern crate grpc;
 extern crate lambda_runtime as lambda;
 #[macro_use] extern crate log;
-extern crate openssl_probe;
+
 extern crate prost;
 extern crate rusoto_core;
 extern crate rusoto_s3;
@@ -25,7 +25,7 @@ extern crate stopwatch;
 
 use std::str::FromStr;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
 use std::sync::Arc;
 use std::time::Duration;
@@ -52,13 +52,24 @@ use rusoto_sns::{Sns, SnsClient};
 use rusoto_sns::PublishInput;
 use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
 use sha2::{Digest, Sha256};
-use sqs_lambda::EventHandler;
-use sqs_lambda::events_from_sns_sqs;
-use sqs_lambda::NopSqsCompletionHandler;
-use sqs_lambda::SnsEventRetriever;
-use sqs_lambda::SqsService;
-use sqs_lambda::EventDecoder;
 use std::env;
+
+use sqs_lambda::cache::{Cache, CacheResponse};
+use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
+use sqs_lambda::event_decoder::PayloadDecoder;
+use sqs_lambda::event_emitter::S3EventEmitter;
+use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
+use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
+use sqs_lambda::event_retriever::{S3PayloadRetriever, PayloadRetriever};
+use sqs_lambda::redis_cache::RedisCache;
+use sqs_lambda::sqs_completion_handler::{CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor};
+use sqs_lambda::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
+
+use async_trait::async_trait;
+use futures::compat::Future01CompatExt;
+use sqs_lambda::event_processor::ProcessorState::Complete;
+use std::marker::PhantomData;
+
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -74,14 +85,14 @@ macro_rules! log_time {
 }
 
 #[derive(Debug)]
-struct AnalyzerDispatcher<S>
-    where S: S3
+pub struct AnalyzerDispatcher<S>
+    where S: S3 + Send + Sync + 'static
 {
     s3_client: Arc<S>
 }
 
 impl<S> Clone for AnalyzerDispatcher<S>
-    where S: S3,
+    where S: S3 + Send + Sync + 'static
 {
     fn clone(&self) -> Self {
         Self {
@@ -90,18 +101,19 @@ impl<S> Clone for AnalyzerDispatcher<S>
     }
 }
 
-fn get_s3_keys(s3_client: &impl S3, bucket: impl Into<String>) -> Result<impl IntoIterator<Item=Result<String, Error>>, Error>
+async fn get_s3_keys(s3_client: &impl S3, bucket: impl Into<String>) -> Result<impl IntoIterator<Item=Result<String, Error>>, Error>
 {
     let bucket = bucket.into();
 
     let list_res = s3_client.list_objects(
-        &ListObjectsRequest {
+        ListObjectsRequest {
             bucket,
             ..Default::default()
         }
     )
         .with_timeout(Duration::from_secs(2))
-        .sync()?;
+        .compat()
+        .await?;
 
     let contents = match list_res.contents {
         Some(contents) => contents,
@@ -120,110 +132,142 @@ fn get_s3_keys(s3_client: &impl S3, bucket: impl Into<String>) -> Result<impl In
     )
 }
 
-#[derive(Serialize, Deserialize)]
-struct AnalyzerDispatchEvent<'a> {
-    #[serde(borrow)]
-    key: &'a str,
-    #[serde(borrow)]
-    subgraph: &'a [u8]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnalyzerDispatchEvent {
+    key: String,
+    subgraph: Graph,
 }
 
-fn encode_subgraph(subgraph: &GraphDescription) -> Result<Vec<u8>, Error> {
+fn encode_subgraph(subgraph: &Graph) -> Result<Vec<u8>, Error> {
     let mut buf = Vec::with_capacity(5000);
     subgraph.encode(&mut buf)?;
     Ok(buf)
 }
 
-fn emit_dispatch_event(
-    s3_client: &impl S3,
-    key: impl AsRef<str>,
-    subgraph: impl AsRef<[u8]>
-) -> Result<(), Error> {
 
-    let event = AnalyzerDispatchEvent {
-        key: key.as_ref(),
-        subgraph: subgraph.as_ref()
-    };
-
-
-    let body = serde_json::to_vec(&event)?;
-
-    // publish event to s3
-    let bucket = std::env::var("DISPATCHED_ANALYZER_BUCKET")
-        .expect("DISPATCHED_ANALYZER_TOPIC_ARN");
-
-    let key = {
-        let mut hasher = Sha256::default();
-        hasher.input(&body);
-
-        let key = hasher.result();
-        let key = base16::encode_lower(&key);
-        let epoch = SystemTime::now()
-            .duration_since(UNIX_EPOCH).unwrap().as_secs();
-
-        let day = epoch - (epoch % (24 * 60 * 60));
-
-        format!("{}/{}", day, key)
-    };
-
-    info!("Uploading payload to : {}", key);
-
-    s3_client.put_object(&PutObjectRequest {
-        bucket,
-        key,
-        body: Some(body),
-        ..Default::default()
-    })
-        .with_timeout(Duration::from_secs(2))
-        .sync()?;
-
-
-    Ok(())
-}
-
-impl<S> EventHandler<GraphDescription> for AnalyzerDispatcher<S>
-    where S: S3
+#[async_trait]
+impl<S> EventHandler for AnalyzerDispatcher<S>
+    where S: S3 + Send + Sync + 'static
 {
-    fn handle_event(&self, subgraph: GraphDescription) -> Result<(), Error> {
+    type InputEvent = GeneratedSubgraphs;
+    type OutputEvent = Vec<AnalyzerDispatchEvent>;
+    type Error = Arc<failure::Error>;
+
+    async fn handle_event(&mut self, subgraphs: GeneratedSubgraphs) -> OutputEvent<Self::OutputEvent, Self::Error> {
         let bucket = std::env::var("BUCKET_PREFIX")
             .map(|prefix| format!("{}-analyzers-bucket", prefix))
             .expect("BUCKET_PREFIX");
 
+        let mut subgraph = Graph::new(0);
+
+        subgraphs.subgraphs.iter().for_each(|generated_subgraph| subgraph.merge(generated_subgraph));
+
+        if subgraph.is_empty() {
+            warn!("Attempted to handle empty subgraph");
+            return OutputEvent::new(Completion::Total(vec![]))
+        }
+
         info!("Retrieving S3 keys");
-        let keys = get_s3_keys(self.s3_client.as_ref(), bucket)?;
-
-        info!("Encoding subgraph");
-        let subgraph = encode_subgraph(&subgraph)?;
-
-        info!("Creating sns_client");
-        let region = {
-            let region_str = env::var("AWS_REGION").expect("AWS_REGION");
-            Region::from_str(&region_str).expect("Invalid Region")
+        let keys = match get_s3_keys(self.s3_client.as_ref(), bucket).await {
+            Ok(keys) => keys,
+            Err(e) => return OutputEvent::new(Completion::Error(Arc::new(e)))
         };
-        let s3_client = S3Client::simple(region);
 
-        keys.into_iter()
-            .map(|key| emit_dispatch_event(&s3_client,key?, &subgraph))
-            .collect()
+        let mut dispatch_events = Vec::new();
+
+        let mut failed = None;
+        for key in keys {
+            let key = match key {
+                Ok(key) => key,
+                Err(e) => {
+                    warn!("Failed to retrieve key with {:?}", e);
+                    failed = Some(e);
+                    continue
+                }
+            };
+
+            dispatch_events.push(
+              AnalyzerDispatchEvent {
+                  key,
+                  subgraph: subgraph.clone()
+              }
+            );
+        }
+
+        let completed = if let Some(e) = failed {
+            OutputEvent::new(
+                Completion::Partial(
+                    (dispatch_events, Arc::new(e))
+                )
+            )
+        } else {
+            OutputEvent::new(Completion::Total(dispatch_events))
+        };
+
+//        identities.into_iter().for_each(|identity| completed.add_identity(identity));
+
+        completed
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct SubgraphSerializer {
+    proto: Vec<u8>,
+}
+
+impl CompletionEventSerializer for SubgraphSerializer {
+    type CompletedEvent = Vec<AnalyzerDispatchEvent>;
+    type Output = Vec<u8>;
+    type Error = failure::Error;
+
+    fn serialize_completed_events(
+        &mut self,
+        completed_events: &[Self::CompletedEvent],
+    ) -> Result<Vec<Self::Output>, Self::Error> {
+
+
+        let unique_events: Vec<_> = completed_events
+            .iter()
+            .flatten()
+            .collect();
+
+        let mut final_subgraph = Graph::new(0);
+
+        for event in unique_events.iter() {
+            final_subgraph.merge(&event.subgraph);
+        }
+
+        let mut serialized = Vec::with_capacity(unique_events.len());
+
+        for event in unique_events {
+            let event = json!({
+                "key": event.key,
+                "subgraph": encode_subgraph(&final_subgraph)?
+            });
+
+            serialized.push(
+                serde_json::to_vec(&event)?
+            );
+
+        }
+
+        Ok(serialized)
     }
 }
 
 
-#[derive(Debug, Clone)]
-pub struct Base64ZstdProtoDecoder;
+#[derive(Debug, Clone, Default)]
+pub struct ZstdProtoDecoder;
 
-impl<E> EventDecoder<E> for Base64ZstdProtoDecoder
+impl<E> PayloadDecoder<E> for ZstdProtoDecoder
     where E: Message + Default
 {
-
-    fn decode(&mut self, body: Vec<u8>) -> Result<E, Error>
+    fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
         where E: Message + Default,
     {
-        let decoded = base64::decode(&body)?;
-
         let mut decompressed = Vec::new();
 
-        let mut body = Cursor::new(&decoded);
+        let mut body = Cursor::new(&body);
 
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;
 
@@ -232,45 +276,197 @@ impl<E> EventDecoder<E> for Base64ZstdProtoDecoder
 }
 
 
-pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    let region = {
-        let region_str = env::var("AWS_REGION").expect("AWS_REGION");
-        Region::from_str(&region_str).expect("Invalid Region")
+fn time_based_key_fn(_event: &[u8]) -> String {
+    info!("event length {}", _event.len());
+    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
+        Ok(n) => n.as_millis(),
+        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
     };
 
-    info!("Creating s3_client");
-    let s3_client = Arc::new(S3Client::simple(region.clone()));
-    let handler = AnalyzerDispatcher{s3_client};
+    let cur_day = cur_ms - (cur_ms % 86400);
 
-    info!("Creating retriever");
-
-    let retriever = SnsEventRetriever::new(
-        |d| {info!("Parsing: {:?}", d); events_from_sns_sqs(d)},
-        Base64ZstdProtoDecoder{},
-    );
-
-    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-
-    info!("Creating sqs_completion_handler");
-    let sqs_completion_handler = NopSqsCompletionHandler::new(
-        queue_url
-    );
-
-    let mut sqs_service = SqsService::new(
-        retriever,
-        handler,
-        sqs_completion_handler,
-    );
-
-    info!("Handing off event");
-    log_time!("sqs_service.run", sqs_service.run(event, ctx)?);
-
-    Ok(())
+    format!(
+        "{}/{}-{}",
+        cur_day, cur_ms, uuid::Uuid::new_v4()
+    )
 }
+
+fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
+    rusoto_sqs::Message {
+        attributes: Some(event.attributes),
+        body: event.body,
+        md5_of_body: event.md5_of_body,
+        md5_of_message_attributes: event.md5_of_message_attributes,
+        message_attributes: None,
+        message_id: event.message_id,
+        receipt_handle: event.receipt_handle,
+    }
+}
+
+
+fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+    info!("Handling event");
+
+    let mut initial_events: HashSet<String> = event.records
+        .iter()
+        .map(|event| event.message_id.clone().unwrap())
+        .collect();
+
+    info!("Initial Events {:?}", initial_events);
+
+    let (tx, rx) = std::sync::mpsc::sync_channel(10);
+
+    std::thread::spawn(move || {
+        tokio_compat::run_std(
+            async move {
+                let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+                info!("Queue Url: {}", queue_url);
+
+                let bucket = std::env::var("DISPATCHED_ANALYZER_BUCKET")
+                    .expect("DISPATCHED_ANALYZER_TOPIC_ARN");
+
+                info!("Output events to: {}", bucket);
+                let region = {
+                    let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+                    Region::from_str(&region_str).expect("Region error")
+                };
+
+                let cache_address = {
+                    let dispatch_event_cache_addr = std::env::var("DISPATCH_EVENT_CACHE_ADDR").expect("DISPATCH_EVENT_CACHE_ADDR");
+                    let dispatch_event_cache_port = std::env::var("DISPATCH_EVENT_CACHE_PORT").expect("DISPATCH_EVENT_CACHE_PORT");
+
+                    format!(
+                        "{}:{}",
+                        dispatch_event_cache_addr,
+                        dispatch_event_cache_port,
+                    )
+                };
+                let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
+
+                let node_identifier = AnalyzerDispatcher {
+                    s3_client: Arc::new(S3Client::new(region.clone())),
+                };
+
+
+                info!("SqsCompletionHandler");
+
+                let finished_tx = tx.clone();
+                let sqs_completion_handler = SqsCompletionHandlerActor::new(
+                    SqsCompletionHandler::new(
+                        SqsClient::new(region.clone()),
+                        queue_url.to_string(),
+                        SubgraphSerializer { proto: Vec::with_capacity(1024) },
+                        S3EventEmitter::new(
+                            S3Client::new(region.clone()),
+                            bucket.to_owned(),
+                            time_based_key_fn,
+                        ),
+                        CompletionPolicy::new(
+                            1000, // Buffer up to 1000 messages
+                            Duration::from_secs(30), // Buffer for up to 30 seconds
+                        ),
+                        move |_self_actor, result: Result<String, String>| {
+                            match result {
+                                Ok(worked) => {
+                                    info!("Handled an event, which was successfully deleted: {}", &worked);
+                                    tx.send(worked).unwrap();
+                                }
+                                Err(worked) => {
+                                    info!("Handled an initial_event, though we failed to delete it: {}", &worked);
+                                    tx.send(worked).unwrap();
+                                }
+                            }
+                        },
+                    )
+                );
+
+
+                info!("Defining consume policy");
+                let consume_policy = ConsumePolicy::new(
+                    ctx, // Use the Context.deadline from the lambda_runtime
+                    Duration::from_secs(10), // Stop consuming when there's 2 seconds left in the runtime
+                    3, // If we get 3 empty receives in a row, stop consuming
+                );
+
+                info!("Defining consume policy");
+                let (shutdown_tx, shutdown_notify) = tokio::sync::oneshot::channel();
+
+                info!("SqsConsumer");
+                let sqs_consumer = SqsConsumerActor::new(
+                    SqsConsumer::new(
+                        SqsClient::new(region.clone()),
+                        queue_url.clone(),
+                        consume_policy,
+                        sqs_completion_handler.clone(),
+                        shutdown_tx,
+                    )
+                );
+
+                info!("EventProcessors");
+                let event_processors: Vec<_> = (0..10)
+                    .map(|_| {
+                        EventProcessorActor::new(EventProcessor::new(
+                            sqs_consumer.clone(),
+                            sqs_completion_handler.clone(),
+                            node_identifier.clone(),
+                            S3PayloadRetriever::new(S3Client::new(region.clone()), ZstdProtoDecoder::default()),
+                            cache.clone(),
+                        ))
+                    })
+                    .collect();
+
+                info!("Start Processing");
+
+                futures::future::join_all(event_processors.iter().map(|ep| ep.start_processing())).await;
+
+                let mut proc_iter = event_processors.iter().cycle();
+                for event in event.records {
+                    let next_proc = proc_iter.next().unwrap();
+                    next_proc.process_event(
+                        map_sqs_message(event)
+                    ).await;
+                }
+
+                info!("Waiting for shutdown notification");
+
+                // Wait for the consumers to shutdown
+                let _ = shutdown_notify.await;
+                info!("Consumer shutdown");
+                finished_tx.send("Completed".to_owned()).unwrap();
+            });
+    });
+
+    info!("Checking acks");
+    for r in &rx {
+        info!("Acking event: {}", &r);
+        initial_events.remove(&r);
+        if r == "Completed" {
+            let r = rx.recv_timeout(Duration::from_millis(100));
+            if let Ok(r) = r {
+                initial_events.remove(&r);
+            }
+            // If we're done go ahead and try to clear out any remaining
+            while let Ok(r) = rx.try_recv() {
+                initial_events.remove(&r);
+            }
+            break;
+        }
+    }
+
+    info!("Completed execution");
+
+    if initial_events.is_empty() {
+        info!("Successfully acked all initial events");
+        Ok(())
+    } else {
+        Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
+    }
+}
+
+
 
 fn main() {
     simple_logger::init_with_level(log::Level::Info).unwrap();
-    openssl_probe::init_ssl_cert_env_vars();
 
     lambda!(handler);
 }

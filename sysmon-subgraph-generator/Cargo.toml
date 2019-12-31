@@ -2,14 +2,15 @@
 name = "sysmon-subgraph-generator"
 version = "0.1.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 #graph-generator-lib = { path = "./graph-generator-lib/" }
-graph-generator-lib = { path = "../graph-generator-lib/" }
-#graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
-graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions" , version="*"}
+#graph-generator-lib = { path = "../graph-generator-lib/" }
+graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
+#graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions" , version="*"}
 
-sqs-lambda = "0.6.*"
+sqs-lambda = "0.2.8"
 #sqs-lambda = {path = "./sqs-lambda/"}
 serde_json = "*"
 serde = "1.0.71"
@@ -20,24 +21,26 @@ log = "0.4.3"
 base16 = "0.1.1"
 regex = "1.1.0"
 lazy_static = "1.2.0"
-brotli = "3.1.0"
 sysmon = "0.2"
 chrono = "0.4.6"
-no-panic = "0.1.6"
 rayon = "1.0.3"
 stopwatch = "0.0.7"
 
 
-rusoto_core = {version = "0.40.0", default_features = false, features=["rustls"]}
-rusoto_s3 = {version = "0.40.0", default_features = false, features=["rustls"]}
-rusoto_sqs = {version = "0.40.0", default_features = false, features=["rustls"]}
+
+rusoto_s3 = {version="0.42.0", default_features = false, features=["rustls"]}
+rusoto_core = {version="0.42.0", default_features = false, features=["rustls"]}
+rusoto_sqs = {version="0.42.0", default_features = false, features=["rustls"]}
+futures = "0.3.*"
+aws_lambda_events = "0.2.0"
 #rusoto_mock = "0.30.0"
 
-
-futures = "0.1.25"
-aws_lambda_events = "0.2.0"
 simple_logger = "1.0.1"
-lambda_runtime = "0.1.0"
+lambda_runtime = "0.2.*"
+async-trait = "0.1.22"
+zstd = "0.5.1"
+tokio-compat = "0.1.2"
+tokio = "0.2.6"
 
 
 [dependencies.uuid]

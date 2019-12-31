@@ -11,7 +11,7 @@ graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
 #graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions" , version="*"}
 
 
-sqs-lambda = "0.15.*"
+sqs-lambda = "0.2.8"
 
 serde_json = "*"
 serde = "1.0.71"

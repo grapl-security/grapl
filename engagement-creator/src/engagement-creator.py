@@ -229,7 +229,7 @@ def copy_node(
         {{
             q0(func: eq(node_key, "{node_key}")) {{
                     uid,
-                    expand(_forward_),
+                    expand(_all_),
                     dgraph.type    
             }}
         }}

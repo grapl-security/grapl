@@ -31,7 +31,7 @@ def main(prefix):
         return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
 
     for chunks in chunker(body, 50):
-        c_body = zstd.compress(b"\n".join(chunks), 4)
+        c_body = zstd.compress(b"\n".join(chunks).replace(b"\n\n", b"\n"), 4)
         epoch = int(time.time())
 
         s3.put_object(

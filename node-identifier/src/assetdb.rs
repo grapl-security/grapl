@@ -78,7 +78,10 @@ where
                 let asset_id: ResolvedAssetId = serde_dynamodb::from_hashmap(item)?;
                 Ok(Some(asset_id.asset_id))
             }
-            Some(items) => bail!("Unexpected number of items returned"),
+            Some(items) if items.is_empty() => {
+                Ok(None)
+            }
+            Some(items) => bail!("Unexpected number of items returned: {}", items.len()),
             None => Ok(None)
         }
     }

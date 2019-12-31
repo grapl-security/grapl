@@ -14,16 +14,16 @@ use crate::sessions::*;
 
 #[derive(Debug, Clone)]
 pub struct SessionDb<D>
-where
-    D: DynamoDb,
+    where
+        D: DynamoDb,
 {
     dynamo: D,
     table_name: String,
 }
 
 impl<D> SessionDb<D>
-where
-    D: DynamoDb,
+    where
+        D: DynamoDb,
 {
     pub fn new(dynamo: D, table_name: impl Into<String>) -> Self {
         Self {
@@ -162,6 +162,55 @@ where
         Ok(())
     }
 
+    pub async fn make_create_time_canonical(
+        &self,
+        session: &Session,
+    ) -> Result<(), Error> {
+        info!("Updating session end time");
+        // Use version as a constraint
+        let upd_req = UpdateItemInput {
+            key: hmap! {
+                "pseudo_key".to_owned() => AttributeValue {
+                    s: session.pseudo_key.clone().into(),
+                    ..Default::default()
+                },
+                "create_time".to_owned() => AttributeValue {
+                    n: session.create_time.to_string().into(),
+                    ..Default::default()
+                }
+            },
+            attribute_updates: Some(hmap! {
+                "is_create_canon".to_owned() => AttributeValueUpdate {
+                    value: Some(AttributeValue {
+                            bool: true.into(),
+                            ..Default::default()
+                        }),
+                    ..Default::default()
+                },
+                "version".to_owned() => AttributeValueUpdate {
+                    value: Some(AttributeValue {
+                        n: (session.version + 1).to_string().into(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }
+            }),
+            table_name: self.table_name.clone(),
+            condition_expression: Some("version = :version".into()),
+            expression_attribute_values: Some(hmap! {
+                ":version".to_owned() => AttributeValue {
+                    n: session.version.to_string().into(),
+                    ..Default::default()
+                }
+            }),
+            ..Default::default()
+        };
+
+        wait_on!(self.dynamo.update_item(upd_req))?;
+
+        Ok(())
+    }
+
     // Update version, and use it as a constraint
     pub async fn update_session_end_time(
         &self,
@@ -269,7 +318,7 @@ where
             // If session.is_create_canon is false,
             // This means that there is a 'Guessed' session in the future,
             // and we should consider this the canonical ID for that session
-            if !session.is_create_canon {
+            if !session.is_create_canon && session.create_time != unid.timestamp {
                 info!("Extending session create_time");
                 self.update_session_create_time(&session, unid.timestamp, true).await?;
                 return Ok(session.session_id);
@@ -406,7 +455,7 @@ where
 }
 
 pub fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
-    ts_1 - 100 < ts_2 && ts_1 + 100 > ts_2
+    ts_1 - 10 < ts_2 && ts_1 + 10 > ts_2
 }
 
 #[cfg(test)]
@@ -705,5 +754,4 @@ mod tests {
 
         assert_eq!(session_id, "SessionId");
     }
-
 }

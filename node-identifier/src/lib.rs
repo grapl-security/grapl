@@ -1,17 +1,17 @@
 #![allow(dead_code)]
 
-extern crate hex;
 extern crate aws_lambda_events;
 extern crate base58;
 #[macro_use]
 extern crate failure;
 extern crate futures;
 extern crate graph_descriptions;
-
+extern crate hex;
+#[macro_use]
+extern crate hmap;
 extern crate lambda_runtime as lambda;
 #[macro_use]
 extern crate log;
-
 extern crate prost;
 #[cfg(test)]
 extern crate quickcheck;
@@ -34,76 +34,57 @@ extern crate stopwatch;
 extern crate tokio;
 extern crate uuid;
 extern crate zstd;
-#[macro_use]
-extern crate hmap;
-
 
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::convert::TryFrom;
 use std::env;
-
 use std::io::Cursor;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
-
 use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-
 use aws_lambda_events::event::sqs::SqsEvent;
-
 use failure::Error;
-
-
+use graph_descriptions::file::FileState;
 use graph_descriptions::graph_description::*;
 use graph_descriptions::graph_description::host::*;
+use graph_descriptions::graph_description::node::WhichNode;
+use graph_descriptions::ip_connection::IpConnectionState;
+use graph_descriptions::network_connection::NetworkConnectionState;
+use graph_descriptions::process::ProcessState;
+use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use lambda::Context;
 use lambda::error::HandlerError;
-
 use prost::Message;
 use rusoto_core::Region;
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use sha2::Digest;
-
-
-use assetdb::{AssetIdDb, AssetIdentifier};
-use sessiondb::SessionDb;
-use sessions::UnidSession;
-use dynamic_sessiondb::{DynamicNodeIdentifier, DynamicMappingDb};
-use graph_descriptions::graph_description::node::WhichNode;
-use graph_descriptions::process::ProcessState;
-use graph_descriptions::file::FileState;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use graph_descriptions::network_connection::NetworkConnectionState;
-
-use std::convert::TryFrom;
-use graph_descriptions::ip_connection::IpConnectionState;
-
+use sqs_lambda::cache::{Cache, CacheResponse};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_emitter::S3EventEmitter;
-use sqs_lambda::event_handler::{EventHandler, OutputEvent, Completion};
-
+use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
 use sqs_lambda::event_retriever::S3PayloadRetriever;
-
+use sqs_lambda::redis_cache::RedisCache;
 use sqs_lambda::sqs_completion_handler::{CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor};
 use sqs_lambda::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
 
+use assetdb::{AssetIdDb, AssetIdentifier};
 use async_trait::async_trait;
+use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
+use sessiondb::SessionDb;
+use sessions::UnidSession;
 
 use crate::graph_descriptions::node::NodeT;
-
-
-use sqs_lambda::redis_cache::RedisCache;
-
-
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -128,7 +109,7 @@ macro_rules! wait_on {
 
 pub mod assetdb;
 pub mod dynamic_sessiondb;
-pub mod retry_cache;
+
 pub mod sessiondb;
 pub mod sessions;
 
@@ -142,12 +123,13 @@ struct NodeIdentifier<D>
     asset_identifier: AssetIdentifier<D>,
     node_id_db: D,
     should_default: bool,
+    cache: RedisCache,
 }
 
 impl<D> NodeIdentifier<D>
     where
         D: DynamoDb + Clone + Send + Sync + 'static,
-        
+
 {
     pub fn new(
         asset_mapping_db: AssetIdDb<D>,
@@ -155,6 +137,7 @@ impl<D> NodeIdentifier<D>
         asset_identifier: AssetIdentifier<D>,
         node_id_db: D,
         should_default: bool,
+        cache: RedisCache,
     ) -> Self {
         Self {
             asset_mapping_db,
@@ -162,6 +145,7 @@ impl<D> NodeIdentifier<D>
             asset_identifier,
             node_id_db,
             should_default,
+            cache,
         }
     }
 
@@ -170,7 +154,7 @@ impl<D> NodeIdentifier<D>
 
         match node.which_node {
             Some(WhichNode::ProcessNode(mut process_node)) => {
-                info!("Attributing ProcessNode");
+                info!("Attributing ProcessNode: {}", process_node.process_id);
                 let unid = match unid {
                     Some(unid) => unid,
                     None => bail!("Could not identify ProcessNode")
@@ -178,6 +162,11 @@ impl<D> NodeIdentifier<D>
                 let session_db = SessionDb::new(self.node_id_db.clone(), "process_history_table");
                 let node_key = session_db.handle_unid_session(unid, self.should_default).await?;
 
+                info!(
+                    "Mapped Process {:?} to {}",
+                    process_node,
+                    &node_key,
+                );
                 process_node.set_node_key(node_key);
                 Ok(process_node.into())
             }
@@ -288,9 +277,15 @@ impl<D> NodeIdentifier<D>
 fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
     match &node.which_node {
         Some(WhichNode::ProcessNode(node)) => {
-            let (is_creation, timestamp) = match ProcessState::try_from(node.state)? {
-                ProcessState::Created => (true, node.created_timestamp),
-                _ => (false, node.last_seen_timestamp),
+            let (is_creation, timestamp) = match (
+                node.created_timestamp != 0,
+                node.last_seen_timestamp != 0,
+                node.terminated_timestamp != 0,
+            ) {
+                (true, _ ,_) => (true, node.created_timestamp),
+                (_, _, true) => (false, node.terminated_timestamp),
+                (_, true, _) => (false, node.last_seen_timestamp),
+                _ => bail!("At least one timestamp must be set")
             };
 
             Ok(
@@ -389,7 +384,7 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
                     }
                 )
             )
-        },
+        }
 
         Some(WhichNode::IpConnectionNode(node)) => {
             let (is_creation, timestamp) = match IpConnectionState::try_from(node.state)? {
@@ -412,7 +407,7 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
                     }
                 )
             )
-        },
+        }
         // IpAddressNode is not a session
         Some(WhichNode::IpAddressNode(_node)) => Ok(None),
 
@@ -577,13 +572,14 @@ async fn create_asset_id_mappings(
 async fn attribute_asset_ids(
     asset_identifier: &AssetIdentifier<impl DynamoDb>,
     unid_graph: Graph,
-) -> Result<Graph, Graph> {
+) -> Result<Graph, (Error, Graph)> {
     info!("Attributing asset ids");
     let mut dead_nodes = HashSet::new();
     let mut output_graph = Graph::new(unid_graph.timestamp);
     output_graph.edges = unid_graph.edges;
 
     let node_asset_ids: HashMap<String, String> = HashMap::new();
+    let mut err = None;
 
     for node in unid_graph.nodes.values() {
         match &node.which_node {
@@ -616,6 +612,7 @@ async fn attribute_asset_ids(
             Ok(asset_id) => asset_id,
             Err(e) => {
                 warn!("Failed to attribute to asset id: {:?} {}", node, e);
+                err = Some(e);
                 dead_nodes.insert(node.clone_node_key());
                 continue;
             }
@@ -634,7 +631,7 @@ async fn attribute_asset_ids(
         Ok(output_graph)
     } else {
         warn!("Attributed asset ids");
-        Err(output_graph)
+        Err((err.unwrap(), output_graph))
     }
 }
 
@@ -642,13 +639,11 @@ async fn attribute_asset_ids(
 impl<D> EventHandler for NodeIdentifier<D>
     where D: DynamoDb + Clone + Send + Sync + 'static,
 {
-
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = GeneratedSubgraphs;
     type Error = Arc<failure::Error>;
 
     async fn handle_event(&mut self, subgraphs: GeneratedSubgraphs) -> OutputEvent<Self::OutputEvent, Self::Error> {
-
         let region = {
             let region_str = env::var("AWS_REGION").expect("AWS_REGION");
             match Region::from_str(&region_str) {
@@ -657,7 +652,7 @@ impl<D> EventHandler for NodeIdentifier<D>
             }
         };
 
-        let mut attribution_failure = false;
+        let mut attribution_failure = None;
 
         info!("Handling raw event");
 
@@ -667,15 +662,7 @@ impl<D> EventHandler for NodeIdentifier<D>
         }
 
         let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-        let dynamo = DynamoDbClient::new(region.clone());
-        let dyn_session_db = SessionDb::new(
-            dynamo.clone(),
-            "dynamic_session_table",
-        );
-        let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
-
-        let retry_cache =
-            retry_cache::RetrySessionCache::new("node_id_retry_table", DynamoDbClient::new(region));
+//        let dynamo = DynamoDbClient::new(region.clone());
 
         // Merge all of the subgraphs into one subgraph to avoid
         // redundant work
@@ -693,7 +680,6 @@ impl<D> EventHandler for NodeIdentifier<D>
             return OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![])));
         }
 
-
         info!(
             "unid_subgraph: {} nodes {} edges",
             unid_subgraph.nodes.len(),
@@ -703,7 +689,7 @@ impl<D> EventHandler for NodeIdentifier<D>
         // Create any implicit asset id mappings
         if let Err(e) = create_asset_id_mappings(&asset_id_db, &unid_subgraph).await {
             error!("Asset mapping creation failed with {}", e);
-            return OutputEvent::new(Completion::Error(Arc::new(e.into())))
+            return OutputEvent::new(Completion::Error(Arc::new(e.into())));
         }
 
         // Map all host_ids into asset_ids. This has to happen before node key
@@ -713,15 +699,13 @@ impl<D> EventHandler for NodeIdentifier<D>
 
         let output_subgraph = match attribute_asset_ids(&self.asset_identifier, unid_subgraph).await {
             Ok(unid_subgraph) => unid_subgraph,
-            Err(unid_subgraph) => {
-                attribution_failure = true;
+            Err((e, unid_subgraph)) => {
+                attribution_failure = Some(e);
                 unid_subgraph
             }
         };
 
-
         let mut dead_node_ids = HashSet::new();
-        let mut cached_node_ids = HashSet::new();
         let mut unid_id_map = HashMap::new();
 
         // new method
@@ -729,22 +713,21 @@ impl<D> EventHandler for NodeIdentifier<D>
         for (old_node_key, old_node) in output_subgraph.nodes.iter() {
             let node = old_node.clone();
 
-            match retry_cache.in_cache(old_node_key).await {
-                Ok(true) => {
-                    info!("Cached node, dropping");
-                    cached_node_ids.insert(old_node_key.to_string());
-                    continue
-                }
-                Err(e) => warn!("Failed to retrieve from cache"),
-                _ => (), // cache miss
-            };
+//            match self.cache.get(old_node_key.clone()).await {
+//                Ok(CacheResponse::Hit) => {
+//                    info!("Got cache hit for old_node_key, skipping node.");
+//                    continue
+//                },
+//                Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
+//                _ => (),
+//            };
 
             let node = match self.attribute_node_key(node.clone()).await {
                 Ok(node) => node,
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
                     dead_node_ids.insert(node.clone_node_key());
-                    attribution_failure = true;
+                    attribution_failure = Some(e);
                     continue;
                 }
             };
@@ -777,6 +760,7 @@ impl<D> EventHandler for NodeIdentifier<D>
         }
 
         println!("POST: identified_graph.edges.len() {}", identified_graph.edges.len());
+        info!("Identified Graph: {:?}", &identified_graph);
 
         // Remove dead nodes and edges from output_graph
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
@@ -784,26 +768,34 @@ impl<D> EventHandler for NodeIdentifier<D>
         if identified_graph.is_empty() {
             return OutputEvent::new(Completion::Error(
                 Arc::new(
-                    (|| {bail!("All nodes failed to identify"); Ok(())})().unwrap_err()
+                    (|| {
+                        bail!("All nodes failed to identify");
+                        Ok(())
+                    })().unwrap_err()
                 )
-            ))
+            ));
         }
 
         let identities: Vec<_> = unid_id_map.keys().cloned().collect();
 
-        let mut completed = if !dead_node_ids.is_empty() || attribution_failure {
+        let mut completed = if !dead_node_ids.is_empty() || attribution_failure.is_some() {
+            info!("Partial Success, identified {} nodes", identities.len());
             OutputEvent::new(
                 Completion::Partial(
                     (GeneratedSubgraphs::new(vec![identified_graph]), Arc::new(
-                        (|| {bail!("Failed"); Ok(())})().unwrap_err()
+                        (|| {
+                            bail!("Partial success: {:?}", attribution_failure.map(|e| format!("{:?}", e)).unwrap_or(String::new()));
+                            Ok(())
+                        })().unwrap_err()
                     ))
                 )
             )
         } else {
+            info!("Identified all nodes");
             OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![identified_graph])))
         };
 
-        identities.into_iter().for_each(|identity| completed.add_identity(identity));
+//        identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
         completed
 
@@ -838,6 +830,10 @@ impl CompletionEventSerializer for SubgraphSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
+        if completed_events.is_empty() {
+            warn!("No events to serialize");
+            return Ok(Vec::new())
+        }
         let mut subgraph = Graph::new(
             0
         );
@@ -861,7 +857,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
                 pre_nodes,
                 pre_edges,
             );
-            return Ok(vec![])
+            return Ok(vec![]);
         }
 
         info!(
@@ -871,6 +867,8 @@ impl CompletionEventSerializer for SubgraphSerializer {
             pre_nodes,
             pre_edges,
         );
+
+        info!("Serializing {:?}", subgraph.nodes);
 
         let subgraphs = GeneratedSubgraphs { subgraphs: vec![subgraph] };
 
@@ -954,22 +952,24 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                 info!("Queue Url: {}", queue_url);
                 let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
                 let cache_address = {
-                    let generic_event_cache_addr = std::env::var("GENERIC_EVENT_CACHE_ADDR").expect("GENERIC_EVENT_CACHE_ADDR");
-                    let generic_event_cache_port = std::env::var("GENERIC_EVENT_CACHE_PORT").expect("GENERIC_EVENT_CACHE_PORT");
+                    let retry_identity_cache_addr = std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
+                    let retry_identity_cache_port = std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
 
                     format!(
-                        "redis://{}:{}/",
-                        generic_event_cache_addr,
-                        generic_event_cache_port,
+                        "{}:{}",
+                        retry_identity_cache_addr,
+                        retry_identity_cache_port,
                     )
                 };
 
-                let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
+                let bucket = bucket_prefix + "-subgraphs-generated-bucket";
                 info!("Output events to: {}", bucket);
                 let region = {
                     let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
                     Region::from_str(&region_str).expect("Region error")
                 };
+
+                let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
 
                 let dynamo = DynamoDbClient::new(region.clone());
 
@@ -1001,10 +1001,8 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                     asset_identifier,
                     dynamo.clone(),
                     should_default,
+                    cache.clone(),
                 );
-
-
-                let cache = RedisCache::new(cache_address.to_owned()).expect("Could not create redis client");
 
                 info!("SqsCompletionHandler");
 
@@ -1068,7 +1066,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                             sqs_completion_handler.clone(),
                             node_identifier.clone(),
                             S3PayloadRetriever::new(S3Client::new(region.clone()), ZstdProtoDecoder::default()),
-                            cache.clone()
+                            cache.clone(),
                         ))
                     })
                     .collect();
@@ -1121,71 +1119,3 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
     }
 }
 
-
-//fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), HandlerError> {
-//    let region = {
-//        let region_str = env::var("AWS_REGION").expect("AWS_REGION");
-//        Region::from_str(&region_str).expect("Invalid region")
-//    };
-//
-//    let dynamo = DynamoDbClient::new(region.clone());
-//
-//    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-//
-//    let dynamo = DynamoDbClient::new(region.clone());
-//    let dyn_session_db = SessionDb::new(
-//        dynamo.clone(),
-//        "dynamic_session_table",
-//    );
-//    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
-//    let asset_identifier = AssetIdentifier::new(asset_id_db);
-//
-//    let dyn_node_identifier = DynamicNodeIdentifier::new(
-//        asset_identifier,
-//        dyn_session_db,
-//        dyn_mapping_db,
-//        should_default,
-//    );
-//
-//    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-//
-//    let asset_identifier = AssetIdentifier::new(asset_id_db);
-//
-//    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-//    let handler = NodeIdentifier::new(
-//        asset_id_db,
-//        dyn_node_identifier,
-//        asset_identifier,
-//        dynamo.clone(),
-//        upload_identified_graphs,
-//        should_default,
-//    );
-//
-//    let sqs_client = Arc::new(SqsClient::new(region.clone()));
-//
-//    info!("Creating s3_client");
-//    let s3_client = Arc::new(S3Client::new(region.clone()));
-//
-//    info!("Creating retriever");
-//    let retriever = S3EventRetriever::new(
-//        s3_client,
-//        |d| {
-//            info!("Parsing: {:?}", d);
-//            events_from_s3_sns_sqs(d)
-//        },
-//        ZstdProtoDecoder {},
-//    );
-//
-//    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-//
-//    info!("Creating sqs_completion_handler");
-//    let sqs_completion_handler = NopSqsCompletionHandler::new(queue_url);
-//
-//    let mut sqs_service = SqsService::new(retriever, handler, sqs_completion_handler);
-//
-//    info!("Handing off event");
-//    sqs_service.run(event, ctx)?;
-//
-//    Ok(())
-//}
-//

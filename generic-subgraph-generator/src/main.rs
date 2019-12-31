@@ -40,12 +40,10 @@ use lambda::error::HandlerError;
 use lambda::lambda;
 use regex::Regex;
 use rusoto_core::Region;
-use rusoto_s3::S3;
 use rusoto_s3::S3Client;
-use rusoto_sqs::{Sqs, SqsClient};
-use serde::{Deserialize, Deserializer};
+use rusoto_sqs::SqsClient;
+use serde::Deserialize;
 
-use serde_json::Value;
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_emitter::S3EventEmitter;
@@ -74,10 +72,11 @@ pub enum GenericEvent {
 }
 
 use serde::de::Error as SerdeError;
+use sqs_lambda::cache::{Cache, CacheResponse};
 
 impl GenericEvent {
     fn from_value(raw_log: serde_json::Value) -> Result<GenericEvent, serde_json::Error> {
-        let sourcetype = match raw_log
+        let eventname = match raw_log
             .get("eventname")
             .and_then(|eventname| eventname.as_str())
             {
@@ -85,8 +84,8 @@ impl GenericEvent {
                 None => return Err(serde_json::Error::custom("missing event_type")),
             };
 
-        info!("Parsing log of type: {}", sourcetype);
-        match &sourcetype[..] {
+        info!("Parsing log of type: {}", eventname);
+        match &eventname[..] {
             "PROCESS_START" => {
                 Ok(
                     GenericEvent::ProcessStart(serde_json::from_value(raw_log)?)
@@ -142,7 +141,7 @@ pub struct ProcessStart {
     arguments: String,
     timestamp: u64,
     exe: Option<String>,
-    sourcetype: String,
+    eventname: String,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -151,7 +150,7 @@ pub struct ProcessStop {
     name: String,
     hostname: String,
     timestamp: u64,
-    sourcetype: String,
+    eventname: String,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -161,7 +160,7 @@ pub struct FileCreate {
     path: String,
     hostname: String,
     timestamp: u64,
-    sourcetype: String,
+    eventname: String,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -171,7 +170,7 @@ pub struct FileDelete {
     path: String,
     hostname: String,
     timestamp: u64,
-    sourcetype: String,
+    eventname: String,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -181,7 +180,7 @@ pub struct FileRead {
     path: String,
     hostname: String,
     timestamp: u64,
-    sourcetype: String,
+    eventname: String,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -191,7 +190,7 @@ pub struct FileWrite {
     path: String,
     hostname: String,
     timestamp: u64,
-    sourcetype: String,
+    eventname: String,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -204,7 +203,7 @@ pub struct ProcessOutboundConnectionLog {
     src_ip_addr: String,
     dst_ip_addr: String,
     timestamp: u64,
-    sourcetype: String,
+    eventname: String,
 }
 
 // In an inbound connection "src" is where the connection is coming from
@@ -219,7 +218,7 @@ pub struct ProcessInboundConnectionLog {
     dst_ip_addr: String,
     protocol: String,
     timestamp: u64,
-    sourcetype: String,
+    eventname: String,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -228,7 +227,7 @@ pub struct ProcessPortBindLog {
     bound_port: u64,
     hostname: String,
     timestamp: u64,
-    sourcetype: String,
+    eventname: String,
 }
 
 fn is_internal_ip(ip: &str) -> bool {
@@ -245,9 +244,10 @@ fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
     let mut graph = Graph::new(conn_log.timestamp);
 
     let asset = AssetBuilder::default()
+        .asset_id(conn_log.src_hostname.clone())
         .hostname(conn_log.src_hostname.clone())
         .build()
-        .unwrap();
+        .expect("outbound_traffic.asset");
 
     // A process creates an outbound connection to dst_port
     let process = ProcessBuilder::default()
@@ -256,41 +256,43 @@ fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
         .process_id(conn_log.pid)
         .last_seen_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("outbound_traffic.process");
 
     let outbound = ProcessOutboundConnectionBuilder::default()
         .asset_id(conn_log.src_hostname.clone())
+        .ip_address(conn_log.src_ip_addr.clone())
+        .protocol(conn_log.protocol.clone())
         .state(ProcessOutboundConnectionState::Connected)
         .port(conn_log.src_port)
         .created_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("outbound_traffic.inbound");
 
     let src_ip = IpAddressBuilder::default()
         .ip_address(conn_log.src_ip_addr.clone())
         .last_seen_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("outbound_traffic.dst_ip");
 
     let dst_ip = IpAddressBuilder::default()
         .ip_address(conn_log.dst_ip_addr.clone())
         .last_seen_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("outbound_traffic.src_ip");
 
     let src_port = IpPortBuilder::default()
         .ip_address(conn_log.src_ip_addr.clone())
         .port(conn_log.src_port)
         .protocol(conn_log.protocol.clone())
         .build()
-        .unwrap();
+        .expect("outbound_traffic.src_port");
 
     let dst_port = IpPortBuilder::default()
         .ip_address(conn_log.dst_ip_addr.clone())
         .port(conn_log.dst_port)
         .protocol(conn_log.protocol.clone())
         .build()
-        .unwrap();
+        .expect("outbound_traffic.dst_port");
 
     let network_connection = NetworkConnectionBuilder::default()
         .state(NetworkConnectionState::Created)
@@ -301,7 +303,7 @@ fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
         .protocol(conn_log.protocol)
         .created_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("outbound_traffic.network_connection");
 
     // An asset is assigned an IP
     graph.add_edge(
@@ -319,7 +321,7 @@ fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
 
     // A process creates a connection
     graph.add_edge(
-        "created_connection",
+        "created_connections",
         process.clone_node_key(),
         outbound.clone_node_key(),
     );
@@ -333,7 +335,7 @@ fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
 
     // The connection is to a dst ip + port
     graph.add_edge(
-        "external_connection",
+        "connected_to",
         outbound.clone_node_key(),
         dst_port.clone_node_key(),
     );
@@ -367,9 +369,10 @@ fn handle_inbound_traffic(conn_log: ProcessInboundConnectionLog) -> Graph {
     let mut graph = Graph::new(conn_log.timestamp);
 
     let asset = AssetBuilder::default()
+        .asset_id(conn_log.dst_hostname.clone())
         .hostname(conn_log.dst_hostname.clone())
         .build()
-        .unwrap();
+        .expect("inbound_traffic.asset");
 
     // A process creates an outbound connection to dst_port
     let process = ProcessBuilder::default()
@@ -378,39 +381,41 @@ fn handle_inbound_traffic(conn_log: ProcessInboundConnectionLog) -> Graph {
         .process_id(conn_log.pid)
         .last_seen_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("inbound_traffic.process");
 
     let inbound = ProcessInboundConnectionBuilder::default()
         .asset_id(conn_log.dst_hostname.clone())
         .state(ProcessInboundConnectionState::Existing)
+        .ip_address(conn_log.dst_ip_addr.clone())
+        .protocol(conn_log.protocol.clone())
         .port(conn_log.dst_port)
         .created_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("inbound_traffic.inbound");
 
     let dst_ip = IpAddressBuilder::default()
         .ip_address(conn_log.dst_ip_addr.clone())
         .last_seen_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("inbound_traffic.dst_ip");
 
     let src_ip = IpAddressBuilder::default()
         .ip_address(conn_log.src_ip_addr.clone())
         .last_seen_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("inbound_traffic.src_ip");
 
     let src_port = IpPortBuilder::default()
         .ip_address(conn_log.src_ip_addr.clone())
         .port(conn_log.src_port)
         .build()
-        .unwrap();
+        .expect("inbound_traffic.src_port");
 
     let dst_port = IpPortBuilder::default()
         .ip_address(conn_log.dst_ip_addr.clone())
         .port(conn_log.dst_port)
         .build()
-        .unwrap();
+        .expect("inbound_traffic.dst_port");
 
     let network_connection = NetworkConnectionBuilder::default()
         .state(NetworkConnectionState::Created)
@@ -421,7 +426,7 @@ fn handle_inbound_traffic(conn_log: ProcessInboundConnectionLog) -> Graph {
         .protocol(conn_log.protocol)
         .created_timestamp(conn_log.timestamp)
         .build()
-        .unwrap();
+        .expect("inbound_traffic.network_connection");
 
     // An asset is assigned an IP
     graph.add_edge(
@@ -453,7 +458,7 @@ fn handle_inbound_traffic(conn_log: ProcessInboundConnectionLog) -> Graph {
 
     // The connection is to a dst ip + port
     graph.add_edge(
-        "external_connection",
+        "connected_to",
         inbound.clone_node_key(),
         dst_port.clone_node_key(),
     );
@@ -487,6 +492,7 @@ fn handle_process_start(process_start: ProcessStart) -> Graph {
     let mut graph = Graph::new(process_start.timestamp);
 
     let asset = AssetBuilder::default()
+        .asset_id(process_start.hostname.clone())
         .hostname(process_start.hostname.clone())
         .build()
         .unwrap();
@@ -840,6 +846,10 @@ impl EventHandler for GenericSubgraphGenerator
 
             let identity = event.clone();
 
+            if let Ok(CacheResponse::Hit) = self.cache.get(identity.clone()).await {
+                 continue
+            }
+
             let res = handle_log(event);
             let subgraph = match res {
                 Ok(subgraph) => subgraph,
@@ -860,10 +870,7 @@ impl EventHandler for GenericSubgraphGenerator
                     (
                         GeneratedSubgraphs::new(vec![final_subgraph]),
                         Arc::new(
-                            (|| {
-                                bail!("Failed");
-                                Ok(())
-                            })().unwrap_err()
+                            e
                         )
                     )
                 )
@@ -902,7 +909,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                     let generic_event_cache_port = std::env::var("GENERIC_EVENT_CACHE_PORT").expect("GENERIC_EVENT_CACHE_PORT");
 
                     format!(
-                        "redis://{}:{}/",
+                        "{}:{}",
                         generic_event_cache_addr,
                         generic_event_cache_port,
                     )
@@ -915,7 +922,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                     Region::from_str(&region_str).expect("Region error")
                 };
 
-                let cache = RedisCache::new(cache_address.to_owned()).expect("Could not create redis client");
+                let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
                 let node_identifier = GenericSubgraphGenerator { cache: cache.clone() };
 
                 info!("SqsCompletionHandler");

@@ -139,7 +139,7 @@ impl NodeT for Process {
 
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
-            warn!("Attempted to merge two IpPort Nodes with differing node_keys");
+            warn!("Attempted to merge two Process Nodes with differing node_keys");
             return false
         }
 

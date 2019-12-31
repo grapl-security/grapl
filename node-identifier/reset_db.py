@@ -2,13 +2,16 @@ import time
 import boto3
 
 table_names = [
-   'process_history_table',
-   'file_history_table',
-   'node_id_retry_table',
-   'outbound_connection_history_table',
-   'asset_id_mappings',
-   'dynamic_session_table',
-   'static_mapping_table',
+    'process_history_table',
+    'file_history_table',
+    'node_id_retry_table',
+    'outbound_connection_history_table',
+    'inbound_connection_history_table',
+    'network_connection_history_table',
+    'ip_connection_history_table',
+    'asset_id_mappings',
+    'dynamic_session_table',
+    'static_mapping_table',
 ]
 
 

@@ -1,4 +1,10 @@
-import {CorsRule, HttpMethods} from "@aws-cdk/aws-s3/lib/bucket";
+import {SqsEventSource} from '@aws-cdk/aws-lambda-event-sources';
+import {IVpc, Port, Vpc} from "@aws-cdk/aws-ec2";
+import {IBucket} from "@aws-cdk/aws-s3";
+import {ITopic} from "@aws-cdk/aws-sns";
+import {Runtime} from "@aws-cdk/aws-lambda";
+import {Duration} from '@aws-cdk/core';
+import {NetworkMode} from "@aws-cdk/aws-ecs";
 
 const AWS = require('aws-sdk');
 const uuidv4 = require('uuid/v4');
@@ -19,17 +25,8 @@ import lambda = require('@aws-cdk/aws-lambda');
 import iam = require('@aws-cdk/aws-iam');
 import dynamodb = require('@aws-cdk/aws-dynamodb');
 import ecs = require('@aws-cdk/aws-ecs');
-import route53 = require('@aws-cdk/aws-route53');
 
 import apigateway = require('@aws-cdk/aws-apigateway');
-import {SqsEventSource} from '@aws-cdk/aws-lambda-event-sources';
-import {InstanceType, IVpc, Port, Vpc} from "@aws-cdk/aws-ec2";
-import {IBucket} from "@aws-cdk/aws-s3";
-import {ITopic} from "@aws-cdk/aws-sns";
-import {Runtime} from "@aws-cdk/aws-lambda";
-import {Duration, Token} from '@aws-cdk/core';
-import {PublicHostedZone} from "@aws-cdk/aws-route53";
-import {NetworkMode, PlacementConstraint} from "@aws-cdk/aws-ecs";
 
 const env = require('node-env-file');
 
@@ -58,6 +55,8 @@ class RedisCluster extends cdk.Construct {
             securityGroups: [this.securityGroup],
             defaultPort: ec2.Port.tcp(6379)
         });
+
+        this.connections.allowFromAnyIpv4(Port.tcp(6379));
 
         // The cluster resource itself.
         this.cluster = new elasticache.CfnCacheCluster(this, `${id}-cluster`, {
@@ -349,6 +348,7 @@ class EventEmitters extends cdk.Stack {
     identity_mappings_bucket: s3.Bucket;
     unid_subgraphs_generated_bucket: s3.Bucket;
     subgraphs_generated_bucket: s3.Bucket;
+    subgraphs_merged_bucket: s3.Bucket;
     analyzers_bucket: s3.Bucket;
     dispatched_analyzer_bucket: s3.Bucket;
     analyzer_matched_subgraphs_bucket: s3.Bucket;
@@ -404,6 +404,10 @@ class EventEmitters extends cdk.Stack {
                 bucketName: process.env.BUCKET_PREFIX + "-analyzers-bucket"
             });
 
+        let subgraphs_merged_bucket =
+            new s3.Bucket(this, id + '-subgraphs-merged-bucket', {
+                bucketName: process.env.BUCKET_PREFIX + "-subgraphs-merged-bucket"
+            });
 
         let dispatched_analyzer_bucket =
             new s3.Bucket(this, id + '-dispatched-analyzer-bucket', {
@@ -486,6 +490,13 @@ class EventEmitters extends cdk.Stack {
                 s3.EventType.OBJECT_CREATED,
                 new s3Subs.SnsDestination(subgraphs_generated_topic)
             );
+
+        subgraphs_merged_bucket
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(subgraph_merged_topic)
+            );
+
         dispatched_analyzer_bucket
             .addEventNotification(
                 s3.EventType.OBJECT_CREATED,
@@ -503,6 +514,7 @@ class EventEmitters extends cdk.Stack {
         this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket;
         this.subgraphs_generated_bucket = subgraphs_generated_bucket;
         this.analyzers_bucket = analyzers_bucket;
+        this.subgraphs_merged_bucket = subgraphs_merged_bucket;
         this.dispatched_analyzer_bucket = dispatched_analyzer_bucket;
         this.analyzer_matched_subgraphs_bucket = analyzer_matched_subgraphs_bucket;
 
@@ -521,21 +533,31 @@ class EventEmitters extends cdk.Stack {
 
 class SysmonSubgraphGenerator extends cdk.Stack {
 
-    constructor(parent: cdk.App, id: string,
-                reads_from: s3.IBucket,
-                subscribes_to: sns.Topic,
-                writes_to: s3.IBucket,
+    constructor(
+        parent: cdk.App, id: string,
+        reads_from: s3.IBucket,
+        subscribes_to: sns.Topic,
+        writes_to: s3.IBucket,
+        vpc: Vpc,
     ) {
         super(parent, id + '-stack');
 
+        const sysmon_event_cache = new RedisCluster(this, id + 'sysmoneventcache', vpc);
+        sysmon_event_cache.connections.allowFromAnyIpv4(Port.allTcp());
+
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
+            "SYSMON_EVENT_CACHE_ADDR": sysmon_event_cache.cluster.attrRedisEndpointAddress,
+            "SYSMON_EVENT_CACHE_PORT": sysmon_event_cache.cluster.attrRedisEndpointPort,
         };
 
-        const service = new Service(this, 'sysmon-subgraph-generator', environment);
+        const service = new Service(this, 'sysmon-subgraph-generator', environment, vpc);
+
+        service.event_handler.connections.allowToAnyIpv4(Port.allTraffic());
+        service.event_retry_handler.connections.allowToAnyIpv4(Port.allTraffic());
 
         service.readsFrom(reads_from);
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
         service.publishesToBucket(writes_to);
     }
 }
@@ -547,24 +569,38 @@ class GenericSubgraphGenerator extends cdk.Stack {
                 reads_from: s3.IBucket,
                 subscribes_to: sns.Topic,
                 writes_to: s3.IBucket,
+                vpc: Vpc,
     ) {
         super(parent, id + '-stack');
 
+        const generic_event_cache = new RedisCluster(this, id + 'genericeventcache', vpc);
+        generic_event_cache.connections.allowFromAnyIpv4(Port.allTcp());
+
         const environment = {
-            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
+            "GENERIC_EVENT_CACHE_ADDR": generic_event_cache.cluster.attrRedisEndpointAddress,
+            "GENERIC_EVENT_CACHE_PORT": generic_event_cache.cluster.attrRedisEndpointPort,
         };
 
-        const service = new Service(this, 'generic-subgraph-generator', environment);
+        const service = new Service(this, 'generic-subgraph-generator', environment, vpc);
 
         service.readsFrom(reads_from);
 
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        service.event_handler.connections.allowToAnyIpv4(Port.tcp(
+            parseInt(generic_event_cache.cluster.attrRedisEndpointPort)
+        ));
+
+        service.event_retry_handler.connections.allowToAnyIpv4(Port.tcp(
+            parseInt(generic_event_cache.cluster.attrRedisEndpointPort)
+        ));
+
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
 
         service.publishesToBucket(writes_to);
     }
 }
 
-function addSubscription(scope, topic, subscription) {
+function addSubscription(scope, topic, subscription, raw?) {
     const config = subscription.bind(topic);
 
     new sns.Subscription(scope, 'Subscription', {
@@ -572,7 +608,7 @@ function addSubscription(scope, topic, subscription) {
         endpoint: config.endpoint,
         filterPolicy: config.filterPolicy,
         protocol: config.protocol,
-        rawMessageDelivery: config.rawMessageDelivery
+        rawMessageDelivery: raw || config.rawMessageDelivery
     });
 }
 
@@ -615,10 +651,13 @@ class NodeIdentifier extends cdk.Stack {
     ) {
         super(parent, id + '-stack');
 
+        const retry_identity_cache = new RedisCluster(this, id + 'retrycache', vpc);
+        retry_identity_cache.connections.allowFromAnyIpv4(Port.allTcp());
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
-            "IDENTITY_CACHE_PEPPER": process.env.IDENTITY_CACHE_PEPPER,
+            "RETRY_IDENTITY_CACHE_ADDR": retry_identity_cache.cluster.attrRedisEndpointAddress,
+            "RETRY_IDENTITY_CACHE_PORT": retry_identity_cache.cluster.attrRedisEndpointPort,
         };
 
         const service = new Service(this, 'node-identifier', environment, vpc, 'node-identifier-retry-handler');
@@ -626,7 +665,16 @@ class NodeIdentifier extends cdk.Stack {
 
         history_db.allowReadWrite(service);
         service.publishesToBucket(writes_to);
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
+
+        service.event_handler.connections.allowToAnyIpv4(Port.tcp(
+            parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
+        ));
+
+        service.event_retry_handler.connections.allowToAnyIpv4(Port.tcp(
+            parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
+        ));
+
         service.event_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
 
@@ -639,24 +687,31 @@ class GraphMerger extends cdk.Stack {
                 id: string,
                 reads_from: s3.IBucket,
                 subscribes_to: sns.ITopic,
-                publishes_to: sns.ITopic,
+                writes_to: s3.IBucket,
                 master_graph: DGraphEcs,
                 vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
 
+        const graph_merge_cache = new RedisCluster(this, id + 'mergedcache', vpc);
+        graph_merge_cache.connections.allowFromAnyIpv4(Port.allTcp());
+
+        graph_merge_cache.connections.allowFromAnyIpv4(Port.allTcp());
+
         const environment = {
-            "SUBGRAPH_MERGED_TOPIC_ARN": publishes_to.topicArn,
+            "SUBGRAPH_MERGED_BUCKET": writes_to.bucketName,
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
-            "MG_ALPHAS": master_graph.alphaNames.join(",")
+            "MG_ALPHAS": master_graph.alphaNames.join(","),
+            "MERGED_CACHE_ADDR": graph_merge_cache.cluster.attrRedisEndpointAddress,
+            "MERGED_CACHE_PORT": graph_merge_cache.cluster.attrRedisEndpointPort,
         };
 
         const service = new Service(this, 'graph-merger', environment, vpc);
 
         service.readsFrom(reads_from);
-        service.publishesToTopic(publishes_to);
+        service.publishesToBucket(writes_to);
 
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
         //
         // service.event_handler.connections
         //     .allowToAnyIpv4(new ec2.Port({
@@ -676,23 +731,30 @@ class AnalyzerDispatch extends cdk.Stack {
                 subscribes_to: sns.ITopic,  // The SNS Topic that we must subscribe to our queue
                 writes_to: s3.IBucket,
                 reads_from: s3.IBucket,
+                analyzer_bucket: s3.IBucket,
                 vpc: ec2.Vpc
     ) {
         super(parent, id + '-stack');
 
+        const dispatch_event_cache = new RedisCluster(this, id + 'dispatcheventcache', vpc);
+        dispatch_event_cache.connections.allowFromAnyIpv4(Port.allTcp());
 
         const environment = {
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
+            "DISPATCH_EVENT_CACHE_ADDR": dispatch_event_cache.cluster.attrRedisEndpointAddress,
+            "DISPATCH_EVENT_CACHE_PORT": dispatch_event_cache.cluster.attrRedisEndpointPort,
             "DISPATCHED_ANALYZER_BUCKET": writes_to.bucketName,
-            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+            "SUBGRAPH_MERGED_BUCKET": reads_from.bucketName,
         };
 
         const service = new Service(this, 'analyzer-dispatcher', environment, vpc);
 
         service.publishesToBucket(writes_to);
         // We need the List capability to find each of the analyzers
-        service.readsFrom(reads_from, true);
+        service.readsFrom(analyzer_bucket, true);
+        service.readsFrom(reads_from);
 
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
 
         service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
@@ -1377,7 +1439,8 @@ class Grapl extends cdk.App {
             'grapl-generic-subgraph-generator',
             event_emitters.raw_logs_bucket,
             event_emitters.raw_logs_topic,
-            event_emitters.unid_subgraphs_generated_bucket
+            event_emitters.unid_subgraphs_generated_bucket,
+            network.grapl_vpc,
         );
 
         new SysmonSubgraphGenerator(
@@ -1385,7 +1448,8 @@ class Grapl extends cdk.App {
             'grapl-sysmon-subgraph-generator',
             event_emitters.sysmon_logs_bucket,
             event_emitters.sysmon_logs_topic,
-            event_emitters.unid_subgraphs_generated_bucket
+            event_emitters.unid_subgraphs_generated_bucket,
+            network.grapl_vpc,
         );
 
 
@@ -1412,7 +1476,7 @@ class Grapl extends cdk.App {
             'grapl-graph-merger',
             event_emitters.subgraphs_generated_bucket,
             event_emitters.subgraphs_generated_topic,
-            event_emitters.subgraph_merged_topic,
+            event_emitters.subgraphs_merged_bucket,
             master_graph,
             network.grapl_vpc
         );
@@ -1422,6 +1486,7 @@ class Grapl extends cdk.App {
             'grapl-analyzer-dispatcher',
             event_emitters.subgraph_merged_topic,
             event_emitters.dispatched_analyzer_bucket,
+            event_emitters.subgraphs_merged_bucket,
             event_emitters.analyzers_bucket,
             network.grapl_vpc
         );

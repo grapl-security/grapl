@@ -105,7 +105,7 @@ def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
                 score,
                 scope {
                     uid,
-                    expand(_forward_),
+                    expand(_all_),
                     node_type: dgraph.type
                 }
             }  
@@ -233,9 +233,9 @@ def expand_node_forward(dgraph_client: DgraphClient, node_key: str) -> Optional[
             res(func: eq(node_key, $node_key))
             {
                 uid,
-                expand(_forward_) {
+                expand(_all_) {
                     uid,
-                    expand(_forward_),
+                    expand(_all_),
                     node_type: dgraph.type
                 }
                 node_type: dgraph.type

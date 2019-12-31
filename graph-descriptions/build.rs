@@ -104,6 +104,7 @@ fn main() {
                            "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]");
 
     config.field_attribute(".graph_description.Asset.asset_id", "#[builder(default)]");
+    config.field_attribute(".graph_description.Asset.ip_address", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.hostname", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.mac_address", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.first_seen_timestamp", "#[builder(default)]");
