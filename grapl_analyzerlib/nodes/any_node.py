@@ -89,7 +89,7 @@ def raw_node_from_uid(
             if node_type:
                 res[0]["node_type"] = res[0]["node_type"][0]
             else:
-                print(f"WARN: node_type missing from {uid}")
+                print(f"WARN: node_type missing from {uid} {res}")
 
             return cast(Dict[str, Any], res[0])
         else:
@@ -97,7 +97,7 @@ def raw_node_from_uid(
             if node_type:
                 res["node_type"] = res["node_type"][0]
             else:
-                print(f"WARN: node_type missing from {uid}")
+                print(f"WARN: node_type missing from {uid} {res}")
             return cast(Dict[str, Any], res)
 
 
@@ -128,7 +128,7 @@ def raw_node_from_node_key(
             if node_type:
                 res[0]["node_type"] = res[0]["node_type"][0]
             else:
-                print(f"WARN: node_type missing from {node_key}")
+                print(f"WARN: node_type missing from {node_key} {res}")
 
             return cast(Dict[str, Any], res[0])
         else:
@@ -136,7 +136,7 @@ def raw_node_from_node_key(
             if node_type:
                 res["node_type"] = res["node_type"][0]
             else:
-                print(f"WARN: node_type missing from {node_key}")
+                print(f"WARN: node_type missing from {node_key} {res}")
 
             return cast(Dict[str, Any], res)
     except Exception as e:
