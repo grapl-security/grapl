@@ -350,12 +350,12 @@ class NodeView(Viewable):
 
             return NodeView(
                 dgraph_client,
-                node.file_node.node_key,
+                node.asset_node.node_key,
                 uid,
                 AssetView(
                     dgraph_client=dgraph_client,
                     uid=uid,
-                    node_key=node.file_node.node_key,
+                    node_key=node.asset_node.node_key,
                 ),
             )
         elif node.HasField("ip_address_node"):
