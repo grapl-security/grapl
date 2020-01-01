@@ -259,7 +259,7 @@ class ProcessQuery(Queryable[IProcessView]):
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         props = {
-            "node_key": self._node_key,
+            "node_key": [[self._node_key]],
             "process_id": self._process_id,
             "process_name": self._process_name,
             "created_timestamp": self._created_timestamp,
