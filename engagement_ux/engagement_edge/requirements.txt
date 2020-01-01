@@ -1,4 +1,4 @@
 pydgraph==2.0.2
 boto3
 pyjwt
-grapl_analyzerlib==0.2.7
+grapl_analyzerlib==0.2.14

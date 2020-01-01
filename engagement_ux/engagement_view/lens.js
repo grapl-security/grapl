@@ -934,7 +934,7 @@ const getNodeType = (node) => {
 
 
 const nodeToTable = (node, Graph) => {
-    const hidden = new Set(['id', '__indexColor', 'risks','uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']);
+    const hidden = new Set(['id', 'dgraph.type', '__indexColor', 'risks','uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']);
     mapEdgeProps(node, (edgeName, _neighbor) => {
         hidden.add(edgeName)
     });

@@ -12,7 +12,7 @@ import jwt
 import pydgraph
 
 from grapl_analyzerlib.nodes.any_node import NodeView, raw_node_from_node_key
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView, _DynamicNodeView
+from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
 from pydgraph import DgraphClient
 
 JWT_SECRET = os.environ['JWT_SECRET']
@@ -61,7 +61,6 @@ def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
         return res['q0']
     finally:
         txn.discard()
-
 
 
 def edge_in_lens(dg_client: DgraphClient, node_uid: str, edge_name: str, lens_name: str) -> List[Dict[str, Any]]:
@@ -285,8 +284,8 @@ def expand_dynamic_node(dynamic_node: DynamicNodeView) -> Dict[str, Any]:
 
 def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, Any]]:
     current_graph = get_lens_scope(dgraph_client, lens_name)
-    print('Getting len sas dict')
-    if not current_graph:
+    print(f'Getting lens as dict {current_graph}')
+    if not current_graph or not current_graph.get('scope'):
         return []
     nodes = []
     for graph in current_graph['scope']:
@@ -295,8 +294,8 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
     if current_graph.get('scope'):
         current_graph.pop('scope')
 
-    concrete_nodes = [n.node for n in nodes if not isinstance(n.node, _DynamicNodeView)]
-    dynamic_nodes = [n.node for n in nodes if isinstance(n.node, _DynamicNodeView)]
+    concrete_nodes = [n.node for n in nodes if not isinstance(n.node, DynamicNodeView)]
+    dynamic_nodes = [n.node for n in nodes if isinstance(n.node, DynamicNodeView)]
 
     expanded_dynamic_nodes = []
     for dynamic_node in dynamic_nodes:

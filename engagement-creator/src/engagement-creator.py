@@ -207,7 +207,7 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> None:
             node_dict = {**node_dict, **res[0]}
 
         mutation = node_dict
-        print(f"Mutating with : {mutation}")
+        print(f"Mutating with : {mutation}, {node_dict} {res}")
 
         mut_res = txn.mutate(set_obj=mutation, commit_now=True)
         print(mut_res)
