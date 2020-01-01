@@ -29,7 +29,7 @@ NV = TypeVar("NV", bound="Viewable")
 
 class Queryable(abc.ABC, Generic[NV]):
     def __init__(self, view_type: Type["NV"]) -> None:
-        self._node_key = Has("node_key")  # type: Cmp[str]
+        self._node_key = [[Has("node_key")]]  # type: List[List[Cmp[str]]]
         self._uid = None  # type: Optional[Cmp[str]]
         self._query_id = str(uuid.uuid4())
 
@@ -47,7 +47,7 @@ class Queryable(abc.ABC, Generic[NV]):
         return extended_type(self.view_type)
 
     def with_node_key(self: 'NQ', eq: str) -> 'NQ':
-        self._node_key = Eq("node_key", eq)
+        self._node_key = [[Eq("node_key", eq)]]
         return self
 
     @abc.abstractmethod
@@ -93,7 +93,8 @@ class Queryable(abc.ABC, Generic[NV]):
     def get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         prop_filters = self._get_property_filters()
         if not prop_filters.get('node_key'):
-            prop_filters['node_key'] = [[self._node_key]]
+            prop_filters['node_key'] = self._node_key
+
         return {**prop_filters, **self.dynamic_property_filters}
 
     def get_property_names(self) -> List[str]:
