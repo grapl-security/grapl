@@ -92,6 +92,7 @@ class Queryable(abc.ABC, Generic[NV]):
 
     def get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         prop_filters = self._get_property_filters()
+        prop_filters['node_key'] = self._node_key
         return {**prop_filters, **self.dynamic_property_filters}
 
     def get_property_names(self) -> List[str]:

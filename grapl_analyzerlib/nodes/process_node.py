@@ -259,6 +259,7 @@ class ProcessQuery(Queryable[IProcessView]):
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         props = {
+            "node_key": self._node_key,
             "process_id": self._process_id,
             "process_name": self._process_name,
             "created_timestamp": self._created_timestamp,
@@ -492,9 +493,11 @@ class ProcessView(Viewable):
         self_node = (
             ProcessQuery()
             .with_node_key(eq=self.node_key)
-            .with_parent(_match_parent or ProcessQuery())
+            .with_parent(_match_parent)
             .query_first(self.dgraph_client)
         )
+
+        assert self.node_key == self_node.node_key, 'self and self_node do not have matching node_keys'
 
         if self_node:
             cast(ProcessView, self).parent = self_node.parent
