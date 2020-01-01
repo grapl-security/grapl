@@ -822,6 +822,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                                 }
                             }
                         },
+                        cache.clone()
                     )
                 );
 
@@ -855,7 +856,6 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                             sqs_completion_handler.clone(),
                             node_identifier.clone(),
                             S3PayloadRetriever::new(S3Client::new(region.clone()), ZstdDecoder::default()),
-                            cache.clone()
                         ))
                     })
                     .collect();

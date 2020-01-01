@@ -175,18 +175,30 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
 
     txn.commit_or_abort().await?;
 
-    info!("Upsert res for {}, {}: {:?}", node_key, set_json.to_string(), upsert_res);
+    info!(
+        "Upsert res for {}, set_json: {} upsert_res: {:?}",
+        node_key,
+        set_json.to_string(),
+        upsert_res,
+    );
 
-    if let Some(uid) = upsert_res.uids.values().next() {
-        Ok(uid.to_owned())
-    } else {
-        match node_key_to_uid(dg, &node_key).await? {
-            Some(uid) => {
-                Ok(uid)
-            },
-            None => bail!("Could not retrieve uid after upsert for &node_key"),
-        }
+    match node_key_to_uid(dg, &node_key).await? {
+        Some(uid) => {
+            Ok(uid)
+        },
+        None => bail!("Could not retrieve uid after upsert for {}", &node_key),
     }
+
+//    if let Some(uid) = upsert_res.uids.values().next() {
+//        Ok(uid.to_owned())
+//    } else {
+//        match node_key_to_uid(dg, &node_key).await? {
+//            Some(uid) => {
+//                Ok(uid)
+//            },
+//            None => bail!("Could not retrieve uid after upsert for {}", &node_key),
+//        }
+//    }
 }
 
 
@@ -505,6 +517,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                                 }
                             }
                         },
+                        cache.clone(),
                     )
                 );
 
@@ -537,7 +550,6 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                             sqs_completion_handler.clone(),
                             node_identifier.clone(),
                             S3PayloadRetriever::new(S3Client::new(region.clone()), ZstdProtoDecoder::default()),
-                            cache.clone(),
                         ))
                     })
                     .collect();

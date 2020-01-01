@@ -89,6 +89,7 @@ def attach_risk(client: DgraphClient, node: Union[FileView, ProcessView], analyz
 
         mutation = {
             "uid": res['q0'][0]['uid'],
+            'dgraph.type': 'Risk',
             "risks": {
                 'analyzer_name': analyzer_name,
                 'risk_score': risk_score
@@ -203,7 +204,7 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> None:
 
         if res:
             node_dict['uid'] = res[0]['uid']
-            # node_dict = {**node_dict, **res[0]}
+            node_dict = {**node_dict, **res[0]}
 
         mutation = node_dict
         print(f"Mutating with : {mutation}")

@@ -713,14 +713,14 @@ impl<D> EventHandler for NodeIdentifier<D>
         for (old_node_key, old_node) in output_subgraph.nodes.iter() {
             let node = old_node.clone();
 
-//            match self.cache.get(old_node_key.clone()).await {
-//                Ok(CacheResponse::Hit) => {
-//                    info!("Got cache hit for old_node_key, skipping node.");
-//                    continue
-//                },
-//                Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
-//                _ => (),
-//            };
+            match self.cache.get(old_node_key.clone()).await {
+                Ok(CacheResponse::Hit) => {
+                    info!("Got cache hit for old_node_key, skipping node.");
+                    continue
+                },
+                Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
+                _ => (),
+            };
 
             let node = match self.attribute_node_key(node.clone()).await {
                 Ok(node) => node,
@@ -1033,6 +1033,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                                 }
                             }
                         },
+                        cache.clone(),
                     )
                 );
 
@@ -1066,7 +1067,6 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                             sqs_completion_handler.clone(),
                             node_identifier.clone(),
                             S3PayloadRetriever::new(S3Client::new(region.clone()), ZstdProtoDecoder::default()),
-                            cache.clone(),
                         ))
                     })
                     .collect();

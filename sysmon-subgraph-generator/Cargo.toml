@@ -10,7 +10,7 @@ edition = "2018"
 graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
 #graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions" , version="*"}
 
-sqs-lambda = "0.2.8"
+sqs-lambda = "0.2.11"
 #sqs-lambda = {path = "./sqs-lambda/"}
 serde_json = "*"
 serde = "1.0.71"
