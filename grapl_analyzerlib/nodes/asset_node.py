@@ -28,7 +28,7 @@ class AssetQuery(Queryable):
             'hostname': self._hostname,
         }
 
-        return {p for p in props if p[1]}
+        return {p[0]: p[1] for p in props if p[1]}
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
         return {}
@@ -67,7 +67,6 @@ class AssetView(Viewable):
             node_key: str,
             uid: str,
             hostname: Optional[str] = None,
-
     ):
         super(AssetView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid
@@ -79,7 +78,7 @@ class AssetView(Viewable):
         self.hostname = hostname
 
     def get_node_type(self) -> Optional[str]:
-        return 'AssetView'
+        return 'Asset'
 
     def get_hostname(self) -> Optional[str]:
         if not self.hostname:

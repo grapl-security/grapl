@@ -143,6 +143,8 @@ class ProcessInboundConnectionQuery(DynamicNodeQuery):
         bound_by.set_reverse_edge_filter("~bound_by", self, "bound_by")
         return self
 
+    def _get_node_type_name(self) -> Optional[str]:
+        return 'ProcessInboundConnection'
 
 IProcessInboundConnectionView = TypeVar(
     "IProcessInboundConnectionView", bound="ProcessInboundConnectionView"

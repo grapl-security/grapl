@@ -10,6 +10,7 @@ from grapl_analyzerlib.nodes.comparators import (
     _str_cmps,
 )
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
+from grapl_analyzerlib.nodes.queryable import NQ
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 
@@ -153,6 +154,8 @@ class IpConnectionQuery(DynamicNodeQuery):
 
         return self
 
+    def _get_node_type_name(self) -> Optional[str]:
+        return 'IpConnection'
 
 IIpConnectionView = TypeVar("IIpConnectionView", bound="IpConnectionView")
 

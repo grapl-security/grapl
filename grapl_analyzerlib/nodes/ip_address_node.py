@@ -91,6 +91,8 @@ class IpAddressQuery(DynamicNodeQuery):
 
         return self
 
+    def _get_node_type_name(self) -> Optional[str]:
+        return 'IpAddress'
 
 IIpAddressView = TypeVar("IIpAddressView", bound="IpAddressView")
 
