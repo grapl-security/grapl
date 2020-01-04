@@ -487,6 +487,7 @@ def lambda_handler(event, context):
             return respond(None, {})
 
         if '/login' in event['path']:
+            print('login')
             cookie = lambda_login(event)
             if cookie:
                 return respond(None, 'True', headers={'Set-Cookie': cookie})
@@ -504,10 +505,12 @@ def lambda_handler(event, context):
             return respond("Must log in")
 
         if '/update' in event['path']:
+            print('update')
             update = try_get_updated_graph(json.loads(event["body"]))
             return respond(None, update)
 
         if '/getLenses' in event['path']:
+            print('getLenses')
             prefix = json.loads(event["body"]).get('prefix', '')
             lenses = list_all_lenses(prefix)
             return respond(None, {'lenses': lenses})
