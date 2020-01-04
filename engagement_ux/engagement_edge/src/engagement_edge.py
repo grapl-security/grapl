@@ -482,6 +482,8 @@ def lambda_login(event):
 
 
 def lambda_handler(event, context):
+    print(f'Received request, {event["path"]} {event["httpMethod"]}')
+
     try:
         if event['httpMethod'] == 'OPTIONS':
             return respond(None, {})
