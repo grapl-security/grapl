@@ -338,6 +338,7 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
     results.extend(expanded_dynamic_nodes)
     return results
 
+
 def try_get_updated_graph(body):
     print('Trying to update graph')
     client_stub = pydgraph.DgraphClientStub('alpha0.engagementgraphcluster.grapl:9080')
@@ -393,7 +394,9 @@ def get_salt_and_pw(table, username):
     if not response.get('Item'):
         return None, None
 
-    return response['Item']['salt'].value, response['Item']['password'].value
+    salt = response['Item']['salt'].value
+    password = response['Item']['password']
+    return salt, password
 
 
 def hash_password(cleartext, salt) -> str:
@@ -404,6 +407,7 @@ def hash_password(cleartext, salt) -> str:
         salt,
         512000
     ).hex()
+
 
 def user_auth_table():
     global DYNAMO
@@ -418,7 +422,7 @@ def create_user(username, cleartext):
     # client side hashing
     pepper = "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254";
 
-    hashed = sha256(cleartext + pepper).digest()
+    hashed = sha256(cleartext + pepper + username).digest()
     for i in range(0, 5000):
         hashed = sha256(hashed).digest()
 
