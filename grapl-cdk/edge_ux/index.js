@@ -19,12 +19,12 @@ async function sha256(message) {
 }
 
 
-const sha256WithPepper = async (message) => {
+const sha256WithPepper = async (username, password) => {
     // The pepper only exists to prevent rainbow tables for extremely weak passwords
     // Client side hashing itself is only to prevent cases where the password is
     // exposed before it makes it into the password database
     const pepper = "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254";
-    let hashed = await sha256(message + pepper);
+    let hashed = await sha256(password + pepper + username);
 
     for (let i = 0; i < 5000; i++) {
         hashed = await sha256(hashed)
@@ -75,11 +75,14 @@ document.addEventListener('DOMContentLoaded', async (event) => {
         console.log("not logged in");
         $('#submitbtn').click(async (submit) => {
             const username = $("#uname").val();
-            const password = await sha256WithPepper($("#psw").val());
-            console.log(`logging in with password: ${password}`);
+            const password = await sha256WithPepper(username, $("#psw").val());
+            console.log(`logging in`);
             const succ = await login(username, password);
             console.log(`login success ${succ}`)
-            window.location.href = 'lenses.html';
+
+            if (succ) {
+                window.location.href = 'lenses.html';
+            }
         })
     }
 });
