@@ -136,7 +136,7 @@ class NetworkConnectionQuery(DynamicNodeQuery):
 
         return self
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return 'NetworkConnection'
 
 
@@ -178,7 +178,7 @@ class NetworkConnectionView(DynamicNodeView):
         self.dst_port = dst_port
         self.inbound_connection_to = inbound_connection_to
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'NetworkConnection'
 
     def get_created_timestamp(self) -> Optional[int]:

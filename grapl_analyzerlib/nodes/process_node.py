@@ -14,7 +14,6 @@ IProcessView = TypeVar("IProcessView", bound="ProcessView")
 
 class ProcessQuery(Queryable[IProcessView]):
     def __init__(self) -> None:
-
         super(ProcessQuery, self).__init__(ProcessView)
         self._process_id = []  # type: List[List[Cmp[int]]]
         self._created_timestamp = []  # type: List[List[Cmp[int]]]
@@ -254,12 +253,12 @@ class ProcessQuery(Queryable[IProcessView]):
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return "process_id", int
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return "Process"
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         props = {
-            "node_key": [[self._node_key]],
+            "node_key": self._node_key,
             "process_id": self._process_id,
             "process_name": self._process_name,
             "created_timestamp": self._created_timestamp,
@@ -347,7 +346,7 @@ class ProcessView(Viewable):
         self.bin_file = bin_file
         self.parent = parent
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'Process'
 
     def get_process_id(self: "NV") -> Optional[int]:

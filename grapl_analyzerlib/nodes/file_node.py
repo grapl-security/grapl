@@ -340,7 +340,7 @@ class FileQuery(Queryable["FileView"]):
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return "file_path", str
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return "File"
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
@@ -446,7 +446,7 @@ class FileView(Viewable):
         self.deleter = deleter
         self.spawned_from = spawned_from or []
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'File'
 
     def get_file_path(self) -> Optional[str]:

@@ -186,7 +186,7 @@ class NodeQuery(Queryable):
     def _get_unique_predicate(self) -> "Optional[Tuple[str, PropertyT]]":
         return None
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return None
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:

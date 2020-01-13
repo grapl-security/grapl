@@ -143,7 +143,7 @@ class ProcessInboundConnectionQuery(DynamicNodeQuery):
         bound_by.set_reverse_edge_filter("~bound_by", self, "bound_by")
         return self
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return 'ProcessInboundConnection'
 
 IProcessInboundConnectionView = TypeVar(
@@ -184,7 +184,7 @@ class ProcessInboundConnectionView(DynamicNodeView):
         self.bound_port = bound_port
         self.bound_by = bound_by
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'ProcessInboundConnection'
 
     def get_created_timestamp(self) -> Optional[int]:

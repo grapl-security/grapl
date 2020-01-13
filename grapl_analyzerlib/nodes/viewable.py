@@ -76,8 +76,9 @@ class Viewable(abc.ABC):
     def _get_reverse_edges(self) -> "Mapping[str,  ReverseEdgeView]":
         pass
 
-    def get_node_type(self) -> Optional[str]:
-        return None
+    @abc.abstractmethod
+    def get_node_type(self) -> str:
+        pass
 
     @classmethod
     def get_edge_types(

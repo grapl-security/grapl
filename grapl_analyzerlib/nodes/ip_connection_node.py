@@ -154,7 +154,7 @@ class IpConnectionQuery(DynamicNodeQuery):
 
         return self
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return 'IpConnection'
 
 IIpConnectionView = TypeVar("IIpConnectionView", bound="IpConnectionView")
@@ -194,7 +194,7 @@ class IpConnectionView(DynamicNodeView):
         self.inbound_connection_to = inbound_connection_to
 
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'IpConnection'
 
     def get_created_timestamp(self) -> Optional[int]:

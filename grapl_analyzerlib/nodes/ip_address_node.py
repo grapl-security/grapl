@@ -91,7 +91,7 @@ class IpAddressQuery(DynamicNodeQuery):
 
         return self
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return 'IpAddress'
 
 IIpAddressView = TypeVar("IIpAddressView", bound="IpAddressView")
@@ -122,7 +122,7 @@ class IpAddressView(DynamicNodeView):
         self.ip_address = ip_address
         self.ip_connections = ip_connections
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'IpAddress'
 
     def get_first_seen_timestamp(self) -> Optional[int]:

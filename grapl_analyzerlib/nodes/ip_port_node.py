@@ -154,7 +154,7 @@ class IpPortQuery(Queryable):
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return None
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return "IpPort"
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
@@ -227,7 +227,7 @@ class IpPortView(Viewable):
         # Process connects overt his port
         self.process_connects = process_connects
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'IpPort'
 
     def get_port(self) -> Optional[int]:

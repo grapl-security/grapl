@@ -20,7 +20,7 @@ class AssetQuery(Queryable):
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return None
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return 'Asset'
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
@@ -77,7 +77,7 @@ class AssetView(Viewable):
 
         self.hostname = hostname
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'Asset'
 
     def get_hostname(self) -> Optional[str]:

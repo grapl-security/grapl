@@ -164,7 +164,7 @@ class ProcessOutboundConnectionQuery(Queryable):
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return None
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return "ProcessOutboundConnection"
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
@@ -242,7 +242,7 @@ class ProcessOutboundConnectionView(Viewable):
         self.connected_over = connected_over
         self.connected_to = connected_to
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'ProcessOutboundConnection'
 
     def get_created_timestamp(self) -> Optional[int]:

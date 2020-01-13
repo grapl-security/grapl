@@ -251,7 +251,7 @@ class LensQuery(Queryable["LensView"]):
     def _get_unique_predicate(self) -> Optional[Tuple[str, PropertyT]]:
         return "lens", int
 
-    def _get_node_type_name(self) -> Optional[str]:
+    def _get_node_type_name(self) -> str:
         return 'Lens'
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
@@ -285,7 +285,7 @@ class LensView(Viewable):
         self.node_type = node_type
         self.scope = scope or []
 
-    def get_node_type(self) -> Optional[str]:
+    def get_node_type(self) -> str:
         return 'Lens'
 
     @staticmethod
