@@ -17,6 +17,7 @@ from pydgraph import DgraphClient
 
 JWT_SECRET = os.environ['JWT_SECRET']
 ORIGIN = "https://" + os.environ['BUCKET_PREFIX'] + "engagement-ux-bucket.s3.amazonaws.com"
+ORIGIN_OVERRIDE = os.environ.get('ORIGIN_OVERRIDE', None)
 # ORIGIN = "http://localhost:63342"
 DYNAMO = None
 
@@ -363,7 +364,7 @@ def try_get_updated_graph(body):
         return updates
 
 
-def respond(err, res=None, headers=None, origin_override=None):
+def respond(err, res=None, headers=None):
     if not headers:
         headers = {}
 
@@ -371,7 +372,7 @@ def respond(err, res=None, headers=None, origin_override=None):
         'statusCode': '400' if err else '200',
         'body': {'error': err} if err else json.dumps({'success': res}),
         'headers': {
-            'Access-Control-Allow-Origin': origin_override or ORIGIN,
+            'Access-Control-Allow-Origin': ORIGIN_OVERRIDE or ORIGIN,
             'Access-Control-Allow-Credentials': True,
             'Content-Type': 'application/json',
             'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
@@ -519,5 +520,6 @@ def lambda_handler(event, context):
 
         return respond(f"Invalid path: {event['path']}", {})
     except Exception as e:
+        print(f'Failed with: {e}')
         traceback.print_exc()
         return respond("UnknownError")
