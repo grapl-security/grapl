@@ -2,7 +2,7 @@ import sys, traceback
 import json
 import os
 import time
-from hashlib import sha256, blake2b
+from hashlib import sha256, pbkdf2_hmac
 from hmac import compare_digest
 from random import uniform
 from typing import List, Dict, Any, Optional
@@ -397,13 +397,13 @@ def get_salt_and_pw(table, username):
 
 
 def hash_password(cleartext, salt) -> str:
-    print('initial hash')
     hashed = sha256(cleartext).digest()
-
-    hasher = blake2b(salt=salt)
-    hasher.update(hashed)
-    return hasher.digest()
-
+    return pbkdf2_hmac(
+        'sha256',
+        hashed,
+        salt,
+        512000
+    ).hex()
 
 def user_auth_table():
     global DYNAMO
@@ -422,7 +422,7 @@ def create_user(username, cleartext):
     for i in range(0, 5000):
         hashed = sha256(hashed).digest()
 
-    salt = os.urandom(blake2b.SALT_SIZE)
+    salt = os.urandom(16)
     password = hash_password(hashed, salt)
 
     table.put_item(
