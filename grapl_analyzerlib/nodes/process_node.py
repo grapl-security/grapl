@@ -496,10 +496,10 @@ class ProcessView(Viewable):
             .query_first(self.dgraph_client)
         )
 
-        assert self.node_key == self_node.node_key, 'self and self_node do not have matching node_keys'
-
         if self_node:
             cast(ProcessView, self).parent = self_node.parent
+
+            assert self.node_key == self_node.node_key, 'self and self_node do not have matching node_keys'
 
         return cast(ProcessView, self).parent
 
