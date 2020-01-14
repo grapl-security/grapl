@@ -221,6 +221,7 @@ class NodeQuery(Queryable):
 
 
 class NodeView(Viewable):
+
     def __init__(
         self, dgraph_client: DgraphClient, node_key: str, uid: str, node: Viewable
     ):
@@ -228,6 +229,9 @@ class NodeView(Viewable):
             dgraph_client=dgraph_client, node_key=node_key, uid=uid
         )
         self.node = node
+
+    def get_node_type(self) -> str:
+        return self.node.get_node_type()
 
     @staticmethod
     def from_view(v: Viewable):

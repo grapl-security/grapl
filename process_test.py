@@ -144,7 +144,5 @@ def main() -> None:
 
     p.get_parent()
 
-
-
 if __name__ == '__main__':
     main()
