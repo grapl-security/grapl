@@ -52,23 +52,23 @@ class Queryable(abc.ABC, Generic[NV]):
 
     @abc.abstractmethod
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
-        pass
+        """If the Node has a guaranteed unique predicate, return its name and type"""
 
     @abc.abstractmethod
     def _get_node_type_name(self) -> str:
-        pass
+        """Every query must define the node type"""
 
     @abc.abstractmethod
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
-        pass
+        """Defines the filters for every property in the query"""
 
     @abc.abstractmethod
     def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
-        pass
+        """:returns The built up comparisons for all forward edges"""
 
     @abc.abstractmethod
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
-        pass
+        """:returns The built up comparisons for all reverse edges"""
 
     def _get_unique_predicate_name(self) -> Optional[str]:
         unique_pred = self._get_unique_predicate()
@@ -128,8 +128,12 @@ class Queryable(abc.ABC, Generic[NV]):
         contains_node_key: Optional[str] = None,
         first: Optional[int] = 1000,
     ) -> List["NV"]:
+        if not first:
+            first = 1000
+
         if contains_node_key:
             first = 1
+
         query_str = generate_query(
             query_name="res",
             binding_modifier="res",
@@ -141,6 +145,8 @@ class Queryable(abc.ABC, Generic[NV]):
         txn = dgraph_client.txn(read_only=True)
         try:
             raw_views = json.loads(txn.query(query_str).json)["res"]
+        except Exception as e:
+            raise Exception(query_str, e)
         finally:
             txn.discard()
 

@@ -1,3 +1,4 @@
+
 import re
 from typing import List, Union, TypeVar, Generic, Optional, Sequence, Any, cast, Tuple
 
@@ -8,6 +9,58 @@ T = TypeVar("T", bound=Union[str, int])
 PropertyFilter = List[List["Cmp[T]"]]
 StrCmp = Union[str, List[str], List[Union[str, "Not[str]"]]]
 IntCmp = Union[int, List[int], List[Union[int, "Not[int]"]]]
+
+def escape_dgraph_regexp(input: str) -> str:
+    input = re.escape(input)
+    input = input.replace("\\$", "//\\$")
+    output = ""
+    for char in input:
+        if char == '"':
+            output += r'\"'
+        elif char == '/':
+            output += r'\/'
+        else:
+            output += char
+
+    return output
+
+
+def escape_dgraph_str(input: str, query=False) -> str:
+
+    output = ""
+    for char in input:
+        if char == "$":
+            output += "//$"
+        elif char == "\n":
+            if query:
+                output += r"//\\n"
+            else:
+                output += r"//\n"
+        elif char == "\\":
+            if query:
+                output += r"\\\\"
+            else:
+                output += r"\\"
+        elif char == '"':
+            if query:
+                output += r'\"'
+            else:
+                output += r'"'
+        else:
+            output += char
+
+    return output
+
+
+def unescape_dgraph_str(input: str) -> str:
+    if not isinstance(input, str):
+        return input
+    output = input.replace("//$", "$")
+    output = output.replace(r"//\n", "\n")
+    output = output.replace(r'\"', '"')
+    output = output.replace(r'\\', '\\')
+    return output
+
 
 
 class Or(object):
@@ -28,15 +81,23 @@ class Cmp(Generic[T]):
 class Eq(Cmp[T]):
     def __init__(self, predicate: str, value: Union[T, Not[T]]) -> None:
         self.predicate = predicate
-        self.value = value
+        if isinstance(value, str):
+            self.value = escape_dgraph_str(value, query=True)  # type: Union[str, Not[str]]
+        elif isinstance(value, Not) and isinstance(value.value, str):
+            self.value = escape_dgraph_str(value.value, query=True)
+        else:
+            self.value = value
 
     def to_filter(self) -> str:
         if isinstance(self.value, str):
             if self.predicate == "dgraph.type":
                 return f"type({self.value})"
-            return 'eq({}, "{}")'.format(self.predicate, self.value)
+            return 'eq({}, "{}")'.format(
+                self.predicate,
+                self.value,
+            )
         if isinstance(self.value, int):
-            return "eq({}, {})".format(self.predicate, self.value)
+            return 'eq({}, {})'.format(self.predicate, self.value)
         if isinstance(self.value, Not) and isinstance(self.value.value, str):
             if self.predicate == "dgraph.type":
                 return f"NOT type({self.value})"
@@ -49,37 +110,49 @@ class Eq(Cmp[T]):
 class EndsWith(Cmp[str]):
     def __init__(self, predicate: str, value: Union[str, Not[str]]) -> None:
         self.predicate = predicate
-        self.value = value  # type: Union[str, Not[str]]
+        if isinstance(value, str):
+            self.value = escape_dgraph_str(value)  # type: Union[str, Not[str]]
+        else:
+            value.value = escape_dgraph_str(value.value)
+            self.value = value
 
     def to_filter(self) -> str:
         if isinstance(self.value, Not):
             value = self.value.value
             escaped_value = re.escape(value)
-            return "NOT regexp({}, /.*{}/i)".format(self.predicate, escaped_value)
+            return "NOT regexp({}, /{}$/i)".format(self.predicate, escaped_value)
         else:
             escaped_value = re.escape(self.value)
-            return "regexp({}, /.*{}/i)".format(self.predicate, escaped_value)
+            return "regexp({}, /{}$/i)".format(self.predicate, escaped_value)
 
 
 class StartsWith(Cmp[str]):
     def __init__(self, predicate: str, value: Union[str, Not[str]]) -> None:
         self.predicate = predicate
-        self.value = value  # type: Union[str, Not[str]]
+        if isinstance(value, str):
+            self.value = escape_dgraph_str(value)  # type: Union[str, Not[str]]
+        else:
+            value.value = escape_dgraph_str(value.value)
+            self.value = value
 
     def to_filter(self) -> str:
         if isinstance(self.value, Not):
             value = self.value.value
             escaped_value = re.escape(value)
-            return "NOT regexp({}, /{}.*/i)".format(self.predicate, escaped_value)
+            return "NOT regexp({}, /^{}.*/i)".format(self.predicate, escaped_value)
         else:
             escaped_value = re.escape(self.value)
-            return "regexp({}, /{}.*/i)".format(self.predicate, escaped_value)
+            return "regexp({}, /^{}.*/i)".format(self.predicate, escaped_value)
 
 
 class Rex(Cmp[str]):
     def __init__(self, predicate: str, value: Union[str, Not[str]]) -> None:
         self.predicate = predicate
-        self.value = value
+        if isinstance(value, str):
+            self.value = value.replace("$", "//$").replace("\n", "//\n")
+        else:
+            value.value.replace("$", "//$").replace("\n", "//\n")
+            self.value = value
 
     def to_filter(self) -> str:
         if isinstance(self.value, Not):
@@ -124,16 +197,24 @@ class Has(Cmp[Any]):
 class Contains(Cmp[str]):
     def __init__(self, predicate: str, value: Union[str, Not[str]]) -> None:
         self.predicate = predicate
-        self.value = value
+        if isinstance(value, str):
+            self.value = escape_dgraph_regexp(value)
+        else:
+            value.value = escape_dgraph_regexp(value.value)
+            self.value = value
 
     def to_filter(self) -> str:
 
         if isinstance(self.value, Not):
-            value = re.escape(self.value.value)
-            return f"NOT regexp({self.predicate}, /{value}/)"
+            # value = re.escape(self.value.value)
+            # value = value.replace("/", "\\/")
+
+            return f"NOT regexp({self.predicate}, /{self.value.value}/)"
         else:
-            value = re.escape(self.value)
-            return f"regexp({self.predicate}, /{value}/)"
+            # value = re.escape(self.value)
+            # value = value
+            # value = value.replace("/", "\\/")
+            return f"regexp({self.predicate}, /{self.value}/)"
 
 
 class Regexp(Cmp[str]):
@@ -167,7 +248,6 @@ class Distance(Cmp[str]):
         else:
             value = self.value
             return f'match({self.predicate}, "{value}", {self.distance})'
-
 
 def _str_cmps(
     predicate: str,
@@ -250,7 +330,7 @@ def _int_cmps(
         _lt = [Lt(predicate, e) for e in lt]
         cmps.append(_lt)
 
-    if not (eq or gt or lt):
+    if eq is None and gt is None and lt is None:
         cmps.append([Has(predicate)])
 
     return cast(List[List[Cmp[int]]], cmps)

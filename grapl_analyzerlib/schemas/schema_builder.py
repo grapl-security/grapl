@@ -102,6 +102,7 @@ class NodeSchema(abc.ABC):
         type_def = f"""
             type {self.node_type} {{
                 node_key: string
+                last_index_time: int
                 {str_types}
                 {int_types}
                 {bool_types}
@@ -139,6 +140,7 @@ class NodeSchema(abc.ABC):
 
         schema = f"""
             node_key: string @upsert @index(hash) .
+            last_index_time: int @index(int) .
             
             {str_prop_schema}
             {int_prop_schema} 

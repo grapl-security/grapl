@@ -75,30 +75,38 @@ def format_schemas(schema_defs):
     ])
 
 
-eclient = DgraphClient(DgraphClientStub('localhost:9080'))
+___local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
 
 
-# drop_all(mclient)
-# drop_all(eclient)
+def provision():
 
-schemas = (
-    AssetSchema(),
-    ProcessSchema(),
-    FileSchema(),
-    IpConnectionSchema(),
-    IpAddressSchema(),
-    IpPortSchema(),
-    NetworkConnectionSchema(),
-    ProcessInboundConnectionSchema(),
-    ProcessOutboundConnectionSchema(),
-)
 
-schema_str = format_schemas(schemas)
+    # drop_all(mclient)
+    # drop_all(___local_dg_provision_client)
 
-eg_schemas = [s.with_forward_edge('risks', ManyToMany(RiskSchema), 'risky_nodes') for s in schemas]
+    schemas = (
+        AssetSchema(),
+        ProcessSchema(),
+        FileSchema(),
+        IpConnectionSchema(),
+        IpAddressSchema(),
+        IpPortSchema(),
+        NetworkConnectionSchema(),
+        ProcessInboundConnectionSchema(),
+        ProcessOutboundConnectionSchema(),
+    )
 
-risk_schema = RiskSchema()
-lens_schema = LensSchema()
-eg_schemas.extend([risk_schema, lens_schema])
-eg_schema_str = format_schemas(eg_schemas)
-set_schema(eclient, eg_schema_str)
+    schema_str = format_schemas(schemas)
+
+    eg_schemas = [s.with_forward_edge('risks', ManyToMany(RiskSchema), 'risky_nodes') for s in schemas]
+
+    risk_schema = RiskSchema()
+    lens_schema = LensSchema()
+    eg_schemas.extend([risk_schema, lens_schema])
+    eg_schema_str = format_schemas(eg_schemas)
+    set_schema(___local_dg_provision_client, eg_schema_str)
+
+
+if __name__ == '__main__':
+    drop_all(___local_dg_provision_client)
+    provision()

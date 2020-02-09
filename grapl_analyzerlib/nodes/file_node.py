@@ -434,7 +434,15 @@ class FileView(Viewable):
         self.file_directory = file_directory
         self.file_inode = file_inode
         self.file_hard_links = file_hard_links
-        self.signed = signed
+        if not signed:
+            self.signed = None
+        elif signed == "True":
+            self.signed = True
+        elif signed == "False":
+            self.signed = False
+        else:
+            raise ValueError(f"signed must be True or False: {signed}")
+
         self.signed_status = signed_status
         self.md5_hash = md5_hash
         self.sha1_hash = sha1_hash
@@ -521,10 +529,20 @@ class FileView(Viewable):
         self.file_hard_links = cast(str, self.fetch_property("file_hard_links", str))
         return self.file_hard_links
 
-    def get_signed(self) -> Optional[str]:
+    def get_signed(self) -> Optional[bool]:
         if self.signed is not None:
             return self.signed
-        self.signed = cast(str, self.fetch_property("signed", str))
+        signed = cast(str, self.fetch_property("signed", str))
+        if not signed:
+            return None
+
+        if signed == "True":
+            self.signed = True
+        elif signed == "False":
+            self.signed = False
+        else:
+            raise ValueError(f"signed must be True or False: {signed}")
+
         return self.signed
 
     def get_signed_status(self) -> Optional[str]:

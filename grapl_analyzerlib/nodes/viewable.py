@@ -17,6 +17,8 @@ from typing import (
 
 # noinspection Mypy
 from pydgraph import DgraphClient
+
+from grapl_analyzerlib.nodes.comparators import unescape_dgraph_str
 from grapl_analyzerlib.nodes.types import PropertyT, OneOrMany, Property
 
 NV = TypeVar("NV", bound="Viewable")
@@ -192,7 +194,8 @@ class Viewable(abc.ABC):
             return None
 
         prop = prop_type(raw_prop[prop_name])
-
+        if isinstance(prop, str):
+            return unescape_dgraph_str(prop)
         return prop
 
     def fetch_properties(
@@ -219,7 +222,7 @@ class Viewable(abc.ABC):
             return []
 
         props = [prop_type(p[prop_name]) for p in raw_props]
-
+        props = [unescape_dgraph_str(prop) for prop in props]
         return props
 
     def fetch_edge(self, edge_name: str, edge_type: Type["NV"]) -> Optional["NV"]:
@@ -320,7 +323,7 @@ class Viewable(abc.ABC):
 
             if val or val == 0:
                 if into == str:
-                    val = str(val)
+                    val = unescape_dgraph_str(str(val))
                 elif into == int:
                     val = int(val)
                 properties[prop] = val
