@@ -41,6 +41,7 @@ class LensSchema(NodeSchema):
     def self_type() -> str:
         return 'Lens'
 
+
 class AssetSchema(NodeSchema):
     def __init__(self):
         super(AssetSchema, self).__init__()
@@ -75,6 +76,80 @@ def format_schemas(schema_defs):
     ])
 
 
+
+def get_type_dict(client, type_name):
+    query = f"""
+    schema(type: {type_name}) {{
+      type
+      index
+    }}
+    """
+
+    txn = client.txn(read_only=True)
+
+    try:
+        res = json.loads(txn.query(query).json)
+    finally:
+        txn.discard()
+
+    type_dict = {}
+
+    for d in res['types'][0]['fields']:
+        if d['name'][0] == "~":
+            name = f"<{d['name']}>"
+        else:
+            name = d['name']
+        type_dict[name] = d['type']
+
+    return type_dict
+
+
+def update_reverse_edges(client, schema):
+
+    type_dicts = {}
+
+    rev_edges = set()
+    for edge in schema.forward_edges:
+        edge_n = edge[0]
+        edge_t = edge[1]._inner_type.self_type()
+        if edge_t == 'Any':
+            continue
+
+        rev_edges.add(('<~' + edge_n + '>', edge_t))
+
+        if not type_dicts.get(edge_t):
+            type_dicts[edge_t] = get_type_dict(client, edge_t)
+
+    if not rev_edges:
+        return
+
+    for (rev_edge_n, rev_edge_t) in rev_edges:
+        type_dicts[rev_edge_t][rev_edge_n] = 'uid'
+
+    type_strs = ""
+
+    for t in type_dicts.items():
+        type_name = t[0]
+        type_d = t[1]
+
+        predicates = []
+        for predicate_name, predicate_type in type_d.items():
+            predicates.append(f"\t{predicate_name}: {predicate_type}")
+
+        predicates = "\n".join(predicates)
+        type_str = f"""
+type {type_name} {{
+{predicates}
+            
+    }}
+        """
+        type_strs += "\n"
+        type_strs += type_str
+
+    op = pydgraph.Operation(schema=type_strs)
+    client.alter(op)
+
+
 ___local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
 
 
@@ -105,6 +180,9 @@ def provision():
     eg_schemas.extend([risk_schema, lens_schema])
     eg_schema_str = format_schemas(eg_schemas)
     set_schema(___local_dg_provision_client, eg_schema_str)
+
+    for schema in eg_schemas:
+        update_reverse_edges(___local_dg_provision_client, schema)
 
 
 if __name__ == '__main__':

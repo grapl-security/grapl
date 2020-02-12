@@ -1,7 +1,8 @@
 import abc
 from collections import defaultdict
-from typing import Union, List, Tuple, Sequence, Type, Set, DefaultDict
+from typing import Union, List, Tuple, Sequence, Type, Set, DefaultDict, Dict
 
+from pydgraph import DgraphClient
 from typing_extensions import Literal
 
 
@@ -610,6 +611,21 @@ def generate_plugin_view_extensions(plugin_schema: NodeSchema) -> str:
         extensions.append(extension)
 
     return "\n".join(extensions)
+
+
+def attach_reverse_edges(client: DgraphClient, schema: NodeSchema):
+    # TODO Query the graphdb for existing schemas for each type
+
+    # types to modify
+
+    # fetch each types... type?
+
+    
+
+    # For each schema, attach the reverse edges
+
+    # Deploy the schemas
+    pass
 
 
 # def main() -> None:
