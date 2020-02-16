@@ -172,6 +172,7 @@ class Viewable(abc.ABC):
             {{
                 res(func: uid("{self.uid}"), first: 1) @cascade {{
                     uid,
+                    node_type: dgraph.type,
                     {node_key_prop},
                     {prop_name}
                 }}
@@ -206,6 +207,7 @@ class Viewable(abc.ABC):
                 res(func: uid("{self.uid}")) @cascade {{
                     uid,
                     node_key,
+                    node_type: dgraph.type,
                     {prop_name}
                 }}
             
@@ -231,6 +233,7 @@ class Viewable(abc.ABC):
                 res(func: uid("{self.uid}"), first: 1) {{
                     uid,
                     node_key,
+                    node_type: dgraph.type,
                     {edge_name} {{
                         uid,
                         node_type: dgraph.type,
@@ -269,6 +272,7 @@ class Viewable(abc.ABC):
             {{
                 res(func: uid("{self.uid}")) {{
                     uid,
+                    node_type: dgraph.type,
                     node_key,
                     {edge_name} {{
                         uid,
