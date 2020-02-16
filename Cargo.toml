@@ -1,0 +1,12 @@
+[workspace]
+
+members = [
+    "analyzer-dispatcher",
+    "derive-dynamic-node",
+    "generic-subgraph-generator",
+    "graph-descriptions",
+    "graph-generator-lib",
+    "graph-merger",
+    "node-identifier",
+    "sysmon-subgraph-generator"
+]

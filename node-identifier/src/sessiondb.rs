@@ -461,6 +461,7 @@ pub fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::executor::block_on;
     use rusoto_dynamodb::KeySchemaElement;
     use rusoto_dynamodb::{
         AttributeDefinition, CreateTableError, CreateTableInput, DeleteTableInput,
@@ -532,7 +533,7 @@ mod tests {
 
         create_or_empty_table(&dynamo, table_name);
 
-        let session_db = SessionDb::new(&dynamo, table_name);
+        let session_db = SessionDb::new(dynamo, table_name);
 
         let unid = UnidSession {
             pseudo_key: format!("{}{}", asset_id, pid),
@@ -540,8 +541,7 @@ mod tests {
             is_creation: true,
         };
 
-        let session_id = session_db
-            .handle_unid_session(unid, false)
+        let session_id = block_on(session_db.handle_unid_session(unid, false))
             .expect("Failed to create session");
 
         assert!(!session_id.is_empty());
@@ -559,7 +559,7 @@ mod tests {
 
         create_or_empty_table(&dynamo, table_name);
 
-        let session_db = SessionDb::new(&dynamo, table_name);
+        let session_db = SessionDb::new(dynamo, table_name);
 
         // Given a timeline with a single session, where that session has a non canon
         //      creation time 'X'
@@ -573,8 +573,7 @@ mod tests {
             version: 0,
         };
 
-        session_db
-            .create_session(&session)
+        block_on(session_db.create_session(&session))
             .expect("Failed to create session");
 
         // When a canonical creation event comes in with a creation time of 'Y'
@@ -585,8 +584,7 @@ mod tests {
             is_creation: true,
         };
 
-        let session_id = session_db
-            .handle_unid_session(unid, false)
+        let session_id = block_on(session_db.handle_unid_session(unid, false))
             .expect("Failed to handle unid");
 
         assert_eq!(session_id, "SessionId");
@@ -604,7 +602,7 @@ mod tests {
 
         create_or_empty_table(&dynamo, table_name);
 
-        let session_db = SessionDb::new(&dynamo, table_name);
+        let session_db = SessionDb::new(dynamo, table_name);
 
         // Given a timeline with a single session, where that session has a non canon
         //      creation time 'X'
@@ -618,8 +616,7 @@ mod tests {
             version: 0,
         };
 
-        session_db
-            .create_session(&session)
+        block_on(session_db.create_session(&session))
             .expect("Failed to create session");
 
         // When a noncanonical creation event comes in with a creation time of 'Y'
@@ -630,8 +627,7 @@ mod tests {
             is_creation: false,
         };
 
-        let session_id = session_db
-            .handle_unid_session(unid, false)
+        let session_id = block_on(session_db.handle_unid_session(unid, false))
             .expect("Failed to handle unid");
 
         // TODO: Assert that the create time was updated correctly
@@ -650,7 +646,7 @@ mod tests {
 
         create_or_empty_table(&dynamo, table_name);
 
-        let session_db = SessionDb::new(&dynamo, table_name);
+        let session_db = SessionDb::new(dynamo, table_name);
     }
 
     // Given an empty timeline
@@ -663,7 +659,7 @@ mod tests {
 
         create_or_empty_table(&dynamo, table_name);
 
-        let session_db = SessionDb::new(&dynamo, table_name);
+        let session_db = SessionDb::new(dynamo, table_name);
 
         let unid = UnidSession {
             pseudo_key: format!("{}{}", asset_id, pid),
@@ -671,8 +667,7 @@ mod tests {
             is_creation: false,
         };
 
-        let session_id = session_db
-            .handle_unid_session(unid, true)
+        let session_id = block_on(session_db.handle_unid_session(unid, true))
             .expect("Failed to create session");
 
         assert!(!session_id.is_empty());
@@ -688,7 +683,7 @@ mod tests {
 
         create_or_empty_table(&dynamo, table_name);
 
-        let session_db = SessionDb::new(&dynamo, table_name);
+        let session_db = SessionDb::new(dynamo, table_name);
 
         let unid = UnidSession {
             pseudo_key: "asset_id_a1234".into(),
@@ -697,7 +692,7 @@ mod tests {
         };
 
         let session_id = session_db.handle_unid_session(unid, false);
-        assert!(session_id.is_err());
+        assert!(block_on(session_id).is_err());
     }
 
     // Given a timeline with one session, where the session has a create_time
@@ -712,7 +707,7 @@ mod tests {
 
         create_or_empty_table(&dynamo, table_name);
 
-        let session_db = SessionDb::new(&dynamo, table_name);
+        let session_db = SessionDb::new(dynamo, table_name);
     }
 
     #[quickcheck]
@@ -722,7 +717,7 @@ mod tests {
 
         create_or_empty_table(&dynamo, table_name);
 
-        let session_db = SessionDb::new(&dynamo, table_name);
+        let session_db = SessionDb::new(dynamo, table_name);
 
         // Given a timeline with a single session, where that session has a non canon
         //      end time 'X'
@@ -736,8 +731,7 @@ mod tests {
             version: 0,
         };
 
-        session_db
-            .create_session(&session)
+        block_on(session_db.create_session(&session))
             .expect("Failed to create session");
 
         // When a canonical creation event comes in with an end time of 'Y'
@@ -748,8 +742,7 @@ mod tests {
             is_creation: false,
         };
 
-        let session_id = session_db
-            .handle_unid_session(unid, false)
+        let session_id = block_on(session_db.handle_unid_session(unid, false))
             .expect("Failed to handle unid");
 
         assert_eq!(session_id, "SessionId");

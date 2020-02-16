@@ -52,7 +52,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
 
         #[derive(Clone, Debug)]
         pub struct #node_name {
-            dynamic_node: grapl_graph_descriptions::graph_description::DynamicNode,
+            dynamic_node: graph_descriptions::graph_description::DynamicNode,
         }
 
         pub trait #node_trait_name {
@@ -62,7 +62,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
         }
 
         impl #node_name {
-            pub fn new(strategy: grapl_graph_descriptions::graph_description::IdStrategy, seen_at: u64) -> Self {
+            pub fn new(strategy: graph_descriptions::graph_description::IdStrategy, seen_at: u64) -> Self {
                 let mut properties = std::collections::HashMap::with_capacity(1);
 
                 let dynamic_node = DynamicNode {
@@ -101,39 +101,39 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl AsRef<grapl_graph_descriptions::graph_description::DynamicNode> for #node_name {
+        impl AsRef<graph_descriptions::graph_description::DynamicNode> for #node_name {
             fn as_ref(&self) -> &DynamicNode {
                 &self.dynamic_node
             }
         }
 
-        impl AsMut<grapl_graph_descriptions::graph_description::DynamicNode> for #node_name {
+        impl AsMut<graph_descriptions::graph_description::DynamicNode> for #node_name {
             fn as_mut(&mut self) -> &mut DynamicNode {
                 &mut self.dynamic_node
             }
         }
 
-        impl Into<grapl_graph_descriptions::graph_description::DynamicNode> for #node_name {
+        impl Into<graph_descriptions::graph_description::DynamicNode> for #node_name {
             fn into(self) -> DynamicNode {
                 self.dynamic_node
             }
         }
 
-        impl Into<grapl_graph_descriptions::graph_description::Node> for #node_name {
+        impl Into<graph_descriptions::graph_description::Node> for #node_name {
             fn into(self) -> Node {
                 self.dynamic_node.into()
             }
         }
 
 
-        impl Into<grapl_graph_descriptions::graph_description::Node> for & #node_name {
+        impl Into<graph_descriptions::graph_description::Node> for & #node_name {
             fn into(self) -> Node {
                 self.dynamic_node.clone().into()
             }
         }
 
 
-        impl Into<grapl_graph_descriptions::graph_description::Node> for &mut #node_name {
+        impl Into<graph_descriptions::graph_description::Node> for &mut #node_name {
             fn into(self) -> Node {
                 self.dynamic_node.clone().into()
             }

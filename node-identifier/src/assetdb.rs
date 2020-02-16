@@ -245,7 +245,9 @@ impl<D> AssetIdentifier<D>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::executor::block_on;
     use rusoto_core::Region;
+    use rusoto_dynamodb::DynamoDbClient;
 
     // Given a hostname 'H' to asset id 'A' mapping at c_timestamp 'X'
     // When attributing 'H' at c_timestamp 'Y', where 'Y' > 'X'
@@ -259,19 +261,24 @@ mod tests {
 
         let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
-        asset_id_db
-            .create_mapping(
-                &HostId::Hostname("fakehostname".to_owned()),
-                "asset_id_a".into(),
-                1500,
-            )
+        block_on(
+            asset_id_db
+                .create_mapping(
+                    &HostId::Hostname("fakehostname".to_owned()),
+                    "asset_id_a".into(),
+                    1500
+                )
+        )
             .expect("Mapping creation failed");
 
-        let mapping = asset_id_db
-            .resolve_asset_id(&HostId::Hostname("fakehostname".to_owned()), 1510)
-            .expect("Failed to resolve asset id mapping")
+        let mapping = block_on(
+            asset_id_db
+                .resolve_asset_id(
+                    &HostId::Hostname("fakehostname".to_owned()), 1510
+                )
+        )
             .expect("Failed to resolve asset id mapping");
 
-        assert_eq!(mapping, "asset_id_a");
+        assert_eq!(mapping.expect("mapping empty"), "asset_id_a");
     }
 }
