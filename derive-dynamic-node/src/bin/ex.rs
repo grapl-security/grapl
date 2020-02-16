@@ -5,8 +5,6 @@ extern crate serde_derive;
 #[macro_use]
 extern crate log;
 
-use graph_descriptions::graph_description::DynamicNode;
-
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
