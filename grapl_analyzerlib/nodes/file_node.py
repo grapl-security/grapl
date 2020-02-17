@@ -18,7 +18,7 @@ from grapl_analyzerlib.nodes.viewable import (
     EdgeViewT,
     ForwardEdgeView,
     ReverseEdgeView,
-)
+    NV)
 
 T = TypeVar("T")
 
@@ -569,6 +569,27 @@ class FileView(Viewable):
         self.sha256_hash = cast(str, self.fetch_property("sha256_hash", str))
         return self.sha256_hash
 
+    def get_spawned_from(
+            self: "NV", match_spawned_from: Optional["IProcessQuery"] = None
+    ) -> Optional["NV"]:
+        query = ProcessQuery()
+        query.view_type = type(self)
+        _match_spawned_from = match_spawned_from or ProcessQuery()  # type: ProcessQuery
+
+        self_node = (
+            FileQuery()
+            .with_node_key(eq=self.node_key)
+            .with_spawned_from(_match_spawned_from)
+            .query_first(self.dgraph_client)
+        )
+
+        if self_node:
+            cast(FileView, self).spawned_from = self_node.spawned_from
+
+            assert self.node_key == self_node.node_key, 'self and self_node do not have matching node_keys'
+
+        return cast(FileView, self).spawned_from
+
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
         return {
@@ -602,6 +623,7 @@ class FileView(Viewable):
             "~wrote_files": ([ProcessView], "writers"),
             "~read_files": ([ProcessView], "readers"),
             "~deleted_files": (ProcessView, "deleter"),
+            "~bin_file": ([ProcessView], "spawned_from"),
         }
 
     def _get_properties(self) -> Mapping[str, "Property"]:
@@ -638,6 +660,7 @@ class FileView(Viewable):
             "~wrote_files": (self.writers, "writers"),
             "~readers": (self.readers, "readers"),
             "~deleted_files": (self.deleter, "deleter"),
+            "~bin_file": (self.spawned_from, "spawned_from"),
         }
 
         filtered = {
@@ -647,4 +670,4 @@ class FileView(Viewable):
         return cast("Mapping[str,  ReverseEdgeView]", filtered)
 
 
-from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
+from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView, IProcessQuery
