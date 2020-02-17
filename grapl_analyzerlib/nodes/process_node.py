@@ -316,7 +316,7 @@ class ProcessView(Viewable):
         bin_file: Optional["FileView"] = None,
         created_files: Optional[List["FileView"]] = None,
         read_files: Optional[List["FileView"]] = None,
-        wrote_to_files: Optional[List["FileView"]] = None,
+        wrote_files: Optional[List["FileView"]] = None,
         deleted_files: Optional[List["FileView"]] = None,
         created_connections: Optional[
             List["ProcessOutboundConnectionQuery"]
@@ -339,7 +339,7 @@ class ProcessView(Viewable):
         self.children = children or []
         self.created_files = created_files or []
         self.read_files = read_files or []
-        self.wrote_to_files = wrote_to_files or []
+        self.wrote_files = wrote_files or []
         self.deleted_files = deleted_files or []
         self.created_connections = created_connections or []
         self.inbound_connections = inbound_connections or []
@@ -469,11 +469,11 @@ class ProcessView(Viewable):
         )
         return cast(ProcessView, self).read_files
 
-    def get_wrote_to_files(self: "NV") -> "List[FileView]":
-        cast(ProcessView, self).wrote_to_files = cast(
-            List[FileView], self.fetch_edges("wrote_to_files", FileView)
+    def get_wrote_files(self: "NV") -> "List[FileView]":
+        cast(ProcessView, self).wrote_files = cast(
+            List[FileView], self.fetch_edges("wrote_files", FileView)
         )
-        return cast(ProcessView, self).wrote_to_files
+        return cast(ProcessView, self).wrote_files
 
     def get_deleted_files(self: "NV") -> "List[FileView]":
         cast(ProcessView, self).deleted_files = cast(
@@ -531,7 +531,7 @@ class ProcessView(Viewable):
             "created_connections": [ProcessOutboundConnectionView],
             "inbound_connections": [ProcessInboundConnectionView],
             "read_files": [FileView],
-            "wrote_to_files": [FileView],
+            "wrote_files": [FileView],
             "deleted_files": [FileView],
         }
 
@@ -564,7 +564,7 @@ class ProcessView(Viewable):
             "created_connections": self.created_connections,
             "inbound_connections": self.inbound_connections,
             "read_files": self.read_files,
-            "wrote_to_files": self.wrote_to_files,
+            "wrote_files": self.wrote_files,
             "deleted_files": self.deleted_files,
             "bin_file": self.bin_file,
         }

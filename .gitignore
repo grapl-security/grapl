@@ -1,4 +1,8 @@
 # Byte-compiled / optimized / DLL files
+*.ipynb
+mut_grapl_analyzerlib/
+.mutmut-cache
+.vscode
 .dmypy.json
 source_env
 test.py

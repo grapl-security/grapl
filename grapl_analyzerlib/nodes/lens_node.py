@@ -105,6 +105,9 @@ class CopyingTransaction(Txn):
                     nodes = []
                     for v in _res.values():
                         mut_from_response(v, nodes, [])
+                    for node in nodes:
+                        if node.get('node_type'):
+                            node['dgraph.type'] = node['node_type']
                     self.copied_uids = [node["uid"] for node in nodes]
                     return res
         finally:
@@ -226,6 +229,13 @@ class EngagementClient(CopyingDgraphClient):
     def __init__(self, eg_uid: str, src_client: DgraphClient, dst_client: DgraphClient):
         super().__init__(src_client, dst_client)
         self.eg_uid = eg_uid
+
+    @staticmethod
+    def from_name(engagement_name: str, src_client: DgraphClient, dst_client: DgraphClient):
+        cclient = CopyingDgraphClient(src_client=src_client, dst_client=dst_client)
+
+        engagement_lens = LensView.get_or_create(cclient, engagement_name)
+        return EngagementClient(engagement_lens.uid, src_client, dst_client)
 
     def txn(self, read_only=False, best_effort=False) -> CopyingTransaction:
         return EngagementTransaction(

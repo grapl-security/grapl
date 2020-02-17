@@ -377,16 +377,16 @@ class NodeView(Viewable):
                 ),
             )
         elif node.HasField("ip_port_node"):
-            uid = get_uid(dgraph_client, node.ip_address_node.node_key)
+            uid = get_uid(dgraph_client, node.ip_port_node.node_key)
 
             return NodeView(
                 dgraph_client,
-                node.ip_address_node.node_key,
+                node.ip_port_node.node_key,
                 uid,
                 IpPortView(
                     dgraph_client=dgraph_client,
                     uid=uid,
-                    node_key=node.ip_address_node.node_key,
+                    node_key=node.ip_port_node.node_key,
                     node_type="IpPort",
                 ),
             )
@@ -404,42 +404,42 @@ class NodeView(Viewable):
                 ),
             )
         elif node.HasField("process_inbound_connection_node"):
-            uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
+            uid = get_uid(dgraph_client, node.process_inbound_connection_node.node_key)
             return NodeView(
                 dgraph_client,
-                node.process_outbound_connection_node.node_key,
+                node.process_inbound_connection_node.node_key,
                 uid,
                 ProcessInboundConnectionView(
                     dgraph_client,
-                    node.process_outbound_connection_node.node_key,
+                    node.process_inbound_connection_node.node_key,
                     uid,
                     "ProcessInboundConnection",
                 ),
             )
         elif node.HasField("ip_connection_node"):
-            uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
+            uid = get_uid(dgraph_client, node.ip_connection_node.node_key)
             return NodeView(
                 dgraph_client,
-                node.process_outbound_connection_node.node_key,
+                node.ip_connection_node.node_key,
                 uid,
                 IpConnectionView(
                     dgraph_client,
-                    node.process_outbound_connection_node.node_key,
+                    node.ip_connection_node.node_key,
                     uid,
                     "IpConnection",
                 ),
             )
         elif node.HasField("network_connection_node"):
-            uid = get_uid(dgraph_client, node.process_outbound_connection_node.node_key)
+            uid = get_uid(dgraph_client, node.network_connection_node.node_key)
             return NodeView(
                 dgraph_client,
-                node.process_outbound_connection_node.node_key,
+                node.network_connection_node.node_key,
                 uid,
                 NetworkConnectionView(
                     dgraph_client,
-                    node.process_outbound_connection_node.node_key,
+                    node.network_connection_node.node_key,
                     uid,
-                    "IpConnection",
+                    "NetworkConnection",
                 ),
             )
         elif node.HasField("dynamic_node"):

@@ -5,7 +5,9 @@ from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 from grapl_analyzerlib.nodes.comparators import Cmp, IntCmp, _int_cmps, StrCmp, _str_cmps
 from grapl_analyzerlib.prelude import *
 
-from pydgraph import DgraphClient  # type: ignore
+
+
+from pydgraph import DgraphClient, DgraphClientStub  # type: ignore
 
 IAuidQuery = TypeVar('IAuidQuery', bound='AuidQuery')
 
@@ -289,7 +291,9 @@ if __name__ == '__main__':
         EProcessQuery()
         .with_assumed_auid()
         .with_process_id()
-        .query_first(cast(DgraphClient, ""))
+        .query_first(DgraphClient(DgraphClientStub(
+            "localhost:9080"
+        )))
     )
 
     if proc:
