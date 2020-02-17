@@ -317,6 +317,8 @@ class Viewable(abc.ABC):
                     print(
                         f"WARN: Node has multiple types: {node_type}, narrowing to: {node_type[0]}"
                     )
+                    # TODO: This is a hack, workaround for a preexisting bug where some nodes are labeled as Risk
+                    node_type = [nt for nt in node_type if nt != 'Risk']
                 node_type = node_type[0]
             properties["node_type"] = node_type
         else:

@@ -308,6 +308,7 @@ class LensView(Viewable):
               res(func: eq(lens, $a), first: 1) @cascade
                {
                  uid,
+                 node_type: dgraph.type,
                  node_key,
                }
              }"""
