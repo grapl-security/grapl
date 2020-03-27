@@ -26,6 +26,7 @@ def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
             res(func: {func_filter}, first: 1) {{
                 uid,
                 node_key,
+                dgraph.type: node_type,
             }}
         }}
     """
@@ -48,6 +49,8 @@ def get_edges(node: Dict[str, Any]) -> List[Tuple[str, str, str]]:
 def strip_node(node) -> Dict[str, Any]:
     output = {}
     for key, value in node.items():
+        if key == 'node_type' or key == 'dgraph.type':
+            output['dgraph.type'] = value
         if isinstance(value, str) or isinstance(value, int):
             output[key] = value
     return output
@@ -81,7 +84,7 @@ class CopyingTransaction(Txn):
         return self.copied_uids
 
     def query(
-        self, query, variables=None, timeout=None, metadata=None, credentials=None
+            self, query, variables=None, timeout=None, metadata=None, credentials=None
     ):
         """
         Query the dst graph.
@@ -129,10 +132,12 @@ class CopyingTransaction(Txn):
         # Otherwise, mutate the dst graph with the response
         nodes = []
         edges = []
+
         for v in _res.values():
             mut_from_response(v, nodes, edges)
 
         uid_map = {}
+
         nodes = [(node.pop("uid"), strip_node(node)) for node in nodes]
 
         for old_uid, stripped_node in nodes:
@@ -152,6 +157,7 @@ class CopyingTransaction(Txn):
                     _txn.discard()
 
                 res = json.loads(res)["res"]
+
 
                 new_uid = None
                 if res:
@@ -201,13 +207,13 @@ class CopyingDgraphClient(DgraphClient):
 
 class EngagementTransaction(CopyingTransaction):
     def __init__(
-        self, copying_client, eg_uid: str, read_only=False, best_effort=False
+            self, copying_client, eg_uid: str, read_only=False, best_effort=False
     ) -> None:
         super().__init__(copying_client, read_only=read_only, best_effort=best_effort)
         self.eg_uid = eg_uid
 
     def query(
-        self, query, variables=None, timeout=None, metadata=None, credentials=None
+            self, query, variables=None, timeout=None, metadata=None, credentials=None
     ):
         txn = super()
         res = txn.query(query, variables, timeout, metadata, credentials)
@@ -250,10 +256,10 @@ class LensQuery(Queryable["LensView"]):
         self._lens = []  # type: List[List[Cmp[str]]]
 
     def with_lens_name(
-        self,
-        eq: Optional["StrCmp"] = None,
-        contains: Optional["StrCmp"] = None,
-        ends_with: Optional["StrCmp"] = None,
+            self,
+            eq: Optional["StrCmp"] = None,
+            contains: Optional["StrCmp"] = None,
+            ends_with: Optional["StrCmp"] = None,
     ) -> "LensQuery":
         self._lens.extend(_str_cmps("lens", eq, contains, ends_with))
         return self
@@ -282,13 +288,13 @@ class LensQuery(Queryable["LensView"]):
 
 class LensView(Viewable):
     def __init__(
-        self,
-        dgraph_client: DgraphClient,
-        uid: str,
-        node_key: str,
-        node_type: Optional[str] = None,
-        lens: Optional[str] = None,
-        scope: Optional[List["NodeView"]] = None,
+            self,
+            dgraph_client: DgraphClient,
+            uid: str,
+            node_key: str,
+            node_type: Optional[str] = None,
+            lens: Optional[str] = None,
+            scope: Optional[List["NodeView"]] = None,
     ) -> None:
         super(LensView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
         self.lens = lens
@@ -334,12 +340,9 @@ class LensView(Viewable):
         finally:
             eg_txn.discard()
 
-        engagement_client = EngagementClient(
-            new_uid, copy_client.src_client, copy_client.dst_client
-        )
 
         self_lens = (
-            LensQuery().with_lens_name(eq=lens_name).query_first(engagement_client)
+            LensQuery().with_lens_name(eq=lens_name).query_first(copy_client.dst_client)
         )
         assert self_lens, "Lens must exist"
         return self_lens

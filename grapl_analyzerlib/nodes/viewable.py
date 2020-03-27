@@ -170,7 +170,7 @@ class Viewable(abc.ABC):
             node_key_prop = "node_key"
         query = f"""
             {{
-                res(func: uid("{self.uid}"), first: 1) @cascade {{
+                res(func: eq(node_key, "{self.node_key}"), first: 1) @cascade {{
                     uid,
                     node_type: dgraph.type,
                     {node_key_prop},
@@ -204,7 +204,7 @@ class Viewable(abc.ABC):
     ) -> List["Property"]:
         query = f"""
             {{
-                res(func: uid("{self.uid}")) @cascade {{
+                res(func: eq(node_key, "{self.node_key}")) @cascade {{
                     uid,
                     node_key,
                     node_type: dgraph.type,
@@ -230,7 +230,7 @@ class Viewable(abc.ABC):
     def fetch_edge(self, edge_name: str, edge_type: Type["NV"]) -> Optional["NV"]:
         query = f"""
             {{
-                res(func: uid("{self.uid}"), first: 1) {{
+                res(func: eq(node_key, "{self.node_key}"), first: 1) {{
                     uid,
                     node_key,
                     node_type: dgraph.type,
@@ -270,7 +270,7 @@ class Viewable(abc.ABC):
     def fetch_edges(self, edge_name: str, edge_type: Type["NV"]) -> List["NV"]:
         query = f"""
             {{
-                res(func: uid("{self.uid}")) {{
+                res(func: eq(node_key, "{self.node_key}")) {{
                     uid,
                     node_type: dgraph.type,
                     node_key,
@@ -314,11 +314,14 @@ class Viewable(abc.ABC):
         if node_type:
             if isinstance(node_type, list):
                 if len(node_type) > 1:
-                    print(
-                        f"WARN: Node has multiple types: {node_type}, narrowing to: {node_type[0]}"
-                    )
                     # TODO: This is a hack, workaround for a preexisting bug where some nodes are labeled as Risk
                     node_type = [nt for nt in node_type if nt != 'Risk']
+
+                    if len(node_type) > 1:
+                        print(
+                            f"WARN: Node has multiple types: {node_type}, narrowing to: {node_type[0]}"
+                        )
+
                 node_type = node_type[0]
             properties["node_type"] = node_type
         else:

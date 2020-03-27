@@ -572,8 +572,6 @@ class FileView(Viewable):
     def get_spawned_from(
             self: "NV", match_spawned_from: Optional["IProcessQuery"] = None
     ) -> Optional["NV"]:
-        query = ProcessQuery()
-        query.view_type = type(self)
         _match_spawned_from = match_spawned_from or ProcessQuery()  # type: ProcessQuery
 
         self_node = (
@@ -588,7 +586,8 @@ class FileView(Viewable):
 
             assert self.node_key == self_node.node_key, 'self and self_node do not have matching node_keys'
 
-        return cast(FileView, self).spawned_from
+        return cast(FileView, self).bin_file
+
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
