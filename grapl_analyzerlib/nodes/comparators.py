@@ -84,7 +84,7 @@ class Eq(Cmp[T]):
         if isinstance(value, str):
             self.value = escape_dgraph_str(value, query=True)  # type: Union[str, Not[str]]
         elif isinstance(value, Not) and isinstance(value.value, str):
-            self.value = escape_dgraph_str(value.value, query=True)
+            self.value = Not(escape_dgraph_str(value.value, query=True))
         else:
             self.value = value
 
@@ -113,7 +113,7 @@ class EndsWith(Cmp[str]):
         if isinstance(value, str):
             self.value = escape_dgraph_str(value)  # type: Union[str, Not[str]]
         else:
-            value.value = escape_dgraph_str(value.value)
+            value.value = Not(escape_dgraph_str(value.value))
             self.value = value
 
     def to_filter(self) -> str:
@@ -132,7 +132,7 @@ class StartsWith(Cmp[str]):
         if isinstance(value, str):
             self.value = escape_dgraph_str(value)  # type: Union[str, Not[str]]
         else:
-            value.value = escape_dgraph_str(value.value)
+            value.value = Not(escape_dgraph_str(value.value))
             self.value = value
 
     def to_filter(self) -> str:
@@ -200,7 +200,7 @@ class Contains(Cmp[str]):
         if isinstance(value, str):
             self.value = escape_dgraph_regexp(value)
         else:
-            value.value = escape_dgraph_regexp(value.value)
+            value.value = Not(escape_dgraph_regexp(value.value))
             self.value = value
 
     def to_filter(self) -> str:
