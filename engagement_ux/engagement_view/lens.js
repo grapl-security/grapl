@@ -1,7 +1,7 @@
 // Stylesheets
 console.log('entry.js init');
 
-const engagement_edge = "https://jzfee2ecp8.execute-api.us-east-1.amazonaws.com/prod/";
+const engagement_edge = "http://127.0.0.1:8900/";
 
 if (engagement_edge.length === 0) {
     console.assert("Engagement Edge URL can not be empty. Run build.sh");
@@ -1041,6 +1041,9 @@ const retrieveGraph = async (graph, lens) => {
             'lens': lens,
             'uid_hashes': uidHashes,
         }),
+        headers: {
+            'Content-Type': 'application/json',
+        },
         credentials: 'include',
     });
 

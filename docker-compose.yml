@@ -1,0 +1,194 @@
+version: '3'
+services:
+
+  master_graph:
+    tty: false
+    image: dgraph/standalone:1.2.2
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+      - "9080:9080"
+
+  engagement_graph:
+    tty: false
+    image: dgraph/standalone:1.2.2
+    ports:
+      - "8001:8000"
+      - "8081:8080"
+      - "9081:9080"
+
+  graph_provision:
+    build:
+      context: ./engagement_ux/engagement_edge/
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./local_grapl/:/var/run/target/
+    command: python /var/run/target/grapl_provision.py
+    tty: false
+    links:
+      - engagement_graph
+      - master_graph
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+
+  dynamodb_provision:
+    build:
+      context: ./engagement_ux/engagement_edge/
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./local_grapl/local_dynamodb:/var/run/target/
+    command: python /var/run/target/provision_local_identity_table.py
+    tty: false
+    links:
+      - dynamodb:dynamodb
+    extra_hosts:
+      - amazonaws:127.0.0.1
+
+  sqs:
+    image: vsouza/sqs-local
+    ports:
+      - "9324:9324"
+
+  s3:
+    image: minio/minio
+    command: server /data
+    ports:
+      - "9000:9000"
+
+  dynamodb:
+    image: amazon/dynamodb-local
+
+  grapl-sysmon-subgraph-generator:
+    build:
+      context: ./sysmon-subgraph-generator/
+      dockerfile: ./Dockerfile
+    command: cargo run  --manifest-path ./sysmon-subgraph-generator/Cargo.toml
+    tty: false
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+      - graph_provision
+
+  grapl-node-identifier:
+    build:
+      context: ./node-identifier/
+      dockerfile: ./Dockerfile
+    command: cargo run --manifest-path ./node-identifier/Cargo.toml --bin node-identifier
+    tty: false
+    links:
+      - s3:minio
+      - dynamodb:dynamo
+      - sqs:sqs.us-east-1.amazonaws.com
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+    depends_on:
+      - s3
+      - dynamodb
+      - sqs
+      - dynamodb_provision
+
+  grapl-graph-merger:
+    build:
+      context: ./graph-merger/
+      dockerfile: ./Dockerfile
+    command: cargo run  --manifest-path ./graph-merger/Cargo.toml
+    tty: false
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+      - master_graph
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+      - graph_provision
+      - master_graph
+
+  grapl-analyzer-dispatcher:
+    build:
+      context: ./analyzer-dispatcher/
+      dockerfile: ./Dockerfile
+    environment:
+      - BUCKET_PREFIX="local-grapl"
+    command: cargo run  --manifest-path ./analyzer-dispatcher/Cargo.toml
+    tty: false
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+
+  grapl-analyzer-executor:
+    build:
+      context: ./analyzer_executor/
+      dockerfile: ./Dockerfile
+    environment:
+      - IS_LOCAL="True"
+      - GRPC_ENABLE_FORK_SUPPORT=1
+      - MG_ALPHAS=master_graph
+      - IS_RETRY="False"
+      - BUCKET_PREFIX=local-grapl
+    command: python3 /src/analyzer-executor.py
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+      - master_graph:master_graph
+    tty: true
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+
+
+  grapl-engagement-creator:
+    build:
+      context: ./engagement-creator/
+      dockerfile: ./Dockerfile
+    environment:
+      - IS_LOCAL="True"
+      - BUCKET_PREFIX=local-grapl
+    command: python3 /src/engagement-creator.py
+    tty: true
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+      - engagement_graph:engagement_graph
+      - master_graph:master_graph
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+
+  grapl_engagement_edge:
+    build:
+      context: ./engagement_ux/engagement_edge/
+      dockerfile: ./Dockerfile
+    ports:
+      - "8900:8900"
+    environment:
+      - IS_LOCAL="True"
+    command: chalice local --no-autoreload --host=0.0.0.0 --port=8900
+    tty: false
+    links:
+      - engagement_graph:engagement_graph

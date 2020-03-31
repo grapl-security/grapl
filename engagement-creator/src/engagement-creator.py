@@ -1,33 +1,33 @@
 import json
 import os
+import time
 
+from collections import defaultdict
 from typing import *
 
 import boto3
-from collections import defaultdict
-from grapl_analyzerlib.prelude import NodeView, FileView, ProcessView
 from grapl_analyzerlib.nodes.lens_node import CopyingDgraphClient, LensView
+from grapl_analyzerlib.prelude import NodeView, FileView, ProcessView
 from pydgraph import DgraphClient, DgraphClientStub
 
+IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 
-def parse_s3_event(event: Dict[str, Any]) -> str:
+
+def parse_s3_event(s3, event) -> str:
     # Retrieve body of sns message
     # Decode json body of sns message
-    print('event is {}'.format(event))
-    msg = json.loads(event['body'])['Message']
-    msg = json.loads(msg)
+    print("event is {}".format(event))
+    # msg = json.loads(event["body"])["Message"]
+    # msg = json.loads(msg)
 
-    record = msg['Records'][0]
-
-    bucket = record['s3']['bucket']['name']
-    key = record['s3']['object']['key']
-    return download_s3_file(bucket, key)
+    bucket = event["s3"]["bucket"]["name"]
+    key = event["s3"]["object"]["key"]
+    return download_s3_file(s3, bucket, key)
 
 
-def download_s3_file(bucket: str, key: str) -> str:
+def download_s3_file(s3, bucket: str, key: str) -> str:
     key = key.replace("%3D", "=")
     print('Downloading s3 file from: {} {}'.format(bucket, key))
-    s3 = boto3.resource('s3')
     obj = s3.Object(bucket, key)
     return obj.get()['Body'].read()
 
@@ -252,20 +252,35 @@ def copy_node(
     return upsert(egclient, raw_to_copy)
 
 
+def get_s3_client():
+    if IS_LOCAL:
+        return boto3.resource(
+            "s3",
+            endpoint_url="http://s3:9000",
+            aws_access_key_id='minioadmin',
+            aws_secret_access_key='minioadmin',
+        )
+    else:
+        return boto3.resource("s3")
+
+
 def lambda_handler(events: Any, context: Any) -> None:
     mg_alpha_names = os.environ['MG_ALPHAS'].split(",")
+    mg_alpha_port = os.environ.get('MG_ALPHA_PORT', '9080')
     eg_alpha_names = os.environ['EG_ALPHAS'].split(",")
+    eg_alpha_port = os.environ.get('EG_ALPHA_PORT', '9080')
 
-    mg_client_stubs = [DgraphClientStub('{}:9080'.format(name)) for name in mg_alpha_names]
-    eg_client_stubs = [DgraphClientStub('{}:9080'.format(name)) for name in eg_alpha_names]
+    mg_client_stubs = [DgraphClientStub(f'{name}:{mg_alpha_port}') for name in mg_alpha_names]
+    eg_client_stubs = [DgraphClientStub(f'{name}:{eg_alpha_port}') for name in eg_alpha_names]
 
     eg_client = DgraphClient(*eg_client_stubs)
     mg_client = DgraphClient(*mg_client_stubs)
 
     cclient = CopyingDgraphClient(src_client=mg_client, dst_client=eg_client)
 
+    s3 = get_s3_client()
     for event in events['Records']:
-        data = parse_s3_event(event)
+        data = parse_s3_event(s3, event)
         incident_graph = json.loads(data)
 
         analyzer_name = incident_graph['analyzer_name']
@@ -318,7 +333,6 @@ def lambda_handler(events: Any, context: Any) -> None:
 
                     create_edge(eg_client, lens.uid, 'scope', copied_node.uid)
 
-
         for node in nodes:
             attach_risk(eg_client, node.node, analyzer_name, risk_score)
 
@@ -341,3 +355,36 @@ def lambda_handler(events: Any, context: Any) -> None:
         for lens in lenses.values():
             recalculate_score(eg_client, lens)
 
+
+
+if IS_LOCAL:
+    os.environ['MG_ALPHAS'] = 'master_graph'
+    os.environ['EG_ALPHAS'] = 'engagement_graph'
+    os.environ['EG_ALPHA_PORT'] = '9080'
+
+    sqs = boto3.client(
+        'sqs',
+        region_name="us-east-1",
+        endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
+        aws_access_key_id='dummy_cred_aws_access_key_id',
+        aws_secret_access_key='dummy_cred_aws_secret_access_key',
+    )
+
+    while True:
+        try:
+            res = sqs.receive_message(
+                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/engagement-creator-queue",
+                WaitTimeSeconds=10,
+                MaxNumberOfMessages=10,
+            )
+
+            messages = res.get('Messages', [])
+            if not messages:
+                print('queue was empty')
+
+            s3_events = [json.loads(msg['Body']) for msg in messages]
+            for s3_event in s3_events:
+                lambda_handler(s3_event, {})
+        except Exception as e:
+            print(e)
+            time.sleep(2)

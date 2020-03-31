@@ -17,10 +17,12 @@ grpc = "0.6.1"
 log = "0.4.6"
 prost = "0.4.0"
 
-rusoto_s3 = {version="0.42.0", default_features = false, features=["rustls"]}
-rusoto_core = {version="0.42.0", default_features = false, features=["rustls"]}
-rusoto_sqs = {version="0.42.0", default_features = false, features=["rustls"]}
-rusoto_sns = {version="0.42.0", default_features = false, features=["rustls"]}
+
+rusoto_s3 = { version="0.43.0-beta.1", default_features = false, features=["rustls"] }
+rusoto_core = { version="0.43.0-beta.1", default_features = false, features=["rustls"] }
+rusoto_sqs = { version="0.43.0-beta.1", default_features = false, features=["rustls"] }
+rusoto_sns = { version="0.43.0-beta.1", default_features = false, features=["rustls"] }
+
 
 serde = "1.0.85"
 serde_derive = "1.0.85"
@@ -34,8 +36,12 @@ lambda_runtime = "0.2.*"
 async-trait = "0.1.22"
 zstd = "0.5.1"
 tokio-compat = "0.1.2"
-tokio = "0.2.6"
-sqs-lambda = "0.20.0"
+#tokio = "0.2.6"
+tokio = { version = "0.2.4", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
+chrono = "0.4.11"
+rusoto_credential = "0.43.0"
+sqs-lambda = "0.20.2"
+#sqs-lambda = {path="../../../workspace/sqs-lambda/" , version="*"}
 
 
 [dependencies.uuid]

@@ -1,4 +1,4 @@
-const engagement_edge = "";
+const engagement_edge = "http://127.0.0.1:8900/";
 
 if (engagement_edge.length === 0) {
     console.assert("Engagement Edge URL can not be empty. Run build.sh");
@@ -52,6 +52,9 @@ const login = async (username, password) => {
                 'username': username,
                 'password': password
             }),
+            headers: {
+                'Content-Type': 'application/json',
+            },
             credentials: 'include',
         });
 
@@ -78,8 +81,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
             const password = await sha256WithPepper(username, $("#psw").val());
             console.log(`logging in`);
             const succ = await login(username, password);
-            console.log(`login success ${succ}`)
-
+            console.log(`login result ${succ}`);
             if (succ) {
                 window.location.href = 'lenses.html';
             }

@@ -33,7 +33,7 @@ impl<D> SessionDb<D>
     }
 
     pub async fn find_first_session_after(&self, unid: &UnidSession) -> Result<Option<Session>, Error> {
-        info!("Finding first session after");
+        info!("Finding first session after : {}", &self.table_name);
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
@@ -55,7 +55,6 @@ impl<D> SessionDb<D>
         };
 
         let res = wait_on!(self.dynamo.query(query));
-
         if let Err(RusotoError::Unknown(ref e)) = res {
             bail!("Query failed with error: {:?}", e);
         };
@@ -445,7 +444,7 @@ impl<D> SessionDb<D>
         mut unid: UnidSession,
         should_default: bool,
     ) -> Result<String, Error> {
-        unid.timestamp = shave_int(unid.timestamp, 3);
+        unid.timestamp = shave_int(unid.timestamp, 1);
         if unid.is_creation {
             self.handle_creation_event(unid).await
         } else {
@@ -515,7 +514,7 @@ mod tests {
 
     fn local_dynamo() -> impl DynamoDb {
         let region = Region::Custom {
-            endpoint: "http://localhost:8000".to_owned(),
+            endpoint: "http://localhost:8001".to_owned(),
             name: "us-east-9".to_owned(),
         };
 

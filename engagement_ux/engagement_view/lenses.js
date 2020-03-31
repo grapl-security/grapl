@@ -2,7 +2,7 @@
 
 console.log('Loaded index.js');
 
-const engagement_edge = "";
+const engagement_edge = "http://127.0.0.1:8900/";
 
 console.log(`Connecting to ${engagement_edge}`);
 
@@ -12,6 +12,9 @@ const getLenses = async () => {
         body: JSON.stringify({
             'prefix': '',
         }),
+        headers: {
+            'Content-Type': 'application/json',
+        },
         credentials: 'include',
     });
     const jres = await res.json();

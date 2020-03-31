@@ -2,3 +2,4 @@ pydgraph==2.0.2
 boto3
 pyjwt
 grapl_analyzerlib==0.2.15
+chalice

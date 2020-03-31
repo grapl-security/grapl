@@ -42,6 +42,7 @@ def main(prefix):
             Key=str(epoch - (epoch % (24 * 60 * 60))) + "/injected/" +
                 str(epoch) + rand_str(3)
         )
+
     print(time.ctime())
 
 if __name__ == '__main__':

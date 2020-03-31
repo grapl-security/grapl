@@ -1,24 +1,20 @@
-use graph_descriptions::graph_description::*;
+use std::collections::{HashMap, HashSet};
+use std::time::Duration;
 
-
-use graph_descriptions::graph_description::id_strategy;
-
-use graph_descriptions::graph_description::Session as SessionStrategy;
 use failure::Error;
-
+use graph_descriptions::graph_description::*;
+use graph_descriptions::graph_description::id_strategy;
+use graph_descriptions::graph_description::Session as SessionStrategy;
+use graph_descriptions::node::NodeT;
 use rusoto_dynamodb::{
     AttributeValue, DynamoDb, GetItemInput,
     PutItemInput,
 };
-use std::time::Duration;
 
-
-use std::collections::{HashSet, HashMap};
-use graph_descriptions::node::NodeT;
-use crate::sessiondb::SessionDb;
 use crate::assetdb::AssetIdentifier;
+use crate::futures::TryFutureExt;
+use crate::sessiondb::SessionDb;
 use crate::sessions::UnidSession;
-
 
 #[derive(Debug, Clone)]
 pub struct DynamicMappingDb<D>
@@ -46,7 +42,7 @@ impl<D> DynamicMappingDb<D> where D: DynamoDb {
         }
     }
 
-    pub fn direct_map(
+    pub async fn direct_map(
         &self,
         input: &str,
     ) -> Result<Option<String>, Error> {
@@ -67,7 +63,7 @@ impl<D> DynamicMappingDb<D> where D: DynamoDb {
             ..Default::default()
         };
 
-        let item = self.dyn_mapping_db.get_item(query).sync()?.item;
+        let item = wait_on!(self.dyn_mapping_db.get_item(query))?.item;
 
         match item {
             Some(item) => {
@@ -95,7 +91,6 @@ impl<D> DynamicMappingDb<D> where D: DynamoDb {
 
         Ok(())
     }
-
 }
 
 
@@ -112,7 +107,6 @@ pub struct DynamicNodeIdentifier<D>
 impl<D> DynamicNodeIdentifier<D>
     where D: DynamoDb
 {
-
     pub fn new(
         asset_identifier: AssetIdentifier<D>,
         dyn_session_db: SessionDb<D>,
@@ -123,7 +117,7 @@ impl<D> DynamicNodeIdentifier<D>
             asset_identifier,
             dyn_session_db,
             dyn_mapping_db,
-            should_guess
+            should_guess,
         }
     }
 
@@ -212,14 +206,14 @@ impl<D> DynamicNodeIdentifier<D>
                 UnidSession {
                     pseudo_key: primary_key,
                     timestamp: strategy.created_time,
-                    is_creation: true
+                    is_creation: true,
                 }
             }
             (_, true) => {
                 UnidSession {
                     pseudo_key: primary_key,
                     timestamp: strategy.last_seen_time,
-                    is_creation: false
+                    is_creation: false,
                 }
             }
             _ => bail!("Terminating sessions not yet supported")
@@ -227,7 +221,7 @@ impl<D> DynamicNodeIdentifier<D>
 
         let session_id = self.dyn_session_db.handle_unid_session(
             unid,
-            self.should_guess
+            self.should_guess,
         ).await?;
 
         attributed_node.set_key(session_id);
@@ -240,11 +234,10 @@ impl<D> DynamicNodeIdentifier<D>
         node: DynamicNode,
         strategy: &Static,
     ) -> Result<DynamicNode, Error> {
-
         let mut attributed_node = node.clone();
         let key = self.primary_mapping_key(&mut attributed_node, strategy).await?;
 
-        let node_key = self.dyn_mapping_db.direct_map(&key)?;
+        let node_key = self.dyn_mapping_db.direct_map(&key).await?;
 
         match node_key {
             Some(node_key) => attributed_node.set_key(node_key),
@@ -272,14 +265,14 @@ impl<D> DynamicNodeIdentifier<D>
                     info!("Attributing dynamic node via session");
                     attributed_node = self.attribute_dynamic_session(
                         attributed_node,
-                        &strategy
+                        &strategy,
                     ).await?;
                 }
                 id_strategy::Strategy::Static(ref strategy) => {
                     info!("Attributing dynamic node via static mapping");
                     attributed_node = self.attribute_static_mapping(
                         attributed_node,
-                        &strategy
+                        &strategy,
                     ).await?;
                 }
             }
@@ -301,7 +294,7 @@ impl<D> DynamicNodeIdentifier<D>
                 }
                 _ => {
                     output_graph.add_node(node.clone());
-                    continue
+                    continue;
                 }
             };
 
@@ -310,7 +303,7 @@ impl<D> DynamicNodeIdentifier<D>
                 Err(e) => {
                     warn!("Failed to attribute dynamic node: {}", e);
                     dead_nodes.insert(node.get_node_key());
-                    continue
+                    continue;
                 }
             };
 
@@ -320,9 +313,9 @@ impl<D> DynamicNodeIdentifier<D>
             output_graph.add_node(new_node);
         }
 
-    //
-    //        remap_nodes(&mut output_graph, &unid_id_map);
-    //        remap_edges(&mut output_graph, &unid_id_map);
+        //
+        //        remap_nodes(&mut output_graph, &unid_id_map);
+        //        remap_edges(&mut output_graph, &unid_id_map);
 //        remove_dead_edges(&mut output_graph);
 
         if dead_nodes.is_empty() {
@@ -333,5 +326,4 @@ impl<D> DynamicNodeIdentifier<D>
             Err(output_graph)
         }
     }
-
 }

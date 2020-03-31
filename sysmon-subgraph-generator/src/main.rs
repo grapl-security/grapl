@@ -20,6 +20,8 @@ extern crate stopwatch;
 extern crate sysmon;
 extern crate uuid;
 
+use std::fmt::Debug;
+
 use std::borrow::Cow;
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -39,22 +41,22 @@ use log::error;
 use rayon::iter::Either;
 use rayon::prelude::*;
 use regex::Regex;
-use rusoto_core::Region;
+use rusoto_core::{Region, HttpClient};
 use rusoto_s3::{GetObjectRequest, S3};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient};
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest};
 use serde::Deserialize;
 
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_emitter::S3EventEmitter;
+use sqs_lambda::s3_event_emitter::S3EventEmitter;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
 use sqs_lambda::event_retriever::S3PayloadRetriever;
 use sqs_lambda::redis_cache::RedisCache;
 use sqs_lambda::sqs_completion_handler::{CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor};
 use sqs_lambda::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
-use sqs_lambda::cache::CacheResponse;
+use sqs_lambda::cache::{CacheResponse, NopCache};
 use async_trait::async_trait;
 
 
@@ -75,7 +77,13 @@ use std::io::Cursor;
 use sqs_lambda::cache::Cache;
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use std::collections::HashSet;
+use sqs_lambda::local_service::local_service;
+use aws_lambda_events::event::s3::{S3UserIdentity, S3RequestParameters, S3Entity, S3Object, S3Event, S3EventRecord, S3Bucket};
+use sqs_lambda::sqs_service::sqs_service;
+use sqs_lambda::local_sqs_service::local_sqs_service;
+use rusoto_core::credential::AwsCredentials;
 
+mod config;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -508,7 +516,7 @@ pub struct SubgraphSerializer {
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = Graph;
     type Output = Vec<u8>;
-    type Error = failure::Error;
+    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
 
     fn serialize_completed_events(
         &mut self,
@@ -551,12 +559,19 @@ impl CompletionEventSerializer for SubgraphSerializer {
 
         self.proto.clear();
 
-        prost::Message::encode(&subgraphs, &mut self.proto)?;
-
+        prost::Message::encode(&subgraphs, &mut self.proto)
+            .map_err(Arc::new)
+            .map_err(|e| {
+                sqs_lambda::error::Error::EncodeError(e.to_string())
+            })?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
-        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)?;
+        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
+            .map_err(Arc::new)
+            .map_err(|e| {
+                sqs_lambda::error::Error::EncodeError(e.to_string())
+            })?;
 
         Ok(vec![compressed])
     }
@@ -581,22 +596,34 @@ impl PayloadDecoder<Vec<u8>> for ZstdDecoder
 
 
 #[derive(Clone)]
-struct SysmonSubgraphGenerator {
-    cache: RedisCache,
+struct SysmonSubgraphGenerator<C, E>
+    where
+        C: Cache<E> + Clone + Send + Sync + 'static,
+        E: Debug + Clone + Send + Sync + 'static,
+{
+    cache: C,
+    _p: std::marker::PhantomData<(C, E)>,
 }
 
-impl SysmonSubgraphGenerator {
-    pub fn new(cache: RedisCache) -> Self {
-        Self { cache }
+impl<C, E> SysmonSubgraphGenerator<C, E>
+    where
+        C: Cache<E> + Clone + Send + Sync + 'static,
+        E: Debug + Clone + Send + Sync + 'static,
+{
+    pub fn new(cache: C) -> Self {
+        Self { cache , _p: PhantomData}
     }
 }
 
 #[async_trait]
-impl EventHandler for SysmonSubgraphGenerator
+impl<C, E> EventHandler for SysmonSubgraphGenerator<C, E>
+    where
+        C: Cache<E> + Clone + Send + Sync + 'static,
+        E: Debug + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<u8>;
     type OutputEvent = Graph;
-    type Error = Arc<failure::Error>;
+    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
 
     async fn handle_event(&mut self, events: Vec<u8>) -> OutputEvent<Self::OutputEvent, Self::Error> {
         info!("Handling raw event");
@@ -707,7 +734,7 @@ impl EventHandler for SysmonSubgraphGenerator
                 Completion::Partial(
                     (
                         final_subgraph,
-                        Arc::new(e)
+                        sqs_lambda::error::Error::ProcessingError(Arc::new(e))
                     )
                 )
             )
@@ -767,117 +794,42 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
                 info!("Queue Url: {}", queue_url);
                 let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-                let cache_address = {
-                    let sysmon_event_cache_addr = std::env::var("SYSMON_EVENT_CACHE_ADDR").expect("SYSMON_EVENT_CACHE_ADDR");
-                    let sysmon_event_cache_port = std::env::var("SYSMON_EVENT_CACHE_PORT").expect("SYSMON_EVENT_CACHE_PORT");
-
-                    format!(
-                        "{}:{}",
-                        sysmon_event_cache_addr,
-                        sysmon_event_cache_port,
-                    )
-                };
-
-                info!("Redis cache: {}", &cache_address);
 
                 let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
                 info!("Output events to: {}", bucket);
-                let region = {
-                    let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-                    Region::from_str(&region_str).expect("Region error")
-                };
+                let region = config::region();
 
-                let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
+                let cache = config::event_cache().await;
 
-                let node_identifier = SysmonSubgraphGenerator::new(
-                    cache.clone()
-                );
 
-                info!("SqsCompletionHandler");
+                let generator
+                    : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
+                    = SysmonSubgraphGenerator::new(cache.clone());
 
-                let finished_tx = tx.clone();
-                let sqs_completion_handler = SqsCompletionHandlerActor::new(
-                    SqsCompletionHandler::new(
-                        SqsClient::new(region.clone()),
-                        queue_url.to_string(),
-                        SubgraphSerializer { proto: Vec::with_capacity(1024) },
-                        S3EventEmitter::new(
-                            S3Client::new(region.clone()),
-                            bucket.to_owned(),
-                            time_based_key_fn,
-                        ),
-                        CompletionPolicy::new(
-                            1000, // Buffer up to 1000 messages
-                            Duration::from_secs(30), // Buffer for up to 30 seconds
-                        ),
-                        move |_self_actor, result: Result<String, String>| {
-                            match result {
-                                Ok(worked) => {
-                                    info!("Handled an event, which was successfully deleted: {}", &worked);
-                                    tx.send(worked).unwrap();
-                                }
-                                Err(worked) => {
-                                    info!("Handled an initial_event, though we failed to delete it: {}", &worked);
-                                    tx.send(worked).unwrap();
-                                }
+                sqs_lambda::sqs_service::sqs_service(
+                    queue_url,
+                    bucket,
+                    ctx,
+                    S3Client::new(region.clone()),
+                    SqsClient::new(region.clone()),
+                    ZstdDecoder::default(),
+                    SubgraphSerializer { proto: Vec::with_capacity(1024) },
+                    generator,
+                    cache.clone(),
+                    move |_self_actor, result: Result<String, String>| {
+                        match result {
+                            Ok(worked) => {
+                                info!("Handled an event, which was successfully deleted: {}", &worked);
+                                tx.send(worked).unwrap();
                             }
-                        },
-                        cache.clone()
-                    )
-                );
-
-
-                info!("Defining consume policy");
-                let consume_policy = ConsumePolicy::new(
-                    ctx, // Use the Context.deadline from the lambda_runtime
-                    Duration::from_secs(10), // Stop consuming when there's 2 seconds left in the runtime
-                    3, // If we get 3 empty receives in a row, stop consuming
-                );
-
-                info!("Defining consume policy");
-                let (shutdown_tx, shutdown_notify) = tokio::sync::oneshot::channel();
-
-                info!("SqsConsumer");
-                let sqs_consumer = SqsConsumerActor::new(
-                    SqsConsumer::new(
-                        SqsClient::new(region.clone()),
-                        queue_url.clone(),
-                        consume_policy,
-                        sqs_completion_handler.clone(),
-                        shutdown_tx,
-                    )
-                );
-
-                info!("EventProcessors");
-                let event_processors: Vec<_> = (0..10)
-                    .map(|_| {
-                        EventProcessorActor::new(EventProcessor::new(
-                            sqs_consumer.clone(),
-                            sqs_completion_handler.clone(),
-                            node_identifier.clone(),
-                            S3PayloadRetriever::new(S3Client::new(region.clone()), ZstdDecoder::default()),
-                        ))
-                    })
-                    .collect();
-
-                info!("Start Processing");
-
-                futures::future::join_all(event_processors.iter().map(|ep| ep.start_processing())).await;
-
-                let mut proc_iter = event_processors.iter().cycle();
-                for event in event.records {
-                    let next_proc = proc_iter.next().unwrap();
-                    next_proc.process_event(
-                        map_sqs_message(event)
-                    ).await;
-                }
-
-                info!("Waiting for shutdown notification");
-
-                // Wait for the consumers to shutdown
-                let _ = shutdown_notify.await;
-                info!("Consumer shutdown");
-                finished_tx.send("Completed".to_owned()).unwrap();
+                            Err(worked) => {
+                                info!("Handled an initial_event, though we failed to delete it: {}", &worked);
+                                tx.send(worked).unwrap();
+                            }
+                        }
+                    },
+                    move |_, _| async move {Ok(())},
+                ).await;
             });
     });
 
@@ -908,12 +860,135 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     }
 }
 
+fn init_sqs_client() -> SqsClient
+{
+    info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+    SqsClient::new_with(
+        HttpClient::new().expect("failed to create request dispatcher"),
+        rusoto_credential::StaticProvider::new_minimal(
+            "dummy_sqs".to_owned(),
+            "dummy_sqs".to_owned(),
+        ),
+        Region::Custom {
+            name: "us-east-1".to_string(),
+            endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
+        }
+    )
+}
+
+fn init_s3_client() -> S3Client
+{
+    info!("Connecting to local http://s3:9000");
+    S3Client::new_with(
+        HttpClient::new().expect("failed to create request dispatcher"),
+        rusoto_credential::StaticProvider::new_minimal(
+            "minioadmin".to_owned(),
+            "minioadmin".to_owned(),
+        ),
+        Region::Custom {
+            name: "locals3".to_string(),
+            endpoint: "http://s3:9000".to_string(),
+        },
+    )
+}
+
+// fn main() -> Result<(), Box<dyn std::error::Error>> {
+//     simple_logger::init_with_level(log::Level::Info).unwrap();
+//
+//     info!("Starting lambda");
+//     lambda!(handler);
+//     Ok(())
+// }
+
+
+async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
+    let cache = NopCache {};
+    info!("SqsCompletionHandler");
+
+    let generator
+        : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
+        = SysmonSubgraphGenerator::new(cache.clone());
+
+    local_sqs_service(
+        "http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue",
+        "local-grapl-unid-subgraphs-generated-bucket",
+        Context {
+            deadline: Utc::now().timestamp_millis() + 10_000,
+            ..Default::default()
+        },
+        init_s3_client(),
+        init_sqs_client(),
+        ZstdDecoder::default(),
+        SubgraphSerializer { proto: Vec::with_capacity(1024) },
+        generator,
+        NopCache {},
+        |_, event_result | {dbg!(event_result);},
+        move |bucket, key| async move {
+            let output_event = S3Event {
+                records: vec![
+                    S3EventRecord {
+                        event_version: None,
+                        event_source: None,
+                        aws_region: None,
+                        event_time: chrono::Utc::now(),
+                        event_name: None,
+                        principal_id: S3UserIdentity { principal_id: None },
+                        request_parameters: S3RequestParameters { source_ip_address: None },
+                        response_elements: Default::default(),
+                        s3: S3Entity {
+                            schema_version: None,
+                            configuration_id: None,
+                            bucket: S3Bucket {
+                                name: Some(bucket),
+                                owner_identity: S3UserIdentity { principal_id: None },
+                                arn: None
+                            },
+                            object: S3Object {
+                                key: Some(key),
+                                size: 0,
+                                url_decoded_key: None,
+                                version_id: None,
+                                e_tag: None,
+                                sequencer: None
+                            }
+                        }
+                    }
+                ]
+            };
+
+            let sqs_client = init_sqs_client();
+
+            // publish to SQS
+            sqs_client.send_message(
+                SendMessageRequest {
+                    message_body: serde_json::to_string(&output_event)
+                        .expect("failed to encode s3 event"),
+                    queue_url: "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue".to_string(),
+                    ..Default::default()
+                }
+            ).await?;
+
+            Ok(())
+        }
+    ).await?;
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
+    // lambda!(handler);
 
-    info!("Starting lambda");
-    lambda!(handler);
+    loop {
+        if let Err(e) = inner_main().await {
+            error!("{}", e);
+        }
+    }
+    // let cache = RedisCache::new(cache_address.to_owned())
+    //     .await.expect("Could not create redis client");
+
+
     Ok(())
 }
 
