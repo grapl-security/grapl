@@ -21,7 +21,7 @@ Keep in mind that Grapl is not yet at a stable, 1.0 state, and is a fast moving 
 
 [Setup](https://github.com/insanitybit/grapl#setup)
 
-Questions? Try opening an issue in this repo, or joining the [Grapl slack channel (Click for invite)](https://join.slack.com/t/grapl-dfir/shared_invite/enQtODQzNzc4Nzg5MTA3LTllZTYzNWY1ZjQxMGI5NDlkODkzZTc0Nzk2ZDUwZjBiMjRhMGM4ZjRiYWUxYTY5NDExNWFlMzRmY2FhMDljMDk).
+Questions? Try opening an issue in this repo, or joining the [Grapl slack channel (Click for invite)](https://join.slack.com/t/grapl-dfir/shared_invite/zt-armk3shf-nuY19fQQuUnYk~dHltUPCw).
 
 ## Key Features
 
