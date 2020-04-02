@@ -1,3 +1,8 @@
+sysmon-subgraph-generator/sysmon-subgraph-generator
+node-identifier/node-identifier
+graph-merger/graph-merger
+analyzer-dispatcher/analyzer-dispatcher
+
 grapl-cdk/edge_ux_package/*
 __pycache__/
 *.pyc

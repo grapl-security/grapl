@@ -63,10 +63,7 @@ services:
     image: amazon/dynamodb-local
 
   grapl-sysmon-subgraph-generator:
-    build:
-      context: ./sysmon-subgraph-generator/
-      dockerfile: ./Dockerfile
-    command: cargo run  --manifest-path ./sysmon-subgraph-generator/Cargo.toml
+    image: grapl/grapl-sysmon-subgraph-generator
     tty: false
     links:
       - s3:minio
@@ -81,10 +78,7 @@ services:
       - graph_provision
 
   grapl-node-identifier:
-    build:
-      context: ./node-identifier/
-      dockerfile: ./Dockerfile
-    command: cargo run --manifest-path ./node-identifier/Cargo.toml --bin node-identifier
+    image: grapl/grapl-node-identifier
     tty: false
     links:
       - s3:minio
@@ -101,10 +95,7 @@ services:
       - dynamodb_provision
 
   grapl-graph-merger:
-    build:
-      context: ./graph-merger/
-      dockerfile: ./Dockerfile
-    command: cargo run  --manifest-path ./graph-merger/Cargo.toml
+    image: grapl/grapl-graph-merger
     tty: false
     links:
       - s3:minio
@@ -121,12 +112,9 @@ services:
       - master_graph
 
   grapl-analyzer-dispatcher:
-    build:
-      context: ./analyzer-dispatcher/
-      dockerfile: ./Dockerfile
+    image: grapl/grapl-analyzer-dispatcher
     environment:
       - BUCKET_PREFIX="local-grapl"
-    command: cargo run  --manifest-path ./analyzer-dispatcher/Cargo.toml
     tty: false
     links:
       - s3:minio

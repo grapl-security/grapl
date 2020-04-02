@@ -67,7 +67,7 @@ use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
 use rusoto_sqs::{SqsClient, SendMessageRequest};
 use sha2::Digest;
-use sqs_lambda::cache::{Cache, CacheResponse, NopCache};
+use sqs_lambda::cache::{Cache, CacheResponse, NopCache, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::s3_event_emitter::S3EventEmitter;
@@ -1125,9 +1125,36 @@ fn init_dynamodb_client() -> DynamoDbClient
     )
 }
 
+#[derive(Clone, Default)]
+pub struct LocalCache {
+    inner_map: HashSet<Vec<u8>>,
+}
+
+#[async_trait]
+impl<E> Cache<E> for LocalCache
+    where
+        E: Debug + Clone + Send + Sync + 'static,
+{
+    async fn get<CA: Cacheable + Send + Sync + 'static>(&mut self, cacheable: CA)
+        -> Result<CacheResponse, sqs_lambda::error::Error<E>>
+    {
+        match self.inner_map.contains(&cacheable.identity()) {
+            true => Ok(CacheResponse::Hit),
+            false => Ok(CacheResponse::Miss),
+        }
+    }
+
+    async fn store(&mut self, identity: Vec<u8>)
+        -> Result<(), sqs_lambda::error::Error<E>>
+    {
+        self.inner_map.insert(identity);
+        Ok(())
+    }
+}
+
 
 pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
-    let cache = NopCache {};
+    let cache = LocalCache::default();
 
     info!("region");
     let region = Region::Custom {
@@ -1191,7 +1218,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
         ZstdProtoDecoder::default(),
         SubgraphSerializer { proto: Vec::with_capacity(1024) },
         node_identifier,
-        NopCache {},
+        LocalCache::default(),
         |_, event_result | {dbg!(event_result);},
         move |bucket, key| async move {
             let output_event = S3Event {
