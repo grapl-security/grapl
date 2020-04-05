@@ -68,6 +68,9 @@ services:
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator
     tty: false
+    environment:
+      - BUCKET_PREFIX="local-grapl"
+      - IS_LOCAL="True"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -83,6 +86,9 @@ services:
   grapl-node-identifier:
     image: grapl/grapl-node-identifier
     command: ./node-identifier
+    environment:
+      - BUCKET_PREFIX="local-grapl"
+      - IS_LOCAL="True"
     tty: false
     links:
       - s3:minio
@@ -102,6 +108,9 @@ services:
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier
     command: ./node-identifier-retry-handler
+    environment:
+      - BUCKET_PREFIX="local-grapl"
+      - IS_LOCAL="True"
     tty: false
     links:
       - s3:minio
@@ -119,6 +128,9 @@ services:
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger
+    environment:
+      - BUCKET_PREFIX="local-grapl"
+      - IS_LOCAL="True"
     tty: false
     links:
       - s3:minio
@@ -138,6 +150,7 @@ services:
     image: grapl/grapl-analyzer-dispatcher
     environment:
       - BUCKET_PREFIX="local-grapl"
+      - IS_LOCAL="True"
     tty: false
     links:
       - s3:minio

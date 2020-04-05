@@ -2,7 +2,7 @@ extern crate lambda_runtime as lambda;
 extern crate node_identifier;
 extern crate simple_logger;
 
-use log::error;
+use log::{info, error};
 
 use node_identifier::{handler, local_handler};
 
@@ -13,10 +13,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
 
     let is_local = std::env::var("IS_LOCAL")
-        .map(|is_local| is_local == "True")
-        .unwrap_or(false);
+        .is_ok();
 
     if is_local {
+        info!("Running locally");
         let mut runtime = Runtime::new().unwrap();
 
         loop {
@@ -25,6 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }  else {
+        info!("Running in AWS");
         lambda!(handler);
     }
     Ok(())

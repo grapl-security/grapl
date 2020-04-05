@@ -969,12 +969,13 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
+    info!("Starting sysmon-subgraph-generator");
 
-    let is_local = std::env::var("IS_LOCAL")
-        .map(|is_local| is_local == "True")
-        .unwrap_or(false);
+    let is_local = std::env::var("IS_LOCAL");
 
-    if is_local {
+    info!("IS_LOCAL={:?}", is_local);
+    if is_local.is_ok() {
+        info!("Running locally {:?}", is_local);
         let mut runtime = Runtime::new().unwrap();
 
         loop {
@@ -983,7 +984,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }  else {
-        lambda!(handler);
+        info!("Running in AWS {:?}", is_local);
+        // lambda!(handler);
     }
 
     Ok(())
