@@ -23,6 +23,7 @@ services = (
 
 buckets = (
     BUCKET_PREFIX + '-sysmon-log-bucket',
+    BUCKET_PREFIX + '-generic-raw-log-bucket',
     BUCKET_PREFIX + '-unid-subgraphs-generated-bucket',
     BUCKET_PREFIX + '-subgraphs-generated-bucket',
     BUCKET_PREFIX + '-subgraphs-merged-bucket',

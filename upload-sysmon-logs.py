@@ -5,20 +5,24 @@ try:
 except:
     pass
 
-from datetime import datetime
-import time
-import string
-import boto3
-import random
-import zstd
-import sys
+import argparse
 import json
+import random
+import string
+import sys
+import time
+from datetime import datetime
+
+import boto3
+
+import zstd
 
 
 def rand_str(l):
     # type: (int) -> str
     return ''.join(random.choice(string.ascii_uppercase + string.digits)
                    for _ in range(l))
+
 
 def into_sqs_message(bucket: str, key: str) -> str:
     return json.dumps(
@@ -57,9 +61,11 @@ def into_sqs_message(bucket: str, key: str) -> str:
         }
     )
 
-def main(prefix):
 
+def main(prefix, logfile):
+    print(f"Writing events to {prefix}")
     sqs = None
+    # local-grapl prefix is reserved for running Grapl locally
     if prefix == 'local-grapl':
         s3 = boto3.client(
             's3',
@@ -69,22 +75,17 @@ def main(prefix):
         )
         sqs = boto3.client('sqs', endpoint_url="http://localhost:9324")
 
-        sqs.purge_queue(
-            QueueUrl='http://localhost:9324/queue/sysmon-graph-generator-queue',
-
-        )
-
     else:
-        raise NotImplementedError
+        s3 = boto3.client('s3')
 
-    with open('./eventlog.xml', 'rb') as b:
+    with open(logfile, 'rb') as b:
         body = b.readlines()
         body = [line for line in body]
 
     def chunker(seq, size):
         return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
 
-    for chunks in chunker(body, 50):
+    for chunks in chunker(body, 150):
         c_body = zstd.compress(b"\n".join(chunks).replace(b"\n\n", b"\n"), 4)
         epoch = int(time.time())
 
@@ -95,6 +96,7 @@ def main(prefix):
             Key=key
         )
 
+        # local-grapl relies on manual eventing
         if sqs:
             sqs.send_message(
                 QueueUrl='http://localhost:9324/queue/sysmon-graph-generator-queue',
@@ -104,12 +106,20 @@ def main(prefix):
                 )
             )
 
+    print('Completed uploading at {}', time.ctime())
 
-    print(time.ctime())
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Send sysmon logs to Grapl')
+    parser.add_argument('--bucket_prefix', dest='bucket_prefix', required=True)
+    parser.add_argument('--logfile', dest='logfile', required=True)
+    return parser.parse_args()
+
 
 if __name__ == '__main__':
 
-    if len(sys.argv) != 2:
+    args = parse_args()
+    if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
     else:
-        main(sys.argv[1])
+        main(args.bucket_prefix, args.logfile)
