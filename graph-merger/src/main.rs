@@ -96,6 +96,7 @@ use sqs_lambda::local_service::local_service;
 use aws_lambda_events::event::s3::{S3Object, S3UserIdentity, S3Bucket, S3Entity, S3RequestParameters, S3Event, S3EventRecord};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use chrono::Utc;
+use tokio::runtime::Runtime;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -377,167 +378,109 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
     }
 }
 
-// fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-//     info!("Handling event");
-//
-//     let mut initial_events: HashSet<String> = event.records
-//         .iter()
-//         .map(|event| event.message_id.clone().unwrap())
-//         .collect();
-//
-//     info!("Initial Events {:?}", initial_events);
-//
-//     let (tx, rx) = std::sync::mpsc::sync_channel(10);
-//
-//
-//     std::thread::spawn(move || {
-//         tokio_compat::run_std(
-//             async move {
-//                 let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-//                 info!("Queue Url: {}", queue_url);
-//                 let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-//                 let cache_address = {
-//                     let retry_identity_cache_addr = std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
-//                     let retry_identity_cache_port = std::env::var("MERGED_CACHE_PORT").expect("MERGED_CACHE_PORT");
-//
-//                     format!(
-//                         "{}:{}",
-//                         retry_identity_cache_addr,
-//                         retry_identity_cache_port,
-//                     )
-//                 };
-//
-//                 let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
-//                 info!("Output events to: {}", bucket);
-//                 let region = {
-//                     let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-//                     Region::from_str(&region_str).expect("Region error")
-//                 };
-//                 let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS").expect("MG_ALPHAS")
-//                     .split(',')
-//                     .map(str::to_string)
-//                     .collect();
-//
-//                 let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
-//
-//                 let graph_merger = GraphMerger::new(
-//                     mg_alphas,
-//                     cache.clone(),
-//                 );
-//
-//                 info!("SqsCompletionHandler");
-//
-//                 let finished_tx = tx.clone();
-//                 let sqs_completion_handler = SqsCompletionHandlerActor::new(
-//                     SqsCompletionHandler::new(
-//                         SqsClient::new(region.clone()),
-//                         queue_url.to_string(),
-//                         SubgraphSerializer { proto: Vec::with_capacity(1024) },
-//                         S3EventEmitter::new(
-//                             S3Client::new(region.clone()),
-//                             bucket.to_owned(),
-//                             time_based_key_fn,
-//                         ),
-//                         CompletionPolicy::new(
-//                             1000, // Buffer up to 1000 messages
-//                             Duration::from_secs(30), // Buffer for up to 30 seconds
-//                         ),
-//                         move |_self_actor, result: Result<String, String>| {
-//                             match result {
-//                                 Ok(worked) => {
-//                                     info!("Handled an event, which was successfully deleted: {}", &worked);
-//                                     tx.send(worked).unwrap();
-//                                 }
-//                                 Err(worked) => {
-//                                     info!("Handled an initial_event, though we failed to delete it: {}", &worked);
-//                                     tx.send(worked).unwrap();
-//                                 }
-//                             }
-//                         },
-//                         cache.clone(),
-//                     )
-//                 );
-//
-//                 info!("Defining consume policy");
-//                 let consume_policy = ConsumePolicy::new(
-//                     ctx, // Use the Context.deadline from the lambda_runtime
-//                     Duration::from_secs(10), // Stop consuming when there's 2 seconds left in the runtime
-//                     3, // If we get 3 empty receives in a row, stop consuming
-//                 );
-//
-//                 info!("Defining consume policy");
-//                 let (shutdown_tx, shutdown_notify) = tokio::sync::oneshot::channel();
-//
-//                 info!("SqsConsumer");
-//                 let sqs_consumer = SqsConsumerActor::new(
-//                     SqsConsumer::new(
-//                         SqsClient::new(region.clone()),
-//                         queue_url.clone(),
-//                         consume_policy,
-//                         sqs_completion_handler.clone(),
-//                         shutdown_tx,
-//                     )
-//                 );
-//
-//                 info!("EventProcessors");
-//                 let event_processors: Vec<_> = (0..10)
-//                     .map(|_| {
-//                         EventProcessorActor::new(EventProcessor::new(
-//                             sqs_consumer.clone(),
-//                             sqs_completion_handler.clone(),
-//                             graph_merger.clone(),
-//                             S3PayloadRetriever::new(S3Client::new(region.clone()), ZstdProtoDecoder::default()),
-//                         ))
-//                     })
-//                     .collect();
-//
-//                 info!("Start Processing");
-//
-//                 futures::future::join_all(event_processors.iter().map(|ep| ep.start_processing())).await;
-//
-//                 let mut proc_iter = event_processors.iter().cycle();
-//                 for event in event.records {
-//                     let next_proc = proc_iter.next().unwrap();
-//                     next_proc.process_event(
-//                         map_sqs_message(event)
-//                     ).await;
-//                 }
-//
-//                 info!("Waiting for shutdown notification");
-//
-//                 // Wait for the consumers to shutdown
-//                 let _ = shutdown_notify.await;
-//                 info!("Consumer shutdown");
-//                 finished_tx.send("Completed".to_owned()).unwrap();
-//             });
-//     });
-//
-//     info!("Checking acks");
-//     for r in &rx {
-//         info!("Acking event: {}", &r);
-//         initial_events.remove(&r);
-//         if r == "Completed" {
-//             let r = rx.recv_timeout(Duration::from_millis(100));
-//             if let Ok(r) = r {
-//                 initial_events.remove(&r);
-//             }
-//             // If we're done go ahead and try to clear out any remaining
-//             while let Ok(r) = rx.try_recv() {
-//                 initial_events.remove(&r);
-//             }
-//             break;
-//         }
-//     }
-//
-//     info!("Completed execution");
-//
-//     if initial_events.is_empty() {
-//         info!("Successfully acked all initial events");
-//         Ok(())
-//     } else {
-//         Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
-//     }
-// }
+fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+    info!("Handling event");
+
+    let mut initial_events: HashSet<String> = event.records
+        .iter()
+        .map(|event| event.message_id.clone().unwrap())
+        .collect();
+
+    info!("Initial Events {:?}", initial_events);
+
+    let (tx, rx) = std::sync::mpsc::sync_channel(10);
+
+
+    std::thread::spawn(move || {
+        tokio_compat::run_std(
+            async move {
+                let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+                info!("Queue Url: {}", queue_url);
+                let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+                let cache_address = {
+                    let retry_identity_cache_addr = std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
+                    let retry_identity_cache_port = std::env::var("MERGED_CACHE_PORT").expect("MERGED_CACHE_PORT");
+
+                    format!(
+                        "{}:{}",
+                        retry_identity_cache_addr,
+                        retry_identity_cache_port,
+                    )
+                };
+
+                let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
+                info!("Output events to: {}", bucket);
+                let region = {
+                    let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+                    Region::from_str(&region_str).expect("Region error")
+                };
+                let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS").expect("MG_ALPHAS")
+                    .split(',')
+                    .map(str::to_string)
+                    .collect();
+
+                let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
+
+                let graph_merger
+                    : GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>>
+                    = GraphMerger::new(
+                        mg_alphas,
+                        cache.clone(),
+                );
+
+                sqs_lambda::sqs_service::sqs_service(
+                    queue_url,
+                    bucket,
+                    ctx,
+                    S3Client::new(region.clone()),
+                    SqsClient::new(region.clone()),
+                    ZstdProtoDecoder::default(),
+                    SubgraphSerializer { proto: Vec::with_capacity(1024) },
+                    graph_merger,
+                    cache.clone(),
+                    move |_self_actor, result: Result<String, String>| {
+                        match result {
+                            Ok(worked) => {
+                                info!("Handled an event, which was successfully deleted: {}", &worked);
+                                tx.send(worked).unwrap();
+                            }
+                            Err(worked) => {
+                                info!("Handled an initial_event, though we failed to delete it: {}", &worked);
+                                tx.send(worked).unwrap();
+                            }
+                        }
+                    },
+                    move |_, _| async move {Ok(())},
+                ).await;
+            });
+    });
+
+    info!("Checking acks");
+    for r in &rx {
+        info!("Acking event: {}", &r);
+        initial_events.remove(&r);
+        if r == "Completed" {
+            let r = rx.recv_timeout(Duration::from_millis(100));
+            if let Ok(r) = r {
+                initial_events.remove(&r);
+            }
+            // If we're done go ahead and try to clear out any remaining
+            while let Ok(r) = rx.try_recv() {
+                initial_events.remove(&r);
+            }
+            break;
+        }
+    }
+
+    info!("Completed execution");
+
+    if initial_events.is_empty() {
+        info!("Successfully acked all initial events");
+        Ok(())
+    } else {
+        Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
+    }
+}
 
 #[async_trait]
 impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
@@ -808,24 +751,28 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     ).await;
 
 
-    // local_service(
-    //     "/home/indie/local_grapl_data/identified-subgraph-generated-bucket/",
-    //     "/home/indie/local_grapl_data/graph-merged-bucket/",
-    //     SubgraphSerializer { proto: Vec::with_capacity(1024) },
-    //     ZstdProtoDecoder::default(),
-    //     graph_merger,
-    // ).await.expect("service failed");
     Ok(())
-    // lambda!(handler);
 
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
 
-    loop {
-        inner_main().await;
+    let is_local = std::env::var("IS_LOCAL")
+        .map(|is_local| is_local == "True")
+        .unwrap_or(false);
+
+    if is_local {
+        let mut runtime = Runtime::new().unwrap();
+
+        loop {
+            if let Err(e) = runtime.block_on(async move { inner_main().await }) {
+                error!("{}", e);
+            }
+        }
+    }  else {
+        lambda!(handler);
     }
+
     Ok(())
 }

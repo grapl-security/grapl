@@ -669,33 +669,6 @@ function addSubscription(scope, topic, subscription, raw?) {
 }
 
 
-class NodeIdentityMapper extends cdk.Stack {
-
-    constructor(parent: cdk.App, id: string,
-                reads_from: s3.IBucket,
-                subscribes_to: sns.Topic,
-                vpc: ec2.Vpc
-    ) {
-        super(parent, id + '-stack');
-
-
-        const environment = {
-            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-        };
-
-        let service = new Service(this, 'node-identity-mapper', environment, vpc);
-
-
-        service.readsFrom(reads_from);
-
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
-
-        service.event_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
-    }
-}
-
-
 class NodeIdentifier extends cdk.Stack {
 
     constructor(parent: cdk.App, id: string,
@@ -1220,7 +1193,7 @@ const getEdgeGatewayId = (integrationName: string, cb) => {
                 return
             }
         }
-        console.assert(false, 'Could not find any integrations. Ensure you have deployed engagement edge.')
+        console.warn(false, 'Could not find any integrations. Ensure you have deployed engagement edge.')
     });
 };
 
@@ -1517,15 +1490,6 @@ class Grapl extends cdk.App {
             network.grapl_vpc,
         );
 
-
-        new NodeIdentityMapper(
-            this,
-            'grapl-node-identity-mapper',
-            event_emitters.identity_mappings_bucket,
-            event_emitters.identity_mappings_topic,
-            network.grapl_vpc
-        );
-
         new NodeIdentifier(
             this,
             'grapl-node-identifier',
@@ -1606,3 +1570,4 @@ class Grapl extends cdk.App {
 }
 
 new Grapl().synth();
+

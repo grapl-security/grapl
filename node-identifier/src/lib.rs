@@ -816,13 +816,12 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
 }
 
 
-pub async fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    _handler(event, ctx, false).await
+pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+    _handler(event, ctx, false)
 }
 
 pub fn retry_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    unimplemented!()
-    // _handler(event, ctx, true)
+    _handler(event, ctx, true)
 }
 
 #[derive(Clone, Debug, Default)]
@@ -946,7 +945,7 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
     }
 }
 
-async fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), HandlerError> {
+fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), HandlerError> {
     info!("Handling event");
 
     let mut initial_events: HashSet<String> = event.records
@@ -959,91 +958,93 @@ async fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result
     let (tx, rx) = std::sync::mpsc::sync_channel(10);
 
 
-    let handle = tokio::spawn(
-        async move {
-            let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-            info!("Queue Url: {}", queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-            let cache_address = {
-                let retry_identity_cache_addr = std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
-                let retry_identity_cache_port = std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
+    std::thread::spawn(move || {
+        tokio_compat::run_std(
+                async move {
+                let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+                info!("Queue Url: {}", queue_url);
+                let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+                let cache_address = {
+                    let retry_identity_cache_addr = std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
+                    let retry_identity_cache_port = std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
 
-                format!(
-                    "{}:{}",
-                    retry_identity_cache_addr,
-                    retry_identity_cache_port,
-                )
-            };
+                    format!(
+                        "{}:{}",
+                        retry_identity_cache_addr,
+                        retry_identity_cache_port,
+                    )
+                };
 
-            let bucket = bucket_prefix + "-subgraphs-generated-bucket";
-            info!("Output events to: {}", bucket);
-            let region = {
-                let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-                Region::from_str(&region_str).expect("Region error")
-            };
-            let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
+                let bucket = bucket_prefix + "-subgraphs-generated-bucket";
+                info!("Output events to: {}", bucket);
+                let region = {
+                    let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+                    Region::from_str(&region_str).expect("Region error")
+                };
+                let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
 
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+                let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
-            let dynamo = DynamoDbClient::new(region.clone());
-            let dyn_session_db = SessionDb::new(
-                dynamo.clone(),
-                "dynamic_session_table",
-            );
-            let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
-            let asset_identifier = AssetIdentifier::new(asset_id_db);
+                let dynamo = DynamoDbClient::new(region.clone());
+                let dyn_session_db = SessionDb::new(
+                    dynamo.clone(),
+                    "dynamic_session_table",
+                );
+                let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
+                let asset_identifier = AssetIdentifier::new(asset_id_db);
 
-            let dyn_node_identifier = DynamicNodeIdentifier::new(
-                asset_identifier,
-                dyn_session_db,
-                dyn_mapping_db,
-                should_default,
-            );
+                let dyn_node_identifier = DynamicNodeIdentifier::new(
+                    asset_identifier,
+                    dyn_session_db,
+                    dyn_mapping_db,
+                    should_default,
+                );
 
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+                let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
-            let asset_identifier = AssetIdentifier::new(asset_id_db);
+                let asset_identifier = AssetIdentifier::new(asset_id_db);
 
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-            let node_identifier
-                : NodeIdentifier<_, _, sqs_lambda::error::Error<Arc<failure::Error>>>
-                = NodeIdentifier::new(
-                asset_id_db,
-                dyn_node_identifier,
-                asset_identifier,
-                dynamo.clone(),
-                should_default,
-                cache.clone(),
-                region.clone(),
-            );
+                let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+                let node_identifier
+                    : NodeIdentifier<_, _, sqs_lambda::error::Error<Arc<failure::Error>>>
+                    = NodeIdentifier::new(
+                    asset_id_db,
+                    dyn_node_identifier,
+                    asset_identifier,
+                    dynamo.clone(),
+                    should_default,
+                    cache.clone(),
+                    region.clone(),
+                );
 
-            let completed_tx = tx.clone();
-            sqs_lambda::sqs_service::sqs_service(
-                queue_url,
-                bucket,
-                ctx,
-                S3Client::new(region.clone()),
-                SqsClient::new(region.clone()),
-                ZstdProtoDecoder::default(),
-                SubgraphSerializer { proto: Vec::with_capacity(1024) },
-                node_identifier,
-                cache.clone(),
-                move |_self_actor, result: Result<String, String>| {
-                    match result {
-                        Ok(worked) => {
-                            info!("Handled an event, which was successfully deleted: {}", &worked);
-                            tx.send(worked).unwrap();
+                let completed_tx = tx.clone();
+                sqs_lambda::sqs_service::sqs_service(
+                    queue_url,
+                    bucket,
+                    ctx,
+                    S3Client::new(region.clone()),
+                    SqsClient::new(region.clone()),
+                    ZstdProtoDecoder::default(),
+                    SubgraphSerializer { proto: Vec::with_capacity(1024) },
+                    node_identifier,
+                    cache.clone(),
+                    move |_self_actor, result: Result<String, String>| {
+                        match result {
+                            Ok(worked) => {
+                                info!("Handled an event, which was successfully deleted: {}", &worked);
+                                tx.send(worked).unwrap();
+                            }
+                            Err(worked) => {
+                                info!("Handled an initial_event, though we failed to delete it: {}", &worked);
+                                tx.send(worked).unwrap();
+                            }
                         }
-                        Err(worked) => {
-                            info!("Handled an initial_event, though we failed to delete it: {}", &worked);
-                            tx.send(worked).unwrap();
-                        }
-                    }
-                },
-                move |_, _| async move { Ok(()) }
-            ).await;
+                    },
+                    move |_, _| async move { Ok(()) }
+                ).await;
 
-            completed_tx.send("Completed".to_owned()).unwrap();
+                completed_tx.send("Completed".to_owned()).unwrap();
+        })
     });
 
     info!("Checking acks");
@@ -1063,7 +1064,6 @@ async fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result
         }
     }
 
-    handle.await;
 
     info!("Completed execution");
 

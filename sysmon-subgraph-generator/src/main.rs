@@ -82,6 +82,7 @@ use aws_lambda_events::event::s3::{S3UserIdentity, S3RequestParameters, S3Entity
 use sqs_lambda::sqs_service::sqs_service;
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use rusoto_core::credential::AwsCredentials;
+use tokio::runtime::Runtime;
 
 mod config;
 
@@ -893,15 +894,6 @@ fn init_s3_client() -> S3Client
     )
 }
 
-// fn main() -> Result<(), Box<dyn std::error::Error>> {
-//     simple_logger::init_with_level(log::Level::Info).unwrap();
-//
-//     info!("Starting lambda");
-//     lambda!(handler);
-//     Ok(())
-// }
-
-
 async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     let cache = NopCache {};
     info!("SqsCompletionHandler");
@@ -975,19 +967,24 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
-    // lambda!(handler);
 
-    loop {
-        if let Err(e) = inner_main().await {
-            error!("{}", e);
+    let is_local = std::env::var("IS_LOCAL")
+        .map(|is_local| is_local == "True")
+        .unwrap_or(false);
+
+    if is_local {
+        let mut runtime = Runtime::new().unwrap();
+
+        loop {
+            if let Err(e) = runtime.block_on(async move { inner_main().await }) {
+                error!("{}", e);
+            }
         }
+    }  else {
+        lambda!(handler);
     }
-    // let cache = RedisCache::new(cache_address.to_owned())
-    //     .await.expect("Could not create redis client");
-
 
     Ok(())
 }

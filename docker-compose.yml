@@ -49,7 +49,10 @@ services:
       - amazonaws:127.0.0.1
 
   sqs:
-    image: vsouza/sqs-local
+    image: localstack/localstack
+    environment:
+      - SERVICES=sqs:9324
+      - HOSTNAME_EXTERNAL=sqs.us-east-1.amazonaws.com
     ports:
       - "9324:9324"
 
@@ -79,6 +82,26 @@ services:
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier
+    command: ./node-identifier
+    tty: false
+    links:
+      - s3:minio
+      - dynamodb:dynamo
+      - sqs:sqs.us-east-1.amazonaws.com
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+    depends_on:
+      - s3
+      - dynamodb
+      - sqs
+      - dynamodb_provision
+
+
+  grapl-node-identifier-retry-handler:
+    image: grapl/grapl-node-identifier
+    command: ./node-identifier-retry-handler
     tty: false
     links:
       - s3:minio
@@ -189,3 +212,8 @@ services:
       - PORT=1234
     ports:
       - 1234:1234
+
+  grapl-notebook:
+    image: grapl/grapl-notebook
+    ports:
+      - 8888:8888

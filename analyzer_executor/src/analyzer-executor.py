@@ -452,9 +452,15 @@ if IS_LOCAL:
             if not messages:
                 print('queue was empty')
 
-            s3_events = [json.loads(msg['Body']) for msg in messages]
-            for s3_event in s3_events:
+            s3_events = [(json.loads(msg['Body']), msg['ReceiptHandle']) for msg in messages]
+            for s3_event, receipt_handle in s3_events:
                 lambda_handler(s3_event, {})
+
+                sqs.delete_message(
+                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue",
+                    ReceiptHandle=receipt_handle,
+                )
+
         except Exception as e:
             print(e)
             time.sleep(2)

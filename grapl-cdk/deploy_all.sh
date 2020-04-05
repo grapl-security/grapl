@@ -7,7 +7,6 @@ cdk deploy --require-approval=never mastergraphcluster-stack && \
 cdk deploy --require-approval=never engagementgraphcluster-stack && \
 cdk deploy --require-approval=never grapl-generic-subgraph-generator-stack && \
 cdk deploy --require-approval=never grapl-sysmon-subgraph-generator-stack && \
-cdk deploy --require-approval=never grapl-node-identity-mapper-stack && \
 cdk deploy --require-approval=never grapl-node-identifier-stack && \
 cdk deploy --require-approval=never grapl-graph-merger-stack && \
 cdk deploy --require-approval=never grapl-analyzer-dispatcher-stack && \

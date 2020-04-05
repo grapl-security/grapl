@@ -72,6 +72,7 @@ use std::marker::PhantomData;
 use chrono::Utc;
 use aws_lambda_events::event::s3::{S3Event, S3EventRecord, S3UserIdentity, S3RequestParameters, S3Entity, S3Bucket, S3Object};
 use sqs_lambda::local_sqs_service::local_sqs_service;
+use tokio::runtime::Runtime;
 
 mod config;
 
@@ -407,164 +408,6 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     }
 }
 
-// fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-//     info!("Handling event");
-//
-//     let mut initial_events: HashSet<String> = event.records
-//         .iter()
-//         .map(|event| event.message_id.clone().unwrap())
-//         .collect();
-//
-//     info!("Initial Events {:?}", initial_events);
-//
-//     let (tx, rx) = std::sync::mpsc::sync_channel(10);
-//
-//     std::thread::spawn(move || {
-//         tokio_compat::run_std(
-//             async move {
-//                 let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-//                 info!("Queue Url: {}", queue_url);
-//
-//                 let bucket = std::env::var("DISPATCHED_ANALYZER_BUCKET")
-//                     .expect("DISPATCHED_ANALYZER_TOPIC_ARN");
-//
-//                 info!("Output events to: {}", bucket);
-//                 let region = {
-//                     let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-//                     Region::from_str(&region_str).expect("Region error")
-//                 };
-//
-//                 let cache_address = {
-//                     let dispatch_event_cache_addr = std::env::var("DISPATCH_EVENT_CACHE_ADDR").expect("DISPATCH_EVENT_CACHE_ADDR");
-//                     let dispatch_event_cache_port = std::env::var("DISPATCH_EVENT_CACHE_PORT").expect("DISPATCH_EVENT_CACHE_PORT");
-//
-//                     format!(
-//                         "{}:{}",
-//                         dispatch_event_cache_addr,
-//                         dispatch_event_cache_port,
-//                     )
-//                 };
-//                 let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
-//
-//                 let node_identifier = AnalyzerDispatcher {
-//                     s3_client: Arc::new(S3Client::new(region.clone())),
-//                 };
-//
-//
-//                 info!("SqsCompletionHandler");
-//
-//                 let finished_tx = tx.clone();
-//                 let sqs_completion_handler = SqsCompletionHandlerActor::new(
-//                     SqsCompletionHandler::new(
-//                         SqsClient::new(region.clone()),
-//                         queue_url.to_string(),
-//                         SubgraphSerializer { proto: Vec::with_capacity(1024) },
-//                         S3EventEmitter::new(
-//                             S3Client::new(region.clone()),
-//                             bucket.to_owned(),
-//                             time_based_key_fn,
-//                         ),
-//                         CompletionPolicy::new(
-//                             1000, // Buffer up to 1000 messages
-//                             Duration::from_secs(30), // Buffer for up to 30 seconds
-//                         ),
-//                         move |_self_actor, result: Result<String, String>| {
-//                             match result {
-//                                 Ok(worked) => {
-//                                     info!("Handled an event, which was successfully deleted: {}", &worked);
-//                                     tx.send(worked).unwrap();
-//                                 }
-//                                 Err(worked) => {
-//                                     info!("Handled an initial_event, though we failed to delete it: {}", &worked);
-//                                     tx.send(worked).unwrap();
-//                                 }
-//                             }
-//                         },
-//                     )
-//                 );
-//
-//
-//                 info!("Defining consume policy");
-//                 let consume_policy = ConsumePolicy::new(
-//                     ctx, // Use the Context.deadline from the lambda_runtime
-//                     Duration::from_secs(10), // Stop consuming when there's 2 seconds left in the runtime
-//                     3, // If we get 3 empty receives in a row, stop consuming
-//                 );
-//
-//                 info!("Defining consume policy");
-//                 let (shutdown_tx, shutdown_notify) = tokio::sync::oneshot::channel();
-//
-//                 info!("SqsConsumer");
-//                 let sqs_consumer = SqsConsumerActor::new(
-//                     SqsConsumer::new(
-//                         SqsClient::new(region.clone()),
-//                         queue_url.clone(),
-//                         consume_policy,
-//                         sqs_completion_handler.clone(),
-//                         shutdown_tx,
-//                     )
-//                 );
-//
-//                 info!("EventProcessors");
-//                 let event_processors: Vec<_> = (0..10)
-//                     .map(|_| {
-//                         EventProcessorActor::new(EventProcessor::new(
-//                             sqs_consumer.clone(),
-//                             sqs_completion_handler.clone(),
-//                             node_identifier.clone(),
-//                             S3PayloadRetriever::new(S3Client::new(region.clone()), ZstdProtoDecoder::default()),
-//                             cache.clone(),
-//                         ))
-//                     })
-//                     .collect();
-//
-//                 info!("Start Processing");
-//
-//                 futures::future::join_all(event_processors.iter().map(|ep| ep.start_processing())).await;
-//
-//                 let mut proc_iter = event_processors.iter().cycle();
-//                 for event in event.records {
-//                     let next_proc = proc_iter.next().unwrap();
-//                     next_proc.process_event(
-//                         map_sqs_message(event)
-//                     ).await;
-//                 }
-//
-//                 info!("Waiting for shutdown notification");
-//
-//                 // Wait for the consumers to shutdown
-//                 let _ = shutdown_notify.await;
-//                 info!("Consumer shutdown");
-//                 finished_tx.send("Completed".to_owned()).unwrap();
-//             });
-//     });
-//
-//     info!("Checking acks");
-//     for r in &rx {
-//         info!("Acking event: {}", &r);
-//         initial_events.remove(&r);
-//         if r == "Completed" {
-//             let r = rx.recv_timeout(Duration::from_millis(100));
-//             if let Ok(r) = r {
-//                 initial_events.remove(&r);
-//             }
-//             // If we're done go ahead and try to clear out any remaining
-//             while let Ok(r) = rx.try_recv() {
-//                 initial_events.remove(&r);
-//             }
-//             break;
-//         }
-//     }
-//
-//     info!("Completed execution");
-//
-//     if initial_events.is_empty() {
-//         info!("Successfully acked all initial events");
-//         Ok(())
-//     } else {
-//         Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
-//     }
-// }
 
 fn init_sqs_client() -> SqsClient
 {
@@ -599,7 +442,7 @@ fn init_s3_client() -> S3Client
     )
 }
 
-async fn local_handler()  {
+async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("BUCKET_PREFIX", "local-grapl");
     let analyzer_dispatcher
         = AnalyzerDispatcher {
@@ -667,18 +510,31 @@ async fn local_handler()  {
 
             Ok(())
         }
-    ).await;
+    ).await?;
 
+    Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
 
-    loop {
-        local_handler().await;
+    let is_local = std::env::var("IS_LOCAL")
+        .map(|is_local| is_local == "True")
+        .unwrap_or(false);
+
+    if is_local {
+        let mut runtime = Runtime::new().unwrap();
+
+        loop {
+            if let Err(e) = runtime.block_on(async move { local_handler().await }) {
+                error!("{}", e);
+            }
+        }
+    }  else {
+        lambda!(handler);
     }
-    // lambda!(handler);
+
 
     Ok(())
 }
