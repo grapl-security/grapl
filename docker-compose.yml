@@ -213,7 +213,7 @@ services:
     environment:
       - IS_LOCAL="True"
     command: chalice local --no-autoreload --host=0.0.0.0 --port=8900
-    tty: false
+    tty: true
     links:
       - engagement_graph:engagement_graph
 

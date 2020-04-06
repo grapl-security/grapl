@@ -4,6 +4,8 @@ graph-merger/graph-merger
 analyzer-dispatcher/analyzer-dispatcher
 
 grapl-cdk/edge_ux_package/*
+
+lambda/
 __pycache__/
 *.pyc
 .mypy_cache/

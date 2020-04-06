@@ -1832,7 +1832,7 @@ version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50d9500ea1488a61aa96da139039b78a92eef64a0f3c82d38173729f0ad73cf8"
 dependencies = [
- "log 0.4.8",
+ "log 0.3.9",
 ]
 
 [[package]]
@@ -2471,9 +2471,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "sqs-lambda"
-version = "0.20.2"
+version = "0.20.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89d972e99077dfd9d5e9f34d18d1f055b5561fb4ebace0faf2a4d9f8ecea1342"
+checksum = "107445ac843071f7f7d393ea97438fc92f738dc0cae65cff0dc7482b5913130b"
 dependencies = [
  "aktors",
  "async-trait",

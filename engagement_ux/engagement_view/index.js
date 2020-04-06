@@ -1,7 +1,7 @@
-const engagement_edge = "http://127.0.0.1:8900/";
+const engagement_edge = "http://localhost:8900/";
 
 if (engagement_edge.length === 0) {
-    console.assert("Engagement Edge URL can not be empty. Run build.sh");
+    console.warn("Engagement Edge URL can not be empty. Run build.sh");
 }
 
 async function sha256(message) {

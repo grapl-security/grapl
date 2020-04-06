@@ -4,8 +4,8 @@ use std::str::FromStr;
 
 pub async fn event_cache() -> RedisCache {
     let cache_address = {
-        let generic_event_cache_addr = std::env::var("EVENT_CACHE_ADDR").expect("GENERIC_EVENT_CACHE_ADDR");
-        let generic_event_cache_port = std::env::var("EVENT_CACHE_PORT").expect("GENERIC_EVENT_CACHE_PORT");
+        let generic_event_cache_addr = std::env::var("EVENT_CACHE_ADDR").expect("EVENT_CACHE_ADDR");
+        let generic_event_cache_port = std::env::var("EVENT_CACHE_PORT").expect("EVENT_CACHE_PORT");
 
         format!(
             "{}:{}",

@@ -787,7 +787,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     info!("Initial Events {:?}", initial_events);
 
     let (tx, rx) = std::sync::mpsc::sync_channel(10);
-
+    let completed_tx = tx.clone();
 
     std::thread::spawn(move || {
         tokio_compat::run_std(
@@ -807,8 +807,14 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                     : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
                     = SysmonSubgraphGenerator::new(cache.clone());
 
+                let initial_messages: Vec<_> = event.records
+                    .into_iter()
+                    .map(map_sqs_message)
+                    .collect();
+
                 sqs_lambda::sqs_service::sqs_service(
                     queue_url,
+                    initial_messages,
                     bucket,
                     ctx,
                     S3Client::new(region.clone()),
@@ -824,13 +830,17 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                                 tx.send(worked).unwrap();
                             }
                             Err(worked) => {
-                                info!("Handled an initial_event, though we failed to delete it: {}", &worked);
+                                info!("Handled an event, though we failed to delete it: {}", &worked);
                                 tx.send(worked).unwrap();
                             }
                         }
                     },
-                    move |_, _| async move {Ok(())},
+                    move |bucket, key| async move {
+                        info!("Emitted event to {} {}", bucket, key);
+                        Ok(())
+                    },
                 ).await;
+                completed_tx.clone().send("Completed".to_owned()).unwrap();
             });
     });
 
@@ -839,17 +849,14 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         info!("Acking event: {}", &r);
         initial_events.remove(&r);
         if r == "Completed" {
-            let r = rx.recv_timeout(Duration::from_millis(100));
-            if let Ok(r) = r {
-                initial_events.remove(&r);
-            }
             // If we're done go ahead and try to clear out any remaining
-            while let Ok(r) = rx.try_recv() {
+            while let Ok(r) = rx.recv_timeout(Duration::from_millis(100)) {
                 initial_events.remove(&r);
             }
             break;
         }
     }
+
 
     info!("Completed execution");
 
@@ -981,11 +988,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         loop {
             if let Err(e) = runtime.block_on(async move { inner_main().await }) {
                 error!("{}", e);
+                std::thread::sleep_ms(2_000);
             }
         }
     }  else {
         info!("Running in AWS {:?}", is_local);
-        // lambda!(handler);
+        lambda!(handler);
     }
 
     Ok(())

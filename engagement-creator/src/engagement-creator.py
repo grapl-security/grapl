@@ -280,6 +280,9 @@ def lambda_handler(events: Any, context: Any) -> None:
 
     s3 = get_s3_client()
     for event in events['Records']:
+        if not IS_LOCAL:
+            event = json.loads(event['body'])['Records'][0]
+
         data = parse_s3_event(s3, event)
         incident_graph = json.loads(data)
 

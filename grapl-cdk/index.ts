@@ -158,8 +158,8 @@ class EngagementEdge extends cdk.Stack {
         this.event_handler = new lambda.Function(
             this, name, {
                 runtime: Runtime.PYTHON_3_7,
-                handler: `engagement_edge.lambda_handler`,
-                code: lambda.Code.asset(`./engagement_edge.zip`),
+                handler: `engagement_edge.app`,
+                code: lambda.Code.fromAsset(`./engagement_edge.zip`),
                 vpc: vpc,
                 environment: {
                     "EG_ALPHAS": engagement_graph.alphaNames.join(","),
@@ -571,8 +571,8 @@ class SysmonSubgraphGenerator extends cdk.Stack {
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
-            "SYSMON_EVENT_CACHE_ADDR": sysmon_event_cache.cluster.attrRedisEndpointAddress,
-            "SYSMON_EVENT_CACHE_PORT": sysmon_event_cache.cluster.attrRedisEndpointPort,
+            "EVENT_CACHE_ADDR": sysmon_event_cache.cluster.attrRedisEndpointAddress,
+            "EVENT_CACHE_PORT": sysmon_event_cache.cluster.attrRedisEndpointPort,
         };
 
         const service = new Service(this, 'sysmon-subgraph-generator', environment, vpc);
@@ -770,8 +770,8 @@ class AnalyzerDispatch extends cdk.Stack {
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
-            "DISPATCH_EVENT_CACHE_ADDR": dispatch_event_cache.cluster.attrRedisEndpointAddress,
-            "DISPATCH_EVENT_CACHE_PORT": dispatch_event_cache.cluster.attrRedisEndpointPort,
+            "EVENT_CACHE_ADDR": dispatch_event_cache.cluster.attrRedisEndpointAddress,
+            "EVENT_CACHE_PORT": dispatch_event_cache.cluster.attrRedisEndpointPort,
             "DISPATCHED_ANALYZER_BUCKET": writes_to.bucketName,
             "SUBGRAPH_MERGED_BUCKET": reads_from.bucketName,
         };
@@ -846,7 +846,7 @@ class AnalyzerExecutor extends cdk.Stack {
         service.event_handler.addToRolePolicy(policy);
         service.event_retry_handler.addToRolePolicy(policy);
 
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
 
         service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTraffic(), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTraffic(), 'Allow outbound to S3');
@@ -878,7 +878,7 @@ class EngagementCreator extends cdk.Stack {
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
 
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
 
         service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');

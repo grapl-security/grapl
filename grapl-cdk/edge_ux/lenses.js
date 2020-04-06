@@ -12,6 +12,9 @@ const getLenses = async () => {
         body: JSON.stringify({
             'prefix': '',
         }),
+        headers: {
+            'Content-Type': 'application/json',
+        },
         credentials: 'include',
     });
     const jres = await res.json();

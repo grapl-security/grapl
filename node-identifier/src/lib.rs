@@ -957,6 +957,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
 
     let (tx, rx) = std::sync::mpsc::sync_channel(10);
 
+    let completed_tx = tx.clone();
 
     std::thread::spawn(move || {
         tokio_compat::run_std(
@@ -1017,9 +1018,14 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                     region.clone(),
                 );
 
-                let completed_tx = tx.clone();
+                let initial_messages: Vec<_> = event.records
+                    .into_iter()
+                    .map(map_sqs_message)
+                    .collect();
+
                 sqs_lambda::sqs_service::sqs_service(
                     queue_url,
+                    initial_messages,
                     bucket,
                     ctx,
                     S3Client::new(region.clone()),
@@ -1043,7 +1049,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                     move |_, _| async move { Ok(()) }
                 ).await;
 
-                completed_tx.send("Completed".to_owned()).unwrap();
+                completed_tx.clone().send("Completed".to_owned()).unwrap();
         })
     });
 
@@ -1052,12 +1058,8 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
         info!("Acking event: {}", &r);
         initial_events.remove(&r);
         if r == "Completed" {
-            let r = rx.recv_timeout(Duration::from_millis(100));
-            if let Ok(r) = r {
-                initial_events.remove(&r);
-            }
             // If we're done go ahead and try to clear out any remaining
-            while let Ok(r) = rx.try_recv() {
+            while let Ok(r) = rx.recv_timeout(Duration::from_millis(100)) {
                 initial_events.remove(&r);
             }
             break;

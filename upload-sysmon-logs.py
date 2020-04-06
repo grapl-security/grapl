@@ -72,8 +72,15 @@ def main(prefix, logfile):
             endpoint_url="http://localhost:9000",
             aws_access_key_id='minioadmin',
             aws_secret_access_key='minioadmin',
+            region_name="us-east-3",
         )
-        sqs = boto3.client('sqs', endpoint_url="http://localhost:9324")
+        sqs = boto3.client(
+            'sqs',
+            endpoint_url="http://localhost:9324",
+            region_name="us-east-1",
+            aws_access_key_id='dummy_cred_aws_access_key_id',
+            aws_secret_access_key='dummy_cred_aws_secret_access_key',
+        )
 
     else:
         s3 = boto3.client('s3')
@@ -106,7 +113,7 @@ def main(prefix, logfile):
                 )
             )
 
-    print('Completed uploading at {}', time.ctime())
+    print(f'Completed uploading at {time.ctime()}')
 
 
 def parse_args():

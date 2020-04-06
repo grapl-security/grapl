@@ -2,7 +2,7 @@
 
 console.log('Loaded index.js');
 
-const engagement_edge = "http://127.0.0.1:8900/";
+const engagement_edge = "http://localhost:8900/";
 
 console.log(`Connecting to ${engagement_edge}`);
 

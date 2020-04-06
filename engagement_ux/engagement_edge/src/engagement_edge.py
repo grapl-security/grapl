@@ -17,8 +17,6 @@ from grapl_analyzerlib.nodes.any_node import NodeView, raw_node_from_node_key
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
 from pydgraph import DgraphClient
 
-app = Chalice(app_name="engagement-edge")
-
 IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 
 if IS_LOCAL:
@@ -27,7 +25,7 @@ if IS_LOCAL:
 
 JWT_SECRET = os.environ['JWT_SECRET']
 ORIGIN = "https://" + os.environ['BUCKET_PREFIX'] + "engagement-ux-bucket.s3.amazonaws.com"
-ORIGIN_OVERRIDE = os.environ.get('ORIGIN_OVERRIDE', None)
+ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 # ORIGIN = "http://127.0.0.1:8900"
 DYNAMO = None
 
@@ -36,6 +34,8 @@ if IS_LOCAL:
 else:
     EG_ALPHA = "alpha0.engagementgraphcluster.grapl:9080"
 
+
+app = Chalice(app_name="engagement-edge")
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
     print(f'connecting to dgraph at {EG_ALPHA}')
@@ -384,19 +384,21 @@ def try_get_updated_graph(body):
 
 
 def respond(err, res=None, headers=None):
-    print('responding')
+    print(f"responding, origin: {app.current_request.headers.get('origin', '')}")
     if not headers:
         headers = {}
 
     if IS_LOCAL:
-        ORIGIN_OVERRIDE = app.current_request.headers.get('origin', '')
-        print(f'overriding origin with {ORIGIN_OVERRIDE}')
+        override = app.current_request.headers.get('origin', '')
+        print(f'overriding origin with {override}')
+    else:
+        override = ORIGIN_OVERRIDE
 
     return Response(
         body={'error': err} if err else json.dumps({'success': res}),
         status_code=400 if err else 200,
         headers={
-            'Access-Control-Allow-Origin': ORIGIN_OVERRIDE or ORIGIN,
+            'Access-Control-Allow-Origin': override or ORIGIN,
             'Access-Control-Allow-Credentials': 'true',
             'Content-Type': 'application/json',
             'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
@@ -511,8 +513,16 @@ def lambda_login(event):
     if login_res:
         return cookie
 
+cors_config = CORSConfig(
+    allow_origin=ORIGIN_OVERRIDE or ORIGIN,
+    allow_credentials='true',
+)
+
 
 def requires_auth(path):
+    if not IS_LOCAL:
+        path = "/{proxy+}" + path
+
     def route_wrapper(route_fn):
         @app.route(path, methods=["OPTIONS", "POST"])
         def inner_route():
@@ -532,19 +542,27 @@ def requires_auth(path):
     return route_wrapper
 
 
-cors_config = CORSConfig(
-    allow_origin=ORIGIN_OVERRIDE or ORIGIN,
-    allow_credentials='true',
-)
+def no_auth(path):
+    if not IS_LOCAL:
+        path = "/{proxy+}" + path
 
-@app.route("/login", methods=["OPTIONS", "POST"])
+    def route_wrapper(route_fn):
+        @app.route(path, methods=["OPTIONS", "GET", "POST"])
+        def inner_route():
+            if app.current_request.method == "OPTIONS":
+                return respond(None, {})
+            try:
+                return route_fn()
+            except Exception as e:
+                print(e)
+                return respond("Unexpected Error")
+        return inner_route
+    return route_wrapper
+
+
+@no_auth('/login')
 def login_route():
     print('/login route')
-    if app.current_request.method == "OPTIONS":
-        print('options')
-        return respond(None, {})
-
-    print('logging in')
     request = app.current_request
     cookie = lambda_login(request)
     if cookie:
@@ -555,7 +573,7 @@ def login_route():
         return respond('Failed to login')
 
 
-@app.route("/checkLogin")
+@no_auth('/checkLogin')
 def check_login():
     print('check login')
     request = app.current_request
@@ -579,3 +597,23 @@ def get_lenses():
     prefix = request.json_body.get('prefix', '')
     lenses = list_all_lenses(prefix)
     return respond(None, {'lenses': lenses})
+
+
+@app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
+def nop_route():
+    print(app.current_request.context['path'])
+
+    print(vars(app.current_request))
+
+    path = app.current_request.context['path']
+
+    if path == '/prod/login':
+        return login_route()
+    elif path == '/prod/checkLogin':
+        return check_login()
+    elif path == '/prod/update':
+        return update()
+    elif path == '/prod/getLenses':
+        return get_lenses()
+
+    return respond('InvalidPath')
