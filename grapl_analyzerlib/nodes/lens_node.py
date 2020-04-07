@@ -286,6 +286,7 @@ class LensQuery(Queryable["LensView"]):
         return {}
 
 
+
 class LensView(Viewable):
     def __init__(
             self,
@@ -387,5 +388,23 @@ class LensView(Viewable):
         return {}
 
 
+class EngagementView(LensView):
+
+    @staticmethod
+    def get_or_create(copy_client: CopyingDgraphClient, lens_name: str) -> "EngagementView":
+        lens = LensView.get_or_create(copy_client, lens_name)
+
+        engagement_client = EngagementClient(
+            lens.uid,
+            copy_client.src_client,
+            copy_client.dst_client,
+        )
+
+        return EngagementView(engagement_client, lens.uid, lens.node_key)
+
+    def get_node(self, node_key: str) -> Optional["NodeView"]:
+        return NodeQuery().with_node_key(eq=node_key).query_first(self.dgraph_client)
+
+
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps
-from grapl_analyzerlib.prelude import NodeView
+from grapl_analyzerlib.prelude import NodeView, NodeQuery

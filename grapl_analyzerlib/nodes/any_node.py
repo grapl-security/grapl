@@ -68,7 +68,7 @@ def raw_node_from_uid(
 ) -> Optional[Dict[str, Any]]:
     query = f"""
         {{
-            res(func: uid("{uid}"), first: 1) {{
+            res(func: uid({uid}), first: 1) {{
                 uid,
                 expand(_all_),
                 node_type: dgraph.type
@@ -198,27 +198,6 @@ class NodeQuery(Queryable):
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         return self.dynamic_reverse_edge_filters
 
-    def query(
-        self,
-        dgraph_client: DgraphClient,
-        contains_node_key: Optional[str] = None,
-        first: Optional[int] = 1000,
-    ) -> List["NodeView"]:
-        res = self.query(dgraph_client, contains_node_key, first)
-
-        if not res:
-            return []
-
-        assert isinstance(res[0], NodeView)
-        return cast("List[NodeView]", res)
-
-    def query_first(
-        self, dgraph_client: DgraphClient, contains_node_key: Optional[str] = None
-    ) -> Optional["NodeView"]:
-        res = self.query_first(dgraph_client, contains_node_key)
-        assert (res is None) or isinstance(res, NodeView)
-        return res
-
 
 class NodeView(Viewable):
 
@@ -276,6 +255,8 @@ class NodeView(Viewable):
         if isinstance(node_type, list):
             node_type = node_type[0]
 
+        if not node_type:
+
         _d = None
         uid = d.get("uid")  # type: Optional[str]
         if uid:
@@ -305,13 +286,6 @@ class NodeView(Viewable):
             node = DynamicNodeView.from_dict(dgraph_client, d)
         else:
             raise Exception(f"Invalid scoped node type: {d}")
-
-        assert (
-            isinstance(node, ProcessView)
-            or isinstance(node, FileView)
-            or isinstance(node, IpAddressView)
-            or isinstance(node, DynamicNodeView)
-        )
 
         return NodeView(
             dgraph_client=dgraph_client, node_key=node.node_key, uid=node.uid, node=node

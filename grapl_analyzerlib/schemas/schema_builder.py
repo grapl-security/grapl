@@ -240,6 +240,7 @@ def generate_imports(schema: NodeSchema) -> str:
     imports = """\
 from typing import *
 
+from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 from grapl_analyzerlib.nodes.comparators import Cmp, IntCmp, _int_cmps, StrCmp, _str_cmps
