@@ -255,12 +255,12 @@ class NodeView(Viewable):
         if isinstance(node_type, list):
             node_type = node_type[0]
 
-        if not node_type:
-
         _d = None
         uid = d.get("uid")  # type: Optional[str]
         if uid:
             _d = raw_node_from_uid(dgraph_client, uid)
+        elif d.get("node_key"):
+            _d = raw_node_from_node_key(dgraph_client, d["node_key"])
 
         if _d:
             d = {**d, **_d}
