@@ -23,6 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if is_local {
 
         info!("Running locally");
+        std::thread::sleep_ms(10_000);
         let mut runtime = Runtime::new().unwrap();
 
         loop {
@@ -31,6 +32,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Err(e) = runtime.block_on(async move { local_handler(true).await }) {
                 error!("{}", e);
             }
+
+            std::thread::sleep_ms(2_000);
         }
     }  else {
         lambda!(retry_handler);

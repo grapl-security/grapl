@@ -1208,11 +1208,18 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
             cache.clone(),
             region.clone(),
     );
+
+    let queue_url = if should_default {
+        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue"
+    } else {
+        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-retry-queue"
+    };
+
     local_sqs_service(
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue",
+        queue_url,
         "local-grapl-subgraphs-generated-bucket",
         Context {
-            deadline: Utc::now().timestamp_millis() + 31_000,
+            deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
         init_s3_client(),

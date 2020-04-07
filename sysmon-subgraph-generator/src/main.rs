@@ -983,6 +983,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("IS_LOCAL={:?}", is_local);
     if is_local.is_ok() {
         info!("Running locally {:?}", is_local);
+        std::thread::sleep_ms(10_000);
         let mut runtime = Runtime::new().unwrap();
 
         loop {

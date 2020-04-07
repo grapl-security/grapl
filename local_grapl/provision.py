@@ -1,7 +1,12 @@
 import boto3
 import json
 
-sqs = boto3.client('sqs', endpoint_url="http://localhost:9324")
+sqs = boto3.client(
+    'sqs',
+    endpoint_url="http://localhost:9324",
+    aws_access_key_id="dummy_sqs",
+    aws_secret_access_key="dummy_sqs",
+)
 s3 = boto3.client(
     's3',
     endpoint_url="http://localhost:9000",

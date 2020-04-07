@@ -17,6 +17,7 @@ ADD requirements.txt /tmp
 RUN pip install -r /tmp/requirements.txt
 
 WORKDIR /app
+COPY ./src/ /src/
 
 COPY --from=0 /lambda.zip /
 
