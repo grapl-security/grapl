@@ -486,7 +486,7 @@ class ProcessView(Viewable):
         self: "NV", match_parent: Optional["IProcessQuery"] = None
     ) -> Optional["NV"]:
         cast(ProcessView, self).parent = cast(
-            ProcessView, self.fetch_edge("~parent", type(self))
+            ProcessView, self.fetch_edge("~children", type(self))
         )
         return cast(ProcessView, self).parent
 
