@@ -1,20 +1,19 @@
+import json
 import time
 import unittest
-import json
-from copy import deepcopy
 from typing import *
 
-from hypothesis import given
+import hypothesis
 import hypothesis.strategies as st
+from hypothesis import given
 from pydgraph import DgraphClient, DgraphClientStub
-from grapl_analyzerlib.nodes.comparators import IntCmp, _str_cmps, StrCmp, _int_cmps, escape_dgraph_str, Not
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
-from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView, IProcessView
-from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
-from grapl_analyzerlib.nodes.types import Property, PropertyT
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView
 
-from grapl_provision import provision, drop_all
+from grapl_analyzerlib.nodes.comparators import escape_dgraph_str, Not
+from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
+from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
+from grapl_analyzerlib.nodes.types import Property
+from grapl_analyzerlib.nodes.viewable import Viewable
+
 
 def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
     if node_dict.get('uid'):
@@ -142,6 +141,10 @@ class TestProcessQuery(unittest.TestCase):
     #     drop_all(local_client)
     #     provision()
 
+
+    @hypothesis.settings(
+        deadline=None
+    )
     @given(
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2**32),
@@ -198,6 +201,9 @@ class TestProcessQuery(unittest.TestCase):
 
     # Given that the code that generates timestamps only uses unsized types we can make some
     # assumptions about the data
+    @hypothesis.settings(
+        deadline=None
+    )
     @given(
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2**32),
@@ -250,7 +256,9 @@ class TestProcessQuery(unittest.TestCase):
         assert terminate_time == queried_proc.get_terminate_time()
         assert image_name == queried_proc.get_image_name()
         assert process_name == queried_proc.get_process_name()
-
+    @hypothesis.settings(
+        deadline=None
+    )
     @given(
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2**32),
@@ -311,7 +319,9 @@ class TestProcessQuery(unittest.TestCase):
         assert image_name == queried_proc.get_image_name()
         assert process_name == queried_proc.get_process_name()
 
-
+    @hypothesis.settings(
+        deadline=None
+    )
     @given(
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2**32),
@@ -375,6 +385,10 @@ class TestProcessQuery(unittest.TestCase):
 
     # Given that the code that generates timestamps only uses unsized types we can make some
     # assumptions about the data
+
+    @hypothesis.settings(
+        deadline=None
+    )
     @given(
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2**32),

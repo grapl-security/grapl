@@ -1,3 +1,4 @@
+import logging
 from typing import *
 
 # noinspection Mypy
@@ -484,23 +485,9 @@ class ProcessView(Viewable):
     def get_parent(
         self: "NV", match_parent: Optional["IProcessQuery"] = None
     ) -> Optional["NV"]:
-        query = ProcessQuery()
-        query.view_type = type(self)
-        _match_parent = match_parent or ProcessQuery()  # type: ProcessQuery
-        _match_parent.view_type = type(self)
-
-        self_node = (
-            ProcessQuery()
-            .with_node_key(eq=self.node_key)
-            .with_parent(_match_parent)
-            .query_first(self.dgraph_client)
+        cast(ProcessView, self).parent = cast(
+            List[FileView], self.fetch_edges("~parent", type(self))
         )
-
-        if self_node:
-            cast(ProcessView, self).parent = self_node.parent
-
-            assert self.node_key == self_node.node_key, 'self and self_node do not have matching node_keys'
-
         return cast(ProcessView, self).parent
 
     @staticmethod

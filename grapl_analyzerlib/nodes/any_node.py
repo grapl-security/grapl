@@ -1,4 +1,6 @@
 import json
+import logging
+
 from collections import defaultdict
 from typing import (
     Optional,
@@ -89,7 +91,7 @@ def raw_node_from_uid(
             if node_type:
                 res[0]["node_type"] = res[0]["node_type"][0]
             else:
-                print(f"WARN: node_type missing from {uid} {res}")
+                logging.warning(f"node_type missing from {uid} {res}")
 
             return cast(Dict[str, Any], res[0])
         else:
@@ -97,7 +99,7 @@ def raw_node_from_uid(
             if node_type:
                 res["node_type"] = res["node_type"][0]
             else:
-                print(f"WARN: node_type missing from {uid} {res}")
+                logging.warning(f"node_type missing from {uid} {res}")
             return cast(Dict[str, Any], res)
 
 
@@ -128,7 +130,7 @@ def raw_node_from_node_key(
             if node_type:
                 res[0]["node_type"] = res[0]["node_type"][0]
             else:
-                print(f"WARN: node_type missing from {node_key} {res}")
+                logging.warning(f"node_type missing from {node_key} {res}")
 
             return cast(Dict[str, Any], res[0])
         else:
@@ -136,11 +138,11 @@ def raw_node_from_node_key(
             if node_type:
                 res["node_type"] = res["node_type"][0]
             else:
-                print(f"WARN: node_type missing from {node_key} {res}")
+                logging.warning(f"node_type missing from {node_key} {res}")
 
             return cast(Dict[str, Any], res)
     except Exception as e:
-        print(f"WARN: raw_node_from_node_key {node_key} {res} {e}")
+        logging.error(f"raw_node_from_node_key {node_key} {res} {e}")
         raise e
 
 
@@ -219,7 +221,7 @@ class NodeView(Viewable):
         try:
             return NodeView(v.dgraph_client, v.node_key, v.uid, v)
         except Exception as e:
-            print(f"ERROR from_view failed for : {v}")
+            logging.error(f"from_view failed for : {v}")
             raise e
 
     @staticmethod
@@ -231,7 +233,7 @@ class NodeView(Viewable):
             try:
                 return NodeView.from_dict(client, res)
             except Exception as e:
-                print(f"ERROR from_node_key failed: {node_key} {res}")
+                logging.warning(f"from_node_key failed: {node_key} {res}")
                 raise e
 
     @staticmethod
@@ -243,7 +245,7 @@ class NodeView(Viewable):
             try:
                 return NodeView.from_dict(client, res)
             except Exception as e:
-                print(f"ERROR from_node_uid failed: {uid} {res}")
+                logging.error(f"from_node_uid failed: {uid} {res}")
                 raise e
 
     @classmethod

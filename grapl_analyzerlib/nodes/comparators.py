@@ -12,7 +12,6 @@ IntCmp = Union[int, List[int], List[Union[int, "Not[int]"]]]
 
 def escape_dgraph_regexp(input: str) -> str:
     input = re.escape(input)
-    input = input.replace("\\$", "//\\$")
     output = ""
     for char in input:
         if char == '"':
