@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         loop {
 
             info!("Running in AWS");
-            if let Err(e) = runtime.block_on(async move { local_handler(true).await }) {
+            if let Err(e) = runtime.block_on(async move { local_handler(false).await }) {
                 error!("{}", e);
             }
 

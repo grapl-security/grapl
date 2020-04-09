@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut runtime = Runtime::new().unwrap();
 
         loop {
-            if let Err(e) = runtime.block_on(async move { local_handler(false).await }) {
+            if let Err(e) = runtime.block_on(async move { local_handler(true).await }) {
                 error!("{}", e);
             }
 

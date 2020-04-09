@@ -151,6 +151,52 @@ type {type_name} {{
     client.alter(op)
 
 
+def provision_mg(mclient):
+
+
+    # drop_all(mclient)
+    # drop_all(___local_dg_provision_client)
+
+    schemas = (
+        AssetSchema(),
+        ProcessSchema(),
+        FileSchema(),
+        IpConnectionSchema(),
+        IpAddressSchema(),
+        IpPortSchema(),
+        NetworkConnectionSchema(),
+        ProcessInboundConnectionSchema(),
+        ProcessOutboundConnectionSchema(),
+    )
+
+    mg_schema_str = format_schemas(schemas)
+    set_schema(mclient, mg_schema_str)
+
+def provision_eg(eclient):
+
+
+    # drop_all(mclient)
+    # drop_all(___local_dg_provision_client)
+
+    schemas = (
+        AssetSchema(),
+        ProcessSchema(),
+        FileSchema(),
+        IpConnectionSchema(),
+        IpAddressSchema(),
+        IpPortSchema(),
+        NetworkConnectionSchema(),
+        ProcessInboundConnectionSchema(),
+        ProcessOutboundConnectionSchema(),
+    )
+
+    eg_schemas = [s.with_forward_edge('risks', ManyToMany(RiskSchema), 'risky_nodes') for s in schemas]
+
+    risk_schema = RiskSchema()
+    lens_schema = LensSchema()
+    eg_schemas.extend([risk_schema, lens_schema])
+    eg_schema_str = format_schemas(eg_schemas)
+    set_schema(eclient, eg_schema_str)
 
 
 def provision(mclient, eclient):
@@ -272,26 +318,53 @@ def provision_bucket(bucket_name: str):
 
 if __name__ == '__main__':
 
-
-    time.sleep(2)
-
     local_dg_provision_client = DgraphClient(DgraphClientStub('master_graph:9080'))
     local_eg_provision_client = DgraphClient(DgraphClientStub('engagement_graph:9080'))
 
-    for i in range(0, 10):
+    mg_succ = False
+    eg_succ = False
+    sqs_succ = {service for service in services}
+    s3_succ = {bucket for bucket in buckets}
+
+    for i in range(0, 150):
         try:
-            provision(
-                local_dg_provision_client,
-                local_eg_provision_client
-            )
-
-            for service in services:
-                provision_sqs(service)
-
-            for bucket_name in buckets:
-                provision_bucket(bucket_name)
-
-            break
+            if not mg_succ:
+                provision_mg(
+                    local_dg_provision_client,
+                )
+                mg_succ = True
         except Exception as e:
             print(e)
-            time.sleep(3)
+
+        try:
+            if not eg_succ:
+                provision_eg(
+                    local_eg_provision_client,
+                )
+                eg_succ = True
+        except Exception as e:
+            print(e)
+
+        for service in services:
+            if service in sqs_succ:
+                try:
+                    provision_sqs(service)
+                    sqs_succ.discard(service)
+                except Exception as e:
+                    print(e)
+
+        for bucket in buckets:
+            if bucket in s3_succ:
+                try:
+                    provision_bucket(bucket)
+                    s3_succ.discard(bucket)
+                except Exception as e:
+                    print(e)
+
+        if mg_succ and eg_succ and not sqs_succ and not s3_succ:
+            break
+        else:
+            time.sleep(1)
+
+    if not mg_succ and eg_succ and not sqs_succ and not s3_succ:
+        raise Exception(f"Failed to provision Grapl: mg_succ: {mg_succ, eg_succ, sqs_succ, s3_succ}, eg_succ: {mg_succ, eg_succ, sqs_succ, s3_succ}, sqs_succ: {mg_succ, eg_succ, sqs_succ, s3_succ}, s3_succ: {mg_succ, eg_succ, sqs_succ, s3_succ}")

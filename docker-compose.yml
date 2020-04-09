@@ -228,5 +228,8 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook
+    links:
+      - engagement_graph:engagement_graph
+      - master_graph:master_graph
     ports:
       - 8888:8888

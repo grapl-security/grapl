@@ -2679,7 +2679,7 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "sqs-lambda"
-version = "0.20.5"
+version = "0.20.7"
 dependencies = [
  "aktors",
  "async-trait",

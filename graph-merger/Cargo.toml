@@ -15,7 +15,7 @@ log = "0.4.6"
 
 dgraph-rs = "0.2.*"
 grpc = "0.6.1"
-sqs-lambda = "0.20.5"
+sqs-lambda = "0.20.*"
 #sqs-lambda = {path="../../../workspace/sqs-lambda/" , version="*"}
 
 rusoto_s3 = { version="0.43.0-beta.1", default_features = false, features=["rustls"] }

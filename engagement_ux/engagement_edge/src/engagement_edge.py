@@ -51,6 +51,7 @@ def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
                 {
                     uid,
                     node_key,
+                    node_type: dgraph.type,
                     lens,
                     score
                 }
@@ -64,6 +65,7 @@ def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
                 {
                     uid,
                     node_key,
+                    node_type: dgraph.type,
                     lens,
                     score
                 }
@@ -88,9 +90,11 @@ def edge_in_lens(dg_client: DgraphClient, node_uid: str, edge_name: str, lens_na
                 {edge_name} {{
                     uid,
                     node_key,
+                    node_type: dgraph.type,
                     
                     ~scope @filter(eq(lens, $lens_name)) {{
-                        uid
+                        uid,
+                        node_type: dgraph.type,
                     }}
                 }}
             }}
@@ -116,6 +120,7 @@ def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
         {  
             q0(func: eq(lens, $a)) {
                 uid,
+                node_type: dgraph.type,
                 node_key,
                 lens,
                 score,
@@ -145,6 +150,7 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
         {  
             q0(func: eq(lens, $a)) @cascade {
                 uid,
+                node_type: dgraph.type,
                 node_key,
                 lens,
                 score,
@@ -155,6 +161,7 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
                     risks {
                         uid,
                         analyzer_name,
+                        node_type: dgraph.type,
                         risk_score
                     }
                 }
