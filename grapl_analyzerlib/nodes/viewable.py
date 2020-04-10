@@ -230,7 +230,7 @@ class Viewable(abc.ABC):
     def fetch_edge(self, edge_name: str, edge_type: Type["NV"]) -> Optional["NV"]:
         query = f"""
             {{
-                res(func: eq(node_key, "{self.node_key}"), first: 1) {{
+                res(func: eq(node_key, "{self.node_key}"), first: 1) @cascade {{
                     uid,
                     node_key,
                     node_type: dgraph.type,
@@ -270,7 +270,7 @@ class Viewable(abc.ABC):
     def fetch_edges(self, edge_name: str, edge_type: Type["NV"]) -> List["NV"]:
         query = f"""
             {{
-                res(func: eq(node_key, "{self.node_key}")) {{
+                res(func: eq(node_key, "{self.node_key}")) @cascade {{
                     uid,
                     node_type: dgraph.type,
                     node_key,

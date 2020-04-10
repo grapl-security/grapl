@@ -243,7 +243,7 @@ class EngagementClient(CopyingDgraphClient):
         engagement_lens = LensView.get_or_create(cclient, engagement_name)
         return EngagementClient(engagement_lens.uid, src_client, dst_client)
 
-    def txn(self, read_only=False, best_effort=False) -> CopyingTransaction:
+    def txn(self, read_only=False, best_effort=False) -> EngagementTransaction:
         return EngagementTransaction(
             self, self.eg_uid, read_only=read_only, best_effort=best_effort
         )
