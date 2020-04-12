@@ -264,9 +264,20 @@ class EngagementTransaction(CopyingTransaction):
             self, query, variables=None, timeout=None, metadata=None, credentials=None
     ):
         txn = super()
-        res = txn.query(query, variables, timeout, metadata, credentials)
+        try:
+            txn.query(query, variables, timeout, metadata, credentials)
+            copied_uids = set(txn.get_copied_uids())
+        finally:
+            txn.discard()
+        # TODO: This is a hack. For some reason it doesn't copy edges properly the first time
+        txn = super()
+        try:
+            res = txn.query(query, variables, timeout, metadata, credentials)
+            copied_uids.update(txn.get_copied_uids())
+        finally:
+            txn.discard()
 
-        for uid in txn.get_copied_uids():
+        for uid in copied_uids:
             if uid == self.eg_uid:
                 continue
             dst_txn = self.dst_client.txn(read_only=False)
