@@ -236,8 +236,8 @@ class Viewable(abc.ABC):
                     node_type: dgraph.type,
                     {edge_name} {{
                         uid,
-                        node_type: dgraph.type,
                         node_key,
+                        node_type: dgraph.type,
                     }}
                 }}
             
@@ -280,9 +280,9 @@ class Viewable(abc.ABC):
                         node_key,
                     }}
                 }}
-            
             }}
         """
+
         txn = self.dgraph_client.txn(read_only=True)
         try:
             res = json.loads(txn.query(query).json)
