@@ -127,7 +127,7 @@ def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
                 scope {
                     uid,
                     expand(_all_),
-                    node_type: dgraph.type
+                    node_type: dgraph.type,
                 }
             }  
       }"""
@@ -148,7 +148,7 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
     query = """
         query q0($a: string)
         {  
-            q0(func: eq(lens, $a)) @cascade {
+            q0(func: eq(lens, $a)) {
                 uid,
                 node_type: dgraph.type,
                 node_key,
@@ -160,6 +160,7 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
                     node_type: dgraph.type
                     risks {
                         uid,
+                        node_key,
                         analyzer_name,
                         node_type: dgraph.type,
                         risk_score
@@ -196,8 +197,11 @@ def expand_forward_edges_in_scope(dgraph_client: DgraphClient, node: NodeView, l
                     if neighbor.get('~scope'):
                         neighbor.pop('~scope')
                     node_edge = getattr(node, edge_name)
-                    print(edge_name)
-                    neighbor_view = inner_edge_type(dgraph_client, node_key=neighbor['node_key'], uid=neighbor['uid'])
+                    try:
+                        neighbor_view = inner_edge_type(dgraph_client, node_key=neighbor['node_key'], uid=neighbor['uid'])
+                    except Exception as e:
+                        print(f'neighbor_view failed with: {e}')
+                        continue
                     print(neighbor_view, neighbor_view.uid, neighbor_view.node_key)
                     if isinstance(node_edge, list):
                         node_edge.append(neighbor_view)
@@ -314,8 +318,10 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
         return []
     nodes = []
     for graph in current_graph['scope']:
-        nodes.append(NodeView.from_dict(dgraph_client, graph))
-
+        try:
+            nodes.append(NodeView.from_dict(dgraph_client, graph))
+        except Exception as e:
+            print('Failed to get NodeView from dict', e)
     if current_graph.get('scope'):
         current_graph.pop('scope')
 
@@ -343,15 +349,18 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
         edges = []
         risks = node.get("risks", [])
         if not risks:
-            print(f"WARN: Node in engagement graph has no connected risks {node['node_key']}")
+            print(f"WARN: Node in engagement graph has no connected risks {node}")
         for risk in risks:
-            risk['node_key'] = node['node_key'] + risk['analyzer_name']
-            edge = {
-                "from": node["node_key"],
-                "edge_name": "risks",
-                "to": risk['node_key']
-            }
-            edges.append(edge)
+            try:
+                risk['node_key'] = node['node_key'] + risk['analyzer_name']
+                edge = {
+                    "from": node["node_key"],
+                    "edge_name": "risks",
+                    "to": risk['node_key']
+                }
+                edges.append(edge)
+            except Exception as e:
+                print(f'risk edge failed: {risk}')
 
         results.append({
             "node": node,

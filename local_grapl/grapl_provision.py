@@ -235,19 +235,6 @@ def provision(mclient, eclient):
 import boto3
 import json
 
-sqs = boto3.client(
-    'sqs',
-    region_name="us-east-1",
-    endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-    aws_access_key_id='dummy_cred_aws_access_key_id',
-    aws_secret_access_key='dummy_cred_aws_secret_access_key',
-)
-s3 = boto3.client(
-    's3',
-    endpoint_url="http://s3:9000",
-    aws_access_key_id='minioadmin',
-    aws_secret_access_key='minioadmin',
-)
 
 BUCKET_PREFIX = 'local-grapl'
 
@@ -271,7 +258,7 @@ buckets = (
     BUCKET_PREFIX + '-analyzer-matched-subgraphs-bucket',
 )
 
-def provision_sqs(service_name: str):
+def provision_sqs(sqs, service_name: str):
     redrive_queue = sqs.create_queue(
         QueueName=service_name + '-retry-queue',
         Attributes={
@@ -307,13 +294,74 @@ def provision_sqs(service_name: str):
     sqs.purge_queue(QueueUrl=redrive_queue['QueueUrl'])
 
 
-def provision_bucket(bucket_name: str):
+def provision_bucket(s3, bucket_name: str):
     try:
         s3.create_bucket(Bucket=bucket_name)
     except Exception as e:
         print(e)
         pass
     print(bucket_name)
+
+
+def bucket_provision_loop():
+    s3_succ = {bucket for bucket in buckets}
+    for i in range(0, 150):
+        try:
+            s3 = boto3.client(
+                's3',
+                endpoint_url="http://s3:9000",
+                aws_access_key_id='minioadmin',
+                aws_secret_access_key='minioadmin',
+            )
+        except Exception as e:
+            print('failed to connect to sqs or s3')
+
+        for bucket in buckets:
+            if bucket in s3_succ:
+                try:
+                    provision_bucket(s3, bucket)
+                    s3_succ.discard(bucket)
+                except Exception as e:
+                    print(e)
+                    time.sleep(1)
+
+        if not s3_succ:
+            return
+
+    raise Exception("Failed to provision s3")
+
+
+def sqs_provision_loop():
+    sqs_succ = {service for service in services}
+    for i in range(0, 150):
+        try:
+            sqs = boto3.client(
+                'sqs',
+                region_name="us-east-1",
+                endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
+                aws_access_key_id='dummy_cred_aws_access_key_id',
+                aws_secret_access_key='dummy_cred_aws_secret_access_key',
+            )
+        except Exception as e:
+            print('failed to connect to sqs or s3')
+
+
+        for service in services:
+            if service in sqs_succ:
+                try:
+                    provision_sqs(sqs, service)
+                    sqs_succ.discard(service)
+                except Exception as e:
+                    print(e)
+                    time.sleep(1)
+        if not sqs_succ:
+            return
+
+    raise Exception("Failed to provision sqs")
+
+
+
+import threading
 
 
 if __name__ == '__main__':
@@ -323,8 +371,13 @@ if __name__ == '__main__':
 
     mg_succ = False
     eg_succ = False
-    sqs_succ = {service for service in services}
-    s3_succ = {bucket for bucket in buckets}
+
+    sqs_t = threading.Thread(target=sqs_provision_loop)
+    s3_t = threading.Thread(target=bucket_provision_loop)
+
+    sqs_t.start()
+    s3_t.start()
+
 
     for i in range(0, 150):
         try:
@@ -345,26 +398,11 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
 
-        for service in services:
-            if service in sqs_succ:
-                try:
-                    provision_sqs(service)
-                    sqs_succ.discard(service)
-                except Exception as e:
-                    print(e)
 
-        for bucket in buckets:
-            if bucket in s3_succ:
-                try:
-                    provision_bucket(bucket)
-                    s3_succ.discard(bucket)
-                except Exception as e:
-                    print(e)
-
-        if mg_succ and eg_succ and not sqs_succ and not s3_succ:
+        if (mg_succ and eg_succ):
             break
         else:
             time.sleep(1)
 
-    if not mg_succ and eg_succ and not sqs_succ and not s3_succ:
-        raise Exception(f"Failed to provision Grapl: mg_succ: {mg_succ, eg_succ, sqs_succ, s3_succ}, eg_succ: {mg_succ, eg_succ, sqs_succ, s3_succ}, sqs_succ: {mg_succ, eg_succ, sqs_succ, s3_succ}, s3_succ: {mg_succ, eg_succ, sqs_succ, s3_succ}")
+    sqs_t.join(timeout=300)
+    s3_t.join(timeout=300)

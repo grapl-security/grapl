@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import traceback
 
 from collections import defaultdict
 from typing import *
@@ -53,54 +54,19 @@ def create_edge(client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
         txn.discard()
 
 
-def attach_risk(client: DgraphClient, node: Union[FileView, ProcessView], analyzer_name: str, risk_score: int):
-    txn = client.txn(read_only=False)
-    try:
-        query = """
-            query q0($a: string, $b: string)
-            {
-            
-              n as var(func: eq(node_key, $a), first: 1) {
-                uid
-              }
-            
-              q0(func: uid(n), first: 1)
-              {
-                uid,
-                risks @filter(
-                    eq(analyzer_name, $b)
-                )
-                {
-                    uid
-                }
-              }
-            }
-            """
+def attach_risk(client: DgraphClient, node_key: str, node_uid: str, analyzer_name: str, risk_score: int):
 
-        variables = {
-            '$a': node.node_key,
-            '$b': analyzer_name
-        }
-        txn = client.txn(read_only=False)
-        res = json.loads(txn.query(query, variables=variables).json)
+    risk_node = {
+        'node_key': node_key + analyzer_name,
+        'analyzer_name': analyzer_name,
+        'risk_score': risk_score,
+        'dgraph.type': 'Risk',
+    }
 
-        if res['q0'] and res['q0'][0].get('risks'):
-            return
+    risk_node_uid = upsert(client, risk_node)
 
-        mutation = {
-            "uid": res['q0'][0]['uid'],
-            'dgraph.type': 'Risk',
-            "risks": {
-                'analyzer_name': analyzer_name,
-                'risk_score': risk_score
-            }
-        }
+    create_edge(client, node_uid, 'risks', risk_node_uid)
 
-        print(f"mutation: {mutation}")
-
-        txn.mutate(set_obj=mutation, commit_now=True)
-    finally:
-        txn.discard()
 
 
 def recalculate_score(client: DgraphClient, lens: LensView) -> int:
@@ -207,10 +173,10 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> None:
             node_dict = {**node_dict, **res[0]}
 
         mutation = node_dict
-        print(f"Mutating with : {mutation}, {node_dict} {res}")
 
         mut_res = txn.mutate(set_obj=mutation, commit_now=True)
-        print(mut_res)
+        new_uid = node_dict.get('uid') or mut_res.uids["blank-0"]
+        return new_uid
 
     finally:
         txn.discard()
@@ -337,7 +303,8 @@ def lambda_handler(events: Any, context: Any) -> None:
                     create_edge(eg_client, lens.uid, 'scope', copied_node.uid)
 
         for node in nodes:
-            attach_risk(eg_client, node.node, analyzer_name, risk_score)
+            node_uid = copied_nodes[node.node.node_key]
+            attach_risk(eg_client, node.node.node_key, node_uid, analyzer_name, risk_score)
 
         for edge_list in edges.values():
             for edge in edge_list:
@@ -395,5 +362,6 @@ if IS_LOCAL:
                 )
 
         except Exception as e:
-            print(e)
+            print('mainloop exception', e)
+            traceback.print_exc()
             time.sleep(2)
