@@ -1,7 +1,6 @@
 // Stylesheets
 console.log('entry.js init');
-
-const engagement_edge = "";
+const engagement_edge = "http://localhost:8900/";
 
 if (engagement_edge.length === 0) {
     console.assert("Engagement Edge URL can not be empty. Run build.sh");
@@ -824,6 +823,9 @@ const dgraphNodesToD3Format = (dgraphNodes) => {
             continue
         }
         const nodeType = getNodeType(node);
+        if (nodeType == 'Unknown') {
+            continue
+        }
         const nodeLabel = getNodeLabel(nodeType, node);
         nodes.push({
             name: node.uid,

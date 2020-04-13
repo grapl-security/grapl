@@ -360,7 +360,7 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
                 }
                 edges.append(edge)
             except Exception as e:
-                print(f'risk edge failed: {risk}')
+                print(f'risk edge failed: {risk} {e}')
 
         results.append({
             "node": node,

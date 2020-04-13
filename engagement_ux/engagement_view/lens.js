@@ -823,6 +823,9 @@ const dgraphNodesToD3Format = (dgraphNodes) => {
             continue
         }
         const nodeType = getNodeType(node);
+        if (nodeType === 'Unknown') {
+            continue
+        }
         const nodeLabel = getNodeLabel(nodeType, node);
         nodes.push({
             name: node.uid,
