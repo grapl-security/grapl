@@ -160,7 +160,8 @@ class ProcessQuery(Queryable[IProcessView]):
         return self
 
     def with_children(
-        self: "NQ", child_query: Optional["IProcessQuery"] = None
+        self: "NQ",
+        child_query: Optional["IProcessQuery"] = None
     ) -> "NQ":
         children = child_query or ProcessQuery()  # type: ProcessQuery
         children._parent = cast(ProcessQuery, self)

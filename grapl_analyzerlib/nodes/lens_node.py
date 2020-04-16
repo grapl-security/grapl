@@ -141,6 +141,9 @@ def copy_node(
 
     if not res:
         raise Exception("ERROR: Can not find res")
+    print('res', res)
+    if not res[0].get('dgraph.type'):
+        raise Exception("ERROR: Can not find res dgraph.type")
 
     raw_to_copy = {**res[0], **init_node}
 
@@ -263,12 +266,14 @@ class EngagementTransaction(CopyingTransaction):
     def query(
             self, query, variables=None, timeout=None, metadata=None, credentials=None
     ):
-        txn = super()
-        try:
-            txn.query(query, variables, timeout, metadata, credentials)
-            copied_uids = set(txn.get_copied_uids())
-        finally:
-            txn.discard()
+        copied_uids = set()
+
+        # txn = super()
+        # try:
+        #     txn.query(query, variables, timeout, metadata, credentials)
+        #     copied_uids.update(txn.get_copied_uids())
+        # finally:
+        #     txn.discard()
         # TODO: This is a hack. For some reason it doesn't copy edges properly the first time
         txn = super()
         try:

@@ -173,13 +173,12 @@ class Queryable(abc.ABC, Generic[NV]):
         self,
         dgraph_client: DgraphClient,
         first: Optional[int] = None,
-        contains_node_key: Optional[str] = None,
     ) -> int:
         query_str = generate_query(
             query_name="res",
             binding_modifier="res",
             root=self,
-            contains_node_key=contains_node_key,
+            contains_node_key=None,
             first=first,
             count=True,
         )

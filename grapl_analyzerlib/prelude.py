@@ -14,3 +14,9 @@ from grapl_analyzerlib.nodes.viewable import Viewable, NV
 from grapl_analyzerlib.nodes.comparators import Not
 
 from grapl_analyzerlib.execution import ExecutionHit
+from grapl_analyzerlib.grapl_client import (
+    MasterGraphClient,
+    LocalMasterGraphClient,
+    EngagementGraphClient,
+    LocalEngagementGraphClient,
+)
