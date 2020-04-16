@@ -1,5 +1,3 @@
-
-
 ## Queryables
 Grapl provides powerful primitives for building graph based queries.
 
@@ -103,3 +101,125 @@ query.query_first(mclient, contains_node_key="node-key-to-query")
 
 In this case, if our signature matches such that any of the nodes A, B, C, have the node_key
 "node-key-to-query", we have a match - otherwise, no match.
+
+
+### And, Or, Not
+
+##### And
+
+For a single predicate constraint (with_* method) all constraints are considered And'd.
+
+This query matches a process name that contains both "foo" and "bar".
+```python3
+ProcessQuery()
+.with_process_name(contains=["foo", "bar"])
+```
+
+##### Or
+Multiple predicate constraints are considered Or'd.
+
+This query matches a process name that contains either "foo" or "bar".
+```python3
+ProcessQuery()
+.with_process_name(contains="foo")
+.with_process_name(contains="bar")
+```
+
+##### Not
+Any constraint can be wrapped in a Not to negate the constraint.
+
+This query matches a process name that is *not* "foo".
+
+```python3
+ProcessQuery()
+.with_process_name(contains=Not("foo"))
+```
+
+
+##### All Together
+
+
+This query matches a process with a process_name that either is *not* 'foo' but ends
+with '.exe', *or* it will match a process with a process containing "bar" *and* "baz".
+
+```python3
+ProcessQuery()
+.with_process_name(contains=Not("foo"), ends_eith=".exe")
+.with_process_name(contains=["bar", baz])
+```
+
+
+
+### with_* methods
+
+Most Queryable classes provide a suite of methods starting with `with_*`.
+
+For example, ProcessQuery provides a `with_process_name`.
+
+[ProcessQuery.with_process_name](/nodes/process_node/#ProcessQuery)
+
+```python
+def with_process_name(
+    self,
+    eq: Optional["StrCmp"] = None,
+    contains: Optional["StrCmp"] = None,
+    ends_with: Optional["StrCmp"] = None,
+    starts_with: Optional["StrCmp"] = None,
+    regexp: Optional["StrCmp"] = None,
+    distance: Optional[Tuple["StrCmp", int]] = None,
+) -> ProcessQuery:
+    pass
+```
+
+The `process_name` field is indexed such that we can constrain our query through:
+###### eq
+Matches a node's `process_name` if it exactly matches `eq`
+```python3
+ProcessQuery().with_process_name(eq="svchost.exe")
+```
+
+###### contains
+Matches a node's `process_name` if it contains `contains`
+```python3
+ProcessQuery().with_process_name(contains="svc")
+```
+
+###### ends_with
+Matches a node's `process_name` if it ends with `ends_with`
+```python3
+ProcessQuery().with_process_name(ends_with=".exe")
+```
+
+###### starts_with
+Matches a node's `process_name` if it starts with `starts_with`
+```python3
+ProcessQuery().with_process_name(starts_with="svchost")
+```
+
+###### regexp
+Matches a node's `process_name` if it matches the regexp pattern `regexp`
+```python3
+ProcessQuery().with_process_name(regexp="svc.*exe")
+```
+
+###### distance
+Matches a node's `process_name` if it has a string distance of less than
+the provided threshold
+
+```python
+ProcessQuery().with_process_name(distance=("svchost", 2))
+```
+
+#### Example
+
+
+Here's an example where we look for processes with a `process_name` that is *not*
+equal to `svchost.exe`, but that has a very close string distance to it.
+
+```python3
+ProcessQuery()
+.with_process_name(eq=Not("svchost.exe"), distance=("svchost", 2))
+```
+
+
+

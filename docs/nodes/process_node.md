@@ -27,12 +27,7 @@
 ```python
 def with_node_key(
     self,
-    eq: Optional[str] = None,
-    contains: Optional[str] = None,
-    ends_with: Optional[str] = None,
-    starts_with: Optional[str] = None,
-    regexp: Optional[str] = None,
-    distance: Optional[str] = None,
+    eq: str,
 ) -> ProcessQuery:
     pass
 ```
@@ -47,7 +42,7 @@ def with_asset_id(
     ends_with: Optional[str] = None,
     starts_with: Optional[str] = None,
     regexp: Optional[str] = None,
-    distance: Optional[str] = None,
+    distance: Optional[Tuple["StrCmp", int]] = None,
 ) -> ProcessQuery:
     pass
 ```
@@ -61,7 +56,7 @@ def with_image_name(
     ends_with: Optional[str] = None,
     starts_with: Optional[str] = None,
     regexp: Optional[str] = None,
-    distance: Optional[str] = None,
+    distance: Optional[Tuple["StrCmp", int]] = None,
 ) -> ProcessQuery:
     pass
 ```
@@ -75,7 +70,7 @@ def with_process_name(
     ends_with: Optional[str] = None,
     starts_with: Optional[str] = None,
     regexp: Optional[str] = None,
-    distance: Optional[str] = None,
+    distance: Optional[Tuple["StrCmp", int]] = None,
 ) -> ProcessQuery:
     pass
 ```
@@ -89,7 +84,7 @@ def with_arguments(
     ends_with: Optional[str] = None,
     starts_with: Optional[str] = None,
     regexp: Optional[str] = None,
-    distance: Optional[str] = None,
+    distance: Optional[Tuple["StrCmp", int]] = None,
 ) -> ProcessQuery:
     pass
 ```
