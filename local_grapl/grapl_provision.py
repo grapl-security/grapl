@@ -363,6 +363,10 @@ def sqs_provision_loop():
 
 import threading
 
+def drop_all(client):
+    op = pydgraph.Operation(drop_all=True)
+    client.alter(op)
+
 
 if __name__ == '__main__':
 
@@ -382,6 +386,8 @@ if __name__ == '__main__':
     for i in range(0, 150):
         try:
             if not mg_succ:
+                drop_all(local_dg_provision_client)
+                time.sleep(1)
                 provision_mg(
                     local_dg_provision_client,
                 )
@@ -391,6 +397,8 @@ if __name__ == '__main__':
 
         try:
             if not eg_succ:
+                drop_all(local_eg_provision_client)
+                time.sleep(1)
                 provision_eg(
                     local_eg_provision_client,
                 )
