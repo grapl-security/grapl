@@ -76,9 +76,6 @@ def on_response(self, response: Viewable, output: Any):
 ```
 
 
-## Implementing an Analyzer
-
-
 #### SuspiciousSvchost Example
 
 Heres an example - we're going to write some logic to look for suspicious executions
