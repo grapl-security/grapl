@@ -1,17 +1,23 @@
-FROM python:3.7
-RUN apt-get update && apt-get install --upgrade -y zip
+FROM grapl/grapl-python-lambda-builder
 WORKDIR /lambda
 
-# Add the requiremts
-ADD requirements.txt /tmp
-RUN pip install --upgrade --quiet -t /lambda -r /tmp/requirements.txt 
-# Add your source code
-ADD src/ /lambda/
+COPY requirements.txt /tmp
+RUN pip install --quiet -t /lambda -r /tmp/requirements.txt
 
-# compile the lot.
+
+COPY src/ /lambda/
 RUN python -m compileall -q /lambda
 
 RUN zip --quiet -9r /lambda.zip .
-
 FROM scratch
+
+FROM grapl/grapl-python-lambda-builder
+
+ADD requirements.txt /tmp
+RUN pip install -r /tmp/requirements.txt
+
+WORKDIR /app
+COPY ./src/ /src/
+
 COPY --from=0 /lambda.zip /
+

@@ -158,8 +158,8 @@ class EngagementEdge extends cdk.Stack {
         this.event_handler = new lambda.Function(
             this, name, {
                 runtime: Runtime.PYTHON_3_7,
-                handler: `engagement_edge.lambda_handler`,
-                code: lambda.Code.asset(`./engagement_edge.zip`),
+                handler: `engagement_edge.app`,
+                code: lambda.Code.fromAsset(`./engagement_edge.zip`),
                 vpc: vpc,
                 environment: {
                     "EG_ALPHAS": engagement_graph.alphaNames.join(","),
@@ -345,6 +345,7 @@ class EventEmitter {
 class EventEmitters extends cdk.Stack {
     raw_logs_bucket: s3.Bucket;
     sysmon_logs_bucket: s3.Bucket;
+    aws_cloudtrail_logs_bucket: s3.Bucket;
     identity_mappings_bucket: s3.Bucket;
     unid_subgraphs_generated_bucket: s3.Bucket;
     subgraphs_generated_bucket: s3.Bucket;
@@ -357,6 +358,7 @@ class EventEmitters extends cdk.Stack {
     identity_mappings_topic: sns.Topic;
     raw_logs_topic: sns.Topic;
     sysmon_logs_topic: sns.Topic;
+    aws_cloudtrail_logs_topic: sns.Topic;
     unid_subgraphs_generated_topic: sns.Topic;
     subgraphs_generated_topic: sns.Topic;
     subgraph_merged_topic: sns.Topic;
@@ -380,6 +382,13 @@ class EventEmitters extends cdk.Stack {
                 bucketName: process.env.BUCKET_PREFIX + "-sysmon-log-bucket"
             });
 
+        let aws_cloudtrail_logs_bucket = new s3.Bucket(
+            this,
+            id + '-aws-cloudtrail-log-bucket',
+            {
+                bucketName: process.env.BUCKET_PREFIX + "-aws-resource-log-bucket"
+            });
+
         let identity_mappings_bucket = new s3.Bucket(
             this,
             id + '-identity-mappings-bucket',
@@ -394,6 +403,7 @@ class EventEmitters extends cdk.Stack {
                 bucketName: process.env.BUCKET_PREFIX + "-unid-subgraphs-generated-bucket"
             }
         );
+
         let subgraphs_generated_bucket =
             new s3.Bucket(this, id + '-subgraphs-generated-bucket', {
                 bucketName: process.env.BUCKET_PREFIX + "-subgraphs-generated-bucket"
@@ -432,6 +442,12 @@ class EventEmitters extends cdk.Stack {
             new sns.Topic(this, id + '-sysmon-log-topic', {
                 topicName: 'sysmon-log-topic'
             });
+
+        let aws_cloudtrail_logs_topic =
+            new sns.Topic(this, id + '-aws-cloudtrail-log-topic', {
+                topicName: 'aws-cloudtrail-log-topic'
+            });
+
         let identity_mappings_topic =
             new sns.Topic(this, id + '-identity-mappings-topic', {
                 topicName: 'identity-mappings-topic'
@@ -462,7 +478,6 @@ class EventEmitters extends cdk.Stack {
                 topicName: 'engagements-created-topic'
             });
 
-
         // S3 -> SNS Events
 
         raw_logs_bucket
@@ -475,6 +490,13 @@ class EventEmitters extends cdk.Stack {
                 s3.EventType.OBJECT_CREATED,
                 new s3Subs.SnsDestination(sysmon_logs_topic)
             );
+
+        aws_cloudtrail_logs_bucket
+            .addEventNotification(
+                s3.EventType.OBJECT_CREATED,
+                new s3Subs.SnsDestination(aws_cloudtrail_logs_topic)
+            );
+
         identity_mappings_bucket
             .addEventNotification(
                 s3.EventType.OBJECT_CREATED,
@@ -510,6 +532,7 @@ class EventEmitters extends cdk.Stack {
 
         this.raw_logs_bucket = raw_logs_bucket;
         this.sysmon_logs_bucket = sysmon_logs_bucket;
+        this.aws_cloudtrail_logs_bucket = aws_cloudtrail_logs_bucket;
         this.identity_mappings_bucket = identity_mappings_bucket;
         this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket;
         this.subgraphs_generated_bucket = subgraphs_generated_bucket;
@@ -520,6 +543,7 @@ class EventEmitters extends cdk.Stack {
 
         this.incident_topic = incident_topic;
         this.raw_logs_topic = raw_logs_topic;
+        this.aws_cloudtrail_logs_topic = aws_cloudtrail_logs_topic;
         this.sysmon_logs_topic = sysmon_logs_topic;
         this.identity_mappings_topic = identity_mappings_topic;
         this.unid_subgraphs_generated_topic = unid_subgraphs_generated_topic;
@@ -547,8 +571,8 @@ class SysmonSubgraphGenerator extends cdk.Stack {
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
-            "SYSMON_EVENT_CACHE_ADDR": sysmon_event_cache.cluster.attrRedisEndpointAddress,
-            "SYSMON_EVENT_CACHE_PORT": sysmon_event_cache.cluster.attrRedisEndpointPort,
+            "EVENT_CACHE_ADDR": sysmon_event_cache.cluster.attrRedisEndpointAddress,
+            "EVENT_CACHE_PORT": sysmon_event_cache.cluster.attrRedisEndpointPort,
         };
 
         const service = new Service(this, 'sysmon-subgraph-generator', environment, vpc);
@@ -561,6 +585,38 @@ class SysmonSubgraphGenerator extends cdk.Stack {
         service.publishesToBucket(writes_to);
     }
 }
+
+class AwsCloudtrailGenerator extends cdk.Stack {
+
+    constructor(
+        parent: cdk.App, id: string,
+        reads_from: s3.IBucket,
+        subscribes_to: sns.Topic,
+        writes_to: s3.IBucket,
+        vpc: Vpc,
+    ) {
+        super(parent, id + '-stack');
+
+        const event_cache = new RedisCluster(this, id + 'awscloudtraileventcache', vpc);
+        event_cache.connections.allowFromAnyIpv4(Port.allTcp());
+
+        const environment = {
+            "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
+            "EVENT_CACHE_ADDR": event_cache.cluster.attrRedisEndpointAddress,
+            "EVENT_CACHE_PORT": event_cache.cluster.attrRedisEndpointPort,
+        };
+
+        const service = new Service(this, 'grapl-aws-cloudtrail-subgraph-generator', environment, vpc);
+
+        service.event_handler.connections.allowToAnyIpv4(Port.allTraffic());
+        service.event_retry_handler.connections.allowToAnyIpv4(Port.allTraffic());
+
+        service.readsFrom(reads_from);
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
+        service.publishesToBucket(writes_to);
+    }
+}
+
 
 
 class GenericSubgraphGenerator extends cdk.Stack {
@@ -610,33 +666,6 @@ function addSubscription(scope, topic, subscription, raw?) {
         protocol: config.protocol,
         rawMessageDelivery: raw || config.rawMessageDelivery
     });
-}
-
-
-class NodeIdentityMapper extends cdk.Stack {
-
-    constructor(parent: cdk.App, id: string,
-                reads_from: s3.IBucket,
-                subscribes_to: sns.Topic,
-                vpc: ec2.Vpc
-    ) {
-        super(parent, id + '-stack');
-
-
-        const environment = {
-            "BUCKET_PREFIX": process.env.BUCKET_PREFIX
-        };
-
-        let service = new Service(this, 'node-identity-mapper', environment, vpc);
-
-
-        service.readsFrom(reads_from);
-
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
-
-        service.event_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.tcp(443), 'Allow outbound to S3');
-    }
 }
 
 
@@ -741,8 +770,8 @@ class AnalyzerDispatch extends cdk.Stack {
 
         const environment = {
             "BUCKET_PREFIX": process.env.BUCKET_PREFIX,
-            "DISPATCH_EVENT_CACHE_ADDR": dispatch_event_cache.cluster.attrRedisEndpointAddress,
-            "DISPATCH_EVENT_CACHE_PORT": dispatch_event_cache.cluster.attrRedisEndpointPort,
+            "EVENT_CACHE_ADDR": dispatch_event_cache.cluster.attrRedisEndpointAddress,
+            "EVENT_CACHE_PORT": dispatch_event_cache.cluster.attrRedisEndpointPort,
             "DISPATCHED_ANALYZER_BUCKET": writes_to.bucketName,
             "SUBGRAPH_MERGED_BUCKET": reads_from.bucketName,
         };
@@ -817,7 +846,7 @@ class AnalyzerExecutor extends cdk.Stack {
         service.event_handler.addToRolePolicy(policy);
         service.event_retry_handler.addToRolePolicy(policy);
 
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
 
         service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTraffic(), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTraffic(), 'Allow outbound to S3');
@@ -849,7 +878,7 @@ class EngagementCreator extends cdk.Stack {
         service.readsFrom(reads_from);
         service.publishesToTopic(publishes_to);
 
-        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue));
+        addSubscription(this, subscribes_to, new snsSubs.SqsSubscription(service.queues.queue), true);
 
         service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
         service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTcp(), 'Allow outbound to S3');
@@ -1164,7 +1193,7 @@ const getEdgeGatewayId = (integrationName: string, cb) => {
                 return
             }
         }
-        console.assert(false, 'Could not find any integrations. Ensure you have deployed engagement edge.')
+        console.warn(false, 'Could not find any integrations. Ensure you have deployed engagement edge.')
     });
 };
 
@@ -1452,13 +1481,13 @@ class Grapl extends cdk.App {
             network.grapl_vpc,
         );
 
-
-        new NodeIdentityMapper(
+        new AwsCloudtrailGenerator(
             this,
-            'grapl-node-identity-mapper',
-            event_emitters.identity_mappings_bucket,
-            event_emitters.identity_mappings_topic,
-            network.grapl_vpc
+            'grapl-aws-cloudtrail-subgraph-generator',
+            event_emitters.aws_cloudtrail_logs_bucket,
+            event_emitters.aws_cloudtrail_logs_topic,
+            event_emitters.unid_subgraphs_generated_bucket,
+            network.grapl_vpc,
         );
 
         new NodeIdentifier(
@@ -1541,3 +1570,4 @@ class Grapl extends cdk.App {
 }
 
 new Grapl().synth();
+

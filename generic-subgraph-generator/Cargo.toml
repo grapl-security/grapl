@@ -11,7 +11,8 @@ graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
 #graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions" , version="*"}
 
 
-sqs-lambda = "0.2.8"
+#sqs-lambda = "0.2.8"
+sqs-lambda = {path="../../../workspace/sqs-lambda/" , version="*"}
 
 serde_json = "*"
 serde = "1.0.71"
@@ -39,7 +40,8 @@ simple_logger = "1.0.1"
 lambda_runtime = "0.2.*"
 async-trait = "0.1.22"
 zstd = "0.5.1"
-tokio = "0.2.6"
+tokio = { version = "0.2.4", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
+
 tokio-compat = "0.1.2"
 #openssl-probe = "0.1.2"
 

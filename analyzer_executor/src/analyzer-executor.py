@@ -6,7 +6,11 @@ import os
 import random
 import sys
 import traceback
+import time
+
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
@@ -14,40 +18,58 @@ from typing import Any, Optional, Tuple, List, Dict, Type, Set
 
 import boto3
 import redis
-from collections import defaultdict
 from grapl_analyzerlib.analyzer import Analyzer
-
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
 from grapl_analyzerlib.nodes.any_node import NodeView
 from grapl_analyzerlib.nodes.queryable import Queryable, traverse_query_iter, generate_query
 from grapl_analyzerlib.nodes.subgraph_view import SubgraphView
 from pydgraph import DgraphClientStub, DgraphClient
 
+IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 IS_RETRY = os.environ['IS_RETRY']
 
 
-def parse_s3_event(event) -> str:
+class NopCache(object):
+    def set(self, key, value):
+        pass
+
+    def get(self, key):
+        return False
+
+
+if IS_LOCAL:
+    message_cache = NopCache()
+    hit_cache = NopCache()
+else:
+    MESSAGECACHE_ADDR = os.environ['MESSAGECACHE_ADDR']
+    MESSAGECACHE_PORT = int(os.environ['MESSAGECACHE_PORT'])
+
+    HITCACHE_ADDR = os.environ['HITCACHE_ADDR']
+    HITCACHE_PORT = os.environ['HITCACHE_PORT']
+
+    message_cache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
+    hit_cache = redis.Redis(host=HITCACHE_ADDR, port=int(HITCACHE_PORT), db=0)
+
+
+def parse_s3_event(s3, event) -> str:
     # Retrieve body of sns message
     # Decode json body of sns message
     print("event is {}".format(event))
-    msg = json.loads(event["body"])["Message"]
-    msg = json.loads(msg)
+    # msg = json.loads(event["body"])["Message"]
+    # msg = json.loads(msg)
 
-    record = msg["Records"][0]
-
-    bucket = record["s3"]["bucket"]["name"]
-    key = record["s3"]["object"]["key"]
-    return download_s3_file(bucket, key)
+    bucket = event["s3"]["bucket"]["name"]
+    key = event["s3"]["object"]["key"]
+    return download_s3_file(s3, bucket, key)
 
 
-def download_s3_file(bucket, key) -> str:
-    s3 = boto3.resource("s3")
+def download_s3_file(s3, bucket: str, key: str) -> str:
     obj = s3.Object(bucket, key)
     return obj.get()["Body"].read()
 
 
 def is_analyzer(analyzer_name, analyzer_cls):
-    if analyzer_name == 'Analyzer':
+    if analyzer_name == 'Analyzer':  # This is the base class
         return False
     return hasattr(analyzer_cls, 'get_queries') and \
            hasattr(analyzer_cls, 'build') and \
@@ -89,7 +111,8 @@ def get_analyzer_query_types(query: Queryable) -> Set[Type[Queryable]]:
     return query_types
 
 
-def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], analyzers: Dict[str, Analyzer], sender: Any):
+def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], analyzers: Dict[str, Analyzer],
+                   sender: Any):
     if not analyzers:
         print('Received empty dict of analyzers')
         return
@@ -142,8 +165,6 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
         response = json.loads(txn.query(query_str).json)
     finally:
         txn.discard()
-
-    print(f'query to analyzer map {result_name_to_analyzer}')
 
     analyzer_to_results = defaultdict(list)
     for result_name, results in response.items():
@@ -225,7 +246,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
         raise
 
 
-def emit_event(event: ExecutionHit) -> None:
+def emit_event(s3, event: ExecutionHit) -> None:
     print(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     event_s = json.dumps(
@@ -239,27 +260,23 @@ def emit_event(event: ExecutionHit) -> None:
     event_hash = hashlib.sha256(event_s.encode())
     key = base64.urlsafe_b64encode(event_hash.digest()).decode("utf-8")
 
-    s3 = boto3.resource("s3")
     obj = s3.Object(f"{os.environ['BUCKET_PREFIX']}-analyzer-matched-subgraphs-bucket", key)
     obj.put(Body=event_s)
 
-    # try:
-    #     obj.load()
-    # except ClientError as e:
-    #     if e.response['Error']['Code'] == "404":
-    #     else:
-    #         raise
-
-
-MESSAGECACHE_ADDR = os.environ['MESSAGECACHE_ADDR']
-MESSAGECACHE_PORT = int(os.environ['MESSAGECACHE_PORT'])
-
-message_cache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
-
-HITCACHE_ADDR = os.environ['HITCACHE_ADDR']
-HITCACHE_PORT = os.environ['HITCACHE_PORT']
-
-hit_cache = redis.Redis(host=HITCACHE_ADDR, port=int(HITCACHE_PORT), db=0)
+    if IS_LOCAL:
+        sqs = boto3.client(
+            'sqs',
+            region_name="us-east-1",
+            endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
+            aws_access_key_id='dummy_cred_aws_access_key_id',
+            aws_secret_access_key='dummy_cred_aws_secret_access_key',
+        )
+        send_s3_event(
+            sqs,
+            "http://sqs.us-east-1.amazonaws.com:9324/queue/engagement-creator-queue",
+            "local-grapl-analyzer-matched-subgraphs-bucket",
+            key,
+        )
 
 
 def check_msg_cache(file: str, node_key: str, msg_id: str) -> bool:
@@ -297,20 +314,25 @@ def lambda_handler(events: Any, context: Any) -> None:
     client_stubs = [DgraphClientStub("{}:9080".format(name)) for name in alpha_names]
     client = DgraphClient(*client_stubs)
 
+    s3 = get_s3_client()
+
     for event in events["Records"]:
-        data = parse_s3_event(event)
+        if not IS_LOCAL:
+            event = json.loads(event['body'])['Records'][0]
+        data = parse_s3_event(s3, event)
 
         message = json.loads(data)
 
         print(f'Executing Analyzer: {message["key"]}')
-        analyzer = download_s3_file(f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"])
+        analyzer = download_s3_file(s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"])
         analyzer_name = message["key"].split("/")[-2]
 
         subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
 
         # TODO: Validate signature of S3 file
+        print(f'event {event}')
         rx, tx = Pipe(duplex=False)  # type: Tuple[Connection, Connection]
-        p = Process(target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, event['messageId']))
+        p = Process(target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, ''))
 
         p.start()
         t = 0
@@ -330,7 +352,7 @@ def lambda_handler(events: Any, context: Any) -> None:
             # emit any hits to an S3 bucket
             if isinstance(result, ExecutionHit):
                 print(f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}")
-                emit_event(result)
+                emit_event(s3, result)
                 update_msg_cache(analyzer, result.root_node_key, message['key'])
                 update_hit_cache(analyzer_name, result.root_node_key)
 
@@ -339,3 +361,108 @@ def lambda_handler(events: Any, context: Any) -> None:
             ), f"Analyzer {analyzer_name} failed."
 
         p.join()
+
+
+### LOCAL HANDLER
+
+
+def into_sqs_message(bucket: str, key: str) -> str:
+    return json.dumps(
+        {
+            'Records': [
+                {
+                    'eventTime': datetime.utcnow().isoformat(),
+                    'principalId': {
+                        'principalId': None,
+                    },
+                    'requestParameters': {
+                        'sourceIpAddress': None,
+                    },
+                    'responseElements': {},
+                    's3': {
+                        'schemaVersion': None,
+                        'configurationId': None,
+                        'bucket': {
+                            'name': bucket,
+                            'ownerIdentity': {
+                                'principalId': None,
+                            }
+                        },
+                        'object': {
+                            'key': key,
+                            'size': 0,
+                            'urlDecodedKey': None,
+                            'versionId': None,
+                            'eTag': None,
+                            'sequencer': None
+                        }
+                    }
+
+                }
+            ]
+        }
+    )
+
+
+def send_s3_event(
+        sqs_client: Any,
+        queue_url: str,
+        output_bucket: str,
+        output_path: str,
+):
+    sqs_client.send_message(
+        QueueUrl=queue_url,
+        MessageBody=into_sqs_message(
+            bucket=output_bucket,
+            key=output_path,
+        )
+    )
+
+
+def get_s3_client():
+    if IS_LOCAL:
+        return boto3.resource(
+            's3',
+            endpoint_url="http://s3:9000",
+            aws_access_key_id='minioadmin',
+            aws_secret_access_key='minioadmin',
+        )
+
+    else:
+        return boto3.resource("s3")
+
+
+if IS_LOCAL:
+    while True:
+        try:
+
+            sqs = boto3.client(
+                'sqs',
+                region_name="us-east-1",
+                endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
+                aws_access_key_id='dummy_cred_aws_access_key_id',
+                aws_secret_access_key='dummy_cred_aws_secret_access_key',
+            )
+
+            res = sqs.receive_message(
+                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue",
+                WaitTimeSeconds=3,
+                MaxNumberOfMessages=10,
+            )
+
+            messages = res.get('Messages', [])
+            if not messages:
+                print('queue was empty')
+
+            s3_events = [(json.loads(msg['Body']), msg['ReceiptHandle']) for msg in messages]
+            for s3_event, receipt_handle in s3_events:
+                lambda_handler(s3_event, {})
+
+                sqs.delete_message(
+                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue",
+                    ReceiptHandle=receipt_handle,
+                )
+
+        except Exception as e:
+            print(e)
+            time.sleep(2)

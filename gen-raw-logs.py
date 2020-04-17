@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+import argparse
+import json
+from datetime import datetime
 
 try:
     from typing import Any, Dict, Union, Optional
@@ -17,6 +20,44 @@ def rand_str(l):
     # type: (int) -> str
     return ''.join(random.choice(string.ascii_uppercase + string.digits)
                    for _ in range(l))
+
+
+def into_sqs_message(bucket: str, key: str) -> str:
+    return json.dumps(
+        {
+            'Records': [
+                {
+                    'eventTime': datetime.utcnow().isoformat(),
+                    'principalId': {
+                        'principalId': None,
+                    },
+                    'requestParameters': {
+                        'sourceIpAddress': None,
+                    },
+                    'responseElements': {},
+                    's3': {
+                        'schemaVersion': None,
+                        'configurationId': None,
+                        'bucket': {
+                            'name': bucket,
+                            'ownerIdentity': {
+                                'principalId': None,
+                            }
+                        },
+                        'object': {
+                            'key': key,
+                            'size': 0,
+                            'urlDecodedKey': None,
+                            'versionId': None,
+                            'eTag': None,
+                            'sequencer': None
+                        }
+                    }
+
+                }
+            ]
+        }
+    )
 
 
 def main(prefix):
@@ -42,9 +83,17 @@ def main(prefix):
         )
     print(time.ctime())
 
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Send demo logs to Grapl')
+    parser.add_argument('--bucket_prefix', dest='bucket_prefix', required=True)
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
 
-    if len(sys.argv) != 2:
+    args = parse_args()
+    if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
     else:
-        main(sys.argv[1])
+        main(args.bucket_prefix)

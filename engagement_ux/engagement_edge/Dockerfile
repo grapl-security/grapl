@@ -1,23 +1,41 @@
-FROM python:3.7
-RUN apt-get update && apt-get install -y zip
+FROM grapl/grapl-python-lambda-builder
 WORKDIR /lambda
 
-# Add the requiremts
-ADD requirements.txt /tmp
-RUN pip install --quiet -t /lambda -r /tmp/requirements.txt 
-#&& \
-#    find /lambda -type d | xargs chmod ugo+rx && \
- #   find /lambda -type f | xargs chmod ugo+r
+COPY requirements.txt /tmp
+RUN pip install --quiet -t /lambda -r /tmp/requirements.txt
 
-# Add your source code
-ADD src/ /lambda/
-#RUN find /lambda -type d | xargs chmod ugo+rx && \
-#    find /lambda -type f | xargs chmod ugo+r
 
-# compile the lot.
+COPY src/ /lambda/
 RUN python -m compileall -q /lambda
 
 RUN zip --quiet -9r /lambda.zip .
-
 FROM scratch
+
+FROM grapl/grapl-python-lambda-builder
+
+ADD requirements.txt /tmp
+RUN pip install -r /tmp/requirements.txt
+
+RUN chalice new-project app/
+WORKDIR /app
+
+ADD src/engagement_edge.py /app/app.py
+
 COPY --from=0 /lambda.zip /
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

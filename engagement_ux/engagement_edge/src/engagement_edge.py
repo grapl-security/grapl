@@ -1,7 +1,8 @@
-import sys, traceback
 import json
 import os
 import time
+import uuid
+
 from hashlib import sha256, pbkdf2_hmac
 from hmac import compare_digest
 from random import uniform
@@ -10,20 +11,35 @@ from typing import List, Dict, Any, Optional
 import boto3
 import jwt
 import pydgraph
+from chalice import Chalice, Response, CORSConfig
 
 from grapl_analyzerlib.nodes.any_node import NodeView, raw_node_from_node_key
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
 from pydgraph import DgraphClient
 
+IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
+
+if IS_LOCAL:
+    os.environ['JWT_SECRET'] = str(uuid.uuid4())
+    os.environ['BUCKET_PREFIX'] = 'local-grapl'
+
 JWT_SECRET = os.environ['JWT_SECRET']
 ORIGIN = "https://" + os.environ['BUCKET_PREFIX'] + "engagement-ux-bucket.s3.amazonaws.com"
-ORIGIN_OVERRIDE = os.environ.get('ORIGIN_OVERRIDE', None)
-# ORIGIN = "http://localhost:63342"
+ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
+# ORIGIN = "http://127.0.0.1:8900"
 DYNAMO = None
 
+if IS_LOCAL:
+    EG_ALPHA = "engagement_graph:9080"
+else:
+    EG_ALPHA = "alpha0.engagementgraphcluster.grapl:9080"
+
+
+app = Chalice(app_name="engagement-edge")
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
-    client_stub = pydgraph.DgraphClientStub('alpha0.engagementgraphcluster.grapl:9080')
+    print(f'connecting to dgraph at {EG_ALPHA}')
+    client_stub = pydgraph.DgraphClientStub(EG_ALPHA)
     dg_client = pydgraph.DgraphClient(client_stub)
 
     # DGraph query for all nodes with a 'lens' that matches the 'prefix'
@@ -35,6 +51,7 @@ def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
                 {
                     uid,
                     node_key,
+                    node_type: dgraph.type,
                     lens,
                     score
                 }
@@ -48,6 +65,7 @@ def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
                 {
                     uid,
                     node_key,
+                    node_type: dgraph.type,
                     lens,
                     score
                 }
@@ -72,9 +90,11 @@ def edge_in_lens(dg_client: DgraphClient, node_uid: str, edge_name: str, lens_na
                 {edge_name} {{
                     uid,
                     node_key,
+                    node_type: dgraph.type,
                     
                     ~scope @filter(eq(lens, $lens_name)) {{
-                        uid
+                        uid,
+                        node_type: dgraph.type,
                     }}
                 }}
             }}
@@ -100,13 +120,14 @@ def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
         {  
             q0(func: eq(lens, $a)) {
                 uid,
+                node_type: dgraph.type,
                 node_key,
                 lens,
                 score,
                 scope {
                     uid,
                     expand(_all_),
-                    node_type: dgraph.type
+                    node_type: dgraph.type,
                 }
             }  
       }"""
@@ -122,12 +143,14 @@ def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
     finally:
         txn.discard()
 
-def get_lens_risks(dg_client: DgraphClient, lens: str) ->List[Dict[str, Any]]:
+
+def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
     query = """
         query q0($a: string)
         {  
-            q0(func: eq(lens, $a)) @cascade {
+            q0(func: eq(lens, $a)) {
                 uid,
+                node_type: dgraph.type,
                 node_key,
                 lens,
                 score,
@@ -137,7 +160,9 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) ->List[Dict[str, Any]]:
                     node_type: dgraph.type
                     risks {
                         uid,
+                        node_key,
                         analyzer_name,
+                        node_type: dgraph.type,
                         risk_score
                     }
                 }
@@ -155,6 +180,7 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) ->List[Dict[str, Any]]:
     finally:
         txn.discard()
 
+
 def expand_forward_edges_in_scope(dgraph_client: DgraphClient, node: NodeView, lens: str) -> None:
     for edge_name, edge_type in node._get_forward_edge_types().items():
 
@@ -171,8 +197,11 @@ def expand_forward_edges_in_scope(dgraph_client: DgraphClient, node: NodeView, l
                     if neighbor.get('~scope'):
                         neighbor.pop('~scope')
                     node_edge = getattr(node, edge_name)
-                    print(edge_name)
-                    neighbor_view = inner_edge_type(dgraph_client, node_key=neighbor['node_key'], uid=neighbor['uid'])
+                    try:
+                        neighbor_view = inner_edge_type(dgraph_client, node_key=neighbor['node_key'], uid=neighbor['uid'])
+                    except Exception as e:
+                        print(f'neighbor_view failed with: {e}')
+                        continue
                     print(neighbor_view, neighbor_view.uid, neighbor_view.node_key)
                     if isinstance(node_edge, list):
                         node_edge.append(neighbor_view)
@@ -215,7 +244,6 @@ def expand_reverse_edges_in_scope(dgraph_client: DgraphClient, node: NodeView, l
 
 def expand_concrete_nodes(dgraph_client: DgraphClient, lens_name: str,
                           concrete_nodes: List[NodeView]) -> None:
-
     for node in concrete_nodes:
         expand_forward_edges_in_scope(dgraph_client, node, lens_name)
         expand_reverse_edges_in_scope(dgraph_client, node, lens_name)
@@ -290,8 +318,10 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
         return []
     nodes = []
     for graph in current_graph['scope']:
-        nodes.append(NodeView.from_dict(dgraph_client, graph))
-
+        try:
+            nodes.append(NodeView.from_dict(dgraph_client, graph))
+        except Exception as e:
+            print('Failed to get NodeView from dict', e)
     if current_graph.get('scope'):
         current_graph.pop('scope')
 
@@ -319,15 +349,18 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
         edges = []
         risks = node.get("risks", [])
         if not risks:
-            print(f"WARN: Node in engagement graph has no connected risks {node['node_key']}")
+            print(f"WARN: Node in engagement graph has no connected risks {node}")
         for risk in risks:
-            risk['node_key'] = node['node_key'] + risk['analyzer_name']
-            edge = {
-                "from": node["node_key"],
-                "edge_name": "risks",
-                "to": risk['node_key']
-            }
-            edges.append(edge)
+            try:
+                risk['node_key'] = node['node_key'] + risk['analyzer_name']
+                edge = {
+                    "from": node["node_key"],
+                    "edge_name": "risks",
+                    "to": risk['node_key']
+                }
+                edges.append(edge)
+            except Exception as e:
+                print(f'risk edge failed: {risk} {e}')
 
         results.append({
             "node": node,
@@ -341,7 +374,8 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
 
 def try_get_updated_graph(body):
     print('Trying to update graph')
-    client_stub = pydgraph.DgraphClientStub('alpha0.engagementgraphcluster.grapl:9080')
+    print(f'connecting to dgraph at {EG_ALPHA}')
+    client_stub = pydgraph.DgraphClientStub(EG_ALPHA)
     dg_client = pydgraph.DgraphClient(client_stub)
 
     lens = body["lens"]
@@ -366,21 +400,29 @@ def try_get_updated_graph(body):
 
 
 def respond(err, res=None, headers=None):
+    print(f"responding, origin: {app.current_request.headers.get('origin', '')}")
     if not headers:
         headers = {}
 
-    return {
-        'statusCode': '400' if err else '200',
-        'body': {'error': err} if err else json.dumps({'success': res}),
-        'headers': {
-            'Access-Control-Allow-Origin': ORIGIN_OVERRIDE or ORIGIN,
-            'Access-Control-Allow-Credentials': True,
+    if IS_LOCAL:
+        override = app.current_request.headers.get('origin', '')
+        print(f'overriding origin with {override}')
+    else:
+        override = ORIGIN_OVERRIDE
+
+    return Response(
+        body={'error': err} if err else json.dumps({'success': res}),
+        status_code=400 if err else 200,
+        headers={
+            'Access-Control-Allow-Origin': override or ORIGIN,
+            'Access-Control-Allow-Credentials': 'true',
             'Content-Type': 'application/json',
             'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
             'X-Requested-With': '*',
+            "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
             **headers
-        },
-    }
+        }
+    )
 
 
 def get_salt_and_pw(table, username):
@@ -439,6 +481,8 @@ def create_user(username, cleartext):
 
 
 def login(username, password):
+    if IS_LOCAL:
+        return jwt.encode({'username': username}, JWT_SECRET, algorithm='HS256').decode('utf8')
     # Connect to dynamodb table
     table = user_auth_table()
 
@@ -477,7 +521,7 @@ def check_jwt(headers):
 
 
 def lambda_login(event):
-    body = json.loads(event['body'])
+    body = event.json_body
     login_res = login(body['username'], body['password'])
     # Clear out the password from the dict, to avoid accidentally logging it
     body['password'] = ''
@@ -485,45 +529,107 @@ def lambda_login(event):
     if login_res:
         return cookie
 
+cors_config = CORSConfig(
+    allow_origin=ORIGIN_OVERRIDE or ORIGIN,
+    allow_credentials='true',
+)
 
-def lambda_handler(event, context):
-    print(f'Received request, {event["path"]} {event["httpMethod"]}')
 
-    try:
-        if event['httpMethod'] == 'OPTIONS':
-            return respond(None, {})
+def requires_auth(path):
+    if not IS_LOCAL:
+        path = "/{proxy+}" + path
 
-        if '/login' in event['path']:
-            print('login')
-            cookie = lambda_login(event)
-            if cookie:
-                return respond(None, 'True', headers={'Set-Cookie': cookie})
-            else:
-                return respond('Failed to login')
+    def route_wrapper(route_fn):
+        @app.route(path, methods=["OPTIONS", "POST"])
+        def inner_route():
+            if app.current_request.method == "OPTIONS":
+                return respond(None, {})
 
-        if '/checkLogin' in event['path']:
-            print('logging in')
-            if check_jwt(event['headers']):
-                return respond(None, 'True')
-            else:
-                return respond(None, 'False')
+            if not IS_LOCAL:  # For now, disable authentication locally
+                if not check_jwt(app.current_request.headers):
+                    print('not logged in')
+                    return respond("Must log in")
+            try:
+                return route_fn()
+            except Exception as e:
+                print(e)
+                return respond("Unexpected Error")
+        return inner_route
+    return route_wrapper
 
-        if not check_jwt(event['headers']):
-            return respond("Must log in")
 
-        if '/update' in event['path']:
-            print('update')
-            update = try_get_updated_graph(json.loads(event["body"]))
-            return respond(None, update)
+def no_auth(path):
+    if not IS_LOCAL:
+        path = "/{proxy+}" + path
 
-        if '/getLenses' in event['path']:
-            print('getLenses')
-            prefix = json.loads(event["body"]).get('prefix', '')
-            lenses = list_all_lenses(prefix)
-            return respond(None, {'lenses': lenses})
+    def route_wrapper(route_fn):
+        @app.route(path, methods=["OPTIONS", "GET", "POST"])
+        def inner_route():
+            if app.current_request.method == "OPTIONS":
+                return respond(None, {})
+            try:
+                return route_fn()
+            except Exception as e:
+                print(e)
+                return respond("Unexpected Error")
+        return inner_route
+    return route_wrapper
 
-        return respond(f"Invalid path: {event['path']}", {})
-    except Exception as e:
-        print(f'Failed with: {e}')
-        traceback.print_exc()
-        return respond("UnknownError")
+
+@no_auth('/login')
+def login_route():
+    print('/login route')
+    request = app.current_request
+    cookie = lambda_login(request)
+    if cookie:
+        print('logged in')
+        return respond(None, 'True', headers={'Set-Cookie': cookie})
+    else:
+        print('not logged in')
+        return respond('Failed to login')
+
+
+@no_auth('/checkLogin')
+def check_login():
+    print('check login')
+    request = app.current_request
+    if check_jwt(request.headers):
+        return respond(None, 'True')
+    else:
+        return respond(None, 'False')
+
+
+@requires_auth("/update")
+def update():
+    print('/update')
+    request = app.current_request
+    update = try_get_updated_graph(request.json_body)
+    return respond(None, update)
+
+
+@requires_auth("/getLenses")
+def get_lenses():
+    request = app.current_request
+    prefix = request.json_body.get('prefix', '')
+    lenses = list_all_lenses(prefix)
+    return respond(None, {'lenses': lenses})
+
+
+@app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
+def nop_route():
+    print(app.current_request.context['path'])
+
+    print(vars(app.current_request))
+
+    path = app.current_request.context['path']
+
+    if path == '/prod/login':
+        return login_route()
+    elif path == '/prod/checkLogin':
+        return check_login()
+    elif path == '/prod/update':
+        return update()
+    elif path == '/prod/getLenses':
+        return get_lenses()
+
+    return respond('InvalidPath')
