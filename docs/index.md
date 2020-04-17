@@ -33,7 +33,7 @@ mclient = MasterGraphClient()
 
 svchosts = (
     ProcessQuery()
-    .with_process_name(eq="svchost")
+    .with_process_name(eq="svchost.exe")
     .query(mclient)  # Execute the query
 )  # type: List[ProcessView]
 ```
