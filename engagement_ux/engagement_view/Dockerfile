@@ -1,2 +1,2 @@
 FROM syntaqx/serve
-COPY . /var/www
+COPY ./build/ /var/www
