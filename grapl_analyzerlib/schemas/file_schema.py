@@ -1,8 +1,9 @@
-from grapl_analyzerlib.schemas.schema_builder import NodeSchema
+from grapl_analyzerlib.schemas.schema_builder import NodeSchema, ManyToMany
+from grapl_provision import RiskSchema
 
 
 class FileSchema(NodeSchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(FileSchema, self).__init__()
         (
             self.with_str_prop("file_name")
@@ -23,8 +24,23 @@ class FileSchema(NodeSchema):
             .with_str_prop("md5_hash")
             .with_str_prop("sha1_hash")
             .with_str_prop("sha256_hash")
+            .with_forward_edge(
+                'risks',
+                ManyToMany(RiskSchema),
+                'risky_nodes'
+            )
         )
 
     @staticmethod
     def self_type() -> str:
         return "File"
+
+
+if __name__ == '__main__':
+    from grapl_analyzerlib.schemas.schema_builder import generate_plugin_query, generate_plugin_view
+    schema = FileSchema()
+    query = generate_plugin_query(schema)
+    view = generate_plugin_view(schema)
+
+    print(query)
+    print(view)

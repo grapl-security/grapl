@@ -47,6 +47,8 @@ class FileQuery(Queryable["FileView"]):
         self._sha1_hash = []  # type: List[List[Cmp[str]]]
         self._sha256_hash = []  # type: List[List[Cmp[str]]]
 
+        self._risks = None  # type: Optional['RiskQuery']
+
         self._creator = None  # type: Optional['ProcessQuery']
         self._writers = None  # type: Optional['ProcessQuery']
         self._readers = None  # type: Optional['ProcessQuery']
@@ -337,6 +339,12 @@ class FileQuery(Queryable["FileView"]):
         cast("FileQuery", self)._readers = reader
         return self
 
+    def with_risks(self: "NQ", risks_query: Optional["RiskQuery"] = None) -> "NQ":
+        risks = risks_query or RiskQuery()  # type: RiskQuery
+        risks._risky_nodes = self
+        cast("FileQuery", self)._risks = risks
+        return self
+
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return "file_path", str
 
@@ -368,7 +376,15 @@ class FileQuery(Queryable["FileView"]):
         return cast("Mapping[str, PropertyFilter[Property]]", prop_filters)
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
-        return {}
+        forward_edges = {
+            "risks": self._risks,
+        }
+
+        filtered = {
+            re[0]: re[1] for re in forward_edges.items() if re[1] is not None
+        }
+
+        return cast("Mapping[str, Queryable]", filtered)
 
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
         reverse_edges = {
@@ -415,6 +431,7 @@ class FileView(Viewable):
         readers: Optional[List["ProcessView"]] = None,
         deleter: Optional["ProcessView"] = None,
         spawned_from: Optional[List["ProcessView"]] = None,
+        risks: Optional[List["RiskView"]] = None,
     ) -> None:
         super(FileView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
 
@@ -453,6 +470,7 @@ class FileView(Viewable):
         self.readers = readers or []
         self.deleter = deleter
         self.spawned_from = spawned_from or []
+        self.risks = risks or []
 
     def get_node_type(self) -> str:
         return 'File'
@@ -568,7 +586,24 @@ class FileView(Viewable):
             return self.sha256_hash
         self.sha256_hash = cast(str, self.fetch_property("sha256_hash", str))
         return self.sha256_hash
+    
+    def get_risks(
+            self: "NV", match_risks: Optional["IRiskQuery"] = None
+    ) -> "List[NV]":
+        _match_risks = match_risks or RiskQuery()  # type: RiskQuery
 
+        self_node = (
+            FileQuery()
+            .with_node_key(eq=self.node_key)
+            .with_risks(_match_risks)
+            .query_first(self.dgraph_client)
+        )
+
+        if self_node:
+            cast(FileView, self).risks = self_node.risks
+
+        return cast(FileView, self).risks
+    
     def get_spawned_from(
             self: "NV", match_spawned_from: Optional["IProcessQuery"] = None
     ) -> Optional["NV"]:
@@ -613,7 +648,9 @@ class FileView(Viewable):
 
     @staticmethod
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
-        return {}
+        return {
+            'risks': [RiskView]
+        }
 
     @staticmethod
     def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
@@ -651,7 +688,14 @@ class FileView(Viewable):
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
 
     def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
-        return dict()
+        f_edges = {
+            "risks": self.risks,
+        }
+
+        forward_edges = {
+            name: value for name, value in f_edges.items() if value is not None
+        }
+        return cast("Mapping[str, ForwardEdgeView]", forward_edges)
 
     def _get_reverse_edges(self) -> "Mapping[str,  ReverseEdgeView]":
         reverse_edges = {
@@ -670,3 +714,4 @@ class FileView(Viewable):
 
 
 from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView, IProcessQuery
+from grapl_analyzerlib.nodes.risk_node import RiskQuery, IRiskQuery, RiskView

@@ -2,7 +2,7 @@ from grapl_analyzerlib.schemas.schema_builder import NodeSchema, ManyToOne
 
 
 class IpConnectionSchema(NodeSchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(IpConnectionSchema, self).__init__()
         (
             self.with_str_prop("src_ip_address")

@@ -7,7 +7,7 @@ from grapl_analyzerlib.schemas.schema_builder import (
 
 
 class ProcessSchema(NodeSchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(ProcessSchema, self).__init__()
         (
             self.with_int_prop("process_id")

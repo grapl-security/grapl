@@ -37,6 +37,10 @@ class ProcessQuery(Queryable[IProcessView]):
             None
         )  # type: Optional['IProcessInboundConnectionQuery']
 
+        self._risks = (
+            None
+        )  # type: Optional['IRiskQuery']
+
         # Reverse edges
         self._parent = None  # type: Optional['ProcessQuery']
 
@@ -177,7 +181,8 @@ class ProcessQuery(Queryable[IProcessView]):
         return self
 
     def with_created_files(
-        self: "NQ", created_files_query: Optional["IFileQuery"] = None
+        self: "NQ",
+        created_files_query: Optional["IFileQuery"] = None
     ) -> "NQ":
         created_files = created_files_query or FileQuery()
         created_files._creator = cast(ProcessQuery, self)
@@ -242,7 +247,13 @@ class ProcessQuery(Queryable[IProcessView]):
             inbound_connection_query or ProcessInboundConnectionQuery()
         )  # type: ProcessInboundConnectionQuery
         inbound_connection._bound_by = self
-        self._inbound_connections = inbound_connection
+        cast("ProcessQuery", self)._inbound_connections = inbound_connection
+        return self
+
+    def with_risks(self: "NQ", risks_query: Optional["RiskQuery"] = None) -> "NQ":
+        risks = risks_query or RiskQuery()  # type: RiskQuery
+        risks._risky_nodes = self
+        cast("ProcessQuery", self)._risks = risks
         return self
 
     def with_parent(self: "NQ", parent_query: Optional["IProcessQuery"] = None) -> "NQ":
@@ -286,6 +297,7 @@ class ProcessQuery(Queryable[IProcessView]):
             "wrote_files": self._wrote_files,
             "created_connections": self._created_connections,
             "inbound_connections": self._inbound_connections,
+            "risks": self._risks,
         }
 
         return {fe[0]: fe[1] for fe in forward_edges.items() if fe[1] is not None}
@@ -327,6 +339,7 @@ class ProcessView(Viewable):
             List["ProcessInboundConnectionQuery"]
         ] = None,
         parent: Optional["NV"] = None,
+        risks: Optional[List["RiskView"]] = None,
     ) -> None:
         super(ProcessView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
         self.process_id = process_id
@@ -346,6 +359,7 @@ class ProcessView(Viewable):
         self.created_connections = created_connections or []
         self.inbound_connections = inbound_connections or []
         self.bin_file = bin_file
+        self.risks = risks or []
         self.parent = parent
 
     def get_node_type(self) -> str:
@@ -483,6 +497,23 @@ class ProcessView(Viewable):
         )
         return cast(ProcessView, self).deleted_files
 
+    def get_risks(
+            self: "NV", match_risks: Optional["IRiskQuery"] = None
+    ) -> "List[RiskView]":
+        _match_risks = match_risks or RiskQuery()  # type: RiskQuery
+
+        self_node = (
+            ProcessQuery()
+            .with_node_key(eq=self.node_key)
+            .with_risks(_match_risks)
+            .query_first(self.dgraph_client)
+        )
+
+        if self_node:
+            cast(ProcessView, self).risks = self_node.risks
+
+        return cast(ProcessView, self).risks
+
     def get_parent(
         self: "NV", match_parent: Optional["IProcessQuery"] = None
     ) -> Optional["NV"]:
@@ -514,6 +545,7 @@ class ProcessView(Viewable):
 
         return {
             "children": [ProcessView],
+            "risks": [RiskView],
             "bin_file": FileView,
             "created_files": [FileView],
             "created_connections": [ProcessOutboundConnectionView],
@@ -593,3 +625,5 @@ from grapl_analyzerlib.nodes.process_outbound_network_connection import (
     ProcessOutboundConnectionView,
     IProcessOutboundConnectionQuery,
     ProcessOutboundConnectionQuery)
+
+from grapl_analyzerlib.nodes.risk_node import RiskQuery, IRiskQuery, RiskView

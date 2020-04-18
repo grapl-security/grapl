@@ -192,7 +192,7 @@ class NodeQuery(Queryable):
         return None
 
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
-        return self.dynamic_property_filters
+        return {}
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
         return self.dynamic_forward_edge_filters

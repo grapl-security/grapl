@@ -1,5 +1,9 @@
 from grapl_analyzerlib.schemas.schema_builder import NodeSchema
 
+from grapl_analyzerlib.schemas.any_node_schema import AnyNodeSchema
+from grapl_analyzerlib.schemas.asset_schema import AssetSchema
+from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
+from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
 from grapl_analyzerlib.schemas.process_schema import ProcessSchema
 from grapl_analyzerlib.schemas.file_schema import FileSchema
 from grapl_analyzerlib.schemas.ip_connection_schema import IpConnectionSchema

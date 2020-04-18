@@ -2,7 +2,7 @@ from grapl_analyzerlib.schemas.schema_builder import NodeSchema, ManyToOne
 
 
 class ProcessOutboundConnectionSchema(NodeSchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(ProcessOutboundConnectionSchema, self).__init__()
         (
             self.with_str_prop("ip_address")

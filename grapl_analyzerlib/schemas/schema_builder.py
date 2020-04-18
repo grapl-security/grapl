@@ -180,7 +180,7 @@ UidType = Union[ManyToOne, ManyToMany, OneToMany, OneToOne]
 def generate_with_str_prop_method(node_type: str, prop_name: str) -> str:
     return f"""
     def with_{prop_name}(
-            self,
+            self: "NQ",
             eq: Optional[StrCmp] = None,
             contains: Optional[StrCmp] = None,
             ends_with: Optional[StrCmp] = None,
@@ -188,8 +188,8 @@ def generate_with_str_prop_method(node_type: str, prop_name: str) -> str:
             regexp: Optional[StrCmp] = None,
             distance: Optional[Tuple[StrCmp, int]] = None,
     ) -> 'NQ':
-        self.set_str_property_filter(
-            "{prop_name}", _str_cmps(
+        cast("{node_type}", self)._{prop_name}.extend(
+            _str_cmps(
                 "{prop_name}",
                 eq=eq,
                 contains=contains,
@@ -211,9 +211,7 @@ def generate_with_int_prop_method(node_type: str, prop_name: str) -> str:
             gt: Optional['IntCmp'] = None,
             lt: Optional['IntCmp'] = None,
     ) -> 'NQ':
-        self.set_int_property_filter(
-            "{prop_name}", _int_cmps("{prop_name}", eq=eq, gt=gt, lt=lt)
-        )
+        cast("{node_type}", self)._{prop_name}.extend(_int_cmps("{prop_name}", eq, gt, lt))
         return self
     """
 
@@ -230,9 +228,10 @@ def generate_with_f_edge_method(
     ) -> 'NQ':
         {f_edge_name} = {f_edge_name}_query or {edge_type_str}()
 
-        self.set_forward_edge_filter("{f_edge_name}", {f_edge_name})
-        {f_edge_name}.set_reverse_edge_filter("~{f_edge_name}", self, "{f_edge_name}")
-        return self        
+        {f_edge_name} = {f_edge_name}_query or {edge_type_str}()  # type: {edge_type_str}
+        {f_edge_name}._{r_edge_name} = cast({node_type}Query, self)
+        cast({node_type}Query, self)._{f_edge_name} = {f_edge_name}
+        return self
         """
 
 
@@ -245,8 +244,7 @@ from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 from grapl_analyzerlib.nodes.comparators import Cmp, IntCmp, _int_cmps, StrCmp, _str_cmps
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
-
-from pydgraph import DgraphClient
+from grapl_analyzerlib.nodes.queryable import NQ
     """
     return imports
 
@@ -298,8 +296,8 @@ def generate_plugin_query(plugin_schema: NodeSchema) -> str:
 
 I{query_type} = TypeVar('I{query_type}', bound='{query_type}')
 
-class {query_type}(DynamicNodeQuery):
-    def __init__(self):
+class {query_type}(DynamicNodeQuery['{view_type}']):
+    def __init__(self) -> None:
         super({query_type}, self).__init__('{plugin_schema.self_type()}',{view_type})
 """
     query += f"{int_query_cmps}"
@@ -356,7 +354,7 @@ def plugin_view_init(plugin_schema: NodeSchema) -> str:
     
     def __init__(
             self,
-            dgraph_client: DgraphClient,
+            dgraph_client: GraphClient,
             node_key: str,
             uid: str,
             node_type: str,
@@ -666,12 +664,12 @@ def attach_reverse_edges(client: DgraphClient, schema: NodeSchema):
 #     auid_assumption_query_extensions = generate_plugin_query_extensions(auid_assumption_schema)
 #     auid_assumption_view_extensions = generate_plugin_view_extensions(auid_assumption_schema)
 #
-#     auid_schema = AuidSchema()
-#     auid_query = generate_plugin_query(auid_schema)
-#     auid_view = generate_plugin_view(auid_schema)
-#     auid_query_extensions = generate_plugin_query_extensions(auid_schema)
-#     auid_view_extensions = generate_plugin_view_extensions(auid_schema)
-#
+    # auid_schema = AuidSchema()
+    # auid_query = generate_plugin_query(auid_schema)
+    # auid_view = generate_plugin_view(auid_schema)
+    # auid_query_extensions = generate_plugin_query_extensions(auid_schema)
+    # auid_view_extensions = generate_plugin_view_extensions(auid_schema)
+
 #     print(auid_query)
 #     print(auid_view)
 #     print(auid_query_extensions)

@@ -44,7 +44,26 @@ class Queryable(abc.ABC, Generic[NV]):
         )  # type: Dict[str, 'PropertyFilter[Property]']
 
     def extend(self, extended_type: Type[NQ]) -> NQ:
-        return extended_type(self.view_type)
+        extended_self = extended_type(self.view_type)
+        extended_self._node_key = self._node_key
+        extended_self._uid = self._uid
+        extended_self._query_id = self._query_id
+        extended_self.view_type = self.view_type
+        extended_self.dynamic_forward_edge_filters = self.dynamic_forward_edge_filters
+        extended_self.dynamic_reverse_edge_filters = self.dynamic_reverse_edge_filters
+        extended_self.dynamic_property_filters = self.dynamic_property_filters
+
+        for prop_filter in self._get_property_filters().items():
+            setattr(extended_self, '_' + prop_filter[0], prop_filter[1])
+
+        for f_edge_filter in self._get_forward_edges().items():
+            setattr(extended_self, '_' + f_edge_filter[0], f_edge_filter[1])
+
+        for r_edge_filter in self._get_reverse_edges().values():
+            setattr(extended_self, '_' + r_edge_filter[1], r_edge_filter[0])
+
+        # We need to add any other queries for this node
+        return extended_self
 
     def with_node_key(self: 'NQ', eq: str) -> 'NQ':
         self._node_key = [[Eq("node_key", eq)]]

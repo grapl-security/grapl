@@ -2,7 +2,7 @@ from grapl_analyzerlib.schemas.schema_builder import NodeSchema, ManyToMany
 
 
 class IpAddressSchema(NodeSchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(IpAddressSchema, self).__init__()
 
         (
