@@ -13,7 +13,7 @@ impl IpAddress {
         let ip_address = ip_address.into();
 
         Self {
-            node_key: Uuid::new_v4().to_string(),
+            node_key: ip_address.to_string(),
             ip_address,
             first_seen_timestamp,
             last_seen_timestamp,

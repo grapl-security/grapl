@@ -54,7 +54,7 @@ def create_edge(client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
         txn.discard()
 
 
-def attach_risk(client: DgraphClient, node_key: str, node_uid: str, analyzer_name: str, risk_score: int):
+def attach_risk(client: DgraphClient, node_key: str, node_uid: str, analyzer_name: str, risk_score: int) -> None:
 
     risk_node = {
         'node_key': node_key + analyzer_name,
@@ -97,6 +97,9 @@ def recalculate_score(client: DgraphClient, lens: LensView) -> int:
 
         redundant_risks = set()
         risk_map = defaultdict(list)
+        if not res:
+            logging.warning("Received an empty response for risk query")
+            return 0
         for root_node in res[0]['scope']:
             for risk in root_node['risks']:
                 if risk['analyzer_name'] in redundant_risks:
@@ -149,7 +152,7 @@ def set_property(client: DgraphClient, uid: str, prop_name: str, prop_value):
         txn.discard()
 
 
-def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> None:
+def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
     if node_dict.get('uid'):
         node_dict.pop('uid')
     node_dict['uid'] = '_:blank-0'
