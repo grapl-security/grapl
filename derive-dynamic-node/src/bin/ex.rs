@@ -36,6 +36,7 @@ struct InstanceDetails {
 pub struct AwsEc2Instance {
     #[grapl(static_id)]
     arn: String,
+    #[grapl(static_id)]
     launch_time: u64,
 }
 

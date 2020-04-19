@@ -180,10 +180,10 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
         })
         .fold(quote!(), |mut acc, f| {
             let f = f.to_string();
-            acc.extend(quote!(#f .to_string()));
+            acc.extend(quote!(#f .to_string(), ));
             acc
         });
-
+    
     assert!(id_fields.to_string().len() > 0);
 
     let struct_name = &input.ident;
