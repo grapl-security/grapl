@@ -6,6 +6,17 @@ import { Formik, Field, Form } from "formik";
 
 const engagement_edge = "http://localhost:8900/";
 
+export const checkLogin = async () => {
+    const res = await fetch(`${engagement_edge}checkLogin`, {
+        method: 'get',
+        credentials: 'include',
+    });
+
+    const body = await res.json();
+
+    return body['success'] === 'True';
+};
+
 export const LogIn = (props: any) => {
   return (
     <div className = "backgroundImage">

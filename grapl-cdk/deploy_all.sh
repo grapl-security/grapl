@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+rm ./edge_ux_package/*;
 npm run build &&
 cdk deploy --require-approval=never grapl-event-emitters-stack && \
 cdk deploy --require-approval=never graplvpcs-stack && \

@@ -6,6 +6,7 @@ import {Runtime} from "@aws-cdk/aws-lambda";
 import {Duration} from '@aws-cdk/core';
 import {NetworkMode} from "@aws-cdk/aws-ecs";
 
+
 const AWS = require('aws-sdk');
 const uuidv4 = require('uuid/v4');
 
@@ -29,7 +30,7 @@ import ecs = require('@aws-cdk/aws-ecs');
 import apigateway = require('@aws-cdk/aws-apigateway');
 
 const env = require('node-env-file');
-
+const dir = require('node-dir');
 
 class RedisCluster extends cdk.Construct {
     securityGroup: ec2.SecurityGroup;
@@ -1161,10 +1162,9 @@ const replaceInFile = (toModify, toReplace, replaceWith, outputFile) => {
         if (err) {
             return console.log(err);
         }
-        const replaced = data.replace(toReplace, replaceWith);
-        if (replaced === data) {
-            console.log(`No replaced text - did you forget to build engagement ux?`)
-        }
+
+        const replaced = data.split(toReplace).join(replaceWith);
+
         if (outputFile) {
             fs.writeFile(outputFile, replaced, 'utf8', (err) => {
                 if (err) return console.log(err);
@@ -1220,34 +1220,51 @@ class EngagementUx extends cdk.Stack {
             (gatewayId) => {
                 const edgeUrl = `https://${gatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
 
-                const filesToModify = ["index.js", "lenses.js", "lens.js"];
+                const toReplace = "http://localhost:8900/";
+                const replacement = `${edgeUrl}`;
 
-                const toReplace = /const engagement_edge = ".*";/;
-                const replacement = `const engagement_edge = "${edgeUrl}";`;
+                console.log(__dirname)
+                dir.readFiles(path.join(__dirname, 'edge_ux/'),
+                    function(err, content, filename, next) {
+                        if (err) throw err;
 
-                for (const toModifyName of filesToModify) {
-                    const toModify = path.join(__dirname, 'edge_ux/', toModifyName);
-                    replaceInFile(
-                        toModify,
-                        toReplace,
-                        replacement,
-                        path.join(__dirname, 'edge_ux_package/', toModifyName)
-                    )
-                }
+                        const targetDir = path.dirname(filename).replace("edge_ux", "edge_ux_package");
+
+                        if (!fs.existsSync(targetDir)) {
+                            fs.mkdirSync(targetDir, {recursive: true});
+                        }
+
+                        const newPath = filename.replace("edge_ux", "edge_ux_package");
+
+                        replaceInFile(
+                            filename,
+                            toReplace,
+                            replacement,
+                            newPath
+                        )
+                        // if (path.extname(newPath) === '.js' || path.extname(newPath) === '.html') {
+                        //     console.log("replacing: ", newPath)
+                        //     replaceInFile(
+                        //         filename,
+                        //         toReplace,
+                        //         replacement,
+                        //         newPath
+                        //     )
+                        // } else {
+                        //     fs.copyFile(filename, newPath, (err) => {
+                        //         if (err) throw err;
+                        //     });
+                        // }
+                        next()
+                    },
+                    function(err, files){
+                        if (err) throw err;
+                    });
             });
-
-        for (const toCopyName of ['index.html', 'lenses.html', 'lens.html']) {
-            const srcPath = path.join(__dirname, 'edge_ux/', toCopyName);
-            const dstPath = path.join(__dirname, 'edge_ux_package/', toCopyName);
-            fs.copyFile(srcPath, dstPath, (err) => {
-                if (err) throw err;
-            });
-        }
 
         new s3deploy.BucketDeployment(this, id + 'Ux', {
             sources: [s3deploy.Source.asset('./edge_ux_package')],
             destinationBucket: edgeBucket,
-            destinationKeyPrefix: 'web/static/v0/'
         });
     }
 }

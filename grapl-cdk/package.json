@@ -31,6 +31,7 @@
     "@aws-cdk/core": "^1.14.0",
     "@types/node": "^10.14.6",
     "aws-cdk": "^1.14.0",
+    "node-dir": "^0.1.17",
     "node-env-file": "^0.1.8",
     "uuid": "^3.3.3"
   }
