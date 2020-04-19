@@ -157,3 +157,4 @@ This requires the [boto3](https://github.com/boto/boto3) and [zstd](https://pypi
 *Note that this may impose charges to your AWS account.*
 
 To use the Grapl UX you must navigate to the `index.html` in the grapl ux bucket.
+https://<YOUR_BUCKET_PREFIX>engagement-ux-bucket.s3.amazonaws.com/index.html

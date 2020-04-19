@@ -19,17 +19,22 @@ const Router = ({}: any) => {
     // if there is no last page
     const [routeState, setRouteState] = React.useState({
         curPage: localStorage.getItem("grapl_curPage") || "login",
+        lastCheckLoginCheck: Date.now(),
     })
 
 
+
     useEffect(() => {
-        checkLogin()
-            .then((loggedIn) => {
-                console.log('Not logged in, redirecting.');
-                if (!loggedIn) {
-                    redirectTo(routeState, setRouteState, "login")
-                }
-            })
+        if (routeState.curPage !== "login") {
+            if (Date.now() - routeState.lastCheckLoginCheck > 1000) {
+                checkLogin()
+                    .then((loggedIn) => {
+                        console.log('Not logged in, redirecting.');
+                        if (!loggedIn && routeState.curPage !== "login") {
+                            redirectTo(routeState, setRouteState, "login")
+                        }
+                    })
+            }}
     });
 
     if (routeState.curPage === "login") {
