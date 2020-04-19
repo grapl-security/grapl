@@ -14,7 +14,7 @@ impl IpPort {
         let protocol = protocol.into();
 
         Self {
-            node_key: Uuid::new_v4().to_string(),
+            node_key: format!("{}{}{}", ip_address, port, protocol),
             ip_address,
             port: port as u32,
             protocol,
