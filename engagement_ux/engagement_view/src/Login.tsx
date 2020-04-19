@@ -21,8 +21,8 @@ export const LogIn = (props: any) => {
           const loginSuccess = login(values.userName, password);
 
           if (loginSuccess) {
+            props.loginSuccess();
             console.log("Logged in");
-            props.history.push("/engagements");
           } else {
             console.warn("Login failed!")
           }
