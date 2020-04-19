@@ -64,7 +64,7 @@ function ToggleLensTable({setLens}: any) {
             console.log(response.lenses);
             setState({
                 ...state,
-                lenses: response.lenses,
+                lenses: response.lenses || [],
             })
         })
     }, []);
@@ -90,7 +90,7 @@ function ToggleLensTable({setLens}: any) {
             </div>
 
             <div className="lensToggle">
-                {state.toggled && 
+                {state.toggled && state.lenses &&
                     state.lenses.map(
                         (_lens) => {
                             const lens = _lens as any;
