@@ -1,6 +1,6 @@
 [package]
 name = "derive-dynamic-node"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
