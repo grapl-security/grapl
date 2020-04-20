@@ -2,6 +2,7 @@ import React, {useEffect} from 'react';
 import './LogIn.css';
 import {checkLogin, LogIn} from './Login';
 import {EngagementUx} from "./components/SideBar";
+// import {PageNotFound} from "./components/PageNotFound";
 
 console.log("App loading");
 
@@ -54,12 +55,12 @@ const Router = ({}: any) => {
     // #TODO: This should be a nice landing page explaining that something has gone
     // wrong, and give a redirect back to the login page
     console.warn("Invalid Page State");
-    return <div>"Invalid Page State"</div>
+    return <div>Invalid Page State</div>
+    // <PageNotFound />
 }
 
 
 export default function App() {
-
     console.log("App loaded");
     return (
         <>

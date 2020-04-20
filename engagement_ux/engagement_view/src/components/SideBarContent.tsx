@@ -8,7 +8,11 @@ import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import LensIcon from '@material-ui/icons/Lens';
 import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
-
+import Table from "@material-ui/core/Table";
+import TableBody from "@material-ui/core/TableBody";
+import TableCell from "@material-ui/core/TableCell";
+import TableContainer from "@material-ui/core/TableContainer";
+import TableRow from "@material-ui/core/TableRow";
 
 const useStyles = makeStyles({
     root:{
@@ -33,21 +37,33 @@ const useStyles = makeStyles({
     },
     header:{
         display: "flex"
-    }
+    }, 
+    table: {
+        minWidth: 450
+    },
 });
 
-function Lens(props: any) {
-    // #TODO: Only set the lens on click
+function createData(name: string) {
+    return { name };
+}
+
+function SelectLens(props: any) {
+    const classes = useStyles(); 
+    // lensRows.push(createData(props.setLens(props.lens) ))
     return (
         <>
-            <Button 
-                onClick={
-                    () => { 
-                        props.setLens(props.lens)    
-                    }
-            }>
-                {props.lens + "\t\t" + props.score}
-            </Button>
+                <TableRow key={props.lens}>
+                        <TableCell component="th" scope="row">
+                        <Button 
+                            onClick={
+                                () => { 
+                                    props.setLens(props.lens)    
+                                }
+                        }>
+                            {props.lens + "\t\t" + props.score}
+                        </Button>
+                        </TableCell>
+                    </TableRow>
         </>
     )
 }
@@ -57,10 +73,10 @@ function ToggleLensTable({setLens}: any) {
         toggled: true,
         lenses: [],
     });
-    const classes = useStyles();
-    useEffect(() => {
 
-        console.log("Graph useEffect");
+    const classes = useStyles();
+
+    useEffect(() => {
         const interval = setInterval(() => {
             console.log("Fetching lenses");
             getLenses()
@@ -85,15 +101,14 @@ function ToggleLensTable({setLens}: any) {
                     LENSES 
                 </b>
                 <Button
-                    // variant="contained"
-                    // color="primary"
                     className = {classes.button}
                     onClick={() => { 
                         setState({
                             ...state,
                             toggled: !state.toggled,
                         }) 
-                    }}> <ExpandMoreIcon className={classes.expand}/> 
+                    }}> 
+                    <ExpandMoreIcon className={classes.expand}/> 
                 </Button>
             </div>
 
@@ -102,17 +117,28 @@ function ToggleLensTable({setLens}: any) {
                     state.lenses.map(
                         (_lens) => {
                             const lens = _lens as any;
-                            return <Lens 
-                                key={new Number(lens.uid)}
-                                uid={lens.uid}
-                                lens={lens.lens}
-                                score={lens.score}
-                                setLens={setLens}
-                            />
+                            // lensRows.push(lens);
+                            return(
+                                <TableContainer>
+                                    <Table className={classes.table} aria-label="lens table">
+                                        <TableBody>
+                                            <SelectLens 
+                                                key={new Number(lens.uid)}
+                                                uid={lens.uid}
+                                                lens={lens.lens}
+                                                score={lens.score}
+                                                setLens={setLens}
+                                            />
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            )
+                            
                         }
                     )
                 }
             </div>
+            
             <Divider />
         </>
     )
