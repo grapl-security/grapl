@@ -622,7 +622,6 @@ type GraphT = {
 
 // #TODO: This algorithm is exponential, and doesn't have to be
 const mergeGraphs = (curGraph: GraphT, update: graphT) => {
-    console.log('curGraph', curGraph);
     // Merges two graphs into a new graph
     // returns 'null' if there are no updates to be made
 
@@ -646,28 +645,31 @@ const mergeGraphs = (curGraph: GraphT, update: graphT) => {
         const node = nodes.get(newNode.uid);
         if (node) {
             if (mergeNodes(node, newNode)) {
-                console.log("node, newNode", node, newNode);
                 updated = true;
             }
         } else {
             nodes.set(newNode.uid, newNode);
-            console.log("setting new node");
             updated = true;
         }
     }
 
     for (const link of curGraph.links) {
-        links.set(
-            link.source + link.label + link.target,
-            link,
-        )
+        if (link) {
+            const source = link.source.uid || link.source;
+            const target = link.target.uid || link.target;
+            links.set(
+                source + link.label + target,
+                link,
+            )
+        }
     }
 
     for (const newLink of update.links) {
-        const link = links.get(newLink.source + newLink.label + newLink.target);
+        const newLinkSource =  newLink.source.id || newLink.source;
+        const newLinkTarget =  newLink.target.id || newLink.target;
+        const link = links.get(newLinkSource + newLink.label + newLinkTarget);
         if (!link) {
             links.set(newLink.source + newLink.label + newLink.target, newLink);
-            console.log("setting new link");
             updated = true;
         }
     }
@@ -684,9 +686,22 @@ const mergeGraphs = (curGraph: GraphT, update: graphT) => {
 const GraphDisplay = ({lensName, setCurNode}: any) => {
     const [state, setState] = React.useState({
         graphData: {nodes: [], links: []},
+        curLensName: lensName,
     });
     const forceRef = useRef(null);
 
+    // When the lensName changes we should reset the graphData
+    // useEffect(() => {
+    //     console.log('useEffect: ', lensName , state.curLensName);
+    //     if (lensName !== state.curLensName) {
+    //         console.log('useEffect clearing: ', lensName , state.curLensName);
+    //         setState({
+    //             ...state,
+    //             curLensName: lensName,
+    //             graphData: {nodes: [], links: []},
+    //         })
+    //     }
+    // }, [lensName, state])
 
     useEffect(() => {
         console.log("useEffect - setting forceRef state");
@@ -704,7 +719,8 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
                 if (Math.abs(y) > SQUARE_HALF_SIDE) { node.vy *= -1; }
             });
         });
-    }, [])
+    }, [state])
+
 
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -717,11 +733,21 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
                         const update = await dgraphNodesToD3Format(updated_nodes) as any;
                         const mergeUpdate = mergeGraphs(state.graphData, update);
                         if (mergeUpdate !== null) {
-                            console.log('update', mergeUpdate);
-                            setState({
-                                ...state,
-                                graphData: mergeUpdate,
-                            })
+                            if (state.curLensName === lensName) {
+                                console.log("update for ",  state.curLensName, lensName);
+                                setState({
+                                    ...state,
+                                    curLensName: lensName,
+                                    graphData: mergeUpdate,
+                                })
+                            } else {
+                                console.log("update, switch, for ",  state.curLensName, lensName);
+                                setState({
+                                    ...state,
+                                    curLensName: lensName,
+                                    graphData: update,
+                                })
+                            }
                         }
                     })
                     .catch((e) => console.error("Failed to retrieveGraph ", e))
@@ -732,7 +758,6 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
 
     console.log('GraphDisplay: ', lensName);
 
-    // #TODO: We should be fetching this data from Grapl's API, see "retrieveGraph" in source
     const graphData = state.graphData;
     
     const colorHash = new ColorHash({});
