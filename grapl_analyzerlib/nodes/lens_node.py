@@ -269,13 +269,13 @@ class EngagementTransaction(CopyingTransaction):
     ):
         copied_uids = set()
 
-        # txn = super()
-        # try:
-        #     txn.query(query, variables, timeout, metadata, credentials)
-        #     copied_uids.update(txn.get_copied_uids())
-        # finally:
-        #     txn.discard()
-        # TODO: This is a hack. For some reason it doesn't copy edges properly the first time
+        txn = super()
+        try:
+            txn.query(query, variables, timeout, metadata, credentials)
+            copied_uids.update(txn.get_copied_uids())
+        finally:
+            txn.discard()
+
         txn = super()
         try:
             res = txn.query(query, variables, timeout, metadata, credentials)
