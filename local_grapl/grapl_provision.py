@@ -1,11 +1,12 @@
 import time
-import json
+import threading
+
 import pydgraph
 
-from pydgraph import DgraphClient, DgraphClientStub
 from grapl_analyzerlib.schemas import *
-
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
+
+from pydgraph import DgraphClient, DgraphClientStub
 
 
 class AnyNodeSchema(NodeSchema):
@@ -15,7 +16,7 @@ class AnyNodeSchema(NodeSchema):
 
 
 class RiskSchema(NodeSchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(RiskSchema, self).__init__()
         (
             self
@@ -29,7 +30,7 @@ class RiskSchema(NodeSchema):
 
 
 class LensSchema(NodeSchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(LensSchema, self).__init__()
         (
             self
@@ -44,7 +45,7 @@ class LensSchema(NodeSchema):
 
 
 class AssetSchema(NodeSchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(AssetSchema, self).__init__()
         (
             self.with_str_prop("hostname")
@@ -64,6 +65,7 @@ def drop_all(client):
     op = pydgraph.Operation(drop_all=True)
     client.alter(op)
 
+
 def format_schemas(schema_defs):
     schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
 
@@ -75,7 +77,6 @@ def format_schemas(schema_defs):
         "\n  # Schema Definitions",
         schemas,
     ])
-
 
 
 def get_type_dict(client, type_name):
@@ -106,7 +107,6 @@ def get_type_dict(client, type_name):
 
 
 def update_reverse_edges(client, schema):
-
     type_dicts = {}
 
     rev_edges = set()
@@ -152,8 +152,6 @@ type {type_name} {{
 
 
 def provision_mg(mclient):
-
-
     # drop_all(mclient)
     # drop_all(___local_dg_provision_client)
 
@@ -172,9 +170,8 @@ def provision_mg(mclient):
     mg_schema_str = format_schemas(schemas)
     set_schema(mclient, mg_schema_str)
 
+
 def provision_eg(eclient):
-
-
     # drop_all(mclient)
     # drop_all(___local_dg_provision_client)
 
@@ -200,8 +197,6 @@ def provision_eg(eclient):
 
 
 def provision(mclient, eclient):
-
-
     # drop_all(mclient)
     # drop_all(___local_dg_provision_client)
 
@@ -235,7 +230,6 @@ def provision(mclient, eclient):
 import boto3
 import json
 
-
 BUCKET_PREFIX = 'local-grapl'
 
 services = (
@@ -258,7 +252,8 @@ buckets = (
     BUCKET_PREFIX + '-analyzer-matched-subgraphs-bucket',
 )
 
-def provision_sqs(sqs, service_name: str):
+
+def provision_sqs(sqs, service_name: str) -> None:
     redrive_queue = sqs.create_queue(
         QueueName=service_name + '-retry-queue',
         Attributes={
@@ -294,7 +289,7 @@ def provision_sqs(sqs, service_name: str):
     sqs.purge_queue(QueueUrl=redrive_queue['QueueUrl'])
 
 
-def provision_bucket(s3, bucket_name: str):
+def provision_bucket(s3, bucket_name: str) -> None:
     try:
         s3.create_bucket(Bucket=bucket_name)
     except Exception as e:
@@ -303,7 +298,7 @@ def provision_bucket(s3, bucket_name: str):
     print(bucket_name)
 
 
-def bucket_provision_loop():
+def bucket_provision_loop() -> None:
     s3_succ = {bucket for bucket in buckets}
     for i in range(0, 150):
         try:
@@ -345,7 +340,6 @@ def sqs_provision_loop():
         except Exception as e:
             print('failed to connect to sqs or s3')
 
-
         for service in services:
             if service in sqs_succ:
                 try:
@@ -361,7 +355,6 @@ def sqs_provision_loop():
 
 
 
-import threading
 
 def drop_all(client):
     op = pydgraph.Operation(drop_all=True)
@@ -381,7 +374,6 @@ if __name__ == '__main__':
 
     sqs_t.start()
     s3_t.start()
-
 
     for i in range(0, 150):
         try:
@@ -405,7 +397,6 @@ if __name__ == '__main__':
                 eg_succ = True
         except Exception as e:
             print(e)
-
 
         if (mg_succ and eg_succ):
             break

@@ -183,17 +183,13 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
             acc.extend(quote!(#f .to_string(), ));
             acc
         });
-    
+
     assert!(id_fields.to_string().len() > 0);
 
     let struct_name = &input.ident;
 
     let node_name = format!("{}Node", struct_name);
     let node_name = syn::Ident::new(&node_name, struct_name.span());
-
-
-    let strategy_name = format!("{}strategy", struct_name);
-    let strategy_name = syn::Ident::new(&strategy_name, struct_name.span());
 
     let q = quote!(
 

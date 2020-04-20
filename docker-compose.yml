@@ -218,9 +218,10 @@ services:
       - engagement_graph:engagement_graph
 
   grapl_engagement_view:
-    build:
-      context: ./engagement_ux/engagement_view/
-      dockerfile: ./Dockerfile
+    image: grapl/grapl-engagement-view
+#    build:
+#      context: ./engagement_ux/engagement_view/
+#      dockerfile: ./Dockerfile
     environment:
       - PORT=1234
     ports:

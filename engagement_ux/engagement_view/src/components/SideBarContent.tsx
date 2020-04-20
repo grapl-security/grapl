@@ -46,7 +46,7 @@ function Lens(props: any) {
                         props.setLens(props.lens)    
                     }
             }>
-                {props.lens + props.score}            
+                {props.lens + "\t\t" + props.score}
             </Button>
         </>
     )
@@ -55,19 +55,27 @@ function Lens(props: any) {
 function ToggleLensTable({setLens}: any) {
     const [state, setState] = useState({
         toggled: true,
-        lenses: []
+        lenses: [],
     });
     const classes = useStyles();
     useEffect(() => {
-        getLenses()
-        .then((response) => {
-            console.log(response.lenses);
-            setState({
-                ...state,
-                lenses: response.lenses || [],
-            })
-        })
+
+        console.log("Graph useEffect");
+        const interval = setInterval(() => {
+            console.log("Fetching lenses");
+            getLenses()
+                .then((response) => {
+                    if (response.lenses && response.lenses !== state.lenses) {
+                        setState({
+                            ...state,
+                            lenses: response.lenses || [],
+                        })
+                    }
+                })
+        }, 1000);
+        return () => clearInterval(interval);
     }, []);
+
 
     return (
         <>

@@ -839,9 +839,9 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
 name = "grapl-graph-descriptions"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f7e4c6d26ea15a2fb8154b02645dfd050e11db9b043824d3f50c1c6f9b858e8"
+checksum = "5a7364f634f94529b264b12e69ecf3b4219c9801993c91efa3b011a6df1bdd35"
 dependencies = [
  "base64 0.11.0",
  "bytes 0.4.12",

@@ -233,9 +233,11 @@ const lensToAdjacencyMatrix = (matricies: any) => {
 
             const edge_name = edge['edge_name'];
             if (edge_name === "risks") {
+                console.log("Handling risks");
                 const node = nodes.get(key_uid.get(edge['from']));
                 for (const risk of matrix.node.risks) {
-                    node.risk = risk.risk_score + (node.risk || 0)
+                    console.log('risk: ', risk);
+                    node.risk = (risk.risk_score || 0) + (node.risk || 0)
                     if (node.analyzers) {
                         if (node.analyzers.indexOf(risk.analyzer_name) === -1) {
                             if (risk.analyzer_name) {
@@ -313,7 +315,7 @@ const dgraphNodesToD3Format = (dgraphNodes: any) => {
                 }
 
                 if (node.risk === undefined) {
-                    node.risk = riskNode.risk_score;
+                    node.risk = riskNode.risk_score || 0;
                     node.analyzers = riskNode.analyzer_name;
                 } else {
                     node.risk += riskNode.risk_score;
@@ -606,111 +608,6 @@ const mergeNodes = (x, y) => {
 };
 
 
-class GraphManager {
-    constructor(graph) {
-        this.graph = graph || {
-            nodes: [], links: []
-        };
-    }
-
-    updateNode = (newNode) => {
-        console.log("newNode", newNode);
-        if (newNode.uid === undefined) {return}
-        for (let node of this.graph.nodes) {
-            if (node.name === newNode.name) {
-                return mergeNodes(node, newNode);
-            }
-        }
-        console.log('adding new node');
-        this.graph.nodes.push(newNode);
-        return true;
-    };
-
-    updateLink(newLink) {
-        console.log("newLink", newLink);
-        for (const link of this.graph.links) {
-            let src = link.source.name;
-            if (src === undefined) {
-                src = link.source;
-            }
-
-            let tgt = link.target.name;
-            if (tgt === undefined) {
-                tgt = link.target;
-            }
-
-            if (src === newLink.source) {
-                if (tgt === newLink.target) {
-                    // if (link.label === newLink.label) {
-
-                    return false;
-                    // }
-                }
-            }
-        }
-
-        this.graph.links.push(newLink);
-        return true;
-    }
-
-    removeNode = (uid) => {
-        for (let i = 0; i < this.graph.nodes.length; i++) {
-            if (this.graph.nodes[i].uid === uid) {
-                this.graph.nodes.splice(i, 1);
-            }
-        }
-    };
-
-    removeLink = (uid) => {
-        for (let i = 0; i < this.graph.links.length; i++) {
-            if (this.graph.links[i].source.uid === uid) {
-                this.graph.links.splice(i, 1);
-                continue
-            }
-            if (this.graph.links[i].target.uid === uid) {
-                this.graph.links.splice(i, 1);
-            }
-        }
-    };
-
-    removeNodesAndLinks = (toRemove) => {
-        for (const deadNode of toRemove) {
-            this.removeNode(deadNode);
-        }
-
-        for (const deadLink of toRemove) {
-            this.removeLink(deadLink);
-        }
-
-        // console.log("Removed nodes and links ", this.graph.nodes, this.graph.links);
-    };
-
-    updateGraph = (newGraph) => {
-        if (newGraph.nodes.length === 0 && newGraph.links.length === 0) {
-            return
-        }
-
-        if (newGraph === this.graph) {
-            return
-        }
-
-        let updated = false;
-        for (const newNode of newGraph.nodes) {
-            if (this.updateNode(newNode)) {
-                updated = true;
-            }
-        }
-
-        for (const newLink of newGraph.links) {
-            if (this.updateLink(newLink)) {
-                updated = true;
-            }
-        }
-        return updated;
-    };
-
-}
-
 type LinkT = {
 
     source: string,
@@ -725,6 +622,7 @@ type GraphT = {
 
 // #TODO: This algorithm is exponential, and doesn't have to be
 const mergeGraphs = (curGraph: GraphT, update: graphT) => {
+    console.log('curGraph', curGraph);
     // Merges two graphs into a new graph
     // returns 'null' if there are no updates to be made
 
@@ -753,6 +651,7 @@ const mergeGraphs = (curGraph: GraphT, update: graphT) => {
             }
         } else {
             nodes.set(newNode.uid, newNode);
+            console.log("setting new node");
             updated = true;
         }
     }
@@ -766,11 +665,9 @@ const mergeGraphs = (curGraph: GraphT, update: graphT) => {
 
     for (const newLink of update.links) {
         const link = links.get(newLink.source + newLink.label + newLink.target);
-
-        if (link) {
-            continue
-        } else {
+        if (!link) {
             links.set(newLink.source + newLink.label + newLink.target, newLink);
+            console.log("setting new link");
             updated = true;
         }
     }
@@ -787,12 +684,12 @@ const mergeGraphs = (curGraph: GraphT, update: graphT) => {
 const GraphDisplay = ({lensName, setCurNode}: any) => {
     const [state, setState] = React.useState({
         graphData: {nodes: [], links: []},
-        last_update: Date.now(),
     });
     const forceRef = useRef(null);
 
 
     useEffect(() => {
+        console.log("useEffect - setting forceRef state");
         forceRef.current.d3Force("link", d3.forceLink());
         forceRef.current.d3Force('collide', d3.forceCollide(22));
         forceRef.current.d3Force("charge", d3.forceManyBody());
@@ -807,33 +704,32 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
                 if (Math.abs(y) > SQUARE_HALF_SIDE) { node.vy *= -1; }
             });
         });
+    }, [])
 
-        if (lensName) {
-            const now = Date.now();
-            if (now - state.last_update <= 1_000) {
-                return
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            if (lensName) {
+                console.log("Retrieving graph from " + lensName);
+                await retrieveGraph(lensName)
+                    .then(async ([updated_nodes, removed_nodes]) => {
+                        console.log('updated_nodes', updated_nodes);
+
+                        const update = await dgraphNodesToD3Format(updated_nodes) as any;
+                        const mergeUpdate = mergeGraphs(state.graphData, update);
+                        if (mergeUpdate !== null) {
+                            console.log('update', mergeUpdate);
+                            setState({
+                                ...state,
+                                graphData: mergeUpdate,
+                            })
+                        }
+                    })
+                    .catch((e) => console.error("Failed to retrieveGraph ", e))
             }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [lensName, state]);
 
-            retrieveGraph(lensName)
-                .then(async ([updated_nodes, removed_nodes]) => {
-                    const update = await dgraphNodesToD3Format(updated_nodes) as any;
-                    // const graphManager = new GraphManager(state.graphData);
-                    // #TODO: Merge our updates in rather than overwriting state,
-                    // at which point we can remove this 'if' hack, which will break things
-                    
-                    const mergeUpdate = mergeGraphs(state.graphData, update);
-                    console.log('update', update);
-                    if (mergeUpdate !== null) {
-                        setState({
-                            ...state,
-                            last_update: Date.now(),
-                            graphData: mergeUpdate,
-                        })    
-                    }
-                })
-                .catch((e) => console.error("Failed to retrieveGraph ", e))
-        }
-    });
     console.log('GraphDisplay: ', lensName);
 
     // #TODO: We should be fetching this data from Grapl's API, see "retrieveGraph" in source
