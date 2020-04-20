@@ -4,6 +4,7 @@ from typing import *
 # noinspection Mypy
 from pydgraph import DgraphClient, Txn
 
+from grapl_analyzerlib.nodes.any_node import NodeQuery, NodeView
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import (
@@ -141,7 +142,7 @@ def copy_node(
 
     if not res:
         raise Exception("ERROR: Can not find res")
-    print('res', res)
+
     if not res[0].get('dgraph.type'):
         raise Exception("ERROR: Can not find res dgraph.type")
 
@@ -328,6 +329,17 @@ class LensQuery(Queryable["LensView"]):
         self._lens.extend(_str_cmps("lens", eq, contains, ends_with))
         return self
 
+    def with_scope(
+            self: "NQ",
+            scope_query: Optional["NodeQuery"] = None
+    ) -> "NQ":
+        scope = scope_query or NodeQuery()  # type: NodeQuery
+
+        scope.set_reverse_edge_filter(
+            'in_scope', self, 'scope',
+        )
+        return self
+        
     def _get_unique_predicate(self) -> Optional[Tuple[str, PropertyT]]:
         return "lens", int
 
@@ -361,9 +373,28 @@ class LensView(Viewable):
             scope: Optional[List["NodeView"]] = None,
     ) -> None:
         super(LensView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
+        self.node_key = node_key
         self.lens = lens
         self.node_type = node_type
         self.scope = scope or []
+
+    def get_scope(
+            self: "NQ",
+            match_scope: Optional[NodeQuery] = None,
+    ) -> List[NodeView]:
+        _match_scope = match_scope or NodeQuery()  # type: NodeQuery
+
+        self_node = (
+            LensQuery()
+            .with_node_key(eq=self.node_key)
+            .with_scope(_match_scope)
+            .query_first(self.dgraph_client)
+        )
+
+        if self_node:
+            cast(LensView, self).scope = self_node.scope
+
+        return cast(LensView, self).scope
 
     def get_node_type(self) -> str:
         return 'Lens'
