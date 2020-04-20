@@ -1,10 +1,12 @@
 from typing import *
 
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.comparators import Cmp, IntCmp, _int_cmps, StrCmp, _str_cmps, PropertyFilter
-from grapl_analyzerlib.nodes.queryable import NQ
+from grapl_analyzerlib.nodes.queryable import NQ, Queryable
+from grapl_analyzerlib.nodes.viewable import Viewable
+
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.prelude import *
 
 IRiskView = TypeVar('IRiskView', bound='RiskView')
 IRiskQuery = TypeVar('IRiskQuery', bound='RiskQuery')
@@ -104,7 +106,7 @@ class RiskView(Viewable):
             node_type: str,
             risk_score: Optional[int] = None,
             analyzer_name: Optional[str] = None,
-            risky_nodes: Optional[List[NodeView]] = None
+            risky_nodes: Optional[List['NodeView']] = None
     ):
         super(RiskView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
@@ -135,7 +137,7 @@ class RiskView(Viewable):
         cast(ProcessView, self).risky_nodes = cast(
             RiskView, self.fetch_edges("~risks", type(self))
         )
-        return cast(ProcessView, self).risky_nodes
+        return cast(RiskView, self).risky_nodes
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
@@ -183,3 +185,7 @@ class RiskView(Viewable):
 
     def get_node_type(self) -> str:
         return 'Risk'
+
+
+from grapl_analyzerlib.nodes.any_node import NodeView, NodeQuery
+from grapl_analyzerlib.nodes.process_node import ProcessView
