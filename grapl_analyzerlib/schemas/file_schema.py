@@ -1,5 +1,5 @@
+from grapl_analyzerlib.schemas import RiskSchema
 from grapl_analyzerlib.schemas.schema_builder import NodeSchema, ManyToMany
-from grapl_provision import RiskSchema
 
 
 class FileSchema(NodeSchema):
