@@ -22,7 +22,6 @@
 | file_size | int | todo: description |
 | file_inode | int | todo: description |
 | signed | bool | todo: description |
-| 
 
 
 ## FileQuery

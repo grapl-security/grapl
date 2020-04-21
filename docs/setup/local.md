@@ -28,28 +28,12 @@ docker-compose up
 ```
 
 **Uploading Your Analyzer**
+Next, we’ll upload a basic [Analyzer (Grapl’s attack signatures)](https://grapl-analyzerlib.readthedocs.io/en/latest/analyzers/Implementing%20An%20Analyzer/), which searches for processes named "svchost" without a whitelisted parent process. We've provided a demo Analyzer in the Grapl repository. If you're interested in the code, see our Analyzer docs.
 
-Next, we’ll upload a basic Analyzer (Grapl’s attack signatures), which searches for processes named `svchost` without a whitelisted parent process.
+To upload the Analyzer to Grapl, navigate to the root of the cloned grapl repository and run the following command: 
 
-```python
-invalid_parents = [
-   Not("services.exe"),
-   Not("smss.exe"),
-   Not("ngentask.exe"),
-   Not("userinit.exe"),
-   Not("GoogleUpdate.exe"),
-   Not("conhost.exe"),
-   Not("MpCmdRun.exe"),
-]
-
-return (
-   ProcessQuery()
-   .with_process_name(eq=invalid_parents)
-   .with_children(
-       ProcessQuery().with_process_name(eq="svchost.exe")
-   )
-)
-```
+`./upload_analyzer_local.sh`
+Grapl may take a couple of minutes to get started, so if you get an error similar to “could not connect to the endpoint URL”,  give Grapl a few more minutes to  finish provisioning. 
     
 
 To upload our Analyzer to Grapl, navigate to the root of the cloned `grapl` repository and run the following command: 
@@ -68,59 +52,64 @@ To get data into Grapl, please run the following command:
 python3 ./upload-sysmon-logs.py --bucket_prefix=local-grapl --logfile=eventlog.xml 
 ```
 
-**Working With** **Grapl Data:** 
+**Working With Grapl Data:** 
+
+
 
 To analyze Grapl Data, open two browser windows in Google Chrome. 
 
-In the first browser window, connect to the Grapl Notebook on [localhost:8888](http://localhost:8888). Credentials are not needed when running Grapl locally, just click the ‘submit’ button to get started. The Grapl Notebook is where we’ll interact with the engagements using Python.
+In the first window, navigate to the Grapl's Jupyter Notebook on localhost:8888.  The 'Grapl Notebook' is where we’ll interact with the engagements using Python. 
 
-Next, connect to the Engagement UX on [localhost:1234](http://localhost:1234). Log in with the password `graplpassword`. The Engagement UX displays risks in our environment. 
+Log in with the password "graplpassword". Once logged in, you'll see a directory with files that will be used later in the tutorial.
 
 The lenses page will show one lens. A lens associates a risk with some kind of correlation point - in this case, an asset.
 
+![](https://static.wixstatic.com/media/aa91b3_2a9a44851cdf4ebb8703ae76af72b192~mv2.png/v1/fill/w_1480,h_455,al_c,q_90,usm_0.66_1.00_0.01/aa91b3_2a9a44851cdf4ebb8703ae76af72b192~mv2.webp)
 
-![](https://paper-attachments.dropbox.com/s_E2075176EF6E38314A4C35C9F7CAB863D54E38F5216C21919103EBEB3DB3EE0A_1586979707971_Screenshot+from+2020-04-15+12-40-08.png)
+In the other window, navigate to localhost:1234 to connect to the Engagement UX. The Engagement UX displays risks in our environment. Credentials are not needed when running Grapl locally, just click the ‘submit’ button to get started! 
 
+After logging in, you’ll be redirected to the Grapl UI. The Lenses section will show one lens which associates a risk with some kind of correlation point - in this case, an asset. 
 
-Click ‘link’ next to the lens score. Details relating to the first Lens will display in your browser!
+To examine the graph of suspicious nodes and edges relating to our asset lens, click on the lens name, in this case ‘DESKTOP-FVSHABR0’. 
 
+![](https://static.wixstatic.com/media/aa91b3_43750d8c9716482a8d8017d4826c93bf~mv2.png/v1/fill/w_1460,h_972,al_c,q_90/aa91b3_43750d8c9716482a8d8017d4826c93bf~mv2.webp)
 
-![](https://paper-attachments.dropbox.com/s_E2075176EF6E38314A4C35C9F7CAB863D54E38F5216C21919103EBEB3DB3EE0A_1586979835729_Screenshot+from+2020-04-15+12-43-17.png)
+After clicking the lens name, a graph will appear in the right panel. In this case, a graph with two nodes - "cmd.exe", "svchost.exe", and an edge between the two appears on the screen.
 
+![](https://static.wixstatic.com/media/aa91b3_4ec6b529647e4310a7f79eb1788f35b4~mv2.png/v1/fill/w_1462,h_808,al_c,q_90/aa91b3_4ec6b529647e4310a7f79eb1788f35b4~mv2.webp)
 
- 
-Next, click the node labeled ‘cmd.exe’, and copy the value of `node_key`.
- 
-The  `Demo_Engagement` notebook creates a new engagement, which shows up on the ‘Lenses’ page. 
+Click the node labeled ‘cmd.exe’, and copy the value of node_key.
 
-![](https://paper-attachments.dropbox.com/s_E2075176EF6E38314A4C35C9F7CAB863D54E38F5216C21919103EBEB3DB3EE0A_1586979716146_Screenshot+from+2020-04-15+12-40-29.png)
+![](https://static.wixstatic.com/media/aa91b3_833b01debcfe4bbfa44e78d0bc1aba55~mv2.png/v1/fill/w_1464,h_756,al_c,q_90/aa91b3_833b01debcfe4bbfa44e78d0bc1aba55~mv2.webp)
 
+The  Demo_Engagement notebook creates a new engagement, which shows up on the ‘Lenses’ page.  
 
-Click the ‘Run’ button three times and a new entry will appear on the Lenses page. This is our Engagement.
+Replace "<<put cmd node_key here>>" with the node key as a string.
 
+![](https://static.wixstatic.com/media/aa91b3_31b92e85fedf4551918ed8147932d5d1~mv2.png/v1/fill/w_1480,h_748,al_c,q_90,usm_0.66_1.00_0.01/aa91b3_31b92e85fedf4551918ed8147932d5d1~mv2.webp)
 
-![](https://paper-attachments.dropbox.com/s_E2075176EF6E38314A4C35C9F7CAB863D54E38F5216C21919103EBEB3DB3EE0A_1586979770224_Screenshot+from+2020-04-15+12-42-38.png)
+Click the first block of code, then click the ‘Run’ button four times. A new lens will appear in the ‘Lenses’ list. This is our Engagement.
 
-
-Copy the `node_key` for `cmd.exe` into the Enagement_Demo notebook. Then, paste the value in `<put cmd node_key here>`. Click `Run` to execute the cell.
-
-Click the ‘link’ next to the ‘Demo’ Lens. The graph will update, indicating our node has been copied over.
-
-
-![](https://paper-attachments.dropbox.com/s_E2075176EF6E38314A4C35C9F7CAB863D54E38F5216C21919103EBEB3DB3EE0A_1586979972077_Screenshot+from+2020-04-15+12-45-49.png)
-
+![](https://static.wixstatic.com/media/aa91b3_b8bd9fbf4c7f4e63b5a850a820423b35~mv2.png/v1/fill/w_1458,h_870,al_c,q_90/aa91b3_b8bd9fbf4c7f4e63b5a850a820423b35~mv2.webp)
 
 As you continue to click the ‘run’ button in your Jupyter Notebook, the graph will update with new nodes and edges that get pulled into the Engagement graph.
 
+![](https://static.wixstatic.com/media/aa91b3_d4540e548fbe42139af7e6eacb341364~mv2.png/v1/fill/w_1462,h_778,al_c,q_90/aa91b3_d4540e548fbe42139af7e6eacb341364~mv2.webp)
 
-![](https://paper-attachments.dropbox.com/s_E2075176EF6E38314A4C35C9F7CAB863D54E38F5216C21919103EBEB3DB3EE0A_1586980043595_Screenshot+from+2020-04-15+12-47-10.png)
+As we pivot off of the data that we have, our graph expands to visually display a‘dropper’ behavior.
+
+![](https://static.wixstatic.com/media/aa91b3_a8edd9fb0c8c470480ced49373c9d53d~mv2.png/v1/fill/w_1460,h_1392,al_c,q_90/aa91b3_a8edd9fb0c8c470480ced49373c9d53d~mv2.webp)
+
+We’ve kept the data in our demo light so users to become familiar with Grapl’s core features, but you can keep expanding the graph using the notebook to get the full story of what the attacker did.
+
+Check out [our docs](https://grapl-analyzerlib.readthedocs.io/en/latest/) to see other ways to interact with your data.
 
 
 
-![](https://paper-attachments.dropbox.com/s_E2075176EF6E38314A4C35C9F7CAB863D54E38F5216C21919103EBEB3DB3EE0A_1586980080696_Screenshot+from+2020-04-15+12-47-48.png)
+### What's Next?
 
+Grapl is drastically improving in many ways. Recently we’ve undergone a full rewrite of our front-end experience, we're actively working to support more data sources, and improving documentation. 
 
- 
-As we pivot off of the data that we have, our graph expands to represent a ‘dropper’ behavior.
+To support these changes, we’ve expanded our team size, and are planning to grow quickly, so expect a significant acceleration in our development! We’ve hired multiple new engineers, who have either started or will start full-time with Grapl in the coming weeks.
 
-We’ve kept the data in our demo light so users to become familiar with Grapl’s core features.
+We’ll have more exciting updates to share soon, keep an eye out for more improvements to Grapl by follow us [@GraplSec](https://twitter.com/graplsec) or join us on [Slack](https://join.slack.com/t/grapl-dfir/shared_invite/zt-armk3shf-nuY19fQQuUnYk~dHltUPCw)!

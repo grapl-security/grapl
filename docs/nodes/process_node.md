@@ -11,14 +11,14 @@
 | process_id | int | The process id for this process.
 | created_timestamp | int | Milliseconds since epoch Unix to time of the process creation.
 | terminate_time | int | Milliseconds since epoch Unix to time of the process termination.
-| children | [[Process](/nodes/process_node/#process-node)] | Child processes of this process.
+| children | [[Process](/nodes/process_node/)] | Child processes of this process.
 | bin_file | File | The file that was executed to create this process.
-| created_files | [[File](/nodes/file_node/#file_node)] | Files created by this process.
-| deleted_files | [[File](/nodes/file_node/#file_node)] | Files deleted by this process.
-| read_files | [[File](/nodes/file_node/#file_node)] | Files read by this process.
-| wrote_files | [[File](/nodes/file_node/#file_node)] | Files written by this process.
-| created_connections | [[ProcessOutboundConnection]("todo")] | Outbound Connections created by this process.
-| inbound_connections | [[ProcessInboundConnection]("todo")] | Inbbound Connections created by this process.
+| created_files | [[File](/nodes/file_node/)] | Files created by this process.
+| deleted_files | [[File](/nodes/file_node/)] | Files deleted by this process.
+| read_files | [[File](/nodes/file_node/)] | Files read by this process.
+| wrote_files | [[File](/nodes/file_node/)] | Files written by this process.
+| created_connections | [[ProcessOutboundConnection](/nodes/process_outbound_connection_node)] | Outbound Connections created by this process.
+| inbound_connections | [[ProcessInboundConnection](/nodes/process_inbound_connection_node)] | Inbbound Connections created by this process.
 
 
 ## ProcessQuery
