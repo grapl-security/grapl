@@ -13,9 +13,9 @@ class IpConnectionSchema(NodeSchema):
             .with_int_prop("terminated_timestamp")
             .with_int_prop("last_seen_timestamp")
             .with_forward_edge(
-                "inbound_connection_to",
+                "inbound_ip_connection_to",
                 ManyToOne(IpAddressSchema),
-                "network_connections_from",
+                "ip_connections_from",
             )
         )
 

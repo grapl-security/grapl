@@ -73,12 +73,12 @@ class IpAddressQuery(DynamicNodeQuery):
         )
         return self
 
-    def with_network_connections_from(
+    def with_ip_connections_from(
         self: "NQ",
-        network_connections_from_query: Optional["IIpConnectionQuery"] = None,
+        ip_connections_from_query: Optional["IIpConnectionQuery"] = None,
     ) -> "NQ":
-        network_connections_from = network_connections_from_query or IpConnectionQuery()
-        network_connections_from.with_inbound_connection_to(cast(IpAddressQuery, self))
+        ip_connections_from = ip_connections_from_query or IpConnectionQuery()
+        ip_connections_from.with_inbound_network_connection_to(cast(IpAddressQuery, self))
 
         return self
 
@@ -146,10 +146,10 @@ class IpAddressView(DynamicNodeView):
             )
         return self.ip_address
 
-    def get_network_connections_from(self,) -> "List[IpConnectionView]":
+    def get_ip_connections_from(self,) -> "List[IpConnectionView]":
         return cast(
             List[IpConnectionView],
-            self.fetch_edges("~inbound_connection_to", List[IpConnectionView]),
+            self.fetch_edges("~inbound_network_connection_to", List[IpConnectionView]),
         )
 
     def get_bound_by(self,) -> "List[ProcessInboundConnectionView]":

@@ -29,7 +29,7 @@ class IpConnectionQuery(DynamicNodeQuery):
         self._dst_ip_address = []  # type: List[List[Cmp[str]]]
         self._dst_port = []  # type: List[List[Cmp[str]]]
 
-        self._inbound_connection_to = None  # type: Optional[IIpAddressQuery]
+        self._inbound_ip_connection_to = None  # type: Optional[IIpAddressQuery]
 
     def with_src_ip_address(
         self,
@@ -135,14 +135,14 @@ class IpConnectionQuery(DynamicNodeQuery):
         )
         return self
 
-    def with_inbound_connection_to(
-        self: "NQ", inbound_connection_to_query: Optional["IIpAddressQuery"] = None
+    def with_inbound_ip_connection_to(
+        self: "NQ", inbound_ip_connection_to_query: Optional["IIpAddressQuery"] = None
     ) -> "NQ":
-        inbound_connection_to = inbound_connection_to_query or IpAddressQuery()
+        inbound_ip_connection_to = inbound_ip_connection_to_query or IpAddressQuery()
 
-        self.set_forward_edge_filter("inbound_connection_to", inbound_connection_to)
-        inbound_connection_to.set_reverse_edge_filter(
-            "~inbound_connection_to", self, "inbound_connection_to"
+        self.set_forward_edge_filter("inbound_ip_connection_to", inbound_ip_connection_to)
+        inbound_ip_connection_to.set_reverse_edge_filter(
+            "~inbound_ip_connection_to", self, "inbound_ip_connection_to"
         )
         return self
 
@@ -174,7 +174,7 @@ class IpConnectionView(DynamicNodeView):
         src_port: Optional[str] = None,
         dst_ip_address: Optional[str] = None,
         dst_port: Optional[str] = None,
-        inbound_connection_to: "Optional[IpAddressView]" = None,
+        inbound_ip_connection_to: "Optional[IpAddressView]" = None,
     ):
         super(IpConnectionView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
@@ -191,7 +191,7 @@ class IpConnectionView(DynamicNodeView):
         self.src_port = src_port
         self.dst_ip_address = dst_ip_address
         self.dst_port = dst_port
-        self.inbound_connection_to = inbound_connection_to
+        self.inbound_ip_connection_to = inbound_ip_connection_to
 
 
     def get_node_type(self) -> str:
@@ -262,7 +262,7 @@ class IpConnectionView(DynamicNodeView):
     @staticmethod
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         f_edges = {
-            "inbound_connection_to": IpAddressView
+            "inbound_ip_connection_to": IpAddressView
         }  # type: Dict[str, Optional["EdgeViewT"]]
 
         return cast(
@@ -271,7 +271,7 @@ class IpConnectionView(DynamicNodeView):
 
     def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
         f_edges = {
-            "inbound_connection_to": self.inbound_connection_to
+            "inbound_ip_connection_to": self.inbound_ip_connection_to
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
         return cast(

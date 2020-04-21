@@ -110,7 +110,7 @@ class IpPortQuery(Queryable):
         network_connections_from = (
             network_connections_from_query or NetworkConnectionQuery()
         )
-        network_connections_from.with_inbound_connection_to(cast(IpPortQuery, self))
+        network_connections_from.with_inbound_ip_connection_to(cast(IpPortQuery, self))
 
         return self
 
@@ -264,7 +264,7 @@ class IpPortView(Viewable):
     def get_network_connections_from(self,) -> "List[NetworkConnectionView]":
         return cast(
             List[NetworkConnectionView],
-            self.fetch_edges("~inbound_connection_to", NetworkConnectionView),
+            self.fetch_edges("~inbound_ip_connection_to", NetworkConnectionView),
         )
 
     def get_bound_by(self,) -> "List[ProcessInboundConnectionView]":
