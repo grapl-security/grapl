@@ -230,9 +230,10 @@ impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
                 Ok(asset_node.into())
             }
             // IpAddress nodes are identified at construction
-            Some(WhichNode::IpAddressNode(_)) => {
+            Some(WhichNode::IpAddressNode(mut ip_node)) => {
+                ip_node.set_node_key(ip_node.ip_address.clone());
                 info!("Attributing IpAddressNode");
-                Ok(node)
+                Ok(ip_node.into())
             }
             // The identity of an IpPortNode is the hash of its ip, port, and protocol
             Some(WhichNode::IpPortNode(mut ip_port)) => {
@@ -610,6 +611,10 @@ async fn attribute_asset_ids(
                 continue;
             }
             Some(WhichNode::IpPortNode(n)) => {
+                output_graph.add_node(n.clone());
+                continue;
+            }
+            Some(WhichNode::IpConnectionNode(n)) => {
                 output_graph.add_node(n.clone());
                 continue;
             }

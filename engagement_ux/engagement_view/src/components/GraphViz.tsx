@@ -683,6 +683,38 @@ const mergeGraphs = (curGraph: GraphT, update: graphT) => {
     }
 }
 
+const updateGraph = async (lensName: string, state: any, setState: any) => {
+    if (!lensName) {
+        return;
+    }
+    console.log("Retrieving graph from " + lensName);
+    await retrieveGraph(lensName)
+        .then(async ([updated_nodes, removed_nodes]) => {
+            console.log('updated_nodes', updated_nodes);
+
+            const update = await dgraphNodesToD3Format(updated_nodes) as any;
+            const mergeUpdate = mergeGraphs(state.graphData, update);
+            if (mergeUpdate !== null) {
+                if (state.curLensName === lensName) {
+                    console.log("update for ",  state.curLensName, lensName);
+                    setState({
+                        ...state,
+                        curLensName: lensName,
+                        graphData: mergeUpdate,
+                    })
+                } else {
+                    console.log("update, switch, for ",  state.curLensName, lensName);
+                    setState({
+                        ...state,
+                        curLensName: lensName,
+                        graphData: update,
+                    })
+                }
+            }
+        })
+        .catch((e) => console.error("Failed to retrieveGraph ", e))
+}
+
 const GraphDisplay = ({lensName, setCurNode}: any) => {
     const [state, setState] = React.useState({
         graphData: {nodes: [], links: []},
@@ -723,34 +755,10 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
 
 
     useEffect(() => {
+        updateGraph(lensName, state, setState);
         const interval = setInterval(async () => {
             if (lensName) {
-                console.log("Retrieving graph from " + lensName);
-                await retrieveGraph(lensName)
-                    .then(async ([updated_nodes, removed_nodes]) => {
-                        console.log('updated_nodes', updated_nodes);
-
-                        const update = await dgraphNodesToD3Format(updated_nodes) as any;
-                        const mergeUpdate = mergeGraphs(state.graphData, update);
-                        if (mergeUpdate !== null) {
-                            if (state.curLensName === lensName) {
-                                console.log("update for ",  state.curLensName, lensName);
-                                setState({
-                                    ...state,
-                                    curLensName: lensName,
-                                    graphData: mergeUpdate,
-                                })
-                            } else {
-                                console.log("update, switch, for ",  state.curLensName, lensName);
-                                setState({
-                                    ...state,
-                                    curLensName: lensName,
-                                    graphData: update,
-                                })
-                            }
-                        }
-                    })
-                    .catch((e) => console.error("Failed to retrieveGraph ", e))
+                await updateGraph(lensName, state, setState);
             }
         }, 1000);
         return () => clearInterval(interval);
