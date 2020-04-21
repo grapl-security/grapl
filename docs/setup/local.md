@@ -28,6 +28,7 @@ docker-compose up
 ```
 
 **Uploading Your Analyzer**
+
 Next, we’ll upload a basic [Analyzer (Grapl’s attack signatures)](https://grapl-analyzerlib.readthedocs.io/en/latest/analyzers/Implementing%20An%20Analyzer/), which searches for processes named "svchost" without a whitelisted parent process. We've provided a demo Analyzer in the Grapl repository. If you're interested in the code, see our Analyzer docs.
 
 To upload the Analyzer to Grapl, navigate to the root of the cloned grapl repository and run the following command: 
