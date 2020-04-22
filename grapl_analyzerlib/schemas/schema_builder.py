@@ -52,7 +52,7 @@ class NodeSchema(abc.ABC):
         self, prop_name: str, indexes: Sequence[StrIndex] = ()
     ) -> "NodeSchema":
         if indexes is ():
-            indexes = ["trigram", "exact", "hash"]
+            indexes = ["trigram", "exact"]
         self.str_props.append((prop_name, indexes))
         return self
 

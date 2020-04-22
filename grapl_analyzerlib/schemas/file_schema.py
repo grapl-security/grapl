@@ -7,7 +7,7 @@ class FileSchema(NodeSchema):
         super(FileSchema, self).__init__()
         (
             self.with_str_prop("file_name")
-            .with_str_prop("asset_id")
+            .with_str_prop("asset_id", indexes=['hash'])
             .with_str_prop("file_path")
             .with_str_prop("file_extension")
             .with_str_prop("file_mime_type")
@@ -21,9 +21,9 @@ class FileSchema(NodeSchema):
             .with_str_prop("file_hard_links")
             .with_bool_prop("signed")
             .with_str_prop("signed_status")
-            .with_str_prop("md5_hash")
-            .with_str_prop("sha1_hash")
-            .with_str_prop("sha256_hash")
+            .with_str_prop("md5_hash", indexes=['hash'])
+            .with_str_prop("sha1_hash", indexes=['hash'])
+            .with_str_prop("sha256_hash", indexes=['hash'])
             .with_forward_edge(
                 'risks',
                 ManyToMany(RiskSchema),
