@@ -64,11 +64,11 @@ def with_node_key(
         pass
 ```
 
-### ProcessQuery.with_network_connections_from
+### ProcessQuery.with_ip_connections_from
 ```python
-    def with_network_connections_from(
+    def with_ip_connections_from(
         self,
-        network_connections_from_query: Optional["IpConnectionQuery"] = None,
+        ip_connections_from_query: Optional["IpConnectionQuery"] = None,
     ) -> "NQ":
         pass
 ```

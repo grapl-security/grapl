@@ -13,7 +13,7 @@ class NetworkConnectionSchema(NodeSchema):
             .with_int_prop("terminated_timestamp")
             .with_int_prop("last_seen_timestamp")
             .with_forward_edge(
-                "inbound_connection_to",
+                "inbound_network_connection_to",
                 ManyToOne(IpPortSchema),
                 "network_connections_from",
             )
