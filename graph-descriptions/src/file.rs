@@ -102,7 +102,6 @@ impl File {
         let asset_id = self.asset_id.as_ref().unwrap();
         let mut j = json!({
             "node_key": self.node_key,
-            "asset_id": asset_id,
             "dgraph.type": "File"
         });
 

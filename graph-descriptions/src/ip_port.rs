@@ -25,7 +25,6 @@ impl IpPort {
         json!({
             "node_key": self.node_key,
             "dgraph.type": "IpPort",
-            "ip_address": self.ip_address,
             "port": self.port,
             "protocol": self.protocol,
         })
