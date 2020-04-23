@@ -12,7 +12,6 @@ class ProcessSchema(NodeSchema):
         (
             self.with_int_prop("process_id")
             .with_int_prop("created_timestamp")
-            .with_str_prop("asset_id", indexes=['hash'])
             .with_int_prop("terminate_time")
             .with_str_prop("image_name")
             .with_str_prop("process_name")

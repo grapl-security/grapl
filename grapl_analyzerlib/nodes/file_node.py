@@ -30,7 +30,6 @@ class FileQuery(Queryable["FileView"]):
     def __init__(self,) -> None:
         super(FileQuery, self).__init__(FileView)
         self._file_path = []  # type: List[List[Cmp[str]]]
-        self._asset_id = []  # type: List[List[Cmp[str]]]
         self._file_extension = []  # type: List[List[Cmp[str]]]
         self._file_mime_type = []  # type: List[List[Cmp[str]]]
         self._file_size = []  # type: List[List[Cmp[int]]]
@@ -77,16 +76,6 @@ class FileQuery(Queryable["FileView"]):
         )
         return self
 
-    def with_asset_id(
-        self: "NQ",
-        eq: Optional["StrCmp"] = None,
-        contains: Optional["StrCmp"] = None,
-        ends_with: Optional["StrCmp"] = None,
-    ) -> "NQ":
-        cast("FileQuery", self)._asset_id.extend(
-            _str_cmps("asset_id", eq, contains, ends_with)
-        )
-        return self
 
     def with_file_extension(
         self: "NQ",
@@ -354,7 +343,6 @@ class FileQuery(Queryable["FileView"]):
     def _get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         _prop_filters = {
             "file_path": self._file_path,
-            "asset_id": self._asset_id,
             "file_extension": self._file_extension,
             "file_mime_type": self._file_mime_type,
             "file_size": self._file_size,
@@ -410,7 +398,6 @@ class FileView(Viewable):
         uid: str,
         node_type: Optional[str] = None,
         file_path: Optional[str] = None,
-        asset_id: Optional[str] = None,
         file_extension: Optional[str] = None,
         file_mime_type: Optional[str] = None,
         file_size: Optional[int] = None,
@@ -440,7 +427,6 @@ class FileView(Viewable):
         self.uid = uid
         self.node_type = node_type
         self.file_path = file_path
-        self.asset_id = asset_id
         self.file_extension = file_extension
         self.file_mime_type = file_mime_type
         self.file_size = file_size
@@ -480,12 +466,6 @@ class FileView(Viewable):
             return self.file_path
         self.file_path = cast(str, self.fetch_property("file_path", str))
         return self.file_path
-
-    def get_asset_id(self) -> Optional[str]:
-        if self.asset_id is not None:
-            return self.asset_id
-        self.asset_id = cast(str, self.fetch_property("asset_id", str))
-        return self.asset_id
 
     def get_file_extension(self) -> Optional[str]:
         if self.file_extension is not None:
@@ -628,7 +608,6 @@ class FileView(Viewable):
     def _get_property_types() -> Mapping[str, "PropertyT"]:
         return {
             "file_path": str,
-            "asset_id": str,
             "file_extension": str,
             "file_mime_type": str,
             "file_size": int,
@@ -667,7 +646,6 @@ class FileView(Viewable):
             "node_key": self.node_key,
             "uid": self.uid,
             "file_path": self.file_path,
-            "asset_id": self.asset_id,
             "file_extension": self.file_extension,
             "file_mime_type": self.file_mime_type,
             "file_size": self.file_size,

@@ -7,7 +7,6 @@ class FileSchema(NodeSchema):
         super(FileSchema, self).__init__()
         (
             self.with_str_prop("file_name")
-            .with_str_prop("asset_id", indexes=['hash'])
             .with_str_prop("file_path")
             .with_str_prop("file_extension")
             .with_str_prop("file_mime_type")

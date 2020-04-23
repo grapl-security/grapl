@@ -18,7 +18,6 @@ class ProcessQuery(Queryable[IProcessView]):
         super(ProcessQuery, self).__init__(ProcessView)
         self._process_id = []  # type: List[List[Cmp[int]]]
         self._created_timestamp = []  # type: List[List[Cmp[int]]]
-        self._asset_id = []  # type: List[List[Cmp[str]]]
         self._terminate_time = []  # type: List[List[Cmp[int]]]
         self._image_name = []  # type: List[List[Cmp[str]]]
         self._process_name = []  # type: List[List[Cmp[str]]]
@@ -83,28 +82,6 @@ class ProcessQuery(Queryable[IProcessView]):
     ) -> "NQ":
         cast(ProcessQuery, self)._created_timestamp.extend(
             _int_cmps("created_timestamp", eq, gt, lt)
-        )
-        return self
-
-    def with_asset_id(
-        self: "NQ",
-        eq: Optional["StrCmp"] = None,
-        contains: Optional["StrCmp"] = None,
-        ends_with: Optional["StrCmp"] = None,
-        starts_with: Optional["StrCmp"] = None,
-        regexp: Optional["StrCmp"] = None,
-        distance: Optional[Tuple["StrCmp", int]] = None,
-    ) -> "NQ":
-        cast(ProcessQuery, self)._asset_id.extend(
-            _str_cmps(
-                "asset_id",
-                eq=eq,
-                contains=contains,
-                ends_with=ends_with,
-                starts_with=starts_with,
-                regexp=regexp,
-                distance=distance,
-            )
         )
         return self
 
@@ -275,7 +252,6 @@ class ProcessQuery(Queryable[IProcessView]):
             "process_id": self._process_id,
             "process_name": self._process_name,
             "created_timestamp": self._created_timestamp,
-            "asset_id": self._asset_id,
             "terminate_time": self._terminate_time,
             "image_name": self._image_name,
             "arguments": self._arguments,
@@ -321,7 +297,6 @@ class ProcessView(Viewable):
         node_type: Optional[str] = None,
         process_id: Optional[int] = None,
         created_timestamp: Optional[int] = None,
-        asset_id: Optional[str] = None,
         terminate_time: Optional[int] = None,
         image_name: Optional[str] = None,
         process_name: Optional[str] = None,
@@ -345,7 +320,6 @@ class ProcessView(Viewable):
         self.process_id = process_id
         self.node_type = node_type
         self.created_timestamp = created_timestamp
-        self.asset_id = asset_id
         self.terminate_time = terminate_time
         self.image_name = image_name
         self.process_name = process_name
@@ -388,14 +362,6 @@ class ProcessView(Viewable):
             int, self.fetch_property("created_timestamp", int)
         )
         return cast(ProcessView, self).created_timestamp
-
-    def get_asset_id(self: "NV") -> Optional[str]:
-        if cast(ProcessView, self).asset_id is not None:
-            return cast(ProcessView, self).asset_id
-        cast(ProcessView, self).asset_id = cast(
-            str, self.fetch_property("asset_id", str)
-        )
-        return cast(ProcessView, self).asset_id
 
     def get_terminate_time(self: "NV") -> Optional[int]:
         if cast(ProcessView, self).terminate_time is not None:
@@ -528,7 +494,6 @@ class ProcessView(Viewable):
             "process_id": int,
             "process_name": str,
             "created_timestamp": int,
-            "asset_id": str,
             "terminate_time": int,
             "image_name": str,
             "arguments": str,
@@ -565,7 +530,6 @@ class ProcessView(Viewable):
             "process_id": self.process_id,
             "process_name": self.process_name,
             "created_timestamp": self.created_timestamp,
-            "asset_id": self.asset_id,
             "terminate_time": self.terminate_time,
             "image_name": self.image_name,
             "arguments": self.arguments,
