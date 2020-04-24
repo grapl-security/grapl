@@ -151,7 +151,7 @@ type {type_name} {{
     client.alter(op)
 
 
-def provision_mg(mclient):
+def provision_mg(mclient) -> None:
     # drop_all(mclient)
     # drop_all(___local_dg_provision_client)
 
@@ -171,7 +171,7 @@ def provision_mg(mclient):
     set_schema(mclient, mg_schema_str)
 
 
-def provision_eg(eclient):
+def provision_eg(eclient) -> None:
     # drop_all(mclient)
     # drop_all(___local_dg_provision_client)
 
@@ -366,6 +366,14 @@ if __name__ == '__main__':
     local_dg_provision_client = DgraphClient(DgraphClientStub('master_graph:9080'))
     local_eg_provision_client = DgraphClient(DgraphClientStub('engagement_graph:9080'))
 
+    while True:
+        try:
+            drop_all(local_dg_provision_client)
+            drop_all(local_eg_provision_client)
+            break
+        except Exception as e:
+            print('Failed to drop', e)
+
     mg_succ = False
     eg_succ = False
 
@@ -378,29 +386,31 @@ if __name__ == '__main__':
     for i in range(0, 150):
         try:
             if not mg_succ:
-                drop_all(local_dg_provision_client)
+                print('attempting mg_succ')
                 time.sleep(1)
                 provision_mg(
                     local_dg_provision_client,
                 )
                 mg_succ = True
         except Exception as e:
-            print(e)
+            print('mg provision failed with: ', e)
 
         try:
             if not eg_succ:
-                drop_all(local_eg_provision_client)
+                print('attempting eg_succ')
                 time.sleep(1)
                 provision_eg(
                     local_eg_provision_client,
                 )
                 eg_succ = True
         except Exception as e:
-            print(e)
+            print('eg provision failed with: ', e)
 
         if (mg_succ and eg_succ):
+            print('Done provisioning mg, eg')
             break
         else:
+            print(f'Not Done provisioning mg, eg {mg_succ} {eg_succ}')
             time.sleep(1)
 
     sqs_t.join(timeout=300)

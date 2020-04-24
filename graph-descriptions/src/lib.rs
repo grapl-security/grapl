@@ -89,21 +89,21 @@ impl std::string::ToString for NodeProperty {
 }
 
 impl NodeProperty {
-    fn as_str_prop(&self) -> Option<&str> {
+    pub fn as_str_prop(&self) -> Option<&str> {
         match &self.property {
             Some(node_property::Property::Strprop(s)) => Some(s),
             _ => None,
         }
     }
 
-    fn as_uint_prop(&self) -> Option<u64> {
+    pub fn as_uint_prop(&self) -> Option<u64> {
         match &self.property {
             Some(node_property::Property::Uintprop(s)) => Some(*s),
             _ => None,
         }
     }
 
-    fn as_int_prop(&self) -> Option<i64> {
+    pub fn as_int_prop(&self) -> Option<i64> {
         match &self.property {
             Some(node_property::Property::Intprop(s)) => Some(*s),
             _ => None,

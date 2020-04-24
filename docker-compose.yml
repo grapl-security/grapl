@@ -24,7 +24,7 @@ services:
     volumes:
       - ./local_grapl/:/var/run/target/
     command: python /var/run/target/grapl_provision.py
-    tty: false
+    tty: true
     links:
       - engagement_graph
       - master_graph
