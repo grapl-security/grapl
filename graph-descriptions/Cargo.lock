@@ -223,7 +223,7 @@ dependencies = [
 
 [[package]]
 name = "grapl-graph-descriptions"
-version = "0.2.8"
+version = "0.2.9"
 dependencies = [
  "base64 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
