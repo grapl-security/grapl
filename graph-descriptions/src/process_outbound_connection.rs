@@ -75,7 +75,6 @@ impl ProcessOutboundConnection {
         let mut j = json!({
             "node_key": self.node_key,
             "dgraph.type": "ProcessOutboundConnection",
-            "asset_id": self.asset_id.unwrap(),
             "protocol": self.protocol,
             "port": self.port,
         });

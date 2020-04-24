@@ -238,12 +238,10 @@ impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
             // The identity of an IpPortNode is the hash of its ip, port, and protocol
             Some(WhichNode::IpPortNode(mut ip_port)) => {
                 info!("Attributing IpPortNode");
-                let ip_address = &ip_port.ip_address;
                 let port = &ip_port.port;
                 let protocol = &ip_port.protocol;
 
                 let mut node_key_hasher = sha2::Sha256::default();
-                node_key_hasher.input(ip_address.as_bytes());
                 node_key_hasher.input(port.to_string().as_bytes());
                 node_key_hasher.input(protocol.as_bytes());
 

@@ -84,7 +84,6 @@ impl Process {
         let mut j =
             json!({
             "node_key": self.node_key,
-            "asset_id": asset_id,
             "process_id": self.process_id,
             "dgraph.type": "Process"
         });
