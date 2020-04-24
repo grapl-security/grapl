@@ -98,14 +98,14 @@ impl NodeProperty {
 
     fn as_uint_prop(&self) -> Option<u64> {
         match &self.property {
-            Some(node_property::Property::Uintprop(s)) => Some(s),
+            Some(node_property::Property::Uintprop(s)) => Some(*s),
             _ => None,
         }
     }
 
     fn as_int_prop(&self) -> Option<i64> {
         match &self.property {
-            Some(node_property::Property::Intprop(s)) => Some(s),
+            Some(node_property::Property::Intprop(s)) => Some(*s),
             _ => None,
         }
     }
