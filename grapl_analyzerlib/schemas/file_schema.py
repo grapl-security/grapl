@@ -1,4 +1,3 @@
-from grapl_analyzerlib.schemas import RiskSchema
 from grapl_analyzerlib.schemas.schema_builder import NodeSchema, ManyToMany
 
 
@@ -34,12 +33,4 @@ class FileSchema(NodeSchema):
     def self_type() -> str:
         return "File"
 
-
-if __name__ == '__main__':
-    from grapl_analyzerlib.schemas.schema_builder import generate_plugin_query, generate_plugin_view
-    schema = FileSchema()
-    query = generate_plugin_query(schema)
-    view = generate_plugin_view(schema)
-
-    print(query)
-    print(view)
+from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
