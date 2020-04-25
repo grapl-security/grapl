@@ -260,6 +260,7 @@ def lambda_handler(events: Any, context: Any) -> None:
         nodes = incident_graph['nodes']
         edges = incident_graph['edges']
         risk_score = incident_graph['risk_score']
+        lense_names = incident_graph['lenses']
 
         print(f'AnalyzerName {analyzer_name}, nodes: {nodes} edges: {type(edges)} {edges}')
 
@@ -272,39 +273,30 @@ def lambda_handler(events: Any, context: Any) -> None:
             # Only support asset lens for now
             copy_node(mg_client, eg_client, node.node.node_key, init_node=node.node.get_properties())
             copied_node = NodeView.from_node_key(eg_client, node.node.node_key)
-            if node.as_process():
-                asset_id = node.as_process().get_asset_id()
-            elif node.as_file():
-                asset_id = node.as_file().get_asset_id()
-            else:
-                if hasattr(node.node, 'asset_id'):
-                    asset_id = node.node.asset_id
-                else:
-                    print(f'Unsupported node: {node} {node.node.node_type}')
-                    continue
 
-            print(f'Getting lens for: {asset_id}')
-            lens = lenses.get(asset_id) or LensView.get_or_create(cclient, asset_id)
-            lenses[asset_id] = lens
+            for lense_name in lense_names:
+                print(f'Getting lens for: {lense_name}')
+                lens = lenses.get(lense_name) or LensView.get_or_create(cclient, lense_name)
+                lenses[lense_name] = lens
 
-            # Attach to scope
-            create_edge(eg_client, lens.uid, 'scope', copied_node.uid)
+                # Attach to scope
+                create_edge(eg_client, lens.uid, 'scope', copied_node.uid)
 
-            copied_nodes[copied_node.node_key] = copied_node.uid
+                copied_nodes[copied_node.node_key] = copied_node.uid
 
-            # If a node shows up in a lens all of its connected nodes should also show up in that lens
-            for edge_list in edges.values():
-                for edge in edge_list:
-                    from_uid = copied_nodes.get(edge['from'])
-                    to_uid = copied_nodes.get(edge['to'])
-                    if not from_uid:
-                        copy_node(mg_client, eg_client, edge['from'])
-                        copied_node = NodeView.from_node_key(eg_client, edge['from'])
-                    if not to_uid:
-                        copy_node(mg_client, eg_client, edge['to'])
-                        copied_node = NodeView.from_node_key(eg_client, edge['to'])
+                # If a node shows up in a lens all of its connected nodes should also show up in that lens
+                for edge_list in edges.values():
+                    for edge in edge_list:
+                        from_uid = copied_nodes.get(edge['from'])
+                        to_uid = copied_nodes.get(edge['to'])
+                        if not from_uid:
+                            copy_node(mg_client, eg_client, edge['from'])
+                            copied_node = NodeView.from_node_key(eg_client, edge['from'])
+                        if not to_uid:
+                            copy_node(mg_client, eg_client, edge['to'])
+                            copied_node = NodeView.from_node_key(eg_client, edge['to'])
 
-                    create_edge(eg_client, lens.uid, 'scope', copied_node.uid)
+                        create_edge(eg_client, lens.uid, 'scope', copied_node.uid)
 
         for node in nodes:
             node_uid = copied_nodes[node.node.node_key]

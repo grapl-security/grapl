@@ -255,6 +255,7 @@ def emit_event(s3, event: ExecutionHit) -> None:
             "edges": json.loads(event.edges),
             "analyzer_name": event.analyzer_name,
             "risk_score": event.risk_score,
+            "lenses": event.lenses,
         }
     )
     event_hash = hashlib.sha256(event_s.encode())
