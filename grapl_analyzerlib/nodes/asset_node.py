@@ -83,7 +83,7 @@ class AssetView(Viewable):
             dgraph_client: DgraphClient,
             node_key: str,
             uid: str,
-            node_type: str,
+            node_type: Optional[str] = None,
             hostname: Optional[str] = None,
             asset_processes: Optional[List['ProcessView']] = None,
             **kwargs,
