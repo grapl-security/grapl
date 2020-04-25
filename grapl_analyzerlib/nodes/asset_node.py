@@ -17,7 +17,7 @@ class AssetQuery(Queryable['AssetView']):
 
         self._hostname = []  # type: List[List[Cmp[str]]]
 
-        self._processes_on_asset = None  # type: Optional[IProcessQuery]
+        self._asset_processes = None  # type: Optional[IProcessQuery]
         self._files_on_asset = None  # type: Optional[IFileQuery]
 
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
@@ -35,7 +35,7 @@ class AssetQuery(Queryable['AssetView']):
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable[Viewable]"]:
         f_edges = {
-            'processes_on_asset': self._processes_on_asset,
+            'asset_processes': self._asset_processes,
             'files_on_asset': self._files_on_asset,
         }
 
@@ -47,7 +47,7 @@ class AssetQuery(Queryable['AssetView']):
     ) -> "NQ":
         process = process_query or ProcessQuery()  # type: ProcessQuery
         process._process_asset = cast(AssetQuery, self)
-        cast(AssetQuery, self)._processes_on_asset = process
+        cast(AssetQuery, self)._asset_processes = process
         return self
 
     def with_hostname(

@@ -14,7 +14,7 @@ class AssetSchema(NodeSchema):
                 "ip_assigned_to",
             )
             .with_forward_edge(
-                'processes_on_asset',
+                'asset_processes',
                 OneToMany(ProcessSchema),
                 'process_asset'
             )

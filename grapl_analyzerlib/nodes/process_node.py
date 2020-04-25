@@ -244,7 +244,7 @@ class ProcessQuery(Queryable[IProcessView]):
     def with_asset(self: "NQ", asset_query: Optional["IAssetQuery"] = None) -> "NQ":
         asset = asset_query or AssetQuery()  # type: AssetQuery
 
-        asset._processes_on_asset = cast(ProcessQuery, self)
+        asset._asset_processes = cast(ProcessQuery, self)
         cast(ProcessQuery, self)._process_asset = asset
         return self
     
@@ -289,7 +289,7 @@ class ProcessQuery(Queryable[IProcessView]):
     def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[Viewable]", str]]:
         reverse_edges = {
             "~children": (self._parent, "parent"),
-            "~processes_on_asset": (self._process_asset, "process_asset"),
+            "~asset_processes": (self._process_asset, "process_asset"),
         }
 
         return {
@@ -505,7 +505,7 @@ class ProcessView(Viewable):
             self: "NV"
     ) -> Optional["AssetView"]:
         cast(ProcessView, self).process_asset = cast(
-            ProcessView, self.fetch_edge("~processes_on_asset", AssetView)
+            ProcessView, self.fetch_edge("~asset_processes", AssetView)
         )
         return cast(ProcessView, self).process_asset
 
@@ -545,7 +545,7 @@ class ProcessView(Viewable):
     def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
         return {
             "~children": (ProcessView, "parent"),
-            "~processes_on_asset": (AssetView, "process_asset"),
+            "~asset_processes": (AssetView, "process_asset"),
         }
 
     def _get_properties(self, fetch: bool = False) -> Mapping[str, Union[str, int]]:
@@ -585,7 +585,7 @@ class ProcessView(Viewable):
     def _get_reverse_edges(self) -> "Mapping[str, ReverseEdgeView]":
         _reverse_edges = {
             "~children": (self.parent, "parent"),
-            "~processes_on_asset": (self.process_asset, "process_asset"),
+            "~asset_processes": (self.process_asset, "process_asset"),
         }
 
         reverse_edges = {
