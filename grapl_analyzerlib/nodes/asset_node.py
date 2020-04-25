@@ -96,6 +96,8 @@ class AssetView(Viewable):
         self.uid = uid
 
         self.hostname = hostname
+
+        self.asset_processes = asset_processes
         self.kwargs = kwargs
 
     def get_node_type(self) -> str:
