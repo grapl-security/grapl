@@ -83,7 +83,9 @@ class AssetView(Viewable):
             dgraph_client: DgraphClient,
             node_key: str,
             uid: str,
+            node_type: str,
             hostname: Optional[str] = None,
+            **kwargs,
     ):
         super(AssetView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid
