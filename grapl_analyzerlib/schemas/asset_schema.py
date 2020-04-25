@@ -20,7 +20,7 @@ class AssetSchema(NodeSchema):
             )
             .with_forward_edge(
                 'files_on_asset',
-                OneToMany(ProcessSchema),
+                OneToMany(FileSchema),
                 'file_asset'
             )
         )
@@ -30,4 +30,6 @@ class AssetSchema(NodeSchema):
         return "Asset"
 
 
-from grapl_analyzerlib.schemas import IpAddressSchema, ProcessSchema
+from grapl_analyzerlib.schemas.ip_address_schema import IpAddressSchema
+from grapl_analyzerlib.schemas.process_schema import ProcessSchema
+from grapl_analyzerlib.schemas.file_schema import FileSchema
