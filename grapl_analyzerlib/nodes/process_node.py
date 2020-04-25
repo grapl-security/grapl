@@ -9,7 +9,7 @@ from grapl_analyzerlib.nodes.viewable import Viewable, NV
 
 T = TypeVar("T")
 
-IProcessQuery = TypeVar("IProcessQuery", bound="ProcessQuery")
+IProcessQuery = TypeVar("IProcessQuery", bound="ProcessQuery[ProcessView]")
 IProcessView = TypeVar("IProcessView", bound="ProcessView")
 
 
@@ -42,6 +42,7 @@ class ProcessQuery(Queryable[IProcessView]):
 
         # Reverse edges
         self._parent = None  # type: Optional['ProcessQuery']
+        self._process_asset = None  # type: Optional['AssetQuery']
 
     def with_process_name(
         self: "NQ",
@@ -240,6 +241,13 @@ class ProcessQuery(Queryable[IProcessView]):
         cast(ProcessQuery, self)._parent = parent
         return self
 
+    def with_asset(self: "NQ", asset_query: Optional["IAssetQuery"] = None) -> "NQ":
+        asset = asset_query or AssetQuery()  # type: AssetQuery
+
+        asset._processes_on_asset = cast(ProcessQuery, self)
+        cast(ProcessQuery, self)._process_asset = asset
+        return self
+    
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return "process_id", int
 
@@ -263,7 +271,7 @@ class ProcessQuery(Queryable[IProcessView]):
 
         return combined
 
-    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
+    def _get_forward_edges(self) -> Mapping[str, "Queryable[Viewable]"]:
         forward_edges = {
             "children": self._children,
             "bin_file": self._bin_file,
@@ -278,8 +286,11 @@ class ProcessQuery(Queryable[IProcessView]):
 
         return {fe[0]: fe[1] for fe in forward_edges.items() if fe[1] is not None}
 
-    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
-        reverse_edges = {"~children": (self._parent, "parent")}
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable[Viewable]", str]]:
+        reverse_edges = {
+            "~children": (self._parent, "parent"),
+            "~processes_on_asset": (self._process_asset, "process_asset"),
+        }
 
         return {
             fe[0]: (fe[1][0], fe[1][1])
@@ -314,6 +325,7 @@ class ProcessView(Viewable):
             List["ProcessInboundConnectionQuery"]
         ] = None,
         parent: Optional["NV"] = None,
+        process_asset: Optional["AssetView"] = None,
         risks: Optional[List["RiskView"]] = None,
     ) -> None:
         super(ProcessView, self).__init__(dgraph_client, node_key=node_key, uid=uid)
@@ -335,6 +347,7 @@ class ProcessView(Viewable):
         self.bin_file = bin_file
         self.risks = risks or []
         self.parent = parent
+        self.process_asset = process_asset
 
     def get_node_type(self) -> str:
         return 'Process'
@@ -481,12 +494,20 @@ class ProcessView(Viewable):
         return cast(ProcessView, self).risks
 
     def get_parent(
-        self: "NV", match_parent: Optional["IProcessQuery"] = None
+        self: "NV"
     ) -> Optional["NV"]:
         cast(ProcessView, self).parent = cast(
             ProcessView, self.fetch_edge("~children", type(self))
         )
         return cast(ProcessView, self).parent
+
+    def get_asset(
+            self: "NV"
+    ) -> Optional["NV"]:
+        cast(ProcessView, self).process_asset = cast(
+            ProcessView, self.fetch_edge("~processes_on_asset", AssetView)
+        )
+        return cast(ProcessView, self).process_asset
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
@@ -522,7 +543,10 @@ class ProcessView(Viewable):
 
     @staticmethod
     def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
-        return {"~children": (ProcessView, "parent")}
+        return {
+            "~children": (ProcessView, "parent"),
+            "~processes_on_asset": (AssetView, "process_asset"),
+        }
 
     def _get_properties(self, fetch: bool = False) -> Mapping[str, Union[str, int]]:
         # TODO: Fetch it `fetch`
@@ -559,7 +583,10 @@ class ProcessView(Viewable):
         return cast("Mapping[str, ForwardEdgeView]", forward_edges)
 
     def _get_reverse_edges(self) -> "Mapping[str, ReverseEdgeView]":
-        _reverse_edges = {"~children": (self.parent, "parent")}
+        _reverse_edges = {
+            "~children": (self.parent, "parent"),
+            "~processes_on_asset": (self.process_asset, "process_asset"),
+        }
 
         reverse_edges = {
             name: value
@@ -591,3 +618,4 @@ from grapl_analyzerlib.nodes.process_outbound_network_connection import (
     ProcessOutboundConnectionQuery)
 
 from grapl_analyzerlib.nodes.risk_node import RiskQuery, IRiskQuery, RiskView
+from grapl_analyzerlib.nodes.asset_node import AssetView, AssetQuery, IAssetQuery

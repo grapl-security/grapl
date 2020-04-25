@@ -34,7 +34,7 @@ message Host {
         // the hostname of the host
         string hostname = 1;
 
-        // The asset ID itself
+        // The process_asset ID itself
         // We expect this to be the variant once we have attributed the node
         string asset_id = 2;
     }

@@ -1,21 +1,24 @@
 from typing import *
 
+from pydgraph import DgraphClient
+
+from grapl_analyzerlib.nodes.comparators import Cmp, StrCmp, _str_cmps, PropertyFilter
 from grapl_analyzerlib.nodes.queryable import Queryable, NQ
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Viewable, ReverseEdgeView
-from grapl_analyzerlib.nodes.comparators import Cmp, IntCmp, _int_cmps, StrCmp, _str_cmps, PropertyFilter
-
-from pydgraph import DgraphClient
 
 IAssetQuery = TypeVar('IAssetQuery', bound='AssetQuery')
 IAssetView = TypeVar('IAssetView', bound='AssetView')
 
 
-class AssetQuery(Queryable):
-    def __init__(self):
+class AssetQuery(Queryable['AssetView']):
+    def __init__(self) -> None:
         super(AssetQuery, self).__init__(AssetView)
 
         self._hostname = []  # type: List[List[Cmp[str]]]
+
+        self._processes_on_asset = None  # type: Optional[IProcessQuery]
+        self._files_on_asset = None  # type: Optional[IFileQuery]
 
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return None
@@ -30,11 +33,22 @@ class AssetQuery(Queryable):
 
         return {p[0]: p[1] for p in props if p[1]}
 
-    def _get_forward_edges(self) -> Mapping[str, "Queryable"]:
-        return {}
+    def _get_forward_edges(self) -> Mapping[str, "Queryable[Viewable]"]:
+        f_edges = {
+            'processes_on_asset': self._processes_on_asset,
+            'files_on_asset': self._files_on_asset,
+        }
 
-    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
-        return {}
+        return {f[0]: f[1] for f in f_edges.items() if f[1] is not None}
+
+    def with_processes(
+            self: "NQ",
+            process_query: Optional["IProcessQuery"] = None
+    ) -> "NQ":
+        process = process_query or ProcessQuery()  # type: ProcessQuery
+        process._process_asset = cast(AssetQuery, self)
+        cast(AssetQuery, self)._processes_on_asset = process
+        return self
 
     def with_hostname(
             self,
@@ -124,3 +138,7 @@ class AssetView(Viewable):
         }
 
         return {p[0]: p[1] for p in props.items() if p[1] is not None}
+
+
+from grapl_analyzerlib.nodes.process_node import IProcessQuery, IProcessView, ProcessQuery
+from grapl_analyzerlib.nodes.file_node import IFileQuery, IFileView

@@ -1,4 +1,4 @@
-from grapl_analyzerlib.schemas.schema_builder import NodeSchema
+from grapl_analyzerlib.schemas.schema_builder import NodeSchema, OneToMany
 
 
 class AssetSchema(NodeSchema):
@@ -9,13 +9,25 @@ class AssetSchema(NodeSchema):
             .with_str_prop("hostname")
             .with_forward_edge(
                 "asset_ip",
-                # An asset can have multiple IP address
-                OneToMany(IpAddressNodeSchema),
+                # An process_asset can have multiple IP address
+                OneToMany(IpAddressSchema),
                 "ip_assigned_to",
             )
-
+            .with_forward_edge(
+                'processes_on_asset',
+                OneToMany(ProcessSchema),
+                'process_asset'
+            )
+            .with_forward_edge(
+                'files_on_asset',
+                OneToMany(ProcessSchema),
+                'file_asset'
+            )
         )
 
     @staticmethod
     def self_type() -> str:
         return "Asset"
+
+
+from grapl_analyzerlib.schemas import IpAddressSchema, ProcessSchema
