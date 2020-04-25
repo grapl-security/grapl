@@ -5,7 +5,8 @@ class FileSchema(NodeSchema):
     def __init__(self) -> None:
         super(FileSchema, self).__init__()
         (
-            self.with_str_prop("file_name")
+            self
+            .with_str_prop("file_name")
             .with_str_prop("file_path")
             .with_str_prop("file_extension")
             .with_str_prop("file_mime_type")
