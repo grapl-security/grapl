@@ -22,11 +22,6 @@ class FileSchema(NodeSchema):
             .with_str_prop("md5_hash", indexes=['hash'])
             .with_str_prop("sha1_hash", indexes=['hash'])
             .with_str_prop("sha256_hash", indexes=['hash'])
-            .with_forward_edge(
-                'risks',
-                ManyToMany(RiskSchema),
-                'risky_nodes'
-            )
         )
 
     @staticmethod
