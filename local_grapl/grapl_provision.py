@@ -1,9 +1,16 @@
 import time
 import threading
 
+import boto3
+import json
+
 import pydgraph
 
 from grapl_analyzerlib.schemas import *
+from grapl_analyzerlib.schemas.schema_builder import *
+from grapl_analyzerlib.schemas.asset_schema import AssetSchema
+from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
+from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
 
 from pydgraph import DgraphClient, DgraphClientStub
@@ -15,58 +22,17 @@ class AnyNodeSchema(NodeSchema):
         return 'Any'
 
 
-class RiskSchema(NodeSchema):
-    def __init__(self) -> None:
-        super(RiskSchema, self).__init__()
-        (
-            self
-                .with_str_prop('analyzer_name')
-                .with_int_prop('risk_score')
-        )
-
-    @staticmethod
-    def self_type() -> str:
-        return 'Risk'
-
-
-class LensSchema(NodeSchema):
-    def __init__(self) -> None:
-        super(LensSchema, self).__init__()
-        (
-            self
-                .with_str_prop('lens')
-                .with_int_prop('score')
-                .with_forward_edge('scope', ManyToMany(AnyNodeSchema), 'in_scope')
-        )
-
-    @staticmethod
-    def self_type() -> str:
-        return 'Lens'
-
-
-class AssetSchema(NodeSchema):
-    def __init__(self) -> None:
-        super(AssetSchema, self).__init__()
-        (
-            self.with_str_prop("hostname")
-        )
-
-    @staticmethod
-    def self_type() -> str:
-        return "Asset"
-
-
-def set_schema(client, schema, engagement=False):
+def set_schema(client, schema, engagement=False) -> None:
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
 
 
-def drop_all(client):
+def drop_all(client) -> None:
     op = pydgraph.Operation(drop_all=True)
     client.alter(op)
 
 
-def format_schemas(schema_defs):
+def format_schemas(schema_defs) -> None:
     schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
@@ -79,7 +45,7 @@ def format_schemas(schema_defs):
     ])
 
 
-def get_type_dict(client, type_name):
+def get_type_dict(client, type_name) -> None:
     query = f"""
     schema(type: {type_name}) {{
       type
@@ -175,7 +141,7 @@ def provision_eg(eclient) -> None:
     # drop_all(mclient)
     # drop_all(___local_dg_provision_client)
 
-    schemas = (
+    schemas = [
         AssetSchema(),
         ProcessSchema(),
         FileSchema(),
@@ -185,50 +151,17 @@ def provision_eg(eclient) -> None:
         NetworkConnectionSchema(),
         ProcessInboundConnectionSchema(),
         ProcessOutboundConnectionSchema(),
-    )
+    ]
 
     eg_schemas = [s.with_forward_edge('risks', ManyToMany(RiskSchema), 'risky_nodes') for s in schemas]
 
-    risk_schema = RiskSchema()
-    lens_schema = LensSchema()
-    eg_schemas.extend([risk_schema, lens_schema])
+    eg_schemas.append(RiskSchema())
+    eg_schemas.append(LensSchema())
     eg_schema_str = format_schemas(eg_schemas)
+    print(eg_schema_str)
     set_schema(eclient, eg_schema_str)
 
 
-def provision(mclient, eclient):
-    # drop_all(mclient)
-    # drop_all(___local_dg_provision_client)
-
-    schemas = (
-        AssetSchema(),
-        ProcessSchema(),
-        FileSchema(),
-        IpConnectionSchema(),
-        IpAddressSchema(),
-        IpPortSchema(),
-        NetworkConnectionSchema(),
-        ProcessInboundConnectionSchema(),
-        ProcessOutboundConnectionSchema(),
-    )
-
-    mg_schema_str = format_schemas(schemas)
-    set_schema(mclient, mg_schema_str)
-
-    eg_schemas = [s.with_forward_edge('risks', ManyToMany(RiskSchema), 'risky_nodes') for s in schemas]
-
-    risk_schema = RiskSchema()
-    lens_schema = LensSchema()
-    eg_schemas.extend([risk_schema, lens_schema])
-    eg_schema_str = format_schemas(eg_schemas)
-    set_schema(eclient, eg_schema_str)
-
-    # for schema in eg_schemas:
-    #     update_reverse_edges(client, schema)
-
-
-import boto3
-import json
 
 BUCKET_PREFIX = 'local-grapl'
 
@@ -300,9 +233,10 @@ def provision_bucket(s3, bucket_name: str) -> None:
 
 def bucket_provision_loop() -> None:
     s3_succ = {bucket for bucket in buckets}
+    s3 = None
     for i in range(0, 150):
         try:
-            s3 = boto3.client(
+            s3 = s3 or boto3.client(
                 's3',
                 endpoint_url="http://s3:9000",
                 aws_access_key_id='minioadmin',
@@ -326,11 +260,12 @@ def bucket_provision_loop() -> None:
     raise Exception("Failed to provision s3")
 
 
-def sqs_provision_loop():
+def sqs_provision_loop() -> None:
     sqs_succ = {service for service in services}
+    sqs = None
     for i in range(0, 150):
         try:
-            sqs = boto3.client(
+            sqs = sqs or boto3.client(
                 'sqs',
                 region_name="us-east-1",
                 endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
@@ -338,7 +273,9 @@ def sqs_provision_loop():
                 aws_secret_access_key='dummy_cred_aws_secret_access_key',
             )
         except Exception as e:
-            print('failed to connect to sqs or s3')
+            print('failed to connect to sqs or s3', e)
+            time.sleep(1)
+            continue
 
         for service in services:
             if service in sqs_succ:
@@ -354,24 +291,25 @@ def sqs_provision_loop():
     raise Exception("Failed to provision sqs")
 
 
-
-
-def drop_all(client):
+def drop_all(client) -> None:
     op = pydgraph.Operation(drop_all=True)
     client.alter(op)
 
 
 if __name__ == '__main__':
-
     local_dg_provision_client = DgraphClient(DgraphClientStub('master_graph:9080'))
     local_eg_provision_client = DgraphClient(DgraphClientStub('engagement_graph:9080'))
 
-    while True:
+    # local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
+    # local_eg_provision_client = DgraphClient(DgraphClientStub('localhost:9081'))
+
+    for i in range(0, 150):
         try:
             drop_all(local_dg_provision_client)
             drop_all(local_eg_provision_client)
             break
         except Exception as e:
+            time.sleep(2)
             print('Failed to drop', e)
 
     mg_succ = False
@@ -392,9 +330,11 @@ if __name__ == '__main__':
                     local_dg_provision_client,
                 )
                 mg_succ = True
+                break
         except Exception as e:
             print('mg provision failed with: ', e)
 
+    for i in range(0, 150):
         try:
             if not eg_succ:
                 print('attempting eg_succ')
@@ -403,15 +343,10 @@ if __name__ == '__main__':
                     local_eg_provision_client,
                 )
                 eg_succ = True
+                break
         except Exception as e:
             print('eg provision failed with: ', e)
 
-        if (mg_succ and eg_succ):
-            print('Done provisioning mg, eg')
-            break
-        else:
-            print(f'Not Done provisioning mg, eg {mg_succ} {eg_succ}')
-            time.sleep(1)
 
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
