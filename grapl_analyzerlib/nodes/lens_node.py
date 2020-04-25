@@ -423,7 +423,7 @@ class LensView(Viewable):
                 m_res = eg_txn.mutate(
                     set_obj={
                         "lens": lens_name,
-                        "node_key": lens_name,
+                        "node_key": 'lens-' + lens_name,
                         "dgraph.type": "Lens",
                         "score": 0,
                     },
