@@ -505,7 +505,7 @@ class ProcessView(Viewable):
             self: "NV"
     ) -> Optional["AssetView"]:
         cast(ProcessView, self).process_asset = cast(
-            ProcessView, self.fetch_edge("~asset_processes", AssetView)
+            AssetView, self.fetch_edge("~asset_processes", AssetView)
         )
         return cast(ProcessView, self).process_asset
 

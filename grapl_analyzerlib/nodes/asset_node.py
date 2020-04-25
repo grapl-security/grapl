@@ -20,6 +20,9 @@ class AssetQuery(Queryable['AssetView']):
         self._asset_processes = None  # type: Optional[IProcessQuery]
         self._files_on_asset = None  # type: Optional[IFileQuery]
 
+    def _get_reverse_edges(self) -> Mapping[str, Tuple["Queryable", str]]:
+        return {}
+
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return None
 
@@ -31,7 +34,7 @@ class AssetQuery(Queryable['AssetView']):
             'hostname': self._hostname,
         }
 
-        return {p[0]: p[1] for p in props if p[1]}
+        return {p[0]: p[1] for p in props.items() if p[1]}
 
     def _get_forward_edges(self) -> Mapping[str, "Queryable[Viewable]"]:
         f_edges = {
