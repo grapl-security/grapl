@@ -20,7 +20,7 @@ class ExecutionHit(object):
         self.analyzer_name = analyzer_name
         self.nodes = json.dumps(node_dict["nodes"])
         self.edges = json.dumps(node_dict["edges"])
-        self.correlation_points = lenses
+        self.lenses = lenses
         self.risk_score = risk_score
 
 
