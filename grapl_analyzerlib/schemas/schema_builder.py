@@ -93,8 +93,8 @@ class NodeSchema(abc.ABC):
 
         for prop_name, edge_type, reverse_name in self.forward_edges:
 
-            if isinstance(edge_type, list):
-                type_name = edge_type[0]._inner_type.self_type()
+            if isinstance(edge_type, OneToMany) or isinstance(edge_type, ManyToMany):
+                type_name = edge_type._inner_type.self_type()
                 edge_types += f"{prop_name}: [uid]  # type: {type_name}\n"
             else:
                 type_name = edge_type._inner_type.self_type()
