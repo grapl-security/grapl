@@ -85,6 +85,7 @@ class AssetView(Viewable):
             uid: str,
             node_type: str,
             hostname: Optional[str] = None,
+            asset_processes: Optional[List['ProcessView']] = None,
             **kwargs,
     ):
         super(AssetView, self).__init__(
@@ -95,6 +96,7 @@ class AssetView(Viewable):
         self.uid = uid
 
         self.hostname = hostname
+        self.kwargs = kwargs
 
     def get_node_type(self) -> str:
         return 'Asset'
