@@ -194,7 +194,10 @@ const getNodeType = (node: any) => {
 
     // Dynamic nodes
     if (node.node_type) {
-        return node.node_type[0]
+        if(Array.isArray(node.node_type)) {
+            return node.node_type[0]
+        }
+        return node.node_type
     }
 
     console.warn('Unable to find type for node ', node);
