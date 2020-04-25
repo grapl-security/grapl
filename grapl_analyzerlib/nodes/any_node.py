@@ -1,6 +1,5 @@
 import json
 import logging
-
 from collections import defaultdict
 from typing import (
     Optional,
@@ -8,7 +7,6 @@ from typing import (
     Tuple,
     Mapping,
     Any,
-    Union,
     Type,
     Dict,
     List,
@@ -19,17 +17,6 @@ from typing import (
 from pydgraph import DgraphClient
 
 from grapl_analyzerlib.graph_description_pb2 import Node
-from grapl_analyzerlib.nodes.asset_node import AssetView
-from grapl_analyzerlib.nodes.ip_address_node import IpAddressView
-from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionView
-from grapl_analyzerlib.nodes.ip_port_node import IpPortView
-from grapl_analyzerlib.nodes.network_connection_node import NetworkConnectionView
-from grapl_analyzerlib.nodes.process_inbound_network_connection import (
-    ProcessInboundConnectionView,
-)
-from grapl_analyzerlib.nodes.process_outbound_network_connection import (
-    ProcessOutboundConnectionView,
-)
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
 
@@ -205,7 +192,7 @@ class NodeView(Viewable):
 
     def __init__(
         self, dgraph_client: DgraphClient, node_key: str, uid: str, node: Viewable
-    ):
+    ) -> None:
         super(NodeView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid
         )
@@ -492,3 +479,14 @@ from grapl_analyzerlib.nodes.file_node import FileView
 from grapl_analyzerlib.nodes.process_node import ProcessView
 from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
 from grapl_analyzerlib.nodes.viewable import ForwardEdgeView, EdgeViewT, ReverseEdgeView
+from grapl_analyzerlib.nodes.asset_node import AssetView
+from grapl_analyzerlib.nodes.ip_address_node import IpAddressView
+from grapl_analyzerlib.nodes.ip_connection_node import IpConnectionView
+from grapl_analyzerlib.nodes.ip_port_node import IpPortView
+from grapl_analyzerlib.nodes.network_connection_node import NetworkConnectionView
+from grapl_analyzerlib.nodes.process_inbound_network_connection import (
+    ProcessInboundConnectionView,
+)
+from grapl_analyzerlib.nodes.process_outbound_network_connection import (
+    ProcessOutboundConnectionView,
+)
