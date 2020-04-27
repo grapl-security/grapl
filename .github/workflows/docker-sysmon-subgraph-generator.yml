@@ -53,5 +53,7 @@ jobs:
           [ "$VERSION" == "master" ] && VERSION=latest 
           [ "$VERSION" == "staging" ] && VERSION=beta 
           
-          docker tag grapl/grapl-sysmon-subgraph-generator:$VERSION
+          echo $VERSION
+          
+          docker tag grapl/grapl-sysmon-subgraph-generator grapl/grapl-sysmon-subgraph-generator:$VERSION
           docker push grapl/grapl-sysmon-subgraph-generator:$VERSION
