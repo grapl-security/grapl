@@ -1,4 +1,4 @@
-name: Docker
+name: Docker Node Identifier
 
 on:
   push:
