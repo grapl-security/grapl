@@ -31,8 +31,8 @@ jobs:
       - name: Build image
         run: |
           cd ./sysmon-subgraph-generator/
-          mkdir -p .//target/release
-          chmod -R 777 ./target/release/
+          mkdir -p ./target/x86_64-unknown-linux-musl/release
+          chmod -R 777 ./target
           docker run   -v "$(pwd)":/home/rust/src -t grapl/grapl_rust_base cargo build --release 
           cp "./target/x86_64-unknown-linux-musl/release/sysmon-subgraph-generator" "./sysmon-subgraph-generator"
           docker build . -t grapl/grapl-sysmon-subgraph-generator
