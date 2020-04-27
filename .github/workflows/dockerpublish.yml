@@ -5,6 +5,7 @@ on:
     # Publish `master` as Docker `latest` image.
     branches:
       - master
+      - staging
 
     # Publish `v1.2.3` tags as releases.
     tags:
@@ -28,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build image
+      - name: Build sysmon-subgraph-generator
         run: |
           cd ./sysmon-subgraph-generator/
           mkdir -p ./target/x86_64-unknown-linux-musl/release
@@ -40,5 +41,17 @@ jobs:
       - name: Log into registry
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
-      - name: Push image
-        run: docker push grapl/grapl-sysmon-subgraph-generator
+      - name: Push sysmon-subgraph-generator
+
+        run: |
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          
+          [ "$VERSION" == "master" ] && VERSION=latest 
+          [ "$VERSION" == "staging" ] && VERSION=beta 
+          
+          docker tag grapl/grapl-sysmon-subgraph-generator:$VERSION
+          docker push grapl/grapl-sysmon-subgraph-generator:$VERSION
