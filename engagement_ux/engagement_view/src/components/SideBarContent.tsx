@@ -144,7 +144,17 @@ function ToggleLensTable({setLens}: any) {
     )
 }
 
-const engagement_edge = "http://localhost:8900/";
+const isLocal = true;
+
+const getEngagementEdge = () => {
+    if (isLocal) {
+        return "http://" + window.location.hostname + ":8900/"
+    } else {
+        return "__engagement_ux_standin__hostname__"
+    }
+}
+
+const engagement_edge = getEngagementEdge();
 
 const getLenses = async () => {
     const res = await fetch(`${engagement_edge}getLenses`,

@@ -3,7 +3,17 @@ import React, { useRef, useState, useEffect } from 'react';
 import { ForceGraph2D, ForceGraph3D } from 'react-force-graph';
 import * as d3 from "d3";
 
-const engagement_edge = "http://localhost:8900/";
+const isLocal = true;
+
+const getEngagementEdge = () => {
+    if (isLocal) {
+        return "http://" + window.location.hostname + ":8900/"
+    } else {
+        return "__engagement_ux_standin__hostname__"
+    }
+}
+
+const engagement_edge = getEngagementEdge();
 
 const BKDRHash = (str: any) => {
     const seed = 131;
