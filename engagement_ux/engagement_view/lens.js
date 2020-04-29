@@ -1,11 +1,16 @@
 // Stylesheets
 console.log('entry.js init');
-const engagement_edge = "http://localhost:8900/";
+const isLocal = true;
 
-if (engagement_edge.length === 0) {
-    console.assert("Engagement Edge URL can not be empty. Run build.sh");
+const getEngagementEdge = () => {
+    if (isLocal) {
+        return window.location.host + ":8900/"
+    } else {
+        return "__engagement_ux_standin__hostname__"
+    }
 }
 
+const engagement_edge = getEngagementEdge();
 console.log(`Connecting to ${engagement_edge}`);
 
 const BKDRHash = (str) => {

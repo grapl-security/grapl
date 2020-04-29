@@ -4,8 +4,17 @@ import './LogIn.css';
 import { Route, Redirect } from "react-router-dom";
 import { Formik, Field, Form } from "formik";
 
-const engagement_edge = "http://localhost:8900/";
+const isLocal = true;
 
+const getEngagementEdge = () => {
+    if (isLocal) {
+        return window.location.host + ":8900/"
+    } else {
+        return "__engagement_ux_standin__hostname__"
+    }
+}
+
+const engagement_edge = getEngagementEdge();
 export const checkLogin = async () => {
     const res = await fetch(`${engagement_edge}checkLogin`, {
         method: 'get',
