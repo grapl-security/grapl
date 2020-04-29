@@ -1158,12 +1158,16 @@ const fs = require('fs'),
     path = require('path');
 
 const replaceInFile = (toModify, toReplace, replaceWith, outputFile) => {
-    return fs.readFile(toModify, 'utf8', (err, data) => {
+    return fs.readFile(toModify, (err, data) => {
         if (err) {
             return console.log(err);
         }
 
-        const replaced = data.split(toReplace).join(replaceWith);
+        const replaced = data
+            .split(toReplace)
+            .join(replaceWith)
+            .split("const isLocal = true;")
+            .join( "const isLocal = false;");
 
         if (outputFile) {
             fs.writeFile(outputFile, replaced, 'utf8', (err) => {
@@ -1175,7 +1179,7 @@ const replaceInFile = (toModify, toReplace, replaceWith, outputFile) => {
             });
         }
 
-    });
+    }, 'utf8');
 };
 
 const getEdgeGatewayId = (integrationName: string, cb) => {
@@ -1220,7 +1224,7 @@ class EngagementUx extends cdk.Stack {
             (gatewayId) => {
                 const edgeUrl = `https://${gatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
 
-                const toReplace = "http://localhost:8900/";
+                const toReplace = "__engagement_ux_standin__hostname__";
                 const replacement = `${edgeUrl}`;
 
                 console.log(__dirname)
