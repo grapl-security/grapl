@@ -29,6 +29,7 @@ jobs:
       - name: Build engagement-view
         run: |
           cd ./engagement_ux/engagement_view/
+          yarn install
           yarn build
 
           docker build . -t grapl/grapl-$IMAGE_NAME
