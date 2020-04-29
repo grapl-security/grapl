@@ -25,6 +25,12 @@ from grapl_analyzerlib.nodes.queryable import Queryable, traverse_query_iter, ge
 from grapl_analyzerlib.nodes.subgraph_view import SubgraphView
 from pydgraph import DgraphClientStub, DgraphClient
 
+try:
+    from analyzer_executor.src.plugin_retriever import PluginRetriever
+except:
+    from plugin_retriever import PluginRetriever
+
+PluginRetriever
 IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 IS_RETRY = os.environ['IS_RETRY']
 
@@ -316,6 +322,12 @@ def lambda_handler(events: Any, context: Any) -> None:
     client = DgraphClient(*client_stubs)
 
     s3 = get_s3_client()
+
+    PluginRetriever(
+        plugin_bucket=,
+        plugin_directory=,
+        s3_client=,
+    )
 
     for event in events["Records"]:
         if not IS_LOCAL:
