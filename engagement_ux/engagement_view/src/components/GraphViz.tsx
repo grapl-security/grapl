@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React, { useRef, useState, useEffect } from 'react';
-import { ForceGraph2D, ForceGraph3D } from 'react-force-graph';
+import React, {useEffect, useRef} from 'react';
+import {ForceGraph2D} from 'react-force-graph';
 import * as d3 from "d3";
 
 const isLocal = true;
@@ -23,8 +23,8 @@ const BKDRHash = (str: any) => {
     str += 'x';
     // Note: Number.MAX_SAFE_INTEGER equals 9007199254740991
     const MAX_SAFE_INTEGER = parseInt(9007199254740991 / seed2 as any) as any;
-    for(let i = 0; i < str.length; i++) {
-        if(hash > MAX_SAFE_INTEGER) {
+    for (let i = 0; i < str.length; i++) {
+        if (hash > MAX_SAFE_INTEGER) {
             hash = parseInt(hash / seed2 as any);
         }
         hash = hash * seed + str.charCodeAt(i);
@@ -48,19 +48,19 @@ const HSL2RGB = (H: any, S: any, L: any) => {
     const q = L < 0.5 ? L * (1 + S) : L + S - L * S;
     const p = 2 * L - q;
 
-    return [H + 1/3, H, H - 1/3].map((color) => {
-        if(color < 0) {
+    return [H + 1 / 3, H, H - 1 / 3].map((color) => {
+        if (color < 0) {
             color++;
         }
-        if(color > 1) {
+        if (color > 1) {
             color--;
         }
-        if(color < 1/6) {
+        if (color < 1 / 6) {
             color = p + (q - p) * 6 * color;
-        } else if(color < 0.5) {
+        } else if (color < 0.5) {
             color = q;
-        } else if(color < 2/3) {
-            color = p + (q - p) * 6 * (2/3 - color);
+        } else if (color < 2 / 3) {
+            color = p + (q - p) * 6 * (2 / 3 - color);
         } else {
             color = p;
         }
@@ -77,7 +77,7 @@ const isArray = (o: any) => {
  *
  * @class
  */
-const ColorHash = function(options: any) {
+const ColorHash = function (options: any) {
     options = options || {};
 
     const LS = [options.lightness, options.saturation].map((param) => {
@@ -100,7 +100,7 @@ const ColorHash = function(options: any) {
     this.hueRanges = options.hue.map(function (range: any) {
         return {
             min: typeof range.min === 'undefined' ? 0 : range.min,
-            max: typeof range.max === 'undefined' ? 360: range.max
+            max: typeof range.max === 'undefined' ? 360 : range.max
         };
     });
 
@@ -114,7 +114,7 @@ const ColorHash = function(options: any) {
  * @param {String} str string to hash
  * @returns {Array} [h, s, l]
  */
-ColorHash.prototype.hsl = function(str: any) {
+ColorHash.prototype.hsl = function (str: any) {
     let H, S, L;
     let hash = this.hash(str);
 
@@ -140,11 +140,10 @@ ColorHash.prototype.hsl = function(str: any) {
  * @param {String} str string to hash
  * @returns {Array} [r, g, b]
  */
-ColorHash.prototype.rgb = function(str: any) {
+ColorHash.prototype.rgb = function (str: any) {
     const hsl = this.hsl(str);
     return HSL2RGB.apply(this, hsl);
 };
-
 
 
 const retrieveGraph = async (lens: string) => {
@@ -204,7 +203,7 @@ const getNodeType = (node: any) => {
 
     // Dynamic nodes
     if (node.node_type) {
-        if(Array.isArray(node.node_type)) {
+        if (Array.isArray(node.node_type)) {
             return node.node_type[0]
         }
         return node.node_type
@@ -237,7 +236,6 @@ const lensToAdjacencyMatrix = (matricies: any) => {
     }
 
     for (const matrix of matricies) {
-        const node_key = matrix.node['node_key'];
         const uid = matrix.node['uid'];
 
         for (const edge of matrix.edges) {
@@ -268,7 +266,7 @@ const lensToAdjacencyMatrix = (matricies: any) => {
             if (edgeList === undefined) {
                 edgeList = new Map();
                 edgeList.set(
-                    uid +  + to_uid,
+                    uid + +to_uid,
                     [uid, edge_name, to_uid]
                 );
 
@@ -485,21 +483,21 @@ const calcNodeRgb = (node: any, colorHash: any) => {
         return [31, 185, 128]
     } else if (node.nodeType === 'File') {
         return [177, 93, 255]
-    } 
-    
-    // else if (node.nodeType === 'Lens'){
-    //     return []
-    // } else if(node.nodeType === 'IpPort'){
-    //     return []
-    // } else if(node.nodeType === 'IpConnection'){
-    //     return []
-    // } else if(node.nodeType === 'ProcessInboundConnection'){
-    //     return []
-    // } else if(node.nodeType === 'ProcessOutboundConnection'){
-    //     return []
+    }
+
+        // else if (node.nodeType === 'Lens'){
+        //     return []
+        // } else if(node.nodeType === 'IpPort'){
+        //     return []
+        // } else if(node.nodeType === 'IpConnection'){
+        //     return []
+        // } else if(node.nodeType === 'ProcessInboundConnection'){
+        //     return []
+        // } else if(node.nodeType === 'ProcessOutboundConnection'){
+        //     return []
     // } 
-    
-    else{
+
+    else {
         return colorHash.rgb(node.nodeType)
     }
 }
@@ -548,7 +546,9 @@ const calcLinkRiskPercentile = (link: any, Graph: any) => {
 const calcLinkColor = (link: any, Graph: any) => {
     const risk = calcLinkRiskPercentile(link, Graph);
     // Default link color if no risk
-    if (risk === 0) {return 'white'}
+    if (risk === 0) {
+        return 'white'
+    }
     return percentToColor(risk);
 };
 
@@ -556,7 +556,7 @@ const calcLinkColor = (link: any, Graph: any) => {
 export const mapNodeProps = (node, f) => {
     for (const prop in node) {
         if (Object.prototype.hasOwnProperty.call(node, prop)) {
-            if(Array.isArray(node[prop])) {
+            if (Array.isArray(node[prop])) {
                 if (node[prop].length > 0) {
                     if (node[prop][0].uid === undefined) {
                         f(prop)
@@ -575,7 +575,7 @@ const calcLinkParticleWidth = (link, Graph) => {
         return 5
     } else if (linkRiskPercentile >= 50) {
         return 4
-    }  else if (linkRiskPercentile >= 25) {
+    } else if (linkRiskPercentile >= 25) {
         return 3
     } else {
         return 2
@@ -592,7 +592,9 @@ const calcLinkDirectionalArrowRelPos = (link, Graph) => {
     const nodes = [...Graph.nodes].map(node => node.risk);
     const riskPercentile = calcNodeRiskPercentile(node.risk, nodes);
 
-    if (riskPercentile === 0) {return 1.0}
+    if (riskPercentile === 0) {
+        return 1.0
+    }
 
     if (riskPercentile >= 75) {
         return 0.95
@@ -604,7 +606,6 @@ const calcLinkDirectionalArrowRelPos = (link, Graph) => {
         return 1.0
     }
 };
-
 
 
 // merges y into x, returns true if update occurred
@@ -628,7 +629,7 @@ type LinkT = {
     target: string,
 }
 
-type GraphT = { 
+type GraphT = {
     nodes: [any],
     links: [LinkT],
 }
@@ -678,8 +679,8 @@ const mergeGraphs = (curGraph: GraphT, update: graphT) => {
     }
 
     for (const newLink of update.links) {
-        const newLinkSource =  newLink.source.id || newLink.source;
-        const newLinkTarget =  newLink.target.id || newLink.target;
+        const newLinkSource = newLink.source.id || newLink.source;
+        const newLinkTarget = newLink.target.id || newLink.target;
         const link = links.get(newLinkSource + newLink.label + newLinkTarget);
         if (!link) {
             links.set(newLink.source + newLink.label + newLink.target, newLink);
@@ -709,14 +710,14 @@ const updateGraph = async (lensName: string, state: any, setState: any) => {
             const mergeUpdate = mergeGraphs(state.graphData, update);
             if (mergeUpdate !== null) {
                 if (state.curLensName === lensName) {
-                    console.log("update for ",  state.curLensName, lensName);
+                    console.log("update for ", state.curLensName, lensName);
                     setState({
                         ...state,
                         curLensName: lensName,
                         graphData: mergeUpdate,
                     })
                 } else {
-                    console.log("update, switch, for ",  state.curLensName, lensName);
+                    console.log("update, switch, for ", state.curLensName, lensName);
                     setState({
                         ...state,
                         curLensName: lensName,
@@ -760,8 +761,12 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
             state.graphData.nodes.forEach(node => {
                 const x = node.x || 0, y = node.y || 0;
                 // bounce on box walls
-                if (Math.abs(x) > SQUARE_HALF_SIDE) { node.vx *= -1; }
-                if (Math.abs(y) > SQUARE_HALF_SIDE) { node.vy *= -1; }
+                if (Math.abs(x) > SQUARE_HALF_SIDE) {
+                    node.vx *= -1;
+                }
+                if (Math.abs(y) > SQUARE_HALF_SIDE) {
+                    node.vy *= -1;
+                }
             });
         });
     }, [state])
@@ -780,47 +785,47 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
     console.log('GraphDisplay: ', lensName);
 
     const graphData = state.graphData;
-    
+
     const colorHash = new ColorHash({});
 
     // #TODO: ADD ZOOM HANDLERS FOR MAX ZOOM IN/OUT
 
 
-    return(
+    return (
         <>
-        
+
             <ForceGraph2D
                 graphData={graphData}
                 nodeLabel={(node: any) => node.nodeLabel}
                 enableNodeDrag={true}
-                linkDirectionalParticles = {1}
-                linkDirectionalParticleWidth = {(link) => {
+                linkDirectionalParticles={1}
+                linkDirectionalParticleWidth={(link) => {
                     return calcLinkParticleWidth(link, graphData);
                 }}
-                linkDirectionalParticleColor = {(link) => {
+                linkDirectionalParticleColor={(link) => {
                     return calcLinkColor(link, graphData)
                 }}
-                linkDirectionalParticleSpeed = {0.005}
-                onNodeClick= {
+                linkDirectionalParticleSpeed={0.005}
+                onNodeClick={
                     (node: any, event: any) => {
                         console.log('clicked', node.nodeLabel);
                         setCurNode(node);
                     }
                 }
-                linkDirectionalArrowLength = {8}
-                linkWidth = {4}
-                linkDirectionalArrowRelPos = {(link => {
+                linkDirectionalArrowLength={8}
+                linkWidth={4}
+                linkDirectionalArrowRelPos={(link => {
                     return calcLinkDirectionalArrowRelPos(link, graphData);
                 })}
-                linkCanvasObjectMode = {(() => 'after')}
-                linkCanvasObject = {((link: any, ctx: any) => {
+                linkCanvasObjectMode={(() => 'after')}
+                linkCanvasObject={((link: any, ctx: any) => {
                     const MAX_FONT_SIZE = 8;
                     const LABEL_NODE_MARGIN = 8 * 1.5;
                     const start = link.source;
                     const end = link.target;
                     // ignore unbound links
                     link.color = calcLinkColor(link, graphData);
-        
+
                     if (typeof start !== 'object' || typeof end !== 'object') return;
                     // calculate label positioning
                     const textPos = Object.assign(
@@ -831,10 +836,10 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
                         )) as any
                     );
 
-                    const relLink = { x: end.x - start.x, y: end.y - start.y };
-        
+                    const relLink = {x: end.x - start.x, y: end.y - start.y};
+
                     const maxTextLength = Math.sqrt(Math.pow(relLink.x, 2) + Math.pow(relLink.y, 2)) - LABEL_NODE_MARGIN * 8;
-        
+
                     let textAngle = Math.atan2(relLink.y, relLink.x);
                     // maintain label vertical orientation for legibility
                     if (textAngle > Math.PI / 2) textAngle = -(Math.PI - textAngle);
@@ -845,18 +850,18 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
                     ctx.font = '50px Arial';
                     const fontSize = Math.min(MAX_FONT_SIZE, maxTextLength / ctx.measureText(label).width);
                     ctx.font = `${fontSize + 5}px Arial`;
-        
+
                     let textWidth = ctx.measureText(label).width;
-        
+
                     textWidth += Math.round(textWidth * 0.25);
-        
+
                     const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
                     // draw text label (with background rect)
                     ctx.save();
                     ctx.translate(textPos.x, textPos.y);
                     ctx.rotate(textAngle);
                     ctx.fillStyle = 'rgb(115,222,255,1)';
-                    ctx.fillRect(- bckgDimensions[0] / 2, - bckgDimensions[1] / 2, ...bckgDimensions);
+                    ctx.fillRect(-bckgDimensions[0] / 2, -bckgDimensions[1] / 2, ...bckgDimensions);
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = 'white';
@@ -864,40 +869,40 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
                     ctx.fillText(label, .75, 3);
                     ctx.restore();
                 })}
-                nodeCanvasObject= {((node: any, ctx: any, globalScale: any) => {
+                nodeCanvasObject={((node: any, ctx: any, globalScale: any) => {
                     // add ring just for highlighted nodes
 
                     const NODE_R = nodeSize(node, graphData);
                     ctx.save();
-        
+
                     // Risk outline color
                     ctx.beginPath();
                     ctx.arc(node.x, node.y, NODE_R * 1.3, 0, 2 * Math.PI, false);
                     ctx.fillStyle = riskColor(node, graphData, colorHash);
                     ctx.fill();
                     ctx.restore();
-        
+
                     ctx.save();
-        
+
                     // Node color
                     ctx.beginPath();
                     ctx.arc(node.x, node.y, NODE_R * 1.2, 0, 2 * Math.PI, false);
-        
+
                     const nodeRbg = calcNodeRgb(node, colorHash);
-        
+
                     ctx.fillStyle = `rgba(${nodeRbg[0]}, ${nodeRbg[1]}, ${nodeRbg[2]}, 1)`;
                     ctx.fill();
                     ctx.restore();
-        
+
                     const label = node.nodeLabel;
-        
-                    const fontSize = 15/globalScale;
-        
+
+                    const fontSize = 15 / globalScale;
+
                     ctx.font = `${fontSize}px Arial`;
-                
-        
+
+
                     const textWidth = ctx.measureText(label).width;
-        
+
                     const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
                     // node label color
                     ctx.fillStyle = 'rgba(48, 48, 48, 0.8)';
@@ -907,7 +912,7 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                     ctx.fillStyle = 'white';
                     ctx.fillText(label, node.x, node.y);
-        
+
                 })}
                 ref={forceRef}
             />
