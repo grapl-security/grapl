@@ -1,12 +1,10 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import NodeTable from './NodeTable'
 import Button from "@material-ui/core/Button";
-import { makeStyles } from "@material-ui/core/styles";
+import {makeStyles} from "@material-ui/core/styles";
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import LensIcon from '@material-ui/icons/Lens';
-import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
@@ -43,12 +41,7 @@ const useStyles = makeStyles({
     },
 });
 
-function createData(name: string) {
-    return { name };
-}
-
 function SelectLens(props: any) {
-    const classes = useStyles(); 
     // lensRows.push(createData(props.setLens(props.lens) ))
     return (
         <>
@@ -90,7 +83,7 @@ function ToggleLensTable({setLens}: any) {
                 })
         }, 1000);
         return () => clearInterval(interval);
-    }, []);
+    });
 
 
     return (
@@ -123,7 +116,7 @@ function ToggleLensTable({setLens}: any) {
                                     <Table className={classes.table} aria-label="lens table">
                                         <TableBody>
                                             <SelectLens 
-                                                key={new Number(lens.uid)}
+                                                key={Number(lens.uid)}
                                                 uid={lens.uid}
                                                 lens={lens.lens}
                                                 score={lens.score}

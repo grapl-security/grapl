@@ -1246,19 +1246,6 @@ class EngagementUx extends cdk.Stack {
                             replacement,
                             newPath
                         )
-                        // if (path.extname(newPath) === '.js' || path.extname(newPath) === '.html') {
-                        //     console.log("replacing: ", newPath)
-                        //     replaceInFile(
-                        //         filename,
-                        //         toReplace,
-                        //         replacement,
-                        //         newPath
-                        //     )
-                        // } else {
-                        //     fs.copyFile(filename, newPath, (err) => {
-                        //         if (err) throw err;
-                        //     });
-                        // }
                         next()
                     },
                     function(err, files){

@@ -1,8 +1,7 @@
 import React from 'react';
 import './LogIn.css';
 // import axios from 'axios';
-import { Route, Redirect } from "react-router-dom";
-import { Formik, Field, Form } from "formik";
+import {Field, Form, Formik} from "formik";
 
 const isLocal = true;
 

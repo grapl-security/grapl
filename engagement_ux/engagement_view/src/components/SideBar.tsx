@@ -1,9 +1,8 @@
 import GraphDisplay from "./GraphViz";
 import React from "react";
-import {useState} from "react";
 import SideBarContent from './SideBarContent'
 import clsx from "clsx";
-import { makeStyles, Theme, createStyles } from "@material-ui/core/styles";
+import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";

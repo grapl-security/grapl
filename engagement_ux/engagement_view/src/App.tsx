@@ -15,7 +15,7 @@ const redirectTo = (routeState: any, setRouteState: any, page_name: string) => {
     localStorage.setItem("grapl_curPage", page_name)
 }
 
-const Router = ({}: any) => {
+const Router = () => {
     // By default, load either the last page we were on, or the login page
     // if there is no last page
     const [routeState, setRouteState] = React.useState({
@@ -64,7 +64,7 @@ export default function App() {
     console.log("App loaded");
     return (
         <>
-            <Router></Router>
+            <Router/>
         </>
     )
 }
