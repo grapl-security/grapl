@@ -24,15 +24,9 @@ from grapl_analyzerlib.nodes.any_node import NodeView
 from grapl_analyzerlib.nodes.queryable import Queryable, traverse_query_iter, generate_query
 from grapl_analyzerlib.nodes.subgraph_view import SubgraphView
 from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.plugin_retriever import load_plugins
+
 from pydgraph import DgraphClientStub, DgraphClient
-
-
-# To satisfy linters
-if False:
-    # noinspection PyUnreachableCode
-    from analyzer_executor.src.plugin_retriever import PluginRetriever
-else:
-    from plugin_retriever import PluginRetriever
 
 
 IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
@@ -333,11 +327,10 @@ def lambda_handler(events: Any, context: Any) -> None:
 
     s3 = get_s3_client()
 
-    PluginRetriever(
-        plugin_bucket=os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket",
-        plugin_directory="./model_plugins/",
-        s3_client=s3.meta.client,
-    ).retrieve(overwrite=True)
+    load_plugins(
+        os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket",
+        s3.meta.client,
+    )
 
     for event in events["Records"]:
         if not IS_LOCAL:
