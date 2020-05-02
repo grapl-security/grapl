@@ -238,10 +238,10 @@ services:
       - minio:127.0.0.1
 
   grapl-engagement-view:
-    image: grapl/grapl-engagement-view
-#    build:
-#      context: ./engagement_ux/engagement_view/
-#      dockerfile: ./Dockerfile
+#    image: grapl/grapl-engagement-view:beta
+    build:
+      context: ./engagement_ux/engagement_view/
+      dockerfile: ./Dockerfile
     environment:
       - PORT=1234
     ports:
