@@ -28,7 +28,6 @@ from grapl_analyzerlib.plugin_retriever import load_plugins
 
 from pydgraph import DgraphClientStub, DgraphClient
 
-
 IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 IS_RETRY = os.environ['IS_RETRY']
 
