@@ -55,12 +55,6 @@ else:
 
 
 def parse_s3_event(s3, event) -> str:
-    # Retrieve body of sns message
-    # Decode json body of sns message
-    print("event is {}".format(event))
-    # msg = json.loads(event["body"])["Message"]
-    # msg = json.loads(msg)
-
     bucket = event["s3"]["bucket"]["name"]
     key = event["s3"]["object"]["key"]
     return download_s3_file(s3, bucket, key)
@@ -146,14 +140,10 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
 
             for i, query in enumerate(queries):
                 analyzer_query_types = get_analyzer_view_types(query)
-                # if type(node.node) not in analyzer_query_types:
-                #     print(f'type of node.node is {type(node.node)} {analyzer_query_types}')
-                #     print(f'{node.node.node_type} {analyzer_query_types}')
-                #     continue
 
                 if node.node.get_node_type() + 'View' not in [n.__name__ for n in analyzer_query_types]:
-                    print(f'type of node.node is {node.node.get_node_type()} {[n.__name__ for n in analyzer_query_types]}')
                     continue
+
                 r = str(random.randint(10, 100))
                 result_name = f'{an_name}u{int(node.uid, 16)}i{i}r{r}'.strip().lower()
                 result_name_to_analyzer[result_name] = (an_name, analyzer, query.view_type)
