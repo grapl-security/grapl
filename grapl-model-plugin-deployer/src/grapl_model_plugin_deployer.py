@@ -1,18 +1,27 @@
 import base64
+import hmac
 import inspect
+import json
 import os
 import sys
 import traceback
+
+from base64 import b64decode
+from hashlib import sha1
 from typing import *
 
-import pydgraph
+import boto3
+from botocore.client import BaseClient
 from chalice import Chalice, Response
-from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient, LocalMasterGraphClient, \
-    EngagementGraphClient, LocalEngagementGraphClient
+from github import Github
+from grapl_analyzerlib.grapl_client import GraphClient
+import pydgraph
 from grapl_analyzerlib.schemas import *
 from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
 from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
+from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient, LocalMasterGraphClient, \
+    EngagementGraphClient, LocalEngagementGraphClient
 
 T = TypeVar('T')
 
@@ -49,27 +58,10 @@ def check_jwt(headers):
         print(e)
         return False
 
-== == == =
-import json
-import hmac
-from hashlib import sha1
-
-import boto3
-from botocore.client import BaseClient
-from github import Github
-
-from base64 import b64decode
-
-import os
->> >> >> > 91506
-d1ed0c06ba927e2d15b5cd9ff195c63dbe9
-
 
 def verify_payload(payload_body, key, signature):
     new_signature = "sha1=" + hmac.new(key, payload_body, sha1).hexdigest()
     return new_signature == signature
-
-<< << << < HEAD
 
 
 def set_schema(client, schema: str) -> None:
@@ -268,50 +260,31 @@ def webhook():
     )
 
     repo_name = app.current_request.json_body["repository"]["full_name"]
+    if body["ref"] != "refs/heads/master":
+        return
 
-== == == =
+    g = Github(access_token)
 
-def lambda_handler(event, context):
-    body = json.loads(event["body"])
+    repo = g.get_repo(repo_name)
 
-    shared_secret = os.environ["GITHUB_SHARED_SECRET"]
-    access_token = os.environ["GITHUB_ACCESS_TOKEN"]
+    plugin_folders = repo.get_contents("model_plugins")
+    # Upload every single file and folder, within 'plugins', to Grapl
 
-    signature = event["headers"]["X-Hub-Signature"]
+    plugin_paths = []
+    for plugin_folder in plugin_folders:
+        git_walker(repo, plugin_folder, lambda file: plugin_paths.append(file))
 
-    assert verify_payload(
-        event["body"].encode("utf8"), shared_secret.encode(), signature
-    )
+    plugin_files = {}
+    for path in plugin_paths:
+        if not path.content:
+            continue
 
-    repo_name = body["repository"]["full_name"]
+        file_contents = b64decode(path.content).decode()
+        plugin_files[path.path] = file_contents
 
->> >> >> > 91506
-d1ed0c06ba927e2d15b5cd9ff195c63dbe9
-if body["ref"] != "refs/heads/master":
-    return
+    upload_plugins(get_s3_client(), plugin_files)
+    return respond(None, {})
 
-g = Github(access_token)
-<< << << < HEAD
-
-repo = g.get_repo(repo_name)
-
-plugin_folders = repo.get_contents("model_plugins")
-# Upload every single file and folder, within 'plugins', to Grapl
-
-plugin_paths = []
-for plugin_folder in plugin_folders:
-    git_walker(repo, plugin_folder, lambda file: plugin_paths.append(file))
-
-plugin_files = {}
-for path in plugin_paths:
-    if not path.content:
-        continue
-
-    file_contents = b64decode(path.content).decode()
-    plugin_files[path.path] = file_contents
-
-upload_plugins(get_s3_client(), plugin_files)
-return respond(None, {})
 
 # We expect a body of:
 """
@@ -349,30 +322,3 @@ def nop_route():
     except Exception:
         print(traceback.format_exc())
         return respond('Server Error')
-
-== == == =
-s3_client = boto3.client("s3")
-
-repo = g.get_repo(repo_name)
-print(repo.name)
-
-analyzer_folders = repo.get_contents("plugins")
-# Upload every single file and folder, within 'plugins', to Grapl
-for plugin_folder in plugin_folders:
-    pass
-
-
-# By convention, every schema file will hold one or many NodeSchema's,
-# which we will load and deploy to DGraph
-
-# TODO: Any forward edges created by plugins should, in turn, generate reverse edges in other types
-
-# Upload all schemas
-
-
-def upload_analyzer(s3_client: BaseClient, name: str, contents: str) -> None:
-    analyzer_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
-
-    s3_client.put_object(
-        Body=contents, Bucket=analyzer_bucket, Key=f"analyzers/{name}/main.py"
-    )
