@@ -1,6 +1,7 @@
-import os.path
+import base64
+from pathlib import Path
 
-from mypy_boto3 import s3
+import os.path
 
 
 class PluginRetriever(object):
@@ -8,7 +9,7 @@ class PluginRetriever(object):
             self,
             plugin_bucket: str,
             plugin_directory: str,
-            s3_client: s3.S3Client,
+            s3_client,
     ) -> None:
         self.plugin_bucket = plugin_bucket
         self.s3_client = s3_client
@@ -18,25 +19,36 @@ class PluginRetriever(object):
         # list plugin files
         plugin_objects = self.s3_client.list_objects(
             Bucket=self.plugin_bucket,
-        )
+        ).get('Contents', [])
 
         # Download each one to the /plugins/ directory
         for plugin_object in plugin_objects:
-            local_path = f"./plugins{plugin_object}"
+            object_key = plugin_object['Key']
+            print(f'object_key: {object_key}')
+            local_path = (
+                os.path.join(
+                    os.path.abspath("."), f"model_plugins/{base64.decodebytes(object_key.encode('utf8')).decode('utf8')}"
+                ).replace("-", "_")
+            )
 
             if not overwrite:
                 if os.path.isfile(local_path):
-                    print(f"./plugins{plugin_object} already exists")
+                    print(f"{local_path} already exists")
                     continue
 
+            print(f'fetching object: {object_key}')
             response = (
                 self.s3_client.get_object(
                     Bucket=self.plugin_bucket,
-                    Key=plugin_object
+                    Key=object_key
                 )
-                ['Body'].read()
+                ['Body'].read().decode('utf8')
             )
 
-            print(f"Writing plugin to: ./plugins{plugin_object}")
+            directory = Path(os.path.dirname(local_path))
+            print(f"Creating directory: {directory}")
+            directory.mkdir(parents=True, exist_ok=True)
+
+            print(f"Writing plugin to: {local_path}")
             with open(local_path, 'w') as f:
                 f.write(response)

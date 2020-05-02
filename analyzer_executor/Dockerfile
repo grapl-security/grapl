@@ -16,7 +16,7 @@ FROM grapl/grapl-python-lambda-builder
 ADD requirements.txt /tmp
 RUN pip install -r /tmp/requirements.txt
 
-WORKDIR /app
+WORKDIR /src
 COPY ./src/ /src/
 
 COPY --from=0 /lambda.zip /
