@@ -1,25 +1,17 @@
-import time
+import json
 import threading
+import time
+
+from typing import *
 
 import boto3
-import json
-
 import pydgraph
-
 from grapl_analyzerlib.schemas import *
-from grapl_analyzerlib.schemas.schema_builder import *
 from grapl_analyzerlib.schemas.asset_schema import AssetSchema
-from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
 from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
+from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
-
 from pydgraph import DgraphClient, DgraphClientStub
-
-
-class AnyNodeSchema(NodeSchema):
-    @staticmethod
-    def self_type() -> str:
-        return 'Any'
 
 
 def set_schema(client, schema, engagement=False) -> None:
@@ -32,7 +24,7 @@ def drop_all(client) -> None:
     client.alter(op)
 
 
-def format_schemas(schema_defs) -> None:
+def format_schemas(schema_defs) -> str:
     schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
@@ -45,7 +37,7 @@ def format_schemas(schema_defs) -> None:
     ])
 
 
-def get_type_dict(client, type_name) -> None:
+def get_type_dict(client, type_name) -> Dict[str, Any]:
     query = f"""
     schema(type: {type_name}) {{
       type
@@ -158,7 +150,6 @@ def provision_eg(eclient) -> None:
     eg_schemas.append(RiskSchema())
     eg_schemas.append(LensSchema())
     eg_schema_str = format_schemas(eg_schemas)
-    print(eg_schema_str)
     set_schema(eclient, eg_schema_str)
 
 
@@ -173,6 +164,7 @@ services = (
     'analyzer-dispatcher',
     'analyzer-executor',
     'engagement-creator',
+    'aws-guardduty-graph-generator'
 )
 
 buckets = (
@@ -183,6 +175,8 @@ buckets = (
     BUCKET_PREFIX + '-analyzer-dispatched-bucket',
     BUCKET_PREFIX + '-analyzers-bucket',
     BUCKET_PREFIX + '-analyzer-matched-subgraphs-bucket',
+    BUCKET_PREFIX + '-model-plugins-bucket',
+    BUCKET_PREFIX + '-aws-guardduty-log-bucket',
 )
 
 

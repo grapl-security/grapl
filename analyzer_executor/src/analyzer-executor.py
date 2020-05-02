@@ -23,6 +23,9 @@ from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, Executi
 from grapl_analyzerlib.nodes.any_node import NodeView
 from grapl_analyzerlib.nodes.queryable import Queryable, traverse_query_iter, generate_query
 from grapl_analyzerlib.nodes.subgraph_view import SubgraphView
+from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.plugin_retriever import load_plugins
+
 from pydgraph import DgraphClientStub, DgraphClient
 
 IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
@@ -52,12 +55,6 @@ else:
 
 
 def parse_s3_event(s3, event) -> str:
-    # Retrieve body of sns message
-    # Decode json body of sns message
-    print("event is {}".format(event))
-    # msg = json.loads(event["body"])["Message"]
-    # msg = json.loads(msg)
-
     bucket = event["s3"]["bucket"]["name"]
     key = event["s3"]["object"]["key"]
     return download_s3_file(s3, bucket, key)
@@ -104,7 +101,7 @@ def handle_result_graphs(analyzer, result_graphs, sender):
             raise e
 
 
-def get_analyzer_query_types(query: Queryable) -> Set[Type[Queryable]]:
+def get_analyzer_view_types(query: Queryable) -> Set[Type[Viewable]]:
     query_types = set()
     for node in traverse_query_iter(query):
         query_types.add(node.view_type)
@@ -142,9 +139,11 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
             analyzer = analyzers[an_name]
 
             for i, query in enumerate(queries):
-                analyzer_query_types = get_analyzer_query_types(query)
-                if type(node.node) not in analyzer_query_types:
+                analyzer_query_types = get_analyzer_view_types(query)
+
+                if node.node.get_node_type() + 'View' not in [n.__name__ for n in analyzer_query_types]:
                     continue
+
                 r = str(random.randint(10, 100))
                 result_name = f'{an_name}u{int(node.uid, 16)}i{i}r{r}'.strip().lower()
                 result_name_to_analyzer[result_name] = (an_name, analyzer, query.view_type)
@@ -317,6 +316,11 @@ def lambda_handler(events: Any, context: Any) -> None:
 
     s3 = get_s3_client()
 
+    load_plugins(
+        os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket",
+        s3.meta.client,
+    )
+
     for event in events["Records"]:
         if not IS_LOCAL:
             event = json.loads(event['body'])['Records'][0]
@@ -465,5 +469,5 @@ if IS_LOCAL:
                 )
 
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
             time.sleep(2)

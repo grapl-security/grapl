@@ -204,7 +204,7 @@ services:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
 
-  grapl_engagement_edge:
+  grapl-engagement-edge:
     build:
       context: ./engagement_ux/engagement_edge/
       dockerfile: ./Dockerfile
@@ -217,7 +217,27 @@ services:
     links:
       - engagement_graph:engagement_graph
 
-  grapl_engagement_view:
+  grapl-model-plugin-deployer:
+    build:
+      context: ./grapl-model-plugin-deployer/
+      dockerfile: ./Dockerfile
+    ports:
+      - "8123:8123"
+    environment:
+      - IS_LOCAL="True"
+    command: chalice local --no-autoreload --host=0.0.0.0 --port=8123
+    tty: true
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+      - engagement_graph:engagement_graph
+      - master_graph:master_graph
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+
+  grapl-engagement-view:
     image: grapl/grapl-engagement-view
 #    build:
 #      context: ./engagement_ux/engagement_view/
@@ -234,3 +254,6 @@ services:
       - master_graph:master_graph
     ports:
       - 8888:8888
+
+
+## Plugins

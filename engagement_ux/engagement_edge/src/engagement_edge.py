@@ -619,8 +619,6 @@ def get_lenses():
 def nop_route():
     print(app.current_request.context['path'])
 
-    print(vars(app.current_request))
-
     path = app.current_request.context['path']
 
     if path == '/prod/login':
