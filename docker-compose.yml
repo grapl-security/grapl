@@ -66,7 +66,7 @@ services:
     image: amazon/dynamodb-local
 
   grapl-sysmon-subgraph-generator:
-    image: grapl/grapl-sysmon-subgraph-generator
+    image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     tty: false
     environment:
       - BUCKET_PREFIX="local-grapl"
@@ -84,7 +84,7 @@ services:
       - graph_provision
 
   grapl-node-identifier:
-    image: grapl/grapl-node-identifier
+    image: grapl/grapl-node-identifier:${TAG:-latest}
     command: ./node-identifier
     environment:
       - BUCKET_PREFIX="local-grapl"
@@ -106,7 +106,7 @@ services:
 
 
   grapl-node-identifier-retry-handler:
-    image: grapl/grapl-node-identifier
+    image: grapl/grapl-node-identifier:${TAG:-latest}
     command: ./node-identifier-retry-handler
     environment:
       - BUCKET_PREFIX="local-grapl"
@@ -147,7 +147,7 @@ services:
       - master_graph
 
   grapl-analyzer-dispatcher:
-    image: grapl/grapl-analyzer-dispatcher
+    image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     environment:
       - BUCKET_PREFIX="local-grapl"
       - IS_LOCAL="True"
@@ -238,7 +238,7 @@ services:
       - minio:127.0.0.1
 
   grapl-engagement-view:
-    image: grapl/grapl-engagement-view
+    image: grapl/grapl-engagement-view:${TAG:-latest}
 #    build:
 #      context: ./engagement_ux/engagement_view/
 #      dockerfile: ./Dockerfile

@@ -351,6 +351,7 @@ class EventEmitters extends cdk.Stack {
     subgraphs_generated_bucket: s3.Bucket;
     subgraphs_merged_bucket: s3.Bucket;
     analyzers_bucket: s3.Bucket;
+    model_plugins_bucket: s3.Bucket;
     dispatched_analyzer_bucket: s3.Bucket;
     analyzer_matched_subgraphs_bucket: s3.Bucket;
 
@@ -404,6 +405,11 @@ class EventEmitters extends cdk.Stack {
         let analyzers_bucket =
             new s3.Bucket(this, id + '-analyzers-bucket', {
                 bucketName: process.env.BUCKET_PREFIX + "-analyzers-bucket"
+            });
+
+        let model_plugins_bucket =
+            new s3.Bucket(this, id + '-model-plugins-bucket', {
+                bucketName: process.env.BUCKET_PREFIX + "-model-plugins-bucket"
             });
 
         let subgraphs_merged_bucket =
@@ -517,6 +523,7 @@ class EventEmitters extends cdk.Stack {
         this.unid_subgraphs_generated_bucket = unid_subgraphs_generated_bucket;
         this.subgraphs_generated_bucket = subgraphs_generated_bucket;
         this.analyzers_bucket = analyzers_bucket;
+        this.model_plugins_bucket = model_plugins_bucket;
         this.subgraphs_merged_bucket = subgraphs_merged_bucket;
         this.dispatched_analyzer_bucket = dispatched_analyzer_bucket;
         this.analyzer_matched_subgraphs_bucket = analyzer_matched_subgraphs_bucket;
@@ -748,6 +755,7 @@ class AnalyzerExecutor extends cdk.Stack {
                 reads_analyzers_from: s3.IBucket,
                 reads_events_from: s3.IBucket,
                 writes_events_to: s3.IBucket,
+                model_plugins_bucket: s3.IBucket,
                 master_graph: DGraphEcs,
                 vpc: ec2.Vpc
     ) {
@@ -781,6 +789,7 @@ class AnalyzerExecutor extends cdk.Stack {
         service.publishesToBucket(writes_events_to);
         // We need the List capability to find each of the analyzers
         service.readsFrom(reads_analyzers_from, true);
+        service.readsFrom(model_plugins_bucket, true);
         service.readsFrom(reads_events_from);
 
         // Need to be able to GetObject in order to HEAD, can be replaced with

@@ -317,8 +317,8 @@ def lambda_handler(events: Any, context: Any) -> None:
     s3 = get_s3_client()
 
     load_plugins(
-        os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket",
-        s3.meta.client,
+        os.environ["BUCKET_PREFIX"],
+        s3,
     )
 
     for event in events["Records"]:
