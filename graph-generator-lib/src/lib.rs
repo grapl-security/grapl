@@ -245,16 +245,15 @@ pub fn run_graph_generator<
             generator,
             event_decoder,
         );
-    }  else {
+    } else {
         info!("Running in AWS {:?}", is_local);
         run_graph_generator_aws(
             bucket_name,
             queue_url,
             generator,
-            event_decoder
+            event_decoder,
         );
     }
-
 }
 
 
