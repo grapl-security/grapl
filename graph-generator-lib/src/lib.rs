@@ -397,8 +397,7 @@ pub fn run_graph_generator<
     let is_local = std::env::var("IS_LOCAL");
 
     info!("IS_LOCAL={:?}", is_local);
-    if is_local.is_ok() {
-        info!("Running locally {:?}", is_local);
+    if is_local.map(|is_local| is_local.parse().unwrap_or(false)).unwrap_or(false) {
         std::thread::sleep_ms(10_000);
 
         run_graph_generator_local(
@@ -406,7 +405,6 @@ pub fn run_graph_generator<
             event_decoder,
         );
     } else {
-        info!("Running in AWS {:?}", is_local);
         run_graph_generator_aws(
             generator,
             event_decoder,
