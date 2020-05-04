@@ -5,14 +5,10 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-#graph-generator-lib = { path = "./graph-generator-lib/" }
-#graph-generator-lib = { path = "../graph-generator-lib/" }
+graph-generator-lib = "0.1.*"
 graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
-#graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions" , version="*"}
 
 sqs-lambda = "0.20.*"
-#sqs-lambda = {path="../../../workspace/sqs-lambda/" , version="*"}
-#sqs-lambda = {path = "./sqs-lambda/"}
 serde_json = "*"
 serde = "1.0.71"
 serde_derive = "1.0.71"

@@ -147,14 +147,13 @@ pub async fn local_service<
     > + Send + Sync + Clone + 'static,
     ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
 >(
-    bucket_name: String,
     queue_url: String,
     generator: EH,
     event_decoder: ED,
 ) -> Result<(), Box<dyn std::error::Error>> {
     local_sqs_service(
         queue_url,
-        bucket_name,
+        "local-grapl-unid-subgraphs-generated-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
@@ -218,45 +217,6 @@ pub async fn local_service<
 }
 
 
-pub fn run_graph_generator<
-    EH: EventHandler<
-        InputEvent=Vec<u8>,
-        OutputEvent=Graph,
-        Error=sqs_lambda::error::Error<Arc<failure::Error>>
-    > + Send + Sync + Clone + 'static,
-    ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
->(
-    bucket_name: String,
-    queue_url: String,
-    generator: EH,
-    event_decoder: ED,
-) {
-    let is_local = std::env::var("IS_LOCAL");
-
-    info!("IS_LOCAL={:?}", is_local);
-    if is_local.is_ok() {
-        info!("Running locally {:?}", is_local);
-        std::thread::sleep_ms(10_000);
-
-
-        run_graph_generator_local(
-            bucket_name,
-            queue_url,
-            generator,
-            event_decoder,
-        );
-    } else {
-        info!("Running in AWS {:?}", is_local);
-        run_graph_generator_aws(
-            bucket_name,
-            queue_url,
-            generator,
-            event_decoder,
-        );
-    }
-}
-
-
 pub fn run_graph_generator_aws<
     EH: EventHandler<
         InputEvent=Vec<u8>,
@@ -265,8 +225,6 @@ pub fn run_graph_generator_aws<
     > + Send + Sync + Clone + 'static,
     ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
 >(
-    bucket_name: String,
-    queue_url: String,
     generator: EH,
     event_decoder: ED,
 ) {
@@ -275,8 +233,6 @@ pub fn run_graph_generator_aws<
             handler(
                 event,
                 context,
-                bucket_name.clone(),
-                queue_url.clone(),
                 generator.clone(),
                 event_decoder.clone(),
             )
@@ -297,8 +253,6 @@ fn handler
 (
     event: SqsEvent,
     ctx: Context,
-    bucket_name: String,
-    queue_url: String,
     generator: EH,
     event_decoder: ED,
 ) -> Result<(), HandlerError> {
@@ -402,23 +356,21 @@ pub fn run_graph_generator_local<
     ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
 >
 (
-    bucket_name: String,
-    queue_url: String,
     generator: EH,
     event_decoder: ED,
 ) {
     std::thread::sleep_ms(10_000);
     let mut runtime = Runtime::new().unwrap();
 
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+
     loop {
-        let bucket_name = bucket_name.clone();
         let queue_url = queue_url.clone();
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
 
         if let Err(e) = runtime.block_on(async move {
             local_service(
-                bucket_name.clone(),
                 queue_url.clone(),
                 generator.clone(),
                 event_decoder.clone(),
@@ -429,6 +381,39 @@ pub fn run_graph_generator_local<
         }
     }
 }
+
+
+pub fn run_graph_generator<
+    EH: EventHandler<
+        InputEvent=Vec<u8>,
+        OutputEvent=Graph,
+        Error=sqs_lambda::error::Error<Arc<failure::Error>>
+    > + Send + Sync + Clone + 'static,
+    ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
+>(
+    generator: EH,
+    event_decoder: ED,
+) {
+    let is_local = std::env::var("IS_LOCAL");
+
+    info!("IS_LOCAL={:?}", is_local);
+    if is_local.is_ok() {
+        info!("Running locally {:?}", is_local);
+        std::thread::sleep_ms(10_000);
+
+        run_graph_generator_local(
+            generator,
+            event_decoder,
+        );
+    } else {
+        info!("Running in AWS {:?}", is_local);
+        run_graph_generator_aws(
+            generator,
+            event_decoder,
+        );
+    }
+}
+
 
 
 #[cfg(test)]
