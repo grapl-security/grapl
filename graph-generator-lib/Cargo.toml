@@ -20,7 +20,7 @@ rusoto_core = {version="0.43.0-beta.1", default_features = false, features=["rus
 rusoto_sqs = {version="0.43.0-beta.1", default_features = false, features=["rustls"]}
 rusoto_credential = "0.43.0"
 
-lambda_runtime = "*"
+lambda_runtime = "0.2.*"
 futures = "0.3"
 base64 = "0.9.2"
 prost = "0.4.0"
