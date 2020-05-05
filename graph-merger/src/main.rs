@@ -759,7 +759,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_with_level(log::Level::Info).unwrap();
+    simple_logger::init_by_env(); // if RUST_LOG is unset this defaults to ERROR
 
     let is_local = std::env::var("IS_LOCAL")
         .is_ok();

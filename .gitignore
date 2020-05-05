@@ -1,5 +1,4 @@
 sysmon-subgraph-generator/sysmon-subgraph-generator
-node-identifier/node-identifier
 graph-merger/graph-merger
 analyzer-dispatcher/analyzer-dispatcher
 
@@ -42,6 +41,8 @@ node-identity-mapper/sqs-microservice/
 
 node-identifier/graph-descriptions/
 node-identifier/sqs-microservice/
+node-identifier/node-identifier
+node-identifier/node-identifier-retry-handler
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -81,3 +82,5 @@ wheels/
 # Installer logs
 pip-log.txt
 
+*.code-workspace
+*.vscode

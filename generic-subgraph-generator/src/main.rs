@@ -1018,11 +1018,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_with_level(log::Level::Info).unwrap();
-    // lambda!(handler);
-
-    // let cache = RedisCache::new(cache_address.to_owned())
-    //     .await.expect("Could not create redis client");
+    simple_logger::init_by_env(); // if RUST_LOG is unset this defaults to ERROR
 
     let cache = NopCache {};
     info!("SqsCompletionHandler");

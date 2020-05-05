@@ -5,8 +5,7 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 
 [dependencies]
 
-#graph-descriptions = {package="grapl-graph-descriptions" , version="*"}
-graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions" , version="*"}
+graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}
 
 failure = "0.1.2"
 
