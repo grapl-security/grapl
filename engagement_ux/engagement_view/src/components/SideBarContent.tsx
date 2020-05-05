@@ -74,6 +74,7 @@ function ToggleLensTable({setLens}: any) {
             console.log("Fetching lenses");
             getLenses()
                 .then((response) => {
+                    console.log('response', response);
                     if (response.lenses && response.lenses !== state.lenses) {
                         setState({
                             ...state,
@@ -118,7 +119,7 @@ function ToggleLensTable({setLens}: any) {
                                             <SelectLens 
                                                 key={Number(lens.uid)}
                                                 uid={lens.uid}
-                                                lens={lens.lens}
+                                                lens={lens.lens_name}
                                                 score={lens.score}
                                                 setLens={setLens}
                                             />
@@ -139,31 +140,49 @@ function ToggleLensTable({setLens}: any) {
 
 const isLocal = true;
 
-const getEngagementEdge = () => {
+const getEngagementEdge = (port?: undefined | string) => {
     if (isLocal) {
-        return "http://" + window.location.hostname + ":8900/"
+        return "http://" + window.location.hostname + (port || ":8900/")
     } else {
         return "__engagement_ux_standin__hostname__"
     }
 }
 
-const engagement_edge = getEngagementEdge();
+// const engagement_edge = getEngagementEdge();
+const graphql_edge = getEngagementEdge(":5000/");
+
 
 const getLenses = async () => {
-    const res = await fetch(`${engagement_edge}getLenses`,
+    console.log('fetching graph');
+
+    const query = `
+    {
+        lenses {
+            uid,
+            node_key,
+            lens_name,
+            score
+        }
+    }
+    `;
+    
+    const res = await fetch(`${graphql_edge}graphql`,
         {
             method: 'post',
-            body: JSON.stringify({
-                'prefix': '',
-            }),
+
+            body: JSON.stringify({ query: query }),
             headers: {
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
-        });
-    const jres = await res.json();
+        })
+        .then(res => res.json())
+        .then((res) => res.data);
 
-    return jres['success'];
+        console.log(res);
+        const jres = await res;
+
+    return jres;
 };
 
 export const mapEdgeProps = (node: any, f: any) => {
