@@ -1,6 +1,6 @@
 [package]
 name = "graph-generator-lib"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 description = "Helper library for implementing Grapl Graph Generators"
 license = "Apache-2.0"

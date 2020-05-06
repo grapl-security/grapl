@@ -140,12 +140,13 @@ fn init_s3_client() -> S3Client
 }
 
 pub async fn local_service<
+    IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=Vec<u8>,
+        InputEvent=IE,
         OutputEvent=Graph,
         Error=sqs_lambda::error::Error<Arc<failure::Error>>
     > + Send + Sync + Clone + 'static,
-    ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
+    ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     queue_url: String,
     generator: EH,
@@ -218,12 +219,13 @@ pub async fn local_service<
 
 
 pub fn run_graph_generator_aws<
+    IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=Vec<u8>,
+        InputEvent=IE,
         OutputEvent=Graph,
         Error=sqs_lambda::error::Error<Arc<failure::Error>>
     > + Send + Sync + Clone + 'static,
-    ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
+    ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     generator: EH,
     event_decoder: ED,
@@ -243,12 +245,13 @@ pub fn run_graph_generator_aws<
 
 fn handler
 <
+    IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=Vec<u8>,
+        InputEvent=IE,
         OutputEvent=Graph,
         Error=sqs_lambda::error::Error<Arc<failure::Error>>
     > + Send + Sync + Clone + 'static,
-    ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
+    ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >
 (
     event: SqsEvent,
@@ -348,12 +351,13 @@ fn handler
 }
 
 pub async fn run_graph_generator_local<
+    IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=Vec<u8>,
+        InputEvent=IE,
         OutputEvent=Graph,
         Error=sqs_lambda::error::Error<Arc<failure::Error>>
     > + Send + Sync + Clone + 'static,
-    ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
+    ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >
 (
     generator: EH,
@@ -381,12 +385,13 @@ pub async fn run_graph_generator_local<
 
 
 pub async fn run_graph_generator<
+    IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=Vec<u8>,
+        InputEvent=IE,
         OutputEvent=Graph,
         Error=sqs_lambda::error::Error<Arc<failure::Error>>
     > + Send + Sync + Clone + 'static,
-    ED: PayloadDecoder<Vec<u8>> + Send + Sync + Clone + 'static,
+    ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     generator: EH,
     event_decoder: ED,
