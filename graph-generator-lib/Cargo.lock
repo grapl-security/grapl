@@ -727,7 +727,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "graph-generator-lib"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "aws_lambda_events 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)",

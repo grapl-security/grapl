@@ -3,7 +3,6 @@ extern crate chrono;
 extern crate failure;
 extern crate futures;
 extern crate graph_descriptions;
-
 extern crate lambda_runtime as lambda;
 #[macro_use]
 extern crate lazy_static;
@@ -20,18 +19,30 @@ extern crate stopwatch;
 extern crate sysmon;
 extern crate uuid;
 
-use std::fmt::Debug;
-
 use std::borrow::Cow;
+use std::collections::HashSet;
+use std::fmt::Debug;
+use std::io::Cursor;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use aws_lambda_events::event::s3::{S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity};
 use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
 use chrono::prelude::*;
 use failure::bail;
 use failure::Error;
 use futures::{Future, Stream};
+use graph_descriptions::*;
+use graph_descriptions::file::FileState;
+use graph_descriptions::graph_description::*;
+use graph_descriptions::network_connection::NetworkConnectionState;
+use graph_descriptions::process::ProcessState;
+use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use graph_generator_lib::{run_graph_generator_aws, run_graph_generator_local};
+use graph_generator_lib::config::event_cache;
 use lambda::Context;
 use lambda::error::HandlerError;
 use lambda::Handler;
@@ -41,50 +52,33 @@ use log::error;
 use rayon::iter::Either;
 use rayon::prelude::*;
 use regex::Regex;
-use rusoto_core::{Region, HttpClient};
+use rusoto_core::{HttpClient, Region};
+use rusoto_core::credential::AwsCredentials;
 use rusoto_s3::{GetObjectRequest, S3};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest};
+use rusoto_sqs::{GetQueueUrlRequest, SendMessageRequest, Sqs, SqsClient};
 use serde::Deserialize;
-
+use sqs_lambda::cache::{CacheResponse, NopCache};
+use sqs_lambda::cache::Cache;
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::s3_event_emitter::S3EventEmitter;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
 use sqs_lambda::event_retriever::S3PayloadRetriever;
+use sqs_lambda::local_service::local_service;
+use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
+use sqs_lambda::s3_event_emitter::S3EventEmitter;
 use sqs_lambda::sqs_completion_handler::{CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor};
 use sqs_lambda::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
-use sqs_lambda::cache::{CacheResponse, NopCache};
-use async_trait::async_trait;
-
-
+use sqs_lambda::sqs_service::sqs_service;
 use sysmon::*;
+use tokio::runtime::Runtime;
 use uuid::Uuid;
 
-use graph_descriptions::*;
-use graph_descriptions::file::FileState;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::network_connection::NetworkConnectionState;
+use async_trait::async_trait;
 
-use graph_descriptions::process::ProcessState;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use crate::graph_descriptions::node::NodeT;
-
-use std::io::Cursor;
-use sqs_lambda::cache::Cache;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
-use std::collections::HashSet;
-use sqs_lambda::local_service::local_service;
-use aws_lambda_events::event::s3::{S3UserIdentity, S3RequestParameters, S3Entity, S3Object, S3Event, S3EventRecord, S3Bucket};
-use sqs_lambda::sqs_service::sqs_service;
-use sqs_lambda::local_sqs_service::local_sqs_service;
-use rusoto_core::credential::AwsCredentials;
-use tokio::runtime::Runtime;
-use graph_generator_lib::config::event_cache;
-
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -543,7 +537,7 @@ impl<C, E> SysmonSubgraphGenerator<C, E>
         E: Debug + Clone + Send + Sync + 'static,
 {
     pub fn new(cache: C) -> Self {
-        Self { cache , _p: PhantomData}
+        Self { cache, _p: PhantomData }
     }
 }
 
@@ -596,10 +590,10 @@ impl<C, E> EventHandler for SysmonSubgraphGenerator<C, E>
             };
 
             match self.cache.get(event.clone()).await {
-                Ok(CacheResponse::Hit) =>  {
+                Ok(CacheResponse::Hit) => {
                     info!("Got cached response");
-                    continue
-                },
+                    continue;
+                }
                 Err(e) => warn!("Cache failed with: {:?}", e),
                 _ => ()
             };
@@ -685,16 +679,32 @@ impl<C, E> EventHandler for SysmonSubgraphGenerator<C, E>
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
     info!("Starting sysmon-subgraph-generator");
-    let generator
-        : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
-        = SysmonSubgraphGenerator::new(event_cache().await);
 
-    graph_generator_lib::run_graph_generator(
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue",
-        generator,
-        ZstdDecoder::default(),
-    );
+    let is_local = std::env::var("IS_LOCAL")
+        .map(|is_local| is_local.to_lowercase().parse().unwrap_or(false))
+        .unwrap_or(false);
 
+    info!("is_local: {}", is_local);
+
+    if is_local {
+        let generator
+            : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
+            = SysmonSubgraphGenerator::new(NopCache {});
+
+        run_graph_generator_local(
+            generator,
+            ZstdDecoder::default(),
+        ).await;
+    } else {
+        let generator
+            : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
+            = SysmonSubgraphGenerator::new(event_cache().await);
+
+        run_graph_generator_aws(
+            generator,
+            ZstdDecoder::default(),
+        );
+    }
     Ok(())
 }
 
