@@ -66,7 +66,7 @@ services:
     image: amazon/dynamodb-local
 
   grapl-sysmon-subgraph-generator:
-    image: grapl/test-grapl-sysmon-subgraph-generator:${TAG:-latest}
+    image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     tty: false
     environment:
       - BUCKET_PREFIX=local-grapl
@@ -258,43 +258,3 @@ services:
 
 
 ## Plugins
-
-
-  grapl-aws-guardduty-subgraph-generator:
-    build:
-      context: ../grapl-aws-plugins/grapl-aws-guardduty-subgraph-generator/
-      dockerfile: ./Dockerfile
-    tty: false
-    environment:
-      - BUCKET_PREFIX=local-grapl
-      - IS_LOCAL=true
-      - QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
-    depends_on:
-      - s3
-      - sqs
-      - graph_provision
-
-  aws_graph_provision:
-    build:
-      context: ./engagement_ux/engagement_edge/
-      dockerfile: ./Dockerfile
-    volumes:
-      - ../grapl-aws-plugins/local_plugin/:/var/run/target/
-    command: python /var/run/target/local_provision.py
-    tty: true
-    links:
-      - engagement_graph
-      - master_graph
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
