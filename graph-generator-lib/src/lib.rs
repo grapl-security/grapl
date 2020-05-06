@@ -347,7 +347,7 @@ fn handler
     }
 }
 
-pub fn run_graph_generator_local<
+pub async fn run_graph_generator_local<
     EH: EventHandler<
         InputEvent=Vec<u8>,
         OutputEvent=Graph,
@@ -360,7 +360,6 @@ pub fn run_graph_generator_local<
     event_decoder: ED,
 ) {
     std::thread::sleep_ms(10_000);
-    let mut runtime = Runtime::new().unwrap();
 
     let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
 
@@ -369,13 +368,11 @@ pub fn run_graph_generator_local<
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
 
-        if let Err(e) = runtime.block_on(async move {
-            local_service(
-                queue_url.clone(),
-                generator.clone(),
-                event_decoder.clone(),
-            ).await
-        }) {
+        if let Err(e) = local_service(
+            queue_url.clone(),
+            generator.clone(),
+            event_decoder.clone(),
+        ).await {
             error!("{}", e);
             std::thread::sleep_ms(2_000);
         }
@@ -383,7 +380,7 @@ pub fn run_graph_generator_local<
 }
 
 
-pub fn run_graph_generator<
+pub async fn run_graph_generator<
     EH: EventHandler<
         InputEvent=Vec<u8>,
         OutputEvent=Graph,
@@ -397,13 +394,13 @@ pub fn run_graph_generator<
     let is_local = std::env::var("IS_LOCAL");
 
     info!("IS_LOCAL={:?}", is_local);
-    if is_local.map(|is_local| is_local.parse().unwrap_or(false)).unwrap_or(false) {
+    if is_local.map(|is_local| is_local.to_lowercase().parse().unwrap_or(false)).unwrap_or(false) {
         std::thread::sleep_ms(10_000);
 
         run_graph_generator_local(
             generator,
             event_decoder,
-        );
+        ).await;
     } else {
         run_graph_generator_aws(
             generator,
