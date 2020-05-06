@@ -2,6 +2,7 @@ import base64
 import hashlib
 import inspect
 import json
+import logging
 import os
 import random
 import sys
@@ -31,6 +32,10 @@ from pydgraph import DgraphClientStub, DgraphClient
 IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 IS_RETRY = os.environ['IS_RETRY']
 
+RUST_LOG = os.getenv('RUST_LOG')
+LEVEL = 'ERROR' if RUST_LOG is None else RUST_LOG
+logging.basicConfig(filename=sys.stdout, level=LEVEL)
+LOGGER = logging.getLogger('analyzer-executor')
 
 class NopCache(object):
     def set(self, key, value):
@@ -80,23 +85,23 @@ def get_analyzer_objects(dgraph_client: DgraphClient) -> Dict[str, Analyzer]:
 
 def check_caches(file_hash: str, msg_id: str, node_key: str, analyzer_name: str) -> bool:
     if check_msg_cache(file_hash, node_key, msg_id):
-        print('cache hit - already processed')
+        LOGGER.debug('cache hit - already processed')
         return True
 
     if check_hit_cache(analyzer_name, node_key):
-        print('cache hit - already matched')
+        LOGGER.debug('cache hit - already matched')
         return True
 
     return False
 
 
 def handle_result_graphs(analyzer, result_graphs, sender):
-    print(f'Result graph: {type(analyzer)} {result_graphs[0]}')
+    LOGGER.info(f'Result graph: {type(analyzer)} {result_graphs[0]}')
     for result_graph in result_graphs:
         try:
             analyzer.on_response(result_graph, sender)
         except Exception as e:
-            print(f'Analyzer {analyzer} failed with {e}')
+            LOGGER.error(f'Analyzer {analyzer} failed with {e}')
             sender.send(ExecutionFailed)
             raise e
 
@@ -111,11 +116,11 @@ def get_analyzer_view_types(query: Queryable) -> Set[Type[Viewable]]:
 def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], analyzers: Dict[str, Analyzer],
                    sender: Any):
     if not analyzers:
-        print('Received empty dict of analyzers')
+        LOGGER.warn('Received empty dict of analyzers')
         return
 
     if not nodes:
-        print("Received empty array of nodes")
+        LOGGER.warn("Received empty array of nodes")
 
     result_name_to_analyzer = {}
     query_str = ""
@@ -156,7 +161,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
                 )
 
     if not query_str:
-        print('No nodes to query')
+        LOGGER.warn('No nodes to query')
         return
 
     txn = dg_client.txn(read_only=True)
@@ -173,11 +178,10 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
 
             result_graph = view_type.from_dict(dg_client, result)
 
-            # next(inspect.getfullargspec(analyzer.on_response).annotations.values().__iter__())
             response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get('response')
 
             if response_ty == NodeView:
-                print('Analyzer on_response is expecting a NodeView')
+                LOGGER.warn('Analyzer on_response is expecting a NodeView')
                 result_graph = NodeView.from_view(result_graph)
 
             analyzer_to_results[an_name].append(result_graph)
@@ -206,9 +210,9 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
         analyzers = get_analyzer_objects(client)
         if not analyzers:
-            print(f'Got no analyzers for file: {name}')
+            LOGGER.warn(f'Got no analyzers for file: {name}')
 
-        print(f'Executing analyzers: {[an for an in analyzers.keys()]}')
+        LOGGER.info(f'Executing analyzers: {[an for an in analyzers.keys()]}')
 
         chunk_size = 100
 
@@ -216,7 +220,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
             chunk_size = 10
 
         for nodes in chunker([n for n in graph.node_iter()], chunk_size):
-            print(f'Querying {len(nodes)} nodes')
+            LOGGER.info(f'Querying {len(nodes)} nodes')
 
             def exec_analyzer(nodes, sender):
                 try:
@@ -224,8 +228,8 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
                     return nodes
                 except Exception as e:
-                    print(traceback.format_exc())
-                    print(f'Execution of {name} failed with {e} {e.args}')
+                    LOGGER.error(traceback.format_exc())
+                    LOGGER.error(f'Execution of {name} failed with {e} {e.args}')
                     sender.send(ExecutionFailed())
                     raise
 
@@ -239,14 +243,14 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
         sender.send(ExecutionComplete())
 
     except Exception as e:
-        print(traceback.format_exc())
-        print(f'Execution of {name} failed with {e} {e.args}')
+        LOGGER.error(traceback.format_exc())
+        LOGGER.error(f'Execution of {name} failed with {e} {e.args}')
         sender.send(ExecutionFailed())
         raise
 
 
 def emit_event(s3, event: ExecutionHit) -> None:
-    print(f"emitting event for: {event.analyzer_name, event.nodes}")
+    LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     event_s = json.dumps(
         {
@@ -305,9 +309,7 @@ def update_hit_cache(file: str, node_key: str) -> None:
 
 def lambda_handler(events: Any, context: Any) -> None:
     # Parse sns message
-    print("handling")
-    print(events)
-    print(context)
+    LOGGER.debug(f"handling events: {events} context: {context}")
 
     alpha_names = os.environ["MG_ALPHAS"].split(",")
 
@@ -328,14 +330,14 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         message = json.loads(data)
 
-        print(f'Executing Analyzer: {message["key"]}')
+        LOGGER.info(f'Executing Analyzer: {message["key"]}')
         analyzer = download_s3_file(s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"])
         analyzer_name = message["key"].split("/")[-2]
 
         subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
 
         # TODO: Validate signature of S3 file
-        print(f'event {event}')
+        LOGGER.info(f'event {event}')
         rx, tx = Pipe(duplex=False)  # type: Tuple[Connection, Connection]
         p = Process(target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, ''))
 
@@ -346,17 +348,17 @@ def lambda_handler(events: Any, context: Any) -> None:
             p_res = rx.poll(timeout=5)
             if not p_res:
                 t += 1
-                print(f"Polled {analyzer_name} for {t * 5} seconds without result")
+                LOGGER.info(f"Polled {analyzer_name} for {t * 5} seconds without result")
                 continue
             result = rx.recv()  # type: Optional[Any]
 
             if isinstance(result, ExecutionComplete):
-                print("execution complete")
+                LOGGER.info("execution complete")
                 break
 
             # emit any hits to an S3 bucket
             if isinstance(result, ExecutionHit):
-                print(f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}")
+                LOGGER.info(f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}")
                 emit_event(s3, result)
                 update_msg_cache(analyzer, result.root_node_key, message['key'])
                 update_hit_cache(analyzer_name, result.root_node_key)
@@ -440,7 +442,6 @@ def get_s3_client():
 if IS_LOCAL:
     while True:
         try:
-
             sqs = boto3.client(
                 'sqs',
                 region_name="us-east-1",
@@ -457,7 +458,7 @@ if IS_LOCAL:
 
             messages = res.get('Messages', [])
             if not messages:
-                print('queue was empty')
+                LOGGER.warn('queue was empty')
 
             s3_events = [(json.loads(msg['Body']), msg['ReceiptHandle']) for msg in messages]
             for s3_event, receipt_handle in s3_events:
@@ -469,5 +470,5 @@ if IS_LOCAL:
                 )
 
         except Exception as e:
-            print(traceback.format_exc())
+            LOGGER.error(traceback.format_exc())
             time.sleep(2)
