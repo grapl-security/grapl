@@ -127,7 +127,6 @@ function ToggleLensTable({setLens}: any) {
                                     </Table>
                                 </TableContainer>
                             )
-                            
                         }
                     )
                 }
@@ -244,8 +243,8 @@ function ToggleNodeTable({curNode}: any) {
 export default function SideBarContent({setLens, curNode}: any) {
     return (
         <>
-            <ToggleLensTable setLens={setLens} />
-            <ToggleNodeTable curNode={curNode} />
+            <ToggleLensTable setLens={setLens}/>
+            <ToggleNodeTable curNode={curNode}/>
         </>
     );
 }

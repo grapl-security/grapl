@@ -43,7 +43,7 @@ function innerTable(node: any, classes: any) {
         </TableHead>
     )
     } else {
-        return <div></div>
+        return <></>
     }
 }
 

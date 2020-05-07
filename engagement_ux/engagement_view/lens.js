@@ -783,7 +783,6 @@ const mapGraph = (node, f) => {
     })
 };
 
-
 const edgeLinksFromNode = (node) => {
     const links = [];
 

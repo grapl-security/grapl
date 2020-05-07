@@ -2,34 +2,54 @@
 import React, {useEffect, useRef} from 'react';
 import {ForceGraph2D} from 'react-force-graph';
 import * as d3 from "d3";
+import {BKDRHash} from "../modules/colorHash.tsx"
+import {traverseNodes, traverseNeighbors, mapEdges} from "../modules/graph_traverse.tsx"
 
 const isLocal = true;
 
-const getEngagementEdge = () => {
+const getEngagementEdge = (port?: undefined | string) => {
     if (isLocal) {
-        return "http://" + window.location.hostname + ":8900/"
+        return "http://" + window.location.hostname + (port || ":8900/")
     } else {
         return "__engagement_ux_standin__hostname__"
     }
 }
 
-const engagement_edge = getEngagementEdge();
-
-const BKDRHash = (str: any) => {
-    const seed = 131;
-    const seed2 = 137;
-    let hash = 0 as any;
-    // make hash more sensitive for short string like 'a', 'b', 'c'
-    str += 'x';
-    // Note: Number.MAX_SAFE_INTEGER equals 9007199254740991
-    const MAX_SAFE_INTEGER = parseInt(9007199254740991 / seed2 as any) as any;
-    for (let i = 0; i < str.length; i++) {
-        if (hash > MAX_SAFE_INTEGER) {
-            hash = parseInt(hash / seed2 as any);
+getEngagementEdge();
+const mapEdgeProps = (node, f) => {
+    for (const prop in node) {
+        if (Object.prototype.hasOwnProperty.call(node, prop)) {
+            if(Array.isArray(node[prop])) {
+                for (const neighbor of node[prop]) {
+                    if (neighbor.uid !== undefined) {
+                        f(prop, neighbor)
+                    }
+                }
+            }
         }
-        hash = hash * seed + str.charCodeAt(i);
     }
-    return hash;
+};
+
+const _mapGraph = (node, visited, f) => {
+    mapEdgeProps(node, (edgeName, neighbor) => {
+        if (visited.has(node.uid + edgeName + neighbor.uid)) {
+            return
+        }
+
+        visited.add(node.uid + edgeName + neighbor.uid);
+
+        f(node, edgeName, neighbor);
+        _mapGraph(neighbor, visited, f)
+    })
+};
+
+const mapGraph = (node, f) => {
+    const visited = new Set();
+    mapEdgeProps(node, (edgeName, neighbor) => {
+
+        f(node, edgeName, neighbor);
+        _mapGraph(neighbor, visited, f)
+    })
 };
 
 
@@ -146,67 +166,119 @@ ColorHash.prototype.rgb = function (str: any) {
 };
 
 
+
+const expandScope = (lensName: string) => {
+    
+    const query = `
+
+    {
+        lens_scope(lens_name: "${lensName}") {
+            uid,
+            node_key,
+            lens_name,
+            dgraph_type,
+            scope {
+                ... on Process {
+                    uid,
+                    node_key, 
+                    dgraph_type,
+                    process_name, 
+                    process_id,
+                    children {
+                        uid, 
+                        node_key, 
+                        dgraph_type,
+                        process_name, 
+                        process_id,
+                    }, 
+                    risks {  
+                        uid,
+                        dgraph_type,
+                        node_key, 
+                        analyzer_name, 
+                        risk_score
+                    },
+                }
+            
+                ... on Asset {
+                    uid, 
+                    node_key, 
+                    dgraph_type,
+                    hostname,
+                    asset_ip{
+                        ip_address
+                    }, 
+                    asset_processes{
+                        uid, 
+                        node_key, 
+                        dgraph_type,
+                        process_name, 
+                        process_id,
+                    },
+                    files_on_asset{
+                        uid, 
+                        node_key, 
+                        dgraph_type,
+                        file_path
+                    }, 
+                    risks {  
+                        uid,
+                        dgraph_type,
+                        node_key, 
+                        analyzer_name, 
+                        risk_score
+                    },
+                }
+
+                ... on File {
+                    uid,
+                    node_key, 
+                    dgraph_type,
+                    risks {  
+                        uid,
+                        dgraph_type,
+                        node_key, 
+                        analyzer_name, 
+                        risk_score
+                    },
+                }
+            }
+        }
+    }
+    `;
+
+    return query;
+}
+
+const graphql_edge = getEngagementEdge(":5000/");
+
 const retrieveGraph = async (lens: string) => {
+    const query = expandScope(lens);
 
-    let uidHashes = {};
+    const res = await fetch(`${graphql_edge}graphql`,
+        {
+            method: 'post',
+            body: JSON.stringify({ query }),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+        })
+        .then(res => res.json())
+        .then((res) => res.data)
+        .then((res) => res.lens_scope);
 
-    // for (const node of graph.nodes) {
-    //     if (node.lens !== undefined) {
-    //         continue
-    //     }
-    //     if (node.uid !== undefined) {
-    //         uidHashes[node.uid] = await hashNode(node);
-    //     }
-    // }
-
-    console.log("Getting graph");
-
-    const res = await fetch(`${engagement_edge}update`, {
-        method: 'post',
-        body: JSON.stringify({
-            'lens': lens,
-            'uid_hashes': uidHashes,
-        }),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-    });
-
-    const json_res = await res.json();
-
-    const updated_nodes = json_res['success']['updated_nodes'];
-    const removed_nodes = json_res['success']['removed_nodes'];
-
-    return [updated_nodes, removed_nodes]
+    return (await res);
 };
 
 const getNodeType = (node: any) => {
-    if (node.process_id !== undefined) {
-        return 'Process';
-    }
-    if (node.file_path !== undefined) {
-        return 'File';
-    }
+    const t = node.dgraph_type || node.node_type;
 
-    if (node.external_ip !== undefined) {
-        return 'ExternalIp';
-    }
-
-    if (node.port !== undefined) {
-        return 'Connect';
-    }
-
-    if (node.scope !== undefined || node.lens !== undefined) {
-        return 'Lens';
-    }
-
-    // Dynamic nodes
-    if (node.node_type) {
-        if (Array.isArray(node.node_type)) {
-            return node.node_type[0]
+    if (t) {
+        if (Array.isArray(t)) {
+            return t[0]
         }
-        return node.node_type
+        return t
     }
 
     console.warn('Unable to find type for node ', node);
@@ -218,11 +290,24 @@ function randomInt(min: number, max: number) // min and max included
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
+const ourgraph = {};
+// Node key into a map, convert to an array 
+const ournodes = [];
+// striped edges 
+const ouredges = [];
+mapGraph(ourgraph, (node, edgename, neighbor) => {
+    ournodes.push(stripedges(node));
+    ouredges.push({from: node.node_key, edge_name: edgeName, neighbor: neighbor})
+})
+
+
 const lensToAdjacencyMatrix = (matricies: any) => {
     const nodes = new Map();
     const links = new Map();
 
     const key_uid = new Map();
+
+    console.log("MATRICIES",  matricies)
 
     for (const matrix of matricies) {
         const node_key = matrix.node['node_key'];
@@ -231,7 +316,6 @@ const lensToAdjacencyMatrix = (matricies: any) => {
             continue
         }
         key_uid.set(node_key, uid);
-        console.log(node_key);
         nodes.set(uid, matrix.node);
     }
 
@@ -244,10 +328,8 @@ const lensToAdjacencyMatrix = (matricies: any) => {
 
             const edge_name = edge['edge_name'];
             if (edge_name === "risks") {
-                console.log("Handling risks");
                 const node = nodes.get(key_uid.get(edge['from']));
                 for (const risk of matrix.node.risks) {
-                    console.log('risk: ', risk);
                     node.risk = (risk.risk_score || 0) + (node.risk || 0)
                     if (node.analyzers) {
                         if (node.analyzers.indexOf(risk.analyzer_name) === -1) {
@@ -280,7 +362,7 @@ const lensToAdjacencyMatrix = (matricies: any) => {
         }
     }
 
-    console.log(links)
+    // console.log(links)
 
     return {
         nodes, links
@@ -288,25 +370,32 @@ const lensToAdjacencyMatrix = (matricies: any) => {
 };
 
 
-const getNodeLabel = (nodeType: any, node: any) => {
+const getNodeLabel = (nodeType: string, node: any) => {
+    console.log('nodetype', nodeType);
+
     if (nodeType === 'Process') {
-        return node.process_name || node.process_id;
+        console.log('nodetype', );
+        return node.process_name || node.process_id || 'Process';
     }
 
     if (nodeType === 'File') {
-        return node.file_path;
+        console.log('nodetype', );
+        return node.file_path || 'File';
     }
 
     if (nodeType === 'ExternalIp') {
-        return node.external_ip;
+        console.log('nodetype', );
+        return node.external_ip || 'ExternalIp';
     }
 
     if (nodeType === 'Connect') {
-        return node.port;
+        console.log('nodetype', );
+        return node.port || 'Connect';
     }
 
     if (nodeType === 'Lens') {
-        return node.lens;
+        console.log('nodetype', );
+        return node.lens || 'Lens';
     }
 
     return nodeType || '';
@@ -414,17 +503,6 @@ const mapLabel = (label: any) => {
 
 const percentToColor = (percentile: any) => {
     const hue = (100 - percentile) * 40 / 100;
-    // if(percentile >= 75){
-    //     // BRIGHT ASS RED
-    // } else if (percentile >= 50){
-    //     //YELLOW
-    // } else if(percentile >=25) {
-    //     //blue 
-    // } else if(percentile > 0){
-    //     // GREEN
-    // } else {
-    //     // more green
-    // }
 
     return `hsl(${hue}, 100%, 50%)`;
 };
@@ -697,27 +775,106 @@ const mergeGraphs = (curGraph: GraphT, update: graphT) => {
     }
 }
 
+const graphQLAdjacencyMatrix = (inputGraph: any) => {
+    const nodes = []; 
+    const links = []; 
+
+    traverseNeighbors(inputGraph, 
+        (fromNode: any, edgeName: string, toNode: any) => {
+            if(edgeName !== 'scope'){
+                
+                if(getNodeType(fromNode) === 'Unknown'){
+                    return;
+                }
+
+                if(getNodeType(toNode) === 'Unknown'){
+                    return;
+                }
+
+                if(getNodeType(fromNode) === 'Risk'){
+                    return;
+                }
+
+                if(getNodeType(toNode) === 'Risk'){
+                    return;
+                }
+                
+                links.push({
+                    source: fromNode.uid,
+                    label: edgeName, 
+                    target: toNode.uid
+                })
+        } 
+    })
+
+    traverseNodes(inputGraph, (node: any) => {
+        const nodeType = getNodeType(node);
+
+        if(nodeType === 'Unknown'){
+            return;
+        }
+
+        if(nodeType === 'Risk'){
+            return; 
+        }
+
+        const nodeLabel = getNodeLabel(nodeType, node);
+
+        const strippedNode = {...node};
+
+
+        console.log("NODESTRING####",node)
+        strippedNode.risk = strippedNode.risk || 0;
+        strippedNode.analyzer_names = strippedNode.analyzer_names || "";
+
+        for(const risk of node.risks || []){
+            console.log("LOUD@~$$$***(((#!~~~)@#*)$&&yIOHJFHDSJK")
+            strippedNode.risk += risk.risk_score || 0;
+            strippedNode.analyzer_names += risk.analyzer_name || "";
+        }
+
+        mapEdges(node, (edge: any, neighbor: any) => {
+            strippedNode[edge] = undefined;
+        })
+        
+        nodes.push({
+            name: node.uid,
+            id: node.uid,
+            ...strippedNode,
+            nodeType,
+            nodeLabel,
+            x: 200 + randomInt(1, 50),
+            y: 150 + randomInt(1, 50),
+        })
+    })
+
+    return {
+        nodes, 
+        links
+    }
+}
+
 const updateGraph = async (lensName: string, state: any, setState: any) => {
     if (!lensName) {
         return;
     }
-    console.log("Retrieving graph from " + lensName);
+    // console.log("Retrieving graph from " + lensName);
     await retrieveGraph(lensName)
-        .then(async ([updated_nodes, removed_nodes]) => {
-            console.log('updated_nodes', updated_nodes);
-
-            const update = await dgraphNodesToD3Format(updated_nodes) as any;
+        .then(async (scope) => {
+            // console.log('updated_nodes', updated_nodes);
+            const update = graphQLAdjacencyMatrix(scope) as any;
+            console.log('update', update);
             const mergeUpdate = mergeGraphs(state.graphData, update);
             if (mergeUpdate !== null) {
                 if (state.curLensName === lensName) {
-                    console.log("update for ", state.curLensName, lensName);
+                    // console.log("update for ", state.curLensName, lensName);
                     setState({
                         ...state,
                         curLensName: lensName,
                         graphData: mergeUpdate,
                     })
                 } else {
-                    console.log("update, switch, for ", state.curLensName, lensName);
+                    // console.log("update, switch, for ", state.curLensName, lensName);
                     setState({
                         ...state,
                         curLensName: lensName,
@@ -750,7 +907,7 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
     // }, [lensName, state])
 
     useEffect(() => {
-        console.log("useEffect - setting forceRef state");
+        // console.log("useEffect - setting forceRef state");
         forceRef.current.d3Force("link", d3.forceLink());
         forceRef.current.d3Force('collide', d3.forceCollide(22));
         forceRef.current.d3Force("charge", d3.forceManyBody());
@@ -782,7 +939,7 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
         return () => clearInterval(interval);
     }, [lensName, state]);
 
-    console.log('GraphDisplay: ', lensName);
+    // console.log('GraphDisplay: ', lensName);
 
     const graphData = state.graphData;
 
@@ -793,7 +950,6 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
 
     return (
         <>
-
             <ForceGraph2D
                 graphData={graphData}
                 nodeLabel={(node: any) => node.nodeLabel}
@@ -808,7 +964,7 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
                 linkDirectionalParticleSpeed={0.005}
                 onNodeClick={
                     (node: any, event: any) => {
-                        console.log('clicked', node.nodeLabel);
+                        // console.log('clicked', node.nodeLabel);
                         setCurNode(node);
                     }
                 }
@@ -921,3 +1077,6 @@ const GraphDisplay = ({lensName, setCurNode}: any) => {
 }
 
 export default GraphDisplay;
+
+
+
