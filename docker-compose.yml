@@ -8,6 +8,8 @@ services:
       - "8000:8000"
       - "8080:8080"
       - "9080:9080"
+    logging:
+      driver: none
 
   engagement_graph:
     tty: false
@@ -16,6 +18,8 @@ services:
       - "8001:8000"
       - "8081:8080"
       - "9081:9080"
+    logging:
+      driver: none
 
   graph_provision:
     build:
