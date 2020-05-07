@@ -116,11 +116,11 @@ def get_analyzer_view_types(query: Queryable) -> Set[Type[Viewable]]:
 def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], analyzers: Dict[str, Analyzer],
                    sender: Any):
     if not analyzers:
-        LOGGER.warn('Received empty dict of analyzers')
+        LOGGER.warning('Received empty dict of analyzers')
         return
 
     if not nodes:
-        LOGGER.warn("Received empty array of nodes")
+        LOGGER.warning("Received empty array of nodes")
 
     result_name_to_analyzer = {}
     query_str = ""
@@ -161,7 +161,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
                 )
 
     if not query_str:
-        LOGGER.warn('No nodes to query')
+        LOGGER.warning('No nodes to query')
         return
 
     txn = dg_client.txn(read_only=True)
@@ -181,7 +181,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
             response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get('response')
 
             if response_ty == NodeView:
-                LOGGER.warn('Analyzer on_response is expecting a NodeView')
+                LOGGER.warning('Analyzer on_response is expecting a NodeView')
                 result_graph = NodeView.from_view(result_graph)
 
             analyzer_to_results[an_name].append(result_graph)
@@ -210,7 +210,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
         analyzers = get_analyzer_objects(client)
         if not analyzers:
-            LOGGER.warn(f'Got no analyzers for file: {name}')
+            LOGGER.warning(f'Got no analyzers for file: {name}')
 
         LOGGER.info(f'Executing analyzers: {[an for an in analyzers.keys()]}')
 
@@ -458,7 +458,7 @@ if IS_LOCAL:
 
             messages = res.get('Messages', [])
             if not messages:
-                LOGGER.warn('queue was empty')
+                LOGGER.warning('queue was empty')
 
             s3_events = [(json.loads(msg['Body']), msg['ReceiptHandle']) for msg in messages]
             for s3_event, receipt_handle in s3_events:

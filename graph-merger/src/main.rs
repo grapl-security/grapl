@@ -506,7 +506,7 @@ impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
             ))
         }
 
-        println!("handling new subgraph with {} nodes {} edges", subgraph.nodes.len(), subgraph.edges.len());
+        info!("handling new subgraph with {} nodes {} edges", subgraph.nodes.len(), subgraph.edges.len());
 
         let mg_client = {
             let mut rng = thread_rng();

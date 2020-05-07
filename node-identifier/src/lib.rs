@@ -464,7 +464,7 @@ fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
             let from = match unid_id_map.get(&edge.from) {
                 Some(from) => from,
                 None => {
-                    println!("Failed to lookup from node in unid_id_map {}", &edge.edge_name);
+                    warn!("Failed to lookup from node in unid_id_map {}", &edge.edge_name);
                     continue;
                 }
             };
@@ -472,7 +472,7 @@ fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
             let to = match unid_id_map.get(&edge.to) {
                 Some(to) => to,
                 None => {
-                    println!("Failed to lookup to node in unid_id_map {}", &edge.edge_name);
+                    warn!("Failed to lookup to node in unid_id_map {}", &edge.edge_name);
                     continue;
                 }
             };
@@ -754,7 +754,7 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
         }
 
 
-        println!("PRE: identified_graph.edges.len() {}", identified_graph.edges.len());
+        info!("PRE: identified_graph.edges.len() {}", identified_graph.edges.len());
 
 
         for (old_key, edge_list) in output_subgraph.edges.iter() {

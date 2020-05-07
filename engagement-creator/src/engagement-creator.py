@@ -352,7 +352,7 @@ if IS_LOCAL:
 
             messages = res.get('Messages', [])
             if not messages:
-                LOGGER.warn('queue was empty')
+                LOGGER.warning('queue was empty')
 
             s3_events = [(json.loads(msg['Body']), msg['ReceiptHandle']) for msg in messages]
             for s3_event, receipt_handle in s3_events:

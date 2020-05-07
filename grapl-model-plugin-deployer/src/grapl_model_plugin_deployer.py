@@ -201,7 +201,7 @@ def requires_auth(path):
 
             if not IS_LOCAL:  # For now, disable authentication locally
                 if not check_jwt(app.current_request.headers):
-                    LOGGER.warn('not logged in')
+                    LOGGER.warning('not logged in')
                     return respond("Must log in")
             try:
                 return route_fn()
