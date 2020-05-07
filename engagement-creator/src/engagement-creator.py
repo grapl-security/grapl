@@ -15,8 +15,8 @@ from pydgraph import DgraphClient, DgraphClientStub
 
 IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 
-RUST_LOG = os.getenv('RUST_LOG')
-LEVEL = 'ERROR' if RUST_LOG is None else RUST_LOG
+GRAPL_LOG_LEVEL = os.getenv('GRAPL_LOG_LEVEL')
+LEVEL = 'ERROR' if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 logging.basicConfig(filename=sys.stdout, level=LEVEL)
 LOGGER = logging.getLogger('engagement-creator')
 

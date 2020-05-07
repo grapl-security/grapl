@@ -3,6 +3,7 @@ extern crate aws_lambda_events;
 extern crate failure;
 extern crate graph_descriptions;
 extern crate graph_generator_lib;
+extern crate grapl_config;
 extern crate lambda_runtime as lambda;
 #[macro_use]
 extern crate lazy_static;
@@ -46,7 +47,6 @@ use serde::Deserialize;
 
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_emitter::S3EventEmitter;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
 use sqs_lambda::event_retriever::S3PayloadRetriever;
@@ -946,10 +946,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
                 let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
                 info!("Output events to: {}", bucket);
-                let region = {
-                    let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-                    Region::from_str(&region_str).expect("Region error")
-                };
+                let region = grapl_config::region();
 
                 let cache = RedisCache::new(cache_address.to_owned())
                     .await.expect("Could not create redis client");
@@ -964,6 +961,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
                 sqs_lambda::sqs_service::sqs_service(
                     queue_url,
+                    vec![], // FIXME: what should this be?
                     bucket,
                     ctx,
                     S3Client::new(region.clone()),
@@ -983,7 +981,8 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                                 tx.send(worked).unwrap();
                             }
                         }
-                    }
+                    },
+                    move |_, _| async move {Ok(())}
                 ).await;
 
             });
@@ -1018,7 +1017,8 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_by_env(); // if RUST_LOG is unset this defaults to ERROR
+    simple_logger::init_with_level(grapl_config::grapl_log_level())
+        .expect("Failed to initialize logger");
 
     let cache = NopCache {};
     info!("SqsCompletionHandler");

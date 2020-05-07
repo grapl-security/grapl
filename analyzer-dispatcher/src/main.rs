@@ -6,6 +6,7 @@ extern crate dgraph_rs;
 #[macro_use] extern crate failure;
 extern crate futures;
 extern crate graph_descriptions;
+extern crate grapl_config;
 extern crate grpc;
 extern crate lambda_runtime as lambda;
 #[macro_use] extern crate log;
@@ -74,7 +75,6 @@ use aws_lambda_events::event::s3::{S3Event, S3EventRecord, S3UserIdentity, S3Req
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use tokio::runtime::Runtime;
 
-mod config;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -346,9 +346,9 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
                 let bucket = bucket_prefix + "-dispatched-analyzer-bucket";
                 info!("Output events to: {}", bucket);
-                let region = config::region();
+                let region = grapl_config::region();
 
-                let cache = config::event_cache().await;
+                let cache = grapl_config::event_cache().await;
                 let analyzer_dispatcher
                     = AnalyzerDispatcher {
                         s3_client: Arc::new(S3Client::new(region.clone())),
@@ -519,7 +519,8 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_by_env(); // if RUST_LOG is unset this defaults to ERROR
+    simple_logger::init_with_level(grapl_config::grapl_log_level())
+        .expect("Failed to initialize logger");
 
     let is_local = std::env::var("IS_LOCAL")
         .is_ok();

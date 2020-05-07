@@ -18,6 +18,7 @@ path = "src/bin/node-identifier-retry-handler.rs"
 bytes = "0.4"
 failure = "*"
 graph-descriptions = {package="grapl-graph-descriptions", version="*"}
+grapl-config = {path = "../grapl-config"}
 prost = "0.4.0"
 prost-derive = "0.4"
 prost-types = "*"

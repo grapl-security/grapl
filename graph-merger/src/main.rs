@@ -6,6 +6,7 @@ extern crate dgraph_rs;
 extern crate failure;
 extern crate futures;
 extern crate graph_descriptions;
+extern crate grapl_config;
 extern crate grpc;
 extern crate itertools;
 extern crate lambda_runtime as lambda;
@@ -410,10 +411,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
                 let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
                 info!("Output events to: {}", bucket);
-                let region = {
-                    let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-                    Region::from_str(&region_str).expect("Region error")
-                };
+                let region = grapl_config::region();
                 let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS").expect("MG_ALPHAS")
                     .split(',')
                     .map(str::to_string)
@@ -759,7 +757,8 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_by_env(); // if RUST_LOG is unset this defaults to ERROR
+    simple_logger::init_with_level(grapl_config::grapl_log_level())
+        .expect("Failed to initialize logger");
 
     let is_local = std::env::var("IS_LOCAL")
         .is_ok();

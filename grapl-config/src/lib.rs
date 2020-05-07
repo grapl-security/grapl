@@ -1,3 +1,5 @@
+extern crate log;
+
 use std::str::FromStr;
 
 use rusoto_core::Region;
@@ -32,5 +34,12 @@ pub fn region() -> Region {
             let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
             Region::from_str(&region_str).expect("Region error")
         }
+    }
+}
+
+pub fn grapl_log_level() -> log::Level {
+    match std::env::var("GRAPL_LOG_LEVEL") {
+        Ok(level) => log::Level::from_str(&level).expect(&format!("Invalid logging level {}", level)),
+        Err(_) => log::Level::Error
     }
 }

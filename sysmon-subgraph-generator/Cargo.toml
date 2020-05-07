@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 graph-descriptions = {package="grapl-graph-descriptions", version="*"}
+grapl-config = {path = "../grapl-config"}
 
 sqs-lambda = "0.20.*"
 serde_json = "*"

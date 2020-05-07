@@ -805,6 +805,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
+name = "grapl-config"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "rusoto_core",
+ "sqs-lambda",
+]
+
+[[package]]
 name = "grapl-graph-descriptions"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2622,6 +2631,7 @@ dependencies = [
  "chrono",
  "failure",
  "futures 0.3.1",
+ "grapl-config",
  "grapl-graph-descriptions",
  "lambda_runtime",
  "lazy_static",

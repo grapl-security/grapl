@@ -3,6 +3,7 @@ extern crate chrono;
 extern crate failure;
 extern crate futures;
 extern crate graph_descriptions;
+extern crate grapl_config;
 
 extern crate lambda_runtime as lambda;
 #[macro_use]
@@ -83,8 +84,6 @@ use sqs_lambda::sqs_service::sqs_service;
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use rusoto_core::credential::AwsCredentials;
 use tokio::runtime::Runtime;
-
-mod config;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -798,9 +797,9 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
                 let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
                 info!("Output events to: {}", bucket);
-                let region = config::region();
+                let region = grapl_config::region();
 
-                let cache = config::event_cache().await;
+                let cache = grapl_config::event_cache().await;
 
 
                 let generator
@@ -975,7 +974,9 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_by_env(); // if RUST_LOG is unset this defaults to ERROR
+    simple_logger::init_with_level(grapl_config::grapl_log_level())
+        .expect("Failed to initialize logger");
+
     info!("Starting sysmon-subgraph-generator");
 
     let is_local = std::env::var("IS_LOCAL");

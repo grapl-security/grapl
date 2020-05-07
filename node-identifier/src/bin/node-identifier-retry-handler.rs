@@ -1,3 +1,4 @@
+extern crate grapl_config;
 extern crate lambda_runtime as lambda;
 extern crate node_identifier;
 extern crate simple_logger;
@@ -16,7 +17,9 @@ use tokio::runtime::Runtime;
 
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_by_env(); // if RUST_LOG is unset this defaults to ERROR
+    simple_logger::init_with_level(grapl_config::grapl_log_level())
+        .expect("Failed to initialize logger");
+
     let is_local = std::env::var("IS_LOCAL")
         .is_ok();
 
