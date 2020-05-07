@@ -26,7 +26,7 @@ services:
       context: ./engagement_ux/engagement_edge/
       dockerfile: ./Dockerfile
     environment:
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     volumes:
       - ./local_grapl/:/var/run/target/
     command: python /var/run/target/grapl_provision.py
@@ -46,7 +46,7 @@ services:
       context: ./engagement_ux/engagement_edge/
       dockerfile: ./Dockerfile
     environment:
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     volumes:
       - ./local_grapl/local_dynamodb:/var/run/target/
     command: python /var/run/target/provision_local_identity_table.py
@@ -79,7 +79,7 @@ services:
     environment:
       - BUCKET_PREFIX="local-grapl"
       - IS_LOCAL="True"
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -98,7 +98,7 @@ services:
     environment:
       - BUCKET_PREFIX="local-grapl"
       - IS_LOCAL="True"
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -121,7 +121,7 @@ services:
     environment:
       - BUCKET_PREFIX="local-grapl"
       - IS_LOCAL="True"
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -142,7 +142,7 @@ services:
     environment:
       - BUCKET_PREFIX="local-grapl"
       - IS_LOCAL="True"
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -163,7 +163,7 @@ services:
     environment:
       - BUCKET_PREFIX="local-grapl"
       - IS_LOCAL="True"
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -186,7 +186,7 @@ services:
       - MG_ALPHAS=master_graph
       - IS_RETRY="False"
       - BUCKET_PREFIX=local-grapl
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     command: python3 /src/analyzer-executor.py
     links:
       - s3:minio
@@ -206,7 +206,7 @@ services:
     environment:
       - IS_LOCAL="True"
       - BUCKET_PREFIX="local-grapl"
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     command: python3 /src/engagement-creator.py
     tty: true
     links:
@@ -227,7 +227,7 @@ services:
       - "8900:8900"
     environment:
       - IS_LOCAL="True"
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     command: chalice local --no-autoreload --host=0.0.0.0 --port=8900
     tty: true
     links:
@@ -241,7 +241,7 @@ services:
       - "8123:8123"
     environment:
       - IS_LOCAL="True"
-      - GRAPL_LOG_LEVEL=INFO
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     command: chalice local --no-autoreload --host=0.0.0.0 --port=8123
     tty: true
     links:
