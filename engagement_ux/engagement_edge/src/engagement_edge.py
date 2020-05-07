@@ -34,11 +34,15 @@ if IS_LOCAL:
 else:
     EG_ALPHA = "alpha0.engagementgraphcluster.grapl:9080"
 
+GRAPL_LOG_LEVEL = os.getenv('GRAPL_LOG_LEVEL')
+LEVEL = 'ERROR' if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+logging.basicConfig(stream=sys.stdout, level=LEVEL)
+LOGGER = logging.getLogger('engagement-creator')
 
 app = Chalice(app_name="engagement-edge")
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
-    print(f'connecting to dgraph at {EG_ALPHA}')
+    LOGGER.info(f'connecting to dgraph at {EG_ALPHA}')
     client_stub = pydgraph.DgraphClientStub(EG_ALPHA)
     dg_client = pydgraph.DgraphClient(client_stub)
 
@@ -200,9 +204,9 @@ def expand_forward_edges_in_scope(dgraph_client: DgraphClient, node: NodeView, l
                     try:
                         neighbor_view = inner_edge_type(dgraph_client, node_key=neighbor['node_key'], uid=neighbor['uid'])
                     except Exception as e:
-                        print(f'neighbor_view failed with: {e}')
+                        LOGGER.error(f'neighbor_view failed with: {e}')
                         continue
-                    print(neighbor_view, neighbor_view.uid, neighbor_view.node_key)
+                    LOGGER.debug(neighbor_view, neighbor_view.uid, neighbor_view.node_key)
                     if isinstance(node_edge, list):
                         node_edge.append(neighbor_view)
                     else:
@@ -313,7 +317,7 @@ def expand_dynamic_node(dynamic_node: DynamicNodeView) -> Dict[str, Any]:
 
 def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, Any]]:
     current_graph = get_lens_scope(dgraph_client, lens_name)
-    print(f'Getting lens as dict {current_graph}')
+    LOGGER.info(f'Getting lens as dict {current_graph}')
     if not current_graph or not current_graph.get('scope'):
         return []
     nodes = []
@@ -321,7 +325,7 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
         try:
             nodes.append(NodeView.from_dict(dgraph_client, graph))
         except Exception as e:
-            print('Failed to get NodeView from dict', e)
+            LOGGER.error('Failed to get NodeView from dict', e)
     if current_graph.get('scope'):
         current_graph.pop('scope')
 
@@ -349,7 +353,7 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
         edges = []
         risks = node.get("risks", [])
         if not risks:
-            print(f"WARN: Node in engagement graph has no connected risks {node}")
+            LOGGER.warning(f"Node in engagement graph has no connected risks {node}")
         for risk in risks:
             try:
                 risk['node_key'] = node['node_key'] + risk['analyzer_name']
@@ -360,7 +364,7 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
                 }
                 edges.append(edge)
             except Exception as e:
-                print(f'risk edge failed: {risk} {e}')
+                LOGGER.error(f'risk edge failed: {risk} {e}')
 
         results.append({
             "node": node,
@@ -373,8 +377,8 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
 
 
 def try_get_updated_graph(body):
-    print('Trying to update graph')
-    print(f'connecting to dgraph at {EG_ALPHA}')
+    LOGGER.info('Trying to update graph')
+    LOGGER.info(f'connecting to dgraph at {EG_ALPHA}')
     client_stub = pydgraph.DgraphClientStub(EG_ALPHA)
     dg_client = pydgraph.DgraphClient(client_stub)
 
@@ -383,12 +387,8 @@ def try_get_updated_graph(body):
     # Mapping from `uid` to node hash
     initial_graph = body["uid_hashes"]
 
-    # print(f'lens: {lens} initial_graph: {initial_graph}')
-    #
-    # # Try for 20 seconds max
-    # max_time = int(time.time()) + 20
     while True:
-        print("Getting updated graph")
+        LOGGER.info("Getting updated graph")
         current_graph = lens_to_dict(dg_client, lens)
 
         updates = {
@@ -400,13 +400,13 @@ def try_get_updated_graph(body):
 
 
 def respond(err, res=None, headers=None):
-    print(f"responding, origin: {app.current_request.headers.get('origin', '')}")
+    LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
     if not headers:
         headers = {}
 
     if IS_LOCAL:
         override = app.current_request.headers.get('origin', '')
-        print(f'overriding origin with {override}')
+        LOGGER.info(f'overriding origin with {override}')
     else:
         override = ORIGIN_OVERRIDE
 
@@ -426,7 +426,7 @@ def respond(err, res=None, headers=None):
 
 
 def get_salt_and_pw(table, username):
-    print(f'Getting salt for user: {username}')
+    LOGGER.info(f'Getting salt for user: {username}')
     response = table.get_item(
         Key={
             'username': username,
@@ -493,7 +493,7 @@ def login(username, password):
 
     # Hash password
     to_check = hash_password(password.encode('utf8'), salt)
-    print('hashed')
+    LOGGER.debug('hashed')
 
     if not compare_digest(to_check, true_pw):
         time.sleep(round(uniform(0.1, 3.0), 2))
@@ -516,7 +516,7 @@ def check_jwt(headers):
         jwt.decode(encoded_jwt, JWT_SECRET, algorithms=['HS256'])
         return True
     except Exception as e:
-        print(e)
+        LOGGER.error(e)
         return False
 
 
@@ -547,12 +547,12 @@ def requires_auth(path):
 
             if not IS_LOCAL:  # For now, disable authentication locally
                 if not check_jwt(app.current_request.headers):
-                    print('not logged in')
+                    LOGGER.warn('not logged in')
                     return respond("Must log in")
             try:
                 return route_fn()
             except Exception as e:
-                print(e)
+                LOGGER.error(e)
                 return respond("Unexpected Error")
         return inner_route
     return route_wrapper
@@ -570,7 +570,7 @@ def no_auth(path):
             try:
                 return route_fn()
             except Exception as e:
-                print(e)
+                LOGGER.error(e)
                 return respond("Unexpected Error")
         return inner_route
     return route_wrapper
@@ -578,20 +578,20 @@ def no_auth(path):
 
 @no_auth('/login')
 def login_route():
-    print('/login route')
+    LOGGER.debug('/login_route')
     request = app.current_request
     cookie = lambda_login(request)
     if cookie:
-        print('logged in')
+        LOGGER.info('logged in')
         return respond(None, 'True', headers={'Set-Cookie': cookie})
     else:
-        print('not logged in')
+        LOGGER.warn('not logged in')
         return respond('Failed to login')
 
 
 @no_auth('/checkLogin')
 def check_login():
-    print('check login')
+    LOGGER.debug('/checkLogin')
     request = app.current_request
     if check_jwt(request.headers):
         return respond(None, 'True')
@@ -601,7 +601,7 @@ def check_login():
 
 @requires_auth("/update")
 def update():
-    print('/update')
+    LOGGER.debug('/update')
     request = app.current_request
     update = try_get_updated_graph(request.json_body)
     return respond(None, update)
@@ -617,7 +617,7 @@ def get_lenses():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
 def nop_route():
-    print(app.current_request.context['path'])
+    LOGGER.debug(app.current_request.context['path'])
 
     path = app.current_request.context['path']
 
