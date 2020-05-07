@@ -17,7 +17,7 @@ IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 
 GRAPL_LOG_LEVEL = os.getenv('GRAPL_LOG_LEVEL')
 LEVEL = 'ERROR' if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-logging.basicConfig(filename=sys.stdout, level=LEVEL)
+logging.basicConfig(stream=sys.stdout, level=LEVEL)
 LOGGER = logging.getLogger('engagement-creator')
 
 

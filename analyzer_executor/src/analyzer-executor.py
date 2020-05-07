@@ -34,7 +34,7 @@ IS_RETRY = os.environ['IS_RETRY']
 
 GRAPL_LOG_LEVEL = os.getenv('GRAPL_LOG_LEVEL')
 LEVEL = 'ERROR' if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-logging.basicConfig(filename=sys.stdout, level=LEVEL)
+logging.basicConfig(stream=sys.stdout, level=LEVEL)
 LOGGER = logging.getLogger('analyzer-executor')
 
 class NopCache(object):
