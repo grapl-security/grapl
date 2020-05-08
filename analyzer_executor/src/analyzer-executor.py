@@ -18,6 +18,7 @@ from multiprocessing.pool import ThreadPool
 from typing import Any, Optional, Tuple, List, Dict, Type, Set
 
 import boto3
+import botocore.exceptions
 import redis
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
@@ -449,6 +450,16 @@ if IS_LOCAL:
                 aws_access_key_id='dummy_cred_aws_access_key_id',
                 aws_secret_access_key='dummy_cred_aws_secret_access_key',
             )
+
+            alive = False
+            while not alive:
+                try:
+                    sqs.list_queues()
+                except botocore.exceptions.BotoCoreError:
+                    LOGGER.info('Waiting for SQS to become available')
+                    time.sleep(2)
+                    continue
+                alive = True
 
             res = sqs.receive_message(
                 QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue",
