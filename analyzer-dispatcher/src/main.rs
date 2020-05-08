@@ -47,11 +47,11 @@ use lambda::Context;
 use lambda::error::HandlerError;
 use lambda::lambda;
 use prost::Message;
-use rusoto_core::{Region, HttpClient};
+use rusoto_core::{Region, HttpClient, RusotoError};
 use rusoto_s3::{ListObjectsRequest, PutObjectRequest, S3, S3Client};
 use rusoto_sns::{Sns, SnsClient};
 use rusoto_sns::PublishInput;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest};
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
 use sha2::{Digest, Sha256};
 use std::env;
 
@@ -527,14 +527,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if is_local {
         info!("Running locally");
-        std::thread::sleep_ms(10_000);
         let mut runtime = Runtime::new().unwrap();
+
+        let s3_client = init_s3_client();
+        loop {
+            if let Err(e) = runtime.block_on(s3_client.list_buckets()) {
+                match e {
+                    RusotoError::HttpDispatch(_) => {
+                        info!("Waiting for S3 to become available");
+                        std::thread::sleep(Duration::new(2, 0));
+                    },
+                    _ => break
+                }
+            } else {
+                break;
+            }
+        }
+
+        let sqs_client = init_sqs_client();
+        loop {
+            if let Err(e) = runtime.block_on(
+                sqs_client.list_queues(ListQueuesRequest{ queue_name_prefix: None })
+            ) {
+                match e {
+                    RusotoError::HttpDispatch(_) => {
+                        info!("Waiting for SQS to become available");
+                        std::thread::sleep(Duration::new(2, 0));
+                    },
+                    _ => break
+                }
+            }
+        }
 
         loop {
             if let Err(e) = runtime.block_on(async move { local_handler().await }) {
                 error!("{}", e);
             }
-            std::thread::sleep_ms(2_000);
+            std::thread::sleep(Duration::new(2, 0));
         }
     }  else {
         info!("Running in AWS");

@@ -1080,7 +1080,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
     }
 }
 
-fn init_sqs_client() -> SqsClient
+pub fn init_sqs_client() -> SqsClient
 {
     info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
@@ -1097,7 +1097,7 @@ fn init_sqs_client() -> SqsClient
     )
 }
 
-fn init_s3_client() -> S3Client
+pub fn init_s3_client() -> S3Client
 {
     info!("Connecting to local http://s3:9000");
     S3Client::new_with(
@@ -1114,7 +1114,7 @@ fn init_s3_client() -> S3Client
 }
 
 
-fn init_dynamodb_client() -> DynamoDbClient
+pub fn init_dynamodb_client() -> DynamoDbClient
 {
     info!("Connecting to local http://dynamo:9000");
     DynamoDbClient::new_with(

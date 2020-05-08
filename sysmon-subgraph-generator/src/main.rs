@@ -42,10 +42,10 @@ use log::error;
 use rayon::iter::Either;
 use rayon::prelude::*;
 use regex::Regex;
-use rusoto_core::{Region, HttpClient};
+use rusoto_core::{Region, HttpClient, RusotoError};
 use rusoto_s3::{GetObjectRequest, S3};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest};
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
 use serde::Deserialize;
 
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
@@ -979,13 +979,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting sysmon-subgraph-generator");
 
-    let is_local = std::env::var("IS_LOCAL");
+    let is_local = std::env::var("IS_LOCAL")
+        .is_ok();
 
-    info!("IS_LOCAL={:?}", is_local);
-    if is_local.is_ok() {
-        info!("Running locally {:?}", is_local);
-        std::thread::sleep_ms(10_000);
+    if is_local {
+        info!("Running locally");
         let mut runtime = Runtime::new().unwrap();
+
+        let s3_client = init_s3_client();
+        loop {
+            if let Err(e) = runtime.block_on(s3_client.list_buckets()) {
+                match e {
+                    RusotoError::HttpDispatch(_) => {
+                        info!("Waiting for S3 to become available");
+                        std::thread::sleep(Duration::new(2, 0));
+                    },
+                    _ => break
+                }
+            } else {
+                break;
+            }
+        }
+
+        let sqs_client = init_sqs_client();
+        loop {
+            if let Err(e) = runtime.block_on(
+                sqs_client.list_queues(ListQueuesRequest{ queue_name_prefix: None })
+            ) {
+                match e {
+                    RusotoError::HttpDispatch(_) => {
+                        info!("Waiting for SQS to become available");
+                        std::thread::sleep(Duration::new(2, 0));
+                    },
+                    _ => break
+                }
+            }
+        }
 
         loop {
             if let Err(e) = runtime.block_on(async move { inner_main().await }) {
@@ -994,7 +1023,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }  else {
-        info!("Running in AWS {:?}", is_local);
+        info!("Running in AWS");
         lambda!(handler);
     }
 
