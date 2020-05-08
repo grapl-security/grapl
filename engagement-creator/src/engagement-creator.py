@@ -364,6 +364,6 @@ if IS_LOCAL:
                 )
 
         except Exception as e:
-            LOGGER.error('mainloop exception', e)
+            LOGGER.error(f'mainloop exception {e}')
             LOGGER.error(traceback.print_exc())
             time.sleep(2)
