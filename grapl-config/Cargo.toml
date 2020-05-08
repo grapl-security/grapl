@@ -9,4 +9,4 @@ edition = "2018"
 [dependencies]
 log = "0.4.*"
 sqs-lambda = "0.20.1"
-rusoto_core = {version="0.43.0-beta.1", default_features = false, features=["rustls"]}
+rusoto_core = {version="0.43.0", default_features = false, features=["rustls"]}

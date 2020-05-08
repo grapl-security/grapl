@@ -959,9 +959,14 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                     : GenericSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
                     = GenericSubgraphGenerator::new(cache.clone());
 
+                let initial_messages = event.records
+                    .into_iter()
+                    .map(map_sqs_message)
+                    .collect();
+
                 sqs_lambda::sqs_service::sqs_service(
                     queue_url,
-                    vec![], // FIXME: what should this be?
+                    initial_messages,
                     bucket,
                     ctx,
                     S3Client::new(region.clone()),
