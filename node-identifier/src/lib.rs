@@ -1212,12 +1212,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
             region.clone(),
     );
 
-    let queue_url = if should_default {
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue"
-    } else {
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-retry-queue"
-    };
-
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
     local_sqs_service(
         queue_url,
         "local-grapl-subgraphs-generated-bucket",
@@ -1272,7 +1267,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
                 SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
-                    queue_url: "http://sqs.us-east-1.amazonaws.com:9324/queue/graph-merger-queue".to_string(),
+                    queue_url: std::env::var("QUEUE_URL").expect("QUEUE_URL"),
                     ..Default::default()
                 }
             ).await?;

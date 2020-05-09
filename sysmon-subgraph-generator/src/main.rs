@@ -908,8 +908,9 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
         = SysmonSubgraphGenerator::new(cache.clone());
 
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
     local_sqs_service(
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue",
+        queue_url,
         "local-grapl-unid-subgraphs-generated-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
@@ -962,7 +963,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
                 SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
-                    queue_url: "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue".to_string(),
+                    queue_url: std::env::var("QUEUE_URL").expect("QUEUE_URL"),
                     ..Default::default()
                 }
             ).await?;
@@ -1001,17 +1002,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
+        let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
         let sqs_client = init_sqs_client();
         loop {
-            if let Err(e) = runtime.block_on(
-                sqs_client.list_queues(ListQueuesRequest{ queue_name_prefix: None })
+            match runtime.block_on(
+                sqs_client.list_queues(
+                    ListQueuesRequest { 
+                        queue_name_prefix: Some("sysmon-subgraph-generator".to_string()) 
+                    }
+                )
             ) {
-                match e {
-                    RusotoError::HttpDispatch(_) => {
-                        info!("Waiting for SQS to become available");
-                        std::thread::sleep(Duration::new(2, 0));
-                    },
-                    _ => break
+                Err(_) => {
+                    info!("Waiting for SQS to become available");
+                    std::thread::sleep(Duration::new(2, 0));
+                },
+                Ok(response) => {
+                    if let Some(urls) = response.queue_urls {
+                        if urls.contains(&queue_url) {
+                            break
+                        } else {
+                            info!("Waiting for {} to be created", queue_url);
+                            std::thread::sleep(Duration::new(2, 0));
+                        }
+                    }
                 }
             }
         }

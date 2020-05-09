@@ -346,8 +346,11 @@ if IS_LOCAL:
     alive = False
     while not alive:
         try:
-            sqs.list_queues()
-        except botocore.exceptions.BotoCoreError:
+            if 'QueueUrls' not in sqs.list_queues(QueueNamePrefix='engagement-creator-queue'):
+                LOGGER.info('Waiting for engagement-creator-queue to be created')
+                time.sleep(2)
+                continue
+        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError):
             LOGGER.info('Waiting for SQS to become available')
             time.sleep(2)
             continue

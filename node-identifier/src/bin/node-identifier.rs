@@ -44,18 +44,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 break;
             }
         }
-
+        
         let sqs_client = init_sqs_client();
+        let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
         loop {
-            if let Err(e) = runtime.block_on(
-                sqs_client.list_queues(ListQueuesRequest{ queue_name_prefix: None })
+            match runtime.block_on(
+                sqs_client.list_queues(
+                    ListQueuesRequest { 
+                        queue_name_prefix: Some("node-identifier".to_string()) 
+                    }
+                )
             ) {
-                match e {
-                    RusotoError::HttpDispatch(_) => {
-                        info!("Waiting for SQS to become available");
-                        std::thread::sleep(Duration::new(2, 0));
-                    },
-                    _ => break
+                Err(_) => {
+                    info!("Waiting for SQS to become available");
+                    std::thread::sleep(Duration::new(2, 0));
+                },
+                Ok(response) => {
+                    if let Some(urls) = response.queue_urls {
+                        if urls.contains(&queue_url) {
+                            break
+                        } else {
+                            info!("Waiting for {} to be created", queue_url);
+                            std::thread::sleep(Duration::new(2, 0));
+                        }
+                    }
                 }
             }
         }

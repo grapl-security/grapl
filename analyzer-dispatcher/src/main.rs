@@ -451,8 +451,9 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
         s3_client: Arc::new(init_s3_client()),
     };
 
+    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
     local_sqs_service(
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-dispatcher-queue",
+        queue_url,
         "local-grapl-analyzer-dispatched-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
@@ -505,7 +506,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
                 SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
-                    queue_url: "http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue".to_string(),
+                    queue_url: std::env::var("QUEUE_URL").expect("QUEUE_URL"),
                     ..Default::default()
                 }
             ).await?;
@@ -543,18 +544,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 break;
             }
         }
-
+        
         let sqs_client = init_sqs_client();
+        let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
         loop {
-            if let Err(e) = runtime.block_on(
-                sqs_client.list_queues(ListQueuesRequest{ queue_name_prefix: None })
+            match runtime.block_on(
+                sqs_client.list_queues(
+                    ListQueuesRequest { 
+                        queue_name_prefix: Some("analyzer-dispatcher".to_string()) 
+                    }
+                )
             ) {
-                match e {
-                    RusotoError::HttpDispatch(_) => {
-                        info!("Waiting for SQS to become available");
-                        std::thread::sleep(Duration::new(2, 0));
-                    },
-                    _ => break
+                Err(_) => {
+                    info!("Waiting for SQS to become available");
+                    std::thread::sleep(Duration::new(2, 0));
+                },
+                Ok(response) => {
+                    if let Some(urls) = response.queue_urls {
+                        if urls.contains(&queue_url) {
+                            break
+                        } else {
+                            info!("Waiting for {} to be created", queue_url);
+                            std::thread::sleep(Duration::new(2, 0));
+                        }
+                    }
                 }
             }
         }
