@@ -1008,7 +1008,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match runtime.block_on(
                 sqs_client.list_queues(
                     ListQueuesRequest { 
-                        queue_name_prefix: Some("sysmon-subgraph-generator".to_string()) 
+                        queue_name_prefix: Some("sysmon-graph-generator".to_string()) 
                     }
                 )
             ) {
