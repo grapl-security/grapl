@@ -101,16 +101,6 @@ fn strip_file_zone_identifier(path: &str) -> &str {
     }
 }
 
-fn is_internal_ip(ip: &str) -> bool {
-    lazy_static!(
-        static ref RE: Regex = Regex::new(
-            r"/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/"
-        ).expect("is_internal_ip regex");
-    );
-
-    RE.is_match(ip)
-}
-
 fn get_image_name(image_path: &str) -> Option<String> {
     image_path.split('\\').last().map(|name| {
         name.replace("- ", "").replace('\\', "")
@@ -511,7 +501,6 @@ impl PayloadDecoder<Vec<u8>> for ZstdDecoder
     fn decode(&mut self, body: Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>>
     {
         let mut decompressed = Vec::new();
-
         let mut body = Cursor::new(&body);
 
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;

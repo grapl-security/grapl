@@ -1,11 +1,13 @@
-use sqs_lambda::redis_cache::RedisCache;
 use rusoto_core::Region;
+use sqs_lambda::redis_cache::RedisCache;
 use std::str::FromStr;
 
 pub fn is_local() -> bool {
     let is_local = std::env::var("IS_LOCAL");
 
-    is_local.map(|is_local| is_local.parse().unwrap_or(false)).unwrap_or(false)
+    is_local
+        .map(|is_local| is_local.parse().unwrap_or(false))
+        .unwrap_or(false)
 }
 
 pub async fn event_cache() -> RedisCache {
@@ -13,14 +15,12 @@ pub async fn event_cache() -> RedisCache {
         let generic_event_cache_addr = std::env::var("EVENT_CACHE_ADDR").expect("EVENT_CACHE_ADDR");
         let generic_event_cache_port = std::env::var("EVENT_CACHE_PORT").expect("EVENT_CACHE_PORT");
 
-        format!(
-            "{}:{}",
-            generic_event_cache_addr,
-            generic_event_cache_port,
-        )
+        format!("{}:{}", generic_event_cache_addr, generic_event_cache_port,)
     };
 
-    RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client")
+    RedisCache::new(cache_address.to_owned())
+        .await
+        .expect("Could not create redis client")
 }
 
 pub fn region() -> Region {

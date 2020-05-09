@@ -1,9 +1,13 @@
 use std::io::Cursor;
 use std::sync::Arc;
 
-use aws_lambda_events::event::s3::{S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity};
+use aws_lambda_events::event::s3::{
+    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
+};
+use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
 use graph_descriptions::graph_description::*;
+use lambda_runtime::error::HandlerError;
 use lambda_runtime::Context;
 use log::*;
 use prost::Message;
@@ -16,13 +20,31 @@ use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::local_sqs_service::local_sqs_service;
-use tokio::runtime::Runtime;
-use aws_lambda_events::event::sqs::SqsEvent;
-use lambda_runtime::error::HandlerError;
-use std::time::Duration;
 use std::collections::HashSet;
+use std::time::Duration;
+use tokio::runtime::Runtime;
 
 pub mod config;
+
+#[derive(Clone, Default)]
+pub struct ZstdJsonDecoder {
+    pub buffer: Vec<u8>,
+}
+
+impl<D> PayloadDecoder<D> for ZstdJsonDecoder
+where
+    for<'a> D: Deserialize<'a>,
+{
+    fn decode(&mut self, body: Vec<u8>) -> Result<D, Box<dyn std::error::Error>> {
+        self.buffer.clear();
+
+        let mut body = Cursor::new(&body);
+
+        zstd::stream::copy_decode(&mut body, &mut self.buffer)?;
+
+        Ok(serde_json::from_slice(&self.buffer)?)
+    }
+}
 
 #[derive(Clone, Debug, Default)]
 pub struct SubgraphSerializer {
@@ -38,9 +60,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let mut subgraph = Graph::new(
-            0
-        );
+        let mut subgraph = Graph::new(0);
 
         let mut pre_nodes = 0;
         let mut pre_edges = 0;
@@ -54,11 +74,10 @@ impl CompletionEventSerializer for SubgraphSerializer {
         if subgraph.is_empty() {
             warn!(
                 concat!(
-                "Output subgraph is empty. Serializing to empty vector.",
-                "pre_nodes: {} pre_edges: {}"
+                    "Output subgraph is empty. Serializing to empty vector.",
+                    "pre_nodes: {} pre_edges: {}"
                 ),
-                pre_nodes,
-                pre_edges,
+                pre_nodes, pre_edges,
             );
             return Ok(vec![]);
         }
@@ -71,28 +90,25 @@ impl CompletionEventSerializer for SubgraphSerializer {
             pre_edges,
         );
 
-        let subgraphs = GeneratedSubgraphs { subgraphs: vec![subgraph] };
+        let subgraphs = GeneratedSubgraphs {
+            subgraphs: vec![subgraph],
+        };
 
         self.proto.clear();
 
         prost::Message::encode(&subgraphs, &mut self.proto)
             .map_err(Arc::new)
-            .map_err(|e| {
-                sqs_lambda::error::Error::EncodeError(e.to_string())
-            })?;
+            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
             .map_err(Arc::new)
-            .map_err(|e| {
-                sqs_lambda::error::Error::EncodeError(e.to_string())
-            })?;
+            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         Ok(vec![compressed])
     }
 }
-
 
 pub fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
     rusoto_sqs::Message {
@@ -106,8 +122,7 @@ pub fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> ruso
     }
 }
 
-fn init_sqs_client() -> SqsClient
-{
+fn init_sqs_client() -> SqsClient {
     info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
     SqsClient::new_with(
@@ -123,8 +138,7 @@ fn init_sqs_client() -> SqsClient
     )
 }
 
-fn init_s3_client() -> S3Client
-{
+fn init_s3_client() -> S3Client {
     info!("Connecting to local http://s3:9000");
     S3Client::new_with(
         HttpClient::new().expect("failed to create request dispatcher"),
@@ -142,10 +156,13 @@ fn init_s3_client() -> S3Client
 pub async fn local_service<
     IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=IE,
-        OutputEvent=Graph,
-        Error=sqs_lambda::error::Error<Arc<failure::Error>>
-    > + Send + Sync + Clone + 'static,
+            InputEvent = IE,
+            OutputEvent = Graph,
+            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
+        > + Send
+        + Sync
+        + Clone
+        + 'static,
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     queue_url: String,
@@ -162,98 +179,100 @@ pub async fn local_service<
         init_s3_client(),
         init_sqs_client(),
         event_decoder,
-        SubgraphSerializer { proto: Vec::with_capacity(1024) },
+        SubgraphSerializer {
+            proto: Vec::with_capacity(1024),
+        },
         generator,
         NopCache {},
-        |_, event_result| { dbg!(event_result); },
+        |_, event_result| {
+            dbg!(event_result);
+        },
         move |bucket, key| async move {
             let output_event = S3Event {
-                records: vec![
-                    S3EventRecord {
-                        event_version: None,
-                        event_source: None,
-                        aws_region: None,
-                        event_time: chrono::Utc::now(),
-                        event_name: None,
-                        principal_id: S3UserIdentity { principal_id: None },
-                        request_parameters: S3RequestParameters { source_ip_address: None },
-                        response_elements: Default::default(),
-                        s3: S3Entity {
-                            schema_version: None,
-                            configuration_id: None,
-                            bucket: S3Bucket {
-                                name: Some(bucket),
-                                owner_identity: S3UserIdentity { principal_id: None },
-                                arn: None,
-                            },
-                            object: S3Object {
-                                key: Some(key),
-                                size: Some(0),
-                                url_decoded_key: None,
-                                version_id: None,
-                                e_tag: None,
-                                sequencer: None,
-                            },
+                records: vec![S3EventRecord {
+                    event_version: None,
+                    event_source: None,
+                    aws_region: None,
+                    event_time: chrono::Utc::now(),
+                    event_name: None,
+                    principal_id: S3UserIdentity { principal_id: None },
+                    request_parameters: S3RequestParameters {
+                        source_ip_address: None,
+                    },
+                    response_elements: Default::default(),
+                    s3: S3Entity {
+                        schema_version: None,
+                        configuration_id: None,
+                        bucket: S3Bucket {
+                            name: Some(bucket),
+                            owner_identity: S3UserIdentity { principal_id: None },
+                            arn: None,
                         },
-                    }
-                ]
+                        object: S3Object {
+                            key: Some(key),
+                            size: Some(0),
+                            url_decoded_key: None,
+                            version_id: None,
+                            e_tag: None,
+                            sequencer: None,
+                        },
+                    },
+                }],
             };
 
             let sqs_client = init_sqs_client();
 
             // publish to SQS
-            sqs_client.send_message(
-                SendMessageRequest {
+            sqs_client
+                .send_message(SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
-                    queue_url: "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue".to_string(),
+                    queue_url:
+                        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue"
+                            .to_string(),
                     ..Default::default()
-                }
-            ).await?;
+                })
+                .await?;
 
             Ok(())
         },
-    ).await?;
+    )
+    .await?;
     Ok(())
 }
-
 
 pub fn run_graph_generator_aws<
     IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=IE,
-        OutputEvent=Graph,
-        Error=sqs_lambda::error::Error<Arc<failure::Error>>
-    > + Send + Sync + Clone + 'static,
+            InputEvent = IE,
+            OutputEvent = Graph,
+            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
+        > + Send
+        + Sync
+        + Clone
+        + 'static,
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     generator: EH,
     event_decoder: ED,
 ) {
-    lambda_runtime::lambda!(
-        move |event, context| {
-            handler(
-                event,
-                context,
-                generator.clone(),
-                event_decoder.clone(),
-            )
-        }
-    )
+    lambda_runtime::lambda!(move |event, context| {
+        handler(event, context, generator.clone(), event_decoder.clone())
+    })
 }
 
-
-fn handler
-<
+fn handler<
     IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=IE,
-        OutputEvent=Graph,
-        Error=sqs_lambda::error::Error<Arc<failure::Error>>
-    > + Send + Sync + Clone + 'static,
+            InputEvent = IE,
+            OutputEvent = Graph,
+            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
+        > + Send
+        + Sync
+        + Clone
+        + 'static,
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
->
-(
+>(
     event: SqsEvent,
     ctx: Context,
     generator: EH,
@@ -261,7 +280,8 @@ fn handler
 ) -> Result<(), HandlerError> {
     info!("Handling event");
 
-    let mut initial_events: HashSet<String> = event.records
+    let mut initial_events: HashSet<String> = event
+        .records
         .iter()
         .map(|event| event.message_id.clone().unwrap())
         .collect();
@@ -276,54 +296,56 @@ fn handler
     std::thread::spawn(move || {
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
-        tokio_compat::run_std(
-            async move {
-                let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-                info!("Queue Url: {}", queue_url);
-                let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+        tokio_compat::run_std(async move {
+            let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+            info!("Queue Url: {}", queue_url);
+            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-                let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
-                info!("Output events to: {}", bucket);
-                let region = config::region();
+            let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
+            info!("Output events to: {}", bucket);
+            let region = config::region();
 
-                let cache = config::event_cache().await;
+            let cache = config::event_cache().await;
 
+            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
-                let initial_messages: Vec<_> = event.records
-                    .into_iter()
-                    .map(map_sqs_message)
-                    .collect();
-
-                sqs_lambda::sqs_service::sqs_service(
-                    queue_url,
-                    initial_messages,
-                    bucket,
-                    ctx,
-                    S3Client::new(region.clone()),
-                    SqsClient::new(region.clone()),
-                    event_decoder.clone(),
-                    SubgraphSerializer { proto: Vec::with_capacity(1024) },
-                    generator,
-                    cache.clone(),
-                    move |_self_actor, result: Result<String, String>| {
-                        match result {
-                            Ok(worked) => {
-                                info!("Handled an event, which was successfully deleted: {}", &worked);
-                                tx.send(worked).unwrap();
-                            }
-                            Err(worked) => {
-                                info!("Handled an event, though we failed to delete it: {}", &worked);
-                                tx.send(worked).unwrap();
-                            }
-                        }
-                    },
-                    move |bucket, key| async move {
-                        info!("Emitted event to {} {}", bucket, key);
-                        Ok(())
-                    },
-                ).await;
-                completed_tx.clone().send("Completed".to_owned()).unwrap();
-            });
+            sqs_lambda::sqs_service::sqs_service(
+                queue_url,
+                initial_messages,
+                bucket,
+                ctx,
+                S3Client::new(region.clone()),
+                SqsClient::new(region.clone()),
+                event_decoder.clone(),
+                SubgraphSerializer {
+                    proto: Vec::with_capacity(1024),
+                },
+                generator,
+                cache.clone(),
+                move |_self_actor, result: Result<String, String>| match result {
+                    Ok(worked) => {
+                        info!(
+                            "Handled an event, which was successfully deleted: {}",
+                            &worked
+                        );
+                        tx.send(worked).unwrap();
+                    }
+                    Err(worked) => {
+                        info!(
+                            "Handled an event, though we failed to delete it: {}",
+                            &worked
+                        );
+                        tx.send(worked).unwrap();
+                    }
+                },
+                move |bucket, key| async move {
+                    info!("Emitted event to {} {}", bucket, key);
+                    Ok(())
+                },
+            )
+            .await;
+            completed_tx.clone().send("Completed".to_owned()).unwrap();
+        });
     });
 
     info!("Checking acks");
@@ -339,27 +361,30 @@ fn handler
         }
     }
 
-
     info!("Completed execution");
 
     if initial_events.is_empty() {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from(
+            "Failed to ack all initial events",
+        ))
     }
 }
 
 pub async fn run_graph_generator_local<
     IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=IE,
-        OutputEvent=Graph,
-        Error=sqs_lambda::error::Error<Arc<failure::Error>>
-    > + Send + Sync + Clone + 'static,
+            InputEvent = IE,
+            OutputEvent = Graph,
+            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
+        > + Send
+        + Sync
+        + Clone
+        + 'static,
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
->
-(
+>(
     generator: EH,
     event_decoder: ED,
 ) {
@@ -372,25 +397,25 @@ pub async fn run_graph_generator_local<
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
 
-        if let Err(e) = local_service(
-            queue_url.clone(),
-            generator.clone(),
-            event_decoder.clone(),
-        ).await {
+        if let Err(e) =
+            local_service(queue_url.clone(), generator.clone(), event_decoder.clone()).await
+        {
             error!("{}", e);
             std::thread::sleep_ms(2_000);
         }
     }
 }
 
-
 pub async fn run_graph_generator<
     IE: Send + Sync + Clone + 'static,
     EH: EventHandler<
-        InputEvent=IE,
-        OutputEvent=Graph,
-        Error=sqs_lambda::error::Error<Arc<failure::Error>>
-    > + Send + Sync + Clone + 'static,
+            InputEvent = IE,
+            OutputEvent = Graph,
+            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
+        > + Send
+        + Sync
+        + Clone
+        + 'static,
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     generator: EH,
@@ -399,22 +424,17 @@ pub async fn run_graph_generator<
     let is_local = std::env::var("IS_LOCAL");
 
     info!("IS_LOCAL={:?}", is_local);
-    if is_local.map(|is_local| is_local.to_lowercase().parse().unwrap_or(false)).unwrap_or(false) {
+    if is_local
+        .map(|is_local| is_local.to_lowercase().parse().unwrap_or(false))
+        .unwrap_or(false)
+    {
         std::thread::sleep_ms(10_000);
 
-        run_graph_generator_local(
-            generator,
-            event_decoder,
-        ).await;
+        run_graph_generator_local(generator, event_decoder).await;
     } else {
-        run_graph_generator_aws(
-            generator,
-            event_decoder,
-        );
+        run_graph_generator_aws(generator, event_decoder);
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -423,8 +443,3 @@ mod tests {
         assert_eq!(2 + 2, 4);
     }
 }
-
-
-
-
-

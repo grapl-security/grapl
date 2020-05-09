@@ -853,9 +853,9 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
 name = "graph-generator-lib"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbf124eea4c7559111c13311f7b37085be3440309b3b3ccddaf229501192592f"
+checksum = "345bd1722baaac4fd96fb2d1d02ecf7709dd1a99893a71ddb886a14b4c3bf4bd"
 dependencies = [
  "aws_lambda_events 0.3.0",
  "base64 0.9.3",
