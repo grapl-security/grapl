@@ -965,8 +965,9 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
     std::thread::spawn(move || {
         tokio_compat::run_std(
                 async move {
-                let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-                info!("Queue Url: {}", queue_url);
+                let node_identifier_queue_url = std::env::var("NODE_IDENTIFIER_QUEUE_URL")
+                    .expect("NODE_IDENTIFIER_QUEUE_URL");
+                debug!("Queue Url: {}", node_identifier_queue_url);
                 let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
                 let cache_address = {
                     let retry_identity_cache_addr = std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
@@ -1027,7 +1028,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                     .collect();
 
                 sqs_lambda::sqs_service::sqs_service(
-                    queue_url,
+                    node_identifier_queue_url,
                     initial_messages,
                     bucket,
                     ctx,
@@ -1212,9 +1213,15 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
             region.clone(),
     );
 
-    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+    let node_identifier_queue_url = if should_default {
+        std::env::var("NODE_IDENTIFIER_QUEUE_URL")
+            .expect("NODE_IDENTIFIER_QUEUE_URL")
+    } else {
+        std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL")
+            .expect("NODE_IDENTIFIER_RETRY_QUEUE_URL")
+    };
     local_sqs_service(
-        queue_url,
+        node_identifier_queue_url,
         "local-grapl-subgraphs-generated-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
@@ -1267,7 +1274,8 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
                 SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
-                    queue_url: std::env::var("QUEUE_URL").expect("QUEUE_URL"),
+                    queue_url: std::env::var("GRAPH_MERGER_QUEUE_URL")
+                        .expect("GRAPH_MERGER_QUEUE_URL"),
                     ..Default::default()
                 }
             ).await?;

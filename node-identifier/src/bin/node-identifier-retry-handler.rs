@@ -52,7 +52,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let sqs_client = init_sqs_client();
-        let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+        let node_identifier_retry_queue_url = std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL")
+            .expect("NODE_IDENTIFIER_RETRY_QUEUE_URL");
         loop {
             match runtime.block_on(
                 sqs_client.list_queues(
@@ -67,10 +68,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 },
                 Ok(response) => {
                     if let Some(urls) = response.queue_urls {
-                        if urls.contains(&queue_url) {
+                        if urls.contains(&node_identifier_retry_queue_url) {
                             break
                         } else {
-                            info!("Waiting for {} to be created", queue_url);
+                            info!("Waiting for {} to be created", node_identifier_retry_queue_url);
                             std::thread::sleep(Duration::new(2, 0));
                         }
                     }
