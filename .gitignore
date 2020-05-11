@@ -1,8 +1,4 @@
-sysmon-subgraph-generator/sysmon-subgraph-generator
-graph-merger/graph-merger
-analyzer-dispatcher/analyzer-dispatcher
-
-grapl-cdk/edge_ux_package/*
+src/js/grapl-cdk/edge_ux_package/*
 
 lambda/
 __pycache__/
@@ -21,28 +17,10 @@ venv/
 
 log2/
 
-grapl-cdk/index.js
+src/js/grapl-cdk/index.js
 
 word-macro-analyzer/*/
 bootstrap
-engagement-creation-service/graph-descriptions/
-engagement-creation-service/incident-graph/
-engagement-creation-service/sqs-microservice/
-
-generic-subgraph-generator/graph-descriptions/
-generic-subgraph-generator/sqs-microservice/
-generic-subgraph-generator/graph-generator-lib/
-
-graph-merger/graph-descriptions/
-graph-merger/sqs-microservice/
-
-node-identity-mapper/graph-descriptions/
-node-identity-mapper/sqs-microservice/
-
-node-identifier/graph-descriptions/
-node-identifier/sqs-microservice/
-node-identifier/node-identifier
-node-identifier/node-identifier-retry-handler
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -84,3 +62,4 @@ pip-log.txt
 
 *.code-workspace
 *.vscode
+*.zip

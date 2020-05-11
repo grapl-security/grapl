@@ -1,0 +1,43 @@
+[package]
+name = "sysmon-subgraph-generator"
+version = "1.0.0"
+authors = ["Insanitybit <insanitybit@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}
+grapl-config = {path = "../grapl-config", version="*"}
+
+sqs-lambda = "0.20.*"
+serde_json = "*"
+serde = "1.0.71"
+serde_derive = "1.0.71"
+failure = "0.1.2"
+prost = "0.4.0"
+log = "0.4.3"
+base16 = "0.1.1"
+regex = "1.1.0"
+lazy_static = "1.2.0"
+sysmon = "0.2"
+chrono = "0.4.6"
+rayon = "1.0.3"
+stopwatch = "0.0.7"
+
+rusoto_s3 = {version="0.43.0", default_features = false, features=["rustls"]}
+rusoto_core = {version="0.43.0", default_features = false, features=["rustls"]}
+rusoto_sqs = {version="0.43.0", default_features = false, features=["rustls"]}
+futures = "0.3.*"
+aws_lambda_events = "0.2.0"
+
+simple_logger = "1.6.*"
+lambda_runtime = "0.2.*"
+async-trait = "0.1.22"
+zstd = "0.5.1"
+tokio-compat = "0.1.2"
+tokio = { version = "0.2.4", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
+rusoto_credential = "0.43.0"
+
+
+[dependencies.uuid]
+version = "*"
+features = ["v4"]
