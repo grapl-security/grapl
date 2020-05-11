@@ -6,6 +6,7 @@ extern crate dgraph_rs;
 extern crate failure;
 extern crate futures;
 extern crate graph_descriptions;
+extern crate grapl_config;
 extern crate grpc;
 extern crate itertools;
 extern crate lambda_runtime as lambda;
@@ -63,11 +64,11 @@ use lambda::lambda;
 use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use rusoto_core::{HttpClient, Region};
+use rusoto_core::{HttpClient, Region, RusotoError};
 use rusoto_s3::{S3, S3Client};
 use rusoto_sns::{Sns, SnsClient};
 use rusoto_sns::PublishInput;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest};
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
 use sha2::{Digest, Sha256};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
@@ -394,8 +395,9 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     std::thread::spawn(move || {
         tokio_compat::run_std(
             async move {
-                let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-                info!("Queue Url: {}", queue_url);
+                let graph_merger_queue_url = std::env::var("GRAPH_MERGER_QUEUE_URL")
+                    .expect("GRAPH_MERGER_QUEUE_URL");
+                debug!("Queue Url: {}", graph_merger_queue_url);
                 let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
                 let cache_address = {
                     let retry_identity_cache_addr = std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
@@ -410,10 +412,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
                 let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
                 info!("Output events to: {}", bucket);
-                let region = {
-                    let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-                    Region::from_str(&region_str).expect("Region error")
-                };
+                let region = grapl_config::region();
                 let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS").expect("MG_ALPHAS")
                     .split(',')
                     .map(str::to_string)
@@ -434,7 +433,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                     .collect();
 
                 sqs_lambda::sqs_service::sqs_service(
-                    queue_url,
+                    graph_merger_queue_url,
                     initial_messages,
                     bucket,
                     ctx,
@@ -508,7 +507,7 @@ impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
             ))
         }
 
-        println!("handling new subgraph with {} nodes {} edges", subgraph.nodes.len(), subgraph.edges.len());
+        info!("handling new subgraph with {} nodes {} edges", subgraph.nodes.len(), subgraph.edges.len());
 
         let mg_client = {
             let mut rng = thread_rng();
@@ -690,8 +689,10 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         =
         GraphMerger::new(mg_alphas, NopCache {});
 
+    let graph_merger_queue_url = std::env::var("GRAPH_MERGER_QUEUE_URL")
+        .expect("GRAPH_MERGER_QUEUE_URL");
     local_sqs_service(
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/graph-merger-queue",
+        graph_merger_queue_url,
         "local-grapl-subgraphs-merged-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
@@ -744,7 +745,8 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
                 SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
-                    queue_url: "http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-dispatcher-queue".to_string(),
+                    queue_url: std::env::var("ANALYZER_DISPATCHER_QUEUE_URL")
+                        .expect("ANALYZER_DISPATCHER_QUEUE_URL"),
                     ..Default::default()
                 }
             ).await?;
@@ -759,16 +761,58 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_with_level(log::Level::Info).unwrap();
+    simple_logger::init_with_level(grapl_config::grapl_log_level())
+        .expect("Failed to initialize logger");
 
     let is_local = std::env::var("IS_LOCAL")
         .is_ok();
 
     if is_local {
         info!("Running locally");
-        std::thread::sleep_ms(10_000);
-
         let mut runtime = Runtime::new().unwrap();
+
+        let s3_client = init_s3_client();
+        loop {
+            if let Err(e) = runtime.block_on(s3_client.list_buckets()) {
+                match e {
+                    RusotoError::HttpDispatch(_) => {
+                        info!("Waiting for S3 to become available");
+                        std::thread::sleep(Duration::new(2, 0));
+                    },
+                    _ => break
+                }
+            } else {
+                break;
+            }
+        }
+        
+        let sqs_client = init_sqs_client();
+        let graph_merger_queue_url = std::env::var("GRAPH_MERGER_QUEUE_URL")
+            .expect("GRAPH_MERGER_QUEUE_URL");
+        loop {
+            match runtime.block_on(
+                sqs_client.list_queues(
+                    ListQueuesRequest { 
+                        queue_name_prefix: Some("graph-merger".to_string())
+                    }
+                )
+            ) {
+                Err(_) => {
+                    info!("Waiting for SQS to become available");
+                    std::thread::sleep(Duration::new(2, 0));
+                },
+                Ok(response) => {
+                    if let Some(urls) = response.queue_urls {
+                        if urls.contains(&graph_merger_queue_url) {
+                            break
+                        } else {
+                            info!("Waiting for {} to be created", graph_merger_queue_url);
+                            std::thread::sleep(Duration::new(2, 0));
+                        }
+                    }
+                }
+            }
+        }
 
         loop {
             if let Err(e) = runtime.block_on(async move { inner_main().await }) {

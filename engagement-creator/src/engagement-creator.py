@@ -1,24 +1,31 @@
 import json
+import logging
 import os
+import sys
 import time
 import traceback
-import logging
 
 from collections import defaultdict
 from typing import *
 
 import boto3
+import botocore.exceptions
 from grapl_analyzerlib.nodes.lens_node import CopyingDgraphClient, LensView
 from grapl_analyzerlib.prelude import NodeView, FileView, ProcessView
 from pydgraph import DgraphClient, DgraphClientStub
 
 IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
 
+GRAPL_LOG_LEVEL = os.getenv('GRAPL_LOG_LEVEL')
+LEVEL = 'ERROR' if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+logging.basicConfig(stream=sys.stdout, level=LEVEL)
+LOGGER = logging.getLogger('engagement-creator')
+
 
 def parse_s3_event(s3, event) -> str:
     # Retrieve body of sns message
     # Decode json body of sns message
-    print("event is {}".format(event))
+    LOGGER.debug("event is {}".format(event))
     # msg = json.loads(event["body"])["Message"]
     # msg = json.loads(msg)
 
@@ -29,7 +36,7 @@ def parse_s3_event(s3, event) -> str:
 
 def download_s3_file(s3, bucket: str, key: str) -> str:
     key = key.replace("%3D", "=")
-    print('Downloading s3 file from: {} {}'.format(bucket, key))
+    LOGGER.info('Downloading s3 file from: {} {}'.format(bucket, key))
     obj = s3.Object(bucket, key)
     return obj.get()['Body'].read()
 
@@ -50,7 +57,7 @@ def create_edge(client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
     txn = client.txn(read_only=False)
     try:
         res = txn.mutate(set_obj=mut, commit_now=True)
-        print('edge mutation result is: {}'.format(res))
+        LOGGER.debug('edge mutation result is: {}'.format(res))
     finally:
         txn.discard()
 
@@ -99,7 +106,7 @@ def recalculate_score(client: DgraphClient, lens: LensView) -> int:
         redundant_risks = set()
         risk_map = defaultdict(list)
         if not res:
-            logging.warning("Received an empty response for risk query")
+            LOGGER.warning("Received an empty response for risk query")
             return 0
         for root_node in res[0]['scope']:
             for risk in root_node['risks']:
@@ -139,7 +146,7 @@ def set_score(client: DgraphClient, uid: str, new_score: int, txn=None) -> None:
 
 
 def set_property(client: DgraphClient, uid: str, prop_name: str, prop_value):
-    print(f'Setting property {prop_name} as {prop_value} for {uid}')
+    LOGGER.debug(f'Setting property {prop_name} as {prop_value} for {uid}')
     txn = client.txn(read_only=False)
 
     try:
@@ -158,7 +165,7 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
         node_dict.pop('uid')
     node_dict['uid'] = '_:blank-0'
     node_key = node_dict['node_key']
-    print(f"INFO: Upserting node: {node_dict}")
+    LOGGER.info(f"Upserting node: {node_dict}")
     query = f"""
         {{
             q0(func: eq(node_key, "{node_key}")) {{
@@ -215,7 +222,7 @@ def copy_node(
     if not res:
         raise Exception("ERROR: Can not find res")
 
-    print(f"Copy query result: {res}")
+    LOGGER.debug(f"Copy query result: {res}")
 
     raw_to_copy = {**res[0], **init_node}
 
@@ -262,20 +269,20 @@ def lambda_handler(events: Any, context: Any) -> None:
         risk_score = incident_graph['risk_score']
         lense_names = incident_graph['lenses']
 
-        print(f'AnalyzerName {analyzer_name}, nodes: {nodes} edges: {type(edges)} {edges}')
+        LOGGER.debug(f'AnalyzerName {analyzer_name}, nodes: {nodes} edges: {type(edges)} {edges}')
 
         nodes = [NodeView.from_node_key(mg_client, n['node_key']) for n in nodes.values()]
 
         copied_nodes = {}
         lenses = {}  # type: Dict[str, LensView]
         for node in nodes:
-            print(f'Copying node: {node}')
+            LOGGER.debug(f'Copying node: {node}')
             # Only support asset lens for now
             copy_node(mg_client, eg_client, node.node.node_key, init_node=node.node.get_properties())
             copied_node = NodeView.from_node_key(eg_client, node.node.node_key)
 
             for lense_name in lense_names:
-                print(f'Getting lens for: {lense_name}')
+                LOGGER.debug(f'Getting lens for: {lense_name}')
                 lens = lenses.get(lense_name) or LensView.get_or_create(cclient, lense_name)
                 lenses[lense_name] = lens
 
@@ -336,6 +343,19 @@ if IS_LOCAL:
         aws_secret_access_key='dummy_cred_aws_secret_access_key',
     )
 
+    alive = False
+    while not alive:
+        try:
+            if 'QueueUrls' not in sqs.list_queues(QueueNamePrefix='engagement-creator-queue'):
+                LOGGER.info('Waiting for engagement-creator-queue to be created')
+                time.sleep(2)
+                continue
+        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError):
+            LOGGER.info('Waiting for SQS to become available')
+            time.sleep(2)
+            continue
+        alive = True
+
     while True:
         try:
             res = sqs.receive_message(
@@ -346,7 +366,7 @@ if IS_LOCAL:
 
             messages = res.get('Messages', [])
             if not messages:
-                print('queue was empty')
+                LOGGER.warning('queue was empty')
 
             s3_events = [(json.loads(msg['Body']), msg['ReceiptHandle']) for msg in messages]
             for s3_event, receipt_handle in s3_events:
@@ -358,6 +378,6 @@ if IS_LOCAL:
                 )
 
         except Exception as e:
-            print('mainloop exception', e)
-            traceback.print_exc()
+            LOGGER.error(f'mainloop exception {e}')
+            LOGGER.error(traceback.print_exc())
             time.sleep(2)

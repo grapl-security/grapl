@@ -2,6 +2,7 @@ import base64
 import hmac
 import inspect
 import json
+import logging
 import os
 import sys
 import traceback
@@ -33,6 +34,11 @@ if IS_LOCAL:
 ORIGIN = "https://" + os.environ['BUCKET_PREFIX'] + "engagement-ux-bucket.s3.amazonaws.com"
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 
+GRAPL_LOG_LEVEL = os.getenv('GRAPL_LOG_LEVEL')
+LEVEL = 'ERROR' if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+logging.basicConfig(stream=sys.stdout, level=LEVEL)
+LOGGER = logging.getLogger('grapl-model-plugin-deployer')
+
 app = Chalice(app_name="model-plugin-deployer")
 
 
@@ -55,7 +61,7 @@ def check_jwt(headers):
         jwt.decode(encoded_jwt, JWT_SECRET, algorithms=['HS256'])
         return True
     except Exception as e:
-        print(e)
+        LOGGER.error(e)
         return False
 
 
@@ -140,7 +146,7 @@ def provision_schemas(mclient, eclient, raw_schemas):
     schemas = list(get_schema_objects().values())
 
     schemas = list(set(schemas) - builtin_nodes)
-    print(f'deploying schemas: {[s.self_type() for s in schemas]}')
+    LOGGER.info(f'deploying schemas: {[s.self_type() for s in schemas]}')
 
     provision_mg(mclient, schemas)
     provision_eg(eclient, schemas)
@@ -154,17 +160,17 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
             Body=contents, Bucket=plugin_bucket, Key=base64.encodebytes((key.encode('utf8'))).decode(),
         )
     except Exception:
-        print('Failed to put_boject to s3', key, traceback.format_exc())
+        LOGGER.error(f'Failed to put_object to s3 {key} {traceback.format_exc()}')
 
 
 def respond(err, res=None, headers=None):
-    print(f"responding, origin: {app.current_request.headers.get('origin', '')}")
+    LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
     if not headers:
         headers = {}
 
     if IS_LOCAL:
         override = app.current_request.headers.get('origin', '')
-        print(f'overriding origin with {override}')
+        LOGGER.info(f'overriding origin with {override}')
     else:
         override = ORIGIN_OVERRIDE
 
@@ -195,12 +201,12 @@ def requires_auth(path):
 
             if not IS_LOCAL:  # For now, disable authentication locally
                 if not check_jwt(app.current_request.headers):
-                    print('not logged in')
+                    LOGGER.warning('not logged in')
                     return respond("Must log in")
             try:
                 return route_fn()
             except Exception as e:
-                print(e)
+                LOGGER.error(e)
                 return respond("Unexpected Error")
 
         return inner_route
@@ -220,7 +226,7 @@ def no_auth(path):
             try:
                 return route_fn()
             except Exception as e:
-                print(e)
+                LOGGER.error(e)
                 return respond("Unexpected Error")
 
         return inner_route
@@ -296,20 +302,19 @@ def webhook():
 
 @requires_auth('/deploy')
 def deploy():
-    print('/deploy')
+    LOGGER.info('/deploy')
     request = app.current_request
     plugins = request.json_body.get('plugins', {})
 
     upload_plugins(get_s3_client(), plugins)
-    print('uploaded plugins')
+    LOGGER.info('uploaded plugins')
     return respond(None, {'Success': True})
 
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    print(app.current_request.context['path'])
-
-    print(vars(app.current_request))
+    LOGGER.info(app.current_request.context['path'])
+    LOGGER.info(vars(app.current_request))
 
     path = app.current_request.context['path']
     try:
@@ -320,5 +325,5 @@ def nop_route():
 
         return respond('InvalidPath')
     except Exception:
-        print(traceback.format_exc())
+        LOGGER.error(traceback.format_exc())
         return respond('Server Error')

@@ -464,7 +464,7 @@ fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
             let from = match unid_id_map.get(&edge.from) {
                 Some(from) => from,
                 None => {
-                    println!("Failed to lookup from node in unid_id_map {}", &edge.edge_name);
+                    warn!("Failed to lookup from node in unid_id_map {}", &edge.edge_name);
                     continue;
                 }
             };
@@ -472,7 +472,7 @@ fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
             let to = match unid_id_map.get(&edge.to) {
                 Some(to) => to,
                 None => {
-                    println!("Failed to lookup to node in unid_id_map {}", &edge.edge_name);
+                    warn!("Failed to lookup to node in unid_id_map {}", &edge.edge_name);
                     continue;
                 }
             };
@@ -754,7 +754,7 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
         }
 
 
-        println!("PRE: identified_graph.edges.len() {}", identified_graph.edges.len());
+        info!("PRE: identified_graph.edges.len() {}", identified_graph.edges.len());
 
 
         for (old_key, edge_list) in output_subgraph.edges.iter() {
@@ -965,8 +965,9 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
     std::thread::spawn(move || {
         tokio_compat::run_std(
                 async move {
-                let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-                info!("Queue Url: {}", queue_url);
+                let node_identifier_queue_url = std::env::var("NODE_IDENTIFIER_QUEUE_URL")
+                    .expect("NODE_IDENTIFIER_QUEUE_URL");
+                debug!("Queue Url: {}", node_identifier_queue_url);
                 let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
                 let cache_address = {
                     let retry_identity_cache_addr = std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
@@ -1027,7 +1028,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                     .collect();
 
                 sqs_lambda::sqs_service::sqs_service(
-                    queue_url,
+                    node_identifier_queue_url,
                     initial_messages,
                     bucket,
                     ctx,
@@ -1080,7 +1081,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
     }
 }
 
-fn init_sqs_client() -> SqsClient
+pub fn init_sqs_client() -> SqsClient
 {
     info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
@@ -1097,7 +1098,7 @@ fn init_sqs_client() -> SqsClient
     )
 }
 
-fn init_s3_client() -> S3Client
+pub fn init_s3_client() -> S3Client
 {
     info!("Connecting to local http://s3:9000");
     S3Client::new_with(
@@ -1114,7 +1115,7 @@ fn init_s3_client() -> S3Client
 }
 
 
-fn init_dynamodb_client() -> DynamoDbClient
+pub fn init_dynamodb_client() -> DynamoDbClient
 {
     info!("Connecting to local http://dynamo:9000");
     DynamoDbClient::new_with(
@@ -1212,14 +1213,15 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
             region.clone(),
     );
 
-    let queue_url = if should_default {
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue"
+    let node_identifier_queue_url = if should_default {
+        std::env::var("NODE_IDENTIFIER_QUEUE_URL")
+            .expect("NODE_IDENTIFIER_QUEUE_URL")
     } else {
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-retry-queue"
+        std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL")
+            .expect("NODE_IDENTIFIER_RETRY_QUEUE_URL")
     };
-
     local_sqs_service(
-        queue_url,
+        node_identifier_queue_url,
         "local-grapl-subgraphs-generated-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
@@ -1272,7 +1274,8 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
                 SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
-                    queue_url: "http://sqs.us-east-1.amazonaws.com:9324/queue/graph-merger-queue".to_string(),
+                    queue_url: std::env::var("GRAPH_MERGER_QUEUE_URL")
+                        .expect("GRAPH_MERGER_QUEUE_URL"),
                     ..Default::default()
                 }
             ).await?;

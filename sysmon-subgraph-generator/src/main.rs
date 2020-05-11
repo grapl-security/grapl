@@ -3,6 +3,7 @@ extern crate chrono;
 extern crate failure;
 extern crate futures;
 extern crate graph_descriptions;
+extern crate grapl_config;
 
 extern crate lambda_runtime as lambda;
 #[macro_use]
@@ -41,10 +42,10 @@ use log::error;
 use rayon::iter::Either;
 use rayon::prelude::*;
 use regex::Regex;
-use rusoto_core::{Region, HttpClient};
+use rusoto_core::{Region, HttpClient, RusotoError};
 use rusoto_s3::{GetObjectRequest, S3};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest};
+use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
 use serde::Deserialize;
 
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
@@ -83,8 +84,6 @@ use sqs_lambda::sqs_service::sqs_service;
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use rusoto_core::credential::AwsCredentials;
 use tokio::runtime::Runtime;
-
-mod config;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {
@@ -798,9 +797,9 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
                 let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
                 info!("Output events to: {}", bucket);
-                let region = config::region();
+                let region = grapl_config::region();
 
-                let cache = config::event_cache().await;
+                let cache = grapl_config::event_cache().await;
 
 
                 let generator
@@ -909,8 +908,10 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
         = SysmonSubgraphGenerator::new(cache.clone());
 
+    let sysmon_graph_generator_queue_url = std::env::var("SYSMON_GRAPH_GENERATOR_QUEUE_URL")
+        .expect("SYSMON_GRAPH_GENERATOR_QUEUE_URL");
     local_sqs_service(
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue",
+        sysmon_graph_generator_queue_url,
         "local-grapl-unid-subgraphs-generated-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
@@ -963,7 +964,8 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
                 SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
-                    queue_url: "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue".to_string(),
+                    queue_url: std::env::var("NODE_IDENTIFIER_QUEUE_URL")
+                        .expect("NODE_IDENTIFIER_QUEUE_URL"),
                     ..Default::default()
                 }
             ).await?;
@@ -975,16 +977,60 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_with_level(log::Level::Info).unwrap();
+    simple_logger::init_with_level(grapl_config::grapl_log_level())
+        .expect("Failed to initialize logger");
+
     info!("Starting sysmon-subgraph-generator");
 
-    let is_local = std::env::var("IS_LOCAL");
+    let is_local = std::env::var("IS_LOCAL")
+        .is_ok();
 
-    info!("IS_LOCAL={:?}", is_local);
-    if is_local.is_ok() {
-        info!("Running locally {:?}", is_local);
-        std::thread::sleep_ms(10_000);
+    if is_local {
+        info!("Running locally");
         let mut runtime = Runtime::new().unwrap();
+
+        let s3_client = init_s3_client();
+        loop {
+            if let Err(e) = runtime.block_on(s3_client.list_buckets()) {
+                match e {
+                    RusotoError::HttpDispatch(_) => {
+                        info!("Waiting for S3 to become available");
+                        std::thread::sleep(Duration::new(2, 0));
+                    },
+                    _ => break
+                }
+            } else {
+                break;
+            }
+        }
+
+        let sysmon_graph_generator_queue_url = std::env::var("SYSMON_GRAPH_GENERATOR_QUEUE_URL")
+            .expect("SYSMON_GRAPH_GENERATOR_QUEUE_URL");
+        let sqs_client = init_sqs_client();
+        loop {
+            match runtime.block_on(
+                sqs_client.list_queues(
+                    ListQueuesRequest { 
+                        queue_name_prefix: Some("sysmon-graph-generator".to_string()) 
+                    }
+                )
+            ) {
+                Err(_) => {
+                    info!("Waiting for SQS to become available");
+                    std::thread::sleep(Duration::new(2, 0));
+                },
+                Ok(response) => {
+                    if let Some(urls) = response.queue_urls {
+                        if urls.contains(&sysmon_graph_generator_queue_url) {
+                            break
+                        } else {
+                            info!("Waiting for {} to be created", sysmon_graph_generator_queue_url);
+                            std::thread::sleep(Duration::new(2, 0));
+                        }
+                    }
+                }
+            }
+        }
 
         loop {
             if let Err(e) = runtime.block_on(async move { inner_main().await }) {
@@ -993,7 +1039,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }  else {
-        info!("Running in AWS {:?}", is_local);
+        info!("Running in AWS");
         lambda!(handler);
     }
 
