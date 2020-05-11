@@ -16,9 +16,9 @@ setup(
     zip_safe=False,
     packages=find_packages(),
     package_data={
-        'grapl_analyzerlib': ["py.typed"],
-        'grapl_analyzerlib.nodes': ["nodes/py.typed"],
-        'grapl_analyzerlib.schemas': ["schemas/py.typed"],
+        "grapl_analyzerlib": ["py.typed"],
+        "grapl_analyzerlib.nodes": ["nodes/py.typed"],
+        "grapl_analyzerlib.schemas": ["schemas/py.typed"],
     },
     include_package_data=True,
     install_requires=["pydgraph", "typing_extensions"],

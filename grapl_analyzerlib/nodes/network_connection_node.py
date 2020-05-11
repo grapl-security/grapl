@@ -120,9 +120,13 @@ class NetworkConnectionQuery(DynamicNodeQuery):
     def with_inbound_network_connection_to(
         self: "NQ", inbound_network_connection_to_query: Optional["IIpPortQuery"] = None
     ) -> "NQ":
-        inbound_network_connection_to = inbound_network_connection_to_query or IpPortQuery()
+        inbound_network_connection_to = (
+            inbound_network_connection_to_query or IpPortQuery()
+        )
 
-        self.set_forward_edge_filter("inbound_network_connection_to", inbound_network_connection_to)
+        self.set_forward_edge_filter(
+            "inbound_network_connection_to", inbound_network_connection_to
+        )
         inbound_network_connection_to.set_reverse_edge_filter(
             "~inbound_network_connection_to", self, "inbound_network_connection_to"
         )
@@ -137,7 +141,7 @@ class NetworkConnectionQuery(DynamicNodeQuery):
         return self
 
     def _get_node_type_name(self) -> str:
-        return 'NetworkConnection'
+        return "NetworkConnection"
 
 
 INetworkConnectionView = TypeVar(
@@ -179,7 +183,7 @@ class NetworkConnectionView(DynamicNodeView):
         self.inbound_network_connection_to = inbound_network_connection_to
 
     def get_node_type(self) -> str:
-        return 'NetworkConnection'
+        return "NetworkConnection"
 
     def get_created_timestamp(self) -> Optional[int]:
         if not self.created_timestamp:

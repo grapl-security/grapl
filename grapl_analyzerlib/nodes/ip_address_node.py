@@ -74,17 +74,17 @@ class IpAddressQuery(DynamicNodeQuery):
         return self
 
     def with_ip_connections_from(
-        self: "NQ",
-        ip_connections_from_query: Optional["IIpConnectionQuery"] = None,
+        self: "NQ", ip_connections_from_query: Optional["IIpConnectionQuery"] = None,
     ) -> "NQ":
         ip_connections_from = ip_connections_from_query or IpConnectionQuery()
-        ip_connections_from.with_inbound_network_connection_to(cast(IpAddressQuery, self))
+        ip_connections_from.with_inbound_network_connection_to(
+            cast(IpAddressQuery, self)
+        )
 
         return self
 
     def with_bound_by(
-        self: "NQ",
-        bound_by_query: Optional["IProcessInboundConnectionQuery"] = None,
+        self: "NQ", bound_by_query: Optional["IProcessInboundConnectionQuery"] = None,
     ) -> "NQ":
         bound_by = bound_by_query or ProcessInboundConnectionQuery()
         bound_by.with_bound_by(cast(IpAddressQuery, self))
@@ -92,7 +92,8 @@ class IpAddressQuery(DynamicNodeQuery):
         return self
 
     def _get_node_type_name(self) -> str:
-        return 'IpAddress'
+        return "IpAddress"
+
 
 IIpAddressView = TypeVar("IIpAddressView", bound="IpAddressView")
 
@@ -123,7 +124,7 @@ class IpAddressView(DynamicNodeView):
         self.ip_connections = ip_connections
 
     def get_node_type(self) -> str:
-        return 'IpAddress'
+        return "IpAddress"
 
     def get_first_seen_timestamp(self) -> Optional[int]:
         if not self.first_seen_timestamp:

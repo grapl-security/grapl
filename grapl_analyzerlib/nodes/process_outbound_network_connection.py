@@ -15,8 +15,7 @@ from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Viewable
 
 IProcessOutboundConnectionQuery = TypeVar(
-    "IProcessOutboundConnectionQuery",
-    bound="ProcessOutboundConnectionQuery",
+    "IProcessOutboundConnectionQuery", bound="ProcessOutboundConnectionQuery",
 )
 
 
@@ -47,7 +46,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         regexp: Optional[StrCmp] = None,
         distance: Optional[Tuple[StrCmp, int]] = None,
     ) -> "NQ":
-        cast('ProcessOutboundConnectionQuery', self)._ip_address.extend(
+        cast("ProcessOutboundConnectionQuery", self)._ip_address.extend(
             _str_cmps(
                 "ip_address",
                 eq=eq,
@@ -69,7 +68,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         regexp: Optional[StrCmp] = None,
         distance: Optional[Tuple[StrCmp, int]] = None,
     ) -> "NQ":
-        cast('ProcessOutboundConnectionQuery', self)._protocol.extend(
+        cast("ProcessOutboundConnectionQuery", self)._protocol.extend(
             _str_cmps(
                 "protocol",
                 eq=eq,
@@ -89,7 +88,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        cast('ProcessOutboundConnectionQuery', self)._created_timestamp.extend(
+        cast("ProcessOutboundConnectionQuery", self)._created_timestamp.extend(
             _int_cmps("created_timestamp", eq=eq, gt=gt, lt=lt)
         )
         return self
@@ -100,7 +99,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        cast('ProcessOutboundConnectionQuery', self)._terminated_timestamp.extend(
+        cast("ProcessOutboundConnectionQuery", self)._terminated_timestamp.extend(
             _int_cmps("terminated_timestamp", eq=eq, gt=gt, lt=lt),
         )
         return self
@@ -111,7 +110,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        cast('ProcessOutboundConnectionQuery', self)._last_seen_timestamp.extend(
+        cast("ProcessOutboundConnectionQuery", self)._last_seen_timestamp.extend(
             _int_cmps("last_seen_timestamp", eq=eq, gt=gt, lt=lt)
         )
         return self
@@ -122,7 +121,7 @@ class ProcessOutboundConnectionQuery(Queryable):
         gt: Optional["IntCmp"] = None,
         lt: Optional["IntCmp"] = None,
     ) -> "NQ":
-        cast('ProcessOutboundConnectionQuery', self)._port.extend(
+        cast("ProcessOutboundConnectionQuery", self)._port.extend(
             _int_cmps("port", eq=eq, gt=gt, lt=lt)
         )
         return self
@@ -151,14 +150,12 @@ class ProcessOutboundConnectionQuery(Queryable):
         return self
 
     def with_connected_to(
-            self: "NQ", connected_to_query: Optional["IpPortQuery"] = None
+        self: "NQ", connected_to_query: Optional["IpPortQuery"] = None
     ) -> "NQ":
         connected_to = connected_to_query or IpPortQuery()
 
         self.set_forward_edge_filter("connected_to", connected_to)
-        connected_to.set_reverse_edge_filter(
-            "~connected_to", self, "connected_to"
-        )
+        connected_to.set_reverse_edge_filter("~connected_to", self, "connected_to")
         return self
 
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
@@ -202,8 +199,7 @@ class ProcessOutboundConnectionQuery(Queryable):
 
 
 IProcessOutboundConnectionView = TypeVar(
-    "IProcessOutboundConnectionView",
-    bound="ProcessOutboundConnectionView",
+    "IProcessOutboundConnectionView", bound="ProcessOutboundConnectionView",
 )
 
 
@@ -243,7 +239,7 @@ class ProcessOutboundConnectionView(Viewable):
         self.connected_to = connected_to
 
     def get_node_type(self) -> str:
-        return 'ProcessOutboundConnection'
+        return "ProcessOutboundConnection"
 
     def get_created_timestamp(self) -> Optional[int]:
         if not self.created_timestamp:
@@ -283,29 +279,18 @@ class ProcessOutboundConnectionView(Viewable):
             self.protocol = cast(Optional[str], self.fetch_property("protocol", str))
         return self.protocol
 
-    def get_connecting_processes(self) -> List['ProcessView']:
+    def get_connecting_processes(self) -> List["ProcessView"]:
         return cast(
-            List[ProcessView],
-            self.fetch_edges(
-                "~created_connections", ProcessView
-            ),
+            List[ProcessView], self.fetch_edges("~created_connections", ProcessView),
         )
 
-    def get_connected_over(self) -> Optional['IpPortView']:
+    def get_connected_over(self) -> Optional["IpPortView"]:
         return cast(
-            Optional[IpPortView],
-            self.fetch_edge(
-                "connected_over", IpPortView
-            ),
+            Optional[IpPortView], self.fetch_edge("connected_over", IpPortView),
         )
 
-    def get_connected_to(self) -> Optional['IpPortView']:
-        return cast(
-            Optional[IpPortView],
-            self.fetch_edge(
-                "connected_to", IpPortView
-            ),
-        )
+    def get_connected_to(self) -> Optional["IpPortView"]:
+        return cast(Optional[IpPortView], self.fetch_edge("connected_to", IpPortView),)
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
@@ -322,7 +307,7 @@ class ProcessOutboundConnectionView(Viewable):
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
         f_edges = {
             "connected_over": IpPortView,
-            "connected_to": IpPortView
+            "connected_to": IpPortView,
         }  # type: Dict[str, Optional["EdgeViewT"]]
 
         return cast(
@@ -332,7 +317,7 @@ class ProcessOutboundConnectionView(Viewable):
     def _get_forward_edges(self) -> "Mapping[str, ForwardEdgeView]":
         f_edges = {
             "connected_over": self.connected_over,
-            "connected_to": self.connected_over
+            "connected_to": self.connected_over,
         }  # type: Dict[str, Optional[ForwardEdgeView]]
 
         return cast(

@@ -43,7 +43,13 @@ class IpPortQuery(Queryable):
     ) -> "NQ":
         self.set_str_property_filter(
             "ip_address",
-            _str_cmps("ip_address", eq=eq, contains=contains, ends_with=ends_with, starts_with=starts_with),
+            _str_cmps(
+                "ip_address",
+                eq=eq,
+                contains=contains,
+                ends_with=ends_with,
+                starts_with=starts_with,
+            ),
         )
         return self
 
@@ -115,8 +121,7 @@ class IpPortQuery(Queryable):
         return self
 
     def with_bound_by(
-        self: "NQ",
-        bound_by_query: Optional["IProcessInboundConnectionQuery"] = None,
+        self: "NQ", bound_by_query: Optional["IProcessInboundConnectionQuery"] = None,
     ) -> "NQ":
         bound_by = bound_by_query or ProcessInboundConnectionQuery()
         bound_by.with_bound_port(cast(IpPortQuery, self))
@@ -125,9 +130,7 @@ class IpPortQuery(Queryable):
 
     def with_process_connections(
         self: "NQ",
-        process_connections_query: Optional[
-            "IProcessOutboundConnectionQuery"
-        ] = None,
+        process_connections_query: Optional["IProcessOutboundConnectionQuery"] = None,
     ) -> "NQ":
         process_connections = (
             process_connections_query or ProcessOutboundConnectionQuery()
@@ -228,7 +231,7 @@ class IpPortView(Viewable):
         self.process_connects = process_connects
 
     def get_node_type(self) -> str:
-        return 'IpPort'
+        return "IpPort"
 
     def get_port(self) -> Optional[int]:
         if not self.port:
@@ -279,9 +282,7 @@ class IpPortView(Viewable):
             self.fetch_edges("~connected_over", ProcessOutboundConnectionView),
         )
 
-    def get_connections_from_processes(
-        self,
-    ) -> "List[ProcessOutboundConnectionView]":
+    def get_connections_from_processes(self,) -> "List[ProcessOutboundConnectionView]":
         return cast(
             List[ProcessOutboundConnectionView],
             self.fetch_edges(

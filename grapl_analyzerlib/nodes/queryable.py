@@ -54,18 +54,18 @@ class Queryable(abc.ABC, Generic[NV]):
         extended_self.dynamic_property_filters = self.dynamic_property_filters
 
         for prop_filter in self._get_property_filters().items():
-            setattr(extended_self, '_' + prop_filter[0], prop_filter[1])
+            setattr(extended_self, "_" + prop_filter[0], prop_filter[1])
 
         for f_edge_filter in self._get_forward_edges().items():
-            setattr(extended_self, '_' + f_edge_filter[0], f_edge_filter[1])
+            setattr(extended_self, "_" + f_edge_filter[0], f_edge_filter[1])
 
         for r_edge_filter in self._get_reverse_edges().values():
-            setattr(extended_self, '_' + r_edge_filter[1], r_edge_filter[0])
+            setattr(extended_self, "_" + r_edge_filter[1], r_edge_filter[0])
 
         # We need to add any other queries for this node
         return extended_self
 
-    def with_node_key(self: 'NQ', eq: str) -> 'NQ':
+    def with_node_key(self: "NQ", eq: str) -> "NQ":
         self._node_key = [[Eq("node_key", eq)]]
         return self
 
@@ -105,14 +105,14 @@ class Queryable(abc.ABC, Generic[NV]):
         return {**reverse_edges, **self.dynamic_reverse_edge_filters}
 
     def get_edge_filters(
-        self
+        self,
     ) -> Mapping[str, Union["Queryable", Tuple["Queryable", str]]]:
         return {**self.get_forward_edges(), **self.get_reverse_edges()}
 
     def get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         prop_filters = self._get_property_filters()
-        if not prop_filters.get('node_key'):
-            prop_filters['node_key'] = self._node_key
+        if not prop_filters.get("node_key"):
+            prop_filters["node_key"] = self._node_key
 
         return {**prop_filters, **self.dynamic_property_filters}
 
@@ -189,9 +189,7 @@ class Queryable(abc.ABC, Generic[NV]):
 
     @retry(delay=0.05)
     def get_count(
-        self,
-        dgraph_client: DgraphClient,
-        first: Optional[int] = None,
+        self, dgraph_client: DgraphClient, first: Optional[int] = None,
     ) -> int:
         query_str = generate_query(
             query_name="res",

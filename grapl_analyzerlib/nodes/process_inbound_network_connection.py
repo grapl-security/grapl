@@ -15,8 +15,7 @@ from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 
 IProcessInboundConnectionQuery = TypeVar(
-    "IProcessInboundConnectionQuery",
-    bound="ProcessInboundConnectionQuery",
+    "IProcessInboundConnectionQuery", bound="ProcessInboundConnectionQuery",
 )
 
 
@@ -144,7 +143,8 @@ class ProcessInboundConnectionQuery(DynamicNodeQuery):
         return self
 
     def _get_node_type_name(self) -> str:
-        return 'ProcessInboundConnection'
+        return "ProcessInboundConnection"
+
 
 IProcessInboundConnectionView = TypeVar(
     "IProcessInboundConnectionView", bound="ProcessInboundConnectionView"
@@ -185,7 +185,7 @@ class ProcessInboundConnectionView(DynamicNodeView):
         self.bound_by = bound_by
 
     def get_node_type(self) -> str:
-        return 'ProcessInboundConnection'
+        return "ProcessInboundConnection"
 
     def get_created_timestamp(self) -> Optional[int]:
         if not self.created_timestamp:

@@ -18,7 +18,8 @@ from grapl_analyzerlib.nodes.viewable import (
     EdgeViewT,
     ForwardEdgeView,
     ReverseEdgeView,
-    NV)
+    NV,
+)
 
 T = TypeVar("T")
 
@@ -75,7 +76,6 @@ class FileQuery(Queryable["FileView"]):
             )
         )
         return self
-
 
     def with_file_extension(
         self: "NQ",
@@ -368,9 +368,7 @@ class FileQuery(Queryable["FileView"]):
             "risks": self._risks,
         }
 
-        filtered = {
-            re[0]: re[1] for re in forward_edges.items() if re[1] is not None
-        }
+        filtered = {re[0]: re[1] for re in forward_edges.items() if re[1] is not None}
 
         return cast("Mapping[str, Queryable]", filtered)
 
@@ -459,7 +457,7 @@ class FileView(Viewable):
         self.risks = risks or []
 
     def get_node_type(self) -> str:
-        return 'File'
+        return "File"
 
     def get_file_path(self) -> Optional[str]:
         if self.file_path is not None:
@@ -566,10 +564,8 @@ class FileView(Viewable):
             return self.sha256_hash
         self.sha256_hash = cast(str, self.fetch_property("sha256_hash", str))
         return self.sha256_hash
-    
-    def get_risks(
-            self: "NV", match_risks: Optional["IRiskQuery"] = None
-    ) -> "List[NV]":
+
+    def get_risks(self: "NV", match_risks: Optional["IRiskQuery"] = None) -> "List[NV]":
         _match_risks = match_risks or RiskQuery()  # type: RiskQuery
 
         self_node = (
@@ -583,9 +579,9 @@ class FileView(Viewable):
             cast(FileView, self).risks = self_node.risks
 
         return cast(FileView, self).risks
-    
+
     def get_spawned_from(
-            self: "NV", match_spawned_from: Optional["IProcessQuery"] = None
+        self: "NV", match_spawned_from: Optional["IProcessQuery"] = None
     ) -> Optional["NV"]:
         _match_spawned_from = match_spawned_from or ProcessQuery()  # type: ProcessQuery
 
@@ -599,10 +595,11 @@ class FileView(Viewable):
         if self_node:
             cast(FileView, self).spawned_from = self_node.spawned_from
 
-            assert self.node_key == self_node.node_key, 'self and self_node do not have matching node_keys'
+            assert (
+                self.node_key == self_node.node_key
+            ), "self and self_node do not have matching node_keys"
 
         return cast(FileView, self).bin_file
-
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:
@@ -627,9 +624,7 @@ class FileView(Viewable):
 
     @staticmethod
     def _get_forward_edge_types() -> Mapping[str, "EdgeViewT"]:
-        return {
-            'risks': [RiskView]
-        }
+        return {"risks": [RiskView]}
 
     @staticmethod
     def _get_reverse_edge_types() -> Mapping[str, Tuple["EdgeViewT", str]]:
@@ -691,5 +686,9 @@ class FileView(Viewable):
         return cast("Mapping[str,  ReverseEdgeView]", filtered)
 
 
-from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView, IProcessQuery
+from grapl_analyzerlib.nodes.process_node import (
+    ProcessQuery,
+    ProcessView,
+    IProcessQuery,
+)
 from grapl_analyzerlib.nodes.risk_node import RiskQuery, IRiskQuery, RiskView

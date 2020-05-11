@@ -1,4 +1,3 @@
-
 import re
 from typing import List, Union, TypeVar, Generic, Optional, Sequence, Any, cast, Tuple
 
@@ -10,14 +9,15 @@ PropertyFilter = List[List["Cmp[T]"]]
 StrCmp = Union[str, List[str], List[Union[str, "Not[str]"]]]
 IntCmp = Union[int, List[int], List[Union[int, "Not[int]"]]]
 
+
 def escape_dgraph_regexp(input: str) -> str:
     input = re.escape(input)
     output = ""
     for char in input:
         if char == '"':
-            output += r'\"'
-        elif char == '/':
-            output += r'\/'
+            output += r"\""
+        elif char == "/":
+            output += r"\/"
         else:
             output += char
 
@@ -42,7 +42,7 @@ def escape_dgraph_str(input: str, query=False) -> str:
                 output += r"\\"
         elif char == '"':
             if query:
-                output += r'\"'
+                output += r"\""
             else:
                 output += r'"'
         else:
@@ -56,10 +56,9 @@ def unescape_dgraph_str(input: str) -> str:
         return input
     output = input.replace("//$", "$")
     output = output.replace(r"//\n", "\n")
-    output = output.replace(r'\"', '"')
-    output = output.replace(r'\\', '\\')
+    output = output.replace(r"\"", '"')
+    output = output.replace(r"\\", "\\")
     return output
-
 
 
 class Or(object):
@@ -81,7 +80,9 @@ class Eq(Cmp[T]):
     def __init__(self, predicate: str, value: Union[T, Not[T]]) -> None:
         self.predicate = predicate
         if isinstance(value, str):
-            self.value = escape_dgraph_str(value, query=True)  # type: Union[str, Not[str]]
+            self.value = escape_dgraph_str(
+                value, query=True
+            )  # type: Union[str, Not[str]]
         elif isinstance(value, Not) and isinstance(value.value, str):
             self.value = Not(escape_dgraph_str(value.value, query=True))
         else:
@@ -91,12 +92,9 @@ class Eq(Cmp[T]):
         if isinstance(self.value, str):
             if self.predicate == "dgraph.type":
                 return f"type({self.value})"
-            return 'eq({}, "{}")'.format(
-                self.predicate,
-                self.value,
-            )
+            return 'eq({}, "{}")'.format(self.predicate, self.value,)
         if isinstance(self.value, int):
-            return 'eq({}, {})'.format(self.predicate, self.value)
+            return "eq({}, {})".format(self.predicate, self.value)
         if isinstance(self.value, Not) and isinstance(self.value.value, str):
             if self.predicate == "dgraph.type":
                 return f"NOT type({self.value})"
@@ -247,6 +245,7 @@ class Distance(Cmp[str]):
         else:
             value = self.value
             return f'match({self.predicate}, "{value}", {self.distance})'
+
 
 def _str_cmps(
     predicate: str,

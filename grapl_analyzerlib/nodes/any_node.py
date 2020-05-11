@@ -189,7 +189,6 @@ class NodeQuery(Queryable):
 
 
 class NodeView(Viewable):
-
     def __init__(
         self, dgraph_client: DgraphClient, node_key: str, uid: str, node: Viewable
     ) -> None:
@@ -312,7 +311,7 @@ class NodeView(Viewable):
                     file_path=node.file_node.file_path,
                 ),
             )
-        elif node.HasField('asset_node'):
+        elif node.HasField("asset_node"):
             uid = get_uid(dgraph_client, node.asset_node.node_key)
 
             return NodeView(

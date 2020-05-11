@@ -11,44 +11,37 @@ from grapl_analyzerlib.schemas.schema_builder import ManyToMany
 class AnyNodeSchema(NodeSchema):
     @staticmethod
     def self_type() -> str:
-        return 'Any'
+        return "Any"
 
 
 class RiskSchema(NodeSchema):
     def __init__(self):
         super(RiskSchema, self).__init__()
-        (
-            self
-                .with_str_prop('analyzer_name')
-                .with_int_prop('risk_score')
-        )
+        (self.with_str_prop("analyzer_name").with_int_prop("risk_score"))
 
     @staticmethod
     def self_type() -> str:
-        return 'Risk'
+        return "Risk"
 
 
 class LensSchema(NodeSchema):
     def __init__(self):
         super(LensSchema, self).__init__()
         (
-            self
-                .with_str_prop('lens')
-                .with_int_prop('score')
-                .with_forward_edge('scope', ManyToMany(AnyNodeSchema), 'in_scope')
+            self.with_str_prop("lens")
+            .with_int_prop("score")
+            .with_forward_edge("scope", ManyToMany(AnyNodeSchema), "in_scope")
         )
 
     @staticmethod
     def self_type() -> str:
-        return 'Lens'
+        return "Lens"
 
 
 class AssetSchema(NodeSchema):
     def __init__(self):
         super(AssetSchema, self).__init__()
-        (
-            self.with_str_prop("hostname")
-        )
+        (self.with_str_prop("hostname"))
 
     @staticmethod
     def self_type() -> str:
@@ -64,18 +57,15 @@ def drop_all(client):
     op = pydgraph.Operation(drop_all=True)
     client.alter(op)
 
+
 def format_schemas(schema_defs):
     schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
 
-    return "\n".join([
-        "  # Type Definitions",
-        types,
-        "\n  # Schema Definitions",
-        schemas,
-    ])
-
+    return "\n".join(
+        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
+    )
 
 
 def get_type_dict(client, type_name):
@@ -95,12 +85,12 @@ def get_type_dict(client, type_name):
 
     type_dict = {}
 
-    for d in res['types'][0]['fields']:
-        if d['name'][0] == "~":
+    for d in res["types"][0]["fields"]:
+        if d["name"][0] == "~":
             name = f"<{d['name']}>"
         else:
-            name = d['name']
-        type_dict[name] = d['type']
+            name = d["name"]
+        type_dict[name] = d["type"]
 
     return type_dict
 
@@ -113,10 +103,10 @@ def update_reverse_edges(client, schema):
     for edge in schema.forward_edges:
         edge_n = edge[0]
         edge_t = edge[1]._inner_type.self_type()
-        if edge_t == 'Any':
+        if edge_t == "Any":
             continue
 
-        rev_edges.add(('<~' + edge_n + '>', edge_t))
+        rev_edges.add(("<~" + edge_n + ">", edge_t))
 
         if not type_dicts.get(edge_t):
             type_dicts[edge_t] = get_type_dict(client, edge_t)
@@ -125,7 +115,7 @@ def update_reverse_edges(client, schema):
         return
 
     for (rev_edge_n, rev_edge_t) in rev_edges:
-        type_dicts[rev_edge_t][rev_edge_n] = 'uid'
+        type_dicts[rev_edge_t][rev_edge_n] = "uid"
 
     type_strs = ""
 
@@ -153,7 +143,6 @@ type {type_name} {{
 
 def provision(mclient):
 
-
     # drop_all(mclient)
     # drop_all(___local_dg_provision_client)
 
@@ -173,10 +162,9 @@ def provision(mclient):
     set_schema(mclient, mg_schema_str)
 
 
+if __name__ == "__main__":
 
-if __name__ == '__main__':
-
-    local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
+    local_dg_provision_client = DgraphClient(DgraphClientStub("localhost:9080"))
 
     mg_succ = False
 

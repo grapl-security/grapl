@@ -36,9 +36,7 @@ class ProcessQuery(Queryable[IProcessView]):
             None
         )  # type: Optional['IProcessInboundConnectionQuery']
 
-        self._risks = (
-            None
-        )  # type: Optional['IRiskQuery']
+        self._risks = None  # type: Optional['IRiskQuery']
 
         # Reverse edges
         self._parent = None  # type: Optional['ProcessQuery']
@@ -142,8 +140,7 @@ class ProcessQuery(Queryable[IProcessView]):
         return self
 
     def with_children(
-        self: "NQ",
-        child_query: Optional["IProcessQuery"] = None
+        self: "NQ", child_query: Optional["IProcessQuery"] = None
     ) -> "NQ":
         children = child_query or ProcessQuery()  # type: ProcessQuery
         children._parent = cast(ProcessQuery, self)
@@ -159,8 +156,7 @@ class ProcessQuery(Queryable[IProcessView]):
         return self
 
     def with_created_files(
-        self: "NQ",
-        created_files_query: Optional["IFileQuery"] = None
+        self: "NQ", created_files_query: Optional["IFileQuery"] = None
     ) -> "NQ":
         created_files = created_files_query or FileQuery()
         created_files._creator = cast(ProcessQuery, self)
@@ -196,9 +192,7 @@ class ProcessQuery(Queryable[IProcessView]):
 
     def with_created_connections(
         self: "NQ",
-        created_connection_query: Optional[
-            "IProcessOutboundConnectionQuery"
-        ] = None,
+        created_connection_query: Optional["IProcessOutboundConnectionQuery"] = None,
     ) -> "NQ":
         from grapl_analyzerlib.nodes.process_outbound_network_connection import (
             ProcessOutboundConnectionQuery,
@@ -213,9 +207,7 @@ class ProcessQuery(Queryable[IProcessView]):
 
     def with_inbound_connections(
         self: "NQ",
-        inbound_connection_query: Optional[
-            "IProcessInboundConnectionQuery"
-        ] = None,
+        inbound_connection_query: Optional["IProcessInboundConnectionQuery"] = None,
     ) -> "NQ":
         from grapl_analyzerlib.nodes.process_inbound_network_connection import (
             ProcessInboundConnectionQuery,
@@ -247,7 +239,7 @@ class ProcessQuery(Queryable[IProcessView]):
         asset._asset_processes = cast(ProcessQuery, self)
         cast(ProcessQuery, self)._process_asset = asset
         return self
-    
+
     def _get_unique_predicate(self) -> Optional[Tuple[str, "PropertyT"]]:
         return "process_id", int
 
@@ -318,12 +310,8 @@ class ProcessView(Viewable):
         read_files: Optional[List["FileView"]] = None,
         wrote_files: Optional[List["FileView"]] = None,
         deleted_files: Optional[List["FileView"]] = None,
-        created_connections: Optional[
-            List["ProcessOutboundConnectionQuery"]
-        ] = None,
-        inbound_connections: Optional[
-            List["ProcessInboundConnectionQuery"]
-        ] = None,
+        created_connections: Optional[List["ProcessOutboundConnectionQuery"]] = None,
+        inbound_connections: Optional[List["ProcessInboundConnectionQuery"]] = None,
         parent: Optional["NV"] = None,
         process_asset: Optional["AssetView"] = None,
         risks: Optional[List["RiskView"]] = None,
@@ -350,7 +338,7 @@ class ProcessView(Viewable):
         self.process_asset = process_asset
 
     def get_node_type(self) -> str:
-        return 'Process'
+        return "Process"
 
     def get_process_id(self: "NV") -> Optional[int]:
         if cast(ProcessView, self).process_id is not None:
@@ -420,29 +408,21 @@ class ProcessView(Viewable):
 
         return cast(ProcessView, self).children
 
-    def get_created_connections(
-        self: "NV"
-    ) -> "List[ProcessOutboundConnectionView]":
+    def get_created_connections(self: "NV") -> "List[ProcessOutboundConnectionView]":
         from grapl_analyzerlib.nodes.process_outbound_network_connection import (
             ProcessOutboundConnectionView,
         )
 
         cast(ProcessView, self).created_connections = cast(
             List[ProcessOutboundConnectionView],
-            self.fetch_edges(
-                "created_connections", ProcessOutboundConnectionView
-            ),
+            self.fetch_edges("created_connections", ProcessOutboundConnectionView),
         )
         return cast(ProcessView, self).created_connections
 
-    def get_inbound_connections(
-        self: "NV"
-    ) -> "List[ProcessInboundConnectionView]":
+    def get_inbound_connections(self: "NV") -> "List[ProcessInboundConnectionView]":
         cast(ProcessView, self).created_connections = cast(
             List[ProcessInboundConnectionView],
-            self.fetch_edges(
-                "inbound_connections", ProcessInboundConnectionView
-            ),
+            self.fetch_edges("inbound_connections", ProcessInboundConnectionView),
         )
         return cast(ProcessView, self).created_connections
 
@@ -477,7 +457,7 @@ class ProcessView(Viewable):
         return cast(ProcessView, self).deleted_files
 
     def get_risks(
-            self: "NV", match_risks: Optional["IRiskQuery"] = None
+        self: "NV", match_risks: Optional["IRiskQuery"] = None
     ) -> "List[RiskView]":
         _match_risks = match_risks or RiskQuery()  # type: RiskQuery
 
@@ -493,17 +473,13 @@ class ProcessView(Viewable):
 
         return cast(ProcessView, self).risks
 
-    def get_parent(
-        self: "NV"
-    ) -> Optional["NV"]:
+    def get_parent(self: "NV") -> Optional["NV"]:
         cast(ProcessView, self).parent = cast(
             ProcessView, self.fetch_edge("~children", type(self))
         )
         return cast(ProcessView, self).parent
 
-    def get_asset(
-            self: "NV"
-    ) -> Optional["AssetView"]:
+    def get_asset(self: "NV") -> Optional["AssetView"]:
         cast(ProcessView, self).process_asset = cast(
             AssetView, self.fetch_edge("~asset_processes", AssetView)
         )
@@ -611,11 +587,13 @@ from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Reverse
 from grapl_analyzerlib.nodes.process_inbound_network_connection import (
     IProcessInboundConnectionQuery,
     ProcessInboundConnectionView,
-    ProcessInboundConnectionQuery)
+    ProcessInboundConnectionQuery,
+)
 from grapl_analyzerlib.nodes.process_outbound_network_connection import (
     ProcessOutboundConnectionView,
     IProcessOutboundConnectionQuery,
-    ProcessOutboundConnectionQuery)
+    ProcessOutboundConnectionQuery,
+)
 
 from grapl_analyzerlib.nodes.risk_node import RiskQuery, IRiskQuery, RiskView
 from grapl_analyzerlib.nodes.asset_node import AssetView, AssetQuery, IAssetQuery

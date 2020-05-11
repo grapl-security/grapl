@@ -140,7 +140,9 @@ class IpConnectionQuery(DynamicNodeQuery):
     ) -> "NQ":
         inbound_ip_connection_to = inbound_ip_connection_to_query or IpAddressQuery()
 
-        self.set_forward_edge_filter("inbound_ip_connection_to", inbound_ip_connection_to)
+        self.set_forward_edge_filter(
+            "inbound_ip_connection_to", inbound_ip_connection_to
+        )
         inbound_ip_connection_to.set_reverse_edge_filter(
             "~inbound_ip_connection_to", self, "inbound_ip_connection_to"
         )
@@ -155,7 +157,8 @@ class IpConnectionQuery(DynamicNodeQuery):
         return self
 
     def _get_node_type_name(self) -> str:
-        return 'IpConnection'
+        return "IpConnection"
+
 
 IIpConnectionView = TypeVar("IIpConnectionView", bound="IpConnectionView")
 
@@ -193,9 +196,8 @@ class IpConnectionView(DynamicNodeView):
         self.dst_port = dst_port
         self.inbound_ip_connection_to = inbound_ip_connection_to
 
-
     def get_node_type(self) -> str:
-        return 'IpConnection'
+        return "IpConnection"
 
     def get_created_timestamp(self) -> Optional[int]:
         if not self.created_timestamp:

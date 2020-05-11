@@ -620,8 +620,6 @@ def attach_reverse_edges(client: DgraphClient, schema: NodeSchema):
 
     # fetch each types... type?
 
-    
-
     # For each schema, attach the reverse edges
 
     # Deploy the schemas
@@ -664,11 +662,11 @@ def attach_reverse_edges(client: DgraphClient, schema: NodeSchema):
 #     auid_assumption_query_extensions = generate_plugin_query_extensions(auid_assumption_schema)
 #     auid_assumption_view_extensions = generate_plugin_view_extensions(auid_assumption_schema)
 #
-    # auid_schema = AuidSchema()
-    # auid_query = generate_plugin_query(auid_schema)
-    # auid_view = generate_plugin_view(auid_schema)
-    # auid_query_extensions = generate_plugin_query_extensions(auid_schema)
-    # auid_view_extensions = generate_plugin_view_extensions(auid_schema)
+# auid_schema = AuidSchema()
+# auid_query = generate_plugin_query(auid_schema)
+# auid_view = generate_plugin_view(auid_schema)
+# auid_query_extensions = generate_plugin_query_extensions(auid_schema)
+# auid_view_extensions = generate_plugin_view_extensions(auid_schema)
 
 #     print(auid_query)
 #     print(auid_view)

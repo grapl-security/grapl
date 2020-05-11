@@ -84,7 +84,7 @@ class Viewable(abc.ABC):
 
     @classmethod
     def get_edge_types(
-        cls
+        cls,
     ) -> Mapping[str, Union["EdgeViewT", Tuple["EdgeViewT", str]]]:
         return {
             **cls._get_forward_edge_types(),
@@ -315,7 +315,7 @@ class Viewable(abc.ABC):
             if isinstance(node_type, list):
                 if len(node_type) > 1:
                     # TODO: This is a hack, workaround for a preexisting bug where some nodes are labeled as Risk
-                    node_type = [nt for nt in node_type if nt != 'Risk']
+                    node_type = [nt for nt in node_type if nt != "Risk"]
 
                     if len(node_type) > 1:
                         print(

@@ -13,6 +13,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Vim swap files
+*.swp
+
 grapl_analyzerlib.iml
 .idea/
 
