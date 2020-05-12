@@ -36,7 +36,7 @@ dependencies = [
  "grpc",
  "lambda_runtime",
  "log 0.4.8",
- "prost 0.4.0",
+ "prost 0.6.1",
  "rusoto_core",
  "rusoto_credential",
  "rusoto_s3",
@@ -932,7 +932,7 @@ dependencies = [
  "lambda_runtime",
  "lazy_static",
  "log 0.4.8",
- "prost 0.4.0",
+ "prost 0.6.1",
  "rayon",
  "regex",
  "rusoto_core",
@@ -974,10 +974,9 @@ dependencies = [
  "base16",
  "base64 0.9.3",
  "failure",
- "futures 0.1.29",
  "grapl-graph-descriptions",
  "log 0.4.8",
- "prost 0.4.0",
+ "prost 0.6.1",
  "rusoto_core",
  "rusoto_s3",
  "rusoto_sqs",
@@ -1001,10 +1000,10 @@ dependencies = [
  "grapl-config",
  "grapl-graph-descriptions",
  "grpc",
- "itertools 0.8.2",
+ "itertools",
  "lambda_runtime",
  "log 0.4.8",
- "prost 0.4.0",
+ "prost 0.6.1",
  "rand 0.6.5",
  "rusoto_core",
  "rusoto_credential",
@@ -1042,6 +1041,7 @@ dependencies = [
  "prost 0.6.1",
  "prost-build",
  "prost-derive 0.6.1",
+ "prost-types",
  "serde",
  "serde_derive",
  "serde_json",
@@ -1367,15 +1367,6 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.7.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d47946d458e94a1b7bcabbf6521ea7c037062c81f534615abcad76e84d4970d"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f56a2d0bc861f9165be4eb3442afd3c236d8a98afd426f65d92324ae1091a484"
@@ -1679,8 +1670,7 @@ dependencies = [
  "hmap",
  "lambda_runtime",
  "log 0.4.8",
- "prost 0.4.0",
- "prost-derive 0.4.0",
+ "prost 0.6.1",
  "prost-types",
  "quickcheck",
  "quickcheck_macros",
@@ -1975,16 +1965,6 @@ dependencies = [
 
 [[package]]
 name = "prost"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9f36c478cd43382388dfc3a3679af175c03d19ed8039e79a3e4447e944cd3f3"
-dependencies = [
- "byteorder",
- "bytes 0.4.12",
-]
-
-[[package]]
-name = "prost"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96d14b1c185652833d24aaad41c5832b0be5616a590227c1fbff57c616754b23"
@@ -2012,7 +1992,7 @@ checksum = "02b10678c913ecbd69350e8535c3aef91a8676c0773fc1d7b95cdd196d7f2f26"
 dependencies = [
  "bytes 0.5.4",
  "heck",
- "itertools 0.8.2",
+ "itertools",
  "log 0.4.8",
  "multimap",
  "petgraph",
@@ -2024,25 +2004,12 @@ dependencies = [
 
 [[package]]
 name = "prost-derive"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9787d1977ea72e8066d58e46ae66100324a2815e677897fe78dfe54958f48252"
-dependencies = [
- "failure",
- "itertools 0.7.11",
- "proc-macro2 0.4.30",
- "quote 0.6.13",
- "syn 0.14.9",
-]
-
-[[package]]
-name = "prost-derive"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e7dc378b94ac374644181a2247cebf59a6ec1c88b49ac77f3a94b86b79d0e11"
 dependencies = [
  "failure",
- "itertools 0.8.2",
+ "itertools",
  "proc-macro2 0.4.30",
  "quote 0.6.13",
  "syn 0.15.44",
@@ -2055,7 +2022,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "537aa19b95acde10a12fec4301466386f757403de4cd4e5b4fa78fb5ecb18f72"
 dependencies = [
  "anyhow",
- "itertools 0.8.2",
+ "itertools",
  "proc-macro2 1.0.12",
  "quote 1.0.4",
  "syn 1.0.19",
@@ -3043,17 +3010,6 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "0.14.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "261ae9ecaa397c42b960649561949d69311f08eeaea86a65696e6e46517cf741"
-dependencies = [
- "proc-macro2 0.4.30",
- "quote 0.6.13",
- "unicode-xid 0.1.0",
-]
-
-[[package]]
-name = "syn"
 version = "0.15.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ca4b3b69a77cbe1ffc9e198781b7acb0c7365a883670e8f1c1bc66fba79a5c5"
@@ -3138,7 +3094,7 @@ dependencies = [
  "lambda_runtime",
  "lazy_static",
  "log 0.4.8",
- "prost 0.4.0",
+ "prost 0.6.1",
  "rayon",
  "regex",
  "rusoto_core",

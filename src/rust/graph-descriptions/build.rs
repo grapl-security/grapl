@@ -2,7 +2,7 @@ fn main() {
 
     let mut config = prost_build::Config::new();
 
-    config.type_attribute(".", "#[derive(Eq, Serialize, Deserialize)]");
+    config.type_attribute(".graph_description", "#[derive(Eq, Serialize, Deserialize)]");
 
 
     config.type_attribute(".graph_description.Asset", "#[derive(Builder)]");

@@ -20,9 +20,8 @@ grapl-config = {path="../grapl-config", version="*"}
 
 bytes = "0.4"
 failure = "*"
-prost = "0.4.0"
-prost-derive = "0.4"
-prost-types = "*"
+prost = "0.6.*"
+prost-types = "0.6.*"
 
 base64 = "0.9.2"
 
@@ -47,9 +46,9 @@ sqs-lambda = "0.20.*"
 aws_lambda_events = "0.2.0"
 
 simple_logger = "1.6.*"
-serde_json = "1.0.39"
-serde_derive = "1.0.89"
-serde = "1.0.89"
+serde = "1.0.110"
+serde_json = "1.0.53"
+serde_derive = "1.0.110"
 
 quickcheck = "0.8.2"
 quickcheck_macros = "0.8.0"

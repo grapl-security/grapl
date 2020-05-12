@@ -1,33 +1,3 @@
-extern crate aws_lambda_events;
-extern crate base16;
-extern crate base64;
-extern crate dgraph_rs;
-#[macro_use]
-extern crate failure;
-extern crate futures;
-extern crate graph_descriptions;
-extern crate grapl_config;
-extern crate grpc;
-extern crate itertools;
-extern crate lambda_runtime as lambda;
-#[macro_use]
-extern crate log;
-
-extern crate prost;
-extern crate rand;
-extern crate rusoto_core;
-extern crate rusoto_s3;
-extern crate rusoto_sns;
-extern crate rusoto_sqs;
-extern crate serde;
-extern crate serde_derive;
-#[macro_use]
-extern crate serde_json;
-extern crate sha2;
-extern crate simple_logger;
-extern crate sqs_lambda;
-extern crate stopwatch;
-
 use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
 use std::sync::Arc;
@@ -48,9 +18,9 @@ use graph_descriptions::graph_description::{Graph, Node};
 
 use grpc::{Client, ClientStub};
 use grpc::ClientConf;
-use lambda::Context;
-use lambda::error::HandlerError;
-use lambda::lambda;
+use lambda_runtime::Context;
+use lambda_runtime::error::HandlerError;
+use lambda_runtime::lambda;
 use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -63,12 +33,8 @@ use sqs_lambda::event_handler::{EventHandler, OutputEvent, Completion};
 
 use async_trait::async_trait;
 
-
-
 use sqs_lambda::redis_cache::RedisCache;
 
-
-use crate::futures::FutureExt;
 use serde_json::Value;
 use std::iter::FromIterator;
 use sqs_lambda::cache::{Cache, NopCache};
