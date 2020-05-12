@@ -1,5 +1,18 @@
 from setuptools import setup, find_packages
 
+LINTERS_REQUIREMENTS = [
+    "black",
+    "mypy",
+]
+
+TEST_REQUIREMENTS = [
+    "pytest",
+    # simultaneously run pytest on multiple cores with `pytest -n NUMCORES`
+    "pytest-xdist",
+    "pytest-cov",
+    "hypothesis",
+]
+
 setup(
     name="grapl_analyzerlib",
     version="0.2.55",
@@ -22,4 +35,9 @@ setup(
     },
     include_package_data=True,
     install_requires=["pydgraph", "typing_extensions"],
+    extras_require={
+        "linters": LINTERS_REQUIREMENTS,
+        "test": TEST_REQUIREMENTS,
+        "dev": LINTERS_REQUIREMENTS + TEST_REQUIREMENTS,
+    },
 )

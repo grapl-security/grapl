@@ -79,7 +79,7 @@ def create_edge(
         txn.discard()
 
 
-def test_name_plus_node_key(test_case: unittest.TestCase, node_key: str) -> str:
+def node_key_for_test(test_case: unittest.TestCase, node_key: str) -> str:
     """
     The atrociously-named TestCase#id returns things like
     tests.test_ip_address_node.TestIpAddressQuery.test__single_ip_addr_node__query_by_node_key

@@ -2,6 +2,7 @@ import time
 import json
 import pydgraph
 
+from grpc import RpcError, StatusCode
 from pydgraph import DgraphClient, DgraphClientStub
 from grapl_analyzerlib.schemas import *
 
@@ -166,19 +167,19 @@ if __name__ == "__main__":
 
     local_dg_provision_client = DgraphClient(DgraphClientStub("localhost:9080"))
 
-    mg_succ = False
-
-    for i in range(0, 150):
+    num_retries = 150
+    for i in range(0, num_retries):
         try:
-            if not mg_succ:
-                provision(local_dg_provision_client,)
-                mg_succ = True
+            provision(local_dg_provision_client,)
         except Exception as e:
-            print(e)
+            if isinstance(e, RpcError) and e.code() == StatusCode.UNAVAILABLE:
+                hint = "have you booted the local dgraph server?"
 
-        if mg_succ:
-            break
-        else:
+            print(f"Retry {i}/{num_retries}: {hint}\n {e}")
             time.sleep(1)
+        else:
+            break
+
 
     time.sleep(1)
+    print("grapl_provision complete!\n")

@@ -12,8 +12,8 @@ from grapl_analyzerlib.nodes.ip_address_node import IpAddressQuery
 from grapl_analyzerlib.nodes.types import Property
 from grapl_analyzerlib.time_utils import Millis, as_millis
 
-from tests.dgraph_utils import upsert, test_name_plus_node_key
-from tests.view_assertions import assert_views_equal
+from test_utils.dgraph_utils import upsert, node_key_for_test
+from test_utils.view_assertions import assert_views_equal
 
 
 def get_or_create_ip_address_node(
@@ -55,7 +55,7 @@ class TestIpAddressQuery(unittest.TestCase):
         self, node_key, first_seen_timestamp, last_seen_timestamp, ip_address,
     ):
         # current function's name, but don't need to copy-paste replace
-        node_key = test_name_plus_node_key(self, node_key)
+        node_key = node_key_for_test(self, node_key)
         local_client = DgraphClient(DgraphClientStub("localhost:9080"))
 
         created = get_or_create_ip_address_node(
