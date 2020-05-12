@@ -6,6 +6,7 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
+use bytes::Bytes;
 use failure::{Error, bail};
 use graph_descriptions::graph_description::*;
 use lambda_runtime::Context;
@@ -232,7 +233,9 @@ impl<E> PayloadDecoder<E> for ZstdProtoDecoder
 
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;
 
-        Ok(E::decode(decompressed)?)
+        let buf = Bytes::from(decompressed);
+        
+        Ok(E::decode(buf)?)
     }
 }
 

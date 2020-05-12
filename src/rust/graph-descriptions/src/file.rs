@@ -103,7 +103,6 @@ impl File {
     }
 
     pub fn into_json(self) -> Value {
-        let asset_id = self.asset_id.as_ref().unwrap();
         let mut j = json!({
             "node_key": self.node_key,
             "dgraph.type": "File"

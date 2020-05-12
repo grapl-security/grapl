@@ -1,4 +1,3 @@
-use rusoto_sqs::Sqs;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -11,6 +10,7 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
+use bytes::Bytes;
 use failure::{Error, bail};
 use graph_descriptions::file::FileState;
 use graph_descriptions::graph_description::*;
@@ -27,7 +27,7 @@ use prost::Message;
 use rusoto_core::{Region, HttpClient};
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{SqsClient, SendMessageRequest};
+use rusoto_sqs::{Sqs, SqsClient, SendMessageRequest};
 use sha2::Digest;
 use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
@@ -861,7 +861,8 @@ impl<E> PayloadDecoder<E> for ZstdProtoDecoder
 
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;
 
-        Ok(E::decode(decompressed)?)
+        let buf = Bytes::from(decompressed);
+        Ok(E::decode(buf)?)
     }
 }
 

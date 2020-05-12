@@ -1,28 +1,14 @@
-extern crate base16;
-extern crate failure;
-extern crate futures;
-extern crate graph_descriptions;
-#[macro_use] extern crate log;
-extern crate prost;
-extern crate rusoto_core;
-extern crate rusoto_s3;
-extern crate rusoto_sqs;
-extern crate serde_json;
-extern crate sha2;
-extern crate zstd;
-
 use std::io::Cursor;
 use std::str::FromStr;
-use std::time::{SystemTime, Duration};
+use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use failure::Error;
-use futures::future::Future;
 use graph_descriptions::graph_description::*;
+use log::info;
 use prost::Message;
 use rusoto_core::Region;
 use rusoto_s3::{PutObjectRequest, S3, S3Client};
-use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 pub async fn send_logs_to_generators(

@@ -1,26 +1,31 @@
 use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
 use std::io::Cursor;
+use std::iter::FromIterator;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
+use aws_lambda_events::event::s3::{S3Object, S3UserIdentity, S3Bucket, S3Entity, S3RequestParameters, S3Event, S3EventRecord};
+use async_trait::async_trait;
+use chrono::Utc;
 use dgraph_rs::DgraphClient;
 use dgraph_rs::protos::api;
 use dgraph_rs::protos::api_grpc;
-use failure::Error;
+use failure::{bail, Error};
 use futures::future::join_all;
 
 use graph_descriptions::node::NodeT;
-use graph_descriptions::graph_description::GeneratedSubgraphs;
-use graph_descriptions::graph_description::{Graph, Node};
+use graph_descriptions::graph_description::{Graph, Node, GeneratedSubgraphs};
 
 use grpc::{Client, ClientStub};
 use grpc::ClientConf;
 use lambda_runtime::Context;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
+use log::{info, warn, error, debug};
 use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -30,18 +35,12 @@ use rusoto_sqs::{Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{EventHandler, OutputEvent, Completion};
-
-use async_trait::async_trait;
-
-use sqs_lambda::redis_cache::RedisCache;
-
-use serde_json::Value;
-use std::iter::FromIterator;
-use sqs_lambda::cache::{Cache, NopCache};
-use std::fmt::Debug;
-use aws_lambda_events::event::s3::{S3Object, S3UserIdentity, S3Bucket, S3Entity, S3RequestParameters, S3Event, S3EventRecord};
 use sqs_lambda::local_sqs_service::local_sqs_service;
-use chrono::Utc;
+use sqs_lambda::redis_cache::RedisCache;
+use sqs_lambda::cache::{Cache, NopCache};
+
+use serde_json::{json, Value};
+
 use tokio::runtime::Runtime;
 
 macro_rules! log_time {
@@ -425,7 +424,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
     }
 }
 
@@ -480,11 +479,14 @@ impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
 
         let mut node_key_to_uid = HashMap::new();
 
-        let upserts = subgraph.nodes.values().map(|node| {
-            upsert_node(&mg_client, node.clone()).map(move |u| (node.get_node_key(), u))
-        });
+        let upserts = subgraph.nodes.values()
+            .map(|node| async {
+                upsert_node(&mg_client, node.clone())
+                    .await
+                    .map(move |u| (node.clone_node_key(), u))
+            });
 
-        let upserts = log_time!("All upserts", join_all(upserts).await);
+        let upserts = log_time!("All upserts", join_all(upserts));
 
         for (node_key, upsert) in upserts {
             let new_uid = match upsert  {
@@ -764,7 +766,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 error!("{}", e);
             }
 
-            std::thread::sleep_ms(2_000);
+            std::thread::sleep(Duration::new(2, 0));
         }
     }  else {
         info!("Running in AWS");

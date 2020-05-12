@@ -465,27 +465,27 @@ mod tests {
 
     use std::time::Duration;
 
-    use quickcheck::*;
+    use quickcheck_macros::quickcheck;
     use rusoto_core::Region;
     use rusoto_dynamodb::KeySchemaElement;
     use rusoto_dynamodb::{
         AttributeDefinition, CreateTableInput, DeleteTableInput,
-        ProvisionedThroughput, DynamoDbClient
+        ProvisionedThroughput, DynamoDbClient, DynamoDb
     };
+    use tokio::runtime::Runtime;
 
     fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) {
+        let mut runtime = Runtime::new().unwrap();
         let table_name = table_name.into();
 
-        let _ = dynamo
+        let _ = runtime.block_on(dynamo
             .delete_table(DeleteTableInput {
                 table_name: table_name.clone(),
-            })
-            .with_timeout(Duration::from_secs(1))
-            .sync();
+            }));
 
         std::thread::sleep(Duration::from_millis(155));
 
-        let res = dynamo
+        let res = runtime.block_on(dynamo
             .create_table(CreateTableInput {
                 table_name: table_name.clone(),
                 attribute_definitions: vec![
@@ -513,9 +513,7 @@ mod tests {
                     write_capacity_units: 3,
                 }),
                 ..Default::default()
-            })
-            .with_timeout(Duration::from_secs(1))
-            .sync()
+            }))
             .expect("Failed to crate table");
     }
 
@@ -533,6 +531,7 @@ mod tests {
     // Then the newly created session should be in the timeline
     #[quickcheck]
     fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
+        let mut runtime = Runtime::new().unwrap();
         let table_name = "process_history_canon_create_on_empty_timeline";
         let dynamo = local_dynamo();
 
@@ -546,8 +545,8 @@ mod tests {
             is_creation: true,
         };
 
-        let session_id = session_db
-            .handle_unid_session(unid, false)
+        let session_id = runtime.block_on(session_db
+            .handle_unid_session(unid, false))
             .expect("Failed to create session");
 
         assert!(!session_id.is_empty());

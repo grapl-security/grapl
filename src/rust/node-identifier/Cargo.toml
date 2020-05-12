@@ -18,8 +18,8 @@ path = "src/bin/node-identifier-retry-handler.rs"
 graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
 
-bytes = "0.4"
-failure = "*"
+bytes = "0.5.*"
+failure = "0.1.*"
 prost = "0.6.*"
 prost-types = "0.6.*"
 
@@ -39,7 +39,7 @@ log = "0.4.*"
 base58 = "0.1.0"
 stopwatch = "0.0.7"
 
-zstd = "0.5.*"
+zstd = "0.5.1"
 futures = "0.3.*"
 sqs-lambda = "0.20.*"
 
@@ -50,8 +50,6 @@ serde = "1.0.110"
 serde_json = "1.0.53"
 serde_derive = "1.0.110"
 
-quickcheck = "0.8.2"
-quickcheck_macros = "0.8.0"
 hex = "0.4.0"
 async-trait = "0.1.21"
 tokio-compat = "0.1.2"
@@ -65,3 +63,6 @@ rusoto_credential = "0.43.0"
 version = "0.6.*"
 features = ["v4"]
 
+[dev-dependencies]
+quickcheck = "0.9.2"
+quickcheck_macros = "0.9.1"

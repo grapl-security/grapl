@@ -3,29 +3,28 @@ use std::panic;
 use crate::graph_description::*;
 pub mod graph_description {
     use derive_builder::*;
-    use serde_derive::*;
 
     include!(concat!(env!("OUT_DIR"), "/graph_description.rs"));
 }
 
+pub mod asset;
+pub mod dynamic_node;
 pub mod error;
+pub mod file;
+pub mod graph;
+pub mod ip_address;
+pub mod ip_connection;
+pub mod ip_port;
+pub mod network_connection;
 pub mod node;
 pub mod process;
-pub mod file;
-pub mod asset;
-pub mod ip_address;
-pub mod ip_port;
-pub mod ip_connection;
-pub mod network_connection;
-pub mod process_outbound_connection;
 pub mod process_inbound_connection;
-pub mod dynamic_node;
-pub mod graph;
+pub mod process_outbound_connection;
 
 impl From<Static> for IdStrategy {
     fn from(strategy: Static) -> IdStrategy {
         IdStrategy {
-            strategy: Some(id_strategy::Strategy::Static(strategy))
+            strategy: Some(id_strategy::Strategy::Static(strategy)),
         }
     }
 }
@@ -33,7 +32,7 @@ impl From<Static> for IdStrategy {
 impl From<Session> for IdStrategy {
     fn from(strategy: Session) -> IdStrategy {
         IdStrategy {
-            strategy: Some(id_strategy::Strategy::Session(strategy))
+            strategy: Some(id_strategy::Strategy::Session(strategy)),
         }
     }
 }
@@ -41,7 +40,7 @@ impl From<Session> for IdStrategy {
 impl From<String> for NodeProperty {
     fn from(s: String) -> NodeProperty {
         NodeProperty {
-            property: Some(node_property::Property::Strprop(s))
+            property: Some(node_property::Property::Strprop(s)),
         }
     }
 }
@@ -49,7 +48,7 @@ impl From<String> for NodeProperty {
 impl From<i64> for NodeProperty {
     fn from(i: i64) -> NodeProperty {
         NodeProperty {
-            property: Some(node_property::Property::Intprop(i))
+            property: Some(node_property::Property::Intprop(i)),
         }
     }
 }
@@ -57,7 +56,7 @@ impl From<i64> for NodeProperty {
 impl From<u64> for NodeProperty {
     fn from(i: u64) -> NodeProperty {
         NodeProperty {
-            property: Some(node_property::Property::Uintprop(i))
+            property: Some(node_property::Property::Uintprop(i)),
         }
     }
 }
@@ -68,7 +67,7 @@ impl std::string::ToString for NodeProperty {
             Some(node_property::Property::Intprop(i)) => i.to_string(),
             Some(node_property::Property::Uintprop(i)) => i.to_string(),
             Some(node_property::Property::Strprop(s)) => s.to_string(),
-            None => panic!("Invalid property : {:?}", self)
+            None => panic!("Invalid property : {:?}", self),
         };
         prop
     }

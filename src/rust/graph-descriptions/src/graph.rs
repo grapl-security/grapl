@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use crate::graph_description::{Edge, EdgeList, GeneratedSubgraphs, Node};
-use crate::graph_description::Graph;
+use crate::graph_description::{Edge, EdgeList, GeneratedSubgraphs, Node, Graph};
 use crate::node::NodeT;
 
 impl Graph {
