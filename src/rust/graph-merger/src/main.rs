@@ -7,53 +7,53 @@ use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use aws_lambda_events::event::sqs::SqsEvent;
-use aws_lambda_events::event::s3::{S3Object, S3UserIdentity, S3Bucket, S3Entity, S3RequestParameters, S3Event, S3EventRecord};
 use async_trait::async_trait;
+use aws_lambda_events::event::s3::{
+    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
+};
+use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
-use dgraph_rs::DgraphClient;
 use dgraph_rs::protos::api;
 use dgraph_rs::protos::api_grpc;
+use dgraph_rs::DgraphClient;
 use failure::{bail, Error};
 use futures::future::join_all;
 
+use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use graph_descriptions::node::NodeT;
-use graph_descriptions::graph_description::{Graph, Node, GeneratedSubgraphs};
 
-use grpc::{Client, ClientStub};
 use grpc::ClientConf;
-use lambda_runtime::Context;
+use grpc::{Client, ClientStub};
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
-use log::{info, warn, error, debug};
+use lambda_runtime::Context;
+use log::{debug, error, info, warn};
 use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rusoto_core::{HttpClient, Region, RusotoError};
-use rusoto_s3::{S3, S3Client};
-use rusoto_sqs::{Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
+use rusoto_s3::{S3Client, S3};
+use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
+use sqs_lambda::cache::{Cache, NopCache};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{EventHandler, OutputEvent, Completion};
+use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::cache::{Cache, NopCache};
 
 use serde_json::{json, Value};
 
 use tokio::runtime::Runtime;
 
 macro_rules! log_time {
-    ($msg:expr, $x:expr) => {
-        {
-            let mut sw = stopwatch::Stopwatch::start_new();
-            #[allow(path_statements)]
-            let result = $x;
-            sw.stop();
-            info!("{} {} milliseconds", $msg, sw.elapsed_ms());
-            result
-        }
-    };
+    ($msg:expr, $x:expr) => {{
+        let mut sw = stopwatch::Stopwatch::start_new();
+        #[allow(path_statements)]
+        let result = $x;
+        sw.stop();
+        info!("{} {} milliseconds", $msg, sw.elapsed_ms());
+        result
+    }};
 }
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> api::Mutation {
@@ -62,7 +62,9 @@ fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> api::Mutation 
         edge_name: {
             "uid": to
         }
-    }).to_string().into_bytes();
+    })
+    .to_string()
+    .into_bytes();
 
     let mut mutation = api::Mutation::new();
     mutation.commit_now = true;
@@ -71,10 +73,9 @@ fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> api::Mutation 
 }
 
 async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<String>, Error> {
-
     let mut txn = dg.new_read_only();
 
-    const QUERY: & str = r"
+    const QUERY: &str = r"
        query q0($a: string)
     {
         q0(func: eq(node_key, $a), first: 1) {
@@ -86,10 +87,13 @@ async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<Str
     let mut vars = HashMap::new();
     vars.insert("$a".to_string(), node_key.into());
 
-    let query_res: Value = txn.query_with_vars(QUERY, vars).await
+    let query_res: Value = txn
+        .query_with_vars(QUERY, vars)
+        .await
         .map(|res| serde_json::from_slice(&res.json))??;
 
-    let uid = query_res.get("q0")
+    let uid = query_res
+        .get("q0")
         .and_then(|res| res.get(0))
         .and_then(|uid| uid.get("uid"))
         .and_then(|uid| uid.as_str())
@@ -100,16 +104,18 @@ async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<Str
 
 async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     let node_key = node.clone_node_key();
-    let query = format!(r#"
+    let query = format!(
+        r#"
                 {{
                   p as var(func: eq(node_key, "{}"), first: 1)
                 }}
-                "#, node.get_node_key());
+                "#,
+        node.get_node_key()
+    );
 
     let node_key = node.clone_node_key();
     let mut set_json = node.into_json();
     set_json["uid"] = "uid(p)".into();
-
 
     let mu = api::Mutation {
         set_json: set_json.to_string().into_bytes(),
@@ -118,9 +124,8 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     };
 
     let mut txn = dg.new_txn();
-    let upsert_res = txn.upsert(
-        query, mu,
-    )
+    let upsert_res = txn
+        .upsert(query, mu)
         .await
         .expect(&format!("Request to dgraph failed {:?}", &node_key));
 
@@ -134,31 +139,28 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     );
 
     match node_key_to_uid(dg, &node_key).await? {
-        Some(uid) => {
-            Ok(uid)
-        },
+        Some(uid) => Ok(uid),
         None => bail!("Could not retrieve uid after upsert for {}", &node_key),
     }
 
-//    if let Some(uid) = upsert_res.uids.values().next() {
-//        Ok(uid.to_owned())
-//    } else {
-//        match node_key_to_uid(dg, &node_key).await? {
-//            Some(uid) => {
-//                Ok(uid)
-//            },
-//            None => bail!("Could not retrieve uid after upsert for {}", &node_key),
-//        }
-//    }
+    //    if let Some(uid) = upsert_res.uids.values().next() {
+    //        Ok(uid.to_owned())
+    //    } else {
+    //        match node_key_to_uid(dg, &node_key).await? {
+    //            Some(uid) => {
+    //                Ok(uid)
+    //            },
+    //            None => bail!("Could not retrieve uid after upsert for {}", &node_key),
+    //        }
+    //    }
 }
 
-
 fn chunk<T, U>(data: U, count: usize) -> Vec<U>
-    where U: IntoIterator<Item=T>,
-          U: FromIterator<T>,
-          <U as IntoIterator>::IntoIter: ExactSizeIterator
+where
+    U: IntoIterator<Item = T>,
+    U: FromIterator<T>,
+    <U as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-
     let mut iter = data.into_iter();
     let iter = iter.by_ref();
 
@@ -173,25 +175,25 @@ fn chunk<T, U>(data: U, count: usize) -> Vec<U>
 
 #[derive(Clone)]
 struct GraphMerger<CacheT, CacheErr>
-    where
-        CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-        CacheErr: Debug + Clone + Send + Sync + 'static,
+where
+    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
+    CacheErr: Debug + Clone + Send + Sync + 'static,
 {
     mg_alphas: Vec<String>,
     cache: CacheT,
-    _p: std::marker::PhantomData<CacheErr>
+    _p: std::marker::PhantomData<CacheErr>,
 }
 
 impl<CacheT, CacheErr> GraphMerger<CacheT, CacheErr>
-    where
-        CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-        CacheErr: Debug + Clone + Send + Sync + 'static,
+where
+    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
+    CacheErr: Debug + Clone + Send + Sync + 'static,
 {
     pub fn new(mg_alphas: Vec<String>, cache: CacheT) -> Self {
         Self {
             mg_alphas,
             cache,
-            _p: std::marker::PhantomData
+            _p: std::marker::PhantomData,
         }
     }
 }
@@ -205,15 +207,16 @@ async fn upsert_edge(mg_client: &DgraphClient, mu: api::Mutation) -> Result<(), 
     Ok(())
 }
 
-
 #[derive(Debug, Clone, Default)]
 pub struct ZstdProtoDecoder;
 
 impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-    where E: Message + Default
+where
+    E: Message + Default,
 {
     fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-        where E: Message + Default,
+    where
+        E: Message + Default,
     {
         let mut decompressed = Vec::new();
 
@@ -221,7 +224,7 @@ impl<E> PayloadDecoder<E> for ZstdProtoDecoder
 
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;
 
-        Ok(E::decode(decompressed)?)
+        Ok(E::decode(Cursor::new(decompressed))?)
     }
 }
 
@@ -239,9 +242,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let mut subgraph = Graph::new(
-            0
-        );
+        let mut subgraph = Graph::new(0);
 
         let mut pre_nodes = 0;
         let mut pre_edges = 0;
@@ -256,11 +257,10 @@ impl CompletionEventSerializer for SubgraphSerializer {
         if subgraph.is_empty() {
             warn!(
                 concat!(
-                "Output subgraph is empty. Serializing to empty vector.",
-                "pre_nodes: {} pre_edges: {}"
+                    "Output subgraph is empty. Serializing to empty vector.",
+                    "pre_nodes: {} pre_edges: {}"
                 ),
-                pre_nodes,
-                pre_edges,
+                pre_nodes, pre_edges,
             );
             return Ok(vec![]);
         }
@@ -273,28 +273,25 @@ impl CompletionEventSerializer for SubgraphSerializer {
             pre_edges,
         );
 
-        let subgraphs = GeneratedSubgraphs { subgraphs: vec![subgraph] };
+        let subgraphs = GeneratedSubgraphs {
+            subgraphs: vec![subgraph],
+        };
 
         self.proto.clear();
 
         prost::Message::encode(&subgraphs, &mut self.proto)
             .map(Arc::new)
-            .map_err(|e| {
-                sqs_lambda::error::Error::EncodeError(e.to_string())
-            })?;
+            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
             .map(Arc::new)
-            .map_err(|e| {
-                sqs_lambda::error::Error::EncodeError(e.to_string())
-            })?;
+            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         Ok(vec![compressed])
     }
 }
-
 
 fn time_based_key_fn(_event: &[u8]) -> String {
     info!("event length {}", _event.len());
@@ -305,10 +302,7 @@ fn time_based_key_fn(_event: &[u8]) -> String {
 
     let cur_day = cur_ms - (cur_ms % 86400);
 
-    format!(
-        "{}/{}-{}",
-        cur_day, cur_ms, uuid::Uuid::new_v4()
-    )
+    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
@@ -326,7 +320,8 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
 fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     info!("Handling event");
 
-    let mut initial_events: HashSet<String> = event.records
+    let mut initial_events: HashSet<String> = event
+        .records
         .iter()
         .map(|event| event.message_id.clone().unwrap())
         .collect();
@@ -337,72 +332,75 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     let completed_tx = tx.clone();
 
     std::thread::spawn(move || {
-        tokio_compat::run_std(
-            async move {
-                let graph_merger_queue_url = std::env::var("GRAPH_MERGER_QUEUE_URL")
-                    .expect("GRAPH_MERGER_QUEUE_URL");
-                debug!("Queue Url: {}", graph_merger_queue_url);
-                let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-                let cache_address = {
-                    let retry_identity_cache_addr = std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
-                    let retry_identity_cache_port = std::env::var("MERGED_CACHE_PORT").expect("MERGED_CACHE_PORT");
+        tokio_compat::run_std(async move {
+            let graph_merger_queue_url =
+                std::env::var("GRAPH_MERGER_QUEUE_URL").expect("GRAPH_MERGER_QUEUE_URL");
+            debug!("Queue Url: {}", graph_merger_queue_url);
+            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+            let cache_address = {
+                let retry_identity_cache_addr =
+                    std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
+                let retry_identity_cache_port =
+                    std::env::var("MERGED_CACHE_PORT").expect("MERGED_CACHE_PORT");
 
-                    format!(
-                        "{}:{}",
-                        retry_identity_cache_addr,
-                        retry_identity_cache_port,
-                    )
-                };
+                format!(
+                    "{}:{}",
+                    retry_identity_cache_addr, retry_identity_cache_port,
+                )
+            };
 
-                let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
-                info!("Output events to: {}", bucket);
-                let region = grapl_config::region();
-                let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS").expect("MG_ALPHAS")
-                    .split(',')
-                    .map(str::to_string)
-                    .collect();
+            let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
+            info!("Output events to: {}", bucket);
+            let region = grapl_config::region();
+            let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS")
+                .expect("MG_ALPHAS")
+                .split(',')
+                .map(str::to_string)
+                .collect();
 
-                let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
+            let cache = RedisCache::new(cache_address.to_owned())
+                .await
+                .expect("Could not create redis client");
 
-                let graph_merger
-                    : GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>>
-                    = GraphMerger::new(
-                        mg_alphas,
-                        cache.clone(),
-                );
+            let graph_merger: GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
+                GraphMerger::new(mg_alphas, cache.clone());
 
-                let initial_messages: Vec<_> = event.records
-                    .into_iter()
-                    .map(map_sqs_message)
-                    .collect();
+            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
-                sqs_lambda::sqs_service::sqs_service(
-                    graph_merger_queue_url,
-                    initial_messages,
-                    bucket,
-                    ctx,
-                    S3Client::new(region.clone()),
-                    SqsClient::new(region.clone()),
-                    ZstdProtoDecoder::default(),
-                    SubgraphSerializer { proto: Vec::with_capacity(1024) },
-                    graph_merger,
-                    cache.clone(),
-                    move |_self_actor, result: Result<String, String>| {
-                        match result {
-                            Ok(worked) => {
-                                info!("Handled an event, which was successfully deleted: {}", &worked);
-                                tx.send(worked).unwrap();
-                            }
-                            Err(worked) => {
-                                info!("Handled an initial_event, though we failed to delete it: {}", &worked);
-                                tx.send(worked).unwrap();
-                            }
-                        }
-                    },
-                    move |_, _| async move {Ok(())},
-                ).await;
-                completed_tx.clone().send("Completed".to_owned()).unwrap();
-            });
+            sqs_lambda::sqs_service::sqs_service(
+                graph_merger_queue_url,
+                initial_messages,
+                bucket,
+                ctx,
+                S3Client::new(region.clone()),
+                SqsClient::new(region.clone()),
+                ZstdProtoDecoder::default(),
+                SubgraphSerializer {
+                    proto: Vec::with_capacity(1024),
+                },
+                graph_merger,
+                cache.clone(),
+                move |_self_actor, result: Result<String, String>| match result {
+                    Ok(worked) => {
+                        info!(
+                            "Handled an event, which was successfully deleted: {}",
+                            &worked
+                        );
+                        tx.send(worked).unwrap();
+                    }
+                    Err(worked) => {
+                        info!(
+                            "Handled an initial_event, though we failed to delete it: {}",
+                            &worked
+                        );
+                        tx.send(worked).unwrap();
+                    }
+                },
+                move |_, _| async move { Ok(()) },
+            )
+            .await;
+            completed_tx.clone().send("Completed".to_owned()).unwrap();
+        });
     });
 
     info!("Checking acks");
@@ -424,21 +422,26 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from(
+            "Failed to ack all initial events",
+        ))
     }
 }
 
 #[async_trait]
 impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
-    where
-        CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-        CacheErr: Debug + Clone + Send + Sync + 'static,
+where
+    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
+    CacheErr: Debug + Clone + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = GeneratedSubgraphs;
     type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
 
-    async fn handle_event(&mut self, generated_subgraphs: GeneratedSubgraphs) -> OutputEvent<Self::OutputEvent, Self::Error> {
+    async fn handle_event(
+        &mut self,
+        generated_subgraphs: GeneratedSubgraphs,
+    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
         let mut subgraph = Graph::new(0);
         for generated_subgraph in generated_subgraphs.subgraphs {
             subgraph.merge(&generated_subgraph);
@@ -446,52 +449,52 @@ impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
 
         if subgraph.is_empty() {
             warn!("Attempted to merge empty subgraph. Short circuiting.");
-            return OutputEvent::new(Completion::Total(
-                GeneratedSubgraphs {subgraphs: vec![]}
-            ))
+            return OutputEvent::new(Completion::Total(GeneratedSubgraphs { subgraphs: vec![] }));
         }
 
-        info!("handling new subgraph with {} nodes {} edges", subgraph.nodes.len(), subgraph.edges.len());
+        info!(
+            "handling new subgraph with {} nodes {} edges",
+            subgraph.nodes.len(),
+            subgraph.edges.len()
+        );
 
         let mg_client = {
             let mut rng = thread_rng();
-            let rand_alpha = self.mg_alphas.choose(&mut rng)
-                .expect("Empty rand_alpha");
+            let rand_alpha = self.mg_alphas.choose(&mut rng).expect("Empty rand_alpha");
 
-            DgraphClient::new(
-                vec![
-                    api_grpc::DgraphClient::with_client(
-                        Arc::new(
-                            Client::new_plain(rand_alpha, 9080, ClientConf {
-                                ..Default::default()
-                            }).expect("Failed to create dgraph client")
-                        )
-                    )
-                ]
-            )
-
+            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
+                Client::new_plain(
+                    rand_alpha,
+                    9080,
+                    ClientConf {
+                        ..Default::default()
+                    },
+                )
+                .expect("Failed to create dgraph client"),
+            ))])
         };
 
-//        async_handler(mg_client, subgraph).await;
+        //        async_handler(mg_client, subgraph).await;
 
         let mut upsert_res = None;
         let mut edge_res = None;
 
         let mut node_key_to_uid = HashMap::new();
+        use futures::future::FutureExt;
+        let upserts = subgraph.nodes.values().map(|node| {
+            upsert_node(&mg_client, node.clone()).map(move |u| (node.clone_node_key(), u))
+        });
 
-        let upserts = subgraph.nodes.values()
-            .map(|node| async {
-                upsert_node(&mg_client, node.clone())
-                    .await
-                    .map(move |u| (node.clone_node_key(), u))
-            });
+        let upserts = log_time!("All upserts", join_all(upserts).await);
 
-        let upserts = log_time!("All upserts", join_all(upserts));
-
-        for (node_key, upsert) in upserts {
-            let new_uid = match upsert  {
+        for (node_key, upsert) in upserts.into_iter() {
+            let new_uid = match upsert {
                 Ok(new_uid) => new_uid,
-                Err(e) => {  warn!("{}", e); upsert_res = Some(e); continue}
+                Err(e) => {
+                    warn!("{}", e);
+                    upsert_res = Some(e);
+                    continue;
+                }
             };
 
             node_key_to_uid.insert(node_key, new_uid);
@@ -499,40 +502,41 @@ impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
 
         if node_key_to_uid.is_empty() {
             return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(
-                    Arc::new(
-                        (|| {
-                            bail!("All nodes failed to identify");
-                            Ok(())
-                        })().unwrap_err()
-                    )
-                ))
-            );
+                sqs_lambda::error::Error::ProcessingError(Arc::new(
+                    (|| {
+                        bail!("All nodes failed to identify");
+                        Ok(())
+                    })()
+                    .unwrap_err(),
+                )),
+            ));
         }
 
         info!("Upserted: {} nodes", node_key_to_uid.len());
 
         info!("Inserting edges {}", subgraph.edges.len());
 
-        let edge_mutations: Vec<_> = subgraph.edges
+        let edge_mutations: Vec<_> = subgraph
+            .edges
             .values()
             .map(|e| &e.edges)
             .flatten()
             .filter_map(|edge| {
-                match (node_key_to_uid.get(&edge.from[..]), node_key_to_uid.get(&edge.to[..])) {
+                match (
+                    node_key_to_uid.get(&edge.from[..]),
+                    node_key_to_uid.get(&edge.to[..]),
+                ) {
                     (Some(from), Some(to)) if from == to => {
-                        let err =
-                            format!(
-                                "From and To can not be the same uid {} {} {} {} {}",
-                                from,
-                                to,
-                                &edge.from[..],
-                                &edge.to[..],
-                                &edge.edge_name);
-                        error!("{}", err);
-                        edge_res = Some(
-                            err
+                        let err = format!(
+                            "From and To can not be the same uid {} {} {} {} {}",
+                            from,
+                            to,
+                            &edge.from[..],
+                            &edge.to[..],
+                            &edge.edge_name
                         );
+                        error!("{}", err);
+                        edge_res = Some(err);
                         None
                     }
                     (Some(from), Some(to)) => {
@@ -540,7 +544,8 @@ impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
                         Some(generate_edge_insert(&from, &to, &edge.edge_name))
                     }
                     (_, _) => {
-                        edge_res = Some("Edge to uid failed".to_string()); None
+                        edge_res = Some("Edge to uid failed".to_string());
+                        None
                     }
                 }
             })
@@ -549,54 +554,35 @@ impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
 
         let _: Vec<_> = join_all(edge_mutations).await;
 
-//        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
+        //        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
 
         let mut completed = match (upsert_res, edge_res) {
-            (Some(e), _) => {
-                OutputEvent::new(
-                    Completion::Partial(
-                        (
-                            GeneratedSubgraphs::new(vec![subgraph]),
-                            sqs_lambda::error::Error::ProcessingError(Arc::new(
-                                e
-                            ))
-                        )
-                    )
-                )
+            (Some(e), _) => OutputEvent::new(Completion::Partial((
+                GeneratedSubgraphs::new(vec![subgraph]),
+                sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
+            ))),
+            (_, Some(e)) => OutputEvent::new(Completion::Partial((
+                GeneratedSubgraphs::new(vec![subgraph]),
+                sqs_lambda::error::Error::ProcessingError(Arc::new(
+                    (|| {
+                        bail!("{}", e);
+                        Ok(())
+                    })()
+                    .unwrap_err(),
+                )),
+            ))),
+            (None, None) => {
+                OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
             }
-            (_, Some(e)) => {
-                OutputEvent::new(
-                    Completion::Partial(
-                        (
-                            GeneratedSubgraphs::new(vec![subgraph]),
-                            sqs_lambda::error::Error::ProcessingError(
-                                Arc::new(
-                                    (
-                                        || {
-                                            bail!("{}", e);
-                                            Ok(())
-                                        }
-                                    )().unwrap_err()
-                                )
-                            )
-                        )
-                    )
-                )
-            }
-            (None, None) => OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
         };
 
-
-//        identities.into_iter().for_each(|identity| completed.add_identity(identity));
+        //        identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
         completed
-
     }
 }
 
-
-fn init_sqs_client() -> SqsClient
-{
+fn init_sqs_client() -> SqsClient {
     info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
     SqsClient::new_with(
@@ -608,12 +594,11 @@ fn init_sqs_client() -> SqsClient
         Region::Custom {
             name: "us-east-1".to_string(),
             endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        }
+        },
     )
 }
 
-fn init_s3_client() -> S3Client
-{
+fn init_s3_client() -> S3Client {
     info!("Connecting to local http://s3:9000");
     S3Client::new_with(
         HttpClient::new().expect("failed to create request dispatcher"),
@@ -631,13 +616,11 @@ fn init_s3_client() -> S3Client
 async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     let mg_alphas: Vec<_> = vec!["master_graph".to_owned()];
 
-    let graph_merger
-        : GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>>
-        =
+    let graph_merger: GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
         GraphMerger::new(mg_alphas, NopCache {});
 
-    let graph_merger_queue_url = std::env::var("GRAPH_MERGER_QUEUE_URL")
-        .expect("GRAPH_MERGER_QUEUE_URL");
+    let graph_merger_queue_url =
+        std::env::var("GRAPH_MERGER_QUEUE_URL").expect("GRAPH_MERGER_QUEUE_URL");
     local_sqs_service(
         graph_merger_queue_url,
         "local-grapl-subgraphs-merged-bucket",
@@ -648,71 +631,73 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         init_s3_client(),
         init_sqs_client(),
         ZstdProtoDecoder::default(),
-        SubgraphSerializer { proto: Vec::with_capacity(1024) },
+        SubgraphSerializer {
+            proto: Vec::with_capacity(1024),
+        },
         graph_merger,
         NopCache {},
-        |_, event_result | {dbg!(event_result);},
+        |_, event_result| {
+            dbg!(event_result);
+        },
         move |bucket, key| async move {
             let output_event = S3Event {
-                records: vec![
-                    S3EventRecord {
-                        event_version: None,
-                        event_source: None,
-                        aws_region: None,
-                        event_time: chrono::Utc::now(),
-                        event_name: None,
-                        principal_id: S3UserIdentity { principal_id: None },
-                        request_parameters: S3RequestParameters { source_ip_address: None },
-                        response_elements: Default::default(),
-                        s3: S3Entity {
-                            schema_version: None,
-                            configuration_id: None,
-                            bucket: S3Bucket {
-                                name: Some(bucket),
-                                owner_identity: S3UserIdentity { principal_id: None },
-                                arn: None
-                            },
-                            object: S3Object {
-                                key: Some(key),
-                                size: 0,
-                                url_decoded_key: None,
-                                version_id: None,
-                                e_tag: None,
-                                sequencer: None
-                            }
-                        }
-                    }
-                ]
+                records: vec![S3EventRecord {
+                    event_version: None,
+                    event_source: None,
+                    aws_region: None,
+                    event_time: chrono::Utc::now(),
+                    event_name: None,
+                    principal_id: S3UserIdentity { principal_id: None },
+                    request_parameters: S3RequestParameters {
+                        source_ip_address: None,
+                    },
+                    response_elements: Default::default(),
+                    s3: S3Entity {
+                        schema_version: None,
+                        configuration_id: None,
+                        bucket: S3Bucket {
+                            name: Some(bucket),
+                            owner_identity: S3UserIdentity { principal_id: None },
+                            arn: None,
+                        },
+                        object: S3Object {
+                            key: Some(key),
+                            size: 0,
+                            url_decoded_key: None,
+                            version_id: None,
+                            e_tag: None,
+                            sequencer: None,
+                        },
+                    },
+                }],
             };
 
             let sqs_client = init_sqs_client();
 
             // publish to SQS
-            sqs_client.send_message(
-                SendMessageRequest {
+            sqs_client
+                .send_message(SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
                     queue_url: std::env::var("ANALYZER_DISPATCHER_QUEUE_URL")
                         .expect("ANALYZER_DISPATCHER_QUEUE_URL"),
                     ..Default::default()
-                }
-            ).await?;
+                })
+                .await?;
 
             Ok(())
-        }
-    ).await;
-
+        },
+    )
+    .await;
 
     Ok(())
-
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(grapl_config::grapl_log_level())
         .expect("Failed to initialize logger");
 
-    let is_local = std::env::var("IS_LOCAL")
-        .is_ok();
+    let is_local = std::env::var("IS_LOCAL").is_ok();
 
     if is_local {
         info!("Running locally");
@@ -725,33 +710,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     RusotoError::HttpDispatch(_) => {
                         info!("Waiting for S3 to become available");
                         std::thread::sleep(Duration::new(2, 0));
-                    },
-                    _ => break
+                    }
+                    _ => break,
                 }
             } else {
                 break;
             }
         }
-        
+
         let sqs_client = init_sqs_client();
-        let graph_merger_queue_url = std::env::var("GRAPH_MERGER_QUEUE_URL")
-            .expect("GRAPH_MERGER_QUEUE_URL");
+        let graph_merger_queue_url =
+            std::env::var("GRAPH_MERGER_QUEUE_URL").expect("GRAPH_MERGER_QUEUE_URL");
         loop {
-            match runtime.block_on(
-                sqs_client.list_queues(
-                    ListQueuesRequest { 
-                        queue_name_prefix: Some("graph-merger".to_string())
-                    }
-                )
-            ) {
+            match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
+                queue_name_prefix: Some("graph-merger".to_string()),
+            })) {
                 Err(_) => {
                     info!("Waiting for SQS to become available");
                     std::thread::sleep(Duration::new(2, 0));
-                },
+                }
                 Ok(response) => {
                     if let Some(urls) = response.queue_urls {
                         if urls.contains(&graph_merger_queue_url) {
-                            break
+                            break;
                         } else {
                             info!("Waiting for {} to be created", graph_merger_queue_url);
                             std::thread::sleep(Duration::new(2, 0));
@@ -768,7 +749,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             std::thread::sleep(Duration::new(2, 0));
         }
-    }  else {
+    } else {
         info!("Running in AWS");
         lambda!(handler);
     }
