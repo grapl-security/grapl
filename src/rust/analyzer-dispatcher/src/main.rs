@@ -1,93 +1,34 @@
-extern crate aws_lambda_events;
-extern crate zstd;
-extern crate base16;
-extern crate base64;
-extern crate dgraph_rs;
-#[macro_use] extern crate failure;
-extern crate futures;
-extern crate graph_descriptions;
-extern crate grapl_config;
-extern crate grpc;
-extern crate lambda_runtime as lambda;
-#[macro_use] extern crate log;
-
-extern crate prost;
-extern crate rusoto_core;
-extern crate rusoto_s3;
-extern crate rusoto_sns;
-extern crate rusoto_sqs;
-extern crate serde;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate serde_json;
-extern crate sha2;
-extern crate simple_logger;
-extern crate sqs_lambda;
-extern crate stopwatch;
-
-use std::str::FromStr;
-
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use aws_lambda_events::event::sqs::{SqsEvent, SqsMessage};
-use dgraph_rs::protos::api;
-use dgraph_rs::protos::api_grpc::{Dgraph, DgraphClient};
-use dgraph_rs::protos::api_grpc;
-use dgraph_rs::Transaction;
-use failure::Error;
-use futures::Future;
+use aws_lambda_events::event::sqs::SqsEvent;
+use failure::{Error, bail};
 use graph_descriptions::graph_description::*;
-use grpc::{Client, ClientStub};
-use grpc::ClientConf;
-use lambda::Context;
-use lambda::error::HandlerError;
-use lambda::lambda;
+use lambda_runtime::Context;
+use lambda_runtime::error::HandlerError;
+use lambda_runtime::lambda;
+use log::{info, warn, debug, error};
 use prost::Message;
 use rusoto_core::{Region, HttpClient, RusotoError};
-use rusoto_s3::{ListObjectsRequest, PutObjectRequest, S3, S3Client};
-use rusoto_sns::{Sns, SnsClient};
-use rusoto_sns::PublishInput;
-use rusoto_sqs::{GetQueueUrlRequest, Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
-use sha2::{Digest, Sha256};
-use std::env;
+use rusoto_s3::{ListObjectsRequest, S3, S3Client};
+use rusoto_sqs::{Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
+use serde::{Serialize, Deserialize};
+use serde_json::json;
 
-use sqs_lambda::cache::{Cache, CacheResponse, NopCache};
+use sqs_lambda::cache::NopCache;
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::s3_event_emitter::S3EventEmitter;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
-use sqs_lambda::event_retriever::{S3PayloadRetriever, PayloadRetriever};
-use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::sqs_completion_handler::{CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor};
-use sqs_lambda::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
 
 use async_trait::async_trait;
-use futures::compat::Future01CompatExt;
-use sqs_lambda::event_processor::ProcessorState::Complete;
-use std::marker::PhantomData;
 use chrono::Utc;
 use aws_lambda_events::event::s3::{S3Event, S3EventRecord, S3UserIdentity, S3RequestParameters, S3Entity, S3Bucket, S3Object};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use tokio::runtime::Runtime;
-
-
-macro_rules! log_time {
-    ($msg:expr, $x:expr) => {
-        {
-            let mut sw = stopwatch::Stopwatch::start_new();
-            #[allow(path_statements)]
-            let result = $x;
-            sw.stop();
-            info!("{} {} milliseconds", $msg, sw.elapsed_ms());
-            result
-        }
-    };
-}
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
@@ -407,7 +348,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
     }
 }
 

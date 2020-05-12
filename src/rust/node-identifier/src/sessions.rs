@@ -1,18 +1,10 @@
 #![allow(dead_code, unused_variables)]
 use std::collections::HashMap;
 
-use base58::ToBase58;
 use failure::Error;
-use futures::future::Future;
-use rusoto_core::Region;
-use rusoto_dynamodb::{
-    AttributeValue, Condition, DeleteItemInput, DynamoDb, DynamoDbClient, GetItemInput,
-    ListTablesInput, PutItemInput, QueryInput, Update, UpdateItemInput,
-};
-use sha2::{Digest, Sha256};
+use rusoto_dynamodb::AttributeValue;
+use serde::{Serialize, Deserialize};
 use std::convert::TryFrom;
-use std::time::Duration;
-use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UnidSession {
@@ -41,5 +33,5 @@ impl TryFrom<HashMap<String, AttributeValue>> for Session {
 
 pub fn shave_int(input: u64, digits: u8) -> u64 {
     let digits = 10u64.pow((digits as u32) + 1u32);
-    (input - (input % digits))
+    input - (input % digits)
 }

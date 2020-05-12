@@ -1,8 +1,7 @@
-extern crate derive_dynamic_node;
+use graph_descriptions::graph_description::*;
+use derive_dynamic_node::DynamicNode;
 
-use derive_dynamic_node::DynamicNode as DN;
-
-#[derive(DN)]
+#[derive(DynamicNode)]
 pub struct Ec2Instance2 {
     arn: String,
     launch_time: u64,

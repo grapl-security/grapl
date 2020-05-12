@@ -1,28 +1,4 @@
-extern crate aws_lambda_events;
-extern crate chrono;
-extern crate failure;
-extern crate futures;
-extern crate graph_descriptions;
-extern crate grapl_config;
-
-extern crate lambda_runtime as lambda;
-#[macro_use]
-extern crate lazy_static;
-extern crate log;
-extern crate rayon;
-extern crate regex;
-extern crate rusoto_core;
-extern crate rusoto_s3;
-extern crate rusoto_sqs;
-extern crate serde;
-extern crate simple_logger;
-extern crate sqs_lambda;
-extern crate stopwatch;
-extern crate sysmon;
-extern crate uuid;
-
 use std::fmt::Debug;
-
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -30,9 +6,10 @@ use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::prelude::*;
 use failure::bail;
 use failure::Error;
-use lambda::Context;
-use lambda::error::HandlerError;
-use lambda::lambda;
+use lambda_runtime::Context;
+use lambda_runtime::error::HandlerError;
+use lambda_runtime::lambda;
+use lazy_static::lazy_static;
 use log::*;
 use log::error;
 use regex::Regex;
@@ -55,7 +32,7 @@ use graph_descriptions::network_connection::NetworkConnectionState;
 use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use crate::graph_descriptions::node::NodeT;
+use graph_descriptions::node::NodeT;
 
 use std::io::Cursor;
 use sqs_lambda::cache::Cache;
@@ -843,7 +820,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
     }
 }
 

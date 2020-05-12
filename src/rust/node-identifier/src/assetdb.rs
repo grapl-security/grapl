@@ -1,14 +1,12 @@
+use rusoto_dynamodb::AttributeValue;
+use failure::{Error, bail};
+use hmap::hmap;
+use log::info;
+use rusoto_dynamodb::{DynamoDb, PutItemInput, QueryInput};
+use serde::{Serialize, Deserialize};
+
 use graph_descriptions::graph_description::*;
-
 use graph_descriptions::graph_description::host::*;
-
-use failure::Error;
-
-use rusoto_dynamodb::{
-    AttributeValue, DynamoDb,
-    PutItemInput, QueryInput,
-};
-use std::time::Duration;
 use graph_descriptions::graph_description::node::WhichNode;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -246,6 +244,7 @@ impl<D> AssetIdentifier<D>
 mod tests {
     use super::*;
     use rusoto_core::Region;
+    use rusoto_dynamodb::DynamoDbClient;
 
     // Given a hostname 'H' to asset id 'A' mapping at c_timestamp 'X'
     // When attributing 'H' at c_timestamp 'Y', where 'Y' > 'X'

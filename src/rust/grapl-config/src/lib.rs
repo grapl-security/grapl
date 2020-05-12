@@ -1,5 +1,3 @@
-extern crate log;
-
 use std::str::FromStr;
 
 use rusoto_core::Region;

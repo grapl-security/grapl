@@ -1,23 +1,10 @@
-extern crate base64;
-#[macro_use]
-extern crate derive_builder;
-#[macro_use]
-extern crate log;
-extern crate prost;
-#[macro_use]
-extern crate prost_derive;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate serde_json;
-extern crate uuid;
-
-extern crate thiserror;
+use std::panic;
 
 use crate::graph_description::*;
-
 pub mod graph_description {
+    use derive_builder::*;
+    use serde_derive::*;
+
     include!(concat!(env!("OUT_DIR"), "/graph_description.rs"));
 }
 
@@ -34,7 +21,6 @@ pub mod process_outbound_connection;
 pub mod process_inbound_connection;
 pub mod dynamic_node;
 pub mod graph;
-
 
 impl From<Static> for IdStrategy {
     fn from(strategy: Static) -> IdStrategy {
@@ -82,7 +68,7 @@ impl std::string::ToString for NodeProperty {
             Some(node_property::Property::Intprop(i)) => i.to_string(),
             Some(node_property::Property::Uintprop(i)) => i.to_string(),
             Some(node_property::Property::Strprop(s)) => s.to_string(),
-            None => panic!("Invalid property : {:?}", self),
+            None => panic!("Invalid property : {:?}", self)
         };
         prop
     }
@@ -110,15 +96,3 @@ impl NodeProperty {
         }
     }
 }
-
-//
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//    #[test]
-//    fn it_works() {
-//        assert_eq!(2 + 2, 4);
-//    }
-//}
-//
-//

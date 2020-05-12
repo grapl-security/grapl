@@ -1,45 +1,7 @@
-#![allow(dead_code)]
-
-extern crate aws_lambda_events;
-extern crate base58;
-#[macro_use]
-extern crate failure;
-extern crate futures;
-extern crate graph_descriptions;
-extern crate hex;
-#[macro_use]
-extern crate hmap;
-extern crate lambda_runtime as lambda;
-#[macro_use]
-extern crate log;
-extern crate prost;
-#[cfg(test)]
-extern crate quickcheck;
-#[cfg(test)]
-#[macro_use(quickcheck)]
-extern crate quickcheck_macros;
-extern crate rusoto_core;
-extern crate rusoto_dynamodb;
-extern crate rusoto_s3;
-extern crate rusoto_sqs;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_dynamodb;
-extern crate serde_json;
-extern crate sha2;
-extern crate simple_logger;
-extern crate sqs_lambda;
-extern crate stopwatch;
-extern crate tokio;
-extern crate uuid;
-extern crate zstd;
-
 use rusoto_sqs::Sqs;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
-use std::env;
 use std::io::Cursor;
 use std::ops::Deref;
 use std::str::FromStr;
@@ -49,34 +11,29 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
-use failure::Error;
+use failure::{Error, bail};
 use graph_descriptions::file::FileState;
 use graph_descriptions::graph_description::*;
 use graph_descriptions::graph_description::host::*;
 use graph_descriptions::graph_description::node::WhichNode;
 use graph_descriptions::ip_connection::IpConnectionState;
 use graph_descriptions::network_connection::NetworkConnectionState;
-use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use lambda::Context;
-use lambda::error::HandlerError;
+use lambda_runtime::Context;
+use lambda_runtime::error::HandlerError;
+use log::*;
 use prost::Message;
 use rusoto_core::{Region, HttpClient};
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
 use rusoto_sqs::{SqsClient, SendMessageRequest};
 use sha2::Digest;
-use sqs_lambda::cache::{Cache, CacheResponse, NopCache, Cacheable};
+use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::s3_event_emitter::S3EventEmitter;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
-use sqs_lambda::event_retriever::S3PayloadRetriever;
 use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::sqs_completion_handler::{CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor};
-use sqs_lambda::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use async_trait::async_trait;
@@ -84,23 +41,11 @@ use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 
-use crate::graph_descriptions::node::NodeT;
+use graph_descriptions::node::NodeT;
 use std::fmt::Debug;
-use sqs_lambda::local_service::local_service;
 use aws_lambda_events::event::s3::{S3EventRecord, S3Event, S3UserIdentity, S3RequestParameters, S3Entity, S3Bucket, S3Object};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use chrono::Utc;
-
-macro_rules! log_time {
-    ($msg:expr, $x:expr) => {{
-        let mut sw = Stopwatch::start_new();
-        #[allow(path_statements)]
-        let result = $x;
-        sw.stop();
-        info!("{} {} milliseconds", $msg, sw.elapsed_ms());
-        result
-    }};
-}
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -1077,7 +1022,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
     }
 }
 

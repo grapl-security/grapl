@@ -1,16 +1,8 @@
-#![allow(warnings)]
-extern crate derive_dynamic_node;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate log;
-extern crate graph_descriptions;
+use log::info;
 
 use serde_derive::Deserialize;
-use serde_derive::Serialize;
 
 use graph_descriptions::graph_description::*;
-
 use derive_dynamic_node::{DynamicNode, GraplStaticId};
 
 fn read_log() -> &'static [u8] { unimplemented!() }

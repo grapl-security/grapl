@@ -1,18 +1,16 @@
 use std::collections::{HashMap, HashSet};
-use std::time::Duration;
 
-use failure::Error;
+use failure::{Error, bail};
+use log::{info, warn};
+use rusoto_dynamodb::{AttributeValue, DynamoDb, GetItemInput, PutItemInput};
+use serde::{Serialize, Deserialize};
+
 use graph_descriptions::graph_description::*;
 use graph_descriptions::graph_description::id_strategy;
 use graph_descriptions::graph_description::Session as SessionStrategy;
 use graph_descriptions::node::NodeT;
-use rusoto_dynamodb::{
-    AttributeValue, DynamoDb, GetItemInput,
-    PutItemInput,
-};
 
 use crate::assetdb::AssetIdentifier;
-use crate::futures::TryFutureExt;
 use crate::sessiondb::SessionDb;
 use crate::sessions::UnidSession;
 

@@ -1,13 +1,15 @@
-use failure::Error;
-use futures::future::Future;
-use rusoto_core::{Region, RusotoError};
-use rusoto_dynamodb::{
-    AttributeValue, AttributeValueUpdate, Condition, Delete, DeleteItemInput, DynamoDb,
-    DynamoDbClient, ExpectedAttributeValue, GetItemInput, ListTablesInput, Put, PutItemInput,
-    QueryError, QueryInput, TransactWriteItem, TransactWriteItemsInput, Update, UpdateItemInput,
-};
 use std::convert::TryFrom;
-use std::time::Duration;
+
+use failure::{Error, bail};
+use hmap::hmap;
+use log::{info, warn};
+use rusoto_core::RusotoError;
+use rusoto_dynamodb::{
+    Delete, DeleteItemInput, DynamoDb, Put, PutItemInput, QueryInput, 
+    TransactWriteItem, TransactWriteItemsInput, UpdateItemInput, 
+    AttributeValue, AttributeValueUpdate
+};
+
 use uuid::Uuid;
 
 use crate::sessions::*;
@@ -460,10 +462,15 @@ pub fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::time::Duration;
+
+    use quickcheck::*;
+    use rusoto_core::Region;
     use rusoto_dynamodb::KeySchemaElement;
     use rusoto_dynamodb::{
-        AttributeDefinition, CreateTableError, CreateTableInput, DeleteTableInput,
-        ProvisionedThroughput,
+        AttributeDefinition, CreateTableInput, DeleteTableInput,
+        ProvisionedThroughput, DynamoDbClient
     };
 
     fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) {

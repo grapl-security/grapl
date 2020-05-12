@@ -1,18 +1,9 @@
-extern crate grapl_config;
-extern crate lambda_runtime as lambda;
-extern crate node_identifier;
-extern crate rusoto_core;
-extern crate rusoto_s3;
-extern crate rusoto_sqs;
-extern crate rusoto_dynamodb;
-extern crate simple_logger;
-
 use log::{info, error};
 use std::time::Duration;
 
 use node_identifier::{handler, local_handler, init_s3_client, init_sqs_client, init_dynamodb_client};
 
-use lambda::lambda;
+use lambda_runtime::lambda;
 use rusoto_core::RusotoError;
 use rusoto_s3::S3;
 use rusoto_sqs::{Sqs, ListQueuesRequest};

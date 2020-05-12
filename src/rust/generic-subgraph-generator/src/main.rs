@@ -1,31 +1,8 @@
-extern crate aws_lambda_events;
-extern crate failure;
-extern crate graph_descriptions;
-extern crate graph_generator_lib;
-extern crate grapl_config;
-extern crate lambda_runtime as lambda;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate log;
-extern crate regex;
-extern crate rusoto_core;
-extern crate rusoto_s3;
-extern crate rusoto_sqs;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate simple_logger;
-extern crate sqs_lambda;
-extern crate uuid;
-
 use std::collections::HashSet;
 use std::io::Cursor;
-use std::str::FromStr;
-
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use lazy_static::lazy_static;
 
 use aws_lambda_events::event::sqs::SqsEvent;
 use failure::Error;
@@ -35,27 +12,22 @@ use graph_descriptions::network_connection::NetworkConnectionState;
 use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use lambda::Context;
-use lambda::error::HandlerError;
-use lambda::lambda;
+use lambda_runtime::Context;
+use lambda_runtime::error::HandlerError;
+use log::*;
 use regex::Regex;
-use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
-use sqs_lambda::event_retriever::S3PayloadRetriever;
 use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::sqs_completion_handler::{CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor};
-use sqs_lambda::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
 
 use async_trait::async_trait;
 
-use crate::graph_descriptions::node::NodeT;
+use graph_descriptions::node::NodeT;
 
 #[derive(Clone, Debug, Hash)]
 pub enum GenericEvent {
@@ -1015,7 +987,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
     }
 }
 
