@@ -13,6 +13,7 @@ from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeVi
 from grapl_analyzerlib.nodes.queryable import NQ
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
+from grapl_analyzerlib.time_utils import Millis
 
 IIpAddressQuery = TypeVar("IIpAddressQuery", bound="IpAddressQuery")
 
@@ -105,8 +106,8 @@ class IpAddressView(DynamicNodeView):
         node_key: str,
         uid: str,
         node_type: str,
-        first_seen_timestamp: Optional[int] = None,
-        last_seen_timestamp: Optional[int] = None,
+        first_seen_timestamp: Optional[Millis] = None,
+        last_seen_timestamp: Optional[Millis] = None,
         ip_address: Optional[str] = None,
         ip_connections: "Optional[List[IpConnectionView]]" = None,
     ):
