@@ -133,34 +133,41 @@ RUN if [ "${release_target}" == "release" ]; \
     fi
 
 #
-# Artifact images
+# Deploy images
 #
 
-# analyzer-dispatcher
-FROM alpine AS grapl-analyzer-dispatcher
+# base deploy image
+FROM alpine AS grapl-deploy-base
+ARG release_target="debug"
+RUN if [ "${release_target}" == "debug" ]; \
+        then apk add --no-cache libgcc; \
+    fi
+
+# analyzer-dispatcher deploy image
+FROM grapl-deploy-base AS grapl-analyzer-dispatcher
 ARG release_target="debug"
 COPY --from=grapl-rust-src-build /home/grapl/target/${release_target}/analyzer-dispatcher /
 CMD ["analyzer-dispatcher"]
 
-# graph-merger
-FROM alpine AS grapl-graph-merger
+# graph-merger deploy image
+FROM grapl-deploy-base AS grapl-graph-merger
 ARG release_target="debug"
 COPY --from=grapl-rust-src-build /home/grapl/target/${release_target}/graph-merger /
 CMD ["graph-merger"]
 
-# node-identifier
-FROM alpine AS grapl-node-identifier
+# node-identifier deploy images
+FROM grapl-deploy-base AS grapl-node-identifier
 ARG release_target="debug"
 COPY --from=grapl-rust-src-build /home/grapl/target/${release_target}/node-identifier /
 CMD ["node-identifier"]
 
-FROM alpine AS grapl-node-identifier-retry-handler
+FROM grapl-deploy-base AS grapl-node-identifier-retry-handler
 ARG release_target="debug"
 COPY --from=grapl-rust-src-build /home/grapl/target/${release_target}/node-identifier-retry-handler /
 CMD ["node-identifier-retry-handler"]
 
-# sysmon-subgraph-generator
-FROM alpine AS grapl-sysmon-subgraph-generator
+# sysmon-subgraph-generator deploy image
+FROM grapl-deploy-base AS grapl-sysmon-subgraph-generator
 ARG release_target="debug"
 COPY --from=grapl-rust-src-build /home/grapl/target/${release_target}/sysmon-subgraph-generator /
 CMD ["sysmon-subgraph-generator"]

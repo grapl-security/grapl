@@ -281,6 +281,11 @@ services:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
+    depends_on:
+      - grapl-engagement-graph-db
+      - grapl-master-graph-db
+      - s3
+      - sqs
 
   grapl-dynamodb-provision:
     image: grapl/grapl-dynamodb-provision:${TAG:-latest}
@@ -294,3 +299,5 @@ services:
       - dynamodb:dynamodb
     extra_hosts:
       - amazonaws:127.0.0.1
+    depends_on:
+      - dynamodb

@@ -291,6 +291,7 @@ def drop_all(client) -> None:
 
 
 if __name__ == '__main__':
+    time.sleep(10)
     local_dg_provision_client = DgraphClient(DgraphClientStub('master_graph:9080'))
     local_eg_provision_client = DgraphClient(DgraphClientStub('engagement_graph:9080'))
 
