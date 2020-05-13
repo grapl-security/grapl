@@ -180,6 +180,5 @@ if __name__ == "__main__":
         else:
             break
 
-
     time.sleep(1)
     print("grapl_provision complete!\n")
