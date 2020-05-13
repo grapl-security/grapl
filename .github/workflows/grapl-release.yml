@@ -27,7 +27,7 @@ jobs:
 
           echo '::set-env name=VERSION::$VERSION'
 
-        - name: Build Grapl
+      - name: Build Grapl
         run: |
           TAG=$VERSION docker-compose --build-args release_target=release -f docker-compose.yml -f docker-compose.build.yml build
           docker system prune -f
