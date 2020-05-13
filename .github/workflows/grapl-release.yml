@@ -1,0 +1,72 @@
+name: Grapl Release
+
+on:
+  push:
+    branches:
+      - master  # latest
+      - staging # beta
+    tags:
+      - v*      # e.g. v1.2.3
+
+  jobs:
+    push:
+      runs-on: ubuntu-latest
+      if: github.event_name == 'push'
+
+      steps:
+        - uses: actions/checkout@v2
+
+        - name: Build Grapl
+          run: |
+            docker-compose --build-args release_target=release -f docker-compose.yml -f docker-compose.build.yml build
+            docker system prune -f
+
+        - name: Log in to Docker registry
+          run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
+
+        - name: Publish Grapl images to DockerHub
+          run: |
+            # Strip git ref prefix from version
+            VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+            # Strip "v" prefix from tag name
+            [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+            [ "$VERSION" == "master" ] && VERSION=latest
+            [ "$VERSION" == "staging" ] && VERSION=beta
+
+            docker tag grapl/grapl-sysmon-subgraph-generator grapl/grapl-sysmon-subgraph-generator:$VERSION
+            docker push grapl/grapl-sysmon-subgraph-generator:$VERSION
+
+            docker tag grapl/grapl-node-identifier grapl/grapl-node-identifier:$VERSION
+            docker push grapl/grapl-node-identifier:$VERSION
+
+            docker tag grapl/grapl-node-identifier-retry-handler grapl/grapl-node-identifier-retry-handler:$VERSION
+            docker push grapl/grapl-node-identifier-retry-handler:$VERSION
+
+            docker tag grapl/grapl-graph-merger grapl/grapl-graph-merger:$VERSION
+            docker push grapl/grapl-graph-merger:$VERSION
+
+            docker tag grapl/grapl-analyzer-dispatcher grapl/grapl-analyzer-dispatcher:$VERSION
+            docker push grapl/grapl-analyzer-dispatcher:$VERSION
+
+            docker tag grapl/grapl-analyzer-executor grapl/grapl-analyzer-executor:$VERSION
+            docker push grapl/grapl-analyzer-executor:$VERSION
+
+            docker tag grapl/grapl-engagement-creator grapl/grapl-engagement-creator:$VERSION
+            docker push grapl/grapl-engagement-creator:$VERSION
+
+            docker tag grapl/grapl-engagement-edge grapl/grapl-engagement-edge:$VERSION
+            docker push grapl/grapl-engagement-edge:$VERSION
+
+            docker tag grapl/grapl-model-plugin-deployer grapl/grapl-model-plugin-deployer:$VERSION
+            docker push grapl/grapl-model-plugin-deployer:$VERSION
+
+            docker tag grapl/grapl-engagement-view grapl/grapl-engagement-view:$VERSION
+            docker push grapl/grapl-engagement-view:$VERSION
+
+            docker tag grapl/grapl-graph-provision grapl/grapl-graph-provision:$VERSION
+            docker push grapl/grapl-graph-provision:$VERSION
+
+            docker tag grapl/grapl-dynamodb-provision grapl/grapl-dynamodb-provision:$VERSION
+            docker push grapl/grapl-dynamodb-provision:$VERSION
