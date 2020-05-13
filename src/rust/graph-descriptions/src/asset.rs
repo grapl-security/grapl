@@ -6,11 +6,12 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 impl Asset {
-    pub fn new(asset_id: impl Into<Option<String>>,
-               hostname: impl Into<Option<String>>,
-               mac_address: impl Into<Option<String>>,
-               first_seen_timestamp: u64,
-               last_seen_timestamp: u64,
+    pub fn new(
+        asset_id: impl Into<Option<String>>,
+        hostname: impl Into<Option<String>>,
+        mac_address: impl Into<Option<String>>,
+        first_seen_timestamp: u64,
+        last_seen_timestamp: u64,
     ) -> Self {
         let asset_id = asset_id.into();
         let hostname = hostname.into();
@@ -77,7 +78,7 @@ impl NodeT for Asset {
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two Asset Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         let mut merged = false;
@@ -103,7 +104,7 @@ impl NodeT for Asset {
     fn merge_into(&mut self, other: Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two Asset Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         let mut merged = false;
@@ -123,7 +124,8 @@ impl NodeT for Asset {
             merged = true;
         }
 
-        if other.first_seen_timestamp != 0 && self.first_seen_timestamp > other.first_seen_timestamp {
+        if other.first_seen_timestamp != 0 && self.first_seen_timestamp > other.first_seen_timestamp
+        {
             self.first_seen_timestamp = other.first_seen_timestamp;
             merged = true;
         }

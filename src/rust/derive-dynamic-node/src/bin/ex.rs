@@ -2,10 +2,12 @@ use log::info;
 
 use serde_derive::Deserialize;
 
-use graph_descriptions::graph_description::*;
 use derive_dynamic_node::{DynamicNode, GraplStaticId};
+use graph_descriptions::graph_description::*;
 
-fn read_log() -> &'static [u8] { unimplemented!() }
+fn read_log() -> &'static [u8] {
+    unimplemented!()
+}
 
 #[derive(Clone, Debug, Deserialize)]
 struct InstanceDetails {

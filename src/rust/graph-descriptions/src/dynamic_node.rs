@@ -1,19 +1,12 @@
 use log::warn;
 use serde_json::{json, Value};
 
-use crate::graph_description::{DynamicNode, NodeProperty, node_property, IdStrategy, id_strategy};
+use crate::graph_description::{id_strategy, node_property, DynamicNode, IdStrategy, NodeProperty};
 use crate::node::NodeT;
 
 impl DynamicNode {
-    pub fn set_property(
-        &mut self,
-        name: impl Into<String>,
-        value: impl Into<NodeProperty>
-    ) {
-        self.properties.insert(
-            name.into(),
-            value.into().into(),
-        );
+    pub fn set_property(&mut self, name: impl Into<String>, value: impl Into<NodeProperty>) {
+        self.properties.insert(name.into(), value.into().into());
     }
 
     pub fn set_key(&mut self, key: String) {
@@ -49,18 +42,17 @@ impl DynamicNode {
         &self.id_strategy[..]
     }
 
-
     pub fn requires_asset_identification(&self) -> bool {
         for strategy in self.get_id_strategies() {
             match strategy.strategy.as_ref().unwrap() {
                 id_strategy::Strategy::Session(ref strategy) => {
                     if strategy.primary_key_requires_asset_id {
-                        return true
+                        return true;
                     }
                 }
                 id_strategy::Strategy::Static(ref strategy) => {
                     if strategy.primary_key_requires_asset_id {
-                        return true
+                        return true;
                     }
                 }
             }
@@ -68,7 +60,6 @@ impl DynamicNode {
 
         false
     }
-
 }
 
 impl NodeT for DynamicNode {
@@ -91,7 +82,7 @@ impl NodeT for DynamicNode {
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two NetworkConnection Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         let mut merged = false;
@@ -109,7 +100,7 @@ impl NodeT for DynamicNode {
     fn merge_into(&mut self, other: Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two NetworkConnection Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         let mut merged = false;

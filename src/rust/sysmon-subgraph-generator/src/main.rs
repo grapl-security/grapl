@@ -6,22 +6,22 @@ use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::prelude::*;
 use failure::bail;
 use failure::Error;
-use lambda_runtime::Context;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
+use lambda_runtime::Context;
 use lazy_static::lazy_static;
-use log::*;
 use log::error;
+use log::*;
 use regex::Regex;
-use rusoto_core::{Region, HttpClient, RusotoError};
-use rusoto_s3::{S3, S3Client};
-use rusoto_sqs::{Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
+use rusoto_core::{HttpClient, Region, RusotoError};
+use rusoto_s3::{S3Client, S3};
+use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
 
+use async_trait::async_trait;
+use sqs_lambda::cache::{CacheResponse, NopCache};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::cache::{CacheResponse, NopCache};
-use async_trait::async_trait;
 
 use sysmon::*;
 
@@ -29,30 +29,30 @@ use graph_descriptions::file::FileState;
 use graph_descriptions::graph_description::*;
 use graph_descriptions::network_connection::NetworkConnectionState;
 
+use graph_descriptions::node::NodeT;
 use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use graph_descriptions::node::NodeT;
 
-use std::io::Cursor;
+use aws_lambda_events::event::s3::{
+    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
+};
 use sqs_lambda::cache::Cache;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
-use std::collections::HashSet;
-use aws_lambda_events::event::s3::{S3UserIdentity, S3RequestParameters, S3Entity, S3Object, S3Event, S3EventRecord, S3Bucket};
 use sqs_lambda::local_sqs_service::local_sqs_service;
+use std::collections::HashSet;
+use std::io::Cursor;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::runtime::Runtime;
 
 macro_rules! log_time {
-    ($msg:expr, $x:expr) => {
-        {
-            let mut sw = stopwatch::Stopwatch::start_new();
-            #[allow(path_statements)]
-            let result = $x;
-            sw.stop();
-            info!("{} {} milliseconds", $msg, sw.elapsed_ms());
-            result
-        }
-    };
+    ($msg:expr, $x:expr) => {{
+        let mut sw = stopwatch::Stopwatch::start_new();
+        #[allow(path_statements)]
+        let result = $x;
+        sw.stop();
+        info!("{} {} milliseconds", $msg, sw.elapsed_ms());
+        result
+    }};
 }
 
 fn strip_file_zone_identifier(path: &str) -> &str {
@@ -74,14 +74,14 @@ fn is_internal_ip(ip: &str) -> bool {
 }
 
 fn get_image_name(image_path: &str) -> Option<String> {
-    image_path.split('\\').last().map(|name| {
-        name.replace("- ", "").replace('\\', "")
-    })
+    image_path
+        .split('\\')
+        .last()
+        .map(|name| name.replace("- ", "").replace('\\', ""))
 }
 
 pub fn utc_to_epoch(utc: &str) -> Result<u64, Error> {
-    let dt = NaiveDateTime::parse_from_str(
-        utc, "%Y-%m-%d %H:%M:%S%.3f")?;
+    let dt = NaiveDateTime::parse_from_str(utc, "%Y-%m-%d %H:%M:%S%.3f")?;
 
     let dt: DateTime<Utc> = DateTime::from_utc(dt, Utc);
     let ts = dt.timestamp_millis();
@@ -89,7 +89,6 @@ pub fn utc_to_epoch(utc: &str) -> Result<u64, Error> {
     if ts < 0 {
         bail!("Timestamp is negative")
     }
-
 
     if ts < 1_000_000_000_000 {
         Ok(ts as u64 * 1000)
@@ -115,7 +114,7 @@ fn handle_process_start(process_start: &ProcessCreateEvent) -> Result<Graph, Err
         .process_name(get_image_name(&process_start.event_data.parent_image.clone()).unwrap())
         .process_command_line(&process_start.event_data.parent_command_line.command_line)
         .last_seen_timestamp(timestamp)
-//        .created_timestamp(process_start.event_data.parent_process_guid.get_creation_timestamp())
+        //        .created_timestamp(process_start.event_data.parent_process_guid.get_creation_timestamp())
         .build()
         .expect("process_start.parent");
 
@@ -137,19 +136,19 @@ fn handle_process_start(process_start: &ProcessCreateEvent) -> Result<Graph, Err
         .build()
         .expect("process_start.child_Exe");
 
-    graph.add_edge("asset_processes",
-                   asset.clone_node_key(),
-                   child.clone_node_key(),
+    graph.add_edge(
+        "asset_processes",
+        asset.clone_node_key(),
+        child.clone_node_key(),
     );
 
-    graph.add_edge("bin_file",
-                   child.clone_node_key(),
-                   child_exe.clone_node_key(),
+    graph.add_edge(
+        "bin_file",
+        child.clone_node_key(),
+        child_exe.clone_node_key(),
     );
 
-    graph.add_edge("children",
-                   parent.clone_node_key(),
-                   child.clone_node_key());
+    graph.add_edge("children", parent.clone_node_key(), child.clone_node_key());
 
     graph.add_node(asset);
     graph.add_node(parent);
@@ -234,11 +233,7 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         .expect("outbound_connection.ip_connection");
 
     // An asset is assigned an IP
-    graph.add_edge(
-        "asset_ip",
-        asset.clone_node_key(),
-        src_ip.clone_node_key(),
-    );
+    graph.add_edge("asset_ip", asset.clone_node_key(), src_ip.clone_node_key());
 
     // A process spawns on an asset
     graph.add_edge(
@@ -374,11 +369,7 @@ fn handle_inbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         .expect("inbound_connection.network_connection");
 
     // An asset is assigned an IP
-    graph.add_edge(
-        "asset_ip",
-        asset.clone_node_key(),
-        src_ip.clone_node_key(),
-    );
+    graph.add_edge("asset_ip", asset.clone_node_key(), src_ip.clone_node_key());
 
     // A process spawns on an asset
     graph.add_edge(
@@ -443,22 +434,25 @@ fn handle_file_create(file_create: &FileCreateEvent) -> Result<Graph, Error> {
         .process_id(file_create.event_data.process_id)
         .process_name(get_image_name(&file_create.event_data.image.clone()).unwrap())
         .last_seen_timestamp(timestamp)
-//        .created_timestamp(file_create.event_data.process_guid.get_creation_timestamp())
+        //        .created_timestamp(file_create.event_data.process_guid.get_creation_timestamp())
         .build()
         .unwrap();
 
     let file = FileBuilder::default()
         .asset_id(file_create.system.computer.computer.clone())
         .state(FileState::Created)
-        .file_path(strip_file_zone_identifier(&file_create.event_data.target_filename))
+        .file_path(strip_file_zone_identifier(
+            &file_create.event_data.target_filename,
+        ))
         .created_timestamp(timestamp)
         .build()
         .unwrap();
 
-
-    graph.add_edge("created_files",
-                   creator.clone_node_key(),
-                   file.clone_node_key());
+    graph.add_edge(
+        "created_files",
+        creator.clone_node_key(),
+        file.clone_node_key(),
+    );
     graph.add_node(creator);
     graph.add_node(file);
 
@@ -479,9 +473,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let mut subgraph = Graph::new(
-            0
-        );
+        let mut subgraph = Graph::new(0);
 
         let mut pre_nodes = 0;
         let mut pre_edges = 0;
@@ -498,8 +490,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
                     "Output subgraph is empty. Serializing to empty vector.",
                     "pre_nodes: {} pre_edges: {}"
                 ),
-                pre_nodes,
-                pre_edges,
+                pre_nodes, pre_edges,
             );
             return Ok(vec![]);
         }
@@ -512,23 +503,21 @@ impl CompletionEventSerializer for SubgraphSerializer {
             pre_edges,
         );
 
-        let subgraphs = GeneratedSubgraphs { subgraphs: vec![subgraph] };
+        let subgraphs = GeneratedSubgraphs {
+            subgraphs: vec![subgraph],
+        };
 
         self.proto.clear();
 
         prost::Message::encode(&subgraphs, &mut self.proto)
             .map_err(Arc::new)
-            .map_err(|e| {
-                sqs_lambda::error::Error::EncodeError(e.to_string())
-            })?;
+            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
             .map_err(Arc::new)
-            .map_err(|e| {
-                sqs_lambda::error::Error::EncodeError(e.to_string())
-            })?;
+            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         Ok(vec![compressed])
     }
@@ -537,10 +526,8 @@ impl CompletionEventSerializer for SubgraphSerializer {
 #[derive(Debug, Clone, Default)]
 pub struct ZstdDecoder;
 
-impl PayloadDecoder<Vec<u8>> for ZstdDecoder
-{
-    fn decode(&mut self, body: Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>>
-    {
+impl PayloadDecoder<Vec<u8>> for ZstdDecoder {
+    fn decode(&mut self, body: Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         let mut decompressed = Vec::new();
 
         let mut body = Cursor::new(&body);
@@ -551,51 +538,59 @@ impl PayloadDecoder<Vec<u8>> for ZstdDecoder
     }
 }
 
-
 #[derive(Clone)]
 struct SysmonSubgraphGenerator<C, E>
-    where
-        C: Cache<E> + Clone + Send + Sync + 'static,
-        E: Debug + Clone + Send + Sync + 'static,
+where
+    C: Cache<E> + Clone + Send + Sync + 'static,
+    E: Debug + Clone + Send + Sync + 'static,
 {
     cache: C,
     _p: std::marker::PhantomData<(C, E)>,
 }
 
 impl<C, E> SysmonSubgraphGenerator<C, E>
-    where
-        C: Cache<E> + Clone + Send + Sync + 'static,
-        E: Debug + Clone + Send + Sync + 'static,
+where
+    C: Cache<E> + Clone + Send + Sync + 'static,
+    E: Debug + Clone + Send + Sync + 'static,
 {
     pub fn new(cache: C) -> Self {
-        Self { cache , _p: PhantomData}
+        Self {
+            cache,
+            _p: PhantomData,
+        }
     }
 }
 
 #[async_trait]
 impl<C, E> EventHandler for SysmonSubgraphGenerator<C, E>
-    where
-        C: Cache<E> + Clone + Send + Sync + 'static,
-        E: Debug + Clone + Send + Sync + 'static,
+where
+    C: Cache<E> + Clone + Send + Sync + 'static,
+    E: Debug + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<u8>;
     type OutputEvent = Graph;
     type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
 
-    async fn handle_event(&mut self, events: Vec<u8>) -> OutputEvent<Self::OutputEvent, Self::Error> {
+    async fn handle_event(
+        &mut self,
+        events: Vec<u8>,
+    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
         info!("Handling raw event");
 
         let mut failed: Option<failure::Error> = None;
 
         let events: Vec<_> = log_time!(
             "event split",
-            events.split(|i| &[*i][..] == &b"\n"[..])
-            .map(String::from_utf8_lossy)
-            .filter(|event| {
-                (!event.is_empty() && event != "\n") &&
-                (event.contains(&"EventID>1<"[..]) || event.contains(&"EventID>3<"[..])  || event.contains(&"EventID>11<"[..]))
-            })
-            .collect()
+            events
+                .split(|i| &[*i][..] == &b"\n"[..])
+                .map(String::from_utf8_lossy)
+                .filter(|event| {
+                    (!event.is_empty() && event != "\n")
+                        && (event.contains(&"EventID>1<"[..])
+                            || event.contains(&"EventID>3<"[..])
+                            || event.contains(&"EventID>11<"[..]))
+                })
+                .collect()
         );
 
         info!("Handling {} events", events.len());
@@ -614,19 +609,20 @@ impl<C, E> EventHandler for SysmonSubgraphGenerator<C, E>
                         (|| {
                             bail!("Failed: {}", e);
                             Ok(())
-                        })().unwrap_err()
+                        })()
+                        .unwrap_err(),
                     );
                     continue;
                 }
             };
 
             match self.cache.get(event.clone()).await {
-                Ok(CacheResponse::Hit) =>  {
+                Ok(CacheResponse::Hit) => {
                     info!("Got cached response");
-                    continue
-                },
+                    continue;
+                }
                 Err(e) => warn!("Cache failed with: {:?}", e),
-                _ => ()
+                _ => (),
             };
 
             let graph = match event.clone() {
@@ -654,15 +650,15 @@ impl<C, E> EventHandler for SysmonSubgraphGenerator<C, E>
                         }
                     }
                 }
-//                    Event::InboundNetwork(event) => {
-//                        match handle_inbound_connection(event) {
-//                            Ok(event) => Some(event),
-//                            Err(e) => {
-//                                warn!("Failed to process inbound network event: {}", e);
-//                                None
-//                            }
-//                        }
-//                    }
+                //                    Event::InboundNetwork(event) => {
+                //                        match handle_inbound_connection(event) {
+                //                            Ok(event) => Some(event),
+                //                            Err(e) => {
+                //                                warn!("Failed to process inbound network event: {}", e);
+                //                                None
+                //                            }
+                //                        }
+                //                    }
                 Event::OutboundNetwork(event) => {
                     info!("OutboundNetwork");
                     match handle_outbound_connection(&event) {
@@ -687,19 +683,17 @@ impl<C, E> EventHandler for SysmonSubgraphGenerator<C, E>
         info!("Completed mapping {} subgraphs", identities.len());
 
         let mut completed = if let Some(e) = failed {
-            OutputEvent::new(
-                Completion::Partial(
-                    (
-                        final_subgraph,
-                        sqs_lambda::error::Error::ProcessingError(Arc::new(e))
-                    )
-                )
-            )
+            OutputEvent::new(Completion::Partial((
+                final_subgraph,
+                sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
+            )))
         } else {
             OutputEvent::new(Completion::Total(final_subgraph))
         };
 
-        identities.into_iter().for_each(|identity| completed.add_identity(identity));
+        identities
+            .into_iter()
+            .for_each(|identity| completed.add_identity(identity));
 
         completed
     }
@@ -714,10 +708,7 @@ fn time_based_key_fn(_event: &[u8]) -> String {
 
     let cur_day = cur_ms - (cur_ms % 86400);
 
-    format!(
-        "{}/{}-{}",
-        cur_day, cur_ms, uuid::Uuid::new_v4()
-    )
+    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
@@ -735,7 +726,8 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
 fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     info!("Handling event");
 
-    let mut initial_events: HashSet<String> = event.records
+    let mut initial_events: HashSet<String> = event
+        .records
         .iter()
         .map(|event| event.message_id.clone().unwrap())
         .collect();
@@ -746,58 +738,61 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     let completed_tx = tx.clone();
 
     std::thread::spawn(move || {
-        tokio_compat::run_std(
-            async move {
-                let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-                info!("Queue Url: {}", queue_url);
-                let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+        tokio_compat::run_std(async move {
+            let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+            info!("Queue Url: {}", queue_url);
+            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-                let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
-                info!("Output events to: {}", bucket);
-                let region = grapl_config::region();
+            let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
+            info!("Output events to: {}", bucket);
+            let region = grapl_config::region();
 
-                let cache = grapl_config::event_cache().await;
+            let cache = grapl_config::event_cache().await;
 
+            let generator: SysmonSubgraphGenerator<
+                _,
+                sqs_lambda::error::Error<Arc<failure::Error>>,
+            > = SysmonSubgraphGenerator::new(cache.clone());
 
-                let generator
-                    : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
-                    = SysmonSubgraphGenerator::new(cache.clone());
+            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
-                let initial_messages: Vec<_> = event.records
-                    .into_iter()
-                    .map(map_sqs_message)
-                    .collect();
-
-                sqs_lambda::sqs_service::sqs_service(
-                    queue_url,
-                    initial_messages,
-                    bucket,
-                    ctx,
-                    S3Client::new(region.clone()),
-                    SqsClient::new(region.clone()),
-                    ZstdDecoder::default(),
-                    SubgraphSerializer { proto: Vec::with_capacity(1024) },
-                    generator,
-                    cache.clone(),
-                    move |_self_actor, result: Result<String, String>| {
-                        match result {
-                            Ok(worked) => {
-                                info!("Handled an event, which was successfully deleted: {}", &worked);
-                                tx.send(worked).unwrap();
-                            }
-                            Err(worked) => {
-                                info!("Handled an event, though we failed to delete it: {}", &worked);
-                                tx.send(worked).unwrap();
-                            }
-                        }
-                    },
-                    move |bucket, key| async move {
-                        info!("Emitted event to {} {}", bucket, key);
-                        Ok(())
-                    },
-                ).await;
-                completed_tx.clone().send("Completed".to_owned()).unwrap();
-            });
+            sqs_lambda::sqs_service::sqs_service(
+                queue_url,
+                initial_messages,
+                bucket,
+                ctx,
+                S3Client::new(region.clone()),
+                SqsClient::new(region.clone()),
+                ZstdDecoder::default(),
+                SubgraphSerializer {
+                    proto: Vec::with_capacity(1024),
+                },
+                generator,
+                cache.clone(),
+                move |_self_actor, result: Result<String, String>| match result {
+                    Ok(worked) => {
+                        info!(
+                            "Handled an event, which was successfully deleted: {}",
+                            &worked
+                        );
+                        tx.send(worked).unwrap();
+                    }
+                    Err(worked) => {
+                        info!(
+                            "Handled an event, though we failed to delete it: {}",
+                            &worked
+                        );
+                        tx.send(worked).unwrap();
+                    }
+                },
+                move |bucket, key| async move {
+                    info!("Emitted event to {} {}", bucket, key);
+                    Ok(())
+                },
+            )
+            .await;
+            completed_tx.clone().send("Completed".to_owned()).unwrap();
+        });
     });
 
     info!("Checking acks");
@@ -813,19 +808,19 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         }
     }
 
-
     info!("Completed execution");
 
     if initial_events.is_empty() {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from(
+            "Failed to ack all initial events",
+        ))
     }
 }
 
-fn init_sqs_client() -> SqsClient
-{
+fn init_sqs_client() -> SqsClient {
     info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
     SqsClient::new_with(
@@ -837,12 +832,11 @@ fn init_sqs_client() -> SqsClient
         Region::Custom {
             name: "us-east-1".to_string(),
             endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        }
+        },
     )
 }
 
-fn init_s3_client() -> S3Client
-{
+fn init_s3_client() -> S3Client {
     info!("Connecting to local http://s3:9000");
     S3Client::new_with(
         HttpClient::new().expect("failed to create request dispatcher"),
@@ -861,9 +855,8 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     let cache = NopCache {};
     info!("SqsCompletionHandler");
 
-    let generator
-        : SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>>
-        = SysmonSubgraphGenerator::new(cache.clone());
+    let generator: SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
+        SysmonSubgraphGenerator::new(cache.clone());
 
     let sysmon_graph_generator_queue_url = std::env::var("SYSMON_GRAPH_GENERATOR_QUEUE_URL")
         .expect("SYSMON_GRAPH_GENERATOR_QUEUE_URL");
@@ -877,59 +870,64 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         init_s3_client(),
         init_sqs_client(),
         ZstdDecoder::default(),
-        SubgraphSerializer { proto: Vec::with_capacity(1024) },
+        SubgraphSerializer {
+            proto: Vec::with_capacity(1024),
+        },
         generator,
         NopCache {},
-        |_, event_result | {dbg!(event_result);},
+        |_, event_result| {
+            dbg!(event_result);
+        },
         move |bucket, key| async move {
             let output_event = S3Event {
-                records: vec![
-                    S3EventRecord {
-                        event_version: None,
-                        event_source: None,
-                        aws_region: None,
-                        event_time: chrono::Utc::now(),
-                        event_name: None,
-                        principal_id: S3UserIdentity { principal_id: None },
-                        request_parameters: S3RequestParameters { source_ip_address: None },
-                        response_elements: Default::default(),
-                        s3: S3Entity {
-                            schema_version: None,
-                            configuration_id: None,
-                            bucket: S3Bucket {
-                                name: Some(bucket),
-                                owner_identity: S3UserIdentity { principal_id: None },
-                                arn: None
-                            },
-                            object: S3Object {
-                                key: Some(key),
-                                size: 0,
-                                url_decoded_key: None,
-                                version_id: None,
-                                e_tag: None,
-                                sequencer: None
-                            }
-                        }
-                    }
-                ]
+                records: vec![S3EventRecord {
+                    event_version: None,
+                    event_source: None,
+                    aws_region: None,
+                    event_time: chrono::Utc::now(),
+                    event_name: None,
+                    principal_id: S3UserIdentity { principal_id: None },
+                    request_parameters: S3RequestParameters {
+                        source_ip_address: None,
+                    },
+                    response_elements: Default::default(),
+                    s3: S3Entity {
+                        schema_version: None,
+                        configuration_id: None,
+                        bucket: S3Bucket {
+                            name: Some(bucket),
+                            owner_identity: S3UserIdentity { principal_id: None },
+                            arn: None,
+                        },
+                        object: S3Object {
+                            key: Some(key),
+                            size: 0,
+                            url_decoded_key: None,
+                            version_id: None,
+                            e_tag: None,
+                            sequencer: None,
+                        },
+                    },
+                }],
             };
 
             let sqs_client = init_sqs_client();
 
             // publish to SQS
-            sqs_client.send_message(
-                SendMessageRequest {
+            sqs_client
+                .send_message(SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
                     queue_url: std::env::var("NODE_IDENTIFIER_QUEUE_URL")
                         .expect("NODE_IDENTIFIER_QUEUE_URL"),
                     ..Default::default()
-                }
-            ).await?;
+                })
+                .await?;
 
             Ok(())
-        }
-    ).await?;
+        },
+    )
+    .await?;
     Ok(())
 }
 
@@ -939,8 +937,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting sysmon-subgraph-generator");
 
-    let is_local = std::env::var("IS_LOCAL")
-        .is_ok();
+    let is_local = std::env::var("IS_LOCAL").is_ok();
 
     if is_local {
         info!("Running locally");
@@ -953,8 +950,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     RusotoError::HttpDispatch(_) => {
                         info!("Waiting for S3 to become available");
                         std::thread::sleep(Duration::new(2, 0));
-                    },
-                    _ => break
+                    }
+                    _ => break,
                 }
             } else {
                 break;
@@ -965,23 +962,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .expect("SYSMON_GRAPH_GENERATOR_QUEUE_URL");
         let sqs_client = init_sqs_client();
         loop {
-            match runtime.block_on(
-                sqs_client.list_queues(
-                    ListQueuesRequest { 
-                        queue_name_prefix: Some("sysmon-graph-generator".to_string()) 
-                    }
-                )
-            ) {
+            match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
+                queue_name_prefix: Some("sysmon-graph-generator".to_string()),
+            })) {
                 Err(_) => {
                     info!("Waiting for SQS to become available");
                     std::thread::sleep(Duration::new(2, 0));
-                },
+                }
                 Ok(response) => {
                     if let Some(urls) = response.queue_urls {
                         if urls.contains(&sysmon_graph_generator_queue_url) {
-                            break
+                            break;
                         } else {
-                            info!("Waiting for {} to be created", sysmon_graph_generator_queue_url);
+                            info!(
+                                "Waiting for {} to be created",
+                                sysmon_graph_generator_queue_url
+                            );
                             std::thread::sleep(Duration::new(2, 0));
                         }
                     }
@@ -995,14 +991,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 std::thread::sleep_ms(2_000);
             }
         }
-    }  else {
+    } else {
         info!("Running in AWS");
         lambda!(handler);
     }
 
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -1030,14 +1025,11 @@ mod tests {
 
         std::env::set_var("BUCKET_PREFIX", "unique_id");
 
-        let handler = SysmonSubgraphGenerator::new(
-            move |generated_subgraphs| {
-                println!("generated subgraphs");
-                Ok(())
-            }
-        );
+        let handler = SysmonSubgraphGenerator::new(move |generated_subgraphs| {
+            println!("generated subgraphs");
+            Ok(())
+        });
 
         handler.handle_event(vec![]).expect("handle_event failed");
     }
 }
-

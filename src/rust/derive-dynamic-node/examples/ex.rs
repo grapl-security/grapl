@@ -1,5 +1,5 @@
-use graph_descriptions::graph_description::*;
 use derive_dynamic_node::DynamicNode;
+use graph_descriptions::graph_description::*;
 
 #[derive(DynamicNode)]
 pub struct Ec2Instance2 {

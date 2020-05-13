@@ -5,19 +5,17 @@ use sqs_lambda::redis_cache::RedisCache;
 
 pub async fn event_cache() -> RedisCache {
     let cache_address = {
-        let generic_event_cache_addr = std::env::var("EVENT_CACHE_ADDR")
-            .expect("GENERIC_EVENT_CACHE_ADDR");
-        let generic_event_cache_port = std::env::var("EVENT_CACHE_PORT")
-            .expect("GENERIC_EVENT_CACHE_PORT");
+        let generic_event_cache_addr =
+            std::env::var("EVENT_CACHE_ADDR").expect("GENERIC_EVENT_CACHE_ADDR");
+        let generic_event_cache_port =
+            std::env::var("EVENT_CACHE_PORT").expect("GENERIC_EVENT_CACHE_PORT");
 
-        format!(
-            "{}:{}",
-            generic_event_cache_addr,
-            generic_event_cache_port,
-        )
+        format!("{}:{}", generic_event_cache_addr, generic_event_cache_port,)
     };
 
-    RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client")
+    RedisCache::new(cache_address.to_owned())
+        .await
+        .expect("Could not create redis client")
 }
 
 pub fn region() -> Region {
@@ -37,7 +35,9 @@ pub fn region() -> Region {
 
 pub fn grapl_log_level() -> log::Level {
     match std::env::var("GRAPL_LOG_LEVEL") {
-        Ok(level) => log::Level::from_str(&level).expect(&format!("Invalid logging level {}", level)),
-        Err(_) => log::Level::Error
+        Ok(level) => {
+            log::Level::from_str(&level).expect(&format!("Invalid logging level {}", level))
+        }
+        Err(_) => log::Level::Error,
     }
 }

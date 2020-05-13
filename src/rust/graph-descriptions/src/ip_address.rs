@@ -69,7 +69,8 @@ impl NodeT for IpAddress {
 
         let mut merged = false;
 
-        if other.first_seen_timestamp != 0 && self.first_seen_timestamp > other.first_seen_timestamp {
+        if other.first_seen_timestamp != 0 && self.first_seen_timestamp > other.first_seen_timestamp
+        {
             self.first_seen_timestamp = other.first_seen_timestamp;
             merged = true;
         }

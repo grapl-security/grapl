@@ -11,23 +11,23 @@ use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;
-use failure::{Error, bail};
+use failure::{bail, Error};
 use graph_descriptions::file::FileState;
-use graph_descriptions::graph_description::*;
 use graph_descriptions::graph_description::host::*;
 use graph_descriptions::graph_description::node::WhichNode;
+use graph_descriptions::graph_description::*;
 use graph_descriptions::ip_connection::IpConnectionState;
 use graph_descriptions::network_connection::NetworkConnectionState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use lambda_runtime::Context;
 use lambda_runtime::error::HandlerError;
+use lambda_runtime::Context;
 use log::*;
 use prost::Message;
-use rusoto_core::{Region, HttpClient};
+use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{Sqs, SqsClient, SendMessageRequest};
+use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use sha2::Digest;
 use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
@@ -41,17 +41,18 @@ use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 
-use graph_descriptions::node::NodeT;
-use std::fmt::Debug;
-use aws_lambda_events::event::s3::{S3EventRecord, S3Event, S3UserIdentity, S3RequestParameters, S3Entity, S3Bucket, S3Object};
-use sqs_lambda::local_sqs_service::local_sqs_service;
+use aws_lambda_events::event::s3::{
+    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
+};
 use chrono::Utc;
+use graph_descriptions::node::NodeT;
+use sqs_lambda::local_sqs_service::local_sqs_service;
+use std::fmt::Debug;
 
 macro_rules! wait_on {
     ($x:expr) => {{
         //            let rt = tokio::runtime::current_thread::Runtime::new()?;
-            $x
-        .await
+        $x.await
     }};
 }
 
@@ -63,10 +64,10 @@ pub mod sessions;
 
 #[derive(Clone)]
 struct NodeIdentifier<D, CacheT, CacheErr>
-    where
-        D: DynamoDb + Clone + Send + Sync + 'static,
-        CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-        CacheErr: Debug + Clone + Send + Sync + 'static,
+where
+    D: DynamoDb + Clone + Send + Sync + 'static,
+    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
+    CacheErr: Debug + Clone + Send + Sync + 'static,
 {
     asset_mapping_db: AssetIdDb<D>,
     dynamic_identifier: DynamicNodeIdentifier<D>,
@@ -79,11 +80,10 @@ struct NodeIdentifier<D, CacheT, CacheErr>
 }
 
 impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
-    where
-        D: DynamoDb + Clone + Send + Sync + 'static,
-        CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-        CacheErr: Debug + Clone + Send + Sync + 'static,
-
+where
+    D: DynamoDb + Clone + Send + Sync + 'static,
+    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
+    CacheErr: Debug + Clone + Send + Sync + 'static,
 {
     pub fn new(
         asset_mapping_db: AssetIdDb<D>,
@@ -114,16 +114,14 @@ impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
                 info!("Attributing ProcessNode: {}", process_node.process_id);
                 let unid = match unid {
                     Some(unid) => unid,
-                    None => bail!("Could not identify ProcessNode")
+                    None => bail!("Could not identify ProcessNode"),
                 };
                 let session_db = SessionDb::new(self.node_id_db.clone(), "process_history_table");
-                let node_key = session_db.handle_unid_session(unid, self.should_default).await?;
+                let node_key = session_db
+                    .handle_unid_session(unid, self.should_default)
+                    .await?;
 
-                info!(
-                    "Mapped Process {:?} to {}",
-                    process_node,
-                    &node_key,
-                );
+                info!("Mapped Process {:?} to {}", process_node, &node_key,);
                 process_node.set_node_key(node_key);
                 Ok(process_node.into())
             }
@@ -131,10 +129,12 @@ impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
                 info!("Attributing FileNode");
                 let unid = match unid {
                     Some(unid) => unid,
-                    None => bail!("Could not identify FileNode")
+                    None => bail!("Could not identify FileNode"),
                 };
                 let session_db = SessionDb::new(self.node_id_db.clone(), "file_history_table");
-                let node_key = session_db.handle_unid_session(unid, self.should_default).await?;
+                let node_key = session_db
+                    .handle_unid_session(unid, self.should_default)
+                    .await?;
 
                 file_node.set_node_key(node_key);
                 Ok(file_node.into())
@@ -143,10 +143,13 @@ impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
                 info!("Attributing ProcessInboundConnectionNode");
                 let unid = match unid {
                     Some(unid) => unid,
-                    None => bail!("Could not identify ProcessInboundConnectionNode")
+                    None => bail!("Could not identify ProcessInboundConnectionNode"),
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "inbound_connection_history_table");
-                let node_key = session_db.handle_unid_session(unid, self.should_default).await?;
+                let session_db =
+                    SessionDb::new(self.node_id_db.clone(), "inbound_connection_history_table");
+                let node_key = session_db
+                    .handle_unid_session(unid, self.should_default)
+                    .await?;
 
                 inbound_node.set_node_key(node_key);
                 Ok(inbound_node.into())
@@ -155,10 +158,13 @@ impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
                 info!("Attributing ProcessOutboundConnectionNode");
                 let unid = match unid {
                     Some(unid) => unid,
-                    None => bail!("Could not identify ProcessOutboundConnectionNode")
+                    None => bail!("Could not identify ProcessOutboundConnectionNode"),
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "outbound_connection_history_table");
-                let node_key = session_db.handle_unid_session(unid, self.should_default).await?;
+                let session_db =
+                    SessionDb::new(self.node_id_db.clone(), "outbound_connection_history_table");
+                let node_key = session_db
+                    .handle_unid_session(unid, self.should_default)
+                    .await?;
 
                 outbound_node.set_node_key(node_key);
                 Ok(outbound_node.into())
@@ -200,10 +206,13 @@ impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
                 info!("Attributing NetworkConnectionNode");
                 let unid = match unid {
                     Some(unid) => unid,
-                    None => bail!("Could not identify NetworkConnectionNode")
+                    None => bail!("Could not identify NetworkConnectionNode"),
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "network_connection_history_table");
-                let node_key = session_db.handle_unid_session(unid, self.should_default).await?;
+                let session_db =
+                    SessionDb::new(self.node_id_db.clone(), "network_connection_history_table");
+                let node_key = session_db
+                    .handle_unid_session(unid, self.should_default)
+                    .await?;
 
                 network_connection_node.set_node_key(node_key);
                 Ok(network_connection_node.into())
@@ -212,20 +221,26 @@ impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
                 info!("Attributing IpConnectionNode");
                 let unid = match unid {
                     Some(unid) => unid,
-                    None => bail!("Could not identify IpConnectionNode")
+                    None => bail!("Could not identify IpConnectionNode"),
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "ip_connection_history_table");
-                let node_key = session_db.handle_unid_session(unid, self.should_default).await?;
+                let session_db =
+                    SessionDb::new(self.node_id_db.clone(), "ip_connection_history_table");
+                let node_key = session_db
+                    .handle_unid_session(unid, self.should_default)
+                    .await?;
 
                 ip_connection_node.set_node_key(node_key);
                 Ok(ip_connection_node.into())
             }
             Some(WhichNode::DynamicNode(ref dynamic_node)) => {
                 info!("Attributing DynamicNode");
-                let new_node = self.dynamic_identifier.attribute_dynamic_node(&dynamic_node).await?;
+                let new_node = self
+                    .dynamic_identifier
+                    .attribute_dynamic_node(&dynamic_node)
+                    .await?;
                 Ok(new_node.into())
             }
-            None => bail!("Unknown Node Variant")
+            None => bail!("Unknown Node Variant"),
         }
     }
 }
@@ -241,22 +256,18 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
                 (true, _, _) => (true, node.created_timestamp),
                 (_, _, true) => (false, node.terminated_timestamp),
                 (_, true, _) => (false, node.last_seen_timestamp),
-                _ => bail!("At least one timestamp must be set")
+                _ => bail!("At least one timestamp must be set"),
             };
 
-            Ok(
-                Some(
-                    UnidSession {
-                        pseudo_key: format!(
-                            "{}{}",
-                            node.get_asset_id().expect("ProcessNode must have asset_id"),
-                            node.process_id
-                        ),
-                        timestamp,
-                        is_creation,
-                    }
-                )
-            )
+            Ok(Some(UnidSession {
+                pseudo_key: format!(
+                    "{}{}",
+                    node.get_asset_id().expect("ProcessNode must have asset_id"),
+                    node.process_id
+                ),
+                timestamp,
+                is_creation,
+            }))
         }
         Some(WhichNode::FileNode(node)) => {
             let (is_creation, timestamp) = match FileState::try_from(node.state)? {
@@ -266,55 +277,50 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
             // TODO: Hash the path
             let key = &node.file_path;
 
-            Ok(
-                Some(
-                    UnidSession {
-                        pseudo_key: format!("{}{}", node.get_asset_id().expect("FileNode must have asset_id"), key),
-                        timestamp,
-                        is_creation,
-                    }
-                )
-            )
+            Ok(Some(UnidSession {
+                pseudo_key: format!(
+                    "{}{}",
+                    node.get_asset_id().expect("FileNode must have asset_id"),
+                    key
+                ),
+                timestamp,
+                is_creation,
+            }))
         }
         Some(WhichNode::ProcessOutboundConnectionNode(node)) => {
-            let (is_creation, timestamp) = match ProcessOutboundConnectionState::try_from(node.state)? {
-                ProcessOutboundConnectionState::Connected => (true, node.created_timestamp),
-                _ => (false, node.last_seen_timestamp),
-            };
+            let (is_creation, timestamp) =
+                match ProcessOutboundConnectionState::try_from(node.state)? {
+                    ProcessOutboundConnectionState::Connected => (true, node.created_timestamp),
+                    _ => (false, node.last_seen_timestamp),
+                };
 
-            Ok(
-                Some(
-                    UnidSession {
-                        pseudo_key: format!(
-                            "{}{}outbound",
-                            node.get_asset_id().expect("ProcessOutboundConnectionNode must have asset_id"),
-                            node.port
-                        ),
-                        timestamp,
-                        is_creation,
-                    }
-                )
-            )
+            Ok(Some(UnidSession {
+                pseudo_key: format!(
+                    "{}{}outbound",
+                    node.get_asset_id()
+                        .expect("ProcessOutboundConnectionNode must have asset_id"),
+                    node.port
+                ),
+                timestamp,
+                is_creation,
+            }))
         }
         Some(WhichNode::ProcessInboundConnectionNode(node)) => {
-            let (is_creation, timestamp) = match ProcessInboundConnectionState::try_from(node.state)? {
-                ProcessInboundConnectionState::Bound => (true, node.created_timestamp),
-                _ => (false, node.last_seen_timestamp),
-            };
+            let (is_creation, timestamp) =
+                match ProcessInboundConnectionState::try_from(node.state)? {
+                    ProcessInboundConnectionState::Bound => (true, node.created_timestamp),
+                    _ => (false, node.last_seen_timestamp),
+                };
 
-            Ok(
-                Some(
-                    UnidSession {
-                        pseudo_key: format!(
-                            "{}{}inbound",
-                            node.get_asset_id().expect("Missing asset id"),
-                            node.port
-                        ),
-                        timestamp,
-                        is_creation,
-                    }
-                )
-            )
+            Ok(Some(UnidSession {
+                pseudo_key: format!(
+                    "{}{}inbound",
+                    node.get_asset_id().expect("Missing asset id"),
+                    node.port
+                ),
+                timestamp,
+                is_creation,
+            }))
         }
 
         Some(WhichNode::NetworkConnectionNode(node)) => {
@@ -331,15 +337,11 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
                 node.dst_ip_address,
                 node.protocol,
             );
-            Ok(
-                Some(
-                    UnidSession {
-                        pseudo_key,
-                        timestamp,
-                        is_creation,
-                    }
-                )
-            )
+            Ok(Some(UnidSession {
+                pseudo_key,
+                timestamp,
+                is_creation,
+            }))
         }
 
         Some(WhichNode::IpConnectionNode(node)) => {
@@ -350,19 +352,13 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
 
             let pseudo_key = format!(
                 "{}{}{}ip_network_connection",
-                node.src_ip_address,
-                node.dst_ip_address,
-                node.protocol,
+                node.src_ip_address, node.dst_ip_address, node.protocol,
             );
-            Ok(
-                Some(
-                    UnidSession {
-                        pseudo_key,
-                        timestamp,
-                        is_creation,
-                    }
-                )
-            )
+            Ok(Some(UnidSession {
+                pseudo_key,
+                timestamp,
+                is_creation,
+            }))
         }
         // IpAddressNode is not a session
         Some(WhichNode::IpAddressNode(_node)) => Ok(None),
@@ -374,14 +370,12 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
         Some(WhichNode::IpPortNode(_node)) => Ok(None),
 
         // DynamicNode's are identified separatealy from others
-        Some(WhichNode::DynamicNode(_node)) => {
-            Ok(None)
-        }
-        None => bail!("Failed to handle variant of node. Dropping it.")
+        Some(WhichNode::DynamicNode(_node)) => Ok(None),
+        None => bail!("Failed to handle variant of node. Dropping it."),
     }
 }
 
-fn remove_dead_nodes(graph: &mut Graph, dead_nodes: &HashSet<impl Deref<Target=str>>) {
+fn remove_dead_nodes(graph: &mut Graph, dead_nodes: &HashSet<impl Deref<Target = str>>) {
     for dead_node in dead_nodes {
         graph.nodes.remove(dead_node.deref());
         graph.edges.remove(dead_node.deref());
@@ -409,7 +403,10 @@ fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
             let from = match unid_id_map.get(&edge.from) {
                 Some(from) => from,
                 None => {
-                    warn!("Failed to lookup from node in unid_id_map {}", &edge.edge_name);
+                    warn!(
+                        "Failed to lookup from node in unid_id_map {}",
+                        &edge.edge_name
+                    );
                     continue;
                 }
             };
@@ -417,7 +414,10 @@ fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
             let to = match unid_id_map.get(&edge.to) {
                 Some(to) => to,
                 None => {
-                    warn!("Failed to lookup to node in unid_id_map {}", &edge.edge_name);
+                    warn!(
+                        "Failed to lookup to node in unid_id_map {}",
+                        &edge.edge_name
+                    );
                     continue;
                 }
             };
@@ -454,9 +454,7 @@ fn remap_nodes(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
             let old_node = nodes.insert(new_key.to_owned(), node.clone());
             if let Some(ref old_node) = old_node {
                 NodeT::merge(
-                    nodes
-                        .get_mut(new_key)
-                        .expect("New key not in map"),
+                    nodes.get_mut(new_key).expect("New key not in map"),
                     old_node,
                 );
             }
@@ -501,17 +499,19 @@ async fn create_asset_id_mappings(
             Some(WhichNode::DynamicNode(ref _node)) => {
                 continue;
             }
-            None => bail!("Failed to handle node variant")
+            None => bail!("Failed to handle node variant"),
         };
 
         match ids {
             (Some(asset_id), Some(hostname), timestamp) => {
                 info!("Creating asset id {} mapping for: {}", asset_id, hostname);
-                assetid_db.create_mapping(
-                    &HostId::AssetId(asset_id.clone()),
-                    hostname.clone(),
-                    timestamp,
-                ).await?;
+                assetid_db
+                    .create_mapping(
+                        &HostId::AssetId(asset_id.clone()),
+                        hostname.clone(),
+                        timestamp,
+                    )
+                    .await?;
             }
             _ => continue,
         };
@@ -519,7 +519,6 @@ async fn create_asset_id_mappings(
 
     Ok(())
 }
-
 
 // Takes a Graph, attributes all nodes with an asset id
 // When atribution fails, attribution continues, but the Graph returned will contain
@@ -561,12 +560,10 @@ async fn attribute_asset_ids(
                 output_graph.add_node(n.clone());
                 continue;
             }
-            _ => ()
+            _ => (),
         }
 
-        let asset_id = asset_identifier.attribute_asset_id(
-            &node,
-        ).await;
+        let asset_id = asset_identifier.attribute_asset_id(&node).await;
 
         let asset_id = match asset_id {
             Ok(asset_id) => asset_id,
@@ -597,17 +594,19 @@ async fn attribute_asset_ids(
 
 #[async_trait]
 impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
-    where
-        D: DynamoDb + Clone + Send + Sync + 'static,
-        CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-        CacheErr: Debug + Clone + Send + Sync + 'static,
-
+where
+    D: DynamoDb + Clone + Send + Sync + 'static,
+    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
+    CacheErr: Debug + Clone + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = GeneratedSubgraphs;
     type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
 
-    async fn handle_event(&mut self, subgraphs: GeneratedSubgraphs) -> OutputEvent<Self::OutputEvent, Self::Error> {
+    async fn handle_event(
+        &mut self,
+        subgraphs: GeneratedSubgraphs,
+    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
         warn!("node-identifier.handle_event");
         let region = self.region.clone();
 
@@ -621,18 +620,23 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
         }
 
         let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-//        let dynamo = DynamoDbClient::new(region.clone());
+        //        let dynamo = DynamoDbClient::new(region.clone());
 
         // Merge all of the subgraphs into one subgraph to avoid
         // redundant work
-        let unid_subgraph = subgraphs.subgraphs.into_iter().fold(
-            Graph::new(0),
-            |mut total_graph, subgraph| {
-                info!("Merging subgraph with: {} nodes {} edges", subgraph.nodes.len(), subgraph.edges.len());
-                total_graph.merge(&subgraph);
-                total_graph
-            },
-        );
+        let unid_subgraph =
+            subgraphs
+                .subgraphs
+                .into_iter()
+                .fold(Graph::new(0), |mut total_graph, subgraph| {
+                    info!(
+                        "Merging subgraph with: {} nodes {} edges",
+                        subgraph.nodes.len(),
+                        subgraph.edges.len()
+                    );
+                    total_graph.merge(&subgraph);
+                    total_graph
+                });
 
         if unid_subgraph.is_empty() {
             warn!("Received empty subgraph");
@@ -649,10 +653,8 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
         if let Err(e) = create_asset_id_mappings(&asset_id_db, &unid_subgraph).await {
             error!("Asset mapping creation failed with {}", e);
             return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(
-                    Arc::new(e.into()))
-            )
-            );
+                sqs_lambda::error::Error::ProcessingError(Arc::new(e.into())),
+            ));
         }
 
         // Map all host_ids into asset_ids. This has to happen before node key
@@ -660,7 +662,8 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
         // If there is a failure, we'll mark this execute as failed, but continue
         // with whatever subgraph has succeeded
 
-        let output_subgraph = match attribute_asset_ids(&self.asset_identifier, unid_subgraph).await {
+        let output_subgraph = match attribute_asset_ids(&self.asset_identifier, unid_subgraph).await
+        {
             Ok(unid_subgraph) => unid_subgraph,
             Err((e, unid_subgraph)) => {
                 attribution_failure = Some(e);
@@ -698,12 +701,15 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
             identified_graph.add_node(node);
         }
 
-
-        info!("PRE: identified_graph.edges.len() {}", identified_graph.edges.len());
-
+        info!(
+            "PRE: identified_graph.edges.len() {}",
+            identified_graph.edges.len()
+        );
 
         for (old_key, edge_list) in output_subgraph.edges.iter() {
-            if dead_node_ids.contains(old_key) { continue; };
+            if dead_node_ids.contains(old_key) {
+                continue;
+            };
 
             for edge in &edge_list.edges {
                 let from_key = unid_id_map.get(&edge.from);
@@ -711,7 +717,7 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
 
                 let (from_key, to_key) = match (from_key, to_key) {
                     (Some(from_key), Some(to_key)) => (from_key, to_key),
-                    _ => continue
+                    _ => continue,
                 };
 
                 identified_graph.add_edge(
@@ -722,47 +728,44 @@ impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
             }
         }
 
-        info!("POST: identified_graph.edges.len() {}", identified_graph.edges.len());
+        info!(
+            "POST: identified_graph.edges.len() {}",
+            identified_graph.edges.len()
+        );
 
         // Remove dead nodes and edges from output_graph
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
 
         if identified_graph.is_empty() {
             return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(
-                    Arc::new(
-                        (|| {
-                            bail!("All nodes failed to identify");
-                            Ok(())
-                        })().unwrap_err()
-                    )
-                ))
-            );
+                sqs_lambda::error::Error::ProcessingError(Arc::new(
+                    (|| {
+                        bail!("All nodes failed to identify");
+                        Ok(())
+                    })()
+                    .unwrap_err(),
+                )),
+            ));
         }
 
         let identities: Vec<_> = unid_id_map.keys().cloned().collect();
 
         let mut completed = if !dead_node_ids.is_empty() || attribution_failure.is_some() {
             info!("Partial Success, identified {} nodes", identities.len());
-            OutputEvent::new(
-                Completion::Partial(
-                    (
-                        GeneratedSubgraphs::new(vec![identified_graph]),
-                        sqs_lambda::error::Error::ProcessingError(Arc::new(
-                            attribution_failure.unwrap()
-                        ))
-                    )
-                )
-            )
+            OutputEvent::new(Completion::Partial((
+                GeneratedSubgraphs::new(vec![identified_graph]),
+                sqs_lambda::error::Error::ProcessingError(Arc::new(attribution_failure.unwrap())),
+            )))
         } else {
             info!("Identified all nodes");
-            OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![identified_graph])))
+            OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![
+                identified_graph,
+            ])))
         };
 
         completed
     }
 }
-
 
 pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     _handler(event, ctx, false)
@@ -790,9 +793,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
             warn!("No events to serialize");
             return Ok(Vec::new());
         }
-        let mut subgraph = Graph::new(
-            0
-        );
+        let mut subgraph = Graph::new(0);
 
         let mut pre_nodes = 0;
         let mut pre_edges = 0;
@@ -807,11 +808,10 @@ impl CompletionEventSerializer for SubgraphSerializer {
         if subgraph.is_empty() {
             warn!(
                 concat!(
-                "Output subgraph is empty. Serializing to empty vector.",
-                "pre_nodes: {} pre_edges: {}"
+                    "Output subgraph is empty. Serializing to empty vector.",
+                    "pre_nodes: {} pre_edges: {}"
                 ),
-                pre_nodes,
-                pre_edges,
+                pre_nodes, pre_edges,
             );
             return Ok(vec![]);
         }
@@ -824,24 +824,21 @@ impl CompletionEventSerializer for SubgraphSerializer {
             pre_edges,
         );
 
-
-        let subgraphs = GeneratedSubgraphs { subgraphs: vec![subgraph] };
+        let subgraphs = GeneratedSubgraphs {
+            subgraphs: vec![subgraph],
+        };
 
         self.proto.clear();
 
         prost::Message::encode(&subgraphs, &mut self.proto)
             .map(Arc::new)
-            .map_err(|e| {
-                sqs_lambda::error::Error::EncodeError(e.to_string())
-            })?;
+            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
             .map(Arc::new)
-            .map_err(|e| {
-                sqs_lambda::error::Error::EncodeError(e.to_string())
-            })?;
+            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
         Ok(vec![compressed])
     }
 }
@@ -850,10 +847,12 @@ impl CompletionEventSerializer for SubgraphSerializer {
 pub struct ZstdProtoDecoder;
 
 impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-    where E: Message + Default
+where
+    E: Message + Default,
 {
     fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-        where E: Message + Default,
+    where
+        E: Message + Default,
     {
         let mut decompressed = Vec::new();
 
@@ -866,7 +865,6 @@ impl<E> PayloadDecoder<E> for ZstdProtoDecoder
     }
 }
 
-
 fn time_based_key_fn(_event: &[u8]) -> String {
     info!("event length {}", _event.len());
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -876,10 +874,7 @@ fn time_based_key_fn(_event: &[u8]) -> String {
 
     let cur_day = cur_ms - (cur_ms % 86400);
 
-    format!(
-        "{}/{}-{}",
-        cur_day, cur_ms, uuid::Uuid::new_v4()
-    )
+    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
@@ -897,7 +892,8 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
 fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), HandlerError> {
     info!("Handling event");
 
-    let mut initial_events: HashSet<String> = event.records
+    let mut initial_events: HashSet<String> = event
+        .records
         .iter()
         .map(|event| event.message_id.clone().unwrap())
         .collect();
@@ -909,97 +905,102 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
     let completed_tx = tx.clone();
 
     std::thread::spawn(move || {
-        tokio_compat::run_std(
-                async move {
-                let node_identifier_queue_url = std::env::var("NODE_IDENTIFIER_QUEUE_URL")
-                    .expect("NODE_IDENTIFIER_QUEUE_URL");
-                debug!("Queue Url: {}", node_identifier_queue_url);
-                let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-                let cache_address = {
-                    let retry_identity_cache_addr = std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
-                    let retry_identity_cache_port = std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
+        tokio_compat::run_std(async move {
+            let node_identifier_queue_url =
+                std::env::var("NODE_IDENTIFIER_QUEUE_URL").expect("NODE_IDENTIFIER_QUEUE_URL");
+            debug!("Queue Url: {}", node_identifier_queue_url);
+            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+            let cache_address = {
+                let retry_identity_cache_addr =
+                    std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
+                let retry_identity_cache_port =
+                    std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
 
-                    format!(
-                        "{}:{}",
-                        retry_identity_cache_addr,
-                        retry_identity_cache_port,
-                    )
-                };
+                format!(
+                    "{}:{}",
+                    retry_identity_cache_addr, retry_identity_cache_port,
+                )
+            };
 
-                let bucket = bucket_prefix + "-subgraphs-generated-bucket";
-                info!("Output events to: {}", bucket);
-                let region = {
-                    let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-                    Region::from_str(&region_str).expect("Region error")
-                };
-                let cache = RedisCache::new(cache_address.to_owned()).await.expect("Could not create redis client");
+            let bucket = bucket_prefix + "-subgraphs-generated-bucket";
+            info!("Output events to: {}", bucket);
+            let region = {
+                let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
+                Region::from_str(&region_str).expect("Region error")
+            };
+            let cache = RedisCache::new(cache_address.to_owned())
+                .await
+                .expect("Could not create redis client");
 
-                let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
-                let dynamo = DynamoDbClient::new(region.clone());
-                let dyn_session_db = SessionDb::new(
-                    dynamo.clone(),
-                    "dynamic_session_table",
-                );
-                let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
-                let asset_identifier = AssetIdentifier::new(asset_id_db);
+            let dynamo = DynamoDbClient::new(region.clone());
+            let dyn_session_db = SessionDb::new(dynamo.clone(), "dynamic_session_table");
+            let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
+            let asset_identifier = AssetIdentifier::new(asset_id_db);
 
-                let dyn_node_identifier = DynamicNodeIdentifier::new(
-                    asset_identifier,
-                    dyn_session_db,
-                    dyn_mapping_db,
-                    should_default,
-                );
+            let dyn_node_identifier = DynamicNodeIdentifier::new(
+                asset_identifier,
+                dyn_session_db,
+                dyn_mapping_db,
+                should_default,
+            );
 
-                let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
-                let asset_identifier = AssetIdentifier::new(asset_id_db);
+            let asset_identifier = AssetIdentifier::new(asset_id_db);
 
-                let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-                let node_identifier
-                    : NodeIdentifier<_, _, sqs_lambda::error::Error<Arc<failure::Error>>>
-                    = NodeIdentifier::new(
-                    asset_id_db,
-                    dyn_node_identifier,
-                    asset_identifier,
-                    dynamo.clone(),
-                    should_default,
-                    cache.clone(),
-                    region.clone(),
-                );
+            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+            let node_identifier: NodeIdentifier<
+                _,
+                _,
+                sqs_lambda::error::Error<Arc<failure::Error>>,
+            > = NodeIdentifier::new(
+                asset_id_db,
+                dyn_node_identifier,
+                asset_identifier,
+                dynamo.clone(),
+                should_default,
+                cache.clone(),
+                region.clone(),
+            );
 
-                let initial_messages: Vec<_> = event.records
-                    .into_iter()
-                    .map(map_sqs_message)
-                    .collect();
+            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
-                sqs_lambda::sqs_service::sqs_service(
-                    node_identifier_queue_url,
-                    initial_messages,
-                    bucket,
-                    ctx,
-                    S3Client::new(region.clone()),
-                    SqsClient::new(region.clone()),
-                    ZstdProtoDecoder::default(),
-                    SubgraphSerializer { proto: Vec::with_capacity(1024) },
-                    node_identifier,
-                    cache.clone(),
-                    move |_self_actor, result: Result<String, String>| {
-                        match result {
-                            Ok(worked) => {
-                                info!("Handled an event, which was successfully deleted: {}", &worked);
-                                tx.send(worked).unwrap();
-                            }
-                            Err(worked) => {
-                                info!("Handled an initial_event, though we failed to delete it: {}", &worked);
-                                tx.send(worked).unwrap();
-                            }
-                        }
-                    },
-                    move |_, _| async move { Ok(()) }
-                ).await;
+            sqs_lambda::sqs_service::sqs_service(
+                node_identifier_queue_url,
+                initial_messages,
+                bucket,
+                ctx,
+                S3Client::new(region.clone()),
+                SqsClient::new(region.clone()),
+                ZstdProtoDecoder::default(),
+                SubgraphSerializer {
+                    proto: Vec::with_capacity(1024),
+                },
+                node_identifier,
+                cache.clone(),
+                move |_self_actor, result: Result<String, String>| match result {
+                    Ok(worked) => {
+                        info!(
+                            "Handled an event, which was successfully deleted: {}",
+                            &worked
+                        );
+                        tx.send(worked).unwrap();
+                    }
+                    Err(worked) => {
+                        info!(
+                            "Handled an initial_event, though we failed to delete it: {}",
+                            &worked
+                        );
+                        tx.send(worked).unwrap();
+                    }
+                },
+                move |_, _| async move { Ok(()) },
+            )
+            .await;
 
-                completed_tx.clone().send("Completed".to_owned()).unwrap();
+            completed_tx.clone().send("Completed".to_owned()).unwrap();
         })
     });
 
@@ -1016,19 +1017,19 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
         }
     }
 
-
     info!("Completed execution");
 
     if initial_events.is_empty() {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
+        Err(lambda_runtime::error::HandlerError::from(
+            "Failed to ack all initial events",
+        ))
     }
 }
 
-pub fn init_sqs_client() -> SqsClient
-{
+pub fn init_sqs_client() -> SqsClient {
     info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
     SqsClient::new_with(
@@ -1040,12 +1041,11 @@ pub fn init_sqs_client() -> SqsClient
         Region::Custom {
             name: "us-east-1".to_string(),
             endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        }
+        },
     )
 }
 
-pub fn init_s3_client() -> S3Client
-{
+pub fn init_s3_client() -> S3Client {
     info!("Connecting to local http://s3:9000");
     S3Client::new_with(
         HttpClient::new().expect("failed to create request dispatcher"),
@@ -1060,9 +1060,7 @@ pub fn init_s3_client() -> S3Client
     )
 }
 
-
-pub fn init_dynamodb_client() -> DynamoDbClient
-{
+pub fn init_dynamodb_client() -> DynamoDbClient {
     info!("Connecting to local http://dynamo:9000");
     DynamoDbClient::new_with(
         HttpClient::new().expect("failed to create request dispatcher"),
@@ -1084,26 +1082,24 @@ pub struct LocalCache {
 
 #[async_trait]
 impl<E> Cache<E> for LocalCache
-    where
-        E: Debug + Clone + Send + Sync + 'static,
+where
+    E: Debug + Clone + Send + Sync + 'static,
 {
-    async fn get<CA: Cacheable + Send + Sync + 'static>(&mut self, cacheable: CA)
-        -> Result<CacheResponse, sqs_lambda::error::Error<E>>
-    {
+    async fn get<CA: Cacheable + Send + Sync + 'static>(
+        &mut self,
+        cacheable: CA,
+    ) -> Result<CacheResponse, sqs_lambda::error::Error<E>> {
         match self.inner_map.contains(&cacheable.identity()) {
             true => Ok(CacheResponse::Hit),
             false => Ok(CacheResponse::Miss),
         }
     }
 
-    async fn store(&mut self, identity: Vec<u8>)
-        -> Result<(), sqs_lambda::error::Error<E>>
-    {
+    async fn store(&mut self, identity: Vec<u8>) -> Result<(), sqs_lambda::error::Error<E>> {
         self.inner_map.insert(identity);
         Ok(())
     }
 }
-
 
 pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
     let cache = LocalCache::default();
@@ -1120,10 +1116,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
     info!("dynamo");
     let dynamo = init_dynamodb_client();
     info!("dyn_session_db");
-    let dyn_session_db = SessionDb::new(
-        dynamo.clone(),
-        "dynamic_session_table",
-    );
+    let dyn_session_db = SessionDb::new(dynamo.clone(), "dynamic_session_table");
     info!("dyn_mapping_db");
     let dyn_mapping_db = DynamicMappingDb::new(init_dynamodb_client());
     info!("asset_identifier");
@@ -1147,9 +1140,8 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
     let asset_id_db = AssetIdDb::new(init_dynamodb_client());
 
     info!("node_identifier");
-    let node_identifier
-        : NodeIdentifier<_, _, sqs_lambda::error::Error<Arc<failure::Error>>>
-        = NodeIdentifier::new(
+    let node_identifier: NodeIdentifier<_, _, sqs_lambda::error::Error<Arc<failure::Error>>> =
+        NodeIdentifier::new(
             asset_id_db,
             dyn_node_identifier,
             asset_identifier,
@@ -1157,14 +1149,12 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
             should_default,
             cache.clone(),
             region.clone(),
-    );
+        );
 
     let node_identifier_queue_url = if should_default {
-        std::env::var("NODE_IDENTIFIER_QUEUE_URL")
-            .expect("NODE_IDENTIFIER_QUEUE_URL")
+        std::env::var("NODE_IDENTIFIER_QUEUE_URL").expect("NODE_IDENTIFIER_QUEUE_URL")
     } else {
-        std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL")
-            .expect("NODE_IDENTIFIER_RETRY_QUEUE_URL")
+        std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL").expect("NODE_IDENTIFIER_RETRY_QUEUE_URL")
     };
     local_sqs_service(
         node_identifier_queue_url,
@@ -1176,58 +1166,63 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
         init_s3_client(),
         init_sqs_client(),
         ZstdProtoDecoder::default(),
-        SubgraphSerializer { proto: Vec::with_capacity(1024) },
+        SubgraphSerializer {
+            proto: Vec::with_capacity(1024),
+        },
         node_identifier,
         LocalCache::default(),
-        |_, event_result | {dbg!(event_result);},
+        |_, event_result| {
+            dbg!(event_result);
+        },
         move |bucket, key| async move {
             let output_event = S3Event {
-                records: vec![
-                    S3EventRecord {
-                        event_version: None,
-                        event_source: None,
-                        aws_region: None,
-                        event_time: chrono::Utc::now(),
-                        event_name: None,
-                        principal_id: S3UserIdentity { principal_id: None },
-                        request_parameters: S3RequestParameters { source_ip_address: None },
-                        response_elements: Default::default(),
-                        s3: S3Entity {
-                            schema_version: None,
-                            configuration_id: None,
-                            bucket: S3Bucket {
-                                name: Some(bucket),
-                                owner_identity: S3UserIdentity { principal_id: None },
-                                arn: None
-                            },
-                            object: S3Object {
-                                key: Some(key),
-                                size: 0,
-                                url_decoded_key: None,
-                                version_id: None,
-                                e_tag: None,
-                                sequencer: None
-                            }
-                        }
-                    }
-                ]
+                records: vec![S3EventRecord {
+                    event_version: None,
+                    event_source: None,
+                    aws_region: None,
+                    event_time: chrono::Utc::now(),
+                    event_name: None,
+                    principal_id: S3UserIdentity { principal_id: None },
+                    request_parameters: S3RequestParameters {
+                        source_ip_address: None,
+                    },
+                    response_elements: Default::default(),
+                    s3: S3Entity {
+                        schema_version: None,
+                        configuration_id: None,
+                        bucket: S3Bucket {
+                            name: Some(bucket),
+                            owner_identity: S3UserIdentity { principal_id: None },
+                            arn: None,
+                        },
+                        object: S3Object {
+                            key: Some(key),
+                            size: 0,
+                            url_decoded_key: None,
+                            version_id: None,
+                            e_tag: None,
+                            sequencer: None,
+                        },
+                    },
+                }],
             };
 
             let sqs_client = init_sqs_client();
 
             // publish to SQS
-            sqs_client.send_message(
-                SendMessageRequest {
+            sqs_client
+                .send_message(SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
                     queue_url: std::env::var("GRAPH_MERGER_QUEUE_URL")
                         .expect("GRAPH_MERGER_QUEUE_URL"),
                     ..Default::default()
-                }
-            ).await?;
+                })
+                .await?;
 
             Ok(())
-        }
-    ).await;
+        },
+    )
+    .await;
     Ok(())
 }

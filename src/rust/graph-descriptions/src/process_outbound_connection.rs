@@ -8,7 +8,6 @@ use crate::error::Error;
 use crate::graph_description::ProcessOutboundConnection;
 use crate::node::NodeT;
 
-
 pub enum ProcessOutboundConnectionState {
     Connected,
     Existing,
@@ -33,7 +32,7 @@ impl TryFrom<u32> for ProcessOutboundConnectionState {
             1 => Ok(ProcessOutboundConnectionState::Connected),
             2 => Ok(ProcessOutboundConnectionState::Closed),
             3 => Ok(ProcessOutboundConnectionState::Existing),
-            _ => Err(Error::InvalidProcessOutboundConnectionState(p))
+            _ => Err(Error::InvalidProcessOutboundConnectionState(p)),
         }
     }
 }
@@ -115,8 +114,10 @@ impl NodeT for ProcessOutboundConnection {
 
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
-            warn!("Attempted to merge two ProcessOutboundConnection Nodes with differing node_keys");
-            return false
+            warn!(
+                "Attempted to merge two ProcessOutboundConnection Nodes with differing node_keys"
+            );
+            return false;
         }
 
         if self.ip_address != other.ip_address {
@@ -139,7 +140,8 @@ impl NodeT for ProcessOutboundConnection {
             merged = true;
         }
 
-        if self.terminated_timestamp != 0 && self.terminated_timestamp < other.terminated_timestamp {
+        if self.terminated_timestamp != 0 && self.terminated_timestamp < other.terminated_timestamp
+        {
             self.terminated_timestamp = other.terminated_timestamp;
             merged = true;
         }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::graph_description::{Edge, EdgeList, GeneratedSubgraphs, Node, Graph};
+use crate::graph_description::{Edge, EdgeList, GeneratedSubgraphs, Graph, Node};
 use crate::node::NodeT;
 
 impl Graph {
@@ -8,7 +8,7 @@ impl Graph {
         Graph {
             nodes: HashMap::new(),
             edges: HashMap::new(),
-            timestamp
+            timestamp,
         }
     }
 
@@ -30,7 +30,8 @@ impl Graph {
     }
 
     pub fn add_node<N>(&mut self, node: N)
-        where N: Into<Node>
+    where
+        N: Into<Node>,
     {
         let node = node.into();
         let key = node.clone_node_key();
@@ -38,47 +39,44 @@ impl Graph {
         self.nodes.insert(key.to_string(), node);
         self.edges
             .entry(key)
-            .or_insert_with(|| {
-                EdgeList { edges: vec![] }
-            });
+            .or_insert_with(|| EdgeList { edges: vec![] });
     }
 
-
     pub fn with_node<N>(mut self, node: N) -> Graph
-        where N: Into<Node>
+    where
+        N: Into<Node>,
     {
         self.add_node(node);
         self
     }
 
-    pub fn add_edge(&mut self,
-                    edge_name: impl Into<String>,
-                    from: impl Into<String>,
-                    to: impl Into<String>)
-    {
+    pub fn add_edge(
+        &mut self,
+        edge_name: impl Into<String>,
+        from: impl Into<String>,
+        to: impl Into<String>,
+    ) {
         let from = from.into();
         let to = to.into();
         let edge_name = edge_name.into();
         let edge = Edge {
             from: from.clone(),
             to,
-            edge_name
+            edge_name,
         };
 
         self.edges
             .entry(from)
-            .or_insert_with(|| {
-                EdgeList { edges: Vec::with_capacity(1) }
+            .or_insert_with(|| EdgeList {
+                edges: Vec::with_capacity(1),
             })
-            .edges.push(edge);
+            .edges
+            .push(edge);
     }
 }
 
-
 impl GeneratedSubgraphs {
     pub fn new(subgraphs: Vec<Graph>) -> GeneratedSubgraphs {
-        GeneratedSubgraphs {
-            subgraphs
-        }
+        GeneratedSubgraphs { subgraphs }
     }
 }

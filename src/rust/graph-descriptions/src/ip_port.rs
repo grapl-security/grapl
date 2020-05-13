@@ -5,11 +5,7 @@ use crate::graph_description::IpPort;
 use crate::node::NodeT;
 
 impl IpPort {
-    pub fn new(
-               ip_address: impl Into<String>,
-               port: u16,
-               protocol: impl Into<String>,
-    ) -> Self {
+    pub fn new(ip_address: impl Into<String>, port: u16, protocol: impl Into<String>) -> Self {
         let ip_address = ip_address.into();
         let protocol = protocol.into();
 
@@ -51,7 +47,7 @@ impl NodeT for IpPort {
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two IpPort Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         if self.ip_address != other.ip_address {

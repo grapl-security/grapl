@@ -32,7 +32,7 @@ impl TryFrom<u32> for ProcessInboundConnectionState {
             1 => Ok(ProcessInboundConnectionState::Bound),
             2 => Ok(ProcessInboundConnectionState::Closed),
             3 => Ok(ProcessInboundConnectionState::Existing),
-            _ => Err(Error::InvalidProcessInboundConnectionState(p))
+            _ => Err(Error::InvalidProcessInboundConnectionState(p)),
         }
     }
 }
@@ -115,7 +115,7 @@ impl NodeT for ProcessInboundConnection {
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two ProcessInboundConnection Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         if self.ip_address != other.ip_address {
@@ -138,7 +138,8 @@ impl NodeT for ProcessInboundConnection {
             merged = true;
         }
 
-        if self.terminated_timestamp != 0 && self.terminated_timestamp < other.terminated_timestamp {
+        if self.terminated_timestamp != 0 && self.terminated_timestamp < other.terminated_timestamp
+        {
             self.terminated_timestamp = other.terminated_timestamp;
             merged = true;
         }

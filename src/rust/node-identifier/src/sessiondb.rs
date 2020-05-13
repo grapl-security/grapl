@@ -1,13 +1,12 @@
 use std::convert::TryFrom;
 
-use failure::{Error, bail};
+use failure::{bail, Error};
 use hmap::hmap;
 use log::{info, warn};
 use rusoto_core::RusotoError;
 use rusoto_dynamodb::{
-    Delete, DeleteItemInput, DynamoDb, Put, PutItemInput, QueryInput, 
-    TransactWriteItem, TransactWriteItemsInput, UpdateItemInput, 
-    AttributeValue, AttributeValueUpdate
+    AttributeValue, AttributeValueUpdate, Delete, DeleteItemInput, DynamoDb, Put, PutItemInput,
+    QueryInput, TransactWriteItem, TransactWriteItemsInput, UpdateItemInput,
 };
 
 use uuid::Uuid;
@@ -16,16 +15,16 @@ use crate::sessions::*;
 
 #[derive(Debug, Clone)]
 pub struct SessionDb<D>
-    where
-        D: DynamoDb,
+where
+    D: DynamoDb,
 {
     dynamo: D,
     table_name: String,
 }
 
 impl<D> SessionDb<D>
-    where
-        D: DynamoDb,
+where
+    D: DynamoDb,
 {
     pub fn new(dynamo: D, table_name: impl Into<String>) -> Self {
         Self {
@@ -34,7 +33,10 @@ impl<D> SessionDb<D>
         }
     }
 
-    pub async fn find_first_session_after(&self, unid: &UnidSession) -> Result<Option<Session>, Error> {
+    pub async fn find_first_session_after(
+        &self,
+        unid: &UnidSession,
+    ) -> Result<Option<Session>, Error> {
         info!("Finding first session after : {}", &self.table_name);
         let query = QueryInput {
             consistent_read: Some(true),
@@ -72,7 +74,10 @@ impl<D> SessionDb<D>
         }
     }
 
-    pub async fn find_last_session_before(&self, unid: &UnidSession) -> Result<Option<Session>, Error> {
+    pub async fn find_last_session_before(
+        &self,
+        unid: &UnidSession,
+    ) -> Result<Option<Session>, Error> {
         info!("Finding last session before");
         let query = QueryInput {
             consistent_read: Some(true),
@@ -163,10 +168,7 @@ impl<D> SessionDb<D>
         Ok(())
     }
 
-    pub async fn make_create_time_canonical(
-        &self,
-        session: &Session,
-    ) -> Result<(), Error> {
+    pub async fn make_create_time_canonical(&self, session: &Session) -> Result<(), Error> {
         info!("Updating session end time");
         // Use version as a constraint
         let upd_req = UpdateItemInput {
@@ -321,7 +323,8 @@ impl<D> SessionDb<D>
             // and we should consider this the canonical ID for that session
             if !session.is_create_canon && session.create_time != unid.timestamp {
                 info!("Extending session create_time");
-                self.update_session_create_time(&session, unid.timestamp, true).await?;
+                self.update_session_create_time(&session, unid.timestamp, true)
+                    .await?;
                 return Ok(session.session_id);
             }
 
@@ -412,7 +415,8 @@ impl<D> SessionDb<D>
             if !session.is_create_canon {
                 info!("Found a later, non canonical session. Extending create_time..");
 
-                self.update_session_create_time(&session, unid.timestamp, false).await?;
+                self.update_session_create_time(&session, unid.timestamp, false)
+                    .await?;
                 return Ok(session.session_id);
             }
         }
@@ -469,8 +473,8 @@ mod tests {
     use rusoto_core::Region;
     use rusoto_dynamodb::KeySchemaElement;
     use rusoto_dynamodb::{
-        AttributeDefinition, CreateTableInput, DeleteTableInput,
-        ProvisionedThroughput, DynamoDbClient, DynamoDb
+        AttributeDefinition, CreateTableInput, DeleteTableInput, DynamoDb, DynamoDbClient,
+        ProvisionedThroughput,
     };
     use tokio::runtime::Runtime;
 
@@ -478,15 +482,14 @@ mod tests {
         let mut runtime = Runtime::new().unwrap();
         let table_name = table_name.into();
 
-        let _ = runtime.block_on(dynamo
-            .delete_table(DeleteTableInput {
-                table_name: table_name.clone(),
-            }));
+        let _ = runtime.block_on(dynamo.delete_table(DeleteTableInput {
+            table_name: table_name.clone(),
+        }));
 
         std::thread::sleep(Duration::from_millis(155));
 
-        let res = runtime.block_on(dynamo
-            .create_table(CreateTableInput {
+        let res = runtime
+            .block_on(dynamo.create_table(CreateTableInput {
                 table_name: table_name.clone(),
                 attribute_definitions: vec![
                     AttributeDefinition {
@@ -545,8 +548,8 @@ mod tests {
             is_creation: true,
         };
 
-        let session_id = runtime.block_on(session_db
-            .handle_unid_session(unid, false))
+        let session_id = runtime
+            .block_on(session_db.handle_unid_session(unid, false))
             .expect("Failed to create session");
 
         assert!(!session_id.is_empty());
