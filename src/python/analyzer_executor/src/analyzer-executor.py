@@ -23,20 +23,25 @@ import redis
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
 from grapl_analyzerlib.nodes.any_node import NodeView
-from grapl_analyzerlib.nodes.queryable import Queryable, traverse_query_iter, generate_query
+from grapl_analyzerlib.nodes.queryable import (
+    Queryable,
+    traverse_query_iter,
+    generate_query,
+)
 from grapl_analyzerlib.nodes.subgraph_view import SubgraphView
 from grapl_analyzerlib.nodes.viewable import Viewable
 from grapl_analyzerlib.plugin_retriever import load_plugins
 
 from pydgraph import DgraphClientStub, DgraphClient
 
-IS_LOCAL = bool(os.environ.get('IS_LOCAL', False))
-IS_RETRY = os.environ['IS_RETRY']
+IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
+IS_RETRY = os.environ["IS_RETRY"]
 
-GRAPL_LOG_LEVEL = os.getenv('GRAPL_LOG_LEVEL')
-LEVEL = 'ERROR' if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 logging.basicConfig(stream=sys.stdout, level=LEVEL)
-LOGGER = logging.getLogger('analyzer-executor')
+LOGGER = logging.getLogger("analyzer-executor")
+
 
 class NopCache(object):
     def set(self, key, value):
@@ -50,11 +55,11 @@ if IS_LOCAL:
     message_cache = NopCache()
     hit_cache = NopCache()
 else:
-    MESSAGECACHE_ADDR = os.environ['MESSAGECACHE_ADDR']
-    MESSAGECACHE_PORT = int(os.environ['MESSAGECACHE_PORT'])
+    MESSAGECACHE_ADDR = os.environ["MESSAGECACHE_ADDR"]
+    MESSAGECACHE_PORT = int(os.environ["MESSAGECACHE_PORT"])
 
-    HITCACHE_ADDR = os.environ['HITCACHE_ADDR']
-    HITCACHE_PORT = os.environ['HITCACHE_PORT']
+    HITCACHE_ADDR = os.environ["HITCACHE_ADDR"]
+    HITCACHE_PORT = os.environ["HITCACHE_PORT"]
 
     message_cache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
     hit_cache = redis.Redis(host=HITCACHE_ADDR, port=int(HITCACHE_PORT), db=0)
@@ -72,37 +77,45 @@ def download_s3_file(s3, bucket: str, key: str) -> str:
 
 
 def is_analyzer(analyzer_name, analyzer_cls):
-    if analyzer_name == 'Analyzer':  # This is the base class
+    if analyzer_name == "Analyzer":  # This is the base class
         return False
-    return hasattr(analyzer_cls, 'get_queries') and \
-           hasattr(analyzer_cls, 'build') and \
-           hasattr(analyzer_cls, 'on_response')
+    return (
+        hasattr(analyzer_cls, "get_queries")
+        and hasattr(analyzer_cls, "build")
+        and hasattr(analyzer_cls, "on_response")
+    )
 
 
 def get_analyzer_objects(dgraph_client: DgraphClient) -> Dict[str, Analyzer]:
     clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
-    return {an[0]: an[1].build(dgraph_client) for an in clsmembers if is_analyzer(an[0], an[1])}
+    return {
+        an[0]: an[1].build(dgraph_client)
+        for an in clsmembers
+        if is_analyzer(an[0], an[1])
+    }
 
 
-def check_caches(file_hash: str, msg_id: str, node_key: str, analyzer_name: str) -> bool:
+def check_caches(
+    file_hash: str, msg_id: str, node_key: str, analyzer_name: str
+) -> bool:
     if check_msg_cache(file_hash, node_key, msg_id):
-        LOGGER.debug('cache hit - already processed')
+        LOGGER.debug("cache hit - already processed")
         return True
 
     if check_hit_cache(analyzer_name, node_key):
-        LOGGER.debug('cache hit - already matched')
+        LOGGER.debug("cache hit - already matched")
         return True
 
     return False
 
 
 def handle_result_graphs(analyzer, result_graphs, sender):
-    LOGGER.info(f'Result graph: {type(analyzer)} {result_graphs[0]}')
+    LOGGER.info(f"Result graph: {type(analyzer)} {result_graphs[0]}")
     for result_graph in result_graphs:
         try:
             analyzer.on_response(result_graph, sender)
         except Exception as e:
-            LOGGER.error(f'Analyzer {analyzer} failed with {e}')
+            LOGGER.error(f"Analyzer {analyzer} failed with {e}")
             sender.send(ExecutionFailed)
             raise e
 
@@ -114,10 +127,16 @@ def get_analyzer_view_types(query: Queryable) -> Set[Type[Viewable]]:
     return query_types
 
 
-def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], analyzers: Dict[str, Analyzer],
-                   sender: Any):
+def exec_analyzers(
+    dg_client,
+    file: str,
+    msg_id: str,
+    nodes: List[NodeView],
+    analyzers: Dict[str, Analyzer],
+    sender: Any,
+):
     if not analyzers:
-        LOGGER.warning('Received empty dict of analyzers')
+        LOGGER.warning("Received empty dict of analyzers")
         return
 
     if not nodes:
@@ -147,13 +166,19 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
             for i, query in enumerate(queries):
                 analyzer_query_types = get_analyzer_view_types(query)
 
-                if node.node.get_node_type() + 'View' not in [n.__name__ for n in analyzer_query_types]:
+                if node.node.get_node_type() + "View" not in [
+                    n.__name__ for n in analyzer_query_types
+                ]:
                     continue
 
                 r = str(random.randint(10, 100))
-                result_name = f'{an_name}u{int(node.uid, 16)}i{i}r{r}'.strip().lower()
-                result_name_to_analyzer[result_name] = (an_name, analyzer, query.view_type)
-                query_str += '\n'
+                result_name = f"{an_name}u{int(node.uid, 16)}i{i}r{r}".strip().lower()
+                result_name_to_analyzer[result_name] = (
+                    an_name,
+                    analyzer,
+                    query.view_type,
+                )
+                query_str += "\n"
                 query_str += generate_query(
                     query_name=result_name,
                     binding_modifier=result_name,
@@ -162,7 +187,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
                 )
 
     if not query_str:
-        LOGGER.warning('No nodes to query')
+        LOGGER.warning("No nodes to query")
         return
 
     txn = dg_client.txn(read_only=True)
@@ -174,15 +199,23 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
     analyzer_to_results = defaultdict(list)
     for result_name, results in response.items():
         for result in results:
-            analyzer_meta = result_name_to_analyzer[result_name]  # type: Tuple[str, Analyzer, Type[Viewable]]
-            an_name, analyzer, view_type = analyzer_meta[0], analyzer_meta[1], analyzer_meta[2]
+            analyzer_meta = result_name_to_analyzer[
+                result_name
+            ]  # type: Tuple[str, Analyzer, Type[Viewable]]
+            an_name, analyzer, view_type = (
+                analyzer_meta[0],
+                analyzer_meta[1],
+                analyzer_meta[2],
+            )
 
             result_graph = view_type.from_dict(dg_client, result)
 
-            response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get('response')
+            response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get(
+                "response"
+            )
 
             if response_ty == NodeView:
-                LOGGER.warning('Analyzer on_response is expecting a NodeView')
+                LOGGER.warning("Analyzer on_response is expecting a NodeView")
                 result_graph = NodeView.from_view(result_graph)
 
             analyzer_to_results[an_name].append(result_graph)
@@ -196,7 +229,7 @@ def exec_analyzers(dg_client, file: str, msg_id: str, nodes: List[NodeView], ana
 
 
 def chunker(seq, size):
-    return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
+    return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
 def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
@@ -211,9 +244,9 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
         analyzers = get_analyzer_objects(client)
         if not analyzers:
-            LOGGER.warning(f'Got no analyzers for file: {name}')
+            LOGGER.warning(f"Got no analyzers for file: {name}")
 
-        LOGGER.info(f'Executing analyzers: {[an for an in analyzers.keys()]}')
+        LOGGER.info(f"Executing analyzers: {[an for an in analyzers.keys()]}")
 
         chunk_size = 100
 
@@ -221,7 +254,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
             chunk_size = 10
 
         for nodes in chunker([n for n in graph.node_iter()], chunk_size):
-            LOGGER.info(f'Querying {len(nodes)} nodes')
+            LOGGER.info(f"Querying {len(nodes)} nodes")
 
             def exec_analyzer(nodes, sender):
                 try:
@@ -230,7 +263,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
                     return nodes
                 except Exception as e:
                     LOGGER.error(traceback.format_exc())
-                    LOGGER.error(f'Execution of {name} failed with {e} {e.args}')
+                    LOGGER.error(f"Execution of {name} failed with {e} {e.args}")
                     sender.send(ExecutionFailed())
                     raise
 
@@ -245,7 +278,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
     except Exception as e:
         LOGGER.error(traceback.format_exc())
-        LOGGER.error(f'Execution of {name} failed with {e} {e.args}')
+        LOGGER.error(f"Execution of {name} failed with {e} {e.args}")
         sender.send(ExecutionFailed())
         raise
 
@@ -265,16 +298,18 @@ def emit_event(s3, event: ExecutionHit) -> None:
     event_hash = hashlib.sha256(event_s.encode())
     key = base64.urlsafe_b64encode(event_hash.digest()).decode("utf-8")
 
-    obj = s3.Object(f"{os.environ['BUCKET_PREFIX']}-analyzer-matched-subgraphs-bucket", key)
+    obj = s3.Object(
+        f"{os.environ['BUCKET_PREFIX']}-analyzer-matched-subgraphs-bucket", key
+    )
     obj.put(Body=event_s)
 
     if IS_LOCAL:
         sqs = boto3.client(
-            'sqs',
+            "sqs",
             region_name="us-east-1",
             endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-            aws_access_key_id='dummy_cred_aws_access_key_id',
-            aws_secret_access_key='dummy_cred_aws_secret_access_key',
+            aws_access_key_id="dummy_cred_aws_access_key_id",
+            aws_secret_access_key="dummy_cred_aws_secret_access_key",
         )
         send_s3_event(
             sqs,
@@ -320,27 +355,30 @@ def lambda_handler(events: Any, context: Any) -> None:
     s3 = get_s3_client()
 
     load_plugins(
-        os.environ["BUCKET_PREFIX"],
-        s3,
+        os.environ["BUCKET_PREFIX"], s3,
     )
 
     for event in events["Records"]:
         if not IS_LOCAL:
-            event = json.loads(event['body'])['Records'][0]
+            event = json.loads(event["body"])["Records"][0]
         data = parse_s3_event(s3, event)
 
         message = json.loads(data)
 
         LOGGER.info(f'Executing Analyzer: {message["key"]}')
-        analyzer = download_s3_file(s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"])
+        analyzer = download_s3_file(
+            s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"]
+        )
         analyzer_name = message["key"].split("/")[-2]
 
         subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
 
         # TODO: Validate signature of S3 file
-        LOGGER.info(f'event {event}')
+        LOGGER.info(f"event {event}")
         rx, tx = Pipe(duplex=False)  # type: Tuple[Connection, Connection]
-        p = Process(target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, ''))
+        p = Process(
+            target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, "")
+        )
 
         p.start()
         t = 0
@@ -349,7 +387,9 @@ def lambda_handler(events: Any, context: Any) -> None:
             p_res = rx.poll(timeout=5)
             if not p_res:
                 t += 1
-                LOGGER.info(f"Polled {analyzer_name} for {t * 5} seconds without result")
+                LOGGER.info(
+                    f"Polled {analyzer_name} for {t * 5} seconds without result"
+                )
                 continue
             result = rx.recv()  # type: Optional[Any]
 
@@ -359,9 +399,11 @@ def lambda_handler(events: Any, context: Any) -> None:
 
             # emit any hits to an S3 bucket
             if isinstance(result, ExecutionHit):
-                LOGGER.info(f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}")
+                LOGGER.info(
+                    f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
+                )
                 emit_event(s3, result)
-                update_msg_cache(analyzer, result.root_node_key, message['key'])
+                update_msg_cache(analyzer, result.root_node_key, message["key"])
                 update_hit_cache(analyzer_name, result.root_node_key)
 
             assert not isinstance(
@@ -377,35 +419,28 @@ def lambda_handler(events: Any, context: Any) -> None:
 def into_sqs_message(bucket: str, key: str) -> str:
     return json.dumps(
         {
-            'Records': [
+            "Records": [
                 {
-                    'eventTime': datetime.utcnow().isoformat(),
-                    'principalId': {
-                        'principalId': None,
-                    },
-                    'requestParameters': {
-                        'sourceIpAddress': None,
-                    },
-                    'responseElements': {},
-                    's3': {
-                        'schemaVersion': None,
-                        'configurationId': None,
-                        'bucket': {
-                            'name': bucket,
-                            'ownerIdentity': {
-                                'principalId': None,
-                            }
+                    "eventTime": datetime.utcnow().isoformat(),
+                    "principalId": {"principalId": None,},
+                    "requestParameters": {"sourceIpAddress": None,},
+                    "responseElements": {},
+                    "s3": {
+                        "schemaVersion": None,
+                        "configurationId": None,
+                        "bucket": {
+                            "name": bucket,
+                            "ownerIdentity": {"principalId": None,},
                         },
-                        'object': {
-                            'key': key,
-                            'size': 0,
-                            'urlDecodedKey': None,
-                            'versionId': None,
-                            'eTag': None,
-                            'sequencer': None
-                        }
-                    }
-
+                        "object": {
+                            "key": key,
+                            "size": 0,
+                            "urlDecodedKey": None,
+                            "versionId": None,
+                            "eTag": None,
+                            "sequencer": None,
+                        },
+                    },
                 }
             ]
         }
@@ -413,27 +448,21 @@ def into_sqs_message(bucket: str, key: str) -> str:
 
 
 def send_s3_event(
-        sqs_client: Any,
-        queue_url: str,
-        output_bucket: str,
-        output_path: str,
+    sqs_client: Any, queue_url: str, output_bucket: str, output_path: str,
 ):
     sqs_client.send_message(
         QueueUrl=queue_url,
-        MessageBody=into_sqs_message(
-            bucket=output_bucket,
-            key=output_path,
-        )
+        MessageBody=into_sqs_message(bucket=output_bucket, key=output_path,),
     )
 
 
 def get_s3_client():
     if IS_LOCAL:
         return boto3.resource(
-            's3',
+            "s3",
             endpoint_url="http://s3:9000",
-            aws_access_key_id='minioadmin',
-            aws_secret_access_key='minioadmin',
+            aws_access_key_id="minioadmin",
+            aws_secret_access_key="minioadmin",
         )
 
     else:
@@ -444,22 +473,27 @@ if IS_LOCAL:
     while True:
         try:
             sqs = boto3.client(
-                'sqs',
+                "sqs",
                 region_name="us-east-1",
                 endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-                aws_access_key_id='dummy_cred_aws_access_key_id',
-                aws_secret_access_key='dummy_cred_aws_secret_access_key',
+                aws_access_key_id="dummy_cred_aws_access_key_id",
+                aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
 
             alive = False
             while not alive:
                 try:
-                    if 'QueueUrls' not in sqs.list_queues(QueueNamePrefix='analyzer-executor-queue'):
-                        LOGGER.info('Waiting for analyzer-executor-queue to be created')
+                    if "QueueUrls" not in sqs.list_queues(
+                        QueueNamePrefix="analyzer-executor-queue"
+                    ):
+                        LOGGER.info("Waiting for analyzer-executor-queue to be created")
                         time.sleep(2)
                         continue
-                except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError):
-                    LOGGER.info('Waiting for SQS to become available')
+                except (
+                    botocore.exceptions.BotoCoreError,
+                    botocore.exceptions.ClientError,
+                ):
+                    LOGGER.info("Waiting for SQS to become available")
                     time.sleep(2)
                     continue
                 alive = True
@@ -470,11 +504,13 @@ if IS_LOCAL:
                 MaxNumberOfMessages=10,
             )
 
-            messages = res.get('Messages', [])
+            messages = res.get("Messages", [])
             if not messages:
-                LOGGER.warning('queue was empty')
+                LOGGER.warning("queue was empty")
 
-            s3_events = [(json.loads(msg['Body']), msg['ReceiptHandle']) for msg in messages]
+            s3_events = [
+                (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
+            ]
             for s3_event, receipt_handle in s3_events:
                 lambda_handler(s3_event, {})
 
