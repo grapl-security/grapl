@@ -32,7 +32,7 @@ class IpConnectionQuery(DynamicNodeQuery):
         self._inbound_ip_connection_to = None  # type: Optional[IIpAddressQuery]
 
     def with_src_ip_address(
-        self,
+        self: "NQ",
         eq: Optional[StrCmp] = None,
         contains: Optional[StrCmp] = None,
         ends_with: Optional[StrCmp] = None,
@@ -55,7 +55,7 @@ class IpConnectionQuery(DynamicNodeQuery):
         return self
 
     def with_src_port(
-        self,
+        self: "NQ",
         eq: Optional["StrCmp"] = None,
         contains: Optional["StrCmp"] = None,
         ends_with: Optional["StrCmp"] = None,
@@ -67,7 +67,7 @@ class IpConnectionQuery(DynamicNodeQuery):
         return self
 
     def with_dst_ip_address(
-        self,
+        self: "NQ",
         eq: Optional[StrCmp] = None,
         contains: Optional[StrCmp] = None,
         ends_with: Optional[StrCmp] = None,
@@ -90,7 +90,7 @@ class IpConnectionQuery(DynamicNodeQuery):
         return self
 
     def with_dst_port(
-        self,
+        self: "NQ",
         eq: Optional["StrCmp"] = None,
         contains: Optional["StrCmp"] = None,
         ends_with: Optional["StrCmp"] = None,

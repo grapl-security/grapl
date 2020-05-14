@@ -12,4 +12,4 @@ def as_datetime(millis: Millis) -> datetime:
 
 
 def as_millis(dt: datetime) -> Millis:
-    return Millis(dt.timestamp() * 1000)
+    return Millis(int(dt.timestamp() * 1000))

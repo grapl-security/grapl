@@ -29,7 +29,7 @@ class IpAddressQuery(DynamicNodeQuery):
         self._ip_connections = None  # type: Optional[IIpConnectionQuery]
 
     def with_ip_address(
-        self,
+        self: "NQ",
         eq: Optional["StrCmp"] = None,
         contains: Optional["StrCmp"] = None,
         ends_with: Optional["StrCmp"] = None,
@@ -78,9 +78,7 @@ class IpAddressQuery(DynamicNodeQuery):
         self: "NQ", ip_connections_from_query: Optional["IIpConnectionQuery"] = None,
     ) -> "NQ":
         ip_connections_from = ip_connections_from_query or IpConnectionQuery()
-        ip_connections_from.with_inbound_network_connection_to(
-            cast(IpAddressQuery, self)
-        )
+        ip_connections_from.with_inbound_ip_connection_to(cast(IpAddressQuery, self))
 
         return self
 
@@ -127,17 +125,17 @@ class IpAddressView(DynamicNodeView):
     def get_node_type(self) -> str:
         return "IpAddress"
 
-    def get_first_seen_timestamp(self) -> Optional[int]:
+    def get_first_seen_timestamp(self) -> Optional[Millis]:
         if not self.first_seen_timestamp:
             self.first_seen_timestamp = cast(
-                Optional[int], self.fetch_property("first_seen_timestamp", int)
+                Optional[Millis], self.fetch_property("first_seen_timestamp", int)
             )
         return self.first_seen_timestamp
 
-    def get_last_seen_timestamp(self) -> Optional[int]:
+    def get_last_seen_timestamp(self) -> Optional[Millis]:
         if not self.last_seen_timestamp:
             self.last_seen_timestamp = cast(
-                Optional[int], self.fetch_property("last_seen_timestamp", int)
+                Optional[Millis], self.fetch_property("last_seen_timestamp", int)
             )
         return self.last_seen_timestamp
 

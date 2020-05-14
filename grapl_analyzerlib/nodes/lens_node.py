@@ -5,7 +5,7 @@ from typing import *
 from pydgraph import DgraphClient, Txn
 
 from grapl_analyzerlib.nodes.any_node import NodeQuery, NodeView
-from grapl_analyzerlib.nodes.queryable import Queryable
+from grapl_analyzerlib.nodes.queryable import Queryable, NQ
 from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import (
     Viewable,
@@ -84,7 +84,7 @@ def dg_query(client: DgraphClient, query: str) -> Dict[str, Any]:
         txn.discard()
 
 
-def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> None:
+def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> Any:
     if node_dict.get("uid"):
         node_dict.pop("uid")
     node_dict["uid"] = "_:blank-0"
@@ -121,7 +121,7 @@ def copy_node(
     dst_client: DgraphClient,
     node_key: str,
     init_node: Optional[Dict[str, Any]] = None,
-) -> None:
+) -> Any:
     if not init_node:
         init_node = dict()
     assert init_node is not None

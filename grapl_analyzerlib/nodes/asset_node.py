@@ -47,7 +47,8 @@ class AssetQuery(Queryable["AssetView"]):
             "files_on_asset": self._files_on_asset,
         }
 
-        return {f[0]: f[1] for f in f_edges.items() if f[1] is not None}
+        # This is right, Mypy just doesn't recognize it as such
+        return {k: v for k, v in f_edges.items() if v is not None}
 
     def with_processes(
         self: "NQ", process_query: Optional["IProcessQuery"] = None
@@ -58,7 +59,7 @@ class AssetQuery(Queryable["AssetView"]):
         return self
 
     def with_hostname(
-        self,
+        self: "NQ",
         eq: Optional[StrCmp] = None,
         contains: Optional[StrCmp] = None,
         ends_with: Optional[StrCmp] = None,
@@ -155,3 +156,4 @@ from grapl_analyzerlib.nodes.process_node import (
     ProcessQuery,
 )
 from grapl_analyzerlib.nodes.file_node import IFileQuery, IFileView
+from grapl_analyzerlib.nodes.process_node import ProcessView
