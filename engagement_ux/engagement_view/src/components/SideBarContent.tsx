@@ -11,6 +11,9 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
+import {mapEdgeProps} from '../modules/GraphViz/graph/graph_traverse'; 
+import {Node, Lens} from "../modules/GraphViz/CustomTypes";
+
 
 const useStyles = makeStyles({
     root:{
@@ -41,7 +44,14 @@ const useStyles = makeStyles({
     },
 });
 
-function SelectLens(props: any) {
+type SelectLensProps = {
+    lens: string,
+    score: number,
+    uid: number,
+    setLens: (lens: string) => void,
+}
+
+function SelectLens(props: SelectLensProps) {
     // lensRows.push(createData(props.setLens(props.lens) ))
     return (
         <>
@@ -61,11 +71,25 @@ function SelectLens(props: any) {
     )
 }
 
-function ToggleLensTable({setLens}: any) {
-    const [state, setState] = useState({
+
+type ToggleLensTableProps = {
+    setLens: (lens: string) => void,
+}
+
+type ToggleLensTableState = {
+    toggled: boolean,
+    lenses: Lens[],
+}
+
+const defaultToggleLensTableState = (): ToggleLensTableState => {
+    return {
         toggled: true,
         lenses: [],
-    });
+    }
+}
+
+function ToggleLensTable({setLens}: ToggleLensTableProps) {
+    const [state, setState] = useState(defaultToggleLensTableState());
 
     const classes = useStyles();
 
@@ -109,8 +133,7 @@ function ToggleLensTable({setLens}: any) {
             <div className="lensToggle">
                 {state.toggled && state.lenses &&
                     state.lenses.map(
-                        (_lens) => {
-                            const lens = _lens as any;
+                        (lens: Lens) => {
                             // lensRows.push(lens);
                             return(
                                 <TableContainer>
@@ -184,21 +207,11 @@ const getLenses = async () => {
     return jres;
 };
 
-export const mapEdgeProps = (node: any, f: any) => {
-    for (const prop in node) {
-        if (Object.prototype.hasOwnProperty.call(node, prop)) {
-            if(Array.isArray(node[prop])) {
-                for (const neighbor of node[prop]) {
-                    if (neighbor.uid !== undefined) {
-                        f(prop, neighbor)
-                    }
-                }
-            }
-        }
-    }
-};
+type NodeDetailsProps = {
+    node: Node
+}
 
-const NodeDetails = ({node}: any) => {
+const NodeDetails = ({node}: NodeDetailsProps) => {
     // #TODO: Remove hidden fields from our node before displaying
     // Display remaining fields of node in our component="div"
 
@@ -209,8 +222,11 @@ const NodeDetails = ({node}: any) => {
     )
 }
 
+type ToggleNodeTableProps = {
+    curNode: Node | null
+}
 
-function ToggleNodeTable({curNode}: any) {
+function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
     const [toggled, toggle] = useState(true);
     const classes = useStyles();
     return (
@@ -229,7 +245,7 @@ function ToggleNodeTable({curNode}: any) {
 
             <div className="nodeToggle">
                 {
-                    toggled && 
+                    toggled && curNode && 
                         <>
                             { <NodeDetails node={curNode}/> }
                         </>
@@ -240,7 +256,13 @@ function ToggleNodeTable({curNode}: any) {
     )
 }
 
-export default function SideBarContent({setLens, curNode}: any) {
+
+type SideBarContentProps = {
+    setLens: (lens: string) => void, 
+    curNode: Node | null
+}
+
+export default function SideBarContent({setLens, curNode}: SideBarContentProps) {
     return (
         <>
             <ToggleLensTable setLens={setLens}/>

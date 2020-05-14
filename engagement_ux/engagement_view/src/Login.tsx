@@ -25,7 +25,11 @@ export const checkLogin = async () => {
     return body['success'] === 'True';
 };
 
-export const LogIn = (props: any) => {
+type LoginProps = {
+  loginSuccess: () => void,
+}
+
+export const LogIn = (props: LoginProps) => {
   return (
     <div className = "backgroundImage">
       <div className="grapl">Grapl</div>

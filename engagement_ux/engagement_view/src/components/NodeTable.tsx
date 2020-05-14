@@ -6,8 +6,9 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import { mapEdgeProps } from './SideBarContent';
+import { mapEdgeProps } from '../modules/GraphViz/graph/graph_traverse';
 import {mapNodeProps} from './GraphViz';
+import {Node} from "../modules/GraphViz/CustomTypes"
 
 
 const useStyles = makeStyles({
@@ -23,19 +24,19 @@ const useStyles = makeStyles({
     }
 });
 
-function innerTable(node: any, classes: any) {
+function innerTable(node: Node, styles: any) {
     if(node) {
         return (
         <TableHead >
             <TableRow>
                 <TableCell 
                     align="left" 
-                    className={classes.tableHeader}>
+                    className={styles.tableHeader}>
                     <b> PROPERTY </b>
                 </TableCell>
                 <TableCell 
                     align="left"
-                    className={classes.tableHeader}
+                    className={styles.tableHeader}
                 >
                     <b> VALUE </b>
                 </TableCell>
@@ -47,22 +48,26 @@ function innerTable(node: any, classes: any) {
     }
 }
 
-function NodeTable({node}:any){
+type NodeTableProps = {
+    node: Node
+}
+
+function NodeTable({node}: NodeTableProps){
     const classes = useStyles();
     const hidden = new Set(
         ['id', 'dgraph.type', '__indexColor', 'risks','uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']
     );
 
-    mapEdgeProps(node, (edgeName: string, _neighbor: any) => {
+    mapEdgeProps(node, (edgeName: string, _neighbor: Node) => {
         hidden.add(edgeName)
     });
 
-    const displayNode = {} as any; 
+    const displayNode = {} as any;
 
     mapNodeProps(
         node, 
         (propName: string) => {
-            const prop = node[propName];
+            const prop = (node as any)[propName];
 
             if(!hidden.has(propName)){
                 if (prop) {
