@@ -1,7 +1,11 @@
-version: '3'
+version: '3.4'
 services:
 
-  master_graph:
+  #
+  # Infrastructure dependencies
+  #
+
+  grapl-master-graph-db:
     tty: false
     image: dgraph/standalone:v1.2.2
     ports:
@@ -11,7 +15,7 @@ services:
     logging:
       driver: none
 
-  engagement_graph:
+  grapl-engagement-graph-db:
     tty: false
     image: dgraph/standalone:v1.2.2
     ports:
@@ -20,41 +24,6 @@ services:
       - "9081:9080"
     logging:
       driver: none
-
-  graph_provision:
-    build:
-      context: ./engagement_ux/engagement_edge/
-      dockerfile: ./Dockerfile
-    environment:
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-    volumes:
-      - ./local_grapl/:/var/run/target/
-    command: python /var/run/target/grapl_provision.py
-    tty: true
-    links:
-      - engagement_graph
-      - master_graph
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
-
-  dynamodb_provision:
-    build:
-      context: ./engagement_ux/engagement_edge/
-      dockerfile: ./Dockerfile
-    environment:
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-    volumes:
-      - ./local_grapl/local_dynamodb:/var/run/target/
-    command: python /var/run/target/provision_local_identity_table.py
-    tty: false
-    links:
-      - dynamodb:dynamodb
-    extra_hosts:
-      - amazonaws:127.0.0.1
 
   sqs:
     image: localstack/localstack
@@ -79,8 +48,13 @@ services:
     logging:
       driver: none
 
+  #
+  # Rust services
+  #
+
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+    command: ./sysmon-subgraph-generator
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -98,7 +72,7 @@ services:
     depends_on:
       - s3
       - sqs
-      - graph_provision
+      - grapl-graph-provision
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -122,11 +96,10 @@ services:
       - s3
       - dynamodb
       - sqs
-      - dynamodb_provision
-
+      - grapl-dynamodb-provision
 
   grapl-node-identifier-retry-handler:
-    image: grapl/grapl-node-identifier:${TAG:-latest}
+    image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     command: ./node-identifier-retry-handler
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -147,10 +120,11 @@ services:
       - s3
       - dynamodb
       - sqs
-      - dynamodb_provision
+      - grapl-dynamodb-provision
 
   grapl-graph-merger:
-    image: grapl/grapl-graph-merger
+    image: grapl/grapl-graph-merger:${TAG:-latest}
+    command: ./graph-merger
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -161,7 +135,7 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - master_graph
+      - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
@@ -169,11 +143,12 @@ services:
     depends_on:
       - s3
       - sqs
-      - graph_provision
-      - master_graph
+      - grapl-graph-provision
+      - grapl-master-graph-db
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
+    command: ./analyzer-dispatcher
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -192,10 +167,13 @@ services:
       - s3
       - sqs
 
+  #
+  # Python services
+  #
+
   grapl-analyzer-executor:
-    build:
-      context: ./analyzer_executor/
-      dockerfile: ./Dockerfile
+    image: grapl/grapl-analyzer-executor:${TAG:-latest}
+    command: python3 /src/analyzer-executor.py
     environment:
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
@@ -204,90 +182,122 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "ANALYZER_EXECUTOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue"
-    command: python3 /src/analyzer-executor.py
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - master_graph:master_graph
+      - grapl-master-graph-db:master_graph
     tty: true
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
 
-
   grapl-engagement-creator:
-    build:
-      context: ./engagement-creator/
-      dockerfile: ./Dockerfile
+    image: grapl/grapl-engagement-creator:${TAG:-latest}
+    command: python3 /src/engagement-creator.py
     environment:
       - "IS_LOCAL=True"
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-    command: python3 /src/engagement-creator.py
     tty: true
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - engagement_graph:engagement_graph
-      - master_graph:master_graph
+      - grapl-engagement-graph-db:engagement_graph
+      - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
 
   grapl-engagement-edge:
-    build:
-      context: ./engagement_ux/engagement_edge/
-      dockerfile: ./Dockerfile
+    image: grapl/grapl-engagement-edge:${TAG:-latest}
+    command: chalice local --no-autoreload --host=0.0.0.0 --port=8900
     ports:
       - "8900:8900"
     environment:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-    command: chalice local --no-autoreload --host=0.0.0.0 --port=8900
     tty: true
     links:
-      - engagement_graph:engagement_graph
+      - grapl-engagement-graph-db:engagement_graph
 
   grapl-model-plugin-deployer:
-    build:
-      context: ./grapl-model-plugin-deployer/
-      dockerfile: ./Dockerfile
+    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+    command: chalice local --no-autoreload --host=0.0.0.0 --port=8123
     ports:
       - "8123:8123"
     environment:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-    command: chalice local --no-autoreload --host=0.0.0.0 --port=8123
     tty: true
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - engagement_graph:engagement_graph
-      - master_graph:master_graph
+      - grapl-engagement-graph-db:engagement_graph
+      - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
 
+  #
+  # JS/web services
+  #
+
   grapl-engagement-view:
     image: grapl/grapl-engagement-view:${TAG:-latest}
-#    build:
-#      context: ./engagement_ux/engagement_view/
-#      dockerfile: ./Dockerfile
     environment:
       - PORT=1234
     ports:
       - 1234:1234
 
   grapl-notebook:
-    image: grapl/grapl-notebook
+    image: grapl/grapl-notebook:${TAG:-latest}
     links:
-      - engagement_graph:engagement_graph
-      - master_graph:master_graph
+      - grapl-engagement-graph-db:engagement_graph
+      - grapl-master-graph-db:master_graph
     ports:
       - 8888:8888
 
+  #
+  # Utility services
+  #
 
-## Plugins
+  grapl-graph-provision:
+    image: grapl/grapl-graph-provision:${TAG:-latest}
+    command: python /var/run/target/grapl_provision.py
+    environment:
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+    volumes:
+      - ./etc/local_grapl/:/var/run/target/
+    tty: true
+    links:
+      - grapl-engagement-graph-db:engagement_graph
+      - grapl-master-graph-db:master_graph
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+    depends_on:
+      - grapl-engagement-graph-db
+      - grapl-master-graph-db
+      - s3
+      - sqs
+
+  grapl-dynamodb-provision:
+    image: grapl/grapl-dynamodb-provision:${TAG:-latest}
+    command: python /var/run/target/provision_local_identity_table.py
+    environment:
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+    volumes:
+      - ./etc/local_grapl/local_dynamodb:/var/run/target/
+    tty: false
+    links:
+      - dynamodb:dynamodb
+    extra_hosts:
+      - amazonaws:127.0.0.1
+    depends_on:
+      - dynamodb
