@@ -7,17 +7,17 @@ use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;
-use failure::{bail, Error};
+use failure::{Error, bail};
 use graph_descriptions::graph_description::*;
+use lambda_runtime::Context;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use log::{debug, error, info, warn};
+use log::{info, warn, debug, error};
 use prost::Message;
-use rusoto_core::{HttpClient, Region, RusotoError};
-use rusoto_s3::{ListObjectsRequest, S3Client, S3};
-use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
-use serde::{Deserialize, Serialize};
+use rusoto_core::{Region, HttpClient, RusotoError};
+use rusoto_s3::{ListObjectsRequest, S3, S3Client};
+use rusoto_sqs::{Sqs, SqsClient, SendMessageRequest, ListQueuesRequest};
+use serde::{Serialize, Deserialize};
 use serde_json::json;
 
 use sqs_lambda::cache::NopCache;
@@ -26,46 +26,43 @@ use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
 use chrono::Utc;
+use aws_lambda_events::event::s3::{S3Event, S3EventRecord, S3UserIdentity, S3RequestParameters, S3Entity, S3Bucket, S3Object};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use tokio::runtime::Runtime;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
+    where S: S3 + Send + Sync + 'static
 {
-    s3_client: Arc<S>,
+    s3_client: Arc<S>
 }
 
 impl<S> Clone for AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
+    where S: S3 + Send + Sync + 'static
 {
     fn clone(&self) -> Self {
         Self {
-            s3_client: self.s3_client.clone(),
+            s3_client: self.s3_client.clone()
         }
     }
 }
 
-async fn get_s3_keys(
-    s3_client: &impl S3,
-    bucket: impl Into<String>,
-) -> Result<impl IntoIterator<Item = Result<String, Error>>, Error> {
+async fn get_s3_keys(s3_client: &impl S3, bucket: impl Into<String>) -> Result<impl IntoIterator<Item=Result<String, Error>>, Error>
+{
     let bucket = bucket.into();
 
-    let list_res = tokio::time::timeout(
-        Duration::from_secs(2),
-        s3_client.list_objects(ListObjectsRequest {
-            bucket,
-            ..Default::default()
-        }),
-    )
-    .await??;
+    let list_res =
+        tokio::time::timeout(
+            Duration::from_secs(2),
+            s3_client.list_objects(
+                ListObjectsRequest {
+                    bucket,
+                    ..Default::default()
+                }
+            )
+        )
+        .await??;
 
     let contents = match list_res.contents {
         Some(contents) => contents,
@@ -75,10 +72,13 @@ async fn get_s3_keys(
         }
     };
 
-    Ok(contents.into_iter().map(|object| match object.key {
-        Some(key) => Ok(key),
-        None => bail!("S3Object is missing key"),
-    }))
+    Ok(
+        contents.into_iter()
+            .map(|object| match object.key {
+                Some(key) => Ok(key),
+                None => bail!("S3Object is missing key")
+            })
+    )
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,43 +93,35 @@ fn encode_subgraph(subgraph: &Graph) -> Result<Vec<u8>, Error> {
     Ok(buf)
 }
 
+
 #[async_trait]
 impl<S> EventHandler for AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
+    where S: S3 + Send + Sync + 'static
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = Vec<AnalyzerDispatchEvent>;
     type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
 
-    async fn handle_event(
-        &mut self,
-        subgraphs: GeneratedSubgraphs,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
+    async fn handle_event(&mut self, subgraphs: GeneratedSubgraphs) -> OutputEvent<Self::OutputEvent, Self::Error> {
         let bucket = std::env::var("BUCKET_PREFIX")
             .map(|prefix| format!("{}-analyzers-bucket", prefix))
             .expect("BUCKET_PREFIX");
 
         let mut subgraph = Graph::new(0);
 
-        subgraphs
-            .subgraphs
-            .iter()
-            .for_each(|generated_subgraph| subgraph.merge(generated_subgraph));
+        subgraphs.subgraphs.iter().for_each(|generated_subgraph| subgraph.merge(generated_subgraph));
 
         if subgraph.is_empty() {
             warn!("Attempted to handle empty subgraph");
-            return OutputEvent::new(Completion::Total(vec![]));
+            return OutputEvent::new(Completion::Total(vec![]))
         }
 
         info!("Retrieving S3 keys");
         let keys = match get_s3_keys(self.s3_client.as_ref(), bucket).await {
             Ok(keys) => keys,
-            Err(e) => {
-                return OutputEvent::new(Completion::Error(
-                    sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
-                ))
-            }
+            Err(e) => return OutputEvent::new(Completion::Error(
+                sqs_lambda::error::Error::ProcessingError(Arc::new(e))
+            ))
         };
 
         let mut dispatch_events = Vec::new();
@@ -141,26 +133,32 @@ where
                 Err(e) => {
                     warn!("Failed to retrieve key with {:?}", e);
                     failed = Some(e);
-                    continue;
+                    continue
                 }
             };
 
-            dispatch_events.push(AnalyzerDispatchEvent {
-                key,
-                subgraph: subgraph.clone(),
-            });
+            dispatch_events.push(
+              AnalyzerDispatchEvent {
+                  key,
+                  subgraph: subgraph.clone()
+              }
+            );
         }
 
         let completed = if let Some(e) = failed {
-            OutputEvent::new(Completion::Partial((
-                dispatch_events,
-                sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
-            )))
+            OutputEvent::new(
+                Completion::Partial(
+                    (
+                        dispatch_events,
+                        sqs_lambda::error::Error::ProcessingError(Arc::new(e))
+                    )
+                )
+            )
         } else {
             OutputEvent::new(Completion::Total(dispatch_events))
         };
 
-        //        identities.into_iter().for_each(|identity| completed.add_identity(identity));
+//        identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
         completed
     }
@@ -180,7 +178,12 @@ impl CompletionEventSerializer for SubgraphSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let unique_events: Vec<_> = completed_events.iter().flatten().collect();
+
+
+        let unique_events: Vec<_> = completed_events
+            .iter()
+            .flatten()
+            .collect();
 
         let mut final_subgraph = Graph::new(0);
 
@@ -203,24 +206,26 @@ impl CompletionEventSerializer for SubgraphSerializer {
             serialized.push(
                 serde_json::to_vec(&event)
                     .map_err(Arc::new)
-                    .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?,
+                    .map_err(|e| {
+                        sqs_lambda::error::Error::EncodeError(e.to_string())
+                    })?
             );
+
         }
 
         Ok(serialized)
     }
 }
 
+
 #[derive(Debug, Clone, Default)]
 pub struct ZstdProtoDecoder;
 
 impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-where
-    E: Message + Default,
+    where E: Message + Default
 {
     fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-    where
-        E: Message + Default,
+        where E: Message + Default,
     {
         let mut decompressed = Vec::new();
 
@@ -229,10 +234,11 @@ where
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;
 
         let buf = Bytes::from(decompressed);
-
+        
         Ok(E::decode(buf)?)
     }
 }
+
 
 fn time_based_key_fn(_event: &[u8]) -> String {
     info!("event length {}", _event.len());
@@ -243,7 +249,10 @@ fn time_based_key_fn(_event: &[u8]) -> String {
 
     let cur_day = cur_ms - (cur_ms % 86400);
 
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
+    format!(
+        "{}/{}-{}",
+        cur_day, cur_ms, uuid::Uuid::new_v4()
+    )
 }
 
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
@@ -258,11 +267,11 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
     }
 }
 
+
 fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     info!("Handling event");
 
-    let mut initial_events: HashSet<String> = event
-        .records
+    let mut initial_events: HashSet<String> = event.records
         .iter()
         .map(|event| event.message_id.clone().unwrap())
         .collect();
@@ -273,57 +282,55 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     let completed_tx = tx.clone();
 
     std::thread::spawn(move || {
-        tokio_compat::run_std(async move {
-            let analyzer_dispatcher_queue_url = std::env::var("ANALYZER_DISPATCHER_QUEUE_URL")
-                .expect("ANALYZER_DISPATCHER_QUEUE_URL");
-            debug!("Queue Url: {}", analyzer_dispatcher_queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+        tokio_compat::run_std(
+            async move {
+                let analyzer_dispatcher_queue_url = std::env::var("ANALYZER_DISPATCHER_QUEUE_URL")
+                    .expect("ANALYZER_DISPATCHER_QUEUE_URL");
+                debug!("Queue Url: {}", analyzer_dispatcher_queue_url);
+                let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-            let bucket = bucket_prefix + "-dispatched-analyzer-bucket";
-            info!("Output events to: {}", bucket);
-            let region = grapl_config::region();
+                let bucket = bucket_prefix + "-dispatched-analyzer-bucket";
+                info!("Output events to: {}", bucket);
+                let region = grapl_config::region();
 
-            let cache = grapl_config::event_cache().await;
-            let analyzer_dispatcher = AnalyzerDispatcher {
-                s3_client: Arc::new(S3Client::new(region.clone())),
-            };
+                let cache = grapl_config::event_cache().await;
+                let analyzer_dispatcher
+                    = AnalyzerDispatcher {
+                        s3_client: Arc::new(S3Client::new(region.clone())),
+                    };
 
-            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
+                let initial_messages: Vec<_> = event.records
+                    .into_iter()
+                    .map(map_sqs_message)
+                    .collect();
 
-            sqs_lambda::sqs_service::sqs_service(
-                analyzer_dispatcher_queue_url,
-                initial_messages,
-                bucket,
-                ctx,
-                S3Client::new(region.clone()),
-                SqsClient::new(region.clone()),
-                ZstdProtoDecoder::default(),
-                SubgraphSerializer {
-                    proto: Vec::with_capacity(1024),
-                },
-                analyzer_dispatcher,
-                cache.clone(),
-                move |_self_actor, result: Result<String, String>| match result {
-                    Ok(worked) => {
-                        info!(
-                            "Handled an event, which was successfully deleted: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                    Err(worked) => {
-                        info!(
-                            "Handled an initial_event, though we failed to delete it: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                },
-                move |_, _| async move { Ok(()) },
-            )
-            .await;
-            completed_tx.clone().send("Completed".to_owned()).unwrap();
-        });
+                sqs_lambda::sqs_service::sqs_service(
+                    analyzer_dispatcher_queue_url,
+                    initial_messages,
+                    bucket,
+                    ctx,
+                    S3Client::new(region.clone()),
+                    SqsClient::new(region.clone()),
+                    ZstdProtoDecoder::default(),
+                    SubgraphSerializer { proto: Vec::with_capacity(1024) },
+                    analyzer_dispatcher,
+                    cache.clone(),
+                    move |_self_actor, result: Result<String, String>| {
+                        match result {
+                            Ok(worked) => {
+                                info!("Handled an event, which was successfully deleted: {}", &worked);
+                                tx.send(worked).unwrap();
+                            }
+                            Err(worked) => {
+                                info!("Handled an initial_event, though we failed to delete it: {}", &worked);
+                                tx.send(worked).unwrap();
+                            }
+                        }
+                    },
+                    move |_, _| async move {Ok(())},
+                ).await;
+                completed_tx.clone().send("Completed".to_owned()).unwrap();
+            });
     });
 
     info!("Checking acks");
@@ -344,13 +351,13 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         info!("Successfully acked all initial events");
         Ok(())
     } else {
-        Err(lambda_runtime::error::HandlerError::from(
-            "Failed to ack all initial events",
-        ))
+        Err(lambda_runtime::error::HandlerError::from("Failed to ack all initial events"))
     }
 }
 
-fn init_sqs_client() -> SqsClient {
+
+fn init_sqs_client() -> SqsClient
+{
     info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
     SqsClient::new_with(
@@ -362,11 +369,12 @@ fn init_sqs_client() -> SqsClient {
         Region::Custom {
             name: "us-east-1".to_string(),
             endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        },
+        }
     )
 }
 
-fn init_s3_client() -> S3Client {
+fn init_s3_client() -> S3Client
+{
     info!("Connecting to local http://s3:9000");
     S3Client::new_with(
         HttpClient::new().expect("failed to create request dispatcher"),
@@ -383,12 +391,13 @@ fn init_s3_client() -> S3Client {
 
 async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("BUCKET_PREFIX", "local-grapl");
-    let analyzer_dispatcher = AnalyzerDispatcher {
+    let analyzer_dispatcher
+        = AnalyzerDispatcher {
         s3_client: Arc::new(init_s3_client()),
     };
 
-    let analyzer_dispatcher_queue_url =
-        std::env::var("ANALYZER_DISPATCHER_QUEUE_URL").expect("ANALYZER_DISPATCHER_QUEUE_URL");
+    let analyzer_dispatcher_queue_url = std::env::var("ANALYZER_DISPATCHER_QUEUE_URL")
+        .expect("ANALYZER_DISPATCHER_QUEUE_URL");
     local_sqs_service(
         analyzer_dispatcher_queue_url,
         "local-grapl-analyzer-dispatched-bucket",
@@ -399,73 +408,70 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
         init_s3_client(),
         init_sqs_client(),
         ZstdProtoDecoder::default(),
-        SubgraphSerializer {
-            proto: Vec::with_capacity(1024),
-        },
+        SubgraphSerializer { proto: Vec::with_capacity(1024) },
         analyzer_dispatcher,
         NopCache {},
-        |_, event_result| {
-            dbg!(event_result);
-        },
+        |_, event_result | {dbg!(event_result);},
         move |bucket, key| async move {
             let output_event = S3Event {
-                records: vec![S3EventRecord {
-                    event_version: None,
-                    event_source: None,
-                    aws_region: None,
-                    event_time: chrono::Utc::now(),
-                    event_name: None,
-                    principal_id: S3UserIdentity { principal_id: None },
-                    request_parameters: S3RequestParameters {
-                        source_ip_address: None,
-                    },
-                    response_elements: Default::default(),
-                    s3: S3Entity {
-                        schema_version: None,
-                        configuration_id: None,
-                        bucket: S3Bucket {
-                            name: Some(bucket),
-                            owner_identity: S3UserIdentity { principal_id: None },
-                            arn: None,
-                        },
-                        object: S3Object {
-                            key: Some(key),
-                            size: 0,
-                            url_decoded_key: None,
-                            version_id: None,
-                            e_tag: None,
-                            sequencer: None,
-                        },
-                    },
-                }],
+                records: vec![
+                    S3EventRecord {
+                        event_version: None,
+                        event_source: None,
+                        aws_region: None,
+                        event_time: chrono::Utc::now(),
+                        event_name: None,
+                        principal_id: S3UserIdentity { principal_id: None },
+                        request_parameters: S3RequestParameters { source_ip_address: None },
+                        response_elements: Default::default(),
+                        s3: S3Entity {
+                            schema_version: None,
+                            configuration_id: None,
+                            bucket: S3Bucket {
+                                name: Some(bucket),
+                                owner_identity: S3UserIdentity { principal_id: None },
+                                arn: None
+                            },
+                            object: S3Object {
+                                key: Some(key),
+                                size: 0,
+                                url_decoded_key: None,
+                                version_id: None,
+                                e_tag: None,
+                                sequencer: None
+                            }
+                        }
+                    }
+                ]
             };
 
             let sqs_client = init_sqs_client();
 
             // publish to SQS
-            sqs_client
-                .send_message(SendMessageRequest {
+            sqs_client.send_message(
+                SendMessageRequest {
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
                     queue_url: std::env::var("ANALYZER_EXECUTOR_QUEUE_URL")
                         .expect("ANALYZER_EXECUTOR_QUEUE_URL"),
                     ..Default::default()
-                })
-                .await?;
+                }
+            ).await?;
 
             Ok(())
-        },
-    )
-    .await?;
+        }
+    ).await?;
 
     Ok(())
 }
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(grapl_config::grapl_log_level())
         .expect("Failed to initialize logger");
 
-    let is_local = std::env::var("IS_LOCAL").is_ok();
+    let is_local = std::env::var("IS_LOCAL")
+        .is_ok();
 
     if is_local {
         info!("Running locally");
@@ -478,34 +484,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     RusotoError::HttpDispatch(_) => {
                         info!("Waiting for S3 to become available");
                         std::thread::sleep(Duration::new(2, 0));
-                    }
-                    _ => break,
+                    },
+                    _ => break
                 }
             } else {
                 break;
             }
         }
-
+        
         let sqs_client = init_sqs_client();
-        let analyzer_dispatcher_queue_url =
-            std::env::var("ANALYZER_DISPATCHER_QUEUE_URL").expect("ANALYZER_DISPATCHER_QUEUE_URL");
+        let analyzer_dispatcher_queue_url = std::env::var("ANALYZER_DISPATCHER_QUEUE_URL")
+            .expect("ANALYZER_DISPATCHER_QUEUE_URL");
         loop {
-            match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
-                queue_name_prefix: Some("analyzer-dispatcher".to_string()),
-            })) {
+            match runtime.block_on(
+                sqs_client.list_queues(
+                    ListQueuesRequest { 
+                        queue_name_prefix: Some("analyzer-dispatcher".to_string()) 
+                    }
+                )
+            ) {
                 Err(_) => {
                     info!("Waiting for SQS to become available");
                     std::thread::sleep(Duration::new(2, 0));
-                }
+                },
                 Ok(response) => {
                     if let Some(urls) = response.queue_urls {
                         if urls.contains(&analyzer_dispatcher_queue_url) {
-                            break;
+                            break
                         } else {
-                            info!(
-                                "Waiting for {} to be created",
-                                analyzer_dispatcher_queue_url
-                            );
+                            info!("Waiting for {} to be created", analyzer_dispatcher_queue_url);
                             std::thread::sleep(Duration::new(2, 0));
                         }
                     }
@@ -519,10 +526,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             std::thread::sleep(Duration::new(2, 0));
         }
-    } else {
+    }  else {
         info!("Running in AWS");
         lambda!(handler);
     }
 
+
     Ok(())
 }
+

@@ -1,8 +1,8 @@
-use lazy_static::lazy_static;
 use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use lazy_static::lazy_static;
 
 use aws_lambda_events::event::sqs::SqsEvent;
 use failure::Error;
