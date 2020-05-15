@@ -1,13 +1,15 @@
-use log::{info, error};
+use log::{error, info};
 use std::time::Duration;
 
-use node_identifier::{retry_handler, local_handler, init_s3_client, init_sqs_client, init_dynamodb_client};
+use node_identifier::{
+    init_dynamodb_client, init_s3_client, init_sqs_client, local_handler, retry_handler,
+};
 
 use lambda_runtime::lambda;
 use rusoto_core::RusotoError;
-use rusoto_s3::S3;
-use rusoto_sqs::{Sqs, ListQueuesRequest};
 use rusoto_dynamodb::DynamoDb;
+use rusoto_s3::S3;
+use rusoto_sqs::{ListQueuesRequest, Sqs};
 use tokio::runtime::Runtime;
 
 // fn main() {
@@ -15,13 +17,11 @@ use tokio::runtime::Runtime;
 //     lambda!(retry_handler);
 // }
 
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(grapl_config::grapl_log_level())
         .expect("Failed to initialize logger");
 
-    let is_local = std::env::var("IS_LOCAL")
-        .is_ok();
+    let is_local = std::env::var("IS_LOCAL").is_ok();
 
     if is_local {
         info!("Running locally");
@@ -34,8 +34,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     RusotoError::HttpDispatch(_) => {
                         info!("Waiting for S3 to become available");
                         std::thread::sleep(Duration::new(2, 0));
-                    },
-                    _ => break
+                    }
+                    _ => break,
                 }
             } else {
                 break;
@@ -46,23 +46,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let node_identifier_retry_queue_url = std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL")
             .expect("NODE_IDENTIFIER_RETRY_QUEUE_URL");
         loop {
-            match runtime.block_on(
-                sqs_client.list_queues(
-                    ListQueuesRequest { 
-                        queue_name_prefix: Some("node-identifier".to_string()) 
-                    }
-                )
-            ) {
+            match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
+                queue_name_prefix: Some("node-identifier".to_string()),
+            })) {
                 Err(_) => {
                     info!("Waiting for SQS to become available");
                     std::thread::sleep(Duration::new(2, 0));
-                },
+                }
                 Ok(response) => {
                     if let Some(urls) = response.queue_urls {
                         if urls.contains(&node_identifier_retry_queue_url) {
-                            break
+                            break;
                         } else {
-                            info!("Waiting for {} to be created", node_identifier_retry_queue_url);
+                            info!(
+                                "Waiting for {} to be created",
+                                node_identifier_retry_queue_url
+                            );
                             std::thread::sleep(Duration::new(2, 0));
                         }
                     }
@@ -77,8 +76,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     RusotoError::HttpDispatch(_) => {
                         info!("Waiting for DynamoDB to become available");
                         std::thread::sleep(Duration::new(2, 0));
-                    },
-                    _ => break
+                    }
+                    _ => break,
                 }
             }
         }
@@ -90,7 +89,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             std::thread::sleep(Duration::new(2, 0));
         }
-    }  else {
+    } else {
         info!("Running in AWS");
         lambda!(retry_handler);
     }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use failure::Error;
 use rusoto_dynamodb::AttributeValue;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 
 #[derive(Debug, Serialize, Deserialize)]

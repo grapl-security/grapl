@@ -1,13 +1,14 @@
-use rusoto_dynamodb::AttributeValue;
-use failure::{Error, bail};
+use failure::{bail, Error};
 use hmap::hmap;
 use log::info;
+use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::{DynamoDb, PutItemInput, QueryInput};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use graph_descriptions::graph_description::*;
 use graph_descriptions::graph_description::host::*;
 use graph_descriptions::graph_description::node::WhichNode;
+use graph_descriptions::graph_description::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResolvedAssetId {
@@ -76,11 +77,9 @@ where
                 let asset_id: ResolvedAssetId = serde_dynamodb::from_hashmap(item)?;
                 Ok(Some(asset_id.asset_id))
             }
-            Some(items) if items.is_empty() => {
-                Ok(None)
-            }
+            Some(items) if items.is_empty() => Ok(None),
             Some(items) => bail!("Unexpected number of items returned: {}", items.len()),
-            None => Ok(None)
+            None => Ok(None),
         }
     }
 
@@ -132,7 +131,11 @@ where
         }
     }
 
-    pub async fn resolve_asset_id(&self, host_id: &HostId, ts: u64) -> Result<Option<String>, Error> {
+    pub async fn resolve_asset_id(
+        &self,
+        host_id: &HostId,
+        ts: u64,
+    ) -> Result<Option<String>, Error> {
         if let Some(session_id) = self.find_last_mapping_before(host_id, ts).await? {
             Ok(Some(session_id))
         } else {
@@ -140,7 +143,12 @@ where
         }
     }
 
-    pub async fn create_mapping(&self, host_id: &HostId, asset_id: String, ts: u64) -> Result<(), Error> {
+    pub async fn create_mapping(
+        &self,
+        host_id: &HostId,
+        asset_id: String,
+        ts: u64,
+    ) -> Result<(), Error> {
         let (table_key, host_id) = match host_id {
             HostId::AssetId(id) => return Ok(()),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
@@ -171,38 +179,40 @@ where
 
 #[derive(Debug, Clone)]
 pub struct AssetIdentifier<D>
-    where D: DynamoDb
+where
+    D: DynamoDb,
 {
     assetdb: AssetIdDb<D>,
 }
 
 impl<D> AssetIdentifier<D>
-    where D: DynamoDb
+where
+    D: DynamoDb,
 {
-    pub fn new(
-        assetdb: AssetIdDb<D>
-    ) -> Self {
-        Self {assetdb}
+    pub fn new(assetdb: AssetIdDb<D>) -> Self {
+        Self { assetdb }
     }
 
-    pub async fn attribute_asset_id(
-        &self,
-        node: &Node,
-    ) -> Result<String, Error> {
-
+    pub async fn attribute_asset_id(&self, node: &Node) -> Result<String, Error> {
         let ids = match &node.which_node {
-            Some(WhichNode::AssetNode(ref node)) =>
-                (&node.asset_id, &node.hostname, node.first_seen_timestamp),
-            Some(WhichNode::ProcessNode(ref node)) =>
-                (&node.asset_id, &node.hostname, node.created_timestamp),
-            Some(WhichNode::FileNode(ref node)) =>
-                (&node.asset_id, &node.hostname, node.created_timestamp),
-            Some(WhichNode::ProcessOutboundConnectionNode(ref node)) =>
-                (&node.asset_id, &node.hostname, node.created_timestamp),
-            Some(WhichNode::DynamicNode(ref node)) =>
-                (&node.asset_id, &node.hostname, node.seen_at),
-            Some(WhichNode::ProcessInboundConnectionNode(ref node)) =>
-                (&node.asset_id, &node.hostname, node.created_timestamp),
+            Some(WhichNode::AssetNode(ref node)) => {
+                (&node.asset_id, &node.hostname, node.first_seen_timestamp)
+            }
+            Some(WhichNode::ProcessNode(ref node)) => {
+                (&node.asset_id, &node.hostname, node.created_timestamp)
+            }
+            Some(WhichNode::FileNode(ref node)) => {
+                (&node.asset_id, &node.hostname, node.created_timestamp)
+            }
+            Some(WhichNode::ProcessOutboundConnectionNode(ref node)) => {
+                (&node.asset_id, &node.hostname, node.created_timestamp)
+            }
+            Some(WhichNode::DynamicNode(ref node)) => {
+                (&node.asset_id, &node.hostname, node.seen_at)
+            }
+            Some(WhichNode::ProcessInboundConnectionNode(ref node)) => {
+                (&node.asset_id, &node.hostname, node.created_timestamp)
+            }
             Some(WhichNode::IpAddressNode(_)) => {
                 bail!("Can not call attribute_asset_id with IpAddressNode")
             }
@@ -215,13 +225,13 @@ impl<D> AssetIdentifier<D>
             Some(WhichNode::IpConnectionNode(_)) => {
                 bail!("Can not call attribute_asset_id with IpConnectionNode")
             }
-            None => bail!("Could not determine node variant")
+            None => bail!("Could not determine node variant"),
         };
 
         let (host_id, timestamp) = match ids {
             (Some(asset_id), _, timestamp) => return Ok(asset_id.clone()),
             (_, Some(hostname), timestamp) => (HostId::Hostname(hostname.clone()), timestamp),
-            (_,_,_) => {
+            (_, _, _) => {
                 bail!("Must provide at least one of: asset_id, hostname, host_ip");
             }
         };
@@ -235,10 +245,8 @@ impl<D> AssetIdentifier<D>
             Ok(None) => bail!("Failed to resolve assetid"),
             Err(e) => bail!("Failed to resolve assetid {}", e),
         }
-
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -260,16 +268,18 @@ mod tests {
 
         let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
-        runtime.block_on(asset_id_db
-            .create_mapping(
+        runtime
+            .block_on(asset_id_db.create_mapping(
                 &HostId::Hostname("fakehostname".to_owned()),
                 "asset_id_a".into(),
                 1500,
             ))
             .expect("Mapping creation failed");
 
-        let mapping = runtime.block_on(asset_id_db
-            .resolve_asset_id(&HostId::Hostname("fakehostname".to_owned()), 1510))
+        let mapping = runtime
+            .block_on(
+                asset_id_db.resolve_asset_id(&HostId::Hostname("fakehostname".to_owned()), 1510),
+            )
             .expect("Failed to resolve asset id mapping")
             .expect("Failed to resolve asset id mapping");
 

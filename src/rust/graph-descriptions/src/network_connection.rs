@@ -32,11 +32,10 @@ impl TryFrom<u32> for NetworkConnectionState {
             1 => Ok(NetworkConnectionState::Created),
             2 => Ok(NetworkConnectionState::Terminated),
             3 => Ok(NetworkConnectionState::Existing),
-            _ => Err(Error::InvalidNetworkConnectionState(p))
+            _ => Err(Error::InvalidNetworkConnectionState(p)),
         }
     }
 }
-
 
 impl NetworkConnection {
     pub fn new(
@@ -50,8 +49,8 @@ impl NetworkConnection {
         terminated_timestamp: u64,
         last_seen_timestamp: u64,
     ) -> Self {
-        let src_ip_address= src_ip_address.into();
-        let dst_ip_address= dst_ip_address.into();
+        let src_ip_address = src_ip_address.into();
+        let dst_ip_address = dst_ip_address.into();
         let protocol = protocol.into();
 
         Self {
@@ -90,7 +89,6 @@ impl NetworkConnection {
             j["last_seen_timestamp"] = self.last_seen_timestamp.into();
         }
 
-
         j
     }
 }
@@ -115,7 +113,7 @@ impl NodeT for NetworkConnection {
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two NetworkConnection Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         let mut merged = false;
@@ -124,7 +122,8 @@ impl NodeT for NetworkConnection {
             self.created_timestamp = other.created_timestamp;
             merged = true;
         }
-        if self.terminated_timestamp == 0 || other.terminated_timestamp > self.terminated_timestamp {
+        if self.terminated_timestamp == 0 || other.terminated_timestamp > self.terminated_timestamp
+        {
             self.terminated_timestamp = other.terminated_timestamp;
             merged = true;
         }

@@ -8,12 +8,11 @@ use crate::error::Error;
 use crate::graph_description::Process;
 use crate::node::NodeT;
 
-
 #[derive(Debug, Clone)]
 pub enum ProcessState {
     Created,
     Terminated,
-    Existing
+    Existing,
 }
 
 impl From<ProcessState> for u32 {
@@ -34,21 +33,22 @@ impl TryFrom<u32> for ProcessState {
             1 => Ok(ProcessState::Created),
             2 => Ok(ProcessState::Terminated),
             3 => Ok(ProcessState::Existing),
-            _ => Err(Error::InvalidProcessState(p))
+            _ => Err(Error::InvalidProcessState(p)),
         }
     }
 }
 
 impl Process {
-    pub fn new(asset_id: impl Into<Option<String>>,
-               hostname: impl Into<Option<String>>,
-               state: ProcessState,
-               process_id: u64,
-               timestamp: u64,
-               process_name: String,
-               operating_system: String,
-               process_command_line: String,
-               process_guid: String,
+    pub fn new(
+        asset_id: impl Into<Option<String>>,
+        hostname: impl Into<Option<String>>,
+        state: ProcessState,
+        process_id: u64,
+        timestamp: u64,
+        process_name: String,
+        operating_system: String,
+        process_command_line: String,
+        process_guid: String,
     ) -> Process {
         let asset_id = asset_id.into();
         let hostname = hostname.into();
@@ -82,8 +82,7 @@ impl Process {
     }
 
     pub fn into_json(self) -> Value {
-        let mut j =
-            json!({
+        let mut j = json!({
             "node_key": self.node_key,
             "process_id": self.process_id,
             "dgraph.type": "Process"
@@ -105,7 +104,7 @@ impl Process {
             j["process_guid"] = Value::from(self.process_guid);
         }
 
-        if self.created_timestamp!= 0 {
+        if self.created_timestamp != 0 {
             j["created_timestamp"] = self.created_timestamp.into()
         }
 
@@ -140,7 +139,7 @@ impl NodeT for Process {
     fn merge(&mut self, other: &Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two Process Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         let mut merged = false;
@@ -170,7 +169,8 @@ impl NodeT for Process {
             merged = true;
         }
 
-        if self.terminated_timestamp == 0 || other.terminated_timestamp > self.terminated_timestamp {
+        if self.terminated_timestamp == 0 || other.terminated_timestamp > self.terminated_timestamp
+        {
             self.terminated_timestamp = other.terminated_timestamp;
             merged = true;
         }
@@ -186,7 +186,7 @@ impl NodeT for Process {
     fn merge_into(&mut self, other: Self) -> bool {
         if self.node_key != other.node_key {
             warn!("Attempted to merge two IpPort Nodes with differing node_keys");
-            return false
+            return false;
         }
 
         let mut merged = false;
@@ -216,7 +216,8 @@ impl NodeT for Process {
             merged = true;
         }
 
-        if self.terminated_timestamp == 0 || other.terminated_timestamp > self.terminated_timestamp {
+        if self.terminated_timestamp == 0 || other.terminated_timestamp > self.terminated_timestamp
+        {
             self.terminated_timestamp = other.terminated_timestamp;
             merged = true;
         }

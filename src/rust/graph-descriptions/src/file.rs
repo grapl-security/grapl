@@ -8,7 +8,6 @@ use crate::error::Error;
 use crate::graph_description::File;
 use crate::node::NodeT;
 
-
 #[derive(Debug, Clone)]
 pub enum FileState {
     Created,
@@ -24,7 +23,7 @@ impl TryFrom<u32> for FileState {
             1 => Ok(FileState::Created),
             2 => Ok(FileState::Deleted),
             3 => Ok(FileState::Existing),
-            _ => Err(Error::InvalidProcessState(i))
+            _ => Err(Error::InvalidProcessState(i)),
         }
     }
 }
@@ -39,27 +38,27 @@ impl From<FileState> for u32 {
     }
 }
 
-
 impl File {
-    pub fn new(asset_id: impl Into<Option<String>>,
-               hostname: impl Into<Option<String>>,
-               state: FileState,
-               timestamp: u64,
-               file_name: String,
-               file_path: String,
-               file_extension: String,
-               file_mime_type: String,
-               file_size: u64,
-               file_version: String,
-               file_description: String,
-               file_product: String,
-               file_company: String,
-               file_directory: String,
-               file_inode: u64,
-               file_hard_links: u64,
-               md5_hash: String,
-               sha1_hash: String,
-               sha256_hash: String,
+    pub fn new(
+        asset_id: impl Into<Option<String>>,
+        hostname: impl Into<Option<String>>,
+        state: FileState,
+        timestamp: u64,
+        file_name: String,
+        file_path: String,
+        file_extension: String,
+        file_mime_type: String,
+        file_size: u64,
+        file_version: String,
+        file_description: String,
+        file_product: String,
+        file_company: String,
+        file_directory: String,
+        file_inode: u64,
+        file_hard_links: u64,
+        md5_hash: String,
+        sha1_hash: String,
+        sha256_hash: String,
     ) -> File {
         let asset_id = asset_id.into();
         let hostname = hostname.into();

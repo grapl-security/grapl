@@ -8,15 +8,13 @@ use graph_descriptions::graph_description::*;
 use log::info;
 use prost::Message;
 use rusoto_core::Region;
-use rusoto_s3::{PutObjectRequest, S3, S3Client};
+use rusoto_s3::{PutObjectRequest, S3Client, S3};
 use sha2::{Digest, Sha256};
 
 pub async fn send_logs_to_generators(
     sourcetype: impl AsRef<str>,
     logs: Vec<u8>,
 ) -> Result<(), Error> {
-
-
     let key = {
         let mut hasher = Sha256::default();
         hasher.input(&logs);
@@ -24,7 +22,9 @@ pub async fn send_logs_to_generators(
         let key = hasher.result();
         let key = base16::encode_lower(&key);
         let epoch = SystemTime::now()
-            .duration_since(UNIX_EPOCH).unwrap().as_secs();
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
         let day = epoch - (epoch % (24 * 60 * 60));
 
@@ -40,18 +40,21 @@ pub async fn send_logs_to_generators(
 
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-    s3_client.put_object(PutObjectRequest {
-        bucket: bucket_prefix + "-grapl-raw-log-bucket",
-        key,
-        body: Some(logs.into()),
-        ..Default::default()
-    }).await;
+    s3_client
+        .put_object(PutObjectRequest {
+            bucket: bucket_prefix + "-grapl-raw-log-bucket",
+            key,
+            body: Some(logs.into()),
+            ..Default::default()
+        })
+        .await;
     info!("Uploaded raw-logs");
     Ok(())
 }
 
 pub async fn upload_subgraphs<S>(s3_client: &S, subgraphs: GeneratedSubgraphs) -> Result<(), Error>
-    where S: S3
+where
+    S: S3,
 {
     info!("upload_subgraphs");
     let mut proto = Vec::with_capacity(5000);
@@ -66,38 +69,35 @@ pub async fn upload_subgraphs<S>(s3_client: &S, subgraphs: GeneratedSubgraphs) -
 
     let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
     let epoch = SystemTime::now()
-        .duration_since(UNIX_EPOCH).unwrap().as_secs();
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
 
     // Bucket by day
     let day = epoch - (epoch % (24 * 60 * 60));
 
     // Key is day/time-hash
-    let key = format!("{}/{}-{}",
-                      day,
-                      epoch,
-                      base16::encode_lower(&key)
-    );
+    let key = format!("{}/{}-{}", day, epoch, base16::encode_lower(&key));
 
     let mut compressed = Vec::with_capacity(proto.len());
     let mut proto = Cursor::new(&proto);
-    zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-        .expect("compress zstd capnp");
+    zstd::stream::copy_encode(&mut proto, &mut compressed, 4).expect("compress zstd capnp");
 
     info!("uploading unidentifed_subgraphs to {}", key);
 
-    s3_client.put_object(PutObjectRequest {
-        bucket,
-        key,
-        body: Some(compressed.into()),
-        ..Default::default()
-    }).await?;
+    s3_client
+        .put_object(PutObjectRequest {
+            bucket,
+            key,
+            body: Some(compressed.into()),
+            ..Default::default()
+        })
+        .await?;
 
     info!("uploaded unidentified subgraphs");
 
     Ok(())
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -106,8 +106,3 @@ mod tests {
         assert_eq!(2 + 2, 4);
     }
 }
-
-
-
-
-

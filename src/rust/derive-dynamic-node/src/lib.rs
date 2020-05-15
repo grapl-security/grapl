@@ -142,9 +142,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
     );
 
     q.into()
-
 }
-
 
 #[proc_macro_derive(GraplStaticId, attributes(grapl))]
 pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
@@ -165,15 +163,15 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
         .filter_map(|field| {
             for attr in &field.attrs {
                 if attr.path.segments.is_empty() {
-                    return None
+                    return None;
                 }
 
                 let id = &attr.path.segments[0].ident;
                 if id.to_string() != "grapl" {
-                    continue
+                    continue;
                 }
 
-                return field.ident.as_ref()
+                return field.ident.as_ref();
             }
 
             None
@@ -205,11 +203,8 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
         }
     );
 
-
     q.into()
-
 }
-
 
 fn get_method(property_name: &Ident, property_type: &Type) -> TS2 {
     let method_name = format!("with_{}", property_name);
@@ -217,16 +212,16 @@ fn get_method(property_name: &Ident, property_type: &Type) -> TS2 {
 
     let property_name_str = format!("{}", property_name);
     quote!(
-            fn #method_name(&mut self, #property_name: impl Into<#property_type>) -> &mut Self {
-                let #property_name = #property_name .into();
-                self.get_mut_dynamic_node()
-                .properties.insert(
-                    #property_name_str .to_string(),
-                    #property_name .into(),
-                );
-                self
-            }
-        )
+        fn #method_name(&mut self, #property_name: impl Into<#property_type>) -> &mut Self {
+            let #property_name = #property_name .into();
+            self.get_mut_dynamic_node()
+            .properties.insert(
+                #property_name_str .to_string(),
+                #property_name .into(),
+            );
+            self
+        }
+    )
 }
 
 #[cfg(test)]
