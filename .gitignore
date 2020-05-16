@@ -1,5 +1,6 @@
 src/js/grapl-cdk/edge_ux_package/*
 
+grapl-cdk/cdk.out/
 lambda/
 __pycache__/
 *.pyc
