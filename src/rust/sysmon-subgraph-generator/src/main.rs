@@ -640,7 +640,7 @@ where
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    grapl_config::grapl_log_level();
+    simple_logger::init_with_level(grapl_config::grapl_log_level());
     info!("Starting sysmon-subgraph-generator");
 
     let is_local = std::env::var("IS_LOCAL")
