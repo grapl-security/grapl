@@ -16,7 +16,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aabb5a525cce24ad46ede774349e860c13616c8bf444807c34a566eab15112ea"
 dependencies = [
  "async-trait",
- "tokio 0.2.20",
+ "tokio 0.2.21",
 ]
 
 [[package]]
@@ -24,7 +24,7 @@ name = "analyzer-dispatcher"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base16",
  "base64 0.10.1",
  "bytes 0.5.4",
@@ -50,7 +50,7 @@ dependencies = [
  "simple_logger",
  "sqs-lambda",
  "stopwatch",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tokio-compat",
  "uuid 0.8.1",
  "zstd",
@@ -88,9 +88,9 @@ checksum = "cff77d8686867eceff3105329d4698d96c2391c176d5d03adc90c7389162b5b8"
 
 [[package]]
 name = "async-trait"
-version = "0.1.30"
+version = "0.1.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da71fef07bc806586090247e971229289f64c210a278ee5ae419314eb386b31d"
+checksum = "26c4f3195085c36ea8d24d32b2f828d23296a9370a28aa39d111f6f16bef9f3b"
 dependencies = [
  "proc-macro2 1.0.12",
  "quote 1.0.4",
@@ -125,6 +125,20 @@ name = "aws_lambda_events"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ef69d388b3f3692968c696e7a2356c23bd16fe88ff0c402c34fe8a5fa262aa2"
+dependencies = [
+ "base64 0.9.3",
+ "bytes 0.4.12",
+ "chrono",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
+name = "aws_lambda_events"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4de1487c8d4fba6faf8dacd7cc715704e96a571d2a6f5fe667f5e5072911e13c"
 dependencies = [
  "base64 0.9.3",
  "bytes 0.4.12",
@@ -468,7 +482,7 @@ checksum = "543a9863ece4fc217b8d0397117cd75264e6685973cea47e31f4e4172cbd1ffe"
 dependencies = [
  "futures 0.3.5",
  "quick-error",
- "tokio 0.2.20",
+ "tokio 0.2.21",
 ]
 
 [[package]]
@@ -517,7 +531,7 @@ dependencies = [
  "futures 0.3.5",
  "quote 1.0.4",
  "syn 1.0.19",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "uuid 0.8.1",
 ]
 
@@ -922,7 +936,7 @@ name = "generic-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base16",
  "chrono",
  "failure",
@@ -945,7 +959,7 @@ dependencies = [
  "simple_logger",
  "sqs-lambda",
  "stopwatch",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tokio-compat",
  "uuid 0.8.1",
  "zstd",
@@ -972,17 +986,26 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 name = "graph-generator-lib"
 version = "1.0.0"
 dependencies = [
+ "aws_lambda_events 0.3.0",
  "base16",
  "base64 0.9.3",
+ "chrono",
  "failure",
+ "grapl-config",
  "grapl-graph-descriptions",
+ "lambda_runtime",
  "log 0.4.8",
  "prost 0.6.1",
  "rusoto_core",
+ "rusoto_credential",
  "rusoto_s3",
  "rusoto_sqs",
+ "serde",
  "serde_json",
  "sha2 0.7.1",
+ "sqs-lambda",
+ "tokio 0.2.21",
+ "tokio-compat",
  "zstd",
 ]
 
@@ -991,7 +1014,7 @@ name = "graph-merger"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base16",
  "base64 0.10.1",
  "chrono",
@@ -1018,7 +1041,7 @@ dependencies = [
  "simple_logger",
  "sqs-lambda",
  "stopwatch",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tokio-compat",
  "uuid 0.8.1",
  "zstd",
@@ -1113,7 +1136,7 @@ dependencies = [
  "indexmap",
  "log 0.4.8",
  "slab 0.4.2",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tokio-util",
 ]
 
@@ -1288,7 +1311,7 @@ dependencies = [
  "net2",
  "pin-project",
  "time 0.1.43",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tower-service",
  "want 0.3.0",
 ]
@@ -1306,7 +1329,7 @@ dependencies = [
  "log 0.4.8",
  "rustls",
  "rustls-native-certs",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tokio-rustls",
  "webpki",
 ]
@@ -1658,7 +1681,7 @@ name = "node-identifier"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base58",
  "base64 0.9.3",
  "bytes 0.5.4",
@@ -1689,7 +1712,7 @@ dependencies = [
  "simple_logger",
  "sqs-lambda",
  "stopwatch",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tokio-compat",
  "tracing",
  "uuid 0.6.5",
@@ -2439,7 +2462,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.8.1",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "xml-rs",
 ]
 
@@ -2459,7 +2482,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shlex",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "zeroize",
 ]
 
@@ -2512,7 +2535,7 @@ dependencies = [
  "serde",
  "sha2 0.8.1",
  "time 0.2.15",
- "tokio 0.2.20",
+ "tokio 0.2.21",
 ]
 
 [[package]]
@@ -2881,7 +2904,7 @@ checksum = "87c25d8d915b2dd636c72befccbed69b82052a7ebd34b854faa32712927fecdc"
 dependencies = [
  "aktors",
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "chrono",
  "crossbeam-channel",
  "darkredis",
@@ -2902,7 +2925,7 @@ dependencies = [
  "serde",
  "serde_json",
  "simple_logger",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "uuid 0.8.1",
  "zstd",
 ]
@@ -3085,11 +3108,12 @@ name = "sysmon-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base16",
  "chrono",
  "failure",
  "futures 0.3.5",
+ "graph-generator-lib",
  "grapl-config",
  "grapl-graph-descriptions",
  "lambda_runtime",
@@ -3109,7 +3133,7 @@ dependencies = [
  "sqs-lambda",
  "stopwatch",
  "sysmon",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tokio-compat",
  "uuid 0.8.1",
  "zstd",
@@ -3261,9 +3285,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "0.2.20"
+version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05c1d570eb1a36f0345a5ce9c6c6e665b70b73d11236912c0b477616aeec47b1"
+checksum = "d099fa27b9702bed751524694adbe393e18b36b204da91eb1cbbbbb4a5ee2d58"
 dependencies = [
  "bytes 0.5.4",
  "fnv",
@@ -3315,7 +3339,7 @@ dependencies = [
  "futures-core",
  "futures-util",
  "pin-project-lite",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "tokio-current-thread",
  "tokio-executor",
  "tokio-reactor",
@@ -3421,7 +3445,7 @@ checksum = "4adb8b3e5f86b707f1b54e7c15b6de52617a823608ccda98a15d3a24222f265a"
 dependencies = [
  "futures-core",
  "rustls",
- "tokio 0.2.20",
+ "tokio 0.2.21",
  "webpki",
 ]
 
@@ -3560,7 +3584,7 @@ dependencies = [
  "futures-sink",
  "log 0.4.8",
  "pin-project-lite",
- "tokio 0.2.20",
+ "tokio 0.2.21",
 ]
 
 [[package]]

@@ -60,6 +60,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue"
       - "SYSMON_GRAPH_GENERATOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue"
       - "NODE_IDENTIFIER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue"
     links:

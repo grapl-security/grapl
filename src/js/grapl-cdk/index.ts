@@ -186,6 +186,60 @@ class EngagementEdge extends cdk.Stack {
 }
 
 
+class ModelPluginDeployer extends cdk.Stack {
+    event_handler: lambda.Function;
+    integration: apigateway.LambdaRestApi;
+    name: string;
+    integrationName: string;
+
+    constructor(
+        parent: cdk.App,
+        name: string,
+        jwt_secret: string,
+        master_graph: DGraphEcs,
+        engagement_graph: DGraphEcs,
+        model_plugin_bucket: s3.IBucket,
+        user_auth_table: UserAuthDb,
+        vpc: ec2.Vpc,
+    ) {
+        super(parent, name + '-stack');
+        this.name = name + process.env.BUCKET_PREFIX;
+        this.integrationName = name + process.env.BUCKET_PREFIX + 'Integration';
+
+        this.event_handler = new lambda.Function(
+            this, name, {
+                runtime: Runtime.PYTHON_3_7,
+                handler: `grapl_model_plugin_deployer.app`,
+                code: lambda.Code.fromAsset(`./grapl_model_plugin_deployer.zip`),
+                vpc: vpc,
+                environment: {
+                    "MG_ALPHAS": master_graph.alphaNames.join(","),
+                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
+                    "JWT_SECRET": jwt_secret,
+                    "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
+                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+                },
+                timeout: Duration.seconds(25),
+                memorySize: 256,
+            }
+        );
+
+        user_auth_table.allowReadFromRole(this.event_handler.role);
+
+        model_plugin_bucket.grantReadWrite(this.event_handler.role);
+        model_plugin_bucket.grantDelete(this.event_handler.role);
+
+        this.integration = new apigateway.LambdaRestApi(
+            this,
+            this.integrationName,
+            {
+                handler: this.event_handler,
+            },
+        );
+    }
+}
+
+
 class Service {
     event_handler: lambda.Function;
     event_retry_handler: lambda.Function;
@@ -1113,7 +1167,7 @@ const fs = require('fs'),
     path = require('path');
 
 const replaceInFile = (toModify, toReplace, replaceWith, outputFile) => {
-    return fs.readFile(toModify, (err, data) => {
+    return fs.readFile(toModify, {encoding: 'utf8'}, (err, data) => {
         if (err) {
             return console.log(err);
         }
@@ -1125,16 +1179,16 @@ const replaceInFile = (toModify, toReplace, replaceWith, outputFile) => {
             .join( "const isLocal = false;");
 
         if (outputFile) {
-            fs.writeFile(outputFile, replaced, 'utf8', (err) => {
+            fs.writeFile(outputFile, replaced, {encoding: 'utf8'}, (err) => {
                 if (err) return console.log(err);
             });
         } else {
-            fs.writeFile(toModify, replaced, 'utf8', (err) => {
+            fs.writeFile(toModify, replaced, {encoding: 'utf8'}, (err) => {
                 if (err) return console.log(err);
             });
         }
 
-    }, 'utf8');
+    });
 };
 
 const getEdgeGatewayId = (integrationName: string, cb) => {
@@ -1481,6 +1535,7 @@ class Grapl extends cdk.App {
             event_emitters.analyzers_bucket,
             event_emitters.dispatched_analyzer_bucket,
             event_emitters.analyzer_matched_subgraphs_bucket,
+            event_emitters.model_plugins_bucket,
             master_graph,
             network.grapl_vpc
         );
@@ -1504,6 +1559,17 @@ class Grapl extends cdk.App {
             'engagementedge',
             jwtSecret,
             engagement_graph,
+            user_auth_table,
+            network.grapl_vpc,
+        );
+
+        new ModelPluginDeployer(
+            this,
+            'model-plugin-deployer',
+            jwtSecret,
+            master_graph,
+            engagement_graph,
+            event_emitters.model_plugins_bucket,
             user_auth_table,
             network.grapl_vpc,
         );
