@@ -103,15 +103,24 @@ COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/vendor vendor
 # copy in the target directory from grapl-rust-deps-build
 COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/target target
 # "invalidate" all the grapl services, we want to rebuild them here
-RUN rm -r target/${release_target}/.fingerprint/analyzer-dispatcher*
-RUN rm -r target/${release_target}/.fingerprint/derive-dynamic-node*
-RUN rm -r target/${release_target}/.fingerprint/generic-subgraph-generator*
-RUN rm -r target/${release_target}/.fingerprint/grapl-graph-descriptions*
-RUN rm -r target/${release_target}/.fingerprint/graph-generator-lib*
-RUN rm -r target/${release_target}/.fingerprint/grapl-config*
-RUN rm -r target/${release_target}/.fingerprint/graph-merger*
-RUN rm -r target/${release_target}/.fingerprint/node-identifier*
-RUN rm -r target/${release_target}/.fingerprint/sysmon-subgraph-generator*
+RUN rm -rf target/debug/.fingerprint/analyzer-dispatcher*
+RUN rm -rf target/release/.fingerprint/analyzer-dispatcher*
+RUN rm -rf target/debug/.fingerprint/derive-dynamic-node*
+RUN rm -rf target/release/.fingerprint/derive-dynamic-node*
+RUN rm -rf target/debug/.fingerprint/generic-subgraph-generator*
+RUN rm -rf target/release/.fingerprint/generic-subgraph-generator*
+RUN rm -rf target/debug/.fingerprint/grapl-graph-descriptions*
+RUN rm -rf target/release/.fingerprint/grapl-graph-descriptions*
+RUN rm -rf target/debug/.fingerprint/graph-generator-lib*
+RUN rm -rf target/release/.fingerprint/graph-generator-lib*
+RUN rm -rf target/debug/.fingerprint/grapl-config*
+RUN rm -rf target/release/.fingerprint/grapl-config*
+RUN rm -rf target/debug/.fingerprint/graph-merger*
+RUN rm -rf target/release/.fingerprint/graph-merger*
+RUN rm -rf target/debug/.fingerprint/node-identifier*
+RUN rm -rf target/release/.fingerprint/node-identifier*
+RUN rm -rf target/debug/.fingerprint/sysmon-subgraph-generator*
+RUN rm -rf target/release/.fingerprint/sysmon-subgraph-generator*
 # copy in the sources
 COPY --chown=grapl ./analyzer-dispatcher analyzer-dispatcher
 COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
