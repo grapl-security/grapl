@@ -1,0 +1,755 @@
+{
+  "Resources": {
+    "graplgraphmergermergedcachegraplgraphmergermergedcachesubnetgroup24408AE8": {
+      "Type": "AWS::ElastiCache::SubnetGroup",
+      "Properties": {
+        "Description": "List of subnets used for redis cache grapl-graph-mergermergedcache",
+        "SubnetIds": [
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+          },
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+          }
+        ],
+        "CacheSubnetGroupName": "grapl-graph-mergermergedcacheSubnetGroupName"
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/grapl-graph-mergermergedcache/grapl-graph-mergermergedcache-subnet-group"
+      }
+    },
+    "graplgraphmergermergedcachegraplgraphmergermergedcachesecuritygroupFB1325EB": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "grapl-graph-merger-stack/grapl-graph-mergermergedcache/grapl-graph-mergermergedcache-security-group",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:6379",
+            "FromPort": 6379,
+            "IpProtocol": "tcp",
+            "ToPort": 6379
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:ALL PORTS",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/grapl-graph-mergermergedcache/grapl-graph-mergermergedcache-security-group/Resource"
+      }
+    },
+    "graplgraphmergermergedcachegraplgraphmergermergedcachecluster96CC2A46": {
+      "Type": "AWS::ElastiCache::CacheCluster",
+      "Properties": {
+        "CacheNodeType": "cache.t2.small",
+        "Engine": "redis",
+        "NumCacheNodes": 1,
+        "AutoMinorVersionUpgrade": true,
+        "CacheSubnetGroupName": "grapl-graph-mergermergedcacheSubnetGroupName",
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "graplgraphmergermergedcachegraplgraphmergermergedcachesecuritygroupFB1325EB",
+              "GroupId"
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/grapl-graph-mergermergedcache/grapl-graph-mergermergedcache-cluster"
+      }
+    },
+    "graphmergerqueuedeadletter09465AAC": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-queue-dead-letter/Resource"
+      }
+    },
+    "graphmergerqueueretry3DFDD2C5": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "graphmergerqueuedeadletter09465AAC",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 10
+        },
+        "VisibilityTimeout": 360
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-queue-retry/Resource"
+      }
+    },
+    "graphmergerqueue84EA7B0C": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "graphmergerqueueretry3DFDD2C5",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 5
+        },
+        "VisibilityTimeout": 180
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-queue/Resource"
+      }
+    },
+    "graphmergerqueuePolicyE6BD05EF": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemitterssubgraphsgeneratedtopic510AAC621D8E0FB3"
+                  }
+                }
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com"
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "graphmergerqueue84EA7B0C",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Queues": [
+          {
+            "Ref": "graphmergerqueue84EA7B0C"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-queue/Policy/Resource"
+      }
+    },
+    "graphmergerServiceRole2F40BC6D": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger/ServiceRole/Resource"
+      }
+    },
+    "graphmergerServiceRoleDefaultPolicy96EA7685": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "graphmergerqueue84EA7B0C",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:ActionGetBucket"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "s3:DeleteObject*",
+                "s3:PutObject*",
+                "s3:Abort*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsmergedbucket27104BF0Arn6201D9CC"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsmergedbucket27104BF0Arn6201D9CC"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "graphmergerServiceRoleDefaultPolicy96EA7685",
+        "Roles": [
+          {
+            "Ref": "graphmergerServiceRole2F40BC6D"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "graphmergerSecurityGroupDB0F5DDC": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function graplgraphmergerstackgraphmergerEB580C0B",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger/SecurityGroup/Resource"
+      }
+    },
+    "graphmergerF9CA629F": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74S3Bucket432F6598"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74S3VersionKey1017F284"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74S3VersionKey1017F284"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "graph-merger",
+        "Role": {
+          "Fn::GetAtt": [
+            "graphmergerServiceRole2F40BC6D",
+            "Arn"
+          ]
+        },
+        "Runtime": "provided",
+        "Environment": {
+          "Variables": {
+            "IS_RETRY": "False",
+            "SUBGRAPH_MERGED_BUCKET": {
+              "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemitterssubgraphsmergedbucket27104BF09DBA1BCB"
+            },
+            "BUCKET_PREFIX": "colin-test-grapl-050720",
+            "MG_ALPHAS": "alpha0.mastergraphcluster.grapl",
+            "MERGED_CACHE_ADDR": {
+              "Fn::GetAtt": [
+                "graplgraphmergermergedcachegraplgraphmergermergedcachecluster96CC2A46",
+                "RedisEndpoint.Address"
+              ]
+            },
+            "MERGED_CACHE_PORT": {
+              "Fn::GetAtt": [
+                "graplgraphmergermergedcachegraplgraphmergermergedcachecluster96CC2A46",
+                "RedisEndpoint.Port"
+              ]
+            },
+            "QUEUE_URL": {
+              "Ref": "graphmergerqueue84EA7B0C"
+            },
+            "RUST_BACKTRACE": "1"
+          }
+        },
+        "MemorySize": 256,
+        "Timeout": 180,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "graphmergerSecurityGroupDB0F5DDC",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+            },
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "graphmergerServiceRoleDefaultPolicy96EA7685",
+        "graphmergerServiceRole2F40BC6D"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger/Resource",
+        "aws:asset:path": "asset.8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74.zip",
+        "aws:asset:property": "Code"
+      }
+    },
+    "graphmergerSqsEventSourcegraplgraphmergerstackgraphmergerqueue1AEFF5E7014ED307": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "graphmergerqueue84EA7B0C",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "graphmergerF9CA629F"
+        },
+        "BatchSize": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger/SqsEventSource:graplgraphmergerstackgraphmergerqueue1AEFF5E7/Resource"
+      }
+    },
+    "graphmergerretryhandlerServiceRole9DD7D611": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-retry-handler/ServiceRole/Resource"
+      }
+    },
+    "graphmergerretryhandlerServiceRoleDefaultPolicyD39AFC52": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "graphmergerqueueretry3DFDD2C5",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:ActionGetBucket"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "s3:DeleteObject*",
+                "s3:PutObject*",
+                "s3:Abort*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsmergedbucket27104BF0Arn6201D9CC"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsmergedbucket27104BF0Arn6201D9CC"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "graphmergerretryhandlerServiceRoleDefaultPolicyD39AFC52",
+        "Roles": [
+          {
+            "Ref": "graphmergerretryhandlerServiceRole9DD7D611"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-retry-handler/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "graphmergerretryhandlerSecurityGroupECA55E3C": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function graplgraphmergerstackgraphmergerretryhandler762E6C6B",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-retry-handler/SecurityGroup/Resource"
+      }
+    },
+    "graphmergerretryhandler7FCDEAA8": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74S3Bucket432F6598"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74S3VersionKey1017F284"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74S3VersionKey1017F284"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "graph-merger",
+        "Role": {
+          "Fn::GetAtt": [
+            "graphmergerretryhandlerServiceRole9DD7D611",
+            "Arn"
+          ]
+        },
+        "Runtime": "provided",
+        "Environment": {
+          "Variables": {
+            "IS_RETRY": "True",
+            "SUBGRAPH_MERGED_BUCKET": {
+              "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemitterssubgraphsmergedbucket27104BF09DBA1BCB"
+            },
+            "BUCKET_PREFIX": "colin-test-grapl-050720",
+            "MG_ALPHAS": "alpha0.mastergraphcluster.grapl",
+            "MERGED_CACHE_ADDR": {
+              "Fn::GetAtt": [
+                "graplgraphmergermergedcachegraplgraphmergermergedcachecluster96CC2A46",
+                "RedisEndpoint.Address"
+              ]
+            },
+            "MERGED_CACHE_PORT": {
+              "Fn::GetAtt": [
+                "graplgraphmergermergedcachegraplgraphmergermergedcachecluster96CC2A46",
+                "RedisEndpoint.Port"
+              ]
+            },
+            "QUEUE_URL": {
+              "Ref": "graphmergerqueueretry3DFDD2C5"
+            },
+            "RUST_BACKTRACE": "1"
+          }
+        },
+        "MemorySize": 512,
+        "Timeout": 360,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "graphmergerretryhandlerSecurityGroupECA55E3C",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+            },
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "graphmergerretryhandlerServiceRoleDefaultPolicyD39AFC52",
+        "graphmergerretryhandlerServiceRole9DD7D611"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-retry-handler/Resource",
+        "aws:asset:path": "asset.8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74.zip",
+        "aws:asset:property": "Code"
+      }
+    },
+    "graphmergerretryhandlerSqsEventSourcegraplgraphmergerstackgraphmergerqueueretryE6DA9396AFCF3449": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "graphmergerqueueretry3DFDD2C5",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "graphmergerretryhandler7FCDEAA8"
+        },
+        "BatchSize": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/graph-merger-retry-handler/SqsEventSource:graplgraphmergerstackgraphmergerqueueretryE6DA9396/Resource"
+      }
+    },
+    "Subscription391C9821": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "Protocol": "sqs",
+        "TopicArn": {
+          "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemitterssubgraphsgeneratedtopic510AAC621D8E0FB3"
+        },
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "graphmergerqueue84EA7B0C",
+            "Arn"
+          ]
+        },
+        "RawMessageDelivery": true
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-graph-merger-stack/Subscription/Resource"
+      }
+    }
+  },
+  "Parameters": {
+    "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74S3Bucket432F6598": {
+      "Type": "String",
+      "Description": "S3 bucket for asset \"8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74\""
+    },
+    "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74S3VersionKey1017F284": {
+      "Type": "String",
+      "Description": "S3 key for asset version \"8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74\""
+    },
+    "AssetParameters8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74ArtifactHash22861ED5": {
+      "Type": "String",
+      "Description": "Artifact hash for asset \"8adc3093ef715bcea2f4fc000d90532530778f94fccf8fc17c91794334d69e74\""
+    }
+  }
+}

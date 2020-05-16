@@ -1,0 +1,1219 @@
+{
+  "Resources": {
+    "graplnodeidentifierretrycachegraplnodeidentifierretrycachesubnetgroup266F4728": {
+      "Type": "AWS::ElastiCache::SubnetGroup",
+      "Properties": {
+        "Description": "List of subnets used for redis cache grapl-node-identifierretrycache",
+        "SubnetIds": [
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+          },
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+          }
+        ],
+        "CacheSubnetGroupName": "grapl-node-identifierretrycacheSubnetGroupName"
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/grapl-node-identifierretrycache/grapl-node-identifierretrycache-subnet-group"
+      }
+    },
+    "graplnodeidentifierretrycachegraplnodeidentifierretrycachesecuritygroup417C61E3": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "grapl-node-identifier-stack/grapl-node-identifierretrycache/grapl-node-identifierretrycache-security-group",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:6379",
+            "FromPort": 6379,
+            "IpProtocol": "tcp",
+            "ToPort": 6379
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:ALL PORTS",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/grapl-node-identifierretrycache/grapl-node-identifierretrycache-security-group/Resource"
+      }
+    },
+    "graplnodeidentifierretrycachegraplnodeidentifierretrycachecluster4C3BE77A": {
+      "Type": "AWS::ElastiCache::CacheCluster",
+      "Properties": {
+        "CacheNodeType": "cache.t2.small",
+        "Engine": "redis",
+        "NumCacheNodes": 1,
+        "AutoMinorVersionUpgrade": true,
+        "CacheSubnetGroupName": "grapl-node-identifierretrycacheSubnetGroupName",
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "graplnodeidentifierretrycachegraplnodeidentifierretrycachesecuritygroup417C61E3",
+              "GroupId"
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/grapl-node-identifierretrycache/grapl-node-identifierretrycache-cluster"
+      }
+    },
+    "nodeidentifierqueuedeadletterF083C15E": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-queue-dead-letter/Resource"
+      }
+    },
+    "nodeidentifierqueueretry17645C01": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "nodeidentifierqueuedeadletterF083C15E",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 10
+        },
+        "VisibilityTimeout": 360
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-queue-retry/Resource"
+      }
+    },
+    "nodeidentifierqueueA651FF9E": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "nodeidentifierqueueretry17645C01",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 5
+        },
+        "VisibilityTimeout": 180
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-queue/Resource"
+      }
+    },
+    "nodeidentifierqueuePolicy79BC0790": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersunidsubgraphsgeneratedtopic6BF61D08F1B4D38B"
+                  }
+                }
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com"
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "nodeidentifierqueueA651FF9E",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Queues": [
+          {
+            "Ref": "nodeidentifierqueueA651FF9E"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-queue/Policy/Resource"
+      }
+    },
+    "nodeidentifierServiceRoleD83E9DB8": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier/ServiceRole/Resource"
+      }
+    },
+    "nodeidentifierServiceRoleDefaultPolicyCFE1E16A": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "nodeidentifierqueueA651FF9E",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:ActionGetBucket"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttprocesshistorytableCB3EFCDFArnB37A4B75"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttfilehistorytable0F0C1AA3Arn880AAA05"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttoutboundconnectionhistorytableA48DC9FAArnADF4F1C0"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttinboundconnectionhistorytableEEB192BAArn291FB1F2"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttnetworkconnectionhistoryC9756948Arn592C2813"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttipconnectionhistorytable5A0E33D6ArnCB85DD60"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttassetidmappings3BD2F003ArnD4098F4B"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttnodeidretrytable118399BFArnD54B523B"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttstaticmappingtableE396ECDFArn81FCF92B"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttdynamicsessiontable6ED203F6ArnD046B3F0"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "s3:DeleteObject*",
+                "s3:PutObject*",
+                "s3:Abort*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "nodeidentifierServiceRoleDefaultPolicyCFE1E16A",
+        "Roles": [
+          {
+            "Ref": "nodeidentifierServiceRoleD83E9DB8"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "nodeidentifierSecurityGroup9324DC40": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function graplnodeidentifierstacknodeidentifier4CE33277",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier/SecurityGroup/Resource"
+      }
+    },
+    "nodeidentifierAE900BEB": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameters49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523S3BucketEC9F4BDC"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523S3VersionKeyB4DE7924"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523S3VersionKeyB4DE7924"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "node-identifier",
+        "Role": {
+          "Fn::GetAtt": [
+            "nodeidentifierServiceRoleD83E9DB8",
+            "Arn"
+          ]
+        },
+        "Runtime": "provided",
+        "Environment": {
+          "Variables": {
+            "IS_RETRY": "False",
+            "BUCKET_PREFIX": "colin-test-grapl-050720",
+            "RETRY_IDENTITY_CACHE_ADDR": {
+              "Fn::GetAtt": [
+                "graplnodeidentifierretrycachegraplnodeidentifierretrycachecluster4C3BE77A",
+                "RedisEndpoint.Address"
+              ]
+            },
+            "RETRY_IDENTITY_CACHE_PORT": {
+              "Fn::GetAtt": [
+                "graplnodeidentifierretrycachegraplnodeidentifierretrycachecluster4C3BE77A",
+                "RedisEndpoint.Port"
+              ]
+            },
+            "QUEUE_URL": {
+              "Ref": "nodeidentifierqueueA651FF9E"
+            },
+            "RUST_BACKTRACE": "1"
+          }
+        },
+        "MemorySize": 256,
+        "Timeout": 180,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "nodeidentifierSecurityGroup9324DC40",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+            },
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "nodeidentifierServiceRoleDefaultPolicyCFE1E16A",
+        "nodeidentifierServiceRoleD83E9DB8"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier/Resource",
+        "aws:asset:path": "asset.49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523.zip",
+        "aws:asset:property": "Code"
+      }
+    },
+    "nodeidentifierSqsEventSourcegraplnodeidentifierstacknodeidentifierqueue3FFC38F5E48E081A": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "nodeidentifierqueueA651FF9E",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "nodeidentifierAE900BEB"
+        },
+        "BatchSize": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier/SqsEventSource:graplnodeidentifierstacknodeidentifierqueue3FFC38F5/Resource"
+      }
+    },
+    "nodeidentifierretryhandlerServiceRole0E464917": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-retry-handler/ServiceRole/Resource"
+      }
+    },
+    "nodeidentifierretryhandlerServiceRoleDefaultPolicyDD59F6BD": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "nodeidentifierqueueretry17645C01",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:ActionGetBucket"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttprocesshistorytableCB3EFCDFArnB37A4B75"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttfilehistorytable0F0C1AA3Arn880AAA05"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttoutboundconnectionhistorytableA48DC9FAArnADF4F1C0"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttinboundconnectionhistorytableEEB192BAArn291FB1F2"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttnetworkconnectionhistoryC9756948Arn592C2813"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttipconnectionhistorytable5A0E33D6ArnCB85DD60"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttassetidmappings3BD2F003ArnD4098F4B"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttnodeidretrytable118399BFArnD54B523B"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttstaticmappingtableE396ECDFArn81FCF92B"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "graplhistorydb-stack:ExportsOutputFnGetAttdynamicsessiontable6ED203F6ArnD046B3F0"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Action": [
+                "s3:DeleteObject*",
+                "s3:PutObject*",
+                "s3:Abort*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemitterssubgraphsgeneratedbucketA2423D7EArn38BA5B24"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "nodeidentifierretryhandlerServiceRoleDefaultPolicyDD59F6BD",
+        "Roles": [
+          {
+            "Ref": "nodeidentifierretryhandlerServiceRole0E464917"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-retry-handler/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "nodeidentifierretryhandlerSecurityGroupB48A3274": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function graplnodeidentifierstacknodeidentifierretryhandler0E26FB1F",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-retry-handler/SecurityGroup/Resource"
+      }
+    },
+    "nodeidentifierretryhandler04B48A59": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameters6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80fS3BucketEE866695"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80fS3VersionKey0EA1F160"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80fS3VersionKey0EA1F160"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "node-identifier",
+        "Role": {
+          "Fn::GetAtt": [
+            "nodeidentifierretryhandlerServiceRole0E464917",
+            "Arn"
+          ]
+        },
+        "Runtime": "provided",
+        "Environment": {
+          "Variables": {
+            "IS_RETRY": "True",
+            "BUCKET_PREFIX": "colin-test-grapl-050720",
+            "RETRY_IDENTITY_CACHE_ADDR": {
+              "Fn::GetAtt": [
+                "graplnodeidentifierretrycachegraplnodeidentifierretrycachecluster4C3BE77A",
+                "RedisEndpoint.Address"
+              ]
+            },
+            "RETRY_IDENTITY_CACHE_PORT": {
+              "Fn::GetAtt": [
+                "graplnodeidentifierretrycachegraplnodeidentifierretrycachecluster4C3BE77A",
+                "RedisEndpoint.Port"
+              ]
+            },
+            "QUEUE_URL": {
+              "Ref": "nodeidentifierqueueretry17645C01"
+            },
+            "RUST_BACKTRACE": "1"
+          }
+        },
+        "MemorySize": 512,
+        "Timeout": 360,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "nodeidentifierretryhandlerSecurityGroupB48A3274",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+            },
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "nodeidentifierretryhandlerServiceRoleDefaultPolicyDD59F6BD",
+        "nodeidentifierretryhandlerServiceRole0E464917"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-retry-handler/Resource",
+        "aws:asset:path": "asset.6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80f.zip",
+        "aws:asset:property": "Code"
+      }
+    },
+    "nodeidentifierretryhandlerSqsEventSourcegraplnodeidentifierstacknodeidentifierqueueretry2B01E0F55728AD4A": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "nodeidentifierqueueretry17645C01",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "nodeidentifierretryhandler04B48A59"
+        },
+        "BatchSize": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/node-identifier-retry-handler/SqsEventSource:graplnodeidentifierstacknodeidentifierqueueretry2B01E0F5/Resource"
+      }
+    },
+    "Subscription391C9821": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "Protocol": "sqs",
+        "TopicArn": {
+          "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersunidsubgraphsgeneratedtopic6BF61D08F1B4D38B"
+        },
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "nodeidentifierqueueA651FF9E",
+            "Arn"
+          ]
+        },
+        "RawMessageDelivery": true
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-node-identifier-stack/Subscription/Resource"
+      }
+    }
+  },
+  "Parameters": {
+    "AssetParameters49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523S3BucketEC9F4BDC": {
+      "Type": "String",
+      "Description": "S3 bucket for asset \"49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523\""
+    },
+    "AssetParameters49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523S3VersionKeyB4DE7924": {
+      "Type": "String",
+      "Description": "S3 key for asset version \"49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523\""
+    },
+    "AssetParameters49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523ArtifactHashFE8A42AF": {
+      "Type": "String",
+      "Description": "Artifact hash for asset \"49b16bb4cd034689904ef8af00d658c714f78a8fc08eb0abf0faed9194bdc523\""
+    },
+    "AssetParameters6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80fS3BucketEE866695": {
+      "Type": "String",
+      "Description": "S3 bucket for asset \"6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80f\""
+    },
+    "AssetParameters6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80fS3VersionKey0EA1F160": {
+      "Type": "String",
+      "Description": "S3 key for asset version \"6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80f\""
+    },
+    "AssetParameters6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80fArtifactHash0B0FD164": {
+      "Type": "String",
+      "Description": "Artifact hash for asset \"6d8f24f9f100ad68cc637f8fae6bb6838e1d73d775f954a284036342ba46e80f\""
+    }
+  }
+}

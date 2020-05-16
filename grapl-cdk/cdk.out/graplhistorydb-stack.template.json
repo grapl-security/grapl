@@ -1,0 +1,424 @@
+{
+  "Resources": {
+    "processhistorytableCB3EFCDF": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "create_time",
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "create_time",
+            "AttributeType": "N"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "process_history_table"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/process_history_table/Resource"
+      }
+    },
+    "filehistorytable0F0C1AA3": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "create_time",
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "create_time",
+            "AttributeType": "N"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "file_history_table"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/file_history_table/Resource"
+      }
+    },
+    "outboundconnectionhistorytableA48DC9FA": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "create_time",
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "create_time",
+            "AttributeType": "N"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "outbound_connection_history_table"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/outbound_connection_history_table/Resource"
+      }
+    },
+    "inboundconnectionhistorytableEEB192BA": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "create_time",
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "create_time",
+            "AttributeType": "N"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "inbound_connection_history_table"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/inbound_connection_history_table/Resource"
+      }
+    },
+    "networkconnectionhistoryC9756948": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "create_time",
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "create_time",
+            "AttributeType": "N"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "network_connection_history_table"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/network_connection_history/Resource"
+      }
+    },
+    "ipconnectionhistorytable5A0E33D6": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "create_time",
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "create_time",
+            "AttributeType": "N"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "ip_connection_history_table"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/ip_connection_history_table/Resource"
+      }
+    },
+    "assetidmappings3BD2F003": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "c_timestamp",
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "c_timestamp",
+            "AttributeType": "N"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "asset_id_mappings"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/asset_id_mappings/Resource"
+      }
+    },
+    "dynamicsessiontable6ED203F6": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "create_time",
+            "KeyType": "RANGE"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "create_time",
+            "AttributeType": "N"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "dynamic_session_table"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/dynamic_session_table/Resource"
+      }
+    },
+    "staticmappingtableE396ECDF": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "static_mapping_table"
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/static_mapping_table/Resource"
+      }
+    },
+    "nodeidretrytable118399BF": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "KeySchema": [
+          {
+            "AttributeName": "pseudo_key",
+            "KeyType": "HASH"
+          }
+        ],
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "pseudo_key",
+            "AttributeType": "S"
+          }
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "TableName": "node_id_retry_table",
+        "TimeToLiveSpecification": {
+          "AttributeName": "ttl_ts",
+          "Enabled": true
+        }
+      },
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "graplhistorydb-stack/node_id_retry_table/Resource"
+      }
+    }
+  },
+  "Outputs": {
+    "ExportsOutputFnGetAttprocesshistorytableCB3EFCDFArnB37A4B75": {
+      "Value": {
+        "Fn::GetAtt": [
+          "processhistorytableCB3EFCDF",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttprocesshistorytableCB3EFCDFArnB37A4B75"
+      }
+    },
+    "ExportsOutputFnGetAttfilehistorytable0F0C1AA3Arn880AAA05": {
+      "Value": {
+        "Fn::GetAtt": [
+          "filehistorytable0F0C1AA3",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttfilehistorytable0F0C1AA3Arn880AAA05"
+      }
+    },
+    "ExportsOutputFnGetAttoutboundconnectionhistorytableA48DC9FAArnADF4F1C0": {
+      "Value": {
+        "Fn::GetAtt": [
+          "outboundconnectionhistorytableA48DC9FA",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttoutboundconnectionhistorytableA48DC9FAArnADF4F1C0"
+      }
+    },
+    "ExportsOutputFnGetAttinboundconnectionhistorytableEEB192BAArn291FB1F2": {
+      "Value": {
+        "Fn::GetAtt": [
+          "inboundconnectionhistorytableEEB192BA",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttinboundconnectionhistorytableEEB192BAArn291FB1F2"
+      }
+    },
+    "ExportsOutputFnGetAttnetworkconnectionhistoryC9756948Arn592C2813": {
+      "Value": {
+        "Fn::GetAtt": [
+          "networkconnectionhistoryC9756948",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttnetworkconnectionhistoryC9756948Arn592C2813"
+      }
+    },
+    "ExportsOutputFnGetAttipconnectionhistorytable5A0E33D6ArnCB85DD60": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ipconnectionhistorytable5A0E33D6",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttipconnectionhistorytable5A0E33D6ArnCB85DD60"
+      }
+    },
+    "ExportsOutputFnGetAttassetidmappings3BD2F003ArnD4098F4B": {
+      "Value": {
+        "Fn::GetAtt": [
+          "assetidmappings3BD2F003",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttassetidmappings3BD2F003ArnD4098F4B"
+      }
+    },
+    "ExportsOutputFnGetAttnodeidretrytable118399BFArnD54B523B": {
+      "Value": {
+        "Fn::GetAtt": [
+          "nodeidretrytable118399BF",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttnodeidretrytable118399BFArnD54B523B"
+      }
+    },
+    "ExportsOutputFnGetAttstaticmappingtableE396ECDFArn81FCF92B": {
+      "Value": {
+        "Fn::GetAtt": [
+          "staticmappingtableE396ECDF",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttstaticmappingtableE396ECDFArn81FCF92B"
+      }
+    },
+    "ExportsOutputFnGetAttdynamicsessiontable6ED203F6ArnD046B3F0": {
+      "Value": {
+        "Fn::GetAtt": [
+          "dynamicsessiontable6ED203F6",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": "graplhistorydb-stack:ExportsOutputFnGetAttdynamicsessiontable6ED203F6ArnD046B3F0"
+      }
+    }
+  }
+}

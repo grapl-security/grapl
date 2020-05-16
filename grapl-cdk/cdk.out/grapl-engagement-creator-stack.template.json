@@ -1,0 +1,631 @@
+{
+  "Resources": {
+    "engagementcreatorqueuedeadletter0D5F9C13": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-queue-dead-letter/Resource"
+      }
+    },
+    "engagementcreatorqueueretryB5A2701D": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "engagementcreatorqueuedeadletter0D5F9C13",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 10
+        },
+        "VisibilityTimeout": 360
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-queue-retry/Resource"
+      }
+    },
+    "engagementcreatorqueue3C88A4C0": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "engagementcreatorqueueretryB5A2701D",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 5
+        },
+        "VisibilityTimeout": 180
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-queue/Resource"
+      }
+    },
+    "engagementcreatorqueuePolicy4E016A48": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersanalyzermatchedsubgraphstopic27EB4DD5444E3A21"
+                  }
+                }
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com"
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "engagementcreatorqueue3C88A4C0",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Queues": [
+          {
+            "Ref": "engagementcreatorqueue3C88A4C0"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-queue/Policy/Resource"
+      }
+    },
+    "engagementcreatorServiceRole2D496FC7": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator/ServiceRole/Resource"
+      }
+    },
+    "engagementcreatorServiceRoleDefaultPolicy47515C84": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "engagementcreatorqueue3C88A4C0",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:ActionGetBucket"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersanalyzermatchedsubgraphsbucketB6195D28Arn9BDF7D3C"
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersanalyzermatchedsubgraphsbucketB6195D28Arn9BDF7D3C"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersanalyzermatchedsubgraphsbucketB6195D28Arn9BDF7D3C"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": "sns:CreateTopic",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersengagementscreatedtopicA819BE2161988C0E"
+              }
+            },
+            {
+              "Action": "sns:Publish",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersengagementscreatedtopicA819BE2161988C0E"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementcreatorServiceRoleDefaultPolicy47515C84",
+        "Roles": [
+          {
+            "Ref": "engagementcreatorServiceRole2D496FC7"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "engagementcreatorSecurityGroup827CB1CC": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function graplengagementcreatorstackengagementcreator7A3B5C23",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator/SecurityGroup/Resource"
+      }
+    },
+    "engagementcreator919F74E9": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449S3BucketD352419A"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449S3VersionKey93E56C36"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449S3VersionKey93E56C36"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "engagement-creator.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "engagementcreatorServiceRole2D496FC7",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.7",
+        "Environment": {
+          "Variables": {
+            "IS_RETRY": "False",
+            "MG_ALPHAS": "alpha0.mastergraphcluster.grapl",
+            "EG_ALPHAS": "alpha0.engagementgraphcluster.grapl",
+            "QUEUE_URL": {
+              "Ref": "engagementcreatorqueue3C88A4C0"
+            },
+            "RUST_BACKTRACE": "1"
+          }
+        },
+        "MemorySize": 256,
+        "Timeout": 180,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "engagementcreatorSecurityGroup827CB1CC",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+            },
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "engagementcreatorServiceRoleDefaultPolicy47515C84",
+        "engagementcreatorServiceRole2D496FC7"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator/Resource",
+        "aws:asset:path": "asset.f696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449.zip",
+        "aws:asset:property": "Code"
+      }
+    },
+    "engagementcreatorSqsEventSourcegraplengagementcreatorstackengagementcreatorqueue0E7D133C301F5745": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "engagementcreatorqueue3C88A4C0",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "engagementcreator919F74E9"
+        },
+        "BatchSize": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator/SqsEventSource:graplengagementcreatorstackengagementcreatorqueue0E7D133C/Resource"
+      }
+    },
+    "engagementcreatorretryhandlerServiceRole0281801A": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-retry-handler/ServiceRole/Resource"
+      }
+    },
+    "engagementcreatorretryhandlerServiceRoleDefaultPolicyD9B80A90": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "engagementcreatorqueueretryB5A2701D",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:ActionGetBucket"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersanalyzermatchedsubgraphsbucketB6195D28Arn9BDF7D3C"
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersanalyzermatchedsubgraphsbucketB6195D28Arn9BDF7D3C"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersanalyzermatchedsubgraphsbucketB6195D28Arn9BDF7D3C"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": "sns:CreateTopic",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersengagementscreatedtopicA819BE2161988C0E"
+              }
+            },
+            {
+              "Action": "sns:Publish",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersengagementscreatedtopicA819BE2161988C0E"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementcreatorretryhandlerServiceRoleDefaultPolicyD9B80A90",
+        "Roles": [
+          {
+            "Ref": "engagementcreatorretryhandlerServiceRole0281801A"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-retry-handler/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "engagementcreatorretryhandlerSecurityGroup3154F843": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function graplengagementcreatorstackengagementcreatorretryhandler931FE2BA",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-retry-handler/SecurityGroup/Resource"
+      }
+    },
+    "engagementcreatorretryhandler1D30E4CA": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449S3BucketD352419A"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449S3VersionKey93E56C36"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449S3VersionKey93E56C36"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "engagement-creator.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "engagementcreatorretryhandlerServiceRole0281801A",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.7",
+        "Environment": {
+          "Variables": {
+            "IS_RETRY": "True",
+            "MG_ALPHAS": "alpha0.mastergraphcluster.grapl",
+            "EG_ALPHAS": "alpha0.engagementgraphcluster.grapl",
+            "QUEUE_URL": {
+              "Ref": "engagementcreatorqueueretryB5A2701D"
+            },
+            "RUST_BACKTRACE": "1"
+          }
+        },
+        "MemorySize": 512,
+        "Timeout": 360,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "engagementcreatorretryhandlerSecurityGroup3154F843",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+            },
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "engagementcreatorretryhandlerServiceRoleDefaultPolicyD9B80A90",
+        "engagementcreatorretryhandlerServiceRole0281801A"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-retry-handler/Resource",
+        "aws:asset:path": "asset.f696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449.zip",
+        "aws:asset:property": "Code"
+      }
+    },
+    "engagementcreatorretryhandlerSqsEventSourcegraplengagementcreatorstackengagementcreatorqueueretryF794AFEE3F6ED731": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "engagementcreatorqueueretryB5A2701D",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "engagementcreatorretryhandler1D30E4CA"
+        },
+        "BatchSize": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/engagement-creator-retry-handler/SqsEventSource:graplengagementcreatorstackengagementcreatorqueueretryF794AFEE/Resource"
+      }
+    },
+    "Subscription391C9821": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "Protocol": "sqs",
+        "TopicArn": {
+          "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersanalyzermatchedsubgraphstopic27EB4DD5444E3A21"
+        },
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "engagementcreatorqueue3C88A4C0",
+            "Arn"
+          ]
+        },
+        "RawMessageDelivery": true
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-engagement-creator-stack/Subscription/Resource"
+      }
+    }
+  },
+  "Parameters": {
+    "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449S3BucketD352419A": {
+      "Type": "String",
+      "Description": "S3 bucket for asset \"f696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449\""
+    },
+    "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449S3VersionKey93E56C36": {
+      "Type": "String",
+      "Description": "S3 key for asset version \"f696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449\""
+    },
+    "AssetParametersf696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449ArtifactHashF4B835D1": {
+      "Type": "String",
+      "Description": "Artifact hash for asset \"f696fbc248438ce2ce8d016ad20bc4fd71250d7201aaaaf613748dfcd8a12449\""
+    }
+  }
+}

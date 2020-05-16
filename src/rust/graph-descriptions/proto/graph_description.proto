@@ -1,0 +1,216 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+
+package graph_description;
+
+// Identity ypes
+message Session {
+    // Such as the pid + assetid
+    repeated string primary_key_properties = 1;
+    bool primary_key_requires_asset_id = 2;
+    uint64 created_time = 3;
+    uint64 last_seen_time = 4;
+    uint64 terminated_time = 5;
+}
+
+message Static {
+    repeated string primary_key_properties = 1;
+    bool primary_key_requires_asset_id = 2;
+}
+
+message IdStrategy {
+    oneof strategy {
+        Session session = 1;
+        Static static = 2;
+    }
+}
+
+
+// Used to identify the system for a given node
+// for example, 'a process executed on cobrien-mbp'
+message Host {
+    oneof host_id {
+        // the hostname of the host
+        string hostname = 1;
+
+        // The asset ID itself
+        // We expect this to be the variant once we have attributed the node
+        string asset_id = 2;
+    }
+}
+
+message Node {
+    oneof which_node {
+        Asset asset_node = 1;
+        Process process_node = 2;
+        File file_node = 3;
+        IpAddress ip_address_node = 4;
+        ProcessOutboundConnection process_outbound_connection_node = 5;
+        ProcessInboundConnection process_inbound_connection_node = 6;
+        IpPort ip_port_node = 7;
+        NetworkConnection network_connection_node = 8;
+        IpConnection ip_connection_node = 9;
+        DynamicNode dynamic_node = 10;
+    }
+}
+
+message Asset {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    google.protobuf.StringValue mac_address = 4;
+    uint64 first_seen_timestamp = 5;
+    uint64 last_seen_timestamp = 6;
+}
+
+message IpConnection {
+    string node_key = 1;
+    string src_ip_address = 2;
+    string dst_ip_address = 3;
+    string protocol = 4;
+    uint64 created_timestamp = 5;
+    uint64 terminated_timestamp = 6;
+    uint64 last_seen_timestamp = 7;
+    uint32 state = 8;
+}
+
+message NetworkConnection {
+    string node_key = 1;
+    string src_ip_address = 2;
+    string dst_ip_address = 3;
+    string protocol = 4;
+    uint32 src_port = 5;
+    uint32 dst_port = 6;
+    uint64 created_timestamp = 7;
+    uint64 terminated_timestamp = 8;
+    uint64 last_seen_timestamp = 9;
+    uint32 state = 10;
+}
+
+message IpPort {
+    string node_key = 1;
+    string ip_address = 2;
+    uint32 port = 3;
+    string protocol = 4;
+}
+
+// Identity = Session(asset_id + port + ip_address, created_timestamp)
+message ProcessOutboundConnection {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    // 1 = Created, 2 = Terminated, 3 = Existing
+    uint32 state = 4;
+    uint64 created_timestamp = 5;
+    uint64 terminated_timestamp = 6;
+    uint64 last_seen_timestamp = 7;
+    uint32 port = 8;
+    string ip_address = 9;
+    string protocol = 10;
+}
+
+// Identity = Session(asset_id + port + ip_address, created_timestamp)
+message ProcessInboundConnection {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    // 1 = Created, 2 = Terminated, 3 = Existing
+    uint32 state = 4;
+    uint64 created_timestamp = 5;
+    uint64 terminated_timestamp = 6;
+    uint64 last_seen_timestamp = 7;
+    uint32 port = 8;
+    string ip_address = 9;
+    string protocol = 10;
+}
+
+message Process {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    uint32 state = 4;
+    uint64 process_id = 5;
+    string process_guid = 6;
+    // When state == 1, create_time
+    // When state == 2, end_time
+    // When state == 3, seen_time
+    uint64 created_timestamp = 7;
+    uint64 terminated_timestamp = 8;
+    uint64 last_seen_timestamp = 9;
+    string process_name = 10;
+    string process_command_line = 11;
+    string operating_system = 12;
+}
+
+message File {
+    string node_key = 1;
+    google.protobuf.StringValue asset_id = 2;
+    google.protobuf.StringValue hostname = 3;
+    // 1 = Created, 2 = Deleted, 3 = Referenced
+    uint32 state = 4;
+    uint64 created_timestamp = 5;
+    uint64 deleted_timestamp = 6;
+    uint64 last_seen_timestamp = 7;
+    string file_name = 8;
+    string file_path = 9;
+    string file_extension = 10;
+    string file_mime_type = 11;
+    uint64 file_size = 12;
+    string file_version = 13;
+    string file_description = 14;
+    string file_product = 15;
+    string file_company = 16;
+    string file_directory = 17;
+    uint64 file_inode = 18;
+    uint64 file_hard_links = 19;
+    string md5_hash = 20;
+    string sha1_hash = 21;
+    string sha256_hash = 22;
+}
+
+message IpAddress {
+    string node_key = 1;
+    string ip_address = 2;
+    uint64 first_seen_timestamp = 3;
+    uint64 last_seen_timestamp = 4;
+}
+
+message NodeProperty {
+    oneof property {
+        int64 intprop = 1;
+        uint64 uintprop = 2;
+        string strprop = 3;
+    }
+}
+
+message DynamicNode {
+    map<string, NodeProperty> properties = 1;
+    string node_key = 2;
+    string node_type = 3;
+    uint64 seen_at = 4;
+    google.protobuf.StringValue asset_id = 5;
+    google.protobuf.StringValue hostname = 6;
+    google.protobuf.StringValue host_ip = 7;
+    repeated IdStrategy id_strategy = 8;
+}
+
+message Edge {
+    string from = 1;
+    string to = 2;
+    string edgeName = 3;
+}
+
+message EdgeList {
+    repeated Edge edges = 1;
+}
+
+message Graph {
+    map <string, Node> nodes = 1;
+    map <string, EdgeList> edges = 2;
+    uint64 timestamp = 3;
+}
+
+message GeneratedSubgraphs {
+    repeated Graph subgraphs = 1;
+}

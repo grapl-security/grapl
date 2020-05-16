@@ -1,0 +1,112 @@
+{
+  "Resources": {
+    "engagementsnotebooksecuritygroupA2CCCE3A": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "engagements-notebook-stack/engagements-notebook-security-group",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagements-notebook-stack/engagements-notebook-security-group/Resource"
+      }
+    },
+    "engagementsnotebookroleB84B2C05": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sagemaker.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagements-notebook-stack/engagementsnotebook-role/Resource"
+      }
+    },
+    "engagementsnotebookroleDefaultPolicyAEC13152": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "dynamodb:BatchGetItem",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:Query",
+                "dynamodb:GetItem",
+                "dynamodb:Scan",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-user-auth-table-stack:ExportsOutputFnGetAttuserauthtableC0C921EEArnA767BB8D"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementsnotebookroleDefaultPolicyAEC13152",
+        "Roles": [
+          {
+            "Ref": "engagementsnotebookroleB84B2C05"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagements-notebook-stack/engagementsnotebook-role/DefaultPolicy/Resource"
+      }
+    },
+    "engagementssagemakerendpoint": {
+      "Type": "AWS::SageMaker::NotebookInstance",
+      "Properties": {
+        "InstanceType": "ml.t2.medium",
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "engagementsnotebookroleB84B2C05",
+            "Arn"
+          ]
+        },
+        "DirectInternetAccess": "Enabled",
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "engagementsnotebooksecuritygroupA2CCCE3A",
+              "GroupId"
+            ]
+          }
+        ],
+        "SubnetId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagements-notebook-stack/engagements-sagemaker-endpoint"
+      }
+    }
+  }
+}

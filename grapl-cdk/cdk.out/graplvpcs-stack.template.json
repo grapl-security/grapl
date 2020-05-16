@@ -1,0 +1,444 @@
+{
+  "Resources": {
+    "GraplVPCD95366B5": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/Resource"
+      }
+    },
+    "GraplVPCPublicSubnet1Subnet33F87D6F": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/18",
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PublicSubnet1"
+          },
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public"
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet1/Subnet"
+      }
+    },
+    "GraplVPCPublicSubnet1RouteTable16865F49": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PublicSubnet1"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet1/RouteTable"
+      }
+    },
+    "GraplVPCPublicSubnet1RouteTableAssociationD64DE38C": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GraplVPCPublicSubnet1RouteTable16865F49"
+        },
+        "SubnetId": {
+          "Ref": "GraplVPCPublicSubnet1Subnet33F87D6F"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet1/RouteTableAssociation"
+      }
+    },
+    "GraplVPCPublicSubnet1DefaultRoute441E4D26": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GraplVPCPublicSubnet1RouteTable16865F49"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "GraplVPCIGW9A85538E"
+        }
+      },
+      "DependsOn": [
+        "GraplVPCVPCGWE6E3BD50"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet1/DefaultRoute"
+      }
+    },
+    "GraplVPCPublicSubnet1EIP4C72368C": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PublicSubnet1"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet1/EIP"
+      }
+    },
+    "GraplVPCPublicSubnet1NATGatewayB8519806": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "GraplVPCPublicSubnet1EIP4C72368C",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "GraplVPCPublicSubnet1Subnet33F87D6F"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PublicSubnet1"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet1/NATGateway"
+      }
+    },
+    "GraplVPCPublicSubnet2Subnet773F9062": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.64.0/18",
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PublicSubnet2"
+          },
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public"
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet2/Subnet"
+      }
+    },
+    "GraplVPCPublicSubnet2RouteTable7BE3A104": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PublicSubnet2"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet2/RouteTable"
+      }
+    },
+    "GraplVPCPublicSubnet2RouteTableAssociationA65D05A4": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GraplVPCPublicSubnet2RouteTable7BE3A104"
+        },
+        "SubnetId": {
+          "Ref": "GraplVPCPublicSubnet2Subnet773F9062"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet2/RouteTableAssociation"
+      }
+    },
+    "GraplVPCPublicSubnet2DefaultRoute804A3A28": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GraplVPCPublicSubnet2RouteTable7BE3A104"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "GraplVPCIGW9A85538E"
+        }
+      },
+      "DependsOn": [
+        "GraplVPCVPCGWE6E3BD50"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PublicSubnet2/DefaultRoute"
+      }
+    },
+    "GraplVPCPrivateSubnet1SubnetC6852983": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.128.0/18",
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PrivateSubnet1"
+          },
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private"
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PrivateSubnet1/Subnet"
+      }
+    },
+    "GraplVPCPrivateSubnet1RouteTable52F1222F": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PrivateSubnet1"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PrivateSubnet1/RouteTable"
+      }
+    },
+    "GraplVPCPrivateSubnet1RouteTableAssociation9234C144": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GraplVPCPrivateSubnet1RouteTable52F1222F"
+        },
+        "SubnetId": {
+          "Ref": "GraplVPCPrivateSubnet1SubnetC6852983"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PrivateSubnet1/RouteTableAssociation"
+      }
+    },
+    "GraplVPCPrivateSubnet1DefaultRouteC20C6302": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GraplVPCPrivateSubnet1RouteTable52F1222F"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "GraplVPCPublicSubnet1NATGatewayB8519806"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PrivateSubnet1/DefaultRoute"
+      }
+    },
+    "GraplVPCPrivateSubnet2SubnetDAF9D2E0": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.192.0/18",
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PrivateSubnet2"
+          },
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private"
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PrivateSubnet2/Subnet"
+      }
+    },
+    "GraplVPCPrivateSubnet2RouteTable79C867D4": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC/PrivateSubnet2"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PrivateSubnet2/RouteTable"
+      }
+    },
+    "GraplVPCPrivateSubnet2RouteTableAssociation0E3E10A6": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GraplVPCPrivateSubnet2RouteTable79C867D4"
+        },
+        "SubnetId": {
+          "Ref": "GraplVPCPrivateSubnet2SubnetDAF9D2E0"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PrivateSubnet2/RouteTableAssociation"
+      }
+    },
+    "GraplVPCPrivateSubnet2DefaultRoute82028171": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "GraplVPCPrivateSubnet2RouteTable79C867D4"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "GraplVPCPublicSubnet1NATGatewayB8519806"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/PrivateSubnet2/DefaultRoute"
+      }
+    },
+    "GraplVPCIGW9A85538E": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "graplvpcs-stack/GraplVPC"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/IGW"
+      }
+    },
+    "GraplVPCVPCGWE6E3BD50": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "GraplVPCD95366B5"
+        },
+        "InternetGatewayId": {
+          "Ref": "GraplVPCIGW9A85538E"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "graplvpcs-stack/GraplVPC/VPCGW"
+      }
+    }
+  },
+  "Outputs": {
+    "ExportsOutputRefGraplVPCD95366B5C69BF9D8": {
+      "Value": {
+        "Ref": "GraplVPCD95366B5"
+      },
+      "Export": {
+        "Name": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+      }
+    },
+    "ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947": {
+      "Value": {
+        "Ref": "GraplVPCPrivateSubnet1SubnetC6852983"
+      },
+      "Export": {
+        "Name": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+      }
+    },
+    "ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3": {
+      "Value": {
+        "Ref": "GraplVPCPrivateSubnet2SubnetDAF9D2E0"
+      },
+      "Export": {
+        "Name": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+      }
+    }
+  }
+}

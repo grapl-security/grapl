@@ -1,0 +1,1598 @@
+{
+  "Resources": {
+    "engagementgraphclusterEcsClusterC490CD09": {
+      "Type": "AWS::ECS::Cluster",
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterDefaultServiceDiscoveryNamespace78E099B9": {
+      "Type": "AWS::ServiceDiscovery::PrivateDnsNamespace",
+      "Properties": {
+        "Name": "engagementgraphcluster.grapl",
+        "Vpc": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/DefaultServiceDiscoveryNamespace/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup6B9BB310": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/InstanceSecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/InstanceSecurityGroup/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroupfromengagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup40CA9EB7ALLPORTS5905322D": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "IpProtocol": "tcp",
+        "Description": "from engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup40CA9EB7:ALL PORTS",
+        "FromPort": 0,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup6B9BB310",
+            "GroupId"
+          ]
+        },
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup6B9BB310",
+            "GroupId"
+          ]
+        },
+        "ToPort": 65535
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/InstanceSecurityGroup/from engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup40CA9EB7:ALL PORTS"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroupfromengagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup375C0EEEALLPORTSB7B60AD8": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "IpProtocol": "tcp",
+        "Description": "from engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup375C0EEE:ALL PORTS",
+        "FromPort": 0,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup6B9BB310",
+            "GroupId"
+          ]
+        },
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup2C33F46F",
+            "GroupId"
+          ]
+        },
+        "ToPort": 65535
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/InstanceSecurityGroup/from engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup375C0EEE:ALL PORTS"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceRoleD8B09486": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "ec2.",
+                      {
+                        "Ref": "AWS::URLSuffix"
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/InstanceRole/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceRoleDefaultPolicy0549BB63": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ecs:CreateCluster",
+                "ecs:DeregisterContainerInstance",
+                "ecs:DiscoverPollEndpoint",
+                "ecs:Poll",
+                "ecs:RegisterContainerInstance",
+                "ecs:StartTelemetrySession",
+                "ecs:Submit*",
+                "ecr:GetAuthorizationToken",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceRoleDefaultPolicy0549BB63",
+        "Roles": [
+          {
+            "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceRoleD8B09486"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/InstanceRole/DefaultPolicy/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceProfile9F09BE3C": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceRoleD8B09486"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/InstanceProfile"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLaunchConfig2B3A2935": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": {
+          "Ref": "SsmParameterValueawsserviceecsoptimizedamiamazonlinux2recommendedimageidC96584B6F00A464EAD1953AFF4B05118Parameter"
+        },
+        "InstanceType": "t3a.small",
+        "IamInstanceProfile": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceProfile9F09BE3C"
+        },
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup6B9BB310",
+              "GroupId"
+            ]
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\necho ECS_CLUSTER=",
+                {
+                  "Ref": "engagementgraphclusterEcsClusterC490CD09"
+                },
+                " >> /etc/ecs/ecs.config\nsudo iptables --insert FORWARD 1 --in-interface docker+ --destination 169.254.169.254/32 --jump DROP\nsudo service iptables save\necho ECS_AWSVPC_BLOCK_IMDS=true >> /etc/ecs/ecs.config"
+              ]
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceRoleDefaultPolicy0549BB63",
+        "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceRoleD8B09486"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/LaunchConfig"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityASG16EF11BD": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MaxSize": "1",
+        "MinSize": "1",
+        "DesiredCapacity": "1",
+        "LaunchConfigurationName": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLaunchConfig2B3A2935"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "PropagateAtLaunch": true,
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity"
+          }
+        ],
+        "VPCZoneIdentifier": [
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+          },
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+          }
+        ]
+      },
+      "UpdatePolicy": {
+        "AutoScalingReplacingUpdate": {
+          "WillReplace": true
+        },
+        "AutoScalingScheduledAction": {
+          "IgnoreUnmodifiedGroupSizeProperties": true
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/ASG"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionServiceRole4B4BB141": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/DrainECSHook/Function/ServiceRole/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicyB9FF73E1": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ec2:DescribeInstances",
+                "ec2:DescribeInstanceAttribute",
+                "ec2:DescribeInstanceStatus",
+                "ec2:DescribeHosts"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": "autoscaling:CompleteLifecycleAction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":autoscaling:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":autoScalingGroup:*:autoScalingGroupName/",
+                    {
+                      "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityASG16EF11BD"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Action": [
+                "ecs:DescribeContainerInstances",
+                "ecs:DescribeTasks"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": [
+                "ecs:ListContainerInstances",
+                "ecs:SubmitContainerStateChange",
+                "ecs:SubmitTaskStateChange"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "engagementgraphclusterEcsClusterC490CD09",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "ecs:UpdateContainerInstancesState",
+                "ecs:ListTasks"
+              ],
+              "Condition": {
+                "ArnEquals": {
+                  "ecs:cluster": {
+                    "Fn::GetAtt": [
+                      "engagementgraphclusterEcsClusterC490CD09",
+                      "Arn"
+                    ]
+                  }
+                }
+              },
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicyB9FF73E1",
+        "Roles": [
+          {
+            "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionServiceRole4B4BB141"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/DrainECSHook/Function/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunction15E0639D": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "ZipFile": "import boto3, json, os, time\n\necs = boto3.client('ecs')\nautoscaling = boto3.client('autoscaling')\n\n\ndef lambda_handler(event, context):\n  print(json.dumps(event))\n  cluster = os.environ['CLUSTER']\n  snsTopicArn = event['Records'][0]['Sns']['TopicArn']\n  lifecycle_event = json.loads(event['Records'][0]['Sns']['Message'])\n  instance_id = lifecycle_event.get('EC2InstanceId')\n  if not instance_id:\n    print('Got event without EC2InstanceId: %s', json.dumps(event))\n    return\n\n  instance_arn = container_instance_arn(cluster, instance_id)\n  print('Instance %s has container instance ARN %s' % (lifecycle_event['EC2InstanceId'], instance_arn))\n\n  if not instance_arn:\n    return\n\n  while has_tasks(cluster, instance_arn):\n    time.sleep(10)\n\n  try:\n    print('Terminating instance %s' % instance_id)\n    autoscaling.complete_lifecycle_action(\n        LifecycleActionResult='CONTINUE',\n        **pick(lifecycle_event, 'LifecycleHookName', 'LifecycleActionToken', 'AutoScalingGroupName'))\n  except Exception as e:\n    # Lifecycle action may have already completed.\n    print(str(e))\n\n\ndef container_instance_arn(cluster, instance_id):\n  \"\"\"Turn an instance ID into a container instance ARN.\"\"\"\n  arns = ecs.list_container_instances(cluster=cluster, filter='ec2InstanceId==' + instance_id)['containerInstanceArns']\n  if not arns:\n    return None\n  return arns[0]\n\n\ndef has_tasks(cluster, instance_arn):\n  \"\"\"Return True if the instance is running tasks for the given cluster.\"\"\"\n  instances = ecs.describe_container_instances(cluster=cluster, containerInstances=[instance_arn])['containerInstances']\n  if not instances:\n    return False\n  instance = instances[0]\n\n  if instance['status'] == 'ACTIVE':\n    # Start draining, then try again later\n    set_container_instance_to_draining(cluster, instance_arn)\n    return True\n\n  tasks = instance['runningTasksCount'] + instance['pendingTasksCount']\n  print('Instance %s has %s tasks' % (instance_arn, tasks))\n\n  return tasks > 0\n\n\ndef set_container_instance_to_draining(cluster, instance_arn):\n  ecs.update_container_instances_state(\n      cluster=cluster,\n      containerInstances=[instance_arn], status='DRAINING')\n\n\ndef pick(dct, *keys):\n  \"\"\"Pick a subset of a dict.\"\"\"\n  return {k: v for k, v in dct.items() if k in keys}\n"
+        },
+        "Handler": "index.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionServiceRole4B4BB141",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Environment": {
+          "Variables": {
+            "CLUSTER": {
+              "Ref": "engagementgraphclusterEcsClusterC490CD09"
+            }
+          }
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity"
+          }
+        ],
+        "Timeout": 310
+      },
+      "DependsOn": [
+        "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicyB9FF73E1",
+        "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionServiceRole4B4BB141"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/DrainECSHook/Function/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionAllowInvokeengagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookTopic948461B95C8E1FCF": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunction15E0639D",
+            "Arn"
+          ]
+        },
+        "Principal": "sns.amazonaws.com",
+        "SourceArn": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookTopic5AAC3A0D"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/DrainECSHook/Function/AllowInvoke:engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookTopic948461B9"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunctionTopic1BEED790": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "Protocol": "lambda",
+        "TopicArn": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookTopic5AAC3A0D"
+        },
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityDrainECSHookFunction15E0639D",
+            "Arn"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/DrainECSHook/Function/Topic/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookRole280BDD81": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "autoscaling.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/LifecycleHookDrainHook/Role/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookRoleDefaultPolicy2A025C7C": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sns:Publish",
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookTopic5AAC3A0D"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookRoleDefaultPolicy2A025C7C",
+        "Roles": [
+          {
+            "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookRole280BDD81"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/LifecycleHookDrainHook/Role/DefaultPolicy/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookTopic5AAC3A0D": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/LifecycleHookDrainHook/Topic/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHook36557BFF": {
+      "Type": "AWS::AutoScaling::LifecycleHook",
+      "Properties": {
+        "AutoScalingGroupName": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityASG16EF11BD"
+        },
+        "LifecycleTransition": "autoscaling:EC2_INSTANCE_TERMINATING",
+        "DefaultResult": "CONTINUE",
+        "HeartbeatTimeout": 300,
+        "NotificationTargetARN": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookTopic5AAC3A0D"
+        },
+        "RoleARN": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookRole280BDD81",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookRoleDefaultPolicy2A025C7C",
+        "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityLifecycleHookDrainHookRole280BDD81"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterZeroGroupCapacity/LifecycleHookDrainHook/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup2C33F46F": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/InstanceSecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/InstanceSecurityGroup/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroupfromengagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup40CA9EB7ALLPORTSDADAC90B": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "IpProtocol": "tcp",
+        "Description": "from engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup40CA9EB7:ALL PORTS",
+        "FromPort": 0,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup2C33F46F",
+            "GroupId"
+          ]
+        },
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup6B9BB310",
+            "GroupId"
+          ]
+        },
+        "ToPort": 65535
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/InstanceSecurityGroup/from engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterZeroGroupCapacityInstanceSecurityGroup40CA9EB7:ALL PORTS"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroupfromengagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup375C0EEEALLPORTSBA1A1BF0": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "IpProtocol": "tcp",
+        "Description": "from engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup375C0EEE:ALL PORTS",
+        "FromPort": 0,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup2C33F46F",
+            "GroupId"
+          ]
+        },
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup2C33F46F",
+            "GroupId"
+          ]
+        },
+        "ToPort": 65535
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/InstanceSecurityGroup/from engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup375C0EEE:ALL PORTS"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceRoleBD8F4E51": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "ec2.",
+                      {
+                        "Ref": "AWS::URLSuffix"
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/InstanceRole/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceRoleDefaultPolicyB35273F9": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ecs:CreateCluster",
+                "ecs:DeregisterContainerInstance",
+                "ecs:DiscoverPollEndpoint",
+                "ecs:Poll",
+                "ecs:RegisterContainerInstance",
+                "ecs:StartTelemetrySession",
+                "ecs:Submit*",
+                "ecr:GetAuthorizationToken",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceRoleDefaultPolicyB35273F9",
+        "Roles": [
+          {
+            "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceRoleBD8F4E51"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/InstanceRole/DefaultPolicy/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceProfile26380613": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceRoleBD8F4E51"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/InstanceProfile"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLaunchConfigAE9056B8": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": {
+          "Ref": "SsmParameterValueawsserviceecsoptimizedamiamazonlinux2recommendedimageidC96584B6F00A464EAD1953AFF4B05118Parameter"
+        },
+        "InstanceType": "t3a.2xlarge",
+        "IamInstanceProfile": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceProfile26380613"
+        },
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceSecurityGroup2C33F46F",
+              "GroupId"
+            ]
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\necho ECS_CLUSTER=",
+                {
+                  "Ref": "engagementgraphclusterEcsClusterC490CD09"
+                },
+                " >> /etc/ecs/ecs.config\nsudo iptables --insert FORWARD 1 --in-interface docker+ --destination 169.254.169.254/32 --jump DROP\nsudo service iptables save\necho ECS_AWSVPC_BLOCK_IMDS=true >> /etc/ecs/ecs.config"
+              ]
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceRoleDefaultPolicyB35273F9",
+        "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityInstanceRoleBD8F4E51"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/LaunchConfig"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityASG1C9343FA": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MaxSize": "1",
+        "MinSize": "1",
+        "DesiredCapacity": "1",
+        "LaunchConfigurationName": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLaunchConfigAE9056B8"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "PropagateAtLaunch": true,
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity"
+          }
+        ],
+        "VPCZoneIdentifier": [
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+          },
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+          }
+        ]
+      },
+      "UpdatePolicy": {
+        "AutoScalingReplacingUpdate": {
+          "WillReplace": true
+        },
+        "AutoScalingScheduledAction": {
+          "IgnoreUnmodifiedGroupSizeProperties": true
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/ASG"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionServiceRoleBE9D2EC0": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/DrainECSHook/Function/ServiceRole/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicyD1F21F2E": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ec2:DescribeInstances",
+                "ec2:DescribeInstanceAttribute",
+                "ec2:DescribeInstanceStatus",
+                "ec2:DescribeHosts"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": "autoscaling:CompleteLifecycleAction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":autoscaling:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":autoScalingGroup:*:autoScalingGroupName/",
+                    {
+                      "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityASG1C9343FA"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Action": [
+                "ecs:DescribeContainerInstances",
+                "ecs:DescribeTasks"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": [
+                "ecs:ListContainerInstances",
+                "ecs:SubmitContainerStateChange",
+                "ecs:SubmitTaskStateChange"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "engagementgraphclusterEcsClusterC490CD09",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "ecs:UpdateContainerInstancesState",
+                "ecs:ListTasks"
+              ],
+              "Condition": {
+                "ArnEquals": {
+                  "ecs:cluster": {
+                    "Fn::GetAtt": [
+                      "engagementgraphclusterEcsClusterC490CD09",
+                      "Arn"
+                    ]
+                  }
+                }
+              },
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicyD1F21F2E",
+        "Roles": [
+          {
+            "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionServiceRoleBE9D2EC0"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/DrainECSHook/Function/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunction6D7E4EDC": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "ZipFile": "import boto3, json, os, time\n\necs = boto3.client('ecs')\nautoscaling = boto3.client('autoscaling')\n\n\ndef lambda_handler(event, context):\n  print(json.dumps(event))\n  cluster = os.environ['CLUSTER']\n  snsTopicArn = event['Records'][0]['Sns']['TopicArn']\n  lifecycle_event = json.loads(event['Records'][0]['Sns']['Message'])\n  instance_id = lifecycle_event.get('EC2InstanceId')\n  if not instance_id:\n    print('Got event without EC2InstanceId: %s', json.dumps(event))\n    return\n\n  instance_arn = container_instance_arn(cluster, instance_id)\n  print('Instance %s has container instance ARN %s' % (lifecycle_event['EC2InstanceId'], instance_arn))\n\n  if not instance_arn:\n    return\n\n  while has_tasks(cluster, instance_arn):\n    time.sleep(10)\n\n  try:\n    print('Terminating instance %s' % instance_id)\n    autoscaling.complete_lifecycle_action(\n        LifecycleActionResult='CONTINUE',\n        **pick(lifecycle_event, 'LifecycleHookName', 'LifecycleActionToken', 'AutoScalingGroupName'))\n  except Exception as e:\n    # Lifecycle action may have already completed.\n    print(str(e))\n\n\ndef container_instance_arn(cluster, instance_id):\n  \"\"\"Turn an instance ID into a container instance ARN.\"\"\"\n  arns = ecs.list_container_instances(cluster=cluster, filter='ec2InstanceId==' + instance_id)['containerInstanceArns']\n  if not arns:\n    return None\n  return arns[0]\n\n\ndef has_tasks(cluster, instance_arn):\n  \"\"\"Return True if the instance is running tasks for the given cluster.\"\"\"\n  instances = ecs.describe_container_instances(cluster=cluster, containerInstances=[instance_arn])['containerInstances']\n  if not instances:\n    return False\n  instance = instances[0]\n\n  if instance['status'] == 'ACTIVE':\n    # Start draining, then try again later\n    set_container_instance_to_draining(cluster, instance_arn)\n    return True\n\n  tasks = instance['runningTasksCount'] + instance['pendingTasksCount']\n  print('Instance %s has %s tasks' % (instance_arn, tasks))\n\n  return tasks > 0\n\n\ndef set_container_instance_to_draining(cluster, instance_arn):\n  ecs.update_container_instances_state(\n      cluster=cluster,\n      containerInstances=[instance_arn], status='DRAINING')\n\n\ndef pick(dct, *keys):\n  \"\"\"Pick a subset of a dict.\"\"\"\n  return {k: v for k, v in dct.items() if k in keys}\n"
+        },
+        "Handler": "index.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionServiceRoleBE9D2EC0",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.6",
+        "Environment": {
+          "Variables": {
+            "CLUSTER": {
+              "Ref": "engagementgraphclusterEcsClusterC490CD09"
+            }
+          }
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity"
+          }
+        ],
+        "Timeout": 310
+      },
+      "DependsOn": [
+        "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionServiceRoleDefaultPolicyD1F21F2E",
+        "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionServiceRoleBE9D2EC0"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/DrainECSHook/Function/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionAllowInvokeengagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookTopic4E57402495623AE3": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunction6D7E4EDC",
+            "Arn"
+          ]
+        },
+        "Principal": "sns.amazonaws.com",
+        "SourceArn": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookTopic2E83931E"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/DrainECSHook/Function/AllowInvoke:engagementgraphclusterstackengagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookTopic4E574024"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunctionTopic425D0717": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "Protocol": "lambda",
+        "TopicArn": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookTopic2E83931E"
+        },
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityDrainECSHookFunction6D7E4EDC",
+            "Arn"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/DrainECSHook/Function/Topic/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookRole40E8E60F": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "autoscaling.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/LifecycleHookDrainHook/Role/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookRoleDefaultPolicy4601E744": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sns:Publish",
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookTopic2E83931E"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookRoleDefaultPolicy4601E744",
+        "Roles": [
+          {
+            "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookRole40E8E60F"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/LifecycleHookDrainHook/Role/DefaultPolicy/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookTopic2E83931E": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/LifecycleHookDrainHook/Topic/Resource"
+      }
+    },
+    "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookA17FF79F": {
+      "Type": "AWS::AutoScaling::LifecycleHook",
+      "Properties": {
+        "AutoScalingGroupName": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityASG1C9343FA"
+        },
+        "LifecycleTransition": "autoscaling:EC2_INSTANCE_TERMINATING",
+        "DefaultResult": "CONTINUE",
+        "HeartbeatTimeout": 300,
+        "NotificationTargetARN": {
+          "Ref": "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookTopic2E83931E"
+        },
+        "RoleARN": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookRole40E8E60F",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookRoleDefaultPolicy4601E744",
+        "engagementgraphclusterEcsClusterengagementgraphclusterAlphaGroupCapacityLifecycleHookDrainHookRole40E8E60F"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/engagementgraphcluster-EcsCluster/engagementgraphclusterAlphaGroupCapacity/LifecycleHookDrainHook/Resource"
+      }
+    },
+    "zero0TaskRoleEE59431D": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/zero0/TaskRole/Resource"
+      }
+    },
+    "zero08F294ACF": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Command": [
+              "dgraph",
+              "zero",
+              "--my=zero0.engagementgraphcluster.grapl:5080",
+              "--replicas=3",
+              "--idx=1",
+              "--alsologtostderr"
+            ],
+            "Essential": true,
+            "Image": "dgraph/dgraph",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "zero0zero0ContainerLogGroupAD77BA79"
+                },
+                "awslogs-stream-prefix": "ecsengagementgraphclusterzero0",
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                }
+              }
+            },
+            "MemoryReservation": 1024,
+            "Name": "zero0Container"
+          }
+        ],
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "zero0ExecutionRoleA355877C",
+            "Arn"
+          ]
+        },
+        "Family": "engagementgraphclusterstackzero01F93B7F3",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "zero0TaskRoleEE59431D",
+            "Arn"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/zero0/Resource"
+      }
+    },
+    "zero0zero0ContainerLogGroupAD77BA79": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/zero0/zero0Container/LogGroup/Resource"
+      }
+    },
+    "zero0ExecutionRoleA355877C": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/zero0/ExecutionRole/Resource"
+      }
+    },
+    "zero0ExecutionRoleDefaultPolicy62EFE539": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "zero0zero0ContainerLogGroupAD77BA79",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "zero0ExecutionRoleDefaultPolicy62EFE539",
+        "Roles": [
+          {
+            "Ref": "zero0ExecutionRoleA355877C"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/zero0/ExecutionRole/DefaultPolicy/Resource"
+      }
+    },
+    "zero0Service951A01B8": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "engagementgraphclusterEcsClusterC490CD09"
+        },
+        "DeploymentConfiguration": {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "LaunchType": "EC2",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "zero0ServiceSecurityGroup3E01EBC7",
+                  "GroupId"
+                ]
+              }
+            ],
+            "Subnets": [
+              {
+                "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+              },
+              {
+                "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+              }
+            ]
+          }
+        },
+        "SchedulingStrategy": "REPLICA",
+        "ServiceRegistries": [
+          {
+            "RegistryArn": {
+              "Fn::GetAtt": [
+                "zero0ServiceCloudmapService6C0F1AC1",
+                "Arn"
+              ]
+            }
+          }
+        ],
+        "TaskDefinition": {
+          "Ref": "zero08F294ACF"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/zero0Service/Service"
+      }
+    },
+    "zero0ServiceCloudmapService6C0F1AC1": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "TTL": 300,
+              "Type": "A"
+            }
+          ],
+          "NamespaceId": {
+            "Fn::GetAtt": [
+              "engagementgraphclusterEcsClusterDefaultServiceDiscoveryNamespace78E099B9",
+              "Id"
+            ]
+          },
+          "RoutingPolicy": "MULTIVALUE"
+        },
+        "HealthCheckCustomConfig": {
+          "FailureThreshold": 1
+        },
+        "Name": "zero0",
+        "NamespaceId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterDefaultServiceDiscoveryNamespace78E099B9",
+            "Id"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/zero0Service/CloudmapService/Resource"
+      }
+    },
+    "zero0ServiceSecurityGroup3E01EBC7": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "engagementgraphcluster-stack/zero0Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:ALL PORTS",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/zero0Service/SecurityGroup/Resource"
+      }
+    },
+    "alpha0TaskRoleD2789A69": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/alpha0/TaskRole/Resource"
+      }
+    },
+    "alpha0CA0EDE27": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Command": [
+              "dgraph",
+              "alpha",
+              "--my=alpha0.engagementgraphcluster.grapl:7080",
+              "--lru_mb=1024",
+              "--zero=zero0.engagementgraphcluster.grapl:5080",
+              "--alsologtostderr"
+            ],
+            "Essential": true,
+            "Image": "dgraph/dgraph",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "alpha0alpha0engagementgraphclusterContainerLogGroupED0935AE"
+                },
+                "awslogs-stream-prefix": "ecsengagementgraphclusteralpha0",
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                }
+              }
+            },
+            "MemoryReservation": 2048,
+            "Name": "alpha0engagementgraphclusterContainer"
+          }
+        ],
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "alpha0ExecutionRole10945257",
+            "Arn"
+          ]
+        },
+        "Family": "engagementgraphclusterstackalpha0F8FC7A7C",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "alpha0TaskRoleD2789A69",
+            "Arn"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/alpha0/Resource"
+      }
+    },
+    "alpha0alpha0engagementgraphclusterContainerLogGroupED0935AE": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/alpha0/alpha0engagementgraphclusterContainer/LogGroup/Resource"
+      }
+    },
+    "alpha0ExecutionRole10945257": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/alpha0/ExecutionRole/Resource"
+      }
+    },
+    "alpha0ExecutionRoleDefaultPolicy4D11427B": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "alpha0alpha0engagementgraphclusterContainerLogGroupED0935AE",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "alpha0ExecutionRoleDefaultPolicy4D11427B",
+        "Roles": [
+          {
+            "Ref": "alpha0ExecutionRole10945257"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/alpha0/ExecutionRole/DefaultPolicy/Resource"
+      }
+    },
+    "alpha0ServiceA4979B1C": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "engagementgraphclusterEcsClusterC490CD09"
+        },
+        "DeploymentConfiguration": {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "LaunchType": "EC2",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "alpha0ServiceSecurityGroupF7B1AFC6",
+                  "GroupId"
+                ]
+              }
+            ],
+            "Subnets": [
+              {
+                "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+              },
+              {
+                "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+              }
+            ]
+          }
+        },
+        "SchedulingStrategy": "REPLICA",
+        "ServiceRegistries": [
+          {
+            "RegistryArn": {
+              "Fn::GetAtt": [
+                "alpha0ServiceCloudmapService9ABD0DC9",
+                "Arn"
+              ]
+            }
+          }
+        ],
+        "TaskDefinition": {
+          "Ref": "alpha0CA0EDE27"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/alpha0Service/Service"
+      }
+    },
+    "alpha0ServiceCloudmapService9ABD0DC9": {
+      "Type": "AWS::ServiceDiscovery::Service",
+      "Properties": {
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "TTL": 300,
+              "Type": "A"
+            }
+          ],
+          "NamespaceId": {
+            "Fn::GetAtt": [
+              "engagementgraphclusterEcsClusterDefaultServiceDiscoveryNamespace78E099B9",
+              "Id"
+            ]
+          },
+          "RoutingPolicy": "MULTIVALUE"
+        },
+        "HealthCheckCustomConfig": {
+          "FailureThreshold": 1
+        },
+        "Name": "alpha0",
+        "NamespaceId": {
+          "Fn::GetAtt": [
+            "engagementgraphclusterEcsClusterDefaultServiceDiscoveryNamespace78E099B9",
+            "Id"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/alpha0Service/CloudmapService/Resource"
+      }
+    },
+    "alpha0ServiceSecurityGroupF7B1AFC6": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "engagementgraphcluster-stack/alpha0Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:ALL PORTS",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "engagementgraphcluster-stack/alpha0Service/SecurityGroup/Resource"
+      }
+    }
+  },
+  "Parameters": {
+    "SsmParameterValueawsserviceecsoptimizedamiamazonlinux2recommendedimageidC96584B6F00A464EAD1953AFF4B05118Parameter": {
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+      "Default": "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
+    }
+  }
+}

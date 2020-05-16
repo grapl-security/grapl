@@ -1,0 +1,747 @@
+{
+  "Resources": {
+    "graplgenericsubgraphgeneratorgenericeventcachegraplgenericsubgraphgeneratorgenericeventcachesubnetgroup08D38669": {
+      "Type": "AWS::ElastiCache::SubnetGroup",
+      "Properties": {
+        "Description": "List of subnets used for redis cache grapl-generic-subgraph-generatorgenericeventcache",
+        "SubnetIds": [
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+          },
+          {
+            "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+          }
+        ],
+        "CacheSubnetGroupName": "grapl-generic-subgraph-generatorgenericeventcacheSubnetGroupName"
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/grapl-generic-subgraph-generatorgenericeventcache/grapl-generic-subgraph-generatorgenericeventcache-subnet-group"
+      }
+    },
+    "graplgenericsubgraphgeneratorgenericeventcachegraplgenericsubgraphgeneratorgenericeventcachesecuritygroup1E7C4584": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "grapl-generic-subgraph-generator-stack/grapl-generic-subgraph-generatorgenericeventcache/grapl-generic-subgraph-generatorgenericeventcache-security-group",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:6379",
+            "FromPort": 6379,
+            "IpProtocol": "tcp",
+            "ToPort": 6379
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:ALL PORTS",
+            "FromPort": 0,
+            "IpProtocol": "tcp",
+            "ToPort": 65535
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/grapl-generic-subgraph-generatorgenericeventcache/grapl-generic-subgraph-generatorgenericeventcache-security-group/Resource"
+      }
+    },
+    "graplgenericsubgraphgeneratorgenericeventcachegraplgenericsubgraphgeneratorgenericeventcacheclusterE80E483D": {
+      "Type": "AWS::ElastiCache::CacheCluster",
+      "Properties": {
+        "CacheNodeType": "cache.t2.small",
+        "Engine": "redis",
+        "NumCacheNodes": 1,
+        "AutoMinorVersionUpgrade": true,
+        "CacheSubnetGroupName": "grapl-generic-subgraph-generatorgenericeventcacheSubnetGroupName",
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "graplgenericsubgraphgeneratorgenericeventcachegraplgenericsubgraphgeneratorgenericeventcachesecuritygroup1E7C4584",
+              "GroupId"
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/grapl-generic-subgraph-generatorgenericeventcache/grapl-generic-subgraph-generatorgenericeventcache-cluster"
+      }
+    },
+    "genericsubgraphgeneratorqueuedeadletterD291EBDD": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-queue-dead-letter/Resource"
+      }
+    },
+    "genericsubgraphgeneratorqueueretry3D5B9111": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "genericsubgraphgeneratorqueuedeadletterD291EBDD",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 10
+        },
+        "VisibilityTimeout": 360
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-queue-retry/Resource"
+      }
+    },
+    "genericsubgraphgeneratorqueueCDAC3268": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "genericsubgraphgeneratorqueueretry3D5B9111",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 5
+        },
+        "VisibilityTimeout": 180
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-queue/Resource"
+      }
+    },
+    "genericsubgraphgeneratorqueuePolicy3D4C161A": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sqs:SendMessage",
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersrawlogtopic43EEC3DF9A9DE5F7"
+                  }
+                }
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com"
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "genericsubgraphgeneratorqueueCDAC3268",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Queues": [
+          {
+            "Ref": "genericsubgraphgeneratorqueueCDAC3268"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-queue/Policy/Resource"
+      }
+    },
+    "genericsubgraphgeneratorServiceRoleE37935EF": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator/ServiceRole/Resource"
+      }
+    },
+    "genericsubgraphgeneratorServiceRoleDefaultPolicy764BC2ED": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "genericsubgraphgeneratorqueueCDAC3268",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:ActionGetBucket"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersrawlogbucketEC5B644EArn9BEC31BF"
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersrawlogbucketEC5B644EArn9BEC31BF"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersrawlogbucketEC5B644EArn9BEC31BF"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "s3:DeleteObject*",
+                "s3:PutObject*",
+                "s3:Abort*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "genericsubgraphgeneratorServiceRoleDefaultPolicy764BC2ED",
+        "Roles": [
+          {
+            "Ref": "genericsubgraphgeneratorServiceRoleE37935EF"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "genericsubgraphgeneratorSecurityGroup76CC50A2": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function graplgenericsubgraphgeneratorstackgenericsubgraphgenerator169025A5",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator/SecurityGroup/Resource"
+      }
+    },
+    "genericsubgraphgenerator3620FA51": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98S3BucketCDBD708E"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98S3VersionKeyC4BC6D6B"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98S3VersionKeyC4BC6D6B"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "generic-subgraph-generator",
+        "Role": {
+          "Fn::GetAtt": [
+            "genericsubgraphgeneratorServiceRoleE37935EF",
+            "Arn"
+          ]
+        },
+        "Runtime": "provided",
+        "Environment": {
+          "Variables": {
+            "IS_RETRY": "False",
+            "BUCKET_PREFIX": "colin-test-grapl-050720",
+            "GENERIC_EVENT_CACHE_ADDR": {
+              "Fn::GetAtt": [
+                "graplgenericsubgraphgeneratorgenericeventcachegraplgenericsubgraphgeneratorgenericeventcacheclusterE80E483D",
+                "RedisEndpoint.Address"
+              ]
+            },
+            "GENERIC_EVENT_CACHE_PORT": {
+              "Fn::GetAtt": [
+                "graplgenericsubgraphgeneratorgenericeventcachegraplgenericsubgraphgeneratorgenericeventcacheclusterE80E483D",
+                "RedisEndpoint.Port"
+              ]
+            },
+            "QUEUE_URL": {
+              "Ref": "genericsubgraphgeneratorqueueCDAC3268"
+            },
+            "RUST_BACKTRACE": "1"
+          }
+        },
+        "MemorySize": 256,
+        "Timeout": 180,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "genericsubgraphgeneratorSecurityGroup76CC50A2",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+            },
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "genericsubgraphgeneratorServiceRoleDefaultPolicy764BC2ED",
+        "genericsubgraphgeneratorServiceRoleE37935EF"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator/Resource",
+        "aws:asset:path": "asset.800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98.zip",
+        "aws:asset:property": "Code"
+      }
+    },
+    "genericsubgraphgeneratorSqsEventSourcegraplgenericsubgraphgeneratorstackgenericsubgraphgeneratorqueue901CEEB455980BB1": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "genericsubgraphgeneratorqueueCDAC3268",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "genericsubgraphgenerator3620FA51"
+        },
+        "BatchSize": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator/SqsEventSource:graplgenericsubgraphgeneratorstackgenericsubgraphgeneratorqueue901CEEB4/Resource"
+      }
+    },
+    "genericsubgraphgeneratorretryhandlerServiceRoleBF2424B1": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-retry-handler/ServiceRole/Resource"
+      }
+    },
+    "genericsubgraphgeneratorretryhandlerServiceRoleDefaultPolicy75587EE4": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:ChangeMessageVisibility",
+                "sqs:GetQueueUrl",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "genericsubgraphgeneratorqueueretry3D5B9111",
+                  "Arn"
+                ]
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:ActionGetBucket"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersrawlogbucketEC5B644EArn9BEC31BF"
+              }
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersrawlogbucketEC5B644EArn9BEC31BF"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersrawlogbucketEC5B644EArn9BEC31BF"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "s3:DeleteObject*",
+                "s3:PutObject*",
+                "s3:Abort*"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputFnGetAttgrapleventemittersunidsubgraphsgeneratedbucket49A18AC1ArnD7DAC986"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "genericsubgraphgeneratorretryhandlerServiceRoleDefaultPolicy75587EE4",
+        "Roles": [
+          {
+            "Ref": "genericsubgraphgeneratorretryhandlerServiceRoleBF2424B1"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-retry-handler/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "genericsubgraphgeneratorretryhandlerSecurityGroup963DC91C": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function graplgenericsubgraphgeneratorstackgenericsubgraphgeneratorretryhandler5EECCB38",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCD95366B5C69BF9D8"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-retry-handler/SecurityGroup/Resource"
+      }
+    },
+    "genericsubgraphgeneratorretryhandler6E0E0AE7": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98S3BucketCDBD708E"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98S3VersionKeyC4BC6D6B"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98S3VersionKeyC4BC6D6B"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Handler": "generic-subgraph-generator",
+        "Role": {
+          "Fn::GetAtt": [
+            "genericsubgraphgeneratorretryhandlerServiceRoleBF2424B1",
+            "Arn"
+          ]
+        },
+        "Runtime": "provided",
+        "Environment": {
+          "Variables": {
+            "IS_RETRY": "True",
+            "BUCKET_PREFIX": "colin-test-grapl-050720",
+            "GENERIC_EVENT_CACHE_ADDR": {
+              "Fn::GetAtt": [
+                "graplgenericsubgraphgeneratorgenericeventcachegraplgenericsubgraphgeneratorgenericeventcacheclusterE80E483D",
+                "RedisEndpoint.Address"
+              ]
+            },
+            "GENERIC_EVENT_CACHE_PORT": {
+              "Fn::GetAtt": [
+                "graplgenericsubgraphgeneratorgenericeventcachegraplgenericsubgraphgeneratorgenericeventcacheclusterE80E483D",
+                "RedisEndpoint.Port"
+              ]
+            },
+            "QUEUE_URL": {
+              "Ref": "genericsubgraphgeneratorqueueretry3D5B9111"
+            },
+            "RUST_BACKTRACE": "1"
+          }
+        },
+        "MemorySize": 512,
+        "Timeout": 360,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "genericsubgraphgeneratorretryhandlerSecurityGroup963DC91C",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet1SubnetC6852983C267B947"
+            },
+            {
+              "Fn::ImportValue": "graplvpcs-stack:ExportsOutputRefGraplVPCPrivateSubnet2SubnetDAF9D2E0F9C618F3"
+            }
+          ]
+        }
+      },
+      "DependsOn": [
+        "genericsubgraphgeneratorretryhandlerServiceRoleDefaultPolicy75587EE4",
+        "genericsubgraphgeneratorretryhandlerServiceRoleBF2424B1"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-retry-handler/Resource",
+        "aws:asset:path": "asset.800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98.zip",
+        "aws:asset:property": "Code"
+      }
+    },
+    "genericsubgraphgeneratorretryhandlerSqsEventSourcegraplgenericsubgraphgeneratorstackgenericsubgraphgeneratorqueueretry6FF6157BD71F9AF3": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "genericsubgraphgeneratorqueueretry3D5B9111",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "genericsubgraphgeneratorretryhandler6E0E0AE7"
+        },
+        "BatchSize": 1
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/generic-subgraph-generator-retry-handler/SqsEventSource:graplgenericsubgraphgeneratorstackgenericsubgraphgeneratorqueueretry6FF6157B/Resource"
+      }
+    },
+    "Subscription391C9821": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "Protocol": "sqs",
+        "TopicArn": {
+          "Fn::ImportValue": "grapl-event-emitters-stack:ExportsOutputRefgrapleventemittersrawlogtopic43EEC3DF9A9DE5F7"
+        },
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "genericsubgraphgeneratorqueueCDAC3268",
+            "Arn"
+          ]
+        },
+        "RawMessageDelivery": true
+      },
+      "Metadata": {
+        "aws:cdk:path": "grapl-generic-subgraph-generator-stack/Subscription/Resource"
+      }
+    }
+  },
+  "Parameters": {
+    "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98S3BucketCDBD708E": {
+      "Type": "String",
+      "Description": "S3 bucket for asset \"800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98\""
+    },
+    "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98S3VersionKeyC4BC6D6B": {
+      "Type": "String",
+      "Description": "S3 key for asset version \"800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98\""
+    },
+    "AssetParameters800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98ArtifactHash428C4A10": {
+      "Type": "String",
+      "Description": "Artifact hash for asset \"800bf1256a808eb8636e6a72891739ca229c0267a4825e11fb244dba7732df98\""
+    }
+  }
+}
