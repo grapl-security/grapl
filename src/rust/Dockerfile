@@ -148,9 +148,7 @@ RUN if [ "${release_target}" == "release" ]; \
 # base deploy image
 FROM alpine AS grapl-deploy-base
 ARG release_target="debug"
-RUN if [ "${release_target}" == "debug" ]; \
-        then apk add --no-cache libgcc; \
-    fi
+RUN apk add --no-cache libgcc;
 
 # analyzer-dispatcher deploy image
 FROM grapl-deploy-base AS grapl-analyzer-dispatcher
