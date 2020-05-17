@@ -22,3 +22,5 @@ from grapl_analyzerlib.grapl_client import (
     EngagementGraphClient,
     LocalEngagementGraphClient,
 )
+
+from grapl_analyzerlib.plugin_retriever import load_plugins, load_plugins_local
