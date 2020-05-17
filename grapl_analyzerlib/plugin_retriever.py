@@ -47,7 +47,6 @@ class PluginRetriever(object):
         # Download each one to the /plugins/ directory
         for plugin_object in plugin_objects:
             object_key = plugin_object['Key']
-            print(f'object_key: {object_key}')
             local_path = (
                 os.path.join(
                     os.path.abspath("."),
@@ -57,10 +56,8 @@ class PluginRetriever(object):
 
             if not overwrite:
                 if os.path.isfile(local_path):
-                    print(f"{local_path} already exists")
                     continue
 
-            print(f'fetching object: {object_key}')
             response = (
                 self.s3_client.get_object(
                     Bucket=self.plugin_bucket,
@@ -70,9 +67,7 @@ class PluginRetriever(object):
             )
 
             directory = Path(os.path.dirname(local_path))
-            print(f"Creating directory: {directory}")
             directory.mkdir(parents=True, exist_ok=True)
 
-            print(f"Writing plugin to: {local_path}")
             with open(local_path, 'w') as f:
                 f.write(response)
