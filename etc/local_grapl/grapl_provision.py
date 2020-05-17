@@ -164,7 +164,6 @@ services = (
     'analyzer-dispatcher',
     'analyzer-executor',
     'engagement-creator',
-    'aws-guardduty-graph-generator'
 )
 
 buckets = (
@@ -176,7 +175,6 @@ buckets = (
     BUCKET_PREFIX + '-analyzers-bucket',
     BUCKET_PREFIX + '-analyzer-matched-subgraphs-bucket',
     BUCKET_PREFIX + '-model-plugins-bucket',
-    BUCKET_PREFIX + '-aws-guardduty-log-bucket',
 )
 
 
@@ -186,7 +184,6 @@ def provision_sqs(sqs, service_name: str) -> None:
         Attributes={
             'MessageRetentionPeriod': '86400'
         }
-
     )
 
     redrive_url = redrive_queue['QueueUrl']
@@ -210,18 +207,14 @@ def provision_sqs(sqs, service_name: str) -> None:
             'RedrivePolicy': json.dumps(redrive_policy)
         }
     )
-    print(queue['QueueUrl'])
+    print(f'Provisioned {service_name} queue at ' + queue['QueueUrl'])
 
     sqs.purge_queue(QueueUrl=queue['QueueUrl'])
     sqs.purge_queue(QueueUrl=redrive_queue['QueueUrl'])
 
 
 def provision_bucket(s3, bucket_name: str) -> None:
-    try:
-        s3.create_bucket(Bucket=bucket_name)
-    except Exception as e:
-        print(e)
-        pass
+    s3.create_bucket(Bucket=bucket_name)
     print(bucket_name)
 
 
@@ -237,7 +230,9 @@ def bucket_provision_loop() -> None:
                 aws_secret_access_key='minioadmin',
             )
         except Exception as e:
-            print('failed to connect to sqs or s3')
+            if i > 10:
+                print('failed to connect to sqs or s3', e)
+            continue
 
         for bucket in buckets:
             if bucket in s3_succ:
@@ -245,7 +240,12 @@ def bucket_provision_loop() -> None:
                     provision_bucket(s3, bucket)
                     s3_succ.discard(bucket)
                 except Exception as e:
-                    print(e)
+                    if 'BucketAlreadyOwnedByYou' in str(e):
+                        s3_succ.discard(bucket)
+                        continue
+
+                    if i > 10:
+                        print(e)
                     time.sleep(1)
 
         if not s3_succ:
@@ -277,7 +277,8 @@ def sqs_provision_loop() -> None:
                     provision_sqs(sqs, service)
                     sqs_succ.discard(service)
                 except Exception as e:
-                    print(e)
+                    if i > 10:
+                        print(e)
                     time.sleep(1)
         if not sqs_succ:
             return
@@ -319,7 +320,6 @@ if __name__ == '__main__':
     for i in range(0, 150):
         try:
             if not mg_succ:
-                print('attempting mg_succ')
                 time.sleep(1)
                 provision_mg(
                     local_dg_provision_client,
@@ -327,12 +327,12 @@ if __name__ == '__main__':
                 mg_succ = True
                 break
         except Exception as e:
-            print('mg provision failed with: ', e)
+            if i > 10:
+                print('mg provision failed with: ', e)
 
     for i in range(0, 150):
         try:
             if not eg_succ:
-                print('attempting eg_succ')
                 time.sleep(1)
                 provision_eg(
                     local_eg_provision_client,
@@ -340,8 +340,11 @@ if __name__ == '__main__':
                 eg_succ = True
                 break
         except Exception as e:
-            print('eg provision failed with: ', e)
+            if i > 10:
+                print('eg provision failed with: ', e)
 
 
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
+
+    print('Completed provisioning')
