@@ -13,102 +13,49 @@ from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
 from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
 from grapl_analyzerlib.nodes.types import Property
 from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.nodes.asset_node import AssetView, AssetQuery
+from test_utils.dgraph_utils import upsert, create_edge, node_key_for_test
 
 
-def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
-    if node_dict.get("uid"):
-        node_dict.pop("uid")
-    node_dict["uid"] = "_:blank-0"
-    node_key = node_dict["node_key"]
-    query = f"""
-        {{
-            q0(func: eq(node_key, "{node_key}"))
-            {{
-                    uid,  
-                    expand(_all_)
-            }}
-        }}
-        """
-    txn = client.txn(read_only=False)
-
-    try:
-        res = json.loads(txn.query(query).json)["q0"]
-        new_uid = None
-        if res:
-            node_dict["uid"] = res[0]["uid"]
-            new_uid = res[0]["uid"]
-
-        mutation = node_dict
-
-        m_res = txn.mutate(set_obj=mutation, commit_now=True)
-        uids = m_res.uids
-
-        if new_uid is None:
-            new_uid = uids["blank-0"]
-        return str(new_uid)
-
-    finally:
-        txn.discard()
-
-
-def upsert(
-    client: DgraphClient,
-    type_name: str,
-    view_type: Type[Viewable],
+def get_or_create_asset_node(
+    local_client: DgraphClient,
     node_key: str,
-    node_props: Dict[str, Property],
-) -> Viewable:
-    node_props["node_key"] = node_key
-    node_props["dgraph.type"] = type_name
-    for key, value in node_props.items():
-        if isinstance(value, str):
-            node_props[key] = escape_dgraph_str(value)
-    uid = _upsert(client, node_props)
-    # print(f'uid: {uid}')
-    node_props["uid"] = uid
-    # print(node_props['node_key'])
-    return view_type.from_dict(client, node_props)
+    # AssetView properties
+    hostname: str,
+) -> AssetView:
+    node_props = {
+        "hostname": hostname,
+    }  # type: Dict[str, Property]
 
-
-def create_edge(
-    client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
-) -> None:
-    if edge_name[0] == "~":
-        mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
-
-    else:
-        mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
-
-    txn = client.txn(read_only=False)
-    try:
-        txn.mutate(set_obj=mut, commit_now=True)
-    finally:
-        txn.discard()
+    return cast(
+        AssetView, upsert(local_client, "Asset", AssetView, node_key, node_props)
+    )
 
 
 def get_or_create_process_node(
     local_client: DgraphClient,
     node_key: str,
+    # properties
     process_id: str,
     arguments: str,
     created_timestamp: str,
-    asset_id: str,
+    # asset_id: str,
     terminate_time: str,
     image_name: str,
     process_name: str,
 ) -> ProcessView:
-    process = {
+    node_props = {
         "process_id": process_id,
         "arguments": arguments,
         "created_timestamp": created_timestamp,
-        "asset_id": asset_id,
+        # "asset_id": asset_id,
         "terminate_time": terminate_time,
         "image_name": image_name,
         "process_name": process_name,
     }  # type: Dict[str, Property]
 
     return cast(
-        ProcessView, upsert(local_client, "Process", ProcessView, node_key, process)
+        ProcessView, upsert(local_client, "Process", ProcessView, node_key, node_props)
     )
 
 
@@ -132,10 +79,9 @@ class TestProcessQuery(unittest.TestCase):
 
     @hypothesis.settings(deadline=None)
     @given(
-        node_key=st.uuids(),
+        process_node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2 ** 32),
         created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        asset_id=st.text(),
         terminate_time=st.integers(min_value=0, max_value=2 ** 48),
         image_name=st.text(),
         process_name=st.text(),
@@ -143,44 +89,117 @@ class TestProcessQuery(unittest.TestCase):
     )
     def test_single_process_contains_key(
         self,
-        node_key,
+        process_node_key,
         process_id,
         created_timestamp,
-        asset_id,
         terminate_time,
         image_name,
         process_name,
         arguments,
     ):
-        node_key = "test_single_process_contains_key" + str(node_key)
+        process_node_key = node_key_for_test(self, process_node_key)
         local_client = DgraphClient(DgraphClientStub("localhost:9080"))
 
-        get_or_create_process_node(
+        created_process_node = get_or_create_process_node(
             local_client,
-            node_key,
+            process_node_key,
             process_id,
             arguments,
             created_timestamp,
-            asset_id,
             terminate_time,
             image_name,
             process_name,
         )
 
+        # Setup complete, do some queries
+
         queried_proc = ProcessQuery().query_first(
-            local_client, contains_node_key=node_key
+            local_client, contains_node_key=process_node_key
         )
 
-        # assert process_view.process_id == queried_proc.get_process_id()
-        assert node_key == queried_proc.node_key
+        assert process_id == queried_proc.get_process_id()
+        assert process_node_key == queried_proc.node_key
         assert "Process" == queried_proc.get_node_type()
         assert process_id == queried_proc.get_process_id()
         assert arguments == queried_proc.get_arguments()
         assert created_timestamp == queried_proc.get_created_timestamp()
-        assert asset_id == queried_proc.get_asset_id()
         assert terminate_time == queried_proc.get_terminate_time()
         assert image_name == queried_proc.get_image_name()
         assert process_name == queried_proc.get_process_name()
+
+        assert not queried_proc.get_asset()
+
+    @hypothesis.settings(deadline=None)
+    @given(
+        asset_node_key=st.uuids(),
+        hostname=st.text(),
+        process_node_key=st.uuids(),
+        process_id=st.integers(min_value=1, max_value=2 ** 32),
+        created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
+        terminate_time=st.integers(min_value=0, max_value=2 ** 48),
+        image_name=st.text(),
+        process_name=st.text(),
+        arguments=st.text(),
+    )
+    def test_single_process_connected_to_asset_node(
+        self,
+        asset_node_key,
+        hostname,
+        process_node_key,
+        process_id,
+        created_timestamp,
+        terminate_time,
+        image_name,
+        process_name,
+        arguments,
+    ):
+        asset_node_key = node_key_for_test(self, asset_node_key)
+        process_node_key = node_key_for_test(self, process_node_key)
+        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+
+        created_asset_node = get_or_create_asset_node(
+            local_client, asset_node_key, hostname=hostname
+        )
+
+        created_process_node = get_or_create_process_node(
+            local_client,
+            process_node_key,
+            process_id,
+            arguments,
+            created_timestamp,
+            terminate_time,
+            image_name,
+            process_name,
+        )
+
+        create_edge(
+            local_client,
+            created_asset_node.uid,
+            "asset_processes",
+            created_process_node.uid,
+        )
+
+        # Setup complete, do some queries
+
+        queried_proc = (
+            ProcessQuery()
+            .with_asset(AssetQuery().with_hostname(hostname))
+            .query_first(local_client, contains_node_key=process_node_key)
+        )
+
+        assert process_id == queried_proc.get_process_id()
+        assert process_node_key == queried_proc.node_key
+        assert "Process" == queried_proc.get_node_type()
+        assert process_id == queried_proc.get_process_id()
+        assert arguments == queried_proc.get_arguments()
+        assert created_timestamp == queried_proc.get_created_timestamp()
+        assert terminate_time == queried_proc.get_terminate_time()
+        assert image_name == queried_proc.get_image_name()
+        assert process_name == queried_proc.get_process_name()
+
+        queried_asset = queried_proc.get_asset()
+        assert queried_asset
+        assert queried_asset.node_key == asset_node_key
 
     # Given that the code that generates timestamps only uses unsized types we can make some
     # assumptions about the data
