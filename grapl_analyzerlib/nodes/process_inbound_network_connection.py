@@ -36,7 +36,7 @@ class ProcessInboundConnectionQuery(DynamicNodeQuery):
         self._bound_by = None  # type: Optional[IProcessQuery]
 
     def with_ip_address(
-        self,
+        self: "NQ",
         eq: Optional[StrCmp] = None,
         contains: Optional[StrCmp] = None,
         ends_with: Optional[StrCmp] = None,
@@ -59,7 +59,7 @@ class ProcessInboundConnectionQuery(DynamicNodeQuery):
         return self
 
     def with_protocol(
-        self,
+        self: "NQ",
         eq: Optional[StrCmp] = None,
         contains: Optional[StrCmp] = None,
         ends_with: Optional[StrCmp] = None,

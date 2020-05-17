@@ -9,7 +9,7 @@ from grapl_analyzerlib.nodes.comparators import (
     _str_cmps,
     PropertyFilter,
 )
-from grapl_analyzerlib.nodes.queryable import NQ, Queryable
+from grapl_analyzerlib.nodes.queryable import NQ, NV, Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
 
 from grapl_analyzerlib.nodes.types import PropertyT, Property
@@ -193,3 +193,4 @@ class RiskView(Viewable):
 
 from grapl_analyzerlib.nodes.any_node import NodeView, NodeQuery
 from grapl_analyzerlib.nodes.process_node import ProcessView
+from grapl_analyzerlib.nodes.viewable import ReverseEdgeView

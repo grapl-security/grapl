@@ -468,6 +468,7 @@ class TestProcessQuery(unittest.TestCase):
             )
             .query_first(local_client)
         )
+        assert queried_process
 
         assert queried_process.node_key == "0e84f2ce-f711-46ce-bc9e-1b13c9ba6d6c"
         assert queried_process.process_id == 100

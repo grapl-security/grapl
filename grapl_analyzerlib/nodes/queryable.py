@@ -111,10 +111,14 @@ class Queryable(abc.ABC, Generic[NV]):
 
     def get_property_filters(self) -> Mapping[str, "PropertyFilter[Property]"]:
         prop_filters = self._get_property_filters()
-        if not prop_filters.get("node_key"):
-            prop_filters["node_key"] = self._node_key
 
-        return {**prop_filters, **self.dynamic_property_filters}
+        return {
+            "node_key": self._node_key,
+            # prop_filters might have its own node_key, which will
+            # overwrite the above one.
+            **prop_filters,
+            **self.dynamic_property_filters,
+        }
 
     def get_property_names(self) -> List[str]:
         prop_names = [
@@ -593,4 +597,4 @@ def generate_query(
 from grapl_analyzerlib.nodes.comparators import Has, Cmp, PropertyFilter, Eq
 
 from grapl_analyzerlib.nodes.types import PropertyT, Property
-from grapl_analyzerlib.nodes.viewable import Viewable, NV
+from grapl_analyzerlib.nodes.viewable import Viewable

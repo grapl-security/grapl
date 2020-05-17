@@ -9,46 +9,6 @@ from grapl_analyzerlib.schemas import *
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
 
 
-class AnyNodeSchema(NodeSchema):
-    @staticmethod
-    def self_type() -> str:
-        return "Any"
-
-
-class RiskSchema(NodeSchema):
-    def __init__(self):
-        super(RiskSchema, self).__init__()
-        (self.with_str_prop("analyzer_name").with_int_prop("risk_score"))
-
-    @staticmethod
-    def self_type() -> str:
-        return "Risk"
-
-
-class LensSchema(NodeSchema):
-    def __init__(self):
-        super(LensSchema, self).__init__()
-        (
-            self.with_str_prop("lens")
-            .with_int_prop("score")
-            .with_forward_edge("scope", ManyToMany(AnyNodeSchema), "in_scope")
-        )
-
-    @staticmethod
-    def self_type() -> str:
-        return "Lens"
-
-
-class AssetSchema(NodeSchema):
-    def __init__(self):
-        super(AssetSchema, self).__init__()
-        (self.with_str_prop("hostname"))
-
-    @staticmethod
-    def self_type() -> str:
-        return "Asset"
-
-
 def set_schema(client, schema, engagement=False):
     op = pydgraph.Operation(schema=schema)
     print(client.alter(op))
@@ -172,6 +132,7 @@ if __name__ == "__main__":
         try:
             provision(local_dg_provision_client,)
         except Exception as e:
+            hint = ""
             if isinstance(e, RpcError) and e.code() == StatusCode.UNAVAILABLE:
                 hint = "have you booted the local dgraph server?"
 
