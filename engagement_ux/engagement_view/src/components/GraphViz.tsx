@@ -9,9 +9,14 @@ import { nodeSize } from '../modules/GraphViz/calculations/node/nodeCalcs.tsx'
 import { calcLinkDirectionalArrowRelPos, calcLinkParticleWidth  } from '../modules/GraphViz/calculations/link/linkCalcs.tsx'
 import {mergeGraphs} from '../modules/GraphViz/graph/mergeGraphs.tsx'
 import {graphQLAdjacencyMatrix} from '../modules/GraphViz/graphQL/graphQLAdjacencyMatrix.tsx'
-import { Node, LinkType, GraphType } from "../modules/GraphViz/CustomTypes"
+import { Node, LinkType, GraphType, ColorHashOptions } from "../modules/GraphViz/CustomTypes"
 
-// getEngagementEdge();
+type ColorHashOptions = {
+    lightness: number,
+    saturation: number,
+    hue: number,
+    hash: BKDRHash,
+}
 
 /**
  * Convert HSL to RGB
@@ -51,13 +56,6 @@ const HSL2RGB = (H: number, S: number, L: number) => {
 const isArray = (o: Object) => {
     return Object.prototype.toString.call(o) === '[object Array]';
 };
-
-type ColorHashOptions = {
-    lightness: number,
-    saturation: number,
-    hue: number,
-    hash: BKDRHash,
-}
 
 /**
  * Color Hash Class

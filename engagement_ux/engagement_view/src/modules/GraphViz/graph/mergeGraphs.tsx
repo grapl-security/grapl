@@ -14,22 +14,6 @@ const mergeNodes = (x: Node, y: Node) => {
     return merged;
 };
 
-type ID = {
-    id: number
-}
-
-type MergeLinkType = {
-    source: ID, 
-    label: string, 
-    target: ID
-}
-
-type MergeUpdateType = {
-    nodes: Node[], 
-    links: MergeLinkType[], 
-    newLink: MergeLinkType[],
-    update: MergeLinkType[]
-}
 // #TODO: This algorithm is exponential, and doesn't have to be
 export const mergeGraphs = (curGraph: MergeGraphType, update: MergeGraphType): MergeGraphType | null => {
     // Merges two graphs into a new graph

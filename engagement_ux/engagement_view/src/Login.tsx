@@ -2,6 +2,7 @@ import React from 'react';
 import './LogIn.css';
 // import axios from 'axios';
 import {Field, Form, Formik} from "formik";
+import {LoginProps} from '../src/modules/GraphViz/CustomTypes'
 
 const isLocal = true;
 
@@ -25,10 +26,6 @@ export const checkLogin = async () => {
     return body['success'] === 'True';
 };
 
-type LoginProps = {
-  loginSuccess: () => void,
-}
-
 export const LogIn = (props: LoginProps) => {
   return (
     <div className = "backgroundImage">
@@ -42,7 +39,7 @@ export const LogIn = (props: LoginProps) => {
           );
 
           const loginSuccess = login(values.userName, password);
-
+          alert(loginSuccess)
           if (loginSuccess) {
             props.loginSuccess();
             console.log("Logged in");

@@ -98,7 +98,6 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
             console.log("Fetching lenses");
             getLenses()
                 .then((response) => {
-                    console.log('response', response);
                     if (response.lenses && response.lenses !== state.lenses) {
                         setState({
                             ...state,
@@ -175,7 +174,7 @@ const graphql_edge = getEngagementEdge(":5000/");
 
 
 const getLenses = async () => {
-    console.log('fetching graph');
+    console.log('fetching graph from', graphql_edge);
 
     const query = `
     {
@@ -191,7 +190,6 @@ const getLenses = async () => {
     const res = await fetch(`${graphql_edge}graphql`,
         {
             method: 'post',
-
             body: JSON.stringify({ query: query }),
             headers: {
                 'Content-Type': 'application/json',
@@ -199,9 +197,15 @@ const getLenses = async () => {
             credentials: 'include',
         })
         .then(res => res.json())
+        .then(res => {
+            if (res.errors) {
+                console.error("lenses failed", res.errors);
+            }
+            res.data = {lenses: []};
+            return res
+        })
         .then((res) => res.data);
 
-        console.log(res);
         const jres = await res;
 
     return jres;

@@ -1,15 +1,27 @@
+
+export type LoginProps = {
+    loginSuccess: () => void,
+}
+
+export type RouteState = {
+    curPage: string,
+    lastCheckLoginCheck: number,
+}
+
+export type SetRouteState = (routeState: RouteState) => void; 
+
 export type VizNode = { 
     name: number,
     risk: number,
     id: number,
     nodeType: string, 
-    nodeLabel: string
+    nodeLabel: string,
 }
 
 export type LinkType = {
     source: VizNode, 
     target: VizNode, 
-    name: string
+    name: string,
 }
 
 export interface BaseNode {
