@@ -11,9 +11,9 @@ RUN mkdir -p /lambda/modules/
 COPY modules/* ./modules/
 
 COPY server.js .
-# RUN zip --quiet -9r /lambda.zip .
+RUN zip --quiet -9r /lambda.zip .
 
-# FROM scratch
+FROM scratch
 
-# COPY --from=0 /lambda.zip /
+COPY --from=0 /lambda.zip /
 

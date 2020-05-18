@@ -137,6 +137,43 @@ class UserAuthDb extends cdk.Stack {
 
 }
 
+
+class GraphQLEndpoint extends cdk.Stack {
+    event_handler: lambda.Function;
+    integration: apigateway.LambdaRestApi;
+    name: string;
+    integrationName: string;
+
+    constructor(
+        parent: cdk.App,
+        name: string,
+        jwt_secret: string,
+        engagement_graph: DGraphEcs,
+        vpc: ec2.Vpc,
+    ) {
+        super(parent, name + '-stack');
+        this.name = name + process.env.BUCKET_PREFIX;
+        this.integrationName = name + process.env.BUCKET_PREFIX + 'GraphQLIntegration';
+        
+        this.event_handler = new lambda.Function(
+            this, name, {
+                runtime: Runtime.NODEJS_12_X,
+                handler: `server.handler`,
+                code: lambda.Code.fromAsset(`./graphql_endpoint.zip`),
+                vpc: vpc,
+                environment: {
+                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
+                    "JWT_SECRET": jwt_secret,
+                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+                },
+                timeout: Duration.seconds(25),
+                memorySize: 128,
+            }
+        );
+    }
+}
+
+
 class EngagementEdge extends cdk.Stack {
     event_handler: lambda.Function;
     integration: apigateway.LambdaRestApi;
@@ -1192,29 +1229,52 @@ const replaceInFile = (toModify, replaceMap, outputFile) => {
     });
 };
 
-const getEdgeGatewayId = (integrationName: string, cb) => {
+const getEdgeGatewayId = ([loginName, graphqlName]: [string, string], cb) => {
     let apigateway = new AWS.APIGateway();
 
+
     apigateway.getRestApis({}, function (err, data) {
+
+        let edgeId = null;
+        let graphId = null;
+
         if (err) {
             console.log('Error getting edge gateway ID', err);
         }
 
         for (const item of data.items) {
-            if (item.name === integrationName) {
-                console.log(`restApi ID ${item.id}`);
-                cb(item.id);
+            if (item.name === loginName) {
+                console.log(`login restApi ID ${item.id}`);
+                edgeId = item.id;
                 return
             }
+            if (item.name === graphqlName) {
+                console.log(`graphql restApi ID ${item.id}`);
+                graphId = item.id;
+                return
+            }
+
+            if (edgeId && graphId) {
+                break
+            }
+            
         }
-        console.warn(false, 'Could not find any integrations. Ensure you have deployed engagement edge.')
+        
+        if (edgeId && graphId) {
+            cb(edgeId, graphId);
+        } else {
+            console.warn(false, 'Could not find any integrations. Ensure you have deployed engagement edge.')
+        }
     });
+
+
 };
 
 class EngagementUx extends cdk.Stack {
     constructor(parent: cdk.App,
                 id: string,
                 edge: EngagementEdge,
+                graphql_endpoint: GraphQLEndpoint,
     ) {
         super(parent, id + '-stack');
         const bucketName = process.env.BUCKET_PREFIX + id + '-bucket';
@@ -1231,13 +1291,15 @@ class EngagementUx extends cdk.Stack {
 
         // TODO: Get both Gateways
         getEdgeGatewayId(
-            edge.name + 'Integration',
-            (gatewayId) => {
-                const edgeUrl = `https://${gatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
+            [edge.name + 'Integration', graphql_endpoint.name + 'GraphQLIntegration'],
+            (loginGatewayId, graphQLGatewayId) => {
+
+                const loginUrl = `https://${loginGatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
+                const graphQLUrl = `https://${graphQLGatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
 
                 const replaceMap = new Map();
-                replaceMap.set(`http://"+window.location.hostname+":8900/`, edgeUrl);
-                // replaceMap.set(`window.location.host+":5000/"`, graphqlUrl);
+                replaceMap.set(`http://"+window.location.hostname+":8900/`, loginUrl);
+                replaceMap.set(`window.location.host+":5000/"`, graphQLUrl);
 
                 console.log(__dirname)
                 dir.readFiles(path.join(__dirname, 'edge_ux/'),
@@ -1254,8 +1316,7 @@ class EngagementUx extends cdk.Stack {
 
                         replaceInFile(
                             filename,
-                            toReplace,
-                            replacement,
+                            replaceMap,
                             newPath
                         )
                         next()
@@ -1566,6 +1627,14 @@ class Grapl extends cdk.App {
             network.grapl_vpc,
         );
 
+        const graphql_endpoint = new GraphQLEndpoint(
+            this,
+            'graphql_endpoint',
+            jwtSecret,
+            engagement_graph,
+            network.grapl_vpc,
+        );
+
         new ModelPluginDeployer(
             this,
             'model-plugin-deployer',
@@ -1587,7 +1656,8 @@ class Grapl extends cdk.App {
         new EngagementUx(
             this,
             'engagement-ux',
-            engagement_edge
+            engagement_edge,
+            graphql_endpoint,
         );
     }
 }
