@@ -12,6 +12,29 @@ export const getEngagementEdge = (port?: undefined | string) => {
 
 const graphql_edge = getEngagementEdge(":5000/");
 
+
+const builtins = new Set([
+    'Process',
+    'File',
+    'IpAddress',
+    'Asset',
+    'Risk',
+    'IpConnections',
+    'ProcessInboundConnections',
+    'ProcessOutboundConnections',
+])
+
+const unpackPluginNodes = (nodes: BaseNode[]) => {
+    for (const node of nodes) {
+        if(!builtins.has(node.dgraph_type[0])) {
+            // Using 'any' because the PluginType is temporary, and not valid outside of the initial response
+            const pluginNode = {...(node as any).properties};
+            delete (node as any).properties
+            Object.keys(pluginNode).forEach(function(key) { (node as any)[key] = pluginNode[key]; });
+        }
+    }
+}
+
 export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & BaseNode)> => {
     const query = expandScope(lens);
 
@@ -28,7 +51,9 @@ export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & 
         .then((res) => res.data)
         .then((res) => res.lens_scope);
 
-    return (await res);
+    const lensWithScope = await res;
+    unpackPluginNodes(lensWithScope.scope);
+    return lensWithScope;
 };
 
 export const expandScope = (lensName: string) => {
@@ -104,6 +129,10 @@ export const expandScope = (lensName: string) => {
                         analyzer_name, 
                         risk_score
                     },
+                }
+
+                ... on PluginType {
+                    predicates,
                 }
             }
         }

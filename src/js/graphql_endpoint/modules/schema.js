@@ -1,5 +1,6 @@
 const dgraph = require("dgraph-js");
 const grpc = require("grpc");
+const { GraphQLJSONObject } = require('graphql-type-json');
 
 const { 
     GraphQLObjectType, 
@@ -143,9 +144,7 @@ const IpPort = new GraphQLObjectType({
 const IpAddressType = new GraphQLObjectType({
     name : 'IpAddress',
     fields : {
-        uid: {type: GraphQLInt}, 
-        node_key: {type: GraphQLString}, 
-        dgraph_type: {type: GraphQLList(GraphQLString)},
+        ...BaseNode,
         risks: {type: GraphQLList(RiskType)},
         ip_address: {type: GraphQLString}
     }
@@ -167,6 +166,7 @@ const AssetType = new GraphQLObjectType({
 const ProcessInboundConnections = new GraphQLObjectType ({
     name: 'ProcessInboundConnections',
     fields: {
+        ...BaseNode,
         ip_address: {type: GraphQLString},
         protocol: {type: GraphQLString}, 
         created_timestamp: {type: GraphQLInt}, 
@@ -182,6 +182,7 @@ const ProcessInboundConnections = new GraphQLObjectType ({
 const ProcessOutboundConnections = new GraphQLObjectType ({
     name: 'ProcessOutboundConnections',
     fields: {
+        ...BaseNode,
         ip_address: {type: GraphQLString},
         protocol: {type: GraphQLString},
         created_timestamp: {type: GraphQLInt}, 
@@ -193,14 +194,40 @@ const ProcessOutboundConnections = new GraphQLObjectType ({
     }
 })
 
-// const PluginType = new GraphQLObjectType({
-//     name: 'PluginType',
-//     fields: {
-//         predicates: { type: GraphQLJSONObject },
-//     }
-// })
+
+const ProcessOutboundConnections = new GraphQLObjectType ({
+    name: 'ProcessOutboundConnections',
+    fields: {
+        ...BaseNode,
+        ip_address: {type: GraphQLString},
+        protocol: {type: GraphQLString},
+        created_timestamp: {type: GraphQLInt}, 
+        terminated_timestamp: {type: GraphQLInt},
+        last_seen_timestamp: {type: GraphQLInt},
+        port: {type: GraphQLInt},
+        connected_over: {type: GraphQLList(IpPort)},
+        connected_to: {type: GraphQLList(IpPort)},
+    }
+})
+
+const PluginType = new GraphQLObjectType({
+    name: 'PluginType',
+    fields: {
+        predicates: { type: GraphQLJSONObject },
+    }
+})
 
 
+const builtins = new Set([
+    'Process',
+    'File',
+    'IpAddress',
+    'Asset',
+    'Risk',
+    'IpConnections',
+    'ProcessInboundConnections',
+    'ProcessOutboundConnections',
+])
 
 // TODO: Handle the rest of the builtin types
 const resolveType = (data) => {
@@ -236,12 +263,13 @@ const resolveType = (data) => {
         return 'ProcessOutboundConnections';
     }
     
+    return 'PluginType'
     // If it is not a builtin, return JSON
     // return GraphQLJSONObject
 };
 const GraplEntityType = new GraphQLUnionType({
     name: 'GraplEntityType',
-    types: [ FileType, ProcessType, IpAddressType, AssetType, RiskType, IpConnections, ProcessInboundConnections, ProcessOutboundConnections ],
+    types: [ PluginType | FileType, ProcessType, IpAddressType, AssetType, RiskType, IpConnections, ProcessInboundConnections, ProcessOutboundConnections ],
     resolveType: resolveType
 });
 
@@ -399,6 +427,14 @@ const RootQuery = new GraphQLObjectType({
                                 node[maybeNeighborProp] = neighbor
                             }                            
                         }
+                    }
+
+                    // If it's a plugin we want to store the properties in a wrapper
+                    if(!builtins.has(node.dgraph_type[0])) {
+                        const tmpNode = {...node};
+                        Object.keys(node).forEach(function(key) { delete node[key]; });
+
+                        node.properties = tmpNode;
                     }
                 }
                 console.log("Lens", lens)

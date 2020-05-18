@@ -148,6 +148,7 @@ export type Dynamic = BaseNode;
 export interface Lens extends BaseNode {
     lens_name: string,
     score: number,
+    scope: Scope,
 }
 
 export type LensScopeResponse = Lens;
