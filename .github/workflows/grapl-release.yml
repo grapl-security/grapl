@@ -1,0 +1,51 @@
+name: Grapl Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: $GITHUB_REF
+
+      - name: Configure environmment
+        run: |
+          # Strip git ref prefix from version
+          VERSION=$(echo "$GITHUB_REF" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          [ "$VERSION" == "master" ] && VERSION=latest
+          [ "$VERSION" == "staging" ] && VERSION=beta
+
+          echo '::set-env name=VERSION::$VERSION'
+
+      - name: Build Grapl
+        run: |
+          TAG=$VERSION docker-compose --build-args release_target=release -f docker-compose.yml -f docker-compose.build.yml build
+          docker system prune -f
+
+      - name: Log in to Docker registry
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
+
+      - name: Publish Grapl images to DockerHub
+        run: |
+          docker push grapl/grapl-sysmon-subgraph-generator:$VERSION
+          docker push grapl/grapl-node-identifier:$VERSION
+          docker push grapl/grapl-node-identifier-retry-handler:$VERSION
+          docker push grapl/grapl-graph-merger:$VERSION
+          docker push grapl/grapl-analyzer-dispatcher:$VERSION
+          docker push grapl/grapl-analyzer-executor:$VERSION
+          docker push grapl/grapl-engagement-creator:$VERSION
+          docker push grapl/grapl-engagement-edge:$VERSION
+          docker push grapl/grapl-model-plugin-deployer:$VERSION
+          docker push grapl/grapl-engagement-view:$VERSION
+          docker push grapl/grapl-graph-provision:$VERSION
+          docker push grapl/grapl-dynamodb-provision:$VERSION

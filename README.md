@@ -9,7 +9,7 @@ Essentially, Grapl will take raw logs, convert them into graphs, and merge those
 Grapl natively supports nodes for:
 
 - Processes
-- Files 
+- Files
 - Networking
 - Plugin nodes, which can be used to arbitrarily extend the graph
 

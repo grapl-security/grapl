@@ -1,0 +1,107 @@
+name: Grapl Deploy
+
+on: deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: $GITHUB_REF
+
+      - name: Configure environmment
+        run: |
+          # Strip git ref prefix from version
+          VERSION=$(echo "$GITHUB_REF" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          [ "$VERSION" == "master" ] && VERSION=latest
+          [ "$VERSION" == "staging" ] && VERSION=beta
+
+          echo '::set-env name=VERSION::$VERSION'
+
+      - name: Build Grapl
+        run: |
+          TAG=$VERSION docker-compose --build-args release_target=release -f docker-compose.yml -f docker-compose.build.yml build
+          docker system prune -f
+
+      - name: Upload Grapl artifacts to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          docker create -ti --name cp-sysmon-subgraph-generator grapl/grapl-sysmon-subgraph-generator:$VERSION bash
+          docker cp-sysmon-subgraph-generator:/target/release/sysmon-subgraph-generator .
+          docker rm -f cp-sysmon-subgraph-generator
+          zip -9 ./sysmon-subgraph-generator ./sysmon-subgraph-generator.zip
+          rm ./sysmon-subgraph-generator
+          #aws s3 cp sysmon-subgraph-generator.zip s3://TBD
+          rm ./sysmon-subgraph-generator.zip
+
+          docker create -ti --name cp-generic-subgraph-generator grapl/grapl-generic-subgraph-generator:$VERSION bash
+          docker cp cp-generic-subgraph-generator:/target/release/generic-subgraph-generator .
+          docker rm -f cp-generic-subgraph-generator
+          zip -9 ./generic-subgraph-generator ./generic-subgraph-generator.zip
+          rm ./generic-subgraph-generator
+          #aws s3 cp generic-subgraph-generator.zip s3://TBD
+          rm ./generic-subgraph-generator.zip
+
+          docker create -ti --name cp-node-identifier grapl/grapl-node-identifier:$VERSION bash
+          docker cp cp-node-identifier:/target/release/node-identifier .
+          docker rm -f cp-node-identifier
+          zip -9 ./node-identifier ./node-identifier.zip
+          rm ./node-identifier
+          #aws s3 cp node-identifier.zip s3://TBD
+          rm ./node-identifier.zip
+
+          docker create -ti --name cp-node-identifier-retry-handler grapl/grapl-node-identifier-retry-handler:$VERSION bash
+          docker cp cp-node-identifier-retry-handler:/target/release/node-identifier-retry-handler .
+          docker rm -f cp-node-identifier-retry-handler
+          zip -9 ./node-identifier-retry-handler ./node-identifier-retry-handler.zip
+          rm ./node-identifier-retry-handler
+          #aws s3 cp node-identifier-retry-handler.zip s3://TBD
+          rm ./node-identifier-retry-handler.zip
+
+          docker create -ti --name cp-graph-merger grapl/grapl-graph-merger:$VERSION bash
+          docker cp cp-graph-merger:/target/release/graph-merger .
+          docker rm -f cp-graph-merger
+          zip -9 ./graph-merger ./graph-merger.zip
+          rm ./graph-merger
+          #aws s3 cp graph-merger.zip s3://TBD
+          rm ./graph-merger.zip
+
+          docker create -ti --name cp-analyzer-dispatcher grapl/grapl-analyzer-dispatcher:$VERSION bash
+          docker cp cp-analyzer-dispatcher:/target/release/analyzer-dispatcher .
+          docker rm -f cp-analyzer-dispatcher
+          zip -9 ./analyzer-dispatcher ./analyzer-dispatcher.zip
+          rm ./sysmon-subgraph-generator
+          #aws s3 cp analyzer-dispatcher.zip s3://TBD
+          rm ./analyzer-dispatcher.zip
+
+          docker create -ti --name cp-analyzer-executor grapl/grapl-analyzer-executor:$VERSION bash
+          docker cp cp-analyzer-executor:/lambda.zip analyzer-executor.zip
+          docker rm -f cp-analyzer-executor
+          #aws s3 cp analyzer-executor.zip s3://TBD
+          rm ./analyzer-executor.zip
+
+          docker create -ti --name cp-engagement-creator grapl/grapl-engagement-creator:$VERSION bash
+          docker cp cp-engagement-creator:/lambda.zip engagement-creator.zip
+          docker rm -f cp-engagement-creator
+          #aws s3 cp engagement-creator.zip s3://TBD
+          rm ./engagement-creator.zip
+
+          docker create -ti --name cp-engagement-edge grapl/grapl-engagement-edge:$VERSION bash
+          docker cp cp-engagement-edge:/lambda.zip engagement-edge.zip
+          docker rm -f cp-engagement-edge
+          #aws s3 cp engagement-edge.zip s3://TBD
+          rm ./engagement-edge.zip
+
+          docker create -ti --name cp-model-plugin-deployer grapl/grapl-model-plugin-deployer:$VERSION bash
+          docker cp cp-model-plugin-deployer:/lambda.zip model-plugin-deployer.zip
+          docker rm -f cp-model-plugin-deployer
+          #aws s3 cp model-plugin-deployer.zip s3://TBD
+          rm ./model-plugin-deployer.zip

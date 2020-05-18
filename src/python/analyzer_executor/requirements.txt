@@ -1,0 +1,9 @@
+pydgraph==2.0.*
+boto3
+grapl-analyzerlib==0.2.59
+grapl_os_user_analyzer_plugin==0.1.13
+grapl_ipc_analyzer_plugin==0.0.2
+redis
+grpcio
+protobuf
+typing_extensions

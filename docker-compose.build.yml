@@ -1,0 +1,96 @@
+version: '3.4'
+services:
+
+  #
+  # Rust services
+  #
+
+  grapl-sysmon-subgraph-generator:
+    image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+    build:
+      context: ./src/rust
+      target: grapl-sysmon-subgraph-generator
+
+  grapl-node-identifier:
+    image: grapl/grapl-node-identifier:${TAG:-latest}
+    build:
+      context: ./src/rust
+      target: grapl-node-identifier
+
+  grapl-node-identifier-retry-handler:
+    image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
+    build:
+      context: ./src/rust
+      target: grapl-node-identifier-retry-handler
+
+  grapl-graph-merger:
+    image: grapl/grapl-graph-merger:${TAG:-latest}
+    build:
+      context: ./src/rust
+      target: grapl-graph-merger
+
+  grapl-analyzer-dispatcher:
+    image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
+    build:
+      context: ./src/rust
+      target: grapl-analyzer-dispatcher
+
+  #
+  # Python services
+  #
+
+  grapl-analyzer-executor:
+    image: grapl/grapl-analyzer-executor:${TAG:-latest}
+    build:
+      context: ./src/python/analyzer_executor
+      target: grapl-analyzer-executor
+
+  grapl-engagement-creator:
+    image: grapl/grapl-engagement-creator:${TAG:-latest}
+    build:
+      context: ./src/python/engagement-creator
+      target: grapl-engagement-creator
+
+  grapl-engagement-edge:
+    image: grapl/grapl-engagement-edge:${TAG:-latest}
+    build:
+      context: ./src/python/engagement_edge
+      target: grapl-engagement-edge
+
+  grapl-model-plugin-deployer:
+    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+    build:
+      context: ./src/python/grapl-model-plugin-deployer/
+      dockerfile: ./Dockerfile
+
+  #
+  # JS/web services
+  #
+
+  grapl-engagement-view:
+    image: grapl/grapl-engagement-view:${TAG:-latest}
+    build:
+      context: ./src/js/engagement_view
+      target: grapl-engagement-view
+
+
+  grapl-graphql-endpoint:
+    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+    build:
+      context: ./src/js/graphql_endpoint
+      target: grapl-graphql-endpoint
+    
+
+  #
+  # Utility services
+  #
+
+  grapl-graph-provision:
+    image: grapl/grapl-graph-provision:${TAG:-latest}
+    build:
+      context: ./src/python/engagement_edge/
+
+  grapl-dynamodb-provision:
+    image: grapl/grapl-dynamodb-provision:${TAG:-latest}
+    build:
+      context: ./src/python/engagement_edge/
