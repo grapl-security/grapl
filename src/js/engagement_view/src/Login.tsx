@@ -1,20 +1,11 @@
 import React from 'react';
 import './LogIn.css';
-// import axios from 'axios';
 import {Field, Form, Formik} from "formik";
-import {LoginProps} from '../src/modules/GraphViz/CustomTypes'
+import {LoginProps} from '../src/modules/GraphViz/CustomTypes';
+import {getAuthEdge} from './modules/GraphViz/engagement_edge/getEngagementEdge';
 
-const isLocal = true;
+const engagement_edge = getAuthEdge();
 
-const getEngagementEdge = () => {
-    if (isLocal) {
-        return window.location.host + ":8900/"
-    } else {
-        return "__engagement_ux_standin__hostname__"
-    }
-}
-
-const engagement_edge = getEngagementEdge();
 export const checkLogin = async () => {
     const res = await fetch(`${engagement_edge}checkLogin`, {
         method: 'get',

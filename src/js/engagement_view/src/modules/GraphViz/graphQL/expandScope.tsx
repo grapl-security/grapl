@@ -1,18 +1,8 @@
 import {BaseNode, LensScopeResponse} from '../../GraphViz/CustomTypes'
 import {mapGraph} from "../graph/graph_traverse";
+import {getGraphQlEdge} from '../engagement_edge/getEngagementEdge';
 
-const isLocal = true;
-
-export const getEngagementEdge = (port?: undefined | string) => {
-    if (isLocal) {
-        return "http://" + window.location.hostname + (port || ":8900/") 
-    } else {
-        return "__engagement_ux_standin__hostname__"
-    }
-}
-
-const graphql_edge = getEngagementEdge(":5000/");
-
+const graphql_edge = getGraphQlEdge();
 
 const builtins = new Set([
     'Process',

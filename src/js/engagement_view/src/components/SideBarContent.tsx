@@ -13,7 +13,7 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
 import {mapEdgeProps} from '../modules/GraphViz/graph/graph_traverse'; 
 import {Node, Lens} from "../modules/GraphViz/CustomTypes";
-
+import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getEngagementEdge";
 
 const useStyles = makeStyles({
     root:{
@@ -159,18 +159,8 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
     )
 }
 
-const isLocal = true;
-
-const getEngagementEdge = (port?: undefined | string) => {
-    if (isLocal) {
-        return "http://" + window.location.hostname + (port || ":8900/")
-    } else {
-        return "__engagement_ux_standin__hostname__"
-    }
-}
-
 // const engagement_edge = getEngagementEdge();
-const graphql_edge = getEngagementEdge(":5000/");
+const graphql_edge = getGraphQlEdge();
 
 
 const getLenses = async () => {
@@ -186,7 +176,7 @@ const getLenses = async () => {
         }
     }
     `;
-    
+    console.log('connecting to: ' + `${graphql_edge}graphql`)
     const res = await fetch(`${graphql_edge}graphql`,
         {
             method: 'post',

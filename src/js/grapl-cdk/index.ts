@@ -1166,17 +1166,18 @@ class EngagementNotebook extends cdk.Stack {
 const fs = require('fs'),
     path = require('path');
 
-const replaceInFile = (toModify, toReplace, replaceWith, outputFile) => {
+const replaceInFile = (toModify, replaceMap, outputFile) => {
     return fs.readFile(toModify, {encoding: 'utf8'}, (err, data) => {
         if (err) {
             return console.log(err);
         }
 
-        const replaced = data
+        let replaced = "";
+        for (const [toReplace, replaceWith] of replaceMap.entries()) {
+            replaced = data
             .split(toReplace)
-            .join(replaceWith)
-            .split("const isLocal = true;")
-            .join( "const isLocal = false;");
+            .join(replaceWith);   
+        }
 
         if (outputFile) {
             fs.writeFile(outputFile, replaced, {encoding: 'utf8'}, (err) => {
@@ -1228,13 +1229,15 @@ class EngagementUx extends cdk.Stack {
             fs.mkdirSync(path.join(__dirname, 'edge_ux_package/'));
         }
 
+        // TODO: Get both Gateways
         getEdgeGatewayId(
             edge.name + 'Integration',
             (gatewayId) => {
                 const edgeUrl = `https://${gatewayId}.execute-api.${AWS.config.region}.amazonaws.com/prod/`;
 
-                const toReplace = "__engagement_ux_standin__hostname__";
-                const replacement = `${edgeUrl}`;
+                const replaceMap = new Map();
+                replaceMap.set(`http://"+window.location.hostname+":8900/`, edgeUrl);
+                // replaceMap.set(`window.location.host+":5000/"`, graphqlUrl);
 
                 console.log(__dirname)
                 dir.readFiles(path.join(__dirname, 'edge_ux/'),
