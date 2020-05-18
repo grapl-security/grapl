@@ -53,6 +53,7 @@ type NodeTableProps = {
 }
 
 function NodeTable({node}: NodeTableProps){
+    console.log("Displaying node: ", node);
     const classes = useStyles();
     const hidden = new Set(
         ['id', 'dgraph.type', '__indexColor', 'risks','uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']

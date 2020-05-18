@@ -98,7 +98,9 @@ function randomInt(min: number, max: number) // min and max included
 export const graphQLAdjacencyMatrix = (inputGraph: (LensScopeResponse & BaseNode)): AdjacencyMatrix => {
 
     const nodes: VizNode[] = []; 
-    const links: VizLink[] = []; 
+    const links: VizLink[] = [];
+
+    const nodeMap: Map<number, VizNode> = new Map();
 
     traverseNeighbors(inputGraph, 
         (fromNode: BaseNode, edgeName: string, toNode: BaseNode) => {
@@ -156,17 +158,23 @@ export const graphQLAdjacencyMatrix = (inputGraph: (LensScopeResponse & BaseNode
             // to any here
             (strippedNode as any)[edge] = undefined;
         })
-        
-        nodes.push({
+
+        const vizNode = {
             name: node.uid,
-            id: node.uid,
             ...strippedNode,
+            id: node.uid,
             nodeType,
             nodeLabel,
             x: 200 + randomInt(1, 50),
             y: 150 + randomInt(1, 50),
-        })
+        };
+
+        nodeMap.set(node.uid, vizNode);
     })
+
+    for (const vizNode of (nodeMap.values() as any)) {
+        nodes.push(vizNode)
+    }
 
     return {
         nodes, 

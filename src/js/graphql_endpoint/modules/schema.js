@@ -15,7 +15,7 @@ const {
 const { GraphQLBoolean } = require("graphql");
 
 const BaseNode = {
-    uid: {type: GraphQLInt}, 
+    uid: {type: GraphQLInt},
     node_key: {type: GraphQLString}, 
     dgraph_type: {type: GraphQLList(GraphQLString)},
 }
@@ -95,7 +95,6 @@ const ProcessType = new GraphQLObjectType({
     name : 'Process',
     fields : () => ({
         ...BaseNode,
-        process_id: {type: GraphQLInt},
         created_timestamp: {type: GraphQLInt},
         image_name: {type: GraphQLString},
         process_name: {type: GraphQLString},
@@ -178,23 +177,6 @@ const ProcessInboundConnections = new GraphQLObjectType ({
     }
 })
 
-
-const ProcessOutboundConnections = new GraphQLObjectType ({
-    name: 'ProcessOutboundConnections',
-    fields: {
-        ...BaseNode,
-        ip_address: {type: GraphQLString},
-        protocol: {type: GraphQLString},
-        created_timestamp: {type: GraphQLInt}, 
-        terminated_timestamp: {type: GraphQLInt},
-        last_seen_timestamp: {type: GraphQLInt},
-        port: {type: GraphQLInt},
-        connected_over: {type: GraphQLList(IpPort)},
-        connected_to: {type: GraphQLList(IpPort)},
-    }
-})
-
-
 const ProcessOutboundConnections = new GraphQLObjectType ({
     name: 'ProcessOutboundConnections',
     fields: {
@@ -264,12 +246,12 @@ const resolveType = (data) => {
     }
     
     return 'PluginType'
-    // If it is not a builtin, return JSON
-    // return GraphQLJSONObject
 };
+
+// | FileType, ProcessType, IpAddressType, AssetType, RiskType, IpConnections, ProcessInboundConnections, ProcessOutboundConnections
 const GraplEntityType = new GraphQLUnionType({
     name: 'GraplEntityType',
-    types: [ PluginType | FileType, ProcessType, IpAddressType, AssetType, RiskType, IpConnections, ProcessInboundConnections, ProcessOutboundConnections ],
+    types: [ PluginType, FileType, ProcessType, AssetType ],
     resolveType: resolveType
 });
 
@@ -277,7 +259,7 @@ const getDgraphClient = () => {
 
     const clientStub = new dgraph.DgraphClientStub(
         // addr: optional, default: "localhost:9080"
-        "localhost:9081",
+        "engagement_graph:9080",
         // credentials: optional, default: grpc.credentials.createInsecure()
         grpc.credentials.createInsecure(),
     );
@@ -303,8 +285,13 @@ const getLenses = async (dg_client) => {
         }
     }`;
 
-    const res = await dg_client.newTxn().query(query);
-    return res.getJson()['all'];
+    const txn = dg_client.newTxn();
+    try {
+        const res = await txn.query(query);
+        return res.getJson()['all'];
+    } finally {
+        await txn.discard();
+    }
 }
 
 // return lens
@@ -315,7 +302,7 @@ const getLensByName = async (dg_client, lensName) => {
         {
             all(func: eq(lens, $a), first: 1)
             {
-                lens,
+                lens_name: lens,
                 score,
                 node_key,
                 uid,
@@ -328,9 +315,13 @@ const getLensByName = async (dg_client, lensName) => {
             }
         }
     `;
-
-    const res = await dg_client.newTxn().queryWithVars(query, {'$a': lensName});
-    return res.getJson()['all'][0];
+    const txn = dg_client.newTxn();
+    try {
+        const res = await txn.queryWithVars(query, {'$a': lensName});
+        return res.getJson()['all'][0];
+    } finally {
+        await txn.discard();
+    }
 }
 // Return base node 
 const getNeighborsFromNode = async (dg_client, nodeUid) => {
@@ -346,9 +337,13 @@ const getNeighborsFromNode = async (dg_client, nodeUid) => {
             }
         }
     }`;
-
-    const res = await dg_client.newTxn().queryWithVars(query, {'$a': nodeUid});
-    return res.getJson()['all'][0];    
+    const txn = dg_client.newTxn();
+    try {
+        const res = await txn.queryWithVars(query, {'$a': nodeUid});
+        return res.getJson()['all'][0];
+    } finally {
+        await txn.discard();
+    }
 }
 
 const inLensScope = async (dg_client, nodeUid, lensUid) => {
@@ -365,10 +360,15 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
         }
     }`;
 
-    const res = await dg_client.newTxn().queryWithVars(query, {
-        '$a': nodeUid, '$b': lensUid
-    });
-    return !!res.getJson()['all'];        
+    const txn = dg_client.newTxn();
+    try {
+        const res = await txn.queryWithVars(query, {
+            '$a': nodeUid, '$b': lensUid
+        });
+        return !!res.getJson()['all'];
+    } finally {
+        await txn.discard();
+    }
 }
 
 const RootQuery = new GraphQLObjectType({
@@ -396,12 +396,14 @@ const RootQuery = new GraphQLObjectType({
 
                 const lens = await getLensByName(dg_client, lens_name);
                 for (const node of lens["scope"]) {
+                    // node.uid = parseInt(node.uid, 16);
                     // for every node in our lens scope, get its neighbors
 
                     const nodeEdges = await getNeighborsFromNode(dg_client, node["uid"]);
 
                     for (const maybeNeighborProp in nodeEdges) {
                         const maybeNeighbor = nodeEdges[maybeNeighborProp];
+                        // maybeNeighbor.uid = parseInt(maybeNeighbor.uid, 16);
                         
                         // A neighbor is either an array of objects with uid fields
                         if (Array.isArray(maybeNeighbor) && maybeNeighbor && maybeNeighbor[0].uid) {
@@ -409,6 +411,7 @@ const RootQuery = new GraphQLObjectType({
 
                             for (const neighbor of neighbors) {
                                 const isInScope = await inLensScope(dg_client, neighbor["uid"], lens["uid"]);
+                                neighbor.uid = parseInt(neighbor.uid, 16);
                                 if (isInScope) {
                                     if (Array.isArray(node[maybeNeighborProp])) {
                                         node[maybeNeighborProp].push(neighbor);
@@ -422,22 +425,40 @@ const RootQuery = new GraphQLObjectType({
                             const neighbor = maybeNeighbor;
 
                             const isInScope = await inLensScope(dg_client, neighbor["uid"], lens["uid"]);
-                                
+
+                            neighbor.uid = parseInt(neighbor.uid, 16);
                             if (isInScope) {
+                                if(!builtins.has(neighbor.dgraph_type[0])) {
+                                    const tmpNode = {...neighbor};
+                                    // Object.keys(node).forEach(function(key) { delete node[key]; });
+
+                                    neighbor.predicates = tmpNode;
+                                }
                                 node[maybeNeighborProp] = neighbor
                             }                            
                         }
                     }
 
+                }
+
+                for (const node of lens["scope"]) {
+                    node.uid = parseInt(node.uid, 16);
                     // If it's a plugin we want to store the properties in a wrapper
                     if(!builtins.has(node.dgraph_type[0])) {
                         const tmpNode = {...node};
-                        Object.keys(node).forEach(function(key) { delete node[key]; });
+                        // Object.keys(node).forEach(function(key) {
+                        //     if (Object.prototype.hasOwnProperty.call(node, key)) {
+                        //         delete node[key];
+                        //     }
+                        // });
 
-                        node.properties = tmpNode;
+                        node.predicates = tmpNode;
                     }
                 }
-                console.log("Lens", lens)
+                console.log("Lens", JSON.stringify(lens, null, 2))
+
+
+                lens.uid = parseInt(lens.uid, 16);
                 return lens
 
             }

@@ -27,11 +27,16 @@ export const mapGraph = (node:Node, f:(node:Node, prop:string, neighbor: Node) =
 export const mapEdges = (node: Node, f: (prop:string, neighbor: Node) => void) => {
     for (const prop in node) {
         if (Object.prototype.hasOwnProperty.call(node, prop)) {
-            if(Array.isArray((node as any)[prop])) {
-                for (const neighbor of (node as any)[prop]) {
+            const maybeNeighbor = (node as any)[prop];
+            if(Array.isArray(maybeNeighbor)) {
+                for (const neighbor of maybeNeighbor) {
                     if (neighbor.uid !== undefined) {
                         f(prop, neighbor)
                     }
+                }
+            } else {
+                if (maybeNeighbor && maybeNeighbor.uid !== undefined) {
+                    f(prop, maybeNeighbor)
                 }
             }
         }
@@ -41,11 +46,16 @@ export const mapEdges = (node: Node, f: (prop:string, neighbor: Node) => void) =
 export const mapEdgeProps = (node: Node, f: (prop:string, neighbor: Node) => void) => {
     for (const prop in node) {
         if (Object.prototype.hasOwnProperty.call(node, prop)) {
-            if(Array.isArray((node as any)[prop])) {
-                for (const neighbor of (node as any)[prop]) {
+            const maybeNeighbor = (node as any)[prop];
+            if(Array.isArray(maybeNeighbor)) {
+                for (const neighbor of maybeNeighbor) {
                     if (neighbor.uid !== undefined) {
                         f(prop, neighbor)
                     }
+                }
+            } else {
+                if (maybeNeighbor && maybeNeighbor.uid !== undefined) {
+                    f(prop, maybeNeighbor)
                 }
             }
         }

@@ -200,8 +200,8 @@ const getLenses = async () => {
         .then(res => {
             if (res.errors) {
                 console.error("lenses failed", res.errors);
+                res.data = {lenses: []};
             }
-            res.data = {lenses: []};
             return res
         })
         .then((res) => res.data);
