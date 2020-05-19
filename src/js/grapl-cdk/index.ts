@@ -148,7 +148,7 @@ class EngagementEdge extends cdk.Stack {
         name: string,
         hostname: string,
         jwt_secret: string,
-        engagement_graph: DGraphEcs,
+        master_graph: DGraphEcs,
         user_auth_table: UserAuthDb,
         vpc: ec2.Vpc,
     ) {
@@ -163,7 +163,7 @@ class EngagementEdge extends cdk.Stack {
                 code: lambda.Code.fromAsset(`./engagement_edge.zip`),
                 vpc: vpc,
                 environment: {
-                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
+                    "MG_ALPHAS": master_graph.alphaNames.join(","),
                     "JWT_SECRET": jwt_secret,
                     "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
                     "BUCKET_PREFIX": process.env.BUCKET_PREFIX
@@ -197,7 +197,6 @@ class ModelPluginDeployer extends cdk.Stack {
         name: string,
         jwt_secret: string,
         master_graph: DGraphEcs,
-        engagement_graph: DGraphEcs,
         model_plugin_bucket: s3.IBucket,
         user_auth_table: UserAuthDb,
         vpc: ec2.Vpc,
@@ -214,7 +213,6 @@ class ModelPluginDeployer extends cdk.Stack {
                 vpc: vpc,
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
-                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                     "JWT_SECRET": jwt_secret,
                     "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
                     "BUCKET_PREFIX": process.env.BUCKET_PREFIX
@@ -871,14 +869,12 @@ class EngagementCreator extends cdk.Stack {
                 subscribes_to: sns.Topic,
                 publishes_to: sns.Topic,
                 master_graph: DGraphEcs,
-                engagement_graph: DGraphEcs,
                 vpc: ec2.Vpc,
     ) {
         super(parent, id + '-stack');
 
         const environment = {
             "MG_ALPHAS": master_graph.alphaNames.join(","),
-            "EG_ALPHAS": engagement_graph.alphaNames.join(","),
         };
 
         const service = new Service(this, 'engagement-creator', environment, vpc, null, {
@@ -1472,14 +1468,6 @@ class Grapl extends cdk.App {
             mgAlphaCount,
         );
 
-        const engagement_graph = new DGraphEcs(
-            this,
-            'engagementgraphcluster',
-            network.grapl_vpc,
-            egZeroCount,
-            egAlphaCount,
-        );
-
         new GenericSubgraphGenerator(
             this,
             'grapl-generic-subgraph-generator',
@@ -1547,7 +1535,6 @@ class Grapl extends cdk.App {
             event_emitters.analyzer_matched_subgraphs_topic,
             event_emitters.engagements_created_topic,
             master_graph,
-            engagement_graph,
             network.grapl_vpc
         );
 
@@ -1558,7 +1545,7 @@ class Grapl extends cdk.App {
             'engagementedge',
             'engagementedge',
             jwtSecret,
-            engagement_graph,
+            master_graph,
             user_auth_table,
             network.grapl_vpc,
         );
@@ -1568,7 +1555,6 @@ class Grapl extends cdk.App {
             'model-plugin-deployer',
             jwtSecret,
             master_graph,
-            engagement_graph,
             event_emitters.model_plugins_bucket,
             user_auth_table,
             network.grapl_vpc,

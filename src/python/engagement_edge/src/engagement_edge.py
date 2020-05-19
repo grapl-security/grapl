@@ -30,13 +30,12 @@ ORIGIN = (
     "https://" + os.environ["BUCKET_PREFIX"] + "engagement-ux-bucket.s3.amazonaws.com"
 )
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
-# ORIGIN = "http://127.0.0.1:8900"
 DYNAMO = None
 
 if IS_LOCAL:
-    EG_ALPHA = "engagement_graph:9080"
+    MG_ALPHA = "master_graph:9080"
 else:
-    EG_ALPHA = "alpha0.engagementgraphcluster.grapl:9080"
+    MG_ALPHA = "alpha0.mastergraphcluster.grapl:9080"
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
@@ -47,8 +46,8 @@ app = Chalice(app_name="engagement-edge")
 
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
-    LOGGER.info(f"connecting to dgraph at {EG_ALPHA}")
-    client_stub = pydgraph.DgraphClientStub(EG_ALPHA)
+    LOGGER.info(f"connecting to dgraph at {MG_ALPHA}")
+    client_stub = pydgraph.DgraphClientStub(MG_ALPHA)
     dg_client = pydgraph.DgraphClient(client_stub)
 
     # DGraph query for all nodes with a 'lens' that matches the 'prefix'
@@ -390,8 +389,8 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
 
 def try_get_updated_graph(body):
     LOGGER.info("Trying to update graph")
-    LOGGER.info(f"connecting to dgraph at {EG_ALPHA}")
-    client_stub = pydgraph.DgraphClientStub(EG_ALPHA)
+    LOGGER.info(f"connecting to dgraph at {MG_ALPHA}")
+    client_stub = pydgraph.DgraphClientStub(MG_ALPHA)
     dg_client = pydgraph.DgraphClient(client_stub)
 
     lens = body["lens"]
