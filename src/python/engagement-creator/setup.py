@@ -33,5 +33,6 @@ setup(
     description='Grapl service which creates engagements',
     install_requires=REQUIREMENTS,
     tests_require=REQUIREMENTS_TEST,
+    setup_requires=('wheel',),
     zip_safe=False
 )

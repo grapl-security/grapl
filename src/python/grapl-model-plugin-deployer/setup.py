@@ -2,7 +2,7 @@
 
 import os
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -31,7 +31,9 @@ setup(
     author_email='FIXME',
     url='https://github.com/grapl-security/grapl',
     description='Grapl service for deploying plugins',
+    packages=find_packages(),
     install_requires=REQUIREMENTS,
     tests_require=REQUIREMENTS_TEST,
+    setup_requires=('wheel',),
     zip_safe=False
 )
