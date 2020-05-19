@@ -1663,4 +1663,3 @@ class Grapl extends cdk.App {
 }
 
 new Grapl().synth();
-

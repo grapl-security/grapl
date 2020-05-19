@@ -149,6 +149,7 @@ export interface Lens extends BaseNode {
     lens_name: string,
     score: number,
     scope: Scope,
+    lens_type: string,
 }
 
 export type LensScopeResponse = Lens;

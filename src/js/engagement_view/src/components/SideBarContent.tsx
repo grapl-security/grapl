@@ -172,7 +172,8 @@ const getLenses = async () => {
             uid,
             node_key,
             lens_name,
-            score
+            score, 
+            lens_type,
         }
     }
     `;

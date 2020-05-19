@@ -77,6 +77,7 @@ export const expandScope = (lensName: string) => {
             uid,
             node_key,
             lens_name,
+            lens_type,
             dgraph_type,
             scope {
                 ... on Process {

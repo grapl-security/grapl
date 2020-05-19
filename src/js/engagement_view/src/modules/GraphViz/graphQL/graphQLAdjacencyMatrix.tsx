@@ -56,6 +56,7 @@ interface VizAssetNode extends IVizNode {
 
 interface VizLensNode extends IVizNode {
     lens_name: string,
+    lens_type: string, 
 }
 
 type VizDynamicNode = IVizNode;
