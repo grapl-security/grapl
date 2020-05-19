@@ -1544,14 +1544,14 @@ class Grapl extends cdk.App {
             egAlphaCount,
         );
 
-        new GenericSubgraphGenerator(
-            this,
-            'grapl-generic-subgraph-generator',
-            event_emitters.raw_logs_bucket,
-            event_emitters.raw_logs_topic,
-            event_emitters.unid_subgraphs_generated_bucket,
-            network.grapl_vpc,
-        );
+        // new GenericSubgraphGenerator(
+        //     this,
+        //     'grapl-generic-subgraph-generator',
+        //     event_emitters.raw_logs_bucket,
+        //     event_emitters.raw_logs_topic,
+        //     event_emitters.unid_subgraphs_generated_bucket,
+        //     network.grapl_vpc,
+        // );
 
         new SysmonSubgraphGenerator(
             this,
