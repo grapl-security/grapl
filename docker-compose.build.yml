@@ -63,6 +63,15 @@ services:
       context: ./src/python/grapl-model-plugin-deployer/
       dockerfile: ./Dockerfile
 
+
+
+  grapl-notebook:
+    image: grapl/grapl-notebook:${TAG:-latest}
+    build:
+      context: ./src/python/grapl-notebook/
+      dockerfile: ./Dockerfile
+
+
   #
   # JS/web services
   #
