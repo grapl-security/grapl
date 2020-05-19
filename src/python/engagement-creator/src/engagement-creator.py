@@ -289,7 +289,7 @@ def lambda_handler(events: Any, context: Any) -> None:
             )
             copied_node = NodeView.from_node_key(eg_client, node.node.node_key)
 
-            for lens_type, lens_name in lens_dict.items():
+            for lens_type, lens_name in lens_dict:
                 LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
                 lens_id = lens_name + lens_type
                 lens = lenses.get(lens_name) or LensView.get_or_create(
