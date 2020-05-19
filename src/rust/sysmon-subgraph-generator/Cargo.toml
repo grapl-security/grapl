@@ -31,11 +31,12 @@ aws_lambda_events = "0.2.0"
 
 simple_logger = "1.6.*"
 lambda_runtime = "0.2.*"
-async-trait = "0.1.22"
+async-trait = "0.1.31"
 zstd = "0.5.1"
 tokio-compat = "0.1.2"
 tokio = { version = "0.2.4", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 rusoto_credential = "0.43.0"
+graph-generator-lib = { path="../graph-generator-lib", version="*"}
 
 
 [dependencies.uuid]

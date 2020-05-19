@@ -1,11 +1,9 @@
-import os
 from typing import Any, Type
 
-import redis
 from grapl_analyzerlib.analyzer import Analyzer, OneOrMany, A
 from grapl_analyzerlib.counters import ParentChildCounter
-from grapl_analyzerlib.prelude import ProcessQuery, ProcessView, Not
 from grapl_analyzerlib.execution import ExecutionHit
+from grapl_analyzerlib.prelude import ProcessQuery, ProcessView, Not
 from pydgraph import DgraphClient
 
 

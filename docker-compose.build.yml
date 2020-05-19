@@ -94,7 +94,7 @@ services:
       - grapl-graph-descriptions-python-build
 
   grapl-model-plugin-deployer:
-    image: grapl/grapl-plugin-deployer:${TAG:-latest}
+    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     build:
       context: ./src/python/grapl-model-plugin-deployer/
       dockerfile: ./Dockerfile
