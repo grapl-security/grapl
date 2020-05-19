@@ -27,7 +27,7 @@ const LensNodeType = new GraphQLObjectType({
         lens_name: {type: GraphQLString}, 
         score: {type: GraphQLInt}, 
         scope: {type: GraphQLList(GraplEntityType)},
-        lens_label: {type: GraphQLString}, 
+        lens_type: {type: GraphQLString}, 
     })
 })
 
@@ -277,7 +277,7 @@ const getLenses = async (dg_client) => {
             node_key,
             uid,
             dgraph_type: dgraph.type,
-            lens_label,
+            lens_type,
             scope {
                 uid,
                 node_key,
@@ -308,7 +308,7 @@ const getLensByName = async (dg_client, lensName) => {
                 node_key,
                 uid,
                 dgraph_type: dgraph.type,
-                lens_label,
+                lens_type,
                 scope {
                     uid,
                     dgraph_type: dgraph.type,
@@ -379,7 +379,7 @@ const RootQuery = new GraphQLObjectType({
         lenses: {
             type: GraphQLList(LensNodeType),
             resolve: async (parent, args) => {
-                console.log("Getting Lenses")
+                console.log("Retrieving Lenses")
                 const lenses = await getLenses(await getDgraphClient());
                 console.log("lenses", lenses);
                 return lenses;
