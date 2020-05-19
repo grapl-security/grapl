@@ -13,5 +13,5 @@ jobs:
 
       - name: Build Grapl
         run: |
-          docker-compose --build-args release_target=debug -f docker-compose.yml -f docker-compose.build.yml build
+          docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-args release_target=debug
           docker system prune -f
