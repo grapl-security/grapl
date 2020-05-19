@@ -345,7 +345,7 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
         try:
             nodes.append(NodeView.from_dict(dgraph_client, graph))
         except Exception as e:
-            LOGGER.error("Failed to get NodeView from dict", e)
+            LOGGER.error(f"Failed to get NodeView from dict: {e}")
     if current_graph.get("scope"):
         current_graph.pop("scope")
 

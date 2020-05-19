@@ -286,13 +286,8 @@ def sqs_provision_loop() -> None:
     raise Exception("Failed to provision sqs")
 
 
-def drop_all(client) -> None:
-    op = pydgraph.Operation(drop_all=True)
-    client.alter(op)
-
-
 if __name__ == '__main__':
-    time.sleep(3)
+    time.sleep(5)
     local_dg_provision_client = DgraphClient(DgraphClientStub('master_graph:9080'))
     local_eg_provision_client = DgraphClient(DgraphClientStub('engagement_graph:9080'))
 

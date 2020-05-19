@@ -5,63 +5,101 @@ services:
   # Rust services
   #
 
+  grapl-rust-src-build:
+    image: grapl/grapl-rust-src-build:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-rust-src-build
+
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     build:
-      context: ./src/rust
+      context: src/rust/sysmon-subgraph-generator
       target: grapl-sysmon-subgraph-generator
+    depends_on: 
+      - grapl-rust-src-build
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     build:
-      context: ./src/rust
+      context: src/rust/node-identifier
       target: grapl-node-identifier
+    depends_on: 
+      - grapl-rust-src-build
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     build:
-      context: ./src/rust
+      context: src/rust/node-identifier
       target: grapl-node-identifier-retry-handler
+    depends_on: 
+      - grapl-rust-src-build
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     build:
-      context: ./src/rust
+      context: src/rust/graph-merger
       target: grapl-graph-merger
+    depends_on: 
+      - grapl-rust-src-build
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     build:
-      context: ./src/rust
+      context: src/rust/analyzer-dispatcher
       target: grapl-analyzer-dispatcher
+    depends_on: 
+      - grapl-rust-src-build
 
   #
   # Python services
   #
+
+  grapl-python-build:
+    image: grapl/grapl-python-build:${TAG:-latest}
+    build:
+      context: src/python/grapl-python-build
+      target: grapl-python-build
+
+  grapl-graph-descriptions-python-build:
+    image: grapl/grapl-graph-descriptions-python-build:${TAG:-latest}
+    build:
+      context: src/rust/graph-descriptions
+      target: grapl-graph-descriptions-python-build
+    depends_on: 
+      - grapl-python-build
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     build:
       context: ./src/python/analyzer_executor
       target: grapl-analyzer-executor
+    depends_on: 
+      - grapl-graph-descriptions-python-build
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
     build:
       context: ./src/python/engagement-creator
       target: grapl-engagement-creator
+    depends_on: 
+      - grapl-graph-descriptions-python-build
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
     build:
       context: ./src/python/engagement_edge
       target: grapl-engagement-edge
+    depends_on: 
+      - grapl-graph-descriptions-python-build
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     build:
       context: ./src/python/grapl-model-plugin-deployer/
       dockerfile: ./Dockerfile
+    depends_on: 
+      - grapl-graph-descriptions-python-build
 
   #
   # JS/web services
@@ -81,8 +119,12 @@ services:
     image: grapl/grapl-graph-provision:${TAG:-latest}
     build:
       context: ./src/python/engagement_edge/
+    depends_on: 
+      - grapl-graph-descriptions-python-build
 
   grapl-dynamodb-provision:
     image: grapl/grapl-dynamodb-provision:${TAG:-latest}
     build:
       context: ./src/python/engagement_edge/
+    depends_on: 
+      - grapl-graph-descriptions-python-build
