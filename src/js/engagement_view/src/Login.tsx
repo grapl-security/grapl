@@ -20,7 +20,7 @@ export const checkLogin = async () => {
 export const LogIn = (props: LoginProps) => {
   return (
     <div className = "backgroundImage">
-      <div className="grapl">Grapl</div>
+      <div className="grapl"> Grapl </div>
       <div className = "formContainer">
       <Formik
         initialValues={{ userName: "", password: "" }}
@@ -28,9 +28,9 @@ export const LogIn = (props: LoginProps) => {
           const password = await sha256WithPepper(
             values.userName, values.password
           );
-
+          
           const loginSuccess = login(values.userName, password);
-          alert(loginSuccess)
+          
           if (loginSuccess) {
             props.loginSuccess();
             console.log("Logged in");
@@ -42,7 +42,7 @@ export const LogIn = (props: LoginProps) => {
         <Form>
           <Field name="userName" type="text" placeholder="Username" /> <br/>
           <Field name="password" type="password" placeholder="Password"/> <br/>
-          <button className="submitBtn"  type="submit">Submit</button>
+          <button className="s ubmitBtn"  type="submit">Submit</button>
         </Form>
       </Formik>
         
