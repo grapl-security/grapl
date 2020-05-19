@@ -9,6 +9,7 @@ RUN zip --quiet -9r lambda.zip venv/lib/python3.7/site-packages/
 RUN zip -g lambda.zip grapl-model-plugin-deployer/src/grapl_model_plugin_deployer.py
 
 FROM python:3.7-alpine AS grapl-model-plugin-deployer
+RUN apk add libstdc++
 RUN adduser -D --gecos '' --home /home/grapl --shell /bin/bash grapl
 USER grapl
 ENV USER grapl

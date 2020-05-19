@@ -9,6 +9,7 @@ RUN zip --quiet -9r lambda.zip venv/lib/python3.7/site-packages/
 RUN zip -g lambda.zip engagement_edge/src/engagement_edge.py
 
 FROM python:3.7-alpine AS grapl-engagement-edge
+RUN apk add libstdc++
 RUN adduser -D --gecos '' --home /home/grapl --shell /bin/bash grapl
 USER grapl
 ENV USER grapl
