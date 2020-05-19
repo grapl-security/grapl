@@ -82,17 +82,12 @@ services:
       context: ./src/js/engagement_view
       dockerfile: ./Dockerfile
 
-      # target: grapl-engagement-view
-
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     build:
       context: ./src/js/graphql_endpoint
       dockerfile: ./Dockerfile
-
-      # target: grapl-graphql-endpoint
-    
 
   #
   # Utility services
