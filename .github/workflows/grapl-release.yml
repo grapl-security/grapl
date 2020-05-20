@@ -13,13 +13,13 @@ jobs:
 
       - name: Determine release channel
         run: |
-          BRANCH = ${{ github.event.release.target_commitish }} \
-          if [ $BRANCH = "master" ]; then \
-              CHANNEL = "latest" \
-          else \
-              CHANNEL = "beta" \
-          fi \
-          echo '::set-env name=CHANNEL::$CHANNEL'
+          BRANCH=${{ github.event.release.target_commitish }}
+          if [[ "$BRANCH"="master" ]]; then
+              CHANNEL="latest"
+          else
+              CHANNEL="beta"
+          fi
+          echo "::set-env name=CHANNEL::$CHANNEL"
 
       - name: Build Grapl
         env:
