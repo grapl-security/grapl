@@ -45,4 +45,4 @@ jobs:
       - name: Check python formatting
         run: |
           source .venv/bin/activate
-          black --check --exclude '.*_pb2.py.*' src/python
+          black --check .
