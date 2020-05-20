@@ -101,6 +101,15 @@ services:
     depends_on: 
       - grapl-graph-descriptions-python-build
 
+
+
+  grapl-notebook:
+    image: grapl/grapl-notebook:${TAG:-latest}
+    build:
+      context: ./src/python/grapl-notebook/
+      dockerfile: ./Dockerfile
+
+
   #
   # JS/web services
   #
@@ -109,7 +118,14 @@ services:
     image: grapl/grapl-engagement-view:${TAG:-latest}
     build:
       context: ./src/js/engagement_view
-      target: grapl-engagement-view
+      dockerfile: ./Dockerfile
+
+
+  grapl-graphql-endpoint:
+    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+    build:
+      context: ./src/js/graphql_endpoint
+      dockerfile: ./Dockerfile
 
   #
   # Utility services

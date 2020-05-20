@@ -11,6 +11,7 @@ import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
 import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
 import Button from "@material-ui/core/Button";
+import { Node, Lens } from "../modules/GraphViz/CustomTypes";
 
 const drawerWidth = 500;
 
@@ -85,7 +86,13 @@ const useStyles = makeStyles((theme: Theme) =>
   })
 );
 
-export default function SideBar({setLens, curLens, curNode}: any) {
+type SideBarProps = {
+  setLens: (lens: string) => void,
+  curLens: string,
+  curNode: Node | null,
+}
+
+export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
   const classes = useStyles();
 
   const [open, setOpen] = React.useState(true);
@@ -166,113 +173,21 @@ export default function SideBar({setLens, curLens, curNode}: any) {
   );
 }
 
+type EngagementUxState = {
+  curLens: string, 
+  curNode: Node | null 
+}
 
-
-
-
-
-
-// const darkTheme = createMuiTheme({
-//   palette: {
-//     type: 'dark',
-//     primary: {
-//       main: '#73DEFF',
-//     }, 
-//     secondary: {
-//       main: '#81d4fa',
-//     },
-//   }
-// })
-
-// const useStyles = makeStyles({
-//   list: {
-//     width: 500,
-//   },
-//   heading: {
-//     margin: "1em",
-//     color: "#B15DFF"
-//   },
-//   button:{
-//     margin: "1em",
-//   }
-// });
-
-
-
-// export default function SideBar({setLens, curLens, curNode}: any) {
-//   const classes = useStyles();
-//   const [state, setState] = React.useState({
-//     left: false,
-//   });
-
-//   const toggleDrawer = (anchor: Anchor, open: boolean) => (
-//     event: React.KeyboardEvent | React.MouseEvent
-//   ) => {
-//     if (
-//       event.type === "keydown" &&
-//       ((event as React.KeyboardEvent).key === "Tab" ||
-//         (event as React.KeyboardEvent).key === "Shift")
-//     ) {
-//       return;
-//     }
-
-//     setState({ ...state, [anchor]: open });
-//   };
-
-//   const list = (anchor: Anchor) => (
-//     <div
-//       className={clsx(classes.list, {})}
-//       role="presentation"
-//       //#TODO: Make onclick below an X button
-//       // onClick={toggleDrawer(anchor, false)}
-//       onKeyDown={toggleDrawer(anchor, false)}
-//     >
-//       <SideBarContent 
-//         setLens={setLens} 
-//         curNode={curNode}
-//       />
-//     </div>
-//   );
-
-//   return (
-//     <>
-//       <ThemeProvider theme={darkTheme}>
-//       {(["left"] as Anchor[]).map((anchor) => (
-//         <React.Fragment key={anchor}>
-//           <Button></Button>
-//           <Button
-//             variant="contained"
-//             color="primary"
-//             className={classes.button}
-//             onClick={toggleDrawer(anchor, true)}
-//           >
-//             Engagements
-//           </Button>
-
-//           <Drawer
-//             anchor={anchor}
-//             open={state[anchor]}
-//             onClose={toggleDrawer(anchor, false)}
-//           >
-//             {list(anchor)}
-//           </Drawer>
-          
-//           <h3 className = {classes.heading}>{curLens || ""} </h3>
-          
-
-//         </React.Fragment>
-//       ))}
-//     </ThemeProvider>
-//     </>
-//   );
-// }
+const defaultEngagementUxState = (): EngagementUxState => {
+  return {
+    curLens: "",
+    curNode: null,
+  }
+}
 
 export const EngagementUx = () => {
     
-    const [state, setState] = React.useState({
-        curLens: "",
-        curNode: null,
-    });
+    const [state, setState] = React.useState(defaultEngagementUxState());
     
     console.log('EngagementUX: curLens, ', state.curLens);
 
@@ -280,7 +195,7 @@ export const EngagementUx = () => {
         <>
             <SideBar 
                 setLens={
-                    (lens: any) => setState({
+                    (lens: string) => setState({
                         ...state,
                         curLens: lens,
                     })
@@ -291,7 +206,7 @@ export const EngagementUx = () => {
 
             <GraphDisplay 
                 lensName={state.curLens} 
-                setCurNode={(node: any) => {
+                setCurNode={(node: Node) => {
                     setState({
                         ...state,
                         curNode: node,

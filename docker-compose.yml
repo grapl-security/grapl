@@ -253,6 +253,18 @@ services:
     ports:
       - 1234:1234
 
+  grapl-graphql-endpoint:
+    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+    command: yarn start server
+    environment:
+      - IS_LOCAL=True
+      - PORT=5000
+    links:
+      - grapl-engagement-graph-db:engagement_graph
+      - grapl-master-graph-db:master_graph
+    ports:
+      - 5000:5000
+
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
     links:

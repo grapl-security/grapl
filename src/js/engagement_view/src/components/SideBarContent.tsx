@@ -11,6 +11,9 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
+import {mapEdgeProps} from '../modules/GraphViz/graph/graph_traverse'; 
+import {Node, Lens} from "../modules/GraphViz/CustomTypes";
+import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getEngagementEdge";
 
 const useStyles = makeStyles({
     root:{
@@ -41,7 +44,15 @@ const useStyles = makeStyles({
     },
 });
 
-function SelectLens(props: any) {
+type SelectLensProps = {
+    lens: string,
+    score: number,
+    uid: number,
+    lens_type: string,
+    setLens: (lens: string) => void,
+}
+
+function SelectLens(props: SelectLensProps) {
     // lensRows.push(createData(props.setLens(props.lens) ))
     return (
         <>
@@ -53,7 +64,7 @@ function SelectLens(props: any) {
                                     props.setLens(props.lens)    
                                 }
                         }>
-                            {props.lens + "\t\t" + props.score}
+                            {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
                         </Button>
                         </TableCell>
                     </TableRow>
@@ -61,11 +72,25 @@ function SelectLens(props: any) {
     )
 }
 
-function ToggleLensTable({setLens}: any) {
-    const [state, setState] = useState({
+
+type ToggleLensTableProps = {
+    setLens: (lens: string) => void,
+}
+
+type ToggleLensTableState = {
+    toggled: boolean,
+    lenses: Lens[],
+}
+
+const defaultToggleLensTableState = (): ToggleLensTableState => {
+    return {
         toggled: true,
         lenses: [],
-    });
+    }
+}
+
+function ToggleLensTable({setLens}: ToggleLensTableProps) {
+    const [state, setState] = useState(defaultToggleLensTableState());
 
     const classes = useStyles();
 
@@ -108,8 +133,7 @@ function ToggleLensTable({setLens}: any) {
             <div className="lensToggle">
                 {state.toggled && state.lenses &&
                     state.lenses.map(
-                        (_lens) => {
-                            const lens = _lens as any;
+                        (lens: Lens) => {
                             // lensRows.push(lens);
                             return(
                                 <TableContainer>
@@ -118,7 +142,8 @@ function ToggleLensTable({setLens}: any) {
                                             <SelectLens 
                                                 key={Number(lens.uid)}
                                                 uid={lens.uid}
-                                                lens={lens.lens}
+                                                lens={lens.lens_name}
+                                                lens_type={lens.lens_type}
                                                 score={lens.score}
                                                 setLens={setLens}
                                             />
@@ -126,7 +151,6 @@ function ToggleLensTable({setLens}: any) {
                                     </Table>
                                 </TableContainer>
                             )
-                            
                         }
                     )
                 }
@@ -137,50 +161,54 @@ function ToggleLensTable({setLens}: any) {
     )
 }
 
-const isLocal = true;
+// const engagement_edge = getEngagementEdge();
+const graphql_edge = getGraphQlEdge();
 
-const getEngagementEdge = () => {
-    if (isLocal) {
-        return "http://" + window.location.hostname + ":8900/"
-    } else {
-        return "__engagement_ux_standin__hostname__"
-    }
-}
-
-const engagement_edge = getEngagementEdge();
 
 const getLenses = async () => {
-    const res = await fetch(`${engagement_edge}getLenses`,
+    console.log('fetching graph from', graphql_edge);
+
+    const query = `
+    {
+        lenses {
+            uid,
+            node_key,
+            lens_name,
+            score, 
+            lens_type,
+        }
+    }
+    `;
+    console.log('connecting to: ' + `${graphql_edge}graphql`)
+    const res = await fetch(`${graphql_edge}graphql`,
         {
             method: 'post',
-            body: JSON.stringify({
-                'prefix': '',
-            }),
+            body: JSON.stringify({ query: query }),
             headers: {
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
-        });
-    const jres = await res.json();
-
-    return jres['success'];
-};
-
-export const mapEdgeProps = (node: any, f: any) => {
-    for (const prop in node) {
-        if (Object.prototype.hasOwnProperty.call(node, prop)) {
-            if(Array.isArray(node[prop])) {
-                for (const neighbor of node[prop]) {
-                    if (neighbor.uid !== undefined) {
-                        f(prop, neighbor)
-                    }
-                }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.errors) {
+                console.error("lenses failed", res.errors);
+                res.data = {lenses: []};
             }
-        }
-    }
+            return res
+        })
+        .then((res) => res.data);
+
+        const jres = await res;
+
+    return jres;
 };
 
-const NodeDetails = ({node}: any) => {
+type NodeDetailsProps = {
+    node: Node
+}
+
+const NodeDetails = ({node}: NodeDetailsProps) => {
     // #TODO: Remove hidden fields from our node before displaying
     // Display remaining fields of node in our component="div"
 
@@ -191,8 +219,11 @@ const NodeDetails = ({node}: any) => {
     )
 }
 
+type ToggleNodeTableProps = {
+    curNode: Node | null
+}
 
-function ToggleNodeTable({curNode}: any) {
+function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
     const [toggled, toggle] = useState(true);
     const classes = useStyles();
     return (
@@ -211,7 +242,7 @@ function ToggleNodeTable({curNode}: any) {
 
             <div className="nodeToggle">
                 {
-                    toggled && 
+                    toggled && curNode && 
                         <>
                             { <NodeDetails node={curNode}/> }
                         </>
@@ -222,11 +253,17 @@ function ToggleNodeTable({curNode}: any) {
     )
 }
 
-export default function SideBarContent({setLens, curNode}: any) {
+
+type SideBarContentProps = {
+    setLens: (lens: string) => void, 
+    curNode: Node | null
+}
+
+export default function SideBarContent({setLens, curNode}: SideBarContentProps) {
     return (
         <>
-            <ToggleLensTable setLens={setLens} />
-            <ToggleNodeTable curNode={curNode} />
+            <ToggleLensTable setLens={setLens}/>
+            <ToggleNodeTable curNode={curNode}/>
         </>
     );
 }

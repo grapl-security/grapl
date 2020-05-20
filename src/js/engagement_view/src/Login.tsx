@@ -1,19 +1,11 @@
 import React from 'react';
 import './LogIn.css';
-// import axios from 'axios';
 import {Field, Form, Formik} from "formik";
+import {LoginProps} from '../src/modules/GraphViz/CustomTypes';
+import {getAuthEdge} from './modules/GraphViz/engagement_edge/getEngagementEdge';
 
-const isLocal = true;
+const engagement_edge = getAuthEdge();
 
-const getEngagementEdge = () => {
-    if (isLocal) {
-        return window.location.host + ":8900/"
-    } else {
-        return "__engagement_ux_standin__hostname__"
-    }
-}
-
-const engagement_edge = getEngagementEdge();
 export const checkLogin = async () => {
     const res = await fetch(`${engagement_edge}checkLogin`, {
         method: 'get',
@@ -25,10 +17,10 @@ export const checkLogin = async () => {
     return body['success'] === 'True';
 };
 
-export const LogIn = (props: any) => {
+export const LogIn = (props: LoginProps) => {
   return (
     <div className = "backgroundImage">
-      <div className="grapl">Grapl</div>
+      <div className="grapl"> Grapl </div>
       <div className = "formContainer">
       <Formik
         initialValues={{ userName: "", password: "" }}
@@ -36,9 +28,9 @@ export const LogIn = (props: any) => {
           const password = await sha256WithPepper(
             values.userName, values.password
           );
-
+          
           const loginSuccess = login(values.userName, password);
-
+          
           if (loginSuccess) {
             props.loginSuccess();
             console.log("Logged in");
@@ -50,7 +42,7 @@ export const LogIn = (props: any) => {
         <Form>
           <Field name="userName" type="text" placeholder="Username" /> <br/>
           <Field name="password" type="password" placeholder="Password"/> <br/>
-          <button className="submitBtn"  type="submit">Submit</button>
+          <button className="s ubmitBtn"  type="submit">Submit</button>
         </Form>
       </Formik>
         

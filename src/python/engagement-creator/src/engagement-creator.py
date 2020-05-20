@@ -266,7 +266,7 @@ def lambda_handler(events: Any, context: Any) -> None:
         nodes = incident_graph["nodes"]
         edges = incident_graph["edges"]
         risk_score = incident_graph["risk_score"]
-        lense_names = incident_graph["lenses"]
+        lens_dict = incident_graph["lenses"]
 
         LOGGER.debug(
             f"AnalyzerName {analyzer_name}, nodes: {nodes} edges: {type(edges)} {edges}"
@@ -289,12 +289,13 @@ def lambda_handler(events: Any, context: Any) -> None:
             )
             copied_node = NodeView.from_node_key(eg_client, node.node.node_key)
 
-            for lense_name in lense_names:
-                LOGGER.debug(f"Getting lens for: {lense_name}")
-                lens = lenses.get(lense_name) or LensView.get_or_create(
-                    cclient, lense_name
+            for lens_type, lens_name in lens_dict:
+                LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
+                lens_id = lens_name + lens_type
+                lens = lenses.get(lens_name) or LensView.get_or_create(
+                    cclient, lens_name, lens_type
                 )
-                lenses[lense_name] = lens
+                lenses[lens_id] = lens
 
                 # Attach to scope
                 create_edge(eg_client, lens.uid, "scope", copied_node.uid)

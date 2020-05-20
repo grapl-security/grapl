@@ -502,6 +502,9 @@ def login(username, password):
 
 
 def check_jwt(headers):
+    if IS_LOCAL:
+        return True
+
     encoded_jwt = None
     for cookie in headers.get("Cookie", "").split(";"):
         if "grapl_jwt=" in cookie:

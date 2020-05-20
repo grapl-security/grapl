@@ -59,6 +59,6 @@ class RareParentOfCmd(Analyzer):
                     analyzer_name="Rare Parent of cmd.exe",
                     node_view=response,
                     risk_score=10,
-                    lenses=[asset_id]
+                    lenses=[('hostname', asset_id)]
                 )
             )
