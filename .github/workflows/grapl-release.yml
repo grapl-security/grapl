@@ -2,7 +2,7 @@ name: Grapl Release
 
 on:
   release:
-    types: [released]
+    types: [released, prereleased]
 
 jobs:
   release:
