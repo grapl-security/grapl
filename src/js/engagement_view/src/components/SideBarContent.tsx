@@ -11,7 +11,6 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
-import {mapEdgeProps} from '../modules/GraphViz/graph/graph_traverse'; 
 import {Node, Lens} from "../modules/GraphViz/CustomTypes";
 import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getEngagementEdge";
 
@@ -179,7 +178,7 @@ const getLenses = async () => {
         }
     }
     `;
-    console.log('connecting to: ' + `${graphql_edge}graphql`)
+    console.log(`connecting to: ${graphql_edge}graphql`)
     const res = await fetch(`${graphql_edge}graphql`,
         {
             method: 'post',

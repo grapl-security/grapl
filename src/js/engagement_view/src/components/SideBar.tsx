@@ -11,7 +11,7 @@ import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
 import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
 import Button from "@material-ui/core/Button";
-import { Node, Lens } from "../modules/GraphViz/CustomTypes";
+import { Node } from "../modules/GraphViz/CustomTypes";
 
 const drawerWidth = 500;
 
