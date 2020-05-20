@@ -10,8 +10,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-        with:
-          ref: $GITHUB_REF
 
       - name: Determine release channel
         run: |
