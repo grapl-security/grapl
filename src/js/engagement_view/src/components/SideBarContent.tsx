@@ -48,6 +48,7 @@ type SelectLensProps = {
     lens: string,
     score: number,
     uid: number,
+    lens_type: string,
     setLens: (lens: string) => void,
 }
 
@@ -63,7 +64,7 @@ function SelectLens(props: SelectLensProps) {
                                     props.setLens(props.lens)    
                                 }
                         }>
-                            {props.lens + "\t\t" + props.score}
+                            {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
                         </Button>
                         </TableCell>
                     </TableRow>
@@ -142,6 +143,7 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                                                 key={Number(lens.uid)}
                                                 uid={lens.uid}
                                                 lens={lens.lens_name}
+                                                lens_type={lens.lens_type}
                                                 score={lens.score}
                                                 setLens={setLens}
                                             />

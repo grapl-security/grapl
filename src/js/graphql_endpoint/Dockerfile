@@ -1,7 +1,12 @@
-FROM node as build
+FROM node:alpine3.10 as build
 WORKDIR /lambda
 
-RUN apt-get update && apt-get install -y zip
+RUN apk upgrade && apk add zip
+RUN apk add python
+RUN apk add --update alpine-sdk
+RUN apk add libffi-dev openssl-dev
+RUN apk --no-cache --update add build-base
+
 COPY package.json .
 COPY package-lock.json .
 

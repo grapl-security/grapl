@@ -10,7 +10,7 @@ const getNodeLabel = (nodeType: string, node: Node) => {
         case "Asset": return _node.hostname || 'Asset';
         case "File": return _node.file_path || 'File';
         case "IpAddress": return _node.external_ip || 'IpAddress';
-        case "Lens":  return _node.lens || 'Lens';
+        case "Lens":  return _node.lens_name || 'Lens';
         default: return nodeType || '';
     }
 };
