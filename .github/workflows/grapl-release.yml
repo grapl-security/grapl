@@ -25,7 +25,7 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          TAG=$VERSION docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-arg release_target=release
+          TAG="$VERSION-$CHANNEL" docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-arg release_target=release
           docker system prune -f
 
       - name: Log in to Docker registry

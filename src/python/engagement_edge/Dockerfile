@@ -1,4 +1,4 @@
-FROM grapl/grapl-graph-descriptions-python-build AS engagement-edge-build
+FROM grapl/grapl-graph-descriptions-python-build:latest AS engagement-edge-build
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . engagement_edge

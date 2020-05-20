@@ -1,4 +1,4 @@
-FROM grapl/grapl-python-build AS grapl-graph-descriptions-python-build
+FROM grapl/grapl-python-build:latest AS grapl-graph-descriptions-python-build
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . graph-descriptions

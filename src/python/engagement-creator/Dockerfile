@@ -1,4 +1,4 @@
-FROM grapl/grapl-graph-descriptions-python-build AS engagement-creator-build
+FROM grapl/grapl-graph-descriptions-python-build:latest AS engagement-creator-build
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . engagement-creator
