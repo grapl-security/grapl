@@ -457,8 +457,6 @@ const RootQuery = new GraphQLObjectType({
                         node.predicates = tmpNode;
                     }
                 }
-                console.log("Lens", JSON.stringify(lens, null, 2))
-
 
                 lens.uid = parseInt(lens.uid, 16);
                 return lens
