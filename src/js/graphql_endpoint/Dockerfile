@@ -1,4 +1,4 @@
-FROM node:alpine3.10 as build
+FROM node:alpine3.10 AS grapl-graphql-endpoint-build
 WORKDIR /lambda
 
 RUN apk upgrade && apk add zip
@@ -18,7 +18,5 @@ COPY modules/* ./modules/
 COPY server.js .
 RUN zip --quiet -9r /lambda.zip .
 
-#FROM scratch
-
-#COPY --from=0 /lambda.zip /
-
+FROM node:alpine3.10 AS grapl-graphql-endpoint
+COPY --from=grapl-graphql-endpoint-build /lambda.zip /

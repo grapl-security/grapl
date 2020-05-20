@@ -123,7 +123,7 @@ services:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     build:
       context: ./src/js/graphql_endpoint
-      dockerfile: ./Dockerfile
+      target: grapl-graphql-endpoint
 
   #
   # Utility services
