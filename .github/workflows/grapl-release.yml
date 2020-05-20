@@ -54,7 +54,7 @@ jobs:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
           docker create -ti --name cp-sysmon-subgraph-generator grapl/grapl-sysmon-subgraph-generator:$VERSION-$CHANNEL bash
-          docker cp-sysmon-subgraph-generator:/target/release/sysmon-subgraph-generator .
+          docker cp cp-sysmon-subgraph-generator:/target/release/sysmon-subgraph-generator .
           docker rm -f cp-sysmon-subgraph-generator
           zip -9 ./sysmon-subgraph-generator ./sysmon-subgraph-generator-$VERSION-$CHANNEL.zip
           rm ./sysmon-subgraph-generator
