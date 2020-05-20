@@ -1,4 +1,4 @@
-FROM grapl/grapl-graph-descriptions-python-build AS grapl-model-plugin-deployer-build
+FROM grapl/grapl-graph-descriptions-python-build:latest AS grapl-model-plugin-deployer-build
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . grapl-model-plugin-deployer

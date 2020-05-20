@@ -1,4 +1,4 @@
-FROM grapl/grapl-graph-descriptions-python-build AS analyzer-executor-build
+FROM grapl/grapl-graph-descriptions-python-build:latest AS analyzer-executor-build
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . analyzer_executor
