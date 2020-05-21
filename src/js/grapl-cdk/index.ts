@@ -164,7 +164,7 @@ class GraphQLEndpoint extends cdk.Stack {
                 environment: {
                     "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                     "JWT_SECRET": jwt_secret,
-                    "BUCKET_PREFIX": process.env.BUCKET_PREFIX
+                    "UX_BUCKET": "https://" +  process.env.BUCKET_PREFIX + "engagement-ux-bucket.s3.amazonaws.com"
                 },
                 timeout: Duration.seconds(25),
                 memorySize: 128,
