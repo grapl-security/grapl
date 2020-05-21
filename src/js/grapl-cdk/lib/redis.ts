@@ -1,0 +1,46 @@
+import * as cdk from "@aws-cdk/core";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as elasticache from "@aws-cdk/aws-elasticache";
+
+export class RedisCluster extends cdk.Construct {
+    readonly securityGroup: ec2.SecurityGroup;
+    readonly connections: ec2.Connections;
+    readonly cluster: elasticache.CfnCacheCluster;
+
+    constructor(scope: cdk.Construct, id: string, vpc: ec2.IVpc) {
+        super(scope, id);
+
+        // Define a group for telling Elasticache which subnets to put cache nodes in.
+        const subnetGroup = new elasticache.CfnSubnetGroup(this, id + '-subnet-group', {
+            description: `List of subnets used for redis cache ${id}`,
+            subnetIds: vpc.privateSubnets.map(function(subnet) {
+                return subnet.subnetId;
+            }),
+            cacheSubnetGroupName: id + '-cache-subnet-group',
+        });
+
+        // The security group that defines network level access to the cluster
+        this.securityGroup = new ec2.SecurityGroup(this, `${id}-security-group`, { vpc: vpc });
+
+        this.connections = new ec2.Connections({
+            securityGroups: [this.securityGroup],
+            defaultPort: ec2.Port.tcp(6379)
+        });
+
+        this.connections.allowFromAnyIpv4(ec2.Port.tcp(6379));
+
+        // The cluster resource itself.
+        this.cluster = new elasticache.CfnCacheCluster(this, `${id}-cluster`, {
+            cacheNodeType: 'cache.t2.small',
+            engine: 'redis',
+            numCacheNodes: 1,
+            autoMinorVersionUpgrade: true,
+            cacheSubnetGroupName: subnetGroup.cacheSubnetGroupName,
+            vpcSecurityGroupIds: [
+                this.securityGroup.securityGroupId
+            ]
+        });
+
+        this.cluster.addDependsOn(subnetGroup);
+    }
+}
