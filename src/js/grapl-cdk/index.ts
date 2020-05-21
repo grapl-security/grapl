@@ -1209,9 +1209,9 @@ const replaceInFile = (toModify, replaceMap, outputFile) => {
             return console.log(err);
         }
 
-        let replaced = "";
+        let replaced = data;
         for (const [toReplace, replaceWith] of replaceMap.entries()) {
-            replaced = data
+            replaced = replaced
             .split(toReplace)
             .join(replaceWith);   
         }
