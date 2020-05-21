@@ -91,19 +91,19 @@ jobs:
           rm ./analyzer-dispatcher
 
           docker create -ti --name cp-analyzer-executor grapl/grapl-analyzer-executor:$VERSION-$CHANNEL bash
-          docker cp cp-analyzer-executor:/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
+          docker cp cp-analyzer-executor:/home/grapl/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
           docker rm -f cp-analyzer-executor
 
           docker create -ti --name cp-engagement-creator grapl/grapl-engagement-creator:$VERSION-$CHANNEL bash
-          docker cp cp-engagement-creator:/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
+          docker cp cp-engagement-creator:/home/grapl/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
           docker rm -f cp-engagement-creator
 
           docker create -ti --name cp-engagement-edge grapl/grapl-engagement-edge:$VERSION-$CHANNEL bash
-          docker cp cp-engagement-edge:/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
+          docker cp cp-engagement-edge:/home/grapl/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
           docker rm -f cp-engagement-edge
 
           docker create -ti --name cp-model-plugin-deployer grapl/grapl-model-plugin-deployer:$VERSION-$CHANNEL bash
-          docker cp cp-model-plugin-deployer:/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
+          docker cp cp-model-plugin-deployer:/home/grapl/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
           docker rm -f cp-model-plugin-deployer
 
           docker create -ti --name cp-graphql-endpoint grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL bash
