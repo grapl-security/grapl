@@ -51,6 +51,7 @@ jobs:
           docker push grapl/grapl-dynamodb-provision:$VERSION-$CHANNEL
 
       - name: Extract Grapl artifacts from build
+        id: extract-artifacts
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
@@ -59,174 +60,174 @@ jobs:
           docker rm -f cp-sysmon-subgraph-generator
           zip -9 sysmon-subgraph-generator-$VERSION-$CHANNEL.zip ./sysmon-subgraph-generator
           rm ./sysmon-subgraph-generator
+          echo "::set-output name=sysmon-subgraph-generator::sysmon-subgraph-generator-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-generic-subgraph-generator grapl/grapl-generic-subgraph-generator:$VERSION-$CHANNEL bash
           docker cp cp-generic-subgraph-generator:/generic-subgraph-generator .
           docker rm -f cp-generic-subgraph-generator
           zip -9 generic-subgraph-generator-$VERSION-$CHANNEL.zip ./generic-subgraph-generator
           rm ./generic-subgraph-generator
+          echo "::set-output name=generic-subgraph-generator::generic-subgraph-generator-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-node-identifier grapl/grapl-node-identifier:$VERSION-$CHANNEL bash
           docker cp cp-node-identifier:/node-identifier .
           docker rm -f cp-node-identifier
           zip -9 node-identifier-$VERSION-$CHANNEL.zip ./node-identifier
           rm ./node-identifier
+          echo "::set-output name=node-identifier::node-identifier-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-node-identifier-retry-handler grapl/grapl-node-identifier-retry-handler:$VERSION-$CHANNEL bash
           docker cp cp-node-identifier-retry-handler:/node-identifier-retry-handler .
           docker rm -f cp-node-identifier-retry-handler
           zip -9 node-identifier-retry-handler-$VERSION-$CHANNEL.zip ./node-identifier-retry-handler
           rm ./node-identifier-retry-handler
+          echo "::set-output name=node-identifier-retry-handler::node-identifier-retry-handler-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-graph-merger grapl/grapl-graph-merger:$VERSION-$CHANNEL bash
           docker cp cp-graph-merger:/graph-merger .
           docker rm -f cp-graph-merger
           zip -9 graph-merger-$VERSION-$CHANNEL.zip ./graph-merger
           rm ./graph-merger
+          echo "::set-output name=graph-merger::graph-merger-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-analyzer-dispatcher grapl/grapl-analyzer-dispatcher:$VERSION-$CHANNEL bash
           docker cp cp-analyzer-dispatcher:/analyzer-dispatcher .
           docker rm -f cp-analyzer-dispatcher
           zip -9 analyzer-dispatcher-$VERSION-$CHANNEL.zip ./analyzer-dispatcher
           rm ./analyzer-dispatcher
+          echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-analyzer-executor grapl/grapl-analyzer-executor:$VERSION-$CHANNEL bash
           docker cp cp-analyzer-executor:/home/grapl/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
           docker rm -f cp-analyzer-executor
+          echo "::set-output name=analyzer-executor::analyzer-executor-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-engagement-creator grapl/grapl-engagement-creator:$VERSION-$CHANNEL bash
           docker cp cp-engagement-creator:/home/grapl/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
           docker rm -f cp-engagement-creator
+          echo "::set-output name=engagement-creator::engagement-creator-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-engagement-edge grapl/grapl-engagement-edge:$VERSION-$CHANNEL bash
           docker cp cp-engagement-edge:/home/grapl/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
           docker rm -f cp-engagement-edge
+          echo "::set-output name=engagement-edge::engagement-edge-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-model-plugin-deployer grapl/grapl-model-plugin-deployer:$VERSION-$CHANNEL bash
           docker cp cp-model-plugin-deployer:/home/grapl/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
           docker rm -f cp-model-plugin-deployer
+          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$VERSION-$CHANNEL.zip"
 
           docker create -ti --name cp-graphql-endpoint grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL bash
           docker cp cp-graphql-endpoint:/lambda.zip graphql-endpoint-$VERSION-$CHANNEL.zip
           docker rm -f cp-graphql-endpoint
+          echo "::set-output name=graphql-endpoint::graphql-endpoint-$VERSION-$CHANNEL.zip"
 
       - name: Upload sysmon-subgraph-generator to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./sysmon-subgraph-generator-$VERSION-$CHANNEL.zip
-          asset_name: sysmon-subgraph-generator-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.sysmon-subgraph-generator }}
+          asset_name: ${{ steps.extract-artifacts.outputs.sysmon-subgraph-generator }}
           asset_content_type: application/zip
 
       - name: Upload generic-subgraph-generator to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./generic-subgraph-generator-$VERSION-$CHANNEL.zip
-          asset_name: generic-subgraph-generator-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.generic-subgraph-generator }}
+          asset_name: ${{ steps.extract-artifacts.outputs.generic-subgraph-generator }}
           asset_content_type: application/zip
 
       - name: Upload node-identifier to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./node-identifier-$VERSION-$CHANNEL.zip
-          asset_name: node-identifier-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.node-identifier }}
+          asset_name: ${{ steps.extract-artifacts.outputs.node-identifier }}
           asset_content_type: application/zip
 
       - name: Upload node-identifier-retry-handler to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./node-identifier-retry-handler-$VERSION-$CHANNEL.zip
-          asset_name: node-identifier-retry-handler-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.node-identifier-retry-handler }}
+          asset_name: ${{ steps.extract-artifacts.outputs.node-identifier-retry-handler }}
           asset_content_type: application/zip
 
       - name: Upload graph-merger to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./graph-merger-$VERSION-$CHANNEL.zip
-          asset_name: graph-merger-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.graph-merger }}
+          asset_name: ${{ steps.extract-artifacts.outputs.graph-merger }}
           asset_content_type: application/zip
 
       - name: Upload analyzer-dispatcher to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./analyzer-dispatcher-$VERSION-$CHANNEL.zip
-          asset_name: analyzer-dispatcher-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.analyzer-dispatcher }}
+          asset_name: ${{ steps.extract-artifacts.outputs.analyzer-dispatcher }}
           asset_content_type: application/zip
 
       - name: Upload analyzer-executor to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./analyzer-executor-$VERSION-$CHANNEL.zip
-          asset_name: analyzer-executor-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.analyzer-executor }}
+          asset_name: ${{ steps.extract-artifacts.outputs.analyzer-executor }}
           asset_content_type: application/zip
 
       - name: Upload engagement-creator to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./engagement-creator-$VERSION-$CHANNEL.zip
-          asset_name: engagement-creator-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.engagement-creator }}
+          asset_name: ${{ steps.extract-artifacts.outputs.engagement-creator }}
           asset_content_type: application/zip
 
       - name: Upload engagement-edge to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./engagement-edge-$VERSION-$CHANNEL.zip
-          asset_name: engagement-edge-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.engagement-edge }}
+          asset_name: ${{ steps.extract-artifacts.outputs.engagement-edge }}
           asset_content_type: application/zip
 
       - name: Upload model-plugin-deployer to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./model-plugin-deployer-$VERSION-$CHANNEL.zip
-          asset_name: model-plugin-deployer-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.model-plugin-deployer }}
+          asset_name: ${{ steps.extract-artifacts.outputs.model-plugin-deployer }}
           asset_content_type: application/zip
 
       - name: Upload graphql-endpoint to Github
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./graphql-endpoint-$VERSION-$CHANNEL.zip
-          asset_name: graphql-endpoint-$VERSION-$CHANNEL.zip
+          asset_path: ./${{ steps.extract-artifacts.outputs.graphql-endpoint }}
+          asset_name: ${{ steps.extract-artifacts.outputs.graphql-endpoint }}
           asset_content_type: application/zip
