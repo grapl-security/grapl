@@ -12,43 +12,59 @@ from grapl_analyzerlib.nodes.comparators import escape_dgraph_str, Not
 from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
 from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
 from grapl_analyzerlib.nodes.types import Property
-from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.nodes.viewable import Viewable, NV
 from grapl_analyzerlib.nodes.asset_node import AssetView, AssetQuery
 from test_utils.dgraph_utils import upsert, create_edge, node_key_for_test
+from test_utils.strategies.misc import text_dgraph_compat
+from test_utils.strategies.process_view_strategy import (
+    process_props,
+    get_or_create_process,
+    ProcessProps,
+)
+from test_utils.strategies.asset_view_strategy import (
+    asset_props,
+    get_or_create_asset,
+    AssetProps,
+)
 
 
-def get_or_create_asset_node(
-    local_client: DgraphClient,
-    node_key: str,
-    # AssetView properties
-    hostname: str,
-) -> AssetView:
-    node_props = {
-        "hostname": hostname,
-    }  # type: Dict[str, Property]
-
-    return cast(
-        AssetView, upsert(local_client, "Asset", AssetView, node_key, node_props)
-    )
+def assert_equal_props(a: NV, b: NV) -> None:
+    """
+    NOTE: Doesn't look at edges at all.
+    You may need to fetch more properties from the queried one.
+    """
+    assert a.get_properties() == b.get_properties()
 
 
-def get_or_create_process_node(
+def assert_equal_identity(a: NV, b: NV) -> None:
+    """ Assert these nodes have the same type and uuid """
+    assert a.node_key == b.node_key
+
+
+def fetch_all_properties(v: Viewable) -> None:
+    for prop_name, prop_type in v._get_property_types().items():
+        if getattr(v, prop_name, None) is None:
+            setattr(v, prop_name, v.fetch_property(prop_name, prop_type))
+
+
+def get_or_create_process_node_deprecated(
     local_client: DgraphClient,
     node_key: str,
     # properties
     process_id: str,
     arguments: str,
     created_timestamp: str,
-    # asset_id: str,
     terminate_time: str,
     image_name: str,
     process_name: str,
 ) -> ProcessView:
+    """
+    Deprecated in favor of property_view_strategy.py
+    """
     node_props = {
         "process_id": process_id,
         "arguments": arguments,
         "created_timestamp": created_timestamp,
-        # "asset_id": asset_id,
         "terminate_time": terminate_time,
         "image_name": image_name,
         "process_name": process_name,
@@ -78,189 +94,100 @@ class TestProcessQuery(unittest.TestCase):
     #     provision()
 
     @hypothesis.settings(deadline=None)
-    @given(
-        process_node_key=st.uuids(),
-        process_id=st.integers(min_value=1, max_value=2 ** 32),
-        created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        terminate_time=st.integers(min_value=0, max_value=2 ** 48),
-        image_name=st.text(),
-        process_name=st.text(),
-        arguments=st.text(),
-    )
-    def test_single_process_contains_key(
-        self,
-        process_node_key,
-        process_id,
-        created_timestamp,
-        terminate_time,
-        image_name,
-        process_name,
-        arguments,
-    ):
-        process_node_key = node_key_for_test(self, process_node_key)
+    @given(process_props=process_props())
+    def test_single_process_contains_key(self, process_props: ProcessProps) -> None:
         local_client = DgraphClient(DgraphClientStub("localhost:9080"))
-
-        created_process_node = get_or_create_process_node(
-            local_client,
-            process_node_key,
-            process_id,
-            arguments,
-            created_timestamp,
-            terminate_time,
-            image_name,
-            process_name,
-        )
+        created_proc = get_or_create_process(self, local_client, process_props)
 
         # Setup complete, do some queries
 
         queried_proc = ProcessQuery().query_first(
-            local_client, contains_node_key=process_node_key
+            local_client, contains_node_key=created_proc.node_key
         )
 
-        assert process_id == queried_proc.get_process_id()
-        assert process_node_key == queried_proc.node_key
+        assert queried_proc
+        assert created_proc.get_process_id() == queried_proc.get_process_id()
+        assert created_proc.node_key == queried_proc.node_key
         assert "Process" == queried_proc.get_node_type()
-        assert process_id == queried_proc.get_process_id()
-        assert arguments == queried_proc.get_arguments()
-        assert created_timestamp == queried_proc.get_created_timestamp()
-        assert terminate_time == queried_proc.get_terminate_time()
-        assert image_name == queried_proc.get_image_name()
-        assert process_name == queried_proc.get_process_name()
+        assert created_proc.get_arguments() == queried_proc.get_arguments()
+        assert (
+            created_proc.get_created_timestamp() == queried_proc.get_created_timestamp()
+        )
+        assert created_proc.get_terminate_time() == queried_proc.get_terminate_time()
+        assert created_proc.get_image_name() == queried_proc.get_image_name()
+        assert created_proc.get_process_name() == queried_proc.get_process_name()
 
         assert not queried_proc.get_asset()
 
     @hypothesis.settings(deadline=None)
     @given(
-        asset_node_key=st.uuids(),
-        hostname=st.text(),
-        process_node_key=st.uuids(),
-        process_id=st.integers(min_value=1, max_value=2 ** 32),
-        created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        terminate_time=st.integers(min_value=0, max_value=2 ** 48),
-        image_name=st.text(),
-        process_name=st.text(),
-        arguments=st.text(),
+        asset_props=asset_props(), process_props=process_props(),
     )
     def test_single_process_connected_to_asset_node(
-        self,
-        asset_node_key,
-        hostname,
-        process_node_key,
-        process_id,
-        created_timestamp,
-        terminate_time,
-        image_name,
-        process_name,
-        arguments,
+        self, asset_props: AssetProps, process_props: ProcessProps,
     ):
-        asset_node_key = node_key_for_test(self, asset_node_key)
-        process_node_key = node_key_for_test(self, process_node_key)
         local_client = DgraphClient(DgraphClientStub("localhost:9080"))
 
-        created_asset_node = get_or_create_asset_node(
-            local_client, asset_node_key, hostname=hostname
-        )
-
-        created_process_node = get_or_create_process_node(
-            local_client,
-            process_node_key,
-            process_id,
-            arguments,
-            created_timestamp,
-            terminate_time,
-            image_name,
-            process_name,
-        )
+        created_asset = get_or_create_asset(self, local_client, asset_props)
+        created_proc = get_or_create_process(self, local_client, process_props)
 
         create_edge(
-            local_client,
-            created_asset_node.uid,
-            "asset_processes",
-            created_process_node.uid,
+            local_client, created_asset.uid, "asset_processes", created_proc.uid,
         )
 
         # Setup complete, do some queries
 
         queried_proc = (
             ProcessQuery()
-            .with_asset(AssetQuery().with_hostname(hostname))
-            .query_first(local_client, contains_node_key=process_node_key)
+            .with_asset(AssetQuery().with_hostname(created_asset.get_hostname()))
+            .query_first(local_client, contains_node_key=created_proc.node_key)
         )
-
-        assert process_id == queried_proc.get_process_id()
-        assert process_node_key == queried_proc.node_key
-        assert "Process" == queried_proc.get_node_type()
-        assert process_id == queried_proc.get_process_id()
-        assert arguments == queried_proc.get_arguments()
-        assert created_timestamp == queried_proc.get_created_timestamp()
-        assert terminate_time == queried_proc.get_terminate_time()
-        assert image_name == queried_proc.get_image_name()
-        assert process_name == queried_proc.get_process_name()
-
+        assert queried_proc
+        fetch_all_properties(queried_proc)
+        assert_equal_props(created_proc, queried_proc)
         queried_asset = queried_proc.get_asset()
-        assert queried_asset
-        assert queried_asset.node_key == asset_node_key
+        assert_equal_identity(created_asset, queried_asset)
 
     # Given that the code that generates timestamps only uses unsized types we can make some
     # assumptions about the data
     @hypothesis.settings(deadline=None)
-    @given(
-        node_key=st.uuids(),
-        process_id=st.integers(min_value=1, max_value=2 ** 32),
-        created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        asset_id=st.text(),
-        terminate_time=st.integers(min_value=0, max_value=2 ** 48),
-        image_name=st.text(),
-        process_name=st.text(),
-        arguments=st.text(),
-    )
-    def test_process_query_view_parity(
-        self,
-        node_key,
-        process_id,
-        created_timestamp,
-        asset_id,
-        terminate_time,
-        image_name,
-        process_name,
-        arguments,
-    ):
-        node_key = "test_process_query_view_parity" + str(node_key)
+    @given(process_props=process_props())
+    def test_process_query_view_parity(self, process_props: ProcessProps):
         local_client = DgraphClient(DgraphClientStub("localhost:9080"))
 
-        get_or_create_process_node(
-            local_client,
-            node_key,
-            process_id,
-            arguments,
-            created_timestamp,
-            asset_id,
-            terminate_time,
-            image_name,
-            process_name,
-        )
+        created_proc = get_or_create_process(self, local_client, process_props,)
 
         queried_proc = (
-            ProcessQuery().with_node_key(eq=node_key).query_first(local_client)
+            ProcessQuery()
+            .with_node_key(eq=created_proc.node_key)
+            .query_first(local_client)
         )
 
-        # assert process_view.process_id == queried_proc.get_process_id()
-        assert node_key == queried_proc.node_key
+        assert queried_proc
+
+        assert process_props["node_key"] == queried_proc.node_key
         assert "Process" == queried_proc.get_node_type()
-        assert process_id == queried_proc.get_process_id()
-        assert arguments == queried_proc.get_arguments()
-        assert created_timestamp == queried_proc.get_created_timestamp()
-        assert asset_id == queried_proc.get_asset_id()
-        assert terminate_time == queried_proc.get_terminate_time()
-        assert image_name == queried_proc.get_image_name()
-        assert process_name == queried_proc.get_process_name()
+        assert process_props["process_id"] == queried_proc.get_process_id()
+        assert process_props["arguments"] == escape_dgraph_str(
+            queried_proc.get_arguments()
+        )
+        assert (
+            process_props["created_timestamp"] == queried_proc.get_created_timestamp()
+        )
+        assert None == queried_proc.get_asset()
+        assert process_props["terminate_time"] == queried_proc.get_terminate_time()
+        assert process_props["image_name"] == escape_dgraph_str(
+            queried_proc.get_image_name()
+        )
+        assert process_props["process_name"] == escape_dgraph_str(
+            queried_proc.get_process_name()
+        )
 
     @hypothesis.settings(deadline=None)
     @given(
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2 ** 32),
         created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        asset_id=st.text(),
         terminate_time=st.integers(min_value=0, max_value=2 ** 48),
         image_name=st.text(),
         process_name=st.text(),
@@ -271,7 +198,6 @@ class TestProcessQuery(unittest.TestCase):
         node_key,
         process_id,
         created_timestamp,
-        asset_id,
         terminate_time,
         image_name,
         process_name,
@@ -279,13 +205,12 @@ class TestProcessQuery(unittest.TestCase):
     ):
         node_key = "test_process_query_view_parity_eq" + str(node_key)
         local_client = DgraphClient(DgraphClientStub("localhost:9080"))
-        get_or_create_process_node(
+        get_or_create_process_node_deprecated(
             local_client,
             node_key,
             process_id,
             arguments,
             created_timestamp,
-            asset_id,
             terminate_time,
             image_name,
             process_name,
@@ -297,7 +222,6 @@ class TestProcessQuery(unittest.TestCase):
             .with_process_id(eq=process_id)
             .with_arguments(eq=arguments)
             .with_created_timestamp(eq=created_timestamp)
-            .with_asset_id(eq=asset_id)
             .with_terminate_time(eq=terminate_time)
             .with_image_name(eq=image_name)
             .with_process_name(eq=process_name)
@@ -311,59 +235,34 @@ class TestProcessQuery(unittest.TestCase):
 
         assert arguments == queried_proc.get_arguments()
         assert created_timestamp == queried_proc.get_created_timestamp()
-        assert asset_id == queried_proc.get_asset_id()
         assert terminate_time == queried_proc.get_terminate_time()
         assert image_name == queried_proc.get_image_name()
         assert process_name == queried_proc.get_process_name()
 
     @hypothesis.settings(deadline=None)
-    @given(
-        node_key=st.uuids(),
-        process_id=st.integers(min_value=1, max_value=2 ** 32),
-        created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        asset_id=st.text(),
-        terminate_time=st.integers(min_value=0, max_value=2 ** 48),
-        image_name=st.text(),
-        process_name=st.text(),
-        arguments=st.text(),
-    )
-    def test_process_query_view_miss(
-        self,
-        node_key,
-        process_id,
-        created_timestamp,
-        asset_id,
-        terminate_time,
-        image_name,
-        process_name,
-        arguments,
-    ):
-        node_key = "test_process_query_view_miss" + str(node_key)
+    @given(process_props=process_props())
+    def test_process_query_view_miss(self, process_props: ProcessProps) -> None:
         local_client = DgraphClient(DgraphClientStub("localhost:9080"))
-        process = {
-            "process_id": process_id,
-            "arguments": arguments,
-            "created_timestamp": created_timestamp,
-            "asset_id": asset_id,
-            "terminate_time": terminate_time,
-            "image_name": image_name,
-            "process_name": process_name,
-        }  # type: Dict[str, Property]
 
-        process_view = cast(
-            ProcessView, upsert(local_client, "Process", ProcessView, node_key, process)
-        )  # type: ProcessView
+        created_proc = get_or_create_process(self, local_client, process_props)
 
+        assert (
+            created_proc.process_id is not None
+            and created_proc.arguments is not None
+            and created_proc.created_timestamp is not None
+            and created_proc.terminate_time is not None
+            and created_proc.image_name is not None
+            and created_proc.process_name is not None
+        )
         queried_proc = (
             ProcessQuery()
-            .with_node_key(eq=node_key)
-            .with_process_id(eq=Not(process_id))
-            .with_arguments(eq=Not(arguments))
-            .with_created_timestamp(eq=Not(created_timestamp))
-            .with_asset_id(eq=Not(asset_id))
-            .with_terminate_time(eq=Not(terminate_time))
-            .with_image_name(eq=Not(image_name))
-            .with_process_name(eq=Not(process_name))
+            .with_node_key(eq=created_proc.node_key)
+            .with_process_id(eq=Not(created_proc.process_id))
+            .with_arguments(eq=Not(created_proc.arguments))
+            .with_created_timestamp(eq=Not(created_proc.created_timestamp))
+            .with_terminate_time(eq=Not(created_proc.terminate_time))
+            .with_image_name(eq=Not(created_proc.image_name))
+            .with_process_name(eq=Not(created_proc.process_name))
             .query_first(local_client)
         )
 
@@ -377,18 +276,16 @@ class TestProcessQuery(unittest.TestCase):
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2 ** 32),
         created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        asset_id=st.text(),
         terminate_time=st.integers(min_value=0, max_value=2 ** 48),
-        image_name=st.text(),
-        process_name=st.text(),
-        arguments=st.text(),
+        image_name=text_dgraph_compat(),
+        process_name=text_dgraph_compat(),
+        arguments=text_dgraph_compat(),
     )
     def test_process_query_view_parity_contains(
         self,
         node_key,
         process_id,
         created_timestamp,
-        asset_id,
         terminate_time,
         image_name,
         process_name,
@@ -396,13 +293,12 @@ class TestProcessQuery(unittest.TestCase):
     ):
         node_key = "test_process_query_view_parity_contains" + str(node_key)
         local_client = DgraphClient(DgraphClientStub("localhost:9080"))
-        get_or_create_process_node(
+        get_or_create_process_node_deprecated(
             local_client,
             node_key,
             process_id,
             arguments,
             created_timestamp,
-            asset_id,
             terminate_time,
             image_name,
             process_name,
@@ -412,14 +308,16 @@ class TestProcessQuery(unittest.TestCase):
 
         # Don't fuck with newlines due to a dgraph bug
         # https://github.com/dgraph-io/dgraph/issues/4694
-        if len(arguments) > 3 and "\n" not in arguments:
-            query.with_arguments(contains=arguments[: len(arguments) - 1])
-        if len(asset_id) > 3 and "\n" not in asset_id:
-            query.with_asset_id(contains=asset_id[: len(asset_id) - 1])
-        if len(image_name) > 3 and "\n" not in image_name:
-            query.with_image_name(contains=image_name[: len(image_name) - 1])
-        if len(process_name) > 3 and "\n" not in process_name:
-            query.with_process_name(contains=process_name[: len(process_name) - 1])
+        for prop in [arguments, image_name, process_name]:
+            hypothesis.assume(len(prop) > 3)
+            hypothesis.assume("\n" not in prop)
+            hypothesis.assume("\\" not in prop)
+
+        # These fail because dgraph doesn't like the query
+        # 	(regexp(process_name, /00\\//))
+        query.with_arguments(contains=arguments[: len(arguments) - 1])
+        query.with_image_name(contains=image_name[: len(image_name) - 1])
+        query.with_process_name(contains=process_name[: len(process_name) - 1])
 
         queried_proc = query.query_first(local_client)
 
@@ -429,7 +327,6 @@ class TestProcessQuery(unittest.TestCase):
         assert node_key == queried_proc.node_key
         assert arguments == queried_proc.get_arguments()
         assert created_timestamp == queried_proc.get_created_timestamp()
-        assert asset_id == queried_proc.get_asset_id()
         assert terminate_time == queried_proc.get_terminate_time()
         assert image_name == queried_proc.get_image_name()
         assert process_name == queried_proc.get_process_name()

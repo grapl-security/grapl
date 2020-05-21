@@ -6,8 +6,8 @@ from grapl_analyzerlib.nodes.types import PropertyT
 T = TypeVar("T", bound=Union[str, int])
 
 PropertyFilter = List[List["Cmp[T]"]]
-StrCmp = Union[str, List[str], List[Union[str, "Not[str]"]]]
-IntCmp = Union[int, List[int], List[Union[int, "Not[int]"]]]
+StrCmp = Union[str, "Not[str]", List[str], List[Union[str, "Not[str]"]]]
+IntCmp = Union[int, "Not[int]", List[int], List[Union[int, "Not[int]"]]]
 
 
 def escape_dgraph_regexp(input: str) -> str:
@@ -25,7 +25,6 @@ def escape_dgraph_regexp(input: str) -> str:
 
 
 def escape_dgraph_str(input: str, query=False) -> str:
-
     output = ""
     for char in input:
         if char == "$":
