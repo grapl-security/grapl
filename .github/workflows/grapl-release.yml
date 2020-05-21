@@ -36,6 +36,7 @@ jobs:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
           docker push grapl/grapl-sysmon-subgraph-generator:$VERSION-$CHANNEL
+          docker push grapl/grapl-generic-subgraph-generator:$VERSION-$CHANNEL
           docker push grapl/grapl-node-identifier:$VERSION-$CHANNEL
           docker push grapl/grapl-node-identifier-retry-handler:$VERSION-$CHANNEL
           docker push grapl/grapl-graph-merger:$VERSION-$CHANNEL

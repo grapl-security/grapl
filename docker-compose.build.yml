@@ -19,6 +19,14 @@ services:
     depends_on:
       - grapl-rust-src-build
 
+  grapl-generic-subgraph-generator:
+    image: grapl/grapl-generic-subgraph-generator:${TAG:-latest}
+    build:
+      context: src/rust/generic-subgraph-generator
+      target: grapl-generic-subgraph-generator
+    depends_on:
+      - grapl-rust-src-build
+
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     build:
