@@ -110,8 +110,8 @@ export class Service extends cdk.Construct {
                 memorySize: 512,
             });
 
-        event_handler.addEventSource(new SqsEventSource(queues.queue, { batchSize: 1 }));
-        event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue, { batchSize: 1 }));
+        event_handler.addEventSource(new SqsEventSource(queues.queue, { batchSize: 10 }));
+        event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue, { batchSize: 10 }));
 
         queues.queue.grantConsumeMessages(event_handler);
         queues.retry_queue.grantConsumeMessages(event_retry_handler);
@@ -134,7 +134,6 @@ export class Service extends cdk.Construct {
                 props.subscribes_to,
             );
         }
-
     }
 
     readsFrom(bucket: s3.IBucket, with_list?: Boolean) {
