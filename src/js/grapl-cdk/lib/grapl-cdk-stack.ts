@@ -340,7 +340,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
             this, name, {
                 runtime: Runtime.PYTHON_3_7,
                 handler: `grapl_model_plugin_deployer.app`,
-                code: lambda.Code.fromAsset(`./zips/grapl_model_plugin_deployer.zip`),
+                code: lambda.Code.fromAsset(`./zips/model-plugin-deployer.zip`),
                 vpc: vpc,
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),

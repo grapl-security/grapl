@@ -33,7 +33,6 @@ function getEdgeGatewayId(
         }
 
         for (const item of data.items) {
-            console.log(item);
             if (item.name === loginName) {
                 console.log(`login restApi ID ${item.id}`);
                 edgeId = item.id;
@@ -108,7 +107,7 @@ export class EngagementEdge extends cdk.Stack {
             this, id, {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: `engagement_edge.app`,
-            code: lambda.Code.fromAsset(`./zips/engagement_edge.zip`),
+            code: lambda.Code.fromAsset(`./zips/engagement-edge.zip`),
             vpc: props.vpc,
             environment: {
                 "EG_ALPHAS": props.engagement_graph.alphaNames.join(","),
