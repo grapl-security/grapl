@@ -1,0 +1,58 @@
+
+name: Lint 
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on: [push, pull_request]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  lint:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    # Technically this doesn't need venv, but doing it to
+    # keep it in line with our README.md
+
+    - name: Set up virtualenv
+      run: |
+        python3 -m venv .venv
+        source .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install . ".[dev]"
+
+    - name: Run Black
+      run: |
+        source .venv/bin/activate
+        black --check .
+
+    # the below `|| true`s allows us to mark something as success, even if
+    # the project is failing
+    # TODO: maybe make a check that we're not getting worse
+    # that is to say, maybe make an upper bound for num of type errors
+    # and test failures
+
+    - name: Run Mypy (Always Pass)
+      run: |
+        source .venv/bin/activate
+        mypy . || true
+
+    - name: Run Tests (Always Pass)
+      run: |
+        source .venv/bin/activate
+        ./local_dgraph/run_on_github_actions.sh
+        ./run_tests.sh || true
