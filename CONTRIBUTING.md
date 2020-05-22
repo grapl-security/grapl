@@ -72,7 +72,8 @@ We currently rely on some unsupported and undocumented behavior of
 `docker-compose build` to build intermediate containers in dependency
 order, so unfortunately `docker-compose build --parallel` will not
 work. The way forward will probably be to use a dedicated build
-automation tool like [Dobi](https://github.com/dnephin/dobi).
+automation tool like [Dobi](https://github.com/dnephin/dobi). See
+https://github.com/grapl-security/grapl/issues/86.
 
 To run your images locally, execute the following command in the
 project root:
