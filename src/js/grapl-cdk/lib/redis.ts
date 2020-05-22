@@ -13,9 +13,7 @@ export class RedisCluster extends cdk.Construct {
         // Define a group for telling Elasticache which subnets to put cache nodes in.
         const subnetGroup = new elasticache.CfnSubnetGroup(this, id + '-subnet-group', {
             description: `List of subnets used for redis cache ${id}`,
-            subnetIds: vpc.privateSubnets.map(function(subnet) {
-                return subnet.subnetId;
-            }),
+            subnetIds: vpc.privateSubnets.map(subnet => subnet.subnetId),
             cacheSubnetGroupName: id + '-cache-subnet-group',
         });
 
