@@ -35,8 +35,8 @@ export class UserAuthDb extends cdk.Construct {
     }
 
     allowReadWrite(service: Service) {
-        this.user_auth_table.grantReadData(service.event_handler);
-        this.user_auth_table.grantReadData(service.event_retry_handler);
+        this.user_auth_table.grantReadWriteData(service.event_handler);
+        this.user_auth_table.grantReadWriteData(service.event_retry_handler);
     }
 
     allowReadFromRole(identity: iam.IGrantable) {
