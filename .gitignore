@@ -64,3 +64,4 @@ pip-log.txt
 *.code-workspace
 *.vscode
 *.zip
+stale_outputs_checked
