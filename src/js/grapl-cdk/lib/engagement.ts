@@ -217,7 +217,7 @@ export class EngagementUx extends cdk.Stack {
 
                 const replaceMap = new Map();
                 replaceMap.set(`http://"+window.location.hostname+":8900/`, loginUrl);
-                replaceMap.set(`window.location.host+":5000/"`, graphQLUrl);
+                replaceMap.set(`http://"+window.location.hostname+":5000/`, graphQLUrl);
 
                 dir.readFiles(srcDir,
                     function(err: any, content: any, filename: string, next: any) {
