@@ -69,6 +69,12 @@ services:
       context: src/python/grapl-python-build
       target: grapl-python-build
 
+  grapl-python-deploy:
+    image: grapl/grapl-python-deploy:latest
+    build:
+      context: src/python/grapl-python-deploy
+      target: grapl-python-deploy
+
   grapl-graph-descriptions-python-build:
     image: grapl/grapl-graph-descriptions-python-build:latest
     build:
@@ -77,13 +83,22 @@ services:
     depends_on:
       - grapl-python-build
 
+  grapl-analyzerlib-python-build:
+    image: grapl/grapl-analyzerlib-python-build:latest
+    build:
+      context: src/python/grapl_analyzerlib
+      target: grapl-analyzerlib-python-build
+    depends_on:
+      - grapl-graph-descriptions-python-build
+
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     build:
       context: ./src/python/analyzer_executor
       target: grapl-analyzer-executor
     depends_on:
-      - grapl-graph-descriptions-python-build
+      - grapl-analyzerlib-python-build
+      - grapl-python-deploy
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
@@ -91,7 +106,8 @@ services:
       context: ./src/python/engagement-creator
       target: grapl-engagement-creator
     depends_on:
-      - grapl-graph-descriptions-python-build
+      - grapl-analyzerlib-python-build
+      - grapl-python-deploy
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
@@ -99,7 +115,8 @@ services:
       context: ./src/python/engagement_edge
       target: grapl-engagement-edge
     depends_on:
-      - grapl-graph-descriptions-python-build
+      - grapl-analyzerlib-python-build
+      - grapl-python-deploy
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -107,7 +124,8 @@ services:
       context: ./src/python/grapl-model-plugin-deployer/
       dockerfile: ./Dockerfile
     depends_on:
-      - grapl-graph-descriptions-python-build
+      - grapl-analyzerlib-python-build
+      - grapl-python-deploy
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
