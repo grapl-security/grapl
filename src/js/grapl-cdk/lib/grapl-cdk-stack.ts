@@ -17,6 +17,7 @@ import { RedisCluster } from "./redis";
 import { EngagementNotebook } from "./engagement";
 
 import * as uuidv4 from "uuid/v4";
+import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
 
 class SysmonSubgraphGenerator extends cdk.NestedStack {
 
@@ -405,6 +406,8 @@ export class GraplCdkStack extends cdk.Stack {
         const analyzers_bucket = new s3.Bucket(this, prefix + '-analyzers-bucket', {
             bucketName: prefix + '-analyzers-bucket',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
+            encryption: BucketEncryption.KMS_MANAGED,
+            blockPublicAccess: BlockPublicAccess.BLOCK_ALL
         });
 
         const engagements_created_topic =
