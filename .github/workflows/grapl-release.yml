@@ -245,13 +245,14 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
 
       - name: Upload graph-descriptions to PyPI
         if: $CHANNEL == "latest"
         uses: pypa/gh-action-pypi-publish@v1
         with:
           user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
 
       - name: Clean up graph-descriptions dist
         run: |
@@ -269,13 +270,14 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
 
       - name: Upload grapl_analzyerlib to PyPI
         if: $CHANNEL == "latest"
         uses: pypa/gh-action-pypi-publish@v1
         with:
           user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
 
       - name: Clean up grapl_analyzerlib dist
         run: |
