@@ -16,8 +16,6 @@ import {EventEmitter} from "./event_emitters";
 import {RedisCluster} from "./redis";
 import {EngagementNotebook} from "./engagement";
 
-import * as uuidv4 from "uuid/v4";
-
 class SysmonSubgraphGenerator extends cdk.NestedStack {
 
     constructor(
