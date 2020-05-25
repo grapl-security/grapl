@@ -3,18 +3,18 @@ import * as s3 from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as lambda from "@aws-cdk/aws-lambda";
+import {Runtime} from "@aws-cdk/aws-lambda";
 import * as iam from "@aws-cdk/aws-iam";
 import * as apigateway from "@aws-cdk/aws-apigateway";
+import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 
-import { Runtime } from "@aws-cdk/aws-lambda";
-
-import { Service } from "./service";
-import { UserAuthDb } from "./userauthdb";
-import { DGraphEcs } from "./dgraph";
-import { HistoryDb } from "./historydb";
-import { EventEmitter } from "./event_emitters";
-import { RedisCluster } from "./redis";
-import { EngagementNotebook } from "./engagement";
+import {Service} from "./service";
+import {UserAuthDb} from "./userauthdb";
+import {DGraphEcs} from "./dgraph";
+import {HistoryDb} from "./historydb";
+import {EventEmitter} from "./event_emitters";
+import {RedisCluster} from "./redis";
+import {EngagementNotebook} from "./engagement";
 
 import * as uuidv4 from "uuid/v4";
 
@@ -324,7 +324,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
         parent: cdk.Construct,
         name: string,
         prefix: string,
-        jwt_secret: string,
+        jwt_secret: EdgeJwtToken,
         master_graph: DGraphEcs,
         engagement_graph: DGraphEcs,
         model_plugin_bucket: s3.IBucket,
@@ -345,7 +345,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
                     "EG_ALPHAS": engagement_graph.alphaNames.join(","),
-                    "JWT_SECRET": jwt_secret,
+                    "JWT_SECRET_ID": jwt_secret.secretId,
                     "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
                     "BUCKET_PREFIX": prefix
                 },
@@ -355,6 +355,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
         );
 
         if (this.event_handler.role) {
+            jwt_secret.jwtSecret.grantRead(this.event_handler.role);
             user_auth_table.allowReadFromRole(this.event_handler.role);
 
             model_plugin_bucket.grantReadWrite(this.event_handler.role);
@@ -371,9 +372,27 @@ class ModelPluginDeployer extends cdk.NestedStack {
     }
 }
 
+class EdgeJwtToken extends cdk.NestedStack {
+    jwtSecret: secretsmanager.Secret;
+    secretId: string;
+
+    constructor(
+        parent: cdk.Construct,
+    ) {
+        super(parent, 'jwt-secret-stack');
+
+        this.secretId = 'EdgeJwtSecret';
+        this.jwtSecret = new secretsmanager.Secret(this, this.secretId, {
+            description: 'The JWT secret that Grapl uses to authenticate its API',
+            secretName: this.secretId,
+
+        });
+    }
+}
+
 export interface GraplEnvironementProps {
     prefix: string,
-    jwt_secret: string,
+    jwt_secret: EdgeJwtToken,
     vpc: ec2.IVpc,
     engagement_graph: DGraphEcs,
     user_auth_table: UserAuthDb,
@@ -392,13 +411,13 @@ export class GraplCdkStack extends cdk.Stack {
         const egZeroCount = Number(process.env.EG_ZEROS_COUNT) || 1;
         const egAlphaCount = Number(process.env.EG_ALPHAS_COUNT) || 1;
 
-        const jwt_secret = process.env.JWT_SECRET || uuidv4();
-
         const grapl_vpc = new ec2.Vpc(this, prefix + '-GraplVPC', {
             natGateways: 1,
             enableDnsHostnames: true,
             enableDnsSupport: true,
         });
+
+        const jwt = new EdgeJwtToken(this);
 
         const user_auth_table = new UserAuthDb(this, 'grapl-user-auth-table');
 
@@ -439,15 +458,15 @@ export class GraplCdkStack extends cdk.Stack {
         );
 
         const model_plugins_bucket = new s3.Bucket(this, prefix + '-model-plugins-bucket', {
-                bucketName: prefix + '-model-plugins-bucket',
-                removalPolicy: cdk.RemovalPolicy.DESTROY,
-            });
+            bucketName: prefix + '-model-plugins-bucket',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
 
         new ModelPluginDeployer(
             this,
             'model-plugin-deployer',
             prefix,
-            jwt_secret,
+            jwt,
             master_graph,
             engagement_graph,
             model_plugins_bucket,
@@ -511,7 +530,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         this.grapl_env = {
             prefix: prefix,
-            jwt_secret: jwt_secret,
+            jwt_secret: jwt,
             vpc: grapl_vpc,
             engagement_graph: engagement_graph,
             user_auth_table: user_auth_table,
