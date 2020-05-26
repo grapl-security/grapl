@@ -40,9 +40,16 @@ jobs:
           python3 -mvenv .venv
           source .venv/bin/activate
           python -mpip install --upgrade pip
-          pip install black
+          pip install black mypy
 
       - name: Check python formatting
         run: |
           source .venv/bin/activate
           black --check .
+
+      # NOTE: this workflow always succeeds because '|| true'
+      # TODO: fix this.
+      - name: Run Mypy (Always Pass)
+        run: |
+          source .venv/bin/activate
+          mypy . || true
