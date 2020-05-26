@@ -174,7 +174,7 @@ setup(
     name='grapl_graph_descriptions',
     version=__version__,
     author='Grapl, Inc.',
-    author_email='FIXME',
+    author_email='grapl.code@graplsecurity.com',
     url='https://github.com/grapl-security/grapl',
     description='Grapl protobuf definitions',
     packages=(OUT_DIR_NAME,),
