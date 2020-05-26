@@ -265,7 +265,7 @@ jobs:
           docker rm -f grapl-analyzerlib
 
       - name: Upload grapl_analyzerlib to Test PyPI
-        if: $CHANNEL == "beta"
+        if: $CHANNEL == 'beta'
         uses: pypa/gh-action-pypi-publish@v1
         with:
           user: __token__
@@ -273,7 +273,7 @@ jobs:
           repository_url: https://test.pypi.org/legacy/
 
       - name: Upload grapl_analzyerlib to PyPI
-        if: $CHANNEL == "latest"
+        if: $CHANNEL == 'latest'
         uses: pypa/gh-action-pypi-publish@v1
         with:
           user: __token__
