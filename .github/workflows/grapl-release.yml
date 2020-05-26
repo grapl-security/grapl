@@ -248,7 +248,7 @@ jobs:
           repository_url: https://test.pypi.org/legacy/
 
       - name: Upload graph-descriptions to PyPI
-        if: "${{ env.CHANNEL}}" == "latest"
+        if: "${{ env.CHANNEL }}" == "latest"
         uses: pypa/gh-action-pypi-publish@v1
         with:
           user: __token__
