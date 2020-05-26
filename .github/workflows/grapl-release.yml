@@ -14,7 +14,7 @@ jobs:
       - name: Determine release channel
         run: |
           BRANCH=${{ github.event.release.target_commitish }}
-          if [[ "$BRANCH"="master" ]]; then
+          if [[ "$BRANCH" == "master" ]]; then
               CHANNEL="latest"
           else
               CHANNEL="beta"
