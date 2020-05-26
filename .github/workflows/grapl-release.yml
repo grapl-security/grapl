@@ -240,7 +240,7 @@ jobs:
           docker rm -f graph-descriptions
 
       - name: Upload graph-descriptions to Test PyPI
-        if: $CHANNEL == "beta"
+        if: "${{ env.CHANNEL }}" == "beta"
         uses: pypa/gh-action-pypi-publish@v1
         with:
           user: __token__
@@ -248,7 +248,7 @@ jobs:
           repository_url: https://test.pypi.org/legacy/
 
       - name: Upload graph-descriptions to PyPI
-        if: $CHANNEL == "latest"
+        if: "${{ env.CHANNEL}}" == "latest"
         uses: pypa/gh-action-pypi-publish@v1
         with:
           user: __token__
