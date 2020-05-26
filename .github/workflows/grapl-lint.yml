@@ -1,8 +1,8 @@
 name: Grapl Lint
 
 on:
-  check_run:
-    types: [created, rerequested]
+  pull_request:
+    types: [opened, edited, reopened]
 
 jobs:
   rust-lint:

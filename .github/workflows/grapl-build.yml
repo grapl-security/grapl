@@ -1,8 +1,8 @@
 name: Grapl Build
 
 on:
-  check_run:
-    types: [created, rerequested]
+  pull_request:
+    types: [opened, edited, reopened]
 
 jobs:
   grapl-build:
@@ -10,6 +10,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Cargo Audit
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Grapl
         run: |
