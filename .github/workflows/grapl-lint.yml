@@ -2,7 +2,7 @@ name: Grapl Lint
 
 on:
   pull_request:
-    types: [opened, synchronized, reopened]
+    types: [opened, synchronize, reopened]
     branches:
       - staging
       - master
