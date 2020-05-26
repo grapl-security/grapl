@@ -8,7 +8,7 @@ on:
       - master
 
 jobs:
-  grapl-build:
+  grapl-cargo-audit:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,6 +18,12 @@ jobs:
         run: |
           docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
           docker run -it grapl/grapl-cargo-audit:latest cargo audit
+
+  grapl-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
 
       - name: Build Grapl
         run: |
