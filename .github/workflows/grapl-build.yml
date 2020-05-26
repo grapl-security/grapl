@@ -14,18 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: cd src/rust
-        run: |
-          cd src/rust
-
       - name: Cargo Audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: cd ../..
         run: |
-          cd ../..
+          docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
+          docker run -it grapl/grapl-cargo-audit:latest cargo audit
 
       - name: Build Grapl
         run: |
