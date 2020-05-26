@@ -17,6 +17,7 @@ import { RedisCluster } from "./redis";
 import { EngagementNotebook } from "./engagement";
 
 import * as uuidv4 from "uuid/v4";
+import {IApiKey} from "@aws-cdk/aws-apigateway";
 
 class SysmonSubgraphGenerator extends cdk.NestedStack {
 
@@ -368,6 +369,17 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 handler: this.event_handler,
             },
         );
+
+        this.integration.addUsagePlan('integrationApiUsagePlan', {
+            quota: {
+                limit: 1000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {  // per minute
+                rateLimit: 50,
+                burstLimit: 50,
+            }
+        });
     }
 }
 

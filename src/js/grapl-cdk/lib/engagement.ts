@@ -131,6 +131,17 @@ export class EngagementEdge extends cdk.Stack {
                 endpointExportName: "EngagementEndpointApi",
             },
         );
+
+        this.integration.addUsagePlan('loginApiUsagePlan', {
+            quota: {
+                limit: 100_000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {  // per minute
+                rateLimit: 500,
+                burstLimit: 500,
+            }
+        });
     }
 }
 
