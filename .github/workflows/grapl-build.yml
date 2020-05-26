@@ -17,7 +17,7 @@ jobs:
       - name: Cargo Audit
         run: |
           docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
-          docker run -it grapl/grapl-cargo-audit:latest cargo audit
+          docker run -t grapl/grapl-cargo-audit:latest cargo audit
 
   grapl-build:
     runs-on: ubuntu-latest
