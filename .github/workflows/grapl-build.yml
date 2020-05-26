@@ -14,11 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: cd src/rust
+        run: |
+          cd src/rust
+
       - name: Cargo Audit
         uses: actions-rs/audit-check@v1
-        working-directory: ./src/rust
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: cd ../..
+        run: |
+          cd ../..
 
       - name: Build Grapl
         run: |
