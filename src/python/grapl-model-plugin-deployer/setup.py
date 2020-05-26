@@ -28,7 +28,7 @@ setup(
     name='grapl-model-plugin-deployer',
     version=__version__,
     author='Grapl, Inc.',
-    author_email='FIXME',
+    author_email='grapl.code@graplsecurity.com',
     url='https://github.com/grapl-security/grapl',
     description='Grapl service for deploying plugins',
     packages=find_packages(),

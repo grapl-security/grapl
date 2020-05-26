@@ -28,7 +28,7 @@ setup(
     name='engagement_edge',
     version=__version__,
     author='Grapl, Inc.',
-    author_email='FIXME',
+    author_email='grapl.code@graplsecurity.com',
     url='https://github.com/grapl-security/grapl',
     description='Grapl edge service for managing engagements',
     packages=find_packages(),
