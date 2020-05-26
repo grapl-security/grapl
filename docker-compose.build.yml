@@ -160,11 +160,11 @@ services:
     build:
       context: ./src/python/engagement_edge/
     depends_on:
-      - grapl-graph-descriptions-python-build
+      - grapl-analyzerlib-python-build
 
   grapl-dynamodb-provision:
     image: grapl/grapl-dynamodb-provision:${TAG:-latest}
     build:
       context: ./src/python/engagement_edge/
     depends_on:
-      - grapl-graph-descriptions-python-build
+      - grapl-analyzerlib-python-build
