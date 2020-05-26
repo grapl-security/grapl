@@ -17,7 +17,6 @@ import { RedisCluster } from "./redis";
 import { EngagementNotebook } from "./engagement";
 
 import * as uuidv4 from "uuid/v4";
-import {IApiKey} from "@aws-cdk/aws-apigateway";
 
 class SysmonSubgraphGenerator extends cdk.NestedStack {
 
