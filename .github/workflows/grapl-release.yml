@@ -241,7 +241,7 @@ jobs:
 
       - name: Upload graph-descriptions to Test PyPI
         if: env.CHANNEL == 'beta'
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@v1.1.0
         with:
           user: __token__
           password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
@@ -249,7 +249,7 @@ jobs:
 
       - name: Upload graph-descriptions to PyPI
         if: env.CHANNEL == 'latest'
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@v1.1.0
         with:
           user: __token__
           password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
@@ -266,7 +266,7 @@ jobs:
 
       - name: Upload grapl_analyzerlib to Test PyPI
         if: env.CHANNEL == 'beta'
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@v1.1.0
         with:
           user: __token__
           password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
@@ -274,7 +274,7 @@ jobs:
 
       - name: Upload grapl_analzyerlib to PyPI
         if: env.CHANNEL == 'latest'
-        uses: pypa/gh-action-pypi-publish@v1
+        uses: pypa/gh-action-pypi-publish@v1.1.0
         with:
           user: __token__
           password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
