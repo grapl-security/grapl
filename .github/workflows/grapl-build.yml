@@ -3,6 +3,9 @@ name: Grapl Build
 on:
   pull_request:
     types: [opened, edited, reopened]
+    branches:
+      - staging
+      - master
 
 jobs:
   grapl-build:
