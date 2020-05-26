@@ -16,6 +16,7 @@ jobs:
 
       - name: Cargo Audit
         uses: actions-rs/audit-check@v1
+        working-directory: src/rust
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
