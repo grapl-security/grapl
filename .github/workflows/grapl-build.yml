@@ -2,7 +2,7 @@ name: Grapl Build
 
 on:
   pull_request:
-    types: [opened, edited, reopened]
+    types: [opened, synchronized, reopened]
     branches:
       - staging
       - master
