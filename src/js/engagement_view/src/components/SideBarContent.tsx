@@ -39,7 +39,10 @@ const useStyles = makeStyles({
         display: "flex"
     }, 
     table: {
-        minWidth: 450
+        minWidth: 450, 
+    },
+    lensName: {
+        fontSize: "16px",
     },
 });
 
@@ -52,17 +55,19 @@ type SelectLensProps = {
 }
 
 function SelectLens(props: SelectLensProps) {
-    // lensRows.push(createData(props.setLens(props.lens) ))
+    const classes = useStyles();
+
     return (
         <>
                 <TableRow key={props.lens}>
                         <TableCell component="th" scope="row">
-                        <Button 
+                        <Button className = {classes.lensName}
                             onClick={
                                 () => { 
                                     props.setLens(props.lens)    
                                 }
                         }>
+                            {/* #TODO: change color of lense name based on score */}
                             {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
                         </Button>
                         </TableCell>
@@ -133,7 +138,6 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                 {state.toggled && state.lenses &&
                     state.lenses.map(
                         (lens: Lens) => {
-                            // lensRows.push(lens);
                             return(
                                 <TableContainer>
                                     <Table className={classes.table} aria-label="lens table">
@@ -154,7 +158,6 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                     )
                 }
             </div>
-            
             <Divider />
         </>
     )

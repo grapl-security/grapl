@@ -42,7 +42,7 @@ export const LogIn = (props: LoginProps) => {
         <Form>
           <Field name="userName" type="text" placeholder="Username" /> <br/>
           <Field name="password" type="password" placeholder="Password"/> <br/>
-          <button className="s ubmitBtn"  type="submit">Submit</button>
+          <button className="submitBtn"  type="submit">Submit</button>
         </Form>
       </Formik>
         

@@ -2,7 +2,8 @@ import React, {useEffect} from 'react';
 import './LogIn.css';
 import {checkLogin, LogIn} from './Login';
 import {EngagementUx} from "./components/SideBar";
-import { RouteState, SetRouteState } from '../src/modules/GraphViz/CustomTypes'
+import Dashboard from "./components/Dashboard";
+import { RouteState, SetRouteState } from '../src/modules/GraphViz/CustomTypes';
 
 console.log("App loading");
 
@@ -47,17 +48,33 @@ const Router = () => {
     });
 
     if (routeState.curPage === "login") {
-        console.log("routing to engagement_ux page");
+        console.log("routing to Dashboard");
         return (
             <LogIn loginSuccess={
-                () => redirectTo(routeState, setRouteState, "engagement_ux")
+                () => redirectTo(routeState, setRouteState, "dashboard")
             }></LogIn>
         )
     }
 
+    // if (routeState.curPage === "dashboard") {
+    //     console.log("routing to engagement_ux page");
+    //     return (
+    //         <LogIn loginSuccess={
+    //             () => redirectTo(routeState, setRouteState, "engagement_ux")
+    //         }></LogIn>
+    //     )
+    // }
+
+    
+
     if (routeState.curPage === "engagement_ux") {
-        console.log("routing to login page");
+        console.log("Routing to login page");
         return <EngagementUx/>
+    }
+
+    if(routeState.curPage === "dashboard"){
+        console.log("Routing to Dashboard");
+        return <Dashboard /> 
     }
 
     // #TODO: This should be a nice landing page explaining that something has gone
