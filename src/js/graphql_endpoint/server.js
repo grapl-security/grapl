@@ -9,13 +9,20 @@ const { validateJwt } = require('./modules/jwt.js');
 const PORT = process.env.PORT || 5000;
 const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;  // get this from environment
 
+let origin = true;
+
+if (!IS_LOCAL) {
+    origin = process.env.UX_BUCKET;
+}
 
 // TODO: Move cors to its own module
 const corsOptions = {
-    origin: true,
+    origin,
     allowedHeaders: "Content-Type, Cookie, Access-Control-Allow-Headers, Authorization, X-Requested-With",
     credentials: true
 };
+
+
 
 const middleware = [cors(corsOptions)];
 

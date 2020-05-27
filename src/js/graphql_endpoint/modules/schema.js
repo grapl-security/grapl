@@ -297,7 +297,6 @@ const getLenses = async (dg_client) => {
 
 // return lens
 const getLensByName = async (dg_client, lensName) => {
-    console.log('lensname', lensName);
     const query = `
     query all($a: string)
         {
@@ -349,7 +348,7 @@ const getNeighborsFromNode = async (dg_client, nodeUid) => {
 }
 
 const inLensScope = async (dg_client, nodeUid, lensUid) => {
-    // console.log(nodeUid, lensUid);
+
     const query = `
     query all($a: string, $b: string)
     {
@@ -379,9 +378,7 @@ const RootQuery = new GraphQLObjectType({
         lenses: {
             type: GraphQLList(LensNodeType),
             resolve: async (parent, args) => {
-                console.log("Retrieving Lenses")
                 const lenses = await getLenses(await getDgraphClient());
-                console.log("lenses", lenses);
                 return lenses;
             }
         },
@@ -391,7 +388,6 @@ const RootQuery = new GraphQLObjectType({
                 lens_name: {type: new GraphQLNonNull(GraphQLString)}
             },
             resolve: async (parent, args) => {
-                console.log('getLenseScope');
                 const dg_client = getDgraphClient();
 
                 const lens_name = args.lens_name;
