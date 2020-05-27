@@ -28,7 +28,7 @@ setup(
     name='analyzer_executor',
     version=__version__,
     author='Grapl, Inc.',
-    author_email='FIXME',
+    author_email='grapl.code@graplsecurity.com',
     url='https://github.com/grapl-security/grapl',
     description='Grapl service which runs analyzers on the graph',
     packages=find_packages(),

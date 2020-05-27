@@ -17,6 +17,7 @@ import { GraplEnvironementProps } from '../lib/grapl-cdk-stack';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from 'node-dir';
+import {BucketEncryption} from "@aws-cdk/aws-s3";
 
 function getEdgeGatewayId(
     [loginName, graphqlName]: [string, string],
@@ -134,6 +135,17 @@ export class EngagementEdge extends cdk.Stack {
                 endpointExportName: "EngagementEndpointApi",
             },
         );
+
+        this.integration.addUsagePlan('loginApiUsagePlan', {
+            quota: {
+                limit: 100_000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {  // per minute
+                rateLimit: 500,
+                burstLimit: 500,
+            }
+        });
     }
 }
 
@@ -202,6 +214,7 @@ export class EngagementUx extends cdk.Stack {
             publicReadAccess: true,
             websiteIndexDocument: 'index.html',
             removalPolicy: RemovalPolicy.DESTROY,
+            encryption: BucketEncryption.KMS_MANAGED
         });
 
         getEdgeGatewayId(

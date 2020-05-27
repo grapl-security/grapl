@@ -1,8 +1,11 @@
 name: Grapl Lint
 
 on:
-  check_run:
-    types: [created, rerequested]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - staging
+      - master
 
 jobs:
   rust-lint:

@@ -1,5 +1,6 @@
 import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
+import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as lambda from "@aws-cdk/aws-lambda";
@@ -367,6 +368,17 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 handler: this.event_handler,
             },
         );
+
+        this.integration.addUsagePlan('integrationApiUsagePlan', {
+            quota: {
+                limit: 1000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {  // per minute
+                rateLimit: 50,
+                burstLimit: 50,
+            }
+        });
     }
 }
 
@@ -409,6 +421,8 @@ export class GraplCdkStack extends cdk.Stack {
         const analyzers_bucket = new s3.Bucket(this, prefix + '-analyzers-bucket', {
             bucketName: prefix + '-analyzers-bucket',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
+            encryption: BucketEncryption.KMS_MANAGED,
+            blockPublicAccess: BlockPublicAccess.BLOCK_ALL
         });
 
         const engagements_created_topic =
