@@ -35,6 +35,7 @@
     "@aws-cdk/aws-s3-deployment": "^1.41.0",
     "@aws-cdk/aws-s3-notifications": "^1.41.0",
     "@aws-cdk/aws-sagemaker": "^1.41.0",
+    "@aws-cdk/aws-secretsmanager": "^1.41.0",
     "@aws-cdk/aws-servicediscovery": "^1.41.0",
     "@aws-cdk/aws-sns": "^1.41.0",
     "@aws-cdk/aws-sns-subscriptions": "^1.41.0",

@@ -1,10 +1,26 @@
 const jwt = require('jsonwebtoken');
+var secretsmanager = new AWS.SecretsManager({apiVersion: '2017-10-17'});
 
-const SECRET_KEY = process.env.JWT_SECRET_KEY;  // get this from environment
+const JWT_SECRET_ID = process.env.JWT_SECRET_ID;  // get this from environment
+let JWT_SECRET = "";
+
+const params = {
+    SecretId: JWT_SECRET_ID,
+};
+
+secretsmanager.getSecretValue(params, (err, data) => {
+    if (err) {
+        console.log(err, err.stack)
+    } // an error occurred
+    else {
+        console.log('Retriever secret with version: ', data.VersionId);
+        JWT_SECRET = data.SecretString;
+    }
+});
 
 const verifyToken = (jwtToken) => {
     try {
-        return jwt.verify(jwtToken, SECRET_KEY, {
+        return jwt.verify(jwtToken, JWT_SECRET, {
             algorithms: ['HS256']
         });
     } catch(e) {
