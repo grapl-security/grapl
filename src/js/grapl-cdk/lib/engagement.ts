@@ -17,6 +17,7 @@ import { GraplEnvironementProps } from '../lib/grapl-cdk-stack';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from 'node-dir';
+import {BucketEncryption} from "@aws-cdk/aws-s3";
 
 function getEdgeGatewayId(
     [loginName, graphqlName]: [string, string],
@@ -210,6 +211,7 @@ export class EngagementUx extends cdk.Stack {
             publicReadAccess: true,
             websiteIndexDocument: 'index.html',
             removalPolicy: RemovalPolicy.DESTROY,
+            encryption: BucketEncryption.KMS_MANAGED
         });
 
         getEdgeGatewayId(
