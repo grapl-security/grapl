@@ -322,7 +322,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
         parent: cdk.Construct,
         name: string,
         prefix: string,
-        jwt_secret: EdgeJwtToken,
+        jwt_secret: secretsmanager.Secret,
         master_graph: DGraphEcs,
         engagement_graph: DGraphEcs,
         model_plugin_bucket: s3.IBucket,
@@ -343,7 +343,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
                     "EG_ALPHAS": engagement_graph.alphaNames.join(","),
-                    "JWT_SECRET_ID": jwt_secret.secretId,
+                    "JWT_SECRET_ID": jwt_secret.secretArn,
                     "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
                     "BUCKET_PREFIX": prefix
                 },
@@ -353,7 +353,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
         );
 
         if (this.event_handler.role) {
-            jwt_secret.jwtSecret.grantRead(this.event_handler.role);
+            jwt_secret.grantRead(this.event_handler.role);
             user_auth_table.allowReadFromRole(this.event_handler.role);
 
             model_plugin_bucket.grantReadWrite(this.event_handler.role);
@@ -370,27 +370,10 @@ class ModelPluginDeployer extends cdk.NestedStack {
     }
 }
 
-class EdgeJwtToken extends cdk.NestedStack {
-    jwtSecret: secretsmanager.Secret;
-    secretId: string;
-
-    constructor(
-        parent: cdk.Construct,
-    ) {
-        super(parent, 'jwt-secret-stack');
-
-        this.secretId = 'EdgeJwtSecret';
-        this.jwtSecret = new secretsmanager.Secret(this, this.secretId, {
-            description: 'The JWT secret that Grapl uses to authenticate its API',
-            secretName: this.secretId,
-
-        });
-    }
-}
 
 export interface GraplEnvironementProps {
     prefix: string,
-    jwt_secret: EdgeJwtToken,
+    jwt_secret: secretsmanager.Secret,
     vpc: ec2.IVpc,
     engagement_graph: DGraphEcs,
     user_auth_table: UserAuthDb,
@@ -415,7 +398,11 @@ export class GraplCdkStack extends cdk.Stack {
             enableDnsSupport: true,
         });
 
-        const jwt = new EdgeJwtToken(this);
+
+        const jwtSecret = new secretsmanager.Secret(this, 'EdgeJwtSecret', {
+            description: 'The JWT secret that Grapl uses to authenticate its API',
+            secretName: 'EdgeJwtSecret',
+        });
 
         const user_auth_table = new UserAuthDb(this, 'grapl-user-auth-table');
 
@@ -464,7 +451,7 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'model-plugin-deployer',
             prefix,
-            jwt,
+            jwtSecret,
             master_graph,
             engagement_graph,
             model_plugins_bucket,
@@ -528,7 +515,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         this.grapl_env = {
             prefix: prefix,
-            jwt_secret: jwt,
+            jwt_secret: jwtSecret,
             vpc: grapl_vpc,
             engagement_graph: engagement_graph,
             user_auth_table: user_auth_table,

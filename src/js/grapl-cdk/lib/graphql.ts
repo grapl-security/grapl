@@ -27,7 +27,7 @@ export class GraphQLEndpoint extends cdk.Stack {
                 vpc: props.vpc,
                 environment: {
                     "EG_ALPHAS": props.engagement_graph.alphaNames.join(","),
-                    "JWT_SECRET_ID": props.jwt_secret.secretId,
+                    "JWT_SECRET_ID": props.jwt_secret.secretArn,
                     "BUCKET_PREFIX": props.prefix,
                 },
                 timeout: cdk.Duration.seconds(25),
@@ -36,7 +36,7 @@ export class GraphQLEndpoint extends cdk.Stack {
         );
 
         if (this.event_handler.role) {
-            props.jwt_secret.jwtSecret.grantRead(this.event_handler.role);
+            props.jwt_secret.grantRead(this.event_handler.role);
         }
 
         this.integration = new apigateway.LambdaRestApi(
