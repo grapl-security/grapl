@@ -368,6 +368,17 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 handler: this.event_handler,
             },
         );
+
+        this.integration.addUsagePlan('integrationApiUsagePlan', {
+            quota: {
+                limit: 1000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {  // per minute
+                rateLimit: 50,
+                burstLimit: 50,
+            }
+        });
     }
 }
 

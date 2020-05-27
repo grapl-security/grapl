@@ -44,5 +44,16 @@ export class GraphQLEndpoint extends cdk.Stack {
                 endpointExportName: "GraphQLEndpointApi",
             },
         );
+
+        this.integration.addUsagePlan('graphQLApiUsagePlan', {
+            quota: {
+                limit: 1_000_000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {  // per minute
+                rateLimit: 5000,
+                burstLimit: 10_000,
+            }
+        });
     }
 }
