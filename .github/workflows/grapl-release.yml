@@ -14,7 +14,7 @@ jobs:
       - name: Determine release channel
         run: |
           BRANCH=${{ github.event.release.target_commitish }}
-          if [[ "$BRANCH"="master" ]]; then
+          if [[ "$BRANCH" == "master" ]]; then
               CHANNEL="latest"
           else
               CHANNEL="beta"
@@ -56,69 +56,69 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          docker create -ti --name cp-sysmon-subgraph-generator grapl/grapl-sysmon-subgraph-generator:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-sysmon-subgraph-generator grapl/grapl-sysmon-subgraph-generator:$VERSION-$CHANNEL
           docker cp cp-sysmon-subgraph-generator:/sysmon-subgraph-generator ./bootstrap
           docker rm -f cp-sysmon-subgraph-generator
           zip -9 sysmon-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=sysmon-subgraph-generator::sysmon-subgraph-generator-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-generic-subgraph-generator grapl/grapl-generic-subgraph-generator:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-generic-subgraph-generator grapl/grapl-generic-subgraph-generator:$VERSION-$CHANNEL
           docker cp cp-generic-subgraph-generator:/generic-subgraph-generator ./bootstrap
           docker rm -f cp-generic-subgraph-generator
           zip -9 generic-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=generic-subgraph-generator::generic-subgraph-generator-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-node-identifier grapl/grapl-node-identifier:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-node-identifier grapl/grapl-node-identifier:$VERSION-$CHANNEL
           docker cp cp-node-identifier:/node-identifier ./bootstrap
           docker rm -f cp-node-identifier
           zip -9 node-identifier-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=node-identifier::node-identifier-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-node-identifier-retry-handler grapl/grapl-node-identifier-retry-handler:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-node-identifier-retry-handler grapl/grapl-node-identifier-retry-handler:$VERSION-$CHANNEL
           docker cp cp-node-identifier-retry-handler:/node-identifier-retry-handler ./bootstrap
           docker rm -f cp-node-identifier-retry-handler
           zip -9 node-identifier-retry-handler-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=node-identifier-retry-handler::node-identifier-retry-handler-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-graph-merger grapl/grapl-graph-merger:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-graph-merger grapl/grapl-graph-merger:$VERSION-$CHANNEL
           docker cp cp-graph-merger:/graph-merger ./bootstrap
           docker rm -f cp-graph-merger
           zip -9 graph-merger-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=graph-merger::graph-merger-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-analyzer-dispatcher grapl/grapl-analyzer-dispatcher:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-analyzer-dispatcher grapl/grapl-analyzer-dispatcher:$VERSION-$CHANNEL
           docker cp cp-analyzer-dispatcher:/analyzer-dispatcher ./bootstrap
           docker rm -f cp-analyzer-dispatcher
           zip -9 analyzer-dispatcher-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-analyzer-executor grapl/grapl-analyzer-executor:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-analyzer-executor grapl/grapl-analyzer-executor:$VERSION-$CHANNEL
           docker cp cp-analyzer-executor:/home/grapl/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
           docker rm -f cp-analyzer-executor
           echo "::set-output name=analyzer-executor::analyzer-executor-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-engagement-creator grapl/grapl-engagement-creator:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-engagement-creator grapl/grapl-engagement-creator:$VERSION-$CHANNEL
           docker cp cp-engagement-creator:/home/grapl/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
           docker rm -f cp-engagement-creator
           echo "::set-output name=engagement-creator::engagement-creator-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-engagement-edge grapl/grapl-engagement-edge:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-engagement-edge grapl/grapl-engagement-edge:$VERSION-$CHANNEL
           docker cp cp-engagement-edge:/home/grapl/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
           docker rm -f cp-engagement-edge
           echo "::set-output name=engagement-edge::engagement-edge-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-model-plugin-deployer grapl/grapl-model-plugin-deployer:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-model-plugin-deployer grapl/grapl-model-plugin-deployer:$VERSION-$CHANNEL
           docker cp cp-model-plugin-deployer:/home/grapl/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
           docker rm -f cp-model-plugin-deployer
           echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-graphql-endpoint grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL bash
+          docker create -ti --name cp-graphql-endpoint grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL
           docker cp cp-graphql-endpoint:/lambda.zip graphql-endpoint-$VERSION-$CHANNEL.zip
           docker rm -f cp-graphql-endpoint
           echo "::set-output name=graphql-endpoint::graphql-endpoint-$VERSION-$CHANNEL.zip"
@@ -232,3 +232,53 @@ jobs:
           asset_path: ./${{ steps.extract-artifacts.outputs.graphql-endpoint }}
           asset_name: ${{ steps.extract-artifacts.outputs.graphql-endpoint }}
           asset_content_type: application/zip
+
+      - name: Prepare graph-descriptions dist
+        run: |
+          docker create -ti --name graph-descriptions grapl/grapl-graph-descriptions-python-build:latest
+          docker cp graph-descriptions:/home/grapl/graph-descriptions/dist .
+          docker rm -f graph-descriptions
+
+      - name: Upload graph-descriptions to Test PyPI
+        if: env.CHANNEL == 'beta'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Upload graph-descriptions to PyPI
+        if: env.CHANNEL == 'latest'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
+
+      - name: Clean up graph-descriptions dist
+        run: |
+          rm -rf dist
+
+      - name: Prepare grapl_analyzerlib dist
+        run: |
+          docker create -ti --name grapl-analyzerlib grapl/grapl-analyzerlib-python-build:latest
+          docker cp grapl-analyzerlib:/home/grapl/grapl_analyzerlib/dist .
+          docker rm -f grapl-analyzerlib
+
+      - name: Upload grapl_analyzerlib to Test PyPI
+        if: env.CHANNEL == 'beta'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Upload grapl_analzyerlib to PyPI
+        if: env.CHANNEL == 'latest'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
+
+      - name: Clean up grapl_analyzerlib dist
+        run: |
+          rm -rf dist
