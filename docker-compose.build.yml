@@ -161,6 +161,7 @@ services:
       context: ./src/python/engagement_edge/
     depends_on:
       - grapl-analyzerlib-python-build
+      - grapl-python-deploy
 
   grapl-dynamodb-provision:
     image: grapl/grapl-dynamodb-provision:${TAG:-latest}
@@ -168,3 +169,4 @@ services:
       context: ./src/python/engagement_edge/
     depends_on:
       - grapl-analyzerlib-python-build
+      - grapl-python-deploy
