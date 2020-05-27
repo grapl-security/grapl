@@ -1,9 +1,12 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import Button from "@material-ui/core/Button";
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
+import GraplHeader from "./reusableComponents/GraplHeader";
+import {redirectTo, defaultRouteState} from "../modules/GraphViz/routing";
+import {EngagementUx} from "../../src/components/SideBar";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -34,28 +37,36 @@ const useStyles = makeStyles((theme: Theme) =>
     })
 );
 
-export default function Dashboard() {
+export default function Dashboard({redirectTo}:any) {
     const classes = useStyles();
     console.log("App loaded");
     return (
         <> 
-            <AppBar position="static">
-                <Toolbar>
-                    <Typography variant="h6" >
-                        GRAPL
-                    </Typography>
-                    <Button className = {classes.button}>Logout</Button>
-                </Toolbar>
-            </AppBar>
+            <GraplHeader />
 
             <div className = { classes.dashboard}>
                 <section className = { classes.nav }>
-                    <Button className = {classes.button }>Engagements</Button>
-                    <Button className = {classes.button }>Upload Plugin</Button>
+                    <Button 
+                        className = {classes.button }
+                        onClick = { (e) => {
+                            redirectTo("engagementUX");
+                        } }
+                    >
+                            Engagements
+                    </Button>
+                    
+                    <Button 
+                        className = {classes.button }
+                        onClick = { (e) => {
+                            redirectTo("uploadPlugin");
+                        } }
+                    >
+                        Upload Plugin
+                    </Button>
                 </section>
 
                 <section className = { classes.welcome }>
-                    <h1>Welcome, username</h1>
+                    <h1> Welcome, username </h1>
                 </section>
             </div>
         </>
