@@ -44,7 +44,6 @@ services:
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
-    command: ./sysmon-subgraph-generator
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -67,7 +66,6 @@ services:
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
-    command: ./node-identifier
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -91,7 +89,6 @@ services:
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
-    command: ./node-identifier-retry-handler
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -115,7 +112,6 @@ services:
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
-    command: ./graph-merger
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -139,7 +135,6 @@ services:
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
-    command: ./analyzer-dispatcher
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -164,7 +159,7 @@ services:
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
-    command: python3 /src/analyzer-executor.py
+    command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/analyzer-executor.py'
     environment:
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
@@ -185,7 +180,7 @@ services:
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
-    command: python3 /src/engagement-creator.py
+    command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
     environment:
       - "IS_LOCAL=True"
       - "BUCKET_PREFIX=local-grapl"
@@ -202,7 +197,7 @@ services:
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
-    command: chalice local --no-autoreload --host=0.0.0.0 --port=8900
+    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8900'
     ports:
       - "8900:8900"
     environment:
@@ -214,7 +209,7 @@ services:
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
-    command: chalice local --no-autoreload --host=0.0.0.0 --port=8123
+    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'
     ports:
       - "8123:8123"
     environment:
@@ -241,6 +236,18 @@ services:
     ports:
       - 1234:1234
 
+  grapl-graphql-endpoint:
+    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+    command: yarn start server
+    environment:
+      - IS_LOCAL=True
+      - PORT=5000
+    links:
+      - grapl-engagement-graph-db:engagement_graph
+      - grapl-master-graph-db:master_graph
+    ports:
+      - 5000:5000
+
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
     links:
@@ -254,7 +261,7 @@ services:
 
   grapl-graph-provision:
     image: grapl/grapl-graph-provision:${TAG:-latest}
-    command: python /var/run/target/grapl_provision.py
+    command: /bin/sh -c '. venv/bin/activate && python /var/run/target/grapl_provision.py'
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     volumes:
@@ -275,7 +282,7 @@ services:
 
   grapl-dynamodb-provision:
     image: grapl/grapl-dynamodb-provision:${TAG:-latest}
-    command: python /var/run/target/provision_local_identity_table.py
+    command: /bin/sh -c '. venv/bin/activate && python /var/run/target/provision_local_identity_table.py'
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     volumes:

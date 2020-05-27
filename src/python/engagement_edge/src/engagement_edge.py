@@ -44,7 +44,6 @@ LOGGER = logging.getLogger("engagement-creator")
 
 app = Chalice(app_name="engagement-edge")
 
-
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
     LOGGER.info(f"connecting to dgraph at {MG_ALPHA}")
     client_stub = pydgraph.DgraphClientStub(MG_ALPHA)
@@ -501,6 +500,9 @@ def login(username, password):
 
 
 def check_jwt(headers):
+    if IS_LOCAL:
+        return True
+
     encoded_jwt = None
     for cookie in headers.get("Cookie", "").split(";"):
         if "grapl_jwt=" in cookie:
@@ -600,21 +602,6 @@ def check_login():
         return respond(None, "False")
 
 
-@requires_auth("/update")
-def update():
-    LOGGER.debug("/update")
-    request = app.current_request
-    update = try_get_updated_graph(request.json_body)
-    return respond(None, update)
-
-
-@requires_auth("/getLenses")
-def get_lenses():
-    request = app.current_request
-    prefix = request.json_body.get("prefix", "")
-    lenses = list_all_lenses(prefix)
-    return respond(None, {"lenses": lenses})
-
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
 def nop_route():
@@ -626,9 +613,5 @@ def nop_route():
         return login_route()
     elif path == "/prod/checkLogin":
         return check_login()
-    elif path == "/prod/update":
-        return update()
-    elif path == "/prod/getLenses":
-        return get_lenses()
 
     return respond("InvalidPath")

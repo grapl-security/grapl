@@ -42,7 +42,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
@@ -51,6 +51,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.mypy_cache
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -64,3 +65,4 @@ pip-log.txt
 *.code-workspace
 *.vscode
 *.zip
+stale_outputs_checked

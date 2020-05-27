@@ -1,10 +1,24 @@
 name: Grapl Build
 
 on:
-  check_run:
-    types: [created, rerequested]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - staging
+      - master
 
 jobs:
+  grapl-cargo-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cargo Audit
+        run: |
+          docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
+          docker run -t grapl/grapl-cargo-audit:latest cargo audit
+
   grapl-build:
     runs-on: ubuntu-latest
 
@@ -13,5 +27,5 @@ jobs:
 
       - name: Build Grapl
         run: |
-          docker-compose --build-args release_target=debug -f docker-compose.yml -f docker-compose.build.yml build
+          docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-arg release_target=debug
           docker system prune -f

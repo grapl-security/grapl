@@ -1,15 +1,17 @@
-FROM grapl/grapl-python-lambda-builder AS grapl-model-plugin-deployer-build
-WORKDIR /lambda
-COPY ./requirements.txt /tmp
-RUN pip install --quiet -t /lambda -r /tmp/requirements.txt
-COPY ./src/ /lambda/
-RUN python -m compileall -q /lambda
-RUN zip --quiet -9r /lambda.zip .
+FROM grapl/grapl-analyzerlib-python-build:latest AS grapl-model-plugin-deployer-build
+USER grapl
+WORKDIR /home/grapl
+COPY --chown=grapl . grapl-model-plugin-deployer
+COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
+# RUN python setup.py test
+RUN source venv/bin/activate && cd grapl-model-plugin-deployer && pip install .
+RUN zip --quiet -9r lambda.zip venv/lib/python3.7/site-packages/
+RUN zip -g lambda.zip grapl-model-plugin-deployer/src/grapl_model_plugin_deployer.py
 
-FROM grapl/grapl-python-lambda-builder AS grapl-model-plugin-deployer
-COPY ./requirements.txt /tmp
-RUN pip install -r /tmp/requirements.txt
-RUN chalice new-project app/
-WORKDIR /app
-COPY ./src/grapl_model_plugin_deployer.py /app/app.py
-COPY --from=grapl-model-plugin-deployer-build /lambda.zip /
+FROM grapl/grapl-python-deploy AS grapl-model-plugin-deployer
+USER grapl
+WORKDIR /home/grapl
+COPY --from=grapl-model-plugin-deployer-build /home/grapl/lambda.zip lambda.zip
+COPY --from=grapl-model-plugin-deployer-build /home/grapl/venv venv
+RUN source venv/bin/activate && chalice new-project app/
+COPY --from=grapl-model-plugin-deployer-build /home/grapl/grapl-model-plugin-deployer/src/grapl_model_plugin_deployer.py app/app.py

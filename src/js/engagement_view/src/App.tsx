@@ -2,28 +2,36 @@ import React, {useEffect} from 'react';
 import './LogIn.css';
 import {checkLogin, LogIn} from './Login';
 import {EngagementUx} from "./components/SideBar";
-// import {PageNotFound} from "./components/PageNotFound";
+import { RouteState, SetRouteState } from '../src/modules/GraphViz/CustomTypes'
 
 console.log("App loading");
 
 // Updates our react state, as well as localStorage state, to reflect the page
 // we should render
-const redirectTo = (routeState: any, setRouteState: any, page_name: string) => {
+
+const redirectTo = (
+    routeState: RouteState, 
+    setRouteState: SetRouteState, 
+    page_name: string
+    ) => {
     setRouteState({
+        ...routeState,
         curPage: page_name,
     })
     localStorage.setItem("grapl_curPage", page_name)
 }
 
+const defaultRouteState = (): RouteState => {
+    return {
+        curPage: localStorage.getItem("grapl_curPage") || "login",
+        lastCheckLoginCheck: Date.now(),
+    }
+}
+
 const Router = () => {
     // By default, load either the last page we were on, or the login page
     // if there is no last page
-    const [routeState, setRouteState] = React.useState({
-        curPage: localStorage.getItem("grapl_curPage") || "login",
-        lastCheckLoginCheck: Date.now(),
-    })
-
-
+    const [routeState, setRouteState] = React.useState(defaultRouteState())
 
     useEffect(() => {
         if (routeState.curPage !== "login") {

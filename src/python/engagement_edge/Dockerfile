@@ -1,15 +1,17 @@
-FROM grapl/grapl-python-lambda-builder AS engagement-edge-builder
-WORKDIR /lambda
-COPY ./requirements.txt /tmp
-RUN pip install --quiet -t /lambda -r /tmp/requirements.txt
-COPY ./src/ /lambda/
-RUN python -m compileall -q /lambda
-RUN zip --quiet -9r /lambda.zip .
+FROM grapl/grapl-analyzerlib-python-build:latest AS engagement-edge-build
+USER grapl
+WORKDIR /home/grapl
+COPY --chown=grapl . engagement_edge
+COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
+# RUN python setup.py test
+RUN source venv/bin/activate && cd engagement_edge && pip install .
+RUN zip --quiet -9r lambda.zip venv/lib/python3.7/site-packages/
+RUN zip -g lambda.zip engagement_edge/src/engagement_edge.py
 
-FROM grapl/grapl-python-lambda-builder AS grapl-engagement-edge
-COPY ./requirements.txt /tmp
-RUN pip install -r /tmp/requirements.txt
-RUN chalice new-project app/
-WORKDIR /app
-COPY ./src/engagement_edge.py /app/app.py
-COPY --from=engagement-edge-builder /lambda.zip /
+FROM grapl/grapl-python-deploy AS grapl-engagement-edge
+USER grapl
+WORKDIR /home/grapl
+COPY --from=engagement-edge-build /home/grapl/lambda.zip lambda.zip
+COPY --from=engagement-edge-build /home/grapl/venv venv
+RUN source venv/bin/activate && chalice new-project app/
+COPY --from=engagement-edge-build /home/grapl/engagement_edge/src/engagement_edge.py app/app.py
