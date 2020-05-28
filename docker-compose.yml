@@ -243,7 +243,6 @@ services:
       - IS_LOCAL=True
       - PORT=5000
     links:
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     ports:
       - 5000:5000

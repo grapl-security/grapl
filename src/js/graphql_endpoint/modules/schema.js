@@ -259,7 +259,7 @@ const getDgraphClient = () => {
 
     const clientStub = new dgraph.DgraphClientStub(
         // addr: optional, default: "localhost:9080"
-        "engagement_graph:9080",
+        "master_graph:9080",
         // credentials: optional, default: grpc.credentials.createInsecure()
         grpc.credentials.createInsecure(),
     );

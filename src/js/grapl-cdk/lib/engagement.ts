@@ -111,7 +111,7 @@ export class EngagementEdge extends cdk.Stack {
             code: lambda.Code.fromAsset(`./zips/engagement-edge.zip`),
             vpc: props.vpc,
             environment: {
-                "EG_ALPHAS": props.engagement_graph.alphaNames.join(","),
+                "MG_ALPHAS": props.master_graph.alphaNames.join(","),
                 "JWT_SECRET": props.jwt_secret,
                 "USER_AUTH_TABLE": props.user_auth_table.user_auth_table.tableName,
                 "BUCKET_PREFIX": props.prefix,

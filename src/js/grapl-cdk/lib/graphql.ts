@@ -26,7 +26,7 @@ export class GraphQLEndpoint extends cdk.Stack {
                 code: lambda.Code.fromAsset(`./zips/graphql-endpoint.zip`),
                 vpc: props.vpc,
                 environment: {
-                    "EG_ALPHAS": props.engagement_graph.alphaNames.join(","),
+                    "MG_ALPHAS": props.master_graph.alphaNames.join(","),
                     "JWT_SECRET": props.jwt_secret,
                     "BUCKET_PREFIX": props.prefix,
                 },

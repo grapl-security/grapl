@@ -241,7 +241,7 @@ def lambda_handler(events: Any, context: Any) -> None:
                 LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
                 lens_id = lens_name + lens_type
                 lens: LensView = lenses.get(lens_name) or LensView.get_or_create(
-                    mg_client, lens_name, lens_Type
+                    mg_client, lens_name, lens_type
                 )
                 lenses[lens_id] = lens
 
