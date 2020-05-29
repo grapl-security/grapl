@@ -24,7 +24,6 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 def find_version():
     with open(os.path.join(HERE, 'VERSION')) as version:
         return version.read().strip()
-    raise Exception('Could not find grapl_analyzerlib version')
 
 
 __version__ = find_version()

@@ -40,7 +40,6 @@ def find_requirements():
 def find_version():
     with open(os.path.join(HERE, 'VERSION')) as version:
         return version.read().strip()
-    raise Exception('Could not find graph-descriptions version')
 
 
 def find_protoc():
