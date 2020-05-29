@@ -43,11 +43,11 @@ jobs:
           if [[ "$CHANNEL" == "latest" ]]; then
               python etc/build_scripts/check_pypi_version.py \
                 grapl_graph_descriptions \
-                $(cat src/rust/grapl_graph_descriptions/VERSION)
+                $(cat src/rust/graph-descriptions/VERSION)
           else
               python etc/build_scripts/check_pypi_version.py \
                 grapl_graph_descriptions \
-                $(cat src/python/grapl_graph_descriptions/VERSION) \
+                $(cat src/rust/graph-descriptions/VERSION) \
                 true
           fi
           deactivate

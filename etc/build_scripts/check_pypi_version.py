@@ -17,12 +17,9 @@ import pypi_simple
 
 
 def needs_version_bumped(package, current_version, test_pypi):
-    if test_pypi:
-        client = pypi_simple.PyPISimple(
-            endpoint='https://test.pypi.org/simple/'
-        )
-    else:
-        client = pypi_simple.PyPISimple()
+    client = pypi_simple.PyPISimple(
+        'https://test.pypi.org/simple/'
+    ) if test_pypi else pypi_simple.PyPISimple()
 
     project_files = client.get_project_files(package)
     latest_version = sorted(
@@ -54,9 +51,10 @@ def main(package, current_version, test_pypi):
     )
 
     if must_bump:
+        test_str = 'Test' if test_pypi else ''
         sys.stderr.write(
             f'{package} {current_version} needs version bump.' \
-            f' Latest version in PyPI: {latest_version}\n'
+            f' Latest version in {test_str} PyPI: {latest_version}\n'
         )
         sys.exit(1)
     else:
@@ -66,10 +64,7 @@ def main(package, current_version, test_pypi):
 if __name__ == '__main__':
     PACKAGE = sys.argv[1]
     CURRENT_VERSION = sys.argv[2]
-    if (len(sys.argv)) > 3:
-        TEST_PYPI = bool(sys.argv[3])
-    else:
-        TEST_PYPI = False
+    TEST_PYPI = bool(sys.argv[3]) if len(sys.argv) > 3 else False
 
     main(
         package=PACKAGE,
