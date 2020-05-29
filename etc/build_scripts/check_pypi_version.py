@@ -26,7 +26,7 @@ def needs_version_bumped(package, current_version, test_pypi):
 
     project_files = client.get_project_files(package)
     latest_version = sorted(
-        project_files,
+        (f for f in project_files if f.yanked is None),
         key=lambda p: tuple(map(int, p.version.split('.'))),
         reverse=True
     )[0].version.strip()
