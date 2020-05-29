@@ -11,6 +11,37 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Configure git
+        run: |
+          git config --global user.name 'Grapl CI'
+          git config --global user.email 'grapl.code@graplsecurity.com'
+
+      - name: Install bump2version CLI
+        run: |
+          python -mvenv venv && . venv/bin/activate
+          pip install bump2version
+          deactivate
+
+      - name: Bump grapl_graph_descriptions version
+        run: |
+          . venv/bin/activate
+          cd src/rust/graph-descriptions
+          bump2version --no-tag patch
+          cd ../../..
+          deactivate
+
+      - name: Bump grapl_analyzerlib version
+        run: |
+          . venv/bin/activate
+          cd src/python/grapl_analyzerlib
+          bump2version --no-tag patch
+          cd ../../..
+          deactivate
+
+      - name: Push version bumps
+        run: |
+          git push
+
       - name: Determine release channel
         run: |
           BRANCH=${{ github.event.release.target_commitish }}

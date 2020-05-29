@@ -16,7 +16,8 @@ from typing import (
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.graph_description_pb2 import Node
+from grapl_graph_descriptions.graph_description_pb2 import Node
+
 from grapl_analyzerlib.nodes.queryable import Queryable
 from grapl_analyzerlib.nodes.viewable import Viewable
 
