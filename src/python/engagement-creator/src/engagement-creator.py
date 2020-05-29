@@ -4,14 +4,13 @@ import os
 import sys
 import time
 import traceback
-
 from collections import defaultdict
 from typing import *
 
 import boto3
 import botocore.exceptions
-from grapl_analyzerlib.nodes.lens_node import CopyingDgraphClient, LensView
-from grapl_analyzerlib.prelude import NodeView, FileView, ProcessView
+from grapl_analyzerlib.nodes.lens_node import LensView
+from grapl_analyzerlib.prelude import NodeView
 from pydgraph import DgraphClient, DgraphClientStub
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))

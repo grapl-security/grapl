@@ -307,20 +307,20 @@ class LensView(Viewable):
         return "Lens"
 
     @staticmethod
-    def get_or_create(copy_client: GraphClient, lens_name: str) -> "LensView":
-        eg_txn = copy_client.txn(read_only=False)
+    def get_or_create(gclient: GraphClient, lens_name: str, lens_type: str) -> "LensView":
+        eg_txn = gclient.txn(read_only=False)
         try:
             query = """
             query res($a: string)
             {
-              res(func: eq(lens, $a), first: 1) @cascade
+              res(func: eq(node_key, $a), first: 1) @cascade
                {
                  uid,
                  node_type: dgraph.type,
                  node_key,
                }
              }"""
-            res = eg_txn.query(query, variables={"$a": lens_name})
+            res = eg_txn.query(query, variables={"$a": 'lens-' + lens_type + lens_name})
 
             res = json.loads(res.json)["res"]
             new_uid = None
@@ -330,7 +330,8 @@ class LensView(Viewable):
                 m_res = eg_txn.mutate(
                     set_obj={
                         "lens": lens_name,
-                        "node_key": "lens-" + lens_name,
+                        "lens_type": lens_type,
+                        "node_key": "lens-" + lens_type + lens_name,
                         "dgraph.type": "Lens",
                         "score": 0,
                     },
@@ -343,7 +344,7 @@ class LensView(Viewable):
             eg_txn.discard()
 
         self_lens = (
-            LensQuery().with_lens_name(eq=lens_name).query_first(copy_client)
+            LensQuery().with_lens_name(eq=lens_name).query_first(gclient)
         )
         assert self_lens, "Lens must exist"
         return self_lens
@@ -394,7 +395,7 @@ class EngagementView(LensView):
         graph_client: GraphClient, lens_name: str
     ) -> "EngagementView":
         print("todo: removeme")
-        lens = LensView.get_or_create(graph_client, lens_name)
+        lens = LensView.get_or_create(graph_client, lens_name, 'engagement')
 
         engagement_client = EngagementClient(
             lens.uid, graph_client,

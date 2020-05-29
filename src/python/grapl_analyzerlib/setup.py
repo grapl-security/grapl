@@ -15,7 +15,7 @@ TEST_REQUIREMENTS = [
 
 setup(
     name="grapl_analyzerlib",
-    version="0.2.61",
+    version="0.2.64",
     description="Library for Grapl Analyzers",
     url="https://github.com/insanitybit/grapl_analyzerlib/",
     author="insanitybit",
