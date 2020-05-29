@@ -1,3 +1,5 @@
+import os
+
 from setuptools import setup, find_packages
 
 LINTERS_REQUIREMENTS = [
@@ -13,10 +15,24 @@ TEST_REQUIREMENTS = [
     "hypothesis",
 ]
 
+with open('README.md') as readme:
+    README = readme.read()
+
+HERE = os.path.abspath(os.path.dirname(__file__))
+
+
+def find_version():
+    with open(os.path.join(HERE, 'VERSION')) as version:
+        return version.read().strip()
+
+
+__version__ = find_version()
+
 setup(
     name="grapl_analyzerlib",
-    version="0.2.64",
+    version=__version__,
     description="Library for Grapl Analyzers",
+    long_description=README,
     url="https://github.com/insanitybit/grapl_analyzerlib/",
     author="insanitybit",
     author_email="insanitybit@gmail.com",
@@ -34,7 +50,11 @@ setup(
         "grapl_analyzerlib.schemas": ["schemas/py.typed"],
     },
     include_package_data=True,
-    install_requires=["pydgraph", "typing_extensions"],
+    install_requires=[
+        'grapl_graph_descriptions==1.0.*',
+        'pydgraph',
+        'typing_extensions'
+    ],
     extras_require={
         "linters": LINTERS_REQUIREMENTS,
         "test": TEST_REQUIREMENTS,

@@ -112,7 +112,7 @@ export class EngagementEdge extends cdk.Stack {
             vpc: props.vpc,
             environment: {
                 "MG_ALPHAS": props.master_graph.alphaNames.join(","),
-                "JWT_SECRET": props.jwt_secret,
+                "JWT_SECRET_ID": props.jwt_secret.secretArn,
                 "USER_AUTH_TABLE": props.user_auth_table.user_auth_table.tableName,
                 "BUCKET_PREFIX": props.prefix,
             },
@@ -121,6 +121,9 @@ export class EngagementEdge extends cdk.Stack {
         }
         );
 
+        if (this.event_handler.role) {
+            props.jwt_secret.grantRead(this.event_handler.role);
+        }
         props.user_auth_table.allowReadFromRole(this.event_handler);
 
         this.integration = new apigateway.LambdaRestApi(

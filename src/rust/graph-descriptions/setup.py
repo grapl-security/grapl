@@ -1,7 +1,6 @@
 """Setuptools script for Grapl graph-descriptions"""
 
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -25,7 +24,6 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 PROTO_DIR = os.path.join(HERE, 'proto')
 OUT_DIR_NAME = 'grapl_graph_descriptions'
 OUT_DIR = os.path.join(HERE, OUT_DIR_NAME)
-VERSION_PATTERN = re.compile(r'^version\s+=\s+\"(\d+\.\d+\.\d+[\w-]*)\"\s*$')
 
 def is_comment(line):
     """check whether a line is a comment"""
@@ -40,16 +38,8 @@ def find_requirements():
 
 
 def find_version():
-    """extract the graph-descriptions version from Cargo.toml
-
-    returns the version string, raises an exception if absent
-    """
-    with open(os.path.join(HERE, 'Cargo.toml')) as cargo_toml:
-        for line in cargo_toml:
-            match = VERSION_PATTERN.fullmatch(line)
-            if match is not None:
-                return match.groups()[0]
-    raise Exception('Could not find graph-descriptions version')
+    with open(os.path.join(HERE, 'VERSION')) as version:
+        return version.read().strip()
 
 
 def find_protoc():

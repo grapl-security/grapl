@@ -26,7 +26,7 @@ for a in assets:
     linkname = filename.replace('-%s-latest.zip' % tag, '.zip')
 
     pwd = os.path.abspath('.')
-    zips = os.path.join(pwd, '/zips/')
+    zips = os.path.join(pwd, 'zips/')
 
     print(url)
     subprocess.run(["wget","-P", "zips",  url])

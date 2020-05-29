@@ -22,10 +22,18 @@ from pydgraph import DgraphClient
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
 if IS_LOCAL:
-    os.environ["JWT_SECRET"] = str(uuid.uuid4())
+    JWT_SECRET = str(uuid.uuid4())
     os.environ["BUCKET_PREFIX"] = "local-grapl"
+else:
+    JWT_SECRET_ID = os.environ['JWT_SECRET_ID']
 
-JWT_SECRET = os.environ["JWT_SECRET"]
+    client = boto3.client('secretsmanager')
+
+    JWT_SECRET = client.get_secret_value(
+        SecretId=JWT_SECRET_ID,
+    )['SecretString']
+
+
 ORIGIN = (
     "https://" + os.environ["BUCKET_PREFIX"] + "engagement-ux-bucket.s3.amazonaws.com"
 )
