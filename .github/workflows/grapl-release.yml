@@ -18,7 +18,7 @@ jobs:
 
       - name: Install bump2version CLI
         run: |
-          python -mvenv venv && . venv/bin/activate
+          python3 -mvenv venv && . venv/bin/activate
           pip install bump2version
           deactivate
 
