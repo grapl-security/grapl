@@ -37,13 +37,11 @@ if IS_LOCAL:
     JWT_SECRET = str(uuid.uuid4())
     os.environ["BUCKET_PREFIX"] = "local-grapl"
 else:
-    JWT_SECRET_ID = os.environ['JWT_SECRET_ID']
+    JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
-    client = boto3.client('secretsmanager')
+    client = boto3.client("secretsmanager")
 
-    JWT_SECRET = client.get_secret_value(
-        SecretId=JWT_SECRET_ID,
-    )['SecretString']
+    JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
 ORIGIN = (
     "https://" + os.environ["BUCKET_PREFIX"] + "engagement-ux-bucket.s3.amazonaws.com"

@@ -11,21 +11,17 @@ from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView, IPro
 from grapl_analyzerlib.nodes.types import Property, PropertyT
 from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-def create_edge(client: DgraphClient, from_uid: str, edge_name: str, to_uid: str) -> None:
-    if edge_name[0] == '~':
-        mut = {
-            'uid': to_uid,
-            edge_name[1:]: {'uid': from_uid}
-        }
+def create_edge(
+    client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
+) -> None:
+    if edge_name[0] == "~":
+        mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
 
     else:
-        mut = {
-            'uid': from_uid,
-            edge_name: {'uid': to_uid}
-        }
+        mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
 
     txn = client.txn(read_only=False)
     try:
@@ -35,10 +31,10 @@ def create_edge(client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
 
 
 def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
-    if node_dict.get('uid'):
-        node_dict.pop('uid')
-    node_dict['uid'] = '_:blank-0'
-    node_key = node_dict['node_key']
+    if node_dict.get("uid"):
+        node_dict.pop("uid")
+    node_dict["uid"] = "_:blank-0"
+    node_key = node_dict["node_key"]
     query = f"""
         {{
             q0(func: eq(node_key, "{node_key}")) {{
@@ -50,11 +46,11 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
     txn = client.txn(read_only=False)
 
     try:
-        res = json.loads(txn.query(query).json)['q0']
+        res = json.loads(txn.query(query).json)["q0"]
         new_uid = None
         if res:
-            node_dict['uid'] = res[0]['uid']
-            new_uid = res[0]['uid']
+            node_dict["uid"] = res[0]["uid"]
+            new_uid = res[0]["uid"]
 
         mutation = node_dict
 
@@ -62,23 +58,23 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
         uids = m_res.uids
 
         if new_uid is None:
-            new_uid = uids['blank-0']
+            new_uid = uids["blank-0"]
         return str(new_uid)
 
     finally:
-            txn.discard()
+        txn.discard()
 
 
 def upsert(
-        client: DgraphClient,
-        view_type: Type[Viewable],
-        node_key: str,
-        node_props: Dict[str, Property]
+    client: DgraphClient,
+    view_type: Type[Viewable],
+    node_key: str,
+    node_props: Dict[str, Property],
 ) -> Viewable:
-    node_props['node_key'] = node_key
+    node_props["node_key"] = node_key
     uid = _upsert(client, node_props)
     # print(f'uid: {uid}')
-    node_props['uid'] = uid
+    node_props["uid"] = uid
     # print(node_props['node_key'])
     return view_type.from_dict(client, node_props)
 
@@ -88,21 +84,26 @@ class IpcQuery(DynamicNodeQuery):
         super(IpcQuery, self).__init__("Ipc", IpcView)
 
     def with_src_pid(self, eq=IntCmp, gt=IntCmp, lt=IntCmp) -> "IpcQuery":
-        self.set_int_property_filter("src_pid", _int_cmps("src_pid", eq=eq, gt=gt, lt=lt))
+        self.set_int_property_filter(
+            "src_pid", _int_cmps("src_pid", eq=eq, gt=gt, lt=lt)
+        )
         return self
 
     def with_dst_pid(self, eq=IntCmp, gt=IntCmp, lt=IntCmp) -> "IpcQuery":
-        self.set_int_property_filter("dst_pid", _int_cmps("dst_pid", eq=eq, gt=gt, lt=lt))
+        self.set_int_property_filter(
+            "dst_pid", _int_cmps("dst_pid", eq=eq, gt=gt, lt=lt)
+        )
         return self
 
     def with_ipc_type(self, eq=StrCmp, contains=StrCmp, ends_with=StrCmp) -> "IpcQuery":
         self.set_str_property_filter(
-            "ipc_type", _str_cmps("ipc_type", eq=eq, contains=contains, ends_with=ends_with)
+            "ipc_type",
+            _str_cmps("ipc_type", eq=eq, contains=contains, ends_with=ends_with),
         )
         return self
 
     def with_ipc_creator(
-            self, ipc_creator_query: "Optional[ProcessQuery]" = None
+        self, ipc_creator_query: "Optional[ProcessQuery]" = None
     ) -> "IpcQuery":
         if ipc_creator_query:
             ipc_creator = deepcopy(ipc_creator_query)
@@ -113,7 +114,7 @@ class IpcQuery(DynamicNodeQuery):
         return self
 
     def with_ipc_recipient(
-            self, ipc_recipient_query: "Optional[ProcessQuery]" = None
+        self, ipc_recipient_query: "Optional[ProcessQuery]" = None
     ) -> "IpcQuery":
         if ipc_recipient_query:
             ipc_recipient = deepcopy(ipc_recipient_query)
@@ -127,16 +128,16 @@ class IpcQuery(DynamicNodeQuery):
 
 class IpcView(DynamicNodeView):
     def __init__(
-            self,
-            dgraph_client: DgraphClient,
-            node_key: str,
-            uid: str,
-            node_type: str,
-            src_pid: Optional[int] = None,
-            dst_pid: Optional[int] = None,
-            ipc_creator: Optional[IProcessView] = None,
-            ipc_recipient: Optional[IProcessView] = None,
-            **kwargs
+        self,
+        dgraph_client: DgraphClient,
+        node_key: str,
+        uid: str,
+        node_type: str,
+        src_pid: Optional[int] = None,
+        dst_pid: Optional[int] = None,
+        ipc_creator: Optional[IProcessView] = None,
+        ipc_recipient: Optional[IProcessView] = None,
+        **kwargs,
     ) -> None:
         super(IpcView, self).__init__(
             dgraph_client=dgraph_client, node_key=node_key, uid=uid, node_type=node_type
@@ -175,10 +176,7 @@ def test_ipc(local_client: DgraphClient):
     }  # type: Dict[str, Property]
 
     ipc_view = upsert(
-        local_client,
-        IpcView,
-        '6fadeb67-4b20-4870-b848-647e97bc5543',
-        ipc
+        local_client, IpcView, "6fadeb67-4b20-4870-b848-647e97bc5543", ipc
     )
 
     qv = IpcQuery().with_ipc_type(eq="UNIX_DOMAIN")
@@ -194,52 +192,42 @@ def test_ipc(local_client: DgraphClient):
     # print(ipc)
     # print(ipc_view)
 
+
 def main() -> None:
-    local_client = DgraphClient(DgraphClientStub('localhost:9080'))
+    local_client = DgraphClient(DgraphClientStub("localhost:9080"))
 
     test_ipc(local_client)
 
     parent = {
-        'process_id': 100,
-        'process_name': 'word.exe'
+        "process_id": 100,
+        "process_name": "word.exe",
     }  # type: Dict[str, Property]
 
-    child = {
-        'process_id': 1234,
-        'process_name': 'cmd.exe'
-    }  # type: Dict[str, Property]
+    child = {"process_id": 1234, "process_name": "cmd.exe"}  # type: Dict[str, Property]
 
     external_ip = {
-        'external_ip': '56.123.14.24',
+        "external_ip": "56.123.14.24",
     }  # type: Dict[str, Property]
 
-
-
     parent_view = upsert(
-        local_client,
-        ProcessView,
-        'ea75f056-61a1-479d-9ca2-f632d2c67205',
-        parent
+        local_client, ProcessView, "ea75f056-61a1-479d-9ca2-f632d2c67205", parent
     )
 
     child_view = upsert(
-        local_client,
-        ProcessView,
-        '10f585c2-cf31-41e2-8ca5-d477e78be3ac',
-        child
+        local_client, ProcessView, "10f585c2-cf31-41e2-8ca5-d477e78be3ac", child
     )
 
     external_ip_view = upsert(
         local_client,
         ExternalIpView,
-        '8bc20354-e8c5-49fc-a984-2927b24c1a29',
-        external_ip
+        "8bc20354-e8c5-49fc-a984-2927b24c1a29",
+        external_ip,
     )
 
-
-    create_edge(local_client, parent_view.uid, 'children', child_view.uid)
-    create_edge(local_client, child_view.uid, 'created_connections', external_ip_view.uid)
-
+    create_edge(local_client, parent_view.uid, "children", child_view.uid)
+    create_edge(
+        local_client, child_view.uid, "created_connections", external_ip_view.uid
+    )
 
     queried_child_0 = ProcessQuery().with_process_id(eq=1234).query_first(local_client)
 
@@ -248,8 +236,10 @@ def main() -> None:
 
     queried_child_1 = (
         ProcessQuery()
-            .with_process_id(eq=1234)
-            .query_first(local_client, contains_node_key='10f585c2-cf31-41e2-8ca5-d477e78be3ac')
+        .with_process_id(eq=1234)
+        .query_first(
+            local_client, contains_node_key="10f585c2-cf31-41e2-8ca5-d477e78be3ac"
+        )
     )
 
     assert queried_child_1
@@ -262,11 +252,10 @@ def main() -> None:
         .with_parent()
         .with_created_connection()
         .query_first(local_client)
-     )  # type: Optional[ProcessView]
+    )  # type: Optional[ProcessView]
 
     assert p
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

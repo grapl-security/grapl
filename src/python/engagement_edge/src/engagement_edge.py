@@ -25,13 +25,11 @@ if IS_LOCAL:
     JWT_SECRET = str(uuid.uuid4())
     os.environ["BUCKET_PREFIX"] = "local-grapl"
 else:
-    JWT_SECRET_ID = os.environ['JWT_SECRET_ID']
+    JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
-    client = boto3.client('secretsmanager')
+    client = boto3.client("secretsmanager")
 
-    JWT_SECRET = client.get_secret_value(
-        SecretId=JWT_SECRET_ID,
-    )['SecretString']
+    JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
 
 ORIGIN = (
@@ -47,6 +45,7 @@ logging.basicConfig(stream=sys.stdout, level=LEVEL)
 LOGGER = logging.getLogger("engagement-creator")
 
 app = Chalice(app_name="engagement-edge")
+
 
 def respond(err, res=None, headers=None):
     LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
@@ -242,7 +241,6 @@ def check_login():
         return respond(None, "True")
     else:
         return respond(None, "False")
-
 
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
