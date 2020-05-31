@@ -129,7 +129,7 @@ def provision_mg(mclient) -> None:
     mg_schemas.append(RiskSchema())
     mg_schemas.append(LensSchema())
 
-    mg_schema_str = format_schemas(schemas)
+    mg_schema_str = format_schemas(mg_schemas)
     set_schema(mclient, mg_schema_str)
 
 
@@ -269,8 +269,8 @@ if __name__ == '__main__':
     time.sleep(5)
     local_dg_provision_client = DgraphClient(DgraphClientStub('master_graph:9080'))
 
+    print('Provisioning graph database')
     # local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
-    # local_eg_provision_client = DgraphClient(DgraphClientStub('localhost:9081'))
 
     for i in range(0, 150):
         try:

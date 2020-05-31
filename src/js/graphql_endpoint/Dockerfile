@@ -11,7 +11,7 @@ COPY package.json .
 COPY package-lock.json .
 
 RUN npm i
-
+RUN rm -rf node_modules/grpc/build/
 RUN mkdir -p /lambda/modules/
 COPY modules/* ./modules/
 

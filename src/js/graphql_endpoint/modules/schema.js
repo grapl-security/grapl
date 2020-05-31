@@ -347,6 +347,34 @@ const getNeighborsFromNode = async (dg_client, nodeUid) => {
     }
 }
 
+const getRisksFromNode = async (dg_client, nodeUid) => {
+    if (!nodeUid) {
+        console.warn('nodeUid can not be null, undefined, or empty')
+        return
+    }
+    const query = `
+    query all($a: string)
+    {
+        all(func: uid($a))
+        {
+            uid,
+            risks {
+                uid,
+                dgraph_type: dgraph.type
+                expand(_all_),
+            }
+        }
+    }`;
+    const txn = dg_client.newTxn();
+    try {
+        const res = await txn.queryWithVars(query, {'$a': nodeUid});
+        return res.getJson()['all'][0]['risks'];
+    } finally {
+        await txn.discard();
+    }
+}
+
+
 const inLensScope = async (dg_client, nodeUid, lensUid) => {
 
     const query = `
@@ -366,7 +394,8 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
         const res = await txn.queryWithVars(query, {
             '$a': nodeUid, '$b': lensUid
         });
-        return !!res.getJson()['all'];
+        const json_res = res.getJson();
+        return json_res['all'].length !== 0;
     } finally {
         await txn.discard();
     }
@@ -423,7 +452,6 @@ const RootQuery = new GraphQLObjectType({
                             const neighbor = maybeNeighbor;
 
                             const isInScope = await inLensScope(dg_client, neighbor["uid"], lens["uid"]);
-
                             neighbor.uid = parseInt(neighbor.uid, 16);
                             if (isInScope) {
                                 if(!builtins.has(neighbor.dgraph_type[0])) {
@@ -433,13 +461,28 @@ const RootQuery = new GraphQLObjectType({
                                     neighbor.predicates = tmpNode;
                                 }
                                 node[maybeNeighborProp] = neighbor
-                            }                            
+                            }
                         }
                     }
 
                 }
 
                 for (const node of lens["scope"]) {
+                    try {
+                        let nodeUid = node['uid'];
+                        if (typeof nodeUid === 'number') {
+                            nodeUid = '0x' + nodeUid.toString(16)
+                        }
+                        const risks = await getRisksFromNode(dg_client, nodeUid);
+                        if (risks) {
+                            for (const risk of risks) {
+                                risk['uid'] = parseInt(risk['uid'], 16)
+                            }
+                            node['risks'] = risks;
+                        }
+                    } catch (err) {
+                        console.error('Failed to get risks', err);
+                    }
                     node.uid = parseInt(node.uid, 16);
                     // If it's a plugin we want to store the properties in a wrapper
                     if(!builtins.has(node.dgraph_type[0])) {
@@ -453,6 +496,7 @@ const RootQuery = new GraphQLObjectType({
                         node.predicates = tmpNode;
                     }
                 }
+
 
                 lens.uid = parseInt(lens.uid, 16);
                 return lens

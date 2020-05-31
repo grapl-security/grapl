@@ -231,6 +231,8 @@ def lambda_handler(events: Any, context: Any) -> None:
             NodeView.from_node_key(mg_client, n["node_key"]) for n in nodes.values()
         ]
 
+        uid_map = {node.node_key: node.uid for node in nodes}
+
         lenses = {}  # type: Dict[str, LensView]
         for node in nodes:
             LOGGER.debug(f"Copying node: {node}")
@@ -251,8 +253,8 @@ def lambda_handler(events: Any, context: Any) -> None:
                 # If a node shows up in a lens all of its connected nodes should also show up in that lens
                 for edge_list in edges.values():
                     for edge in edge_list:
-                        from_uid = edge["from"]
-                        to_uid = edge["to"]
+                        from_uid = uid_map[edge["from"]]
+                        to_uid = uid_map[edge["to"]]
                         create_edge(mg_client, lens.uid, "scope", from_uid)
                         create_edge(mg_client, lens.uid, "scope", to_uid)
 
@@ -264,9 +266,9 @@ def lambda_handler(events: Any, context: Any) -> None:
 
         for edge_list in edges.values():
             for edge in edge_list:
-                from_uid = edge["from"]
+                from_uid = uid_map[edge["from"]]
                 edge_name = edge["edge_name"]
-                to_uid = edge["to"]
+                to_uid = uid_map[edge["to"]]
 
                 create_edge(mg_client, from_uid, edge_name, to_uid)
 
