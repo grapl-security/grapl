@@ -340,12 +340,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 vpc: vpc,
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
-<<<<<<< HEAD
-                    "JWT_SECRET": jwt_secret,
-=======
-                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                     "JWT_SECRET_ID": jwt_secret.secretArn,
->>>>>>> staging
                     "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
                     "BUCKET_PREFIX": prefix
                 },
