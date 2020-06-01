@@ -27,13 +27,17 @@ export class GraphQLEndpoint extends cdk.Stack {
                 vpc: props.vpc,
                 environment: {
                     "EG_ALPHAS": props.engagement_graph.alphaNames.join(","),
-                    "JWT_SECRET": props.jwt_secret,
+                    "JWT_SECRET_ID": props.jwt_secret.secretArn,
                     "BUCKET_PREFIX": props.prefix,
                 },
                 timeout: cdk.Duration.seconds(25),
                 memorySize: 128,
             }
         );
+
+        if (this.event_handler.role) {
+            props.jwt_secret.grantRead(this.event_handler.role);
+        }
 
         this.integration = new apigateway.LambdaRestApi(
             this,
@@ -44,5 +48,16 @@ export class GraphQLEndpoint extends cdk.Stack {
                 endpointExportName: "GraphQLEndpointApi",
             },
         );
+
+        this.integration.addUsagePlan('graphQLApiUsagePlan', {
+            quota: {
+                limit: 1_000_000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {  // per minute
+                rateLimit: 5000,
+                burstLimit: 10_000,
+            }
+        });
     }
 }

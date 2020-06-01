@@ -8,8 +8,18 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
+    strategy:
+        matrix:
+          python-version: [3.7]
+
     steps:
+
       - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Determine release channel
         run: |
@@ -20,6 +30,42 @@ jobs:
               CHANNEL="beta"
           fi
           echo "::set-env name=CHANNEL::$CHANNEL"
+
+      - name: Install pypi-simple
+        run: |
+          python3 -mvenv venv && . venv/bin/activate
+          pip install pypi-simple
+          deactivate
+
+      - name: Check whether grapl_graph_descriptions version has been bumped
+        run: |
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_graph_descriptions \
+                $(cat src/rust/graph-descriptions/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_graph_descriptions \
+                $(cat src/rust/graph-descriptions/VERSION) \
+                true
+          fi
+          deactivate
+
+      - name: Check whether grapl_analyzerlib version has been bumped
+        run: |
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_analyzerlib \
+                $(cat src/python/grapl_analyzerlib/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_analyzerlib \
+                $(cat src/python/grapl_analyzerlib/VERSION) \
+                true
+          fi
+          deactivate
 
       - name: Build Grapl
         env:

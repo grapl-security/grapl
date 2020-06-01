@@ -17,6 +17,7 @@ import { GraplEnvironementProps } from '../lib/grapl-cdk-stack';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from 'node-dir';
+import {BucketEncryption} from "@aws-cdk/aws-s3";
 
 function getEdgeGatewayId(
     [loginName, graphqlName]: [string, string],
@@ -111,7 +112,7 @@ export class EngagementEdge extends cdk.Stack {
             vpc: props.vpc,
             environment: {
                 "EG_ALPHAS": props.engagement_graph.alphaNames.join(","),
-                "JWT_SECRET": props.jwt_secret,
+                "JWT_SECRET_ID": props.jwt_secret.secretArn,
                 "USER_AUTH_TABLE": props.user_auth_table.user_auth_table.tableName,
                 "BUCKET_PREFIX": props.prefix,
             },
@@ -120,6 +121,9 @@ export class EngagementEdge extends cdk.Stack {
         }
         );
 
+        if (this.event_handler.role) {
+            props.jwt_secret.grantRead(this.event_handler.role);
+        }
         props.user_auth_table.allowReadFromRole(this.event_handler);
 
         this.integration = new apigateway.LambdaRestApi(
@@ -131,6 +135,17 @@ export class EngagementEdge extends cdk.Stack {
                 endpointExportName: "EngagementEndpointApi",
             },
         );
+
+        this.integration.addUsagePlan('loginApiUsagePlan', {
+            quota: {
+                limit: 100_000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {  // per minute
+                rateLimit: 500,
+                burstLimit: 500,
+            }
+        });
     }
 }
 
@@ -199,6 +214,7 @@ export class EngagementUx extends cdk.Stack {
             publicReadAccess: true,
             websiteIndexDocument: 'index.html',
             removalPolicy: RemovalPolicy.DESTROY,
+            encryption: BucketEncryption.KMS_MANAGED
         });
 
         getEdgeGatewayId(

@@ -1,9 +1,8 @@
 from typing import *
 
-from grapl_analyzerlib import graph_description_pb2
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.graph_description_pb2 import EdgeList
+from grapl_graph_descriptions.graph_description_pb2 import EdgeList, Graph
 
 
 class SubgraphView(object):
@@ -17,7 +16,7 @@ class SubgraphView(object):
     def from_proto(dgraph_client: DgraphClient, s: bytes) -> "SubgraphView":
         from grapl_analyzerlib.prelude import NodeView
 
-        subgraph = graph_description_pb2.Graph()
+        subgraph = Graph()
         subgraph.ParseFromString(s)
 
         nodes = {
