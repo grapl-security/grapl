@@ -8,7 +8,6 @@ from pydgraph import DgraphClient
 
 
 class RareParentOfCmd(Analyzer):
-
     def __init__(self, dgraph_client: DgraphClient, counter: ParentChildCounter):
         super(RareParentOfCmd, self).__init__(dgraph_client)
         self.counter = counter
@@ -39,10 +38,7 @@ class RareParentOfCmd(Analyzer):
         return (
             ProcessQuery()
             .with_process_name(eq=parent_whitelist)
-            .with_children(
-                ProcessQuery()
-                .with_process_name(eq="cmd.exe")
-            )
+            .with_children(ProcessQuery().with_process_name(eq="cmd.exe"))
         )
 
     def on_response(self, response: ProcessView, output: Any) -> None:
@@ -59,6 +55,6 @@ class RareParentOfCmd(Analyzer):
                     analyzer_name="Rare Parent of cmd.exe",
                     node_view=response,
                     risk_score=10,
-                    lenses=[('hostname', asset_id)]
+                    lenses=[("hostname", asset_id)],
                 )
             )

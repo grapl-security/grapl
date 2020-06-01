@@ -187,7 +187,6 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
         txn.discard()
 
 
-
 def get_s3_client():
     if IS_LOCAL:
         return boto3.resource(
@@ -237,7 +236,6 @@ def lambda_handler(events: Any, context: Any) -> None:
         for node in nodes:
             LOGGER.debug(f"Copying node: {node}")
 
-
             for lens_type, lens_name in lens_dict:
                 LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
                 lens_id = lens_name + lens_type
@@ -249,7 +247,6 @@ def lambda_handler(events: Any, context: Any) -> None:
                 # Attach to scope
                 create_edge(mg_client, lens.uid, "scope", node.uid)
 
-
                 # If a node shows up in a lens all of its connected nodes should also show up in that lens
                 for edge_list in edges.values():
                     for edge in edge_list:
@@ -257,7 +254,6 @@ def lambda_handler(events: Any, context: Any) -> None:
                         to_uid = uid_map[edge["to"]]
                         create_edge(mg_client, lens.uid, "scope", from_uid)
                         create_edge(mg_client, lens.uid, "scope", to_uid)
-
 
         for node in nodes:
             attach_risk(

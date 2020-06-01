@@ -25,13 +25,11 @@ if IS_LOCAL:
     JWT_SECRET = str(uuid.uuid4())
     os.environ["BUCKET_PREFIX"] = "local-grapl"
 else:
-    JWT_SECRET_ID = os.environ['JWT_SECRET_ID']
+    JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
-    client = boto3.client('secretsmanager')
+    client = boto3.client("secretsmanager")
 
-    JWT_SECRET = client.get_secret_value(
-        SecretId=JWT_SECRET_ID,
-    )['SecretString']
+    JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
 
 ORIGIN = (
@@ -51,6 +49,7 @@ logging.basicConfig(stream=sys.stdout, level=LEVEL)
 LOGGER = logging.getLogger("engagement-creator")
 
 app = Chalice(app_name="engagement-edge")
+
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
     LOGGER.info(f"connecting to dgraph at {MG_ALPHA}")
@@ -108,7 +107,7 @@ def edge_in_lens(
                     uid,
                     node_key,
                     node_type: dgraph.type,
-                    
+
                     ~scope @filter(eq(lens, $lens_name)) {{
                         uid,
                         node_type: dgraph.type,
@@ -131,7 +130,7 @@ def edge_in_lens(
 def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
     query = """
         query q0($a: string)
-        {  
+        {
             q0(func: eq(lens, $a)) {
                 uid,
                 node_type: dgraph.type,
@@ -143,7 +142,7 @@ def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
                     expand(_all_),
                     node_type: dgraph.type,
                 }
-            }  
+            }
       }"""
 
     txn = dg_client.txn(read_only=True)
@@ -161,7 +160,7 @@ def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
 def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
     query = """
         query q0($a: string)
-        {  
+        {
             q0(func: eq(lens, $a)) {
                 uid,
                 node_type: dgraph.type,
@@ -180,7 +179,7 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
                         risk_score
                     }
                 }
-            }  
+            }
       }"""
 
     txn = dg_client.txn(read_only=True)
@@ -284,7 +283,7 @@ def expand_node_forward(
     query = """
         query res($node_key: string)
         {
-        
+
             res(func: eq(node_key, $node_key))
             {
                 uid,
@@ -295,7 +294,7 @@ def expand_node_forward(
                 }
                 node_type: dgraph.type
             }
-      
+
         }
     """
 
@@ -608,7 +607,6 @@ def check_login():
         return respond(None, "True")
     else:
         return respond(None, "False")
-
 
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])

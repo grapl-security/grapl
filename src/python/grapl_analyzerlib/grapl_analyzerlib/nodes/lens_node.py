@@ -212,9 +212,7 @@ class EngagementClient(GraphClient):
         self.eg_uid = eg_uid
 
     @staticmethod
-    def from_name(
-        engagement_name: str, src_client: GraphClient
-    ):
+    def from_name(engagement_name: str, src_client: GraphClient):
 
         engagement_lens = LensView.get_or_create(src_client, engagement_name)
         return EngagementClient(engagement_lens.uid, src_client)
@@ -307,7 +305,9 @@ class LensView(Viewable):
         return "Lens"
 
     @staticmethod
-    def get_or_create(gclient: GraphClient, lens_name: str, lens_type: str) -> "LensView":
+    def get_or_create(
+        gclient: GraphClient, lens_name: str, lens_type: str
+    ) -> "LensView":
         eg_txn = gclient.txn(read_only=False)
         try:
             query = """
@@ -320,7 +320,7 @@ class LensView(Viewable):
                  node_key,
                }
              }"""
-            res = eg_txn.query(query, variables={"$a": 'lens-' + lens_type + lens_name})
+            res = eg_txn.query(query, variables={"$a": "lens-" + lens_type + lens_name})
 
             res = json.loads(res.json)["res"]
             new_uid = None
@@ -343,9 +343,7 @@ class LensView(Viewable):
         finally:
             eg_txn.discard()
 
-        self_lens = (
-            LensQuery().with_lens_name(eq=lens_name).query_first(gclient)
-        )
+        self_lens = LensQuery().with_lens_name(eq=lens_name).query_first(gclient)
         assert self_lens, "Lens must exist"
         return self_lens
 
@@ -391,15 +389,11 @@ class LensView(Viewable):
 
 class EngagementView(LensView):
     @staticmethod
-    def get_or_create(
-        graph_client: GraphClient, lens_name: str
-    ) -> "EngagementView":
+    def get_or_create(graph_client: GraphClient, lens_name: str) -> "EngagementView":
         print("todo: removeme")
-        lens = LensView.get_or_create(graph_client, lens_name, 'engagement')
+        lens = LensView.get_or_create(graph_client, lens_name, "engagement")
 
-        engagement_client = EngagementClient(
-            lens.uid, graph_client,
-        )
+        engagement_client = EngagementClient(lens.uid, graph_client,)
 
         return EngagementView(engagement_client, lens.uid, lens.node_key)
 
