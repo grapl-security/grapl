@@ -282,7 +282,6 @@ class EngagementCreator extends cdk.NestedStack {
         vpc: ec2.IVpc,
         publishes_to: sns.ITopic,
         master_graph: DGraphEcs,
-        engagement_graph: DGraphEcs,
     ) {
         super(scope, id);
 
@@ -295,7 +294,6 @@ class EngagementCreator extends cdk.NestedStack {
             {
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
-                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                 },
                 vpc: vpc,
                 reads_from: analyzer_matched_sugraphs.bucket,
@@ -325,7 +323,6 @@ class ModelPluginDeployer extends cdk.NestedStack {
         prefix: string,
         jwt_secret: secretsmanager.Secret,
         master_graph: DGraphEcs,
-        engagement_graph: DGraphEcs,
         model_plugin_bucket: s3.IBucket,
         user_auth_table: UserAuthDb,
         vpc: ec2.Vpc,
@@ -343,7 +340,6 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 vpc: vpc,
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
-                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                     "JWT_SECRET_ID": jwt_secret.secretArn,
                     "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
                     "BUCKET_PREFIX": prefix
@@ -387,7 +383,7 @@ export interface GraplEnvironementProps {
     prefix: string,
     jwt_secret: secretsmanager.Secret,
     vpc: ec2.IVpc,
-    engagement_graph: DGraphEcs,
+    master_graph: DGraphEcs,
     user_auth_table: UserAuthDb,
 }
 
@@ -401,8 +397,6 @@ export class GraplCdkStack extends cdk.Stack {
 
         const mgZeroCount = Number(process.env.MG_ZEROS_COUNT) || 1;
         const mgAlphaCount = Number(process.env.MG_ALPHAS_COUNT) || 1;
-        const egZeroCount = Number(process.env.EG_ZEROS_COUNT) || 1;
-        const egAlphaCount = Number(process.env.EG_ALPHAS_COUNT) || 1;
 
         const grapl_vpc = new ec2.Vpc(this, prefix + '-GraplVPC', {
             natGateways: 1,
@@ -438,14 +432,6 @@ export class GraplCdkStack extends cdk.Stack {
             mgAlphaCount,
         );
 
-        const engagement_graph = new DGraphEcs(
-            this,
-            'engagementgraphcluster',
-            grapl_vpc,
-            egZeroCount,
-            egAlphaCount,
-        );
-
         const engagement_creator = new EngagementCreator(
             this,
             'engagement-creator',
@@ -453,7 +439,6 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
             engagements_created_topic,
             master_graph,
-            engagement_graph,
         );
 
         const model_plugins_bucket = new s3.Bucket(this, prefix + '-model-plugins-bucket', {
@@ -467,7 +452,7 @@ export class GraplCdkStack extends cdk.Stack {
             prefix,
             jwtSecret,
             master_graph,
-            engagement_graph,
+            master_graph,
             model_plugins_bucket,
             user_auth_table,
             grapl_vpc,
@@ -528,11 +513,11 @@ export class GraplCdkStack extends cdk.Stack {
         );
 
         this.grapl_env = {
-            prefix: prefix,
+            prefix,
             jwt_secret: jwtSecret,
             vpc: grapl_vpc,
-            engagement_graph: engagement_graph,
-            user_auth_table: user_auth_table,
+            master_graph,
+            user_auth_table,
         }
     }
 }

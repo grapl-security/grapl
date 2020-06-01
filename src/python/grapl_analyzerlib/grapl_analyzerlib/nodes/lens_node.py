@@ -2,6 +2,7 @@ import json
 from typing import *
 
 # noinspection Mypy
+from grapl_analyzerlib.grapl_client import GraphClient
 from pydgraph import DgraphClient, Txn
 
 from grapl_analyzerlib.nodes.any_node import NodeQuery, NodeView
@@ -169,89 +170,7 @@ def create_edge(
         txn.discard()
 
 
-class CopyingTransaction(Txn):
-    def __init__(self, copying_client, read_only=False, best_effort=False) -> None:
-        super().__init__(copying_client.src_client, read_only, best_effort)
-        self.src_client = copying_client.src_client
-        self.dst_client = copying_client.dst_client
-        self.copied_uids = []  # type: List[str]
-
-    def get_copied_uids(self) -> List[str]:
-        return self.copied_uids
-
-    def query(
-        self, query, variables=None, timeout=None, metadata=None, credentials=None
-    ):
-        """
-        Query the dst graph.
-        if response, return response
-        If it does not, check if it exists in src graph
-        if it does
-            * copy from src graph to dst graph
-            * hook up new nodes to the engagement
-        return query on dst graph
-        :return:
-        """
-
-        # Query the dst graph
-        raw_dst_res = dg_query(self.dst_client, query)
-        dst_res = json.loads(raw_dst_res.json)
-        # If it's already there, return the response, no need to copy
-        if any(dst_res.values()):
-            # Make sure we register these nodes as 'copied', as they need to be tagged by our
-            # engagement
-            nodes = {}  # type: Dict[str, Dict[str, Any]]
-            edges = []
-            response_into_matrix(dst_res.values(), nodes, edges)
-            for node in nodes.values():
-                self.copied_uids.append(node["uid"])
-            return raw_dst_res
-
-        # Otherwise, we need to copy data from our src to dst
-        # First we query the src graph
-        # If we don't get a response, return
-        raw_src_res = dg_query(self.src_client, query)
-        src_res = json.loads(raw_src_res.json)
-        if not any(src_res.values()):
-            return raw_src_res
-
-        # Next we strip the response from the src, removing any 'uid' values, since those
-        # won't match up with our dst graph's uids
-        # The end result of our mutation should be an adjacency matrix of nodes and edges
-
-        nodes = {}  # type: Dict[str, Dict[str, Any]]
-        edges = []
-        response_into_matrix(src_res.values(), nodes, edges)
-        uid_map = {}  # Map from old uid to new uid
-        # Upsert every node, and write every edge
-        for node in nodes.values():
-            old_uid = node.pop("uid")
-            new_uid = copy_node(
-                self.src_client, self.dst_client, node["node_key"], node,
-            )
-
-            uid_map[old_uid] = new_uid
-
-        self.copied_uids.extend(uid_map.values())
-
-        for edge in edges:
-            from_uid, edge_name, to_uid = edge
-            create_edge(self.dst_client, uid_map[from_uid], edge_name, uid_map[to_uid])
-
-        return dg_query(self.dst_client, query)
-
-
-class CopyingDgraphClient(DgraphClient):
-    def __init__(self, src_client: DgraphClient, dst_client: DgraphClient) -> None:
-        super().__init__(*src_client._clients, *dst_client._clients)
-        self.src_client = src_client
-        self.dst_client = dst_client
-
-    def txn(self, read_only=False, best_effort=False) -> CopyingTransaction:
-        return CopyingTransaction(self, read_only=read_only, best_effort=best_effort)
-
-
-class EngagementTransaction(CopyingTransaction):
+class EngagementTransaction(Txn):
     def __init__(
         self, copying_client, eg_uid: str, read_only=False, best_effort=False
     ) -> None:
@@ -263,24 +182,21 @@ class EngagementTransaction(CopyingTransaction):
     ):
         copied_uids = set()
 
-        txn = super()
-        try:
-            txn.query(query, variables, timeout, metadata, credentials)
-            copied_uids.update(txn.get_copied_uids())
-        finally:
-            txn.discard()
-
-        txn = super()
+        txn = super().__init__(read_only=True)
         try:
             res = txn.query(query, variables, timeout, metadata, credentials)
-            copied_uids.update(txn.get_copied_uids())
+            nodes = {}  # type: Dict[str, Dict[str, Any]]
+            edges = []
+            response_into_matrix(res.values(), nodes, edges)
+            for node in nodes.values():
+                copied_uids.update(node["uid"])
         finally:
             txn.discard()
 
         for uid in copied_uids:
             if uid == self.eg_uid:
                 continue
-            dst_txn = self.dst_client.txn(read_only=False)
+            dst_txn = super().__init__(read_only=False)
             try:
                 mu = {"uid": self.eg_uid, "scope": {"uid": uid}}
 
@@ -290,19 +206,18 @@ class EngagementTransaction(CopyingTransaction):
         return res
 
 
-class EngagementClient(CopyingDgraphClient):
-    def __init__(self, eg_uid: str, src_client: DgraphClient, dst_client: DgraphClient):
-        super().__init__(src_client, dst_client)
+class EngagementClient(GraphClient):
+    def __init__(self, eg_uid: str, src_client: GraphClient):
+        super().__init__(src_client)
         self.eg_uid = eg_uid
 
     @staticmethod
     def from_name(
-        engagement_name: str, src_client: DgraphClient, dst_client: DgraphClient
+        engagement_name: str, src_client: GraphClient
     ):
-        cclient = CopyingDgraphClient(src_client=src_client, dst_client=dst_client)
 
-        engagement_lens = LensView.get_or_create(cclient, engagement_name)
-        return EngagementClient(engagement_lens.uid, src_client, dst_client)
+        engagement_lens = LensView.get_or_create(src_client, engagement_name)
+        return EngagementClient(engagement_lens.uid, src_client)
 
     def txn(self, read_only=False, best_effort=False) -> EngagementTransaction:
         return EngagementTransaction(
@@ -392,20 +307,20 @@ class LensView(Viewable):
         return "Lens"
 
     @staticmethod
-    def get_or_create(copy_client: CopyingDgraphClient, lens_name: str) -> "LensView":
-        eg_txn = copy_client.dst_client.txn(read_only=False)
+    def get_or_create(gclient: GraphClient, lens_name: str, lens_type: str) -> "LensView":
+        eg_txn = gclient.txn(read_only=False)
         try:
             query = """
             query res($a: string)
             {
-              res(func: eq(lens, $a), first: 1) @cascade
+              res(func: eq(node_key, $a), first: 1) @cascade
                {
                  uid,
                  node_type: dgraph.type,
                  node_key,
                }
              }"""
-            res = eg_txn.query(query, variables={"$a": lens_name})
+            res = eg_txn.query(query, variables={"$a": 'lens-' + lens_type + lens_name})
 
             res = json.loads(res.json)["res"]
             new_uid = None
@@ -415,7 +330,8 @@ class LensView(Viewable):
                 m_res = eg_txn.mutate(
                     set_obj={
                         "lens": lens_name,
-                        "node_key": "lens-" + lens_name,
+                        "lens_type": lens_type,
+                        "node_key": "lens-" + lens_type + lens_name,
                         "dgraph.type": "Lens",
                         "score": 0,
                     },
@@ -428,7 +344,7 @@ class LensView(Viewable):
             eg_txn.discard()
 
         self_lens = (
-            LensQuery().with_lens_name(eq=lens_name).query_first(copy_client.dst_client)
+            LensQuery().with_lens_name(eq=lens_name).query_first(gclient)
         )
         assert self_lens, "Lens must exist"
         return self_lens
@@ -476,12 +392,13 @@ class LensView(Viewable):
 class EngagementView(LensView):
     @staticmethod
     def get_or_create(
-        copy_client: CopyingDgraphClient, lens_name: str
+        graph_client: GraphClient, lens_name: str
     ) -> "EngagementView":
-        lens = LensView.get_or_create(copy_client, lens_name)
+        print("todo: removeme")
+        lens = LensView.get_or_create(graph_client, lens_name, 'engagement')
 
         engagement_client = EngagementClient(
-            lens.uid, copy_client.src_client, copy_client.dst_client,
+            lens.uid, graph_client,
         )
 
         return EngagementView(engagement_client, lens.uid, lens.node_key)

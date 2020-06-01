@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import traceback
+import uuid
 
 from base64 import b64decode
 from hashlib import sha1

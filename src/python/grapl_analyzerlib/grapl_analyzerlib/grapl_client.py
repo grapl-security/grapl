@@ -17,17 +17,3 @@ class LocalMasterGraphClient(GraphClient):
         super(LocalMasterGraphClient, self).__init__(
             DgraphClientStub("master_graph:9080")
         )
-
-
-class EngagementGraphClient(GraphClient):
-    def __init__(self) -> None:
-        super(EngagementGraphClient, self).__init__(
-            DgraphClientStub("alpha0.engagementgraphcluster.grapl:9080")
-        )
-
-
-class LocalEngagementGraphClient(GraphClient):
-    def __init__(self) -> None:
-        super(LocalEngagementGraphClient, self).__init__(
-            DgraphClientStub("engagement_graph:9080")
-        )

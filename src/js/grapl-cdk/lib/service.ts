@@ -61,6 +61,7 @@ export class Service extends cdk.Construct {
                 name: "provided",
                 supportsInlineCode: true
             };
+
         const handler = (runtime === lambda.Runtime.PYTHON_3_7) ?
             `${name}.lambda_handler` :
             name;

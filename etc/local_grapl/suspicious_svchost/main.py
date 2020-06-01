@@ -27,6 +27,7 @@ class SuspiciousSvchost(Analyzer):
     def on_response(self, response: ProcessView, output: Any):
         asset_id = response.get_asset().get_hostname()
 
+
         output.send(
             ExecutionHit(
                 analyzer_name="Suspicious svchost",
@@ -35,9 +36,3 @@ class SuspiciousSvchost(Analyzer):
                 lenses=[("hostname", asset_id)],
             )
         )
-
-
-def get_descendents(process: ProcessView) -> None:
-    children = process.get_children()
-    for child in children:
-        get_descendents(child)

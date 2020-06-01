@@ -14,7 +14,7 @@ from grapl_analyzerlib.schemas.schema_builder import ManyToMany
 from pydgraph import DgraphClient, DgraphClientStub
 
 
-def set_schema(client, schema, engagement=False) -> None:
+def set_schema(client, schema) -> None:
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
 
@@ -96,7 +96,7 @@ def update_reverse_edges(client, schema):
         type_str = f"""
 type {type_name} {{
 {predicates}
-            
+
     }}
         """
         type_strs += "\n"
@@ -121,37 +121,13 @@ def provision_mg(mclient) -> None:
         ProcessInboundConnectionSchema(),
         ProcessOutboundConnectionSchema(),
     )
+    mg_schemas = [s.with_forward_edge('risks', ManyToMany(RiskSchema), 'risky_nodes') for s in schemas]
 
-    mg_schema_str = format_schemas(schemas)
+    mg_schemas.append(RiskSchema())
+    mg_schemas.append(LensSchema())
+
+    mg_schema_str = format_schemas(mg_schemas)
     set_schema(mclient, mg_schema_str)
-
-
-def provision_eg(eclient) -> None:
-    # drop_all(mclient)
-    # drop_all(___local_dg_provision_client)
-
-    schemas = [
-        AssetSchema(),
-        ProcessSchema(),
-        FileSchema(),
-        IpConnectionSchema(),
-        IpAddressSchema(),
-        IpPortSchema(),
-        NetworkConnectionSchema(),
-        ProcessInboundConnectionSchema(),
-        ProcessOutboundConnectionSchema(),
-    ]
-
-    eg_schemas = [
-        s.with_forward_edge("risks", ManyToMany(RiskSchema), "risky_nodes")
-        for s in schemas
-    ]
-
-    eg_schemas.append(RiskSchema())
-    eg_schemas.append(LensSchema())
-    eg_schema_str = format_schemas(eg_schemas)
-    set_schema(eclient, eg_schema_str)
-
 
 BUCKET_PREFIX = "local-grapl"
 
@@ -280,23 +256,20 @@ def sqs_provision_loop() -> None:
 
 if __name__ == "__main__":
     time.sleep(5)
-    local_dg_provision_client = DgraphClient(DgraphClientStub("master_graph:9080"))
-    local_eg_provision_client = DgraphClient(DgraphClientStub("engagement_graph:9080"))
+    local_dg_provision_client = DgraphClient(DgraphClientStub('master_graph:9080'))
 
+    print('Provisioning graph database')
     # local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
-    # local_eg_provision_client = DgraphClient(DgraphClientStub('localhost:9081'))
 
     for i in range(0, 150):
         try:
             drop_all(local_dg_provision_client)
-            drop_all(local_eg_provision_client)
             break
         except Exception as e:
             time.sleep(2)
             print("Failed to drop", e)
 
     mg_succ = False
-    eg_succ = False
 
     sqs_t = threading.Thread(target=sqs_provision_loop)
     s3_t = threading.Thread(target=bucket_provision_loop)
@@ -314,17 +287,6 @@ if __name__ == "__main__":
         except Exception as e:
             if i > 10:
                 print("mg provision failed with: ", e)
-
-    for i in range(0, 150):
-        try:
-            if not eg_succ:
-                time.sleep(1)
-                provision_eg(local_eg_provision_client,)
-                eg_succ = True
-                break
-        except Exception as e:
-            if i > 10:
-                print("eg provision failed with: ", e)
 
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
