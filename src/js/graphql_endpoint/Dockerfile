@@ -1,7 +1,6 @@
-FROM node:alpine3.10 AS grapl-graphql-endpoint-build
+FROM node:alpine3.10 AS grapl-graphql-endpoint-deps
 WORKDIR /lambda
 
-RUN apk upgrade && apk add zip
 RUN apk add python
 RUN apk add --update alpine-sdk
 RUN apk add libffi-dev openssl-dev
@@ -12,6 +11,12 @@ COPY package-lock.json .
 
 RUN npm i
 
+FROM node:alpine3.10 AS grapl-graphql-endpoint-build
+WORKDIR /lambda
+COPY --from=grapl-graphql-endpoint-deps /lambda/node_modules node_modules/
+RUN apk upgrade && apk add zip
+
+RUN rm -rf node_modules/grpc/build/
 RUN mkdir -p /lambda/modules/
 COPY modules/* ./modules/
 

@@ -15,16 +15,6 @@ services:
     logging:
       driver: none
 
-  grapl-engagement-graph-db:
-    tty: false
-    image: dgraph/standalone:v1.2.2
-    ports:
-      - "8001:8000"
-      - "8081:8080"
-      - "9081:9080"
-    logging:
-      driver: none
-
   sqs:
     image: localstack/localstack
     environment:
@@ -199,7 +189,6 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
@@ -216,7 +205,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     tty: true
     links:
-      - grapl-engagement-graph-db:engagement_graph
+      - grapl-master-graph-db:master_graph
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -230,7 +219,6 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
@@ -255,7 +243,6 @@ services:
       - IS_LOCAL=True
       - PORT=5000
     links:
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     ports:
       - 5000:5000
@@ -263,7 +250,6 @@ services:
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
     links:
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     ports:
       - 8888:8888
@@ -281,7 +267,6 @@ services:
       - ./etc/local_grapl/:/var/run/target/
     tty: true
     links:
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -290,7 +275,6 @@ services:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
     depends_on:
-      - grapl-engagement-graph-db
       - grapl-master-graph-db
       - s3
       - sqs

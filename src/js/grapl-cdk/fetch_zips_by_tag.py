@@ -16,6 +16,14 @@ except IndexError:
 if not valid_tag.match(tag):
     print('Tag invalid - must be of format v\d+\.\d+\.\d+')
     sys.exit(1)
+try:
+    stable_or_beta = sys.argv[2]
+except IndexError:
+    stable_or_beta = 'latest'
+
+if stable_or_beta not in ('latest', 'beta'):
+    print('Version invalid, mut be latest or beta')
+    sys.exit(1)
 
 raw = subprocess.run(["curl", "-s", "https://api.github.com/repos/grapl-security/grapl/releases/tags/%s" % tag], capture_output=True).stdout
 assets = json.loads(raw)['assets']
@@ -23,7 +31,7 @@ assets = json.loads(raw)['assets']
 for a in assets:
     url = a['browser_download_url']
     filename = a['name']
-    linkname = filename.replace('-%s-latest.zip' % tag, '.zip')
+    linkname = filename.replace(f'-{tag}-{stable_or_beta}.zip', '.zip')
 
     pwd = os.path.abspath('.')
     zips = os.path.join(pwd, 'zips/')
