@@ -121,13 +121,17 @@ def provision_mg(mclient) -> None:
         ProcessInboundConnectionSchema(),
         ProcessOutboundConnectionSchema(),
     )
-    mg_schemas = [s.with_forward_edge('risks', ManyToMany(RiskSchema), 'risky_nodes') for s in schemas]
+    mg_schemas = [
+        s.with_forward_edge("risks", ManyToMany(RiskSchema), "risky_nodes")
+        for s in schemas
+    ]
 
     mg_schemas.append(RiskSchema())
     mg_schemas.append(LensSchema())
 
     mg_schema_str = format_schemas(mg_schemas)
     set_schema(mclient, mg_schema_str)
+
 
 BUCKET_PREFIX = "local-grapl"
 
@@ -256,9 +260,9 @@ def sqs_provision_loop() -> None:
 
 if __name__ == "__main__":
     time.sleep(5)
-    local_dg_provision_client = DgraphClient(DgraphClientStub('master_graph:9080'))
+    local_dg_provision_client = DgraphClient(DgraphClientStub("master_graph:9080"))
 
-    print('Provisioning graph database')
+    print("Provisioning graph database")
     # local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
 
     for i in range(0, 150):
