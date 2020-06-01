@@ -20,14 +20,15 @@
 # Base image
 #
 
-FROM rust:alpine AS grapl-rust-base
-RUN apk add --no-cache musl-dev libc6-compat protoc
+FROM rust:1-slim-buster AS grapl-rust-base
+RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
-RUN adduser -D --gecos '' --home /home/grapl --shell /bin/bash grapl
+RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
 USER grapl
 ENV USER grapl
 WORKDIR /home/grapl
+RUN rustup target add x86_64-unknown-linux-musl
 
 #
 # Dependency build image
@@ -82,9 +83,9 @@ COPY --chown=grapl Cargo.toml .
 RUN mkdir -p /home/grapl/.cargo
 RUN cargo vendor --versioned-dirs --locked > /home/grapl/.cargo/config
 # build all the deps
-RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build
-RUN if [ "${release_target}" == "release" ]; \
-        then RUSTFLAGS="-C target-feature=-crt-static" cargo build --release; \
+RUN cargo build --target=x86_64-unknown-linux-musl
+RUN if test "${release_target}" = "release"; then \
+      cargo build --target=x86_64-unknown-linux-musl --release; \
     fi
 
 #
@@ -103,24 +104,15 @@ COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/vendor vendor
 # copy in the target directory from grapl-rust-deps-build
 COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/target target
 # "invalidate" all the grapl services, we want to rebuild them here
-RUN rm -rf target/debug/.fingerprint/analyzer-dispatcher*
-RUN rm -rf target/release/.fingerprint/analyzer-dispatcher*
-RUN rm -rf target/debug/.fingerprint/derive-dynamic-node*
-RUN rm -rf target/release/.fingerprint/derive-dynamic-node*
-RUN rm -rf target/debug/.fingerprint/generic-subgraph-generator*
-RUN rm -rf target/release/.fingerprint/generic-subgraph-generator*
-RUN rm -rf target/debug/.fingerprint/grapl-graph-descriptions*
-RUN rm -rf target/release/.fingerprint/grapl-graph-descriptions*
-RUN rm -rf target/debug/.fingerprint/graph-generator-lib*
-RUN rm -rf target/release/.fingerprint/graph-generator-lib*
-RUN rm -rf target/debug/.fingerprint/grapl-config*
-RUN rm -rf target/release/.fingerprint/grapl-config*
-RUN rm -rf target/debug/.fingerprint/graph-merger*
-RUN rm -rf target/release/.fingerprint/graph-merger*
-RUN rm -rf target/debug/.fingerprint/node-identifier*
-RUN rm -rf target/release/.fingerprint/node-identifier*
-RUN rm -rf target/debug/.fingerprint/sysmon-subgraph-generator*
-RUN rm -rf target/release/.fingerprint/sysmon-subgraph-generator*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/analyzer-dispatcher*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/derive-dynamic-node*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/generic-subgraph-generator*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/grapl-graph-descriptions*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/graph-generator-lib*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/grapl-config*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/graph-merger*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/node-identifier*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/sysmon-subgraph-generator*
 # copy in the sources
 COPY --chown=grapl ./analyzer-dispatcher analyzer-dispatcher
 COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
@@ -136,7 +128,7 @@ COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
 # build everything
 # FIXME: cargo test instead of cargo build once the tests work
-RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build
-RUN if [ "${release_target}" == "release" ]; \
-      then RUSTFLAGS="-C target-feature=-crt-static" cargo build --release; \
+RUN cargo build --target=x86_64-unknown-linux-musl
+RUN if test "${release_target}" = "release"; then \
+      cargo build --target=x86_64-unknown-linux-musl --release; \
     fi
