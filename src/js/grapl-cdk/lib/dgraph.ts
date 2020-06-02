@@ -40,7 +40,7 @@ class Zero extends cdk.Construct {
         zeroTask.addContainer(id + 'Container', {
             // --my is our own hostname (graph + id)
             // --peer is the other dgraph zero hostname
-            image: ecs.ContainerImage.fromRegistry("dgraph/standalone:v1.2.2"),
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.2.2"),
             command,
             logging: logDriver,
             memoryReservationMiB: 1024,
@@ -89,7 +89,7 @@ class Alpha extends cdk.Construct {
         });
 
         alphaTask.addContainer(id + graph_name + 'Container', {
-            image: ecs.ContainerImage.fromRegistry("dgraph/standalone:v1.2.2"),
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.2.2"),
             command: [
                 "dgraph", "alpha", `--my=${id}.${graph_name}.grapl:7080`,
                 "--lru_mb=1024", `--zero=${zero}.${graph_name}.grapl:5080`,
