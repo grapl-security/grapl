@@ -82,11 +82,8 @@ COPY --chown=grapl Cargo.toml .
 # vendor all the deps
 RUN mkdir -p /home/grapl/.cargo
 RUN cargo vendor --versioned-dirs --locked > /home/grapl/.cargo/config
-# build all the deps
+# debug build of all the deps
 RUN cargo build --target=x86_64-unknown-linux-musl
-RUN if test "${release_target}" = "release"; then \
-      cargo build --target=x86_64-unknown-linux-musl --release; \
-    fi
 
 #
 # Source build image
@@ -129,6 +126,8 @@ COPY --chown=grapl Cargo.toml .
 # build everything
 # FIXME: cargo test instead of cargo build once the tests work
 RUN cargo build --target=x86_64-unknown-linux-musl
+# Now do a clean release build
 RUN if test "${release_target}" = "release"; then \
+      cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl --release; \
     fi
