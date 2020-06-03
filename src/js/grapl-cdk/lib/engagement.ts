@@ -188,8 +188,9 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         const _notebook = new sagemaker.CfnNotebookInstance(
             this,
-            'SagemakerEndpoint',
+            'SageMakerEndpoint',
             {
+                notebookInstanceName: 'Grapl-Notebook',
                 instanceType: 'ml.t2.medium',
                 securityGroupIds: [this.securityGroup.securityGroupId],
                 subnetId: vpc.privateSubnets[0].subnetId,
