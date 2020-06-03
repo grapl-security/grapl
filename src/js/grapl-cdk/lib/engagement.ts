@@ -218,8 +218,7 @@ export class EngagementUx extends cdk.Stack {
             bucketName,
             publicReadAccess: true,
             websiteIndexDocument: 'index.html',
-            removalPolicy: RemovalPolicy.DESTROY,
-            encryption: BucketEncryption.KMS_MANAGED
+            removalPolicy: RemovalPolicy.DESTROY
         });
 
         getEdgeGatewayId(
