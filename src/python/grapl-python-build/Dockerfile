@@ -1,11 +1,11 @@
-FROM python:3.7-alpine AS grapl-python-build
-RUN apk add --no-cache musl-dev libc6-compat protoc build-base linux-headers zip
+FROM python:3.7-slim-buster AS grapl-python-build
+RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends musl-dev protobuf-compiler build-essential zip bash
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
-RUN adduser -D --gecos '' --home /home/grapl --shell /bin/bash grapl
+RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
 USER grapl
 ENV USER grapl
 WORKDIR /home/grapl
 RUN python -mvenv venv
-RUN source venv/bin/activate && pip install --upgrade pip
-RUN source venv/bin/activate && pip install wheel grpcio chalice
+RUN /bin/bash -c "source venv/bin/activate && pip install --upgrade pip"
+RUN /bin/bash -c "source venv/bin/activate && pip install wheel grpcio chalice"

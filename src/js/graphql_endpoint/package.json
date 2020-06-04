@@ -19,7 +19,7 @@
     "express-graphql": "^0.9.0",
     "graphql": "^15.0.0",
     "graphql-type-json": "^0.3.1",
-    "grpc": "^1.24.2",
+    "grpc": "^1.24.3",
     "jsonwebtoken": "^8.5.1",
     "protobufjs": "^6.9.0"
   },

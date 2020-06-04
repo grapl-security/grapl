@@ -49,9 +49,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-queue"
-      - "SYSMON_GRAPH_GENERATOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-queue"
-      - "NODE_IDENTIFIER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-queue"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -70,7 +68,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "NODE_IDENTIFIER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
     tty: false
     links:
@@ -93,7 +91,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "NODE_IDENTIFIER_RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
       - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
     tty: false
     links:
@@ -139,7 +137,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - "ANALYZER_EXECUTOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
     tty: false
     links:
@@ -167,7 +165,7 @@ services:
       - "IS_RETRY=False"
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "ANALYZER_EXECUTOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
