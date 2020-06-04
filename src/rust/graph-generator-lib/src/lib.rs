@@ -226,7 +226,7 @@ pub async fn local_service<
                     message_body: serde_json::to_string(&output_event)
                         .expect("failed to encode s3 event"),
                     queue_url:
-                        "http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue"
+                        "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
                             .to_string(),
                     ..Default::default()
                 })
@@ -295,10 +295,10 @@ fn handler<
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
         tokio_compat::run_std(async move {
-            let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-            info!("Queue Url: {}", queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+            let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+            info!("Queue Url: {}", source_queue_url);
 
+            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
             info!("Output events to: {}", bucket);
             let region = config::region();
@@ -308,7 +308,7 @@ fn handler<
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
             sqs_lambda::sqs_service::sqs_service(
-                queue_url,
+                source_queue_url,
                 initial_messages,
                 bucket,
                 ctx,
@@ -387,10 +387,10 @@ pub async fn run_graph_generator_local<
     generator: EH,
     event_decoder: ED,
 ) {
-    let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
+    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
     loop {
-        let queue_url = queue_url.clone();
+        let queue_url = source_queue_url.clone();
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
 

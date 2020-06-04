@@ -313,7 +313,7 @@ def emit_event(s3, event: ExecutionHit) -> None:
         )
         send_s3_event(
             sqs,
-            "http://sqs.us-east-1.amazonaws.com:9324/queue/engagement-creator-queue",
+            "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
             "local-grapl-analyzer-matched-subgraphs-bucket",
             key,
         )
@@ -484,9 +484,9 @@ if IS_LOCAL:
             while not alive:
                 try:
                     if "QueueUrls" not in sqs.list_queues(
-                        QueueNamePrefix="analyzer-executor-queue"
+                        QueueNamePrefix="grapl-analyzer-executor-queue"
                     ):
-                        LOGGER.info("Waiting for analyzer-executor-queue to be created")
+                        LOGGER.info("Waiting for grapl-analyzer-executor-queue to be created")
                         time.sleep(2)
                         continue
                 except (
@@ -499,7 +499,7 @@ if IS_LOCAL:
                 alive = True
 
             res = sqs.receive_message(
-                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue",
+                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
                 WaitTimeSeconds=3,
                 MaxNumberOfMessages=10,
             )
@@ -515,7 +515,7 @@ if IS_LOCAL:
                 lambda_handler(s3_event, {})
 
                 sqs.delete_message(
-                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue",
+                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
                     ReceiptHandle=receipt_handle,
                 )
 

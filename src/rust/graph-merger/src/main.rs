@@ -333,9 +333,9 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
     std::thread::spawn(move || {
         tokio_compat::run_std(async move {
-            let graph_merger_queue_url =
-                std::env::var("GRAPH_MERGER_QUEUE_URL").expect("GRAPH_MERGER_QUEUE_URL");
-            debug!("Queue Url: {}", graph_merger_queue_url);
+            let source_queue_url =
+                std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+            debug!("Queue Url: {}", source_queue_url);
             let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let cache_address = {
                 let retry_identity_cache_addr =
@@ -368,7 +368,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
             sqs_lambda::sqs_service::sqs_service(
-                graph_merger_queue_url,
+                source_queue_url,
                 initial_messages,
                 bucket,
                 ctx,
@@ -619,10 +619,10 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     let graph_merger: GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
         GraphMerger::new(mg_alphas, NopCache {});
 
-    let graph_merger_queue_url =
-        std::env::var("GRAPH_MERGER_QUEUE_URL").expect("GRAPH_MERGER_QUEUE_URL");
+    let source_queue_url =
+        std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
     local_sqs_service(
-        graph_merger_queue_url,
+        source_queue_url,
         "local-grapl-subgraphs-merged-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
@@ -719,11 +719,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let sqs_client = init_sqs_client();
-        let graph_merger_queue_url =
-            std::env::var("GRAPH_MERGER_QUEUE_URL").expect("GRAPH_MERGER_QUEUE_URL");
+        let source_queue_url =
+            std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
         loop {
             match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
-                queue_name_prefix: Some("graph-merger".to_string()),
+                queue_name_prefix: Some("grapl".to_string()),
             })) {
                 Err(_) => {
                     info!("Waiting for SQS to become available");
@@ -731,10 +731,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Ok(response) => {
                     if let Some(urls) = response.queue_urls {
-                        if urls.contains(&graph_merger_queue_url) {
+                        if urls.contains(&source_queue_url) {
                             break;
                         } else {
-                            info!("Waiting for {} to be created", graph_merger_queue_url);
+                            info!("Waiting for {} to be created", source_queue_url);
                             std::thread::sleep(Duration::new(2, 0));
                         }
                     }

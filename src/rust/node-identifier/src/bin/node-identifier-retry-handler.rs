@@ -43,11 +43,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let sqs_client = init_sqs_client();
-        let node_identifier_retry_queue_url = std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL")
-            .expect("NODE_IDENTIFIER_RETRY_QUEUE_URL");
+        let source_queue_url = std::env::var("SOURCE_QUEUE_URL")
+            .expect("SOURCE_QUEUE_URL");
         loop {
             match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
-                queue_name_prefix: Some("node-identifier".to_string()),
+                queue_name_prefix: Some("grapl".to_string()),
             })) {
                 Err(_) => {
                     info!("Waiting for SQS to become available");
@@ -55,12 +55,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Ok(response) => {
                     if let Some(urls) = response.queue_urls {
-                        if urls.contains(&node_identifier_retry_queue_url) {
+                        if urls.contains(&source_queue_url) {
                             break;
                         } else {
                             info!(
                                 "Waiting for {} to be created",
-                                node_identifier_retry_queue_url
+                                source_queue_url
                             );
                             std::thread::sleep(Duration::new(2, 0));
                         }

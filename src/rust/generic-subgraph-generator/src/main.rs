@@ -851,8 +851,8 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
     std::thread::spawn(move || {
         tokio_compat::run_std(async move {
-            let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-            info!("Queue Url: {}", queue_url);
+            let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+            info!("Queue Url: {}", source_queue_url);
             let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let cache_address = {
                 let generic_event_cache_addr =
@@ -884,7 +884,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 event.records.into_iter().map(map_sqs_message).collect();
 
             sqs_lambda::sqs_service::sqs_service(
-                queue_url,
+                source_queue_url,
                 initial_messages,
                 bucket,
                 ctx,

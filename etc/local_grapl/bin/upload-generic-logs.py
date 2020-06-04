@@ -93,7 +93,7 @@ def main(prefix, logfile):
         # local-grapl relies on manual eventing
         if sqs:
             sqs.send_message(
-                QueueUrl="http://localhost:9324/queue/generic-graph-generator-queue",
+                QueueUrl="http://localhost:9324/queue/grapl-generic-graph-generator-queue",
                 MessageBody=into_sqs_message(
                     bucket="{}-sysmon-log-bucket".format(prefix), key=key
                 ),
