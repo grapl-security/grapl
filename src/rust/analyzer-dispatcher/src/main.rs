@@ -273,9 +273,9 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
     std::thread::spawn(move || {
         tokio_compat::run_std(async move {
-            let analyzer_dispatcher_queue_url = std::env::var("ANALYZER_DISPATCHER_QUEUE_URL")
-                .expect("ANALYZER_DISPATCHER_QUEUE_URL");
-            debug!("Queue Url: {}", analyzer_dispatcher_queue_url);
+            let source_queue_url = std::env::var("SOURCE_QUEUE_URL")
+                .expect("SOURCE_QUEUE_URL");
+            debug!("Queue Url: {}", source_queue_url);
             let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
             let bucket = bucket_prefix + "-dispatched-analyzer-bucket";
@@ -290,7 +290,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
             sqs_lambda::sqs_service::sqs_service(
-                analyzer_dispatcher_queue_url,
+                source_queue_url,
                 initial_messages,
                 bucket,
                 ctx,
@@ -387,10 +387,10 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
         s3_client: Arc::new(init_s3_client()),
     };
 
-    let analyzer_dispatcher_queue_url =
-        std::env::var("ANALYZER_DISPATCHER_QUEUE_URL").expect("ANALYZER_DISPATCHER_QUEUE_URL");
+    let source_queue_url =
+        std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
     local_sqs_service(
-        analyzer_dispatcher_queue_url,
+        source_queue_url,
         "local-grapl-analyzer-dispatched-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,
@@ -488,11 +488,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let sqs_client = init_sqs_client();
-        let analyzer_dispatcher_queue_url =
-            std::env::var("ANALYZER_DISPATCHER_QUEUE_URL").expect("ANALYZER_DISPATCHER_QUEUE_URL");
+        let source_queue_url =
+            std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
         loop {
             match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
-                queue_name_prefix: Some("analyzer-dispatcher".to_string()),
+                queue_name_prefix: Some("grapl".to_string()),
             })) {
                 Err(_) => {
                     info!("Waiting for SQS to become available");
@@ -500,12 +500,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 Ok(response) => {
                     if let Some(urls) = response.queue_urls {
-                        if urls.contains(&analyzer_dispatcher_queue_url) {
+                        if urls.contains(&source_queue_url) {
                             break;
                         } else {
                             info!(
                                 "Waiting for {} to be created",
-                                analyzer_dispatcher_queue_url
+                                source_queue_url
                             );
                             std::thread::sleep(Duration::new(2, 0));
                         }

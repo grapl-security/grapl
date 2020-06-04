@@ -895,9 +895,9 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
 
     std::thread::spawn(move || {
         tokio_compat::run_std(async move {
-            let node_identifier_queue_url =
-                std::env::var("NODE_IDENTIFIER_QUEUE_URL").expect("NODE_IDENTIFIER_QUEUE_URL");
-            debug!("Queue Url: {}", node_identifier_queue_url);
+            let source_queue_url =
+                std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+            debug!("Queue Url: {}", source_queue_url);
             let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let cache_address = {
                 let retry_identity_cache_addr =
@@ -953,7 +953,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
             sqs_lambda::sqs_service::sqs_service(
-                node_identifier_queue_url,
+                source_queue_url,
                 initial_messages,
                 bucket,
                 ctx,
@@ -1133,16 +1133,16 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
         region.clone(),
     );
 
-    let node_identifier_queue_url = if should_default {
-        std::env::var("NODE_IDENTIFIER_QUEUE_URL").expect("NODE_IDENTIFIER_QUEUE_URL")
+    let source_queue_url = if should_default {
+        std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL")
     } else {
-        std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL").expect("NODE_IDENTIFIER_RETRY_QUEUE_URL")
+        std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL")
     };
 
     let queue_name = node_identifier_queue_url.split("/").last().unwrap();
     grapl_config::wait_for_s3(init_s3_client()).await?;
     local_sqs_service(
-        node_identifier_queue_url,
+        source_queue_url,
         "local-grapl-subgraphs-generated-bucket",
         Context {
             deadline: Utc::now().timestamp_millis() + 10_000,

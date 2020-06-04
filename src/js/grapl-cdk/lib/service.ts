@@ -16,17 +16,17 @@ class Queues {
     constructor(scope: cdk.Construct, queue_name: string) {
 
         const dead_letter_queue = new sqs.Queue(scope, 'DeadLetterQueue', {
-                queueName: queue_name + '-DeadLetterQueue'
+                queueName: queue_name + '-dead-letter-queue'
         });
 
         this.retry_queue = new sqs.Queue(scope, 'RetryQueue', {
-            queueName: queue_name + '-RetryQueue',
+            queueName: queue_name + '-retry-queue',
             deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 10 },
             visibilityTimeout: cdk.Duration.seconds(360)
         });
 
         this.queue = new sqs.Queue(scope, 'Queue', {
-            queueName: queue_name + '-Queue',
+            queueName: queue_name + '-queue',
             deadLetterQueue: { queue: this.retry_queue, maxReceiveCount: 5 },
             visibilityTimeout: cdk.Duration.seconds(180)
         });
@@ -71,10 +71,10 @@ export class Service {
             `${name}.lambda_handler` :
             name;
 
-        const queues = new Queues(scope, 'Grapl-' + name);
+        const queues = new Queues(scope, 'grapl-' + name);
 
         if (environment) {
-            environment.QUEUE_URL = queues.queue.queueUrl;
+            environment.SOURCE_QUEUE_URL = queues.queue.queueUrl;
             environment.RUST_BACKTRACE = "1";
         }
 
@@ -102,7 +102,7 @@ export class Service {
         }
 
         if (environment) {
-            environment.QUEUE_URL = queues.retry_queue.queueUrl;
+            environment.SOURCE_QUEUE_URL = queues.retry_queue.queueUrl;
         }
 
         let event_retry_handler = new lambda.Function(
