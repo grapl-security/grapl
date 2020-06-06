@@ -333,8 +333,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
     std::thread::spawn(move || {
         tokio_compat::run_std(async move {
-            let source_queue_url =
-                std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+            let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
             debug!("Queue Url: {}", source_queue_url);
             let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let cache_address = {
@@ -619,8 +618,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     let graph_merger: GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
         GraphMerger::new(mg_alphas, NopCache {});
 
-    let source_queue_url =
-        std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
     local_sqs_service(
         source_queue_url,
         "local-grapl-subgraphs-merged-bucket",
@@ -719,8 +717,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let sqs_client = init_sqs_client();
-        let source_queue_url =
-            std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+        let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
         loop {
             match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
                 queue_name_prefix: Some("grapl".to_string()),

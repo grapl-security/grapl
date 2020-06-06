@@ -906,8 +906,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
 
     std::thread::spawn(move || {
         tokio_compat::run_std(async move {
-            let source_queue_url =
-                std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+            let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
             debug!("Queue Url: {}", source_queue_url);
             let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let cache_address = {

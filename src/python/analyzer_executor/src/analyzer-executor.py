@@ -486,7 +486,9 @@ if IS_LOCAL:
                     if "QueueUrls" not in sqs.list_queues(
                         QueueNamePrefix="grapl-analyzer-executor-queue"
                     ):
-                        LOGGER.info("Waiting for grapl-analyzer-executor-queue to be created")
+                        LOGGER.info(
+                            "Waiting for grapl-analyzer-executor-queue to be created"
+                        )
                         time.sleep(2)
                         continue
                 except (
