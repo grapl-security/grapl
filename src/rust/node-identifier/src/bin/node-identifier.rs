@@ -38,8 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let sqs_client = init_sqs_client();
-        let source_queue_url =
-            std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+        let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
         loop {
             match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
                 queue_name_prefix: Some("grapl".to_string()),
