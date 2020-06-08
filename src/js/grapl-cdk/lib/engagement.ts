@@ -17,7 +17,6 @@ import { GraplEnvironementProps } from '../lib/grapl-cdk-stack';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from 'node-dir';
-import {BucketEncryption} from "@aws-cdk/aws-s3";
 
 function getEdgeGatewayId(
     [loginName, graphqlName]: [string, string],
