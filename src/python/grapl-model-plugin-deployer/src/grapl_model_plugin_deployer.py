@@ -7,28 +7,23 @@ import os
 import sys
 import traceback
 import uuid
-
 from base64 import b64decode
 from hashlib import sha1
-from typing import *
+from typing import TypeVar, Dict, Union, List, Any
 
 import boto3
+import pydgraph
 from botocore.client import BaseClient
 from chalice import Chalice, Response
 from github import Github
-from grapl_analyzerlib.grapl_client import GraphClient
-import pydgraph
-from grapl_analyzerlib.schemas import *
-from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
-from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
-from grapl_analyzerlib.schemas.schema_builder import ManyToMany
 from grapl_analyzerlib.grapl_client import (
     GraphClient,
     MasterGraphClient,
     LocalMasterGraphClient,
-    EngagementGraphClient,
-    LocalEngagementGraphClient,
 )
+from grapl_analyzerlib.schemas import NodeSchema
+from grapl_analyzerlib.schemas.schema_builder import ManyToMany, ManyToOne, UidType
+
 
 T = TypeVar("T")
 
@@ -85,7 +80,7 @@ def verify_payload(payload_body, key, signature):
     return new_signature == signature
 
 
-def set_schema(client, schema: str) -> None:
+def set_schema(client: GraphClient, schema: str) -> None:
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
 
@@ -100,21 +95,11 @@ def format_schemas(schema_defs) -> str:
     )
 
 
-def provision_mg(mclient: GraphClient, schemas: List[NodeSchema]) -> None:
+def provision_master_graph(
+    master_graph_client: GraphClient, schemas: List[NodeSchema]
+) -> None:
     mg_schema_str = format_schemas(schemas)
-    set_schema(mclient, mg_schema_str)
-
-
-def provision_eg(eclient: GraphClient, schemas: List[NodeSchema]) -> None:
-    eg_schemas = [
-        s.with_forward_edge("risks", ManyToMany(RiskSchema), "risky_nodes")
-        for s in schemas
-    ]
-
-    eg_schemas.append(RiskSchema())
-    eg_schemas.append(LensSchema())
-    eg_schema_str = format_schemas(eg_schemas)
-    set_schema(eclient, eg_schema_str)
+    set_schema(master_graph_client, mg_schema_str)
 
 
 def get_s3_client() -> Any:
@@ -156,7 +141,7 @@ def get_schema_objects() -> Dict[str, NodeSchema]:
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[0], an[1])}
 
 
-def provision_schemas(mclient, eclient, raw_schemas):
+def provision_schemas(master_graph_client, raw_schemas):
     # For every schema, exec the schema
     for raw_schema in raw_schemas:
         exec(raw_schema, globals())
@@ -167,8 +152,61 @@ def provision_schemas(mclient, eclient, raw_schemas):
     schemas = list(set(schemas) - builtin_nodes)
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
-    provision_mg(mclient, schemas)
-    provision_eg(eclient, schemas)
+    provision_master_graph(master_graph_client, schemas)
+    attach_reverse_edges(master_graph_client, schemas)
+
+
+def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None:
+    for schema in schemas:
+        for edge_name, uid_type, _ in schema.forward_edges:
+            add_reverse_edge_type(client, uid_type, edge_name)
+
+
+def add_reverse_edge_type(
+    client: GraphClient, uid_type: UidType, edge_name: str
+) -> None:
+    type_dict = query_dgraph_type(client, uid_type._inner_type.self_type())
+
+    if isinstance(uid_type, ManyToMany) or isinstance(uid_type, ManyToOne):
+        type_dict[f"<~{edge_name}>"] = ["uid"]
+    else:
+        type_dict[f"<~{edge_name}>"] = "uid"
+
+    type_str = "\n"
+    for type_name, type_d in type_dict.items():
+        predicates = "\n".join(
+            f"\t{predicate_name}: {predicate_type}"
+            for predicate_name, predicate_type in type_d.items()
+        )
+        type_str += f"""
+        \ntype {type_name} {{
+        {predicates}
+        }}
+        """
+
+    txn = client.txn(read_only=False)
+    op = pydgraph.Operation(schema=type_str)
+    client.alter(op)
+
+
+def query_dgraph_type(client: GraphClient, type_name: str) -> Dict[str, Any]:
+    query = f"""
+    schema(type: {type_name}) {{
+      type
+      index
+    }}
+    """
+
+    txn = client.txn(read_only=True)
+    try:
+        res = json.loads(txn.query(query).json)
+    finally:
+        txn.discard()
+
+    return {
+        (f"<{d['name']}>" if d["name"].startswith("~") else d["name"]): d["type"]
+        for d in res["types"][0]["fields"]
+    }
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
@@ -263,12 +301,9 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     ]
 
     provision_schemas(
-        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
-        LocalEngagementGraphClient() if IS_LOCAL else EngagementGraphClient(),
-        raw_schemas,
+        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(), raw_schemas,
     )
 
-    # TODO: Handle new reverse edges
     for path, file in plugin_files.items():
         upload_plugin(s3_client, path, file)
 
