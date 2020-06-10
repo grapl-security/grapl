@@ -184,7 +184,6 @@ def add_reverse_edge_type(
         }}
         """
 
-    txn = client.txn(read_only=False)
     op = pydgraph.Operation(schema=type_str)
     client.alter(op)
 
