@@ -9,4 +9,6 @@ edition = "2018"
 [dependencies]
 log = "0.4.*"
 sqs-lambda = "0.20.*"
+#sqs-lambda = {path = "../sqs-lambda"}
+
 rusoto_core = {version="0.43.0", default_features = false, features=["rustls"]}

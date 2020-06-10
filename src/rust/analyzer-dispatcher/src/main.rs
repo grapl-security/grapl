@@ -100,7 +100,7 @@ where
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = Vec<AnalyzerDispatchEvent>;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     async fn handle_event(
         &mut self,
@@ -127,7 +127,7 @@ where
             Ok(keys) => keys,
             Err(e) => {
                 return OutputEvent::new(Completion::Error(
-                    sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
+                    sqs_lambda::error::Error::ProcessingError(e.to_string()),
                 ))
             }
         };
@@ -154,7 +154,7 @@ where
         let completed = if let Some(e) = failed {
             OutputEvent::new(Completion::Partial((
                 dispatch_events,
-                sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             )))
         } else {
             OutputEvent::new(Completion::Total(dispatch_events))
@@ -174,7 +174,7 @@ pub struct SubgraphSerializer {
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = Vec<AnalyzerDispatchEvent>;
     type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     fn serialize_completed_events(
         &mut self,
@@ -194,7 +194,6 @@ impl CompletionEventSerializer for SubgraphSerializer {
             let event = json!({
                 "key": event.key,
                 "subgraph": encode_subgraph(&final_subgraph)
-                    .map_err(Arc::new)
                     .map_err(|e| {
                         sqs_lambda::error::Error::EncodeError(e.to_string())
                     })?
@@ -202,7 +201,6 @@ impl CompletionEventSerializer for SubgraphSerializer {
 
             serialized.push(
                 serde_json::to_vec(&event)
-                    .map_err(Arc::new)
                     .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?,
             );
         }

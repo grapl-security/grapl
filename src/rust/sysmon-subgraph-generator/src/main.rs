@@ -29,7 +29,6 @@ use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
 use sqs_lambda::event_retriever::S3PayloadRetriever;
-use sqs_lambda::local_service::local_service;
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
 use sqs_lambda::s3_event_emitter::S3EventEmitter;
@@ -185,6 +184,7 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
     let outbound = ProcessOutboundConnectionBuilder::default()
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessOutboundConnectionState::Connected)
+        .ip_address(conn_log.event_data.source_ip.clone())
         .port(conn_log.event_data.source_port)
         .created_timestamp(timestamp)
         .build()
@@ -477,38 +477,41 @@ impl PayloadDecoder<Vec<u8>> for ZstdDecoder {
     }
 }
 
-#[derive(Clone)]
-struct SysmonSubgraphGenerator<C, E>
+struct SysmonSubgraphGenerator<C>
 where
-    C: Cache<E> + Clone + Send + Sync + 'static,
-    E: Debug + Clone + Send + Sync + 'static,
+    C: Cache + Clone + Send + Sync + 'static,
 {
     cache: C,
-    _p: std::marker::PhantomData<(C, E)>,
 }
 
-impl<C, E> SysmonSubgraphGenerator<C, E>
+impl<C> Clone for SysmonSubgraphGenerator<C>
 where
-    C: Cache<E> + Clone + Send + Sync + 'static,
-    E: Debug + Clone + Send + Sync + 'static,
+    C: Cache + Clone + Send + Sync + 'static,
 {
-    pub fn new(cache: C) -> Self {
+    fn clone(&self) -> Self {
         Self {
-            cache,
-            _p: PhantomData,
+            cache: self.cache.clone(),
         }
     }
 }
 
-#[async_trait]
-impl<C, E> EventHandler for SysmonSubgraphGenerator<C, E>
+impl<C> SysmonSubgraphGenerator<C>
 where
-    C: Cache<E> + Clone + Send + Sync + 'static,
-    E: Debug + Clone + Send + Sync + 'static,
+    C: Cache + Clone + Send + Sync + 'static,
+{
+    pub fn new(cache: C) -> Self {
+        Self { cache }
+    }
+}
+
+#[async_trait]
+impl<C> EventHandler for SysmonSubgraphGenerator<C>
+where
+    C: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<u8>;
     type OutputEvent = Graph;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     async fn handle_event(
         &mut self,
@@ -624,7 +627,7 @@ where
         let mut completed = if let Some(e) = failed {
             OutputEvent::new(Completion::Partial((
                 final_subgraph,
-                sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
+                sqs_lambda::error::Error::ProcessingError((e.to_string())),
             )))
         } else {
             OutputEvent::new(Completion::Total(final_subgraph))
@@ -643,20 +646,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     simple_logger::init_with_level(grapl_config::grapl_log_level());
     info!("Starting sysmon-subgraph-generator");
 
-    let is_local = std::env::var("IS_LOCAL")
-        .map(|is_local| is_local.to_lowercase().parse().unwrap_or(false))
-        .unwrap_or(false);
-
-    info!("is_local: {}", is_local);
-
-    if is_local {
-        let generator: SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
-            SysmonSubgraphGenerator::new(NopCache {});
+    if grapl_config::is_local() {
+        let generator = SysmonSubgraphGenerator::new(NopCache {});
 
         run_graph_generator_local(generator, ZstdDecoder::default()).await;
     } else {
-        let generator: SysmonSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
-            SysmonSubgraphGenerator::new(event_cache().await);
+        let generator = SysmonSubgraphGenerator::new(event_cache().await);
 
         run_graph_generator_aws(generator, ZstdDecoder::default());
     }

@@ -63,6 +63,24 @@ COPY --chown=grapl ./graph-generator-lib/Cargo.toml graph-generator-lib/
 RUN mkdir -p grapl-config/src
 RUN touch grapl-config/src/lib.rs
 COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
+
+# copy in Cargo.toml for sqs-lambda
+RUN mkdir -p sqs-lambda/src
+RUN touch sqs-lambda/src/lib.rs
+COPY --chown=grapl ./sqs-lambda/Cargo.toml sqs-lambda/
+
+
+# copy in Cargo.toml for derive_aktor
+RUN mkdir -p derive_aktor/src
+RUN touch derive_aktor/src/lib.rs
+COPY --chown=grapl ./derive_aktor/Cargo.toml derive_aktor/
+
+
+# copy in Cargo.toml for aktors
+RUN mkdir -p aktors/src
+RUN touch aktors/src/lib.rs
+COPY --chown=grapl ./aktors/Cargo.toml aktors/
+
 # copy in Cargo.toml for graph-merger
 RUN mkdir -p graph-merger/src
 RUN echo 'fn main() {}' > graph-merger/src/main.rs
@@ -110,6 +128,9 @@ RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/generic-subgraph-gene
 RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/grapl-graph-descriptions*
 RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/graph-generator-lib*
 RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/grapl-config*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/sqs-lambda*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/derive_aktor*
+RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/aktors*
 RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/graph-merger*
 RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/node-identifier*
 RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/sysmon-subgraph-generator*
@@ -120,6 +141,9 @@ COPY --chown=grapl ./generic-subgraph-generator generic-subgraph-generator
 COPY --chown=grapl ./graph-descriptions graph-descriptions
 COPY --chown=grapl ./graph-generator-lib graph-generator-lib
 COPY --chown=grapl ./grapl-config grapl-config
+COPY --chown=grapl ./sqs-lambda sqs-lambda
+COPY --chown=grapl ./derive_aktor derive_aktor
+COPY --chown=grapl ./aktors aktors
 COPY --chown=grapl ./graph-merger graph-merger
 COPY --chown=grapl ./node-identifier node-identifier
 COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator

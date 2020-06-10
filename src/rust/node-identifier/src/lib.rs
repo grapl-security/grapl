@@ -63,11 +63,10 @@ pub mod sessiondb;
 pub mod sessions;
 
 #[derive(Clone)]
-struct NodeIdentifier<D, CacheT, CacheErr>
+struct NodeIdentifier<D, CacheT>
 where
     D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-    CacheErr: Debug + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     asset_mapping_db: AssetIdDb<D>,
     dynamic_identifier: DynamicNodeIdentifier<D>,
@@ -76,14 +75,12 @@ where
     should_default: bool,
     cache: CacheT,
     region: Region,
-    _p: std::marker::PhantomData<CacheErr>,
 }
 
-impl<D, CacheT, CacheErr> NodeIdentifier<D, CacheT, CacheErr>
+impl<D, CacheT> NodeIdentifier<D, CacheT>
 where
     D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-    CacheErr: Debug + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(
         asset_mapping_db: AssetIdDb<D>,
@@ -102,7 +99,6 @@ where
             should_default,
             cache,
             region,
-            _p: std::marker::PhantomData,
         }
     }
 
@@ -593,15 +589,14 @@ async fn attribute_asset_ids(
 }
 
 #[async_trait]
-impl<D, CacheT, CacheErr> EventHandler for NodeIdentifier<D, CacheT, CacheErr>
+impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
 where
     D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-    CacheErr: Debug + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = GeneratedSubgraphs;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     async fn handle_event(
         &mut self,
@@ -653,7 +648,7 @@ where
         if let Err(e) = create_asset_id_mappings(&asset_id_db, &unid_subgraph).await {
             error!("Asset mapping creation failed with {}", e);
             return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(Arc::new(e.into())),
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             ));
         }
 
@@ -738,13 +733,9 @@ where
 
         if identified_graph.is_empty() {
             return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(Arc::new(
-                    (|| {
-                        bail!("All nodes failed to identify");
-                        Ok(())
-                    })()
-                    .unwrap_err(),
-                )),
+                sqs_lambda::error::Error::ProcessingError(
+                    "All nodes failed to identify".to_string(),
+                ),
             ));
         }
 
@@ -754,7 +745,7 @@ where
             info!("Partial Success, identified {} nodes", identities.len());
             OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![identified_graph]),
-                sqs_lambda::error::Error::ProcessingError(Arc::new(attribution_failure.unwrap())),
+                sqs_lambda::error::Error::ProcessingError(attribution_failure.unwrap().to_string()),
             )))
         } else {
             info!("Identified all nodes");
@@ -783,7 +774,7 @@ pub struct SubgraphSerializer {
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = GeneratedSubgraphs;
     type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     fn serialize_completed_events(
         &mut self,
@@ -831,13 +822,11 @@ impl CompletionEventSerializer for SubgraphSerializer {
         self.proto.clear();
 
         prost::Message::encode(&subgraphs, &mut self.proto)
-            .map(Arc::new)
             .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-            .map(Arc::new)
             .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
         Ok(vec![compressed])
     }
@@ -951,11 +940,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
             let asset_identifier = AssetIdentifier::new(asset_id_db);
 
             let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-            let node_identifier: NodeIdentifier<
-                _,
-                _,
-                sqs_lambda::error::Error<Arc<failure::Error>>,
-            > = NodeIdentifier::new(
+            let node_identifier = NodeIdentifier::new(
                 asset_id_db,
                 dyn_node_identifier,
                 asset_identifier,
@@ -1081,21 +1066,18 @@ pub struct LocalCache {
 }
 
 #[async_trait]
-impl<E> Cache<E> for LocalCache
-where
-    E: Debug + Clone + Send + Sync + 'static,
-{
+impl Cache for LocalCache {
     async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
-    ) -> Result<CacheResponse, sqs_lambda::error::Error<E>> {
+    ) -> Result<CacheResponse, sqs_lambda::error::Error> {
         match self.inner_map.contains(&cacheable.identity()) {
             true => Ok(CacheResponse::Hit),
             false => Ok(CacheResponse::Miss),
         }
     }
 
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), sqs_lambda::error::Error<E>> {
+    async fn store(&mut self, identity: Vec<u8>) -> Result<(), sqs_lambda::error::Error> {
         self.inner_map.insert(identity);
         Ok(())
     }
@@ -1140,16 +1122,15 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
     let asset_id_db = AssetIdDb::new(init_dynamodb_client());
 
     info!("node_identifier");
-    let node_identifier: NodeIdentifier<_, _, sqs_lambda::error::Error<Arc<failure::Error>>> =
-        NodeIdentifier::new(
-            asset_id_db,
-            dyn_node_identifier,
-            asset_identifier,
-            dynamo.clone(),
-            should_default,
-            cache.clone(),
-            region.clone(),
-        );
+    let node_identifier = NodeIdentifier::new(
+        asset_id_db,
+        dyn_node_identifier,
+        asset_identifier,
+        dynamo.clone(),
+        should_default,
+        cache.clone(),
+        region.clone(),
+    );
 
     let node_identifier_queue_url = if should_default {
         std::env::var("NODE_IDENTIFIER_QUEUE_URL").expect("NODE_IDENTIFIER_QUEUE_URL")

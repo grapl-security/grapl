@@ -8,6 +8,7 @@ edition = "2018"
 graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}
 grapl-config = {path = "../grapl-config", version="*"}
 
+#sqs-lambda = {path = "../sqs-lambda"}
 sqs-lambda = "0.20.*"
 serde = "1.0.110"
 serde_json = "1.0.53"
@@ -37,6 +38,9 @@ tokio-compat = "0.1.2"
 tokio = { version = "0.2.4", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 rusoto_credential = "0.43.0"
 graph-generator-lib = { path="../graph-generator-lib", version="*"}
+tracing = "0.1.15"
+tracing-subscriber = "0.2.5"
+tracing-futures = "0.2.4"
 
 
 [dependencies.uuid]

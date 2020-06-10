@@ -3,6 +3,12 @@ use std::str::FromStr;
 use rusoto_core::Region;
 use sqs_lambda::redis_cache::RedisCache;
 
+pub fn is_local() -> bool {
+    std::env::var("IS_LOCAL")
+        .map(|is_local| is_local.to_lowercase().parse().unwrap_or(false))
+        .unwrap_or(false)
+}
+
 pub async fn event_cache() -> RedisCache {
     let cache_address = {
         let generic_event_cache_addr =

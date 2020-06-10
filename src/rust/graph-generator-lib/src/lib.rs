@@ -3,6 +3,8 @@ use std::io::Cursor;
 use std::sync::Arc;
 use std::time::Duration;
 
+use std::fmt::Debug;
+
 use log::*;
 use rusoto_core::{HttpClient, Region};
 use rusoto_s3::S3Client;
@@ -52,7 +54,7 @@ pub struct SubgraphSerializer {
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = Graph;
     type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     fn serialize_completed_events(
         &mut self,
@@ -95,13 +97,11 @@ impl CompletionEventSerializer for SubgraphSerializer {
         self.proto.clear();
 
         prost::Message::encode(&subgraphs, &mut self.proto)
-            .map_err(Arc::new)
             .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-            .map_err(Arc::new)
             .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         Ok(vec![compressed])
@@ -153,11 +153,8 @@ fn init_s3_client() -> S3Client {
 
 pub async fn local_service<
     IE: Send + Sync + Clone + 'static,
-    EH: EventHandler<
-            InputEvent = IE,
-            OutputEvent = Graph,
-            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
-        > + Send
+    EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
+        + Send
         + Sync
         + Clone
         + 'static,
@@ -241,11 +238,8 @@ pub async fn local_service<
 
 pub fn run_graph_generator_aws<
     IE: Send + Sync + Clone + 'static,
-    EH: EventHandler<
-            InputEvent = IE,
-            OutputEvent = Graph,
-            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
-        > + Send
+    EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
+        + Send
         + Sync
         + Clone
         + 'static,
@@ -261,11 +255,8 @@ pub fn run_graph_generator_aws<
 
 fn handler<
     IE: Send + Sync + Clone + 'static,
-    EH: EventHandler<
-            InputEvent = IE,
-            OutputEvent = Graph,
-            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
-        > + Send
+    EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
+        + Send
         + Sync
         + Clone
         + 'static,
@@ -374,11 +365,8 @@ fn handler<
 
 pub async fn run_graph_generator_local<
     IE: Send + Sync + Clone + 'static,
-    EH: EventHandler<
-            InputEvent = IE,
-            OutputEvent = Graph,
-            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
-        > + Send
+    EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
+        + Send
         + Sync
         + Clone
         + 'static,
@@ -405,11 +393,8 @@ pub async fn run_graph_generator_local<
 
 pub async fn run_graph_generator<
     IE: Send + Sync + Clone + 'static,
-    EH: EventHandler<
-            InputEvent = IE,
-            OutputEvent = Graph,
-            Error = sqs_lambda::error::Error<Arc<failure::Error>>,
-        > + Send
+    EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
+        + Send
         + Sync
         + Clone
         + 'static,
