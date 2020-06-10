@@ -27,3 +27,5 @@ FROM node:alpine3.10 AS grapl-graphql-endpoint
 RUN apk add --no-cache zip
 COPY --from=grapl-graphql-endpoint-build /lambda.zip /
 RUN unzip -q lambda.zip
+COPY --from=grapl-graphql-endpoint-deps /lambda/package.json /package.json
+COPY --from=grapl-graphql-endpoint-deps /lambda/package-lock.json /package-lock.json

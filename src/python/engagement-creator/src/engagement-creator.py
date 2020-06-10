@@ -292,7 +292,11 @@ if IS_LOCAL:
                 LOGGER.info("Waiting for engagement-creator-queue to be created")
                 time.sleep(2)
                 continue
-        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError):
+        except (
+            botocore.exceptions.BotoCoreError,
+            botocore.exceptions.ClientError,
+            botocore.parsers.ResponseParserError,
+        ):
             LOGGER.info("Waiting for SQS to become available")
             time.sleep(2)
             continue

@@ -492,6 +492,7 @@ if IS_LOCAL:
                 except (
                     botocore.exceptions.BotoCoreError,
                     botocore.exceptions.ClientError,
+                    botocore.parsers.ResponseParserError,
                 ):
                     LOGGER.info("Waiting for SQS to become available")
                     time.sleep(2)
