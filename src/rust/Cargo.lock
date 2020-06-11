@@ -41,8 +41,8 @@ dependencies = [
  "dgraph-rs 0.1.2",
  "failure",
  "futures 0.3.5",
- "grapl-config 0.0.1",
- "grapl-graph-descriptions 0.2.10",
+ "grapl-config",
+ "grapl-graph-descriptions",
  "grpc",
  "lambda_runtime",
  "log 0.4.8",
@@ -590,8 +590,8 @@ dependencies = [
 name = "derive-dynamic-node"
 version = "1.0.0"
 dependencies = [
- "grapl-config 0.0.1",
- "grapl-graph-descriptions 0.2.10",
+ "grapl-config",
+ "grapl-graph-descriptions",
  "log 0.4.8",
  "proc-macro2 0.4.30",
  "quote 0.6.13",
@@ -1002,8 +1002,8 @@ dependencies = [
  "failure",
  "futures 0.3.5",
  "graph-generator-lib",
- "grapl-config 0.0.1",
- "grapl-graph-descriptions 0.2.10",
+ "grapl-config",
+ "grapl-graph-descriptions",
  "lambda_runtime",
  "lazy_static",
  "log 0.4.8",
@@ -1060,8 +1060,8 @@ dependencies = [
  "base64 0.9.3",
  "chrono",
  "failure",
- "grapl-config 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "grapl-graph-descriptions 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "grapl-config",
+ "grapl-graph-descriptions",
  "lambda_runtime",
  "log 0.4.8",
  "prost",
@@ -1090,8 +1090,8 @@ dependencies = [
  "dgraph-rs 0.2.8",
  "failure",
  "futures 0.3.5",
- "grapl-config 0.0.1",
- "grapl-graph-descriptions 0.2.10",
+ "grapl-config",
+ "grapl-graph-descriptions",
  "grpc",
  "itertools 0.8.2",
  "lambda_runtime",
@@ -1134,46 +1134,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "grapl-config"
-version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e0bf6932217b130836e287525db6a28cf39391f4f98f2cd8baaba5dcc6e2da6"
-dependencies = [
- "color-eyre",
- "eyre",
- "log 0.4.8",
- "rusoto_core",
- "rusoto_s3",
- "rusoto_sqs",
- "sqs-lambda",
- "tokio 0.2.21",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "grapl-graph-descriptions"
 version = "0.2.10"
-dependencies = [
- "derive_builder",
- "log 0.4.8",
- "prost",
- "prost-build",
- "prost-derive",
- "prost-types",
- "serde",
- "serde_derive",
- "serde_json",
- "thiserror",
- "uuid 0.8.1",
-]
-
-[[package]]
-name = "grapl-graph-descriptions"
-version = "0.2.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93f8aa12d37e15116606fa4642d7bdab9b332843bad42293fd0c84cf5426e586"
 dependencies = [
  "derive_builder",
  "log 0.4.8",
@@ -1827,8 +1789,8 @@ dependencies = [
  "chrono",
  "failure",
  "futures 0.3.5",
- "grapl-config 0.0.1",
- "grapl-graph-descriptions 0.2.10",
+ "grapl-config",
+ "grapl-graph-descriptions",
  "hex",
  "hmap",
  "lambda_runtime",
@@ -3263,8 +3225,8 @@ dependencies = [
  "failure",
  "futures 0.3.5",
  "graph-generator-lib",
- "grapl-config 0.0.1",
- "grapl-graph-descriptions 0.2.10",
+ "grapl-config",
+ "grapl-graph-descriptions",
  "lambda_runtime",
  "lazy_static",
  "log 0.4.8",
