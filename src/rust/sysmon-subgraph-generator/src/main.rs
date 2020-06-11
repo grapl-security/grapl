@@ -332,6 +332,7 @@ fn handle_inbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessInboundConnectionState::Bound)
         .port(conn_log.event_data.source_port)
+        .ip_address(conn_log.event_data.source_ip.clone())
         .created_timestamp(timestamp)
         .build()
         .expect("inbound_connection.outbound");
