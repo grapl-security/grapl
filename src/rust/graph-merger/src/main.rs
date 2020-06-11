@@ -43,6 +43,7 @@ use sqs_lambda::redis_cache::RedisCache;
 
 use serde_json::{json, Value};
 
+use std::str::FromStr;
 use tokio::runtime::Runtime;
 
 macro_rules! log_time {
@@ -174,27 +175,20 @@ where
 }
 
 #[derive(Clone)]
-struct GraphMerger<CacheT, CacheErr>
+struct GraphMerger<CacheT>
 where
-    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-    CacheErr: Debug + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     mg_alphas: Vec<String>,
     cache: CacheT,
-    _p: std::marker::PhantomData<CacheErr>,
 }
 
-impl<CacheT, CacheErr> GraphMerger<CacheT, CacheErr>
+impl<CacheT> GraphMerger<CacheT>
 where
-    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-    CacheErr: Debug + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(mg_alphas: Vec<String>, cache: CacheT) -> Self {
-        Self {
-            mg_alphas,
-            cache,
-            _p: std::marker::PhantomData,
-        }
+        Self { mg_alphas, cache }
     }
 }
 
@@ -236,7 +230,7 @@ pub struct SubgraphSerializer {
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = GeneratedSubgraphs;
     type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     fn serialize_completed_events(
         &mut self,
@@ -280,13 +274,11 @@ impl CompletionEventSerializer for SubgraphSerializer {
         self.proto.clear();
 
         prost::Message::encode(&subgraphs, &mut self.proto)
-            .map(Arc::new)
             .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-            .map(Arc::new)
             .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         Ok(vec![compressed])
@@ -362,8 +354,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 .await
                 .expect("Could not create redis client");
 
-            let graph_merger: GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
-                GraphMerger::new(mg_alphas, cache.clone());
+            let graph_merger = GraphMerger::new(mg_alphas, cache.clone());
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
@@ -372,6 +363,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 initial_messages,
                 bucket,
                 ctx,
+                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
                 ZstdProtoDecoder::default(),
@@ -429,14 +421,13 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 }
 
 #[async_trait]
-impl<CacheT, CacheErr> EventHandler for GraphMerger<CacheT, CacheErr>
+impl<CacheT> EventHandler for GraphMerger<CacheT>
 where
-    CacheT: Cache<CacheErr> + Clone + Send + Sync + 'static,
-    CacheErr: Debug + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = GeneratedSubgraphs;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     async fn handle_event(
         &mut self,
@@ -502,12 +493,9 @@ where
 
         if node_key_to_uid.is_empty() {
             return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(Arc::new(
-                    (|| {
-                        bail!("All nodes failed to identify");
-                        Ok(())
-                    })()
-                    .unwrap_err(),
+                sqs_lambda::error::Error::ProcessingError(format!(
+                    "All nodes failed to upsert {:?}",
+                    upsert_res
                 )),
             ));
         }
@@ -559,17 +547,11 @@ where
         let mut completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
-                sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             ))),
             (_, Some(e)) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
-                sqs_lambda::error::Error::ProcessingError(Arc::new(
-                    (|| {
-                        bail!("{}", e);
-                        Ok(())
-                    })()
-                    .unwrap_err(),
-                )),
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             ))),
             (None, None) => {
                 OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
@@ -616,11 +598,15 @@ fn init_s3_client() -> S3Client {
 async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     let mg_alphas: Vec<_> = vec!["master_graph".to_owned()];
 
-    let graph_merger: GraphMerger<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
-        GraphMerger::new(mg_alphas, NopCache {});
+    let graph_merger = GraphMerger::new(mg_alphas, NopCache {});
 
     let graph_merger_queue_url =
         std::env::var("GRAPH_MERGER_QUEUE_URL").expect("GRAPH_MERGER_QUEUE_URL");
+
+    let queue_name = graph_merger_queue_url.split("/").last().unwrap();
+    grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
+    grapl_config::wait_for_s3(init_s3_client()).await?;
+
     local_sqs_service(
         graph_merger_queue_url,
         "local-grapl-subgraphs-merged-bucket",
@@ -628,6 +614,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
+        |_| init_s3_client(),
         init_s3_client(),
         init_sqs_client(),
         ZstdProtoDecoder::default(),
@@ -644,7 +631,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
                 records: vec![S3EventRecord {
                     event_version: None,
                     event_source: None,
-                    aws_region: None,
+                    aws_region: Some("us-east-1".to_owned()),
                     event_time: chrono::Utc::now(),
                     event_name: None,
                     principal_id: S3UserIdentity { principal_id: None },

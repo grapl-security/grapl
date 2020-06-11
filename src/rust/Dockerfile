@@ -63,6 +63,7 @@ COPY --chown=grapl ./graph-generator-lib/Cargo.toml graph-generator-lib/
 RUN mkdir -p grapl-config/src
 RUN touch grapl-config/src/lib.rs
 COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
+
 # copy in Cargo.toml for graph-merger
 RUN mkdir -p graph-merger/src
 RUN echo 'fn main() {}' > graph-merger/src/main.rs

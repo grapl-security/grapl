@@ -105,18 +105,6 @@ def provision_mg(mclient: GraphClient, schemas: List[NodeSchema]) -> None:
     set_schema(mclient, mg_schema_str)
 
 
-def provision_eg(eclient: GraphClient, schemas: List[NodeSchema]) -> None:
-    eg_schemas = [
-        s.with_forward_edge("risks", ManyToMany(RiskSchema), "risky_nodes")
-        for s in schemas
-    ]
-
-    eg_schemas.append(RiskSchema())
-    eg_schemas.append(LensSchema())
-    eg_schema_str = format_schemas(eg_schemas)
-    set_schema(eclient, eg_schema_str)
-
-
 def get_s3_client() -> Any:
     if IS_LOCAL:
         return boto3.client(
@@ -168,7 +156,6 @@ def provision_schemas(mclient, eclient, raw_schemas):
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
     provision_mg(mclient, schemas)
-    provision_eg(eclient, schemas)
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:

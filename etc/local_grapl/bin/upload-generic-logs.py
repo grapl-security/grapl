@@ -28,6 +28,7 @@ def into_sqs_message(bucket: str, key: str) -> str:
         {
             "Records": [
                 {
+                    "awsRegion": "us-east-1",
                     "eventTime": datetime.utcnow().isoformat(),
                     "principalId": {"principalId": None,},
                     "requestParameters": {"sourceIpAddress": None,},
