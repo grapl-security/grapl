@@ -1,6 +1,6 @@
 [package]
 name = "graph-generator-lib"
-version = "1.0.1"
+version = "0.1.8"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
