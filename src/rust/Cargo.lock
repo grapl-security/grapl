@@ -997,6 +997,7 @@ dependencies = [
  "aws_lambda_events 0.2.7",
  "base16",
  "chrono",
+ "eyre",
  "failure",
  "futures 0.3.5",
  "graph-generator-lib",
@@ -1019,6 +1020,9 @@ dependencies = [
  "stopwatch",
  "tokio 0.2.21",
  "tokio-compat",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
  "uuid 0.6.5",
  "zstd",
 ]
@@ -1115,9 +1119,17 @@ dependencies = [
 name = "grapl-config"
 version = "1.0.0"
 dependencies = [
+ "color-eyre",
+ "eyre",
  "log 0.4.8",
  "rusoto_core",
+ "rusoto_s3",
+ "rusoto_sqs",
  "sqs-lambda",
+ "tokio 0.2.21",
+ "tracing",
+ "tracing-futures",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2987,9 +2999,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "sqs-lambda"
-version = "0.20.13"
+version = "0.20.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7467b199c309e046dfc96b5101e78d0f32190a39d92a97a6063f4385165173b0"
+checksum = "d001e33784efa05e64feb2639f5b1371c8fd740c67433e51f02a52939dbc71fe"
 dependencies = [
  "aktors",
  "async-trait",

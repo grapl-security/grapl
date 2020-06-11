@@ -31,6 +31,7 @@ use aws_lambda_events::event::s3::{
 };
 use chrono::Utc;
 use sqs_lambda::local_sqs_service::local_sqs_service;
+use std::str::FromStr;
 use tokio::runtime::Runtime;
 
 #[derive(Debug)]
@@ -293,6 +294,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 initial_messages,
                 bucket,
                 ctx,
+                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
                 ZstdProtoDecoder::default(),
@@ -394,6 +396,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
+        |_| init_s3_client(),
         init_s3_client(),
         init_sqs_client(),
         ZstdProtoDecoder::default(),

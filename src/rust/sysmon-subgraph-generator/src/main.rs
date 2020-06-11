@@ -643,7 +643,7 @@ where
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_with_level(grapl_config::grapl_log_level());
+    grapl_config::init_grapl_log!();
     info!("Starting sysmon-subgraph-generator");
 
     if grapl_config::is_local() {

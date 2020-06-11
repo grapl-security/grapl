@@ -25,6 +25,7 @@ use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::local_sqs_service::local_sqs_service;
+use std::str::FromStr;
 
 #[derive(Clone, Default)]
 pub struct ZstdJsonDecoder {
@@ -164,6 +165,11 @@ pub async fn local_service<
     generator: EH,
     event_decoder: ED,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let queue_name = queue_url.split("/").last().unwrap();
+    grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
+    grapl_config::wait_for_sqs(init_sqs_client(), "node-identifier-queue").await?;
+    grapl_config::wait_for_s3(init_s3_client()).await?;
+
     local_sqs_service(
         queue_url,
         "local-grapl-unid-subgraphs-generated-bucket",
@@ -171,6 +177,7 @@ pub async fn local_service<
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
+        |_| init_s3_client(),
         init_s3_client(),
         init_sqs_client(),
         event_decoder,
@@ -303,6 +310,7 @@ fn handler<
                 initial_messages,
                 bucket,
                 ctx,
+                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
                 event_decoder.clone(),

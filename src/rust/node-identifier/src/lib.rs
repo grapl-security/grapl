@@ -957,6 +957,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                 initial_messages,
                 bucket,
                 ctx,
+                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
                 ZstdProtoDecoder::default(),
@@ -1083,7 +1084,7 @@ impl Cache for LocalCache {
     }
 }
 
-pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
+pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
     let cache = LocalCache::default();
 
     info!("region");
@@ -1137,6 +1138,9 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
     } else {
         std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL").expect("NODE_IDENTIFIER_RETRY_QUEUE_URL")
     };
+
+    grapl_config::wait_for_sqs(init_sqs_client(), "node-identifier-queue").await?;
+    grapl_config::wait_for_s3(init_s3_client()).await?;
     local_sqs_service(
         node_identifier_queue_url,
         "local-grapl-subgraphs-generated-bucket",
@@ -1144,6 +1148,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), HandlerError> {
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
+        |_| init_s3_client(),
         init_s3_client(),
         init_sqs_client(),
         ZstdProtoDecoder::default(),

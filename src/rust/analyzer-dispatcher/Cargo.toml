@@ -38,7 +38,7 @@ tokio-compat = "0.1.2"
 tokio = { version = "0.2.4", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 chrono = "0.4.11"
 rusoto_credential = "0.43.0"
-sqs-lambda = "0.20.13"
+sqs-lambda = "0.20.*"
 
 [dependencies.uuid]
 version = "*"

@@ -43,6 +43,7 @@ use sqs_lambda::redis_cache::RedisCache;
 
 use serde_json::{json, Value};
 
+use std::str::FromStr;
 use tokio::runtime::Runtime;
 
 macro_rules! log_time {
@@ -362,6 +363,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 initial_messages,
                 bucket,
                 ctx,
+                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
                 ZstdProtoDecoder::default(),
@@ -600,6 +602,11 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 
     let graph_merger_queue_url =
         std::env::var("GRAPH_MERGER_QUEUE_URL").expect("GRAPH_MERGER_QUEUE_URL");
+
+    let queue_name = graph_merger_queue_url.split("/").last().unwrap();
+    grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
+    grapl_config::wait_for_s3(init_s3_client()).await?;
+
     local_sqs_service(
         graph_merger_queue_url,
         "local-grapl-subgraphs-merged-bucket",
@@ -607,6 +614,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
+        |_| init_s3_client(),
         init_s3_client(),
         init_sqs_client(),
         ZstdProtoDecoder::default(),

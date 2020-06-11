@@ -1,25 +1,15 @@
-use std::collections::HashSet;
 use std::fmt::Debug;
 use std::io::Cursor;
-use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use aws_lambda_events::event::sqs::SqsEvent;
-use failure::Error;
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::Context;
-use log::*;
 use regex::Regex;
-use rusoto_s3::S3Client;
-use rusoto_sqs::SqsClient;
 use serde::de::Error as SerdeError;
 use serde::{Deserialize, Serialize};
 use sqs_lambda::cache::{Cache, CacheResponse, NopCache};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service;
-use sqs_lambda::redis_cache::RedisCache;
+use tracing::*;
 
 use async_trait::async_trait;
 use graph_descriptions::file::FileState;
@@ -32,6 +22,7 @@ use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionSt
 use graph_generator_lib::{run_graph_generator_aws, run_graph_generator_local};
 use grapl_config::event_cache;
 use lazy_static::lazy_static;
+use tracing_subscriber::EnvFilter;
 
 #[derive(Clone, Debug, Hash)]
 pub enum GenericEvent {
@@ -174,16 +165,6 @@ pub struct ProcessPortBindLog {
     hostname: String,
     timestamp: u64,
     eventname: String,
-}
-
-fn is_internal_ip(ip: &str) -> bool {
-    lazy_static!(
-        static ref RE: Regex = Regex::new(
-            r"/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/"
-        ).expect("is_internal_ip regex");
-    );
-
-    RE.is_match(ip)
 }
 
 fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
@@ -627,7 +608,7 @@ fn handle_file_read(file_read: FileRead) -> Graph {
     graph
 }
 
-fn handle_log(generic_event: GenericEvent) -> Result<Graph, Error> {
+fn handle_log(generic_event: GenericEvent) -> Result<Graph, eyre::Report> {
     match generic_event {
         GenericEvent::ProcessStart(event) => Ok(handle_process_start(event)),
         GenericEvent::ProcessStop(event) => Ok(handle_process_stop(event)),
@@ -690,7 +671,7 @@ where
         &mut self,
         events: Vec<serde_json::Value>,
     ) -> OutputEvent<Self::OutputEvent, Self::Error> {
-        let mut failed: Option<failure::Error> = None;
+        let mut failed: Option<eyre::Report> = None;
         let mut final_subgraph = Graph::new(0);
         let mut identities = Vec::with_capacity(events.len());
 
@@ -742,9 +723,8 @@ where
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_with_level(grapl_config::grapl_log_level());
+    grapl_config::init_grapl_log!();
     info!("Starting generic-subgraph-generator");
-
     if grapl_config::is_local() {
         let generator = GenericSubgraphGenerator::new(NopCache {});
 
