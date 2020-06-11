@@ -1139,7 +1139,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
         std::env::var("NODE_IDENTIFIER_RETRY_QUEUE_URL").expect("NODE_IDENTIFIER_RETRY_QUEUE_URL")
     };
 
-    grapl_config::wait_for_sqs(init_sqs_client(), "node-identifier-queue").await?;
+    let queue_name = node_identifier_queue_url.split("/").last().unwrap();
     grapl_config::wait_for_s3(init_s3_client()).await?;
     local_sqs_service(
         node_identifier_queue_url,
@@ -1165,7 +1165,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
                 records: vec![S3EventRecord {
                     event_version: None,
                     event_source: None,
-                    aws_region: None,
+                    aws_region: Some("us-east-1".to_owned()),
                     event_time: chrono::Utc::now(),
                     event_name: None,
                     principal_id: S3UserIdentity { principal_id: None },

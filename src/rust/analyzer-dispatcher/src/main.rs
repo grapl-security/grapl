@@ -413,7 +413,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
                 records: vec![S3EventRecord {
                     event_version: None,
                     event_source: None,
-                    aws_region: None,
+                    aws_region: Some("us-east-1".to_owned()),
                     event_time: chrono::Utc::now(),
                     event_name: None,
                     principal_id: S3UserIdentity { principal_id: None },
