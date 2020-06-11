@@ -167,7 +167,7 @@ pub async fn local_service<
 ) -> Result<(), Box<dyn std::error::Error>> {
     let queue_name = queue_url.split("/").last().unwrap();
     grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
-    grapl_config::wait_for_sqs(init_sqs_client(), "node-identifier-queue").await?;
+    grapl_config::wait_for_sqs(init_sqs_client(), "grapl-node-identifier-queue").await?;
     grapl_config::wait_for_s3(init_s3_client()).await?;
 
     local_sqs_service(

@@ -603,7 +603,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     let source_queue_url =
         std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
-    let queue_name = graph_merger_queue_url.split("/").last().unwrap();
+    let queue_name = source_queue_url.split("/").last().unwrap();
     grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
     grapl_config::wait_for_s3(init_s3_client()).await?;
 
@@ -710,7 +710,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
         loop {
             match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
-                queue_name_prefix: Some("graph-merger".to_string()),
+                queue_name_prefix: Some("grapl".to_string()),
             })) {
                 Err(_) => {
                     info!("Waiting for SQS to become available");
