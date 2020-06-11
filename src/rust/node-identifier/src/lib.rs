@@ -1138,7 +1138,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
         std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL")
     };
 
-    let queue_name = node_identifier_queue_url.split("/").last().unwrap();
+    let queue_name = source_queue_url.split("/").last().unwrap();
     grapl_config::wait_for_s3(init_s3_client()).await?;
     local_sqs_service(
         source_queue_url,
