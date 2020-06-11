@@ -31,6 +31,7 @@ use aws_lambda_events::event::s3::{
 };
 use chrono::Utc;
 use sqs_lambda::local_sqs_service::local_sqs_service;
+use std::str::FromStr;
 use tokio::runtime::Runtime;
 
 #[derive(Debug)]
@@ -100,7 +101,7 @@ where
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = Vec<AnalyzerDispatchEvent>;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     async fn handle_event(
         &mut self,
@@ -127,7 +128,7 @@ where
             Ok(keys) => keys,
             Err(e) => {
                 return OutputEvent::new(Completion::Error(
-                    sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
+                    sqs_lambda::error::Error::ProcessingError(e.to_string()),
                 ))
             }
         };
@@ -154,7 +155,7 @@ where
         let completed = if let Some(e) = failed {
             OutputEvent::new(Completion::Partial((
                 dispatch_events,
-                sqs_lambda::error::Error::ProcessingError(Arc::new(e)),
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             )))
         } else {
             OutputEvent::new(Completion::Total(dispatch_events))
@@ -174,7 +175,7 @@ pub struct SubgraphSerializer {
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = Vec<AnalyzerDispatchEvent>;
     type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type Error = sqs_lambda::error::Error;
 
     fn serialize_completed_events(
         &mut self,
@@ -194,7 +195,6 @@ impl CompletionEventSerializer for SubgraphSerializer {
             let event = json!({
                 "key": event.key,
                 "subgraph": encode_subgraph(&final_subgraph)
-                    .map_err(Arc::new)
                     .map_err(|e| {
                         sqs_lambda::error::Error::EncodeError(e.to_string())
                     })?
@@ -202,7 +202,6 @@ impl CompletionEventSerializer for SubgraphSerializer {
 
             serialized.push(
                 serde_json::to_vec(&event)
-                    .map_err(Arc::new)
                     .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?,
             );
         }
@@ -295,6 +294,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 initial_messages,
                 bucket,
                 ctx,
+                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
                 ZstdProtoDecoder::default(),
@@ -396,6 +396,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
+        |_| init_s3_client(),
         init_s3_client(),
         init_sqs_client(),
         ZstdProtoDecoder::default(),
@@ -412,7 +413,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
                 records: vec![S3EventRecord {
                     event_version: None,
                     event_source: None,
-                    aws_region: None,
+                    aws_region: Some("us-east-1".to_owned()),
                     event_time: chrono::Utc::now(),
                     event_name: None,
                     principal_id: S3UserIdentity { principal_id: None },
