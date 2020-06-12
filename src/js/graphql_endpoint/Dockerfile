@@ -24,3 +24,5 @@ FROM node:12.18-buster-slim AS grapl-graphql-endpoint
 RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends unzip
 COPY --from=grapl-graphql-endpoint-build /lambda.zip /
 RUN unzip -q lambda.zip
+COPY --from=grapl-graphql-endpoint-deps /lambda/package.json /package.json
+COPY --from=grapl-graphql-endpoint-deps /lambda/package-lock.json /package-lock.json

@@ -70,12 +70,6 @@ class NodeSchema(abc.ABC):
         self.forward_edges.append((edge_name, edge, reverse_name))
         return self
 
-    def with_reverse_edge(
-        self, reverse_name: str, edge: "UidType", forward_name: str
-    ) -> "NodeSchema":
-        self.reverse_edges.append((reverse_name, edge, forward_name))
-        return self
-
     def generate_type(self) -> str:
         str_types = ""
         int_types = ""
