@@ -17,8 +17,9 @@ IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-logging.basicConfig(stream=sys.stdout, level=LEVEL)
-LOGGER = logging.getLogger("engagement-creator")
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def parse_s3_event(s3, event) -> str:

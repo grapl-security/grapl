@@ -22,7 +22,7 @@ from grapl_analyzerlib.grapl_client import (
     LocalMasterGraphClient,
 )
 from grapl_analyzerlib.schemas import NodeSchema
-from grapl_analyzerlib.schemas.schema_builder import ManyToMany, ManyToOne, UidType
+from grapl_analyzerlib.schemas.schema_builder import UidType
 
 
 T = TypeVar("T")
@@ -46,8 +46,9 @@ ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-logging.basicConfig(stream=sys.stdout, level=LEVEL)
-LOGGER = logging.getLogger("grapl-model-plugin-deployer")
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 app = Chalice(app_name="model-plugin-deployer")
 
@@ -86,12 +87,12 @@ def set_schema(client: GraphClient, schema: str) -> None:
 
 
 def format_schemas(schema_defs) -> str:
-    LOGGER.info(f"schema_defs: {schema_defs}")
+    LOGGER.debug(f"schema_defs: {schema_defs}")
     schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
-    LOGGER.info(f"schemas: {schemas}")
+    LOGGER.debug(f"schemas: {schemas}")
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
-    LOGGER.info(f"types: {types}")
+    LOGGER.debug(f"types: {types}")
 
     return "\n".join(
         ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
@@ -153,18 +154,18 @@ def provision_schemas(master_graph_client, raw_schemas):
     schemas = list(get_schema_objects().values())
 
     schemas = list(set(schemas) - builtin_nodes)
-    LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
+    LOGGER.debug(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
     provision_master_graph(master_graph_client, schemas)
 
-    LOGGER.info(f"Attaching reverse edges")
+    LOGGER.debug(f"Attaching reverse edges")
     attach_reverse_edges(master_graph_client, schemas)
 
 
 def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None:
-    LOGGER.info(f"attaching reverse edges for schemas: {schemas}")
+    LOGGER.debug(f"attaching reverse edges for schemas: {schemas}")
     for schema in schemas:
-        if schema.self_type() in builtin_nodes or schema.self_type() == 'Any':
+        if schema.self_type() in builtin_nodes or schema.self_type() == "Any":
             continue
         for edge_name, uid_type, _ in schema.forward_edges:
             add_reverse_edge_type(client, uid_type, edge_name)
@@ -173,7 +174,7 @@ def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None
 def add_reverse_edge_type(
     client: GraphClient, uid_type: UidType, edge_name: str
 ) -> None:
-    LOGGER.info(
+    LOGGER.debug(
         f"adding reverse edge type uid_type: {uid_type} edge_name: {edge_name}"
     )
     self_type = uid_type._inner_type.self_type()
@@ -196,22 +197,23 @@ def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
         schema(type: {type_name}) {{
         }}
     """
-    LOGGER.info(f"query: {query}")
+    LOGGER.debug(f"query: {query}")
     txn = client.txn(read_only=True)
     try:
         res = json.loads(txn.query(query).json)
-        LOGGER.info(f"res: {res}")
+        LOGGER.debug(f"res: {res}")
     finally:
         txn.discard()
 
     pred_names = []
 
     for field in res["types"][0]["fields"]:
-        pred_name = f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
+        pred_name = (
+            f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
+        )
         pred_names.append(pred_name)
 
     return pred_names
-
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
@@ -290,7 +292,7 @@ def no_auth(path):
             try:
                 return route_fn()
             except Exception:
-                LOGGER.error(path + ' failed ' + traceback.format_exc())
+                LOGGER.error(path + " failed " + traceback.format_exc())
                 return respond("Unexpected Error")
 
         return inner_route
