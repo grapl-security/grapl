@@ -167,7 +167,9 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
         s3_client.put_object(
             Body=contents,
             Bucket=plugin_bucket,
-            Key=plugin_name + "/" + base64.encodebytes((plugin_key.encode("utf8"))).decode(),
+            Key=plugin_name
+            + "/"
+            + base64.encodebytes((plugin_key.encode("utf8"))).decode(),
         )
     except Exception:
         LOGGER.error(f"Failed to put_object to s3 {key} {traceback.format_exc()}")
@@ -336,19 +338,18 @@ def deploy():
 def get_plugin_list(s3: BaseClient):
     plugin_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
 
-    list_response = s3.list_objects_v2(
-        Bucket=plugin_bucket
-    )
+    list_response = s3.list_objects_v2(Bucket=plugin_bucket)
 
-    if not list_response.get('Contents'):
+    if not list_response.get("Contents"):
         return []
 
     plugin_names = set()
-    for response in list_response['Contents']:
-        key = response['Key']
-        plugin_name = key.split('/')[0]
+    for response in list_response["Contents"]:
+        key = response["Key"]
+        plugin_name = key.split("/")[0]
         plugin_names.add(plugin_name)
     return [plugin_name for plugin_name in plugin_names if plugin_name != "__init__.py"]
+
 
 @requires_auth("/listModelPlugins")
 def list_model_plugins():
@@ -357,29 +358,25 @@ def list_model_plugins():
     try:
         plugin_names = get_plugin_list(get_s3_client())
     except Exception as e:
-        LOGGER.error('failed with %s', traceback.format_exc())
-        return respond({'Failed': 'Failed'})
+        LOGGER.error("failed with %s", traceback.format_exc())
+        return respond({"Failed": "Failed"})
 
-    LOGGER.info('plugin_names: %s', plugin_names)
-    return respond(None, {'plugin_list': plugin_names})
+    LOGGER.info("plugin_names: %s", plugin_names)
+    return respond(None, {"plugin_list": plugin_names})
+
 
 def delete_plugin(s3_client, plugin_name):
     plugin_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
 
-    list_response = s3_client.list_objects_v2(
-        Bucket=plugin_bucket,
-        Prefix=plugin_name,
-    )
-    
-    if not list_response.get('Contents'):
+    list_response = s3_client.list_objects_v2(Bucket=plugin_bucket, Prefix=plugin_name,)
+
+    if not list_response.get("Contents"):
         return []
 
     plugin_names = set()
-    for response in list_response['Contents']:
-        s3_client.delete_object(
-            Bucket=plugin_bucket,
-            Key=response['Key']
-        )
+    for response in list_response["Contents"]:
+        s3_client.delete_object(Bucket=plugin_bucket, Key=response["Key"])
+
 
 @requires_auth("/deleteModelPlugin")
 def delete_model_plugin():
@@ -400,9 +397,9 @@ def delete_model_plugin():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    LOGGER.info('routing: ', app.current_request.context["path"])
+    LOGGER.info("routing: ", app.current_request.context["path"])
     LOGGER.info(vars(app.current_request))
-    
+
     try:
         path = app.current_request.context["path"]
         if path == "/prod/gitWebhook":
