@@ -80,5 +80,7 @@ def delete_batch(client: GraphClient, uids: Iterable[str]) -> None:
 @app.lambda_function(name="prune_expired_subgraphs")
 def prune_expired_subgraphs():
     client = LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient()
-    for uids in _expired_node_uids(client, GRAPL_DGRAPH_TTL_SECONDS):
-        _delete_batch(client, uids)
+    for uids in expired_node_uids(
+        client, ttl_s=GRAPL_DGRAPH_TTL_SECONDS, batch_size=GRAPL_TTL_DELETE_BATCH_SIZE
+    ):
+        delete_batch(client, uids)
