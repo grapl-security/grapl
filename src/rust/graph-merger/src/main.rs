@@ -681,8 +681,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_with_level(grapl_config::grapl_log_level())
-        .expect("Failed to initialize logger");
+    grapl_config::init_grapl_log!();
 
     let is_local = std::env::var("IS_LOCAL").is_ok();
 
