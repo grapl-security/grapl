@@ -250,8 +250,7 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     ]
 
     provision_schemas(
-        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
-        raw_schemas,
+        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(), raw_schemas,
     )
 
     # TODO: Handle new reverse edges
