@@ -5,15 +5,14 @@ import * as s3n from "@aws-cdk/aws-s3-notifications";
 import { RemovalPolicy } from "@aws-cdk/core";
 import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
 
-export class EventEmitter extends cdk.Construct {
+export class EventEmitter {
     readonly bucket: s3.Bucket;
     readonly topic: sns.Topic;
 
     constructor(scope: cdk.Construct, eventName: string) {
-        super(scope, eventName)
 
         this.bucket =
-            new s3.Bucket(this, eventName + '-bucket', {
+            new s3.Bucket(scope, eventName + '-bucket', {
                 bucketName: eventName + "-bucket",
                 removalPolicy: RemovalPolicy.DESTROY,
                 encryption: BucketEncryption.KMS_MANAGED,
@@ -22,7 +21,7 @@ export class EventEmitter extends cdk.Construct {
 
         // SNS Topics
         this.topic =
-            new sns.Topic(this, eventName + "-topic", {
+            new sns.Topic(scope, eventName + "-topic", {
                 topicName: eventName + "-topic"
             });
 

@@ -1,5 +1,5 @@
-FROM python:3.7-alpine AS grapl-python-deploy
-RUN apk add libstdc++
-RUN adduser -D --gecos '' --home /home/grapl --shell /bin/bash grapl
+FROM python:3.7-slim-buster AS grapl-python-deploy
+RUN apt-get install -y libstdc++6 bash
+RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
 USER grapl
 ENV USER grapl

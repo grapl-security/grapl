@@ -26,8 +26,6 @@ from grapl_analyzerlib.grapl_client import (
     GraphClient,
     MasterGraphClient,
     LocalMasterGraphClient,
-    EngagementGraphClient,
-    LocalEngagementGraphClient,
 )
 
 T = TypeVar("T")
@@ -144,7 +142,7 @@ def get_schema_objects() -> Dict[str, NodeSchema]:
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[0], an[1])}
 
 
-def provision_schemas(mclient, eclient, raw_schemas):
+def provision_schemas(mclient, raw_schemas):
     # For every schema, exec the schema
     for raw_schema in raw_schemas:
         exec(raw_schema, globals())
@@ -250,9 +248,7 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     ]
 
     provision_schemas(
-        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
-        LocalEngagementGraphClient() if IS_LOCAL else EngagementGraphClient(),
-        raw_schemas,
+        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(), raw_schemas,
     )
 
     # TODO: Handle new reverse edges

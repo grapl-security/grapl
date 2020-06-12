@@ -11,7 +11,7 @@ const env = require('node-env-file');
 env(__dirname + '/../.env');
 
 const app = new cdk.App();
-const grapl = new GraplCdkStack(app, 'GraplCdkStack', { stackName: "GraplCDK" });
+const grapl = new GraplCdkStack(app, 'Grapl');
 
 const engagement_edge = new EngagementEdge(
     app,

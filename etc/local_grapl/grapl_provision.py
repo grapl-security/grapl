@@ -159,7 +159,7 @@ buckets = (
 
 def provision_sqs(sqs, service_name: str) -> None:
     redrive_queue = sqs.create_queue(
-        QueueName=service_name + "-retry-queue",
+        QueueName="grapl-%s-retry-queue" % service_name,
         Attributes={"MessageRetentionPeriod": "86400"},
     )
 
@@ -173,7 +173,7 @@ def provision_sqs(sqs, service_name: str) -> None:
         "maxReceiveCount": "10",
     }
 
-    queue = sqs.create_queue(QueueName=service_name + "-queue",)
+    queue = sqs.create_queue(QueueName="grapl-%s-queue" % service_name,)
 
     sqs.set_queue_attributes(
         QueueUrl=queue["QueueUrl"],
