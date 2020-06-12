@@ -34,6 +34,7 @@ def query_batch(
         }}
     }}
     """
+
     txn = client.txn()
     try:
         return txn.query(query)
@@ -48,9 +49,9 @@ def calculate_ttl_cutoff_s(now: datetime.datetime, ttl_s: int) -> int:
 
 
 def expired_node_uids(
-    client: GraphClient, ttl_s: int, batch_size: int
+    client: GraphClient, now: datetime.datetime, ttl_s: int, batch_size: int
 ) -> Iterator[Iterable[str]]:
-    ttl_cutoff_s = calculate_ttl_cutoff_s(datetime.datetime.utcnow(), ttl_s)
+    ttl_cutoff_s = calculate_ttl_cutoff_s(now, ttl_s)
 
     last_uid = None
     while 1:
@@ -79,8 +80,10 @@ def delete_batch(client: GraphClient, uids: Iterable[str]) -> None:
 
 @app.lambda_function(name="prune_expired_subgraphs")
 def prune_expired_subgraphs():
-    client = LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient()
     for uids in expired_node_uids(
-        client, ttl_s=GRAPL_DGRAPH_TTL_SECONDS, batch_size=GRAPL_TTL_DELETE_BATCH_SIZE
+        client=LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
+        now=datetime.datetime.utcnow(),
+        ttl_s=GRAPL_DGRAPH_TTL_SECONDS,
+        batch_size=GRAPL_TTL_DELETE_BATCH_SIZE,
     ):
         delete_batch(client, uids)
