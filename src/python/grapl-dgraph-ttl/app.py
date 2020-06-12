@@ -30,7 +30,8 @@ def query_batch(
     query = f"""
     {{
         q(func: le(last_index_time, {ttl_cutoff_s}) {paging}) {{
-            # FIXME
+            uid,
+            expand(_all_) {{ expand(_all_) }}
         }}
     }}
     """
@@ -79,11 +80,12 @@ def delete_batch(client: GraphClient, uids: Iterable[str]) -> None:
 
 
 @app.lambda_function(name="prune_expired_subgraphs")
-def prune_expired_subgraphs():
-    for uids in expired_node_uids(
-        client=LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
-        now=datetime.datetime.utcnow(),
-        ttl_s=GRAPL_DGRAPH_TTL_SECONDS,
-        batch_size=GRAPL_TTL_DELETE_BATCH_SIZE,
-    ):
-        delete_batch(client, uids)
+def prune_expired_subgraphs() -> None:
+    if GRAPL_DGRAPH_TTL_S > 0:
+        for uids in expired_node_uids(
+            client=LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
+            now=datetime.datetime.utcnow(),
+            ttl_s=GRAPL_DGRAPH_TTL_SECONDS,
+            batch_size=GRAPL_TTL_DELETE_BATCH_SIZE,
+        ):
+            delete_batch(client, uids)
