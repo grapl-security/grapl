@@ -1,0 +1,3 @@
+pydgraph==2.0.2
+grapl_analyzerlib==0.2.*
+chalice
