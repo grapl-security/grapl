@@ -71,7 +71,7 @@ def check_jwt(headers):
         jwt.decode(encoded_jwt, JWT_SECRET, algorithms=["HS256"])
         return True
     except Exception as e:
-        LOGGER.error(e)
+        LOGGER.error(traceback.format_exc())
         return False
 
 
@@ -86,12 +86,12 @@ def set_schema(client: GraphClient, schema: str) -> None:
 
 
 def format_schemas(schema_defs) -> str:
-    LOGGER.debug(f"schema_defs: {schema_defs}")
+    LOGGER.info(f"schema_defs: {schema_defs}")
     schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
-    LOGGER.debug(f"schemas: {schemas}")
+    LOGGER.info(f"schemas: {schemas}")
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
-    LOGGER.debug(f"types: {types}")
+    LOGGER.info(f"types: {types}")
 
     return "\n".join(
         ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
@@ -102,7 +102,6 @@ def provision_master_graph(
     master_graph_client: GraphClient, schemas: List[NodeSchema]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
-    LOGGER.debug(f"mg_schema_str:\n{mg_schema_str}")
     set_schema(master_graph_client, mg_schema_str)
 
 
@@ -157,12 +156,16 @@ def provision_schemas(master_graph_client, raw_schemas):
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
     provision_master_graph(master_graph_client, schemas)
+
+    LOGGER.info(f"Attaching reverse edges")
     attach_reverse_edges(master_graph_client, schemas)
 
 
 def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None:
-    LOGGER.debug(f"attaching reverse edges for schemas: {schemas}")
+    LOGGER.info(f"attaching reverse edges for schemas: {schemas}")
     for schema in schemas:
+        if schema.self_type() in builtin_nodes or schema.self_type() == 'Any':
+            continue
         for edge_name, uid_type, _ in schema.forward_edges:
             add_reverse_edge_type(client, uid_type, edge_name)
 
@@ -170,54 +173,45 @@ def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None
 def add_reverse_edge_type(
     client: GraphClient, uid_type: UidType, edge_name: str
 ) -> None:
-    LOGGER.debug(
+    LOGGER.info(
         f"adding reverse edge type uid_type: {uid_type} edge_name: {edge_name}"
     )
-    type_dict = query_dgraph_type(client, uid_type._inner_type.self_type())
+    self_type = uid_type._inner_type.self_type()
+    predicates = "\n\t\t".join(query_dgraph_type(client, self_type))
 
-    if isinstance(uid_type, ManyToMany) or isinstance(uid_type, ManyToOne):
-        type_dict[f"<~{edge_name}>"] = ["uid"]
-    else:
-        type_dict[f"<~{edge_name}>"] = "uid"
+    predicates += f"\n\t\t<~{edge_name}>"
 
-    type_str = ""
-    for type_name, type_d in type_dict.items():
-        predicates = "\n".join(
-            f"\t{predicate_name}: {predicate_type}"
-            for predicate_name, predicate_type in type_d.items()
-        )
-        type_str += f"""
-        type {type_name} {{
+    type_str = f"""
+    type {self_type} {{
         {predicates}
-        }}\n
-        """
+    }}\n
+    """
 
-    LOGGER.debug(f"type_str: {type_str}")
     op = pydgraph.Operation(schema=type_str)
     client.alter(op)
 
 
-def query_dgraph_type(client: GraphClient, type_name: str) -> Dict[str, Any]:
+def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
     query = f"""
-    {{
-        schema(func: type({type_name})) {{
-            type
-            index
+        schema(type: {type_name}) {{
         }}
-    }}
     """
-    LOGGER.debug(f"query: {query}")
+    LOGGER.info(f"query: {query}")
     txn = client.txn(read_only=True)
     try:
         res = json.loads(txn.query(query).json)
-        LOGGER.debug(f"res: {res}")
+        LOGGER.info(f"res: {res}")
     finally:
         txn.discard()
 
-    return {
-        (f"<{d['name']}>" if d["name"].startswith("~") else d["name"]): d["type"]
-        for d in res["types"][0]["fields"]
-    }
+    pred_names = []
+
+    for field in res["types"][0]["fields"]:
+        pred_name = f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
+        pred_names.append(pred_name)
+
+    return pred_names
+
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
@@ -276,7 +270,7 @@ def requires_auth(path):
             try:
                 return route_fn()
             except Exception as e:
-                LOGGER.error(e)
+                LOGGER.error(traceback.format_exc())
                 return respond("Unexpected Error")
 
         return inner_route
@@ -295,8 +289,8 @@ def no_auth(path):
                 return respond(None, {})
             try:
                 return route_fn()
-            except Exception as e:
-                LOGGER.error(e)
+            except Exception:
+                LOGGER.error(path + ' failed ' + traceback.format_exc())
                 return respond("Unexpected Error")
 
         return inner_route
