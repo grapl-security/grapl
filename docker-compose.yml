@@ -50,6 +50,7 @@ services:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -70,6 +71,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -93,6 +95,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
       - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -116,6 +119,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -139,6 +143,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - "ANALYZER_EXECUTOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
