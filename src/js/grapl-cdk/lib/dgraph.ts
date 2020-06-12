@@ -14,11 +14,11 @@ class Zero extends cdk.Construct {
         peer: string,
         idx: number
     ) {
-        super(scope, graph_name + id);
+        super(scope, id);
 
         const zeroTask = new ecs.Ec2TaskDefinition(
             this, 
-            id,
+            'TaskDef',
             {
                 networkMode: ecs.NetworkMode.AWS_VPC,
             }
@@ -40,13 +40,13 @@ class Zero extends cdk.Construct {
         zeroTask.addContainer(id + 'Container', {
             // --my is our own hostname (graph + id)
             // --peer is the other dgraph zero hostname
-            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.2.2"),
             command,
             logging: logDriver,
             memoryReservationMiB: 1024,
         });
 
-        const zeroService = new ecs.Ec2Service(this, id + 'Service', {
+        const zeroService = new ecs.Ec2Service(this, 'Ec2Service', {
             cluster,  // Required
             taskDefinition: zeroTask,
             cloudMapOptions: {
@@ -74,11 +74,11 @@ class Alpha extends cdk.Construct {
         cluster: ecs.Cluster,
         zero: string
     ) {
-        super(scope, graph_name + id);
+        super(scope, id);
 
         const alphaTask = new ecs.Ec2TaskDefinition(
             this,
-            id,
+            'TaskDef',
             {
                 networkMode: ecs.NetworkMode.AWS_VPC,
             }
@@ -89,7 +89,7 @@ class Alpha extends cdk.Construct {
         });
 
         alphaTask.addContainer(id + graph_name + 'Container', {
-            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph"),
+            image: ecs.ContainerImage.fromRegistry("dgraph/dgraph:v1.2.2"),
             command: [
                 "dgraph", "alpha", `--my=${id}.${graph_name}.grapl:7080`,
                 "--lru_mb=1024", `--zero=${zero}.${graph_name}.grapl:5080`,
@@ -99,7 +99,7 @@ class Alpha extends cdk.Construct {
             memoryReservationMiB: 2048,
         });
 
-        const alphaService = new ecs.Ec2Service(this, id + 'Service', {
+        const alphaService = new ecs.Ec2Service(this, 'Ec2Service', {
             cluster,  // Required
             taskDefinition: alphaTask,
             cloudMapOptions: {
@@ -127,7 +127,8 @@ export class DGraphEcs extends cdk.Construct {
     ) {
         super(scope, id);
 
-        const cluster = new ecs.Cluster(this, id + '-EcsCluster', {
+        const cluster = new ecs.Cluster(this, 'EcsCluster', {
+            clusterName: `Grapl-${id}-EcsCluster`,
             vpc: vpc
         });
 
@@ -141,7 +142,7 @@ export class DGraphEcs extends cdk.Construct {
             }
         );
 
-        cluster.addCapacity(id + "ZeroGroupCapacity",
+        cluster.addCapacity('ZeroGroupCapacity',
             {
                 instanceType: new ec2.InstanceType("t3a.small"),
                 minCapacity: zeroCount,
@@ -171,7 +172,7 @@ export class DGraphEcs extends cdk.Construct {
 
         this.alphaNames = [];
 
-        cluster.addCapacity(id + "AlphaGroupCapacity",
+        cluster.addCapacity('AlphaGroupCapacity',
             {
                 instanceType: new ec2.InstanceType("t3a.2xlarge"),
                 minCapacity: alphaCount,

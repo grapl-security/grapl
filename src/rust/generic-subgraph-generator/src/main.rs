@@ -1,33 +1,28 @@
-use std::collections::HashSet;
+use std::fmt::Debug;
 use std::io::Cursor;
-use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use lazy_static::lazy_static;
 
 use aws_lambda_events::event::sqs::SqsEvent;
-use failure::Error;
+use regex::Regex;
+use serde::de::Error as SerdeError;
+use serde::{Deserialize, Serialize};
+use sqs_lambda::cache::{Cache, CacheResponse, NopCache};
+use sqs_lambda::event_decoder::PayloadDecoder;
+use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
+use tracing::*;
+
+use async_trait::async_trait;
 use graph_descriptions::file::FileState;
 use graph_descriptions::graph_description::*;
 use graph_descriptions::network_connection::NetworkConnectionState;
+use graph_descriptions::node::NodeT;
 use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::Context;
-use log::*;
-use regex::Regex;
-use rusoto_s3::S3Client;
-use rusoto_sqs::SqsClient;
-use serde::{Deserialize, Serialize};
-
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::redis_cache::RedisCache;
-
-use async_trait::async_trait;
-
-use graph_descriptions::node::NodeT;
+use graph_generator_lib::{run_graph_generator_aws, run_graph_generator_local};
+use grapl_config::event_cache;
+use lazy_static::lazy_static;
+use tracing_subscriber::EnvFilter;
 
 #[derive(Clone, Debug, Hash)]
 pub enum GenericEvent {
@@ -41,11 +36,6 @@ pub enum GenericEvent {
     ProcessInboundConnectionLog(ProcessInboundConnectionLog),
     ProcessPortBindLog(ProcessPortBindLog),
 }
-
-use serde::de::Error as SerdeError;
-use sqs_lambda::cache::{Cache, CacheResponse, NopCache};
-use sqs_lambda::local_service::local_service;
-use std::fmt::Debug;
 
 impl GenericEvent {
     fn from_value(raw_log: serde_json::Value) -> Result<GenericEvent, serde_json::Error> {
@@ -175,16 +165,6 @@ pub struct ProcessPortBindLog {
     hostname: String,
     timestamp: u64,
     eventname: String,
-}
-
-fn is_internal_ip(ip: &str) -> bool {
-    lazy_static!(
-        static ref RE: Regex = Regex::new(
-            r"/(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/"
-        ).expect("is_internal_ip regex");
-    );
-
-    RE.is_match(ip)
 }
 
 fn handle_outbound_traffic(conn_log: ProcessOutboundConnectionLog) -> Graph {
@@ -628,7 +608,7 @@ fn handle_file_read(file_read: FileRead) -> Graph {
     graph
 }
 
-fn handle_log(generic_event: GenericEvent) -> Result<Graph, Error> {
+fn handle_log(generic_event: GenericEvent) -> Result<Graph, eyre::Report> {
     match generic_event {
         GenericEvent::ProcessStart(event) => Ok(handle_process_start(event)),
         GenericEvent::ProcessStop(event) => Ok(handle_process_stop(event)),
@@ -639,93 +619,6 @@ fn handle_log(generic_event: GenericEvent) -> Result<Graph, Error> {
         GenericEvent::ProcessOutboundConnectionLog(event) => Ok(handle_outbound_traffic(event)),
         GenericEvent::ProcessInboundConnectionLog(event) => Ok(handle_inbound_traffic(event)),
         GenericEvent::ProcessPortBindLog(_event) => unimplemented!(),
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct SubgraphSerializer {
-    proto: Vec<u8>,
-}
-
-impl CompletionEventSerializer for SubgraphSerializer {
-    type CompletedEvent = GeneratedSubgraphs;
-    type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
-
-    fn serialize_completed_events(
-        &mut self,
-        completed_events: &[Self::CompletedEvent],
-    ) -> Result<Vec<Self::Output>, Self::Error> {
-        let mut subgraph = Graph::new(0);
-
-        let mut pre_nodes = 0;
-        let mut pre_edges = 0;
-        for completed_event in completed_events {
-            for sg in completed_event.subgraphs.iter() {
-                pre_nodes += sg.nodes.len();
-                pre_edges += sg.edges.len();
-                subgraph.merge(sg);
-            }
-        }
-
-        if subgraph.is_empty() {
-            warn!(
-                concat!(
-                    "Output subgraph is empty. Serializing to empty vector.",
-                    "pre_nodes: {} pre_edges: {}"
-                ),
-                pre_nodes, pre_edges,
-            );
-            return Ok(vec![]);
-        }
-
-        info!(
-            "Serializing {} nodes {} edges. Down from {} nodes {} edges.",
-            subgraph.nodes.len(),
-            subgraph.edges.len(),
-            pre_nodes,
-            pre_edges,
-        );
-
-        let subgraphs = GeneratedSubgraphs {
-            subgraphs: vec![subgraph],
-        };
-
-        self.proto.clear();
-
-        prost::Message::encode(&subgraphs, &mut self.proto)
-            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
-
-        let mut compressed = Vec::with_capacity(self.proto.len());
-        let mut proto = Cursor::new(&self.proto);
-        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
-
-        Ok(vec![compressed])
-    }
-}
-
-fn time_based_key_fn(_event: &[u8]) -> String {
-    info!("event length {}", _event.len());
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
-}
-
-fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
-    rusoto_sqs::Message {
-        attributes: Some(event.attributes),
-        body: event.body,
-        md5_of_body: event.md5_of_body,
-        md5_of_message_attributes: event.md5_of_message_attributes,
-        message_attributes: None,
-        message_id: event.message_id,
-        receipt_handle: event.receipt_handle,
     }
 }
 
@@ -748,43 +641,37 @@ where
 }
 
 #[derive(Clone)]
-struct GenericSubgraphGenerator<C, E>
+struct GenericSubgraphGenerator<C>
 where
-    C: Cache<E> + Clone + Send + Sync + 'static,
-    E: Debug + Clone + Send + Sync + 'static,
+    C: Cache + Clone + Send + Sync + 'static,
 {
     cache: C,
-    _p: std::marker::PhantomData<(E)>,
 }
 
-impl<C, E> GenericSubgraphGenerator<C, E>
+impl<C> GenericSubgraphGenerator<C>
 where
-    C: Cache<E> + Clone + Send + Sync + 'static,
-    E: Debug + Clone + Send + Sync + 'static,
+    C: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(cache: C) -> Self {
-        Self {
-            cache,
-            _p: std::marker::PhantomData,
-        }
+        Self { cache }
     }
 }
 
 #[async_trait]
-impl<C, E> EventHandler for GenericSubgraphGenerator<C, E>
+impl<C> EventHandler for GenericSubgraphGenerator<C>
 where
-    C: Cache<E> + Clone + Send + Sync + 'static,
-    E: Debug + Clone + Send + Sync + 'static,
+    C: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<serde_json::Value>;
-    type OutputEvent = GeneratedSubgraphs;
-    type Error = sqs_lambda::error::Error<Arc<failure::Error>>;
+    type OutputEvent = Graph;
+    type Error = sqs_lambda::error::Error;
 
+    #[tracing::instrument(skip(self, events))]
     async fn handle_event(
         &mut self,
         events: Vec<serde_json::Value>,
     ) -> OutputEvent<Self::OutputEvent, Self::Error> {
-        let mut failed: Option<failure::Error> = None;
+        let mut failed: Option<eyre::Report> = None;
         let mut final_subgraph = Graph::new(0);
         let mut identities = Vec::with_capacity(events.len());
 
@@ -819,13 +706,11 @@ where
 
         let mut completed = if let Some(e) = failed {
             OutputEvent::new(Completion::Partial((
-                GeneratedSubgraphs::new(vec![final_subgraph]),
-                sqs_lambda::error::Error::from(Arc::new(e)),
+                final_subgraph,
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             )))
         } else {
-            OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![
-                final_subgraph,
-            ])))
+            OutputEvent::new(Completion::Total(final_subgraph))
         };
 
         identities
@@ -836,136 +721,18 @@ where
     }
 }
 
-fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    info!("Handling event");
-
-    let mut initial_events: HashSet<String> = event
-        .records
-        .iter()
-        .map(|event| event.message_id.clone().unwrap())
-        .collect();
-
-    info!("Initial Events {:?}", initial_events);
-
-    let (tx, rx) = std::sync::mpsc::sync_channel(10);
-
-    std::thread::spawn(move || {
-        tokio_compat::run_std(async move {
-            let queue_url = std::env::var("QUEUE_URL").expect("QUEUE_URL");
-            info!("Queue Url: {}", queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-            let cache_address = {
-                let generic_event_cache_addr =
-                    std::env::var("GENERIC_EVENT_CACHE_ADDR").expect("GENERIC_EVENT_CACHE_ADDR");
-                let generic_event_cache_port =
-                    std::env::var("GENERIC_EVENT_CACHE_PORT").expect("GENERIC_EVENT_CACHE_PORT");
-
-                format!("{}:{}", generic_event_cache_addr, generic_event_cache_port,)
-            };
-
-            let bucket = bucket_prefix + "-unid-subgraphs-generated-bucket";
-            info!("Output events to: {}", bucket);
-            let region = grapl_config::region();
-
-            let cache = RedisCache::new(cache_address.to_owned())
-                .await
-                .expect("Could not create redis client");
-
-            info!("SqsCompletionHandler");
-
-            todo!("We need to add the 'Completed' messaeg");
-
-            let generator: GenericSubgraphGenerator<
-                _,
-                sqs_lambda::error::Error<Arc<failure::Error>>,
-            > = GenericSubgraphGenerator::new(cache.clone());
-
-            let initial_messages: Vec<rusoto_sqs::Message> =
-                event.records.into_iter().map(map_sqs_message).collect();
-
-            sqs_lambda::sqs_service::sqs_service(
-                queue_url,
-                initial_messages,
-                bucket,
-                ctx,
-                S3Client::new(region.clone()),
-                SqsClient::new(region.clone()),
-                ZstdJsonDecoder::default(),
-                SubgraphSerializer {
-                    proto: Vec::with_capacity(1024),
-                },
-                generator,
-                cache.clone(),
-                move |_self_actor, result: Result<String, String>| match result {
-                    Ok(worked) => {
-                        info!(
-                            "Handled an event, which was successfully deleted: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                    Err(worked) => {
-                        info!(
-                            "Handled an initial_event, though we failed to delete it: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                },
-                move |_, _| async move { Ok(()) },
-            )
-            .await;
-        });
-    });
-
-    info!("Checking acks");
-    for r in &rx {
-        info!("Acking event: {}", &r);
-        initial_events.remove(&r);
-        if r == "Completed" {
-            let r = rx.recv_timeout(Duration::from_millis(100));
-            if let Ok(r) = r {
-                initial_events.remove(&r);
-            }
-            // If we're done go ahead and try to clear out any remaining
-            while let Ok(r) = rx.try_recv() {
-                initial_events.remove(&r);
-            }
-            break;
-        }
-    }
-
-    info!("Completed execution");
-
-    if initial_events.is_empty() {
-        info!("Successfully acked all initial events");
-        Ok(())
-    } else {
-        Err(lambda_runtime::error::HandlerError::from(
-            "Failed to ack all initial events",
-        ))
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    simple_logger::init_with_level(grapl_config::grapl_log_level())
-        .expect("Failed to initialize logger");
+    grapl_config::init_grapl_log!();
+    info!("Starting generic-subgraph-generator");
+    if grapl_config::is_local() {
+        let generator = GenericSubgraphGenerator::new(NopCache {});
 
-    let cache = NopCache {};
-    info!("SqsCompletionHandler");
+        run_graph_generator_local(generator, ZstdJsonDecoder::default()).await;
+    } else {
+        let generator = GenericSubgraphGenerator::new(event_cache().await);
 
-    let generator: GenericSubgraphGenerator<_, sqs_lambda::error::Error<Arc<failure::Error>>> =
-        GenericSubgraphGenerator::new(cache.clone());
-
-    local_service(
-        "input-dir",
-        "output-dir",
-        SubgraphSerializer {
-            proto: Vec::with_capacity(1024),
-        },
-        ZstdJsonDecoder::default(),
-        generator,
-    )
-    .await
+        run_graph_generator_aws(generator, ZstdJsonDecoder::default());
+    }
+    Ok(())
 }

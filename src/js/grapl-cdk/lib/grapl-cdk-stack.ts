@@ -30,7 +30,7 @@ class SysmonSubgraphGenerator extends cdk.NestedStack {
 
         const sysmon_log = new EventEmitter(this, prefix + '-sysmon-log');
 
-        const event_cache = new RedisCluster(this, prefix + '-sysmon-eventcache', vpc);
+        const event_cache = new RedisCluster(this, 'SysmonEventCache', vpc);
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         const service = new Service(
@@ -72,7 +72,7 @@ class NodeIdentifier extends cdk.Construct {
         vpc: ec2.IVpc,
         writes_to: s3.IBucket,
     ) {
-        super(scope, id + '-stack');
+        super(scope, id);
 
         const history_db = new HistoryDb(this, 'graplhistorydb');
 
@@ -80,7 +80,7 @@ class NodeIdentifier extends cdk.Construct {
         this.bucket = unid_subgraphs.bucket;
         this.topic = unid_subgraphs.topic;
 
-        const retry_identity_cache = new RedisCluster(this, `${prefix}-${id}-retrycache`, vpc);
+        const retry_identity_cache = new RedisCluster(this, 'NodeIdentifierRetryCache', vpc);
         retry_identity_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         const service = new Service(
@@ -134,7 +134,7 @@ class GraphMerger extends cdk.NestedStack {
         const subgraphs_generated = new EventEmitter(this, prefix + '-subgraphs-generated');
         this.bucket = subgraphs_generated.bucket;
 
-        const graph_merge_cache = new RedisCluster(this, prefix + '-mergedcache', vpc);
+        const graph_merge_cache = new RedisCluster(this, 'GraphMergerMergedCache', vpc);
         graph_merge_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         const service = new Service(
@@ -174,7 +174,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
         this.bucket = subgraphs_merged.bucket;
         this.topic = subgraphs_merged.topic;
 
-        const dispatch_event_cache = new RedisCluster(this, prefix + '-dispatcheventcache', vpc);
+        const dispatch_event_cache = new RedisCluster(this, 'DispatchedEventCache', vpc);
         dispatch_event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         const service = new Service(
@@ -224,9 +224,9 @@ class AnalyzerExecutor extends cdk.NestedStack {
         this.bucket = dispatched_analyzer.bucket;
         this.topic = dispatched_analyzer.topic;
 
-        this.count_cache = new RedisCluster(this, id + '-countcache', vpc);
-        this.hit_cache = new RedisCluster(this, id + '-hitcache', vpc);
-        this.message_cache = new RedisCluster(this, id + '-msgcache', vpc);
+        this.count_cache = new RedisCluster(this, 'ExecutorCountCache', vpc);
+        this.hit_cache = new RedisCluster(this, 'ExecutorHitCache', vpc);
+        this.message_cache = new RedisCluster(this, 'ExecutorMsgCache', vpc);
 
         const service = new Service(
             this,
@@ -282,7 +282,6 @@ class EngagementCreator extends cdk.NestedStack {
         vpc: ec2.IVpc,
         publishes_to: sns.ITopic,
         master_graph: DGraphEcs,
-        engagement_graph: DGraphEcs,
     ) {
         super(scope, id);
 
@@ -295,7 +294,6 @@ class EngagementCreator extends cdk.NestedStack {
             {
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
-                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                 },
                 vpc: vpc,
                 reads_from: analyzer_matched_sugraphs.bucket,
@@ -325,7 +323,6 @@ class ModelPluginDeployer extends cdk.NestedStack {
         prefix: string,
         jwt_secret: secretsmanager.Secret,
         master_graph: DGraphEcs,
-        engagement_graph: DGraphEcs,
         model_plugin_bucket: s3.IBucket,
         user_auth_table: UserAuthDb,
         vpc: ec2.Vpc,
@@ -335,23 +332,27 @@ class ModelPluginDeployer extends cdk.NestedStack {
         this.name = name + prefix;
         this.integrationName = name + prefix + 'Integration';
 
+        const grapl_version = process.env.GRAPL_VERSION || "latest";
+
         this.event_handler = new lambda.Function(
-            this, name, {
+            this, 'Handler', {
                 runtime: Runtime.PYTHON_3_7,
                 handler: `grapl_model_plugin_deployer.app`,
-                code: lambda.Code.fromAsset(`./zips/model-plugin-deployer.zip`),
+                functionName: 'Grapl-ModelPluginDeployer-Handler',
+                code: lambda.Code.fromAsset(`./zips/model-plugin-deployer-${grapl_version}.zip`),
                 vpc: vpc,
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
-                    "EG_ALPHAS": engagement_graph.alphaNames.join(","),
                     "JWT_SECRET_ID": jwt_secret.secretArn,
                     "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
                     "BUCKET_PREFIX": prefix
                 },
                 timeout: cdk.Duration.seconds(25),
                 memorySize: 256,
+                description: grapl_version,
             }
         );
+        this.event_handler.currentVersion.addAlias('live');
 
         if (this.event_handler.role) {
             jwt_secret.grantRead(this.event_handler.role);
@@ -387,7 +388,7 @@ export interface GraplEnvironementProps {
     prefix: string,
     jwt_secret: secretsmanager.Secret,
     vpc: ec2.IVpc,
-    engagement_graph: DGraphEcs,
+    master_graph: DGraphEcs,
     user_auth_table: UserAuthDb,
 }
 
@@ -401,10 +402,8 @@ export class GraplCdkStack extends cdk.Stack {
 
         const mgZeroCount = Number(process.env.MG_ZEROS_COUNT) || 1;
         const mgAlphaCount = Number(process.env.MG_ALPHAS_COUNT) || 1;
-        const egZeroCount = Number(process.env.EG_ZEROS_COUNT) || 1;
-        const egAlphaCount = Number(process.env.EG_ALPHAS_COUNT) || 1;
 
-        const grapl_vpc = new ec2.Vpc(this, prefix + '-GraplVPC', {
+        const grapl_vpc = new ec2.Vpc(this, 'VPC', {
             natGateways: 1,
             enableDnsHostnames: true,
             enableDnsSupport: true,
@@ -416,7 +415,7 @@ export class GraplCdkStack extends cdk.Stack {
             secretName: 'EdgeJwtSecret',
         });
 
-        const user_auth_table = new UserAuthDb(this, 'grapl-user-auth-table');
+        const user_auth_table = new UserAuthDb(this, 'UserAuthTable');
 
         const analyzers_bucket = new s3.Bucket(this, prefix + '-analyzers-bucket', {
             bucketName: prefix + '-analyzers-bucket',
@@ -432,18 +431,10 @@ export class GraplCdkStack extends cdk.Stack {
 
         const master_graph = new DGraphEcs(
             this,
-            'mastergraphcluster',
+            'master-graph',
             grapl_vpc,
             mgZeroCount,
             mgAlphaCount,
-        );
-
-        const engagement_graph = new DGraphEcs(
-            this,
-            'engagementgraphcluster',
-            grapl_vpc,
-            egZeroCount,
-            egAlphaCount,
         );
 
         const engagement_creator = new EngagementCreator(
@@ -453,7 +444,6 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
             engagements_created_topic,
             master_graph,
-            engagement_graph,
         );
 
         const model_plugins_bucket = new s3.Bucket(this, prefix + '-model-plugins-bucket', {
@@ -467,7 +457,6 @@ export class GraplCdkStack extends cdk.Stack {
             prefix,
             jwtSecret,
             master_graph,
-            engagement_graph,
             model_plugins_bucket,
             user_auth_table,
             grapl_vpc,
@@ -528,11 +517,11 @@ export class GraplCdkStack extends cdk.Stack {
         );
 
         this.grapl_env = {
-            prefix: prefix,
+            prefix,
             jwt_secret: jwtSecret,
             vpc: grapl_vpc,
-            engagement_graph: engagement_graph,
-            user_auth_table: user_auth_table,
+            master_graph,
+            user_auth_table,
         }
     }
 }

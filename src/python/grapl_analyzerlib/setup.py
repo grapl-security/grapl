@@ -15,14 +15,14 @@ TEST_REQUIREMENTS = [
     "hypothesis",
 ]
 
-with open('README.md') as readme:
+with open("README.md") as readme:
     README = readme.read()
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 def find_version():
-    with open(os.path.join(HERE, 'VERSION')) as version:
+    with open(os.path.join(HERE, "VERSION")) as version:
         return version.read().strip()
 
 
@@ -51,9 +51,9 @@ setup(
     },
     include_package_data=True,
     install_requires=[
-        'grapl_graph_descriptions==1.0.*',
-        'pydgraph',
-        'typing_extensions'
+        "grapl_graph_descriptions==1.0.*",
+        "pydgraph",
+        "typing_extensions",
     ],
     extras_require={
         "linters": LINTERS_REQUIREMENTS,

@@ -15,16 +15,6 @@ services:
     logging:
       driver: none
 
-  grapl-engagement-graph-db:
-    tty: false
-    image: dgraph/standalone:v1.2.2
-    ports:
-      - "8001:8000"
-      - "8081:8080"
-      - "9081:9080"
-    logging:
-      driver: none
-
   sqs:
     image: localstack/localstack
     environment:
@@ -59,9 +49,8 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue"
-      - "SYSMON_GRAPH_GENERATOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/sysmon-graph-generator-queue"
-      - "NODE_IDENTIFIER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -80,8 +69,9 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "NODE_IDENTIFIER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-queue"
-      - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/graph-merger-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
+      - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -103,8 +93,9 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "NODE_IDENTIFIER_RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/node-identifier-retry-queue"
-      - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/graph-merger-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
+      - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -126,8 +117,9 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/graph-merger-queue"
-      - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-dispatcher-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -149,8 +141,9 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-dispatcher-queue"
-      - "ANALYZER_EXECUTOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
+      - "ANALYZER_EXECUTOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
@@ -177,7 +170,7 @@ services:
       - "IS_RETRY=False"
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "ANALYZER_EXECUTOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/analyzer-executor-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -199,7 +192,6 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
@@ -216,7 +208,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     tty: true
     links:
-      - grapl-engagement-graph-db:engagement_graph
+      - grapl-master-graph-db:master_graph
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -230,7 +222,6 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
@@ -255,7 +246,6 @@ services:
       - IS_LOCAL=True
       - PORT=5000
     links:
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     ports:
       - 5000:5000
@@ -263,7 +253,6 @@ services:
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
     links:
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
     ports:
       - 8888:8888
@@ -281,7 +270,6 @@ services:
       - ./etc/local_grapl/:/var/run/target/
     tty: true
     links:
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -290,7 +278,6 @@ services:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
     depends_on:
-      - grapl-engagement-graph-db
       - grapl-master-graph-db
       - s3
       - sqs

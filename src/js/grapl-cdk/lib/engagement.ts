@@ -17,7 +17,6 @@ import { GraplEnvironementProps } from '../lib/grapl-cdk-stack';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from 'node-dir';
-import {BucketEncryption} from "@aws-cdk/aws-s3";
 
 function getEdgeGatewayId(
     [loginName, graphqlName]: [string, string],
@@ -99,27 +98,31 @@ export class EngagementEdge extends cdk.Stack {
         id: string,
         props: GraplEnvironementProps,
     ) {
-        super(scope, id + 'Stack', { stackName: 'Grapl-EngagementEdge' });
+        super(scope, id, { stackName: 'Grapl-EngagementEdge' });
 
         this.name = id + props.prefix;
         this.integrationName = id + props.prefix + 'Integration';
 
+        const grapl_version = process.env.GRAPL_VERSION || "latest";
+
         this.event_handler = new lambda.Function(
-            this, id, {
+            this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: `engagement_edge.app`,
-            code: lambda.Code.fromAsset(`./zips/engagement-edge.zip`),
+            functionName: 'Grapl-EngagementEdge-Handler',
+            code: lambda.Code.fromAsset(`./zips/engagement-edge-${grapl_version}.zip`),
             vpc: props.vpc,
             environment: {
-                "EG_ALPHAS": props.engagement_graph.alphaNames.join(","),
+                "MG_ALPHAS": props.master_graph.alphaNames.join(","),
                 "JWT_SECRET_ID": props.jwt_secret.secretArn,
                 "USER_AUTH_TABLE": props.user_auth_table.user_auth_table.tableName,
                 "BUCKET_PREFIX": props.prefix,
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
-        }
-        );
+            description: grapl_version,
+        });
+        this.event_handler.currentVersion.addAlias('live');
 
         if (this.event_handler.role) {
             props.jwt_secret.grantRead(this.event_handler.role);
@@ -164,7 +167,7 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         this.securityGroup = new ec2.SecurityGroup(
             this,
-            prefix + '-notebook-security-group',
+            'SecurityGroup',
             { vpc: vpc });
 
         this.connections = new ec2.Connections({
@@ -174,7 +177,7 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         const role = new iam.Role(
             this,
-            id + 'notebook-role',
+            'Role',
             {
                 assumedBy: new iam.ServicePrincipal('sagemaker.amazonaws.com')
             }
@@ -184,8 +187,9 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         const _notebook = new sagemaker.CfnNotebookInstance(
             this,
-            id + '-sagemaker-endpoint',
+            'SageMakerEndpoint',
             {
+                notebookInstanceName: 'Grapl-Notebook',
                 instanceType: 'ml.t2.medium',
                 securityGroupIds: [this.securityGroup.securityGroupId],
                 subnetId: vpc.privateSubnets[0].subnetId,
@@ -205,16 +209,15 @@ export class EngagementUx extends cdk.Stack {
         edge: EngagementEdge,
         graphql_endpoint: GraphQLEndpoint,
     ) {
-        super(scope, id + 'Stack', { stackName: 'Grapl-EngagementUX' });
+        super(scope, id, { stackName: 'Grapl-EngagementUX' });
 
         const bucketName = `${prefix}-engagement-ux-bucket`;
 
-        const edgeBucket = new s3.Bucket(this, bucketName, {
+        const edgeBucket = new s3.Bucket(this, 'EdgeBucket', {
             bucketName,
             publicReadAccess: true,
             websiteIndexDocument: 'index.html',
-            removalPolicy: RemovalPolicy.DESTROY,
-            encryption: BucketEncryption.KMS_MANAGED
+            removalPolicy: RemovalPolicy.DESTROY
         });
 
         getEdgeGatewayId(
@@ -258,7 +261,7 @@ export class EngagementUx extends cdk.Stack {
                     });
 
 
-                new s3deploy.BucketDeployment(this, id + 'Ux', {
+                new s3deploy.BucketDeployment(this, 'UxDeployment', {
                     sources: [s3deploy.Source.asset(packageDir)],
                     destinationBucket: edgeBucket,
                 });

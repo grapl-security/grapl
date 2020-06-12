@@ -15,14 +15,18 @@ class Queues {
 
     constructor(scope: cdk.Construct, queue_name: string) {
 
-        const dead_letter_queue = new sqs.Queue(scope, queue_name + '-dead-letter');
+        const dead_letter_queue = new sqs.Queue(scope, 'DeadLetterQueue', {
+                queueName: queue_name + '-dead-letter-queue'
+        });
 
-        this.retry_queue = new sqs.Queue(scope, queue_name + '-retry', {
+        this.retry_queue = new sqs.Queue(scope, 'RetryQueue', {
+            queueName: queue_name + '-retry-queue',
             deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 10 },
             visibilityTimeout: cdk.Duration.seconds(360)
         });
 
-        this.queue = new sqs.Queue(scope, queue_name, {
+        this.queue = new sqs.Queue(scope, 'Queue', {
+            queueName: queue_name + '-queue',
             deadLetterQueue: { queue: this.retry_queue, maxReceiveCount: 5 },
             visibilityTimeout: cdk.Duration.seconds(180)
         });
@@ -39,8 +43,8 @@ export interface ServiceProps {
     opt?: any
 }
 
-export class Service extends cdk.Construct {
-    readonly event_handler: lambda.Function;
+export class Service {
+    readonly event_handler: lambda.IFunction;
     readonly event_retry_handler: lambda.Function;
     readonly queues: Queues
 
@@ -49,11 +53,12 @@ export class Service extends cdk.Construct {
         name: string,
         props: ServiceProps
     ) {
-        super(scope, name + "-Service");
 
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
         const opt = props.opt;
+
+        const grapl_version = process.env.GRAPL_VERSION || "latest";
 
         const runtime = (opt && opt.runtime) ?
             opt.runtime : 
@@ -61,23 +66,25 @@ export class Service extends cdk.Construct {
                 name: "provided",
                 supportsInlineCode: true
             };
+
         const handler = (runtime === lambda.Runtime.PYTHON_3_7) ?
             `${name}.lambda_handler` :
             name;
 
-        const queues = new Queues(this, name + '-queue');
+        const queues = new Queues(scope, 'grapl-' + name);
 
         if (environment) {
-            environment.QUEUE_URL = queues.queue.queueUrl;
+            environment.SOURCE_QUEUE_URL = queues.queue.queueUrl;
             environment.RUST_BACKTRACE = "1";
         }
 
         const event_handler = new lambda.Function(
-            this, name,
+            scope, 'Handler',
             {
                 runtime: runtime,
                 handler: handler,
-                code: lambda.Code.asset(`./zips/${name}.zip`),
+                functionName: `Grapl-${name}-Handler`,
+                code: lambda.Code.asset(`./zips/${name}-${grapl_version}.zip`),
                 vpc: props.vpc,
                 environment: {
                     IS_RETRY: "False",
@@ -85,22 +92,26 @@ export class Service extends cdk.Construct {
                 },
                 timeout: cdk.Duration.seconds(180),
                 memorySize: 256,
+                description: grapl_version,
             });
+        event_handler.currentVersion.addAlias('live');
+        
 
         if (!retry_code_name) {
             retry_code_name = name
         }
 
         if (environment) {
-            environment.QUEUE_URL = queues.retry_queue.queueUrl;
+            environment.SOURCE_QUEUE_URL = queues.retry_queue.queueUrl;
         }
 
         let event_retry_handler = new lambda.Function(
-            this, name + '-retry-handler',
+            scope, 'RetryHandler',
             {
                 runtime: runtime,
                 handler: handler,
-                code: lambda.Code.asset(`./zips/${retry_code_name}.zip`),
+                functionName: `Grapl-${name}-RetryHandler`,
+                code: lambda.Code.asset(`./zips/${retry_code_name}-${grapl_version}.zip`),
                 vpc: props.vpc,
                 environment: {
                     IS_RETRY: "True",
@@ -108,7 +119,9 @@ export class Service extends cdk.Construct {
                 },
                 timeout: cdk.Duration.seconds(360),
                 memorySize: 512,
+                description: grapl_version,
             });
+        event_retry_handler.currentVersion.addAlias('live');
 
         event_handler.addEventSource(new SqsEventSource(queues.queue, { batchSize: 10 }));
         event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue, { batchSize: 10 }));

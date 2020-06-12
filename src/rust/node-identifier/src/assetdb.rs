@@ -5,9 +5,9 @@ use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::{DynamoDb, PutItemInput, QueryInput};
 use serde::{Deserialize, Serialize};
 
-use graph_descriptions::graph_description::*;
 use graph_descriptions::graph_description::host::*;
 use graph_descriptions::graph_description::node::WhichNode;
+use graph_descriptions::graph_description::*;
 use graph_descriptions::graph_description::*;
 
 #[derive(Debug, Serialize, Deserialize)]

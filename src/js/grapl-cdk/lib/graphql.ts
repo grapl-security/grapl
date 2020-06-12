@@ -14,26 +14,30 @@ export class GraphQLEndpoint extends cdk.Stack {
         name: string,
         props: GraplEnvironementProps,
     ) {
-        super(parent, name + 'Stack', { stackName: 'Grapl-GraphQLEndpoint' });
+        super(parent, name, { stackName: 'Grapl-GraphQLEndpoint' });
 
         this.name = name + props.prefix
         this.integrationName = name + props.prefix + 'GraphQLIntegration';
+
+        const grapl_version = process.env.GRAPL_VERSION || "latest";
         
         this.event_handler = new lambda.Function(
-            this, name, {
+            this, 'Handler', {
                 runtime: lambda.Runtime.NODEJS_12_X,
                 handler: `server.handler`,
-                code: lambda.Code.fromAsset(`./zips/graphql-endpoint.zip`),
+                code: lambda.Code.fromAsset(`./zips/graphql-endpoint-${grapl_version}.zip`),
                 vpc: props.vpc,
                 environment: {
-                    "EG_ALPHAS": props.engagement_graph.alphaNames.join(","),
+                    "MG_ALPHAS": props.master_graph.alphaNames.join(","),
                     "JWT_SECRET_ID": props.jwt_secret.secretArn,
                     "BUCKET_PREFIX": props.prefix,
                 },
                 timeout: cdk.Duration.seconds(25),
                 memorySize: 128,
+                description: grapl_version,
             }
         );
+        this.event_handler.currentVersion.addAlias('live');
 
         if (this.event_handler.role) {
             props.jwt_secret.grantRead(this.event_handler.role);

@@ -4,14 +4,13 @@ import os
 import sys
 import time
 import traceback
-
 from collections import defaultdict
 from typing import *
 
 import boto3
 import botocore.exceptions
-from grapl_analyzerlib.nodes.lens_node import CopyingDgraphClient, LensView
-from grapl_analyzerlib.prelude import NodeView, FileView, ProcessView
+from grapl_analyzerlib.nodes.lens_node import LensView
+from grapl_analyzerlib.prelude import NodeView
 from pydgraph import DgraphClient, DgraphClientStub
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
@@ -188,42 +187,6 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
         txn.discard()
 
 
-def copy_node(
-    mgclient: DgraphClient,
-    egclient: DgraphClient,
-    node_key: str,
-    init_node: Optional[Dict[str, Any]] = None,
-) -> None:
-    if not init_node:
-        init_node = dict()
-    assert init_node is not None
-
-    query = f"""
-        {{
-            q0(func: eq(node_key, "{node_key}")) {{
-                    uid,
-                    expand(_all_),
-                    dgraph.type    
-            }}
-        }}
-        """
-    txn = mgclient.txn(read_only=True)
-
-    try:
-        res = json.loads(txn.query(query).json)["q0"]
-    finally:
-        txn.discard()
-
-    if not res:
-        raise Exception("ERROR: Can not find res")
-
-    LOGGER.debug(f"Copy query result: {res}")
-
-    raw_to_copy = {**res[0], **init_node}
-
-    return upsert(egclient, raw_to_copy)
-
-
 def get_s3_client():
     if IS_LOCAL:
         return boto3.resource(
@@ -239,20 +202,11 @@ def get_s3_client():
 def lambda_handler(events: Any, context: Any) -> None:
     mg_alpha_names = os.environ["MG_ALPHAS"].split(",")
     mg_alpha_port = os.environ.get("MG_ALPHA_PORT", "9080")
-    eg_alpha_names = os.environ["EG_ALPHAS"].split(",")
-    eg_alpha_port = os.environ.get("EG_ALPHA_PORT", "9080")
 
     mg_client_stubs = [
         DgraphClientStub(f"{name}:{mg_alpha_port}") for name in mg_alpha_names
     ]
-    eg_client_stubs = [
-        DgraphClientStub(f"{name}:{eg_alpha_port}") for name in eg_alpha_names
-    ]
-
-    eg_client = DgraphClient(*eg_client_stubs)
     mg_client = DgraphClient(*mg_client_stubs)
-
-    cclient = CopyingDgraphClient(src_client=mg_client, dst_client=eg_client)
 
     s3 = get_s3_client()
     for event in events["Records"]:
@@ -276,78 +230,50 @@ def lambda_handler(events: Any, context: Any) -> None:
             NodeView.from_node_key(mg_client, n["node_key"]) for n in nodes.values()
         ]
 
-        copied_nodes = {}
+        uid_map = {node.node_key: node.uid for node in nodes}
+
         lenses = {}  # type: Dict[str, LensView]
         for node in nodes:
             LOGGER.debug(f"Copying node: {node}")
-            # Only support asset lens for now
-            copy_node(
-                mg_client,
-                eg_client,
-                node.node.node_key,
-                init_node=node.node.get_properties(),
-            )
-            copied_node = NodeView.from_node_key(eg_client, node.node.node_key)
 
             for lens_type, lens_name in lens_dict:
                 LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
                 lens_id = lens_name + lens_type
-                lens = lenses.get(lens_name) or LensView.get_or_create(
-                    cclient, lens_name, lens_type
+                lens: LensView = lenses.get(lens_name) or LensView.get_or_create(
+                    mg_client, lens_name, lens_type
                 )
                 lenses[lens_id] = lens
 
                 # Attach to scope
-                create_edge(eg_client, lens.uid, "scope", copied_node.uid)
-
-                copied_nodes[copied_node.node_key] = copied_node.uid
+                create_edge(mg_client, lens.uid, "scope", node.uid)
 
                 # If a node shows up in a lens all of its connected nodes should also show up in that lens
                 for edge_list in edges.values():
                     for edge in edge_list:
-                        from_uid = copied_nodes.get(edge["from"])
-                        to_uid = copied_nodes.get(edge["to"])
-                        if not from_uid:
-                            copy_node(mg_client, eg_client, edge["from"])
-                            copied_node = NodeView.from_node_key(
-                                eg_client, edge["from"]
-                            )
-                        if not to_uid:
-                            copy_node(mg_client, eg_client, edge["to"])
-                            copied_node = NodeView.from_node_key(eg_client, edge["to"])
-
-                        create_edge(eg_client, lens.uid, "scope", copied_node.uid)
+                        from_uid = uid_map[edge["from"]]
+                        to_uid = uid_map[edge["to"]]
+                        create_edge(mg_client, lens.uid, "scope", from_uid)
+                        create_edge(mg_client, lens.uid, "scope", to_uid)
 
         for node in nodes:
-            node_uid = copied_nodes[node.node.node_key]
             attach_risk(
-                eg_client, node.node.node_key, node_uid, analyzer_name, risk_score
+                mg_client, node.node.node_key, node.uid, analyzer_name, risk_score
             )
 
         for edge_list in edges.values():
             for edge in edge_list:
-                from_uid = copied_nodes.get(edge["from"])
+                from_uid = uid_map[edge["from"]]
                 edge_name = edge["edge_name"]
-                to_uid = copied_nodes.get(edge["to"])
-                if not from_uid:
-                    copy_node(mg_client, eg_client, edge["from"])
-                    copied_node = NodeView.from_node_key(eg_client, edge["from"])
-                    from_uid = copied_node.uid
-                if not to_uid:
-                    copy_node(mg_client, eg_client, edge["to"])
-                    copied_node = NodeView.from_node_key(eg_client, edge["to"])
-                    to_uid = copied_node.uid
+                to_uid = uid_map[edge["to"]]
 
-                create_edge(eg_client, from_uid, edge_name, to_uid)
+                create_edge(mg_client, from_uid, edge_name, to_uid)
 
         for lens in lenses.values():
-            recalculate_score(eg_client, lens)
+            recalculate_score(mg_client, lens)
 
 
 if IS_LOCAL:
     os.environ["MG_ALPHAS"] = "master_graph"
-    os.environ["EG_ALPHAS"] = "engagement_graph"
-    os.environ["EG_ALPHA_PORT"] = "9080"
 
     sqs = boto3.client(
         "sqs",
@@ -361,9 +287,9 @@ if IS_LOCAL:
     while not alive:
         try:
             if "QueueUrls" not in sqs.list_queues(
-                QueueNamePrefix="engagement-creator-queue"
+                QueueNamePrefix="grapl-engagement-creator-queue"
             ):
-                LOGGER.info("Waiting for engagement-creator-queue to be created")
+                LOGGER.info("Waiting for grapl-engagement-creator-queue to be created")
                 time.sleep(2)
                 continue
         except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError):
@@ -375,7 +301,7 @@ if IS_LOCAL:
     while True:
         try:
             res = sqs.receive_message(
-                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/engagement-creator-queue",
+                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
                 WaitTimeSeconds=10,
                 MaxNumberOfMessages=10,
             )
@@ -391,7 +317,7 @@ if IS_LOCAL:
                 lambda_handler(s3_event, {})
 
                 sqs.delete_message(
-                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/engagement-creator-queue",
+                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
                     ReceiptHandle=receipt_handle,
                 )
 
