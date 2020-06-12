@@ -26,8 +26,6 @@ from grapl_analyzerlib.grapl_client import (
     GraphClient,
     MasterGraphClient,
     LocalMasterGraphClient,
-    EngagementGraphClient,
-    LocalEngagementGraphClient,
 )
 
 T = TypeVar("T")
