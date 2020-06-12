@@ -52,6 +52,7 @@ def expired_node_uids(
 ) -> Iterator[Iterable[str]]:
     ttl_cutoff_s = calculate_ttl_cutoff_s(datetime.datetime.utcnow(), ttl_s)
 
+    last_uid = None
     while 1:
         results = query_batch(client, batch_size, ttl_cutoff_s, last_uid)
         batch = []  # FIXME
