@@ -165,10 +165,9 @@ def provision_schemas(master_graph_client, raw_schemas):
 def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None:
     LOGGER.debug(f"attaching reverse edges for schemas: {schemas}")
     for schema in schemas:
-        if schema.self_type() in builtin_nodes or schema.self_type() == "Any":
-            continue
-        for edge_name, uid_type, _ in schema.forward_edges:
-            add_reverse_edge_type(client, uid_type, edge_name)
+        if schema.self_type() != "Any":
+            for edge_name, uid_type, _ in schema.forward_edges:
+                add_reverse_edge_type(client, uid_type, edge_name)
 
 
 def add_reverse_edge_type(
