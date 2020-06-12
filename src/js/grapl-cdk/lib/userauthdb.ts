@@ -11,14 +11,12 @@ export class UserAuthDb extends cdk.Construct {
     constructor(
         scope: cdk.Construct,
         id: string,
-        // props?: cdk.NestedStackProps
 
     ) {
-        // super(scope, id, props);
         super(scope, id);
 
         this.user_auth_table = new dynamodb.Table(this, 'user_auth_table', {
-            tableName: "user_auth_table",
+            tableName: 'user_auth_table',
             partitionKey: {
                 name: 'username',
                 type: dynamodb.AttributeType.STRING

@@ -288,9 +288,9 @@ if IS_LOCAL:
     while not alive:
         try:
             if "QueueUrls" not in sqs.list_queues(
-                QueueNamePrefix="engagement-creator-queue"
+                QueueNamePrefix="grapl-engagement-creator-queue"
             ):
-                LOGGER.info("Waiting for engagement-creator-queue to be created")
+                LOGGER.info("Waiting for grapl-engagement-creator-queue to be created")
                 time.sleep(2)
                 continue
         except (
@@ -306,7 +306,7 @@ if IS_LOCAL:
     while True:
         try:
             res = sqs.receive_message(
-                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/engagement-creator-queue",
+                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
                 WaitTimeSeconds=10,
                 MaxNumberOfMessages=10,
             )
@@ -322,7 +322,7 @@ if IS_LOCAL:
                 lambda_handler(s3_event, {})
 
                 sqs.delete_message(
-                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/engagement-creator-queue",
+                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
                     ReceiptHandle=receipt_handle,
                 )
 
