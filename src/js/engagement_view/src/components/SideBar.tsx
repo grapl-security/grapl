@@ -20,6 +20,11 @@ const useStyles = makeStyles((theme: Theme) =>
     root: {
       display: "flex"
     },
+    button: {
+      backgroundColor: "#42C6FF",
+      margin: "0.25rem",
+      padding: "0.20rem",
+  }, 
     appBar: {
       transition: theme.transitions.create(["margin", "width"], {
         easing: theme.transitions.easing.sharp,
@@ -75,11 +80,16 @@ const useStyles = makeStyles((theme: Theme) =>
     lensName:{
       color:"#EAFDFF",
       fontSize: "2rem", 
-      margin: "10px 15px 0px 0px"
+      margin: "10px 15px 0px 0px",
     },
     header:{
-      fontSize: "35px"
+      fontSize: "35px",
     }, 
+    headerContent: {
+      width: "100vw",
+      display: "flex",  
+      justifyContent: "space-between",
+    },
     close:{
       color:"#42C6FF",
     }
@@ -90,9 +100,10 @@ type SideBarProps = {
   setLens: (lens: string) => void,
   curLens: string,
   curNode: Node | null,
+  redirectTo: (pageName: string) => void,
 }
 
-export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
+export default function SideBar({setLens, curLens, curNode, redirectTo}: SideBarProps) {
   const classes = useStyles();
 
   const [open, setOpen] = React.useState(true);
@@ -110,9 +121,10 @@ export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
       {/* <CssBaseline /> */}
       <AppBar
         position="fixed"
-        className={clsx(classes.appBar, {
-          [classes.appBarShift]: open
-        })}
+        className={
+          clsx(classes.appBar,
+          { [classes.appBarShift]: open})
+        }
       >
         <Toolbar>
           <IconButton
@@ -125,12 +137,24 @@ export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
             {/* // Menu Icon  */}
             &#9776;
           </IconButton>
-          <Typography 
-            variant="h5" 
-            noWrap
-          >
-            <b className={classes.header}> GRAPL</b>
-          </Typography>
+
+          <div className={classes.headerContent}>
+            <Typography 
+              variant="h5" 
+              noWrap
+            >
+              <b className={classes.header}> GRAPL </b>
+            </Typography>
+            <Button 
+                className = {classes.button }
+                onClick = { (e) => {
+                    redirectTo("dashboard");
+                } }
+            >
+                Dashboard
+            </Button>
+          </div>
+
         </Toolbar>
       </AppBar>
 
@@ -185,12 +209,9 @@ const defaultEngagementUxState = (): EngagementUxState => {
   }
 }
 
-export const EngagementUx = () => {
-    
+export const EngagementUx = ({redirectTo}: any) => {
     const [state, setState] = React.useState(defaultEngagementUxState());
     
-    console.log('EngagementUX: curLens, ', state.curLens);
-
     return (
         <>
             <SideBar 
@@ -202,6 +223,7 @@ export const EngagementUx = () => {
                 }
                 curLens={state.curLens}
                 curNode={state.curNode}
+                redirectTo={redirectTo}
             />
 
             <GraphDisplay 

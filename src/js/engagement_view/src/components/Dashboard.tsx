@@ -3,7 +3,7 @@ import Button from "@material-ui/core/Button";
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
 import GraplHeader from "./reusableComponents/GraplHeader";
 
-const useStyles = makeStyles((theme: Theme) =>
+const useStyles = makeStyles( (theme: Theme) =>
     createStyles({
         root: {
             display: "flex",
@@ -32,38 +32,40 @@ const useStyles = makeStyles((theme: Theme) =>
     })
 );
 
-export default function Dashboard({redirectTo}:any) {
-    const classes = useStyles();
-    console.log("App loaded");
-    return (
-        <> 
-            <GraplHeader />
+export default function Dashboard(
+    {redirectTo}: any) {
+        const classes = useStyles();
+        return (
+            <> 
+                <GraplHeader redirectTo={redirectTo} displayBtn={false} />
 
-            <div className = { classes.dashboard}>
-                <section className = { classes.nav }>
-                    <Button 
-                        className = {classes.button }
-                        onClick = { (e) => {
-                            redirectTo("engagementUX");
-                        } }
-                    >
-                            Engagements
-                    </Button>
-                    
-                    <Button 
-                        className = {classes.button }
-                        onClick = { (e) => {
-                            redirectTo("uploadPlugin");
-                        } }
-                    >
-                        Upload Plugin
-                    </Button>
-                </section>
+                <div className = { classes.dashboard}>
+                    <section className = { classes.nav }>
+                        <Button 
+                            className = {classes.button }
+                            onClick = { 
+                                (e) => {
+                                    redirectTo("engagementUX");
+                                } 
+                            }
+                        >
+                                Engagements
+                        </Button>
+                        
+                        <Button 
+                            className = {classes.button }
+                            onClick = { (e) => {
+                                redirectTo("uploadPlugin");
+                            } }
+                        >
+                            Upload Plugin
+                        </Button>
+                    </section>
 
-                <section className = { classes.welcome }>
-                    <h1> Welcome, username </h1>
-                </section>
-            </div>
-        </>
-    )
+                    <section className = { classes.welcome }>
+                        <h1> Welcome, username </h1>
+                    </section>
+                </div>
+            </>
+        )
 }

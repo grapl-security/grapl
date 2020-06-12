@@ -7,8 +7,6 @@ import  PageNotFound  from "./components/PageNotFound";
 import UploadPlugin from "./components/UploadPlugin";
 import {redirectTo, defaultRouteState} from "../src/modules/GraphViz/routing";
 
-console.log("App loading");
-
 // Updates our react state, as well as localStorage state, to reflect the page
 // we should render
 
@@ -33,9 +31,11 @@ const Router = () => {
     if (routeState.curPage === "login") {
         console.log("routing to Dashboard");
         return (
-            <LogIn loginSuccess={
-                () => redirectTo(routeState, setRouteState, "dashboard")
-            }></LogIn>
+            <LogIn 
+                loginSuccess={
+                    () => redirectTo(routeState, setRouteState, "dashboard")
+                }
+            ></LogIn>
         )
     }
 
@@ -50,27 +50,34 @@ const Router = () => {
 
     if (routeState.curPage === "engagementUX") {
         console.log("Routing to EngagementUX page");
-        return <EngagementUx/>
+        return <EngagementUx redirectTo={
+            (pageName: string) => {
+                redirectTo(routeState, setRouteState, pageName)
+            }
+        }/>
     }
 
     if(routeState.curPage === "dashboard"){
         console.log("Routing to Dashboard");
-        return <Dashboard redirectTo = {
-            (pageName: string) => {
-                redirectTo(routeState, setRouteState, pageName)
+        return <Dashboard 
+            redirectTo = {
+                (pageName: string) => {
+                    redirectTo(routeState, setRouteState, pageName)
+                }
             }
-        }/> 
+        /> 
     }
 
     if(routeState.curPage === "uploadPlugin"){
         console.log("Routing to Upload Plugin");
-        return <UploadPlugin redirectTo = {
-            (pageName: string) => {
-                redirectTo(routeState, setRouteState, pageName)
+        return <UploadPlugin 
+            redirectTo = {
+                (pageName: string) => {
+                    redirectTo(routeState, setRouteState, pageName)
+                }
             }
-        }/> 
+        /> 
     }
-
     console.warn("Invalid Page State");
     return <PageNotFound />
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import './LogIn.css';
 import {Field, Form, Formik} from "formik";
 import {LoginProps} from '../src/modules/GraphViz/CustomTypes';
-import {getAuthEdge} from './modules/GraphViz/engagement_edge/getEngagementEdge';
+import {getAuthEdge} from './modules/GraphViz/engagement_edge/getApiURLs';
 
 const engagement_edge = getAuthEdge();
 

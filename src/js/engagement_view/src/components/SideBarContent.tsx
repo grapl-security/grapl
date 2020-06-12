@@ -12,7 +12,7 @@ import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
 import {Node, Lens} from "../modules/GraphViz/CustomTypes";
-import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getEngagementEdge";
+import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getApiURLs";
 
 const useStyles = makeStyles({
     root:{
