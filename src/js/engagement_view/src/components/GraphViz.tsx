@@ -363,7 +363,6 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
                     ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                     ctx.fillStyle = 'white';
                     ctx.fillText(label, node.x, node.y);
 
