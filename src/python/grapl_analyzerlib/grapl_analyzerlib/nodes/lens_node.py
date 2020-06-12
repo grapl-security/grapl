@@ -206,6 +206,23 @@ class EngagementTransaction(Txn):
         return res
 
 
+class EngagementClient(GraphClient):
+    def __init__(self, eg_uid: str, src_client: GraphClient):
+        super().__init__(src_client)
+        self.eg_uid = eg_uid
+
+    @staticmethod
+    def from_name(engagement_name: str, src_client: GraphClient):
+
+        engagement_lens = LensView.get_or_create(src_client, engagement_name)
+        return EngagementClient(engagement_lens.uid, src_client)
+
+    def txn(self, read_only=False, best_effort=False) -> EngagementTransaction:
+        return EngagementTransaction(
+            self, self.eg_uid, read_only=read_only, best_effort=best_effort
+        )
+
+
 class LensQuery(Queryable["LensView"]):
     def __init__(self) -> None:
 
@@ -368,6 +385,20 @@ class LensView(Viewable):
 
     def _get_reverse_edges(self) -> "Mapping[str, ReverseEdgeView]":
         return {}
+
+
+class EngagementView(LensView):
+    @staticmethod
+    def get_or_create(graph_client: GraphClient, lens_name: str) -> "EngagementView":
+        print("todo: removeme")
+        lens = LensView.get_or_create(graph_client, lens_name, "engagement")
+
+        engagement_client = EngagementClient(lens.uid, graph_client,)
+
+        return EngagementView(engagement_client, lens.uid, lens.node_key)
+
+    def get_node(self, node_key: str) -> Optional["NodeView"]:
+        return NodeQuery().with_node_key(eq=node_key).query_first(self.dgraph_client)
 
 
 from grapl_analyzerlib.nodes.comparators import PropertyFilter, Cmp, StrCmp, _str_cmps
