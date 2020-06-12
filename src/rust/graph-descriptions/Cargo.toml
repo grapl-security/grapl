@@ -1,6 +1,6 @@
 [package]
 name = "grapl-graph-descriptions"
-version = "1.0.0"
+version = "0.2.10"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 description = "A library for interacting with Grapl graphs"
