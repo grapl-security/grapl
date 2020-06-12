@@ -39,8 +39,9 @@ IS_RETRY = os.environ["IS_RETRY"]
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-logging.basicConfig(stream=sys.stdout, level=LEVEL)
-LOGGER = logging.getLogger("analyzer-executor")
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class NopCache(object):
@@ -494,6 +495,7 @@ if IS_LOCAL:
                 except (
                     botocore.exceptions.BotoCoreError,
                     botocore.exceptions.ClientError,
+                    botocore.parsers.ResponseParserError,
                 ):
                     LOGGER.info("Waiting for SQS to become available")
                     time.sleep(2)
