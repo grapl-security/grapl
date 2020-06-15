@@ -193,8 +193,7 @@ def add_reverse_edge_type(
 
 def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
     query = f"""
-        schema(type: {type_name}) {{
-        }}
+        schema(type: {type_name}) {{ }}
     """
     LOGGER.debug(f"query: {query}")
     txn = client.txn(read_only=True)
@@ -206,11 +205,12 @@ def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
 
     pred_names = []
 
-    for field in res["types"][0]["fields"]:
-        pred_name = (
-            f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
-        )
-        pred_names.append(pred_name)
+    if "types" in res:
+        for field in res["types"][0]["fields"]:
+            pred_name = (
+                f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
+            )
+            pred_names.append(pred_name)
 
     return pred_names
 

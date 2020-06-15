@@ -1,8 +1,8 @@
 import datetime
 import json
-import logging
+import os
 
-from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, Optional, Tuple, Union
 
 from chalice import Chalice
 
@@ -24,14 +24,14 @@ app.log.setLevel(GRAPL_LOG_LEVEL)
 def query_batch(
     client: GraphClient,
     batch_size: int,
-    ttl_cutoff_s: int,
+    ttl_cutoff_ms: int,
     last_uid: Optional[str] = None,
-) -> Dict[str, Any]:
-    after = "" if last_uid is None else f" after: {last_uid}"
+) -> Iterable[Dict[str, Any]]:
+    after = "" if last_uid is None else f", after: {last_uid}"
     paging = f"first: {batch_size}{after}"
     query = f"""
     {{
-        q(func: le(last_index_time, {ttl_cutoff_s}) {paging}) {{
+        q(func: le(last_index_time, {ttl_cutoff_ms}), {paging}) {{
             uid,
             expand(_all_) {{ uid }}
         }}
@@ -40,53 +40,67 @@ def query_batch(
 
     txn = client.txn()
     try:
+        app.log.debug(f"retrieving batch: {query}")
         batch = txn.query(query)
-        app.log.debug("retrieved batch: {batch}")
-        return json.loads(batch)
+        app.log.debug(f"retrieved batch: {batch}")
+        return json.loads(batch.json)["q"]
     finally:
         txn.discard()
 
 
-def calculate_ttl_cutoff_s(now: datetime.datetime, ttl_s: int) -> int:
+def calculate_ttl_cutoff_ms(now: datetime.datetime, ttl_s: int) -> int:
     delta = datetime.timedelta(seconds=ttl_s)
     cutoff = now - delta
-    return int(cutoff.timestamp())
+    return int(cutoff.timestamp() * 1000)
 
 
 def expired_entities(
     client: GraphClient, now: datetime.datetime, ttl_s: int, batch_size: int
-) -> Iterator[Iterable[Union[str, Tuple[str, str, str]]]]:
-    ttl_cutoff_s = calculate_ttl_cutoff_s(now, ttl_s)
+) -> Iterator[Iterable[Dict[str, Any]]]:
+    ttl_cutoff_ms = calculate_ttl_cutoff_ms(now, ttl_s)
 
-    app.log.info("Pruning entities last indexed before {ttl_cutoff_s}")
+    app.log.info(f"Pruning entities last indexed before {ttl_cutoff_ms}")
 
     last_uid = None
     while 1:
-        results = query_batch(client, batch_size, ttl_cutoff_s, last_uid)
-        batch = []  # FIXME
+        results = query_batch(client, batch_size, ttl_cutoff_ms, last_uid)
+        last_uid = results[-1]["uid"]
+        yield results
 
-        yield batch
-
-        if len(batch) < batch_size:  # this is the last page
-            break
-
-        last_uid = None  # FIXME
+        if len(results) < batch_size:
+            break  # this was the last page of results
 
 
-def delete_nodes(client: GraphClient, uids: Iterable[str]) -> int:
+def edges(entities: Iterable[Dict[str, Any]]) -> Iterator[Tuple[str, str, str]]:
+    for entity in entities:
+        uid = entity["uid"]
+        for key, value in entity.items():
+            if isinstance(value, list):
+                for v in value:
+                    if isinstance(v, dict):
+                        if len(v.keys()) == 1 and "uid" in v.keys():
+                            yield (uid, key, v["uid"])
+
+
+def nodes(entities: Iterable[Dict[str, Any]]) -> Iterator[str]:
+    for entity in entities:
+        yield entity["uid"]
+
+
+def delete_nodes(client: GraphClient, nodes: Iterator[str]) -> int:
     del_ = {"delete": [{"uid": uid} for uid in uids]}
 
     txn = client.txn()
     try:
         mut = txn.create_mutation(del_obj=del_)
         txn.mutate(mutation=mut, commit_now=True)
-        app.log.debug("deleted: {json.dumps(del_)}")
+        app.log.debug(f"deleted nodes: {json.dumps(del_)}")
         return len(del_["delete"])
     finally:
         txn.discard()
 
 
-def delete_edges(client: GraphClient, edges: Iterable[Tuple[str, str, str]]) -> int:
+def delete_edges(client: GraphClient, edges: Iterator[Tuple[str, str, str]]) -> int:
     del_ = {
         "delete": [{"uid": src_uid, predicate: dest_uid}]
         for src_uid, predicate, dest_uid in edges
@@ -96,7 +110,7 @@ def delete_edges(client: GraphClient, edges: Iterable[Tuple[str, str, str]]) -> 
     try:
         mut = txn.create_mutation(del_obj=del_)
         txn.mutate(mutation=mut, commit_now=True)
-        app.log.debug("deleted: {json.dumps(del_)}")
+        app.log.debug(f"deleted edges: {json.dumps(del_)}")
         return len(del_["delete"])
     finally:
         txn.discard()
@@ -108,19 +122,13 @@ def prune_expired_subgraphs() -> None:
         node_count = 0
         edge_count = 0
 
-        for entity in expired_entities(
+        for entities in expired_entities(
             client=LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
             now=datetime.datetime.utcnow(),
             ttl_s=GRAPL_DGRAPH_TTL_SECONDS,
             batch_size=GRAPL_TTL_DELETE_BATCH_SIZE,
         ):
-            if isinstance(entity, Iterable[Tuple]):
-                # entity is a collection of edges
-                edge_count += delete_edges(client, entity)
-            elif isinstance(entity, Iterable[str]):
-                # entity is a collection of node uids
-                node_count += delete_nodes(client, entity)
-            else:
-                app.log.warn("Encountered unknown entity: {entity}")
+            edge_count += delete_edges(client, edges(entities))
+            node_count += delete_nodes(client, nodes(entities))
 
-        app.log.info("Pruned {node_count} nodes and {edge_count} edges")
+        app.log.info(f"Pruned {node_count} nodes and {edge_count} edges")
