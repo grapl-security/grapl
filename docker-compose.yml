@@ -362,7 +362,6 @@ services:
       - ../grapl-aws-plugins/local_plugin/local_provision.py:/var/run/target/local_provision.py
     tty: true
     links:
-      - grapl-engagement-graph-db:engagement_graph
       - grapl-master-graph-db:master_graph
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
