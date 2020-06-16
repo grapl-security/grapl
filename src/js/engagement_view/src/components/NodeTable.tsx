@@ -104,7 +104,7 @@ function NodeTable({node}: NodeTableProps){
                 </TableBody>
                 </Table>
             </TableContainer>
-        ) || "no no"
+        ) 
         
     
 }
