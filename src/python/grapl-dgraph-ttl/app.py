@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 
-from typing import Any, Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, Optional, Tuple
 
 from chalice import Chalice
 
@@ -71,6 +71,11 @@ def expired_entities(
             break  # this was the last page of results
 
 
+def nodes(entities: Iterable[Dict[str, Any]]) -> Iterator[str]:
+    for entity in entities:
+        yield entity["uid"]
+
+
 def edges(entities: Iterable[Dict[str, Any]]) -> Iterator[Tuple[str, str, str]]:
     for entity in entities:
         uid = entity["uid"]
@@ -82,17 +87,13 @@ def edges(entities: Iterable[Dict[str, Any]]) -> Iterator[Tuple[str, str, str]]:
                             yield (uid, key, v["uid"])
 
 
-def nodes(entities: Iterable[Dict[str, Any]]) -> Iterator[str]:
-    for entity in entities:
-        yield entity["uid"]
-
-
 def delete_nodes(client: GraphClient, nodes: Iterator[str]) -> int:
     del_ = {"delete": [{"uid": uid} for uid in uids]}
 
     txn = client.txn()
     try:
         mut = txn.create_mutation(del_obj=del_)
+        app.log.debug(f"deleting nodes: {mut}")
         txn.mutate(mutation=mut, commit_now=True)
         app.log.debug(f"deleted nodes: {json.dumps(del_)}")
         return len(del_["delete"])
@@ -102,13 +103,14 @@ def delete_nodes(client: GraphClient, nodes: Iterator[str]) -> int:
 
 def delete_edges(client: GraphClient, edges: Iterator[Tuple[str, str, str]]) -> int:
     del_ = {
-        "delete": [{"uid": src_uid, predicate: dest_uid}]
+        "delete": [{"uid": src_uid, predicate: {"uid": dest_uid}}]
         for src_uid, predicate, dest_uid in edges
     }
 
     txn = client.txn()
     try:
         mut = txn.create_mutation(del_obj=del_)
+        app.log.debug(f"deleting edges: {mut}")
         txn.mutate(mutation=mut, commit_now=True)
         app.log.debug(f"deleted edges: {json.dumps(del_)}")
         return len(del_["delete"])
@@ -125,7 +127,7 @@ def prune_expired_subgraphs() -> None:
         for entities in expired_entities(
             client=LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
             now=datetime.datetime.utcnow(),
-            ttl_s=GRAPL_DGRAPH_TTL_SECONDS,
+            ttl_s=GRAPL_DGRAPH_TTL_S,
             batch_size=GRAPL_TTL_DELETE_BATCH_SIZE,
         ):
             edge_count += delete_edges(client, edges(entities))
