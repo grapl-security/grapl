@@ -11,9 +11,8 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
-import {mapEdgeProps} from '../modules/GraphViz/graph/graph_traverse'; 
 import {Node, Lens} from "../modules/GraphViz/CustomTypes";
-import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getEngagementEdge";
+import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getApiURLs";
 
 const useStyles = makeStyles({
     root:{
@@ -40,7 +39,10 @@ const useStyles = makeStyles({
         display: "flex"
     }, 
     table: {
-        minWidth: 450
+        minWidth: 450, 
+    },
+    lensName: {
+        fontSize: "16px",
     },
 });
 
@@ -53,17 +55,19 @@ type SelectLensProps = {
 }
 
 function SelectLens(props: SelectLensProps) {
-    // lensRows.push(createData(props.setLens(props.lens) ))
+    const classes = useStyles();
+
     return (
         <>
                 <TableRow key={props.lens}>
                         <TableCell component="th" scope="row">
-                        <Button 
+                        <Button className = {classes.lensName}
                             onClick={
                                 () => { 
                                     props.setLens(props.lens)    
                                 }
                         }>
+                            {/* #TODO: change color of lense name based on score */}
                             {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
                         </Button>
                         </TableCell>
@@ -134,7 +138,6 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                 {state.toggled && state.lenses &&
                     state.lenses.map(
                         (lens: Lens) => {
-                            // lensRows.push(lens);
                             return(
                                 <TableContainer>
                                     <Table className={classes.table} aria-label="lens table">
@@ -155,7 +158,6 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                     )
                 }
             </div>
-            
             <Divider />
         </>
     )
@@ -179,7 +181,7 @@ const getLenses = async () => {
         }
     }
     `;
-    console.log('connecting to: ' + `${graphql_edge}graphql`)
+    console.log(`connecting to: ${graphql_edge}graphql`)
     const res = await fetch(`${graphql_edge}graphql`,
         {
             method: 'post',
@@ -200,7 +202,6 @@ const getLenses = async () => {
         .then((res) => res.data);
 
         const jres = await res;
-
     return jres;
 };
 

@@ -17,8 +17,8 @@
   color: white;
   text-transform: uppercase;
   font-weight: bold;
-  font-size: 90px;
-  margin: 3em 1.5em;
+  font-size: 5rem;
+  margin: 3em 1em;
   font-family: "Arial";
 }
 
@@ -36,14 +36,14 @@
 
 input{
   border: 1px solid darkgrey;
-  width: 100%;
+  width: 85%;
   opacity: 1;
   padding: .2em;
+  font-size: 1em;
 } 
 
 input, 
 .submitBtn{
-  font-size: 1.25em;
   margin: .5em;
 }
 
@@ -52,10 +52,15 @@ input,
   border: none;
   padding: .25em;
   color: white;
+  font-size: 1.15rem;
 }
 
-@media only screen and (max-width: 600px) {
+@media (max-width: 800px) {
   .backgroundImage {
     flex-direction: column;
   }
+  .grapl{
+    margin: .5em;
+  }
+  .formContainer{margin:.5em 2.5em;}
 }

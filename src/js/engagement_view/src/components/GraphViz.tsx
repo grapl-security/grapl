@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import * as d3 from "d3";
 import { BKDRHash, riskColor, calcNodeRgb , calcLinkColor} from "../modules/GraphViz/graphColoring/coloring.tsx";
-import { getEngagementEdge, retrieveGraph } from '../modules/GraphViz/graphQL/expandScope.tsx';
+import { retrieveGraph } from '../modules/GraphViz/graphQL/expandScope.tsx';
 import { mapLabel } from '../modules/GraphViz/graph/labels.tsx';
 import { nodeSize } from '../modules/GraphViz/calculations/node/nodeCalcs.tsx'
 import { calcLinkDirectionalArrowRelPos, calcLinkParticleWidth  } from '../modules/GraphViz/calculations/link/linkCalcs.tsx'
@@ -363,7 +363,6 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
                     ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
                     ctx.fillStyle = 'white';
                     ctx.fillText(label, node.x, node.y);
 

@@ -1,4 +1,3 @@
-
 export type LoginProps = {
     loginSuccess: () => void,
 }
