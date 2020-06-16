@@ -42,7 +42,7 @@ def query_batch(
     try:
         app.log.debug(f"retrieving batch: {query}")
         batch = txn.query(query)
-        app.log.debug(f"retrieved batch: {batch}")
+        app.log.debug(f"retrieved batch: {batch.json}")
         return json.loads(batch.json)["q"]
     finally:
         txn.discard()
