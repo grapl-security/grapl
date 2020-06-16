@@ -1,6 +1,6 @@
 import {BaseNode, LensScopeResponse} from '../../GraphViz/CustomTypes'
 import {mapGraph} from "../graph/graph_traverse";
-import {getGraphQlEdge} from '../engagement_edge/getEngagementEdge';
+import {getGraphQlEdge} from '../engagement_edge/getApiURLs';
 
 const graphql_edge = getGraphQlEdge();
 

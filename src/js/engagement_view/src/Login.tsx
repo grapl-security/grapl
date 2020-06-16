@@ -2,7 +2,7 @@ import React from 'react';
 import './LogIn.css';
 import {Field, Form, Formik} from "formik";
 import {LoginProps} from '../src/modules/GraphViz/CustomTypes';
-import {getAuthEdge} from './modules/GraphViz/engagement_edge/getEngagementEdge';
+import {getAuthEdge} from './modules/GraphViz/engagement_edge/getApiURLs';
 
 const engagement_edge = getAuthEdge();
 
@@ -42,7 +42,7 @@ export const LogIn = (props: LoginProps) => {
         <Form>
           <Field name="userName" type="text" placeholder="Username" /> <br/>
           <Field name="password" type="password" placeholder="Password"/> <br/>
-          <button className="s ubmitBtn"  type="submit">Submit</button>
+          <button className="submitBtn"  type="submit">Submit</button>
         </Form>
       </Formik>
         

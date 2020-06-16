@@ -19,7 +19,7 @@ const BaseNode = {
     node_key: {type: GraphQLString}, 
     dgraph_type: {type: GraphQLList(GraphQLString)},
 }
-// Lens Node Type
+
 const LensNodeType = new GraphQLObjectType({
     name: "LensNode", 
     fields: () => ({

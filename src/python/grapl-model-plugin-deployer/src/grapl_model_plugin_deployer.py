@@ -218,11 +218,17 @@ def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
     plugin_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
 
+    plugin_parts = key.split("/")
+    plugin_name = plugin_parts[0]
+    plugin_key = "/".join(plugin_parts[1:])
+
     try:
         s3_client.put_object(
             Body=contents,
             Bucket=plugin_bucket,
-            Key=base64.encodebytes((key.encode("utf8"))).decode(),
+            Key=plugin_name
+            + "/"
+            + base64.encodebytes((plugin_key.encode("utf8"))).decode(),
         )
     except Exception:
         LOGGER.error(f"Failed to put_object to s3 {key} {traceback.format_exc()}")
@@ -301,8 +307,8 @@ def no_auth(path):
 
 def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     raw_schemas = [
-        file
-        for path, file in plugin_files.items()
+        contents
+        for path, contents in plugin_files.items()
         if path.endswith("schema.py") or path.endswith("schemas.py")
     ]
 
@@ -381,24 +387,89 @@ def deploy():
     request = app.current_request
     plugins = request.json_body.get("plugins", {})
 
+    LOGGER.info(f"Deploying {request.json_body}")
     upload_plugins(get_s3_client(), plugins)
     LOGGER.info("uploaded plugins")
     return respond(None, {"Success": True})
 
 
+def get_plugin_list(s3: BaseClient):
+    plugin_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
+
+    list_response = s3.list_objects_v2(Bucket=plugin_bucket)
+
+    if not list_response.get("Contents"):
+        return []
+
+    plugin_names = set()
+    for response in list_response["Contents"]:
+        key = response["Key"]
+        plugin_name = key.split("/")[0]
+        plugin_names.add(plugin_name)
+    return [plugin_name for plugin_name in plugin_names if plugin_name != "__init__.py"]
+
+
+@requires_auth("/listModelPlugins")
+def list_model_plugins():
+    LOGGER.info("/listModelPlugins")
+    plugin_names = []
+    try:
+        plugin_names = get_plugin_list(get_s3_client())
+    except Exception as e:
+        LOGGER.error("failed with %s", traceback.format_exc())
+        return respond({"Failed": "Failed"})
+
+    LOGGER.info("plugin_names: %s", plugin_names)
+    return respond(None, {"plugin_list": plugin_names})
+
+
+def delete_plugin(s3_client, plugin_name):
+    plugin_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
+
+    list_response = s3_client.list_objects_v2(Bucket=plugin_bucket, Prefix=plugin_name,)
+
+    if not list_response.get("Contents"):
+        return []
+
+    plugin_names = set()
+    for response in list_response["Contents"]:
+        s3_client.delete_object(Bucket=plugin_bucket, Key=response["Key"])
+
+
+@requires_auth("/deleteModelPlugin")
+def delete_model_plugin():
+    try:
+        LOGGER.info("/deleteModelPlugin")
+        request = app.current_request
+        plugins_to_delete = request.json_body.get("plugins_to_delete", [])
+
+        s3_client = get_s3_client()
+        for plugin_name in plugins_to_delete:
+            delete_plugin(s3_client, plugin_name)
+    except Exception as e:
+        LOGGER.error(traceback.format_exc())
+        return respond("deleteModelPlugin: Server Error")
+
+    return respond(None, {"Success": "Deleted plugins"})
+
+
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    LOGGER.info(app.current_request.context["path"])
+    LOGGER.info("routing: ", app.current_request.context["path"])
     LOGGER.info(vars(app.current_request))
 
-    path = app.current_request.context["path"]
     try:
+        path = app.current_request.context["path"]
         if path == "/prod/gitWebhook":
             return webhook()
         if path == "/prod/deploy":
             return deploy()
+        if path == "/prod/listModelPlugins":
+            return list_model_plugins()
+        if path == "/prod/deleteModelPlugin":
+            return delete_model_plugin()
 
         return respond("InvalidPath")
     except Exception:
         LOGGER.error(traceback.format_exc())
-        return respond("Server Error")
+        return respond("Route Server Error")
