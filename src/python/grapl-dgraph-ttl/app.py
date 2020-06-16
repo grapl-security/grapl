@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 
-from typing import Any, Dict, Iterable, Iterator, Optional, Tuple
+from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 
 from chalice import Chalice
 
@@ -26,7 +26,7 @@ def query_batch(
     batch_size: int,
     ttl_cutoff_ms: int,
     last_uid: Optional[str] = None,
-) -> Iterable[Dict[str, Any]]:
+) -> Iterable[Dict[str, Union[Dict, str]]]:
     after = "" if last_uid is None else f", after: {last_uid}"
     paging = f"first: {batch_size}{after}"
     query = f"""
@@ -56,7 +56,7 @@ def calculate_ttl_cutoff_ms(now: datetime.datetime, ttl_s: int) -> int:
 
 def expired_entities(
     client: GraphClient, now: datetime.datetime, ttl_s: int, batch_size: int
-) -> Iterator[Iterable[Dict[str, Any]]]:
+) -> Iterator[Iterable[Dict[str, Union[Dict, str]]]]:
     ttl_cutoff_ms = calculate_ttl_cutoff_ms(now, ttl_s)
 
     app.log.info(f"Pruning entities last indexed before {ttl_cutoff_ms}")
@@ -64,19 +64,23 @@ def expired_entities(
     last_uid = None
     while 1:
         results = query_batch(client, batch_size, ttl_cutoff_ms, last_uid)
-        last_uid = results[-1]["uid"]
-        yield results
+
+        if len(results) > 0:
+            last_uid = results[-1]["uid"]
+            yield results
 
         if len(results) < batch_size:
             break  # this was the last page of results
 
 
-def nodes(entities: Iterable[Dict[str, Any]]) -> Iterator[str]:
+def nodes(entities: Iterable[Dict[str, Union[Dict, str]]]) -> Iterator[str]:
     for entity in entities:
         yield entity["uid"]
 
 
-def edges(entities: Iterable[Dict[str, Any]]) -> Iterator[Tuple[str, str, str]]:
+def edges(
+    entities: Iterable[Dict[str, Union[Dict, str]]]
+) -> Iterator[Tuple[str, str, str]]:
     for entity in entities:
         uid = entity["uid"]
         for key, value in entity.items():
@@ -88,7 +92,7 @@ def edges(entities: Iterable[Dict[str, Any]]) -> Iterator[Tuple[str, str, str]]:
 
 
 def delete_nodes(client: GraphClient, nodes: Iterator[str]) -> int:
-    del_ = {"delete": [{"uid": uid} for uid in uids]}
+    del_ = [{"uid": uid} for uid in nodes]
 
     txn = client.txn()
     try:
@@ -96,16 +100,16 @@ def delete_nodes(client: GraphClient, nodes: Iterator[str]) -> int:
         app.log.debug(f"deleting nodes: {mut}")
         txn.mutate(mutation=mut, commit_now=True)
         app.log.debug(f"deleted nodes: {json.dumps(del_)}")
-        return len(del_["delete"])
+        return len(del_)
     finally:
         txn.discard()
 
 
 def delete_edges(client: GraphClient, edges: Iterator[Tuple[str, str, str]]) -> int:
-    del_ = {
-        "delete": [{"uid": src_uid, predicate: {"uid": dest_uid}}]
+    del_ = [
+        create_edge_obj(src_uid, predicate, dest_uid)
         for src_uid, predicate, dest_uid in edges
-    }
+    ]
 
     txn = client.txn()
     try:
@@ -113,19 +117,30 @@ def delete_edges(client: GraphClient, edges: Iterator[Tuple[str, str, str]]) -> 
         app.log.debug(f"deleting edges: {mut}")
         txn.mutate(mutation=mut, commit_now=True)
         app.log.debug(f"deleted edges: {json.dumps(del_)}")
-        return len(del_["delete"])
+        return len(del_)
     finally:
         txn.discard()
+
+
+def create_edge_obj(
+    src_uid: str, predicate: str, dest_uid: str
+) -> Dict[str, Union[Dict, str]]:
+    if predicate.startswith("~"):  # this is a reverse edge
+        return {"uid": dest_uid, predicate.lstrip("~"): {"uid": src_uid}}
+    else:  # this is a forward edge
+        return {"uid": src_uid, predicate: {"uid": dest_uid}}
 
 
 @app.lambda_function(name="prune_expired_subgraphs")
 def prune_expired_subgraphs() -> None:
     if GRAPL_DGRAPH_TTL_S > 0:
+        client = LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient()
+
         node_count = 0
         edge_count = 0
 
         for entities in expired_entities(
-            client=LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
+            client,
             now=datetime.datetime.utcnow(),
             ttl_s=GRAPL_DGRAPH_TTL_S,
             batch_size=GRAPL_TTL_DELETE_BATCH_SIZE,
