@@ -202,7 +202,6 @@ const getLenses = async () => {
         .then((res) => res.data);
 
         const jres = await res;
-
     return jres;
 };
 

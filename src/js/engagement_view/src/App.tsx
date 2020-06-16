@@ -39,15 +39,6 @@ const Router = () => {
         )
     }
 
-    // if (routeState.curPage === "dashboard") {
-    //     console.log("routing to engagement_ux page");
-    //     return (
-    //         <LogIn loginSuccess={
-    //             () => redirectTo(routeState, setRouteState, "engagement_ux")
-    //         }></LogIn>
-    //     )
-    // }
-
     if (routeState.curPage === "engagementUX") {
         console.log("Routing to EngagementUX page");
         return <EngagementUx redirectTo={
@@ -81,7 +72,6 @@ const Router = () => {
     console.warn("Invalid Page State");
     return <PageNotFound />
 }
-
 
 export default function App() {
     console.log("App loaded");

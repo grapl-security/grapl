@@ -12,6 +12,7 @@ import IconButton from "@material-ui/core/IconButton";
 import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
 import Button from "@material-ui/core/Button";
 import { Node } from "../modules/GraphViz/CustomTypes";
+import Home from '@material-ui/icons/Home';
 
 const drawerWidth = 500;
 
@@ -151,7 +152,7 @@ export default function SideBar({setLens, curLens, curNode, redirectTo}: SideBar
                     redirectTo("dashboard");
                 } }
             >
-                Dashboard
+                <Home/>
             </Button>
           </div>
 

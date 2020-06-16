@@ -42,10 +42,16 @@ class PluginRetriever(object):
         # Download each one to the /plugins/ directory
         for plugin_object in plugin_objects:
             object_key = plugin_object["Key"]
+            plugin_name = object_key.split("/")[0]
             local_path = os.path.join(
                 os.path.abspath("."),
-                f"model_plugins/{base64.decodebytes(object_key.encode('utf8')).decode('utf8')}",
+                f"model_plugins/{plugin_name}/{base64.decodebytes(object_key.split('/')[1].encode('utf8')).decode('utf8')}",
             ).replace("-", "_")
+
+            print(local_path)
+
+            if local_path[-1] == "/":
+                local_path = local_path[:-1]
 
             if not overwrite:
                 if os.path.isfile(local_path):
