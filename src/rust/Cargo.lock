@@ -1053,7 +1053,7 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
 name = "graph-generator-lib"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "aws_lambda_events 0.3.0",
  "base16",
@@ -1069,6 +1069,7 @@ dependencies = [
  "rusoto_credential",
  "rusoto_s3",
  "rusoto_sqs",
+ "rusoto_sts",
  "serde",
  "serde_json",
  "sha2 0.7.1",
@@ -2656,6 +2657,22 @@ dependencies = [
  "futures 0.3.5",
  "rusoto_core",
  "serde_urlencoded",
+ "xml-rs",
+]
+
+[[package]]
+name = "rusoto_sts"
+version = "0.43.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e83d166cfb294672db98a60159c4a81a8169c6c91054a275cb812158c73815e5"
+dependencies = [
+ "async-trait",
+ "bytes 0.5.4",
+ "chrono",
+ "futures 0.3.5",
+ "rusoto_core",
+ "serde_urlencoded",
+ "tempfile",
  "xml-rs",
 ]
 
