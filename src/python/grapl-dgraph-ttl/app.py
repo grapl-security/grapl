@@ -4,7 +4,7 @@ import os
 
 from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 
-from chalice import Chalice, Rate
+from chalice import Chalice
 
 from grapl_analyzerlib.grapl_client import (
     GraphClient,
@@ -131,13 +131,7 @@ def create_edge_obj(
         return {"uid": src_uid, predicate: {"uid": dest_uid}}
 
 
-@app.schedule(
-    expression=Rate(1, Rate.MINUTES) if IS_LOCAL else Rate(1, Rate.HOURS),
-    name="prune_expired_subgraphs",
-    description="""
-Delete nodes and edges from the graph which are older than GRAPL_DGRAPH_TTL_S
-""",
-)
+@app.lambda_function(name="prune_expired_subgraphs")
 def prune_expired_subgraphs() -> None:
     if GRAPL_DGRAPH_TTL_S > 0:
         client = LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient()
@@ -157,3 +151,11 @@ def prune_expired_subgraphs() -> None:
         app.log.info(f"Pruned {node_count} nodes and {edge_count} edges")
     else:
         app.log.warn("GRAPL_DGRAPH_TTL_S is not set, exiting.")
+
+
+if IS_LOCAL:
+    import time
+
+    while 1:
+        time.sleep(60)
+        prune_expired_subgraphs()
