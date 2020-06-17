@@ -228,6 +228,22 @@ services:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
 
+  grapl-dgraph-ttl:
+    image: grapl/grapl-dgraph-ttl:${TAG:-latest}
+    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8124'
+    ports:
+      - "8124:8124"
+    environment:
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - GRAPL_DGRAPH_TTL_S=${GRAPL_DGRAPH_TTL_S:-600}
+      - GRAPL_TTL_DELETE_BATCH_SIZE=${GRAPL_TTL_DELETE_BATCH_SIZE:-10}
+    tty: true
+    links:
+      - grapl-master-graph-db:master_graph
+    extra_hosts:
+      - amazonaws:127.0.0.1
+
   #
   # JS/web services
   #

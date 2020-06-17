@@ -117,6 +117,11 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     let node_key = node.clone_node_key();
     let mut set_json = node.into_json();
     set_json["uid"] = "uid(p)".into();
+    set_json["last_index_time"] = (SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Something is very wrong with the system clock")
+        .as_millis() as u64)
+        .into();
 
     let mu = api::Mutation {
         set_json: set_json.to_string().into_bytes(),
