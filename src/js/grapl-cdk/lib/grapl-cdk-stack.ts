@@ -311,6 +311,44 @@ class EngagementCreator extends cdk.NestedStack {
     }
 }
 
+class DGraphTtl extends cdk.NestedStack {
+    readonly event_handler: lambda.Function;
+    readonly name: string;
+
+    constructor(
+        scope: cdk.Construct,
+        name: string,
+        prefix: string,
+        vpc: ec2.IVpc,
+        master_graph: DGraphEcs
+    ) {
+        super(scope, name + "-stack");
+
+        this.name = name + prefix;
+
+        const grapl_version = process.env.GRAPL_VERSION || "latest";
+
+        this.event_handler = new lambda.Function(
+            this, "Handler", {
+                runtime: Runtime.PYTHON_3_7,
+                handler: `app.app`,
+                functionName: "Grapl-DGraphTtl-Handler",
+                code: lambda.Code.fromAsset("./zips/grapl-dgraph-ttl-${grapl_version}.zip"),
+                vpc: vpc,
+                environment: {
+                    "MG_ALPHAS": master_graph.alphaNames.join(","),
+                    "GRAPL_DGRAPH_TTL_S": "2678400", // 60 * 60 * 24 * 31 == 1 month
+                    "GRAPL_LOG_LEVEL": "INFO",
+                    "GRAPL_TTL_DELETE_BATCH_SIZE": "1000"
+                },
+                timeout: cdk.Duration.seconds(600),
+                memorySize: 128,
+                description: grapl_version
+            }
+        );
+    }
+}
+
 class ModelPluginDeployer extends cdk.NestedStack {
     event_handler: lambda.Function;
     integration: apigateway.LambdaRestApi;
@@ -444,6 +482,14 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
             engagements_created_topic,
             master_graph,
+        );
+
+        new DGraphTtl(
+            this,
+            "dgraph-ttl",
+            prefix,
+            grapl_vpc,
+            master_graph
         );
 
         const model_plugins_bucket = new s3.Bucket(this, prefix + '-model-plugins-bucket', {

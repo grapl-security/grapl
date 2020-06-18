@@ -67,3 +67,4 @@ pip-log.txt
 *.vscode
 *.zip
 stale_outputs_checked
+.log/
