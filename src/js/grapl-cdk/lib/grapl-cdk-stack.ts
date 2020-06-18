@@ -3,6 +3,8 @@ import * as s3 from "@aws-cdk/aws-s3";
 import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as ec2 from "@aws-cdk/aws-ec2";
+import * as events from "@aws-cdk/aws-events";
+import * as targets from "@aws-cdk/aws-events-targets";
 import * as lambda from "@aws-cdk/aws-lambda";
 import {Runtime} from "@aws-cdk/aws-lambda";
 import * as iam from "@aws-cdk/aws-iam";
@@ -314,6 +316,7 @@ class EngagementCreator extends cdk.NestedStack {
 class DGraphTtl extends cdk.NestedStack {
     readonly event_handler: lambda.Function;
     readonly name: string;
+    readonly rule: events.Rule;
 
     constructor(
         scope: cdk.Construct,
@@ -344,6 +347,13 @@ class DGraphTtl extends cdk.NestedStack {
                 timeout: cdk.Duration.seconds(600),
                 memorySize: 128,
                 description: grapl_version
+            }
+        );
+
+        this.rule = new events.Rule(
+            scope, this.name + "-rule", {
+                schedule: events.Schedule.expression("rate(1 hour)"),
+                targets: [new targets.LambdaFunction(this.event_handler)]
             }
         );
     }
