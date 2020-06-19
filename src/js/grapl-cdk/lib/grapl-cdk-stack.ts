@@ -330,7 +330,7 @@ class DGraphTtl extends cdk.NestedStack {
                 runtime: Runtime.PYTHON_3_7,
                 handler: "app.app",
                 functionName: "Grapl-DGraphTtl-Handler",
-                code: lambda.Code.fromAsset(`./zips/grapl-dgraph-ttl-${grapl_version}.zip`),
+                code: lambda.Code.fromAsset(`./zips/dgraph-ttl-${grapl_version}.zip`),
                 vpc: vpc,
                 environment: {
                     "MG_ALPHAS": master_graph.alphaNames.join(","),
