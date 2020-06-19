@@ -12,13 +12,13 @@
   },
   "devDependencies": {
     "@aws-cdk/assert": "1.41.x",
-    "@types/jest": "^25.2.3",
-    "@types/node": "14.0.5",
-    "@types/uuid": "^7.0.3",
-    "aws-cdk": "^1.41.0",
-    "jest": "^26.0.1",
-    "ts-jest": "^26.0.0",
-    "ts-node": "^8.10.1",
+    "@types/jest": "26.0.x",
+    "@types/node": "14.0.x",
+    "@types/uuid": "7.0.x",
+    "aws-cdk": "1.41.x",
+    "jest": "26.0.x",
+    "ts-jest": "26.0.x",
+    "ts-node": "8.10.x",
     "typescript": "~3.9.3"
   },
   "dependencies": {
@@ -43,9 +43,9 @@
     "@aws-cdk/aws-sqs": "1.41.x",
     "@aws-cdk/core": "1.41.x",
     "@types/node-dir": "0.0.33",
-    "aws-sdk": "^2.682.0",
-    "node-dir": "^0.1.17",
-    "node-env-file": "^0.1.8",
-    "source-map-support": "^0.5.19"
+    "aws-sdk": "2.682.x",
+    "node-dir": "0.1.17",
+    "node-env-file": "0.1.8",
+    "source-map-support": "0.5.19"
   }
 }
