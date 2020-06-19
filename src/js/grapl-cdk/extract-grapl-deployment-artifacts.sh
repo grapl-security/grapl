@@ -34,6 +34,7 @@ asdf=(
     "engagement-creator"
     "engagement-edge"
     "model-plugin-deployer"
+    "dgraph-ttl"
 )
 
 cs=(

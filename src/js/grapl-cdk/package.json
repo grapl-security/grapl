@@ -28,6 +28,7 @@
     "@aws-cdk/aws-ec2": "^1.41.0",
     "@aws-cdk/aws-ecs": "^1.41.0",
     "@aws-cdk/aws-elasticache": "^1.41.0",
+    "@aws-cdk/aws-events-targets": "^1.41.0",
     "@aws-cdk/aws-iam": "^1.41.0",
     "@aws-cdk/aws-lambda": "^1.41.0",
     "@aws-cdk/aws-lambda-event-sources": "^1.41.0",

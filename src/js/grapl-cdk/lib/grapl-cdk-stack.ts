@@ -344,12 +344,14 @@ class DGraphTtl extends cdk.NestedStack {
             }
         );
 
-        new events.Rule(
+        let target = new targets.LambdaFunction(event_handler);
+
+        let rule = new events.Rule(
             scope, name + "-rule", {
-                schedule: events.Schedule.expression("rate(1 hour)"),
-                targets: [new targets.LambdaFunction(event_handler)]
+                schedule: events.Schedule.expression("rate(1 hour)")
             }
         );
+        rule.addTarget(target);
     }
 }
 

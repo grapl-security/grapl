@@ -24,7 +24,7 @@ Make sure your `~/.aws/credentials` file contains the proper AWS credentials.
 Execute a local Grapl build by running the following in Grapl's root:
 
 ``` bash
-docker-compose -f docker-compose.yml -f docker-compose.build.yml build
+docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-arg release_target=release
 ```
 
 Then extract the deployment artifacts from the build containers with
