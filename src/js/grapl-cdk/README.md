@@ -47,4 +47,5 @@ To deploy Grapl with the CDK, execute the following
   1. `npm -i`
   2. `npm run build`
   3. `echo "BUCKET_PREFIX=$YOUR_BUCKET_PREFIX" > .env`
-  4. `./deploy_all.sh`
+  4. `cdk bootstrap` (only need to do this once per region)
+  5. `./deploy_all.sh`
