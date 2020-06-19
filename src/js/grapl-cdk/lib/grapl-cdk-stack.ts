@@ -313,7 +313,7 @@ class EngagementCreator extends cdk.NestedStack {
     }
 }
 
-class DGraphTtl extends cdk.NestedStack {
+class DGraphTtl extends cdk.Construct {
 
     constructor(
         scope: cdk.Construct,
