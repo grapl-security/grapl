@@ -314,24 +314,18 @@ class EngagementCreator extends cdk.NestedStack {
 }
 
 class DGraphTtl extends cdk.NestedStack {
-    readonly event_handler: lambda.Function;
-    readonly name: string;
-    readonly rule: events.Rule;
 
     constructor(
         scope: cdk.Construct,
         name: string,
-        prefix: string,
         vpc: ec2.IVpc,
         master_graph: DGraphEcs
     ) {
         super(scope, name + "-stack");
 
-        this.name = name + prefix;
-
         const grapl_version = process.env.GRAPL_VERSION || "latest";
 
-        this.event_handler = new lambda.Function(
+        let event_handler = new lambda.Function(
             this, "Handler", {
                 runtime: Runtime.PYTHON_3_7,
                 handler: `app.app`,
@@ -350,10 +344,10 @@ class DGraphTtl extends cdk.NestedStack {
             }
         );
 
-        this.rule = new events.Rule(
-            scope, this.name + "-rule", {
+        new events.Rule(
+            scope, name + "-rule", {
                 schedule: events.Schedule.expression("rate(1 hour)"),
-                targets: [new targets.LambdaFunction(this.event_handler)]
+                targets: [new targets.LambdaFunction(event_handler)]
             }
         );
     }
@@ -497,7 +491,6 @@ export class GraplCdkStack extends cdk.Stack {
         new DGraphTtl(
             this,
             "dgraph-ttl",
-            prefix,
             grapl_vpc,
             master_graph
         );
