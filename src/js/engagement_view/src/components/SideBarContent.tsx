@@ -11,6 +11,7 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
+import TablePagination from '@material-ui/core/TablePagination';
 import {Node, Lens} from "../modules/GraphViz/CustomTypes";
 import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getApiURLs";
 
@@ -59,19 +60,19 @@ function SelectLens(props: SelectLensProps) {
 
     return (
         <>
-                <TableRow key={props.lens}>
-                        <TableCell component="th" scope="row">
-                        <Button className = {classes.lensName}
-                            onClick={
-                                () => { 
-                                    props.setLens(props.lens)    
-                                }
-                        }>
-                            {/* #TODO: change color of lense name based on score */}
-                            {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
-                        </Button>
-                        </TableCell>
-                    </TableRow>
+            <TableRow key={props.lens}>
+                <TableCell component="th" scope="row">
+                <Button className = {classes.lensName}
+                    onClick={
+                        () => { 
+                            props.setLens(props.lens)    
+                        }
+                }>
+                    {/* #TODO: change color of lense name based on score */}
+                    {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
+                </Button>
+                </TableCell>
+            </TableRow>
         </>
     )
 }
@@ -95,8 +96,16 @@ const defaultToggleLensTableState = (): ToggleLensTableState => {
 
 function ToggleLensTable({setLens}: ToggleLensTableProps) {
     const [state, setState] = useState(defaultToggleLensTableState());
-
     const classes = useStyles();
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const handleChangePage = (event: any, newPage:any) => {
+        setPage(newPage);
+    }
+    const handleChangeRowsPerPage = (event: any) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    }
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -114,6 +123,7 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
         return () => clearInterval(interval);
     });
 
+    console.log("State.lenses", state.lenses)
 
     return (
         <>
@@ -133,9 +143,11 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                     <ExpandMoreIcon className={classes.expand}/> 
                 </Button>
             </div>
-
+                    
             <div className="lensToggle">
-                {state.toggled && state.lenses &&
+                { state.toggled && 
+                    state.lenses 
+                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) &&
                     state.lenses.map(
                         (lens: Lens) => {
                             return(
@@ -152,6 +164,18 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                                             />
                                         </TableBody>
                                     </Table>
+
+                                    <TablePagination
+                                        aria-label = "pagination"
+                                        rowsPerPageOptions={[5, 10, 25]}
+                                        component="div"
+                                        count={state.lenses.length}
+                                        rowsPerPage={rowsPerPage}
+                                        page={page}
+                                        onChangePage={handleChangePage}
+                                        onChangeRowsPerPage={handleChangeRowsPerPage}
+                                    />
+
                                 </TableContainer>
                             )
                         }

@@ -418,7 +418,7 @@ const RootQuery = new GraphQLObjectType({
             resolve: async (parent, args) => {
                 const first = args.first;
                 const offset = args.offset; 
-                // TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
+                // #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
                 return await getLenses(getDgraphClient(), first, offset);
             } 
         },
