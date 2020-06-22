@@ -328,7 +328,7 @@ class DGraphTtl extends cdk.Construct {
         let event_handler = new lambda.Function(
             this, "Handler", {
                 runtime: Runtime.PYTHON_3_7,
-                handler: "app.prune_expired_subgraphs",
+                handler: "app.app",
                 functionName: "Grapl-DGraphTtl-Handler",
                 code: lambda.Code.fromAsset(`./zips/dgraph-ttl-${grapl_version}.zip`),
                 vpc: vpc,
