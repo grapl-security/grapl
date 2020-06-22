@@ -16,6 +16,7 @@ import {HistoryDb} from "./historydb";
 import {EventEmitter} from "./event_emitters";
 import {RedisCluster} from "./redis";
 import {EngagementNotebook} from "./engagement";
+import AnalyzerDeployer from "./analyzer_deployer"
 
 class SysmonSubgraphGenerator extends cdk.NestedStack {
 
@@ -462,6 +463,14 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
         );
 
+        new AnalyzerDeployer(
+            this,
+            'analyzer-deplyer',
+            prefix,
+            jwtSecret,
+            analyzers_bucket,
+            grapl_vpc,
+        );
 
         const analyzer_executor = new AnalyzerExecutor(
             this,

@@ -127,6 +127,15 @@ services:
       - grapl-analyzerlib-python-build
       - grapl-python-deploy
 
+  grapl-analyzer-deployer:
+    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+    build:
+      context: ./src/python/grapl-model-plugin-deployer/
+      dockerfile: ./Dockerfile
+    depends_on:
+      - grapl-analyzerlib-python-build
+      - grapl-python-deploy
+
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
     build:

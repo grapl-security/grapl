@@ -228,6 +228,23 @@ services:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
 
+  grapl-analyzer-deployer:
+    image: grapl/grapl-analyzer-deployer:${TAG:-latest}
+    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'
+    ports:
+      - "8123:8123"
+    environment:
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+    tty: true
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+      - grapl-master-graph-db:master_graph
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
   #
   # JS/web services
   #
