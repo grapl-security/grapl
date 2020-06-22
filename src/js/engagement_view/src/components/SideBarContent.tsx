@@ -85,12 +85,16 @@ type ToggleLensTableProps = {
 type ToggleLensTableState = {
     toggled: boolean,
     lenses: Lens[],
+    first: number,
+    offset: number,
 }
 
 const defaultToggleLensTableState = (): ToggleLensTableState => {
     return {
         toggled: true,
         lenses: [],
+        first: 100, // first is the page size
+        offset: 0, // by default, start from page 0
     }
 }
 
@@ -110,11 +114,14 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
     useEffect(() => {
         const interval = setInterval(() => {
             console.log("Fetching lenses");
-            getLenses()
+            getLenses(state.first, state.offset)
                 .then((response) => {
+
+                    // TODO: Update offset
                     if (response.lenses && response.lenses !== state.lenses) {
                         setState({
                             ...state,
+                            offset: state.offset + response.lenses.length || 0,
                             lenses: response.lenses || [],
                         })
                     }
@@ -191,12 +198,12 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
 const graphql_edge = getGraphQlEdge();
 
 
-const getLenses = async () => {
+const getLenses = async (first: number, offset: number) => {
     console.log('fetching graph from', graphql_edge);
 
     const query = `
     {
-        lenses {
+        lenses(first: ${first}, offset: ${offset}) {
             uid,
             node_key,
             lens_name,
