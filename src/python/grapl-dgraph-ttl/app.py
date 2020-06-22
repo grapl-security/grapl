@@ -132,7 +132,7 @@ def create_edge_obj(
 
 
 @app.lambda_function(name="prune_expired_subgraphs")
-def prune_expired_subgraphs() -> None:
+def prune_expired_subgraphs(event, lambda_context) -> None:
     if GRAPL_DGRAPH_TTL_S > 0:
         client = LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient()
 
