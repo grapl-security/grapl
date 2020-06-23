@@ -151,10 +151,14 @@ export const graphQLAdjacencyMatrix = (inputGraph: (LensScopeResponse & BaseNode
 
         for(const risk of node.risks || []){
             strippedNode.risk += risk.risk_score || 0;
+            if (strippedNode.analyzer_names && risk.analyzer_name) {
+                // #TODO: Link to the analyzer details
+                strippedNode.analyzer_names += ", "
+            }
             strippedNode.analyzer_names += risk.analyzer_name || "";
         }
 
-        mapEdges(node, (edge: string, neighbor: BaseNode) => {
+        mapEdges(node, (edge: string, _neighbor: BaseNode) => {
             // The stripped node is being converted to another type, so we can cast
             // to any here
             (strippedNode as any)[edge] = undefined;

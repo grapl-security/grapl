@@ -34,6 +34,7 @@ export const PluginTable = () => {
     }
 
     useEffect(() => {
+        console.log("fetching plugins");
         getPluginList().then((rows) => {
             setState({
                 ...state,
