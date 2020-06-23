@@ -98,9 +98,50 @@ const defaultToggleLensTableState = (): ToggleLensTableState => {
     }
 }
 
-function ToggleLensTable({setLens}: ToggleLensTableProps) {
+const pagedTable = (state: any, page: number, rowsPerPage: number, handleChangePage: any, handleChangeRowsPerPage: any, setLens: any, classes: any) => {
+    return (
+        <TableContainer>
+        <TablePagination
+            aria-label = "pagination"
+            rowsPerPageOptions={[1, 3, 5]}
+            component="div"
+            count={state.lenses.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onChangePage={handleChangePage}
+            onChangeRowsPerPage={handleChangeRowsPerPage}
+        />
+        {
+            state.lenses 
+            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            .map(
+            (lens: Lens) => {
+                return(
+                    <Table className={classes.table} aria-label="lens table">
+                        <TableBody>
+                            <SelectLens 
+                                key={Number(lens.uid)}
+                                uid={lens.uid}
+                                lens={lens.lens_name}
+                                lens_type={lens.lens_type}
+                                score={lens.score}
+                                setLens={setLens}
+                            />
+                        </TableBody>
+                    </Table>
+                )
+            }
+        )
+        }
+
+        </TableContainer>
+    )
+}
+
+function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
     const [state, setState] = useState(defaultToggleLensTableState());
     const classes = useStyles();
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const handleChangePage = (event: any, newPage:any) => {
@@ -113,24 +154,21 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
 
     useEffect(() => {
         const interval = setInterval(() => {
-            console.log("Fetching lenses");
+            // console.log("Fetching lenses");
             getLenses(state.first, state.offset)
                 .then((response) => {
-
-                    // TODO: Update offset
                     if (response.lenses && response.lenses !== state.lenses) {
+                        const lenses = state.lenses.concat(response.lenses);
                         setState({
                             ...state,
                             offset: state.offset + response.lenses.length || 0,
-                            lenses: response.lenses || [],
+                            lenses,
                         })
                     }
                 })
         }, 1000);
         return () => clearInterval(interval);
     });
-
-    console.log("State.lenses", state.lenses)
 
     return (
         <>
@@ -150,45 +188,13 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                     <ExpandMoreIcon className={classes.expand}/> 
                 </Button>
             </div>
-                    
+        
             <div className="lensToggle">
-                { state.toggled && 
-                    state.lenses 
-                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) &&
-                    state.lenses.map(
-                        (lens: Lens) => {
-                            return(
-                                <TableContainer>
-                                    <Table className={classes.table} aria-label="lens table">
-                                        <TableBody>
-                                            <SelectLens 
-                                                key={Number(lens.uid)}
-                                                uid={lens.uid}
-                                                lens={lens.lens_name}
-                                                lens_type={lens.lens_type}
-                                                score={lens.score}
-                                                setLens={setLens}
-                                            />
-                                        </TableBody>
-                                    </Table>
-
-                                    <TablePagination
-                                        aria-label = "pagination"
-                                        rowsPerPageOptions={[5, 10, 25]}
-                                        component="div"
-                                        count={state.lenses.length}
-                                        rowsPerPage={rowsPerPage}
-                                        page={page}
-                                        onChangePage={handleChangePage}
-                                        onChangeRowsPerPage={handleChangeRowsPerPage}
-                                    />
-
-                                </TableContainer>
-                            )
-                        }
-                    )
+                {   state.toggled && 
+                    pagedTable(state, page, rowsPerPage, handleChangePage, handleChangeRowsPerPage, setLens, classes)
                 }
             </div>
+
             <Divider />
         </>
     )

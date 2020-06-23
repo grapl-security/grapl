@@ -268,10 +268,11 @@ const getDgraphClient = () => {
 }
 // return lens
 const getLenses = async (dg_client, first, offset) => {
+    console.log("first offset", first, offset);
     const query = `
     query all($a: int, $b: int)
     {
-        all(func: type(Lens), first: $a, offset: $b)
+        all(func: type(Lens), first: $a, offset: $b, orderdesc: score)
         {
             lens_name: lens,
             score,
@@ -289,7 +290,7 @@ const getLenses = async (dg_client, first, offset) => {
 
     const txn = dg_client.newTxn();
     try {
-        const res = await txn.queryWithVars(query, {'$a': first, '$b': offset});
+        const res = await txn.queryWithVars(query, {'$a': first.toString(), '$b': offset.toString()});
         return res.getJson()['all'];
     } finally {
         await txn.discard();
@@ -409,17 +410,20 @@ const RootQuery = new GraphQLObjectType({
             type: GraphQLList(LensNodeType),
             args: {
                 first: {
-                    type: new GraphQLNonNull(GraphQLInteger)
+                    type: new GraphQLNonNull(GraphQLInt)
                 },
                 offset: {
-                    type: new GraphQLNonNull(GraphQLInteger)
+                    type: new GraphQLNonNull(GraphQLInt)
                 }
             },
             resolve: async (parent, args) => {
+                console.log("Args", args)
                 const first = args.first;
                 const offset = args.offset; 
                 // #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
-                return await getLenses(getDgraphClient(), first, offset);
+                const lenses =  await getLenses(getDgraphClient(), first, offset);
+                console.log('lenses', lenses);
+                return lenses
             } 
         },
         lens_scope:{

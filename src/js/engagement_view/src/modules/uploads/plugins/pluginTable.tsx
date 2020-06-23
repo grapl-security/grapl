@@ -56,7 +56,7 @@ export const PluginTable = () => {
                             (pluginName: string) => {
                                 return <TableRow key = { pluginName }> 
                                             <TableCell 
-                                                align = "left"> 
+                                                align = "right"> 
                                                 {pluginName} 
                                                 <Button onClick={
                                                     () => { 
