@@ -7,8 +7,8 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import { mapEdgeProps } from '../modules/GraphViz/graph/graph_traverse';
-import {mapNodeProps} from './GraphViz';
-import {Node} from "../modules/GraphViz/CustomTypes"
+import { mapNodeProps } from './GraphViz';
+import { Node } from "../modules/GraphViz/CustomTypes"
 
 
 const useStyles = makeStyles({
