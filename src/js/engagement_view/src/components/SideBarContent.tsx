@@ -45,6 +45,10 @@ const useStyles = makeStyles({
     lensName: {
         fontSize: "16px",
     },
+    pagination: {
+        margin: ".5rem",
+        backgroundColor: "#595959",
+    }
 });
 
 type SelectLensProps = {
@@ -89,6 +93,11 @@ type ToggleLensTableState = {
     offset: number,
 }
 
+type SideBarContentProps = {
+    setLens: (lens: string) => void, 
+    curNode: Node | null
+}
+
 const defaultToggleLensTableState = (): ToggleLensTableState => {
     return {
         toggled: true,
@@ -98,12 +107,21 @@ const defaultToggleLensTableState = (): ToggleLensTableState => {
     }
 }
 
-const pagedTable = (state: any, page: number, rowsPerPage: number, handleChangePage: any, handleChangeRowsPerPage: any, setLens: any, classes: any) => {
+const pagedTable = (
+    state: any, 
+    page: number, 
+    rowsPerPage: number, 
+    handleChangePage: any, 
+    handleChangeRowsPerPage: any, 
+    setLens: any, 
+    classes: any
+) => {
     return (
         <TableContainer>
         <TablePagination
+            className = {classes.pagination}
             aria-label = "pagination"
-            rowsPerPageOptions={[1, 3, 5]}
+            rowsPerPageOptions={[5, 10, 15]}
             component="div"
             count={state.lenses.length}
             rowsPerPage={rowsPerPage}
@@ -115,25 +133,24 @@ const pagedTable = (state: any, page: number, rowsPerPage: number, handleChangeP
             state.lenses 
             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
             .map(
-            (lens: Lens) => {
-                return(
-                    <Table className={classes.table} aria-label="lens table">
-                        <TableBody>
-                            <SelectLens 
-                                key={Number(lens.uid)}
-                                uid={lens.uid}
-                                lens={lens.lens_name}
-                                lens_type={lens.lens_type}
-                                score={lens.score}
-                                setLens={setLens}
-                            />
-                        </TableBody>
-                    </Table>
-                )
-            }
-        )
+                (lens: Lens) => {
+                    return(
+                        <Table className={classes.table} aria-label="lens table">
+                            <TableBody>
+                                <SelectLens 
+                                    key={Number(lens.uid)}
+                                    uid={lens.uid}
+                                    lens={lens.lens_name}
+                                    lens_type={lens.lens_type}
+                                    score={lens.score}
+                                    setLens={setLens}
+                                />
+                            </TableBody>
+                        </Table>
+                    )
+                }
+            )
         }
-
         </TableContainer>
     )
 }
@@ -152,8 +169,9 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
         setPage(0);
     }
 
-    useEffect(() => {
-        const interval = setInterval(() => {
+    useEffect( () => {
+        const interval = setInterval(
+            () => {
             // console.log("Fetching lenses");
             getLenses(state.first, state.offset)
                 .then((response) => {
@@ -165,7 +183,8 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
                             lenses,
                         })
                     }
-                })
+                }
+            )
         }, 1000);
         return () => clearInterval(interval);
     });
@@ -200,25 +219,23 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
     )
 }
 
-// const engagement_edge = getEngagementEdge();
 const graphql_edge = getGraphQlEdge();
 
-
 const getLenses = async (first: number, offset: number) => {
-    console.log('fetching graph from', graphql_edge);
+    // console.log('fetching graph from', graphql_edge);
 
     const query = `
-    {
-        lenses(first: ${first}, offset: ${offset}) {
-            uid,
-            node_key,
-            lens_name,
-            score, 
-            lens_type,
+        {
+            lenses(first: ${first}, offset: ${offset}) {
+                uid,
+                node_key,
+                lens_name,
+                score, 
+                lens_type,
+            }
         }
-    }
     `;
-    console.log(`connecting to: ${graphql_edge}graphql`)
+    // console.log(`connecting to: ${graphql_edge}graphql`);
     const res = await fetch(`${graphql_edge}graphql`,
         {
             method: 'post',
@@ -247,9 +264,6 @@ type NodeDetailsProps = {
 }
 
 const NodeDetails = ({node}: NodeDetailsProps) => {
-    // #TODO: Remove hidden fields from our node before displaying
-    // Display remaining fields of node in our component="div"
-
     return (
         <>
             <NodeTable node={node} />
@@ -292,10 +306,6 @@ function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
 }
 
 
-type SideBarContentProps = {
-    setLens: (lens: string) => void, 
-    curNode: Node | null
-}
 
 export default function SideBarContent({setLens, curNode}: SideBarContentProps) {
     return (

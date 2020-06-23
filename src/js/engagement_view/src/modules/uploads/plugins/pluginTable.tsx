@@ -51,7 +51,7 @@ export const PluginTable = () => {
                             <TableCell align = "left">PLUGINS</TableCell>
                         </TableRow>
                     </TableHead>
-                    <TableBody>
+                    <TableBody aria-label = "PluginTable">
                         {state.rows.map(
                             (pluginName: string) => {
                                 return <TableRow key = { pluginName }> 
