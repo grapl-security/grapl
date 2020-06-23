@@ -9,6 +9,7 @@ use log::*;
 use rusoto_core::{HttpClient, Region};
 use rusoto_s3::S3Client;
 use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
+use rusoto_sts::{StsAssumeRoleSessionCredentialsProvider, StsClient};
 use serde::Deserialize;
 
 use aws_lambda_events::event::s3::{
@@ -310,7 +311,30 @@ fn handler<
                 initial_messages,
                 bucket,
                 ctx,
-                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+                |region_str| {
+                    let region = Region::from_str(&region_str).expect("region_str");
+                    match std::env::var("ASSUME_ROLE") {
+                        Ok(role) => {
+                            let sts = StsClient::new(region.clone());
+                            let provider = StsAssumeRoleSessionCredentialsProvider::new(
+                                sts,
+                                role,
+                                "default".to_owned(),
+                                None,
+                                None,
+                                None,
+                                None,
+                            );
+                            S3Client::new_with(
+                                rusoto_core::request::HttpClient::new()
+                                    .expect("Failed to creat HTTP client"),
+                                provider,
+                                region,
+                            )
+                        }
+                        _ => S3Client::new(region),
+                    }
+                },
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
                 event_decoder.clone(),

@@ -3,6 +3,8 @@ import * as s3 from "@aws-cdk/aws-s3";
 import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as ec2 from "@aws-cdk/aws-ec2";
+import * as events from "@aws-cdk/aws-events";
+import * as targets from "@aws-cdk/aws-events-targets";
 import * as lambda from "@aws-cdk/aws-lambda";
 import {Runtime} from "@aws-cdk/aws-lambda";
 import * as iam from "@aws-cdk/aws-iam";
@@ -311,6 +313,48 @@ class EngagementCreator extends cdk.NestedStack {
     }
 }
 
+class DGraphTtl extends cdk.Construct {
+
+    constructor(
+        scope: cdk.Construct,
+        name: string,
+        vpc: ec2.IVpc,
+        master_graph: DGraphEcs
+    ) {
+        super(scope, name + "-stack");
+
+        const grapl_version = process.env.GRAPL_VERSION || "latest";
+
+        let event_handler = new lambda.Function(
+            this, "Handler", {
+                runtime: Runtime.PYTHON_3_7,
+                handler: "app.prune_expired_subgraphs",
+                functionName: "Grapl-DGraphTtl-Handler",
+                code: lambda.Code.fromAsset(`./zips/dgraph-ttl-${grapl_version}.zip`),
+                vpc: vpc,
+                environment: {
+                    "MG_ALPHAS": master_graph.alphaNames.join(","),
+                    "GRAPL_DGRAPH_TTL_S": "2678400", // 60 * 60 * 24 * 31 == 1 month
+                    "GRAPL_LOG_LEVEL": "INFO",
+                    "GRAPL_TTL_DELETE_BATCH_SIZE": "1000"
+                },
+                timeout: cdk.Duration.seconds(600),
+                memorySize: 128,
+                description: grapl_version
+            }
+        );
+
+        let target = new targets.LambdaFunction(event_handler);
+
+        let rule = new events.Rule(
+            scope, name + "-rule", {
+                schedule: events.Schedule.expression("rate(1 hour)")
+            }
+        );
+        rule.addTarget(target);
+    }
+}
+
 class ModelPluginDeployer extends cdk.NestedStack {
     event_handler: lambda.Function;
     integration: apigateway.LambdaRestApi;
@@ -444,6 +488,13 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
             engagements_created_topic,
             master_graph,
+        );
+
+        new DGraphTtl(
+            this,
+            "dgraph-ttl",
+            grapl_vpc,
+            master_graph
         );
 
         const model_plugins_bucket = new s3.Bucket(this, prefix + '-model-plugins-bucket', {

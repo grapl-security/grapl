@@ -122,7 +122,16 @@ services:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     build:
       context: ./src/python/grapl-model-plugin-deployer/
-      dockerfile: ./Dockerfile
+      target: grapl-model-plugin-deployer
+    depends_on:
+      - grapl-analyzerlib-python-build
+      - grapl-python-deploy
+
+  grapl-dgraph-ttl:
+    image: grapl/grapl-dgraph-ttl:${TAG:-latest}
+    build:
+      context: ./src/python/grapl-dgraph-ttl/
+      target: grapl-dgraph-ttl
     depends_on:
       - grapl-analyzerlib-python-build
       - grapl-python-deploy

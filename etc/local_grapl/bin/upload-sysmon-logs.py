@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
-try:
-    from typing import Any, Dict, Union, Optional
-except:
-    pass
-
 import argparse
 import json
 import random
 import string
-import sys
 import time
 from datetime import datetime
 
@@ -57,8 +51,10 @@ def into_sqs_message(bucket: str, key: str) -> str:
     )
 
 
-def main(prefix, logfile):
-    print(f"Writing events to {prefix}")
+def main(prefix, logfile, delay, batch_size):
+    print(
+        f"Writing events to {prefix} with {delay} seconds between batches of {batch_size}"
+    )
     sqs = None
     # local-grapl prefix is reserved for running Grapl locally
     if prefix == "local-grapl":
@@ -87,7 +83,7 @@ def main(prefix, logfile):
     def chunker(seq, size):
         return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
-    for chunks in chunker(body, 150):
+    for chunks in chunker(body, batch_size):
         c_body = zstd.compress(b"\n".join(chunks).replace(b"\n\n", b"\n"), 4)
         epoch = int(time.time())
 
@@ -110,6 +106,8 @@ def main(prefix, logfile):
                 ),
             )
 
+        time.sleep(delay)
+
     print(f"Completed uploading at {time.ctime()}")
 
 
@@ -117,6 +115,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Send sysmon logs to Grapl")
     parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
     parser.add_argument("--logfile", dest="logfile", required=True)
+    parser.add_argument("--delay", dest="delay", default=0, type=int)
+    parser.add_argument("--batch-size", dest="batch_size", default=100, type=int)
     return parser.parse_args()
 
 
@@ -126,4 +126,4 @@ if __name__ == "__main__":
     if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
     else:
-        main(args.bucket_prefix, args.logfile)
+        main(args.bucket_prefix, args.logfile, args.delay, args.batch_size)
