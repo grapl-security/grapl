@@ -32,6 +32,6 @@ class SuspiciousSvchost(Analyzer):
                 analyzer_name="Suspicious svchost",
                 node_view=response,
                 risk_score=75,
-                lenses=[("hostname", asset_id), ("technique", "evasion"), ("DESKTOP-JM18", "47"), ("DESKTOP-KM", "35"), ("DESKTOP-DB", "315")],
+                lenses=[("hostname", asset_id)],
             )
         )
