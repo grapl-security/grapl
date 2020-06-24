@@ -58,10 +58,9 @@ const useStyles = makeStyles({
 
 function SelectLens(props: SelectLensProps) {
     const classes = useStyles();
-
     return (
         <>
-            <TableRow key={props.lens}>
+            <TableRow key={props.uid}>
                 <TableCell component="th" scope="row">
                 <Button className = {classes.lensName}
                     onClick={
@@ -170,7 +169,7 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
         }, 1000);
         return () => clearInterval(interval);
     });
-    console.log("setLens", setLens)
+
     return (
         <>
             <div className={classes.header}>

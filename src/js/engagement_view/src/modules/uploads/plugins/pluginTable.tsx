@@ -11,7 +11,6 @@ import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
 import { PluginTableState } from "../plugins/uploadPluginTypes"
 import { getPluginList, deletePlugin} from "../plugins/apiRequests";
 import { useStyles } from "../plugins/useStyles";
-import { RecordWithTtl } from 'dns';
 
 const defaultPluginTableState = (): PluginTableState => {
     return {
