@@ -120,6 +120,7 @@ services:
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - MG_ALPHAS=master_graph:9080
     tty: false
     links:
       - s3:minio
@@ -166,7 +167,7 @@ services:
     environment:
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
-      - MG_ALPHAS=master_graph
+      - MG_ALPHAS=master_graph:9080
       - "IS_RETRY=False"
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
@@ -188,6 +189,7 @@ services:
       - "IS_LOCAL=True"
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - MG_ALPHAS=master_graph:9080
     tty: true
     links:
       - s3:minio
