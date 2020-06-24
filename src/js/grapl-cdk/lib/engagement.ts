@@ -191,7 +191,7 @@ export class EngagementNotebook extends cdk.NestedStack {
     }
 }
 
-interface EngagementUxProps {
+interface EngagementUxProps extends cdk.StackProps {
     prefix: string,
     engagement_edge: EngagementEdge,
     graphql_endpoint: GraphQLEndpoint,
@@ -203,7 +203,7 @@ export class EngagementUx extends cdk.Stack {
         id: string,
         props: EngagementUxProps
     ) {
-        super(scope, id, { stackName: props.prefix });
+        super(scope, id, props);
 
         const edgeBucket = new s3.Bucket(this, 'EdgeBucket', {
             bucketName: props.prefix.toLowerCase() + '-engagement-ux-bucket',

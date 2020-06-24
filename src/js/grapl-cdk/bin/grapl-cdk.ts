@@ -19,6 +19,7 @@ new EngagementUx(
     'EngagementUX', {
         prefix: grapl.prefix,
         engagement_edge: grapl.engagement_edge,
-        graphql_endpoint: grapl.graphql_endpoint
+        graphql_endpoint: grapl.graphql_endpoint,
+        stackName: deployName + '-EngagementUX',
     }
 );
