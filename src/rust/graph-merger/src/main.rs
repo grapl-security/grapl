@@ -332,7 +332,6 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         tokio_compat::run_std(async move {
             let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
             debug!("Queue Url: {}", source_queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let cache_address = {
                 let retry_identity_cache_addr =
                     std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
@@ -348,17 +347,12 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
             let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
             info!("Output events to: {}", bucket);
             let region = grapl_config::region();
-            let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS")
-                .expect("MG_ALPHAS")
-                .split(',')
-                .map(str::to_string)
-                .collect();
 
             let cache = RedisCache::new(cache_address.to_owned())
                 .await
                 .expect("Could not create redis client");
 
-            let graph_merger = GraphMerger::new(mg_alphas, cache.clone());
+            let graph_merger = GraphMerger::new(grapl_config::mg_alphas(), cache.clone());
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
@@ -455,12 +449,18 @@ where
 
         let mg_client = {
             let mut rng = thread_rng();
-            let rand_alpha = self.mg_alphas.choose(&mut rng).expect("Empty rand_alpha");
+            let rand_alpha = self
+                .mg_alphas
+                .choose(&mut rng)
+                .expect("Empty rand_alpha")
+                .to_owned();
+            let (host, port) = grapl_config::parse_host_port(rand_alpha);
 
+            debug!("connecting to DGraph {:?}:{:?}", host, port);
             DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
                 Client::new_plain(
-                    rand_alpha,
-                    9080,
+                    &host,
+                    port,
                     ClientConf {
                         ..Default::default()
                     },
@@ -548,7 +548,7 @@ where
 
         //        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
 
-        let mut completed = match (upsert_res, edge_res) {
+        let completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
                 sqs_lambda::error::Error::ProcessingError(e.to_string()),
@@ -600,9 +600,7 @@ fn init_s3_client() -> S3Client {
 }
 
 async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
-    let mg_alphas: Vec<_> = vec!["master_graph".to_owned()];
-
-    let graph_merger = GraphMerger::new(mg_alphas, NopCache {});
+    let graph_merger = GraphMerger::new(grapl_config::mg_alphas(), NopCache {});
 
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 

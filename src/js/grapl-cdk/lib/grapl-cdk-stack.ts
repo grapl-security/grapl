@@ -146,7 +146,7 @@ class GraphMerger extends cdk.NestedStack {
                 environment: {
                     "BUCKET_PREFIX": prefix,
                     "SUBGRAPH_MERGED_BUCKET": writes_to.bucketName,
-                    "MG_ALPHAS": master_graph.alphaNames.join(","),
+                    "MG_ALPHAS": master_graph.alphaHostPorts().join(","),
                     "MERGED_CACHE_ADDR": graph_merge_cache.cluster.attrRedisEndpointAddress,
                     "MERGED_CACHE_PORT": graph_merge_cache.cluster.attrRedisEndpointPort,
                 },
@@ -237,7 +237,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
                 environment: {
                     "ANALYZER_MATCH_BUCKET": writes_events_to.bucketName,
                     "BUCKET_PREFIX": prefix,
-                    "MG_ALPHAS": master_graph.alphaNames.join(","),
+                    "MG_ALPHAS": master_graph.alphaHostPorts().join(","),
                     "COUNTCACHE_ADDR": this.count_cache.cluster.attrRedisEndpointAddress,
                     "COUNTCACHE_PORT": this.count_cache.cluster.attrRedisEndpointPort,
                     "MESSAGECACHE_ADDR": this.message_cache.cluster.attrRedisEndpointAddress,
@@ -295,7 +295,7 @@ class EngagementCreator extends cdk.NestedStack {
             id,
             {
                 environment: {
-                    "MG_ALPHAS": master_graph.alphaNames.join(","),
+                    "MG_ALPHAS": master_graph.alphaHostPorts().join(","),
                 },
                 vpc: vpc,
                 reads_from: analyzer_matched_sugraphs.bucket,
@@ -333,7 +333,7 @@ class DGraphTtl extends cdk.Construct {
                 code: lambda.Code.fromAsset(`./zips/dgraph-ttl-${grapl_version}.zip`),
                 vpc: vpc,
                 environment: {
-                    "MG_ALPHAS": master_graph.alphaNames.join(","),
+                    "MG_ALPHAS": master_graph.alphaHostPorts().join(","),
                     "GRAPL_DGRAPH_TTL_S": "2678400", // 60 * 60 * 24 * 31 == 1 month
                     "GRAPL_LOG_LEVEL": "INFO",
                     "GRAPL_TTL_DELETE_BATCH_SIZE": "1000"
@@ -386,7 +386,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 code: lambda.Code.fromAsset(`./zips/model-plugin-deployer-${grapl_version}.zip`),
                 vpc: vpc,
                 environment: {
-                    "MG_ALPHAS": master_graph.alphaNames.join(","),
+                    "MG_ALPHAS": master_graph.alphaHostPorts().join(","),
                     "JWT_SECRET_ID": jwt_secret.secretArn,
                     "USER_AUTH_TABLE": user_auth_table.user_auth_table.tableName,
                     "BUCKET_PREFIX": prefix
@@ -446,6 +446,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const mgZeroCount = Number(process.env.MG_ZEROS_COUNT) || 1;
         const mgAlphaCount = Number(process.env.MG_ALPHAS_COUNT) || 1;
+        const mgAlphaPort = Number(process.env.MG_ALPHAS_PORT) || 9080;
 
         const grapl_vpc = new ec2.Vpc(this, 'VPC', {
             natGateways: 1,
@@ -479,6 +480,7 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
             mgZeroCount,
             mgAlphaCount,
+            mgAlphaPort
         );
 
         const engagement_creator = new EngagementCreator(

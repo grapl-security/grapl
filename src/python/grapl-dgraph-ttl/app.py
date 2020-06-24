@@ -158,4 +158,4 @@ if IS_LOCAL:
 
     while 1:
         time.sleep(60)
-        prune_expired_subgraphs()
+        prune_expired_subgraphs(None, None)

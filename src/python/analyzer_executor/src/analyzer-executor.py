@@ -15,7 +15,7 @@ from datetime import datetime
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
-from typing import Any, Optional, Tuple, List, Dict, Type, Set
+from typing import Any, Optional, Tuple, List, Dict, Type, Set, Iterator
 
 import boto3
 import botocore.exceptions
@@ -233,14 +233,21 @@ def chunker(seq, size):
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
-    alpha_names = os.environ["MG_ALPHAS"].split(",")
+def mg_alphas() -> Iterator[Tuple[str, int]]:
+    mg_alphas = os.environ["MG_ALPHAS"].split(",")
+    for mg_alpha in mg_alphas:
+        host, port = mg_alpha.split(":")
+        yield host, int(port)
 
+
+def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
     try:
         pool = ThreadPool(processes=4)
 
         exec(file, globals())
-        client_stubs = [DgraphClientStub(f"{a_name}:9080") for a_name in alpha_names]
+        client_stubs = (
+            DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas()
+        )
         client = DgraphClient(*client_stubs)
 
         analyzers = get_analyzer_objects(client)
@@ -348,9 +355,7 @@ def lambda_handler(events: Any, context: Any) -> None:
     # Parse sns message
     LOGGER.debug(f"handling events: {events} context: {context}")
 
-    alpha_names = os.environ["MG_ALPHAS"].split(",")
-
-    client_stubs = [DgraphClientStub("{}:9080".format(name)) for name in alpha_names]
+    client_stubs = (DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
     client = DgraphClient(*client_stubs)
 
     s3 = get_s3_client()
