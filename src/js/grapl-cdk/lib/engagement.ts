@@ -47,9 +47,9 @@ function getEdgeGatewayId(
             if (edgeId && graphId) {
                 break
             }
-            
+
         }
-        
+
         if (edgeId && graphId) {
             cb(edgeId, graphId);
         } else {
@@ -71,7 +71,7 @@ function replaceInFile(
         for (const [toReplace, replaceWith] of replaceMap.entries()) {
             replaced = replaced
             .split(toReplace)
-            .join(replaceWith);   
+            .join(replaceWith);
         }
 
         if (outputFile) {
@@ -113,7 +113,7 @@ export class EngagementEdge extends cdk.Stack {
             code: lambda.Code.fromAsset(`./zips/engagement-edge-${grapl_version}.zip`),
             vpc: props.vpc,
             environment: {
-                "MG_ALPHAS": props.master_graph.alphaNames.join(","),
+                "MG_ALPHAS": props.master_graph.alphaHostPorts().join(","),
                 "JWT_SECRET_ID": props.jwt_secret.secretArn,
                 "USER_AUTH_TABLE": props.user_auth_table.user_auth_table.tableName,
                 "BUCKET_PREFIX": props.prefix,

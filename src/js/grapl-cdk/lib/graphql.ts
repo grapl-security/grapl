@@ -20,7 +20,7 @@ export class GraphQLEndpoint extends cdk.Stack {
         this.integrationName = name + props.prefix + 'GraphQLIntegration';
 
         const grapl_version = process.env.GRAPL_VERSION || "latest";
-        
+
         this.event_handler = new lambda.Function(
             this, 'Handler', {
                 runtime: lambda.Runtime.NODEJS_12_X,
@@ -28,7 +28,7 @@ export class GraphQLEndpoint extends cdk.Stack {
                 code: lambda.Code.fromAsset(`./zips/graphql-endpoint-${grapl_version}.zip`),
                 vpc: props.vpc,
                 environment: {
-                    "MG_ALPHAS": props.master_graph.alphaNames.join(","),
+                    "MG_ALPHAS": props.master_graph.alphaHostPorts().join(","),
                     "JWT_SECRET_ID": props.jwt_secret.secretArn,
                     "BUCKET_PREFIX": props.prefix,
                 },

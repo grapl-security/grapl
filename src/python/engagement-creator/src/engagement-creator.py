@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import *
+from typing import Any, Dict, Iterator, Tuple
 
 import boto3
 import botocore.exceptions
@@ -200,13 +200,15 @@ def get_s3_client():
         return boto3.resource("s3")
 
 
-def lambda_handler(events: Any, context: Any) -> None:
-    mg_alpha_names = os.environ["MG_ALPHAS"].split(",")
-    mg_alpha_port = os.environ.get("MG_ALPHA_PORT", "9080")
+def mg_alphas() -> Iterator[Tuple[str, int]]:
+    mg_alphas = os.environ["MG_ALPHAS"].split(",")
+    for mg_alpha in mg_alphas:
+        host, port = mg_alpha.split(":")
+        yield host, int(port)
 
-    mg_client_stubs = [
-        DgraphClientStub(f"{name}:{mg_alpha_port}") for name in mg_alpha_names
-    ]
+
+def lambda_handler(events: Any, context: Any) -> None:
+    mg_client_stubs = (DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
     mg_client = DgraphClient(*mg_client_stubs)
 
     s3 = get_s3_client()
@@ -274,8 +276,6 @@ def lambda_handler(events: Any, context: Any) -> None:
 
 
 if IS_LOCAL:
-    os.environ["MG_ALPHAS"] = "master_graph"
-
     sqs = boto3.client(
         "sqs",
         region_name="us-east-1",

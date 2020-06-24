@@ -17,7 +17,7 @@ class Zero extends cdk.Construct {
         super(scope, id);
 
         const zeroTask = new ecs.Ec2TaskDefinition(
-            this, 
+            this,
             'TaskDef',
             {
                 networkMode: ecs.NetworkMode.AWS_VPC,
@@ -116,7 +116,7 @@ class Alpha extends cdk.Construct {
 }
 
 export class DGraphEcs extends cdk.Construct {
-    readonly alphaNames: string[];
+    readonly alphas: [string, number][];
 
     constructor(
         scope: cdk.Construct,
@@ -124,6 +124,7 @@ export class DGraphEcs extends cdk.Construct {
         vpc: ec2.Vpc,
         zeroCount: number,
         alphaCount: number,
+        alphaPort: number
     ) {
         super(scope, id);
 
@@ -150,7 +151,7 @@ export class DGraphEcs extends cdk.Construct {
             }
         );
 
-        const zero0 = new Zero(
+        new Zero(
             this,
             id,
             'zero0',
@@ -170,7 +171,7 @@ export class DGraphEcs extends cdk.Construct {
             );
         }
 
-        this.alphaNames = [];
+        this.alphas = [];
 
         cluster.addCapacity('AlphaGroupCapacity',
             {
@@ -190,7 +191,17 @@ export class DGraphEcs extends cdk.Construct {
                 "zero0"
             );
 
-            this.alphaNames.push(alpha.name);
+            this.alphas.push([alpha.name, alphaPort]);
         }
+    };
+
+    alphaHostPorts(): string[] {
+        let names: string[] = []
+        this.alphas.forEach(function (value) {
+            let [host, port] = value;
+            names.push(`${host}:${port}`);
+        });
+
+        return names;
     }
 }
