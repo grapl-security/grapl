@@ -6,15 +6,12 @@ import * as iam from "@aws-cdk/aws-iam";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as sagemaker from "@aws-cdk/aws-sagemaker";
 import * as s3deploy from "@aws-cdk/aws-s3-deployment";
-import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 
 import * as aws from "aws-sdk";
 
 import { GraplServiceProps } from './grapl-cdk-stack';
-import { UserAuthDb } from "./userauthdb";
 import { RemovalPolicy } from "@aws-cdk/core";
 import { GraphQLEndpoint } from './graphql';
-import { GraplEnvironementProps } from './grapl-cdk-stack';
 
 import * as fs from 'fs';
 import * as path from 'path';
