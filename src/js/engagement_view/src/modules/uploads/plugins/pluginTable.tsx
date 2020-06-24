@@ -11,6 +11,7 @@ import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
 import { PluginTableState } from "../plugins/uploadPluginTypes"
 import { getPluginList, deletePlugin} from "../plugins/apiRequests";
 import { useStyles } from "../plugins/useStyles";
+import { RecordWithTtl } from 'dns';
 
 const defaultPluginTableState = (): PluginTableState => {
     return {
@@ -25,16 +26,17 @@ export const PluginTable = () => {
     const [state, setState] = React.useState(defaultPluginTableState());
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const handleChangePage = (event: any, newPage:any) => {
+    const handleChangePage = (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null, newPage:number) => {
         setPage(newPage);
     }
-    const handleChangeRowsPerPage = (event: any) => {
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        console.log("Event", event)
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     }
 
     useEffect(() => {
-        console.log("fetching plugins");
+        // console.log("fetching plugins");
         getPluginList().then((rows) => {
             setState({
                 ...state,

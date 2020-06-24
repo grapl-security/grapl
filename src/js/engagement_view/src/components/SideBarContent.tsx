@@ -14,6 +14,10 @@ import TableRow from "@material-ui/core/TableRow";
 import TablePagination from '@material-ui/core/TablePagination';
 import {Node, Lens} from "../modules/GraphViz/CustomTypes";
 import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getApiURLs";
+import _withStyles, {
+    ClassNameMap,
+} from '@material-ui/styles/withStyles';
+import {SelectLensProps, ToggleLensTableProps, ToggleLensTableState, SideBarContentProps, NodeDetailsProps, ToggleNodeTableProps, PaginationState} from "../modules/GraphViz/CustomTypes"
 
 const useStyles = makeStyles({
     root:{
@@ -51,13 +55,6 @@ const useStyles = makeStyles({
     }
 });
 
-type SelectLensProps = {
-    lens: string,
-    score: number,
-    uid: number,
-    lens_type: string,
-    setLens: (lens: string) => void,
-}
 
 function SelectLens(props: SelectLensProps) {
     const classes = useStyles();
@@ -72,30 +69,13 @@ function SelectLens(props: SelectLensProps) {
                             props.setLens(props.lens)    
                         }
                 }>
-                    {/* #TODO: change color of lense name based on score */}
+                    {/* #TODO: change color of lens name based on score */}
                     {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
                 </Button>
                 </TableCell>
             </TableRow>
         </>
     )
-}
-
-
-type ToggleLensTableProps = {
-    setLens: (lens: string) => void,
-}
-
-type ToggleLensTableState = {
-    toggled: boolean,
-    lenses: Lens[],
-    first: number,
-    offset: number,
-}
-
-type SideBarContentProps = {
-    setLens: (lens: string) => void, 
-    curNode: Node | null
 }
 
 const defaultToggleLensTableState = (): ToggleLensTableState => {
@@ -107,21 +87,22 @@ const defaultToggleLensTableState = (): ToggleLensTableState => {
     }
 }
 
+
 const pagedTable = (
-    state: any, 
+    state: PaginationState, 
     page: number, 
     rowsPerPage: number, 
-    handleChangePage: any, 
-    handleChangeRowsPerPage: any, 
-    setLens: any, 
-    classes: any
+    handleChangePage: (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null, page: number) => void, 
+    handleChangeRowsPerPage: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, 
+    setLens: (lens: string) => void, 
+    classes: ClassNameMap<string>
 ) => {
     return (
         <TableContainer>
         <TablePagination
             className = {classes.pagination}
             aria-label = "pagination"
-            rowsPerPageOptions={[5, 10, 15]}
+            rowsPerPageOptions={[5, 10, 25]}
             component="div"
             count={state.lenses.length}
             rowsPerPage={rowsPerPage}
@@ -161,10 +142,11 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const handleChangePage = (event: any, newPage:any) => {
-        setPage(newPage);
+    const handleChangePage = (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null, page: number) => {
+        setPage(page);
     }
-    const handleChangeRowsPerPage = (event: any) => {
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        console.log("Handle Row Event", event)
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     }
@@ -188,7 +170,7 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
         }, 1000);
         return () => clearInterval(interval);
     });
-
+    console.log("setLens", setLens)
     return (
         <>
             <div className={classes.header}>
@@ -209,7 +191,8 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
             </div>
         
             <div className="lensToggle">
-                {   state.toggled && 
+                {   
+                    state.toggled && 
                     pagedTable(state, page, rowsPerPage, handleChangePage, handleChangeRowsPerPage, setLens, classes)
                 }
             </div>
@@ -259,20 +242,12 @@ const getLenses = async (first: number, offset: number) => {
     return jres;
 };
 
-type NodeDetailsProps = {
-    node: Node
-}
-
 const NodeDetails = ({node}: NodeDetailsProps) => {
     return (
         <>
             <NodeTable node={node} />
         </>
     )
-}
-
-type ToggleNodeTableProps = {
-    curNode: Node | null
 }
 
 function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
