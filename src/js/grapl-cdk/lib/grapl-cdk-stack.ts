@@ -432,6 +432,7 @@ export interface GraplServiceProps {
 }
 
 export interface GraplStackProps extends cdk.StackProps {
+    stackName: string,
     version?: string,
     graphAlphaCount?: number,
     graphAlphaPort?: number,
@@ -443,10 +444,10 @@ export class GraplCdkStack extends cdk.Stack {
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
 
-    constructor(scope: cdk.Construct, id: string, props?: GraplStackProps) {
+    constructor(scope: cdk.Construct, id: string, props: GraplStackProps) {
         super(scope, id, props);
 
-        this.prefix = props?.stackName || 'Grapl';
+        this.prefix = props.stackName;
         const bucket_prefix = this.prefix.toLowerCase();
 
         const grapl_vpc = new ec2.Vpc(this, this.prefix + '-VPC', {
@@ -469,15 +470,15 @@ export class GraplCdkStack extends cdk.Stack {
             'master-graph', {
                 prefix: this.prefix,
                 vpc: grapl_vpc,
-                alphaCount: props?.graphZeroCount || 1,
-                alphaPort: props?.graphAlphaPort || 9080,
-                zeroCount: props?.graphAlphaCount || 1,
+                alphaCount: props.graphZeroCount || 1,
+                alphaPort: props.graphAlphaPort || 9080,
+                zeroCount: props.graphAlphaCount || 1,
             }
         );
 
         const graplProps = {
             prefix: this.prefix,
-            version: props?.version || 'latest',
+            version: props.version || 'latest',
             jwtSecret: jwtSecret,
             vpc: grapl_vpc,
             masterGraph: master_graph,
