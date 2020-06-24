@@ -115,39 +115,44 @@ class Alpha extends cdk.Construct {
     }
 }
 
+export interface DGraphEcsProps {
+    prefix: string,
+    vpc: ec2.Vpc,
+    alphaCount: number,
+    alphaPort: number
+    zeroCount: number,
+}
+
 export class DGraphEcs extends cdk.Construct {
     readonly alphas: [string, number][];
 
     constructor(
         scope: cdk.Construct,
         id: string,
-        vpc: ec2.Vpc,
-        zeroCount: number,
-        alphaCount: number,
-        alphaPort: number
+        props: DGraphEcsProps,
     ) {
         super(scope, id);
 
         const cluster = new ecs.Cluster(this, 'EcsCluster', {
-            clusterName: `Grapl-${id}-EcsCluster`,
-            vpc: vpc
+            clusterName: `${props.prefix}-${id}-EcsCluster`,
+            vpc: props.vpc
         });
 
         cluster.connections.allowInternally(ec2.Port.allTcp());
 
-        const namespace = cluster.addDefaultCloudMapNamespace(
+        cluster.addDefaultCloudMapNamespace(
             {
                 name: id + '.grapl',
                 type: servicediscovery.NamespaceType.DNS_PRIVATE,
-                vpc
+                vpc: props.vpc,
             }
         );
 
         cluster.addCapacity('ZeroGroupCapacity',
             {
                 instanceType: new ec2.InstanceType("t3a.small"),
-                minCapacity: zeroCount,
-                maxCapacity: zeroCount,
+                minCapacity: props.zeroCount,
+                maxCapacity: props.zeroCount,
             }
         );
 
@@ -160,7 +165,7 @@ export class DGraphEcs extends cdk.Construct {
             1
         );
 
-        for (let i = 1; i < zeroCount; i++) {
+        for (let i = 1; i < props.zeroCount; i++) {
             new Zero(
                 this,
                 id,
@@ -176,12 +181,12 @@ export class DGraphEcs extends cdk.Construct {
         cluster.addCapacity('AlphaGroupCapacity',
             {
                 instanceType: new ec2.InstanceType("t3a.2xlarge"),
-                minCapacity: alphaCount,
-                maxCapacity: alphaCount,
+                minCapacity: props.alphaCount,
+                maxCapacity: props.alphaCount,
             }
         );
 
-        for (let i = 0; i < alphaCount; i++) {
+        for (let i = 0; i < props.alphaCount; i++) {
 
             const alpha = new Alpha(
                 this,
@@ -191,7 +196,7 @@ export class DGraphEcs extends cdk.Construct {
                 "zero0"
             );
 
-            this.alphas.push([alpha.name, alphaPort]);
+            this.alphas.push([alpha.name, props.alphaPort]);
         }
     };
 

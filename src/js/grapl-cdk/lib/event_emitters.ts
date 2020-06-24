@@ -2,14 +2,18 @@ import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as s3n from "@aws-cdk/aws-s3-notifications";
+
 import { RemovalPolicy } from "@aws-cdk/core";
-import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
+import { BlockPublicAccess, BucketEncryption } from "@aws-cdk/aws-s3";
 
 export class EventEmitter {
     readonly bucket: s3.Bucket;
     readonly topic: sns.Topic;
 
-    constructor(scope: cdk.Construct, eventName: string) {
+    constructor(
+        scope: cdk.Construct, 
+        eventName: string
+    ) {
 
         this.bucket =
             new s3.Bucket(scope, eventName + '-bucket', {

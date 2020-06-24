@@ -6,13 +6,15 @@ import * as iam from "@aws-cdk/aws-iam";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as sagemaker from "@aws-cdk/aws-sagemaker";
 import * as s3deploy from "@aws-cdk/aws-s3-deployment";
+import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 
 import * as aws from "aws-sdk";
 
+import { GraplServiceProps } from './grapl-cdk-stack';
 import { UserAuthDb } from "./userauthdb";
 import { RemovalPolicy } from "@aws-cdk/core";
-import { GraphQLEndpoint } from '../lib/graphql';
-import { GraplEnvironementProps } from '../lib/grapl-cdk-stack';
+import { GraphQLEndpoint } from './graphql';
+import { GraplEnvironementProps } from './grapl-cdk-stack';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -47,7 +49,6 @@ function getEdgeGatewayId(
             if (edgeId && graphId) {
                 break
             }
-
         }
 
         if (edgeId && graphId) {
@@ -87,7 +88,7 @@ function replaceInFile(
     });
 };
 
-export class EngagementEdge extends cdk.Stack {
+export class EngagementEdge extends cdk.NestedStack {
     event_handler: lambda.Function;
     integration: apigateway.LambdaRestApi;
     name: string;
@@ -96,38 +97,36 @@ export class EngagementEdge extends cdk.Stack {
     constructor(
         scope: cdk.Construct,
         id: string,
-        props: GraplEnvironementProps,
+        props: GraplServiceProps,
     ) {
-        super(scope, id, { stackName: 'Grapl-EngagementEdge' });
+        super(scope, id);
 
         this.name = id + props.prefix;
         this.integrationName = id + props.prefix + 'Integration';
-
-        const grapl_version = process.env.GRAPL_VERSION || "latest";
 
         this.event_handler = new lambda.Function(
             this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: `engagement_edge.app`,
             functionName: 'Grapl-EngagementEdge-Handler',
-            code: lambda.Code.fromAsset(`./zips/engagement-edge-${grapl_version}.zip`),
+            code: lambda.Code.fromAsset(`./zips/engagement-edge-${props.version}.zip`),
             vpc: props.vpc,
             environment: {
-                "MG_ALPHAS": props.master_graph.alphaHostPorts().join(","),
-                "JWT_SECRET_ID": props.jwt_secret.secretArn,
-                "USER_AUTH_TABLE": props.user_auth_table.user_auth_table.tableName,
+                "MG_ALPHAS": props.masterGraph.alphaHostPorts().join(","),
+                "JWT_SECRET_ID": props.jwtSecret.secretArn,
+                "USER_AUTH_TABLE": props.userAuthTable.user_auth_table.tableName,
                 "BUCKET_PREFIX": props.prefix,
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
-            description: grapl_version,
+            description: props.version,
         });
         this.event_handler.currentVersion.addAlias('live');
 
         if (this.event_handler.role) {
-            props.jwt_secret.grantRead(this.event_handler.role);
+            props.jwtSecret.grantRead(this.event_handler.role);
         }
-        props.user_auth_table.allowReadFromRole(this.event_handler);
+        props.userAuthTable.allowReadFromRole(this.event_handler);
 
         this.integration = new apigateway.LambdaRestApi(
             this,
@@ -153,46 +152,37 @@ export class EngagementEdge extends cdk.Stack {
 }
 
 export class EngagementNotebook extends cdk.NestedStack {
-    securityGroup: ec2.SecurityGroup;
-    connections: ec2.Connections;
 
     constructor(
         scope: cdk.Construct,
         id: string,
-        prefix: string,
-        user_auth_db: UserAuthDb,
-        vpc: ec2.Vpc,
+        props: GraplServiceProps,
     ) {
         super(scope, id);
 
-        this.securityGroup = new ec2.SecurityGroup(
-            this,
-            'SecurityGroup',
-            { vpc: vpc });
+        const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
+            vpc: props.vpc
+        });
 
-        this.connections = new ec2.Connections({
-            securityGroups: [this.securityGroup],
+        new ec2.Connections({
+            securityGroups: [securityGroup],
             defaultPort: ec2.Port.allTcp()
         });
 
-        const role = new iam.Role(
-            this,
-            'Role',
-            {
-                assumedBy: new iam.ServicePrincipal('sagemaker.amazonaws.com')
-            }
-        );
+        const role = new iam.Role(this, 'Role',{
+            assumedBy: new iam.ServicePrincipal('sagemaker.amazonaws.com')
+        });
 
-        user_auth_db.allowReadWriteFromRole(role);
+        props.userAuthTable.allowReadWriteFromRole(role);
 
-        const _notebook = new sagemaker.CfnNotebookInstance(
+        new sagemaker.CfnNotebookInstance(
             this,
             'SageMakerEndpoint',
             {
                 notebookInstanceName: 'Grapl-Notebook',
                 instanceType: 'ml.t2.medium',
-                securityGroupIds: [this.securityGroup.securityGroupId],
-                subnetId: vpc.privateSubnets[0].subnetId,
+                securityGroupIds: [securityGroup.securityGroupId],
+                subnetId: props.vpc.privateSubnets[0].subnetId,
                 directInternetAccess: 'Enabled',
                 roleArn: role.roleArn
             }
@@ -201,27 +191,29 @@ export class EngagementNotebook extends cdk.NestedStack {
     }
 }
 
+interface EngagementUxProps {
+    prefix: string,
+    engagement_edge: EngagementEdge,
+    graphql_endpoint: GraphQLEndpoint,
+}
+
 export class EngagementUx extends cdk.Stack {
     constructor(
         scope: cdk.Construct,
         id: string,
-        prefix: string,
-        edge: EngagementEdge,
-        graphql_endpoint: GraphQLEndpoint,
+        props: EngagementUxProps
     ) {
-        super(scope, id, { stackName: 'Grapl-EngagementUX' });
-
-        const bucketName = `${prefix}-engagement-ux-bucket`;
+        super(scope, id, { stackName: props.prefix });
 
         const edgeBucket = new s3.Bucket(this, 'EdgeBucket', {
-            bucketName,
+            bucketName: props.prefix.toLowerCase() + '-engagement-ux-bucket',
             publicReadAccess: true,
             websiteIndexDocument: 'index.html',
             removalPolicy: RemovalPolicy.DESTROY
         });
 
         getEdgeGatewayId(
-            [edge.integrationName, graphql_endpoint.integrationName],
+            [props.engagement_edge.integrationName, props.graphql_endpoint.integrationName],
             (loginGatewayId: string, graphQLGatewayId: string) => {
                 const srcDir = path.join(__dirname, "../edge_ux/");
                 const packageDir = path.join(__dirname, "../edge_ux_package/");

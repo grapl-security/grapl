@@ -1,6 +1,7 @@
 import * as cdk from "@aws-cdk/core";
 import * as dynamodb from "@aws-cdk/aws-dynamodb";
 
+import { GraplServiceProps } from './grapl-cdk-stack';
 import { Service } from "./service";
 import { RemovalPolicy } from "@aws-cdk/core";
 
@@ -36,19 +37,23 @@ export class HistoryDb extends cdk.Construct {
     readonly dynamic_session_table: dynamodb.Table;
     readonly static_mapping_table: dynamodb.Table;
 
-    constructor(scope: cdk.Construct, id: string) {
+    constructor(
+        scope: cdk.Construct,
+        id: string,
+        props: GraplServiceProps,
+    ) {
         super(scope, id);
 
-        this.proc_history = create_table(this, 'process_history_table');
-        this.file_history = create_table(this, 'file_history_table');
-        this.outbound_connection_history = create_table(this, 'outbound_connection_history_table');
-        this.inbound_connection_history = create_table(this, 'inbound_connection_history_table');
-        this.network_connection_history = create_table(this, 'network_connection_history_table');
-        this.ip_connection_history = create_table(this, 'ip_connection_history_table');
-        this.dynamic_session_table = create_table(this, 'dynamic_session_table');
+        this.proc_history = create_table(this, props.prefix + '-process_history_table');
+        this.file_history = create_table(this, props.prefix + '-file_history_table');
+        this.outbound_connection_history = create_table(this, props.prefix + '-outbound_connection_history_table');
+        this.inbound_connection_history = create_table(this, props.prefix + '-inbound_connection_history_table');
+        this.network_connection_history = create_table(this, props.prefix + '-network_connection_history_table');
+        this.ip_connection_history = create_table(this, props.prefix + '-ip_connection_history_table');
+        this.dynamic_session_table = create_table(this, props.prefix + '-dynamic_session_table');
 
-        this.asset_history = new dynamodb.Table(this, 'asset_id_mappings', {
-            tableName: "asset_id_mappings",
+        this.asset_history = new dynamodb.Table(this, 'AssetIdMappings', {
+            tableName: props.prefix + '-asset_id_mappings',
             partitionKey: {
                 name: 'pseudo_key',
                 type: dynamodb.AttributeType.STRING
@@ -61,8 +66,8 @@ export class HistoryDb extends cdk.Construct {
             removalPolicy: RemovalPolicy.DESTROY,
         });
 
-        this.static_mapping_table = new dynamodb.Table(this, 'static_mapping_table', {
-            tableName: "static_mapping_table",
+        this.static_mapping_table = new dynamodb.Table(this, 'StaticMappingTable', {
+            tableName:  props.prefix + '-static_mapping_table',
             partitionKey: {
                 name: 'pseudo_key',
                 type: dynamodb.AttributeType.STRING
@@ -71,14 +76,14 @@ export class HistoryDb extends cdk.Construct {
             removalPolicy: RemovalPolicy.DESTROY,
         });
 
-        this.node_id_retry_table = new dynamodb.Table(this, 'node_id_retry_table', {
-            tableName: "node_id_retry_table",
+        this.node_id_retry_table = new dynamodb.Table(this, 'NodeIdRetryTable', {
+            tableName:  props.prefix + '-node_id_retry_table',
             partitionKey: {
                 name: 'pseudo_key',
                 type: dynamodb.AttributeType.STRING
             },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-            timeToLiveAttribute: "ttl_ts",
+            timeToLiveAttribute: 'ttl_ts',
             removalPolicy: RemovalPolicy.DESTROY,
         });
     }
