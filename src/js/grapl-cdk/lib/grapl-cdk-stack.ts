@@ -2,6 +2,7 @@ import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
 import { BlockPublicAccess, BucketEncryption } from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
+import * as sqs from "@aws-cdk/aws-sqs";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as events from "@aws-cdk/aws-events";
 import * as targets from "@aws-cdk/aws-events-targets";
@@ -19,7 +20,7 @@ import { EventEmitter } from "./event_emitters";
 import { RedisCluster } from "./redis";
 import { EngagementNotebook } from "./engagement";
 
-import {Watchful} from "./vendor/cdk-watchful/lib/watchful";
+import { Watchful, WatchfulProps } from "./vendor/cdk-watchful/lib/watchful";
 
 class SysmonSubgraphGenerator extends cdk.NestedStack {
 
@@ -29,6 +30,7 @@ class SysmonSubgraphGenerator extends cdk.NestedStack {
         prefix: string,
         vpc: ec2.IVpc,
         writes_to: s3.IBucket,
+        watchful_props: WatchfulProps
     ) {
         super(scope, id);
 
@@ -50,6 +52,7 @@ class SysmonSubgraphGenerator extends cdk.NestedStack {
                 reads_from: sysmon_log.bucket,
                 subscribes_to: sysmon_log.topic,
                 writes_to: writes_to,
+                watchful_props: watchful_props
             });
 
         service.event_handler.connections.allowToAnyIpv4(
@@ -75,6 +78,7 @@ class NodeIdentifier extends cdk.Construct {
         prefix: string,
         vpc: ec2.IVpc,
         writes_to: s3.IBucket,
+        watchful_props: WatchfulProps
     ) {
         super(scope, id);
 
@@ -101,6 +105,7 @@ class NodeIdentifier extends cdk.Construct {
                 subscribes_to: unid_subgraphs.topic,
                 writes_to: writes_to,
                 retry_code_name: 'node-identifier-retry-handler',
+                watchful_props: watchful_props
             });
 
         history_db.allowReadWrite(service);
@@ -132,6 +137,7 @@ class GraphMerger extends cdk.NestedStack {
         vpc: ec2.IVpc,
         writes_to: s3.IBucket,
         master_graph: DGraphEcs,
+        watchful_props: WatchfulProps
     ) {
         super(scope, id);
 
@@ -141,7 +147,7 @@ class GraphMerger extends cdk.NestedStack {
         const graph_merge_cache = new RedisCluster(this, 'GraphMergerMergedCache', vpc);
         graph_merge_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        const service = new Service(
+        new Service(
             this,
             id,
             {
@@ -156,6 +162,7 @@ class GraphMerger extends cdk.NestedStack {
                 reads_from: subgraphs_generated.bucket,
                 subscribes_to: subgraphs_generated.topic,
                 writes_to: writes_to,
+                watchful_props: watchful_props
             });
     }
 }
@@ -171,6 +178,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
         vpc: ec2.IVpc,
         writes_to: s3.IBucket,
         analyzer_bucket: s3.IBucket,
+        watchful_props: WatchfulProps
     ) {
         super(scope, id);
 
@@ -196,6 +204,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
                 reads_from: subgraphs_merged.bucket,
                 subscribes_to: subgraphs_merged.topic,
                 writes_to: writes_to,
+                watchful_props: watchful_props
             });
 
         service.readsFrom(analyzer_bucket, true);
@@ -221,6 +230,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
         writes_events_to: s3.IBucket,
         model_plugins_bucket: s3.IBucket,
         master_graph: DGraphEcs,
+        watchful_props: WatchfulProps
     ) {
         super(scope, id);
 
@@ -254,7 +264,8 @@ class AnalyzerExecutor extends cdk.NestedStack {
                 subscribes_to: dispatched_analyzer.topic,
                 opt: {
                     runtime: lambda.Runtime.PYTHON_3_7
-                }
+                },
+                watchful_props: watchful_props
             });
 
         // We need the List capability to find each of the analyzers
@@ -286,6 +297,7 @@ class EngagementCreator extends cdk.NestedStack {
         vpc: ec2.IVpc,
         publishes_to: sns.ITopic,
         master_graph: DGraphEcs,
+        watchful_props: WatchfulProps
     ) {
         super(scope, id);
 
@@ -304,7 +316,8 @@ class EngagementCreator extends cdk.NestedStack {
                 subscribes_to: analyzer_matched_sugraphs.topic,
                 opt: {
                     runtime: lambda.Runtime.PYTHON_3_7
-                }
+                },
+                watchful_props: watchful_props
             });
 
         service.publishesToTopic(publishes_to);
@@ -321,13 +334,16 @@ class DGraphTtl extends cdk.Construct {
         scope: cdk.Construct,
         name: string,
         vpc: ec2.IVpc,
-        master_graph: DGraphEcs
+        master_graph: DGraphEcs,
+        watchful_props: WatchfulProps
     ) {
         super(scope, name + "-stack");
 
+        const watchful = new Watchful(this, name + '-Watchful', watchful_props);
+
         const grapl_version = process.env.GRAPL_VERSION || "latest";
 
-        let event_handler = new lambda.Function(
+        const event_handler = new lambda.Function(
             this, "Handler", {
                 runtime: Runtime.PYTHON_3_7,
                 handler: "app.prune_expired_subgraphs",
@@ -346,22 +362,20 @@ class DGraphTtl extends cdk.Construct {
             }
         );
 
-        let target = new targets.LambdaFunction(event_handler);
+        const target = new targets.LambdaFunction(event_handler);
 
-        let rule = new events.Rule(
+        const rule = new events.Rule(
             scope, name + "-rule", {
                 schedule: events.Schedule.expression("rate(1 hour)")
             }
         );
         rule.addTarget(target);
+
+        watchful.watchLambdaFunction(name + "-Handler", event_handler);
     }
 }
 
 class ModelPluginDeployer extends cdk.NestedStack {
-    event_handler: lambda.Function;
-    integration: apigateway.LambdaRestApi;
-    name: string;
-    integrationName: string;
 
     constructor(
         parent: cdk.Construct,
@@ -372,15 +386,19 @@ class ModelPluginDeployer extends cdk.NestedStack {
         model_plugin_bucket: s3.IBucket,
         user_auth_table: UserAuthDb,
         vpc: ec2.Vpc,
+        watchful_props: WatchfulProps
     ) {
         super(parent, name + '-stack');
 
-        this.name = name + prefix;
-        this.integrationName = name + prefix + 'Integration';
+        name = name + prefix;
+
+        const watchful = new Watchful(this, name + '-Watchful', watchful_props);
+
+        const integrationName = name + prefix + 'Integration';
 
         const grapl_version = process.env.GRAPL_VERSION || "latest";
 
-        this.event_handler = new lambda.Function(
+        const event_handler = new lambda.Function(
             this, 'Handler', {
                 runtime: Runtime.PYTHON_3_7,
                 handler: `grapl_model_plugin_deployer.app`,
@@ -398,25 +416,27 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 description: grapl_version,
             }
         );
-        this.event_handler.currentVersion.addAlias('live');
+        event_handler.currentVersion.addAlias('live');
 
-        if (this.event_handler.role) {
-            jwt_secret.grantRead(this.event_handler.role);
-            user_auth_table.allowReadFromRole(this.event_handler.role);
+        if (event_handler.role) {
+            jwt_secret.grantRead(event_handler.role);
+            user_auth_table.allowReadFromRole(event_handler.role);
 
-            model_plugin_bucket.grantReadWrite(this.event_handler.role);
-            model_plugin_bucket.grantDelete(this.event_handler.role);
+            model_plugin_bucket.grantReadWrite(event_handler.role);
+            model_plugin_bucket.grantDelete(event_handler.role);
         }
 
-        this.integration = new apigateway.LambdaRestApi(
+        watchful.watchLambdaFunction(name + "-Handler", event_handler);
+
+        const integration = new apigateway.LambdaRestApi(
             this,
-            this.integrationName,
+            integrationName,
             {
-                handler: this.event_handler,
+                handler: event_handler,
             },
         );
 
-        this.integration.addUsagePlan('integrationApiUsagePlan', {
+        integration.addUsagePlan('integrationApiUsagePlan', {
             quota: {
                 limit: 1000,
                 period: apigateway.Period.DAY,
@@ -425,6 +445,53 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 rateLimit: 50,
                 burstLimit: 50,
             }
+        });
+
+        watchful.watchApiGateway(integrationName, integration, {
+            serverErrorThreshold: 1, // any 5xx alerts
+            cacheGraph: true,
+            watchedOperations: [
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/gitWebhook"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/gitWebHook"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/deploy"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/deploy"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/listModelPlugins"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/listModelPlugins"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/deleteModelPlugin"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/deleteModelPlugin"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/{proxy+}"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/{proxy+}"
+                }
+            ]
         });
     }
 }
@@ -444,8 +511,14 @@ export class GraplCdkStack extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        const watchful = new Watchful(this, id); // FIXME: SNS, SQS, SES
-        watchful.watchScope(scope); // FIXME: maybe not this?
+        const alarmSqs = new sqs.Queue(this, 'alarmSqs');
+        const alarmSns = new sns.Topic(this, 'alarmSns');
+
+        const watchful_props = {
+            alarmEmail: "operations@graplsecurity.com",
+            alarmSqs,
+            alarmSns
+        };
 
         const prefix = process.env.BUCKET_PREFIX || "my";
 
@@ -459,13 +532,12 @@ export class GraplCdkStack extends cdk.Stack {
             enableDnsSupport: true,
         });
 
-
         const jwtSecret = new secretsmanager.Secret(this, 'EdgeJwtSecret', {
             description: 'The JWT secret that Grapl uses to authenticate its API',
             secretName: 'EdgeJwtSecret',
         });
 
-        const user_auth_table = new UserAuthDb(this, 'UserAuthTable');
+        const user_auth_table = new UserAuthDb(this, 'UserAuthTable', watchful_props);
 
         const analyzers_bucket = new s3.Bucket(this, prefix + '-analyzers-bucket', {
             bucketName: prefix + '-analyzers-bucket',
@@ -495,13 +567,15 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
             engagements_created_topic,
             master_graph,
+            watchful_props
         );
 
         new DGraphTtl(
             this,
             "dgraph-ttl",
             grapl_vpc,
-            master_graph
+            master_graph,
+            watchful_props
         );
 
         const model_plugins_bucket = new s3.Bucket(this, prefix + '-model-plugins-bucket', {
@@ -518,6 +592,7 @@ export class GraplCdkStack extends cdk.Stack {
             model_plugins_bucket,
             user_auth_table,
             grapl_vpc,
+            watchful_props
         );
 
 
@@ -530,6 +605,7 @@ export class GraplCdkStack extends cdk.Stack {
             engagement_creator.bucket,
             model_plugins_bucket,
             master_graph,
+            watchful_props
         );
 
         const analyzer_dispatch = new AnalyzerDispatch(
@@ -539,6 +615,7 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
             analyzer_executor.bucket,
             analyzers_bucket,
+            watchful_props
         );
 
         const graph_merger = new GraphMerger(
@@ -548,6 +625,7 @@ export class GraplCdkStack extends cdk.Stack {
             grapl_vpc,
             analyzer_dispatch.bucket,
             master_graph,
+            watchful_props
         );
 
         const node_identifier = new NodeIdentifier(
@@ -556,6 +634,7 @@ export class GraplCdkStack extends cdk.Stack {
             prefix,
             grapl_vpc,
             graph_merger.bucket,
+            watchful_props
         );
 
         new SysmonSubgraphGenerator(
@@ -564,6 +643,7 @@ export class GraplCdkStack extends cdk.Stack {
             prefix,
             grapl_vpc,
             node_identifier.bucket,
+            watchful_props
         );
 
         new EngagementNotebook(

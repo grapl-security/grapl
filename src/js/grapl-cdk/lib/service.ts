@@ -9,6 +9,8 @@ import * as subscriptions from "@aws-cdk/aws-sns-subscriptions";
 
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 
+import { Watchful, WatchfulProps } from "./vendor/cdk-watchful/lib/watchful";
+
 class Queues {
     readonly queue: sqs.Queue;
     readonly retry_queue: sqs.Queue;
@@ -34,6 +36,7 @@ class Queues {
 }
 
 export interface ServiceProps {
+    watchful_props: WatchfulProps,
     environment?: any,
     vpc?: ec2.IVpc,
     reads_from?: s3.IBucket,
@@ -53,6 +56,7 @@ export class Service {
         name: string,
         props: ServiceProps
     ) {
+        const watchful = new Watchful(scope, name + '-Watchful', props.watchful_props);
 
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
@@ -61,7 +65,7 @@ export class Service {
         const grapl_version = process.env.GRAPL_VERSION || "latest";
 
         const runtime = (opt && opt.runtime) ?
-            opt.runtime : 
+            opt.runtime :
             {
                 name: "provided",
                 supportsInlineCode: true
@@ -95,7 +99,8 @@ export class Service {
                 description: grapl_version,
             });
         event_handler.currentVersion.addAlias('live');
-        
+
+        watchful.watchLambdaFunction(name + '-Handler', event_handler);
 
         if (!retry_code_name) {
             retry_code_name = name
@@ -122,6 +127,8 @@ export class Service {
                 description: grapl_version,
             });
         event_retry_handler.currentVersion.addAlias('live');
+
+        watchful.watchLambdaFunction(name + '-RetryHandler', event_retry_handler);
 
         event_handler.addEventSource(new SqsEventSource(queues.queue, { batchSize: 10 }));
         event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue, { batchSize: 10 }));
@@ -190,7 +197,7 @@ export class Service {
         scope: cdk.Construct,
         topic: sns.ITopic,
     ) {
-        const subscription = new subscriptions.SqsSubscription(this.queues.queue)
+        const subscription = new subscriptions.SqsSubscription(this.queues.queue);
 
         const config = subscription.bind(topic);
 
