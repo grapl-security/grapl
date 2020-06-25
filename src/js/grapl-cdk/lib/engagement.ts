@@ -98,6 +98,7 @@ export class EngagementEdge extends cdk.NestedStack {
     ) {
         super(scope, id);
 
+        const serviceName = props.prefix + '-EngagementEdge';
         this.name = id + props.prefix;
         this.integrationName = id + props.prefix + 'Integration';
 
@@ -105,7 +106,7 @@ export class EngagementEdge extends cdk.NestedStack {
             this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: `engagement_edge.app`,
-            functionName: 'Grapl-EngagementEdge-Handler',
+            functionName: serviceName + '-Handler',
             code: lambda.Code.fromAsset(`./zips/engagement-edge-${props.version}.zip`),
             vpc: props.vpc,
             environment: {
@@ -131,7 +132,7 @@ export class EngagementEdge extends cdk.NestedStack {
             {
                 handler: this.event_handler,
                 restApiName: this.integrationName,
-                endpointExportName: "EngagementEndpointApi",
+                endpointExportName: serviceName + '-EndpointApi',
             },
         );
 
@@ -176,7 +177,7 @@ export class EngagementNotebook extends cdk.NestedStack {
             this,
             'SageMakerEndpoint',
             {
-                notebookInstanceName: 'Grapl-Notebook',
+                notebookInstanceName: props.prefix + '-Notebook',
                 instanceType: 'ml.t2.medium',
                 securityGroupIds: [securityGroup.securityGroupId],
                 subnetId: props.vpc.privateSubnets[0].subnetId,
@@ -184,7 +185,6 @@ export class EngagementNotebook extends cdk.NestedStack {
                 roleArn: role.roleArn
             }
         );
-
     }
 }
 

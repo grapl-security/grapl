@@ -41,6 +41,7 @@ class SysmonGraphGenerator extends cdk.Construct {
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         const service = new Service(this, id, {
+            prefix: props.prefix,
             environment: {
                 "BUCKET_PREFIX": bucket_prefix,
                 "EVENT_CACHE_ADDR": event_cache.cluster.attrRedisEndpointAddress,
@@ -91,6 +92,7 @@ class NodeIdentifier extends cdk.Construct {
         retry_identity_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         const service = new Service(this, id, {
+            prefix: props.prefix,
             environment: {
                 "BUCKET_PREFIX": bucket_prefix,
                 "RETRY_IDENTITY_CACHE_ADDR": retry_identity_cache.cluster.attrRedisEndpointAddress,
@@ -145,6 +147,7 @@ class GraphMerger extends cdk.NestedStack {
         graph_merge_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         new Service(this, id, {
+            prefix: props.prefix,
             environment: {
                 "BUCKET_PREFIX": bucket_prefix,
                 "SUBGRAPH_MERGED_BUCKET": props.writesTo.bucketName,
@@ -185,23 +188,21 @@ class AnalyzerDispatch extends cdk.NestedStack {
         const dispatch_event_cache = new RedisCluster(this, 'DispatchedEventCache', props);
         dispatch_event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        const service = new Service(
-            this,
-            id,
-            {
-                environment: {
-                    "BUCKET_PREFIX": bucket_prefix,
-                    "EVENT_CACHE_ADDR": dispatch_event_cache.cluster.attrRedisEndpointAddress,
-                    "EVENT_CACHE_PORT": dispatch_event_cache.cluster.attrRedisEndpointPort,
-                    "DISPATCHED_ANALYZER_BUCKET": props.writesTo.bucketName,
-                    "SUBGRAPH_MERGED_BUCKET": subgraphs_merged.bucket.bucketName,
-                },
-                vpc: props.vpc,
-                reads_from: subgraphs_merged.bucket,
-                subscribes_to: subgraphs_merged.topic,
-                writes_to: props.writesTo,
-                version: props.version,
-            });
+        const service = new Service(this, id, {
+            prefix: props.prefix,
+            environment: {
+                "BUCKET_PREFIX": bucket_prefix,
+                "EVENT_CACHE_ADDR": dispatch_event_cache.cluster.attrRedisEndpointAddress,
+                "EVENT_CACHE_PORT": dispatch_event_cache.cluster.attrRedisEndpointPort,
+                "DISPATCHED_ANALYZER_BUCKET": props.writesTo.bucketName,
+                "SUBGRAPH_MERGED_BUCKET": subgraphs_merged.bucket.bucketName,
+            },
+            vpc: props.vpc,
+            reads_from: subgraphs_merged.bucket,
+            subscribes_to: subgraphs_merged.topic,
+            writes_to: props.writesTo,
+            version: props.version,
+        });
 
         service.readsFrom(props.readsFrom, true);
 
@@ -235,6 +236,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
         const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
 
         const service = new Service(this, id, {
+            prefix: props.prefix,
             environment: {
                 "ANALYZER_MATCH_BUCKET": props.writesTo.bucketName,
                 "BUCKET_PREFIX": bucket_prefix,
@@ -295,6 +297,7 @@ class EngagementCreator extends cdk.NestedStack {
         this.bucket = analyzer_matched_sugraphs.bucket;
 
         const service = new Service(this, id, {
+            prefix: props.prefix,
             environment: {
                 "MG_ALPHAS": props.masterGraph.alphaHostPorts().join(","),
             },

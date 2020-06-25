@@ -46,7 +46,7 @@ export class GraphQLEndpoint extends cdk.Construct {
             {
                 handler: event_handler,
                 restApiName: this.integrationName,
-                endpointExportName: 'GraphQLEndpointApi',
+                endpointExportName: serviceName + '-EndpointApi',
             },
         );
 

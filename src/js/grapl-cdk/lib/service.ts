@@ -35,6 +35,7 @@ class Queues {
 
 export interface ServiceProps {
     version: string,
+    prefix: string,
     environment?: any,
     vpc?: ec2.IVpc,
     reads_from?: s3.IBucket,
@@ -54,6 +55,7 @@ export class Service {
         name: string,
         props: ServiceProps
     ) {
+        const serviceName =  `${props.prefix}-${name}`
 
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
@@ -70,7 +72,7 @@ export class Service {
             `${name}.lambda_handler` :
             name;
 
-        const queues = new Queues(scope, 'grapl-' + name);
+        const queues = new Queues(scope, serviceName.toLowerCase());
 
         if (environment) {
             environment.SOURCE_QUEUE_URL = queues.queue.queueUrl;
@@ -82,7 +84,7 @@ export class Service {
             {
                 runtime: runtime,
                 handler: handler,
-                functionName: `Grapl-${name}-Handler`,
+                functionName: serviceName + '-Handler',
                 code: lambda.Code.asset(`./zips/${name}-${props.version}.zip`),
                 vpc: props.vpc,
                 environment: {
