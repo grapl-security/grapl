@@ -1,23 +1,25 @@
 import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
-import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
+import { BlockPublicAccess, BucketEncryption } from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as events from "@aws-cdk/aws-events";
 import * as targets from "@aws-cdk/aws-events-targets";
 import * as lambda from "@aws-cdk/aws-lambda";
-import {Runtime} from "@aws-cdk/aws-lambda";
+import { Runtime } from "@aws-cdk/aws-lambda";
 import * as iam from "@aws-cdk/aws-iam";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 
-import {Service} from "./service";
-import {UserAuthDb} from "./userauthdb";
-import {DGraphEcs} from "./dgraph";
-import {HistoryDb} from "./historydb";
-import {EventEmitter} from "./event_emitters";
-import {RedisCluster} from "./redis";
-import {EngagementNotebook} from "./engagement";
+import { Service } from "./service";
+import { UserAuthDb } from "./userauthdb";
+import { DGraphEcs } from "./dgraph";
+import { HistoryDb } from "./historydb";
+import { EventEmitter } from "./event_emitters";
+import { RedisCluster } from "./redis";
+import { EngagementNotebook } from "./engagement";
+
+import {Watchful} from "./vendor/cdk-watchful/lib/watchful";
 
 class SysmonSubgraphGenerator extends cdk.NestedStack {
 
@@ -441,6 +443,9 @@ export class GraplCdkStack extends cdk.Stack {
 
     constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
+
+        const watchful = new Watchful(this, id); // FIXME: SNS, SQS, SES
+        watchful.watchScope(scope); // FIXME: maybe not this?
 
         const prefix = process.env.BUCKET_PREFIX || "my";
 

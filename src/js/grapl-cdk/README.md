@@ -12,7 +12,7 @@ Execute these steps to prepare a Grapl CDK deployment.
 Install the following dependencies:
   1. Node
   2. Typescript
-  3. AWS CDK
+  3. AWS CDK -- `npm i -g aws-cdk@1.46.0`
   4. AWS CLI
 
 ### Configuration
