@@ -111,7 +111,7 @@ export class Service {
             {
                 runtime: runtime,
                 handler: handler,
-                functionName: `Grapl-${name}-RetryHandler`,
+                functionName: serviceName + '-RetryHandler',
                 code: lambda.Code.asset(`./zips/${retry_code_name}-${props.version}.zip`),
                 vpc: props.vpc,
                 environment: {
