@@ -96,7 +96,7 @@ const useStyles = makeStyles((theme: Theme) =>
       color:"#42C6FF",
     },
     link: {
-      color: "white", 
+      color: "#42C6FF", 
       textDecoration: "none"
     }
   })
@@ -105,11 +105,10 @@ const useStyles = makeStyles((theme: Theme) =>
 type SideBarProps = {
   setLens: (lens: string) => void,
   curLens: string,
-  curNode: Node | null,
-  redirectTo: (pageName: string) => void,
+  curNode: Node | null
 }
 
-export default function SideBar({setLens, curLens, curNode, redirectTo}: SideBarProps) {
+export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
   const classes = useStyles();
 
   const [open, setOpen] = React.useState(true);
@@ -151,11 +150,7 @@ export default function SideBar({setLens, curLens, curNode, redirectTo}: SideBar
             >
               <b className={classes.header}> GRAPL </b>
             </Typography>
-            <Button 
-                className = {classes.button }
-            >
                 <Link to = "/" className = {classes.link}><Home/></Link>
-            </Button>
           </div>
 
         </Toolbar>
@@ -212,7 +207,7 @@ const defaultEngagementUxState = (): EngagementUxState => {
   }
 }
 
-export const EngagementUx = ({redirectTo}: any) => {
+export const EngagementUx = () => {
     const [state, setState] = React.useState(defaultEngagementUxState());
     
     return (
@@ -226,7 +221,6 @@ export const EngagementUx = ({redirectTo}: any) => {
                 }
                 curLens={state.curLens}
                 curNode={state.curNode}
-                redirectTo={redirectTo}
             />
 
             <GraphDisplay 

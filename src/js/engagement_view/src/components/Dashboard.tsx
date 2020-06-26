@@ -1,6 +1,5 @@
 import React from 'react';
 import Button from "@material-ui/core/Button";
-// import {redirectTo} from "../modules/GraphViz/routing";
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
 import GraplHeader from "./reusableComponents/GraplHeader";
 import {Link} from 'react-router-dom';
@@ -38,12 +37,11 @@ const useStyles = makeStyles( (theme: Theme) =>
     })
 );
 
-export default function Dashboard(
-    {redirectTo}: any) {
+export default function Dashboard() {
         const classes = useStyles();
         return (
             <> 
-                <GraplHeader redirectTo={redirectTo} displayBtn={false} />
+                <GraplHeader displayBtn={false} />
 
                 <div className = { classes.dashboard}>
                     <section className = { classes.nav }>

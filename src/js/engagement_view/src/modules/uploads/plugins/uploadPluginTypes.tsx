@@ -1,9 +1,5 @@
 export type redirect = (pageName: string) => void;
 
-export type UploadFormProps = {
-    redirectTo: redirect
-}
-
 export type PluginPayload = {
     plugins: object
 }
