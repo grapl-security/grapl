@@ -5,7 +5,6 @@ import boto3
 table_names = [
     "local-grapl-process_history_table",
     "local-grapl-file_history_table",
-    "local-grapl-node_id_retry_table",
     "local-grapl-outbound_connection_history_table",
     "local-grapl-inbound_connection_history_table",
     "local-grapl-network_connection_history_table",
@@ -16,7 +15,7 @@ table_names = [
 ]
 
 table_defs = {
-    "network_connection_history_table": {
+    "local-grapl-network_connection_history_table": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "pseudo_key"},
             {"KeyType": "RANGE", "AttributeName": "create_time"},
@@ -26,7 +25,7 @@ table_defs = {
             {"AttributeName": "pseudo_key", "AttributeType": "S"},
         ],
     },
-    "inbound_connection_history_table": {
+    "local-grapl-inbound_connection_history_table": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "pseudo_key"},
             {"KeyType": "RANGE", "AttributeName": "create_time"},
@@ -36,19 +35,13 @@ table_defs = {
             {"AttributeName": "pseudo_key", "AttributeType": "S"},
         ],
     },
-    "node_id_retry_table": {
+    "local-grapl-static_mapping_table": {
         "key_schema": [{"KeyType": "HASH", "AttributeName": "pseudo_key"}],
         "attribute_definitions": [
             {"AttributeName": "pseudo_key", "AttributeType": "S"}
         ],
     },
-    "static_mapping_table": {
-        "key_schema": [{"KeyType": "HASH", "AttributeName": "pseudo_key"}],
-        "attribute_definitions": [
-            {"AttributeName": "pseudo_key", "AttributeType": "S"}
-        ],
-    },
-    "dynamic_session_table": {
+    "local-grapl-dynamic_session_table": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "pseudo_key"},
             {"KeyType": "RANGE", "AttributeName": "create_time"},
@@ -58,7 +51,7 @@ table_defs = {
             {"AttributeName": "pseudo_key", "AttributeType": "S"},
         ],
     },
-    "process_history_table": {
+    "local-grapl-process_history_table": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "pseudo_key"},
             {"KeyType": "RANGE", "AttributeName": "create_time"},
@@ -68,7 +61,7 @@ table_defs = {
             {"AttributeName": "pseudo_key", "AttributeType": "S"},
         ],
     },
-    "file_history_table": {
+    "local-grapl-file_history_table": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "pseudo_key"},
             {"KeyType": "RANGE", "AttributeName": "create_time"},
@@ -78,7 +71,7 @@ table_defs = {
             {"AttributeName": "pseudo_key", "AttributeType": "S"},
         ],
     },
-    "outbound_connection_history_table": {
+    "local-grapl-outbound_connection_history_table": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "pseudo_key"},
             {"KeyType": "RANGE", "AttributeName": "create_time"},
@@ -88,7 +81,7 @@ table_defs = {
             {"AttributeName": "pseudo_key", "AttributeType": "S"},
         ],
     },
-    "asset_id_mappings": {
+    "local-grapl-asset_id_mappings": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "pseudo_key"},
             {"KeyType": "RANGE", "AttributeName": "c_timestamp"},
@@ -98,7 +91,7 @@ table_defs = {
             {"AttributeName": "pseudo_key", "AttributeType": "S"},
         ],
     },
-    "ip_connection_history_table": {
+    "local-grapl-ip_connection_history_table": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "pseudo_key"},
             {"KeyType": "RANGE", "AttributeName": "create_time"},

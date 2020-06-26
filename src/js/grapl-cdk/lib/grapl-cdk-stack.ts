@@ -105,6 +105,7 @@ class NodeIdentifier extends cdk.Construct {
                 "OUTBOUND_CONNECTION_HISTORY_TABLE": history_db.outbound_connection_history.tableName,
                 "NETWORK_CONNECTION_HISTORY_TABLE": history_db.network_connection_history.tableName,
                 "IP_CONNECTION_HISTORY_TABLE": history_db.ip_connection_history.tableName,
+                "ASSET_ID_MAPPINGS": history_db.asset_history.tableName,
             },
             vpc: props.vpc,
             reads_from: unid_subgraphs.bucket,

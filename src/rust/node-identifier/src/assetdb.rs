@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use graph_descriptions::graph_description::host::*;
 use graph_descriptions::graph_description::node::WhichNode;
 use graph_descriptions::graph_description::*;
-use graph_descriptions::graph_description::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResolvedAssetId {
@@ -52,7 +51,7 @@ where
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
-            table_name: "asset_id_mappings".to_owned(),
+            table_name: std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS"),
             key_condition_expression: Some(
                 "pseudo_key = :pkey_val AND c_timestamp >= :c_timestamp".into(),
             ),
@@ -98,7 +97,7 @@ where
             consistent_read: Some(true),
             limit: Some(1),
             scan_index_forward: Some(false),
-            table_name: "asset_id_mappings".to_owned(),
+            table_name: std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS"),
             key_condition_expression: Some(
                 "pseudo_key = :pseudo_key AND c_timestamp <= :c_timestamp".into(),
             ),
@@ -162,7 +161,7 @@ where
 
         let put_req = PutItemInput {
             item: serde_dynamodb::to_hashmap(&mapping).unwrap(),
-            table_name: "asset_id_mappings".to_owned(),
+            table_name: std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS"),
             ..Default::default()
         };
 
