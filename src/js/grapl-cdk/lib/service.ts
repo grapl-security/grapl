@@ -9,7 +9,7 @@ import * as subscriptions from "@aws-cdk/aws-sns-subscriptions";
 
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 
-import { Watchful, WatchfulProps } from "./vendor/cdk-watchful/lib/watchful";
+import { Watchful } from "./vendor/cdk-watchful/lib/watchful";
 
 class Queues {
     readonly queue: sqs.Queue;
