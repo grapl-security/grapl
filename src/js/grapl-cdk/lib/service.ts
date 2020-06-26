@@ -36,7 +36,7 @@ class Queues {
 }
 
 export interface ServiceProps {
-    watchful_props: WatchfulProps,
+    watchful: Watchful,
     environment?: any,
     vpc?: ec2.IVpc,
     reads_from?: s3.IBucket,
@@ -56,8 +56,6 @@ export class Service {
         name: string,
         props: ServiceProps
     ) {
-        const watchful = new Watchful(scope, name + '-Watchful', props.watchful_props);
-
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
         const opt = props.opt;
@@ -100,7 +98,7 @@ export class Service {
             });
         event_handler.currentVersion.addAlias('live');
 
-        watchful.watchLambdaFunction(name + '-Handler', event_handler);
+        props.watchful.watchLambdaFunction(name + '-Handler', event_handler);
 
         if (!retry_code_name) {
             retry_code_name = name
@@ -128,7 +126,7 @@ export class Service {
             });
         event_retry_handler.currentVersion.addAlias('live');
 
-        watchful.watchLambdaFunction(name + '-RetryHandler', event_retry_handler);
+        props.watchful.watchLambdaFunction(name + '-RetryHandler', event_retry_handler);
 
         event_handler.addEventSource(new SqsEventSource(queues.queue, { batchSize: 10 }));
         event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue, { batchSize: 10 }));

@@ -5,7 +5,7 @@ import * as iam from "@aws-cdk/aws-iam";
 import { Service } from "./service"
 import { RemovalPolicy } from "@aws-cdk/core";
 
-import { Watchful, WatchfulProps } from "./vendor/cdk-watchful/lib/watchful";
+import { Watchful } from "./vendor/cdk-watchful/lib/watchful";
 
 export class UserAuthDb extends cdk.Construct {
     readonly user_auth_table: dynamodb.Table;
@@ -13,11 +13,9 @@ export class UserAuthDb extends cdk.Construct {
     constructor(
         scope: cdk.Construct,
         id: string,
-        watchful_props: WatchfulProps
+        watchful: Watchful
     ) {
         super(scope, id);
-
-        const watchful = new Watchful(this, id + "-Watchful", watchful_props);
 
         this.user_auth_table = new dynamodb.Table(this, 'user_auth_table', {
             tableName: 'user_auth_table',
@@ -30,7 +28,7 @@ export class UserAuthDb extends cdk.Construct {
             removalPolicy: RemovalPolicy.DESTROY,
         });
 
-        watchful.watchDynamoTable(this.user_auth_table.tableName, this.user_auth_table);
+        // watchful.watchDynamoTable(this.user_auth_table.tableName, this.user_auth_table);
     }
 
     allowRead(service: Service) {
