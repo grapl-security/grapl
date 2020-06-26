@@ -246,6 +246,7 @@ services:
       - "8124:8124"
     environment:
       - "IS_LOCAL=True"
+      - MG_ALPHAS=master_graph:9080
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - GRAPL_DGRAPH_TTL_S=${GRAPL_DGRAPH_TTL_S:-600}
       - GRAPL_TTL_DELETE_BATCH_SIZE=${GRAPL_TTL_DELETE_BATCH_SIZE:-10}
