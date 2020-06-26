@@ -121,6 +121,8 @@ export class EngagementEdge extends cdk.NestedStack {
         });
         this.event_handler.currentVersion.addAlias('live');
 
+        props.watchful.watchLambdaFunction(this.event_handler.functionName, this.event_handler);
+
         if (this.event_handler.role) {
             props.jwtSecret.grantRead(this.event_handler.role);
         }
@@ -135,6 +137,49 @@ export class EngagementEdge extends cdk.NestedStack {
                 endpointExportName: serviceName + '-EndpointApi',
             },
         );
+
+        props.watchful.watchApiGateway(this.integrationName, this.integration, {
+            serverErrorThreshold: 1, // any 5xx alerts
+            cacheGraph: true,
+            watchedOperations: [
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/login"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/login"
+                },
+                {
+                    httpMethod: "GET",
+                    resourcePath: "/login"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/checkLogin"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/checkLogin"
+                },
+                {
+                    httpMethod: "GET",
+                    resourcePath: "/checkLogin"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/{proxy+}"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/{proxy+}"
+                },
+                {
+                    httpMethod: "GET",
+                    resourcePath: "/{proxy+}"
+                },
+            ]
+        });
 
         this.integration.addUsagePlan('loginApiUsagePlan', {
             quota: {
