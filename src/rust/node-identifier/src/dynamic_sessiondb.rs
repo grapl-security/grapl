@@ -54,7 +54,7 @@ where
 
         let query = GetItemInput {
             consistent_read: Some(true),
-            table_name: std::env::var("STATIC_MAPPING_TABLE").expect("STATIC_MAPPING_TABLE"),
+            table_name: grapl_config::static_mapping_table_name(),
             key,
             ..Default::default()
         };
@@ -79,7 +79,7 @@ where
 
         let put_req = PutItemInput {
             item: serde_dynamodb::to_hashmap(&mapping).unwrap(),
-            table_name: std::env::var("STATIC_MAPPING_TABLE").expect("STATIC_MAPPING_TABLE"),
+            table_name: grapl_config::static_mapping_table_name(),
             ..Default::default()
         };
 

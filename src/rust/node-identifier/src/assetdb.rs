@@ -51,7 +51,7 @@ where
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
-            table_name: std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS"),
+            table_name: grapl_config::asset_id_mappings_table_name(),
             key_condition_expression: Some(
                 "pseudo_key = :pkey_val AND c_timestamp >= :c_timestamp".into(),
             ),
@@ -97,7 +97,7 @@ where
             consistent_read: Some(true),
             limit: Some(1),
             scan_index_forward: Some(false),
-            table_name: std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS"),
+            table_name: grapl_config::asset_id_mappings_table_name(),
             key_condition_expression: Some(
                 "pseudo_key = :pseudo_key AND c_timestamp <= :c_timestamp".into(),
             ),
@@ -161,7 +161,7 @@ where
 
         let put_req = PutItemInput {
             item: serde_dynamodb::to_hashmap(&mapping).unwrap(),
-            table_name: std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS"),
+            table_name: grapl_config::asset_id_mappings_table_name(),
             ..Default::default()
         };
 
