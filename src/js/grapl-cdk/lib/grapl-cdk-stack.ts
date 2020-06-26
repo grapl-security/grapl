@@ -82,7 +82,7 @@ class NodeIdentifier extends cdk.Construct {
     ) {
         super(scope, id);
 
-        const history_db = new HistoryDb(this, 'graplhistorydb', watchful);
+        const history_db = new HistoryDb(this, 'graplhistorydb');
 
         const unid_subgraphs = new EventEmitter(this, prefix + '-unid-subgraphs-generated');
         this.bucket = unid_subgraphs.bucket;
@@ -533,7 +533,7 @@ export class GraplCdkStack extends cdk.Stack {
             secretName: 'EdgeJwtSecret',
         });
 
-        const user_auth_table = new UserAuthDb(this, 'UserAuthTable', watchful);
+        const user_auth_table = new UserAuthDb(this, 'UserAuthTable');
 
         const analyzers_bucket = new s3.Bucket(this, prefix + '-analyzers-bucket', {
             bucketName: prefix + '-analyzers-bucket',

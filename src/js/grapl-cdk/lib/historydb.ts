@@ -4,8 +4,6 @@ import * as dynamodb from "@aws-cdk/aws-dynamodb";
 import { Service } from "./service";
 import { RemovalPolicy } from "@aws-cdk/core";
 
-import { Watchful } from "./vendor/cdk-watchful/lib/watchful";
-
 function create_table(
     scope: cdk.Construct,
     name: string,
@@ -38,29 +36,16 @@ export class HistoryDb extends cdk.Construct {
     readonly dynamic_session_table: dynamodb.Table;
     readonly static_mapping_table: dynamodb.Table;
 
-    constructor(scope: cdk.Construct, id: string, watchful: Watchful) {
+    constructor(scope: cdk.Construct, id: string) {
         super(scope, id);
 
         this.proc_history = create_table(this, 'process_history_table');
-        // watchful.watchDynamoTable(this.proc_history.tableName, this.proc_history);
-
         this.file_history = create_table(this, 'file_history_table');
-        // watchful.watchDynamoTable(this.file_history.tableName, this.file_history);
-
         this.outbound_connection_history = create_table(this, 'outbound_connection_history_table');
-        // watchful.watchDynamoTable(this.outbound_connection_history.tableName, this.outbound_connection_history);
-
         this.inbound_connection_history = create_table(this, 'inbound_connection_history_table');
-        // watchful.watchDynamoTable(this.inbound_connection_history.tableName, this.inbound_connection_history);
-
         this.network_connection_history = create_table(this, 'network_connection_history_table');
-        // watchful.watchDynamoTable(this.network_connection_history.tableName, this.network_connection_history);
-
         this.ip_connection_history = create_table(this, 'ip_connection_history_table');
-        // watchful.watchDynamoTable(this.ip_connection_history.tableName, this.ip_connection_history);
-
         this.dynamic_session_table = create_table(this, 'dynamic_session_table');
-        // watchful.watchDynamoTable(this.dynamic_session_table.tableName, this.dynamic_session_table);
 
         this.asset_history = new dynamodb.Table(this, 'asset_id_mappings', {
             tableName: "asset_id_mappings",
@@ -75,7 +60,6 @@ export class HistoryDb extends cdk.Construct {
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY,
         });
-        // watchful.watchDynamoTable(this.asset_history.tableName, this.asset_history);
 
         this.static_mapping_table = new dynamodb.Table(this, 'static_mapping_table', {
             tableName: "static_mapping_table",
@@ -86,7 +70,6 @@ export class HistoryDb extends cdk.Construct {
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY,
         });
-        // watchful.watchDynamoTable(this.static_mapping_table.tableName, this.static_mapping_table);
 
         this.node_id_retry_table = new dynamodb.Table(this, 'node_id_retry_table', {
             tableName: "node_id_retry_table",
@@ -98,7 +81,6 @@ export class HistoryDb extends cdk.Construct {
             timeToLiveAttribute: "ttl_ts",
             removalPolicy: RemovalPolicy.DESTROY,
         });
-        // watchful.watchDynamoTable(this.node_id_retry_table.tableName, this.node_id_retry_table);
     }
 
     allowReadWrite(service: Service) {
