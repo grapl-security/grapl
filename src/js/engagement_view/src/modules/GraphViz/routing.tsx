@@ -3,13 +3,16 @@ import { RouteState, SetRouteState } from '../GraphViz/CustomTypes';
 export const redirectTo = (
     routeState: RouteState, 
     setRouteState: SetRouteState, 
-    page_name: string
+    pageName: string
     ) => {
     setRouteState({
         ...routeState,
-        curPage: page_name,
+        curPage: pageName,
     })
-    localStorage.setItem("grapl_curPage", page_name)
+    console.log("Route State", routeState)
+    // window.history.replaceState(routeState, "", pageName)
+
+    // localStorage.setItem("grapl_curPage", page_name)
 }
 
 export const defaultRouteState = (): RouteState => {

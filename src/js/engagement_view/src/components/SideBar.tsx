@@ -13,6 +13,7 @@ import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
 import Button from "@material-ui/core/Button";
 import { Node } from "../modules/GraphViz/CustomTypes";
 import Home from '@material-ui/icons/Home';
+import {Link} from 'react-router-dom'
 
 const drawerWidth = 500;
 
@@ -93,6 +94,10 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     close:{
       color:"#42C6FF",
+    },
+    link: {
+      color: "white", 
+      textDecoration: "none"
     }
   })
 );
@@ -148,11 +153,8 @@ export default function SideBar({setLens, curLens, curNode, redirectTo}: SideBar
             </Typography>
             <Button 
                 className = {classes.button }
-                onClick = { (e) => {
-                    redirectTo("dashboard");
-                } }
             >
-                <Home/>
+                <Link to = "/" className = {classes.link}><Home/></Link>
             </Button>
           </div>
 

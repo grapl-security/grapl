@@ -5,6 +5,7 @@ import Typography from "@material-ui/core/Typography";
 import Button from "@material-ui/core/Button";
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
 import Home from '@material-ui/icons/Home';
+import {Link} from 'react-router-dom';
 
 const useStyles = makeStyles(
     (theme: Theme) =>
@@ -19,11 +20,15 @@ const useStyles = makeStyles(
             }, 
             header: {
                 justifyContent: "space-between",
+            }, 
+            link:{
+                color:"white", 
+                textDecoration: "none"
             }
         }
     )
 );
-
+// history.replaceState 
 // function logout() {
 //     localStorage.removeItem("grapl_curPage");
 //     window.location.reload(false);
@@ -47,16 +52,10 @@ const GraplHeader = ({redirectTo, displayBtn}: GraplHeaderProps) => {
                         displayBtn &&
                             <Button 
                             className = {classes.button }
-                            onClick = { (e) => {
-                                redirectTo("dashboard");
-                            } }
                             >
-                                <Home />
+                                <Link to = "/" className = {classes.link}><Home /></Link>
                             </Button>
-                        
                     }
-                    
-                    
                 </Toolbar>
             </AppBar>
         </>
