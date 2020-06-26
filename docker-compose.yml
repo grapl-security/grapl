@@ -71,6 +71,15 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
+      - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
+      - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
+      - FILE_HISTORY_TABLE=local-grapl-file_history_table
+      - INBOUND_CONNECTION_HISTORY_TABLE=local-grapl-inbound_connection_history_table
+      - OUTBOUND_CONNECTION_HISTORY_TABLE=local-grapl-outbound_connection_history_table
+      - NETWORK_CONNECTION_HISTORY_TABLE=local-grapl-network_connection_history_table
+      - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
+      - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
       - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
