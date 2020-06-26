@@ -3,16 +3,16 @@ import time
 import boto3
 
 table_names = [
-    "process_history_table",
-    "file_history_table",
-    "node_id_retry_table",
-    "outbound_connection_history_table",
-    "inbound_connection_history_table",
-    "network_connection_history_table",
-    "ip_connection_history_table",
-    "asset_id_mappings",
-    "dynamic_session_table",
-    "static_mapping_table",
+    "local-grapl-process_history_table",
+    "local-grapl-file_history_table",
+    "local-grapl-node_id_retry_table",
+    "local-grapl-outbound_connection_history_table",
+    "local-grapl-inbound_connection_history_table",
+    "local-grapl-network_connection_history_table",
+    "local-grapl-ip_connection_history_table",
+    "local-grapl-asset_id_mappings",
+    "local-grapl-dynamic_session_table",
+    "local-grapl-static_mapping_table",
 ]
 
 table_defs = {

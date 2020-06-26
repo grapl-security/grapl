@@ -26,15 +26,15 @@ function create_table(
 
 export class HistoryDb extends cdk.Construct {
 
-    readonly proc_history: dynamodb.Table;
-    readonly file_history: dynamodb.Table;
-    readonly outbound_connection_history: dynamodb.Table;
-    readonly inbound_connection_history: dynamodb.Table;
-    readonly network_connection_history: dynamodb.Table;
-    readonly ip_connection_history: dynamodb.Table;
-    readonly asset_history: dynamodb.Table;
-    readonly node_id_retry_table: dynamodb.Table;
-    readonly dynamic_session_table: dynamodb.Table;
+    readonly ProcessHistoryTable: dynamodb.Table;
+    readonly FileHistoryTable: dynamodb.Table;
+    readonly OutboundConnectionHistoryTable: dynamodb.Table;
+    readonly InboundConnectionHistoryTable: dynamodb.Table;
+    readonly NetworkConnectionHistoryTable: dynamodb.Table;
+    readonly IpConnectionHistoryTable: dynamodb.Table;
+    readonly AssetHistoryTable: dynamodb.Table;
+    readonly NodeIdRetryTable: dynamodb.Table;
+    readonly DynamicSessionTable: dynamodb.Table;
     readonly static_mapping_table: dynamodb.Table;
 
     constructor(
@@ -44,15 +44,15 @@ export class HistoryDb extends cdk.Construct {
     ) {
         super(scope, id);
 
-        this.proc_history = create_table(this, props.prefix + '-process_history_table');
-        this.file_history = create_table(this, props.prefix + '-file_history_table');
-        this.outbound_connection_history = create_table(this, props.prefix + '-outbound_connection_history_table');
-        this.inbound_connection_history = create_table(this, props.prefix + '-inbound_connection_history_table');
-        this.network_connection_history = create_table(this, props.prefix + '-network_connection_history_table');
-        this.ip_connection_history = create_table(this, props.prefix + '-ip_connection_history_table');
-        this.dynamic_session_table = create_table(this, props.prefix + '-dynamic_session_table');
+        this.ProcessHistoryTable = create_table(this, props.prefix + '-process_history_table');
+        this.FileHistoryTable = create_table(this, props.prefix + '-file_history_table');
+        this.OutboundConnectionHistoryTable = create_table(this, props.prefix + '-outbound_connection_history_table');
+        this.InboundConnectionHistoryTable = create_table(this, props.prefix + '-inbound_connection_history_table');
+        this.NetworkConnectionHistoryTable = create_table(this, props.prefix + '-network_connection_history_table');
+        this.IpConnectionHistoryTable = create_table(this, props.prefix + '-ip_connection_history_table');
+        this.DynamicSessionTable = create_table(this, props.prefix + '-dynamic_session_table');
 
-        this.asset_history = new dynamodb.Table(this, 'AssetIdMappings', {
+        this.AssetHistoryTable = new dynamodb.Table(this, 'AssetIdMappings', {
             tableName: props.prefix + '-asset_id_mappings',
             partitionKey: {
                 name: 'pseudo_key',
@@ -76,7 +76,7 @@ export class HistoryDb extends cdk.Construct {
             removalPolicy: RemovalPolicy.DESTROY,
         });
 
-        this.node_id_retry_table = new dynamodb.Table(this, 'NodeIdRetryTable', {
+        this.NodeIdRetryTable = new dynamodb.Table(this, 'NodeIdRetryTable', {
             tableName:  props.prefix + '-node_id_retry_table',
             partitionKey: {
                 name: 'pseudo_key',
@@ -89,26 +89,26 @@ export class HistoryDb extends cdk.Construct {
     }
 
     allowReadWrite(service: Service) {
-        this.proc_history.grantReadWriteData(service.event_handler);
-        this.file_history.grantReadWriteData(service.event_handler);
-        this.outbound_connection_history.grantReadWriteData(service.event_handler);
-        this.inbound_connection_history.grantReadWriteData(service.event_handler);
-        this.network_connection_history.grantReadWriteData(service.event_handler);
-        this.ip_connection_history.grantReadWriteData(service.event_handler);
-        this.asset_history.grantReadWriteData(service.event_handler);
-        this.node_id_retry_table.grantReadWriteData(service.event_handler);
+        this.ProcessHistoryTable.grantReadWriteData(service.event_handler);
+        this.FileHistoryTable.grantReadWriteData(service.event_handler);
+        this.OutboundConnectionHistoryTable.grantReadWriteData(service.event_handler);
+        this.InboundConnectionHistoryTable.grantReadWriteData(service.event_handler);
+        this.NetworkConnectionHistoryTable.grantReadWriteData(service.event_handler);
+        this.IpConnectionHistoryTable.grantReadWriteData(service.event_handler);
+        this.AssetHistoryTable.grantReadWriteData(service.event_handler);
+        this.NodeIdRetryTable.grantReadWriteData(service.event_handler);
         this.static_mapping_table.grantReadWriteData(service.event_handler);
-        this.dynamic_session_table.grantReadWriteData(service.event_handler);
+        this.DynamicSessionTable.grantReadWriteData(service.event_handler);
 
-        this.proc_history.grantReadWriteData(service.event_retry_handler);
-        this.file_history.grantReadWriteData(service.event_retry_handler);
-        this.outbound_connection_history.grantReadWriteData(service.event_retry_handler);
-        this.inbound_connection_history.grantReadWriteData(service.event_retry_handler);
-        this.network_connection_history.grantReadWriteData(service.event_retry_handler);
-        this.ip_connection_history.grantReadWriteData(service.event_retry_handler);
-        this.asset_history.grantReadWriteData(service.event_retry_handler);
-        this.node_id_retry_table.grantReadWriteData(service.event_retry_handler);
+        this.ProcessHistoryTable.grantReadWriteData(service.event_retry_handler);
+        this.FileHistoryTable.grantReadWriteData(service.event_retry_handler);
+        this.OutboundConnectionHistoryTable.grantReadWriteData(service.event_retry_handler);
+        this.InboundConnectionHistoryTable.grantReadWriteData(service.event_retry_handler);
+        this.NetworkConnectionHistoryTable.grantReadWriteData(service.event_retry_handler);
+        this.IpConnectionHistoryTable.grantReadWriteData(service.event_retry_handler);
+        this.AssetHistoryTable.grantReadWriteData(service.event_retry_handler);
+        this.NodeIdRetryTable.grantReadWriteData(service.event_retry_handler);
         this.static_mapping_table.grantReadWriteData(service.event_retry_handler);
-        this.dynamic_session_table.grantReadWriteData(service.event_retry_handler);
+        this.DynamicSessionTable.grantReadWriteData(service.event_retry_handler);
     }
 }

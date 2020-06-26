@@ -112,7 +112,10 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify ProcessNode"),
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "process_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    std::env::var("PROCESS_HISTORY_TABLE").expect("PROCESS_HISTORY_TABLE"),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -127,7 +130,10 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify FileNode"),
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "file_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    std::env::var("FILE_HISTORY_TABLE").expect("FILE_HISTORY_TABLE"),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -141,8 +147,11 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify ProcessInboundConnectionNode"),
                 };
-                let session_db =
-                    SessionDb::new(self.node_id_db.clone(), "inbound_connection_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    std::env::var("INBOUND_CONNECTION_HISTORY_TABLE")
+                        .expect("INBOUND_CONNECTION_HISTORY_TABLE"),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -156,8 +165,11 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify ProcessOutboundConnectionNode"),
                 };
-                let session_db =
-                    SessionDb::new(self.node_id_db.clone(), "outbound_connection_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    std::env::var("OUTBOUND_CONNECTION_HISTORY_TABLE")
+                        .expect("OUTBOUND_CONNECTION_HISTORY_TABLE"),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -204,8 +216,11 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify NetworkConnectionNode"),
                 };
-                let session_db =
-                    SessionDb::new(self.node_id_db.clone(), "network_connection_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    std::env::var("NETWORK_CONNECTION_HISTORY_TABLE")
+                        .expect("NETWORK_CONNECTION_HISTORY_TABLE"),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -219,8 +234,11 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify IpConnectionNode"),
                 };
-                let session_db =
-                    SessionDb::new(self.node_id_db.clone(), "ip_connection_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    std::env::var("IP_CONNECTION_HISTORY_TABLE")
+                        .expect("IP_CONNECTION_HISTORY_TABLE"),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -923,7 +941,10 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
             let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
             let dynamo = DynamoDbClient::new(region.clone());
-            let dyn_session_db = SessionDb::new(dynamo.clone(), "dynamic_session_table");
+            let dyn_session_db = SessionDb::new(
+                dynamo.clone(),
+                std::env::var("DYNAMIC_SESSION_TABLE").expect("DYNAMIC_SESSION_TABLE"),
+            );
             let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
             let asset_identifier = AssetIdentifier::new(asset_id_db);
 
@@ -1098,7 +1119,10 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
     info!("dynamo");
     let dynamo = init_dynamodb_client();
     info!("dyn_session_db");
-    let dyn_session_db = SessionDb::new(dynamo.clone(), "dynamic_session_table");
+    let dyn_session_db = SessionDb::new(
+        dynamo.clone(),
+        std::env::var("DYNAMIC_SESSION_TABLE").expect("DYNAMIC_SESSION_TABLE"),
+    );
     info!("dyn_mapping_db");
     let dyn_mapping_db = DynamicMappingDb::new(init_dynamodb_client());
     info!("asset_identifier");
