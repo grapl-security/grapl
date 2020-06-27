@@ -81,8 +81,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     lensName:{
       color:"#EAFDFF",
-      fontSize: "2rem", 
-      margin: "10px 15px 0px 0px",
+      fontSize: "1.5rem", 
     },
     header:{
       fontSize: "35px",

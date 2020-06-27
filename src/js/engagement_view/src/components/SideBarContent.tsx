@@ -14,6 +14,11 @@ import TableRow from "@material-ui/core/TableRow";
 import { Node, Lens } from "../modules/GraphViz/CustomTypes";
 import { getGraphQlEdge } from "../modules/GraphViz/engagement_edge/getApiURLs";
 
+import TablePagination from '@material-ui/core/TablePagination';
+import _withStyles, {
+    ClassNameMap,
+} from '@material-ui/styles/withStyles';
+import {SelectLensProps, ToggleLensTableProps, ToggleLensTableState, SideBarContentProps, NodeDetailsProps, ToggleNodeTableProps, PaginationState} from "../modules/GraphViz/CustomTypes"
 
 const useStyles = makeStyles({
     root:{
@@ -45,76 +50,126 @@ const useStyles = makeStyles({
     lensName: {
         fontSize: "16px",
     },
+    pagination: {
+        margin: ".5rem",
+        backgroundColor: "#595959",
+    }
 });
 
-type SelectLensProps = {
-    lens: string,
-    score: number,
-    uid: number,
-    lens_type: string,
-    setLens: (lens: string) => void,
-}
 
 function SelectLens(props: SelectLensProps) {
     const classes = useStyles();
-
     return (
         <>
-                <TableRow key={props.lens}>
-                        <TableCell component="th" scope="row">
-                        <Button className = {classes.lensName}
-                            onClick={
-                                () => { 
-                                    props.setLens(props.lens)    
-                                }
-                        }>
-                            {/* #TODO: change color of lense name based on score */}
-                            {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
-                        </Button>
-                        </TableCell>
-                    </TableRow>
+            <TableRow key={props.uid}>
+                <TableCell component="th" scope="row">
+                <Button className = {classes.lensName}
+                    onClick={
+                        () => { 
+                            props.setLens(props.lens)    
+                        }
+                }>
+                    {/* #TODO: change color of lens name based on score */}
+                    {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
+                </Button>
+                </TableCell>
+            </TableRow>
         </>
     )
-}
-
-
-type ToggleLensTableProps = {
-    setLens: (lens: string) => void,
-}
-
-type ToggleLensTableState = {
-    toggled: boolean,
-    lenses: Lens[],
 }
 
 const defaultToggleLensTableState = (): ToggleLensTableState => {
     return {
         toggled: true,
         lenses: [],
+        first: 100, // first is the page size
+        offset: 0, // by default, start from page 0
     }
 }
 
-function ToggleLensTable({setLens}: ToggleLensTableProps) {
-    const [state, setState] = useState(defaultToggleLensTableState());
 
+const pagedTable = (
+    state: PaginationState, 
+    page: number, 
+    rowsPerPage: number, 
+    handleChangePage: (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null, page: number) => void, 
+    handleChangeRowsPerPage: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, 
+    setLens: (lens: string) => void, 
+    classes: ClassNameMap<string>
+) => {
+    return (
+        <TableContainer>
+        <TablePagination
+            className = {classes.pagination}
+            aria-label = "pagination"
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={state.lenses.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onChangePage={handleChangePage}
+            onChangeRowsPerPage={handleChangeRowsPerPage}
+        />
+        {
+            state.lenses 
+            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            .map(
+                (lens: Lens) => {
+                    return(
+                        <Table className={classes.table} aria-label="lens table">
+                            <TableBody>
+                                <SelectLens 
+                                    key={Number(lens.uid)}
+                                    uid={lens.uid}
+                                    lens={lens.lens_name}
+                                    lens_type={lens.lens_type}
+                                    score={lens.score}
+                                    setLens={setLens}
+                                />
+                            </TableBody>
+                        </Table>
+                    )
+                }
+            )
+        }
+        </TableContainer>
+    )
+}
+
+function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
+    const [state, setState] = useState(defaultToggleLensTableState());
     const classes = useStyles();
 
-    useEffect(() => {
-        const interval = setInterval(() => {
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const handleChangePage = (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null, page: number) => {
+        setPage(page);
+    }
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        console.log("Handle Row Event", event)
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    }
+
+    useEffect( () => {
+        const interval = setInterval(
+            () => {
             console.log("Fetching lenses");
-            getLenses()
+            getLenses(state.first, state.offset)
                 .then((response) => {
                     if (response.lenses && response.lenses !== state.lenses) {
+                        const lenses = state.lenses.concat(response.lenses);
                         setState({
                             ...state,
-                            lenses: response.lenses || [],
+                            offset: state.offset + response.lenses.length || 0,
+                            lenses,
                         })
                     }
-                })
+                }
+            )
         }, 1000);
         return () => clearInterval(interval);
     });
-
 
     return (
         <>
@@ -134,55 +189,36 @@ function ToggleLensTable({setLens}: ToggleLensTableProps) {
                     <ExpandMoreIcon className={classes.expand}/> 
                 </Button>
             </div>
-
+        
             <div className="lensToggle">
-                {state.toggled && state.lenses &&
-                    state.lenses.map(
-                        (lens: Lens) => {
-                            return(
-                                <TableContainer>
-                                    <Table className={classes.table} aria-label="lens table">
-                                        <TableBody>
-                                            <SelectLens 
-                                                key={Number(lens.uid)}
-                                                uid={lens.uid}
-                                                lens={lens.lens_name}
-                                                lens_type={lens.lens_type}
-                                                score={lens.score}
-                                                setLens={setLens}
-                                            />
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            )
-                        }
-                    )
+                {   
+                    state.toggled && 
+                    pagedTable(state, page, rowsPerPage, handleChangePage, handleChangeRowsPerPage, setLens, classes)
                 }
             </div>
+
             <Divider />
         </>
     )
 }
 
-// const engagement_edge = getEngagementEdge();
 const graphql_edge = getGraphQlEdge();
 
-
-const getLenses = async () => {
-    console.log('fetching graph from', graphql_edge);
+const getLenses = async (first: number, offset: number) => {
+    // console.log('fetching graph from', graphql_edge);
 
     const query = `
-    {
-        lenses {
-            uid,
-            node_key,
-            lens_name,
-            score, 
-            lens_type,
+        {
+            lenses(first: ${first}, offset: ${offset}) {
+                uid,
+                node_key,
+                lens_name,
+                score, 
+                lens_type,
+            }
         }
-    }
     `;
-    console.log(`connecting to: ${graphql_edge}graphql`)
+    // console.log(`connecting to: ${graphql_edge}graphql`);
     const res = await fetch(`${graphql_edge}graphql`,
         {
             method: 'post',
@@ -206,23 +242,12 @@ const getLenses = async () => {
     return jres;
 };
 
-type NodeDetailsProps = {
-    node: Node
-}
-
 const NodeDetails = ({node}: NodeDetailsProps) => {
-    // #TODO: Remove hidden fields from our node before displaying
-    // Display remaining fields of node in our component="div"
-
     return (
         <>
             <NodeTable node={node} />
         </>
     )
-}
-
-type ToggleNodeTableProps = {
-    curNode: Node | null
 }
 
 function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
@@ -256,10 +281,6 @@ function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
 }
 
 
-type SideBarContentProps = {
-    setLens: (lens: string) => void, 
-    curNode: Node | null
-}
 
 export default function SideBarContent({setLens, curNode}: SideBarContentProps) {
     return (
