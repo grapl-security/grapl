@@ -34,6 +34,8 @@ class Queues {
 }
 
 export interface ServiceProps {
+    version: string,
+    prefix: string,
     environment?: any,
     vpc?: ec2.IVpc,
     reads_from?: s3.IBucket,
@@ -53,12 +55,11 @@ export class Service {
         name: string,
         props: ServiceProps
     ) {
+        const serviceName =  `${props.prefix}-${name}`
 
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
         const opt = props.opt;
-
-        const grapl_version = process.env.GRAPL_VERSION || "latest";
 
         const runtime = (opt && opt.runtime) ?
             opt.runtime : 
@@ -71,7 +72,7 @@ export class Service {
             `${name}.lambda_handler` :
             name;
 
-        const queues = new Queues(scope, 'grapl-' + name);
+        const queues = new Queues(scope, serviceName.toLowerCase());
 
         if (environment) {
             environment.SOURCE_QUEUE_URL = queues.queue.queueUrl;
@@ -83,8 +84,8 @@ export class Service {
             {
                 runtime: runtime,
                 handler: handler,
-                functionName: `Grapl-${name}-Handler`,
-                code: lambda.Code.asset(`./zips/${name}-${grapl_version}.zip`),
+                functionName: serviceName + '-Handler',
+                code: lambda.Code.asset(`./zips/${name}-${props.version}.zip`),
                 vpc: props.vpc,
                 environment: {
                     IS_RETRY: "False",
@@ -92,7 +93,7 @@ export class Service {
                 },
                 timeout: cdk.Duration.seconds(180),
                 memorySize: 256,
-                description: grapl_version,
+                description: props.version,
             });
         event_handler.currentVersion.addAlias('live');
         
@@ -110,8 +111,8 @@ export class Service {
             {
                 runtime: runtime,
                 handler: handler,
-                functionName: `Grapl-${name}-RetryHandler`,
-                code: lambda.Code.asset(`./zips/${retry_code_name}-${grapl_version}.zip`),
+                functionName: serviceName + '-RetryHandler',
+                code: lambda.Code.asset(`./zips/${retry_code_name}-${props.version}.zip`),
                 vpc: props.vpc,
                 environment: {
                     IS_RETRY: "True",
@@ -119,7 +120,7 @@ export class Service {
                 },
                 timeout: cdk.Duration.seconds(360),
                 memorySize: 512,
-                description: grapl_version,
+                description: props.version,
             });
         event_retry_handler.currentVersion.addAlias('live');
 
