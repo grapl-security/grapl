@@ -15,7 +15,7 @@ Install the following dependencies:
   3. AWS CDK
   4. AWS CLI
 
-### Configuration
+### AWS Credentials
 
 Make sure your `~/.aws/credentials` file contains the proper AWS credentials.
 
@@ -31,21 +31,31 @@ Then extract the deployment artifacts from the build containers with
 the following script:
 
 ``` bash
-VERSION=$YOUR_VERSION CHANNEL=latest ./extract-grapl-deployment-artifacts.sh
+VERSION=$YOUR_VERSION ./extract-grapl-deployment-artifacts.sh
 ```
 
-Then move the deployment artifacts into the `/zips` directory:
+`YOUR_VERSION` can be any name you want. Just make note of it, we'll use it in the next step.
 
-``` bash
-mv *.zip zips/
+Your build outputs should appear in the `zips/` directory.
+
+### Configuration
+
+Set your deployment name and version in `bin/grapl-cdk.ts`
+
 ```
+const deployName = 'Grapl-MYDEPLOYMENT';
+const graplVersion = 'YOUR_VERSION';
+```
+
+Some tips for choosing a deployment name:
+- Keep "Grapl" as prefix. This isn't necessary, but will help identify Grapl resources in your AWS account.
+- Choose a globally unique name, as this will be used to name S3 buckets, which have this requiement. Using a name that includes your AWS account number and deployment region should work.
 
 ## Deploying
 
 To deploy Grapl with the CDK, execute the following
 
-  1. `npm -i`
+  1. `npm i`
   2. `npm run build`
-  3. `echo "BUCKET_PREFIX=$YOUR_BUCKET_PREFIX" > .env`
-  4. `cdk bootstrap` (only need to do this once per region)
-  5. `./deploy_all.sh`
+  3. `cdk bootstrap` (only need to do this once per region)
+  4. `./deploy_all.sh`
