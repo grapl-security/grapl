@@ -33,6 +33,7 @@ export const LogIn = (props: LoginProps) => {
           
           if (loginSuccess) {
             props.loginSuccess();
+            window.history.replaceState('/login', "", "/dashboard")
             console.log("Logged in");
           } else {
             console.warn("Login failed!")
@@ -101,4 +102,4 @@ const login = async (username: string, password: string) => {
       }
     };
 
-// export default LogIn;
+export default LogIn;

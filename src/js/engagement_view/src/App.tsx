@@ -33,13 +33,13 @@ const RouterComponent = () => {
     console.warn("Invalid Page State");
     // return <PageNotFound />
 }
-{/* <Link to = "/"></Link> */}
 export default function App() {
     console.log("App loaded");
     return (
         <>
         <HashRouter>
             <Switch>
+                <Route exact path = "/login" component = {LogIn}/>
                 <Route exact path = "/" component = {Dashboard}/>
                 <Route exact path = "/plugins" component = {UploadPlugin}/>
                 <Route exact path = "/engagements" component = {EngagementUx}/>
