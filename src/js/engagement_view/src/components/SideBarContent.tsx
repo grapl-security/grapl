@@ -11,13 +11,11 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
-import { Node, Lens } from "../modules/GraphViz/CustomTypes";
+import { Lens } from "../modules/GraphViz/CustomTypes";
 import { getGraphQlEdge } from "../modules/GraphViz/engagement_edge/getApiURLs";
 
 import TablePagination from '@material-ui/core/TablePagination';
-import _withStyles, {
-    ClassNameMap,
-} from '@material-ui/styles/withStyles';
+import { ClassNameMap } from '@material-ui/styles/withStyles';
 import {SelectLensProps, ToggleLensTableProps, ToggleLensTableState, SideBarContentProps, NodeDetailsProps, ToggleNodeTableProps, PaginationState} from "../modules/GraphViz/CustomTypes"
 
 const useStyles = makeStyles({
