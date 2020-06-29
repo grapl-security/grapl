@@ -1,38 +1,41 @@
 import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
-import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
+import { BlockPublicAccess, BucketEncryption } from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
+import * as sqs from "@aws-cdk/aws-sqs";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as events from "@aws-cdk/aws-events";
 import * as targets from "@aws-cdk/aws-events-targets";
 import * as lambda from "@aws-cdk/aws-lambda";
-import {Runtime} from "@aws-cdk/aws-lambda";
+import { Runtime } from "@aws-cdk/aws-lambda";
 import * as iam from "@aws-cdk/aws-iam";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 
-import {Service} from "./service";
-import {UserAuthDb} from "./userauthdb";
-import {DGraphEcs} from "./dgraph";
-import {HistoryDb} from "./historydb";
-import {EventEmitter} from "./event_emitters";
-import {RedisCluster} from "./redis";
-import {EngagementNotebook} from "./engagement";
+import { Service } from "./service";
+import { UserAuthDb } from "./userauthdb";
+import { DGraphEcs } from "./dgraph";
+import { HistoryDb } from "./historydb";
+import { EventEmitter } from "./event_emitters";
+import { RedisCluster } from "./redis";
+import { EngagementNotebook } from "./engagement";
 import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
+
+import { Watchful } from "./vendor/cdk-watchful/lib/watchful";
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket,
 }
 
-class SysmonGraphGenerator extends cdk.Construct {
+class SysmonGraphGenerator extends cdk.NestedStack {
 
     constructor(
-        scope: cdk.Construct,
+        parent: cdk.Construct,
         id: string,
         props: SysmonGraphGeneratorProps,
     ) {
-        super(scope, id);
+        super(parent, id);
 
         const bucket_prefix = props.prefix.toLowerCase();
         const sysmon_log = new EventEmitter(this, bucket_prefix + '-sysmon-log');
@@ -52,6 +55,7 @@ class SysmonGraphGenerator extends cdk.Construct {
             subscribes_to: sysmon_log.topic,
             writes_to: props.writesTo,
             version: props.version,
+            watchful: props.watchful
         });
 
         service.event_handler.connections.allowToAnyIpv4(
@@ -70,16 +74,16 @@ export interface NodeIdentifierProps extends GraplServiceProps {
     writesTo: s3.IBucket,
 }
 
-class NodeIdentifier extends cdk.Construct {
+class NodeIdentifier extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
     readonly topic: sns.Topic;
 
     constructor(
-        scope: cdk.Construct,
+        parent: cdk.Construct,
         id: string,
         props: NodeIdentifierProps,
     ) {
-        super(scope, id);
+        super(parent, id);
 
         const history_db = new HistoryDb(this, 'HistoryDB', props);
 
@@ -113,6 +117,7 @@ class NodeIdentifier extends cdk.Construct {
             writes_to: props.writesTo,
             retry_code_name: 'node-identifier-retry-handler',
             version: props.version,
+            watchful: props.watchful
         });
 
         history_db.allowReadWrite(service);
@@ -169,6 +174,7 @@ class GraphMerger extends cdk.NestedStack {
             subscribes_to: subgraphs_generated.topic,
             writes_to: props.writesTo,
             version: props.version,
+            watchful: props.watchful
         });
     }
 }
@@ -211,6 +217,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
             subscribes_to: subgraphs_merged.topic,
             writes_to: props.writesTo,
             version: props.version,
+            watchful: props.watchful
         });
 
         service.readsFrom(props.readsFrom, true);
@@ -266,6 +273,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
                 runtime: lambda.Runtime.PYTHON_3_7
             },
             version: props.version,
+            watchful: props.watchful
         });
 
         // We need the List capability to find each of the analyzers
@@ -317,6 +325,7 @@ class EngagementCreator extends cdk.NestedStack {
                 runtime: lambda.Runtime.PYTHON_3_7
             },
             version: props.version,
+            watchful: props.watchful
         });
 
         service.publishesToTopic(props.publishesTo);
@@ -327,14 +336,14 @@ class EngagementCreator extends cdk.NestedStack {
     }
 }
 
-class DGraphTtl extends cdk.Construct {
+class DGraphTtl extends cdk.NestedStack {
 
     constructor(
-        scope: cdk.Construct,
+        parent: cdk.Construct,
         id: string,
         props: GraplServiceProps,
     ) {
-        super(scope, id);
+        super(parent, id);
 
         const serviceName = props.prefix + '-DGraphTtl';
 
@@ -361,11 +370,13 @@ class DGraphTtl extends cdk.Construct {
         const target = new targets.LambdaFunction(event_handler);
 
         const rule = new events.Rule(
-            scope, 'Rule', {
+            this, 'Rule', {
                 schedule: events.Schedule.expression("rate(1 hour)")
             }
         );
         rule.addTarget(target);
+
+        props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
     }
 }
 
@@ -404,6 +415,8 @@ class ModelPluginDeployer extends cdk.NestedStack {
         );
         event_handler.currentVersion.addAlias('live');
 
+        props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+
         if (event_handler.role) {
             props.jwtSecret.grantRead(event_handler.role);
             props.userAuthTable.allowReadFromRole(event_handler.role);
@@ -431,6 +444,53 @@ class ModelPluginDeployer extends cdk.NestedStack {
                 burstLimit: 50,
             }
         });
+
+        props.watchful.watchApiGateway(serviceName + '-Integration', integration, {
+            serverErrorThreshold: 1, // any 5xx alerts
+            cacheGraph: true,
+            watchedOperations: [
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/gitWebhook"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/gitWebHook"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/deploy"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/deploy"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/listModelPlugins"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/listModelPlugins"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/deleteModelPlugin"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/deleteModelPlugin"
+                },
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/{proxy+}"
+                },
+                {
+                    httpMethod: "OPTIONS",
+                    resourcePath: "/{proxy+}"
+                }
+            ]
+        });
     }
 }
 
@@ -441,6 +501,7 @@ export interface GraplServiceProps {
     vpc: ec2.IVpc,
     masterGraph: DGraphEcs,
     userAuthTable: UserAuthDb,
+    watchful: Watchful
 }
 
 export interface GraplStackProps extends cdk.StackProps {
@@ -488,6 +549,15 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
+        const alarmSqs = new sqs.Queue(this, 'alarmSqs');
+        const alarmSns = new sns.Topic(this, 'alarmSns');
+
+        const watchful = new Watchful(this, id + "-Watchful", {
+            alarmEmail: "operations@graplsecurity.com",
+            alarmSqs,
+            alarmSns
+        });
+
         const graplProps = {
             prefix: this.prefix,
             version: props.version || 'latest',
@@ -495,6 +565,7 @@ export class GraplCdkStack extends cdk.Stack {
             vpc: grapl_vpc,
             masterGraph: master_graph,
             userAuthTable: user_auth_table,
+            watchful: watchful
         }
 
         const analyzers_bucket = new s3.Bucket(this, 'AnalyzersBucket', {
