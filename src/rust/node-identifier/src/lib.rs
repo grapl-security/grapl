@@ -112,7 +112,10 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify ProcessNode"),
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "process_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    grapl_config::process_history_table_name(),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -127,7 +130,10 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify FileNode"),
                 };
-                let session_db = SessionDb::new(self.node_id_db.clone(), "file_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    grapl_config::file_history_table_name(),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -141,8 +147,10 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify ProcessInboundConnectionNode"),
                 };
-                let session_db =
-                    SessionDb::new(self.node_id_db.clone(), "inbound_connection_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    grapl_config::inbound_connection_history_table_name(),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -156,8 +164,10 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify ProcessOutboundConnectionNode"),
                 };
-                let session_db =
-                    SessionDb::new(self.node_id_db.clone(), "outbound_connection_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    grapl_config::outbound_connection_history_table_name(),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -204,8 +214,10 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify NetworkConnectionNode"),
                 };
-                let session_db =
-                    SessionDb::new(self.node_id_db.clone(), "network_connection_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    grapl_config::network_connection_history_table_name(),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -219,8 +231,10 @@ where
                     Some(unid) => unid,
                     None => bail!("Could not identify IpConnectionNode"),
                 };
-                let session_db =
-                    SessionDb::new(self.node_id_db.clone(), "ip_connection_history_table");
+                let session_db = SessionDb::new(
+                    self.node_id_db.clone(),
+                    grapl_config::ip_connection_history_table_name(),
+                );
                 let node_key = session_db
                     .handle_unid_session(unid, self.should_default)
                     .await?;
@@ -912,10 +926,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
 
             let bucket = bucket_prefix + "-subgraphs-generated-bucket";
             info!("Output events to: {}", bucket);
-            let region = {
-                let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
-                Region::from_str(&region_str).expect("Region error")
-            };
+            let region = grapl_config::region();
             let cache = RedisCache::new(cache_address.to_owned())
                 .await
                 .expect("Could not create redis client");
@@ -923,7 +934,8 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
             let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
             let dynamo = DynamoDbClient::new(region.clone());
-            let dyn_session_db = SessionDb::new(dynamo.clone(), "dynamic_session_table");
+            let dyn_session_db =
+                SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
             let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
             let asset_identifier = AssetIdentifier::new(asset_id_db);
 
@@ -1098,7 +1110,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
     info!("dynamo");
     let dynamo = init_dynamodb_client();
     info!("dyn_session_db");
-    let dyn_session_db = SessionDb::new(dynamo.clone(), "dynamic_session_table");
+    let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
     info!("dyn_mapping_db");
     let dyn_mapping_db = DynamicMappingDb::new(init_dynamodb_client());
     info!("asset_identifier");
@@ -1132,11 +1144,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
         region.clone(),
     );
 
-    let source_queue_url = if should_default {
-        std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL")
-    } else {
-        std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL")
-    };
+    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
     let queue_name = source_queue_url.split("/").last().unwrap();
     grapl_config::wait_for_s3(init_s3_client()).await?;
