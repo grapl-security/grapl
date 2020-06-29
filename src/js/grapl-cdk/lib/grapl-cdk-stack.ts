@@ -28,14 +28,14 @@ interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket,
 }
 
-class SysmonGraphGenerator extends cdk.Construct {
+class SysmonGraphGenerator extends cdk.NestedStack {
 
     constructor(
-        scope: cdk.Construct,
+        parent: cdk.Construct,
         id: string,
         props: SysmonGraphGeneratorProps,
     ) {
-        super(scope, id);
+        super(parent, id);
 
         const bucket_prefix = props.prefix.toLowerCase();
         const sysmon_log = new EventEmitter(this, bucket_prefix + '-sysmon-log');
@@ -74,16 +74,16 @@ export interface NodeIdentifierProps extends GraplServiceProps {
     writesTo: s3.IBucket,
 }
 
-class NodeIdentifier extends cdk.Construct {
+class NodeIdentifier extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
     readonly topic: sns.Topic;
 
     constructor(
-        scope: cdk.Construct,
+        parent: cdk.Construct,
         id: string,
         props: NodeIdentifierProps,
     ) {
-        super(scope, id);
+        super(parent, id);
 
         const history_db = new HistoryDb(this, 'HistoryDB', props);
 
@@ -336,14 +336,14 @@ class EngagementCreator extends cdk.NestedStack {
     }
 }
 
-class DGraphTtl extends cdk.Construct {
+class DGraphTtl extends cdk.NestedStack {
 
     constructor(
-        scope: cdk.Construct,
+        parent: cdk.Construct,
         id: string,
         props: GraplServiceProps,
     ) {
-        super(scope, id);
+        super(parent, id);
 
         const serviceName = props.prefix + '-DGraphTtl';
 
@@ -370,7 +370,7 @@ class DGraphTtl extends cdk.Construct {
         const target = new targets.LambdaFunction(event_handler);
 
         const rule = new events.Rule(
-            scope, 'Rule', {
+            this, 'Rule', {
                 schedule: events.Schedule.expression("rate(1 hour)")
             }
         );
