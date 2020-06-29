@@ -36,6 +36,8 @@ export class GraphQLEndpoint extends cdk.Construct {
         );
         event_handler.currentVersion.addAlias('live');
 
+        props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+
         if (event_handler.role) {
             props.jwtSecret.grantRead(event_handler.role);
         }
@@ -49,6 +51,17 @@ export class GraphQLEndpoint extends cdk.Construct {
                 endpointExportName: serviceName + '-EndpointApi',
             },
         );
+
+        props.watchful.watchApiGateway(this.integrationName, integration, {
+            serverErrorThreshold: 1, // any 5xx alerts
+            cacheGraph: true,
+            watchedOperations: [
+                {
+                    httpMethod: "POST",
+                    resourcePath: "/graphql"
+                },
+            ]
+        });
 
         integration.addUsagePlan('graphQLApiUsagePlan', {
             quota: {
