@@ -26,14 +26,14 @@ const useStyles = makeStyles((theme: Theme) =>
     })
 );
 
-const PageNotFound = () => {
-    const classes = useStyles();
-    return(
-        <> 
-            <h1 className = {classes.errCode}> 404 </h1>
-            <h3 className = {classes.notFound}> Page Not Found </h3>        
-        </>
-    )
-}
+// const PageNotFound = () => {
+//     const classes = useStyles();
+//     return(
+//         <> 
+//             <h1 className = {classes.errCode}> 404 </h1>
+//             <h3 className = {classes.notFound}> Page Not Found </h3>        
+//         </>
+//     )
+// }
 
-export default PageNotFound;
+// export default PageNotFound;

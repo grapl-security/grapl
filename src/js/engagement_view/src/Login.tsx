@@ -17,7 +17,7 @@ export const checkLogin = async () => {
     return body['success'] === 'True';
 };
 
-export const LogIn = (props: LoginProps) => {
+export const LogIn = (_: LoginProps) => {
   return (
     <div className = "backgroundImage">
       <div className="grapl"> Grapl </div>
@@ -25,6 +25,7 @@ export const LogIn = (props: LoginProps) => {
       <Formik
         initialValues={{ userName: "", password: "" }}
         onSubmit={async values => {
+          console.log("logging in");
           const password = await sha256WithPepper(
             values.userName, values.password
           );
@@ -32,7 +33,7 @@ export const LogIn = (props: LoginProps) => {
           const loginSuccess = login(values.userName, password);
           
           if (loginSuccess) {
-            props.loginSuccess();
+            window.history.replaceState('/login', "", "/")
             console.log("Logged in");
           } else {
             console.warn("Login failed!")
@@ -94,6 +95,7 @@ const login = async (username: string, password: string) => {
           });
           
           const body = await res.json();
+          console.log("body", body);
           return body['success'] === 'True';
         } catch (e) {
           console.log(e);
@@ -101,4 +103,4 @@ const login = async (username: string, password: string) => {
       }
     };
 
-// export default LogIn;
+export default LogIn;
