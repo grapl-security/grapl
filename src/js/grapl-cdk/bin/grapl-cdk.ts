@@ -7,12 +7,14 @@ import { EngagementUx } from '../lib/engagement';
 
 const deployName = 'Grapl-MYDEPLOYMENT';
 const graplVersion = 'latest';
+const watchfulEmail = undefined;
 
 const app = new cdk.App();
 const grapl = new GraplCdkStack(app, 'Grapl', {
     version: graplVersion,
     stackName: deployName,
     tags: {'grapl deployment': deployName},
+    watchfulEmail,
 });
 
 new EngagementUx(app, 'EngagementUX', {

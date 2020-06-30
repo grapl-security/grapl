@@ -1,13 +1,11 @@
 import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
-import { BlockPublicAccess, BucketEncryption } from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as sqs from "@aws-cdk/aws-sqs";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as events from "@aws-cdk/aws-events";
 import * as targets from "@aws-cdk/aws-events-targets";
 import * as lambda from "@aws-cdk/aws-lambda";
-import { Runtime } from "@aws-cdk/aws-lambda";
 import * as iam from "@aws-cdk/aws-iam";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
@@ -349,7 +347,7 @@ class DGraphTtl extends cdk.NestedStack {
 
         const event_handler = new lambda.Function(
             this, "Handler", {
-                runtime: Runtime.PYTHON_3_7,
+                runtime: lambda.Runtime.PYTHON_3_7,
                 handler: "app.prune_expired_subgraphs",
                 functionName: serviceName + "-Handler",
                 code: lambda.Code.fromAsset(`./zips/dgraph-ttl-${props.version}.zip`),
@@ -376,7 +374,9 @@ class DGraphTtl extends cdk.NestedStack {
         );
         rule.addTarget(target);
 
-        props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        }
     }
 }
 
@@ -397,7 +397,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
 
         const event_handler = new lambda.Function(
             this, 'Handler', {
-                runtime: Runtime.PYTHON_3_7,
+                runtime: lambda.Runtime.PYTHON_3_7,
                 handler: `grapl_model_plugin_deployer.app`,
                 functionName: serviceName + '-Handler',
                 code: lambda.Code.fromAsset(`./zips/model-plugin-deployer-${props.version}.zip`),
@@ -415,7 +415,9 @@ class ModelPluginDeployer extends cdk.NestedStack {
         );
         event_handler.currentVersion.addAlias('live');
 
-        props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        }
 
         if (event_handler.role) {
             props.jwtSecret.grantRead(event_handler.role);
@@ -445,52 +447,54 @@ class ModelPluginDeployer extends cdk.NestedStack {
             }
         });
 
-        props.watchful.watchApiGateway(serviceName + '-Integration', integration, {
-            serverErrorThreshold: 1, // any 5xx alerts
-            cacheGraph: true,
-            watchedOperations: [
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/gitWebhook"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/gitWebHook"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/deploy"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/deploy"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/listModelPlugins"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/listModelPlugins"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/deleteModelPlugin"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/deleteModelPlugin"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/{proxy+}"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/{proxy+}"
-                }
-            ]
-        });
+        if (props.watchful) {
+            props.watchful.watchApiGateway(serviceName + '-Integration', integration, {
+                serverErrorThreshold: 1, // any 5xx alerts
+                cacheGraph: true,
+                watchedOperations: [
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/gitWebhook"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/gitWebHook"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/deploy"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/deploy"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/listModelPlugins"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/listModelPlugins"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/deleteModelPlugin"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/deleteModelPlugin"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/{proxy+}"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/{proxy+}"
+                    }
+                ]
+            });
+        }
     }
 }
 
@@ -501,7 +505,7 @@ export interface GraplServiceProps {
     vpc: ec2.IVpc,
     masterGraph: DGraphEcs,
     userAuthTable: UserAuthDb,
-    watchful: Watchful
+    watchful?: Watchful
 }
 
 export interface GraplStackProps extends cdk.StackProps {
@@ -510,6 +514,7 @@ export interface GraplStackProps extends cdk.StackProps {
     graphAlphaCount?: number,
     graphAlphaPort?: number,
     graphZeroCount?: number,
+    watchfulEmail?: string,
 }
 
 export class GraplCdkStack extends cdk.Stack {
@@ -549,14 +554,17 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        const alarmSqs = new sqs.Queue(this, 'alarmSqs');
-        const alarmSns = new sns.Topic(this, 'alarmSns');
+        let watchful = undefined;
+        if (props.watchfulEmail) {
+            const alarmSqs = new sqs.Queue(this, 'alarmSqs');
+            const alarmSns = new sns.Topic(this, 'alarmSns');
 
-        const watchful = new Watchful(this, id + "-Watchful", {
-            alarmEmail: "operations@graplsecurity.com",
-            alarmSqs,
-            alarmSns
-        });
+            watchful = new Watchful(this, id + "-Watchful", {
+                alarmEmail: props.watchfulEmail,
+                alarmSqs,
+                alarmSns
+            });
+        }
 
         const graplProps = {
             prefix: this.prefix,
@@ -571,8 +579,8 @@ export class GraplCdkStack extends cdk.Stack {
         const analyzers_bucket = new s3.Bucket(this, 'AnalyzersBucket', {
             bucketName: bucket_prefix + '-analyzers-bucket',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
-            encryption: BucketEncryption.KMS_MANAGED,
-            blockPublicAccess: BlockPublicAccess.BLOCK_ALL
+            encryption: s3.BucketEncryption.KMS_MANAGED,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL
         });
 
         const engagements_created_topic =

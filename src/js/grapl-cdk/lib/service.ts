@@ -36,7 +36,6 @@ class Queues {
 }
 
 export interface ServiceProps {
-    watchful: Watchful,
     version: string,
     prefix: string,
     environment?: any,
@@ -45,7 +44,8 @@ export interface ServiceProps {
     writes_to?: s3.IBucket,
     subscribes_to?: sns.ITopic,
     retry_code_name?: string,
-    opt?: any
+    opt?: any,
+    watchful?: Watchful,
 }
 
 export class Service {
@@ -81,25 +81,25 @@ export class Service {
             environment.RUST_BACKTRACE = "1";
         }
 
-        const event_handler = new lambda.Function(
-            scope, 'Handler',
-            {
-                runtime: runtime,
-                handler: handler,
-                functionName: serviceName + '-Handler',
-                code: lambda.Code.asset(`./zips/${name}-${props.version}.zip`),
-                vpc: props.vpc,
-                environment: {
-                    IS_RETRY: "False",
-                    ...environment
-                },
-                timeout: cdk.Duration.seconds(180),
-                memorySize: 256,
-                description: props.version,
-            });
+        const event_handler = new lambda.Function(scope, 'Handler', {
+            runtime: runtime,
+            handler: handler,
+            functionName: serviceName + '-Handler',
+            code: lambda.Code.asset(`./zips/${name}-${props.version}.zip`),
+            vpc: props.vpc,
+            environment: {
+                IS_RETRY: "False",
+                ...environment
+            },
+            timeout: cdk.Duration.seconds(180),
+            memorySize: 256,
+            description: props.version,
+        });
         event_handler.currentVersion.addAlias('live');
 
-        props.watchful.watchLambdaFunction(name + '-Handler', event_handler);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(name + '-Handler', event_handler);
+        }
 
         if (!retry_code_name) {
             retry_code_name = name
@@ -109,25 +109,25 @@ export class Service {
             environment.SOURCE_QUEUE_URL = queues.retry_queue.queueUrl;
         }
 
-        let event_retry_handler = new lambda.Function(
-            scope, 'RetryHandler',
-            {
-                runtime: runtime,
-                handler: handler,
-                functionName: serviceName + '-RetryHandler',
-                code: lambda.Code.asset(`./zips/${retry_code_name}-${props.version}.zip`),
-                vpc: props.vpc,
-                environment: {
-                    IS_RETRY: "True",
-                    ...environment
-                },
-                timeout: cdk.Duration.seconds(360),
-                memorySize: 512,
-                description: props.version,
-            });
+        let event_retry_handler = new lambda.Function(scope, 'RetryHandler', {
+            runtime: runtime,
+            handler: handler,
+            functionName: serviceName + '-RetryHandler',
+            code: lambda.Code.asset(`./zips/${retry_code_name}-${props.version}.zip`),
+            vpc: props.vpc,
+            environment: {
+                IS_RETRY: "True",
+                ...environment
+            },
+            timeout: cdk.Duration.seconds(360),
+            memorySize: 512,
+            description: props.version,
+        });
         event_retry_handler.currentVersion.addAlias('live');
 
-        props.watchful.watchLambdaFunction(name + '-RetryHandler', event_retry_handler);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(name + '-RetryHandler', event_retry_handler);
+        }
 
         event_handler.addEventSource(new SqsEventSource(queues.queue, { batchSize: 10 }));
         event_retry_handler.addEventSource(new SqsEventSource(queues.retry_queue, { batchSize: 10 }));
