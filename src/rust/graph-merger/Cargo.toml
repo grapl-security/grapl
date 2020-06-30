@@ -40,7 +40,7 @@ itertools = "0.8.0"
 futures = "0.3.*"
 async-trait = "0.1.30"
 uuid = "0.8.1"
-tokio-compat = "0.1.2"
-tokio = { version = "0.2.4", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
+tokio-compat = "0.1.6"
+tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 chrono = "0.4.11"
 rusoto_credential = "0.43.0"
