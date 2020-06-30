@@ -52,8 +52,8 @@ serde_derive = "1.0.110"
 
 hex = "0.4.0"
 async-trait = "0.1.21"
-tokio-compat = "0.1.2"
-tokio = { version = "0.2.13", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
+tokio-compat = "0.1.*"
+tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 hmap = "0.1.0"
 tracing = "0.1.13"
 chrono = "0.4.11"
