@@ -10,7 +10,6 @@ import * as s3deploy from "@aws-cdk/aws-s3-deployment";
 import * as aws from "aws-sdk";
 
 import { GraplServiceProps } from './grapl-cdk-stack';
-import { RemovalPolicy } from "@aws-cdk/core";
 import { GraphQLEndpoint } from './graphql';
 
 import * as fs from 'fs';
