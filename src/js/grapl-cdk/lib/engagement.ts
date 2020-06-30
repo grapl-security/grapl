@@ -10,7 +10,6 @@ import * as s3deploy from "@aws-cdk/aws-s3-deployment";
 import * as aws from "aws-sdk";
 
 import { GraplServiceProps } from './grapl-cdk-stack';
-import { RemovalPolicy } from "@aws-cdk/core";
 import { GraphQLEndpoint } from './graphql';
 
 import * as fs from 'fs';
@@ -251,12 +250,11 @@ export class EngagementUx extends cdk.Stack {
     ) {
         super(scope, id, props);
 
-        const edgeBucket = new s3.Bucket(this, 'EdgeBucket', {
-            bucketName: props.prefix.toLowerCase() + '-engagement-ux-bucket',
-            publicReadAccess: true,
-            websiteIndexDocument: 'index.html',
-            removalPolicy: RemovalPolicy.DESTROY
-        });
+        const edgeBucket = s3.Bucket.fromBucketName(
+            this,
+            'uxBucket',
+            props.prefix.toLowerCase() + '-engagement-ux-bucket',
+        );
 
         getEdgeGatewayId(
             [props.engagement_edge.integrationName, props.graphql_endpoint.integrationName],
