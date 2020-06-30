@@ -1,10 +1,12 @@
 import * as cdk from "@aws-cdk/core";
 import * as lambda from "@aws-cdk/aws-lambda";
-import {Runtime} from "@aws-cdk/aws-lambda";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as ec2 from "@aws-cdk/aws-ec2";
+import * as ecs from "@aws-cdk/aws-ecs";
+import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
+import {DGraphEcs} from "./dgraph";
 
 class AnalyzerDeployer extends cdk.NestedStack {
     event_handler: lambda.Function;
@@ -16,48 +18,45 @@ class AnalyzerDeployer extends cdk.NestedStack {
         scope: cdk.Construct,
         id: string,
         prefix: string,
-        jwt_secret: secretsmanager.Secret,
-        analyzer_bucket: s3.IBucket,
+        grapl_version: string,
+        merged_graph_bucket: s3.IBucket,
+        analyzer_matched_bucket: s3.IBucket,
+        model_plugins_bucket: s3.IBucket,
+        master_graph: DGraphEcs,
         vpc: ec2.Vpc,
     ) {
         super(scope, id);
 
-        const environment = {} as any;
-        if (process.env.GITHUB_SHARED_SECRET) {
-            environment.GITHUB_SHARED_SECRET = process.env.GITHUB_SHARED_SECRET;
-        }
-        if (process.env.GITHUB_ACCESS_TOKEN) {
-            environment.GITHUB_ACCESS_TOKEN = process.env.GITHUB_ACCESS_TOKEN;
-        }
-        if (process.env.GITHUB_REPOSITORY_NAME) {
-            environment.GITHUB_REPOSITORY_NAME = process.env.GITHUB_REPOSITORY_NAME;
-        }
+        const cluster = new ecs.Cluster(this, id+'-FargateCluster', {
+            vpc: vpc
+        });
 
-        this.event_handler = new lambda.Function(
-            this, `${id}-handler`, {
-                runtime: Runtime.PYTHON_3_7,
-                handler: `main.lambda_handler`,
-                code: lambda.Code.fromAsset(`./analyzer_deployer.zip`),
-                vpc: vpc,
-                environment: {
-                    ...environment,
-                    "BUCKET_PREFIX": prefix,
-                },
-                timeout: cdk.Duration.seconds(25),
-                memorySize: 256,
+        const zeroTask = new ecs.FargateTaskDefinition(
+            this,
+            id,
+            {
+                cpu: 256,
+                memoryLimitMiB: 512,
             }
         );
 
-        new apigateway.LambdaRestApi(this, id, {
-            handler: this.event_handler,
+        zeroTask.addContainer(id + 'Container', {
+            image: ecs.ContainerImage.fromRegistry("grapl/grapl-analyzer-deployer"),
+            environment: {
+                CUSTOMER_PREFIX: prefix,
+                GRAPL_VERSION: grapl_version,
+                VPC_ID: vpc.vpcId,
+                MERGED_GRAPH_BUCKET_ARN: merged_graph_bucket.bucketArn,
+                ANALYZER_MATCHED_BUCKET_ARN: analyzer_matched_bucket.bucketArn,
+                MODEL_PLUGIN_BUCKET_ARN: model_plugins_bucket.bucketArn,
+                MG_ALPHAS: master_graph.alphaNames.join(",")
+            }
         });
 
-        // We need these permissions so that we can:
-        // * List and read analyzers, to display on the frontend
-        // * Upload new analyzers
-        // * Delete deprecated analyzers
-        analyzer_bucket.grantDelete(this.event_handler);
-        analyzer_bucket.grantReadWrite(this.event_handler);
+        new ecs.FargateService(this, id+'Service', {
+            cluster,  // Required
+            taskDefinition: zeroTask,
+        });
     }
 }
 

@@ -1,6 +1,6 @@
 module.exports = {
     "env": {
-        "browser": true,
+        "browser": false,
         "es2020": true
     },
     "extends": [

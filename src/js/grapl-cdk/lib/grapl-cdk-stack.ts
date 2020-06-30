@@ -5,9 +5,9 @@ import * as sns from "@aws-cdk/aws-sns";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as lambda from "@aws-cdk/aws-lambda";
 import {Runtime} from "@aws-cdk/aws-lambda";
-import * as iam from "@aws-cdk/aws-iam";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
+import * as codedeploy from '@aws-cdk/aws-codedeploy';
 
 import {Service} from "./service";
 import {UserAuthDb} from "./userauthdb";
@@ -213,63 +213,60 @@ class AnalyzerExecutor extends cdk.NestedStack {
         scope: cdk.Construct,
         id: string,
         prefix: string,
+        entrypoint: string, // name of the analyzer entrypoint file
+        analyzer_version: string,
         vpc: ec2.IVpc,
-        reads_analyzers_from: s3.IBucket,
+        event_topic: sns.ITopic,
         writes_events_to: s3.IBucket,
         model_plugins_bucket: s3.IBucket,
         master_graph: DGraphEcs,
+        count_cache: RedisCluster,
+        hit_cache: RedisCluster,
+        message_cache: RedisCluster,
     ) {
         super(scope, id);
 
-        const dispatched_analyzer = new EventEmitter(this, prefix + '-dispatched-analyzer');
-        this.bucket = dispatched_analyzer.bucket;
-        this.topic = dispatched_analyzer.topic;
+        this.topic = event_topic;
 
-        this.count_cache = new RedisCluster(this, 'ExecutorCountCache', vpc);
-        this.hit_cache = new RedisCluster(this, 'ExecutorHitCache', vpc);
-        this.message_cache = new RedisCluster(this, 'ExecutorMsgCache', vpc);
 
-        const service = new Service(
-            this,
-            id,
+
+        const func = new lambda.Function(
+            scope, 'Handler',
             {
+                runtime: lambda.Runtime.PYTHON_3_7,
+                handler: entrypoint,
+                functionName: `Grapl-${name}-Handler`,
+                code: lambda.Code.asset(`./zips/${name}-${analyzer_version}.zip`),
+                vpc,
                 environment: {
-                    "ANALYZER_MATCH_BUCKET": writes_events_to.bucketName,
-                    "BUCKET_PREFIX": prefix,
-                    "MG_ALPHAS": master_graph.alphaNames.join(","),
-                    "COUNTCACHE_ADDR": this.count_cache.cluster.attrRedisEndpointAddress,
-                    "COUNTCACHE_PORT": this.count_cache.cluster.attrRedisEndpointPort,
-                    "MESSAGECACHE_ADDR": this.message_cache.cluster.attrRedisEndpointAddress,
-                    "MESSAGECACHE_PORT": this.message_cache.cluster.attrRedisEndpointPort,
-                    "HITCACHE_ADDR": this.hit_cache.cluster.attrRedisEndpointAddress,
-                    "HITCACHE_PORT": this.hit_cache.cluster.attrRedisEndpointPort,
-                    "GRPC_ENABLE_FORK_SUPPORT": "1",
+                    IS_RETRY: "False",
+                    ...{
+                        "ANALYZER_MATCH_BUCKET": writes_events_to.bucketName,
+                        "BUCKET_PREFIX": prefix,
+                        "MG_ALPHAS": master_graph.alphaNames.join(","),
+                        "COUNTCACHE_ADDR": count_cache.cluster.attrRedisEndpointAddress,
+                        "COUNTCACHE_PORT": count_cache.cluster.attrRedisEndpointPort,
+                        "MESSAGECACHE_ADDR": message_cache.cluster.attrRedisEndpointAddress,
+                        "MESSAGECACHE_PORT": message_cache.cluster.attrRedisEndpointPort,
+                        "HITCACHE_ADDR": hit_cache.cluster.attrRedisEndpointAddress,
+                        "HITCACHE_PORT": hit_cache.cluster.attrRedisEndpointPort,
+                        "GRPC_ENABLE_FORK_SUPPORT": "1",
+                    },
                 },
-                vpc: vpc,
-                reads_from: dispatched_analyzer.bucket,
-                writes_to: writes_events_to,
-                subscribes_to: dispatched_analyzer.topic,
-                opt: {
-                    runtime: lambda.Runtime.PYTHON_3_7
-                }
+                timeout: cdk.Duration.seconds(180),
+                memorySize: 256,
             });
 
-        // We need the List capability to find each of the analyzers
-        service.readsFrom(reads_analyzers_from, true);
-        service.readsFrom(model_plugins_bucket, true);
+        const version = func.latestVersion;
+        const alias = new lambda.Alias(this, 'LambdaAlias', {
+            aliasName: 'Prod',
+            version,
+        });
 
-        // Need to be able to GetObject in order to HEAD, can be replaced with
-        // a cache later, but safe so long as there is no LIST
-        let policy = new iam.PolicyStatement();
-        policy.addActions('s3:GetObject');
-
-        policy.addResources(writes_events_to.bucketArn);
-
-        service.event_handler.addToRolePolicy(policy);
-        service.event_retry_handler.addToRolePolicy(policy);
-
-        service.event_handler.connections.allowToAnyIpv4(ec2.Port.allTraffic(), 'Allow outbound to S3');
-        service.event_retry_handler.connections.allowToAnyIpv4(ec2.Port.allTraffic(), 'Allow outbound to S3');
+        new codedeploy.LambdaDeploymentGroup(this, 'DeploymentGroup', {
+            alias,
+            deploymentConfig: codedeploy.LambdaDeploymentConfig.LINEAR_10PERCENT_EVERY_1MINUTE,
+        });
     }
 }
 
