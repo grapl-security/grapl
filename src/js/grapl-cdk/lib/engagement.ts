@@ -247,12 +247,11 @@ export class EngagementUx extends cdk.Stack {
     ) {
         super(scope, id, props);
 
-        const edgeBucket = new s3.Bucket(this, 'EdgeBucket', {
-            bucketName: props.prefix.toLowerCase() + '-engagement-ux-bucket',
-            publicReadAccess: true,
-            websiteIndexDocument: 'index.html',
-            removalPolicy: RemovalPolicy.DESTROY
-        });
+        const edgeBucket = s3.Bucket.fromBucketName(
+            this,
+            'uxBucket',
+            props.prefix.toLowerCase() + '-engagement-ux-bucket',
+        );
 
         getEdgeGatewayId(
             [props.engagement_edge.integrationName, props.graphql_endpoint.integrationName],

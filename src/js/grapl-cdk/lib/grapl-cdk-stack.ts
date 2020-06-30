@@ -21,6 +21,7 @@ import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
 
 import { Watchful } from "./vendor/cdk-watchful/lib/watchful";
+import {RemovalPolicy} from "@aws-cdk/core";
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket,
@@ -670,10 +671,18 @@ export class GraplCdkStack extends cdk.Stack {
             graplProps
          );
 
+        const ux_bucket = new s3.Bucket(this, 'EdgeBucket', {
+            bucketName: graplProps.prefix.toLowerCase() + '-engagement-ux-bucket',
+            publicReadAccess: true,
+            websiteIndexDocument: 'index.html',
+            removalPolicy: RemovalPolicy.DESTROY
+        });
+
         this.graphql_endpoint = new GraphQLEndpoint(
             this,
             'GraphqlEndpoint',
             graplProps,
+            ux_bucket,
         );
     }
 }
