@@ -4,15 +4,12 @@ import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
-import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
-import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import {DGraphEcs} from "./dgraph";
+import * as iam from "@aws-cdk/aws-iam";
 
 class AnalyzerDeployer extends cdk.NestedStack {
     event_handler: lambda.Function;
-    integration: apigateway.LambdaRestApi;
     name: string;
-    integrationName: string;
 
     constructor(
         scope: cdk.Construct,
@@ -27,11 +24,11 @@ class AnalyzerDeployer extends cdk.NestedStack {
     ) {
         super(scope, id);
 
-        const cluster = new ecs.Cluster(this, id+'-FargateCluster', {
+        const cluster = new ecs.Cluster(this, id + '-FargateCluster', {
             vpc: vpc
         });
 
-        const zeroTask = new ecs.FargateTaskDefinition(
+        const task = new ecs.FargateTaskDefinition(
             this,
             id,
             {
@@ -40,7 +37,7 @@ class AnalyzerDeployer extends cdk.NestedStack {
             }
         );
 
-        zeroTask.addContainer(id + 'Container', {
+        task.addContainer(id + 'Container', {
             image: ecs.ContainerImage.fromRegistry("grapl/grapl-analyzer-deployer"),
             environment: {
                 CUSTOMER_PREFIX: prefix,
@@ -53,10 +50,20 @@ class AnalyzerDeployer extends cdk.NestedStack {
             }
         });
 
-        new ecs.FargateService(this, id+'Service', {
+        new ecs.FargateService(this, id + 'Service', {
             cluster,  // Required
-            taskDefinition: zeroTask,
+            taskDefinition: task,
         });
+
+        // Give it permissions to create and modify the Analyzer stack
+        // This should be safe because this only grants access to one specific stack, which incorporates
+        // the customer name
+        const cfPolicy = new iam.PolicyStatement();
+
+        cfPolicy.addActions('cloudformation:*');
+        // TODO: Limit region and account as well
+        cfPolicy.addResources(`arn:aws:cloudformation:::stack/${prefix}-Analyzers-*-pack/*`);
+        task.addToTaskRolePolicy(cfPolicy);
     }
 }
 

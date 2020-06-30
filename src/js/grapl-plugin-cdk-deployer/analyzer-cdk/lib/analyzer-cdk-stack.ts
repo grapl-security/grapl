@@ -166,7 +166,7 @@ export class AnalyzerCdkStack extends cdk.Stack {
         analyzer_matched_bucket_arn,
     );
 
-// TODO: We should use a lambda layer for model plugins, but for now this will do
+    // TODO: We should use a lambda layer for model plugins, but for now this will do
     const model_plugin_bucket = s3.Bucket.fromBucketArn(
         scope,
         'modelPluginBucketBucket',
