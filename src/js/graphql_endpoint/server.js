@@ -12,7 +12,7 @@ const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;  // get this from env
 let origin = true;
 
 if (!IS_LOCAL) {
-    origin = process.env.UX_BUCKET;
+    origin = process.env.UX_BUCKET_URL;
 }
 
 // TODO: Move cors to its own module
