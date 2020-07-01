@@ -384,7 +384,8 @@ export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket,
 }
 
-class ModelPluginDeployer extends cdk.NestedStack {
+export class ModelPluginDeployer extends cdk.NestedStack {
+    integrationName: string;
 
     constructor(
         parent: cdk.Construct,
@@ -394,6 +395,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
         super(parent, id);
 
         const serviceName = props.prefix + '-ModelPluginDeployer';
+        this.integrationName = id + props.prefix + 'Integration';
 
         const event_handler = new lambda.Function(
             this, 'Handler', {
@@ -431,7 +433,8 @@ class ModelPluginDeployer extends cdk.NestedStack {
             this,
             'Integration',
             {
-                restApiName: serviceName + '-Integration',
+                restApiName: this.integrationName,
+                endpointExportName: serviceName + '-EndpointApi',
                 handler: event_handler,
             },
         );
@@ -521,6 +524,7 @@ export class GraplCdkStack extends cdk.Stack {
     prefix: string;
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
+    model_plugin_deployer: ModelPluginDeployer;
 
     constructor(scope: cdk.Construct, id: string, props: GraplStackProps) {
         super(scope, id, props);
@@ -607,7 +611,7 @@ export class GraplCdkStack extends cdk.Stack {
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
-        new ModelPluginDeployer(
+        this.model_plugin_deployer = new ModelPluginDeployer(
             this,
             'model-plugin-deployer', {
                 modelPluginBucket: model_plugins_bucket,
