@@ -97,6 +97,12 @@ export class EngagementEdge extends cdk.NestedStack {
     ) {
         super(scope, id);
 
+        const ux_bucket = s3.Bucket.fromBucketName(
+            this,
+            'uxBucket',
+            props.prefix.toLowerCase() + '-engagement-ux-bucket',
+    );
+
         const serviceName = props.prefix + '-EngagementEdge';
         this.name = id + props.prefix;
         this.integrationName = id + props.prefix + 'Integration';
@@ -112,7 +118,7 @@ export class EngagementEdge extends cdk.NestedStack {
                 "MG_ALPHAS": props.masterGraph.alphaHostPorts().join(","),
                 "JWT_SECRET_ID": props.jwtSecret.secretArn,
                 "USER_AUTH_TABLE": props.userAuthTable.user_auth_table.tableName,
-                "BUCKET_PREFIX": props.prefix,
+                "UX_BUCKET_URL": ux_bucket.bucketRegionalDomainName,
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
@@ -272,6 +278,7 @@ export class EngagementUx extends cdk.Stack {
                 const replaceMap = new Map();
                 replaceMap.set(`http://"+window.location.hostname+":8900/`, loginUrl);
                 replaceMap.set(`http://"+window.location.hostname+":5000/`, graphQLUrl);
+                replaceMap.set(`http://"+window.location.hostname+":8123/`, graphQLUrl);
 
                 dir.readFiles(srcDir,
                     function(err: any, content: any, filename: string, next: any) {

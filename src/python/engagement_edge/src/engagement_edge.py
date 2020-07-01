@@ -31,12 +31,8 @@ else:
 
     JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
+ORIGIN = os.environ["UX_BUCKET_URL"]
 
-ORIGIN = (
-    "https://"
-    + os.environ["BUCKET_PREFIX"].lower()
-    + "engagement-ux-bucket.s3.amazonaws.com"
-)
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 DYNAMO = None
 
