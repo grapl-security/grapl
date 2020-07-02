@@ -64,6 +64,8 @@ image=grapl-analyzerlib-python-build:
   target: grapl-analyzerlib-python-build
   depends:
     - graph-descriptions-python-build
+  tags:
+    - latest
 
 image=analyzer-executor-python-build:
   image: grapl/analyzer-executor-build
@@ -72,6 +74,8 @@ image=analyzer-executor-python-build:
   target: analyzer-executor-build
   depends:
     - grapl-analyzerlib-python-build
+  tags:
+    - latest
 
 image=engagement-creator-python-build:
   image: grapl/engagement-creator-build
@@ -80,6 +84,8 @@ image=engagement-creator-python-build:
   target: engagement-creator-build
   depends:
     - grapl-analyzerlib-python-build
+  tags:
+    - latest
 
 image=engagement-edge-python-build:
   image: grapl/engagement-edge-build
@@ -88,6 +94,8 @@ image=engagement-edge-python-build:
   target: engagement-edge-build
   depends:
     - grapl-analyzerlib-python-build
+  tags:
+    - latest
 
 image=grapl-dgraph-ttl-python-build:
   image: grapl/grapl-dgraph-ttl-build
@@ -96,6 +104,8 @@ image=grapl-dgraph-ttl-python-build:
   target: grapl-dgraph-ttl-build
   depends:
     - grapl-analyzerlib-python-build
+  tags:
+    - latest
 
 image=grapl-model-plugin-deployer-python-build:
   image: grapl/grapl-model-plugin-deployer-build
@@ -104,6 +114,8 @@ image=grapl-model-plugin-deployer-python-build:
   target: grapl-model-plugin-deployer-build
   depends:
     - grapl-analyzerlib-python-build
+  tags:
+    - latest
 
 image=grapl-notebook-build:
   image: grapl/grapl-notebook
