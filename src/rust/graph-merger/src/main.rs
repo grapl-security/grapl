@@ -184,7 +184,7 @@ struct GraphMerger<CacheT>
 where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
-    mg_alphas: Vec<String>,
+    mg_client: Arc<DgraphClient>,
     cache: CacheT,
 }
 
@@ -193,7 +193,31 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(mg_alphas: Vec<String>, cache: CacheT) -> Self {
-        Self { mg_alphas, cache }
+        let mg_client = {
+            let mut rng = thread_rng();
+            let rand_alpha = mg_alphas
+                .choose(&mut rng)
+                .expect("Empty rand_alpha")
+                .to_owned();
+            let (host, port) = grapl_config::parse_host_port(rand_alpha);
+
+            debug!("connecting to DGraph {:?}:{:?}", host, port);
+            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
+                Client::new_plain(
+                    &host,
+                    port,
+                    ClientConf {
+                        ..Default::default()
+                    },
+                )
+                .expect("Failed to create dgraph client"),
+            ))])
+        };
+
+        Self {
+            mg_client: Arc::new(mg_client),
+            cache,
+        }
     }
 }
 
@@ -447,28 +471,6 @@ where
             subgraph.edges.len()
         );
 
-        let mg_client = {
-            let mut rng = thread_rng();
-            let rand_alpha = self
-                .mg_alphas
-                .choose(&mut rng)
-                .expect("Empty rand_alpha")
-                .to_owned();
-            let (host, port) = grapl_config::parse_host_port(rand_alpha);
-
-            debug!("connecting to DGraph {:?}:{:?}", host, port);
-            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
-                Client::new_plain(
-                    &host,
-                    port,
-                    ClientConf {
-                        ..Default::default()
-                    },
-                )
-                .expect("Failed to create dgraph client"),
-            ))])
-        };
-
         //        async_handler(mg_client, subgraph).await;
 
         let mut upsert_res = None;
@@ -477,7 +479,7 @@ where
         let mut node_key_to_uid = HashMap::new();
         use futures::future::FutureExt;
         let upserts = subgraph.nodes.values().map(|node| {
-            upsert_node(&mg_client, node.clone()).map(move |u| (node.clone_node_key(), u))
+            upsert_node(&self.mg_client, node.clone()).map(move |u| (node.clone_node_key(), u))
         });
 
         let upserts = log_time!("All upserts", join_all(upserts).await);
@@ -541,7 +543,7 @@ where
                     }
                 }
             })
-            .map(|mu| upsert_edge(&mg_client, mu))
+            .map(|mu| upsert_edge(&self.mg_client, mu))
             .collect();
 
         let _: Vec<_> = join_all(edge_mutations).await;
