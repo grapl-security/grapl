@@ -396,6 +396,11 @@ export class ModelPluginDeployer extends cdk.NestedStack {
 
         const serviceName = props.prefix + '-ModelPluginDeployer';
         this.integrationName = id + props.prefix + 'Integration';
+        const ux_bucket = s3.Bucket.fromBucketName(
+            this,
+            'uxBucket',
+            props.prefix.toLowerCase() + '-engagement-ux-bucket',
+        );
 
         const event_handler = new lambda.Function(
             this, 'Handler', {
@@ -409,6 +414,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
                     "JWT_SECRET_ID": props.jwtSecret.secretArn,
                     "USER_AUTH_TABLE": props.userAuthTable.user_auth_table.tableName,
                     "BUCKET_PREFIX": props.prefix,
+                    "UX_BUCKET_URL": "https://" + ux_bucket.bucketRegionalDomainName,
                 },
                 timeout: cdk.Duration.seconds(25),
                 memorySize: 256,
