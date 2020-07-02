@@ -67,11 +67,15 @@ jobs:
           fi
           deactivate
 
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+
       - name: Build Grapl
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          TAG="$VERSION-$CHANNEL" docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-arg release_target=release
+          TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount release
           docker system prune -f
 
       - name: Log in to Docker registry
@@ -102,71 +106,49 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          docker create -ti --name cp-sysmon-subgraph-generator grapl/grapl-sysmon-subgraph-generator:$VERSION-$CHANNEL
-          docker cp cp-sysmon-subgraph-generator:/sysmon-subgraph-generator ./bootstrap
-          docker rm -f cp-sysmon-subgraph-generator
+          cp dist/sysmon-subgraph-generator ./bootstrap
           zip -9 sysmon-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=sysmon-subgraph-generator::sysmon-subgraph-generator-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-generic-subgraph-generator grapl/grapl-generic-subgraph-generator:$VERSION-$CHANNEL
-          docker cp cp-generic-subgraph-generator:/generic-subgraph-generator ./bootstrap
-          docker rm -f cp-generic-subgraph-generator
+          cp dist/generic-subgraph-generator ./bootstrap
           zip -9 generic-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=generic-subgraph-generator::generic-subgraph-generator-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-node-identifier grapl/grapl-node-identifier:$VERSION-$CHANNEL
-          docker cp cp-node-identifier:/node-identifier ./bootstrap
-          docker rm -f cp-node-identifier
+          cp dist/node-identifier ./bootstrap
           zip -9 node-identifier-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=node-identifier::node-identifier-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-node-identifier-retry-handler grapl/grapl-node-identifier-retry-handler:$VERSION-$CHANNEL
-          docker cp cp-node-identifier-retry-handler:/node-identifier-retry-handler ./bootstrap
-          docker rm -f cp-node-identifier-retry-handler
+          cp dist/node-identifier-retry-handler ./bootstrap
           zip -9 node-identifier-retry-handler-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=node-identifier-retry-handler::node-identifier-retry-handler-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-graph-merger grapl/grapl-graph-merger:$VERSION-$CHANNEL
-          docker cp cp-graph-merger:/graph-merger ./bootstrap
-          docker rm -f cp-graph-merger
+          cp dist/graph-merger ./bootstrap
           zip -9 graph-merger-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=graph-merger::graph-merger-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-analyzer-dispatcher grapl/grapl-analyzer-dispatcher:$VERSION-$CHANNEL
-          docker cp cp-analyzer-dispatcher:/analyzer-dispatcher ./bootstrap
-          docker rm -f cp-analyzer-dispatcher
+          cp dist/analyzer-dispatcher ./bootstrap
           zip -9 analyzer-dispatcher-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-analyzer-executor grapl/grapl-analyzer-executor:$VERSION-$CHANNEL
-          docker cp cp-analyzer-executor:/home/grapl/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
-          docker rm -f cp-analyzer-executor
+          cp dist/analyzer-executor/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
           echo "::set-output name=analyzer-executor::analyzer-executor-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-engagement-creator grapl/grapl-engagement-creator:$VERSION-$CHANNEL
-          docker cp cp-engagement-creator:/home/grapl/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
-          docker rm -f cp-engagement-creator
+          cp dist/engagement-creator/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
           echo "::set-output name=engagement-creator::engagement-creator-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-engagement-edge grapl/grapl-engagement-edge:$VERSION-$CHANNEL
-          docker cp cp-engagement-edge:/home/grapl/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
-          docker rm -f cp-engagement-edge
+          cp dist/engagement-edge/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
           echo "::set-output name=engagement-edge::engagement-edge-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-model-plugin-deployer grapl/grapl-model-plugin-deployer:$VERSION-$CHANNEL
-          docker cp cp-model-plugin-deployer:/home/grapl/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
-          docker rm -f cp-model-plugin-deployer
+          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
           echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$VERSION-$CHANNEL.zip"
 
-          docker create -ti --name cp-graphql-endpoint grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL
-          docker cp cp-graphql-endpoint:/lambda.zip graphql-endpoint-$VERSION-$CHANNEL.zip
-          docker rm -f cp-graphql-endpoint
+          cp dist/graphql-endpoint/lambda.zip graphql-endpoint-$VERSION-$CHANNEL.zip
           echo "::set-output name=graphql-endpoint::graphql-endpoint-$VERSION-$CHANNEL.zip"
 
       - name: Upload sysmon-subgraph-generator to Github

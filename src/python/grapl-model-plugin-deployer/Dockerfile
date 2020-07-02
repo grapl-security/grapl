@@ -7,6 +7,7 @@ COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
 RUN /bin/bash -c "source venv/bin/activate && cd grapl-model-plugin-deployer && pip install ."
 RUN zip --quiet -9r lambda.zip venv/lib/python3.7/site-packages/
 RUN zip -g lambda.zip grapl-model-plugin-deployer/src/grapl_model_plugin_deployer.py
+RUN mkdir -p dist/grapl-model-plugin-deployer && cp lambda.zip dist/grapl-model-plugin-deployer/lambda.zip
 
 FROM grapl/grapl-python-deploy AS grapl-model-plugin-deployer
 USER grapl

@@ -132,3 +132,11 @@ RUN if test "${release_target}" = "release"; then \
       cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl --release; \
     fi
+# Move artifacts to dist mount
+RUN mkdir -p /home/grapl/dist && \
+    mv target/x86_64-unknown-linux-musl/${release_target}/analyzer-dispatcher dist/analyzer-dispatcher && \
+    mv target/x86_64-unknown-linux-musl/${release_target}/generic-subgraph-generator dist/generic-subgraph-generator && \
+    mv target/x86_64-unknown-linux-musl/${release_target}/graph-merger dist/graph-merger && \
+    mv target/x86_64-unknown-linux-musl/${release_target}/node-identifier dist/node-identifier && \
+    mv target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler dist/node-identifier-retry-handler && \
+    mv target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator \
