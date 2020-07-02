@@ -628,9 +628,6 @@ where
             return OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![])));
         }
 
-        let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-        //        let dynamo = DynamoDbClient::new(region.clone());
-
         // Merge all of the subgraphs into one subgraph to avoid
         // redundant work
         let unid_subgraph =
@@ -659,7 +656,7 @@ where
         );
 
         // Create any implicit asset id mappings
-        if let Err(e) = create_asset_id_mappings(&asset_id_db, &unid_subgraph).await {
+        if let Err(e) = create_asset_id_mappings(&self.asset_mapping_db, &unid_subgraph).await {
             error!("Asset mapping creation failed with {}", e);
             return OutputEvent::new(Completion::Error(
                 sqs_lambda::error::Error::ProcessingError(e.to_string()),
