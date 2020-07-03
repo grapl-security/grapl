@@ -22,14 +22,29 @@ from pydgraph import DgraphClient
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
 if IS_LOCAL:
-    JWT_SECRET = str(uuid.uuid4())
-    os.environ["BUCKET_PREFIX"] = "local-grapl"
+    import time
+    while True:
+        try:
+            secretsmanager = boto3.client(
+                "secretsmanager",
+                region_name='us-east-1',
+                aws_access_key_id="dummy_cred_aws_access_key_id",
+                aws_secret_access_key="dummy_cred_aws_secret_access_key",
+                endpoint_url='http://secretsmanager.us-east-1.amazonaws.com:4566'
+            )
+
+            JWT_SECRET = secretsmanager.get_secret_value(SecretId='JWT_SECRET_ID',)["SecretString"]
+        except Exception as e:
+            print(e)
+            time.sleep(1)
+
+    console.log("JWT SECRET", JWT_SECRET)
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
-    client = boto3.client("secretsmanager")
+    secretsmanager = boto3.client("secretsmanager")
 
-    JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
+    JWT_SECRET = secretsmanager.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
 
 ORIGIN = (
@@ -508,8 +523,8 @@ def login(username, password):
 
 
 def check_jwt(headers):
-    if IS_LOCAL:
-        return True
+    # if IS_LOCAL:
+    #     return True
 
     encoded_jwt = None
     for cookie in headers.get("Cookie", "").split(";"):
@@ -552,10 +567,10 @@ def requires_auth(path):
             if app.current_request.method == "OPTIONS":
                 return respond(None, {})
 
-            if not IS_LOCAL:  # For now, disable authentication locally
-                if not check_jwt(app.current_request.headers):
-                    LOGGER.warn("not logged in")
-                    return respond("Must log in")
+            # if not IS_LOCAL:  # For now, disable authentication locally
+            if not check_jwt(app.current_request.headers):
+                LOGGER.warn("not logged in")
+                return respond("Must log in")
             try:
                 return route_fn()
             except Exception as e:

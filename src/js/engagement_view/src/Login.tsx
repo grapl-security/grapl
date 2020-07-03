@@ -30,10 +30,10 @@ export const LogIn = (_: LoginProps) => {
             values.userName, values.password
           );
           
-          const loginSuccess = login(values.userName, password);
+          const loginSuccess = await login(values.userName, password);
           
-          if (loginSuccess) {
-            window.history.replaceState('/login', "", "/")
+          if (loginSuccess === true) {
+            window.history.replaceState('#/login', "", "#/")
             console.log("Logged in");
           } else {
             console.warn("Login failed!")

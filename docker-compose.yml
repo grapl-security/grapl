@@ -25,6 +25,19 @@ services:
     logging:
       driver: none
 
+  secretsmanager:
+    image: localstack/localstack
+    environment:
+      - PORT_WEB_UI=8099
+      - SERVICES=secretsmanager:4569
+      - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
+    ports:
+      - "4568:4568"
+      - "8099:8099"
+    # logging:
+    #   driver: none
+    
+
   s3:
     image: minio/minio
     command: server /data
@@ -220,7 +233,8 @@ services:
     tty: true
     links:
       - grapl-master-graph-db:master_graph
-
+      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
+      
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'
@@ -233,6 +247,7 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
+      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
@@ -273,8 +288,10 @@ services:
     environment:
       - IS_LOCAL=True
       - PORT=5000
+      - JWT_SECRET_ID=JWT_SECRET_ID
     links:
       - grapl-master-graph-db:master_graph
+      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     ports:
       - 5000:5000
 
@@ -301,6 +318,7 @@ services:
       - grapl-master-graph-db:master_graph
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
+      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1

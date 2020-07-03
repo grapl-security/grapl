@@ -4,6 +4,7 @@ import time
 
 from typing import *
 
+import botocore
 import boto3
 import pydgraph
 from grapl_analyzerlib.schemas import *
@@ -12,6 +13,13 @@ from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
 from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
 from pydgraph import DgraphClient, DgraphClientStub
+
+def create_secret(secretsmanager):
+    secretsmanager.create_secret(
+        Name="JWT_SECRET_ID",
+        SecretString="jwt_secret",
+    )
+
 
 
 def set_schema(client, schema) -> None:
@@ -260,6 +268,8 @@ def sqs_provision_loop() -> None:
 
 if __name__ == "__main__":
     time.sleep(5)
+
+
     local_dg_provision_client = DgraphClient(DgraphClientStub("master_graph:9080"))
 
     print("Provisioning graph database")
@@ -295,4 +305,25 @@ if __name__ == "__main__":
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
 
+    boto3.set_stream_logger(name='botocore')
+
+    while True:
+        try:
+            client = boto3.client(
+                service_name = "secretsmanager",
+                region_name="us-east-1",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+                aws_access_key_id="dummy_cred_aws_access_key_id",
+                aws_secret_access_key="dummy_cred_aws_secret_access_key",
+            )
+
+            create_secret(client)
+        except botocore.exceptions.ClientError as e:
+            if 'ResourceExistsException' in e.__class__.__name__:
+                break
+            else:
+                print(e)
+        except Exception as e:
+            print(e)
+            time.sleep(1)
     print("Completed provisioning")
