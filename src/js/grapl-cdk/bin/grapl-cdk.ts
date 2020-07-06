@@ -13,7 +13,7 @@ const app = new cdk.App();
 const grapl = new GraplCdkStack(app, 'Grapl', {
     version: graplVersion,
     stackName: deployName,
-    tags: {'grapl deployment': deployName},
+    tags: { 'grapl deployment': deployName },
     watchfulEmail,
 });
 

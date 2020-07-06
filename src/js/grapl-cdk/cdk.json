@@ -1,6 +1,6 @@
 {
-  "app": "npx ts-node bin/grapl-cdk.ts",
-  "context": {
-    "@aws-cdk/core:newStyleStackSynthesis": true
-  }
+    "app": "npx ts-node bin/grapl-cdk.ts",
+    "context": {
+        "@aws-cdk/core:newStyleStackSynthesis": true
+    }
 }
