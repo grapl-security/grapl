@@ -35,8 +35,6 @@ export const LogIn = (_: LoginProps) => {
           if (await loginSuccess) {
             window.history.replaceState('/login', "", "/")
             window.location.reload();
-            console.log("Logged in");
-            console.log("LoginSuccess", loginSuccess)
           } else {
             console.warn("Login failed!")
           }
