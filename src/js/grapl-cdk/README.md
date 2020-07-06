@@ -51,6 +51,12 @@ Some tips for choosing a deployment name:
 - Keep "Grapl" as prefix. This isn't necessary, but will help identify Grapl resources in your AWS account.
 - Choose a globally unique name, as this will be used to name S3 buckets, which have this requiement. Using a name that includes your AWS account number and deployment region should work.
 
+To enable [Watchful](https://github.com/eladb/cdk-watchful) for monitoring Grapl with email alerts, specify the email address to receive alerts:
+
+```
+const watchfulEmail = 'YOUR@EMAIL';
+```
+
 ## Deploying
 
 To deploy Grapl with the CDK, execute the following

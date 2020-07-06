@@ -10,3 +10,6 @@ cdk.out
 # Parcel build directories
 .cache
 .build
+
+# do not ignore our UX
+!edge_ux/**/*.js

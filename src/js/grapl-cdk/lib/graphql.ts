@@ -1,6 +1,7 @@
 import * as cdk from "@aws-cdk/core";
 import * as lambda from "@aws-cdk/aws-lambda";
 import * as apigateway from "@aws-cdk/aws-apigateway";
+import * as s3 from "@aws-cdk/aws-s3";
 
 import { GraplServiceProps } from './grapl-cdk-stack';
 
@@ -11,6 +12,7 @@ export class GraphQLEndpoint extends cdk.Construct {
         parent: cdk.Construct,
         id: string,
         props: GraplServiceProps,
+        ux_bucket: s3.IBucket,
     ) {
         super(parent, id);
 
@@ -28,6 +30,7 @@ export class GraphQLEndpoint extends cdk.Construct {
                     "MG_ALPHAS": props.masterGraph.alphaHostPorts().join(","),
                     "JWT_SECRET_ID": props.jwtSecret.secretArn,
                     "BUCKET_PREFIX": props.prefix,
+                    "UX_BUCKET_URL": "https://" + ux_bucket.bucketRegionalDomainName,
                 },
                 timeout: cdk.Duration.seconds(25),
                 memorySize: 128,
@@ -36,7 +39,9 @@ export class GraphQLEndpoint extends cdk.Construct {
         );
         event_handler.currentVersion.addAlias('live');
 
-        props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        }
 
         if (event_handler.role) {
             props.jwtSecret.grantRead(event_handler.role);
@@ -52,16 +57,18 @@ export class GraphQLEndpoint extends cdk.Construct {
             },
         );
 
-        props.watchful.watchApiGateway(this.integrationName, integration, {
-            serverErrorThreshold: 1, // any 5xx alerts
-            cacheGraph: true,
-            watchedOperations: [
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/graphql"
-                },
-            ]
-        });
+        if (props.watchful) {
+            props.watchful.watchApiGateway(this.integrationName, integration, {
+                serverErrorThreshold: 1, // any 5xx alerts
+                cacheGraph: true,
+                watchedOperations: [
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/graphql"
+                    },
+                ]
+            });
+        }
 
         integration.addUsagePlan('graphQLApiUsagePlan', {
             quota: {

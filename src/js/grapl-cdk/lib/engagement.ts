@@ -9,23 +9,23 @@ import * as s3deploy from "@aws-cdk/aws-s3-deployment";
 
 import * as aws from "aws-sdk";
 
-import { GraplServiceProps } from './grapl-cdk-stack';
-import { RemovalPolicy } from "@aws-cdk/core";
-import { GraphQLEndpoint } from './graphql';
+import {GraplServiceProps, ModelPluginDeployer} from './grapl-cdk-stack';
+import {GraphQLEndpoint} from './graphql';
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from 'node-dir';
 
 function getEdgeGatewayId(
-    [loginName, graphqlName]: [string, string],
-    cb: any
+    [loginName, graphqlName, modelPluginName]: [string, string, string],
+    cb: (loginId: string, graphqlId: string, modelPluginId: string) => void,
 ) {
     let apigateway = new aws.APIGateway();
 
-    apigateway.getRestApis({}, function(err, data: any) {
+    apigateway.getRestApis({}, function (err, data: any) {
         let edgeId = undefined;
         let graphId = undefined;
+        let modelPluginId = undefined;
 
         if (err) {
             console.log('Error getting edge gateway ID', err);
@@ -42,14 +42,19 @@ function getEdgeGatewayId(
                 graphId = item.id;
                 continue
             }
+            if (item.name === modelPluginName) {
+                console.log(`modelPlugin restApi ID ${item.id}`);
+                modelPluginId = item.id;
+                continue
+            }
 
-            if (edgeId && graphId) {
+            if (edgeId && graphId && modelPluginId) {
                 break
             }
         }
 
-        if (edgeId && graphId) {
-            cb(edgeId, graphId);
+        if (edgeId && graphId && modelPluginId) {
+            cb(edgeId, graphId, modelPluginId);
         } else {
             console.warn(false, 'Could not find any integrations. Ensure you have deployed engagement edge.')
         }
@@ -68,8 +73,8 @@ function replaceInFile(
         let replaced = data;
         for (const [toReplace, replaceWith] of replaceMap.entries()) {
             replaced = replaced
-            .split(toReplace)
-            .join(replaceWith);
+                .split(toReplace)
+                .join(replaceWith);
         }
 
         if (outputFile) {
@@ -98,30 +103,38 @@ export class EngagementEdge extends cdk.NestedStack {
     ) {
         super(scope, id);
 
+        const ux_bucket = s3.Bucket.fromBucketName(
+            this,
+            'uxBucket',
+            props.prefix.toLowerCase() + '-engagement-ux-bucket',
+        );
+
         const serviceName = props.prefix + '-EngagementEdge';
         this.name = id + props.prefix;
         this.integrationName = id + props.prefix + 'Integration';
 
         this.event_handler = new lambda.Function(
             this, 'Handler', {
-            runtime: lambda.Runtime.PYTHON_3_7,
-            handler: `engagement_edge.app`,
-            functionName: serviceName + '-Handler',
-            code: lambda.Code.fromAsset(`./zips/engagement-edge-${props.version}.zip`),
-            vpc: props.vpc,
-            environment: {
-                "MG_ALPHAS": props.masterGraph.alphaHostPorts().join(","),
-                "JWT_SECRET_ID": props.jwtSecret.secretArn,
-                "USER_AUTH_TABLE": props.userAuthTable.user_auth_table.tableName,
-                "BUCKET_PREFIX": props.prefix,
-            },
-            timeout: cdk.Duration.seconds(25),
-            memorySize: 256,
-            description: props.version,
-        });
+                runtime: lambda.Runtime.PYTHON_3_7,
+                handler: `engagement_edge.app`,
+                functionName: serviceName + '-Handler',
+                code: lambda.Code.fromAsset(`./zips/engagement-edge-${props.version}.zip`),
+                vpc: props.vpc,
+                environment: {
+                    "MG_ALPHAS": props.masterGraph.alphaHostPorts().join(","),
+                    "JWT_SECRET_ID": props.jwtSecret.secretArn,
+                    "USER_AUTH_TABLE": props.userAuthTable.user_auth_table.tableName,
+                    "UX_BUCKET_URL": "https://" + ux_bucket.bucketRegionalDomainName,
+                },
+                timeout: cdk.Duration.seconds(25),
+                memorySize: 256,
+                description: props.version,
+            });
         this.event_handler.currentVersion.addAlias('live');
 
-        props.watchful.watchLambdaFunction(this.event_handler.functionName, this.event_handler);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(this.event_handler.functionName, this.event_handler);
+        }
 
         if (this.event_handler.role) {
             props.jwtSecret.grantRead(this.event_handler.role);
@@ -138,48 +151,50 @@ export class EngagementEdge extends cdk.NestedStack {
             },
         );
 
-        props.watchful.watchApiGateway(this.integrationName, this.integration, {
-            serverErrorThreshold: 1, // any 5xx alerts
-            cacheGraph: true,
-            watchedOperations: [
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/login"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/login"
-                },
-                {
-                    httpMethod: "GET",
-                    resourcePath: "/login"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/checkLogin"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/checkLogin"
-                },
-                {
-                    httpMethod: "GET",
-                    resourcePath: "/checkLogin"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/{proxy+}"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/{proxy+}"
-                },
-                {
-                    httpMethod: "GET",
-                    resourcePath: "/{proxy+}"
-                },
-            ]
-        });
+        if (props.watchful) {
+            props.watchful.watchApiGateway(this.integrationName, this.integration, {
+                serverErrorThreshold: 1, // any 5xx alerts
+                cacheGraph: true,
+                watchedOperations: [
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/login"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/login"
+                    },
+                    {
+                        httpMethod: "GET",
+                        resourcePath: "/login"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/checkLogin"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/checkLogin"
+                    },
+                    {
+                        httpMethod: "GET",
+                        resourcePath: "/checkLogin"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/{proxy+}"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/{proxy+}"
+                    },
+                    {
+                        httpMethod: "GET",
+                        resourcePath: "/{proxy+}"
+                    },
+                ]
+            });
+        }
 
         this.integration.addUsagePlan('loginApiUsagePlan', {
             quota: {
@@ -212,7 +227,7 @@ export class EngagementNotebook extends cdk.NestedStack {
             defaultPort: ec2.Port.allTcp()
         });
 
-        const role = new iam.Role(this, 'Role',{
+        const role = new iam.Role(this, 'Role', {
             assumedBy: new iam.ServicePrincipal('sagemaker.amazonaws.com')
         });
 
@@ -237,6 +252,7 @@ interface EngagementUxProps extends cdk.StackProps {
     prefix: string,
     engagement_edge: EngagementEdge,
     graphql_endpoint: GraphQLEndpoint,
+    model_plugin_deployer: ModelPluginDeployer,
 }
 
 export class EngagementUx extends cdk.Stack {
@@ -247,16 +263,19 @@ export class EngagementUx extends cdk.Stack {
     ) {
         super(scope, id, props);
 
-        const edgeBucket = new s3.Bucket(this, 'EdgeBucket', {
-            bucketName: props.prefix.toLowerCase() + '-engagement-ux-bucket',
-            publicReadAccess: true,
-            websiteIndexDocument: 'index.html',
-            removalPolicy: RemovalPolicy.DESTROY
-        });
+        const edgeBucket = s3.Bucket.fromBucketName(
+            this,
+            'uxBucket',
+            props.prefix.toLowerCase() + '-engagement-ux-bucket',
+        );
 
         getEdgeGatewayId(
-            [props.engagement_edge.integrationName, props.graphql_endpoint.integrationName],
-            (loginGatewayId: string, graphQLGatewayId: string) => {
+            [
+                props.engagement_edge.integrationName,
+                props.graphql_endpoint.integrationName,
+                props.model_plugin_deployer.integrationName,
+            ],
+            (loginGatewayId: string, graphQLGatewayId: string, modelPluginGatewayId: string) => {
                 const srcDir = path.join(__dirname, "../edge_ux/");
                 const packageDir = path.join(__dirname, "../edge_ux_package/");
 
@@ -266,19 +285,21 @@ export class EngagementUx extends cdk.Stack {
 
                 const loginUrl = `https://${loginGatewayId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
                 const graphQLUrl = `https://${graphQLGatewayId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
+                const modelPluginUrl = `https://${modelPluginGatewayId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
 
                 const replaceMap = new Map();
                 replaceMap.set(`http://"+window.location.hostname+":8900/`, loginUrl);
                 replaceMap.set(`http://"+window.location.hostname+":5000/`, graphQLUrl);
+                replaceMap.set(`http://"+window.location.hostname+":8123/`, modelPluginUrl);
 
                 dir.readFiles(srcDir,
-                    function(err: any, content: any, filename: string, next: any) {
+                    function (err: any, content: any, filename: string, next: any) {
                         if (err) throw err;
 
                         const targetDir = path.dirname(filename).replace("edge_ux", "edge_ux_package");
 
                         if (!fs.existsSync(targetDir)) {
-                            fs.mkdirSync(targetDir, { recursive: true });
+                            fs.mkdirSync(targetDir, {recursive: true});
                         }
 
                         const newPath = filename.replace("edge_ux", "edge_ux_package");
@@ -290,7 +311,7 @@ export class EngagementUx extends cdk.Stack {
                         )
                         next()
                     },
-                    function(err: any, files: any) {
+                    function (err: any, files: any) {
                         if (err) throw err;
                     });
 

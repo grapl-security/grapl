@@ -1,13 +1,11 @@
 import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
-import { BlockPublicAccess, BucketEncryption } from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as sqs from "@aws-cdk/aws-sqs";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as events from "@aws-cdk/aws-events";
 import * as targets from "@aws-cdk/aws-events-targets";
 import * as lambda from "@aws-cdk/aws-lambda";
-import { Runtime } from "@aws-cdk/aws-lambda";
 import * as iam from "@aws-cdk/aws-iam";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
@@ -349,7 +347,7 @@ class DGraphTtl extends cdk.NestedStack {
 
         const event_handler = new lambda.Function(
             this, "Handler", {
-                runtime: Runtime.PYTHON_3_7,
+                runtime: lambda.Runtime.PYTHON_3_7,
                 handler: "app.prune_expired_subgraphs",
                 functionName: serviceName + "-Handler",
                 code: lambda.Code.fromAsset(`./zips/dgraph-ttl-${props.version}.zip`),
@@ -376,7 +374,9 @@ class DGraphTtl extends cdk.NestedStack {
         );
         rule.addTarget(target);
 
-        props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        }
     }
 }
 
@@ -384,7 +384,8 @@ export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket,
 }
 
-class ModelPluginDeployer extends cdk.NestedStack {
+export class ModelPluginDeployer extends cdk.NestedStack {
+    integrationName: string;
 
     constructor(
         parent: cdk.Construct,
@@ -394,10 +395,16 @@ class ModelPluginDeployer extends cdk.NestedStack {
         super(parent, id);
 
         const serviceName = props.prefix + '-ModelPluginDeployer';
+        this.integrationName = id + props.prefix + 'Integration';
+        const ux_bucket = s3.Bucket.fromBucketName(
+            this,
+            'uxBucket',
+            props.prefix.toLowerCase() + '-engagement-ux-bucket',
+        );
 
         const event_handler = new lambda.Function(
             this, 'Handler', {
-                runtime: Runtime.PYTHON_3_7,
+                runtime: lambda.Runtime.PYTHON_3_7,
                 handler: `grapl_model_plugin_deployer.app`,
                 functionName: serviceName + '-Handler',
                 code: lambda.Code.fromAsset(`./zips/model-plugin-deployer-${props.version}.zip`),
@@ -407,6 +414,7 @@ class ModelPluginDeployer extends cdk.NestedStack {
                     "JWT_SECRET_ID": props.jwtSecret.secretArn,
                     "USER_AUTH_TABLE": props.userAuthTable.user_auth_table.tableName,
                     "BUCKET_PREFIX": props.prefix,
+                    "UX_BUCKET_URL": "https://" + ux_bucket.bucketRegionalDomainName,
                 },
                 timeout: cdk.Duration.seconds(25),
                 memorySize: 256,
@@ -415,7 +423,9 @@ class ModelPluginDeployer extends cdk.NestedStack {
         );
         event_handler.currentVersion.addAlias('live');
 
-        props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(event_handler.functionName, event_handler);
+        }
 
         if (event_handler.role) {
             props.jwtSecret.grantRead(event_handler.role);
@@ -429,7 +439,8 @@ class ModelPluginDeployer extends cdk.NestedStack {
             this,
             'Integration',
             {
-                restApiName: serviceName + '-Integration',
+                restApiName: this.integrationName,
+                endpointExportName: serviceName + '-EndpointApi',
                 handler: event_handler,
             },
         );
@@ -445,52 +456,54 @@ class ModelPluginDeployer extends cdk.NestedStack {
             }
         });
 
-        props.watchful.watchApiGateway(serviceName + '-Integration', integration, {
-            serverErrorThreshold: 1, // any 5xx alerts
-            cacheGraph: true,
-            watchedOperations: [
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/gitWebhook"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/gitWebHook"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/deploy"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/deploy"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/listModelPlugins"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/listModelPlugins"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/deleteModelPlugin"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/deleteModelPlugin"
-                },
-                {
-                    httpMethod: "POST",
-                    resourcePath: "/{proxy+}"
-                },
-                {
-                    httpMethod: "OPTIONS",
-                    resourcePath: "/{proxy+}"
-                }
-            ]
-        });
+        if (props.watchful) {
+            props.watchful.watchApiGateway(serviceName + '-Integration', integration, {
+                serverErrorThreshold: 1, // any 5xx alerts
+                cacheGraph: true,
+                watchedOperations: [
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/gitWebhook"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/gitWebHook"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/deploy"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/deploy"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/listModelPlugins"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/listModelPlugins"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/deleteModelPlugin"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/deleteModelPlugin"
+                    },
+                    {
+                        httpMethod: "POST",
+                        resourcePath: "/{proxy+}"
+                    },
+                    {
+                        httpMethod: "OPTIONS",
+                        resourcePath: "/{proxy+}"
+                    }
+                ]
+            });
+        }
     }
 }
 
@@ -501,7 +514,7 @@ export interface GraplServiceProps {
     vpc: ec2.IVpc,
     masterGraph: DGraphEcs,
     userAuthTable: UserAuthDb,
-    watchful: Watchful
+    watchful?: Watchful
 }
 
 export interface GraplStackProps extends cdk.StackProps {
@@ -510,12 +523,14 @@ export interface GraplStackProps extends cdk.StackProps {
     graphAlphaCount?: number,
     graphAlphaPort?: number,
     graphZeroCount?: number,
+    watchfulEmail?: string,
 }
 
 export class GraplCdkStack extends cdk.Stack {
     prefix: string;
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
+    model_plugin_deployer: ModelPluginDeployer;
 
     constructor(scope: cdk.Construct, id: string, props: GraplStackProps) {
         super(scope, id, props);
@@ -549,14 +564,17 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        const alarmSqs = new sqs.Queue(this, 'alarmSqs');
-        const alarmSns = new sns.Topic(this, 'alarmSns');
+        let watchful = undefined;
+        if (props.watchfulEmail) {
+            const alarmSqs = new sqs.Queue(this, 'alarmSqs');
+            const alarmSns = new sns.Topic(this, 'alarmSns');
 
-        const watchful = new Watchful(this, id + "-Watchful", {
-            alarmEmail: "operations@graplsecurity.com",
-            alarmSqs,
-            alarmSns
-        });
+            watchful = new Watchful(this, id + "-Watchful", {
+                alarmEmail: props.watchfulEmail,
+                alarmSqs,
+                alarmSns
+            });
+        }
 
         const graplProps = {
             prefix: this.prefix,
@@ -571,8 +589,8 @@ export class GraplCdkStack extends cdk.Stack {
         const analyzers_bucket = new s3.Bucket(this, 'AnalyzersBucket', {
             bucketName: bucket_prefix + '-analyzers-bucket',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
-            encryption: BucketEncryption.KMS_MANAGED,
-            blockPublicAccess: BlockPublicAccess.BLOCK_ALL
+            encryption: s3.BucketEncryption.KMS_MANAGED,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL
         });
 
         const engagements_created_topic =
@@ -599,7 +617,7 @@ export class GraplCdkStack extends cdk.Stack {
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
-        new ModelPluginDeployer(
+        this.model_plugin_deployer = new ModelPluginDeployer(
             this,
             'model-plugin-deployer', {
                 modelPluginBucket: model_plugins_bucket,
@@ -662,10 +680,18 @@ export class GraplCdkStack extends cdk.Stack {
             graplProps
          );
 
+        const ux_bucket = new s3.Bucket(this, 'EdgeBucket', {
+            bucketName: graplProps.prefix.toLowerCase() + '-engagement-ux-bucket',
+            publicReadAccess: true,
+            websiteIndexDocument: 'index.html',
+            removalPolicy: cdk.RemovalPolicy.DESTROY
+        });
+
         this.graphql_endpoint = new GraphQLEndpoint(
             this,
             'GraphqlEndpoint',
             graplProps,
+            ux_bucket,
         );
     }
 }
