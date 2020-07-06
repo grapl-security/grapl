@@ -162,21 +162,19 @@ export class Service {
     }
 
     readsFrom(bucket: s3.IBucket, with_list?: Boolean) {
-        let policy = new iam.PolicyStatement();
-        policy.addActions('s3:GetObject', 's3:ActionGetBucket');
+        let policy = new iam.PolicyStatement({
+            sid: 'Allow GetObject',
+            effect: iam.Effect.ALLOW,
+            actions: ['s3:GetObject'],
+            resources: [bucket.bucketArn + '/*']
+        });
 
         if (with_list === true) {
             policy.addActions('s3:ListObjects');
         }
 
-        policy.addResources(bucket.bucketArn);
-
         this.event_handler.addToRolePolicy(policy);
         this.event_retry_handler.addToRolePolicy(policy);
-
-        // TODO: This is adding more permissions than necessary
-        bucket.grantRead(this.event_handler);
-        bucket.grantRead(this.event_retry_handler);
     }
 
     publishesToTopic(publishes_to: sns.ITopic) {
