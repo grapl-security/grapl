@@ -230,6 +230,7 @@ services:
     environment:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "UX_BUCKET_URL=localhost:3000"
     tty: true
     links:
       - grapl-master-graph-db:master_graph
