@@ -34,11 +34,13 @@ if IS_LOCAL:
             )
 
             JWT_SECRET = secretsmanager.get_secret_value(SecretId='JWT_SECRET_ID',)["SecretString"]
+            print(JWT_SECRET)
+            break
         except Exception as e:
             print(e)
             time.sleep(1)
 
-    console.log("JWT SECRET", JWT_SECRET)
+    print("JWT SECRET", JWT_SECRET)
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 

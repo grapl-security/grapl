@@ -7,13 +7,14 @@ import {getAuthEdge} from './modules/GraphViz/engagement_edge/getApiURLs';
 const engagement_edge = getAuthEdge();
 
 export const checkLogin = async () => {
-    const res = await fetch(`${engagement_edge}checkLogin`, {
+    const res = await fetch(`${engagement_edge}checkLogin`, 
+      {
         method: 'get',
         credentials: 'include',
-    });
+      }
+    );
 
     const body = await res.json();
-
     return body['success'] === 'True';
 };
 
@@ -33,7 +34,7 @@ export const LogIn = (_: LoginProps) => {
           const loginSuccess = await login(values.userName, password);
           
           if (loginSuccess === true) {
-            window.history.replaceState('#/login', "", "#/")
+            window.history.replaceState('#/login', "", "/")
             console.log("Logged in");
           } else {
             console.warn("Login failed!")
@@ -98,7 +99,7 @@ const login = async (username: string, password: string) => {
           console.log("body", body);
           return body['success'] === 'True';
         } catch (e) {
-          console.log(e);
+          console.log("Login Error", e);
           return false
       }
     };

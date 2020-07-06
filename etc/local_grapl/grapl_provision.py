@@ -20,8 +20,6 @@ def create_secret(secretsmanager):
         SecretString="jwt_secret",
     )
 
-
-
 def set_schema(client, schema) -> None:
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
