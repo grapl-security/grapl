@@ -95,7 +95,6 @@ const login = async (username: string, password: string) => {
           });
           
           const body = await res.json();
-          console.log("body", body);
           return body['success'] === 'True';
         } catch (e) {
           console.log(e);
