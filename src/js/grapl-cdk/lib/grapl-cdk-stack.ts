@@ -321,10 +321,9 @@ class AnalyzerExecutor extends cdk.NestedStack {
         // Need to be able to GetObject in order to HEAD, can be replaced with
         // a cache later, but safe so long as there is no LIST
         let policy = new iam.PolicyStatement({
-            sid: 'Allow GetObject',
             effect: iam.Effect.ALLOW,
             actions: ['s3:GetObject'],
-            resources: [props.writesTo.bucketArn + '/*']
+            resources: [props.writesTo.bucketArn + '/*'],
         });
 
         service.event_handler.addToRolePolicy(policy);

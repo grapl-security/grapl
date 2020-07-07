@@ -163,10 +163,9 @@ export class Service {
 
     readsFrom(bucket: s3.IBucket, with_list?: Boolean) {
         let policy = new iam.PolicyStatement({
-            sid: 'Allow GetObject',
             effect: iam.Effect.ALLOW,
             actions: ['s3:GetObject'],
-            resources: [bucket.bucketArn + '/*']
+            resources: [bucket.bucketArn + '/*'],
         });
 
         if (with_list === true) {
