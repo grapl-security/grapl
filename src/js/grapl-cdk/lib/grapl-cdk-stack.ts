@@ -395,6 +395,20 @@ class DGraphTtl extends cdk.NestedStack {
 
         const serviceName = props.prefix + '-DGraphTtl';
 
+        const role = new iam.Role(this, 'ExecutionRole', {
+            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+            roleName: serviceName + '-HandlerRole',
+            description: 'Lambda execution role for: ' + serviceName,
+            managedPolicies: [
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    'service-role/AWSLambdaBasicExecutionRole'
+                ),
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                ),
+            ],
+        });
+
         const event_handler = new lambda.Function(this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: 'app.prune_expired_subgraphs',
@@ -412,6 +426,7 @@ class DGraphTtl extends cdk.NestedStack {
             timeout: cdk.Duration.seconds(600),
             memorySize: 128,
             description: props.version,
+            role
         });
         event_handler.currentVersion.addAlias('live');
 
@@ -453,6 +468,20 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
         );
 
+        const role = new iam.Role(this, 'ExecutionRole', {
+            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+            roleName: serviceName + '-HandlerRole',
+            description: 'Lambda execution role for: ' + serviceName,
+            managedPolicies: [
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    'service-role/AWSLambdaBasicExecutionRole'
+                ),
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                ),
+            ],
+        });
+
         const event_handler = new lambda.Function(this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: `grapl_model_plugin_deployer.app`,
@@ -471,6 +500,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
             description: props.version,
+            role,
         });
         event_handler.currentVersion.addAlias('live');
 
