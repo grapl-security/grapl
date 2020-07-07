@@ -177,17 +177,14 @@ export class Service {
     }
 
     publishesToTopic(publishes_to: sns.ITopic) {
-        const topicPolicy = new iam.PolicyStatement();
-
-        topicPolicy.addActions('sns:CreateTopic');
-        topicPolicy.addResources(publishes_to.topicArn);
+        const topicPolicy = new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['sns:CreateTopic', 'sns:Publish'],
+            resources: [publishes_to.topicArn],
+        });
 
         this.event_handler.addToRolePolicy(topicPolicy);
-
         this.event_retry_handler.addToRolePolicy(topicPolicy);
-
-        publishes_to.grantPublish(this.event_handler);
-        publishes_to.grantPublish(this.event_retry_handler);
     }
 
     publishesToBucket(publishes_to: s3.IBucket) {
