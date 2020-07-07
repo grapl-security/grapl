@@ -10,12 +10,13 @@ Execute these steps to prepare a Grapl CDK deployment.
 ### Dependencies
 
 Install the following dependencies:
-  1. Node
-  2. Typescript
-  3. AWS CDK -- `npm i -g aws-cdk@1.46.0`
-  4. AWS CLI
 
-### Configuration
+1. Node
+2. Typescript
+3. AWS CDK -- `npm i -g aws-cdk@1.47.0`
+4. AWS CLI
+
+### AWS Credentials
 
 Make sure your `~/.aws/credentials` file contains the proper AWS credentials.
 
@@ -23,29 +24,46 @@ Make sure your `~/.aws/credentials` file contains the proper AWS credentials.
 
 Execute a local Grapl build by running the following in Grapl's root:
 
-``` bash
+```bash
 docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-arg release_target=release
 ```
 
 Then extract the deployment artifacts from the build containers with
 the following script:
 
-``` bash
-VERSION=$YOUR_VERSION CHANNEL=latest ./extract-grapl-deployment-artifacts.sh
+```bash
+VERSION=$YOUR_VERSION ./extract-grapl-deployment-artifacts.sh
 ```
 
-Then move the deployment artifacts into the `/zips` directory:
+`YOUR_VERSION` can be any name you want. Just make note of it, we'll use it in the next step.
 
-``` bash
-mv *.zip zips/
+Your build outputs should appear in the `zips/` directory.
+
+### Configuration
+
+Set your deployment name and version in `bin/grapl-cdk.ts`
+
+```
+const deployName = 'Grapl-MYDEPLOYMENT';
+const graplVersion = 'YOUR_VERSION';
+```
+
+Some tips for choosing a deployment name:
+
+-   Keep "Grapl" as prefix. This isn't necessary, but will help identify Grapl resources in your AWS account.
+-   Choose a globally unique name, as this will be used to name S3 buckets, which have this requiement. Using a name that includes your AWS account number and deployment region should work.
+
+To enable [Watchful](https://github.com/eladb/cdk-watchful) for monitoring Grapl with email alerts, specify the email address to receive alerts:
+
+```
+const watchfulEmail = 'YOUR@EMAIL';
 ```
 
 ## Deploying
 
 To deploy Grapl with the CDK, execute the following
 
-  1. `npm -i`
-  2. `npm run build`
-  3. `echo "BUCKET_PREFIX=$YOUR_BUCKET_PREFIX" > .env`
-  4. `env CDK_NEW_BOOTSTRAP=1 cdk bootstrap --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess` (only need to do this once per region)
-  5. `./deploy_all.sh`
+1. `npm i`
+2. `npm run build`
+3. `env CDK_NEW_BOOTSTRAP=1 cdk bootstrap --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess`
+4. `./deploy_all.sh`

@@ -1,16 +1,5 @@
-import { RouteState, SetRouteState } from '../GraphViz/CustomTypes';
+import { RouteState } from '../GraphViz/CustomTypes';
 
-export const redirectTo = (
-    routeState: RouteState, 
-    setRouteState: SetRouteState, 
-    page_name: string
-    ) => {
-    setRouteState({
-        ...routeState,
-        curPage: page_name,
-    })
-    localStorage.setItem("grapl_curPage", page_name)
-}
 
 export const defaultRouteState = (): RouteState => {
     return {

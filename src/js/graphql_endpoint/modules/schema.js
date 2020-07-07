@@ -255,11 +255,18 @@ const GraplEntityType = new GraphQLUnionType({
     resolveType: resolveType
 });
 
+const get_random = (list) => {
+    return list[Math.floor((Math.random()*list.length))];
+}
+
+
+const mg_alpha = get_random(process.env.MG_ALPHAS.split(","));
+
 const getDgraphClient = () => {
 
     const clientStub = new dgraph.DgraphClientStub(
         // addr: optional, default: "localhost:9080"
-        "master_graph:9080",
+        mg_alpha,
         // credentials: optional, default: grpc.credentials.createInsecure()
         grpc.credentials.createInsecure(),
     );
@@ -267,10 +274,12 @@ const getDgraphClient = () => {
     return new dgraph.DgraphClient(clientStub);
 }
 // return lens
-const getLenses = async (dg_client) => {
+const getLenses = async (dg_client, first, offset) => {
+    console.log("first offset", first, offset);
     const query = `
+    query all($a: int, $b: int)
     {
-        all(func: type(Lens))
+        all(func: type(Lens), first: $a, offset: $b, orderdesc: score)
         {
             lens_name: lens,
             score,
@@ -288,7 +297,7 @@ const getLenses = async (dg_client) => {
 
     const txn = dg_client.newTxn();
     try {
-        const res = await txn.query(query);
+        const res = await txn.queryWithVars(query, {'$a': first.toString(), '$b': offset.toString()});
         return res.getJson()['all'];
     } finally {
         await txn.discard();
@@ -298,7 +307,7 @@ const getLenses = async (dg_client) => {
 // return lens
 const getLensByName = async (dg_client, lensName) => {
     const query = `
-    query all($a: string)
+    query all($a: string, $b: first, $c: offset)
         {
             all(func: eq(lens, $a), first: 1)
             {
@@ -406,10 +415,23 @@ const RootQuery = new GraphQLObjectType({
     fields: {
         lenses: {
             type: GraphQLList(LensNodeType),
+            args: {
+                first: {
+                    type: new GraphQLNonNull(GraphQLInt)
+                },
+                offset: {
+                    type: new GraphQLNonNull(GraphQLInt)
+                }
+            },
             resolve: async (parent, args) => {
-                const lenses = await getLenses(await getDgraphClient());
-                return lenses;
-            }
+                console.log("Args", args)
+                const first = args.first;
+                const offset = args.offset; 
+                // #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
+                const lenses =  await getLenses(getDgraphClient(), first, offset);
+                console.log('lenses', lenses);
+                return lenses
+            } 
         },
         lens_scope:{
             type: LensNodeType, 

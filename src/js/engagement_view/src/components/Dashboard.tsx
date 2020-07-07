@@ -2,6 +2,7 @@ import React from 'react';
 import Button from "@material-ui/core/Button";
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
 import GraplHeader from "./reusableComponents/GraplHeader";
+import {Link} from 'react-router-dom';
 
 const useStyles = makeStyles( (theme: Theme) =>
     createStyles({
@@ -29,37 +30,30 @@ const useStyles = makeStyles( (theme: Theme) =>
             display: "flex",
             flexDirection: "row",
         }, 
+        link:{
+            color: "white",
+            textDecoration: "none"
+        }
     })
 );
 
-export default function Dashboard(
-    {redirectTo}: any) {
+export default function Dashboard() {
         const classes = useStyles();
         return (
             <> 
-                <GraplHeader redirectTo={redirectTo} displayBtn={false} />
+                <GraplHeader displayBtn={false} />
 
                 <div className = { classes.dashboard}>
                     <section className = { classes.nav }>
-                        <Button 
-                            className = {classes.button }
-                            onClick = { 
-                                (e) => {
-                                    redirectTo("engagementUX");
-                                } 
-                            }
-                        >
-                                Engagements
+                        
+                        <Button  className = {classes.button }>
+                            <Link to = "/engagements" className = {classes.link}> Engagements </Link>
                         </Button>
                         
-                        <Button 
-                            className = {classes.button }
-                            onClick = { (e) => {
-                                redirectTo("uploadPlugin");
-                            } }
-                        >
-                            Upload Plugin
+                        <Button  className = {classes.button }>
+                            <Link to = "/plugins" className = {classes.link}> Upload Plugin </Link>
                         </Button>
+                        
                     </section>
 
                     <section className = { classes.welcome }>
