@@ -78,6 +78,20 @@ export class Service {
             environment.RUST_BACKTRACE = '1';
         }
 
+        const role = new iam.Role(scope, 'ExecutionRole', {
+            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+            roleName: serviceName + '-HandlerRole',
+            description: 'Lambda execution role for: ' + serviceName,
+            managedPolicies: [
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    'service-role/AWSLambdaBasicExecutionRole'
+                ),
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                ),
+            ],
+        });
+
         const event_handler = new lambda.Function(scope, 'Handler', {
             runtime: runtime,
             handler: handler,
@@ -91,6 +105,7 @@ export class Service {
             timeout: cdk.Duration.seconds(180),
             memorySize: 256,
             description: props.version,
+            role,
         });
         event_handler.currentVersion.addAlias('live');
 
@@ -124,6 +139,7 @@ export class Service {
             timeout: cdk.Duration.seconds(360),
             memorySize: 512,
             description: props.version,
+            role,
         });
         event_retry_handler.currentVersion.addAlias('live');
 
@@ -153,7 +169,7 @@ export class Service {
         }
 
         if (props.writes_to) {
-            this.publishesToBucket(props.writes_to);
+            this.writesToBucket(props.writes_to);
         }
 
         if (props.subscribes_to) {
@@ -187,7 +203,7 @@ export class Service {
         this.event_retry_handler.addToRolePolicy(topicPolicy);
     }
 
-    publishesToBucket(publishes_to: s3.IBucket) {
+    writesToBucket(publishes_to: s3.IBucket) {
         publishes_to.grantWrite(this.event_handler);
         publishes_to.grantWrite(this.event_retry_handler);
     }
