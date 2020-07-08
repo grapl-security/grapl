@@ -1,6 +1,6 @@
 meta:
   project: grapl
-  default: test
+  default: build
 
 #
 # mounts
@@ -17,25 +17,75 @@ mount=dist:
 
 # rust images
 
-image=rust-test-build:
+image=rust-build:
   image: grapl/grapl-rust-src-build
   context: src/rust
   dockerfile: Dockerfile
   args:
-    release_target: debug
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-rust-src-build
   tags:
     - latest
 
-image=rust-release-build:
-  image: grapl/grapl-rust-src-build
-  context: src/rust
+image=analyzer-dispatcher:
+  image: grapl/grapl-analyzer-dispatcher
+  context: src/rust/analyzer-dispatcher
   dockerfile: Dockerfile
-  args:
-    release_target: release
-  target: grapl-rust-src-build
+  target: grapl-analyzer-dispatcher
   tags:
-    - latest
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
+image=generic-subgraph-generator:
+  image: grapl/grapl-generic-subgraph-generator
+  context: src/rust/generic-subgraph-generator
+  dockerfile: Dockerfile
+  target: grapl-generic-subgraph-generator
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
+image=graph-merger:
+  image: grapl/grapl-graph-merger
+  context: src/rust/graph-merger
+  dockerfile: Dockerfile
+  target: grapl-graph-merger
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
+image=node-identifier:
+  image: grapl/grapl-node-identifier
+  context: src/rust/node-identifier
+  dockerfile: Dockerfile
+  target: grapl-node-identifier
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
+image=node-identifier-retry-handler:
+  image: grapl/grapl-node-identifier-retry-handler
+  context: src/rust/node-identifier
+  dockerfile: Dockerfile
+  target: grapl-node-identifier-retry-handler
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
+image=sysmon-subgraph-generator:
+  image: grapl/grapl-sysmon-subgraph-generator
+  context: src/rust/sysmon-subgraph-generator
+  dockerfile: Dockerfile
+  target: grapl-sysmon-subgraph-generator
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
 
 # python images
 
@@ -47,7 +97,15 @@ image=python-build:
   tags:
     - latest
 
-image=graph-descriptions-python-build:
+image=python-deploy:
+  image: grapl/grapl-python-deploy
+  context: src/python/grapl-python-deploy/
+  dockerfile: Dockerfile
+  target: grapl-python-deploy
+  tags:
+    - latest
+
+image=graph-descriptions-build:
   image: grapl/grapl-graph-descriptions-python-build
   context: src/rust/graph-descriptions/
   dockerfile: Dockerfile
@@ -57,89 +115,186 @@ image=graph-descriptions-python-build:
   tags:
     - latest
 
-image=grapl-analyzerlib-python-build:
+image=grapl-analyzerlib-build:
   image: grapl/grapl-analyzerlib-python-build
   context: src/python/grapl_analyzerlib/
   dockerfile: Dockerfile
   target: grapl-analyzerlib-python-build
   depends:
-    - graph-descriptions-python-build
+    - graph-descriptions-build
   tags:
     - latest
 
-image=analyzer-executor-python-build:
+image=analyzer-executor-build:
   image: grapl/analyzer-executor-build
   context: src/python/analyzer_executor/
   dockerfile: Dockerfile
   target: analyzer-executor-build
   depends:
-    - grapl-analyzerlib-python-build
+    - grapl-analyzerlib-build
   tags:
     - latest
 
-image=engagement-creator-python-build:
+image=analyzer-executor:
+  image: grapl/grapl-analyzer-executor
+  context: src/python/analyzer_executor/
+  dockerfile: Dockerfile
+  target: grapl-analyzer-executor
+  depends:
+    - analyzer-executor-build
+    - python-deploy
+  tags:
+    - "{env.TAG}"
+
+image=engagement-creator-build:
   image: grapl/engagement-creator-build
   context: src/python/engagement-creator
   dockerfile: Dockerfile
   target: engagement-creator-build
   depends:
-    - grapl-analyzerlib-python-build
+    - grapl-analyzerlib-build
   tags:
     - latest
 
-image=engagement-edge-python-build:
+image=engagement-creator:
+  image: grapl/grapl-engagement-creator
+  context: src/python/engagement-creator
+  dockerfile: Dockerfile
+  target: grapl-engagement-creator
+  depends:
+    - engagement-creator-build
+    - python-deploy
+  tags:
+    - "{env.TAG}"
+
+image=engagement-edge-build:
   image: grapl/engagement-edge-build
   context: src/python/engagement_edge
   dockerfile: Dockerfile
   target: engagement-edge-build
   depends:
-    - grapl-analyzerlib-python-build
+    - grapl-analyzerlib-build
   tags:
     - latest
 
-image=grapl-dgraph-ttl-python-build:
+image=engagement-edge:
+  image: grapl/grapl-engagement-edge
+  context: src/python/engagement_edge
+  dockerfile: Dockerfile
+  target: grapl-engagement-edge
+  depends:
+    - engagement-edge-build
+    - python-deploy
+  tags:
+    - "{env.TAG}"
+
+image=dgraph-ttl-build:
   image: grapl/grapl-dgraph-ttl-build
   context: src/python/grapl-dgraph-ttl
   dockerfile: Dockerfile
   target: grapl-dgraph-ttl-build
   depends:
-    - grapl-analyzerlib-python-build
+    - grapl-analyzerlib-build
   tags:
     - latest
 
-image=grapl-model-plugin-deployer-python-build:
+image=dgraph-ttl:
+  image: grapl/grapl-dgraph-ttl
+  context: src/python/grapl-dgraph-ttl
+  dockerfile: Dockerfile
+  target: grapl-dgraph-ttl
+  depends:
+    - dgraph-ttl-build
+    - python-deploy
+  tags:
+    - "{env.TAG}"
+
+image=model-plugin-deployer-build:
   image: grapl/grapl-model-plugin-deployer-build
   context: src/python/grapl-model-plugin-deployer
   dockerfile: Dockerfile
   target: grapl-model-plugin-deployer-build
   depends:
-    - grapl-analyzerlib-python-build
+    - grapl-analyzerlib-build
   tags:
     - latest
 
-image=grapl-notebook-build:
+image=model-plugin-deployer:
+  image: grapl/grapl-model-plugin-deployer
+  context: src/python/grapl-model-plugin-deployer
+  dockerfile: Dockerfile
+  target: grapl-model-plugin-deployer
+  depends:
+    - model-plugin-deployer-build
+    - python-deploy
+  tags:
+    - "{env.TAG}"
+
+image=grapl-notebook:
   image: grapl/grapl-notebook
   context: src/python/grapl-notebook
   dockerfile: Dockerfile
+  tags:
+    - "{env.TAG}"
+
+image=graph-provision:
+  image: grapl/grapl-graph-provision
+  context: src/python/engagement_edge/
+  dockerfile: Dockerfile
+  target: grapl-engagement-edge
+  depends:
+    - engagement-edge-build
+    - python-deploy
+  tags:
+    - "{env.TAG}"
+
+image=dynamodb-provision:
+  image: grapl/grapl-dynamodb-provision
+  context: src/python/engagement_edge/
+  dockerfile: Dockerfile
+  target: grapl-engagement-edge
+  depends:
+    - engagement-edge-build
+    - python-deploy
+  tags:
+    - "{env.TAG}"
 
 # js images
-# TODO
+
+image=engagement-view:
+  image: grapl/grapl-engagement-view
+  context: src/js/engagement_view
+  dockerfile: Dockerfile
+  target: grapl-engagement-view
+  tags:
+    - "{env.TAG}"
+
+image=graphql-endpoint-build:
+  image: grapl/grapl-graphql-endpoint-build
+  context: src/js/graphql_endpoint
+  dockerfile: Dockerfile
+  target: grapl-graphql-endpoint-build
+  tags:
+    - latest
+
+image=graphql-endpoint:
+  image: grapl/grapl-graphql-endpoint
+  context: src/js/graphql_endpoint
+  dockerfile: Dockerfile
+  target: grapl-graphql-endpoint
+  depends:
+    - graphql-endpoint-build
+  tags:
+    - "{env.TAG}"
 
 #
-# jobs
+# jobs -- these are where we build release artifacts
 #
 
 # rust jobs
 
-job=build-rust-test:
-  use: rust-test-build
-  mounts:
-    - dist
-  artifact:
-    - ./dist/*
-
-job=build-rust-release:
-  use: rust-release-build
+job=build-rust:
+  use: rust-build
   mounts:
     - dist
   artifact:
@@ -148,79 +303,128 @@ job=build-rust-release:
 # python jobs
 
 job=build-analyzer-executor:
-  use: analyzer-executor-python-build
+  use: analyzer-executor-build
   mounts:
     - dist
   artifact:
     - ./dist/analyzer-executor/lambda.zip
 
 job=build-engagement-creator:
-  use: engagement-creator-python-build
+  use: engagement-creator-build
   mounts:
     - dist
   artifact:
     - ./dist/engagement-creator/lambda.zip
 
 job=build-engagement-edge:
-  use: engagement-edge-python-build
+  use: engagement-edge-build
   mounts:
     - dist
   artifact:
     - ./dist/engagement-edge/lambda.zip
 
-job=build-grapl-dgraph-ttl:
-  use: grapl-dgraph-ttl-python-build
+job=build-dgraph-ttl:
+  use: dgraph-ttl-build
   mounts:
     - dist
   artifact:
     - ./dist/grapl-dgraph-ttl/lambda.zip
 
-job=build-grapl-model-plugin-deployer:
-  use: grapl-model-plugin-deployer-python-build
+job=build-model-plugin-deployer:
+  use: model-plugin-deployer-build
   mounts:
     - dist
   artifact:
     - ./dist/grapl-model-plugin-deployer/lambda.zip
 
 # js jobs
-# TODO
+
+job=build-graphql-endpoint:
+  use: graphql-endpoint-build
+  mounts:
+    - dist
+  artifact:
+    - ./dist/grapl-graphql-endpoint/lambda.zip
 
 #
 # aliases
 #
 
-alias=rust-test:
+alias=rust:
   tasks:
-    - build-rust-test
+    - build-rust
+    - "analyzer-dispatcher:tag"
+    - "generic-subgraph-generator:tag"
+    - "graph-merger:tag"
+    - "node-identifier:tag"
+    - "node-identifier-retry-handler:tag"
+    - "sysmon-subgraph-generator:tag"
   annotations:
-    description: "Run tests and build debug artifacts for rust services"
+    description: "Run tests, build artifacts, and build images for rust services"
 
-alias=rust-release:
+alias=clean-rust-build:
   tasks:
-    - build-rust-release
+    - "rust-build:rm"
   annotations:
-    description: "Run tests and build release artifacts for rust services"
+    description: "Delete the rust build image"
 
-alias=python-release:
+alias=python:
   tasks:
     - build-analyzer-executor
     - build-engagement-creator
     - build-engagement-edge
-    - build-grapl-dgraph-ttl
-    - build-grapl-model-plugin-deployer
+    - build-dgraph-ttl
+    - build-model-plugin-deployer
+    - "analyzer-executor:tag"
+    - "engagement-creator:tag"
+    - "engagement-edge:tag"
+    - "dgraph-ttl:tag"
+    - "model-plugin-deployer:tag"
+    - "grapl-notebook:tag"
+    - "graph-provision:tag"
+    - "dynamodb-provision:tag"
   annotations:
-    description: "Run tests and build release artifacts for python services"
+    description: "Run tests, build artifacts, and build images for python services"
 
-alias=test:
+alias=clean-python-build:
   tasks:
-    - rust-test
-    - python-release
+    - "analyzer-executor-build:rm"
+    - "engagement-creator-build:rm"
+    - "engagement-edge-build:rm"
+    - "dgraph-ttl-build:rm"
+    - "model-plugin-deployer-build:rm"
+    - "grapl-analyzerlib-build:rm"
+    - "graph-descriptions-build:rm"
+    - "python-build:rm"
   annotations:
-    description: "Run tests and build debug artifacts for all services"
+    description: "Delete the python build images"
 
-alias=release:
+alias=js:
   tasks:
-    - rust-release
-    - python-release
+    - build-graphql-endpoint
+    - "graphql-endpoint:tag"
+    - "engagement-view:tag"
   annotations:
-    description: "Run tests and build release artifacts for all services"
+    description: "Run tests, build artifacts, and build images for js services"
+
+alias=clean-js-build:
+  tasks:
+    - "graphql-endpoint-build:rm"
+  annotations:
+    description: "Delete the js build images"
+
+alias=build:
+  tasks:
+    - rust
+    - python
+    - js
+  annotations:
+    description: "Run tests, build artifacts, and build images for all services"
+
+alias=clean-build:
+  tasks:
+    - clean-rust-build
+    - clean-python-build
+    - clean-js-build
+  annotations:
+    description: "Delete all the build images"

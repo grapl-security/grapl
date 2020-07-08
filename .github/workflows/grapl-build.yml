@@ -25,7 +25,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+
       - name: Build Grapl
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-arg release_target=debug
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-rust-build
+          docker system prune -f
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-python-build
+          docker system prune -f
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-js-build
           docker system prune -f
