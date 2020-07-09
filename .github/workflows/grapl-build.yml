@@ -19,13 +19,53 @@ jobs:
           docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
           docker run -t grapl/grapl-cargo-audit:latest cargo audit
 
-  grapl-build:
+  grapl-rust-build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build Grapl
+      - name: Install dobi
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.build.yml build --build-arg release_target=debug
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Build Grapl Rust services
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-rust-build
+          docker system prune -f
+
+  grapl-python-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Build Grapl Python services
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-python-build
+          docker system prune -f
+
+  grapl-js-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Build Grapl JS services
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-js-build
           docker system prune -f
