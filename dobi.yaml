@@ -31,6 +31,8 @@ image=analyzer-dispatcher:
   image: grapl/grapl-analyzer-dispatcher
   context: src/rust/analyzer-dispatcher
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-analyzer-dispatcher
   tags:
     - "{env.TAG}"
@@ -41,6 +43,8 @@ image=generic-subgraph-generator:
   image: grapl/grapl-generic-subgraph-generator
   context: src/rust/generic-subgraph-generator
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-generic-subgraph-generator
   tags:
     - "{env.TAG}"
@@ -51,6 +55,8 @@ image=graph-merger:
   image: grapl/grapl-graph-merger
   context: src/rust/graph-merger
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-graph-merger
   tags:
     - "{env.TAG}"
@@ -61,6 +67,8 @@ image=node-identifier:
   image: grapl/grapl-node-identifier
   context: src/rust/node-identifier
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-node-identifier
   tags:
     - "{env.TAG}"
@@ -71,6 +79,8 @@ image=node-identifier-retry-handler:
   image: grapl/grapl-node-identifier-retry-handler
   context: src/rust/node-identifier
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-node-identifier-retry-handler
   tags:
     - "{env.TAG}"
@@ -81,6 +91,8 @@ image=sysmon-subgraph-generator:
   image: grapl/grapl-sysmon-subgraph-generator
   context: src/rust/sysmon-subgraph-generator
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-sysmon-subgraph-generator
   tags:
     - "{env.TAG}"
