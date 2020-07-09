@@ -125,8 +125,7 @@ COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator
 COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
 # build everything
-# FIXME: cargo test instead of cargo build once the tests work
-RUN cargo build --target=x86_64-unknown-linux-musl
+RUN cargo test --target=x86_64-unknown-linux-musl
 # Now do a clean release build
 RUN if test "${release_target}" = "release"; then \
       cargo clean; \
