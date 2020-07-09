@@ -7,6 +7,7 @@ COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
 RUN /bin/bash -c "source venv/bin/activate && cd analyzer_executor && pip install ."
 RUN zip --quiet -9r lambda.zip venv/lib/python3.7/site-packages/
 RUN zip -g lambda.zip analyzer_executor/src/analyzer-executor.py
+RUN mkdir -p dist/analyzer-executor && cp lambda.zip dist/analyzer-executor/lambda.zip
 
 FROM grapl/grapl-python-deploy AS grapl-analyzer-executor
 USER grapl

@@ -7,6 +7,7 @@ COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
 RUN /bin/bash -c "source venv/bin/activate && cd engagement_edge && pip install ."
 RUN cd venv/lib/python3.7/site-packages/ && zip --quiet -9r ~/lambda.zip ./
 RUN cd engagement_edge/src/ && zip -g ~/lambda.zip ./engagement_edge.py
+RUN mkdir -p dist/engagement-edge && cp lambda.zip dist/engagement-edge/lambda.zip
 
 FROM grapl/grapl-python-deploy AS grapl-engagement-edge
 USER grapl
