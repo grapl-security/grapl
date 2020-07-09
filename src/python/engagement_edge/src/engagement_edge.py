@@ -474,7 +474,16 @@ def hash_password(cleartext, salt) -> str:
 
 def user_auth_table():
     global DYNAMO
-    DYNAMO = DYNAMO or boto3.resource("dynamodb")
+    if IS_LOCAL:
+        DYNAMO = DYNAMO or boto3.resource(
+            "dynamodb",
+            region_name="us-west-2",
+            endpoint_url="http://dynamodb:8000",
+            aws_access_key_id="dummy_cred_aws_access_key_id",
+            aws_secret_access_key="dummy_cred_aws_secret_access_key",
+        )
+    else: 
+        DYNAMO = DYNAMO or boto3.resource("dynamodb")
 
     return DYNAMO.Table(os.environ["USER_AUTH_TABLE"])
 
@@ -496,10 +505,6 @@ def create_user(username, cleartext):
 
 
 def login(username, password):
-    if IS_LOCAL:
-        return jwt.encode({"username": username}, JWT_SECRET, algorithm="HS256").decode(
-            "utf8"
-        )
     # Connect to dynamodb table
     table = user_auth_table()
 
@@ -510,7 +515,6 @@ def login(username, password):
 
     # Hash password
     to_check = hash_password(password.encode("utf8"), salt)
-    LOGGER.debug("hashed")
 
     if not compare_digest(to_check, true_pw):
         time.sleep(round(uniform(0.1, 3.0), 2))
@@ -547,8 +551,12 @@ def lambda_login(event):
     login_res = login(body["username"], body["password"])
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
+    if IS_LOCAL:
+        domain = ""
+    else: 
+        domain = "Domain=.amazonaws.com;"
     cookie = (
-        f"grapl_jwt={login_res}; Domain=.amazonaws.com; secure; HttpOnly; SameSite=None"
+        f"grapl_jwt={login_res}; {domain} secure; HttpOnly; SameSite=None"
     )
     if login_res:
         return cookie

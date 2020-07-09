@@ -1,8 +1,13 @@
 import json
 import threading
 import time
+import os
 
 from typing import *
+
+from hashlib import sha256, pbkdf2_hmac
+from hmac import compare_digest
+from random import uniform
 
 import botocore
 import boto3
@@ -18,7 +23,7 @@ def create_secret(secretsmanager):
     secretsmanager.create_secret(
         Name="JWT_SECRET_ID",
         SecretString="jwt_secret",
-    )
+    )   
 
 def set_schema(client, schema) -> None:
     op = pydgraph.Operation(schema=schema)
@@ -232,6 +237,47 @@ def bucket_provision_loop() -> None:
     raise Exception("Failed to provision s3")
 
 
+def hash_password(cleartext, salt) -> str:
+    hashed = sha256(cleartext).digest()
+    return pbkdf2_hmac(
+        'sha256', 
+        hashed,
+        salt,
+        512000
+    ).hex()
+
+def create_user(username, cleartext):
+    assert cleartext
+    dynamodb = boto3.resource(
+        "dynamodb",
+        region_name="us-west-2",
+        endpoint_url="http://dynamodb:8000",
+        aws_access_key_id="dummy_cred_aws_access_key_id",
+        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+    )
+    table = dynamodb.Table("local-grapl-user_auth_table")
+    
+    # We hash before calling 'hashed_password' because the frontend will also perform
+    # client side hashing
+    cleartext += "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254";
+    
+    cleartext += username;
+
+    hashed = sha256(cleartext.encode('utf8')).hexdigest()
+    
+    for i in range(0, 5000):
+        hashed = sha256(hashed.encode('utf8')).hexdigest()
+    
+    salt = os.urandom(16)
+    password = hash_password(hashed.encode('utf8'), salt)
+    table.put_item(
+        Item={
+            'username': username,
+            'salt': salt,
+            'password': password
+        }
+    )
+
 def sqs_provision_loop() -> None:
     sqs_succ = {service for service in services}
     sqs = None
@@ -314,8 +360,8 @@ if __name__ == "__main__":
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
-
             create_secret(client)
+            break
         except botocore.exceptions.ClientError as e:
             if 'ResourceExistsException' in e.__class__.__name__:
                 break
@@ -325,3 +371,14 @@ if __name__ == "__main__":
             print(e)
             time.sleep(1)
     print("Completed provisioning")
+
+    while True: 
+        try:
+            create_user("grapluser", "graplpassword")
+            break
+        except Exception as e: 
+            print(e)
+            time.sleep(1)
+
+
+

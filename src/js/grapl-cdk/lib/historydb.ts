@@ -35,6 +35,7 @@ export class HistoryDb extends cdk.Construct {
     readonly asset_history: dynamodb.Table;
     readonly dynamic_session_table: dynamodb.Table;
     readonly static_mapping_table: dynamodb.Table;
+    readonly user_auth_table: dynamodb.Table;
 
     constructor(
         scope: cdk.Construct,
@@ -50,6 +51,7 @@ export class HistoryDb extends cdk.Construct {
         this.network_connection_history = create_table(this, props.prefix + '-network_connection_history_table');
         this.ip_connection_history = create_table(this, props.prefix + '-ip_connection_history_table');
         this.dynamic_session_table = create_table(this, props.prefix + '-dynamic_session_table');
+        this.user_auth_table = create_table(this, props.prefix + '-user_auth_table');
 
         this.asset_history = new dynamodb.Table(this, 'AssetIdMappings', {
             tableName: props.prefix + '-asset_id_mappings',
@@ -86,6 +88,7 @@ export class HistoryDb extends cdk.Construct {
         this.asset_history.grantReadWriteData(service.event_handler);
         this.static_mapping_table.grantReadWriteData(service.event_handler);
         this.dynamic_session_table.grantReadWriteData(service.event_handler);
+        this.user_auth_table.grantReadWriteData(service.event_handler)
 
         this.proc_history.grantReadWriteData(service.event_retry_handler);
         this.file_history.grantReadWriteData(service.event_retry_handler);
@@ -96,5 +99,7 @@ export class HistoryDb extends cdk.Construct {
         this.asset_history.grantReadWriteData(service.event_retry_handler);
         this.static_mapping_table.grantReadWriteData(service.event_retry_handler);
         this.dynamic_session_table.grantReadWriteData(service.event_retry_handler);
+        this.user_auth_table.grantReadWriteData(service.event_retry_handler);
+
     }
 }

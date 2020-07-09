@@ -231,6 +231,7 @@ services:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "UX_BUCKET_URL=localhost:3000"
+      - "USER_AUTH_TABLE=local-grapl-user_auth_table"
     tty: true
     links:
       - grapl-master-graph-db:master_graph
@@ -320,6 +321,7 @@ services:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
+      - dynamodb:dynamodb
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1

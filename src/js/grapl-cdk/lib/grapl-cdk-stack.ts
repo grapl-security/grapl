@@ -110,6 +110,8 @@ class NodeIdentifier extends cdk.NestedStack {
                 "NETWORK_CONNECTION_HISTORY_TABLE": history_db.network_connection_history.tableName,
                 "IP_CONNECTION_HISTORY_TABLE": history_db.ip_connection_history.tableName,
                 "ASSET_ID_MAPPINGS": history_db.asset_history.tableName,
+                "USER_AUTH_TABLE": history_db.user_auth_table.tableName,
+
             },
             vpc: props.vpc,
             reads_from: unid_subgraphs.bucket,

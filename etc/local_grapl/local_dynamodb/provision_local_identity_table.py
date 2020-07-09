@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import time
 import boto3
+import botocore
 
 table_names = [
     "local-grapl-process_history_table",
@@ -12,6 +13,7 @@ table_names = [
     "local-grapl-asset_id_mappings",
     "local-grapl-dynamic_session_table",
     "local-grapl-static_mapping_table",
+    "local-grapl-user_auth_table",
 ]
 
 table_defs = {
@@ -101,6 +103,14 @@ table_defs = {
             {"AttributeName": "pseudo_key", "AttributeType": "S"},
         ],
     },
+    "local-grapl-user_auth_table": {
+        "key_schema": [
+            {"KeyType": "HASH", "AttributeName": "username"},
+        ],
+        "attribute_definitions": [
+            {"AttributeName": "username", "AttributeType": "S"},
+        ],
+    },
 }
 
 dynamodb = boto3.client(
@@ -123,6 +133,12 @@ def try_create_loop(table_name):
             )
 
             return
+        except botocore.exceptions.ClientError as e:
+            if 'ResourceInUseException' in e.__class__.__name__:
+                break
+            else:
+                print(table_name, e)
+                time.sleep(2)
         except Exception as e:
             print(table_name, e)
             time.sleep(2)
@@ -133,3 +149,5 @@ for table_name in table_names:
         try_create_loop(table_name)
     except Exception as e:
         print(table_name, e)
+
+print("Provisioned DynamoDB")

@@ -197,3 +197,7 @@ pub fn ip_connection_history_table_name() -> String {
 pub fn asset_id_mappings_table_name() -> String {
     return std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS");
 }
+
+pub fn user_auth_table_name() -> String {
+    return std::env::var("USER_AUTH_TABLE").expect("USER_AUTH_TABLE")
+}
