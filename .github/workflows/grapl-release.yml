@@ -159,6 +159,10 @@ jobs:
           cp dist/graphql-endpoint/lambda.zip graphql-endpoint-$VERSION-$CHANNEL.zip
           echo "::set-output name=graphql-endpoint::graphql-endpoint-$VERSION-$CHANNEL.zip"
 
+      - name: Clean up Grapl build dist
+        run: |
+          rm -rf dist
+
       - name: Upload sysmon-subgraph-generator to Github
         uses: actions/upload-release-asset@v1
         env:
