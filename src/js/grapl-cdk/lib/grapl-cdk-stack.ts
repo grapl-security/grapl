@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
 import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
@@ -7,7 +6,6 @@ import * as ec2 from "@aws-cdk/aws-ec2";
 import * as lambda from "@aws-cdk/aws-lambda";
 import {Runtime} from "@aws-cdk/aws-lambda";
 import * as apigateway from "@aws-cdk/aws-apigateway";
-=======
 import * as cdk from '@aws-cdk/core';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
@@ -18,11 +16,9 @@ import * as targets from '@aws-cdk/aws-events-targets';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as iam from '@aws-cdk/aws-iam';
 import * as apigateway from '@aws-cdk/aws-apigateway';
->>>>>>> staging
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as codedeploy from '@aws-cdk/aws-codedeploy';
 
-<<<<<<< HEAD
 import {Service} from "./service";
 import {UserAuthDb} from "./userauthdb";
 import {DGraphEcs} from "./dgraph";
@@ -31,7 +27,6 @@ import {EventEmitter} from "./event_emitters";
 import {RedisCluster} from "./redis";
 import {EngagementNotebook} from "./engagement";
 import AnalyzerDeployer from "./analyzer_deployer"
-=======
 import { Service } from './service';
 import { UserAuthDb } from './userauthdb';
 import { DGraphEcs } from './dgraph';
@@ -41,7 +36,6 @@ import { RedisCluster } from './redis';
 import { EngagementNotebook } from './engagement';
 import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
->>>>>>> staging
 
 import { Watchful } from './vendor/cdk-watchful/lib/watchful';
 
@@ -296,7 +290,6 @@ class AnalyzerExecutor extends cdk.NestedStack {
     constructor(
         scope: cdk.Construct,
         id: string,
-<<<<<<< HEAD
         prefix: string,
         entrypoint: string, // name of the analyzer entrypoint file
         analyzer_version: string,
@@ -352,72 +345,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
             alias,
             deploymentConfig: codedeploy.LambdaDeploymentConfig.LINEAR_10PERCENT_EVERY_1MINUTE,
         });
-=======
-        props: AnalyzerExecutorProps
-    ) {
-        super(scope, id);
 
-        const bucket_prefix = props.prefix.toLowerCase();
-        const dispatched_analyzer = new EventEmitter(
-            this,
-            bucket_prefix + '-dispatched-analyzer'
-        );
-        this.bucket = dispatched_analyzer.bucket;
-
-        const count_cache = new RedisCluster(this, 'ExecutorCountCache', props);
-        const hit_cache = new RedisCluster(this, 'ExecutorHitCache', props);
-        const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
-
-        const service = new Service(this, id, {
-            prefix: props.prefix,
-            environment: {
-                ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
-                BUCKET_PREFIX: bucket_prefix,
-                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
-                COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
-                COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
-                MESSAGECACHE_ADDR:
-                    message_cache.cluster.attrRedisEndpointAddress,
-                MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
-                HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
-                HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
-                GRPC_ENABLE_FORK_SUPPORT: '1',
-            },
-            vpc: props.vpc,
-            reads_from: dispatched_analyzer.bucket,
-            writes_to: props.writesTo,
-            subscribes_to: dispatched_analyzer.topic,
-            opt: {
-                runtime: lambda.Runtime.PYTHON_3_7,
-            },
-            version: props.version,
-            watchful: props.watchful,
-        });
-
-        // We need the List capability to find each of the analyzers
-        service.readsFrom(props.readsAnalyzersFrom, true);
-        service.readsFrom(props.modelPluginsBucket, true);
-
-        // Need to be able to GetObject in order to HEAD, can be replaced with
-        // a cache later, but safe so long as there is no LIST
-        let policy = new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: ['s3:GetObject'],
-            resources: [props.writesTo.bucketArn + '/*'],
-        });
-
-        service.event_handler.addToRolePolicy(policy);
-        service.event_retry_handler.addToRolePolicy(policy);
-
-        service.event_handler.connections.allowToAnyIpv4(
-            ec2.Port.allTraffic(),
-            'Allow outbound to S3'
-        );
-        service.event_retry_handler.connections.allowToAnyIpv4(
-            ec2.Port.allTraffic(),
-            'Allow outbound to S3'
-        );
->>>>>>> staging
     }
 }
 
@@ -789,27 +717,18 @@ export class GraplCdkStack extends cdk.Stack {
                 ...graplProps,
             }
         );
-        
-        const analyzer_executor = new AnalyzerExecutor(
-            this,
-            'analyzer-executor',
-            {
-                writesTo: engagement_creator.bucket,
-                readsAnalyzersFrom: analyzers_bucket,
-                modelPluginsBucket: model_plugins_bucket,
-                ...graplProps,
-            }
-        );
 
-        const analyzer_dispatch = new AnalyzerDispatch(
-            this,
-            'analyzer-dispatcher',
-            {
-                writesTo: analyzer_executor.bucket,
-                readsFrom: analyzers_bucket,
-                ...graplProps,
-            }
-        );
+        // TODO: We need a new dispatcher
+
+        // const analyzer_dispatch = new AnalyzerDispatch(
+        //     this,
+        //     'analyzer-dispatcher',
+        //     {
+        //         writesTo: analyzer_executor.bucket,
+        //         readsFrom: analyzers_bucket,
+        //         ...graplProps,
+        //     }
+        // );
 
         const graph_merger = new GraphMerger(this, 'graph-merger', {
             writesTo: analyzer_dispatch.bucket,
@@ -825,6 +744,18 @@ export class GraplCdkStack extends cdk.Stack {
             writesTo: node_identifier.bucket,
             ...graplProps,
         });
+
+        new AnalyzerDeployer(
+            this,
+            'analyzer-deplyer',
+            graplProps.prefix,
+            graplProps.version,
+            graph_merger.bucket,
+            engagement_creator.bucket,
+            model_plugins_bucket,
+            master_graph,
+            grapl_vpc,
+        );
 
         new EngagementNotebook(this, 'engagements', graplProps);
 
