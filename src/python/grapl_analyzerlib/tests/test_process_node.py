@@ -1,20 +1,22 @@
-import json
 import time
 import unittest
-from typing import *
+from typing import cast, Dict
 
 import hypothesis
 import hypothesis.strategies as st
 from hypothesis import given
+
 from pydgraph import DgraphClient, DgraphClientStub
+
+import pytest
 
 from grapl_analyzerlib.nodes.comparators import escape_dgraph_str, Not
 from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
 from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
 from grapl_analyzerlib.nodes.types import Property
 from grapl_analyzerlib.nodes.viewable import Viewable, NV
-from grapl_analyzerlib.nodes.asset_node import AssetView, AssetQuery
-from test_utils.dgraph_utils import upsert, create_edge, node_key_for_test
+from grapl_analyzerlib.nodes.asset_node import AssetQuery
+from test_utils.dgraph_utils import upsert, create_edge
 from test_utils.strategies.misc import text_dgraph_compat
 from test_utils.strategies.process_view_strategy import (
     process_props,
@@ -75,6 +77,7 @@ def get_or_create_process_node_deprecated(
     )
 
 
+@pytest.mark.integration_test
 class TestProcessQuery(unittest.TestCase):
 
     # @classmethod

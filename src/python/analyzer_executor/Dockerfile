@@ -3,8 +3,8 @@ USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . analyzer_executor
 COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
-# RUN python setup.py test
 RUN /bin/bash -c "source venv/bin/activate && cd analyzer_executor && pip install ."
+RUN /bin/bash -c "source venv/bin/activate && py.test -m 'not integration_test'"
 RUN zip --quiet -9r lambda.zip venv/lib/python3.7/site-packages/
 RUN zip -g lambda.zip analyzer_executor/src/analyzer-executor.py
 RUN mkdir -p dist/analyzer-executor && cp lambda.zip dist/analyzer-executor/lambda.zip

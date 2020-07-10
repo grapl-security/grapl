@@ -1,27 +1,19 @@
-import time
 import unittest
 import json
-from copy import deepcopy
-from typing import *
+
+from typing import cast, Dict, Type
+
+import hypothesis.strategies as st
 
 from hypothesis import given
-import hypothesis.strategies as st
-from pydgraph import DgraphClient, DgraphClientStub
-from grapl_analyzerlib.nodes.comparators import (
-    IntCmp,
-    _str_cmps,
-    StrCmp,
-    _int_cmps,
-    escape_dgraph_str,
-    Not,
-)
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
-from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView, IProcessView
-from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
-from grapl_analyzerlib.nodes.types import Property, PropertyT
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView
 
-from grapl_provision import provision, drop_all
+import pytest
+
+from pydgraph import DgraphClient, DgraphClientStub
+from grapl_analyzerlib.nodes.comparators import escape_dgraph_str
+from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
+from grapl_analyzerlib.nodes.types import Property
+from grapl_analyzerlib.nodes.viewable import Viewable
 
 
 def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
@@ -33,7 +25,7 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
         {{
             q0(func: eq(node_key, "{node_key}"))
             {{
-                    uid,  
+                    uid,
                     expand(_all_)
             }}
         }}
@@ -140,6 +132,7 @@ def get_or_create_file_node(
     return cast(FileView, upsert(local_client, "File", FileView, node_key, file))
 
 
+@pytest.mark.integration_test
 class TestFileQuery(unittest.TestCase):
     #
     # @classmethod
