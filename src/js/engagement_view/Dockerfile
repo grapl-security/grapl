@@ -1,6 +1,7 @@
 FROM node:alpine3.10 AS engagement-view-build
 COPY . .
 RUN yarn install
+RUN yarn test
 RUN yarn build
 
 FROM syntaqx/serve AS grapl-engagement-view
