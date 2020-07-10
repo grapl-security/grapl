@@ -68,3 +68,4 @@ pip-log.txt
 *.zip
 stale_outputs_checked
 .log/
+.dobi/

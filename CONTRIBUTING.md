@@ -54,38 +54,32 @@ Grapl is organized as a monorepo with the following structure:
       └──{ rust services …
 ```
 
-We use `docker-compose` for local development. To execute a Grapl
-debug build, execute the following command in the project root:
-
-``` bash
-docker-compose \
-  -f docker-compose.yml \
-  -f docker-compose.build.yml \
-  build --build-arg release_target=debug
-```
-
-Note that the `--build-arg release_target=debug` is redundant, but
-it's shown here because if you want to execute a release build you
-can use `--build-arg release_target=release`.
-
-We currently rely on some unsupported and undocumented behavior of
-`docker-compose build` to build intermediate containers in dependency
-order, so unfortunately `docker-compose build --parallel` will not
-work. The way forward will probably be to use a dedicated build
-automation tool like [Dobi](https://github.com/dnephin/dobi). See
-https://github.com/grapl-security/grapl/issues/86.
-
-To run your images locally, execute the following command in the
+We use [docker-compose](https://docs.docker.com/compose/) and
+[dobi](https://dnephin.github.io/dobi/) for local development. To
+execute a Grapl debug build, execute the following command in the
 project root:
 
 ``` bash
-docker-compose \
-  -f docker-compose.yml \
-  -f docker-compose.build.yml \
-  up
+TAG=latest GRAPL_RELEASE_TARGET=debug dobi --no-bind-mount build
 ```
 
-See [these docs](https://grapl-analyzerlib.readthedocs.io/en/latest/setup/local/)
+Note that the `GRAPL_RELEASE_TARGET=debug` is redundant, but it's
+shown here because if you want to execute a release build you can use
+`GRAPL_RELEASE_TARGET=release`.
+
+To run your images locally, execute the following command in the
+project root (after building):
+
+``` bash
+TAG=latest docker-compose up
+```
+
+Note that the `TAG=latest` is redundant, it's shown here because if
+you specified a different tag in your build step above you would want
+to specify that same tag here.
+
+See [these
+docs](https://grapl-analyzerlib.readthedocs.io/en/latest/setup/local/)
 for a more in-depth guide to operating Grapl locally.
 
 We heartily welcome code contributions, but we request for the sake of
