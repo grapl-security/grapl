@@ -7,6 +7,8 @@ import os
 import sys
 import traceback
 import uuid
+import jwt
+
 from base64 import b64decode
 from hashlib import sha1
 from typing import TypeVar, Dict, Union, List, Any
@@ -39,9 +41,8 @@ else:
 
     JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
-ORIGIN = (
-    "https://" + os.environ["BUCKET_PREFIX"] + "engagement-ux-bucket.s3.amazonaws.com"
-)
+ORIGIN = os.environ["UX_BUCKET_URL"].lower()
+
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
@@ -193,8 +194,7 @@ def add_reverse_edge_type(
 
 def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
     query = f"""
-        schema(type: {type_name}) {{
-        }}
+        schema(type: {type_name}) {{ }}
     """
     LOGGER.debug(f"query: {query}")
     txn = client.txn(read_only=True)
@@ -206,17 +206,18 @@ def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
 
     pred_names = []
 
-    for field in res["types"][0]["fields"]:
-        pred_name = (
-            f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
-        )
-        pred_names.append(pred_name)
+    if "types" in res:
+        for field in res["types"][0]["fields"]:
+            pred_name = (
+                f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
+            )
+            pred_names.append(pred_name)
 
     return pred_names
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
-    plugin_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
+    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
     plugin_parts = key.split("/")
     plugin_name = plugin_parts[0]
@@ -394,7 +395,7 @@ def deploy():
 
 
 def get_plugin_list(s3: BaseClient):
-    plugin_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
+    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
     list_response = s3.list_objects_v2(Bucket=plugin_bucket)
 
@@ -423,7 +424,7 @@ def list_model_plugins():
 
 
 def delete_plugin(s3_client, plugin_name):
-    plugin_bucket = os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket"
+    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
     list_response = s3_client.list_objects_v2(Bucket=plugin_bucket, Prefix=plugin_name,)
 

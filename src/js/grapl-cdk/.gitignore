@@ -2,7 +2,6 @@
 !jest.config.js
 *.d.ts
 node_modules
-.env
 
 # CDK asset staging directory
 .cdk.staging
@@ -11,3 +10,6 @@ cdk.out
 # Parcel build directories
 .cache
 .build
+
+# do not ignore our UX
+!edge_ux/**/*.js

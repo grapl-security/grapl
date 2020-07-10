@@ -7,21 +7,24 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import { mapEdgeProps } from '../modules/GraphViz/graph/graph_traverse';
-import {mapNodeProps} from './GraphViz';
-import {Node} from "../modules/GraphViz/CustomTypes"
+import { mapNodeProps } from './GraphViz';
+import { Node } from "../modules/GraphViz/CustomTypes"
 
 
 const useStyles = makeStyles({
     root: {
-        fontSize: "1em"
+        fontSize: ".75em"
     },
-    table: {
+    nodeTable: {
         minWidth: 450,
     }, 
     tableHeader: {
-        fontSize: "18px", 
-        color: "#EAFDFF", 
-    }
+        fontSize: ".85rem", 
+        backgroundColor: "#595959"
+    }, 
+    nodeTableData: {
+        fontSize: ".75rem"
+    },
 });
 
 function innerTable(node: Node, styles: any) {
@@ -53,10 +56,9 @@ type NodeTableProps = {
 }
 
 function NodeTable({node}: NodeTableProps){
-    console.log("Displaying node: ", node);
     const classes = useStyles();
     const hidden = new Set(
-        ['id', 'dgraph.type', '__indexColor', 'risks','uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']
+        ['id', 'dgraph.type', 'dgraph_type', '__indexColor', 'risks','uid', 'scope', 'name', 'nodeType', 'nodeLabel', 'x', 'y', 'index', 'vy', 'vx', 'fx', 'fy']
     );
 
     mapEdgeProps(node, (edgeName: string, _neighbor: Node) => {
@@ -84,7 +86,7 @@ function NodeTable({node}: NodeTableProps){
 
         return(
             <TableContainer>
-                <Table className={classes.table}>
+                <Table className={classes.nodeTable}>
                 {
                     innerTable(node, classes)
                 }
@@ -95,8 +97,8 @@ function NodeTable({node}: NodeTableProps){
                                 
                                 return(
                                     <TableRow>
-                                        <TableCell align="left"><b>{key}</b></TableCell>
-                                        <TableCell align="left">{value as any}</TableCell>
+                                        <TableCell className = {classes.nodeTableData} align="left"><b>{key}</b></TableCell>
+                                        <TableCell className = {classes.nodeTableData} align="left">{value as any}</TableCell>
                                     </TableRow>
                                 ) 
                             })

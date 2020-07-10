@@ -30,7 +30,7 @@ export const deletePlugin = async ( pluginName: string ): Promise <boolean> => {
             body: JSON.stringify({plugins_to_delete: [pluginName]})
         }
     );
-    const body = await res.json();
+    await res.json();
     return true;
 };
 
@@ -46,5 +46,6 @@ export const uploadFilesToDgraph = async (payload: PluginPayload ): Promise<bool
         }
     );
     const body = await res.json();
+    console.log("body", body)
     return body.success.Success;
 };

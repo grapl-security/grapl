@@ -186,15 +186,16 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
 
     let struct_name = &input.ident;
 
-    let node_name = format!("{}Node", struct_name);
-    let node_name = syn::Ident::new(&node_name, struct_name.span());
-
+    let node_name_str = format!("{}Node", struct_name);
+    let node_name = syn::Ident::new(&node_name_str, struct_name.span());
+    // Add node name to id
     let q = quote!(
 
         impl #node_name {
             pub fn static_strategy() -> IdStrategy {
                 Static {
                     primary_key_properties: vec![
+                        #node_name_str .to_owned(),
                         #id_fields
                     ],
                     primary_key_requires_asset_id: false,

@@ -31,10 +31,8 @@ else:
 
     JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
+ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
-ORIGIN = (
-    "https://" + os.environ["BUCKET_PREFIX"] + "engagement-ux-bucket.s3.amazonaws.com"
-)
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 DYNAMO = None
 
@@ -532,7 +530,9 @@ def lambda_login(event):
     login_res = login(body["username"], body["password"])
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
-    cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None"
+    cookie = (
+        f"grapl_jwt={login_res}; Domain=.amazonaws.com; secure; HttpOnly; SameSite=None"
+    )
     if login_res:
         return cookie
 
