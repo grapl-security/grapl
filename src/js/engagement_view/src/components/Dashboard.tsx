@@ -56,15 +56,6 @@ export default function Dashboard() {
                             <Link to = "/engagements" className = {classes.link}> Engagements </Link>
                             <Link to = "/plugins" className = {classes.link}> Upload Plugin </Link>
                     </section>
-
-                    <section className = { classes.welcome }>
-                        <h1> Welcome! </h1>
-                        <p>Documents</p>
-                        <p> File an issue</p>
-                        <p>Slack</p>
-                        {/* # TODO: Link to Docs 
-                        # TODO: Link to Issues */}
-                    </section>
                 </div>
             </>
         )
