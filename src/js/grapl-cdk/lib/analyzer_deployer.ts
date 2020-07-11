@@ -16,7 +16,7 @@ class AnalyzerDeployer extends cdk.NestedStack {
         id: string,
         prefix: string,
         grapl_version: string,
-        merged_graph_bucket: s3.IBucket,
+        analyzer_request_bucket: s3.IBucket,
         analyzer_matched_bucket: s3.IBucket,
         model_plugins_bucket: s3.IBucket,
         master_graph: DGraphEcs,
@@ -43,10 +43,10 @@ class AnalyzerDeployer extends cdk.NestedStack {
                 CUSTOMER_PREFIX: prefix,
                 GRAPL_VERSION: grapl_version,
                 VPC_ID: vpc.vpcId,
-                MERGED_GRAPH_BUCKET_ARN: merged_graph_bucket.bucketArn,
+                ANALYZER_REQUEST_BUCKET: analyzer_request_bucket.bucketArn,
                 ANALYZER_MATCHED_BUCKET_ARN: analyzer_matched_bucket.bucketArn,
                 MODEL_PLUGIN_BUCKET_ARN: model_plugins_bucket.bucketArn,
-                MG_ALPHAS: master_graph.alphaNames.join(",")
+                MG_ALPHAS: master_graph.alphaHostPorts().join(",")
             }
         });
 

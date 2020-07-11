@@ -2,8 +2,8 @@ import * as cdk from "@aws-cdk/core";
 import * as lambda from "@aws-cdk/aws-lambda";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as ec2 from "@aws-cdk/aws-ec2";
-import {RedisCluster} from "../../../grapl-cdk/lib/redis";
-import {DGraphEcs} from "../../../grapl-cdk/lib/dgraph";
+import {RedisCluster} from "../../grapl-cdk/lib/redis";
+import {DGraphEcs} from "../../grapl-cdk/lib/dgraph";
 import * as sns from "@aws-cdk/aws-sns";
 import {IVpc, Vpc} from "@aws-cdk/aws-ec2";
 

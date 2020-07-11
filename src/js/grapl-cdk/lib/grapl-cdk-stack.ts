@@ -1,23 +1,15 @@
 import * as cdk from "@aws-cdk/core";
 import * as s3 from "@aws-cdk/aws-s3";
-import {BlockPublicAccess, BucketEncryption} from "@aws-cdk/aws-s3";
+import {BucketEncryption} from "@aws-cdk/aws-s3";
 import * as sns from "@aws-cdk/aws-sns";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as lambda from "@aws-cdk/aws-lambda";
-import {Runtime} from "@aws-cdk/aws-lambda";
 import * as apigateway from "@aws-cdk/aws-apigateway";
-import * as cdk from '@aws-cdk/core';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
-import * as ec2 from '@aws-cdk/aws-ec2';
 import * as events from '@aws-cdk/aws-events';
 import * as targets from '@aws-cdk/aws-events-targets';
-import * as lambda from '@aws-cdk/aws-lambda';
 import * as iam from '@aws-cdk/aws-iam';
-import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
-import * as codedeploy from '@aws-cdk/aws-codedeploy';
 
 import {Service} from "./service";
 import {UserAuthDb} from "./userauthdb";
@@ -25,19 +17,11 @@ import {DGraphEcs} from "./dgraph";
 import {HistoryDb} from "./historydb";
 import {EventEmitter} from "./event_emitters";
 import {RedisCluster} from "./redis";
-import {EngagementNotebook} from "./engagement";
+import {EngagementEdge, EngagementNotebook} from "./engagement";
 import AnalyzerDeployer from "./analyzer_deployer"
-import { Service } from './service';
-import { UserAuthDb } from './userauthdb';
-import { DGraphEcs } from './dgraph';
-import { HistoryDb } from './historydb';
-import { EventEmitter } from './event_emitters';
-import { RedisCluster } from './redis';
-import { EngagementNotebook } from './engagement';
-import { EngagementEdge } from './engagement';
-import { GraphQLEndpoint } from './graphql';
+import {GraphQLEndpoint} from './graphql';
 
-import { Watchful } from './vendor/cdk-watchful/lib/watchful';
+import {Watchful} from './vendor/cdk-watchful/lib';
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -275,77 +259,6 @@ class AnalyzerDispatch extends cdk.NestedStack {
             ec2.Port.allTcp(),
             'Allow outbound to S3'
         );
-    }
-}
-
-export interface AnalyzerExecutorProps extends GraplServiceProps {
-    writesTo: s3.IBucket;
-    readsAnalyzersFrom: s3.IBucket;
-    modelPluginsBucket: s3.IBucket;
-}
-
-class AnalyzerExecutor extends cdk.NestedStack {
-    readonly bucket: s3.IBucket;
-
-    constructor(
-        scope: cdk.Construct,
-        id: string,
-        prefix: string,
-        entrypoint: string, // name of the analyzer entrypoint file
-        analyzer_version: string,
-        vpc: ec2.IVpc,
-        event_topic: sns.ITopic,
-        writes_events_to: s3.IBucket,
-        model_plugins_bucket: s3.IBucket,
-        master_graph: DGraphEcs,
-        count_cache: RedisCluster,
-        hit_cache: RedisCluster,
-        message_cache: RedisCluster,
-    ) {
-        super(scope, id);
-
-        this.topic = event_topic;
-
-
-
-        const func = new lambda.Function(
-            scope, 'Handler',
-            {
-                runtime: lambda.Runtime.PYTHON_3_7,
-                handler: entrypoint,
-                functionName: `Grapl-${name}-Handler`,
-                code: lambda.Code.asset(`./zips/${name}-${analyzer_version}.zip`),
-                vpc,
-                environment: {
-                    IS_RETRY: "False",
-                    ...{
-                        "ANALYZER_MATCH_BUCKET": writes_events_to.bucketName,
-                        "BUCKET_PREFIX": prefix,
-                        "MG_ALPHAS": master_graph.alphaNames.join(","),
-                        "COUNTCACHE_ADDR": count_cache.cluster.attrRedisEndpointAddress,
-                        "COUNTCACHE_PORT": count_cache.cluster.attrRedisEndpointPort,
-                        "MESSAGECACHE_ADDR": message_cache.cluster.attrRedisEndpointAddress,
-                        "MESSAGECACHE_PORT": message_cache.cluster.attrRedisEndpointPort,
-                        "HITCACHE_ADDR": hit_cache.cluster.attrRedisEndpointAddress,
-                        "HITCACHE_PORT": hit_cache.cluster.attrRedisEndpointPort,
-                        "GRPC_ENABLE_FORK_SUPPORT": "1",
-                    },
-                },
-                timeout: cdk.Duration.seconds(180),
-                memorySize: 256,
-            });
-
-        const version = func.latestVersion;
-        const alias = new lambda.Alias(this, 'LambdaAlias', {
-            aliasName: 'Prod',
-            version,
-        });
-
-        new codedeploy.LambdaDeploymentGroup(this, 'DeploymentGroup', {
-            alias,
-            deploymentConfig: codedeploy.LambdaDeploymentConfig.LINEAR_10PERCENT_EVERY_1MINUTE,
-        });
-
     }
 }
 
@@ -720,20 +633,40 @@ export class GraplCdkStack extends cdk.Stack {
 
         // TODO: We need a new dispatcher
 
-        // const analyzer_dispatch = new AnalyzerDispatch(
-        //     this,
-        //     'analyzer-dispatcher',
-        //     {
-        //         writesTo: analyzer_executor.bucket,
-        //         readsFrom: analyzers_bucket,
-        //         ...graplProps,
-        //     }
-        // );
+        const analyzer_request_bucket = new s3.Bucket(
+            this,
+            'analyzer-request-bucket',
+            {
+                encryption: BucketEncryption.S3_MANAGED
+            }
+        )
+
+        const analyzer_dispatch = new AnalyzerDispatch(
+            this,
+            'analyzer-dispatcher',
+            {
+                writesTo: analyzer_request_bucket,
+                readsFrom: analyzers_bucket,
+                ...graplProps,
+            }
+        );
 
         const graph_merger = new GraphMerger(this, 'graph-merger', {
             writesTo: analyzer_dispatch.bucket,
             ...graplProps,
         });
+
+        new AnalyzerDeployer(
+            this,
+            'analyzer-deplyer',
+            graplProps.prefix,
+            graplProps.version,
+            analyzer_request_bucket,
+            engagement_creator.bucket,
+            model_plugins_bucket,
+            master_graph,
+            grapl_vpc,
+        );
 
         const node_identifier = new NodeIdentifier(this, 'node-identifier', {
             writesTo: graph_merger.bucket,
@@ -745,17 +678,7 @@ export class GraplCdkStack extends cdk.Stack {
             ...graplProps,
         });
 
-        new AnalyzerDeployer(
-            this,
-            'analyzer-deplyer',
-            graplProps.prefix,
-            graplProps.version,
-            graph_merger.bucket,
-            engagement_creator.bucket,
-            model_plugins_bucket,
-            master_graph,
-            grapl_vpc,
-        );
+
 
         new EngagementNotebook(this, 'engagements', graplProps);
 

@@ -1,6 +1,7 @@
 import * as AWS from 'aws-sdk';
-const fsPromises = require('fs').promises
 import AdmZip from 'adm-zip';
+
+const fsPromises = require('fs').promises
 
 // Set the region
 // Create SQS service object
