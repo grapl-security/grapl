@@ -4,6 +4,7 @@ import './index.css';
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles'
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import { HashRouter } from 'react-router-dom';
 
 
 const darkTheme = createMuiTheme({
@@ -19,11 +20,12 @@ const rootElement = document.getElementById('root')
 
 ReactDOM.render(
     <React.StrictMode>
-    <ThemeProvider theme={darkTheme}>
-        <App />, 
-    </ThemeProvider>
-    </React.StrictMode>
-    ,
+        <HashRouter>
+            <ThemeProvider theme={darkTheme}>
+                <App />, 
+            </ThemeProvider>
+        </HashRouter>
+    </React.StrictMode>,
     rootElement
 );
 

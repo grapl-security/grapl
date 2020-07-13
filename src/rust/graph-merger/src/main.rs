@@ -184,7 +184,7 @@ struct GraphMerger<CacheT>
 where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
-    mg_alphas: Vec<String>,
+    mg_client: Arc<DgraphClient>,
     cache: CacheT,
 }
 
@@ -193,7 +193,31 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(mg_alphas: Vec<String>, cache: CacheT) -> Self {
-        Self { mg_alphas, cache }
+        let mg_client = {
+            let mut rng = thread_rng();
+            let rand_alpha = mg_alphas
+                .choose(&mut rng)
+                .expect("Empty rand_alpha")
+                .to_owned();
+            let (host, port) = grapl_config::parse_host_port(rand_alpha);
+
+            debug!("connecting to DGraph {:?}:{:?}", host, port);
+            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
+                Client::new_plain(
+                    &host,
+                    port,
+                    ClientConf {
+                        ..Default::default()
+                    },
+                )
+                .expect("Failed to create dgraph client"),
+            ))])
+        };
+
+        Self {
+            mg_client: Arc::new(mg_client),
+            cache,
+        }
     }
 }
 
@@ -332,7 +356,6 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         tokio_compat::run_std(async move {
             let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
             debug!("Queue Url: {}", source_queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let cache_address = {
                 let retry_identity_cache_addr =
                     std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
@@ -348,17 +371,12 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
             let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
             info!("Output events to: {}", bucket);
             let region = grapl_config::region();
-            let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS")
-                .expect("MG_ALPHAS")
-                .split(',')
-                .map(str::to_string)
-                .collect();
 
             let cache = RedisCache::new(cache_address.to_owned())
                 .await
                 .expect("Could not create redis client");
 
-            let graph_merger = GraphMerger::new(mg_alphas, cache.clone());
+            let graph_merger = GraphMerger::new(grapl_config::mg_alphas(), cache.clone());
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
@@ -453,22 +471,6 @@ where
             subgraph.edges.len()
         );
 
-        let mg_client = {
-            let mut rng = thread_rng();
-            let rand_alpha = self.mg_alphas.choose(&mut rng).expect("Empty rand_alpha");
-
-            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
-                Client::new_plain(
-                    rand_alpha,
-                    9080,
-                    ClientConf {
-                        ..Default::default()
-                    },
-                )
-                .expect("Failed to create dgraph client"),
-            ))])
-        };
-
         //        async_handler(mg_client, subgraph).await;
 
         let mut upsert_res = None;
@@ -477,7 +479,7 @@ where
         let mut node_key_to_uid = HashMap::new();
         use futures::future::FutureExt;
         let upserts = subgraph.nodes.values().map(|node| {
-            upsert_node(&mg_client, node.clone()).map(move |u| (node.clone_node_key(), u))
+            upsert_node(&self.mg_client, node.clone()).map(move |u| (node.clone_node_key(), u))
         });
 
         let upserts = log_time!("All upserts", join_all(upserts).await);
@@ -541,14 +543,14 @@ where
                     }
                 }
             })
-            .map(|mu| upsert_edge(&mg_client, mu))
+            .map(|mu| upsert_edge(&self.mg_client, mu))
             .collect();
 
         let _: Vec<_> = join_all(edge_mutations).await;
 
         //        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
 
-        let mut completed = match (upsert_res, edge_res) {
+        let completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
                 sqs_lambda::error::Error::ProcessingError(e.to_string()),
@@ -600,9 +602,7 @@ fn init_s3_client() -> S3Client {
 }
 
 async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
-    let mg_alphas: Vec<_> = vec!["master_graph".to_owned()];
-
-    let graph_merger = GraphMerger::new(mg_alphas, NopCache {});
+    let graph_merger = GraphMerger::new(grapl_config::mg_alphas(), NopCache {});
 
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 

@@ -82,6 +82,26 @@ pub fn _init_grapl_log(service_name: &str) {
     }
 }
 
+pub fn mg_alphas() -> Vec<String> {
+    return std::env::var("MG_ALPHAS")
+        .expect("MG_ALPHAS")
+        .split(',')
+        .map(str::to_string)
+        .collect();
+}
+
+pub fn parse_host_port(mg_alpha: String) -> (String, u16) {
+    let mut splat = mg_alpha.split(":");
+    let host = splat.next().expect("missing host").to_owned();
+    let port_str = splat.next();
+    let port = port_str
+        .expect("missing port")
+        .parse()
+        .expect(&format!("invalid port: \"{:?}\"", port_str));
+
+    (host, port)
+}
+
 pub async fn wait_for_s3(s3_client: impl S3) -> color_eyre::Result<()> {
     wait_loop(150, || async {
         match s3_client.list_buckets().await {
@@ -139,4 +159,43 @@ where
     }
 
     errs
+}
+
+pub fn static_mapping_table_name() -> String {
+    return std::env::var("STATIC_MAPPING_TABLE").expect("STATIC_MAPPING_TABLE");
+}
+
+pub fn dynamic_session_table_name() -> String {
+    return std::env::var("DYNAMIC_SESSION_TABLE").expect("DYNAMIC_SESSION_TABLE");
+}
+
+pub fn process_history_table_name() -> String {
+    return std::env::var("PROCESS_HISTORY_TABLE").expect("PROCESS_HISTORY_TABLE");
+}
+
+pub fn file_history_table_name() -> String {
+    return std::env::var("FILE_HISTORY_TABLE").expect("FILE_HISTORY_TABLE");
+}
+
+pub fn inbound_connection_history_table_name() -> String {
+    return std::env::var("INBOUND_CONNECTION_HISTORY_TABLE")
+        .expect("INBOUND_CONNECTION_HISTORY_TABLE");
+}
+
+pub fn outbound_connection_history_table_name() -> String {
+    return std::env::var("OUTBOUND_CONNECTION_HISTORY_TABLE")
+        .expect("OUTBOUND_CONNECTION_HISTORY_TABLE");
+}
+
+pub fn network_connection_history_table_name() -> String {
+    return std::env::var("NETWORK_CONNECTION_HISTORY_TABLE")
+        .expect("NETWORK_CONNECTION_HISTORY_TABLE");
+}
+
+pub fn ip_connection_history_table_name() -> String {
+    return std::env::var("IP_CONNECTION_HISTORY_TABLE").expect("IP_CONNECTION_HISTORY_TABLE");
+}
+
+pub fn asset_id_mappings_table_name() -> String {
+    return std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS");
 }

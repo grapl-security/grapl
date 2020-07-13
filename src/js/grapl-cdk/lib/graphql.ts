@@ -1,67 +1,84 @@
-import * as cdk from "@aws-cdk/core";
-import * as lambda from "@aws-cdk/aws-lambda";
-import * as apigateway from "@aws-cdk/aws-apigateway";
-import { GraplEnvironementProps } from '../lib/grapl-cdk-stack';
+import * as cdk from '@aws-cdk/core';
+import * as lambda from '@aws-cdk/aws-lambda';
+import * as apigateway from '@aws-cdk/aws-apigateway';
+import * as s3 from '@aws-cdk/aws-s3';
 
-export class GraphQLEndpoint extends cdk.Stack {
-    event_handler: lambda.Function;
-    integration: apigateway.LambdaRestApi;
-    name: string;
+import { GraplServiceProps } from './grapl-cdk-stack';
+
+export class GraphQLEndpoint extends cdk.Construct {
     integrationName: string;
 
     constructor(
         parent: cdk.Construct,
-        name: string,
-        props: GraplEnvironementProps,
+        id: string,
+        props: GraplServiceProps,
+        ux_bucket: s3.IBucket
     ) {
-        super(parent, name, { stackName: 'Grapl-GraphQLEndpoint' });
+        super(parent, id);
 
-        this.name = name + props.prefix
-        this.integrationName = name + props.prefix + 'GraphQLIntegration';
+        const serviceName = props.prefix + '-GraphQL';
+        this.integrationName = serviceName + '-Integration';
 
-        const grapl_version = process.env.GRAPL_VERSION || "latest";
-        
-        this.event_handler = new lambda.Function(
-            this, 'Handler', {
-                runtime: lambda.Runtime.NODEJS_12_X,
-                handler: `server.handler`,
-                code: lambda.Code.fromAsset(`./zips/graphql-endpoint-${grapl_version}.zip`),
-                vpc: props.vpc,
-                environment: {
-                    "MG_ALPHAS": props.master_graph.alphaNames.join(","),
-                    "JWT_SECRET_ID": props.jwt_secret.secretArn,
-                    "BUCKET_PREFIX": props.prefix,
-                },
-                timeout: cdk.Duration.seconds(25),
-                memorySize: 128,
-                description: grapl_version,
-            }
-        );
-        this.event_handler.currentVersion.addAlias('live');
+        const event_handler = new lambda.Function(this, 'Handler', {
+            runtime: lambda.Runtime.NODEJS_12_X,
+            handler: `server.handler`,
+            functionName: serviceName + '-Handler',
+            code: lambda.Code.fromAsset(
+                `./zips/graphql-endpoint-${props.version}.zip`
+            ),
+            vpc: props.vpc,
+            environment: {
+                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
+                JWT_SECRET_ID: props.jwtSecret.secretArn,
+                BUCKET_PREFIX: props.prefix,
+                UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
+            },
+            timeout: cdk.Duration.seconds(25),
+            memorySize: 128,
+            description: props.version,
+        });
+        event_handler.currentVersion.addAlias('live');
 
-        if (this.event_handler.role) {
-            props.jwt_secret.grantRead(this.event_handler.role);
+        if (props.watchful) {
+            props.watchful.watchLambdaFunction(
+                event_handler.functionName,
+                event_handler
+            );
         }
 
-        this.integration = new apigateway.LambdaRestApi(
-            this,
-            'Integration',
-            {
-                handler: this.event_handler,
-                restApiName: this.integrationName,
-                endpointExportName: "GraphQLEndpointApi",
-            },
-        );
+        if (event_handler.role) {
+            props.jwtSecret.grantRead(event_handler.role);
+        }
 
-        this.integration.addUsagePlan('graphQLApiUsagePlan', {
+        const integration = new apigateway.LambdaRestApi(this, 'Integration', {
+            handler: event_handler,
+            restApiName: this.integrationName,
+            endpointExportName: serviceName + '-EndpointApi',
+        });
+
+        if (props.watchful) {
+            props.watchful.watchApiGateway(this.integrationName, integration, {
+                serverErrorThreshold: 1, // any 5xx alerts
+                cacheGraph: true,
+                watchedOperations: [
+                    {
+                        httpMethod: 'POST',
+                        resourcePath: '/graphql',
+                    },
+                ],
+            });
+        }
+
+        integration.addUsagePlan('graphQLApiUsagePlan', {
             quota: {
                 limit: 1_000_000,
                 period: apigateway.Period.DAY,
             },
-            throttle: {  // per minute
+            throttle: {
+                // per minute
                 rateLimit: 5000,
                 burstLimit: 10_000,
-            }
+            },
         });
     }
 }

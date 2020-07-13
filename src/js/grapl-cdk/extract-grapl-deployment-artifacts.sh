@@ -4,23 +4,23 @@ function getzip_a() {
     docker create -ti --name "cp-$1" "grapl/grapl-$1"
     docker cp "cp-$1:/$1" ./bootstrap
     docker rm -f "cp-$1"
-    zip -9 "$1-$VERSION-$CHANNEL.zip" ./bootstrap
+    zip -9 "zips/$1-$VERSION.zip" ./bootstrap
     rm ./bootstrap
 }
 
 function getzip_b() {
     docker create -ti --name "cp-$1" "grapl/grapl-$1"
-    docker cp "cp-$1:/home/grapl/lambda.zip" "$1-$VERSION-$CHANNEL.zip"
+    docker cp "cp-$1:/home/grapl/lambda.zip" "zips/$1-$VERSION.zip"
     docker rm -f "cp-$1"
 }
 
 function getzip_c() {
     docker create -ti --name "cp-$1" "grapl/grapl-$1"
-    docker cp "cp-$1:/lambda.zip" "$1-$VERSION-$CHANNEL.zip"
+    docker cp "cp-$1:/lambda.zip" "zips/$1-$VERSION.zip"
     docker rm -f "cp-$1"
 }
 
-builds=(
+as=(
     "node-identifier"
     "sysmon-subgraph-generator"
     "generic-subgraph-generator"
@@ -29,7 +29,7 @@ builds=(
     "analyzer-dispatcher"
 )
 
-asdf=(
+bs=(
     "analyzer-executor"
     "engagement-creator"
     "engagement-edge"
@@ -41,12 +41,12 @@ cs=(
     "graphql-endpoint"
 )
 
-for b in "${builds[@]}"; do
-    getzip_a $b
+for a in "${as[@]}"; do
+    getzip_a $a
 done
 
-for a in "${asdf[@]}"; do
-    getzip_b $a
+for b in "${bs[@]}"; do
+    getzip_b $b
 done
 
 for c in "${cs[@]}"; do
