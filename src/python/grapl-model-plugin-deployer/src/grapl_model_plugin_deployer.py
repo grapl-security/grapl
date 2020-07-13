@@ -1,4 +1,4 @@
-print('init')
+print("init")
 import base64
 import hmac
 import inspect
@@ -52,9 +52,9 @@ LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-LOGGER.info('Initializing Chalice server')
+LOGGER.info("Initializing Chalice server")
 
-print('origin: ', ORIGIN)
+print("origin: ", ORIGIN)
 
 app = Chalice(app_name="model-plugin-deployer")
 
@@ -242,11 +242,12 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
 
 origin_re = re.compile(
     f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
+
 def respond(err, res=None, headers=None):
-    req_origin = app.current_request.headers.get('origin', '')
+    req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding to origin: {req_origin}")
     if not headers:
@@ -265,7 +266,6 @@ def respond(err, res=None, headers=None):
         LOGGER.info("Origin did not match")
         # allow_origin = override or ORIGIN
         allow_origin = req_origin
-
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
@@ -477,7 +477,7 @@ def delete_model_plugin():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    print('nop_route')
+    print("nop_route")
     LOGGER.info("routing: " + app.current_request.context["path"])
 
     try:
