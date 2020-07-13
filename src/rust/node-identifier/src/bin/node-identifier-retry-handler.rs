@@ -26,44 +26,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         info!("Running locally");
         let mut runtime = Runtime::new().unwrap();
 
-        let s3_client = init_s3_client();
-        loop {
-            if let Err(e) = runtime.block_on(s3_client.list_buckets()) {
-                match e {
-                    RusotoError::HttpDispatch(_) => {
-                        info!("Waiting for S3 to become available");
-                        std::thread::sleep(Duration::new(2, 0));
-                    }
-                    _ => break,
-                }
-            } else {
-                break;
-            }
-        }
-
-        let sqs_client = init_sqs_client();
-        let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-        loop {
-            match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
-                queue_name_prefix: Some("grapl".to_string()),
-            })) {
-                Err(_) => {
-                    info!("Waiting for SQS to become available");
-                    std::thread::sleep(Duration::new(2, 0));
-                }
-                Ok(response) => {
-                    if let Some(urls) = response.queue_urls {
-                        if urls.contains(&source_queue_url) {
-                            break;
-                        } else {
-                            info!("Waiting for {} to be created", source_queue_url);
-                            std::thread::sleep(Duration::new(2, 0));
-                        }
-                    }
-                }
-            }
-        }
-
         let dynamodb_client = init_dynamodb_client();
         loop {
             if let Err(e) = runtime.block_on(dynamodb_client.describe_endpoints()) {
@@ -76,6 +38,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
+        // An extra sleep, for good measure
+        std::thread::sleep(Duration::new(2, 0));
 
         loop {
             if let Err(e) = runtime.block_on(async move { local_handler(false).await }) {
