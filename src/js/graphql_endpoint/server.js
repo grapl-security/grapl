@@ -5,7 +5,7 @@ const cors = require('cors');
 const app = express();
 const awsServerlessExpress = require('aws-serverless-express')
 const {validateJwt} = require('./modules/jwt.js');
-
+console.log('server.js entrypoint')
 const PORT = process.env.PORT || 5000;
 const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;  // get this from environment
 

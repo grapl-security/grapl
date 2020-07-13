@@ -1,9 +1,11 @@
+print('init')
 import base64
 import hmac
 import inspect
 import json
 import logging
 import os
+import re
 import sys
 import traceback
 import uuid
@@ -50,6 +52,9 @@ LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER.info('Initializing Chalice server')
+
+print('origin: ', ORIGIN)
 
 app = Chalice(app_name="model-plugin-deployer")
 
@@ -235,22 +240,38 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
         LOGGER.error(f"Failed to put_object to s3 {key} {traceback.format_exc()}")
 
 
+origin_re = re.compile(
+    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
+    re.IGNORECASE
+)
+
 def respond(err, res=None, headers=None):
-    LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
+    req_origin = app.current_request.headers.get('origin', '')
+
+    LOGGER.info(f"responding to origin: {req_origin}")
     if not headers:
         headers = {}
 
     if IS_LOCAL:
-        override = app.current_request.headers.get("origin", "")
+        override = req_origin
         LOGGER.info(f"overriding origin with {override}")
     else:
         override = ORIGIN_OVERRIDE
+
+    if origin_re.match(req_origin):
+        LOGGER.info("Origin matched")
+        allow_origin = req_origin
+    else:
+        LOGGER.info("Origin did not match")
+        # allow_origin = override or ORIGIN
+        allow_origin = req_origin
+
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=400 if err else 200,
         headers={
-            "Access-Control-Allow-Origin": override or ORIGIN,
+            "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Credentials": "true",
             "Content-Type": "application/json",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
@@ -456,8 +477,8 @@ def delete_model_plugin():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    LOGGER.info("routing: ", app.current_request.context["path"])
-    LOGGER.info(vars(app.current_request))
+    print('nop_route')
+    LOGGER.info("routing: " + app.current_request.context["path"])
 
     try:
         path = app.current_request.context["path"]

@@ -496,6 +496,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 BUCKET_PREFIX: props.prefix,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
+                GRAPL_LOG_LEVEL: 'DEBUG',
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
