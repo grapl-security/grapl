@@ -130,7 +130,13 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     };
 
     let mut txn = dg.new_txn();
-    let upsert_res = txn.upsert(query, mu).await?;
+    let upsert_res = match txn.upsert(query, mu).await {
+        Ok(res) => res,
+        Err(e) => {
+            txn.discard().await?;
+            return Err(e.into());
+        }
+    };
 
     txn.commit_or_abort().await?;
 
