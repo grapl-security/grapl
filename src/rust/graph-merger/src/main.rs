@@ -130,10 +130,7 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     };
 
     let mut txn = dg.new_txn();
-    let upsert_res = txn
-        .upsert(query, mu)
-        .await
-        .expect(&format!("Request to dgraph failed {:?}", &node_key));
+    let upsert_res = txn.upsert(query, mu).await?;
 
     txn.commit_or_abort().await?;
 
@@ -488,7 +485,7 @@ where
             let new_uid = match upsert {
                 Ok(new_uid) => new_uid,
                 Err(e) => {
-                    warn!("{}", e);
+                    error!("{}", e);
                     upsert_res = Some(e);
                     continue;
                 }
@@ -564,7 +561,7 @@ where
             }
         };
 
-        //        identities.into_iter().for_each(|identity| completed.add_identity(identity));
+        // identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
         completed
     }
