@@ -172,7 +172,14 @@ def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None
     for schema in schemas:
         if schema.self_type() != "Any":
             for edge_name, uid_type, _ in schema.forward_edges:
-                add_reverse_edge_type(client, uid_type, edge_name)
+                try:
+                    add_reverse_edge_type(client, uid_type, edge_name)
+                except Exception:
+                    import traceback
+
+                    LOGGER.error(
+                        "Failed to add reverse_edge type\n", traceback.format_exc()
+                    )
 
 
 def add_reverse_edge_type(
@@ -182,7 +189,13 @@ def add_reverse_edge_type(
         f"adding reverse edge type uid_type: {uid_type} edge_name: {edge_name}"
     )
     self_type = uid_type._inner_type.self_type()
-    predicates = "\n\t\t".join(query_dgraph_type(client, self_type))
+
+    existing_predicates = query_dgraph_type(client, self_type)
+    predicates = "\n\t\t".join(existing_predicates)
+
+    # In case we've already deployed this plugin
+    if edge_name in predicates:
+        return
 
     predicates += f"\n\t\t<~{edge_name}>"
 
