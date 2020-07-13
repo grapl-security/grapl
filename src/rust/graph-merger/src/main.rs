@@ -551,8 +551,6 @@ where
 
         let _: Vec<_> = join_all(edge_mutations).await;
 
-        //        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
-
         let completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
@@ -566,8 +564,6 @@ where
                 OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
             }
         };
-
-        // identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
         completed
     }
