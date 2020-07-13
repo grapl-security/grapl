@@ -178,17 +178,14 @@ export class Service {
     }
 
     readsFrom(bucket: s3.IBucket, with_list?: Boolean) {
-        const resources = [bucket.bucketArn + '/*'];
-        if (with_list) {
-            resources.push(bucket.bucketArn);
-        }
         let policy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ['s3:GetObject'],
-            resources,
+            resources: [bucket.bucketArn + '/*'],
         });
 
         if (with_list === true) {
+            policy.addResources(bucket.bucketArn);
             policy.addActions('s3:ListBucket');
         }
 
