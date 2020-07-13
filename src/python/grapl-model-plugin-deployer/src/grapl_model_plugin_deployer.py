@@ -1,4 +1,4 @@
-print('init')
+print("init")
 import base64
 import hmac
 import inspect
@@ -28,7 +28,6 @@ from grapl_analyzerlib.grapl_client import (
 from grapl_analyzerlib.schemas import NodeSchema
 from grapl_analyzerlib.schemas.schema_builder import UidType
 
-
 T = TypeVar("T")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
@@ -52,18 +51,16 @@ LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-LOGGER.info('Initializing Chalice server')
+LOGGER.info("Initializing Chalice server")
 
-print('origin: ', ORIGIN)
+print("origin: ", ORIGIN)
 
 app = Chalice(app_name="model-plugin-deployer")
-
 
 def into_list(t: Union[T, List[T]]) -> List[T]:
     if isinstance(t, list):
         return t
     return [t]
-
 
 def check_jwt(headers):
     encoded_jwt = None
@@ -81,16 +78,13 @@ def check_jwt(headers):
         LOGGER.error(traceback.format_exc())
         return False
 
-
 def verify_payload(payload_body, key, signature):
     new_signature = "sha1=" + hmac.new(key, payload_body, sha1).hexdigest()
     return new_signature == signature
 
-
 def set_schema(client: GraphClient, schema: str) -> None:
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
-
 
 def format_schemas(schema_defs) -> str:
     LOGGER.debug(f"schema_defs: {schema_defs}")
@@ -104,13 +98,11 @@ def format_schemas(schema_defs) -> str:
         ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
     )
 
-
 def provision_master_graph(
     master_graph_client: GraphClient, schemas: List[NodeSchema]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
     set_schema(master_graph_client, mg_schema_str)
-
 
 def get_s3_client() -> Any:
     if IS_LOCAL:
@@ -123,7 +115,6 @@ def get_s3_client() -> Any:
     else:
         return boto3.client("s3")
 
-
 def git_walker(repo, directory, f):
     f(directory)
     for path in into_list(repo.get_contents(directory.path)):
@@ -132,7 +123,6 @@ def git_walker(repo, directory, f):
         inner_directories = into_list(repo.get_contents(path.path))
         for inner_directory in inner_directories:
             git_walker(repo, inner_directory, f)
-
 
 def is_schema(plugin_name: str, schema_cls):
     if (
@@ -145,11 +135,9 @@ def is_schema(plugin_name: str, schema_cls):
         and hasattr(schema_cls, "to_schema_str")
     )
 
-
 def get_schema_objects() -> Dict[str, NodeSchema]:
     clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[0], an[1])}
-
 
 def provision_schemas(master_graph_client, raw_schemas):
     # For every schema, exec the schema
@@ -167,14 +155,12 @@ def provision_schemas(master_graph_client, raw_schemas):
     LOGGER.debug(f"Attaching reverse edges")
     attach_reverse_edges(master_graph_client, schemas)
 
-
 def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None:
     LOGGER.debug(f"attaching reverse edges for schemas: {schemas}")
     for schema in schemas:
         if schema.self_type() != "Any":
             for edge_name, uid_type, _ in schema.forward_edges:
                 add_reverse_edge_type(client, uid_type, edge_name)
-
 
 def add_reverse_edge_type(
     client: GraphClient, uid_type: UidType, edge_name: str
@@ -195,7 +181,6 @@ def add_reverse_edge_type(
 
     op = pydgraph.Operation(schema=type_str)
     client.alter(op)
-
 
 def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
     query = f"""
@@ -220,7 +205,6 @@ def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
 
     return pred_names
 
-
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
@@ -239,14 +223,13 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
     except Exception:
         LOGGER.error(f"Failed to put_object to s3 {key} {traceback.format_exc()}")
 
-
 origin_re = re.compile(
     f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
 def respond(err, res=None, headers=None):
-    req_origin = app.current_request.headers.get('origin', '')
+    req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding to origin: {req_origin}")
     if not headers:
@@ -266,7 +249,6 @@ def respond(err, res=None, headers=None):
         # allow_origin = override or ORIGIN
         allow_origin = req_origin
 
-
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=400 if err else 200,
@@ -281,11 +263,9 @@ def respond(err, res=None, headers=None):
         },
     )
 
-
 def requires_auth(path):
     if not IS_LOCAL:
         path = "/{proxy+}" + path
-
     def route_wrapper(route_fn):
         @app.route(path, methods=["OPTIONS", "POST"])
         def inner_route():
@@ -301,16 +281,12 @@ def requires_auth(path):
             except Exception as e:
                 LOGGER.error(traceback.format_exc())
                 return respond("Unexpected Error")
-
         return inner_route
-
     return route_wrapper
-
 
 def no_auth(path):
     if not IS_LOCAL:
         path = "/{proxy+}" + path
-
     def route_wrapper(route_fn):
         @app.route(path, methods=["OPTIONS", "POST"])
         def inner_route():
@@ -321,11 +297,8 @@ def no_auth(path):
             except Exception:
                 LOGGER.error(path + " failed " + traceback.format_exc())
                 return respond("Unexpected Error")
-
         return inner_route
-
     return route_wrapper
-
 
 def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     raw_schemas = [
@@ -341,7 +314,6 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     for path, file in plugin_files.items():
         upload_plugin(s3_client, path, file)
 
-
 builtin_nodes = {
     "Asset",
     "File",
@@ -355,8 +327,6 @@ builtin_nodes = {
     "Process",
     "Risk",
 }
-
-
 @no_auth("/gitWebhook")
 def webhook():
     shared_secret = os.environ["GITHUB_SHARED_SECRET"]
@@ -394,15 +364,12 @@ def webhook():
     upload_plugins(get_s3_client(), plugin_files)
     return respond(None, {})
 
-
 # We expect a body of:
 """
 "plugins": {
     "<plugin_path>": "<plugin_contents>",
 }
 """
-
-
 @requires_auth("/deploy")
 def deploy():
     LOGGER.info("/deploy")
@@ -413,7 +380,6 @@ def deploy():
     upload_plugins(get_s3_client(), plugins)
     LOGGER.info("uploaded plugins")
     return respond(None, {"Success": True})
-
 
 def get_plugin_list(s3: BaseClient):
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
@@ -430,7 +396,6 @@ def get_plugin_list(s3: BaseClient):
         plugin_names.add(plugin_name)
     return [plugin_name for plugin_name in plugin_names if plugin_name != "__init__.py"]
 
-
 @requires_auth("/listModelPlugins")
 def list_model_plugins():
     LOGGER.info("/listModelPlugins")
@@ -444,7 +409,6 @@ def list_model_plugins():
     LOGGER.info("plugin_names: %s", plugin_names)
     return respond(None, {"plugin_list": plugin_names})
 
-
 def delete_plugin(s3_client, plugin_name):
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
@@ -456,7 +420,6 @@ def delete_plugin(s3_client, plugin_name):
     plugin_names = set()
     for response in list_response["Contents"]:
         s3_client.delete_object(Bucket=plugin_bucket, Key=response["Key"])
-
 
 @requires_auth("/deleteModelPlugin")
 def delete_model_plugin():
@@ -474,10 +437,9 @@ def delete_model_plugin():
 
     return respond(None, {"Success": "Deleted plugins"})
 
-
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    print('nop_route')
+    print("nop_route")
     LOGGER.info("routing: " + app.current_request.context["path"])
 
     try:

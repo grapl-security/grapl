@@ -52,7 +52,7 @@ app = Chalice(app_name="engagement-edge")
 
 origin_re = re.compile(
     f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
@@ -99,7 +99,6 @@ def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
     finally:
         txn.discard()
 
-
 def edge_in_lens(
     dg_client: DgraphClient, node_uid: str, edge_name: str, lens_name: str
 ) -> List[Dict[str, Any]]:
@@ -130,7 +129,6 @@ def edge_in_lens(
     finally:
         txn.discard()
 
-
 def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
     query = """
         query q0($a: string)
@@ -159,7 +157,6 @@ def get_lens_scope(dg_client: DgraphClient, lens: str) -> Dict[str, Any]:
         return res["q0"][0]
     finally:
         txn.discard()
-
 
 def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
     query = """
@@ -197,7 +194,6 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
     finally:
         txn.discard()
 
-
 def expand_forward_edges_in_scope(
     dgraph_client: DgraphClient, node: NodeView, lens: str
 ) -> None:
@@ -234,7 +230,6 @@ def expand_forward_edges_in_scope(
                         node_edge = neighbor_view
                         setattr(node, edge_name, node_edge)
 
-
 def expand_reverse_edges_in_scope(
     dgraph_client: DgraphClient, node: NodeView, lens: str
 ) -> None:
@@ -268,7 +263,6 @@ def expand_reverse_edges_in_scope(
                         node_edge = neighbor_view
                         setattr(node, forward_name, node_edge)
 
-
 def expand_concrete_nodes(
     dgraph_client: DgraphClient, lens_name: str, concrete_nodes: List[NodeView]
 ) -> None:
@@ -279,7 +273,6 @@ def expand_concrete_nodes(
     for node in concrete_nodes:
         for prop_name, prop_type in node._get_property_types().items():
             setattr(node, prop_name, node.fetch_property(prop_name, prop_type))
-
 
 def expand_node_forward(
     dgraph_client: DgraphClient, node_key: str
@@ -309,7 +302,6 @@ def expand_node_forward(
     finally:
         txn.discard()
     return res["res"][0]
-
 
 def expand_dynamic_node(dynamic_node: DynamicNodeView) -> Dict[str, Any]:
     node = raw_node_from_node_key(dynamic_node.dgraph_client, dynamic_node.node_key)
@@ -342,7 +334,6 @@ def expand_dynamic_node(dynamic_node: DynamicNodeView) -> Dict[str, Any]:
             )
 
     return {"node": node, "edges": edges}
-
 
 def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, Any]]:
     current_graph = get_lens_scope(dgraph_client, lens_name)
@@ -396,7 +387,6 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
     results.extend(expanded_dynamic_nodes)
     return results
 
-
 def try_get_updated_graph(body):
     LOGGER.info("Trying to update graph")
     LOGGER.info(f"connecting to dgraph at {MG_ALPHA}")
@@ -416,9 +406,8 @@ def try_get_updated_graph(body):
 
         return updates
 
-
 def respond(err, res=None, headers=None):
-    req_origin = app.current_request.headers.get('origin', '')
+    req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
     if not headers:
@@ -429,7 +418,6 @@ def respond(err, res=None, headers=None):
         LOGGER.info(f"overriding origin with {override}")
     else:
         override = ORIGIN_OVERRIDE
-
 
     if origin_re.match(req_origin):
         LOGGER.info("Origin matched")
@@ -453,7 +441,6 @@ def respond(err, res=None, headers=None):
         },
     )
 
-
 def get_salt_and_pw(table, username):
     LOGGER.info(f"Getting salt for user: {username}")
     response = table.get_item(Key={"username": username,})
@@ -465,18 +452,15 @@ def get_salt_and_pw(table, username):
     password = response["Item"]["password"]
     return salt, password
 
-
 def hash_password(cleartext, salt) -> str:
     hashed = sha256(cleartext).digest()
     return pbkdf2_hmac("sha256", hashed, salt, 512000).hex()
-
 
 def user_auth_table():
     global DYNAMO
     DYNAMO = DYNAMO or boto3.resource("dynamodb")
 
     return DYNAMO.Table(os.environ["USER_AUTH_TABLE"])
-
 
 def create_user(username, cleartext):
     table = user_auth_table()
@@ -492,7 +476,6 @@ def create_user(username, cleartext):
     password = hash_password(hashed, salt)
 
     table.put_item(Item={"username": username, "salt": salt, "password": password})
-
 
 def login(username, password):
     if IS_LOCAL:
@@ -520,7 +503,6 @@ def login(username, password):
         "utf8"
     )
 
-
 def check_jwt(headers):
     if IS_LOCAL:
         return True
@@ -540,7 +522,6 @@ def check_jwt(headers):
         LOGGER.error(e)
         return False
 
-
 def lambda_login(event):
     body = event.json_body
     login_res = login(body["username"], body["password"])
@@ -552,16 +533,13 @@ def lambda_login(event):
     if login_res:
         return cookie
 
-
 cors_config = CORSConfig(
     allow_origin=ORIGIN_OVERRIDE or ORIGIN, allow_credentials="true",
 )
 
-
 def requires_auth(path):
     if not IS_LOCAL:
         path = "/{proxy+}" + path
-
     def route_wrapper(route_fn):
         @app.route(path, methods=["OPTIONS", "POST"])
         def inner_route():
@@ -577,16 +555,12 @@ def requires_auth(path):
             except Exception as e:
                 LOGGER.error(e)
                 return respond("Unexpected Error")
-
         return inner_route
-
     return route_wrapper
-
 
 def no_auth(path):
     if not IS_LOCAL:
         path = "/{proxy+}" + path
-
     def route_wrapper(route_fn):
         @app.route(path, methods=["OPTIONS", "GET", "POST"])
         def inner_route():
@@ -597,11 +571,8 @@ def no_auth(path):
             except Exception as e:
                 LOGGER.error(e)
                 return respond("Unexpected Error")
-
         return inner_route
-
     return route_wrapper
-
 
 @no_auth("/login")
 def login_route():
@@ -615,7 +586,6 @@ def login_route():
         LOGGER.warn("not logged in")
         return respond("Failed to login")
 
-
 @no_auth("/checkLogin")
 def check_login():
     LOGGER.debug("/checkLogin")
@@ -624,7 +594,6 @@ def check_login():
         return respond(None, "True")
     else:
         return respond(None, "False")
-
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
 def nop_route():
