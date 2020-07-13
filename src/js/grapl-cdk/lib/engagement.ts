@@ -133,6 +133,7 @@ export class EngagementEdge extends cdk.NestedStack {
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
+                BUCKET_PREFIX: props.prefix,
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
@@ -221,8 +222,16 @@ export class EngagementEdge extends cdk.NestedStack {
     }
 }
 
+export interface EngagementNotebookProps extends GraplServiceProps {
+    model_plugins_bucket: s3.IBucket,
+}
+
 export class EngagementNotebook extends cdk.NestedStack {
-    constructor(scope: cdk.Construct, id: string, props: GraplServiceProps) {
+    constructor(
+        scope: cdk.Construct,
+        id: string,
+        props: EngagementNotebookProps
+    ) {
         super(scope, id);
 
         const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
@@ -239,6 +248,8 @@ export class EngagementNotebook extends cdk.NestedStack {
         });
 
         props.userAuthTable.allowReadWriteFromRole(role);
+        props.model_plugins_bucket.grantRead(role);
+
 
         new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
             notebookInstanceName: props.prefix + '-Notebook',
