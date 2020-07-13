@@ -52,8 +52,9 @@ app = Chalice(app_name="engagement-edge")
 
 origin_re = re.compile(
     f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
-    re.IGNORECASE
+    re.IGNORECASE,
 )
+
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
     LOGGER.info(f"connecting to dgraph at {MG_ALPHA}")
@@ -418,7 +419,7 @@ def try_get_updated_graph(body):
 
 
 def respond(err, res=None, headers=None):
-    req_origin = app.current_request.headers.get('origin', '')
+    req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
     if not headers:
@@ -429,7 +430,6 @@ def respond(err, res=None, headers=None):
         LOGGER.info(f"overriding origin with {override}")
     else:
         override = ORIGIN_OVERRIDE
-
 
     if origin_re.match(req_origin):
         LOGGER.info("Origin matched")
