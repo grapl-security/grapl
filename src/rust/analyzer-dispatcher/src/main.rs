@@ -124,11 +124,14 @@ where
         }
 
         info!("Retrieving S3 keys");
-        let keys = match get_s3_keys(self.s3_client.as_ref(), bucket).await {
+        let keys = match get_s3_keys(self.s3_client.as_ref(), &bucket).await {
             Ok(keys) => keys,
             Err(e) => {
                 return OutputEvent::new(Completion::Error(
-                    sqs_lambda::error::Error::ProcessingError(e.to_string()),
+                    sqs_lambda::error::Error::ProcessingError(format!(
+                        "Failed to list bucket: {} with {:?}",
+                        bucket, e
+                    )),
                 ))
             }
         };

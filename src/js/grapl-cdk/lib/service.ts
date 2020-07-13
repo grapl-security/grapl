@@ -189,7 +189,7 @@ export class Service {
         });
 
         if (with_list === true) {
-            policy.addActions('s3:ListObjects');
+            policy.addActions('s3:ListBucket');
         }
 
         this.event_handler.addToRolePolicy(policy);
