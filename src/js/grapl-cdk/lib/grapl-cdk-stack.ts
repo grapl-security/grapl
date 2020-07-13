@@ -315,8 +315,8 @@ class AnalyzerExecutor extends cdk.NestedStack {
         });
 
         // We need the List capability to find each of the analyzers
-        service.readsFrom(props.readsAnalyzersFrom, true);
-        service.readsFrom(props.modelPluginsBucket, true);
+        props.readsAnalyzersFrom.grantRead(service.event_handler);
+        props.readsAnalyzersFrom.grantRead(service.event_retry_handler);
 
         // Need to be able to GetObject in order to HEAD, can be replaced with
         // a cache later, but safe so long as there is no LIST
@@ -496,6 +496,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 BUCKET_PREFIX: props.prefix,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
+                GRAPL_LOG_LEVEL: 'DEBUG',
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
@@ -745,7 +746,10 @@ export class GraplCdkStack extends cdk.Stack {
             ...graplProps,
         });
 
-        new EngagementNotebook(this, 'engagements', graplProps);
+        new EngagementNotebook(this, 'engagements', {
+            model_plugins_bucket,
+            ...graplProps,
+        });
 
         this.engagement_edge = new EngagementEdge(
             this,
