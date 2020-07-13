@@ -164,6 +164,8 @@ def provision_sqs(sqs, service_name: str) -> None:
     )
 
     redrive_url = redrive_queue["QueueUrl"]
+    print(f"Provisioned {service_name} retry queue at " + redrive_url)
+
     redrive_arn = sqs.get_queue_attributes(
         QueueUrl=redrive_url, AttributeNames=["QueueArn"]
     )["Attributes"]["QueueArn"]
