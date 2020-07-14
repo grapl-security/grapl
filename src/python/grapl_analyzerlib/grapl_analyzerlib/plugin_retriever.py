@@ -48,8 +48,6 @@ class PluginRetriever(object):
                 f"model_plugins/{plugin_name}/{base64.decodebytes(object_key.split('/')[1].encode('utf8')).decode('utf8')}",
             ).replace("-", "_")
 
-            print(local_path)
-
             if local_path[-1] == "/":
                 local_path = local_path[:-1]
 
