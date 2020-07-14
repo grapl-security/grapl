@@ -36,16 +36,11 @@ const validationSchema = Yup.object().shape({
   password: Yup.string().required("Password Required")
 })
 
-function validateCreds (validated:boolean) {
-  let error; 
-  if(!validated){
-    error = "invalid credentials";
-  }
-  return error 
-}
-
 export const LogIn = (_: LoginProps) => {
   const classes = useStyles()
+  const [state, setState] = React.useState({
+    loginFailed: false
+  })
   return (
     <div className = "backgroundImage">
       <div className="grapl"> Grapl </div>
@@ -57,7 +52,6 @@ export const LogIn = (_: LoginProps) => {
         }}
         validationSchema = {validationSchema}
         onSubmit={ async values => {
-          console.log("values", values);
           const password = await sha256WithPepper(
             values.userName, values.password
           );
@@ -66,26 +60,28 @@ export const LogIn = (_: LoginProps) => {
           
           if (loginSuccess) {
             window.history.replaceState('/login', "", "/")
-            console.log("Logged in");
           } else {
-            validateCreds(false)
-            return "Login Error"
+            setState({
+              ...state,
+              loginFailed: true
+            })
           }
         }}
       >
 
-      {({ errors, touched, isValidating }) => (
+      {({ errors, touched }) => (
         <Form>
-           <Field name="userName" type="text" placeholder="Username" validate={validateCreds} />
-           {touched.userName && errors.userName && <div className = {classes.valErrorMsg}>{errors.userName}</div>}
+            <Field name="userName" type="text" placeholder="Username"  />
+            {touched.userName && errors.userName && <div className = {classes.valErrorMsg}>{errors.userName}</div>}
         
-           <Field name="password" type="password" placeholder="Password" validate={validateCreds}/> <br/>
-           {touched.password && errors.password && <div className = {classes.valErrorMsg}>{errors.password}</div>}
+            <Field name="password" type="password" placeholder="Password"/> <br/>
+            {touched.password && errors.password && <div className = {classes.valErrorMsg}>{errors.password}</div>}
 
-           <button className="submitBtn"  type="submit">Submit</button>
+            <button className="submitBtn"  type="submit">Submit</button>
 
-         </Form>
-       )}
+            {state.loginFailed && <div className= {classes.valErrorMsg}>Unsuccessful Login</div>}
+          </Form>
+        )}
       </Formik>
         
       </div>
@@ -136,8 +132,9 @@ const login = async (username: string, password: string) => {
           });
           
           const body = await res.json();
+          console.log("Body", body)
 
-          return body['success'] === 'True';
+          return body['success'] === 'True';  
         } catch (e) {
           console.log(e);
           return false

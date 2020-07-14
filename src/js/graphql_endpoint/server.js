@@ -23,11 +23,18 @@ const corsRegexp = new RegExp(
     'i'
 );
 
+
 const corsDelegate = (req, callback) => {
     let corsOptions = {
         allowedHeaders: "Content-Type, Cookie, Access-Control-Allow-Headers, Authorization, X-Requested-With",
         credentials: true,
     };
+
+    if(IS_LOCAL){
+        corsOptions = {...corsOptions, origin: true}
+        callback(null, corsOptions);
+        return; 
+    }
 
     if (req.header('Origin') === origin) {
         console.log("exact matched origin: ", req.header('Origin'));
