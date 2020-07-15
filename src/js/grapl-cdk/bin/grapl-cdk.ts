@@ -5,7 +5,7 @@ import * as cdk from '@aws-cdk/core';
 import { GraplCdkStack } from '../lib/grapl-cdk-stack';
 import { EngagementUx } from '../lib/engagement';
 
-const deployName = 'Grapl-Meta-us-east-2';
+const deployName = 'Grapl-MYDEPLOYMENT';
 const graplVersion = 'latest';
 const watchfulEmail = undefined;
 
