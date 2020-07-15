@@ -471,7 +471,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if is_local {
         info!("Running locally");
-        let mut runtime = Runtime::new().unwrap();
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
         grapl_config::wait_for_sqs(
@@ -480,6 +479,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
         grapl_config::wait_for_s3(init_s3_client()).await?;
+
+        loop {
+            if let Err(e) = local_handler().await {
+                error!("local_handler: {}", e);
+            };
+        }   
     } else {
         info!("Running in AWS");
         lambda!(handler);
