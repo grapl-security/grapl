@@ -4,7 +4,7 @@ WORKDIR /home/grapl
 COPY --chown=grapl . engagement-creator
 COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
 RUN /bin/bash -c "source venv/bin/activate && cd engagement-creator && pip install ."
-RUN /bin/bash -c "source venv/bin/activate && py.test -m 'not integration_test'"
+RUN /bin/bash -c "source venv/bin/activate && py.test -n auto -m 'not integration_test'"
 RUN zip --quiet -9r lambda.zip venv/lib/python3.7/site-packages/
 RUN zip -g lambda.zip engagement-creator/src/engagement-creator.py
 RUN mkdir -p dist/engagement-creator && cp lambda.zip dist/engagement-creator/lambda.zip

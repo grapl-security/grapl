@@ -300,6 +300,39 @@ image=graphql-endpoint:
     - "{env.TAG}"
 
 #
+# compose
+#
+# This is where hook into the docker-compose environment for running
+# integration tests. It should be identical to local Grapl. The most
+# important thing here is to keep the 'depends' list up to date.
+#
+
+compose=integration-env:
+  files:
+    - docker-compose.yml
+  project: grapl-integration-tests
+  depends:
+    # rust images
+    - analyzer-dispatcher
+    - generic-subgraph-generator
+    - graph-merger
+    - node-identifier
+    - node-identifier-retry-handler
+    - sysmon-subgraph-generator
+    # python images
+    - analyzer-executor
+    - engagement-creator
+    - engagement-edge
+    - dgraph-ttl
+    - model-plugin-deployer
+    - grapl-notebook
+    - graph-provision
+    - dynamodb-provision
+    # js images
+    - engagement-view
+    - graphql-endpoint
+
+#
 # jobs -- these are where we build release artifacts
 #
 
@@ -312,7 +345,23 @@ job=build-rust:
   artifact:
     - ./dist/*
 
+job=run-node-identifier-integration-tests:
+  use: rust-build
+  net-mode: grapl-integration-tests_default
+  command: "sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration"
+  depends:
+    - rust-build
+    - integration-env
+
 # python jobs
+
+job=run-grapl-analyzerlib-integration-tests:
+  use: grapl-analyzerlib-build
+  net-mode: grapl-integration-tests_default
+  command: /bin/bash -c "sleep 30 && source venv/bin/activate && py.test -n auto -m 'integration_test'"
+  depends:
+    - grapl-analyzerlib-build
+    - integration-env
 
 job=build-analyzer-executor:
   use: analyzer-executor-build
@@ -358,6 +407,8 @@ job=build-graphql-endpoint:
   artifact:
     - ./dist/grapl-graphql-endpoint/lambda.zip
 
+# TODO: graphql endpoint integration tests
+
 #
 # aliases
 #
@@ -379,6 +430,12 @@ alias=clean-rust-build:
     - "rust-build:rm"
   annotations:
     description: "Delete the rust build image"
+
+alias=rust-integration:
+  tasks:
+    - run-node-identifier-integration-tests
+  annotations:
+    description: "Run the rust integration tests"
 
 alias=python:
   tasks:
@@ -411,6 +468,12 @@ alias=clean-python-build:
   annotations:
     description: "Delete the python build images"
 
+alias=python-integration:
+  tasks:
+    - run-grapl-analyzerlib-integration-tests
+  annotations:
+    description: "Run the python integration tests"
+
 alias=js:
   tasks:
     - build-graphql-endpoint
@@ -424,6 +487,8 @@ alias=clean-js-build:
     - "graphql-endpoint-build:rm"
   annotations:
     description: "Delete the js build images"
+
+# TODO: js integration tests
 
 alias=build:
   tasks:
@@ -440,3 +505,11 @@ alias=clean-build:
     - clean-js-build
   annotations:
     description: "Delete all the build images"
+
+alias=integration:
+  tasks:
+    - rust-integration
+    - python-integration
+    # TODO: js integration tests
+  annotations:
+    description: "Run all the integration tests"
