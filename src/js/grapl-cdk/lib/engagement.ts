@@ -234,6 +234,7 @@ export class EngagementNotebook extends cdk.NestedStack {
     ) {
         super(scope, id);
 
+        let serviceName = `${props.prefix}-${id}`;
         const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
             vpc: props.vpc,
         });
@@ -245,6 +246,8 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         const role = new iam.Role(this, 'Role', {
             assumedBy: new iam.ServicePrincipal('sagemaker.amazonaws.com'),
+            roleName: serviceName + '-HandlerRole',
+            description: 'Notebook role for: ' + serviceName,
         });
 
         props.userAuthTable.allowReadWriteFromRole(role);
