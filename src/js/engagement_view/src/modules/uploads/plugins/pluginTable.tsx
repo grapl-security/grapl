@@ -36,12 +36,15 @@ export const PluginTable = () => {
 
     useEffect(() => {
         // console.log("fetching plugins");
-        getPluginList().then((rows) => {
-            setState({
-                ...state,
-                rows
-            })
-        })
+        const interval = setInterval(async () => {
+            await getPluginList().then((rows) => {
+                setState({
+                    toggle: state.toggle ,
+                    rows
+                })
+            });
+        }, 1000);
+        return () => clearInterval(interval);
     }, [state.toggle])
 
     return(

@@ -79,8 +79,9 @@ async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<Str
     const QUERY: &str = r"
        query q0($a: string)
     {
-        q0(func: eq(node_key, $a), first: 1) {
-            uid
+        q0(func: eq(node_key, $a), first: 1) @cascade {
+            uid,
+            dgraph.type,
         }
     }
     ";
@@ -130,10 +131,13 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     };
 
     let mut txn = dg.new_txn();
-    let upsert_res = txn
-        .upsert(query, mu)
-        .await
-        .expect(&format!("Request to dgraph failed {:?}", &node_key));
+    let upsert_res = match txn.upsert(query, mu).await {
+        Ok(res) => res,
+        Err(e) => {
+            txn.discard().await?;
+            return Err(e.into());
+        }
+    };
 
     txn.commit_or_abort().await?;
 
@@ -184,7 +188,7 @@ struct GraphMerger<CacheT>
 where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
-    mg_alphas: Vec<String>,
+    mg_client: Arc<DgraphClient>,
     cache: CacheT,
 }
 
@@ -193,13 +197,37 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(mg_alphas: Vec<String>, cache: CacheT) -> Self {
-        Self { mg_alphas, cache }
+        let mg_client = {
+            let mut rng = thread_rng();
+            let rand_alpha = mg_alphas
+                .choose(&mut rng)
+                .expect("Empty rand_alpha")
+                .to_owned();
+            let (host, port) = grapl_config::parse_host_port(rand_alpha);
+
+            debug!("connecting to DGraph {:?}:{:?}", host, port);
+            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
+                Client::new_plain(
+                    &host,
+                    port,
+                    ClientConf {
+                        ..Default::default()
+                    },
+                )
+                .expect("Failed to create dgraph client"),
+            ))])
+        };
+
+        Self {
+            mg_client: Arc::new(mg_client),
+            cache,
+        }
     }
 }
 
 async fn upsert_edge(mg_client: &DgraphClient, mu: api::Mutation) -> Result<(), Error> {
     let mut txn = mg_client.new_txn();
-    let upsert_res = txn.mutate(mu).await?;
+    txn.mutate(mu).await?;
 
     txn.commit_or_abort().await?;
 
@@ -332,7 +360,6 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
         tokio_compat::run_std(async move {
             let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
             debug!("Queue Url: {}", source_queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
             let cache_address = {
                 let retry_identity_cache_addr =
                     std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
@@ -348,17 +375,12 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
             let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
             info!("Output events to: {}", bucket);
             let region = grapl_config::region();
-            let mg_alphas: Vec<_> = std::env::var("MG_ALPHAS")
-                .expect("MG_ALPHAS")
-                .split(',')
-                .map(str::to_string)
-                .collect();
 
             let cache = RedisCache::new(cache_address.to_owned())
                 .await
                 .expect("Could not create redis client");
 
-            let graph_merger = GraphMerger::new(mg_alphas, cache.clone());
+            let graph_merger = GraphMerger::new(grapl_config::mg_alphas(), cache.clone());
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
@@ -453,22 +475,6 @@ where
             subgraph.edges.len()
         );
 
-        let mg_client = {
-            let mut rng = thread_rng();
-            let rand_alpha = self.mg_alphas.choose(&mut rng).expect("Empty rand_alpha");
-
-            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
-                Client::new_plain(
-                    rand_alpha,
-                    9080,
-                    ClientConf {
-                        ..Default::default()
-                    },
-                )
-                .expect("Failed to create dgraph client"),
-            ))])
-        };
-
         //        async_handler(mg_client, subgraph).await;
 
         let mut upsert_res = None;
@@ -477,7 +483,7 @@ where
         let mut node_key_to_uid = HashMap::new();
         use futures::future::FutureExt;
         let upserts = subgraph.nodes.values().map(|node| {
-            upsert_node(&mg_client, node.clone()).map(move |u| (node.clone_node_key(), u))
+            upsert_node(&self.mg_client, node.clone()).map(move |u| (node.clone_node_key(), u))
         });
 
         let upserts = log_time!("All upserts", join_all(upserts).await);
@@ -486,7 +492,7 @@ where
             let new_uid = match upsert {
                 Ok(new_uid) => new_uid,
                 Err(e) => {
-                    warn!("{}", e);
+                    error!("{}", e);
                     upsert_res = Some(e);
                     continue;
                 }
@@ -541,14 +547,12 @@ where
                     }
                 }
             })
-            .map(|mu| upsert_edge(&mg_client, mu))
+            .map(|mu| upsert_edge(&self.mg_client, mu))
             .collect();
 
         let _: Vec<_> = join_all(edge_mutations).await;
 
-        //        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
-
-        let mut completed = match (upsert_res, edge_res) {
+        let completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
                 sqs_lambda::error::Error::ProcessingError(e.to_string()),
@@ -561,8 +565,6 @@ where
                 OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
             }
         };
-
-        //        identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
         completed
     }
@@ -600,9 +602,7 @@ fn init_s3_client() -> S3Client {
 }
 
 async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
-    let mg_alphas: Vec<_> = vec!["master_graph".to_owned()];
-
-    let graph_merger = GraphMerger::new(mg_alphas, NopCache {});
+    let graph_merger = GraphMerger::new(grapl_config::mg_alphas(), NopCache {});
 
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
@@ -683,7 +683,8 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::init_grapl_log!();
 
     let is_local = std::env::var("IS_LOCAL").is_ok();
@@ -691,52 +692,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if is_local {
         info!("Running locally");
         let mut runtime = Runtime::new().unwrap();
-
-        let s3_client = init_s3_client();
-        loop {
-            if let Err(e) = runtime.block_on(s3_client.list_buckets()) {
-                match e {
-                    RusotoError::HttpDispatch(_) => {
-                        info!("Waiting for S3 to become available");
-                        std::thread::sleep(Duration::new(2, 0));
-                    }
-                    _ => break,
-                }
-            } else {
-                break;
-            }
-        }
-
-        let sqs_client = init_sqs_client();
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-        loop {
-            match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
-                queue_name_prefix: Some("grapl".to_string()),
-            })) {
-                Err(_) => {
-                    info!("Waiting for SQS to become available");
-                    std::thread::sleep(Duration::new(2, 0));
-                }
-                Ok(response) => {
-                    if let Some(urls) = response.queue_urls {
-                        if urls.contains(&source_queue_url) {
-                            break;
-                        } else {
-                            info!("Waiting for {} to be created", source_queue_url);
-                            std::thread::sleep(Duration::new(2, 0));
-                        }
-                    }
-                }
-            }
-        }
 
-        loop {
-            if let Err(e) = runtime.block_on(async move { inner_main().await }) {
-                error!("{}", e);
-            }
-
-            std::thread::sleep(Duration::new(2, 0));
-        }
+        grapl_config::wait_for_sqs(
+            init_sqs_client(),
+            source_queue_url.split("/").last().unwrap(),
+        )
+        .await?;
+        grapl_config::wait_for_s3(init_s3_client()).await?;
     } else {
         info!("Running in AWS");
         lambda!(handler);

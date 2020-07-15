@@ -13,6 +13,7 @@ import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
 import Button from "@material-ui/core/Button";
 import { Node } from "../modules/GraphViz/CustomTypes";
 import Home from '@material-ui/icons/Home';
+import {Link} from 'react-router-dom'
 
 const drawerWidth = 500;
 
@@ -92,6 +93,10 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     close:{
       color:"#42C6FF",
+    },
+    link: {
+      color: "#42C6FF", 
+      textDecoration: "none"
     }
   })
 );
@@ -99,11 +104,10 @@ const useStyles = makeStyles((theme: Theme) =>
 type SideBarProps = {
   setLens: (lens: string) => void,
   curLens: string,
-  curNode: Node | null,
-  redirectTo: (pageName: string) => void,
+  curNode: Node | null
 }
 
-export default function SideBar({setLens, curLens, curNode, redirectTo}: SideBarProps) {
+export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
   const classes = useStyles();
 
   const [open, setOpen] = React.useState(true);
@@ -145,14 +149,7 @@ export default function SideBar({setLens, curLens, curNode, redirectTo}: SideBar
             >
               <b className={classes.header}> GRAPL </b>
             </Typography>
-            <Button 
-                className = {classes.button }
-                onClick = { (e) => {
-                    redirectTo("dashboard");
-                } }
-            >
-                <Home/>
-            </Button>
+                <Link to = "/" className = {classes.link}><Home/></Link>
           </div>
 
         </Toolbar>
@@ -209,7 +206,7 @@ const defaultEngagementUxState = (): EngagementUxState => {
   }
 }
 
-export const EngagementUx = ({redirectTo}: any) => {
+export const EngagementUx = () => {
     const [state, setState] = React.useState(defaultEngagementUxState());
     
     return (
@@ -223,7 +220,6 @@ export const EngagementUx = ({redirectTo}: any) => {
                 }
                 curLens={state.curLens}
                 curNode={state.curNode}
-                redirectTo={redirectTo}
             />
 
             <GraphDisplay 

@@ -1,5 +1,4 @@
 export type LoginProps = {
-    loginSuccess: () => void,
 }
 
 export type RouteState = {

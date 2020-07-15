@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import NodeTable from './NodeTable'
 import Button from "@material-ui/core/Button";
-import {makeStyles} from "@material-ui/core/styles";
+import { makeStyles } from "@material-ui/core/styles";
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import LensIcon from '@material-ui/icons/Lens';
@@ -11,12 +11,11 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
+import { Lens } from "../modules/GraphViz/CustomTypes";
+import { getGraphQlEdge } from "../modules/GraphViz/engagement_edge/getApiURLs";
+
 import TablePagination from '@material-ui/core/TablePagination';
-import {Node, Lens} from "../modules/GraphViz/CustomTypes";
-import {getGraphQlEdge} from "../modules/GraphViz/engagement_edge/getApiURLs";
-import _withStyles, {
-    ClassNameMap,
-} from '@material-ui/styles/withStyles';
+import { ClassNameMap } from '@material-ui/styles/withStyles';
 import {SelectLensProps, ToggleLensTableProps, ToggleLensTableState, SideBarContentProps, NodeDetailsProps, ToggleNodeTableProps, PaginationState} from "../modules/GraphViz/CustomTypes"
 
 const useStyles = makeStyles({
