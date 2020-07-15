@@ -94,7 +94,7 @@ export const PluginTable = () => {
                             )}
                     </TableBody>
                 </Table>
-                
+
                 <TablePagination
                     aria-label = "pagination"
                     rowsPerPageOptions={[5, 10, 25]}

@@ -31,6 +31,7 @@ const corsDelegate = (req, callback) => {
     };
 
     if(IS_LOCAL){
+        console.log("Running Locally, CORS disabled")
         corsOptions = {...corsOptions, origin: true}
         callback(null, corsOptions);
         return; 
