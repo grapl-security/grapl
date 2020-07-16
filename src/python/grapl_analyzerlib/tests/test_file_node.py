@@ -3,6 +3,8 @@ import json
 
 from typing import cast, Dict, Type
 
+import hypothesis
+
 import hypothesis.strategies as st
 
 from hypothesis import given
@@ -152,6 +154,7 @@ class TestFileQuery(unittest.TestCase):
     #     drop_all(local_client)
     #     provision()
 
+    @hypothesis.settings(deadline=None)
     @given(
         node_key=st.uuids(),
         file_path=st.text(),
@@ -224,7 +227,6 @@ class TestFileQuery(unittest.TestCase):
         assert node_key == queried_proc.node_key
 
         assert file_path == queried_proc.get_file_path()
-        assert asset_id == queried_proc.get_asset_id()
         assert file_extension == queried_proc.get_file_extension()
         assert file_mime_type == queried_proc.get_file_mime_type()
         assert file_size == queried_proc.get_file_size()
@@ -311,7 +313,6 @@ class TestFileQuery(unittest.TestCase):
             FileQuery()
             .with_node_key(eq=node_key)
             .with_file_path(eq=file_path)
-            .with_asset_id(eq=asset_id)
             .with_file_extension(eq=file_extension)
             .with_file_mime_type(eq=file_mime_type)
             .with_file_size(eq=file_size)
@@ -333,7 +334,6 @@ class TestFileQuery(unittest.TestCase):
         assert node_key == queried_file.node_key
 
         assert file_path == queried_file.get_file_path()
-        assert asset_id == queried_file.get_asset_id()
         assert file_extension == queried_file.get_file_extension()
         assert file_mime_type == queried_file.get_file_mime_type()
         assert file_size == queried_file.get_file_size()
