@@ -32,9 +32,9 @@ export const LogIn = (_: LoginProps) => {
           
           const loginSuccess = await login(values.userName, password);
           
-          if (loginSuccess) {
+          if (await loginSuccess) {
             window.history.replaceState('/login', "", "/")
-            console.log("Logged in");
+            window.location.reload();
           } else {
             console.warn("Login failed!")
           }
@@ -43,7 +43,7 @@ export const LogIn = (_: LoginProps) => {
         <Form>
           <Field name="userName" type="text" placeholder="Username" /> <br/>
           <Field name="password" type="password" placeholder="Password"/> <br/>
-          <button className="submitBtn"  type="submit">Submit</button>
+          <button className="submitBtn"  type="submit"> Submit </button>
         </Form>
       </Formik>
         
@@ -95,7 +95,6 @@ const login = async (username: string, password: string) => {
           });
           
           const body = await res.json();
-          console.log("body", body);
           return body['success'] === 'True';
         } catch (e) {
           console.log(e);
