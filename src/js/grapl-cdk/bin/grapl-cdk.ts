@@ -13,8 +13,9 @@ const app = new cdk.App();
 const grapl = new GraplCdkStack(app, 'Grapl', {
     version: graplVersion,
     stackName: deployName,
-    tags: {'grapl deployment': deployName},
+    tags: { 'grapl deployment': deployName },
     watchfulEmail,
+    description: 'Grapl base deployment',
 });
 
 new EngagementUx(app, 'EngagementUX', {
@@ -23,4 +24,5 @@ new EngagementUx(app, 'EngagementUX', {
     graphql_endpoint: grapl.graphql_endpoint,
     model_plugin_deployer: grapl.model_plugin_deployer,
     stackName: deployName + '-EngagementUX',
+    description: 'Grapl Engagement UX',
 });

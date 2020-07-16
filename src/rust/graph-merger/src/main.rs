@@ -79,8 +79,9 @@ async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<Str
     const QUERY: &str = r"
        query q0($a: string)
     {
-        q0(func: eq(node_key, $a), first: 1) {
-            uid
+        q0(func: eq(node_key, $a), first: 1) @cascade {
+            uid,
+            dgraph.type,
         }
     }
     ";
@@ -130,10 +131,13 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     };
 
     let mut txn = dg.new_txn();
-    let upsert_res = txn
-        .upsert(query, mu)
-        .await
-        .expect(&format!("Request to dgraph failed {:?}", &node_key));
+    let upsert_res = match txn.upsert(query, mu).await {
+        Ok(res) => res,
+        Err(e) => {
+            txn.discard().await?;
+            return Err(e.into());
+        }
+    };
 
     txn.commit_or_abort().await?;
 
@@ -223,7 +227,7 @@ where
 
 async fn upsert_edge(mg_client: &DgraphClient, mu: api::Mutation) -> Result<(), Error> {
     let mut txn = mg_client.new_txn();
-    let upsert_res = txn.mutate(mu).await?;
+    txn.mutate(mu).await?;
 
     txn.commit_or_abort().await?;
 
@@ -488,7 +492,7 @@ where
             let new_uid = match upsert {
                 Ok(new_uid) => new_uid,
                 Err(e) => {
-                    warn!("{}", e);
+                    error!("{}", e);
                     upsert_res = Some(e);
                     continue;
                 }
@@ -548,8 +552,6 @@ where
 
         let _: Vec<_> = join_all(edge_mutations).await;
 
-        //        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
-
         let completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
@@ -563,8 +565,6 @@ where
                 OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
             }
         };
-
-        //        identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
         completed
     }
@@ -683,59 +683,27 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::init_grapl_log!();
 
     let is_local = std::env::var("IS_LOCAL").is_ok();
 
     if is_local {
         info!("Running locally");
-        let mut runtime = Runtime::new().unwrap();
-
-        let s3_client = init_s3_client();
-        loop {
-            if let Err(e) = runtime.block_on(s3_client.list_buckets()) {
-                match e {
-                    RusotoError::HttpDispatch(_) => {
-                        info!("Waiting for S3 to become available");
-                        std::thread::sleep(Duration::new(2, 0));
-                    }
-                    _ => break,
-                }
-            } else {
-                break;
-            }
-        }
-
-        let sqs_client = init_sqs_client();
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-        loop {
-            match runtime.block_on(sqs_client.list_queues(ListQueuesRequest {
-                queue_name_prefix: Some("grapl".to_string()),
-            })) {
-                Err(_) => {
-                    info!("Waiting for SQS to become available");
-                    std::thread::sleep(Duration::new(2, 0));
-                }
-                Ok(response) => {
-                    if let Some(urls) = response.queue_urls {
-                        if urls.contains(&source_queue_url) {
-                            break;
-                        } else {
-                            info!("Waiting for {} to be created", source_queue_url);
-                            std::thread::sleep(Duration::new(2, 0));
-                        }
-                    }
-                }
-            }
-        }
+
+        grapl_config::wait_for_sqs(
+            init_sqs_client(),
+            source_queue_url.split("/").last().unwrap(),
+        )
+        .await?;
+        grapl_config::wait_for_s3(init_s3_client()).await?;
 
         loop {
-            if let Err(e) = runtime.block_on(async move { inner_main().await }) {
-                error!("{}", e);
-            }
-
-            std::thread::sleep(Duration::new(2, 0));
+            if let Err(e) = inner_main().await {
+                error!("inner_main: {}", e);
+            };
         }
     } else {
         info!("Running in AWS");
