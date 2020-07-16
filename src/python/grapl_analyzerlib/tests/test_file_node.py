@@ -9,7 +9,8 @@ from hypothesis import given
 
 import pytest
 
-from pydgraph import DgraphClient, DgraphClientStub
+from pydgraph import DgraphClient
+from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.comparators import escape_dgraph_str
 from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
 from grapl_analyzerlib.nodes.types import Property
@@ -193,7 +194,7 @@ class TestFileQuery(unittest.TestCase):
         sha256_hash,
     ):
         node_key = "test_single_file_contains_key" + str(node_key)
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         get_or_create_file_node(
             local_client,
@@ -282,7 +283,7 @@ class TestFileQuery(unittest.TestCase):
         sha256_hash,
     ):
         node_key = "test_single_file_view_parity_eq" + str(node_key)
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         get_or_create_file_node(
             local_client,

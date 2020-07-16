@@ -6,10 +6,11 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import given
 
-from pydgraph import DgraphClient, DgraphClientStub
+from pydgraph import DgraphClient
 
 import pytest
 
+from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.comparators import escape_dgraph_str, Not
 from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
 from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
@@ -82,7 +83,7 @@ class TestProcessQuery(unittest.TestCase):
 
     # @classmethod
     # def setUpClass(cls):
-    #     local_client = DgraphClient(DgraphClientStub('localhost:9080'))
+    #     local_client = MasterGraphClient()
     #
     #     # drop_all(local_client)
     #     # time.sleep(3)
@@ -91,7 +92,7 @@ class TestProcessQuery(unittest.TestCase):
 
     # @classmethod
     # def tearDownClass(cls):
-    #     local_client = DgraphClient(DgraphClientStub('localhost:9080'))
+    #     local_client = MasterGraphClient()
     #
     #     drop_all(local_client)
     #     provision()
@@ -99,7 +100,7 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(deadline=None)
     @given(process_props=process_props())
     def test_single_process_contains_key(self, process_props: ProcessProps) -> None:
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
         created_proc = get_or_create_process(self, local_client, process_props)
 
         # Setup complete, do some queries
@@ -129,7 +130,7 @@ class TestProcessQuery(unittest.TestCase):
     def test_single_process_connected_to_asset_node(
         self, asset_props: AssetProps, process_props: ProcessProps,
     ):
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_asset = get_or_create_asset(self, local_client, asset_props)
         created_proc = get_or_create_process(self, local_client, process_props)
@@ -156,7 +157,7 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(deadline=None)
     @given(process_props=process_props())
     def test_process_query_view_parity(self, process_props: ProcessProps):
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_proc = get_or_create_process(self, local_client, process_props,)
 
@@ -207,7 +208,7 @@ class TestProcessQuery(unittest.TestCase):
         arguments,
     ):
         node_key = "test_process_query_view_parity_eq" + str(node_key)
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
         get_or_create_process_node_deprecated(
             local_client,
             node_key,
@@ -245,7 +246,7 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(deadline=None)
     @given(process_props=process_props())
     def test_process_query_view_miss(self, process_props: ProcessProps) -> None:
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_proc = get_or_create_process(self, local_client, process_props)
 
@@ -295,7 +296,7 @@ class TestProcessQuery(unittest.TestCase):
         arguments,
     ):
         node_key = "test_process_query_view_parity_contains" + str(node_key)
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
         get_or_create_process_node_deprecated(
             local_client,
             node_key,
@@ -336,7 +337,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_parent_children_edge(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_timestamp = int(time.time())
 
@@ -403,7 +404,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_with_bin_file(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_timestamp = int(time.time())
 
@@ -465,7 +466,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_process_with_created_files(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_timestamp = int(time.time())
 
@@ -526,7 +527,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_with_deleted_files(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_timestamp = int(time.time())
 
@@ -578,7 +579,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_with_read_files(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_timestamp = int(time.time())
 
@@ -640,7 +641,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_with_wrote_files(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created_timestamp = int(time.time())
 

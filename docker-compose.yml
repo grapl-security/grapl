@@ -271,6 +271,7 @@ services:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     command: yarn start server
     environment:
+      - MG_ALPHAS=master_graph:9080
       - IS_LOCAL=True
       - PORT=5000
     links:
@@ -294,6 +295,7 @@ services:
     command: /bin/sh -c '. venv/bin/activate && python /var/run/target/grapl_provision.py'
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - MG_ALPHAS=master_graph:9080
     volumes:
       - ./etc/local_grapl/:/var/run/target/
     tty: true

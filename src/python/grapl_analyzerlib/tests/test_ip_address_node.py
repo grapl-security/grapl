@@ -5,10 +5,11 @@ import hypothesis
 import hypothesis.strategies as st
 from hypothesis import given
 
-from pydgraph import DgraphClient, DgraphClientStub
+from pydgraph import DgraphClient
 
 import pytest
 
+from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.ip_address_node import IpAddressView
 from grapl_analyzerlib.nodes.ip_address_node import IpAddressQuery
 from grapl_analyzerlib.nodes.types import Property
@@ -58,7 +59,7 @@ class TestIpAddressQuery(unittest.TestCase):
     ):
         # current function's name, but don't need to copy-paste replace
         node_key = node_key_for_test(self, node_key)
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         created = get_or_create_ip_address_node(
             local_client=local_client,

@@ -349,6 +349,11 @@ job=run-node-identifier-integration-tests:
   use: rust-build
   net-mode: grapl-integration-tests_default
   command: "sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration"
+  env:
+    - GRAPL_LOG_LEVEL=TRACE
+    - "BUCKET_PREFIX=local-grapl"
+    - "IS_LOCAL=True"
+    - "MG_ALPHAS=grapl-master-graph-db:9080"
   depends:
     - rust-build
     - integration-env
@@ -359,6 +364,11 @@ job=run-grapl-analyzerlib-integration-tests:
   use: grapl-analyzerlib-build
   net-mode: grapl-integration-tests_default
   command: /bin/bash -c "sleep 30 && source venv/bin/activate && py.test -n auto -m 'integration_test'"
+  env:
+    - GRAPL_LOG_LEVEL=TRACE
+    - "BUCKET_PREFIX=local-grapl"
+    - "IS_LOCAL=True"
+    - "MG_ALPHAS=grapl-master-graph-db:9080"
   depends:
     - grapl-analyzerlib-build
     - integration-env
@@ -470,6 +480,7 @@ alias=clean-python-build:
 
 alias=python-integration:
   tasks:
+    - integration-env:attach
     - run-grapl-analyzerlib-integration-tests
   annotations:
     description: "Run the python integration tests"
