@@ -6,8 +6,9 @@ import logging
 import os
 import random
 import sys
-import traceback
 import time
+import traceback
+
 
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -15,6 +16,7 @@ from datetime import datetime
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 from typing import Any, Optional, Tuple, List, Dict, Type, Set, Iterator
 
 import boto3
@@ -31,8 +33,9 @@ from grapl_analyzerlib.nodes.queryable import (
 from grapl_analyzerlib.nodes.subgraph_view import SubgraphView
 from grapl_analyzerlib.nodes.viewable import Viewable
 from grapl_analyzerlib.plugin_retriever import load_plugins
-
 from pydgraph import DgraphClientStub, DgraphClient
+
+sys.path.append("/tmp/")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 IS_RETRY = os.environ["IS_RETRY"]
@@ -42,6 +45,12 @@ LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+try:
+    directory = Path("/tmp/model_plugins/")
+    directory.mkdir(parents=True, exist_ok=True)
+except Exception as e:
+    LOGGER.error("Failed to create directory", e)
 
 
 class NopCache(object):
@@ -111,7 +120,7 @@ def check_caches(
 
 
 def handle_result_graphs(analyzer, result_graphs, sender):
-    LOGGER.info(f"Result graph: {type(analyzer)} {result_graphs[0]}")
+    LOGGER.info(f"Re" f"sult graph: {type(analyzer)} {result_graphs[0]}")
     for result_graph in result_graphs:
         try:
             analyzer.on_response(result_graph, sender)
@@ -360,9 +369,7 @@ def lambda_handler(events: Any, context: Any) -> None:
 
     s3 = get_s3_client()
 
-    load_plugins(
-        os.environ["BUCKET_PREFIX"], s3,
-    )
+    load_plugins(os.environ["BUCKET_PREFIX"], s3, os.path.abspath("/tmp/"))
 
     for event in events["Records"]:
         if not IS_LOCAL:

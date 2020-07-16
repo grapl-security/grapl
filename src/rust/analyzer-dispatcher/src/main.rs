@@ -484,7 +484,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Err(e) = local_handler().await {
                 error!("local_handler: {}", e);
             };
-        }   
+        }
     } else {
         info!("Running in AWS");
         lambda!(handler);

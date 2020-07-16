@@ -301,6 +301,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
                 MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
                 HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
                 HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
+                GRAPL_LOG_LEVEL: "INFO",
                 GRPC_ENABLE_FORK_SUPPORT: '1',
             },
             vpc: props.vpc,
@@ -317,6 +318,8 @@ class AnalyzerExecutor extends cdk.NestedStack {
         // We need the List capability to find each of the analyzers
         props.readsAnalyzersFrom.grantRead(service.event_handler);
         props.readsAnalyzersFrom.grantRead(service.event_retry_handler);
+
+        service.readsFrom(props.modelPluginsBucket, true);
 
         // Need to be able to GetObject in order to HEAD, can be replaced with
         // a cache later, but safe so long as there is no LIST
