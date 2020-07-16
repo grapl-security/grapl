@@ -217,6 +217,7 @@ services:
     environment:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "UX_BUCKET_URL=localhost"
     tty: true
     links:
       - grapl-master-graph-db:master_graph
@@ -229,6 +230,7 @@ services:
     environment:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "UX_BUCKET_URL=localhost"
     tty: true
     links:
       - s3:minio
@@ -274,6 +276,7 @@ services:
       - MG_ALPHAS=master_graph:9080
       - IS_LOCAL=True
       - PORT=5000
+      - "MG_ALPHAS=master_graph:9080"
     links:
       - grapl-master-graph-db:master_graph
     ports:

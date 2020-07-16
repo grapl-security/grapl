@@ -30,7 +30,7 @@ export const LogIn = (_: LoginProps) => {
             values.userName, values.password
           );
           
-          const loginSuccess = login(values.userName, password);
+          const loginSuccess = await login(values.userName, password);
           
           if (loginSuccess) {
             window.history.replaceState('/login', "", "/")
