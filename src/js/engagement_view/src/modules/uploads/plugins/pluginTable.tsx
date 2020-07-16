@@ -45,7 +45,6 @@ export const PluginTable = () => {
             });
         }, 1000);
         return () => clearInterval(interval);
-
     }, [state.toggle])
 
     return(
