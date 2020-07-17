@@ -699,7 +699,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
         grapl_config::wait_for_s3(init_s3_client()).await?;
-
         loop {
             if let Err(e) = inner_main().await {
                 error!("inner_main: {}", e);
