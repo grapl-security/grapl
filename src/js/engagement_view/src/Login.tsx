@@ -59,7 +59,8 @@ export const LogIn = (_: LoginProps) => {
           const loginSuccess = await login(values.userName, password);
           
           if (loginSuccess) {
-            window.history.replaceState('/login', "", "/")
+            window.history.replaceState('/login', "", "/");
+            window.location.reload();
           } else {
             setState({
               ...state,
@@ -132,8 +133,6 @@ const login = async (username: string, password: string) => {
           });
           
           const body = await res.json();
-          console.log("Body", body)
-
           return body['success'] === 'True';  
         } catch (e) {
           console.log(e);
