@@ -16,6 +16,7 @@
     "@types/react-router": "^5.1.8",
     "@types/react-router-dom": "^5.1.3",
     "@types/react-sidebar": "^3.0.0",
+    "@types/yup": "^0.29.3",
     "d3": "^5.15.1",
     "debug": "^2.6.9",
     "formik": "^2.1.4",
@@ -29,7 +30,8 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "3.4.0",
     "semantic-ui-react": "^0.88.2",
-    "typescript": "~3.7.2"
+    "typescript": "~3.7.2",
+    "yup": "^0.29.1"
   },
   "scripts": {
     "start": "react-scripts start",

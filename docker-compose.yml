@@ -238,6 +238,7 @@ services:
       - "8123:8123"
     environment:
       - "IS_LOCAL=True"
+      - "MG_ALPHAS=master_graph:9080"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "UX_BUCKET_URL=localhost"
     tty: true
