@@ -69,6 +69,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - RUST_LOG=${RUST_LOG:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
@@ -80,11 +81,10 @@ services:
       - NETWORK_CONNECTION_HISTORY_TABLE=local-grapl-network_connection_history_table
       - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
       - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
-      - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
       - s3:minio
-      - dynamodb:dynamo
+      - dynamodb:dynamodb
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
@@ -102,13 +102,22 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - RUST_LOG=${RUST_LOG:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
       - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
-      - RUST_LOG=${RUST_LOG:-ERROR}
+      - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
+      - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
+      - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
+      - FILE_HISTORY_TABLE=local-grapl-file_history_table
+      - INBOUND_CONNECTION_HISTORY_TABLE=local-grapl-inbound_connection_history_table
+      - OUTBOUND_CONNECTION_HISTORY_TABLE=local-grapl-outbound_connection_history_table
+      - NETWORK_CONNECTION_HISTORY_TABLE=local-grapl-network_connection_history_table
+      - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
+      - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
     tty: false
     links:
       - s3:minio
-      - dynamodb:dynamo
+      - dynamodb:dynamodb
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
@@ -274,9 +283,9 @@ services:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     command: yarn start server
     environment:
+      - MG_ALPHAS=master_graph:9080
       - IS_LOCAL=True
       - PORT=5000
-      - "MG_ALPHAS=master_graph:9080"
     links:
       - grapl-master-graph-db:master_graph
     ports:
@@ -298,6 +307,7 @@ services:
     command: /bin/sh -c '. venv/bin/activate && python /var/run/target/grapl_provision.py'
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - MG_ALPHAS=master_graph:9080
     volumes:
       - ./etc/local_grapl/:/var/run/target/
     tty: true

@@ -1,27 +1,22 @@
-import time
 import unittest
 import json
-from copy import deepcopy
-from typing import *
+
+from typing import cast, Dict, Type
+
+import hypothesis
+
+import hypothesis.strategies as st
 
 from hypothesis import given
-import hypothesis.strategies as st
-from pydgraph import DgraphClient, DgraphClientStub
-from grapl_analyzerlib.nodes.comparators import (
-    IntCmp,
-    _str_cmps,
-    StrCmp,
-    _int_cmps,
-    escape_dgraph_str,
-    Not,
-)
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeView
-from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView, IProcessView
-from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
-from grapl_analyzerlib.nodes.types import Property, PropertyT
-from grapl_analyzerlib.nodes.viewable import Viewable, EdgeViewT, ForwardEdgeView
 
-from grapl_provision import provision, drop_all
+import pytest
+
+from pydgraph import DgraphClient
+from grapl_analyzerlib.grapl_client import MasterGraphClient
+from grapl_analyzerlib.nodes.comparators import escape_dgraph_str
+from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
+from grapl_analyzerlib.nodes.types import Property
+from grapl_analyzerlib.nodes.viewable import Viewable
 
 
 def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
@@ -33,7 +28,7 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Property]) -> str:
         {{
             q0(func: eq(node_key, "{node_key}"))
             {{
-                    uid,  
+                    uid,
                     expand(_all_)
             }}
         }}
@@ -140,6 +135,7 @@ def get_or_create_file_node(
     return cast(FileView, upsert(local_client, "File", FileView, node_key, file))
 
 
+@pytest.mark.integration_test
 class TestFileQuery(unittest.TestCase):
     #
     # @classmethod
@@ -158,6 +154,7 @@ class TestFileQuery(unittest.TestCase):
     #     drop_all(local_client)
     #     provision()
 
+    @hypothesis.settings(deadline=None)
     @given(
         node_key=st.uuids(),
         file_path=st.text(),
@@ -200,7 +197,7 @@ class TestFileQuery(unittest.TestCase):
         sha256_hash,
     ):
         node_key = "test_single_file_contains_key" + str(node_key)
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         get_or_create_file_node(
             local_client,
@@ -230,7 +227,6 @@ class TestFileQuery(unittest.TestCase):
         assert node_key == queried_proc.node_key
 
         assert file_path == queried_proc.get_file_path()
-        assert asset_id == queried_proc.get_asset_id()
         assert file_extension == queried_proc.get_file_extension()
         assert file_mime_type == queried_proc.get_file_mime_type()
         assert file_size == queried_proc.get_file_size()
@@ -247,6 +243,7 @@ class TestFileQuery(unittest.TestCase):
         assert sha1_hash == queried_proc.get_sha1_hash()
         assert sha256_hash == queried_proc.get_sha256_hash()
 
+    @hypothesis.settings(deadline=None)
     @given(
         node_key=st.uuids(),
         file_path=st.text(),
@@ -289,7 +286,7 @@ class TestFileQuery(unittest.TestCase):
         sha256_hash,
     ):
         node_key = "test_single_file_view_parity_eq" + str(node_key)
-        local_client = DgraphClient(DgraphClientStub("localhost:9080"))
+        local_client = MasterGraphClient()
 
         get_or_create_file_node(
             local_client,
@@ -317,7 +314,6 @@ class TestFileQuery(unittest.TestCase):
             FileQuery()
             .with_node_key(eq=node_key)
             .with_file_path(eq=file_path)
-            .with_asset_id(eq=asset_id)
             .with_file_extension(eq=file_extension)
             .with_file_mime_type(eq=file_mime_type)
             .with_file_size(eq=file_size)
@@ -339,7 +335,6 @@ class TestFileQuery(unittest.TestCase):
         assert node_key == queried_file.node_key
 
         assert file_path == queried_file.get_file_path()
-        assert asset_id == queried_file.get_asset_id()
         assert file_extension == queried_file.get_file_extension()
         assert file_mime_type == queried_file.get_file_mime_type()
         assert file_size == queried_file.get_file_size()

@@ -85,6 +85,9 @@ jobs:
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount js
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-js-build
           docker system prune -f
+          GRAPL_RELEASE_TARGET=release TAG="$VERSION-CHANNEL" ./dobi-linux --no-bind-mount integration
+          GRAPL_RELEASE_TARGET=release TAG="$VERSION-CHANNEL" ./dobi-linux --no-bind-mount clean-build
+          docker system prune -f
 
       - name: Log in to Docker registry
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin

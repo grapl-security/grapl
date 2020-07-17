@@ -16,6 +16,7 @@ COPY --chown=grapl --from=grapl-graphql-endpoint-deps /home/grapl/lambda/node_mo
 RUN rm -rf lambda/node_modules/grpc/build/
 RUN mkdir -p lambda/modules/
 COPY modules lambda/modules
+# TODO: run tests
 COPY server.js lambda/server.js
 RUN cd lambda && zip --quiet -9r /home/grapl/lambda.zip .
 RUN mkdir -p dist/grapl-graphql-endpoint && cp lambda.zip dist/grapl-graphql-endpoint/lambda.zip
