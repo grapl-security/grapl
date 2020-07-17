@@ -243,6 +243,7 @@ class TestFileQuery(unittest.TestCase):
         assert sha1_hash == queried_proc.get_sha1_hash()
         assert sha256_hash == queried_proc.get_sha256_hash()
 
+    @hypothesis.settings(deadline=None)
     @given(
         node_key=st.uuids(),
         file_path=st.text(),

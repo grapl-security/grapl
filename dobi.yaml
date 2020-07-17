@@ -350,8 +350,8 @@ job=run-node-identifier-integration-tests:
   net-mode: grapl-integration-tests_default
   command: /bin/bash -c "sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration"
   env:
-    - GRAPL_LOG_LEVEL=DEBUG
-    - RUST_LOG=DEBUG
+    - GRAPL_LOG_LEVEL=INFO
+    - RUST_LOG=INFO
     - RUST_BACKTRACE=1
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
@@ -378,7 +378,7 @@ job=run-grapl-analyzerlib-integration-tests:
   net-mode: grapl-integration-tests_default
   command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'integration_test'"
   env:
-    - GRAPL_LOG_LEVEL=TRACE
+    - GRAPL_LOG_LEVEL=INFO
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
