@@ -1054,7 +1054,7 @@ pub fn init_s3_client() -> S3Client {
 }
 
 pub fn init_dynamodb_client() -> DynamoDbClient {
-    info!("Connecting to local http://dynamo:9000");
+    info!("Connecting to local http://dynamodb:8000");
     DynamoDbClient::new_with(
         HttpClient::new().expect("failed to create request dispatcher"),
         rusoto_credential::StaticProvider::new_minimal(
@@ -1063,7 +1063,7 @@ pub fn init_dynamodb_client() -> DynamoDbClient {
         ),
         Region::Custom {
             name: "us-west-2".to_string(),
-            endpoint: "http://dynamo:8000".to_string(),
+            endpoint: "http://dynamodb:8000".to_string(),
         },
     )
 }

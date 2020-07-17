@@ -84,7 +84,7 @@ services:
     tty: false
     links:
       - s3:minio
-      - dynamodb:dynamo
+      - dynamodb:dynamodb
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
@@ -117,7 +117,7 @@ services:
     tty: false
     links:
       - s3:minio
-      - dynamodb:dynamo
+      - dynamodb:dynamodb
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1

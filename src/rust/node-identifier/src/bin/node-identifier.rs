@@ -1,15 +1,11 @@
 use log::{error, info};
 use std::time::Duration;
 
-use node_identifier::{
-    handler, init_dynamodb_client, init_s3_client, init_sqs_client, local_handler,
-};
+use node_identifier::{handler, init_dynamodb_client, local_handler};
 
 use lambda_runtime::lambda;
 use rusoto_core::RusotoError;
 use rusoto_dynamodb::DynamoDb;
-use rusoto_s3::S3;
-use rusoto_sqs::{ListQueuesRequest, Sqs};
 use tokio::runtime::Runtime;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -1,13 +1,13 @@
+use node_identifier::init_dynamodb_client;
 use node_identifier::sessiondb::SessionDb;
-use node_identifier::sessions::UnidSession;
+use node_identifier::sessions::{Session, UnidSession};
 use std::time::Duration;
 
 use quickcheck_macros::quickcheck;
 use rusoto_core::Region;
 use rusoto_dynamodb::KeySchemaElement;
 use rusoto_dynamodb::{
-    AttributeDefinition, CreateTableInput, DeleteTableInput, DynamoDb, DynamoDbClient,
-    ProvisionedThroughput,
+    AttributeDefinition, CreateTableInput, DeleteTableInput, DynamoDb, ProvisionedThroughput,
 };
 use tokio::runtime::Runtime;
 
@@ -53,15 +53,6 @@ fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) 
         .expect("Failed to crate table");
 }
 
-fn local_dynamo() -> impl DynamoDb {
-    let region = Region::Custom {
-        endpoint: "http://localhost:8001".to_owned(),
-        name: "us-east-9".to_owned(),
-    };
-
-    DynamoDbClient::new(region)
-}
-
 // Given an empty timeline
 // When a canonical creation event comes in
 // Then the newly created session should be in the timeline
@@ -70,7 +61,7 @@ fn local_dynamo() -> impl DynamoDb {
 fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_on_empty_timeline";
-    let dynamo = local_dynamo();
+    let dynamo = init_dynamodb_client();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -99,7 +90,7 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
 fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_update_existing_non_canon_create";
-    let dynamo = local_dynamo();
+    let dynamo = init_dynamodb_client();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -146,7 +137,7 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
 fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
-    let dynamo = local_dynamo();
+    let dynamo = init_dynamodb_client();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -193,7 +184,7 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
 #[cfg(feature = "integration")]
 fn canon_create_on_timeline_with_surrounding_canon_sessions() {
     let table_name = "process_history_canon_create_on_timeline_with_surrounding_canon_sessions";
-    let dynamo = local_dynamo();
+    let dynamo = init_dynamodb_client();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -208,7 +199,7 @@ fn canon_create_on_timeline_with_surrounding_canon_sessions() {
 fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
-    let dynamo = local_dynamo();
+    let dynamo = init_dynamodb_client();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -235,7 +226,7 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
 fn noncanon_create_on_empty_timeline_without_default() {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
-    let dynamo = local_dynamo();
+    let dynamo = init_dynamodb_client();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -259,7 +250,7 @@ fn noncanon_create_on_empty_timeline_without_default() {
 #[cfg(feature = "integration")]
 fn canon_create_on_timeline_with_existing_session_within_skew() {
     let table_name = "process_history_canon_create_on_timeline_with_existing_session_within_skew";
-    let dynamo = local_dynamo();
+    let dynamo = init_dynamodb_client();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -271,7 +262,7 @@ fn canon_create_on_timeline_with_existing_session_within_skew() {
 fn update_end_time(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_update_end_time";
-    let dynamo = local_dynamo();
+    let dynamo = init_dynamodb_client();
 
     create_or_empty_table(&dynamo, table_name);
 
