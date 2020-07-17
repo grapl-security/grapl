@@ -58,8 +58,9 @@ export const LogIn = (_: LoginProps) => {
           
           const loginSuccess = await login(values.userName, password);
           
-          if (loginSuccess) {
+          if (await loginSuccess) {
             window.history.replaceState('/login', "", "/")
+            window.location.reload();
           } else {
             setState({
               ...state,
@@ -71,6 +72,7 @@ export const LogIn = (_: LoginProps) => {
 
       {({ errors, touched }) => (
         <Form>
+
             <Field name="userName" type="text" placeholder="Username"  />
             {touched.userName && errors.userName && <div className = {classes.valErrorMsg}>{errors.userName}</div>}
         
@@ -82,6 +84,12 @@ export const LogIn = (_: LoginProps) => {
             {state.loginFailed && <div className= {classes.valErrorMsg}>Unsuccessful Login</div>}
           </Form>
         )}
+
+          <Field name="userName" type="text" placeholder="Username" /> <br/>
+          <Field name="password" type="password" placeholder="Password"/> <br/>
+          <button className="submitBtn"  type="submit"> Submit </button>
+        </Form>
+
       </Formik>
         
       </div>
@@ -132,9 +140,8 @@ const login = async (username: string, password: string) => {
           });
           
           const body = await res.json();
-          console.log("Body", body)
 
-          return body['success'] === 'True';  
+          return body['success'] === 'True';
         } catch (e) {
           console.log(e);
           return false
