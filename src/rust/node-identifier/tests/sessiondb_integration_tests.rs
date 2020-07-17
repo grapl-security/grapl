@@ -4,26 +4,20 @@ use node_identifier::sessions::{Session, UnidSession};
 use std::time::Duration;
 
 use quickcheck_macros::quickcheck;
-use rusoto_core::Region;
-use rusoto_dynamodb::KeySchemaElement;
+use rusoto_core::{Region, RusotoError};
 use rusoto_dynamodb::{
-    AttributeDefinition, CreateTableInput, DeleteTableInput, DynamoDb, ProvisionedThroughput,
+    AttributeDefinition, CreateTableError, CreateTableInput, CreateTableOutput, DeleteTableInput,
+    DynamoDb, KeySchemaElement, ProvisionedThroughput,
 };
 use tokio::runtime::Runtime;
 
-fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) {
-    let mut runtime = Runtime::new().unwrap();
-    let table_name = table_name.into();
-
-    let _ = runtime.block_on(dynamo.delete_table(DeleteTableInput {
-        table_name: table_name.clone(),
-    }));
-
-    std::thread::sleep(Duration::from_millis(155));
-
-    let res = runtime
-        .block_on(dynamo.create_table(CreateTableInput {
-            table_name: table_name.clone(),
+async fn try_create_table(
+    dynamo: &impl DynamoDb,
+    table_name: String,
+) -> Result<CreateTableOutput, RusotoError<CreateTableError>> {
+    dynamo
+        .create_table(CreateTableInput {
+            table_name,
             attribute_definitions: vec![
                 AttributeDefinition {
                     attribute_name: "pseudo_key".into(),
@@ -49,8 +43,23 @@ fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) 
                 write_capacity_units: 3,
             }),
             ..Default::default()
-        }))
-        .expect("Failed to crate table");
+        })
+        .await
+}
+
+fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) {
+    let mut runtime = Runtime::new().unwrap();
+    let table_name = table_name.into();
+
+    let _ = runtime.block_on(dynamo.delete_table(DeleteTableInput {
+        table_name: table_name.clone(),
+    }));
+
+    std::thread::sleep(Duration::from_millis(250));
+
+    while let Err(e) = runtime.block_on(try_create_table(dynamo, table_name.clone())) {
+        std::thread::sleep(Duration::from_millis(250));
+    }
 }
 
 // Given an empty timeline

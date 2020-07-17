@@ -33,6 +33,7 @@ jobs:
       - name: Build Grapl Rust services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-integration
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-rust-build
           docker system prune -f
 
@@ -50,6 +51,7 @@ jobs:
       - name: Build Grapl Python services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-integration
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-python-build
           docker system prune -f
 
