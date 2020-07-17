@@ -76,8 +76,6 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration
-          docker system prune -af
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount rust
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-rust-build
           docker system prune -f
@@ -86,6 +84,9 @@ jobs:
           docker system prune -f
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount js
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-js-build
+          docker system prune -f
+          GRAPL_RELEASE_TARGET=release TAG="$VERSION-CHANNEL" ./dobi-linux --no-bind-mount integration
+          GRAPL_RELEASE_TARGET=release TAG="$VERSION-CHANNEL" ./dobi-linux --no-bind-mount clean-build
           docker system prune -f
 
       - name: Log in to Docker registry

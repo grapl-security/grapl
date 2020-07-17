@@ -33,7 +33,6 @@ jobs:
       - name: Build Grapl Rust services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-integration
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-rust-build
           docker system prune -f
 
@@ -51,7 +50,6 @@ jobs:
       - name: Build Grapl Python services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-integration
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-python-build
           docker system prune -f
 
@@ -70,4 +68,40 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-js-build
+          docker system prune -f
+
+  grapl-rust-integration-tests:
+    runs-on: ubuntu-latest
+    needs: [grapl-rust-build, grapl-python-build, grapl-js-build]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Run Grapl integration tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-integration
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-rust-build
+          docker system prune -f
+
+  grapl-python-integration-tests:
+    runs-on: ubuntu-latest
+    needs: [grapl-rust-build, grapl-python-build, grapl-js-build]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Run Grapl integration tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-integration
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-python-build
           docker system prune -f
