@@ -58,8 +58,8 @@ export const LogIn = (_: LoginProps) => {
           
           const loginSuccess = await login(values.userName, password);
           
-          if (loginSuccess) {
-            window.history.replaceState('/login', "", "/");
+          if (await loginSuccess) {
+            window.history.replaceState('/login', "", "/")
             window.location.reload();
           } else {
             setState({
@@ -72,6 +72,7 @@ export const LogIn = (_: LoginProps) => {
 
       {({ errors, touched }) => (
         <Form>
+
             <Field name="userName" type="text" placeholder="Username"  />
             {touched.userName && errors.userName && <div className = {classes.valErrorMsg}>{errors.userName}</div>}
         
@@ -133,7 +134,8 @@ const login = async (username: string, password: string) => {
           });
           
           const body = await res.json();
-          return body['success'] === 'True';  
+
+          return body['success'] === 'True';
         } catch (e) {
           console.log(e);
           return false
