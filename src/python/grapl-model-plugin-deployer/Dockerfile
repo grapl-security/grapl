@@ -7,7 +7,7 @@ RUN /bin/bash -c "source venv/bin/activate && cd grapl-model-plugin-deployer && 
 RUN /bin/bash -c "source venv/bin/activate && cd grapl-model-plugin-deployer && py.test -n auto -m 'not integration_test'"
 RUN cd venv/lib/python3.7/site-packages/ && zip --quiet -9r ~/lambda.zip ./
 RUN cd grapl-model-plugin-deployer/src/ && zip -g ~/lambda.zip ./grapl_model_plugin_deployer.py
-RUN mkdir -p dist/grapl-model-plugin-deployer && cp ~/lambda.zip dist/grapl-model-plugin-deployer/lambda.zip
+RUN mkdir -p dist/model-plugin-deployer && cp ~/lambda.zip dist/model-plugin-deployer/lambda.zip
 
 FROM grapl/grapl-python-deploy AS grapl-model-plugin-deployer
 USER grapl
