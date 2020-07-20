@@ -424,7 +424,7 @@ job=build-dgraph-ttl:
   mounts:
     - dist
   artifact:
-    - ./dist/grapl-dgraph-ttl/lambda.zip
+    - ./dist/dgraph-ttl/lambda.zip
 
 job=build-model-plugin-deployer:
   use: model-plugin-deployer-build
@@ -440,7 +440,7 @@ job=build-graphql-endpoint:
   mounts:
     - dist
   artifact:
-    - ./dist/grapl-graphql-endpoint/lambda.zip
+    - ./dist/graphql-endpoint/lambda.zip
 
 # TODO: graphql endpoint integration tests
 

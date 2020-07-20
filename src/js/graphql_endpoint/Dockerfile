@@ -19,7 +19,7 @@ COPY modules lambda/modules
 # TODO: run tests
 COPY server.js lambda/server.js
 RUN cd lambda && zip --quiet -9r /home/grapl/lambda.zip .
-RUN mkdir -p dist/grapl-graphql-endpoint && cp lambda.zip dist/grapl-graphql-endpoint/lambda.zip
+RUN mkdir -p dist/graphql-endpoint && cp lambda.zip dist/graphql-endpoint/lambda.zip
 
 FROM node:12.18-buster-slim AS grapl-graphql-endpoint
 RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends unzip

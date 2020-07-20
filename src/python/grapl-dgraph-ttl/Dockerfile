@@ -7,7 +7,7 @@ RUN /bin/bash -c "source venv/bin/activate && pip install -r grapl-dgraph-ttl/re
 RUN /bin/bash -c "source venv/bin/activate && cd grapl-dgraph-ttl && py.test -n auto -m 'not integration_test'"
 RUN cd venv/lib/python3.7/site-packages && zip --quiet -9r ../../../../lambda.zip .
 RUN cd grapl-dgraph-ttl && zip -g ../lambda.zip app.py
-RUN mkdir -p dist/grapl-dgraph-ttl && cp lambda.zip dist/grapl-dgraph-ttl/lambda.zip
+RUN mkdir -p dist/dgraph-ttl && cp lambda.zip dist/dgraph-ttl/lambda.zip
 
 FROM grapl/grapl-python-deploy AS grapl-dgraph-ttl
 USER grapl
