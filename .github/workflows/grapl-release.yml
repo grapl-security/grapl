@@ -162,6 +162,9 @@ jobs:
           cp dist/graphql-endpoint/lambda.zip graphql-endpoint-$VERSION-$CHANNEL.zip
           echo "::set-output name=graphql-endpoint::graphql-endpoint-$VERSION-$CHANNEL.zip"
 
+          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$VERSION-$CHANNEL.zip
+          echo "::set-output name=dgraph-ttl::dgraph-ttl-$VERSION-$CHANNEL.zip"
+
       - name: Clean up Grapl build dist
         run: |
           rm -rf dist
@@ -270,6 +273,16 @@ jobs:
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ steps.extract-artifacts.outputs.graphql-endpoint }}
+          asset_name: ${{ steps.extract-artifacts.outputs.graphql-endpoint }}
+          asset_content_type: application/zip
+
+      - name: Upload dgraph-ttl to Github
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.event.release.upload_url }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./${{ steps.extract-artifacts.outputs.graphql-endpoint }}
