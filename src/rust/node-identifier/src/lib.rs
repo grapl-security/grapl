@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
+use std::fmt::Debug;
 use std::io::Cursor;
 use std::ops::Deref;
 use std::str::FromStr;
@@ -9,17 +10,14 @@ use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
+use async_trait::async_trait;
+use aws_lambda_events::event::s3::{
+    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
+};
 use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;
+use chrono::Utc;
 use failure::{bail, Error};
-use graph_descriptions::file::FileState;
-use graph_descriptions::graph_description::host::*;
-use graph_descriptions::graph_description::node::WhichNode;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::ip_connection::IpConnectionState;
-use graph_descriptions::network_connection::NetworkConnectionState;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::Context;
 use log::*;
@@ -33,21 +31,22 @@ use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
+use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
 
 use assetdb::{AssetIdDb, AssetIdentifier};
-use async_trait::async_trait;
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
+use graph_descriptions::file::FileState;
+use graph_descriptions::graph_description::host::*;
+use graph_descriptions::graph_description::node::WhichNode;
+use graph_descriptions::graph_description::*;
+use graph_descriptions::ip_connection::IpConnectionState;
+use graph_descriptions::network_connection::NetworkConnectionState;
+use graph_descriptions::node::NodeT;
+use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
-
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use chrono::Utc;
-use graph_descriptions::node::NodeT;
-use sqs_lambda::local_sqs_service::local_sqs_service;
-use std::fmt::Debug;
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -1055,7 +1054,7 @@ pub fn init_s3_client() -> S3Client {
 }
 
 pub fn init_dynamodb_client() -> DynamoDbClient {
-    info!("Connecting to local http://dynamo:9000");
+    info!("Connecting to local http://dynamodb:8000");
     DynamoDbClient::new_with(
         HttpClient::new().expect("failed to create request dispatcher"),
         rusoto_credential::StaticProvider::new_minimal(
@@ -1064,7 +1063,7 @@ pub fn init_dynamodb_client() -> DynamoDbClient {
         ),
         Region::Custom {
             name: "us-west-2".to_string(),
-            endpoint: "http://dynamo:8000".to_string(),
+            endpoint: "http://dynamodb:8000".to_string(),
         },
     )
 }
@@ -1144,7 +1143,9 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
     let queue_name = source_queue_url.split("/").last().unwrap();
+    grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
     grapl_config::wait_for_s3(init_s3_client()).await?;
+
     local_sqs_service(
         source_queue_url,
         "local-grapl-subgraphs-generated-bucket",

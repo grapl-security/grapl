@@ -1,18 +1,28 @@
 import base64
+import logging
+import sys
 import os.path
+
+from typing import Optional
 from pathlib import Path
 
 import boto3
 
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-def load_plugins(bucket_prefix: str, s3=None):
+
+def load_plugins(bucket_prefix: str, s3=None, path=None):
     s3 = s3 or boto3.resource("s3")
 
     PluginRetriever(
         plugin_bucket=bucket_prefix + "-model-plugins-bucket",
         plugin_directory="./model_plugins/",
         s3_client=s3.meta.client,
-    ).retrieve(overwrite=True)
+    ).retrieve(overwrite=True, path=path)
 
 
 def load_plugins_local():
@@ -33,7 +43,10 @@ class PluginRetriever(object):
         self.s3_client = s3_client
         self.plugin_directory = plugin_directory
 
-    def retrieve(self, overwrite: bool = False) -> None:
+    def retrieve(self, overwrite: bool = False, path: Optional[Path] = None) -> None:
+        path = path or "."
+        LOGGER.info(f'Writing out plugins to: {os.path.join(path, "model_plugins")}')
+
         # list plugin files
         plugin_objects = self.s3_client.list_objects(Bucket=self.plugin_bucket,).get(
             "Contents", []
@@ -44,11 +57,9 @@ class PluginRetriever(object):
             object_key = plugin_object["Key"]
             plugin_name = object_key.split("/")[0]
             local_path = os.path.join(
-                os.path.abspath("."),
+                path,
                 f"model_plugins/{plugin_name}/{base64.decodebytes(object_key.split('/')[1].encode('utf8')).decode('utf8')}",
             ).replace("-", "_")
-
-            print(local_path)
 
             if local_path[-1] == "/":
                 local_path = local_path[:-1]

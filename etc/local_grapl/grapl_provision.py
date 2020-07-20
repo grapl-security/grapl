@@ -2,16 +2,25 @@ import json
 import threading
 import time
 
-from typing import *
+from typing import Any, Dict
 
 import boto3
 import pydgraph
-from grapl_analyzerlib.schemas import *
-from grapl_analyzerlib.schemas.asset_schema import AssetSchema
+from grapl_analyzerlib.grapl_client import MasterGraphClient
+from grapl_analyzerlib.schemas import (
+    AssetSchema,
+    ProcessSchema,
+    FileSchema,
+    IpConnectionSchema,
+    IpAddressSchema,
+    IpPortSchema,
+    NetworkConnectionSchema,
+    ProcessInboundConnectionSchema,
+    ProcessOutboundConnectionSchema,
+)
 from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
 from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
-from pydgraph import DgraphClient, DgraphClientStub
 
 
 def set_schema(client, schema) -> None:
@@ -164,6 +173,8 @@ def provision_sqs(sqs, service_name: str) -> None:
     )
 
     redrive_url = redrive_queue["QueueUrl"]
+    print(f"Provisioned {service_name} retry queue at " + redrive_url)
+
     redrive_arn = sqs.get_queue_attributes(
         QueueUrl=redrive_url, AttributeNames=["QueueArn"]
     )["Attributes"]["QueueArn"]
@@ -260,10 +271,9 @@ def sqs_provision_loop() -> None:
 
 if __name__ == "__main__":
     time.sleep(5)
-    local_dg_provision_client = DgraphClient(DgraphClientStub("master_graph:9080"))
+    local_dg_provision_client = MasterGraphClient()
 
     print("Provisioning graph database")
-    # local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
 
     for i in range(0, 150):
         try:
