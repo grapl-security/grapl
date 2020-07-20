@@ -419,7 +419,7 @@ job=build-model-plugin-deployer:
   mounts:
     - dist
   artifact:
-    - ./dist/grapl-model-plugin-deployer/lambda.zip
+    - ./dist/model-plugin-deployer/lambda.zip
 
 # js jobs
 
