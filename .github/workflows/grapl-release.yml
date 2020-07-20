@@ -111,6 +111,7 @@ jobs:
           docker push grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL
           docker push grapl/grapl-graph-provision:$VERSION-$CHANNEL
           docker push grapl/grapl-dynamodb-provision:$VERSION-$CHANNEL
+          docker push grapl/grapl-dgraph-ttl:$VERSION-$CHANNEL
 
       - name: Extract Grapl artifacts from build
         id: extract-artifacts
