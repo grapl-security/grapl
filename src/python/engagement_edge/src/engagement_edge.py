@@ -567,7 +567,6 @@ def lambda_login(event):
     login_res = login(body["username"], body["password"])
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
-    print("IS_LOCAL", IS_LOCAL)
     if IS_LOCAL:
         domain = ""
     else: 
