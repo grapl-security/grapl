@@ -11,6 +11,16 @@ mount=dist:
   path: /home/grapl/dist
   file: false
 
+mount=rust-target:
+  bind: ./src/rust/target
+  path: /home/grapl/target
+  file: false
+
+mount=rust-cargo:
+  bind: ./src/rust/.cargo
+  path: /home/grapl/.cargo
+  file: false
+
 #
 # images
 #
@@ -342,6 +352,8 @@ job=build-rust:
   use: rust-build
   mounts:
     - dist
+    - rust-target
+    - rust-cargo
   artifact:
     - ./dist/*
 
