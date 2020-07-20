@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import sys
 import time
 import uuid
@@ -65,6 +66,11 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 app = Chalice(app_name="engagement-edge")
+
+origin_re = re.compile(
+    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
+    re.IGNORECASE,
+)
 
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
@@ -430,6 +436,8 @@ def try_get_updated_graph(body):
 
 
 def respond(err, res=None, headers=None):
+    req_origin = app.current_request.headers.get("origin", "")
+
     LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
     if not headers:
         headers = {}
@@ -440,11 +448,19 @@ def respond(err, res=None, headers=None):
     else:
         override = ORIGIN_OVERRIDE
 
+    if origin_re.match(req_origin):
+        LOGGER.info("Origin matched")
+        allow_origin = req_origin
+    else:
+        LOGGER.info("Origin did not match")
+        # allow_origin = override or ORIGIN
+        allow_origin = req_origin
+
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=400 if err else 200,
         headers={
-            "Access-Control-Allow-Origin": override or ORIGIN,
+            "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Credentials": "true",
             "Content-Type": "application/json",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
