@@ -21,6 +21,11 @@ mount=rust-cargo:
   path: /home/grapl/.cargo
   file: false
 
+mount=rust-vendor:
+  bind: ./src/rust/vendor
+  path: /home/grapl/vendor
+  file: false
+
 #
 # images
 #
@@ -354,10 +359,12 @@ job=build-rust:
     - dist
     - rust-target
     - rust-cargo
+    - rust-vendor
   artifact:
     - ./dist/*
     - ./src/rust/target/*
     - ./src/rust/.cargo/*
+    - ./src/rust/vendor/*
 
 job=run-node-identifier-integration-tests:
   use: rust-build
