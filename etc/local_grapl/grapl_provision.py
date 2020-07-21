@@ -12,6 +12,7 @@ from random import uniform
 import botocore
 import boto3
 import pydgraph
+from uuid import uuid4
 from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.schemas import (
     AssetSchema,
@@ -31,7 +32,7 @@ from grapl_analyzerlib.schemas.schema_builder import ManyToMany
 
 def create_secret(secretsmanager):
     secretsmanager.create_secret(
-        Name="JWT_SECRET_ID", SecretString="jwt_secret",
+        Name="JWT_SECRET_ID", SecretString=str(uuid4()),
     )
 
 
@@ -349,9 +350,7 @@ if __name__ == "__main__":
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
 
-    boto3.set_stream_logger(name="botocore")
-
-    while True:
+    for i in range(0, 150):
         try:
             client = boto3.client(
                 service_name="secretsmanager",
@@ -365,17 +364,19 @@ if __name__ == "__main__":
         except botocore.exceptions.ClientError as e:
             if "ResourceExistsException" in e.__class__.__name__:
                 break
-            else:
+            if i >= 50:
                 print(e)
         except Exception as e:
-            print(e)
+            if i >= 50: 
+                print(e)
             time.sleep(1)
     print("Completed provisioning")
 
-    while True:
+    for i in range(0, 150):
         try:
             create_user("grapluser", "graplpassword")
             break
         except Exception as e:
-            print(e)
+            if i >= 50:
+                print(e)
             time.sleep(1)

@@ -22,6 +22,14 @@ from pydgraph import DgraphClient
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
+
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+
 if IS_LOCAL:
     import time
 
@@ -38,13 +46,10 @@ if IS_LOCAL:
             JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
                 "SecretString"
             ]
-            print(JWT_SECRET)
             break
         except Exception as e:
-            print(e)
+            LOGGER.debug(e)
             time.sleep(1)
-
-    print("JWT SECRET", JWT_SECRET)
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
@@ -63,12 +68,6 @@ if IS_LOCAL:
     MG_ALPHA = "master_graph:9080"
 else:
     MG_ALPHA = "alpha0.mastergraphcluster.grapl:9080"
-
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 app = Chalice(app_name="engagement-edge")
 
@@ -548,9 +547,6 @@ def login(username, password):
 
 
 def check_jwt(headers):
-    # if IS_LOCAL:
-    #     return True
-
     encoded_jwt = None
     for cookie in headers.get("Cookie", "").split(";"):
         if "grapl_jwt=" in cookie:
@@ -596,7 +592,6 @@ def requires_auth(path):
             if app.current_request.method == "OPTIONS":
                 return respond(None, {})
 
-            # if not IS_LOCAL:  # For now, disable authentication locally
             if not check_jwt(app.current_request.headers):
                 LOGGER.warn("not logged in")
                 return respond("Must log in")
