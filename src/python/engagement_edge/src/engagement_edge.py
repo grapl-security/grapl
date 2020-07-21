@@ -24,17 +24,20 @@ IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
 if IS_LOCAL:
     import time
+
     while True:
         try:
             secretsmanager = boto3.client(
                 "secretsmanager",
-                region_name='us-east-1',
+                region_name="us-east-1",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url='http://secretsmanager.us-east-1.amazonaws.com:4566'
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
             )
 
-            JWT_SECRET = secretsmanager.get_secret_value(SecretId='JWT_SECRET_ID',)["SecretString"]
+            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
+                "SecretString"
+            ]
             print(JWT_SECRET)
             break
         except Exception as e:
@@ -47,7 +50,9 @@ else:
 
     secretsmanager = boto3.client("secretsmanager")
 
-    JWT_SECRET = secretsmanager.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
+    JWT_SECRET = secretsmanager.get_secret_value(SecretId=JWT_SECRET_ID,)[
+        "SecretString"
+    ]
 
 ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
@@ -498,7 +503,7 @@ def user_auth_table():
             aws_access_key_id="dummy_cred_aws_access_key_id",
             aws_secret_access_key="dummy_cred_aws_secret_access_key",
         )
-    else: 
+    else:
         DYNAMO = DYNAMO or boto3.resource("dynamodb")
 
     return DYNAMO.Table(os.environ["USER_AUTH_TABLE"])
@@ -569,11 +574,9 @@ def lambda_login(event):
     body["password"] = ""
     if IS_LOCAL:
         domain = ""
-    else: 
+    else:
         domain = "Domain=.amazonaws.com;"
-    cookie = (
-        f"grapl_jwt={login_res}; {domain} secure; HttpOnly; SameSite=None"
-    )
+    cookie = f"grapl_jwt={login_res}; {domain} secure; HttpOnly; SameSite=None"
     if login_res:
         return cookie
 

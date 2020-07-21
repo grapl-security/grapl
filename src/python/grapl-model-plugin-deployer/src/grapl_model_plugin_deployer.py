@@ -34,22 +34,25 @@ IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
 if IS_LOCAL:
     import time
+
     while True:
         try:
             secretsmanager = boto3.client(
                 "secretsmanager",
-                region_name='us-east-1',
+                region_name="us-east-1",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url='http://secretsmanager.us-east-1.amazonaws.com:4566'
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
             )
 
-            JWT_SECRET = secretsmanager.get_secret_value(SecretId='JWT_SECRET_ID',)["SecretString"]
+            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
+                "SecretString"
+            ]
             break
         except Exception as e:
             print(e)
             time.sleep(1)
-    
+
     os.environ["BUCKET_PREFIX"] = "local-grapl"
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
