@@ -356,6 +356,8 @@ job=build-rust:
     - rust-cargo
   artifact:
     - ./dist/*
+    - ./src/rust/target/*
+    - ./src/rust/.cargo/*
 
 job=run-node-identifier-integration-tests:
   use: rust-build
