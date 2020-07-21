@@ -102,15 +102,15 @@ COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/vendor vendor
 # copy in the target directory from grapl-rust-deps-build
 COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/target target
 # "invalidate" all the grapl services, we want to rebuild them here
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/analyzer-dispatcher*
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/derive-dynamic-node*
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/generic-subgraph-generator*
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/grapl-graph-descriptions*
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/graph-generator-lib*
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/grapl-config*
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/graph-merger*
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/node-identifier*
-RUN rm -rf target/x86_64-unknown-linux-musl/*/.fingerprint/sysmon-subgraph-generator*
+RUN rm -rf target/*/*/.fingerprint/analyzer-dispatcher*
+RUN rm -rf target/*/*/.fingerprint/derive-dynamic-node*
+RUN rm -rf target/*/*/.fingerprint/generic-subgraph-generator*
+RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
+RUN rm -rf target/*/*/.fingerprint/graph-generator-lib*
+RUN rm -rf target/*/*/.fingerprint/grapl-config*
+RUN rm -rf target/*/*/.fingerprint/graph-merger*
+RUN rm -rf target/*/*/.fingerprint/node-identifier*
+RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
 # copy in the sources
 COPY --chown=grapl ./analyzer-dispatcher analyzer-dispatcher
 COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
@@ -124,12 +124,15 @@ COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator
 # copy in the top-level Cargo.toml and Cargo.lock
 COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
-# build everything
-RUN cargo test --target=x86_64-unknown-linux-musl
-# Now do a clean release build
+
+# Now do a clean build
 RUN if test "${release_target}" = "release"; then \
       cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl --release; \
+    fi
+RUN if test "${release_target}" = "debug"; then \
+      cargo clean; \
+      cargo build --target=x86_64-unknown-linux-musl; \
     fi
 # copy artifacts to dist mount
 RUN mkdir -p /home/grapl/dist && \
