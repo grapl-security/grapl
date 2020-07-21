@@ -124,9 +124,8 @@ COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator
 # copy in the top-level Cargo.toml and Cargo.lock
 COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
-# build everything
-RUN cargo test --target=x86_64-unknown-linux-musl
-# Now do a clean release build
+
+# Now do a clean build
 RUN if test "${release_target}" = "release"; then \
       cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl --release; \
