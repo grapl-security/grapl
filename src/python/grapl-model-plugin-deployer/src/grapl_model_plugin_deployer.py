@@ -32,8 +32,35 @@ T = TypeVar("T")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER.info("Initializing Chalice server")
+
+
 if IS_LOCAL:
-    JWT_SECRET = str(uuid.uuid4())
+    import time
+
+    for i in range(0, 150):
+        try:
+            secretsmanager = boto3.client(
+                "secretsmanager",
+                region_name="us-east-1",
+                aws_access_key_id="dummy_cred_aws_access_key_id",
+                aws_secret_access_key="dummy_cred_aws_secret_access_key",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+            )
+
+            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
+                "SecretString"
+            ]
+            break
+        except Exception as e:
+            LOGGER.debug(e)
+            time.sleep(1)
+
     os.environ["BUCKET_PREFIX"] = "local-grapl"
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
@@ -46,15 +73,7 @@ ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-LOGGER.info("Initializing Chalice server")
-
-print("origin: ", ORIGIN)
-
+LOGGER.debug("Origin: ", origin)
 app = Chalice(app_name="model-plugin-deployer")
 
 
