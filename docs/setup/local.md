@@ -52,6 +52,11 @@ To get data into Grapl, please run the following command:
 ```bash
 python3 ./upload-sysmon-logs.py --bucket_prefix=local-grapl --logfile=eventlog.xml 
 ```
+***Logging In to Grapl:***
+When you navigate to localhost:3000/login, please enter the following credentials into the login form: 
+Username: grapluser
+Password: graplpassword
+
 
 **Working With Grapl Data:** 
 
