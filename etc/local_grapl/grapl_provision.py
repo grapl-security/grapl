@@ -367,7 +367,7 @@ if __name__ == "__main__":
             if i >= 50:
                 print(e)
         except Exception as e:
-            if i >= 50: 
+            if i >= 50:
                 print(e)
             time.sleep(1)
     print("Completed provisioning")
