@@ -28,11 +28,12 @@ from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
 from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
 
+
 def create_secret(secretsmanager):
     secretsmanager.create_secret(
-        Name="JWT_SECRET_ID",
-        SecretString="jwt_secret",
-    )   
+        Name="JWT_SECRET_ID", SecretString="jwt_secret",
+    )
+
 
 def set_schema(client, schema) -> None:
     op = pydgraph.Operation(schema=schema)
@@ -250,12 +251,8 @@ def bucket_provision_loop() -> None:
 
 def hash_password(cleartext, salt) -> str:
     hashed = sha256(cleartext).digest()
-    return pbkdf2_hmac(
-        'sha256', 
-        hashed,
-        salt,
-        512000
-    ).hex()
+    return pbkdf2_hmac("sha256", hashed, salt, 512000).hex()
+
 
 def create_user(username, cleartext):
     assert cleartext
@@ -267,27 +264,22 @@ def create_user(username, cleartext):
         aws_secret_access_key="dummy_cred_aws_secret_access_key",
     )
     table = dynamodb.Table("local-grapl-user_auth_table")
-    
+
     # We hash before calling 'hashed_password' because the frontend will also perform
     # client side hashing
-    cleartext += "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254";
-    
-    cleartext += username;
+    cleartext += "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254"
 
-    hashed = sha256(cleartext.encode('utf8')).hexdigest()
-    
+    cleartext += username
+
+    hashed = sha256(cleartext.encode("utf8")).hexdigest()
+
     for i in range(0, 5000):
-        hashed = sha256(hashed.encode('utf8')).hexdigest()
-    
+        hashed = sha256(hashed.encode("utf8")).hexdigest()
+
     salt = os.urandom(16)
-    password = hash_password(hashed.encode('utf8'), salt)
-    table.put_item(
-        Item={
-            'username': username,
-            'salt': salt,
-            'password': password
-        }
-    )
+    password = hash_password(hashed.encode("utf8"), salt)
+    table.put_item(Item={"username": username, "salt": salt, "password": password})
+
 
 def sqs_provision_loop() -> None:
     sqs_succ = {service for service in services}
@@ -357,12 +349,12 @@ if __name__ == "__main__":
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
 
-    boto3.set_stream_logger(name='botocore')
+    boto3.set_stream_logger(name="botocore")
 
     while True:
         try:
             client = boto3.client(
-                service_name = "secretsmanager",
+                service_name="secretsmanager",
                 region_name="us-east-1",
                 endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
@@ -371,7 +363,7 @@ if __name__ == "__main__":
             create_secret(client)
             break
         except botocore.exceptions.ClientError as e:
-            if 'ResourceExistsException' in e.__class__.__name__:
+            if "ResourceExistsException" in e.__class__.__name__:
                 break
             else:
                 print(e)
@@ -380,13 +372,10 @@ if __name__ == "__main__":
             time.sleep(1)
     print("Completed provisioning")
 
-    while True: 
+    while True:
         try:
             create_user("grapluser", "graplpassword")
             break
-        except Exception as e: 
+        except Exception as e:
             print(e)
             time.sleep(1)
-
-
-

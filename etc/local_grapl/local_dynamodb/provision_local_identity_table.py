@@ -104,12 +104,8 @@ table_defs = {
         ],
     },
     "local-grapl-user_auth_table": {
-        "key_schema": [
-            {"KeyType": "HASH", "AttributeName": "username"},
-        ],
-        "attribute_definitions": [
-            {"AttributeName": "username", "AttributeType": "S"},
-        ],
+        "key_schema": [{"KeyType": "HASH", "AttributeName": "username"},],
+        "attribute_definitions": [{"AttributeName": "username", "AttributeType": "S"},],
     },
 }
 
@@ -134,7 +130,7 @@ def try_create_loop(table_name):
 
             return
         except botocore.exceptions.ClientError as e:
-            if 'ResourceInUseException' in e.__class__.__name__:
+            if "ResourceInUseException" in e.__class__.__name__:
                 break
             else:
                 print(table_name, e)
