@@ -45,6 +45,7 @@ if IS_LOCAL:
             )
 
             JWT_SECRET = secretsmanager.get_secret_value(SecretId='JWT_SECRET_ID',)["SecretString"]
+            break
         except Exception as e:
             print(e)
             time.sleep(1)

@@ -688,7 +688,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::init_grapl_log!();
 
     let is_local = std::env::var("IS_LOCAL").is_ok();
-
+    println!("{}", is_local);
+    
     if is_local {
         info!("Running locally");
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
