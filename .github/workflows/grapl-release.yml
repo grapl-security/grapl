@@ -286,8 +286,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.graphql-endpoint }}
-          asset_name: ${{ steps.extract-artifacts.outputs.graphql-endpoint }}
+          asset_path: ./${{ steps.extract-artifacts.outputs.dgraph-ttl }}
+          asset_name: ${{ steps.extract-artifacts.outputs.dgraph-ttl }}
           asset_content_type: application/zip
 
       - name: Prepare graph-descriptions dist
