@@ -410,6 +410,94 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
     }
 }
 
+const handleLensScope = async (parent, args) => {
+    const dg_client = getDgraphClient();
+
+    const lens_name = args.lens_name;
+
+    const lens = await getLensByName(dg_client, lens_name);
+    for (const node of lens["scope"]) {
+        // node.uid = parseInt(node.uid, 16);
+        // for every node in our lens scope, get its neighbors
+
+        const nodeEdges = await getNeighborsFromNode(dg_client, node["uid"]);
+
+        for (const maybeNeighborProp in nodeEdges) {
+            const maybeNeighbor = nodeEdges[maybeNeighborProp];
+            // maybeNeighbor.uid = parseInt(maybeNeighbor.uid, 16);
+            
+            // A neighbor is either an array of objects with uid fields
+            if (Array.isArray(maybeNeighbor) && maybeNeighbor && maybeNeighbor[0].uid) {
+                const neighbors = maybeNeighbor;
+
+                for (const neighbor of neighbors) {
+                    const isInScope = await inLensScope(dg_client, neighbor["uid"], lens["uid"]);
+                    neighbor.uid = parseInt(neighbor.uid, 16);
+                    if (isInScope) {
+                        if (Array.isArray(node[maybeNeighborProp])) {
+                            node[maybeNeighborProp].push(neighbor);
+                        } else {
+                            node[maybeNeighborProp] = [neighbor];
+                        }
+                    }
+                }
+            }
+            else if (typeof maybeNeighbor === 'object' && maybeNeighbor.uid) {
+                const neighbor = maybeNeighbor;
+
+                const isInScope = await inLensScope(dg_client, neighbor["uid"], lens["uid"]);
+                neighbor.uid = parseInt(neighbor.uid, 16);
+                if (isInScope) {
+                    if(!builtins.has(neighbor.dgraph_type[0])) {
+                        const tmpNode = {...neighbor};
+                        // Object.keys(node).forEach(function(key) { delete node[key]; });
+
+                        neighbor.predicates = tmpNode;
+                    }
+                    node[maybeNeighborProp] = neighbor
+                }
+            }
+        }
+
+    }
+
+    for (const node of lens["scope"]) {
+        try {
+            let nodeUid = node['uid'];
+            if (typeof nodeUid === 'number') {
+                nodeUid = '0x' + nodeUid.toString(16)
+            }
+            const risks = await getRisksFromNode(dg_client, nodeUid);
+            if (risks) {
+                for (const risk of risks) {
+                    risk['uid'] = parseInt(risk['uid'], 16)
+                }
+                node['risks'] = risks;
+            }
+        } catch (err) {
+            console.error('Failed to get risks', err);
+        }
+        node.uid = parseInt(node.uid, 16);
+        // If it's a plugin we want to store the properties in a wrapper
+        console.log("Node", node)
+        if(!builtins.has(node.dgraph_type[0])) {
+            const tmpNode = {...node};
+            // Object.keys(node).forEach(function(key) {
+            //     if (Object.prototype.hasOwnProperty.call(node, key)) {
+            //         delete node[key];
+            //     }
+            // });
+
+            node.predicates = tmpNode;
+        }
+    }
+
+
+    lens.uid = parseInt(lens.uid, 16);
+    return lens
+
+}
+
 const RootQuery = new GraphQLObjectType({
     name: 'RootQueryType', 
     fields: {
@@ -439,90 +527,12 @@ const RootQuery = new GraphQLObjectType({
                 lens_name: {type: new GraphQLNonNull(GraphQLString)}
             },
             resolve: async (parent, args) => {
-                const dg_client = getDgraphClient();
-
-                const lens_name = args.lens_name;
-
-                const lens = await getLensByName(dg_client, lens_name);
-                for (const node of lens["scope"]) {
-                    // node.uid = parseInt(node.uid, 16);
-                    // for every node in our lens scope, get its neighbors
-
-                    const nodeEdges = await getNeighborsFromNode(dg_client, node["uid"]);
-
-                    for (const maybeNeighborProp in nodeEdges) {
-                        const maybeNeighbor = nodeEdges[maybeNeighborProp];
-                        // maybeNeighbor.uid = parseInt(maybeNeighbor.uid, 16);
-                        
-                        // A neighbor is either an array of objects with uid fields
-                        if (Array.isArray(maybeNeighbor) && maybeNeighbor && maybeNeighbor[0].uid) {
-                            const neighbors = maybeNeighbor;
-
-                            for (const neighbor of neighbors) {
-                                const isInScope = await inLensScope(dg_client, neighbor["uid"], lens["uid"]);
-                                neighbor.uid = parseInt(neighbor.uid, 16);
-                                if (isInScope) {
-                                    if (Array.isArray(node[maybeNeighborProp])) {
-                                        node[maybeNeighborProp].push(neighbor);
-                                    } else {
-                                        node[maybeNeighborProp] = [neighbor];
-                                    }
-                                }
-                            }
-                        }
-                        else if (typeof maybeNeighbor === 'object' && maybeNeighbor.uid) {
-                            const neighbor = maybeNeighbor;
-
-                            const isInScope = await inLensScope(dg_client, neighbor["uid"], lens["uid"]);
-                            neighbor.uid = parseInt(neighbor.uid, 16);
-                            if (isInScope) {
-                                if(!builtins.has(neighbor.dgraph_type[0])) {
-                                    const tmpNode = {...neighbor};
-                                    // Object.keys(node).forEach(function(key) { delete node[key]; });
-
-                                    neighbor.predicates = tmpNode;
-                                }
-                                node[maybeNeighborProp] = neighbor
-                            }
-                        }
-                    }
-
+                try {
+                    return await handleLensScope(parent, args);
+                } catch (e) { 
+                    console.error("Failed to handle lens scope", e);
+                    throw e;
                 }
-
-                for (const node of lens["scope"]) {
-                    try {
-                        let nodeUid = node['uid'];
-                        if (typeof nodeUid === 'number') {
-                            nodeUid = '0x' + nodeUid.toString(16)
-                        }
-                        const risks = await getRisksFromNode(dg_client, nodeUid);
-                        if (risks) {
-                            for (const risk of risks) {
-                                risk['uid'] = parseInt(risk['uid'], 16)
-                            }
-                            node['risks'] = risks;
-                        }
-                    } catch (err) {
-                        console.error('Failed to get risks', err);
-                    }
-                    node.uid = parseInt(node.uid, 16);
-                    // If it's a plugin we want to store the properties in a wrapper
-                    if(!builtins.has(node.dgraph_type[0])) {
-                        const tmpNode = {...node};
-                        // Object.keys(node).forEach(function(key) {
-                        //     if (Object.prototype.hasOwnProperty.call(node, key)) {
-                        //         delete node[key];
-                        //     }
-                        // });
-
-                        node.predicates = tmpNode;
-                    }
-                }
-
-
-                lens.uid = parseInt(lens.uid, 16);
-                return lens
-
             }
         }, 
         

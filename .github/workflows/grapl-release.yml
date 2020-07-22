@@ -80,7 +80,7 @@ jobs:
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-rust-build
           docker system prune -f
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount python
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-python-build
+          # don't clean the python build, we need to upload libraries
           docker system prune -f
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount js
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-js-build
@@ -283,11 +283,11 @@ jobs:
       - name: Upload dgraph-ttl to Github
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ github.event.release.upload_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.graphql-endpoint }}
-          asset_name: ${{ steps.extract-artifacts.outputs.graphql-endpoint }}
+          asset_path: ./${{ steps.extract-artifacts.outputs.dgraph-ttl }}
+          asset_name: ${{ steps.extract-artifacts.outputs.dgraph-ttl }}
           asset_content_type: application/zip
 
       - name: Prepare graph-descriptions dist
