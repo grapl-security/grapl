@@ -22,15 +22,42 @@ from pydgraph import DgraphClient
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
+
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+
 if IS_LOCAL:
-    JWT_SECRET = str(uuid.uuid4())
-    os.environ["BUCKET_PREFIX"] = "local-grapl"
+    import time
+
+    while True:
+        try:
+            secretsmanager = boto3.client(
+                "secretsmanager",
+                region_name="us-east-1",
+                aws_access_key_id="dummy_cred_aws_access_key_id",
+                aws_secret_access_key="dummy_cred_aws_secret_access_key",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+            )
+
+            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
+                "SecretString"
+            ]
+            break
+        except Exception as e:
+            LOGGER.debug(e)
+            time.sleep(1)
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
-    client = boto3.client("secretsmanager")
+    secretsmanager = boto3.client("secretsmanager")
 
-    JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
+    JWT_SECRET = secretsmanager.get_secret_value(SecretId=JWT_SECRET_ID,)[
+        "SecretString"
+    ]
 
 ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
@@ -41,12 +68,6 @@ if IS_LOCAL:
     MG_ALPHA = "master_graph:9080"
 else:
     MG_ALPHA = "alpha0.mastergraphcluster.grapl:9080"
-
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 app = Chalice(app_name="engagement-edge")
 
@@ -473,7 +494,16 @@ def hash_password(cleartext, salt) -> str:
 
 def user_auth_table():
     global DYNAMO
-    DYNAMO = DYNAMO or boto3.resource("dynamodb")
+    if IS_LOCAL:
+        DYNAMO = DYNAMO or boto3.resource(
+            "dynamodb",
+            region_name="us-west-2",
+            endpoint_url="http://dynamodb:8000",
+            aws_access_key_id="dummy_cred_aws_access_key_id",
+            aws_secret_access_key="dummy_cred_aws_secret_access_key",
+        )
+    else:
+        DYNAMO = DYNAMO or boto3.resource("dynamodb")
 
     return DYNAMO.Table(os.environ["USER_AUTH_TABLE"])
 
@@ -495,10 +525,6 @@ def create_user(username, cleartext):
 
 
 def login(username, password):
-    if IS_LOCAL:
-        return jwt.encode({"username": username}, JWT_SECRET, algorithm="HS256").decode(
-            "utf8"
-        )
     # Connect to dynamodb table
     table = user_auth_table()
 
@@ -509,7 +535,6 @@ def login(username, password):
 
     # Hash password
     to_check = hash_password(password.encode("utf8"), salt)
-    LOGGER.debug("hashed")
 
     if not compare_digest(to_check, true_pw):
         time.sleep(round(uniform(0.1, 3.0), 2))
@@ -522,9 +547,6 @@ def login(username, password):
 
 
 def check_jwt(headers):
-    if IS_LOCAL:
-        return True
-
     encoded_jwt = None
     for cookie in headers.get("Cookie", "").split(";"):
         if "grapl_jwt=" in cookie:
@@ -546,9 +568,11 @@ def lambda_login(event):
     login_res = login(body["username"], body["password"])
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
-    cookie = (
-        f"grapl_jwt={login_res}; Domain=.amazonaws.com; secure; HttpOnly; SameSite=None"
-    )
+    if IS_LOCAL:
+        domain = ""
+    else:
+        domain = "Domain=.amazonaws.com;"
+    cookie = f"grapl_jwt={login_res}; {domain} secure; HttpOnly; SameSite=None"
     if login_res:
         return cookie
 
@@ -568,10 +592,9 @@ def requires_auth(path):
             if app.current_request.method == "OPTIONS":
                 return respond(None, {})
 
-            if not IS_LOCAL:  # For now, disable authentication locally
-                if not check_jwt(app.current_request.headers):
-                    LOGGER.warn("not logged in")
-                    return respond("Must log in")
+            if not check_jwt(app.current_request.headers):
+                LOGGER.warn("not logged in")
+                return respond("Must log in")
             try:
                 return route_fn()
             except Exception as e:

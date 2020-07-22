@@ -1,6 +1,6 @@
 import React from 'react';
 import './LogIn.css';
-import {Field, Form, Formik, ErrorMessage} from "formik";
+import {Field, Form, Formik} from "formik";
 import {LoginProps} from '../src/modules/GraphViz/CustomTypes';
 import {getAuthEdge} from './modules/GraphViz/engagement_edge/getApiURLs';
 import * as Yup from "yup";
@@ -21,13 +21,14 @@ const useStyles = makeStyles(
 const engagement_edge = getAuthEdge();
 
 export const checkLogin = async () => {
-    const res = await fetch(`${engagement_edge}checkLogin`, {
+    const res = await fetch(`${engagement_edge}checkLogin`, 
+      {
         method: 'get',
         credentials: 'include',
-    });
+      }
+    );
 
     const body = await res.json();
-
     return body['success'] === 'True';
 };
 
@@ -58,9 +59,10 @@ export const LogIn = (_: LoginProps) => {
           
           const loginSuccess = await login(values.userName, password);
           
-          if (await loginSuccess) {
-            window.history.replaceState('/login', "", "/")
+          if (loginSuccess === true) {
+            window.history.replaceState('#/login', "", "/")
             window.location.reload();
+            console.log("Logged In")
           } else {
             setState({
               ...state,
@@ -137,7 +139,7 @@ const login = async (username: string, password: string) => {
 
           return body['success'] === 'True';
         } catch (e) {
-          console.log(e);
+          console.log("Login Error", e);
           return false
       }
     };
