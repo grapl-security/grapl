@@ -73,7 +73,7 @@ ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 
-LOGGER.debug("Origin: ", origin)
+LOGGER.debug("Origin: ", ORIGIN)
 app = Chalice(app_name="model-plugin-deployer")
 
 
