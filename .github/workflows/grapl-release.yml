@@ -5,7 +5,47 @@ on:
     types: [released, prereleased]
 
 jobs:
-  release:
+  rust-unit-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.7]
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Run unit tests
+        run: |
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount rust-unit-test
+
+      - name: Run integration tests
+        run: |
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount rust-integration-test
+
+      - name: Clean Rust build
+        run: |
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-build
+          docker system prune -f
+
+  release-rust-services:
     runs-on: ubuntu-latest
 
     strategy:
@@ -72,7 +112,7 @@ jobs:
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
-      - name: Build Grapl
+      - name: Build Grapl Rust services
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
@@ -85,9 +125,41 @@ jobs:
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount js
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-js-build
           docker system prune -f
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-CHANNEL" ./dobi-linux --no-bind-mount integration
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-CHANNEL" ./dobi-linux --no-bind-mount clean-build
-          docker system prune -f
+
+      - name: Extract Grapl artifacts from Rust build
+        id: extract-rust-artifacts
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          cp dist/sysmon-subgraph-generator ./bootstrap
+          zip -9 sysmon-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
+          rm ./bootstrap
+          echo "::set-output name=sysmon-subgraph-generator::sysmon-subgraph-generator-$VERSION-$CHANNEL.zip"
+
+          cp dist/generic-subgraph-generator ./bootstrap
+          zip -9 generic-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
+          rm ./bootstrap
+          echo "::set-output name=generic-subgraph-generator::generic-subgraph-generator-$VERSION-$CHANNEL.zip"
+
+          cp dist/node-identifier ./bootstrap
+          zip -9 node-identifier-$VERSION-$CHANNEL.zip ./bootstrap
+          rm ./bootstrap
+          echo "::set-output name=node-identifier::node-identifier-$VERSION-$CHANNEL.zip"
+n
+          cp dist/node-identifier-retry-handler ./bootstrap
+          zip -9 node-identifier-retry-handler-$VERSION-$CHANNEL.zip ./bootstrap
+          rm ./bootstrap
+          echo "::set-output name=node-identifier-retry-handler::node-identifier-retry-handler-$VERSION-$CHANNEL.zip"
+
+          cp dist/graph-merger ./bootstrap
+          zip -9 graph-merger-$VERSION-$CHANNEL.zip ./bootstrap
+          rm ./bootstrap
+          echo "::set-output name=graph-merger::graph-merger-$VERSION-$CHANNEL.zip"
+
+          cp dist/analyzer-dispatcher ./bootstrap
+          zip -9 analyzer-dispatcher-$VERSION-$CHANNEL.zip ./bootstrap
+          rm ./bootstrap
+          echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$VERSION-$CHANNEL.zip"
 
       - name: Log in to Docker registry
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
@@ -118,36 +190,6 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          cp dist/sysmon-subgraph-generator ./bootstrap
-          zip -9 sysmon-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=sysmon-subgraph-generator::sysmon-subgraph-generator-$VERSION-$CHANNEL.zip"
-
-          cp dist/generic-subgraph-generator ./bootstrap
-          zip -9 generic-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=generic-subgraph-generator::generic-subgraph-generator-$VERSION-$CHANNEL.zip"
-
-          cp dist/node-identifier ./bootstrap
-          zip -9 node-identifier-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=node-identifier::node-identifier-$VERSION-$CHANNEL.zip"
-
-          cp dist/node-identifier-retry-handler ./bootstrap
-          zip -9 node-identifier-retry-handler-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=node-identifier-retry-handler::node-identifier-retry-handler-$VERSION-$CHANNEL.zip"
-
-          cp dist/graph-merger ./bootstrap
-          zip -9 graph-merger-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=graph-merger::graph-merger-$VERSION-$CHANNEL.zip"
-
-          cp dist/analyzer-dispatcher ./bootstrap
-          zip -9 analyzer-dispatcher-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$VERSION-$CHANNEL.zip"
-
           cp dist/analyzer-executor/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
           echo "::set-output name=analyzer-executor::analyzer-executor-$VERSION-$CHANNEL.zip"
 

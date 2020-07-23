@@ -33,7 +33,10 @@ jobs:
       - name: Build Grapl Rust services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
-          docker system prune -f
+
+      - name: Grapl Rust unit tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-unit-tests
 
   grapl-python-build:
     runs-on: ubuntu-latest
@@ -49,7 +52,10 @@ jobs:
       - name: Build Grapl Python services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
-          docker system prune -f
+
+      - name: Grapl Python unit tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-unit-tests
 
   grapl-js-build:
     runs-on: ubuntu-latest
@@ -65,7 +71,10 @@ jobs:
       - name: Build Grapl JS services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js
-          docker system prune -f
+
+      - name: Grapl JS unit tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js-unit-tests
 
   grapl-rust-integration-tests:
     runs-on: ubuntu-latest
