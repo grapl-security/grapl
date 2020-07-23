@@ -420,7 +420,6 @@ const handleLensScope = async (parent, args) => {
     const lens_name = args.lens_name;
 
     const lens = await getLensByName(dg_client, lens_name);
-    console.log("Lens in handleLensScope", lens)
     lens["scope"] = lens["scope"] || [];
 
     for (const node of lens["scope"]) {
