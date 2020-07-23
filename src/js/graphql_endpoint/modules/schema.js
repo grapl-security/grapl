@@ -317,7 +317,7 @@ const getLensByName = async (dg_client, lensName) => {
                 uid,
                 dgraph_type: dgraph.type,
                 lens_type,
-                scope {
+                scope @filter(has(node_key)) {
                     uid,
                     dgraph_type: dgraph.type,
                     expand(_all_)
@@ -364,13 +364,17 @@ const getRisksFromNode = async (dg_client, nodeUid) => {
     const query = `
     query all($a: string)
     {
-        all(func: uid($a))
+        all(func: uid($a)) @cascade
         {
             uid,
+            dgraph_type: dgraph.type
+            node_key
             risks {
-                uid,
+                uid
                 dgraph_type: dgraph.type
-                expand(_all_),
+                node_key
+                analyzer_name
+                risk_score
             }
         }
     }`;
@@ -416,8 +420,13 @@ const handleLensScope = async (parent, args) => {
     const lens_name = args.lens_name;
 
     const lens = await getLensByName(dg_client, lens_name);
+    lens["scope"] = lens["scope"] || [];
+
     for (const node of lens["scope"]) {
         // node.uid = parseInt(node.uid, 16);
+        if(!node.dgraph_type){
+            console.warn("No DGraph Type", node)
+        }
         // for every node in our lens scope, get its neighbors
 
         const nodeEdges = await getNeighborsFromNode(dg_client, node["uid"]);
