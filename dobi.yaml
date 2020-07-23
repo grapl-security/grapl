@@ -11,21 +11,6 @@ mount=dist:
   path: /home/grapl/dist
   file: false
 
-mount=rust-target:
-  bind: ./src/rust/target
-  path: /home/grapl/target
-  file: false
-
-mount=rust-cargo:
-  bind: ./src/rust/.cargo
-  path: /home/grapl/.cargo
-  file: false
-
-mount=rust-vendor:
-  bind: ./src/rust/vendor
-  path: /home/grapl/vendor
-  file: false
-
 #
 # images
 #
@@ -288,6 +273,14 @@ image=dynamodb-provision:
 
 # js images
 
+image=engagement-view-build:
+  image: grapl/engagement-view-build
+  context: src/js/engagement_view
+  dockerfile: Dockerfile
+  target: engagement-view-build
+  tags:
+    - latest
+
 image=engagement-view:
   image: grapl/grapl-engagement-view
   context: src/js/engagement_view
@@ -357,14 +350,14 @@ job=build-rust:
   use: rust-build
   mounts:
     - dist
-    - rust-target
-    - rust-cargo
-    - rust-vendor
   artifact:
-    - ./dist/*
-    - ./src/rust/target/*
-    - ./src/rust/.cargo/*
-    - ./src/rust/vendor/*
+    - ./dist/
+
+job=run-rust-unit-tests:
+  use: rust-build
+  command: /bin/bash -c "cargo test --target=x86_64-unknown-linux-musl"
+  depends:
+    - rust-build
 
 job=run-node-identifier-integration-tests:
   use: rust-build
@@ -394,6 +387,12 @@ job=run-node-identifier-integration-tests:
 
 # python jobs
 
+job=run-grapl-analyzerlib-unit-tests:
+  use: grapl-analyzerlib-build
+  command: /bin/bash -c "source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'not integration_test'"
+  depends:
+    - grapl-analyzerlib-build
+
 job=run-grapl-analyzerlib-integration-tests:
   use: grapl-analyzerlib-build
   net-mode: grapl-integration-tests_default
@@ -414,12 +413,24 @@ job=build-analyzer-executor:
   artifact:
     - ./dist/analyzer-executor/lambda.zip
 
+job=run-analyzer-executor-unit-tests:
+  use: analyzer-executor-build
+  command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
+  depends:
+    - build-analyzer-executor
+
 job=build-engagement-creator:
   use: engagement-creator-build
   mounts:
     - dist
   artifact:
     - ./dist/engagement-creator/lambda.zip
+
+job=run-engagement-creator-unit-tests:
+  use: engagement-creator-build
+  command: /bin/bash -c "source venv/bin/activate && cd engagement-creator && py.test -n auto -m 'not integration_test'"
+  depends:
+    - engagement-creator-build
 
 job=build-engagement-edge:
   use: engagement-edge-build
@@ -428,12 +439,24 @@ job=build-engagement-edge:
   artifact:
     - ./dist/engagement-edge/lambda.zip
 
+job=run-engagement-edge-unit-tests:
+  use: engagement-edge-build
+  command: /bin/bash -c "source venv/bin/activate && cd engagement_edge && py.test -n auto -m 'not integration_test'"
+  depends:
+    - engagement-edge-build
+
 job=build-dgraph-ttl:
   use: dgraph-ttl-build
   mounts:
     - dist
   artifact:
     - ./dist/dgraph-ttl/lambda.zip
+
+job=run-dgraph-ttl-unit-tests:
+  use: dgraph-ttl-build
+  command: /bin/bash -c "source venv/bin/activate && cd dgraph-ttl && py.test -n auto -m 'not integration_test'"
+  depends:
+    - dgraph-ttl-build
 
 job=build-model-plugin-deployer:
   use: model-plugin-deployer-build
@@ -442,7 +465,21 @@ job=build-model-plugin-deployer:
   artifact:
     - ./dist/model-plugin-deployer/lambda.zip
 
+job=run-model-plugin-deployer-unit-tests:
+  use: model-plugin-deployer-build
+  command: /bin/bash -c "source venv/bin/activate && cd model-plugin-deployer && py.test -n auto -m 'not integration_test'"
+  depends:
+    - model-plugin-deployer-build
+
 # js jobs
+
+# TODO: more normal build job for engagement-view w/ deploy artifact
+
+job=run-engagement-view-unit-tests:
+  use: engagement-view-build
+  command: /bin/bash -c "CI=true yarn test"
+  depends:
+    - engagement-view-build
 
 job=build-graphql-endpoint:
   use: graphql-endpoint-build
@@ -450,6 +487,8 @@ job=build-graphql-endpoint:
     - dist
   artifact:
     - ./dist/graphql-endpoint/lambda.zip
+
+# TODO: graphql endpoint unit tests
 
 # TODO: graphql endpoint integration tests
 
@@ -475,7 +514,13 @@ alias=clean-rust-build:
   annotations:
     description: "Delete the rust build image"
 
-alias=rust-integration:
+alias=rust-unit-tests:
+  tasks:
+    - run-rust-unit-tests
+  annotations:
+    description: "Run the rust unit tests"
+
+alias=rust-integration-tests:
   tasks:
     - run-node-identifier-integration-tests
   annotations:
@@ -512,7 +557,18 @@ alias=clean-python-build:
   annotations:
     description: "Delete the python build images"
 
-alias=python-integration:
+alias=python-unit-tests:
+  tasks:
+    - run-grapl-analyzerlib-unit-tests
+    - run-analyzer-executor-unit-tests
+    - run-engagement-creator-unit-tests
+    - run-engagement-edge-unit-tests
+    - run-dgraph-ttl-unit-tests
+    - run-model-plugin-deployer-unit-tests
+  annotations:
+    description: "Run the python unit tests"
+
+alias=python-integration-tests:
   tasks:
     - run-grapl-analyzerlib-integration-tests
   annotations:
@@ -532,6 +588,12 @@ alias=clean-js-build:
   annotations:
     description: "Delete the js build images"
 
+alias=js-unit-tests:
+  tasks:
+    - run-engagement-view-unit-tests
+  annotations:
+    description: "Run the js unit tests"
+
 # TODO: js integration tests
 
 alias=build:
@@ -550,10 +612,18 @@ alias=clean-build:
   annotations:
     description: "Delete all the build images"
 
-alias=integration:
+alias=unit-tests:
   tasks:
-    - rust-integration
-    - python-integration
+    - rust-unit-tests
+    - python-unit-tests
+    - js-unit-tests
+  annotations:
+    description: "Run all the unit tests"
+
+alias=integration-tests:
+  tasks:
+    - rust-integration-tests
+    - python-integration-tests
     # TODO: js integration tests
   annotations:
     description: "Run all the integration tests"
