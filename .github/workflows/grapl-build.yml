@@ -19,7 +19,7 @@ jobs:
           docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
           docker run -t grapl/grapl-cargo-audit:latest cargo audit
 
-  rust-unit-tests:
+  upload-rust-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,6 +29,47 @@ jobs:
         run: |
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
+
+      - name: Build Rust services
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
+
+      - name: Save Rust src build
+        run: |
+          docker save grapl/grapl-rust-src-build:latest | gzip -1 > rust-src-build.tar.gz
+
+      - name: Upload Rust src build
+        uses: actions/upload-artifact@v2
+        with:
+          name: rust-src-build
+          path: rust-src-build.tar.gz
+
+      - name: Clean up
+        run: |
+          rm rust-src-img.tar.gz
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-rust-build
+
+  rust-unit-tests:
+    runs-on: ubuntu-latest
+    needs: [upload-rust-build]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Download Rust src build
+        uses: actions/download-artifact@v2
+        with:
+          name: rust-src-build
+
+      - name: Load Rust src build
+        run: |
+          gzip -c -d rust-src-build.tar.gz | docker load
+          rm rust-src-build.tar.gz
 
       - name: Build Rust services
         run: |
@@ -78,6 +119,7 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
+    needs: [upload-rust-build]
 
     steps:
       - uses: actions/checkout@v2
@@ -86,6 +128,16 @@ jobs:
         run: |
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
+
+      - name: Download Rust src build
+        uses: actions/download-artifact@v2
+        with:
+          name: rust-src-build
+
+      - name: Load Rust src build
+        run: |
+          gzip -c -d rust-src-build.tar.gz | docker load
+          rm rust-src-build.tar.gz
 
       - name: Run integration tests
         run: |
