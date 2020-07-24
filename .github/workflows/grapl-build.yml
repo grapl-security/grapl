@@ -30,6 +30,17 @@ jobs:
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
+            - name: Download Rust src build
+        uses: actions/download-artifact@v2
+        with:
+          name: rust-src-build
+
+      - name: Load Rust src build
+        run: |
+          gzip -c -d rust-src-build.tar.gz | docker load
+          rm rust-src-build.tar.gz
+
+
       - name: Build Rust services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
