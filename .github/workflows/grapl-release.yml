@@ -105,16 +105,6 @@ n
           docker push grapl/grapl-node-identifier-retry-handler:$VERSION-$CHANNEL
           docker push grapl/grapl-graph-merger:$VERSION-$CHANNEL
           docker push grapl/grapl-analyzer-dispatcher:$VERSION-$CHANNEL
-          docker push grapl/grapl-analyzer-executor:$VERSION-$CHANNEL
-          docker push grapl/grapl-engagement-creator:$VERSION-$CHANNEL
-          docker push grapl/grapl-notebook:$VERSION-$CHANNEL
-          docker push grapl/grapl-engagement-edge:$VERSION-$CHANNEL
-          docker push grapl/grapl-model-plugin-deployer:$VERSION-$CHANNEL
-          docker push grapl/grapl-engagement-view:$VERSION-$CHANNEL
-          docker push grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL
-          docker push grapl/grapl-graph-provision:$VERSION-$CHANNEL
-          docker push grapl/grapl-dynamodb-provision:$VERSION-$CHANNEL
-          docker push grapl/grapl-dgraph-ttl:$VERSION-$CHANNEL
 
       - name: Clean up dist
         run: |
@@ -291,8 +281,6 @@ n
           docker push grapl/grapl-notebook:$VERSION-$CHANNEL
           docker push grapl/grapl-engagement-edge:$VERSION-$CHANNEL
           docker push grapl/grapl-model-plugin-deployer:$VERSION-$CHANNEL
-          docker push grapl/grapl-engagement-view:$VERSION-$CHANNEL
-          docker push grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL
           docker push grapl/grapl-graph-provision:$VERSION-$CHANNEL
           docker push grapl/grapl-dynamodb-provision:$VERSION-$CHANNEL
           docker push grapl/grapl-dgraph-ttl:$VERSION-$CHANNEL
