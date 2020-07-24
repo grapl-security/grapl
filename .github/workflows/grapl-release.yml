@@ -76,7 +76,7 @@ jobs:
           zip -9 node-identifier-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
           echo "::set-output name=node-identifier::node-identifier-$VERSION-$CHANNEL.zip"
-n
+
           cp dist/node-identifier-retry-handler ./bootstrap
           zip -9 node-identifier-retry-handler-$VERSION-$CHANNEL.zip ./bootstrap
           rm ./bootstrap
@@ -93,7 +93,8 @@ n
           echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$VERSION-$CHANNEL.zip"
 
       - name: Log in to Docker registry
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
       - name: Publish Rust images to DockerHub
         env:
@@ -270,7 +271,8 @@ n
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount python
 
       - name: Log in to Docker registry
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
       - name: Publish Python images to DockerHub
         env:
@@ -450,7 +452,8 @@ n
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount js
 
       - name: Log in to Docker registry
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
       - name: Publish JS images to DockerHub
         env:
