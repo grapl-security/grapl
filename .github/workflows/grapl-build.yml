@@ -30,7 +30,7 @@ jobs:
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
-            - name: Download Rust src build
+      - name: Download Rust src build
         uses: actions/download-artifact@v2
         with:
           name: rust-src-build
