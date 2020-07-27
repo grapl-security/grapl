@@ -5,6 +5,27 @@ on:
     types: [released, prereleased]
 
 jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Run integration tests
+        run: |
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount integration-tests
+
+      - name: Clean build
+        run: |
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-build
+          docker system prune -af
+
   rust-tests:
     runs-on: ubuntu-latest
 
@@ -21,18 +42,14 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount rust-unit-tests
 
-      - name: Run integration tests
-        run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount rust-integration-tests
-
       - name: Clean build
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-build
-          docker system prune -f
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-rust-build
+          docker system prune -af
 
   release-rust-services:
     runs-on: ubuntu-latest
-    needs: [rust-tests]
+    needs: [rust-tests, integration-tests]
 
     steps:
 
@@ -187,18 +204,14 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount python-unit-tests
 
-      - name: Run integration tests
-        run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount python-integration-tests
-
       - name: Clean build
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-build
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-python-build
           docker system prune -f
 
   release-python-services:
     runs-on: ubuntu-latest
-    needs: [python-tests]
+    needs: [python-tests, integration-tests]
 
     strategy:
         matrix:
@@ -434,7 +447,7 @@ jobs:
 
   release-js-services:
     runs-on: ubuntu-latest
-    needs: [js-tests]
+    needs: [js-tests, integration-tests]
 
     steps:
 
