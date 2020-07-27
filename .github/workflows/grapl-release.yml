@@ -48,19 +48,41 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Install pypi-simple
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          python3 -mvenv venv && . venv/bin/activate
+          pip install pypi-simple
+          deactivate
 
-      - name: Run integration tests
+      - name: Check whether grapl_graph_descriptions version has been bumped
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount integration-tests
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_graph_descriptions \
+                $(cat src/rust/graph-descriptions/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_graph_descriptions \
+                $(cat src/rust/graph-descriptions/VERSION) \
+                true
+          fi
+          deactivate
 
-      - name: Clean build
+      - name: Check whether grapl_analyzerlib version has been bumped
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-build
-          docker system prune -af
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_analyzerlib \
+                $(cat src/python/grapl_analyzerlib/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_analyzerlib \
+                $(cat src/python/grapl_analyzerlib/VERSION) \
+                true
+          fi
+          deactivate
 
   release-rust-services:
     runs-on: ubuntu-latest
