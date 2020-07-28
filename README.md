@@ -83,7 +83,7 @@ your queries executing efficiently.
 
 Grapl provides an analyzer library so that you can write attacker
 signatures using pure Python. See this [repo for
-examples](https://github.com/insanitybit/grapl-analyzers).
+examples](https://github.com/grapl-security/grapl-analyzers).
 
 Here is a brief example of how to detect a suspicious execution of `svchost.exe`,
 ```python
@@ -125,7 +125,7 @@ Keeping your analyzers in code means you can:
   for maintaining software
 
 Check out Grapl's [analyzer deployer
-plugin](https://github.com/insanitybit/grapl-analyzer-deployer) to see
+plugin](https://github.com/grapl-security/grapl-analyzer-deployer) to see
 how you can keep your analyzers in a git repo that automatically
 deploys them upon a push to master.
 
