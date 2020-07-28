@@ -31,9 +31,10 @@ For all non-sensitive feature request or bug reports, please open a
 Issue](https://github.com/grapl-security/grapl/issues/new?template=bug_report.md)
 containing a detailed, reproducible description of the problem. It may
 be useful to discuss the issue before opening one in GitHub, if you'd
-like you may reach out via Slack at
-[grapl-dfir.slack.com](https://grapl-dfir.slack.com), but this is not
-a requirement.
+like you may reach out via Slack at the [Grapl slack channel (Click
+for
+invite)](https://join.slack.com/t/grapl-dfir/shared_invite/zt-armk3shf-nuY19fQQuUnYk~dHltUPCw),
+but this is not a requirement.
 
 ### Changes to code or documentation
 
