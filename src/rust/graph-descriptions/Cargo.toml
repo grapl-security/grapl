@@ -1,0 +1,31 @@
+[package]
+name = "grapl-graph-descriptions"
+version = "0.2.10"
+authors = ["Insanitybit <insanitybit@gmail.com>"]
+edition = "2018"
+description = "A library for interacting with Grapl graphs"
+license = "MIT"
+
+
+[dependencies]
+
+thiserror = "1.0.16"
+
+prost = "0.6.*"
+prost-derive = "0.6.*"
+prost-types = "0.6.*"
+
+serde = "1.0.110"
+serde_json = "1.0.53"
+serde_derive = "1.0.110"
+
+derive_builder = "0.9.0"
+
+log = "0.4.*"
+
+[dependencies.uuid]
+version = "0.8.1"
+features = ["v4"]
+
+[build-dependencies]
+prost-build = "0.6.*"

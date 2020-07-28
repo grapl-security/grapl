@@ -1,0 +1,2 @@
+black .
+mypy .

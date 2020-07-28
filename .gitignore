@@ -1,10 +1,7 @@
-sysmon-subgraph-generator/sysmon-subgraph-generator
-node-identifier/node-identifier
-graph-merger/graph-merger
-analyzer-dispatcher/analyzer-dispatcher
+src/js/grapl-cdk/edge_ux_package/*
+src/rust/graph-descriptions/grapl_graph_descriptions
 
-grapl-cdk/edge_ux_package/*
-
+grapl-cdk/cdk.out/
 lambda/
 __pycache__/
 *.pyc
@@ -22,26 +19,10 @@ venv/
 
 log2/
 
-grapl-cdk/index.js
+src/js/grapl-cdk/index.js
 
 word-macro-analyzer/*/
 bootstrap
-engagement-creation-service/graph-descriptions/
-engagement-creation-service/incident-graph/
-engagement-creation-service/sqs-microservice/
-
-generic-subgraph-generator/graph-descriptions/
-generic-subgraph-generator/sqs-microservice/
-generic-subgraph-generator/graph-generator-lib/
-
-graph-merger/graph-descriptions/
-graph-merger/sqs-microservice/
-
-node-identity-mapper/graph-descriptions/
-node-identity-mapper/sqs-microservice/
-
-node-identifier/graph-descriptions/
-node-identifier/sqs-microservice/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -49,6 +30,7 @@ __pycache__/
 *$py.class
 
 target/
+.cargo
 
 # C extensions
 *.so
@@ -62,7 +44,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
@@ -71,6 +53,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.mypy_cache
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -81,3 +64,9 @@ wheels/
 # Installer logs
 pip-log.txt
 
+*.code-workspace
+*.vscode
+*.zip
+stale_outputs_checked
+.log/
+.dobi/

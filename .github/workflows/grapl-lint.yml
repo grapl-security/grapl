@@ -1,0 +1,111 @@
+name: Grapl Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - staging
+      - master
+
+jobs:
+  rust-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt
+
+      - name: Check rust formatting
+        run: |
+          cd src/rust
+          cargo fmt -- --check
+
+  python-lint:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.7]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up virtualenv
+        run: |
+          python3 -mvenv .venv
+          source .venv/bin/activate
+          python -mpip install --upgrade pip
+          pip install black mypy pypi-simple
+
+      - name: Check python formatting
+        run: |
+          source .venv/bin/activate
+          black --check .
+
+      # NOTE: this task always succeeds because '|| true'
+      # TODO: fix this.
+      - name: Run Mypy (Always Pass)
+        run: |
+          source .venv/bin/activate
+          mypy . || true
+
+  check-pypi:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.7]
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pypi-simple
+        run: |
+          python3 -mvenv venv && . venv/bin/activate
+          pip install pypi-simple
+          deactivate
+
+      - name: Check whether grapl_graph_descriptions version has been bumped
+        run: |
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_graph_descriptions \
+                $(cat src/rust/graph-descriptions/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_graph_descriptions \
+                $(cat src/rust/graph-descriptions/VERSION) \
+                true
+          fi
+          deactivate
+
+      - name: Check whether grapl_analyzerlib version has been bumped
+        run: |
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_analyzerlib \
+                $(cat src/python/grapl_analyzerlib/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_analyzerlib \
+                $(cat src/python/grapl_analyzerlib/VERSION) \
+                true
+          fi
+          deactivate
