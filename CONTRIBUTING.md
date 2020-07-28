@@ -31,9 +31,10 @@ For all non-sensitive feature request or bug reports, please open a
 Issue](https://github.com/grapl-security/grapl/issues/new?template=bug_report.md)
 containing a detailed, reproducible description of the problem. It may
 be useful to discuss the issue before opening one in GitHub, if you'd
-like you may reach out via Slack at
-[grapl-dfir.slack.com](https://grapl-dfir.slack.com), but this is not
-a requirement.
+like you may reach out via Slack at the [Grapl slack channel (Click
+for
+invite)](https://join.slack.com/t/grapl-dfir/shared_invite/zt-armk3shf-nuY19fQQuUnYk~dHltUPCw),
+but this is not a requirement.
 
 ### Changes to code or documentation
 
@@ -67,6 +68,29 @@ Note that the `GRAPL_RELEASE_TARGET=debug` is redundant, but it's
 shown here because if you want to execute a release build you can use
 `GRAPL_RELEASE_TARGET=release`.
 
+You can see all the `dobi` tasks available by running `dobi list` in
+Grapl root. For example:
+
+``` bash
+(venv) jgrillo@penguin:~/src/grapl$ dobi list
+Resources:
+  build                Build artifacts and images for all services
+  clean-build          Delete all the build images
+  clean-js-build       Delete the js build images
+  clean-python-build   Delete the python build images
+  clean-rust-build     Delete the rust build image
+  integration-tests    Run all the integration tests
+  js                   Build artifacts and images for js services
+  js-unit-tests        Run the js unit tests
+  python               Build artifacts and images for python services
+  python-integration-tests Run the python integration tests
+  python-unit-tests    Run the python unit tests
+  rust                 Build artifacts and images for rust services
+  rust-integration-tests Run the rust integration tests
+  rust-unit-tests      Run the rust unit tests
+  unit-tests           Run all the unit tests
+```
+
 To run your images locally, execute the following command in the
 project root (after building):
 
@@ -98,7 +122,7 @@ Documentation is definitely a work-in-progress at this point. In the
 likely event you find it lacking, please open a [Documentation request
 GitHub
 Issue](https://github.com/grapl-security/grapl/issues/new?template=documentation_request.md).
-For minor edits for spelling, correctness, grammar, etc., don't worry
+For minor edits like spelling, correctness, grammar, etc., don't worry
 about opening an issue, just submit a PR.
 
 #### Plugins

@@ -506,7 +506,7 @@ alias=rust:
     - "node-identifier-retry-handler:tag"
     - "sysmon-subgraph-generator:tag"
   annotations:
-    description: "Run tests, build artifacts, and build images for rust services"
+    description: "Build artifacts and images for rust services"
 
 alias=clean-rust-build:
   tasks:
@@ -542,7 +542,7 @@ alias=python:
     - "graph-provision:tag"
     - "dynamodb-provision:tag"
   annotations:
-    description: "Run tests, build artifacts, and build images for python services"
+    description: "Build artifacts and images for python services"
 
 alias=clean-python-build:
   tasks:
@@ -580,7 +580,7 @@ alias=js:
     - "graphql-endpoint:tag"
     - "engagement-view:tag"
   annotations:
-    description: "Run tests, build artifacts, and build images for js services"
+    description: "Build artifacts and images for js services"
 
 alias=clean-js-build:
   tasks:
@@ -602,7 +602,7 @@ alias=build:
     - python
     - js
   annotations:
-    description: "Run tests, build artifacts, and build images for all services"
+    description: "Build artifacts and images for all services"
 
 alias=clean-build:
   tasks:
