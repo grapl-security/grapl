@@ -8,7 +8,7 @@ on:
       - master
 
 jobs:
-  grapl-cargo-audit:
+  cargo-audit:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +19,7 @@ jobs:
           docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
           docker run -t grapl/grapl-cargo-audit:latest cargo audit
 
-  grapl-rust-build:
+  rust-unit-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -30,13 +30,15 @@ jobs:
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
-      - name: Build Grapl Rust services
+      - name: Build Rust services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-rust-build
-          docker system prune -f
 
-  grapl-python-build:
+      - name: Rust unit tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-unit-tests
+
+  python-unit-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -47,13 +49,15 @@ jobs:
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
-      - name: Build Grapl Python services
+      - name: Build Python services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-python-build
-          docker system prune -f
 
-  grapl-js-build:
+      - name: Python unit tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-unit-tests
+
+  js-unit-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -64,8 +68,29 @@ jobs:
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
-      - name: Build Grapl JS services
+      - name: Build JS services
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount clean-js-build
-          docker system prune -f
+
+      - name: JS unit tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js-unit-tests
+
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Build Grapl
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
+
+      - name: Run integration tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration-tests

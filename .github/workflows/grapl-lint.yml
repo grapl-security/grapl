@@ -17,6 +17,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          components: rustfmt
 
       - name: Check rust formatting
         run: |
@@ -50,26 +51,38 @@ jobs:
           source .venv/bin/activate
           black --check .
 
-      # NOTE: this workflow always succeeds because '|| true'
+      # NOTE: this task always succeeds because '|| true'
       # TODO: fix this.
       - name: Run Mypy (Always Pass)
         run: |
           source .venv/bin/activate
           mypy . || true
 
-      - name: Determine release channel
+  check-pypi:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.7]
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pypi-simple
         run: |
-          BRANCH=${{ github.event.release.target_commitish }}
-          if [[ "$BRANCH" == "master" ]]; then
-              CHANNEL="latest"
-          else
-              CHANNEL="beta"
-          fi
-          echo "::set-env name=CHANNEL::$CHANNEL"
+          python3 -mvenv venv && . venv/bin/activate
+          pip install pypi-simple
+          deactivate
 
       - name: Check whether grapl_graph_descriptions version has been bumped
         run: |
-          source .venv/bin/activate
+          . venv/bin/activate
           if [[ "$CHANNEL" == "latest" ]]; then
               python etc/build_scripts/check_pypi_version.py \
                 grapl_graph_descriptions \
@@ -84,7 +97,7 @@ jobs:
 
       - name: Check whether grapl_analyzerlib version has been bumped
         run: |
-          source .venv/bin/activate
+          . venv/bin/activate
           if [[ "$CHANNEL" == "latest" ]]; then
               python etc/build_scripts/check_pypi_version.py \
                 grapl_analyzerlib \

@@ -21,7 +21,6 @@ const defaultPluginTableState = (): PluginTableState => {
 
 export const PluginTable = () => {
     const classes = useStyles();
-
     const [state, setState] = React.useState(defaultPluginTableState());
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -34,8 +33,10 @@ export const PluginTable = () => {
         setPage(0);
     }
 
+    const emptyRows =
+        rowsPerPage - Math.min(rowsPerPage, state.rows.length - page * rowsPerPage);
+
     useEffect(() => {
-        // console.log("fetching plugins");
         const interval = setInterval(async () => {
             await getPluginList().then((rows) => {
                 setState({
@@ -45,7 +46,6 @@ export const PluginTable = () => {
             });
         }, 1000);
         return () => clearInterval(interval);
-
     }, [state.toggle])
 
     return(
@@ -58,44 +58,52 @@ export const PluginTable = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody aria-label = "PluginTable">
-                        {state.rows.map(
-                            (pluginName: string) => {
-                                return <TableRow key = { pluginName }> 
-                                            <TableCell 
-                                                align = "right"> 
-                                                {pluginName} 
-                                                <Button onClick={
-                                                    () => { 
-                                                        deletePlugin(pluginName)
-                                                        .then( 
-                                                            () => {
-                                                                setState({
-                                                                    ...state, 
-                                                                    toggle: state.toggle && false
-                                                                })
-                                                                console.log("Plugin Deleted");
-                                                            }
-                                                        )
-                                                    } 
-                                                }
-                                            >
-                                            <DeleteOutlinedIcon className = {classes.btn}/></Button>
-                                        </TableCell> 
-                                    </TableRow>
-                            }
-                        )}
+                        {state.rows
+                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                            .map(
+                                (pluginName: string) => {
+                                    return <TableRow key = { pluginName }> 
+                                                <TableCell 
+                                                    align = "right"> 
+                                                    {pluginName} 
+                                                    <Button onClick={
+                                                        () => { 
+                                                            deletePlugin(pluginName)
+                                                            .then( 
+                                                                () => {
+                                                                    setState({
+                                                                        ...state, 
+                                                                        toggle: state.toggle && false
+                                                                    })
+                                                                    console.log("Plugin Deleted");
+                                                                }
+                                                            )
+                                                        } 
+                                                    }
+                                                >
+                                                <DeleteOutlinedIcon className = {classes.btn}/></Button>
+                                            </TableCell> 
+                                        </TableRow>
+                                }
+                            )}
+                            {emptyRows > 0 && (
+                                <TableRow style={{ height: 53 * emptyRows }}>
+                                <TableCell colSpan={6} />
+                                </TableRow>
+                            )}
                     </TableBody>
                 </Table>
-                    <TablePagination
-                        aria-label = "pagination"
-                        rowsPerPageOptions={[5, 10, 25]}
-                        component="div"
-                        count={state.rows.length}
-                        rowsPerPage={rowsPerPage}
-                        page={page}
-                        onChangePage={handleChangePage}
-                        onChangeRowsPerPage={handleChangeRowsPerPage}
-                    />
+
+                <TablePagination
+                    aria-label = "pagination"
+                    rowsPerPageOptions={[5, 10, 25]}
+                    component="div"
+                    count={state.rows.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onChangePage={handleChangePage}
+                    onChangeRowsPerPage={handleChangeRowsPerPage}
+                />
             </TableContainer>
         </>
     )

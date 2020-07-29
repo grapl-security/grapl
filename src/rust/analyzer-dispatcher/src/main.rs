@@ -124,11 +124,14 @@ where
         }
 
         info!("Retrieving S3 keys");
-        let keys = match get_s3_keys(self.s3_client.as_ref(), bucket).await {
+        let keys = match get_s3_keys(self.s3_client.as_ref(), &bucket).await {
             Ok(keys) => keys,
             Err(e) => {
                 return OutputEvent::new(Completion::Error(
-                    sqs_lambda::error::Error::ProcessingError(e.to_string()),
+                    sqs_lambda::error::Error::ProcessingError(format!(
+                        "Failed to list bucket: {} with {:?}",
+                        bucket, e
+                    )),
                 ))
             }
         };
@@ -468,7 +471,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if is_local {
         info!("Running locally");
-        let mut runtime = Runtime::new().unwrap();
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
         grapl_config::wait_for_sqs(
@@ -477,6 +479,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
         grapl_config::wait_for_s3(init_s3_client()).await?;
+
+        loop {
+            if let Err(e) = local_handler().await {
+                error!("local_handler: {}", e);
+            };
+        }
     } else {
         info!("Running in AWS");
         lambda!(handler);

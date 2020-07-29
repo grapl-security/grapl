@@ -131,10 +131,13 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     };
 
     let mut txn = dg.new_txn();
-    let upsert_res = txn
-        .upsert(query, mu)
-        .await
-        .expect(&format!("Request to dgraph failed {:?}", &node_key));
+    let upsert_res = match txn.upsert(query, mu).await {
+        Ok(res) => res,
+        Err(e) => {
+            txn.discard().await?;
+            return Err(e.into());
+        }
+    };
 
     txn.commit_or_abort().await?;
 
@@ -489,7 +492,7 @@ where
             let new_uid = match upsert {
                 Ok(new_uid) => new_uid,
                 Err(e) => {
-                    warn!("{}", e);
+                    error!("{}", e);
                     upsert_res = Some(e);
                     continue;
                 }
@@ -549,8 +552,6 @@ where
 
         let _: Vec<_> = join_all(edge_mutations).await;
 
-        //        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
-
         let completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
@@ -564,8 +565,6 @@ where
                 OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
             }
         };
-
-        //        identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
         completed
     }
@@ -692,7 +691,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if is_local {
         info!("Running locally");
-        let mut runtime = Runtime::new().unwrap();
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
         grapl_config::wait_for_sqs(
@@ -701,6 +699,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
         grapl_config::wait_for_s3(init_s3_client()).await?;
+        loop {
+            if let Err(e) = inner_main().await {
+                error!("inner_main: {}", e);
+            };
+        }
     } else {
         info!("Running in AWS");
         lambda!(handler);

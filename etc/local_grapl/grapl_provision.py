@@ -1,17 +1,39 @@
 import json
 import threading
 import time
+import os
 
-from typing import *
+from typing import Any, Dict
 
+from hashlib import sha256, pbkdf2_hmac
+from hmac import compare_digest
+from random import uniform
+
+import botocore
 import boto3
 import pydgraph
-from grapl_analyzerlib.schemas import *
-from grapl_analyzerlib.schemas.asset_schema import AssetSchema
+from uuid import uuid4
+from grapl_analyzerlib.grapl_client import MasterGraphClient
+from grapl_analyzerlib.schemas import (
+    AssetSchema,
+    ProcessSchema,
+    FileSchema,
+    IpConnectionSchema,
+    IpAddressSchema,
+    IpPortSchema,
+    NetworkConnectionSchema,
+    ProcessInboundConnectionSchema,
+    ProcessOutboundConnectionSchema,
+)
 from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
 from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
 from grapl_analyzerlib.schemas.schema_builder import ManyToMany
-from pydgraph import DgraphClient, DgraphClientStub
+
+
+def create_secret(secretsmanager):
+    secretsmanager.create_secret(
+        Name="JWT_SECRET_ID", SecretString=str(uuid4()),
+    )
 
 
 def set_schema(client, schema) -> None:
@@ -164,6 +186,8 @@ def provision_sqs(sqs, service_name: str) -> None:
     )
 
     redrive_url = redrive_queue["QueueUrl"]
+    print(f"Provisioned {service_name} retry queue at " + redrive_url)
+
     redrive_arn = sqs.get_queue_attributes(
         QueueUrl=redrive_url, AttributeNames=["QueueArn"]
     )["Attributes"]["QueueArn"]
@@ -226,6 +250,38 @@ def bucket_provision_loop() -> None:
     raise Exception("Failed to provision s3")
 
 
+def hash_password(cleartext, salt) -> str:
+    hashed = sha256(cleartext).digest()
+    return pbkdf2_hmac("sha256", hashed, salt, 512000).hex()
+
+
+def create_user(username, cleartext):
+    assert cleartext
+    dynamodb = boto3.resource(
+        "dynamodb",
+        region_name="us-west-2",
+        endpoint_url="http://dynamodb:8000",
+        aws_access_key_id="dummy_cred_aws_access_key_id",
+        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+    )
+    table = dynamodb.Table("local-grapl-user_auth_table")
+
+    # We hash before calling 'hashed_password' because the frontend will also perform
+    # client side hashing
+    cleartext += "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254"
+
+    cleartext += username
+
+    hashed = sha256(cleartext.encode("utf8")).hexdigest()
+
+    for i in range(0, 5000):
+        hashed = sha256(hashed.encode("utf8")).hexdigest()
+
+    salt = os.urandom(16)
+    password = hash_password(hashed.encode("utf8"), salt)
+    table.put_item(Item={"username": username, "salt": salt, "password": password})
+
+
 def sqs_provision_loop() -> None:
     sqs_succ = {service for service in services}
     sqs = None
@@ -260,10 +316,9 @@ def sqs_provision_loop() -> None:
 
 if __name__ == "__main__":
     time.sleep(5)
-    local_dg_provision_client = DgraphClient(DgraphClientStub("master_graph:9080"))
+    local_dg_provision_client = MasterGraphClient()
 
     print("Provisioning graph database")
-    # local_dg_provision_client = DgraphClient(DgraphClientStub('localhost:9080'))
 
     for i in range(0, 150):
         try:
@@ -295,4 +350,33 @@ if __name__ == "__main__":
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
 
+    for i in range(0, 150):
+        try:
+            client = boto3.client(
+                service_name="secretsmanager",
+                region_name="us-east-1",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+                aws_access_key_id="dummy_cred_aws_access_key_id",
+                aws_secret_access_key="dummy_cred_aws_secret_access_key",
+            )
+            create_secret(client)
+            break
+        except botocore.exceptions.ClientError as e:
+            if "ResourceExistsException" in e.__class__.__name__:
+                break
+            if i >= 50:
+                print(e)
+        except Exception as e:
+            if i >= 50:
+                print(e)
+            time.sleep(1)
     print("Completed provisioning")
+
+    for i in range(0, 150):
+        try:
+            create_user("grapluser", "graplpassword")
+            break
+        except Exception as e:
+            if i >= 50:
+                print(e)
+            time.sleep(1)

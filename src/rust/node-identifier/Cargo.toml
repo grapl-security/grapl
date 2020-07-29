@@ -13,6 +13,8 @@ path = "src/bin/node-identifier.rs"
 name = "node-identifier-retry-handler"
 path = "src/bin/node-identifier-retry-handler.rs"
 
+[features]
+integration = []
 
 [dependencies]
 graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}

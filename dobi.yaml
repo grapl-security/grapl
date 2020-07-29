@@ -31,6 +31,8 @@ image=analyzer-dispatcher:
   image: grapl/grapl-analyzer-dispatcher
   context: src/rust/analyzer-dispatcher
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-analyzer-dispatcher
   tags:
     - "{env.TAG}"
@@ -41,6 +43,8 @@ image=generic-subgraph-generator:
   image: grapl/grapl-generic-subgraph-generator
   context: src/rust/generic-subgraph-generator
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-generic-subgraph-generator
   tags:
     - "{env.TAG}"
@@ -51,6 +55,8 @@ image=graph-merger:
   image: grapl/grapl-graph-merger
   context: src/rust/graph-merger
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-graph-merger
   tags:
     - "{env.TAG}"
@@ -61,6 +67,8 @@ image=node-identifier:
   image: grapl/grapl-node-identifier
   context: src/rust/node-identifier
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-node-identifier
   tags:
     - "{env.TAG}"
@@ -71,6 +79,8 @@ image=node-identifier-retry-handler:
   image: grapl/grapl-node-identifier-retry-handler
   context: src/rust/node-identifier
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-node-identifier-retry-handler
   tags:
     - "{env.TAG}"
@@ -81,6 +91,8 @@ image=sysmon-subgraph-generator:
   image: grapl/grapl-sysmon-subgraph-generator
   context: src/rust/sysmon-subgraph-generator
   dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-sysmon-subgraph-generator
   tags:
     - "{env.TAG}"
@@ -261,6 +273,14 @@ image=dynamodb-provision:
 
 # js images
 
+image=engagement-view-build:
+  image: grapl/engagement-view-build
+  context: src/js/engagement_view
+  dockerfile: Dockerfile
+  target: engagement-view-build
+  tags:
+    - latest
+
 image=engagement-view:
   image: grapl/grapl-engagement-view
   context: src/js/engagement_view
@@ -288,6 +308,39 @@ image=graphql-endpoint:
     - "{env.TAG}"
 
 #
+# compose
+#
+# This is where hook into the docker-compose environment for running
+# integration tests. It should be identical to local Grapl. The most
+# important thing here is to keep the 'depends' list up to date.
+#
+
+compose=integration-env:
+  files:
+    - docker-compose.yml
+  project: grapl-integration-tests
+  depends:
+    # rust images
+    - analyzer-dispatcher
+    - generic-subgraph-generator
+    - graph-merger
+    - node-identifier
+    - node-identifier-retry-handler
+    - sysmon-subgraph-generator
+    # python images
+    - analyzer-executor
+    - engagement-creator
+    - engagement-edge
+    - dgraph-ttl
+    - model-plugin-deployer
+    - grapl-notebook
+    - graph-provision
+    - dynamodb-provision
+    # js images
+    - engagement-view
+    - graphql-endpoint
+
+#
 # jobs -- these are where we build release artifacts
 #
 
@@ -298,9 +351,60 @@ job=build-rust:
   mounts:
     - dist
   artifact:
-    - ./dist/*
+    - ./dist/
+
+job=run-rust-unit-tests:
+  use: rust-build
+  command: /bin/bash -c "cargo test --target=x86_64-unknown-linux-musl"
+  depends:
+    - rust-build
+
+job=run-node-identifier-integration-tests:
+  use: rust-build
+  net-mode: grapl-integration-tests_default
+  command: /bin/bash -c "sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration"
+  env:
+    - GRAPL_LOG_LEVEL=INFO
+    - RUST_LOG=INFO
+    - RUST_BACKTRACE=1
+    - "BUCKET_PREFIX=local-grapl"
+    - "IS_LOCAL=True"
+    - "MG_ALPHAS=grapl-master-graph-db:9080"
+    - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
+    - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+    - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
+    - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
+    - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
+    - FILE_HISTORY_TABLE=local-grapl-file_history_table
+    - INBOUND_CONNECTION_HISTORY_TABLE=local-grapl-inbound_connection_history_table
+    - OUTBOUND_CONNECTION_HISTORY_TABLE=local-grapl-outbound_connection_history_table
+    - NETWORK_CONNECTION_HISTORY_TABLE=local-grapl-network_connection_history_table
+    - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
+    - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
+  depends:
+    - rust-build
+    - integration-env
 
 # python jobs
+
+job=run-grapl-analyzerlib-unit-tests:
+  use: grapl-analyzerlib-build
+  command: /bin/bash -c "source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'not integration_test'"
+  depends:
+    - grapl-analyzerlib-build
+
+job=run-grapl-analyzerlib-integration-tests:
+  use: grapl-analyzerlib-build
+  net-mode: grapl-integration-tests_default
+  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'integration_test'"
+  env:
+    - GRAPL_LOG_LEVEL=INFO
+    - "BUCKET_PREFIX=local-grapl"
+    - "IS_LOCAL=True"
+    - "MG_ALPHAS=grapl-master-graph-db:9080"
+  depends:
+    - grapl-analyzerlib-build
+    - integration-env
 
 job=build-analyzer-executor:
   use: analyzer-executor-build
@@ -309,12 +413,24 @@ job=build-analyzer-executor:
   artifact:
     - ./dist/analyzer-executor/lambda.zip
 
+job=run-analyzer-executor-unit-tests:
+  use: analyzer-executor-build
+  command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
+  depends:
+    - build-analyzer-executor
+
 job=build-engagement-creator:
   use: engagement-creator-build
   mounts:
     - dist
   artifact:
     - ./dist/engagement-creator/lambda.zip
+
+job=run-engagement-creator-unit-tests:
+  use: engagement-creator-build
+  command: /bin/bash -c "source venv/bin/activate && cd engagement-creator && py.test -n auto -m 'not integration_test'"
+  depends:
+    - engagement-creator-build
 
 job=build-engagement-edge:
   use: engagement-edge-build
@@ -323,28 +439,58 @@ job=build-engagement-edge:
   artifact:
     - ./dist/engagement-edge/lambda.zip
 
+job=run-engagement-edge-unit-tests:
+  use: engagement-edge-build
+  command: /bin/bash -c "source venv/bin/activate && cd engagement_edge && py.test -n auto -m 'not integration_test'"
+  depends:
+    - engagement-edge-build
+
 job=build-dgraph-ttl:
   use: dgraph-ttl-build
   mounts:
     - dist
   artifact:
-    - ./dist/grapl-dgraph-ttl/lambda.zip
+    - ./dist/dgraph-ttl/lambda.zip
+
+job=run-dgraph-ttl-unit-tests:
+  use: dgraph-ttl-build
+  command: /bin/bash -c "source venv/bin/activate && cd dgraph-ttl && py.test -n auto -m 'not integration_test'"
+  depends:
+    - dgraph-ttl-build
 
 job=build-model-plugin-deployer:
   use: model-plugin-deployer-build
   mounts:
     - dist
   artifact:
-    - ./dist/grapl-model-plugin-deployer/lambda.zip
+    - ./dist/model-plugin-deployer/lambda.zip
+
+job=run-model-plugin-deployer-unit-tests:
+  use: model-plugin-deployer-build
+  command: /bin/bash -c "source venv/bin/activate && cd model-plugin-deployer && py.test -n auto -m 'not integration_test'"
+  depends:
+    - model-plugin-deployer-build
 
 # js jobs
+
+# TODO: more normal build job for engagement-view w/ deploy artifact
+
+job=run-engagement-view-unit-tests:
+  use: engagement-view-build
+  command: /bin/bash -c "CI=true yarn test"
+  depends:
+    - engagement-view-build
 
 job=build-graphql-endpoint:
   use: graphql-endpoint-build
   mounts:
     - dist
   artifact:
-    - ./dist/grapl-graphql-endpoint/lambda.zip
+    - ./dist/graphql-endpoint/lambda.zip
+
+# TODO: graphql endpoint unit tests
+
+# TODO: graphql endpoint integration tests
 
 #
 # aliases
@@ -360,13 +506,25 @@ alias=rust:
     - "node-identifier-retry-handler:tag"
     - "sysmon-subgraph-generator:tag"
   annotations:
-    description: "Run tests, build artifacts, and build images for rust services"
+    description: "Build artifacts and images for rust services"
 
 alias=clean-rust-build:
   tasks:
     - "rust-build:rm"
   annotations:
     description: "Delete the rust build image"
+
+alias=rust-unit-tests:
+  tasks:
+    - run-rust-unit-tests
+  annotations:
+    description: "Run the rust unit tests"
+
+alias=rust-integration-tests:
+  tasks:
+    - run-node-identifier-integration-tests
+  annotations:
+    description: "Run the rust integration tests"
 
 alias=python:
   tasks:
@@ -384,7 +542,7 @@ alias=python:
     - "graph-provision:tag"
     - "dynamodb-provision:tag"
   annotations:
-    description: "Run tests, build artifacts, and build images for python services"
+    description: "Build artifacts and images for python services"
 
 alias=clean-python-build:
   tasks:
@@ -399,13 +557,30 @@ alias=clean-python-build:
   annotations:
     description: "Delete the python build images"
 
+alias=python-unit-tests:
+  tasks:
+    - run-grapl-analyzerlib-unit-tests
+    - run-analyzer-executor-unit-tests
+    - run-engagement-creator-unit-tests
+    - run-engagement-edge-unit-tests
+    - run-dgraph-ttl-unit-tests
+    - run-model-plugin-deployer-unit-tests
+  annotations:
+    description: "Run the python unit tests"
+
+alias=python-integration-tests:
+  tasks:
+    - run-grapl-analyzerlib-integration-tests
+  annotations:
+    description: "Run the python integration tests"
+
 alias=js:
   tasks:
     - build-graphql-endpoint
     - "graphql-endpoint:tag"
     - "engagement-view:tag"
   annotations:
-    description: "Run tests, build artifacts, and build images for js services"
+    description: "Build artifacts and images for js services"
 
 alias=clean-js-build:
   tasks:
@@ -413,13 +588,21 @@ alias=clean-js-build:
   annotations:
     description: "Delete the js build images"
 
+alias=js-unit-tests:
+  tasks:
+    - run-engagement-view-unit-tests
+  annotations:
+    description: "Run the js unit tests"
+
+# TODO: js integration tests
+
 alias=build:
   tasks:
     - rust
     - python
     - js
   annotations:
-    description: "Run tests, build artifacts, and build images for all services"
+    description: "Build artifacts and images for all services"
 
 alias=clean-build:
   tasks:
@@ -428,3 +611,19 @@ alias=clean-build:
     - clean-js-build
   annotations:
     description: "Delete all the build images"
+
+alias=unit-tests:
+  tasks:
+    - rust-unit-tests
+    - python-unit-tests
+    - js-unit-tests
+  annotations:
+    description: "Run all the unit tests"
+
+alias=integration-tests:
+  tasks:
+    - rust-integration-tests
+    - python-integration-tests
+    # TODO: js integration tests
+  annotations:
+    description: "Run all the integration tests"

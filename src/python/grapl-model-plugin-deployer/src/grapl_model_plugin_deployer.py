@@ -1,9 +1,11 @@
+print("init")
 import base64
 import hmac
 import inspect
 import json
 import logging
 import os
+import re
 import sys
 import traceback
 import uuid
@@ -26,13 +28,39 @@ from grapl_analyzerlib.grapl_client import (
 from grapl_analyzerlib.schemas import NodeSchema
 from grapl_analyzerlib.schemas.schema_builder import UidType
 
-
 T = TypeVar("T")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER.info("Initializing Chalice server")
+
+
 if IS_LOCAL:
-    JWT_SECRET = str(uuid.uuid4())
+    import time
+
+    for i in range(0, 150):
+        try:
+            secretsmanager = boto3.client(
+                "secretsmanager",
+                region_name="us-east-1",
+                aws_access_key_id="dummy_cred_aws_access_key_id",
+                aws_secret_access_key="dummy_cred_aws_secret_access_key",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+            )
+
+            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
+                "SecretString"
+            ]
+            break
+        except Exception as e:
+            LOGGER.debug(e)
+            time.sleep(1)
+
     os.environ["BUCKET_PREFIX"] = "local-grapl"
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
@@ -45,12 +73,7 @@ ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-
+LOGGER.debug("Origin: ", ORIGIN)
 app = Chalice(app_name="model-plugin-deployer")
 
 
@@ -168,7 +191,14 @@ def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None
     for schema in schemas:
         if schema.self_type() != "Any":
             for edge_name, uid_type, _ in schema.forward_edges:
-                add_reverse_edge_type(client, uid_type, edge_name)
+                try:
+                    add_reverse_edge_type(client, uid_type, edge_name)
+                except Exception:
+                    import traceback
+
+                    LOGGER.error(
+                        "Failed to add reverse_edge type\n", traceback.format_exc()
+                    )
 
 
 def add_reverse_edge_type(
@@ -178,7 +208,13 @@ def add_reverse_edge_type(
         f"adding reverse edge type uid_type: {uid_type} edge_name: {edge_name}"
     )
     self_type = uid_type._inner_type.self_type()
-    predicates = "\n\t\t".join(query_dgraph_type(client, self_type))
+
+    existing_predicates = query_dgraph_type(client, self_type)
+    predicates = "\n\t\t".join(existing_predicates)
+
+    # In case we've already deployed this plugin
+    if edge_name in predicates:
+        return
 
     predicates += f"\n\t\t<~{edge_name}>"
 
@@ -235,22 +271,38 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
         LOGGER.error(f"Failed to put_object to s3 {key} {traceback.format_exc()}")
 
 
+origin_re = re.compile(
+    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
+    re.IGNORECASE,
+)
+
+
 def respond(err, res=None, headers=None):
-    LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
+    req_origin = app.current_request.headers.get("origin", "")
+
+    LOGGER.info(f"responding to origin: {req_origin}")
     if not headers:
         headers = {}
 
     if IS_LOCAL:
-        override = app.current_request.headers.get("origin", "")
+        override = req_origin
         LOGGER.info(f"overriding origin with {override}")
     else:
         override = ORIGIN_OVERRIDE
+
+    if origin_re.match(req_origin):
+        LOGGER.info("Origin matched")
+        allow_origin = req_origin
+    else:
+        LOGGER.info("Origin did not match")
+        # allow_origin = override or ORIGIN
+        allow_origin = req_origin
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=400 if err else 200,
         headers={
-            "Access-Control-Allow-Origin": override or ORIGIN,
+            "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Credentials": "true",
             "Content-Type": "application/json",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
@@ -455,8 +507,8 @@ def delete_model_plugin():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    LOGGER.info("routing: ", app.current_request.context["path"])
-    LOGGER.info(vars(app.current_request))
+    print("nop_route")
+    LOGGER.info("routing: " + app.current_request.context["path"])
 
     try:
         path = app.current_request.context["path"]
