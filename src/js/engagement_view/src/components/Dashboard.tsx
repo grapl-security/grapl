@@ -1,66 +1,65 @@
-import React from 'react';
-import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
+import React, { useEffect, useState } from 'react';
+import { checkLogin } from '../Login';
 import GraplHeader from "./reusableComponents/GraplHeader";
-import {Link} from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { dasboardStyles } from './makeStyles/DashboardStyles';
 
-const useStyles = makeStyles( (theme: Theme) =>
-    createStyles({
-        root: {
-            display: "flex",
-        },
-        button: {
-            backgroundColor: "#42C6FF",
-            margin: "0.25rem",
-            padding: "0.25rem",
-        }, 
-        welcome: {
-            width:"70%",
-            textAlign:"center",
-            backgroundColor: "#373740",
-            height: "100vh",
-            color: "white"
-        },
-        nav: {
-            margin: "2rem",
-            width: "30%",
-            display: "flex",
-            flexDirection: "column",
-        },
-        dashboard: {
-            display: "flex",
-            flexDirection: "row",
-        }, 
-        link: {
-            color: "white",
-            textDecoration: "none",
-            padding: ".75rem",
-            backgroundColor: "#42C6FF",
-            margin: "1rem",
-            textAlign: "center",
-            borderRadius: ".35rem",
-            textTransform: "uppercase",
-            fontWeight: "bolder"
-        },
-        
-    })
-);
+const useStyles = dasboardStyles; 
+
+const getTimeMod = (mod: number) => {
+    const time = Date.now();
+
+    return (time - (time % mod))
+}
 
 export default function Dashboard() {
-        const classes = useStyles();
-        return (
-            <> 
-                <GraplHeader displayBtn={false} />
+    const classes = useStyles();
+    
+    const [state, setState] = useState({
+        loggedIn: true,
+        lastUpdate: getTimeMod(5000),
+    });
 
-                <div className = { classes.dashboard}>
-                    <section className = { classes.nav }>
-                            <Link to = "/engagements" className = {classes.link}> Engagements </Link>
-                            <Link to = "/plugins" className = {classes.link}> Upload Plugin </Link>
-                    </section>
+    useEffect(() => {
+        const now = getTimeMod(5000);
 
-                    <section className = { classes.welcome }>
-                        <h1> Welcome! </h1>
-                    </section>
-                </div>
-            </>
-        )
-}
+        if (state.lastUpdate !== now) {
+            checkLogin()
+            .then((loggedIn) => {
+                if (!loggedIn) {
+                    console.warn("Logged out")
+                }
+                setState({
+                    loggedIn: loggedIn || false,
+                    lastUpdate: now
+                });
+            })
+        }
+    
+    }, [state, setState])
+
+    console.log("state - loggedin", state.loggedIn); 
+
+    if (!state.loggedIn) {
+        // Replace with a popup card with a redirect to login 
+        window.history.replaceState('#/', "", "#/login");
+        window.location.reload();
+    }
+
+    return (
+        <> 
+            <GraplHeader displayBtn={false} />
+
+            <div className = { classes.dashboard}>
+                <section className = { classes.nav }>
+                        <Link to = "/engagements" className = {classes.link}> Engagements </Link>
+                        <Link to = "/plugins" className = {classes.link}> Upload Plugin </Link>
+                </section>
+
+                <section className = { classes.welcome }>
+                    <h1> Welcome! </h1>
+                </section>
+            </div>
+        </>
+    )
+}       

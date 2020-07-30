@@ -20,16 +20,47 @@ const useStyles = makeStyles(
 
 const engagement_edge = getAuthEdge();
 
-export const checkLogin = async () => {
+
+const retry = async <T extends unknown>(f: () => T, count: number): Promise<T | undefined> => {
+  if (count === 0) {
+    return undefined
+  }
+  try {
+    console.log('retrying')
+    const x = await f();
+    if (!x) {
+      await new Promise(r => setTimeout(r, 1000));
+      return await retry(f, count -1)
+    } else {
+      return x
+    }
+  } catch (e) {
+    console.warn(e);
+    await new Promise(r => setTimeout(r, 1000));
+    return await retry(f, count -1)
+  }
+
+}
+
+
+export const checkLogin = async (): Promise<boolean | null> => {
+
+  try { 
+
     const res = await fetch(`${engagement_edge}checkLogin`, 
       {
-        method: 'get',
+        method: 'post',
         credentials: 'include',
       }
     );
 
     const body = await res.json();
-    return body['success'] === 'True';
+
+    return (body['success'] === 'True')
+  } catch (e) {
+    console.warn(e);
+    return null
+  }
 };
 
 const validationSchema = Yup.object().shape({

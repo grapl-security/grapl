@@ -1,5 +1,5 @@
 import GraphDisplay from "./GraphViz";
-import React from "react";
+import React, {useEffect, useState} from "react";
 import SideBarContent from './SideBarContent'
 import clsx from "clsx";
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
@@ -13,7 +13,10 @@ import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
 import Button from "@material-ui/core/Button";
 import { Node } from "../modules/GraphViz/CustomTypes";
 import Home from '@material-ui/icons/Home';
-import {Link} from 'react-router-dom'
+import {Link} from 'react-router-dom';
+import { checkLogin } from '../Login';
+
+
 
 const drawerWidth = 500;
 
@@ -206,8 +209,65 @@ const defaultEngagementUxState = (): EngagementUxState => {
   }
 }
 
+const getTimeMod = (mod: number) => {
+  const time = Date.now();
+
+  return (time - (time % mod))
+}
+
+
 export const EngagementUx = () => {
     const [state, setState] = React.useState(defaultEngagementUxState());
+
+    const [logInState, setLogInState] = useState({
+      loggedIn: true,
+      last_update: getTimeMod(5000)
+    });
+  
+    useEffect(() => {
+      const now = getTimeMod(5000);
+
+      if (logInState.last_update !== now) {
+          checkLogin()
+          .then((loggedIn) => {
+              if (!loggedIn) {
+                  console.warn("Logged out")
+              }
+              setLogInState({
+                  loggedIn: loggedIn || false,
+                  last_update: now
+              });
+          })
+      }
+  
+  }, [logInState, setLogInState])
+
+  console.log("state - loggedin", logInState.loggedIn); 
+
+  if (!logInState.loggedIn) {
+      // Replace with a popup card with a redirect to login 
+      window.history.replaceState('#/', "", "#/login");
+      window.location.reload();
+  }
+    // useEffect(() => {
+    //     // Happen via setInterval
+    //     const interval = setInterval(
+    //         async () => {
+    //             const loggedIn = await checkLogin();
+    //             console.log("loggedIn", loggedIn)
+    //             setLogInState({
+    //                 ...logInState,
+    //                 loggedIn
+    //             });
+    //     }, 5000);
+    //     return () => clearInterval(interval);
+    // }, [logInState])
+
+    // if (!logInState.loggedIn) {
+    //     window.history.replaceState('#/', "", "#/login")
+    //     window.location.reload();
+    // }
+
     
     return (
         <>

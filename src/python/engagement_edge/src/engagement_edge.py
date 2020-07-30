@@ -553,13 +553,14 @@ def check_jwt(headers):
             encoded_jwt = cookie.split("grapl_jwt=")[1].strip()
 
     if not encoded_jwt:
+        LOGGER.info('encoded_jwt %s', encoded_jwt)
         return False
 
     try:
         jwt.decode(encoded_jwt, JWT_SECRET, algorithms=["HS256"])
         return True
     except Exception as e:
-        LOGGER.error(e)
+        LOGGER.error('jwt.decode %s', e)
         return False
 
 
@@ -569,10 +570,10 @@ def lambda_login(event):
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
     if IS_LOCAL:
-        domain = ""
+        cookie = f"grapl_jwt={login_res}; HttpOnly"
     else:
-        domain = "Domain=.amazonaws.com;"
-    cookie = f"grapl_jwt={login_res}; {domain} secure; HttpOnly; SameSite=None"
+        cookie = f"grapl_jwt={login_res}; Domain=.amazonaws.com; secure; HttpOnly; SameSite=None"
+
     if login_res:
         return cookie
 
@@ -618,7 +619,7 @@ def no_auth(path):
             try:
                 return route_fn()
             except Exception as e:
-                LOGGER.error(e)
+                LOGGER.error('path %s', e)
                 return respond("Unexpected Error")
 
         return inner_route
@@ -641,7 +642,7 @@ def login_route():
 
 @no_auth("/checkLogin")
 def check_login():
-    LOGGER.debug("/checkLogin")
+    LOGGER.debug("/checkLogin %s", app.current_request)
     request = app.current_request
     if check_jwt(request.headers):
         return respond(None, "True")
