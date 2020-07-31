@@ -4,6 +4,8 @@ import { useStyles } from "../modules/uploads/plugins/useStyles";
 import { UploadForm } from "../modules/uploads/plugins/uploadPlugins"; 
 import { PluginTable } from "../modules/uploads/plugins/pluginTable";
 import { checkLogin } from '../Login';
+import LoginNotification from "./reusableComponents/Notifications";
+
 
 const getTimeMod = (mod: number) => {
     const time = Date.now();
@@ -37,17 +39,16 @@ const UploadPlugin = () => {
     
     }, [state, setState])
 
-    console.log("state - loggedin", state.loggedIn); 
-
-    if (!state.loggedIn) {
-        // Replace with a popup card with a redirect to login 
-        window.history.replaceState('#/', "", "#/login");
-        window.location.reload();
-    }
+    console.log("state - loggedin", state.loggedIn);
+ 
+    const loggedIn = state.loggedIn;
 
     return(
         <>
             <GraplHeader displayBtn={true} />
+                <div className = {classes.loggedIn}>
+                    {!loggedIn ? <LoginNotification /> : ""}
+                </div>
             
             <div className={classes.upload}>
                 <div className = {classes.uploadFormContainer}>

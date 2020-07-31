@@ -15,8 +15,12 @@ createStyles({
         textAlign:"center",
         backgroundColor: "#373740",
         height: "100vh",
-        color: "white"
+        color: "white",
     },
+    loggedIn: {
+        display:"flex", 
+        justifyContent: "flex-end",
+    }, 
     nav: {
         margin: "2rem",
         width: "30%",

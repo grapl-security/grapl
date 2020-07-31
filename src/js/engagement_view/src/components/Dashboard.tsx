@@ -3,6 +3,7 @@ import { checkLogin } from '../Login';
 import GraplHeader from "./reusableComponents/GraplHeader";
 import { Link } from 'react-router-dom';
 import { dasboardStyles } from './makeStyles/DashboardStyles';
+import LoginNotification from "./reusableComponents/Notifications";
 
 const useStyles = dasboardStyles; 
 
@@ -27,7 +28,7 @@ export default function Dashboard() {
             checkLogin()
             .then((loggedIn) => {
                 if (!loggedIn) {
-                    console.warn("Logged out")
+                    console.warn("Logged out");
                 }
                 setState({
                     loggedIn: loggedIn || false,
@@ -40,11 +41,7 @@ export default function Dashboard() {
 
     console.log("state - loggedin", state.loggedIn); 
 
-    if (!state.loggedIn) {
-        // Replace with a popup card with a redirect to login 
-        window.history.replaceState('#/', "", "#/login");
-        window.location.reload();
-    }
+    const loggedIn = state.loggedIn;
 
     return (
         <> 
@@ -55,9 +52,14 @@ export default function Dashboard() {
                         <Link to = "/engagements" className = {classes.link}> Engagements </Link>
                         <Link to = "/plugins" className = {classes.link}> Upload Plugin </Link>
                 </section>
-
+                
                 <section className = { classes.welcome }>
+                    <div className = {classes.loggedIn}>
+                        {!loggedIn ? <LoginNotification /> : ""}
+                    </div>
                     <h1> Welcome! </h1>
+                
+                
                 </section>
             </div>
         </>
