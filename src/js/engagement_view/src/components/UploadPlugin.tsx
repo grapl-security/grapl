@@ -26,7 +26,6 @@ const UploadPlugin = () => {
         if (state.lastUpdate !== now) {
             checkLogin()
             .then((loggedIn) => {
-                console.log('loergnaerugnaergaerg', loggedIn)
                 if (!loggedIn) {
                     console.warn("Logged out")
                 }

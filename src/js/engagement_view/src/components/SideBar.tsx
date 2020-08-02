@@ -1,5 +1,5 @@
 import GraphDisplay from "./GraphViz";
-import React, {useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import SideBarContent from './SideBarContent'
 import clsx from "clsx";
 import Drawer from "@material-ui/core/Drawer";
@@ -21,6 +21,15 @@ type SideBarProps = {
   setLens: (lens: string) => void,
   curLens: string,
   curNode: Node | null
+}
+
+const defaultEngagementUxState = (): EngagementUxState => {
+  return {
+    curLens: "",
+    curNode: null,
+    loggedIn: true,
+    lastUpdate: getTimeMod(5000)
+  }
 }
 
 export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
@@ -114,15 +123,11 @@ export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
 
 type EngagementUxState = {
   curLens: string, 
-  curNode: Node | null 
+  curNode: Node | null,
+  loggedIn: boolean,
+  lastUpdate: number,
 }
 
-const defaultEngagementUxState = (): EngagementUxState => {
-  return {
-    curLens: "",
-    curNode: null,
-  }
-}
 
 const getTimeMod = (mod: number) => {
   const time = Date.now();
@@ -135,32 +140,33 @@ export const EngagementUx = () => {
     const classes = useStyles();
     const [state, setState] = React.useState(defaultEngagementUxState());
 
-    const [logInState, setLogInState] = useState({
-      loggedIn: true,
-      last_update: getTimeMod(5000)
-    });
-  
     useEffect(() => {
       const now = getTimeMod(5000);
 
-      if (logInState.last_update !== now) {
+      if (state.lastUpdate !== now) {
           checkLogin()
           .then((loggedIn) => {
               if (!loggedIn) {
                   console.warn("Logged out")
               }
-              setLogInState({
+              setState({
+                  ...state,
                   loggedIn: loggedIn || false,
-                  last_update: now
+                  lastUpdate: now,
               });
           })
       }
-  
-  }, [logInState, setLogInState])
+      else {
+        setState({
+            ...state,
+            loggedIn: state.loggedIn || false,
+            lastUpdate: now,
+        });
+      }
+  }, [state, setState])
 
-  console.log("state - loggedin", logInState.loggedIn); 
   
-  const loggedIn = logInState.loggedIn; 
+  const loggedIn = state.loggedIn; 
   
     return (
         <>
