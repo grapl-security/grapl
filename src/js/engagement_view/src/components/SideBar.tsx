@@ -2,7 +2,6 @@ import GraphDisplay from "./GraphViz";
 import React, {useEffect, useState} from "react";
 import SideBarContent from './SideBarContent'
 import clsx from "clsx";
-import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
 import Drawer from "@material-ui/core/Drawer";
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
@@ -13,7 +12,7 @@ import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
 import Button from "@material-ui/core/Button";
 import { Node } from "../modules/GraphViz/CustomTypes";
 import Home from '@material-ui/icons/Home';
-import {Link} from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { checkLogin } from '../Login';
 import LoginNotification from "./reusableComponents/Notifications";
 import { useStyles } from "./makeStyles/GraphVizStyles";
@@ -66,7 +65,7 @@ export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
             >
               <b className={classes.header}> GRAPL </b>
             </Typography>
-                <Link to = "/" className = {classes.link}><Home/></Link>
+                <Link to = "/" className = {classes.link}> <Home/> </Link>
           </div>
 
         </Toolbar>

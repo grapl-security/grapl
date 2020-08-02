@@ -35,6 +35,11 @@ export default function Dashboard() {
                     lastUpdate: now
                 });
             })
+        } else {
+            setState({
+                ...state,
+                lastUpdate: now
+            });
         }
     
     }, [state, setState])

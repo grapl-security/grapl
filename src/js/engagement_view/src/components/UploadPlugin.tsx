@@ -23,10 +23,10 @@ const UploadPlugin = () => {
     useEffect(() => {
         const now = getTimeMod(5000);
 
-     
         if (state.lastUpdate !== now) {
             checkLogin()
             .then((loggedIn) => {
+                console.log('loergnaerugnaergaerg', loggedIn)
                 if (!loggedIn) {
                     console.warn("Logged out")
                 }
@@ -35,6 +35,11 @@ const UploadPlugin = () => {
                     lastUpdate: now
                 });
             })
+        } else {
+            setState({
+                loggedIn: state.loggedIn || false,
+                lastUpdate: now
+            });
         }
     
     }, [state, setState])
@@ -42,7 +47,7 @@ const UploadPlugin = () => {
     console.log("state - loggedin", state.loggedIn);
  
     const loggedIn = state.loggedIn;
-
+    console.log("loggedIn", loggedIn);
     return(
         <>
             <GraplHeader displayBtn={true} />
