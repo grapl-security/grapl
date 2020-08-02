@@ -180,22 +180,22 @@ export const EngagementUx = () => {
                 curLens={state.curLens}
                 curNode={state.curNode}
             />
-            <>
+        <>
+          <div className = {classes.loggedIn}>
+            {!loggedIn ? <LoginNotification /> : ""}
+          </div>
 
-            <div className = {classes.loggedIn}>
-              {!loggedIn ? <LoginNotification /> : ""}
-            </div>
-
-            <GraphDisplay 
-                lensName={state.curLens} 
-                setCurNode={(node: Node) => {
-                    setState({
-                        ...state,
-                        curNode: node,
-                    })
-                }}
-            />
-            </>
+          <GraphDisplay 
+              lensName={state.curLens} 
+              setCurNode={
+                (node: Node) => {
+                  setState({
+                      ...state,
+                      curNode: node,
+                  })
+              }}
+          />
         </>
+      </>
     )
 }

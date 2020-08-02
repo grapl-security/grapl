@@ -79,7 +79,7 @@ export const useStyles = makeStyles((theme: Theme) =>
         headerContent: {
             width: "100vw",
             display: "flex",  
-            alignItems: "flex-end",
+            justifyContent: "space-between",
         },
         close:{
             color:"#42C6FF",

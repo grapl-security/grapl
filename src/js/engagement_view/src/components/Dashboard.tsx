@@ -62,9 +62,8 @@ export default function Dashboard() {
                     <div className = {classes.loggedIn}>
                         {!loggedIn ? <LoginNotification /> : ""}
                     </div>
+
                     <h1> Welcome! </h1>
-                
-                
                 </section>
             </div>
         </>

@@ -10,6 +10,7 @@
     const useStyles = makeStyles({
         root: {
             maxWidth: 345,
+            postion: "fixed"
         },
     });
 
@@ -18,7 +19,7 @@
     const classes = useStyles();
 
         return (
-            <Card className={classes.root}>
+            <Card variant="outlined" className={classes.root}>
                 <CardActionArea>
                     <CardContent>
                         <Typography variant="body2" color="textSecondary" component="p">
