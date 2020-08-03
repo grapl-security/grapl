@@ -19,6 +19,7 @@ import { RedisCluster } from './redis';
 import { EngagementNotebook } from './engagement';
 import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
+import { Swarm } from './swarm';
 
 import { Watchful } from './vendor/cdk-watchful/lib/watchful';
 
@@ -389,6 +390,17 @@ class EngagementCreator extends cdk.NestedStack {
             ec2.Port.allTcp(),
             'Allow outbound to S3'
         );
+    }
+}
+
+export class DGraphSwarmCluster extends cdk.NestedStack {
+    constructor(parent: cdk.Construct, id: string, props: GraplServiceProps) {
+        super(parent, id);
+
+        new Swarm(this, props.prefix + "-DGraphSwarmCluster", {
+            vpc: props.vpc,
+            servicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080)]
+        });
     }
 }
 
