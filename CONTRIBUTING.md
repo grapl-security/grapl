@@ -91,6 +91,9 @@ Resources:
   unit-tests           Run all the unit tests
 ```
 
+See [BUILDING.md](BUILDING.md) for a more in-depth description of
+Grapl's build system.
+
 To run your images locally, execute the following command in the
 project root (after building):
 
