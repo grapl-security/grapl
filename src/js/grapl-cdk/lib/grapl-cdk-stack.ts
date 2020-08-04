@@ -709,6 +709,8 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
+        new DGraphSwarmCluster(this, 'dgraph-swarm-cluster', graplProps);
+
         new DGraphTtl(this, 'dgraph-ttl', graplProps);
 
         const model_plugins_bucket = new s3.Bucket(this, 'ModelPluginsBucket', {

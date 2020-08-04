@@ -1,6 +1,8 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 
+import { Bastion } from './bastion';
+
 export interface SwarmProps {
     // The VPC where the Docker Swarm cluster will live
     readonly vpc: ec2.IVpc;
@@ -60,7 +62,7 @@ export class Swarm extends cdk.Construct {
             ec2.Port.tcp(22)
         );
 
-        new SwarmBastion(scope, id + '-bastion', {
+        new Bastion(scope, id + '-bastion', {
             vpc: swarmProps.vpc,
             securityGroup: bastionSecurityGroup,
             instanceType: new ec2.InstanceType("t3.nano")
@@ -72,18 +74,6 @@ export class Swarm extends cdk.Construct {
             machineImage: new ec2.AmazonLinuxImage(),
             securityGroup: swarmSecurityGroup
         });
-    }
-}
-
-class SwarmBastion extends cdk.Construct {
-    constructor(
-        scope: cdk.Construct,
-        id: string,
-        bastion_props: ec2.BastionHostLinuxProps
-    ) {
-        super(scope, id);
-
-        new ec2.BastionHostLinux(scope, id, bastion_props);
     }
 }
 
