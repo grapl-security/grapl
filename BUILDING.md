@@ -29,7 +29,7 @@ re-build afresh). After [installing
 dobi](https://dnephin.github.io/dobi/install.html) you can see these
 tasks by running `dobi list` in the root of the Grapl source tree:
 
-``` bash
+```
 jgrillo@penguin:~/src/grapl$ dobi list
 Resources:
   build                Build artifacts and images for all services
@@ -82,7 +82,7 @@ Note also the `--no-bind-mount` option. We use a [host bind
 mount](https://dnephin.github.io/dobi/config.html#mount) to emit build
 artifacts to the `/dist` directory in the Grapl root:
 
-``` bash
+```
 jgrillo@penguin:~/src/grapl$ tree dist
 dist
 ├── analyzer-dispatcher
@@ -159,7 +159,7 @@ alias=rust:
 
 This task builds all the Rust sources, but does not run any unit or
 integration tests. When we ran `dobi list`
-[above](#building-the-source) all the aliases and their documentation
+[above](#building-the-source), all the aliases and their documentation
 were printed to the console. Aliases therefore are the user-facing
 commands, jobs--which run on images--are the internal building blocks
 for these commands.
@@ -223,9 +223,8 @@ The core values of Grapl's build system are:
     example, in each of Grapl's source subtrees you will find that we
     use the normal build tools for each language. So in `src/rust` you
     can execute `cargo test` to run all the Rust tests. In
-    `src/python/*` you can run `py.test` to execute python
-    tests. These are exactly what's used--via dobi--in the build
-    system.
+    `src/python/*` you can run `py.test` to execute python tests. We
+    run these same commands--via dobi jobs--in the build system.
 
 Note that this list *does not include* the following:
 
