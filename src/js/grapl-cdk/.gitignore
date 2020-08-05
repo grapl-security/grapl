@@ -13,6 +13,3 @@ cdk.out
 
 # do not ignore our UX
 !edge_ux/**/*.js
-
-# ignore users' changes to constants.ts
-bin/constants.ts
