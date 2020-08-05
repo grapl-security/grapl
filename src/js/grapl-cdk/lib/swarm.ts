@@ -58,23 +58,11 @@ export class Swarm extends cdk.Construct {
             ec2.Port.tcp(22)
         );
 
-        new SwarmJumpPoint(scope, id + '-jump-point', {
+        new ec2.Instance(scope, id + '-jump-point', {
             vpc: swarmProps.vpc,
             instanceType: new ec2.InstanceType("t3.nano"),
             machineImage: new ec2.AmazonLinuxImage(),
             securityGroup: swarmSecurityGroup
         });
-    }
-}
-
-class SwarmJumpPoint extends cdk.Construct {
-    constructor(
-        scope: cdk.Construct,
-        id: string,
-        instance_props: ec2.InstanceProps
-    ) {
-        super(scope, id);
-
-        new ec2.Instance(scope, id, instance_props);
     }
 }

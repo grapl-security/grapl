@@ -20,7 +20,6 @@ import { EngagementNotebook } from './engagement';
 import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
 import { Swarm } from './swarm';
-import { Bastion } from './bastion';
 
 import { Watchful } from './vendor/cdk-watchful/lib/watchful';
 
@@ -706,12 +705,16 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        const bastionSecurityGroup = new ec2.SecurityGroup(scope, id + "-bastion-security-group", {
-            vpc: graplProps.vpc,
-            allowAllOutbound: false
-        });
+        const bastionSecurityGroup = new ec2.SecurityGroup(
+            this,
+            "BastionSecurityGroup",
+            {
+                vpc: graplProps.vpc,
+                allowAllOutbound: false
+            }
+        );
 
-        new Bastion(scope, id + '-bastion', {
+        new ec2.BastionHostLinux(this, 'bastion', {
             vpc: graplProps.vpc,
             securityGroup: bastionSecurityGroup,
             instanceType: new ec2.InstanceType("t3.nano")

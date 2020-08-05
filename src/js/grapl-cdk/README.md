@@ -41,11 +41,11 @@ Your build outputs should appear in the `zips/` directory.
 
 ### Configuration
 
-Set your deployment name and version in `bin/grapl-cdk.ts`
+Set your deployment name and version in `bin/constants.ts`:
 
 ```
-const deployName = 'Grapl-MYDEPLOYMENT';
-const graplVersion = 'YOUR_VERSION';
+export const deployName = 'Grapl-MYDEPLOYMENT';
+export const graplVersion = 'YOUR_VERSION';
 ```
 
 Some tips for choosing a deployment name:
@@ -56,7 +56,7 @@ Some tips for choosing a deployment name:
 To enable [Watchful](https://github.com/eladb/cdk-watchful) for monitoring Grapl with email alerts, specify the email address to receive alerts:
 
 ```
-const watchfulEmail = 'YOUR@EMAIL';
+export const watchfulEmail = 'YOUR@EMAIL';
 ```
 
 ## Deploying
