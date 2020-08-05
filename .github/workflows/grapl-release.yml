@@ -5,6 +5,22 @@ on:
     types: [released, prereleased]
 
 jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Run unit tests
+        run: |
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount unit-tests
+
   integration-tests:
     runs-on: ubuntu-latest
 
@@ -21,35 +37,61 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount integration-tests
 
-      - name: Clean build
-        run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-build
-          docker system prune -af
-
-  rust-tests:
+  check-pypi:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.7]
 
     steps:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
-        run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
-      - name: Run unit tests
+      - name: Install pypi-simple
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount rust-unit-tests
+          python3 -mvenv venv && . venv/bin/activate
+          pip install pypi-simple
+          deactivate
 
-      - name: Clean build
+      - name: Check whether grapl_graph_descriptions version has been bumped
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-rust-build
-          docker system prune -af
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_graph_descriptions \
+                $(cat src/rust/graph-descriptions/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_graph_descriptions \
+                $(cat src/rust/graph-descriptions/VERSION) \
+                true
+          fi
+          deactivate
+
+      - name: Check whether grapl_analyzerlib version has been bumped
+        run: |
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_analyzerlib \
+                $(cat src/python/grapl_analyzerlib/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl_analyzerlib \
+                $(cat src/python/grapl_analyzerlib/VERSION) \
+                true
+          fi
+          deactivate
 
   release-rust-services:
     runs-on: ubuntu-latest
-    needs: [rust-tests, integration-tests]
+    needs: [unit-tests, integration-tests, check-pypi]
 
     steps:
 
@@ -59,20 +101,22 @@ jobs:
         run: |
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
+
+      - name: Determine release channel
+        run: |
+          BRANCH=${{ github.event.release.target_commitish }}
+          if [[ "$BRANCH" == "master" ]]; then
+              CHANNEL="latest"
+          else
+              CHANNEL="beta"
+          fi
+          echo "::set-env name=CHANNEL::$CHANNEL"
 
       - name: Build Rust services
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
           GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount rust
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-rust-build
-          docker system prune -f
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount python
-          # don't clean the python build, we need to upload libraries
-          docker system prune -f
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount js
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount clean-js-build
-          docker system prune -f
 
       - name: Extract artifacts from Rust build
         id: extract-rust-artifacts
@@ -134,8 +178,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.sysmon-subgraph-generator }}
-          asset_name: ${{ steps.extract-artifacts.outputs.sysmon-subgraph-generator }}
+          asset_path: ./${{ steps.extract-rust-artifacts.outputs.sysmon-subgraph-generator }}
+          asset_name: ${{ steps.extract-rust-artifacts.outputs.sysmon-subgraph-generator }}
           asset_content_type: application/zip
 
       - name: Upload generic-subgraph-generator to Github
@@ -144,8 +188,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.generic-subgraph-generator }}
-          asset_name: ${{ steps.extract-artifacts.outputs.generic-subgraph-generator }}
+          asset_path: ./${{ steps.extract-rust-artifacts.outputs.generic-subgraph-generator }}
+          asset_name: ${{ steps.extract-rust-artifacts.outputs.generic-subgraph-generator }}
           asset_content_type: application/zip
 
       - name: Upload node-identifier to Github
@@ -154,8 +198,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.node-identifier }}
-          asset_name: ${{ steps.extract-artifacts.outputs.node-identifier }}
+          asset_path: ./${{ steps.extract-rust-artifacts.outputs.node-identifier }}
+          asset_name: ${{ steps.extract-rust-artifacts.outputs.node-identifier }}
           asset_content_type: application/zip
 
       - name: Upload node-identifier-retry-handler to Github
@@ -164,8 +208,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.node-identifier-retry-handler }}
-          asset_name: ${{ steps.extract-artifacts.outputs.node-identifier-retry-handler }}
+          asset_path: ./${{ steps.extract-rust-artifacts.outputs.node-identifier-retry-handler }}
+          asset_name: ${{ steps.extract-rust-artifacts.outputs.node-identifier-retry-handler }}
           asset_content_type: application/zip
 
       - name: Upload graph-merger to Github
@@ -174,8 +218,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.graph-merger }}
-          asset_name: ${{ steps.extract-artifacts.outputs.graph-merger }}
+          asset_path: ./${{ steps.extract-rust-artifacts.outputs.graph-merger }}
+          asset_name: ${{ steps.extract-rust-artifacts.outputs.graph-merger }}
           asset_content_type: application/zip
 
       - name: Upload analyzer-dispatcher to Github
@@ -184,12 +228,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.analyzer-dispatcher }}
-          asset_name: ${{ steps.extract-artifacts.outputs.analyzer-dispatcher }}
+          asset_path: ./${{ steps.extract-rust-artifacts.outputs.analyzer-dispatcher }}
+          asset_name: ${{ steps.extract-rust-artifacts.outputs.analyzer-dispatcher }}
           asset_content_type: application/zip
 
-  python-tests:
+  release-python-services:
     runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, check-pypi]
 
     steps:
 
@@ -199,32 +244,6 @@ jobs:
         run: |
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
-
-      - name: Run unit tests
-        run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount python-unit-tests
-
-      - name: Clean build
-        run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-python-build
-          docker system prune -f
-
-  release-python-services:
-    runs-on: ubuntu-latest
-    needs: [python-tests, integration-tests]
-
-    strategy:
-        matrix:
-          python-version: [3.7]
-
-    steps:
-
-      - uses: actions/checkout@v2
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: Determine release channel
         run: |
@@ -235,47 +254,6 @@ jobs:
               CHANNEL="beta"
           fi
           echo "::set-env name=CHANNEL::$CHANNEL"
-
-      - name: Install pypi-simple
-        run: |
-          python3 -mvenv venv && . venv/bin/activate
-          pip install pypi-simple
-          deactivate
-
-      - name: Check whether grapl_graph_descriptions version has been bumped
-        run: |
-          . venv/bin/activate
-          if [[ "$CHANNEL" == "latest" ]]; then
-              python etc/build_scripts/check_pypi_version.py \
-                grapl_graph_descriptions \
-                $(cat src/rust/graph-descriptions/VERSION)
-          else
-              python etc/build_scripts/check_pypi_version.py \
-                grapl_graph_descriptions \
-                $(cat src/rust/graph-descriptions/VERSION) \
-                true
-          fi
-          deactivate
-
-      - name: Check whether grapl_analyzerlib version has been bumped
-        run: |
-          . venv/bin/activate
-          if [[ "$CHANNEL" == "latest" ]]; then
-              python etc/build_scripts/check_pypi_version.py \
-                grapl_analyzerlib \
-                $(cat src/python/grapl_analyzerlib/VERSION)
-          else
-              python etc/build_scripts/check_pypi_version.py \
-                grapl_analyzerlib \
-                $(cat src/python/grapl_analyzerlib/VERSION) \
-                true
-          fi
-          deactivate
-
-      - name: Install dobi
-        run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
 
       - name: Build Python services
         env:
@@ -326,8 +304,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.analyzer-executor }}
-          asset_name: ${{ steps.extract-artifacts.outputs.analyzer-executor }}
+          asset_path: ./${{ steps.extract-python-artifacts.outputs.analyzer-executor }}
+          asset_name: ${{ steps.extract-python-artifacts.outputs.analyzer-executor }}
           asset_content_type: application/zip
 
       - name: Upload engagement-creator to Github
@@ -336,8 +314,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.engagement-creator }}
-          asset_name: ${{ steps.extract-artifacts.outputs.engagement-creator }}
+          asset_path: ./${{ steps.extract-python-artifacts.outputs.engagement-creator }}
+          asset_name: ${{ steps.extract-python-artifacts.outputs.engagement-creator }}
           asset_content_type: application/zip
 
       - name: Upload engagement-edge to Github
@@ -346,8 +324,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.engagement-edge }}
-          asset_name: ${{ steps.extract-artifacts.outputs.engagement-edge }}
+          asset_path: ./${{ steps.extract-python-artifacts.outputs.engagement-edge }}
+          asset_name: ${{ steps.extract-python-artifacts.outputs.engagement-edge }}
           asset_content_type: application/zip
 
       - name: Upload model-plugin-deployer to Github
@@ -356,8 +334,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.model-plugin-deployer }}
-          asset_name: ${{ steps.extract-artifacts.outputs.model-plugin-deployer }}
+          asset_path: ./${{ steps.extract-python-artifacts.outputs.model-plugin-deployer }}
+          asset_name: ${{ steps.extract-python-artifacts.outputs.model-plugin-deployer }}
+
           asset_content_type: application/zip
 
       - name: Upload dgraph-ttl to Github
@@ -366,8 +345,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.dgraph-ttl }}
-          asset_name: ${{ steps.extract-artifacts.outputs.dgraph-ttl }}
+          asset_path: ./${{ steps.extract-python-artifacts.outputs.dgraph-ttl }}
+          asset_name: ${{ steps.extract-python-artifacts.outputs.dgraph-ttl }}
           asset_content_type: application/zip
 
       - name: Clean up dist
@@ -424,30 +403,9 @@ jobs:
         run: |
           rm -rf dist
 
-  js-tests:
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - uses: actions/checkout@v2
-
-      - name: Install dobi
-        run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
-
-      - name: Run JS unit tests
-        run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount js-unit-tests
-
-      - name: Clean build
-        run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount clean-js-build
-          docker system prune -f
-
   release-js-services:
     runs-on: ubuntu-latest
-    needs: [js-tests, integration-tests]
+    needs: [unit-tests, integration-tests, check-pypi]
 
     steps:
 
@@ -457,6 +415,16 @@ jobs:
         run: |
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
+
+      - name: Determine release channel
+        run: |
+          BRANCH=${{ github.event.release.target_commitish }}
+          if [[ "$BRANCH" == "master" ]]; then
+              CHANNEL="latest"
+          else
+              CHANNEL="beta"
+          fi
+          echo "::set-env name=CHANNEL::$CHANNEL"
 
       - name: Build JS services
         env:
@@ -489,6 +457,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-artifacts.outputs.graphql-endpoint }}
-          asset_name: ${{ steps.extract-artifacts.outputs.graphql-endpoint }}
+          asset_path: ./${{ steps.extract-js-artifacts.outputs.graphql-endpoint }}
+          asset_name: ${{ steps.extract-js-artifacts.outputs.graphql-endpoint }}
           asset_content_type: application/zip
