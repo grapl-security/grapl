@@ -553,14 +553,14 @@ def check_jwt(headers):
             encoded_jwt = cookie.split("grapl_jwt=")[1].strip()
 
     if not encoded_jwt:
-        LOGGER.info('encoded_jwt %s', encoded_jwt)
+        LOGGER.info("encoded_jwt %s", encoded_jwt)
         return False
 
     try:
         jwt.decode(encoded_jwt, JWT_SECRET, algorithms=["HS256"])
         return True
     except Exception as e:
-        LOGGER.error('jwt.decode %s', e)
+        LOGGER.error("jwt.decode %s", e)
         return False
 
 
@@ -619,7 +619,7 @@ def no_auth(path):
             try:
                 return route_fn()
             except Exception as e:
-                LOGGER.error('path %s', e)
+                LOGGER.error("path %s", e)
                 return respond("Unexpected Error")
 
         return inner_route
