@@ -7,53 +7,42 @@ import { checkLogin } from '../Login';
 import LoginNotification from "./reusableComponents/Notifications";
 
 
-const getTimeMod = (mod: number) => {
-    const time = Date.now();
-
-    return (time - (time % mod))
-}
-
 const UploadPlugin = () => {
     const classes = useStyles();
     const [state, setState] = useState({
         loggedIn: true,
-        lastUpdate:  getTimeMod(5000),
+        renderedOnce:  false,
     });
 
     useEffect(() => {
-        const now = getTimeMod(5000);
-
-        if (state.lastUpdate !== now) {
-            checkLogin()
+        if (state.renderedOnce){
+            return
+        }
+        const interval = setInterval(async() => {
+            await checkLogin()
             .then((loggedIn) => {
-                if (!loggedIn) {
-                    console.warn("Logged out")
+                if(!loggedIn){
+                    console.warn("Logged Out")
                 }
                 setState({
-                    loggedIn: loggedIn || false,
-                    lastUpdate: now
+                    loggedIn: loggedIn || false, 
+                    renderedOnce: true,
                 });
-            })
-        } else {
-            setState({
-                loggedIn: state.loggedIn || false,
-                lastUpdate: now
             });
-        }
-    
-    }, [state, setState])
+        }, 2000);
+        return () => { clearInterval(interval) } 
+    }, [state, setState]);
 
-    console.log("state - loggedin", state.loggedIn);
- 
     const loggedIn = state.loggedIn;
-    console.log("loggedIn", loggedIn);
+    
     return(
         <>
             <GraplHeader displayBtn={true} />
-                <div className = {classes.loggedIn}>
-                    {!loggedIn ? <LoginNotification /> : ""}
-                </div>
-            
+
+            <div className = {classes.loggedIn}>
+                {!loggedIn ? <LoginNotification /> : ""}
+            </div>
+        
             <div className={classes.upload}>
                 <div className = {classes.uploadFormContainer}>
                     <UploadForm />

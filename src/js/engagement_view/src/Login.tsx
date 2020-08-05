@@ -20,29 +20,6 @@ const useStyles = makeStyles(
 
 const engagement_edge = getAuthEdge();
 
-
-const retry = async <T extends unknown>(f: () => T, count: number): Promise<T | undefined> => {
-  if (count === 0) {
-    return undefined
-  }
-  try {
-    console.log('retrying')
-    const x = await f();
-    if (!x) {
-      await new Promise(r => setTimeout(r, 1000));
-      return await retry(f, count -1)
-    } else {
-      return x
-    }
-  } catch (e) {
-    console.warn(e);
-    await new Promise(r => setTimeout(r, 1000));
-    return await retry(f, count -1)
-  }
-
-}
-
-
 export const checkLogin = async (): Promise<boolean | null> => {
 
   try { 

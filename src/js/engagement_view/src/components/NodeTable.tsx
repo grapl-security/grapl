@@ -1,5 +1,4 @@
 import React from "react";
-import { makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -8,24 +7,8 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import { mapEdgeProps } from '../modules/GraphViz/graph/graph_traverse';
 import { mapNodeProps } from './GraphViz';
-import { Node } from "../modules/GraphViz/CustomTypes"
-
-
-const useStyles = makeStyles({
-    root: {
-        fontSize: ".75em"
-    },
-    nodeTable: {
-        minWidth: 450,
-    }, 
-    tableHeader: {
-        fontSize: ".85rem", 
-        backgroundColor: "#595959"
-    }, 
-    nodeTableData: {
-        fontSize: ".75rem"
-    },
-});
+import { Node } from "../modules/GraphViz/CustomTypes";
+import { useStyles } from "./makeStyles/NodeTableStyles"; 
 
 function innerTable(node: Node, styles: any) {
     if(node) {
@@ -84,31 +67,29 @@ function NodeTable({node}: NodeTableProps){
         }
     )
 
-        return(
-            <TableContainer>
-                <Table className={classes.nodeTable}>
-                {
-                    innerTable(node, classes)
-                }
-                <TableBody>
-                        {
-                            Object.entries(displayNode).map((entry) => {
-                                const [key, value] = entry;
-                                
-                                return(
-                                    <TableRow>
-                                        <TableCell className = {classes.nodeTableData} align="left"><b>{key}</b></TableCell>
-                                        <TableCell className = {classes.nodeTableData} align="left">{value as any}</TableCell>
-                                    </TableRow>
-                                ) 
-                            })
-                        }
-                </TableBody>
-                </Table>
-            </TableContainer>
-        ) 
-        
-    
+    return(
+        <TableContainer>
+            <Table className={classes.nodeTable}>
+            {
+                innerTable(node, classes)
+            }
+            <TableBody>
+                    {
+                        Object.entries(displayNode).map((entry) => {
+                            const [key, value] = entry;
+                            
+                            return(
+                                <TableRow key = {node.node_key + key}> 
+                                    <TableCell className = {classes.nodeTableData} align="left"><b>{key}</b></TableCell>
+                                    <TableCell className = {classes.nodeTableData} align="left">{value as any}</TableCell>
+                                </TableRow>
+                            ) 
+                        })
+                    }
+            </TableBody>
+            </Table>
+        </TableContainer>
+    ) 
 }
 
 

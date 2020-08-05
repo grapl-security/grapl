@@ -1,6 +1,6 @@
 import GraphDisplay from "./GraphViz";
 import React, {useEffect} from "react";
-import SideBarContent from './SideBarContent'
+import EngagementViewContent from './EngagementViewContent'
 import clsx from "clsx";
 import Drawer from "@material-ui/core/Drawer";
 import AppBar from "@material-ui/core/AppBar";
@@ -17,7 +17,7 @@ import { checkLogin } from '../Login';
 import LoginNotification from "./reusableComponents/Notifications";
 import { useStyles } from "./makeStyles/GraphVizStyles";
 
-type SideBarProps = {
+type EngagementViewProps = {
   setLens: (lens: string) => void,
   curLens: string,
   curNode: Node | null
@@ -28,11 +28,11 @@ const defaultEngagementUxState = (): EngagementUxState => {
     curLens: "",
     curNode: null,
     loggedIn: true,
-    lastUpdate: getTimeMod(5000)
+    renderedOnce: false
   }
 }
 
-export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
+export default function EngagementView({setLens, curLens, curNode}: EngagementViewProps) {
   const classes = useStyles();
 
   const [open, setOpen] = React.useState(true);
@@ -76,7 +76,6 @@ export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
             </Typography>
                 <Link to = "/" className = {classes.link}> <Home/> </Link>
           </div>
-
         </Toolbar>
       </AppBar>
 
@@ -95,7 +94,7 @@ export default function SideBar({setLens, curLens, curNode}: SideBarProps) {
 
         <Divider />
 
-        <SideBarContent 
+        <EngagementViewContent 
           setLens={setLens} 
           curNode={curNode}
         />
@@ -125,26 +124,20 @@ type EngagementUxState = {
   curLens: string, 
   curNode: Node | null,
   loggedIn: boolean,
-  lastUpdate: number,
+  renderedOnce: boolean,
 }
-
-
-const getTimeMod = (mod: number) => {
-  const time = Date.now();
-
-  return (time - (time % mod))
-}
-
 
 export const EngagementUx = () => {
     const classes = useStyles();
     const [state, setState] = React.useState(defaultEngagementUxState());
 
-    useEffect(() => {
-      const now = getTimeMod(5000);
-
-      if (state.lastUpdate !== now) {
-          checkLogin()
+    useEffect(
+      () => {
+        if (state.renderedOnce) {
+          return;
+        }
+        const interval = setInterval(async () => {
+          await checkLogin()
           .then((loggedIn) => {
               if (!loggedIn) {
                   console.warn("Logged out")
@@ -152,25 +145,19 @@ export const EngagementUx = () => {
               setState({
                   ...state,
                   loggedIn: loggedIn || false,
-                  lastUpdate: now,
+                  renderedOnce: true,
               });
-          })
-      }
-      else {
-        setState({
-            ...state,
-            loggedIn: state.loggedIn || false,
-            lastUpdate: now,
-        });
-      }
-  }, [state, setState])
+          });
+        }, 2000);
+        return () => { clearInterval(interval) }
+      }, 
+    [state, setState]);
 
-  
   const loggedIn = state.loggedIn; 
   
     return (
         <>
-            <SideBar 
+            <EngagementView 
                 setLens={
                     (lens: string) => setState({
                         ...state,

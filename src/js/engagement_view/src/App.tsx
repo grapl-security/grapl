@@ -1,7 +1,7 @@
 import React from 'react';
 import './LogIn.css';
 import { LogIn } from './Login';
-import { EngagementUx } from "./components/SideBar";
+import { EngagementUx } from "./components/EngagementView";
 import Dashboard from "./components/Dashboard";
 import UploadPlugin from "./components/UploadPlugin";
 import { HashRouter, Route, Switch } from 'react-router-dom';

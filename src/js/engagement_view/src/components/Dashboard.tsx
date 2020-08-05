@@ -7,42 +7,36 @@ import LoginNotification from "./reusableComponents/Notifications";
 
 const useStyles = dasboardStyles; 
 
-const getTimeMod = (mod: number) => {
-    const time = Date.now();
-
-    return (time - (time % mod))
-}
-
 export default function Dashboard() {
     const classes = useStyles();
     
     const [state, setState] = useState({
         loggedIn: true,
-        lastUpdate: getTimeMod(5000),
+        renderedOnce: false,
     });
 
-    useEffect(() => {
-        const now = getTimeMod(5000);
+    useEffect(
+        () => {
+            if(state.renderedOnce){
+                return;
+            }
 
-        if (state.lastUpdate !== now) {
-            checkLogin()
-            .then((loggedIn) => {
-                if (!loggedIn) {
-                    console.warn("Logged out");
-                }
-                setState({
-                    loggedIn: loggedIn || false,
-                    lastUpdate: now
+            const interval = setInterval(async () => {
+                await checkLogin()
+                .then((loggedIn) => {
+                    if(!loggedIn){
+                        console.warn("Logged out")
+                    }
+                    setState({
+                        loggedIn: loggedIn || false, 
+                        renderedOnce: true,
+                    });
                 });
-            })
-        } else {
-            setState({
-                ...state,
-                lastUpdate: now
-            });
-        }
-    
-    }, [state, setState])
+            }, 2000);
+
+            return () => { clearInterval(interval) }
+        }, 
+    [state, setState])
 
     console.log("state - loggedin", state.loggedIn); 
 

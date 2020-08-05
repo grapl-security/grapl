@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
 import NodeTable from './NodeTable'
 import Button from "@material-ui/core/Button";
-import { makeStyles } from "@material-ui/core/styles";
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import LensIcon from '@material-ui/icons/Lens';
@@ -16,44 +15,9 @@ import { getGraphQlEdge } from "../modules/GraphViz/engagement_edge/getApiURLs";
 
 import TablePagination from '@material-ui/core/TablePagination';
 import { ClassNameMap } from '@material-ui/styles/withStyles';
-import {SelectLensProps, ToggleLensTableProps, ToggleLensTableState, SideBarContentProps, NodeDetailsProps, ToggleNodeTableProps, PaginationState} from "../modules/GraphViz/CustomTypes"
+import {SelectLensProps, ToggleLensTableProps, ToggleLensTableState, EngagementViewContentProps, NodeDetailsProps, ToggleNodeTableProps, PaginationState} from "../modules/GraphViz/CustomTypes"
 
-const useStyles = makeStyles({
-    root:{
-        fontSize: "1rem",
-    },
-    button: {
-        width: ".005%",
-        color: "white",
-        backgroundColor:"#424242",
-    },
-    title: {
-        fontSize: "25px",
-        color: "#ffffff",
-    },
-    icon:{
-        color: "#42C6FF",
-        margin: "15px 0 0 10px",
-    }, 
-    expand:{
-        color: "#42C6FF",
-        margin: "0px"
-    },
-    header:{
-        display: "flex"
-    }, 
-    table: {
-        minWidth: 450, 
-    },
-    lensName: {
-        fontSize: "16px",
-    },
-    pagination: {
-        margin: ".5rem",
-        backgroundColor: "#595959",
-    }
-});
-
+import { useStyles } from './makeStyles/EngagementViewContentStyles';
 
 function SelectLens(props: SelectLensProps) {
     const classes = useStyles();
@@ -97,39 +61,39 @@ const pagedTable = (
 ) => {
     return (
         <TableContainer>
-        <TablePagination
-            className = {classes.pagination}
-            aria-label = "pagination"
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={state.lenses.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onChangePage={handleChangePage}
-            onChangeRowsPerPage={handleChangeRowsPerPage}
-        />
-        {
-            state.lenses 
-            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            .map(
-                (lens: Lens) => {
-                    return(
-                        <Table className={classes.table} aria-label="lens table">
-                            <TableBody>
-                                <SelectLens 
-                                    key={Number(lens.uid)}
-                                    uid={lens.uid}
-                                    lens={lens.lens_name}
-                                    lens_type={lens.lens_type}
-                                    score={lens.score}
-                                    setLens={setLens}
-                                />
-                            </TableBody>
-                        </Table>
-                    )
-                }
-            )
-        }
+            <TablePagination
+                className = {classes.pagination}
+                aria-label = "pagination"
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={state.lenses.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onChangePage={handleChangePage}
+                onChangeRowsPerPage={handleChangeRowsPerPage}
+            />
+            {
+                state.lenses 
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map(
+                    (lens: Lens) => {
+                        return(
+                            <Table className={classes.table} aria-label="lens table" key={Number(lens.uid)}>
+                                <TableBody>
+                                    <SelectLens 
+                                        key={Number(lens.uid)}
+                                        uid={lens.uid}
+                                        lens={lens.lens_name}
+                                        lens_type={lens.lens_type}
+                                        score={lens.score}
+                                        setLens={setLens}
+                                    />
+                                </TableBody>
+                            </Table>
+                        )
+                    }
+                )
+            }
         </TableContainer>
     )
 }
@@ -280,7 +244,7 @@ function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
 
 
 
-export default function SideBarContent({setLens, curNode}: SideBarContentProps) {
+export default function EngagementViewContent({setLens, curNode}: EngagementViewContentProps) {
     return (
         <>
             <ToggleLensTable setLens={setLens}/>
