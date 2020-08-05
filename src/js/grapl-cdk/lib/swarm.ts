@@ -1,8 +1,6 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 
-import { Bastion } from './bastion';
-
 export interface SwarmProps {
     // The VPC where the Docker Swarm cluster will live
     readonly vpc: ec2.IVpc;
@@ -10,6 +8,9 @@ export interface SwarmProps {
     // The service-specific (e.g. DGraph) ports to open internally
     // within the Docker Swarm cluster.
     readonly servicePorts: ec2.Port[];
+
+    // The bastion host's security group.
+    readonly bastionSecurityGroup: ec2.ISecurityGroup;
 }
 
 export class Swarm extends cdk.Construct {
@@ -19,11 +20,6 @@ export class Swarm extends cdk.Construct {
         swarmProps: SwarmProps
     ) {
         super(scope, id);
-
-        const bastionSecurityGroup = new ec2.SecurityGroup(scope, id + "-bastion-security-group", {
-            vpc: swarmProps.vpc,
-            allowAllOutbound: false
-        });
 
         const swarmSecurityGroup = new ec2.SecurityGroup(scope, id + "-swarm-security-group", {
             vpc: swarmProps.vpc,
@@ -54,19 +50,13 @@ export class Swarm extends cdk.Construct {
         // allow only the bastion security group to talk to the swarm
         // security group on port 22 (SSH)
         swarmSecurityGroup.connections.allowFrom(
-            bastionSecurityGroup,
+            swarmProps.bastionSecurityGroup,
             ec2.Port.tcp(22)
         );
-        bastionSecurityGroup.connections.allowTo(
+        swarmProps.bastionSecurityGroup.connections.allowTo(
             swarmSecurityGroup,
             ec2.Port.tcp(22)
         );
-
-        new Bastion(scope, id + '-bastion', {
-            vpc: swarmProps.vpc,
-            securityGroup: bastionSecurityGroup,
-            instanceType: new ec2.InstanceType("t3.nano")
-        });
 
         new SwarmJumpPoint(scope, id + '-jump-point', {
             vpc: swarmProps.vpc,

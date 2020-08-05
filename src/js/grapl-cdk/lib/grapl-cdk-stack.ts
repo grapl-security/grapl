@@ -20,6 +20,7 @@ import { EngagementNotebook } from './engagement';
 import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
 import { Swarm } from './swarm';
+import { Bastion } from './bastion';
 
 import { Watchful } from './vendor/cdk-watchful/lib/watchful';
 
@@ -393,13 +394,18 @@ class EngagementCreator extends cdk.NestedStack {
     }
 }
 
+export interface DGraphSwarmClusterProps extends GraplServiceProps {
+    bastionSecurityGroup: ec2.ISecurityGroup;
+}
+
 export class DGraphSwarmCluster extends cdk.NestedStack {
-    constructor(parent: cdk.Construct, id: string, props: GraplServiceProps) {
+    constructor(parent: cdk.Construct, id: string, props: DGraphSwarmClusterProps) {
         super(parent, id);
 
         new Swarm(this, props.prefix + "-DGraphSwarmCluster", {
             vpc: props.vpc,
-            servicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080)]
+            servicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080)],
+            bastionSecurityGroup: props.bastionSecurityGroup
         });
     }
 }
@@ -700,6 +706,17 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
+        const bastionSecurityGroup = new ec2.SecurityGroup(scope, id + "-bastion-security-group", {
+            vpc: graplProps.vpc,
+            allowAllOutbound: false
+        });
+
+        new Bastion(scope, id + '-bastion', {
+            vpc: graplProps.vpc,
+            securityGroup: bastionSecurityGroup,
+            instanceType: new ec2.InstanceType("t3.nano")
+        });
+
         const engagement_creator = new EngagementCreator(
             this,
             'engagement-creator',
@@ -709,7 +726,10 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        new DGraphSwarmCluster(this, 'dgraph-swarm-cluster', graplProps);
+        new DGraphSwarmCluster(this, 'dgraph-swarm-cluster', {
+            bastionSecurityGroup,
+            ...graplProps
+        });
 
         new DGraphTtl(this, 'dgraph-ttl', graplProps);
 
