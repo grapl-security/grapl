@@ -51,13 +51,7 @@ const corsDelegate = (req, callback) => {
 }
 
 
-const middleware = [cors(corsDelegate)];
-
-if (!IS_LOCAL) {
-    middleware.push(validateJwt)
-} else {
-    console.info("Running locally - disabling auth");
-}
+const middleware = [cors(corsDelegate), validateJwt];
 
 app.options('*', cors(corsDelegate));
 app.use('/graphql', middleware, graphqlHTTP({
