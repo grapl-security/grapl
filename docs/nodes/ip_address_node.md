@@ -1,4 +1,4 @@
-## Process Node
+## IP Address Node (needs updating)
 
 ### Schema
 | Predicate           | Type          | Description  |
@@ -7,7 +7,7 @@
 | ip_address | string | The IP address that this node represents.
 
 
-## ProcessQuery
+## IP Address Query (needs updating)
 
 ###### ProcessQuery.with_node_key
 ```python
