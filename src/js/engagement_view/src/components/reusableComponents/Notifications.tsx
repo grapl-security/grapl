@@ -10,8 +10,12 @@
     const useStyles = makeStyles({
         root: {
             maxWidth: 345,
-            postion: "fixed"
+            postion: "fixed",
         },
+        button: {
+            border: "2px solid white",
+            backgroundColor: "#42c6ff",
+        }
     });
 
 
@@ -31,8 +35,8 @@
 
                 <CardActions>
                     <Button 
+                        className = {classes.button}
                         size = "small" 
-                        // color = "primary" 
                         onClick = { 
                             () => {
                                 window.history.replaceState('#/', "", "#/login");
