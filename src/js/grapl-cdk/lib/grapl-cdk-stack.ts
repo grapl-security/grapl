@@ -714,11 +714,16 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        new ec2.BastionHostLinux(this, 'bastion', {
+        const bastion = new ec2.BastionHostLinux(this, 'bastion', {
             vpc: graplProps.vpc,
             securityGroup: bastionSecurityGroup,
-            instanceType: new ec2.InstanceType("t3.nano")
+            instanceType: new ec2.InstanceType("t3.nano"),
         });
+        bastion.role.addManagedPolicy(
+            iam.ManagedPolicy.fromAwsManagedPolicyName(
+                "AmazonSSMManagedInstanceCore"
+            )
+        )
 
         const engagement_creator = new EngagementCreator(
             this,
