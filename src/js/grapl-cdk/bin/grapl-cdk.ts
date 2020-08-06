@@ -5,11 +5,12 @@ import * as cdk from '@aws-cdk/core';
 import { GraplCdkStack } from '../lib/grapl-cdk-stack';
 import { EngagementUx } from '../lib/engagement';
 
-export const deployName = 'Grapl-MYDEPLOYMENT';
-export const graplVersion = 'latest';
-export const watchfulEmail = undefined;
+const deployName = 'Grapl-MYDEPLOYMENT';
+const graplVersion = 'latest';
+const watchfulEmail = undefined;
 
 const app = new cdk.App();
+
 const grapl = new GraplCdkStack(app, 'Grapl', {
     version: graplVersion,
     stackName: deployName,
