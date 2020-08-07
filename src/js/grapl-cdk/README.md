@@ -91,13 +91,22 @@ To provision DGraph:
      and click *Start session*. A new window will open in your browser
      with a terminal prompt on the bastion host.
   2. `sudo yum install docker`
-  3. `base=https://github.com/docker/machine/releases/download/v0.16.0 &&
-  curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
-  sudo mv /tmp/docker-machine /usr/local/bin/docker-machine &&
-  chmod +x /usr/local/bin/docker-machine`
-  4. `ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/)`
-  5. `RESPONSE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE)`
-  6. `AWS_ACCESS_KEY_ID=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["AccessKeyId"]);')`
-  7. `AWS_SECRET_ACCESS_KEY=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["SecretAccessKey"]);')`
-  8. `AWS_SESSION_TOKEN=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["Token"]);')`
-  9. `TBD`
+  3. Execute the following commands:
+
+``` bash
+# install docker-machine
+base=https://github.com/docker/machine/releases/download/v0.16.0 &&
+curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
+sudo mv /tmp/docker-machine /usr/local/bin/docker-machine &&
+chmod +x /usr/local/bin/docker-machine
+
+# extract AWS creds into environment variables
+ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/)
+RESPONSE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE)
+AWS_ACCESS_KEY_ID=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["AccessKeyId"]);')
+AWS_SECRET_ACCESS_KEY=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["SecretAccessKey"]);')
+AWS_SESSION_TOKEN=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["Token"]);')
+
+# spin up ec2 resources with docker-machine
+
+```
