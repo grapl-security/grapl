@@ -1,5 +1,6 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
+import * as iam from '@aws-cdk/aws-iam';
 
 export interface SwarmProps {
     // The VPC where the Docker Swarm cluster will live
@@ -8,9 +9,6 @@ export interface SwarmProps {
     // The service-specific (e.g. DGraph) ports to open internally
     // within the Docker Swarm cluster.
     readonly servicePorts: ec2.Port[];
-
-    // The bastion host's security group.
-    readonly bastionSecurityGroup: ec2.ISecurityGroup;
 }
 
 export class Swarm extends cdk.Construct {
@@ -25,6 +23,12 @@ export class Swarm extends cdk.Construct {
             vpc: swarmProps.vpc,
             allowAllOutbound: false
         });
+        // allow the bastion machine to make outbound connections to
+        // the Internet for these services:
+        //   TCP 443 -- AWS SSM Agent (for handshake)
+        //   TCP 80 -- yum package manager and wget (install docker-machine)
+        swarmSecurityGroup.connections.allowToAnyIpv4(ec2.Port.tcp(443));
+        swarmSecurityGroup.connections.allowToAnyIpv4(ec2.Port.tcp(80));
 
         // allow hosts in the swarm security group to communicate
         // internally on the following ports:
@@ -47,22 +51,11 @@ export class Swarm extends cdk.Construct {
             (port, _) => swarmSecurityGroup.connections.allowInternally(port)
         );
 
-        // allow only the bastion security group to talk to the swarm
-        // security group on port 22 (SSH)
-        swarmSecurityGroup.connections.allowFrom(
-            swarmProps.bastionSecurityGroup,
-            ec2.Port.tcp(22)
-        );
-        swarmProps.bastionSecurityGroup.connections.allowTo(
-            swarmSecurityGroup,
-            ec2.Port.tcp(22)
-        );
-
-        new ec2.Instance(scope, id + '-jump-point', {
+        new ec2.BastionHostLinux(this, 'bastion', {
             vpc: swarmProps.vpc,
+            securityGroup: swarmSecurityGroup,
             instanceType: new ec2.InstanceType("t3.nano"),
-            machineImage: new ec2.AmazonLinuxImage(),
-            securityGroup: swarmSecurityGroup
+            instanceName: "SwarmBastion"
         });
     }
 }

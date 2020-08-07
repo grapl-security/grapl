@@ -393,18 +393,13 @@ class EngagementCreator extends cdk.NestedStack {
     }
 }
 
-export interface DGraphSwarmClusterProps extends GraplServiceProps {
-    bastionSecurityGroup: ec2.ISecurityGroup;
-}
-
 export class DGraphSwarmCluster extends cdk.NestedStack {
-    constructor(parent: cdk.Construct, id: string, props: DGraphSwarmClusterProps) {
+    constructor(parent: cdk.Construct, id: string, props: GraplServiceProps) {
         super(parent, id);
 
         new Swarm(this, props.prefix + "-DGraphSwarmCluster", {
             vpc: props.vpc,
-            servicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080)],
-            bastionSecurityGroup: props.bastionSecurityGroup
+            servicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080)]
         });
     }
 }
@@ -705,26 +700,6 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        const bastionSecurityGroup = new ec2.SecurityGroup(
-            this,
-            "BastionSecurityGroup",
-            {
-                vpc: graplProps.vpc,
-                allowAllOutbound: false
-            }
-        );
-
-        const bastion = new ec2.BastionHostLinux(this, 'bastion', {
-            vpc: graplProps.vpc,
-            securityGroup: bastionSecurityGroup,
-            instanceType: new ec2.InstanceType("t3.nano"),
-        });
-        bastion.role.addManagedPolicy(
-            iam.ManagedPolicy.fromAwsManagedPolicyName(
-                "AmazonSSMManagedInstanceCore"
-            )
-        )
-
         const engagement_creator = new EngagementCreator(
             this,
             'engagement-creator',
@@ -734,10 +709,7 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        new DGraphSwarmCluster(this, 'dgraph-swarm-cluster', {
-            bastionSecurityGroup,
-            ...graplProps
-        });
+        new DGraphSwarmCluster(this, 'dgraph-swarm-cluster', graplProps);
 
         new DGraphTtl(this, 'dgraph-ttl', graplProps);
 
