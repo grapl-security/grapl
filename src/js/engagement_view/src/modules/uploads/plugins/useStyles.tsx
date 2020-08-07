@@ -16,6 +16,10 @@ export const useStyles = makeStyles(
                 padding: "0.25rem",
                 borderRadius: "6px",
             },
+            loggedIn: {
+                display:"flex", 
+                justifyContent: "flex-end",
+            }, 
             inputFiles: {
                 border: "none",
                 width: "35vw",

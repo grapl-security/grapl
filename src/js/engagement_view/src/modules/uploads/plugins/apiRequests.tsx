@@ -12,11 +12,15 @@ export const getPluginList = async () => {
         }
     );
 
-    const body = await res.json();
+    const body = await res.json() as any;
 
-    let pluginList: string[] = body.success.plugin_list;
-
-    return pluginList
+    try { 
+        let pluginList: string[] = body.success.plugin_list;
+        return pluginList
+    } catch (e) {
+        console.warn(e);
+        return []
+    }
 }
 
 export const deletePlugin = async ( pluginName: string ): Promise <boolean> => {
