@@ -91,13 +91,13 @@ To provision DGraph:
      and click *Start session*. A new window will open in your browser
      with a terminal prompt on the bastion host.
   2. `sudo yum install docker`
-  3. ```base=https://github.com/docker/machine/releases/download/v0.16.0 &&
+  3. `base=https://github.com/docker/machine/releases/download/v0.16.0 &&
   curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
   sudo mv /tmp/docker-machine /usr/local/bin/docker-machine &&
-  chmod +x /usr/local/bin/docker-machine```
-  4. ```ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/)```
-  5. ```RESPONSE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE)```
-  6. ```AWS_ACCESS_KEY_ID=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["AccessKeyId"]);')```
-  7. ```AWS_SECRET_ACCESS_KEY=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["SecretAccessKey"]);')```
-  8. ```AWS_SESSION_TOKEN=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["Token"]);')```
-  9. ```TBD```
+  chmod +x /usr/local/bin/docker-machine`
+  4. `ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/)`
+  5. `RESPONSE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE)`
+  6. `AWS_ACCESS_KEY_ID=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["AccessKeyId"]);')`
+  7. `AWS_SECRET_ACCESS_KEY=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["SecretAccessKey"]);')`
+  8. `AWS_SESSION_TOKEN=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["Token"]);')`
+  9. `TBD`
