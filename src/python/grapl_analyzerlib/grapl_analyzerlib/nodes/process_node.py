@@ -314,6 +314,7 @@ class ProcessView(Viewable):
         "created_connections", List[:doc:`/nodes/process_outbound_connection_node`], "Outbound connections created by this process."
         "inbound_connections", List[:doc:`/nodes/process_inbound_connection_node`], "Inbound connections created by this process."
     """
+
     def __init__(
         self,
         dgraph_client: DgraphClient,
