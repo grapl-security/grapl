@@ -10,4 +10,5 @@ wheel
 ### Requirements from projects (yes, really...)
 typing_extensions
 pydgraph
+boto3
 
