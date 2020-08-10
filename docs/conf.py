@@ -16,12 +16,12 @@ import sphinx_rtd_theme
 # Add grapl_analyzerlib
 import os
 import sys
+
 py_roots = [
     "../src/python/grapl_analyzerlib/",
 ]
 for py_root in py_roots:
     sys.path.insert(0, os.path.abspath(os.path.abspath(py_root)))
-
 
 
 autodoc_mock_imports = [
@@ -32,9 +32,9 @@ autodoc_mock_imports = [
 
 # -- Project information -----------------------------------------------------
 
-project = 'Grapl-Analyzerlib'
-copyright = '2020, Grapl Security'
-author = 'Grapl Security'
+project = "Grapl-Analyzerlib"
+copyright = "2020, Grapl Security"
+author = "Grapl Security"
 
 
 # -- General configuration ---------------------------------------------------
@@ -43,13 +43,13 @@ author = 'Grapl Security'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'recommonmark',
-    'sphinx_rtd_theme',
+    "sphinx.ext.autodoc",
+    "recommonmark",
+    "sphinx_rtd_theme",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -59,7 +59,7 @@ exclude_patterns = [
     "README.md",
 ]
 
-master_doc = 'index'
+master_doc = "index"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -67,25 +67,31 @@ master_doc = 'index'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 autodoc_default_options = {
     # Include members that don't have docstrings
-    'undoc-members': True,
+    "undoc-members": True,
 }
 
+
 def setup(app):
-    app.add_config_value('recommonmark_config', {
-        'enable_auto_toc_tree': True,
-        #'auto_toc_tree_section': 'Contents',
-        #'enable_math': False,
-        #'enable_inline_math': False,
-        'enable_eval_rst': True,
-    }, True)
+    app.add_config_value(
+        "recommonmark_config",
+        {
+            "enable_auto_toc_tree": True,
+            #'auto_toc_tree_section': 'Contents',
+            #'enable_math': False,
+            #'enable_inline_math': False,
+            "enable_eval_rst": True,
+        },
+        True,
+    )
     from recommonmark.transform import AutoStructify
+
     app.add_transform(AutoStructify)
