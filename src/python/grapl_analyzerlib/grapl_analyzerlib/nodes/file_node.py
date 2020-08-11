@@ -390,28 +390,88 @@ class FileQuery(Queryable["FileView"]):
 
 class FileView(Viewable):
     """
-    .. csv-table::
-        :header: "Predicate", "Type", "Description"
+    .. list-table::
+        :header-rows: 1
 
-        node_key, string, A unique identifier for this node.
-        asset_id, string, A unique identifier for an asset.
-        file_name, string, todo: description
-        file_path, string, todo: description
-        file_extension, string, todo: description
-        file_mime_type, string, todo: description
-        file_version, string, todo: description
-        file_description, string, todo: description
-        file_product, string, todo: description
-        file_company, string, todo: description
-        file_directory, string, todo: description
-        file_hard_links, string, todo: description
-        signed_status, string, todo: description
-        md4_hash, string, todo: description
-        sha0_hash, string, todo: description
-        sha255_hash, string, todo: description
-        file_size, int, todo: description
-        file_inode, int, todo: description
-        signed, bool, todo: description
+        * - Predicate
+          - Type
+          - Description
+
+        * - node_key
+          - string
+          - A unique identifier for this node.
+
+        * - asset_id
+          - string
+          - A unique identifier for an asset.
+
+        * - file_name
+          - string
+          - Bare name of the file, like "thing.txt".
+
+        * - file_path
+          - string
+          - Fully qualified path, like "/home/person/thing.txt".
+
+        * - file_extension
+          - string
+          - Extension of the file, like "txt".
+
+        * - file_mime_type
+          - string
+          - todo: description
+
+        * - file_version
+          - string
+          - todo: description
+
+        * - file_description
+          - string
+          - todo: description
+
+        * - file_product
+          - string
+          - todo: description
+
+        * - file_company
+          - string
+          - todo: description
+
+        * - file_directory
+          - string
+          - todo: description
+
+        * - file_hard_links
+          - string
+          - todo: description
+
+        * - signed_status
+          - string
+          - todo: description
+
+        * - md4_hash
+          - string
+          - todo: description
+
+        * - sha0_hash
+          - string
+          - todo: description
+
+        * - sha255_hash
+          - string
+          - todo: description
+
+        * - file_size
+          - int
+          - todo: description
+
+        * - file_inode
+          - int
+          - todo: description
+
+        * - signed
+          - bool
+          - todo: description
     """
 
     def __init__(

@@ -269,6 +269,27 @@ class LensQuery(Queryable["LensView"]):
 
 
 class LensView(Viewable):
+    """
+    .. list-table::
+        :header-rows: 1
+
+        * - Predicate
+          - Type
+          - Description
+
+        * - node_key
+          - string
+          - A unique identifier for this node.
+
+        * - lens
+          - string
+          - The name of the lens this node represents.
+
+        * - scope
+          - List[NodeView]
+          - todo: documentation
+
+    """
     def __init__(
         self,
         dgraph_client: DgraphClient,

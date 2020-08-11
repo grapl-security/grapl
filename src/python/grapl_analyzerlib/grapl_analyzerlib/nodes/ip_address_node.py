@@ -99,14 +99,32 @@ IIpAddressView = TypeVar("IIpAddressView", bound="IpAddressView")
 
 class IpAddressView(DynamicNodeView):
     """
-    .. csv-table::
-        :header: "Predicate", "Type", "Description"
+    .. list-table::
+        :header-rows: 1
 
-        "node_key", "string", "A unique identifier for this node."
-        "ip_address", "string", "The IP address that this node represents."
-        "first_seen_timestamp", "int", "Time address was first seen (in millis-since-epoch)."
-        "last_seen_timestamp", "int", "Time address was last seen (in millis-since-epoch)."
-        "ip_connections", "List[:doc:`/nodes/ip_connection`]", "Connections made from this address."
+        * - Predicate
+          - Type
+          - Description
+
+        * - node_key
+          - string
+          - A unique identifier for this node.
+
+        * - ip_address
+          - string
+          - The IP address that this node represents.
+
+        * - first_seen_timestamp
+          - int
+          - Time address was first seen (in millis-since-epoch).
+
+        * - last_seen_timestamp
+          - int
+          - Time address was last seen (in millis-since-epoch).
+
+        * - ip_connections
+          - List[:doc:`/nodes/ip_connection`]
+          - Connections made from this address.
     """
 
     def __init__(
