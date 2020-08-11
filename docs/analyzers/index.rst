@@ -1,5 +1,5 @@
 Analyzers
------
+---------
 
 .. toctree::
     :maxdepth: 1
