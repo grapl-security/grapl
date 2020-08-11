@@ -3,7 +3,14 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 
 export interface SwarmProps {
-    // The VPC where the Docker Swarm cluster will live
+
+    // The AWS Account ID where the Docker Swarm cluster will run
+    readonly accountId: string;
+
+    // The AWS Region where the Docker Swarm cluster will run
+    readonly region: string;
+
+    // The VPC where the Docker Swarm cluster will run
     readonly vpc: ec2.IVpc;
 
     // The service-specific (e.g. DGraph) ports to open internally
@@ -51,11 +58,90 @@ export class Swarm extends cdk.Construct {
             (port, _) => swarmSecurityGroup.connections.allowInternally(port)
         );
 
-        new ec2.BastionHostLinux(this, 'bastion', {
+        const bastion = new ec2.BastionHostLinux(this, 'bastion', {
             vpc: swarmProps.vpc,
             securityGroup: swarmSecurityGroup,
             instanceType: new ec2.InstanceType("t3.nano"),
             instanceName: "SwarmBastion"
         });
+
+        /* configure a bunch of AWS permissions to enable
+         * docker-machine to do things with instances.
+         *
+         * with this set of permissions, the docker-machine invocation
+         * requires the following parameters passed on the command
+         * line, else it won't work:
+         *
+         * --amazonec2-vpc-id <vpc_id>
+         * --amazonec2-security-group <security_group>
+         * --amazonec2-keypair-name <keypair_name>
+         * --amazonec2-ssh-keypath <ssh_keypath>
+         *
+         * this seems like it's a fairly locked-down configuration, yet
+         * flexible enough to allow interesting use-cases (e.g. spot
+         * instances).
+         *
+         * see this github issue comment for more info:
+         *
+         * https://github.com/docker/machine/issues/1655#issuecomment-409407523
+         *
+         * "DescribeSecurityGroups" -- required to check whether the
+         * --amazonec2-security-group actually exists
+         *
+         * "DescribeSubnets" -- required to find the subnet
+         *
+         * "DescribeKeyPairs" -- to validate whether the keypair
+         * actually exists
+         *
+         * these spot instance permissions apply if docker-machine is
+         * invoked with --amazonec2-request-spot-instance:
+         *
+         * "DescribeSpotInstances"
+         * "DescribeSpotInstanceRequests"
+         * "RequestSpotInstances"
+         * "CancelSpotInstanceRequests"
+         *
+         * "DescribeInstances" -- required to tell when an instance is
+         * ready, what its IP address is, etc
+         *
+         * "RunInstances" -- required to run an AWS instance if not
+         * --amazonec2-request-spot-instance
+         *
+         * "StartInstances" -- docker-machine start
+         *
+         * "StopInstances" -- docker-machine stop or docker-machine
+         * kill
+         *
+         * "RebootInstances" -- docker-machine restart
+         *
+         * "TerminateInstances" -- docker-machine rm
+         *
+         * "CreateTags" -- required to set the Name tag and anything
+         * that's passed via --amazonec2-tags
+         */
+        const statement = new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeKeyPairs",
+                "ec2:DescribeSpotInstances",
+                "ec2:DescribeSpotInstanceRequests",
+                "ec2:RequestSpotInstances",
+                "ec2:CancelSpotInstanceRequests",
+                "ec2:DescribeInstances",
+                "ec2:RunInstances",
+                "ec2:StartInstances",
+                "ec2:StopInstances",
+                "ec2:RebootInstances",
+                "ec2:TerminateInstances",
+                "ec2:CreateTags"
+            ],
+            resources: [
+                `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:instance/*`
+            ]
+        });
+
+        bastion.role.addToPrincipalPolicy(statement);
     }
 }
