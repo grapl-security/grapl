@@ -1,21 +1,35 @@
-Welcome to Grapl-Analyzerlib's documentation!
-=============================================
+.. _Github: https://github.com/grapl-security/grapl
 
-grapl_analyzerlib provides a Python interface for interacting with the
-data in Grapl.
+Grapl
+=====
 
-Grapl's documentation is still a work in progress.
+Grapl is a Graph Platform for Detection and Response with a focus on helping
+Detection Engineers and Incident Responders stop fighting their data and start
+connecting it. Find out more on our `Github`_.
+
+For now, our documentation primarily focuses on `grapl_analyzerlib`.
+`grapl_analyzerlib` provides a Python interface for end-users to interact
+with the data in Grapl.
+
+.. note::
+    Grapl's documentation is still a work in progress.
 
 .. Defines the table of contents (toc) - mostly pointing at subdirectories.
 .. toctree::
-    :maxdepth: 2
-    :caption: Grapl Documentation
+    :caption: Documentation
+    :maxdepth: 1
 
-    nodes/index
     queryable
     analyzers/index
     setup/index
     plugins/index
+
+.. toctree::
+    :caption: Nodes
+    :maxdepth: 1
+    :glob:
+
+    nodes/*
 
 Queries and Views
 -----------------
