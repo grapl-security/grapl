@@ -129,7 +129,7 @@ export class EngagementEdge extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
-                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
+                MG_ALPHAS: props.dgraphAlphaHostPort,
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,

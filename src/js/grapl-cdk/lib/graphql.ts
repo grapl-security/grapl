@@ -28,7 +28,7 @@ export class GraphQLEndpoint extends cdk.Construct {
             ),
             vpc: props.vpc,
             environment: {
-                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
+                MG_ALPHAS: props.dgraphAlphaHostPort,
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 BUCKET_PREFIX: props.prefix,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,

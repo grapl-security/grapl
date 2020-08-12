@@ -9,10 +9,10 @@ import * as lambda from '@aws-cdk/aws-lambda';
 import * as iam from '@aws-cdk/aws-iam';
 import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
+import * as route53 from '@aws-cdk/aws-route53';
 
 import { Service } from './service';
 import { UserAuthDb } from './userauthdb';
-import { DGraphEcs } from './dgraph';
 import { HistoryDb } from './historydb';
 import { EventEmitter } from './event_emitters';
 import { RedisCluster } from './redis';
@@ -183,7 +183,7 @@ class GraphMerger extends cdk.NestedStack {
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
-                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
+                MG_ALPHAS: props.dgraphAlphaHostPort,
                 MERGED_CACHE_ADDR:
                     graph_merge_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT:
@@ -294,7 +294,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
             environment: {
                 ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
                 BUCKET_PREFIX: bucket_prefix,
-                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
+                MG_ALPHAS: props.dgraphAlphaHostPort,
                 COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
                 COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
                 MESSAGECACHE_ADDR:
@@ -368,7 +368,7 @@ class EngagementCreator extends cdk.NestedStack {
         const service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
-                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
+                MG_ALPHAS: props.dgraphAlphaHostPort,
             },
             vpc: props.vpc,
             reads_from: analyzer_matched_sugraphs.bucket,
@@ -393,9 +393,27 @@ class EngagementCreator extends cdk.NestedStack {
     }
 }
 
+interface DGraphSwarmClusterProps {
+    prefix: string;
+    vpc: ec2.IVpc;
+}
+
 export class DGraphSwarmCluster extends cdk.NestedStack {
-    constructor(parent: cdk.Construct, id: string, props: GraplServiceProps) {
+    private readonly dgraphAlphaZone: route53.PrivateHostedZone;
+
+    constructor(
+        parent: cdk.Construct, id: string, props: DGraphSwarmClusterProps
+    ) {
         super(parent, id);
+
+        this.dgraphAlphaZone = new route53.PrivateHostedZone(
+            this,
+            id + "-DGraphSwarmZone",
+            {
+                vpc: props.vpc,
+                zoneName: "alpha.dgraph.graplsecurity.com"
+            }
+        );
 
         new Swarm(this, props.prefix + "-DGraphSwarmCluster", {
             vpc: props.vpc,
@@ -403,6 +421,10 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             accountId: cdk.Aws.ACCOUNT_ID.replace(/-/g, ""),
             region: cdk.Aws.REGION
         });
+    }
+
+    public alphaFQDN(): string {
+        return this.dgraphAlphaZone.zoneName;
     }
 }
 
@@ -435,7 +457,7 @@ class DGraphTtl extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
-                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
+                MG_ALPHAS: props.dgraphAlphaHostPort,
                 GRAPL_DGRAPH_TTL_S: '2678400', // 60 * 60 * 24 * 31 == 1 month
                 GRAPL_LOG_LEVEL: 'INFO',
                 GRAPL_TTL_DELETE_BATCH_SIZE: '1000',
@@ -508,7 +530,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
-                MG_ALPHAS: props.masterGraph.alphaHostPorts().join(','),
+                MG_ALPHAS: props.dgraphAlphaHostPort,
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 BUCKET_PREFIX: props.prefix,
@@ -615,7 +637,7 @@ export interface GraplServiceProps {
     version: string;
     jwtSecret: secretsmanager.Secret;
     vpc: ec2.IVpc;
-    masterGraph: DGraphEcs;
+    dgraphAlphaHostPort: string;
     userAuthTable: UserAuthDb;
     watchful?: Watchful;
 }
@@ -623,9 +645,6 @@ export interface GraplServiceProps {
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
     version?: string;
-    graphAlphaCount?: number;
-    graphAlphaPort?: number;
-    graphZeroCount?: number;
     watchfulEmail?: string;
 }
 
@@ -657,14 +676,6 @@ export class GraplCdkStack extends cdk.Stack {
             table_name: this.prefix.toLowerCase() + '-user_auth_table',
         });
 
-        const master_graph = new DGraphEcs(this, 'master-graph', {
-            prefix: this.prefix,
-            vpc: grapl_vpc,
-            alphaCount: props.graphZeroCount || 1,
-            alphaPort: props.graphAlphaPort || 9080,
-            zeroCount: props.graphAlphaCount || 1,
-        });
-
         let watchful = undefined;
         if (props.watchfulEmail) {
             const alarmSqs = new sqs.Queue(this, 'alarmSqs');
@@ -677,12 +688,19 @@ export class GraplCdkStack extends cdk.Stack {
             });
         }
 
+        const dgraphSwarmCluster = new DGraphSwarmCluster(
+            this, 'dgraph-swarm-cluster', {
+                prefix: this.prefix,
+                vpc: grapl_vpc
+            }
+        );
+
         const graplProps = {
             prefix: this.prefix,
             version: props.version || 'latest',
             jwtSecret: jwtSecret,
             vpc: grapl_vpc,
-            masterGraph: master_graph,
+            dgraphAlphaHostPort: `${dgraphSwarmCluster.alphaFQDN()}:9080`,
             userAuthTable: user_auth_table,
             watchful: watchful,
         };
@@ -710,8 +728,6 @@ export class GraplCdkStack extends cdk.Stack {
                 ...graplProps,
             }
         );
-
-        new DGraphSwarmCluster(this, 'dgraph-swarm-cluster', graplProps);
 
         new DGraphTtl(this, 'dgraph-ttl', graplProps);
 
