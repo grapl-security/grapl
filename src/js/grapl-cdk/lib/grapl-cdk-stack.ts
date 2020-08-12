@@ -400,7 +400,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         new Swarm(this, props.prefix + "-DGraphSwarmCluster", {
             vpc: props.vpc,
             servicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080)],
-            accountId: cdk.Aws.ACCOUNT_ID,
+            accountId: cdk.Aws.ACCOUNT_ID.replace(/-/g, ""),
             region: cdk.Aws.REGION
         });
     }

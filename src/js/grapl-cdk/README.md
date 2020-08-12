@@ -90,10 +90,12 @@ To provision DGraph:
      console](https://us-east-1.console.aws.amazon.com/systems-manager/session-manager)
      and click *Start session*. A new window will open in your browser
      with a terminal prompt on the bastion host.
-  2. `sudo yum install docker`
-  3. Execute the following commands:
+  2. Execute the following commands:
 
 ``` bash
+# install docker
+sudo yum install -y docker
+
 # install docker-machine
 base=https://github.com/docker/machine/releases/download/v0.16.0 &&
 curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
@@ -107,6 +109,29 @@ AWS_ACCESS_KEY_ID=$(echo $RESPONSE | python -c 'import json; import sys; print(j
 AWS_SECRET_ACCESS_KEY=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["SecretAccessKey"]);')
 AWS_SESSION_TOKEN=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["Token"]);')
 
+# extract AWS region into environment variable
+AWS_DEFAULT_REGION=$(curl http://169.254.169.254/latest/meta-data/placement/region)
+
+# create a key pair
+aws --region $AWS_DEFAULT_REGION ec2 create-key-pair --key-name docker-machine-key --query 'KeyMaterial' --output text > $HOME/docker-machine-key.pem
+chmod 400 $HOME/docker-machine-key.pem
+ssh-keygen -y -f $HOME/docker-machine-key.pem > $HOME/docker-machine-key.pem.pub
+
+# extract security group and VPC ID into environment variables
+MAC=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs)
+SWARM_SECURITY_GROUP=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/security-groups)
+SWARM_VPC_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/vpc-id)
+SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/subnet-id)
+
 # spin up ec2 resources with docker-machine
+# see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
+docker-machine create --driver "amazonec2" --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key-pair" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t2.medium" aws01
 
 ```
+
+## Operating DGraph
+
+Now that we have DGraph provisioned, it's important to be aware of
+some operational details.
+
+TBD

@@ -4,7 +4,8 @@ import * as iam from '@aws-cdk/aws-iam';
 
 export interface SwarmProps {
 
-    // The AWS Account ID where the Docker Swarm cluster will run
+    // The AWS Account ID where the Docker Swarm cluster will
+    // run. NOTE: the Account ID must not contain any hyphens.
     readonly accountId: string;
 
     // The AWS Region where the Docker Swarm cluster will run
@@ -58,7 +59,7 @@ export class Swarm extends cdk.Construct {
             (port, _) => swarmSecurityGroup.connections.allowInternally(port)
         );
 
-        const bastion = new ec2.BastionHostLinux(this, 'bastion', {
+        const bastion = new ec2.BastionHostLinux(this, id + 'bastion', {
             vpc: swarmProps.vpc,
             securityGroup: swarmSecurityGroup,
             instanceType: new ec2.InstanceType("t3.nano"),
@@ -88,10 +89,14 @@ export class Swarm extends cdk.Construct {
          * "DescribeSecurityGroups" -- required to check whether the
          * --amazonec2-security-group actually exists
          *
+         * "CreateSecurityGroup" -- not sure why this is required
+         *
          * "DescribeSubnets" -- required to find the subnet
          *
          * "DescribeKeyPairs" -- to validate whether the keypair
          * actually exists
+         *
+         * "CreateKeyPair" -- not sure why this is required
          *
          * these spot instance permissions apply if docker-machine is
          * invoked with --amazonec2-request-spot-instance:
@@ -123,8 +128,10 @@ export class Swarm extends cdk.Construct {
             effect: iam.Effect.ALLOW,
             actions: [
                 "ec2:DescribeSecurityGroups",
+                "ec2:CreateSecurityGroup",
                 "ec2:DescribeSubnets",
                 "ec2:DescribeKeyPairs",
+                "ec2:CreateKeyPair",
                 "ec2:DescribeSpotInstances",
                 "ec2:DescribeSpotInstanceRequests",
                 "ec2:RequestSpotInstances",
@@ -137,9 +144,13 @@ export class Swarm extends cdk.Construct {
                 "ec2:TerminateInstances",
                 "ec2:CreateTags"
             ],
-            resources: [
-                `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:instance/*`
-            ]
+            resources: ["*"]
+            // resources: [
+            //     `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:instance/*`,
+            //     `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:key-pair/*`,
+            //     `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:security-group/*`,
+            //     `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:subnet/*`
+            // ]
         });
 
         bastion.role.addToPrincipalPolicy(statement);
