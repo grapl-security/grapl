@@ -188,6 +188,7 @@ class IpConnectionView(DynamicNodeView):
           - int
           - Time connection was terminated (in millis-since-epoch).
     """
+
     def __init__(
         self,
         dgraph_client: DgraphClient,

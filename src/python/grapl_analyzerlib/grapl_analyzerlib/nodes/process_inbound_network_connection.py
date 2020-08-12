@@ -197,6 +197,7 @@ class ProcessInboundConnectionView(DynamicNodeView):
           - todo: documentation
 
     """
+
     def __init__(
         self,
         dgraph_client: DgraphClient,
