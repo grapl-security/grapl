@@ -3,7 +3,7 @@ from typing import Optional, Any
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.queryable import Queryable, generate_query
+from grapl_analyzerlib.queryable import Queryable, generate_query
 from grapl_analyzerlib.prelude import ProcessQuery
 
 

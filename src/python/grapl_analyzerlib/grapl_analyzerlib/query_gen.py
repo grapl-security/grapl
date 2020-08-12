@@ -1,0 +1,518 @@
+from copy import deepcopy
+
+from typing import Any, Dict, Set, Optional, Iterator, Tuple, List
+
+
+class VarAllocator(object):
+    def __init__(self, prefix: Optional[str] = None):
+        self.prefix = prefix
+        self.next_alloc: str = "$" + (prefix or "") + "a"
+        self.allocated: Dict[str, str] = dict()
+        self.typemap: Dict[str, str] = dict()
+
+    def alloc(self, cmp: "Cmp") -> str:
+        if isinstance(cmp, Has):
+            raise NotImplementedError
+            return ""
+        else:
+            var: str = self.allocated.get(str(extract_value(cmp.value)), "")
+            if not var:
+                var = self.next_alloc
+                self.allocated[str(extract_value(cmp.value))] = var
+                self.incr_var()
+
+            self.typemap[var] = dgraph_prop_type(cmp)
+
+            return var
+
+    def incr_var(self):
+        if self.next_alloc[-1] == "z":
+            self.next_alloc = self.next_alloc + "a"
+        else:
+            self.next_alloc = self.next_alloc[:-1] + chr(ord(self.next_alloc[-1]) + 1)
+
+    def reset(self):
+        self.next_alloc = "$" + (self.prefix or "") + "a"
+        self.allocated.clear()
+
+
+def gen_prop_filters(q: "Queryable", var_alloc: VarAllocator) -> Optional[str]:
+    prop_filter_str = ""
+    prop_filters = []
+    for (prop_name, or_filter) in q.property_filters():
+        or_filters = []
+
+        for and_filter in or_filter:
+            andeds = []
+            for f in and_filter:
+                f = deepcopy(f)
+                if isinstance(f, Has):
+                    continue  # We don't need a filter for Has, @cascade will sort that out for us
+                else:
+                    f.value = var_alloc.alloc(f)
+                    serialized = f.to_filter()
+                andeds.append(serialized)
+            if not andeds:
+                continue
+
+            if len(andeds) == 1:
+                anded = " AND ".join(andeds)
+            else:
+                anded = "(" + " AND ".join(andeds) + ")"
+            or_filters.append(anded)
+        if not or_filters:
+            continue
+        if len(or_filters) == 1:
+            orded = " OR ".join(or_filters)
+        else:
+            orded = "(" + " OR ".join(or_filters) + ")"
+        prop_filters.append(orded)
+
+    if not prop_filters:
+        return None
+
+    prop_filter_str += " AND ".join(prop_filters)
+
+    return prop_filter_str
+
+
+def find_func(q: "Queryable") -> str:
+    """
+    `find_func` will look for the most optimal filter.
+
+    * Singular EQ on a unique value
+    * Multiple AND'd EQ on a unique value
+    * Singular eq on a non-unique value
+    * <todo, more optimized funcs>
+    * Node type
+
+    :param q:
+    :return:
+    """
+    multiple_and_u = None
+    singular_eq_nu = None
+
+    for (prop_name, or_filter) in q.property_filters():
+        for and_filter in or_filter:
+            if len(and_filter) == 1 and (
+                isinstance(and_filter[0], Eq) or isinstance(and_filter[0], IntEq)
+            ):
+                if prop_name == "node_key":
+                    return and_filter[0].to_filter()
+                if prop_name == "uid":
+                    return and_filter[0].to_filter()
+
+                singular_eq_nu = and_filter[0].to_filter()
+
+    return multiple_and_u or singular_eq_nu or f"type({q.node_schema().self_type()})"
+
+
+def zip_graph(q: "Queryable", into: "Queryable", visited=None):
+    if not visited:
+        visited = set()
+
+    if q._id in visited:
+        return
+
+    visited.add(q._id)
+
+    for prop_name, prop_filter in q.property_filters():
+        into.set_property_filters(prop_name, prop_filter)
+
+    # Create a neighbor that represents the combined structure of all neighbors for a given edge name
+    for edge_name, neighbor_filters in q.neighbor_filters():
+        if not neighbor_filters:
+            continue
+        _merged_neighbor = neighbor_filters[0]
+        if isinstance(_merged_neighbor, tuple) or isinstance(_merged_neighbor, list):
+            merged_neighbor = type(_merged_neighbor[0])()
+        else:
+            merged_neighbor = type(_merged_neighbor)()
+
+        for neighbor_filter in neighbor_filters:
+            if isinstance(neighbor_filter, tuple) or isinstance(neighbor_filter, list):
+                if not neighbor_filter:
+                    continue
+                for inner_neighbor_filter in neighbor_filter:
+                    for (
+                        prop_name,
+                        prop_filter,
+                    ) in inner_neighbor_filter.property_filters():
+                        merged_neighbor.set_property_filters(prop_name, prop_filter)
+            else:
+                for prop_name, prop_filter in neighbor_filter.property_filters():
+                    merged_neighbor.set_property_filters(prop_name, prop_filter)
+
+        zip_graph(merged_neighbor, into, visited)
+        into.set_neighbor_filters(edge_name, [merged_neighbor])
+
+        # into.set_neighbor_filters(edge_name, [merged_neighbor])
+
+
+def into_query_block(
+    q: "Queryable",
+    var_alloc: VarAllocator,
+    visited=None,
+    depth=None,
+    should_filter=True,
+    should_alias=True,
+    binding: Optional[str] = None,
+    root_node: Optional["Queryable"] = None,
+) -> Tuple[str, str]:
+    """
+    Returns the property block and the filters
+    :param q:
+    :param var_alloc:
+    :return:
+    """
+    if not visited:
+        visited = set()
+
+    if q._id in visited:
+        return ("", "")
+
+    visited.add(q._id)
+
+    if not depth:
+        depth = 0
+
+    depth += 1
+
+    # Generate the filter block
+    if should_filter:
+        filter = gen_prop_filters(q, var_alloc) or ""
+    else:
+        filter = ""
+
+    # Grab the properties
+    always = {"uid", "dgraph.type", "node_key"}
+
+    tabs = "\t" * 3 + "\t" * depth
+    properties = f"\n{tabs}".join(
+        [prop[0] for prop in q.property_filters() if prop[1] or prop[0] in always]
+    )
+    # Generate the edges (by calling into_query_block on them)
+
+    neighbors = ""
+    for edge_name, neighbor_filters in q.neighbor_filters():
+        for neighbor_filter in neighbor_filters:
+            if isinstance(neighbor_filter, tuple) or isinstance(neighbor_filter, list):
+                # Generate AND query for neighbor
+                for i, inner_neighbor_filter in enumerate(neighbor_filter):
+                    (neighbor_filter_str, neighbor_properties) = into_query_block(
+                        inner_neighbor_filter,
+                        var_alloc,
+                        visited,
+                        depth,
+                        should_filter,
+                        should_alias,
+                        binding,
+                        root_node,
+                    )
+                    if not neighbor_properties:
+                        continue
+
+                    filter_str = ""
+                    if should_filter and neighbor_filter_str:
+                        filter_str = f"@filter({neighbor_filter_str})"
+
+                    alias = ""
+                    if should_alias:
+                        alias = f"{edge_name}_{depth}_{i} : "
+
+                    formatted_var_name = ""
+                    if binding and root_node:
+                        if inner_neighbor_filter._id == root_node._id:
+                            formatted_var_name = f"{binding} as "
+                    neighbors += f"""
+
+                {formatted_var_name}  {alias} {edge_name} {filter_str} {{
+                    {neighbor_properties}
+                }}
+                    """
+            else:
+                # Generate OR logic for query
+                (neighbor_filter_str, neighbor_properties) = into_query_block(
+                    neighbor_filter,
+                    var_alloc,
+                    visited,
+                    depth,
+                    should_filter,
+                    should_alias,
+                    binding,
+                    root_node,
+                )
+                if not neighbor_properties:
+                    continue
+
+                filter_str = ""
+                if should_filter and neighbor_filter_str:
+                    filter_str = f"@filter({neighbor_filter_str})"
+
+                formatted_var_name = ""
+                if binding and root_node:
+                    if neighbor_filter._id == root_node._id:
+                        formatted_var_name = f"{binding} as "
+                neighbors += f"""
+
+                {formatted_var_name} {edge_name} {filter_str} {{
+                    {neighbor_properties}
+                }}
+                """
+
+    properties += neighbors
+
+    return (filter, properties)
+
+
+def into_vars_list(vars_alloc: VarAllocator) -> str:
+    return ", ".join([f"{vn}: {vt}" for vn, vt in vars_alloc.typemap.items()])
+
+
+def into_var_query(
+    q: "Queryable",
+    var_name: str,
+    vars_alloc: VarAllocator,
+    func: Optional[str] = None,
+    first: Optional[int] = None,
+    binding: Optional[str] = None,
+    root_node: Optional["Queryable"] = None,
+    cascade: Optional[bool] = None,
+) -> Tuple[str, str]:
+    func = func or find_func(q)
+    filters, block = into_query_block(
+        q, vars_alloc, binding=binding, root_node=root_node
+    )
+
+    f_first = ""
+    if first:
+        f_first = f", first: {first}"
+
+    cascade_str = ""
+    if cascade:
+        cascade_str = "@cascade"
+    formatted_var_name = ""
+    if var_name:
+        formatted_var_name = f"{var_name} as "
+
+    filter_str = ""
+    if filters:
+        filter_str = f"@filter({filters})"
+    query = f"""           {formatted_var_name} var(func: {func} {f_first})
+            {filter_str}
+            {cascade_str}
+            {{
+                {block}
+            }}
+    """
+
+    return query, block
+
+
+def gen_coalescing_query(
+    q: "Queryable", var_alloc: VarAllocator, query_name: str, bindings: List[str]
+) -> Tuple[str, str]:
+
+    __merged_filters, merged_query_block = into_query_block(
+        q, var_alloc, should_filter=True, should_alias=False,
+    )
+
+    cs_bindings = ", ".join(bindings)
+
+    coalescing_query_name = f"{query_name}Coalesce"
+
+    coalescing_query = f"""
+        {coalescing_query_name} as var(func: uid({cs_bindings}))
+        @cascade
+        {{
+            {merged_query_block}
+        }}
+      """
+
+    return coalescing_query_name, coalescing_query
+
+
+def gen_query_parameterized(
+    q: "Queryable", query_name: str, contains_node_key: str, depth: int
+) -> Tuple[VarAllocator, str]:
+    vars_alloc = VarAllocator()
+
+    bindings = []
+    var_queries = []
+
+    node_key_var = vars_alloc.alloc(Eq("node_key", contains_node_key))
+    for i, node in enumerate(traverse_query_iter(q)):
+        func = f"eq(node_key, {node_key_var}), first: 1"
+        binding = f"Binding{depth}_{i}"
+        bindings.append(binding)
+        var_name = ""
+
+        if node._id == q._id:
+            var_name = binding
+
+        var_query, var_block = into_var_query(
+            node, var_name, vars_alloc, func=func, binding=binding, root_node=q,
+        )
+
+        var_queries.append(var_query)
+
+    formatted_var_queries = "\n".join(var_queries)
+
+    merged = type(q)()
+    zip_graph(q, merged)
+    __merged_filters, merged_query_block = into_query_block(
+        merged, VarAllocator(), should_filter=False, should_alias=False,
+    )
+
+    vars_list = into_vars_list(vars_alloc)
+
+    coalescing_query_name, coalescing_query = gen_coalescing_query(
+        merged, vars_alloc, query_name, bindings
+    )
+
+    query = f"""
+        query {query_name}({vars_list}) {{
+            {formatted_var_queries}
+
+            {coalescing_query}
+
+            query(func: uid({coalescing_query_name}), first: 1) @cascade {{
+                {merged_query_block}
+            }}
+        }}
+    """
+
+    return vars_alloc, query
+
+
+def gen_query(
+    q: "Queryable", query_name: str, first: Optional[int] = None,
+) -> Tuple[VarAllocator, str]:
+    if not first:
+        first = 1
+
+    vars_alloc = VarAllocator()
+
+    func = find_func(q)
+    var_query, var_block = into_var_query(q, "q0", vars_alloc, func=func, cascade=True)
+    # merged_query = into_query_block_merged(q)
+
+    merged = type(q)()
+    zip_graph(q, merged)
+    __merged_filters, merged_query_block = into_query_block(
+        merged, VarAllocator(), should_filter=False, should_alias=False,
+    )
+
+    vars_list = into_vars_list(vars_alloc)
+
+    f_first = ""
+    if first:
+        f_first = f", first: {first}"
+    query = f"""
+        query {query_name}({vars_list}) {{
+            {var_query}
+
+            query(func: uid(q0) {f_first}) @cascade {{
+                {merged_query_block}
+            }}
+        }}
+    """
+
+    return vars_alloc, query
+
+
+def traverse_query_iter(
+    root_q: "Queryable", visited: Optional[Set["Queryable"]] = None
+) -> Iterator["Queryable"]:
+    if visited is None:
+        visited = set()
+
+    if root_q in visited:
+        return
+    yield root_q
+
+    for edge_name, neighbor_filters in root_q.neighbor_filters():
+        if not neighbor_filters:
+            continue
+
+        visited.add(root_q)
+
+        for neighbor_filter in neighbor_filters:
+            if isinstance(neighbor_filter, tuple) or isinstance(neighbor_filter, list):
+                for n_filter in neighbor_filter:
+                    for nested in traverse_query_iter(n_filter, visited):
+                        yield nested
+            else:
+                for nested in traverse_query_iter(neighbor_filter, visited):
+                    yield nested
+
+
+def traverse_query_neighbors_iter(
+    root_q: "Queryable", visited: Optional[Set["Queryable"]] = None
+) -> Iterator[Tuple["Queryable", str, "EdgeFilter"]]:
+    if visited is None:
+        visited = set()
+
+    if root_q in visited:
+        return
+
+    for edge_name, neighbor_filters in root_q.neighbor_filters():
+        if not neighbor_filters:
+            continue
+        if root_q not in visited:
+            yield (root_q, edge_name, neighbor_filters)
+
+        visited.add(root_q)
+
+        for neighbor_filter in neighbor_filters:
+            if isinstance(neighbor_filter, tuple) or isinstance(neighbor_filter, list):
+                for n_filter in neighbor_filter:
+                    for nested in traverse_query_neighbors_iter(n_filter, visited):
+                        yield nested
+            else:
+                for nested in traverse_query_neighbors_iter(neighbor_filter, visited):
+                    yield nested
+
+
+from grapl_analyzerlib.queryable import Queryable, EdgeFilter
+from grapl_analyzerlib.comparators import (
+    Cmp,
+    Eq,
+    IntEq,
+    Has,
+    StrCmp,
+    IntCmp,
+    extract_value,
+    dgraph_prop_type,
+)
+
+
+def main():
+    from grapl_analyzerlib.nodes.process import ProcessQuery
+    from pydgraph import DgraphClient, DgraphClientStub
+
+    gclient = DgraphClient(DgraphClientStub("localhost:9080"))
+
+    p = (
+        ProcessQuery()
+        .with_process_name(eq="proc")
+        .with_process_name(contains=["proc", "bad"])
+        # Either it has two or more children, one or more named bar and one or more named baz
+        .with_children(
+            ProcessQuery().with_process_name(eq="bar"),
+            ProcessQuery()
+            .with_process_name(eq="foo")
+            .with_arguments(eq="arg0 arg1")
+            .with_children(ProcessQuery().with_process_name(eq="grandchild")),
+        )
+        # Punting on supporting OR logic for edges
+        # # Or it has at least one child with the name baz
+        # .with_children(ProcessQuery().with_process_name(eq="baz"))
+        .with_parent(ProcessQuery().with_process_name(eq="evil"))
+    )
+
+    p.query_first(gclient)
+
+
+if __name__ == "__main__":
+    main()

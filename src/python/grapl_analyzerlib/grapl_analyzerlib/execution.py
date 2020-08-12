@@ -6,12 +6,11 @@ class ExecutionHit(object):
     def __init__(
         self,
         analyzer_name: str,
-        node_view: "Accepts",
+        node_view: "EntityView",
         risk_score: int,
         lenses: Union[List[str], str],
     ) -> None:
-        node_view = cast(NodeView, NodeView.from_view(node_view))
-        self.root_node_key = node_view.node.node_key
+        self.root_node_key = node_view.node_key
 
         if isinstance(lenses, str):
             lenses = [lenses]
@@ -32,9 +31,4 @@ class ExecutionFailed(object):
     pass
 
 
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
-from grapl_analyzerlib.nodes.file_node import FileView
-from grapl_analyzerlib.nodes.process_node import ProcessView
-from grapl_analyzerlib.prelude import NodeView
-
-Accepts = Union[NodeView, ProcessView, FileView, DynamicNodeView]
+from grapl_analyzerlib.nodes.entity import EntityView
