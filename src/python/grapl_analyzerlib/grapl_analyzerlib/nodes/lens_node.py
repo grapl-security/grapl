@@ -290,6 +290,7 @@ class LensView(Viewable):
           - todo: documentation
 
     """
+
     def __init__(
         self,
         dgraph_client: DgraphClient,

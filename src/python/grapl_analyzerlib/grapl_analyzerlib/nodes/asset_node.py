@@ -103,6 +103,7 @@ class AssetView(Viewable):
           - List[:doc:`/nodes/process`]
           - Processes associated with this asset.
     """
+
     def __init__(
         self,
         dgraph_client: DgraphClient,
