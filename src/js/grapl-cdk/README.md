@@ -125,8 +125,39 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 
 # spin up ec2 resources with docker-machine
 # see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-docker-machine create --driver "amazonec2" --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key-pair" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t2.medium" aws01
+docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key-pair" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "i3.large" aws01
+docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key-pair" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "i3.large" aws02
+docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key-pair" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "i3.large" aws03
 
+#
+# refer to the DGraph docs for more details about the rest of the setup
+# procedure:
+#
+# https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
+#
+
+# create a Docker Swarm cluster
+AWS01_IP=$(docker-machine ip aws01)
+eval $(docker-machine env aws01 --shell sh)
+docker swarm init --advertise-addr $AWS01_IP
+
+# extract the join token
+WORKER_JOIN_TOKEN=$(docker swarm join-token worker -q)
+
+# make aws02 and aws03 join the swarm
+eval $(docker-machine env aws02 --shell sh)
+docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
+eval $(docker-machine env aws03 --shell sh)
+docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
+
+# start DGraph
+cd $HOME
+wget https://github.com/dgraph-io/dgraph/raw/master/contrib/config/docker/docker-compose-multi.yml
+eval $(docker-machine env aws01 --shell sh)
+docker stack deploy -c docker-compose-multi.yml dgraph
+
+# check that all the services are running
+docker service ls
 ```
 
 ## Operating DGraph
