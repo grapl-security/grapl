@@ -165,4 +165,10 @@ docker service ls
 Now that we have DGraph provisioned, it's important to be aware of
 some operational details.
 
-TBD
+First, *don't lose the key pair*. If, for example, your bastion host
+crashes and you somehow lost the key pair
+(e.g. `docker-machine-key-pair.pem` from the previous section) then
+`docker-machine` will no longer be able to connect to the DGraph
+cluster. This would be bad. To mitigate this risk, make sure you don't
+destroy the bastion's EBS volume. If the bastion crashes and you need
+to make a new one, be sure to use the previous bastion's EBS volume.
