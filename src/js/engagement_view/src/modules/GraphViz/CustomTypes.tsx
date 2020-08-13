@@ -198,7 +198,7 @@ export type ToggleLensTableState = {
     offset: number,
 }
 
-export type SideBarContentProps = {
+export type EngagementViewContentProps = {
     setLens: (lens: string) => void, 
     curNode: Node | null
 }

@@ -7,7 +7,7 @@ import * as ecs from "@aws-cdk/aws-ecs";
 import {DGraphEcs} from "./dgraph";
 import * as iam from "@aws-cdk/aws-iam";
 
-class AnalyzerDeployer extends cdk.NestedStack {
+export class AnalyzerDeployer extends cdk.NestedStack {
     event_handler: lambda.Function;
     name: string;
 

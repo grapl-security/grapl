@@ -10,6 +10,7 @@ const graplVersion = 'latest';
 const watchfulEmail = undefined;
 
 const app = new cdk.App();
+
 const grapl = new GraplCdkStack(app, 'Grapl', {
     version: graplVersion,
     stackName: deployName,

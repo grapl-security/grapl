@@ -73,7 +73,7 @@ ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 
-LOGGER.debug("Origin: ", ORIGIN)
+LOGGER.debug("Origin: %s", ORIGIN)
 app = Chalice(app_name="model-plugin-deployer")
 
 
@@ -323,10 +323,9 @@ def requires_auth(path):
             if app.current_request.method == "OPTIONS":
                 return respond(None, {})
 
-            if not IS_LOCAL:  # For now, disable authentication locally
-                if not check_jwt(app.current_request.headers):
-                    LOGGER.warning("not logged in")
-                    return respond("Must log in")
+            if not check_jwt(app.current_request.headers):
+                LOGGER.warning("not logged in")
+                return respond("Must log in")
             try:
                 return route_fn()
             except Exception as e:

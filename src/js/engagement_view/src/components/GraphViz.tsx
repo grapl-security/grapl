@@ -211,7 +211,7 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
     useEffect(() => {
         // console.log("useEffect - setting forceRef state");
         forceRef.current.d3Force("link", d3.forceLink());
-        forceRef.current.d3Force('collide', d3.forceCollide(22));
+        forceRef.current.d3Force('collide', d3.forceCollide(22));   
         forceRef.current.d3Force("charge", d3.forceManyBody());
         forceRef.current.d3Force('box', () => {
             const N = 100;
