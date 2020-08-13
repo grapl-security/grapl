@@ -4,13 +4,6 @@ import * as iam from '@aws-cdk/aws-iam';
 
 export interface SwarmProps {
 
-    // The AWS Account ID where the Docker Swarm cluster will
-    // run. NOTE: the Account ID must not contain any hyphens.
-    readonly accountId: string;
-
-    // The AWS Region where the Docker Swarm cluster will run
-    readonly region: string;
-
     // The VPC where the Docker Swarm cluster will run
     readonly vpc: ec2.IVpc;
 
@@ -65,7 +58,7 @@ export class Swarm extends cdk.Construct {
         const bastion = new ec2.BastionHostLinux(this, id + 'bastion', {
             vpc: swarmProps.vpc,
             securityGroup: swarmSecurityGroup,
-            instanceType: new ec2.InstanceType("t3.nano"),
+            instanceType: new ec2.InstanceType("t3a.nano"),
             instanceName: "SwarmBastion"
         });
 
@@ -156,12 +149,6 @@ export class Swarm extends cdk.Construct {
                 "route53:ChangeResourceRecordSets"
             ],
             resources: ["*"]
-            // resources: [
-            //     `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:instance/*`,
-            //     `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:key-pair/*`,
-            //     `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:security-group/*`,
-            //     `arn:aws:ec2:${swarmProps.region}:${swarmProps.accountId}:subnet/*`
-            // ]
         });
 
         bastion.role.addToPrincipalPolicy(statement);
