@@ -156,6 +156,14 @@ wget https://github.com/dgraph-io/dgraph/raw/master/contrib/config/docker/docker
 eval $(docker-machine env aws01 --shell sh)
 docker stack deploy -c docker-compose-multi.yml dgraph
 
+# add A records to route53 to make the alpha nodes discoverable
+AWS02_IP=$(docker-machine ip aws02)
+AWS03_IP=$(docker-machine ip aws03)
+HOSTED_ZONES_RESPONSE=$(aws route53 list-hosted-zones-by-name --dns-name "alpha.dgraph.graplsecurity.com")
+HOSTED_ZONE_ID=$(echo $HOSTED_ZONES_RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["HostedZones"][0]["Id"]);')
+echo {\"Changes\": [{\"Action\": \"UPSERT\", \"ResourceRecordSet\": {\"Name\": \"alpha.dgraph.graplsecurity.com\", \"Type\": \"A\", \"TTL\": 300, \"ResourceRecords\": [{\"Value\": \"$AWS01_IP\"}, {\"Value\": \"$AWS02_IP\"}, {\"Value\": \"$AWS03_IP\"}]}}]} > $HOME/batch.json
+aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch file://$HOME/batch.json
+
 # check that all the services are running
 docker service ls
 ```

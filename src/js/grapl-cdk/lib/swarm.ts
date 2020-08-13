@@ -123,6 +123,12 @@ export class Swarm extends cdk.Construct {
          *
          * "CreateTags" -- required to set the Name tag and anything
          * that's passed via --amazonec2-tags
+         *
+         * "route53:ListHostedZonesByName" -- required to find the
+         * hosted zone ID
+         *
+         * "route53:ChangeResourceRecordSets" -- required to add A
+         * records to make DGraph discoverable.
          */
         const statement = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
@@ -142,7 +148,9 @@ export class Swarm extends cdk.Construct {
                 "ec2:StopInstances",
                 "ec2:RebootInstances",
                 "ec2:TerminateInstances",
-                "ec2:CreateTags"
+                "ec2:CreateTags",
+                "route53:ListHostedZonesByName",
+                "route53:ChangeResourceRecordSets"
             ],
             resources: ["*"]
             // resources: [
