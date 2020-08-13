@@ -28,7 +28,7 @@ export class GraphQLEndpoint extends cdk.Construct {
             ),
             vpc: props.vpc,
             environment: {
-                MG_ALPHAS: props.dgraphAlphaHostPort,
+                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 BUCKET_PREFIX: props.prefix,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
@@ -38,6 +38,8 @@ export class GraphQLEndpoint extends cdk.Construct {
             description: props.version,
         });
         event_handler.currentVersion.addAlias('live');
+
+        props.dgraphSwarmCluster.allowConnectionsFrom(event_handler);
 
         if (props.watchful) {
             props.watchful.watchLambdaFunction(

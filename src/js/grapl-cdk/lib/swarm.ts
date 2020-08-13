@@ -16,10 +16,12 @@ export interface SwarmProps {
 
     // The service-specific (e.g. DGraph) ports to open internally
     // within the Docker Swarm cluster.
-    readonly servicePorts: ec2.Port[];
+    readonly internalServicePorts: ec2.Port[];
 }
 
 export class Swarm extends cdk.Construct {
+    private readonly swarmSecurityGroup: ec2.ISecurityGroup;
+
     constructor(
         scope: cdk.Construct,
         id: string,
@@ -54,10 +56,11 @@ export class Swarm extends cdk.Construct {
 
         // allow hosts in the swarm security group to communicate
         // internally on the given service ports.
-        const servicePorts = swarmProps.servicePorts;
-        servicePorts.forEach(
+        swarmProps.internalServicePorts.forEach(
             (port, _) => swarmSecurityGroup.connections.allowInternally(port)
         );
+
+        this.swarmSecurityGroup = swarmSecurityGroup;
 
         const bastion = new ec2.BastionHostLinux(this, id + 'bastion', {
             vpc: swarmProps.vpc,
@@ -162,5 +165,11 @@ export class Swarm extends cdk.Construct {
         });
 
         bastion.role.addToPrincipalPolicy(statement);
+    }
+
+    public allowConnectionsFrom(
+        other: ec2.IConnectable, portRange: ec2.Port
+    ): void {
+        this.swarmSecurityGroup.connections.allowFrom(other, portRange);
     }
 }

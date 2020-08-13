@@ -129,7 +129,7 @@ export class EngagementEdge extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
-                MG_ALPHAS: props.dgraphAlphaHostPort,
+                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
@@ -140,6 +140,8 @@ export class EngagementEdge extends cdk.NestedStack {
             description: props.version,
         });
         this.event_handler.currentVersion.addAlias('live');
+
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.event_handler);
 
         if (props.watchful) {
             props.watchful.watchLambdaFunction(
@@ -238,6 +240,8 @@ export class EngagementNotebook extends cdk.NestedStack {
         const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
             vpc: props.vpc,
         });
+
+        props.dgraphSwarmCluster.allowConnectionsFrom(securityGroup);
 
         new ec2.Connections({
             securityGroups: [securityGroup],
