@@ -90,6 +90,8 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         return self
 
     def with_to_neighbor(self, default, f, r, edges) -> 'Q':
+        if edges and not isinstance(edges, tuple):
+            edges = (edges,)
         edges = edges or [default()]
         self.set_neighbor_filters(f, [edges])
         for edge in edges:
@@ -179,6 +181,8 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
 
         variables = {v: k for k, v in var_alloc.allocated.items()}
         txn = graph_client.txn(read_only=True)
+
+        # print(query)
         try:
             qres = json.loads(txn.query(query, variables=variables).json)
         finally:

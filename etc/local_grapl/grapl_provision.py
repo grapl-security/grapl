@@ -25,9 +25,8 @@ from grapl_analyzerlib.schemas import (
     ProcessInboundConnectionSchema,
     ProcessOutboundConnectionSchema,
 )
-from grapl_analyzerlib.schemas.lens_node_schema import LensSchema
-from grapl_analyzerlib.schemas.risk_node_schema import RiskSchema
-from grapl_analyzerlib.schemas.schema_builder import ManyToMany
+from grapl_analyzerlib.nodes.lens import LensSchema
+from grapl_analyzerlib.nodes.risk import RiskSchema
 
 
 def create_secret(secretsmanager):

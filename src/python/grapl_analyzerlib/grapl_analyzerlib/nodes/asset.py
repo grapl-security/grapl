@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
+from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional, Union
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -7,14 +6,16 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
     EdgeRelationship,
 )
-from grapl_analyzerlib.queryable import Queryable, EdgeFilter, ToOneFilter, ToManyFilter
+from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
+from grapl_analyzerlib.nodes.base import BaseView
 
 AQ = TypeVar("AQ", bound="AssetQuery")
 AV = TypeVar("AV", bound="AssetView")
 
+T = TypeVar("T")
+
+OneOrMany = Union[List[T], T]
 
 def default_asset_properties() -> Dict[str, PropType]:
     return {
@@ -204,10 +205,9 @@ class AssetView(BaseView[AV, AQ]):
         return type("AssetView", types, {})
 
 
-from grapl_analyzerlib.comparators import Cmp, IntOrNot, StrOrNot, _str_cmps, _int_cmps
-from grapl_analyzerlib.nodes.ip_address import IpAddressSchema, IpAddressView, IpAddressQuery
-from grapl_analyzerlib.nodes.file import FileSchema, FileView, FileQuery
-from grapl_analyzerlib.nodes.process import ProcessSchema, ProcessView, ProcessQuery
-from grapl_analyzerlib.nodes.base import BaseView
+from grapl_analyzerlib.comparators import StrOrNot, _str_cmps
+from grapl_analyzerlib.nodes.ip_address import IpAddressSchema, IpAddressView
+from grapl_analyzerlib.nodes.file import FileSchema, FileView
+from grapl_analyzerlib.nodes.process import ProcessSchema, ProcessView
 
 AssetSchema().init_reverse()

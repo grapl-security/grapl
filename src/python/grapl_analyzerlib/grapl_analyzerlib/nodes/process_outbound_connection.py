@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
+from typing import Any, TypeVar, Set, Dict, Tuple, Optional
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -7,12 +6,9 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
     EdgeRelationship,
 )
-from grapl_analyzerlib.queryable import Queryable, EdgeFilter, ToOneFilter, ToManyFilter, with_to_neighbor, \
-    with_str_prop, with_int_prop
-from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
+from grapl_analyzerlib.queryable import with_str_prop, with_int_prop
+from grapl_analyzerlib.schema import Schema
 
 POCQ = TypeVar("POCQ", bound="ProcessOutboundConnectionQuery")
 POCV = TypeVar("POCV", bound="ProcessOutboundConnectionView")
@@ -164,7 +160,7 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
         uid: str,
         node_key: str,
         graph_client: Any,
-        node_types: List[str],
+        node_types: Set[str],
         created_timestamp: Optional[int] = None,
         terminated_timestamp: Optional[int] = None,
         last_seen_timestamp: Optional[int] = None,

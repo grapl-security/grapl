@@ -1,10 +1,20 @@
 import abc
+import logging
+import os
+import sys
 import types
+from typing import cast, Callable, Type, TypeVar, Any, Dict, Tuple, Union
 
-from copy import deepcopy
+from grapl_analyzerlib.grapl_client import GraphClient
 
-from typing import cast, Type, TypeVar, Any, Dict, Tuple, Union
+IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER.info("Initializing Chalice server")
 
 V = TypeVar("V", bound="Viewable")
 
@@ -27,10 +37,10 @@ class SingletonMeta(type):
 
 class Schema(metaclass=SingletonMeta):
     def __init__(
-        self,
-        properties: Dict[str, "PropType"],
-        edges: Dict[str, Tuple["EdgeT", str]],
-        viewable: "Union[Type[Viewable], Callable[[], Type[Viewable]]]",
+            self,
+            properties: Dict[str, "PropType"],
+            edges: Dict[str, Tuple["EdgeT", str]],
+            viewable: "Union[Type[Viewable], Callable[[], Type[Viewable]]]",
     ):
         self.properties: Dict[str, "PropType"] = {**default_properties(), **properties}
         self.edges: Dict[str, Tuple["EdgeT", str]] = {}
@@ -78,11 +88,33 @@ class Schema(metaclass=SingletonMeta):
         return cast(Any, None)  # satisfy pytype
 
     @staticmethod
-    def from_graphdb(type_name: str) -> "Schema":
+    def from_graphdb(graph_client: GraphClient, type_name: str) -> "Schema":
         """
         Given a `type_name`, queries the graph database
         for the schema of that type, and constructs a Schema
         """
+
+        # query = f"""
+        #     schema(type: {type_name}) {{ }}
+        # """
+        # LOGGER.debug(f"query: {query}")
+        # txn = graph_client.txn(read_only=True)
+        # try:
+        #     res = json.loads(txn.query(query).json)
+        #     LOGGER.debug(f"res: {res}")
+        # finally:
+        #     txn.discard()
+        #
+        # pred_names = []
+        #
+        # if "types" in res:
+        #     for field in res["types"][0]["fields"]:
+        #         pred_name = (
+        #             f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
+        #         )
+        #         pred_names.append(pred_name)
+        #
+
         raise NotImplementedError
         # noinspection PyUnreachableCode
         return cast(Any, None)  # satisfy pytype

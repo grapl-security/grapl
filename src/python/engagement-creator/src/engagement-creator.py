@@ -9,8 +9,7 @@ from typing import Any, Dict, Iterator, Tuple
 
 import boto3
 import botocore.exceptions
-from grapl_analyzerlib.nodes.lens_node import LensView
-from grapl_analyzerlib.prelude import NodeView
+from grapl_analyzerlib.prelude import BaseView, LensView
 from pydgraph import DgraphClient, DgraphClientStub
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
@@ -230,7 +229,7 @@ def lambda_handler(events: Any, context: Any) -> None:
         )
 
         nodes = [
-            NodeView.from_node_key(mg_client, n["node_key"]) for n in nodes.values()
+            BaseView.from_node_key(mg_client, n["node_key"]) for n in nodes.values()
         ]
 
         uid_map = {node.node_key: node.uid for node in nodes}

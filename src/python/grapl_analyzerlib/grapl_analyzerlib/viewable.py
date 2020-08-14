@@ -11,6 +11,7 @@ Q = TypeVar("Q", bound="Queryable")
 T = TypeVar("T")
 OneOrMany = Union[List[T], T]
 
+
 class Viewable(Generic[V, Q], Extendable, abc.ABC):
     queryable = None
 
@@ -61,14 +62,14 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
 
         return getattr(self, property_name, None)
 
-    def get_neighbor(self, default: 'Type[Q]', f_edge: str, r_edge: str, *filters, cached=True) -> Optional['Q']:
+    def get_neighbor(self, default: 'Type[Q]', f_edge: str, r_edge: str, filters, cached=True) -> Optional['Q']:
         if cached and getattr(self, f_edge, None):
             return getattr(self, f_edge, None)
 
         self_node = (
             self.queryable()
                 .with_node_key(eq=self.node_key)
-                .with_to_neighbor(default, f_edge, r_edge, *filters)
+                .with_to_neighbor(default, f_edge, r_edge, filters)
                 .query_first(self.graph_client)
         )
 
@@ -89,10 +90,11 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         return cast("Schema", None)
 
     def get_node_type(self) -> str:
-        return self.schema.self_type()
+        return self.node_schema().self_type()
 
     @classmethod
     def from_dict(cls: Type[V], d: Dict[str, Any], graph_client: Any) -> V:
+        from grapl_analyzerlib.nodes.base import BaseView
         self_schema = cls.node_schema()
         self_props = {}
 
@@ -102,8 +104,16 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
                 name
             )  # type: Union[Tuple[EdgeT, str], PropType, None]
             if ty is None:
-                # TODO: Handle this - Construct a placeholder?
-                continue
+                # This can happen if you're working with BaseViews, since we may not have the schema
+                # but are still working with predicates
+                # Rather than enforcing the type via schema we infer it and set it
+                if isinstance(value, dict):
+                    if value.get('uid'):
+                        value = BaseView.from_dict(value, graph_client)
+                if isinstance(value, list):
+                    if value and value[0].get('uid'):
+                        value = [BaseView.from_dict(v, graph_client) for v in value]
+                self_props[name] = value
             elif isinstance(ty, PropType):
                 deserialized_prop = deserialize_prop(value, ty)
                 self_props[name] = deserialized_prop
@@ -122,7 +132,6 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
                 raise NotImplementedError
         self_props["node_types"] = self_props.pop("dgraph.type")
 
-        print(self_props)
         self_node = cls(graph_client=graph_client, **self_props)
 
         return self_node

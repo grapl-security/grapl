@@ -1,5 +1,5 @@
 import json
-from typing import Any, TypeVar, Set, Type, Optional
+from typing import Any, TypeVar, Set, Type, Optional, List
 
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.node_types import (
@@ -28,6 +28,9 @@ class BaseSchema(Schema):
 
 
 class BaseQuery(Queryable[BCV, BCQ]):
+
+    # def with_node_key(self, *, eq: str):
+    #     self.with_str_property('node_key', eq)
 
     @staticmethod
     def extend_self(*types):
@@ -73,7 +76,19 @@ class BaseView(Viewable[BCV, BCQ]):
         return None
 
     @staticmethod
+    def from_node_key(graph_client: GraphClient, node_key: str) -> "Optional[BaseView]":
+        self_node = (
+            BaseQuery()
+            .with_node_key(eq=node_key)
+            .query_first(graph_client)
+        )
+
+        return self_node
+
+    @staticmethod
     def from_proto(graph_client: GraphClient, node) -> "BaseView":
+
+        from grapl_analyzerlib.prelude import AssetView, ProcessView, FileView, IpConnectionView, NetworkConnectionView, IpPortView, IpAddressView, ProcessOutboundConnectionView, ProcessInboundConnectionView
 
         if node.HasField("process_node"):
             uid = get_uid(graph_client, node.process_node.node_key)
@@ -107,9 +122,10 @@ class BaseView(Viewable[BCV, BCQ]):
             uid = get_uid(graph_client, node.ip_address_node.node_key)
 
             return IpAddressView(
-                graph_client,
-                node.ip_address_node.node_key,
                 uid,
+                node.ip_address_node.node_key,
+                graph_client,
+                node_types={'IpAddress'}
             )
         elif node.HasField("ip_port_node"):
             uid = get_uid(graph_client, node.ip_port_node.node_key)
@@ -179,6 +195,78 @@ class BaseView(Viewable[BCV, BCQ]):
     def node_schema(cls) -> "Schema":
         return BaseSchema({}, {}, BaseView)
 
+    def _expand(self, edge_str: Optional[List[str]] = None):
+        # get the raw dictionary for this type
+        if edge_str:
+            edge_filters = " AND " + " AND ".join(edge_str or [])
+        else:
+            edge_filters = ""
+        query = f"""
+        query q0($a: string) {{
+            edges(func: eq(node_key, $a) , first: 1) {{
+                uid
+                dgraph.type
+                node_key
+                expand(_all_) @filter(has(dgraph.type) AND has(node_key) {edge_filters}) {{
+                    uid
+                    dgraph.type
+                    expand(_all_)
+                }}
+            }}
+
+            properties(func: eq(node_key, $a) , first: 1) {{
+                uid
+                dgraph.type
+                expand(_all_)
+            }}
+        }}
+        """
+        txn = self.graph_client.txn(read_only=True, best_effort=True)
+
+        try:
+            qres = json.loads(txn.query(query, variables={'$a': self.node_key}).json)
+        finally:
+            txn.discard()
+
+        d = qres.get("edges")
+        if d:
+            self_node = BaseView.from_dict(d[0], self.graph_client)
+            self.predicates = {**self.predicates, **self_node.predicates}
+
+        d = qres.get("properties")
+        if d:
+            self_node = BaseView.from_dict(d[0], self.graph_client)
+            self.predicates = {**self.predicates, **self_node.predicates}
+
+        return None
+
+
+    # def expand_neighbors(self, filter):
+    #     # get the raw dictionary for this type
+    #     query = f"""
+    #         query res($a: string)
+    #         {{
+    #             query(func: uid($a, first: 1) {{
+    #               expand(_all_)
+    #             }}
+    #         }}
+    #     """
+    #     txn = self.graph_client.txn(read_only=True, best_effort=True)
+    #
+    #     try:
+    #         res = txn.query(query, variables={"$a": self.uid})
+    #         res = json.loads(res.json)['query']
+    #         if not res:
+    #             return
+    #
+    #         if isinstance(res, list):
+    #             self_node = BaseView.from_dict(res[0], self.graph_client)
+    #         else:
+    #             self_node = BaseView.from_dict(res, self.graph_client)
+    #         self.predicates = {**self_node.predicates, **self.predicates}
+    #     finally:
+    #         txn.discard()
+
 
 # Proto nodes don't contain a uid so we have to fetch them. It may make sense to store these uids
 # alongside the proto in the future. This makes constructing from proto relatively expensive.
@@ -206,7 +294,4 @@ def get_uid(client: GraphClient, node_key: str) -> str:
 
     finally:
         txn.discard()
-
-
-from grapl_analyzerlib.prelude import AssetView, ProcessView, FileView, IpConnectionView, NetworkConnectionView, IpPortView, IpAddressView, ProcessOutboundConnectionView, ProcessInboundConnectionView
 

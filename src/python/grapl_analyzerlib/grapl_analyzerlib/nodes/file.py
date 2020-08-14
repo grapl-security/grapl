@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
+from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -7,11 +6,9 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
     EdgeRelationship,
 )
-from grapl_analyzerlib.queryable import Queryable, EdgeFilter, ToOneFilter, ToManyFilter, with_to_neighbor, with_str_prop, with_int_prop
-from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
+from grapl_analyzerlib.queryable import with_str_prop
+from grapl_analyzerlib.schema import Schema
 
 FQ = TypeVar("FQ", bound="FileQuery")
 FV = TypeVar("FV", bound="FileView")
@@ -117,7 +114,7 @@ class FileView(EntityView[FV, FQ]):
         uid: str,
         node_key: str,
         graph_client: Any,
-        node_types: List[str],
+        node_types: Set[str],
         file_path: Optional[str] = None,
         file_extension: Optional[str] = None,
         file_mime_type: Optional[str] = None,
@@ -187,7 +184,6 @@ class FileView(EntityView[FV, FQ]):
 
 
 from grapl_analyzerlib.nodes.process import ProcessView, ProcessQuery, ProcessSchema
-from grapl_analyzerlib.queryable import with_to_neighbor
 
 
 class FileExtendsProcessQuery(ProcessQuery):
@@ -247,7 +243,6 @@ class FileExtendsProcessView(ProcessView):
 
     def get_created_files(self, *filters, cached=True):
         return self.get_neighbor(FileQuery, 'wrote_files', 'writers', filters, cached=cached)
-
 
     def get_wrote_files(self, *filters, cached=True):
         return self.get_neighbor(FileQuery, 'wrote_files', 'writers', filters, cached=cached)

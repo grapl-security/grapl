@@ -99,7 +99,6 @@ class EntityView(BaseView[EV, EQ]):
         self.node_key = node_key
         self.graph_client = graph_client
         self.lenses = lenses or []
-        self._kwargs = kwargs
 
     def get_lenses(self, *lenses, cached=True) -> "List[LensView]":
         if cached and self.lenses:
@@ -123,7 +122,7 @@ class EntityView(BaseView[EV, EQ]):
                 self.node_key,
                 self.graph_client,
                 node_types=self.node_types,
-                **self._kwargs,
+                **self.predicates,
             )
         return None
 

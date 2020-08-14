@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union, Type
 import pydgraph
 from pydgraph import DgraphClient, DgraphClientStub
 
+from grapl_analyzerlib.nodes.entity import EntityQuery
 from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.nodes.process import (
     ProcessQuery,
@@ -115,13 +116,13 @@ def main():
 
     lens = {"lens": "shared_hostname"}
 
-    grand_parent = {"process_name": "explorer.exe", "user": "okuser"}
-    parent = {"process_name": "word.exe", "user": "okuser"}
+    grand_parent = {"process_name": "explorer.exe", "user": "okuser", "process_id": 7777}
+    parent = {"process_name": "word.exe", "user": "okuser", "process_id": 2222}
 
     parent_bin = {
         "file_path": "word.exe",
     }
-    child = {"process_name": "cmd.exe"}  # type: Dict[str, Property]
+    child = {"process_name": "cmd.exe", "process_id": 5555}  # type: Dict[str, Property]
 
     child2 = {
         "process_name": "evil.exe",
@@ -195,37 +196,44 @@ def main():
 
     p = (
         ProcessQuery()
-        .with_lenses()
-        .with_parent()
-        .with_user()
-        .with_bin_file()
-        .with_process_name()
-        .with_children(
-            ProcessQuery().with_process_name(eq="cmd.exe"),
-            ProcessQuery().with_process_name(eq="evil.exe"),
-        )
+        # .with_lenses()
+        # .with_parent()
+        # .with_user()
+        # .with_bin_file()
+        # .with_process_name()
+        # .with_children(
+        #     ProcessQuery().with_process_name(eq="cmd.exe"),
+        #     ProcessQuery().with_process_name(eq="evil.exe"),
+        # )
     )
     print("---")
-    print(ProcessQuery.__dict__)
+
     for node_key in (
         "10f585c2-cf31-41e2-8ca5-d477e78be3ac",
         "ea75f056-61a1-479d-9ca2-f632d2c67205",
         "251502ab-3332-4225-a0ec-128ea17c51d2",
         "e03519f6-6f84-4f87-b426-196e249e7b7a",
     ):
-        pv = p.query_first(local_client, contains_node_key=node_key)
+        pv = p.with_node_key(eq=node_key).query_first(local_client)
+        # pv = p.query_first(local_client, contains_node_key=node_key)
 
         # print(pv.node_key)
-        print("get_user", pv.get_user())
-        print("get_bin_file", pv.get_bin_file())
-        print("bin_spawned", pv.get_bin_file().get_spawned_from())
-        print(pv.parent.get_process_name())
-        print(pv.children[0].process_name)
-        print(pv.children[1].process_name)
+        print(pv.predicates)
+        pv._expand()
+        # print(pv.get_neighbor(EntityQuery, 'expand(_all_)', '', EntityQuery()))
+        print(pv.predicates)
+        # break
+        # print("get_user", pv.get_user())
+        # print("get_bin_file", pv.get_bin_file())
+        # print("bin_spawned", pv.get_bin_file().get_spawned_from())
+        # print(pv.parent.get_process_name())
+        # print(pv.children[0].process_name)
+        # print(pv.children[1].process_name)
 
     # break
 
     print("-----")
+    return
     l = LensQuery().with_scope().query_first(local_client)
     print(l)
     if not l:
@@ -245,6 +253,7 @@ if __name__ == "__main__":
         """
         type Process {
             process_name
+            process_id
             node_key
             children
             parent

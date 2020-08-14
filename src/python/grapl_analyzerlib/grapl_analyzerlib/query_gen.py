@@ -184,15 +184,10 @@ def into_query_block(
     else:
         filter = ""
 
-    # Grab the properties
-    always = {"uid", "dgraph.type", "node_key"}
-
     tabs = "\t" * 3 + "\t" * depth
-    properties = f"\n{tabs}".join(
-        [prop[0] for prop in q.property_filters() if prop[1] or prop[0] in always]
-    )
     # Generate the edges (by calling into_query_block on them)
 
+    is_expand = False
     neighbors = ""
     for edge_name, neighbor_filters in q.neighbor_filters():
         for neighbor_filter in neighbor_filters:
@@ -217,8 +212,11 @@ def into_query_block(
                         filter_str = f"@filter({neighbor_filter_str})"
 
                     alias = ""
-                    if should_alias:
+                    if should_alias and len(neighbor_filter) != 1:
                         alias = f"{edge_name}_{depth}_{i} : "
+
+                    if edge_name.startswith('expand(') and edge_name.endswith(')'):
+                        is_expand = True
 
                     formatted_var_name = ""
                     if binding and root_node:
@@ -259,6 +257,16 @@ def into_query_block(
                     {neighbor_properties}
                 }}
                 """
+
+    # Grab the properties
+    if is_expand:
+        properties = f"\n{tabs}".join(['uid', 'dgraph.type'])
+    else:
+        always = {"uid", "dgraph.type", "node_key"}
+
+        properties = f"\n{tabs}".join(
+            [prop[0] for prop in q.property_filters() if prop[1] or prop[0] in always]
+        )
 
     properties += neighbors
 
