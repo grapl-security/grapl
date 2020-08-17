@@ -75,7 +75,7 @@ class FileQuery(EntityQuery[FV, FQ]):
     def __init__(self,) -> None:
         super(FileQuery, self).__init__()
 
-    @with_str_prop('file_path')
+    @with_str_prop("file_path")
     def with_file_path(
         self,
         *,
@@ -89,7 +89,9 @@ class FileQuery(EntityQuery[FV, FQ]):
         pass
 
     def with_spawned_from(self, *spawned_from: Optional["ProcessQuery"]) -> "FileQuery":
-        return self.with_to_neighbor(ProcessQuery, 'spawned_from', 'bin_file', *spawned_from)
+        return self.with_to_neighbor(
+            ProcessQuery, "spawned_from", "bin_file", *spawned_from
+        )
 
     @staticmethod
     def extend_self(*types):
@@ -165,8 +167,10 @@ class FileView(EntityView[FV, FQ]):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def get_spawned_from(self, *filters: 'ProcessQuery', cached=True):
-        return self.get_neighbor(ProcessQuery, 'spawned_from', 'bin_file', filters, cached=cached)
+    def get_spawned_from(self, *filters: "ProcessQuery", cached=True):
+        return self.get_neighbor(
+            ProcessQuery, "spawned_from", "bin_file", filters, cached=cached
+        )
 
     @staticmethod
     def extend_self(*types):
@@ -188,19 +192,23 @@ from grapl_analyzerlib.nodes.process import ProcessView, ProcessQuery, ProcessSc
 
 class FileExtendsProcessQuery(ProcessQuery):
     def with_bin_file(self, bin_file: Optional[FileQuery] = None):
-        return self.with_to_neighbor(FileQuery, 'bin_file', 'spawned_from', bin_file)
+        return self.with_to_neighbor(FileQuery, "bin_file", "spawned_from", bin_file)
 
     def with_created_files(self, *created_files: Optional[FileQuery]) -> "ProcessQuery":
-        return self.with_to_neighbor(FileQuery, 'created_files', 'creator', created_files)
+        return self.with_to_neighbor(
+            FileQuery, "created_files", "creator", created_files
+        )
 
     def with_wrote_files(self, *wrote_files: Optional[FileQuery]) -> "ProcessQuery":
-        return self.with_to_neighbor(FileQuery, 'wrote_files', 'writers', wrote_files)
+        return self.with_to_neighbor(FileQuery, "wrote_files", "writers", wrote_files)
 
     def with_read_files(self, *read_files: Optional[FileQuery]) -> "ProcessQuery":
-        return self.with_to_neighbor(FileQuery, 'read_files', 'readers', read_files)
+        return self.with_to_neighbor(FileQuery, "read_files", "readers", read_files)
 
     def with_deleted_files(self, *deleted_files: Optional[FileQuery]) -> "ProcessQuery":
-        return self.with_to_neighbor(FileQuery, 'deleted_files', 'deleter', deleted_files)
+        return self.with_to_neighbor(
+            FileQuery, "deleted_files", "deleter", deleted_files
+        )
 
 
 class FileExtendsProcessView(ProcessView):
@@ -231,27 +239,37 @@ class FileExtendsProcessView(ProcessView):
             **kwargs,
         )
 
-        self.set_predicate('node_types', node_types)
-        self.set_predicate('bin_file', bin_file or [])
-        self.set_predicate('created_files', created_files or [])
-        self.set_predicate('wrote_files', wrote_files or [])
-        self.set_predicate('read_files', read_files or [])
-        self.set_predicate('deleted_files', deleted_files or [])
+        self.set_predicate("node_types", node_types)
+        self.set_predicate("bin_file", bin_file or [])
+        self.set_predicate("created_files", created_files or [])
+        self.set_predicate("wrote_files", wrote_files or [])
+        self.set_predicate("read_files", read_files or [])
+        self.set_predicate("deleted_files", deleted_files or [])
 
     def get_bin_file(self, *filters, cached=True):
-        return self.get_neighbor(FileQuery, 'bin_file', 'spawned_from', filters, cached=cached)
+        return self.get_neighbor(
+            FileQuery, "bin_file", "spawned_from", filters, cached=cached
+        )
 
     def get_created_files(self, *filters, cached=True):
-        return self.get_neighbor(FileQuery, 'wrote_files', 'writers', filters, cached=cached)
+        return self.get_neighbor(
+            FileQuery, "wrote_files", "writers", filters, cached=cached
+        )
 
     def get_wrote_files(self, *filters, cached=True):
-        return self.get_neighbor(FileQuery, 'wrote_files', 'writers', filters, cached=cached)
+        return self.get_neighbor(
+            FileQuery, "wrote_files", "writers", filters, cached=cached
+        )
 
     def get_read_files(self, *filters, cached=True):
-        return self.get_neighbor(FileQuery, 'read_files', 'readers', filters, cached=cached)
+        return self.get_neighbor(
+            FileQuery, "read_files", "readers", filters, cached=cached
+        )
 
     def get_deleted_files(self, *filters, cached=True):
-        return self.get_neighbor(FileQuery, 'deleted_files', 'deleter', filters, cached=cached)
+        return self.get_neighbor(
+            FileQuery, "deleted_files", "deleter", filters, cached=cached
+        )
 
 
 FileSchema().init_reverse()

@@ -14,7 +14,7 @@ import boto3
 import pydgraph
 from uuid import uuid4
 from grapl_analyzerlib.grapl_client import MasterGraphClient
-from grapl_analyzerlib.schemas import (
+from grapl_analyzerlib.prelude import (
     AssetSchema,
     ProcessSchema,
     FileSchema,
@@ -24,9 +24,9 @@ from grapl_analyzerlib.schemas import (
     NetworkConnectionSchema,
     ProcessInboundConnectionSchema,
     ProcessOutboundConnectionSchema,
+    LensSchema,
+    RiskSchema,
 )
-from grapl_analyzerlib.nodes.lens import LensSchema
-from grapl_analyzerlib.nodes.risk import RiskSchema
 
 
 def create_secret(secretsmanager):
@@ -46,7 +46,7 @@ def drop_all(client) -> None:
 
 
 def format_schemas(schema_defs) -> str:
-    schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
+    schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
 
@@ -131,7 +131,7 @@ def provision_mg(mclient) -> None:
     # drop_all(mclient)
     # drop_all(___local_dg_provision_client)
 
-    schemas = (
+    mg_schemas = (
         AssetSchema(),
         ProcessSchema(),
         FileSchema(),
@@ -141,14 +141,9 @@ def provision_mg(mclient) -> None:
         NetworkConnectionSchema(),
         ProcessInboundConnectionSchema(),
         ProcessOutboundConnectionSchema(),
+        RiskSchema(),
+        LensSchema()
     )
-    mg_schemas = [
-        s.with_forward_edge("risks", ManyToMany(RiskSchema), "risky_nodes")
-        for s in schemas
-    ]
-
-    mg_schemas.append(RiskSchema())
-    mg_schemas.append(LensSchema())
 
     mg_schema_str = format_schemas(mg_schemas)
     set_schema(mclient, mg_schema_str)
@@ -341,6 +336,7 @@ if __name__ == "__main__":
                 time.sleep(1)
                 provision_mg(local_dg_provision_client,)
                 mg_succ = True
+                print('Provisioned mastergraph')
                 break
         except Exception as e:
             if i > 10:

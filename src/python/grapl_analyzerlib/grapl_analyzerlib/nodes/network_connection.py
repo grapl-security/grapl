@@ -51,36 +51,38 @@ class NetworkConnectionSchema(EntitySchema):
 
 
 class NetworkConnectionQuery(EntityQuery[IPPV, IPPQ]):
-
-    @with_int_prop('port')
+    @with_int_prop("port")
     def with_port(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
-    @with_str_prop('ip_address')
+    @with_str_prop("ip_address")
     def with_ip_address(
-            self,
-            *,
-            eq: Optional["StrOrNot"] = None,
-            contains: Optional["OneOrMany[StrOrNot]"] = None,
-            starts_with: Optional["StrOrNot"] = None,
-            ends_with: Optional["StrOrNot"] = None,
-            regexp: Optional["OneOrMany[StrOrNot]"] = None,
-            distance_lt: Optional[Tuple[str, int]] = None,
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
 
     def with_inbound_network_connection_to(self, *inbound_network_connection_to):
-        return self.with_to_neighbor(IpPortQuery, 'inbound_network_connection_to',
-                                     'network_connections_from', inbound_network_connection_to)
-
+        return self.with_to_neighbor(
+            IpPortQuery,
+            "inbound_network_connection_to",
+            "network_connections_from",
+            inbound_network_connection_to,
+        )
 
     @staticmethod
     def extend_self(*types):
@@ -101,14 +103,14 @@ class NetworkConnectionView(EntityView[IPPV, IPPQ]):
     queryable = NetworkConnectionQuery
 
     def __init__(
-            self,
-            uid: str,
-            node_key: str,
-            graph_client: Any,
-            node_types: Set[str],
-            port: Optional[int] = None,
-            ip_address: Optional[str] = None,
-            **kwargs,
+        self,
+        uid: str,
+        node_key: str,
+        graph_client: Any,
+        node_types: Set[str],
+        port: Optional[int] = None,
+        ip_address: Optional[str] = None,
+        **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, **kwargs)
         self.node_types = set(node_types)
@@ -117,14 +119,21 @@ class NetworkConnectionView(EntityView[IPPV, IPPQ]):
         self.ip_address = ip_address
 
     def get_port(self, cached=True):
-        return self.get_int('port', cached=cached)
+        return self.get_int("port", cached=cached)
 
     def get_ip_address(self, cached=True):
-        return self.get_str('ip_address', cached=cached)
+        return self.get_str("ip_address", cached=cached)
 
-    def get_inbound_network_connection_to(self, *inbound_network_connection_to, cached=False):
-        return self.get_neighbor(IpPortQuery, 'inbound_network_connection_to',
-                                     'network_connections_from', inbound_network_connection_to, cached=cached)
+    def get_inbound_network_connection_to(
+        self, *inbound_network_connection_to, cached=False
+    ):
+        return self.get_neighbor(
+            IpPortQuery,
+            "inbound_network_connection_to",
+            "network_connections_from",
+            inbound_network_connection_to,
+            cached=cached,
+        )
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -148,12 +157,23 @@ NetworkConnectionSchema().init_reverse()
 
 class NetworkConnectionExtendsIpPortQuery(IpPortQuery):
     def with_network_connections_from(self, *network_connections_from):
-        return self.with_to_neighbor(NetworkConnectionQuery, 'network_connections_from', 'inbound_network_connection_to', network_connections_from)
+        return self.with_to_neighbor(
+            NetworkConnectionQuery,
+            "network_connections_from",
+            "inbound_network_connection_to",
+            network_connections_from,
+        )
 
 
 class NetworkConnectionExtendsIpPortView(IpPortQuery):
     def get_network_connections_from(self, *network_connections_from, cached=False):
-        return self.get_neighbor(NetworkConnectionQuery, 'network_connections_from', 'inbound_network_connection_to', network_connections_from, cached=cached)
+        return self.get_neighbor(
+            NetworkConnectionQuery,
+            "network_connections_from",
+            "inbound_network_connection_to",
+            network_connections_from,
+            cached=cached,
+        )
 
 
 IpPortQuery = IpPortQuery.extend_self(NetworkConnectionExtendsIpPortQuery)

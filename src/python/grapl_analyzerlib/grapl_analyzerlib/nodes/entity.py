@@ -1,40 +1,20 @@
-from collections import defaultdict
-from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
+from typing import Any, TypeVar, List, Set, Type, Optional
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
-    PropType,
-    PropPrimitive,
     EdgeRelationship,
 )
-from grapl_analyzerlib.queryable import Queryable, EdgeFilter, ToOneFilter, ToManyFilter
-from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
-
-
-from collections import defaultdict
-from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
-
-from grapl_analyzerlib.node_types import (
-    EdgeT,
-    PropType,
-    PropPrimitive,
-    EdgeRelationship,
-)
-from grapl_analyzerlib.queryable import Queryable, EdgeFilter, ToOneFilter, ToManyFilter
-from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
 from grapl_analyzerlib.nodes.base import BaseView, BaseQuery, BaseSchema
+from grapl_analyzerlib.schema import Schema
+from grapl_analyzerlib.viewable import Viewable
 
 EQ = TypeVar("EQ", bound="EntityQuery")
 EV = TypeVar("EV", bound="EntityView")
 
 
 def default_entity_edges():
-    from grapl_analyzerlib.nodes.lens import LensSchema, LensQuery, LensView
-    from grapl_analyzerlib.nodes.risk import RiskSchema, RiskQuery, RiskView
+    from grapl_analyzerlib.nodes.lens import LensSchema
+    from grapl_analyzerlib.nodes.risk import RiskSchema
 
     return {
         "in_scope": (
@@ -51,8 +31,6 @@ def default_entity_edges():
 
 class EntitySchema(BaseSchema):
     def __init__(self, properties=None, edges=None, view=None):
-        from grapl_analyzerlib.nodes.lens import LensSchema
-
         super(EntitySchema, self).__init__(
             {**(properties or {})},
             {**default_entity_edges(), **(edges or {}),},
@@ -70,6 +48,13 @@ class EntityQuery(BaseQuery[EV, EQ]):
         self.set_neighbor_filters("in_scope", [lenses])
         for lens in lenses:
             lens.set_neighbor_filters("scope", [self])
+        return self
+
+    def with_risks(self, *risks: "RiskQuery"):
+        risks = risks or [RiskQuery()]
+        self.set_neighbor_filters("risks", [risks])
+        for risk in risks:
+            risk.set_neighbor_filters("risky_nodes", [self])
         return self
 
     @staticmethod
@@ -100,19 +85,11 @@ class EntityView(BaseView[EV, EQ]):
         self.graph_client = graph_client
         self.lenses = lenses or []
 
-    def get_lenses(self, *lenses, cached=True) -> "List[LensView]":
-        if cached and self.lenses:
-            return self.lenses
+    def get_lenses(self, *lenses, cached=False) -> "List[LensView]":
+        return self.get_neighbor(LensQuery, 'in_scope', 'scope', lenses, cached) or []
 
-        self_node = (
-            self.queryable()
-            .with_node_key(eq=self.node_key)
-            .with_lenses(*lenses)
-            .query_first(self.graph_client)
-        )
-        if self_node:
-            self.lenses = self_node.in_scope
-        return self.lenses
+    def get_risks(self, *risks, cached=False) -> "List[RiskView]":
+        return self.get_neighbor(LensQuery, 'risks', 'risky_nodes', risks, cached) or []
 
     def into_view(self, v: Type["Viewable"]) -> Optional["Viewable"]:
         if v.node_schema().self_type() in self.node_types:
@@ -135,5 +112,5 @@ class EntityView(BaseView[EV, EQ]):
         return EntitySchema({}, {}, EntityView)
 
 
-from grapl_analyzerlib.nodes.lens import LensSchema, LensQuery, LensView
-from grapl_analyzerlib.nodes.risk import RiskSchema, RiskQuery, RiskView
+from grapl_analyzerlib.nodes.lens import LensQuery, LensView
+from grapl_analyzerlib.nodes.risk import RiskQuery, RiskView

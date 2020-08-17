@@ -215,7 +215,7 @@ def into_query_block(
                     if should_alias and len(neighbor_filter) != 1:
                         alias = f"{edge_name}_{depth}_{i} : "
 
-                    if edge_name.startswith('expand(') and edge_name.endswith(')'):
+                    if edge_name.startswith("expand(") and edge_name.endswith(")"):
                         is_expand = True
 
                     formatted_var_name = ""
@@ -260,7 +260,7 @@ def into_query_block(
 
     # Grab the properties
     if is_expand:
-        properties = f"\n{tabs}".join(['uid', 'dgraph.type'])
+        properties = f"\n{tabs}".join(["uid", "dgraph.type"])
     else:
         always = {"uid", "dgraph.type", "node_key"}
 
@@ -341,9 +341,15 @@ def gen_coalescing_query(
 
 
 def gen_query_parameterized(
-    q: "Queryable", query_name: str, contains_node_key: str, depth: int
+    q: "Queryable",
+    query_name: str,
+    contains_node_key: str,
+    depth: int,
+    binding_modifier: Optional[str] = None,
+    vars_alloc: Optional[VarAllocator] = None,
 ) -> Tuple[VarAllocator, str]:
-    vars_alloc = VarAllocator()
+    binding_modifier = binding_modifier or ""
+    vars_alloc = vars_alloc or VarAllocator()
 
     bindings = []
     var_queries = []
@@ -351,7 +357,7 @@ def gen_query_parameterized(
     node_key_var = vars_alloc.alloc(Eq("node_key", contains_node_key))
     for i, node in enumerate(traverse_query_iter(q)):
         func = f"eq(node_key, {node_key_var}), first: 1"
-        binding = f"Binding{depth}_{i}"
+        binding = f"{binding_modifier}Binding{depth}_{i}"
         bindings.append(binding)
         var_name = ""
 
@@ -384,7 +390,7 @@ def gen_query_parameterized(
 
             {coalescing_query}
 
-            query(func: uid({coalescing_query_name}), first: 1) @cascade {{
+            {query_name}(func: uid({coalescing_query_name}), first: 1) @cascade {{
                 {merged_query_block}
             }}
         }}
@@ -420,7 +426,7 @@ def gen_query(
         query {query_name}({vars_list}) {{
             {var_query}
 
-            query(func: uid(q0) {f_first}) @cascade {{
+            {query_name}(func: uid(q0) {f_first}) @cascade {{
                 {merged_query_block}
             }}
         }}

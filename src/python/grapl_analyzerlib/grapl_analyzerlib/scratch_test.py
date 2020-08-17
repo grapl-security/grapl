@@ -20,10 +20,6 @@ from grapl_analyzerlib.nodes.ip_address import (
     IpAddressView,
 )
 
-from grapl_analyzerlib.nodes.process_user import (
-    ProcessWithUserQuery,
-    ProcessWithUserView,
-)
 
 from grapl_analyzerlib.nodes.file import (
     FileQuery,
@@ -116,8 +112,11 @@ def main():
 
     lens = {"lens": "shared_hostname"}
 
-    grand_parent = {"process_name": "explorer.exe", "user": "okuser", "process_id": 7777}
-    parent = {"process_name": "word.exe", "user": "okuser", "process_id": 2222}
+    grand_parent = {
+        "process_name": "explorer.exe",
+        "process_id": 7777,
+    }
+    parent = {"process_name": "word.exe", "process_id": 2222}
 
     parent_bin = {
         "file_path": "word.exe",
@@ -126,7 +125,6 @@ def main():
 
     child2 = {
         "process_name": "evil.exe",
-        "user": "eviluser",
     }  # type: Dict[str, Property]
 
     parent_bin_view = upsert(
@@ -196,15 +194,14 @@ def main():
 
     p = (
         ProcessQuery()
-        # .with_lenses()
-        # .with_parent()
-        # .with_user()
-        # .with_bin_file()
-        # .with_process_name()
-        # .with_children(
-        #     ProcessQuery().with_process_name(eq="cmd.exe"),
-        #     ProcessQuery().with_process_name(eq="evil.exe"),
-        # )
+        .with_lenses()
+        .with_parent()
+        .with_bin_file()
+        .with_process_name()
+        .with_children(
+            ProcessQuery().with_process_name(eq="cmd.exe"),
+            ProcessQuery().with_process_name(eq="evil.exe"),
+        )
     )
     print("---")
 
@@ -214,16 +211,17 @@ def main():
         "251502ab-3332-4225-a0ec-128ea17c51d2",
         "e03519f6-6f84-4f87-b426-196e249e7b7a",
     ):
-        pv = p.with_node_key(eq=node_key).query_first(local_client)
-        # pv = p.query_first(local_client, contains_node_key=node_key)
-
+        pv = p.query_first(local_client, contains_node_key=node_key)
+        al = pv.to_adjacency_list()
+        print(al['nodes'])
+        print(al['edges'])
         # print(pv.node_key)
-        print(pv.predicates)
-        pv._expand()
-        # print(pv.get_neighbor(EntityQuery, 'expand(_all_)', '', EntityQuery()))
-        print(pv.predicates)
+        # print(pv.predicates)
+        # pv._expand()
+        # # print(pv.get_neighbor(EntityQuery, 'expand(_all_)', '', EntityQuery()))
+        # print(pv.predicates)
+        return
         # break
-        # print("get_user", pv.get_user())
         # print("get_bin_file", pv.get_bin_file())
         # print("bin_spawned", pv.get_bin_file().get_spawned_from())
         # print(pv.parent.get_process_name())
@@ -234,16 +232,16 @@ def main():
 
     print("-----")
     return
-    l = LensQuery().with_scope().query_first(local_client)
-    print(l)
-    if not l:
-        raise Exception('Expected lens')
-    for scoped in l.scope:
-        print(scoped)
-        maybe_proc = scoped.into_view(ProcessView)
-        if maybe_proc:
-            print("lens", maybe_proc.get_lenses())
-
+    # l = LensQuery().with_scope().query_first(local_client)
+    # print(l)
+    # if not l:
+    #     raise Exception("Expected lens")
+    # for scoped in l.scope:
+    #     print(scoped)
+    #     maybe_proc = scoped.into_view(ProcessView)
+    #     if maybe_proc:
+    #         print("lens", maybe_proc.get_lenses())
+    #
 
 if __name__ == "__main__":
     gclient = DgraphClient(DgraphClientStub("localhost:9080"))
@@ -257,18 +255,17 @@ if __name__ == "__main__":
             node_key
             children
             parent
-            user
-            
+
             # Attached by the File node
             bin_file
             created_files
             wrote_files
             read_files
             deleted_files
-            
+
             in_scope
         }
-        
+
         type File {
             node_key
             file_path
@@ -279,35 +276,35 @@ if __name__ == "__main__":
             deleter
             in_scope
         }
-                
+
         type Lens {
             node_key
             lens
             scope
         }
-        
+
+        process_id: int @index(int) .
         process_name: string @index(exact, trigram) .
         file_path: string @index(exact, trigram) .
-        user: string @index(exact, trigram) .
         node_key: string @index(hash) @upsert .
         children: [uid] .
         parent: uid .
-        
+
         lens: string @index(exact) .
-        
+
         spawned_from: [uid] .
         bin_file: uid .
-        
+
         created_files: [uid] .
         wrote_files: [uid] .
         read_files: [uid] .
         deleted_files: [uid] .
-        
+
         creator: uid .
         writers: [uid] .
         readers: [uid] .
         deleter: uid .
-        
+
         scope: [uid] .
         in_scope: [uid] .
     """,

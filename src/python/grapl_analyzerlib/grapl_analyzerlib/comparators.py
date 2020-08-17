@@ -211,8 +211,6 @@ def dgraph_prop_type(cmp: Cmp) -> str:
     return "int"
 
 
-
-
 def _str_cmps(
     predicate: str,
     eq: Optional[StrOrNot] = None,

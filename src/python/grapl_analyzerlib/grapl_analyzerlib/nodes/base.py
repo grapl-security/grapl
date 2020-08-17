@@ -1,8 +1,9 @@
 import json
-from typing import Any, TypeVar, Set, Type, Optional, List
+from typing import Any, TypeVar, Set, Type, Optional, List, Dict, Tuple
 
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.node_types import (
+    EdgeT,
     PropType,
     PropPrimitive,
 )
@@ -15,12 +16,55 @@ BCV = TypeVar("BCV", bound="BaseView")
 
 
 class BaseSchema(Schema):
-    def __init__(self, properties=None, edges=None, view=None):
+    def __init__(
+        self,
+        properties=None,
+        edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
+        view=None,
+    ):
         super(BaseSchema, self).__init__(
-            {**(properties or {}), "node_key": PropType(PropPrimitive.Str, False)},
+            {
+                **(properties or {}),
+                "node_key": PropType(
+                    PropPrimitive.Str, False, index=["hash"], upsert=True
+                ),
+                "last_index_time": PropType(PropPrimitive.Int, False),
+            },
             {**(edges or {}),},
-            view,
+            view or BaseView,
         )
+
+    def generate_type(self) -> str:
+        dgraph_builtins = {"dgraph.type", "uid"}
+
+        property_names = [p for p in self.properties.keys() if p not in dgraph_builtins]
+        property_names.extend(self.edges.keys())
+        linebreak = "\n" + ("\t" * 4)
+        property_str = f"{linebreak}".join(property_names)
+        type_str = f"""
+            type {self.self_type()} {{
+                {property_str}
+            }}
+        """
+        return type_str
+
+    def generate_schema(self) -> str:
+        predicates = []
+        dgraph_builtins = {"dgraph.type", "uid"}
+        for prop_name, prop_type in self.properties.items():
+            if prop_name in dgraph_builtins:
+                continue
+            prim_str = prop_type.prop_type_str()
+            index_str = prop_type.prop_index_str()
+            predicates.append(f"{prop_name}: {prim_str} {index_str} .")
+
+        for edge_name, (edge_t, r_name) in self.edges.items():
+            uid_t = "uid"
+            if edge_t.is_to_many():
+                uid_t = f"[{uid_t}]"
+            predicates.append(f"{edge_name}: {uid_t} .")
+
+        return "\n".join(predicates)
 
     @staticmethod
     def self_type() -> str:
@@ -28,10 +72,6 @@ class BaseSchema(Schema):
 
 
 class BaseQuery(Queryable[BCV, BCQ]):
-
-    # def with_node_key(self, *, eq: str):
-    #     self.with_str_property('node_key', eq)
-
     @staticmethod
     def extend_self(*types):
         for t in types:
@@ -77,18 +117,24 @@ class BaseView(Viewable[BCV, BCQ]):
 
     @staticmethod
     def from_node_key(graph_client: GraphClient, node_key: str) -> "Optional[BaseView]":
-        self_node = (
-            BaseQuery()
-            .with_node_key(eq=node_key)
-            .query_first(graph_client)
-        )
+        self_node = BaseQuery().with_node_key(eq=node_key).query_first(graph_client)
 
         return self_node
 
     @staticmethod
     def from_proto(graph_client: GraphClient, node) -> "BaseView":
 
-        from grapl_analyzerlib.prelude import AssetView, ProcessView, FileView, IpConnectionView, NetworkConnectionView, IpPortView, IpAddressView, ProcessOutboundConnectionView, ProcessInboundConnectionView
+        from grapl_analyzerlib.prelude import (
+            AssetView,
+            ProcessView,
+            FileView,
+            IpConnectionView,
+            NetworkConnectionView,
+            IpPortView,
+            IpAddressView,
+            ProcessOutboundConnectionView,
+            ProcessInboundConnectionView,
+        )
 
         if node.HasField("process_node"):
             uid = get_uid(graph_client, node.process_node.node_key)
@@ -98,25 +144,22 @@ class BaseView(Viewable[BCV, BCQ]):
                 graph_client=graph_client,
                 uid=uid,
                 node_key=node.process_node.node_key,
-                node_types={'Process'}
+                node_types={"Process"},
             )
         elif node.HasField("file_node"):
             uid = get_uid(graph_client, node.file_node.node_key)
 
             return FileView(
-                    graph_client=graph_client,
-                    uid=uid,
-                    node_key=node.file_node.node_key,
-                    node_types={'File'}
-                )
+                graph_client=graph_client,
+                uid=uid,
+                node_key=node.file_node.node_key,
+                node_types={"File"},
+            )
         elif node.HasField("asset_node"):
             uid = get_uid(graph_client, node.asset_node.node_key)
 
             return AssetView(
-                uid,
-                node.asset_node.node_key,
-                graph_client,
-                {'Asset'}
+                uid, node.asset_node.node_key, graph_client, node_types={"Asset"}
             )
         elif node.HasField("ip_address_node"):
             uid = get_uid(graph_client, node.ip_address_node.node_key)
@@ -125,16 +168,13 @@ class BaseView(Viewable[BCV, BCQ]):
                 uid,
                 node.ip_address_node.node_key,
                 graph_client,
-                node_types={'IpAddress'}
+                node_types={"IpAddress"},
             )
         elif node.HasField("ip_port_node"):
             uid = get_uid(graph_client, node.ip_port_node.node_key)
 
             return IpPortView(
-                uid,
-                node.ip_port_node.node_key,
-                graph_client,
-                {'IpPort'}
+                uid, node.ip_port_node.node_key, graph_client, node_types={"IpPort"}
             )
         elif node.HasField("process_outbound_connection_node"):
             uid = get_uid(graph_client, node.process_outbound_connection_node.node_key)
@@ -142,42 +182,42 @@ class BaseView(Viewable[BCV, BCQ]):
                 uid,
                 node.process_outbound_connection_node.node_key,
                 graph_client,
-                {'ProcessOutboundConnection'}
+                node_types={"ProcessOutboundConnection"},
             )
         elif node.HasField("process_inbound_connection_node"):
             uid = get_uid(graph_client, node.process_inbound_connection_node.node_key)
             return ProcessInboundConnectionView(
-                    uid,
-                    node.process_inbound_connection_node.node_key,
-                    graph_client,
-                    {'ProcessInboundConnection'}
-                )
+                uid,
+                node.process_inbound_connection_node.node_key,
+                graph_client,
+                node_types={"ProcessInboundConnection"},
+            )
         elif node.HasField("ip_connection_node"):
             uid = get_uid(graph_client, node.ip_connection_node.node_key)
             return IpConnectionView(
                 uid,
                 node.ip_connection_node.node_key,
                 graph_client,
-                {'IpConnection'}
+                node_types={"IpConnection"},
             )
         elif node.HasField("network_connection_node"):
             uid = get_uid(graph_client, node.network_connection_node.node_key)
             return NetworkConnectionView(
-                    uid,
-                    node.network_connection_node.node_key,
-                    graph_client,
-                    {'NetworkConnection'}
-                )
+                uid,
+                node.network_connection_node.node_key,
+                graph_client,
+                node_types={"NetworkConnection"},
+            )
 
         elif node.HasField("dynamic_node"):
             uid = get_uid(graph_client, node.dynamic_node.node_key)
 
             return BaseView(
                 uid,
-                    node.dynamic_node.node_key,
+                node.dynamic_node.node_key,
                 graph_client,
-                    {node.dynamic_node.node_type}
-                )
+                node_types={node.dynamic_node.node_type},
+            )
         else:
             raise Exception(f"Invalid Node Type : {node}")
 
@@ -224,7 +264,7 @@ class BaseView(Viewable[BCV, BCQ]):
         txn = self.graph_client.txn(read_only=True, best_effort=True)
 
         try:
-            qres = json.loads(txn.query(query, variables={'$a': self.node_key}).json)
+            qres = json.loads(txn.query(query, variables={"$a": self.node_key}).json)
         finally:
             txn.discard()
 
@@ -240,6 +280,61 @@ class BaseView(Viewable[BCV, BCQ]):
 
         return None
 
+    def to_adjacency_list(self):
+        from grapl_analyzerlib.viewable import traverse_view_iter
+        from collections import defaultdict
+
+        node_dicts = defaultdict(dict)
+        edges = defaultdict(list)
+        for node in traverse_view_iter(self):
+            node_dict = node.to_dict()
+            node_dicts[node_dict["node"]["node_key"]] = node_dict["node"]
+            edges[node_dict["node"]["node_key"]].extend(node_dict["edges"])
+
+        return {"nodes": node_dicts, "edges": edges}
+
+    def to_dict(self):
+        node_dict = {
+            "uid": self.uid,
+            "node_key": self.node_key,
+            "dgraph.type": self.node_schema().self_type(),
+        }
+        self_key = self.node_key
+        edges = []
+        for predicate_name, predicate in self.predicates.items():
+            if not predicate:
+                continue
+
+            if isinstance(predicate, Viewable):
+                edges.append(
+                    {
+                        "from": self_key,
+                        "edge_name": predicate_name,
+                        "to": predicate.node_key,
+                    }
+                )
+                continue
+            elif isinstance(predicate, list) and isinstance(predicate[0], Viewable):
+                for p in predicate:
+                    edges.append(
+                        {
+                            "from": self_key,
+                            "edge_name": predicate_name,
+                            "to": p.node_key,
+                        }
+                    )
+                    continue
+            else:
+                if isinstance(predicate, set):
+                    node_dict[predicate_name] = list(predicate)
+                else:
+                    if not isinstance(predicate, Viewable) and not (
+                        isinstance(predicate, list)
+                        and isinstance(predicate[0], Viewable)
+                    ):
+                        node_dict[predicate_name] = predicate
+
+        return {"node": node_dict, "edges": edges}
 
     # def expand_neighbors(self, filter):
     #     # get the raw dictionary for this type
@@ -294,4 +389,3 @@ def get_uid(client: GraphClient, node_key: str) -> str:
 
     finally:
         txn.discard()
-

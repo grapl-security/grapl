@@ -62,80 +62,79 @@ class ProcessOutboundConnectionSchema(EntitySchema):
 
 
 class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
-    @with_str_prop('ip_address')
+    @with_str_prop("ip_address")
     def with_ip_address(
-            self,
-            *,
-            eq: Optional["StrOrNot"] = None,
-            contains: Optional["OneOrMany[StrOrNot]"] = None,
-            starts_with: Optional["StrOrNot"] = None,
-            ends_with: Optional["StrOrNot"] = None,
-            regexp: Optional["OneOrMany[StrOrNot]"] = None,
-            distance_lt: Optional[Tuple[str, int]] = None,
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
 
-    @with_str_prop('protocol')
+    @with_str_prop("protocol")
     def with_protocol(
-            self,
-            *,
-            eq: Optional["StrOrNot"] = None,
-            contains: Optional["OneOrMany[StrOrNot]"] = None,
-            starts_with: Optional["StrOrNot"] = None,
-            ends_with: Optional["StrOrNot"] = None,
-            regexp: Optional["OneOrMany[StrOrNot]"] = None,
-            distance_lt: Optional[Tuple[str, int]] = None,
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
 
-    @with_int_prop('created_timestamp')
+    @with_int_prop("created_timestamp")
     def with_created_timestamp(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
-    @with_int_prop('terminated_timestamp')
+    @with_int_prop("terminated_timestamp")
     def with_terminated_timestamp(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
-    @with_int_prop('port')
+    @with_int_prop("port")
     def with_port(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
-    @with_int_prop('last_seen_timestamp')
+    @with_int_prop("last_seen_timestamp")
     def with_last_seen_timestamp(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
-
 
     @staticmethod
     def extend_self(*types):
@@ -180,23 +179,22 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
         self.protocol = protocol
 
     def get_ip_address(self, cached=True):
-        self.get_str('ip_address', cached=cached)
+        self.get_str("ip_address", cached=cached)
 
     def get_protocol(self, cached=True):
-        self.get_str('protocol', cached=cached)
+        self.get_str("protocol", cached=cached)
 
     def get_created_timestamp(self, cached=True):
-        self.get_int('created_timestamp', cached=cached)
+        self.get_int("created_timestamp", cached=cached)
 
     def get_terminated_timestamp(self, cached=True):
-        self.get_int('terminated_timestamp', cached=cached)
+        self.get_int("terminated_timestamp", cached=cached)
 
     def get_port(self, cached=True):
-        self.get_int('port', cached=cached)
+        self.get_int("port", cached=cached)
 
     def get_last_seen_timestamp(self, cached=True):
-        self.get_int('last_seen_timestamp', cached=cached)
-
+        self.get_int("last_seen_timestamp", cached=cached)
 
     @staticmethod
     def extend_self(*types):
@@ -220,18 +218,41 @@ ProcessOutboundConnectionSchema().init_reverse()
 
 class ProcessOutboundConnectionExtendsIpPortQuery(IpPortQuery):
     def with_connected_over(self, connected_over):
-        self.with_to_neighbor(ProcessOutboundConnectionQuery, 'connected_over', 'process_connections', connected_over)
+        self.with_to_neighbor(
+            ProcessOutboundConnectionQuery,
+            "connected_over",
+            "process_connections",
+            connected_over,
+        )
 
     def with_connected_to(self, connected_to):
-        self.with_to_neighbor(ProcessOutboundConnectionQuery, 'connected_to', 'connections_from', connected_to)
+        self.with_to_neighbor(
+            ProcessOutboundConnectionQuery,
+            "connected_to",
+            "connections_from",
+            connected_to,
+        )
 
 
 class ProcessOutboundConnectionExtendsIpPortView(IpPortView):
     def get_connected_over(self, connected_over, cached=False):
-        self.get_neighbor(ProcessOutboundConnectionQuery, 'connected_over', 'process_connections', connected_over, cached=cached)
+        self.get_neighbor(
+            ProcessOutboundConnectionQuery,
+            "connected_over",
+            "process_connections",
+            connected_over,
+            cached=cached,
+        )
 
     def get_connected_to(self, connected_to):
-        self.get_neighbor(ProcessOutboundConnectionQuery, 'connected_to', 'connections_from', connected_to, cached=cached)
+        self.get_neighbor(
+            ProcessOutboundConnectionQuery,
+            "connected_to",
+            "connections_from",
+            connected_to,
+            cached=cached,
+        )
+
 
 IpPortQuery = IpPortQuery.extend_self(ProcessOutboundConnectionExtendsIpPortQuery)
 IpPortView = IpPortView.extend_self(ProcessOutboundConnectionExtendsIpPortView)

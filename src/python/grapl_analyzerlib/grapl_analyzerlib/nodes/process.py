@@ -1,17 +1,16 @@
-from collections import defaultdict
-from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
+from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional, Union
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
     PropType,
-    PropPrimitive,
-    EdgeRelationship,
 )
-from grapl_analyzerlib.queryable import Queryable, EdgeFilter, ToOneFilter, ToManyFilter, with_str_prop, with_int_prop, with_to_neighbor
-from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
+from grapl_analyzerlib.queryable import (
+    with_str_prop,
+    with_int_prop,
+    with_to_neighbor,
+)
+from grapl_analyzerlib.schema import Schema
 
 PQ = TypeVar("PQ", bound="ProcessQuery")
 PV = TypeVar("PV", bound="ProcessView")
@@ -19,13 +18,9 @@ PV = TypeVar("PV", bound="ProcessView")
 
 def default_process_edges() -> Dict[str, Tuple[EdgeT, str]]:
     from grapl_analyzerlib.nodes.process_outbound_connection import (
-        ProcessOutboundConnectionView,
-        ProcessOutboundConnectionQuery,
         ProcessOutboundConnectionSchema,
     )
     from grapl_analyzerlib.nodes.process_inbound_connection import (
-        ProcessInboundConnectionView,
-        ProcessInboundConnectionQuery,
         ProcessInboundConnectionSchema,
     )
 
@@ -150,12 +145,11 @@ class ProcessQuery(EntityQuery[PV, PQ]):
     ) -> "ProcessQuery":
         pass
 
-    @with_to_neighbor(None, 'children', 'parent')
+    @with_to_neighbor(None, "children", "parent")
     def with_children(self, *children: PQ):
         pass
 
-
-    @with_to_neighbor(None, 'parent', 'children')
+    @with_to_neighbor(None, "parent", "children")
     def with_parent(self, parent: PQ = None):
         pass
 
@@ -193,14 +187,14 @@ class ProcessView(EntityView[PV, PQ]):
         **kwargs,
     ):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
-        self.set_predicate('node_types', node_types)
-        self.set_predicate('process_name', process_name)
-        self.set_predicate('process_id', process_id)
-        self.set_predicate('created_timestamp', created_timestamp)
-        self.set_predicate('terminate_time', terminate_time)
-        self.set_predicate('arguments', arguments)
-        self.set_predicate('children', children or [])
-        self.set_predicate('parent', parent)
+        self.set_predicate("node_types", node_types)
+        self.set_predicate("process_name", process_name)
+        self.set_predicate("process_id", process_id)
+        self.set_predicate("created_timestamp", created_timestamp)
+        self.set_predicate("terminate_time", terminate_time)
+        self.set_predicate("arguments", arguments)
+        self.set_predicate("children", children or [])
+        self.set_predicate("parent", parent)
 
     def get_process_name(self, cached=True) -> Optional[str]:
         if cached and self.process_name:
@@ -322,7 +316,7 @@ class ProcessView(EntityView[PV, PQ]):
         return ProcessSchema()
 
 
-from grapl_analyzerlib.comparators import Cmp, IntOrNot, StrOrNot, _str_cmps, _int_cmps
+from grapl_analyzerlib.comparators import IntOrNot, StrOrNot
 
 from grapl_analyzerlib.nodes.process_outbound_connection import *
 from grapl_analyzerlib.nodes.process_inbound_connection import *
@@ -345,7 +339,7 @@ class ProcessExtendsProcessOutboundConnectionView(ProcessOutboundConnectionView)
         uid: str,
         node_key: str,
         graph_client: Any,
-        node_types: List[str],
+        node_types: Set[str],
         connections_from: Optional[List[ProcessView]] = None,
         **kwargs,
     ):
@@ -392,7 +386,7 @@ class ProcessExtendsProcessInboundConnectionView(ProcessInboundConnectionView):
         uid: str,
         node_key: str,
         graph_client: Any,
-        node_types: List[str],
+        node_types: Set[str],
         bound_by: Optional[List[ProcessView]] = None,
         **kwargs,
     ):

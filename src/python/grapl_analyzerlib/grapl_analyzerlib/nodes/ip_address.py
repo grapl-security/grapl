@@ -7,7 +7,15 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
     EdgeRelationship,
 )
-from grapl_analyzerlib.queryable import Queryable, EdgeFilter, ToOneFilter, ToManyFilter, with_to_neighbor, with_str_prop, with_int_prop
+from grapl_analyzerlib.queryable import (
+    Queryable,
+    EdgeFilter,
+    ToOneFilter,
+    ToManyFilter,
+    with_to_neighbor,
+    with_str_prop,
+    with_int_prop,
+)
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable, V, Q
 from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
@@ -50,8 +58,7 @@ class IpAddressSchema(EntitySchema):
 
 
 class IpAddressQuery(EntityQuery[IPV, IPQ]):
-
-    @with_int_prop('first_seen_timestamp')
+    @with_int_prop("first_seen_timestamp")
     def with_first_seen_timestamp(
         self,
         *,
@@ -63,7 +70,7 @@ class IpAddressQuery(EntityQuery[IPV, IPQ]):
     ):
         pass
 
-    @with_int_prop('last_seen_timestamp')
+    @with_int_prop("last_seen_timestamp")
     def with_last_seen_timestamp(
         self,
         *,
@@ -75,7 +82,7 @@ class IpAddressQuery(EntityQuery[IPV, IPQ]):
     ):
         pass
 
-    @with_str_prop('ip_address')
+    @with_str_prop("ip_address")
     def with_ip_address(
         self,
         *,
@@ -89,7 +96,9 @@ class IpAddressQuery(EntityQuery[IPV, IPQ]):
         pass
 
     def with_ip_connections(self, *ip_connections):
-        return self.with_to_neighbor(IpConnectionQuery(), 'ip_connections', 'connecting_ips', ip_connections)
+        return self.with_to_neighbor(
+            IpConnectionQuery(), "ip_connections", "connecting_ips", ip_connections
+        )
 
     @staticmethod
     def extend_self(*types):
@@ -124,22 +133,24 @@ class IpAddressView(EntityView[IPV, IPQ]):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
 
-        self.set_predicate('first_seen_timestamp', first_seen_timestamp)
-        self.set_predicate('last_seen_timestamp', last_seen_timestamp)
-        self.set_predicate('ip_address', ip_address)
-        self.set_predicate('ip_connections', ip_connections or [])
+        self.set_predicate("first_seen_timestamp", first_seen_timestamp)
+        self.set_predicate("last_seen_timestamp", last_seen_timestamp)
+        self.set_predicate("ip_address", ip_address)
+        self.set_predicate("ip_connections", ip_connections or [])
 
     def get_first_seen_timestamp(self, cached=True):
-        return self.get_int('first_seen_timestamp', cached=cached)
+        return self.get_int("first_seen_timestamp", cached=cached)
 
     def get_last_seen_timestamp(self, cached=True):
-        return self.get_int('last_seen_timestamp', cached=cached)
+        return self.get_int("last_seen_timestamp", cached=cached)
 
     def get_ip_address(self, cached=True):
-        return self.get_str('ip_address', cached=cached)
+        return self.get_str("ip_address", cached=cached)
 
     def get_ip_connections(self, *ip_connections, cached=False):
-        return self.get_neighbor(IpConnectionQuery, 'ip_connections', 'connecting_ips', ip_connections)
+        return self.get_neighbor(
+            IpConnectionQuery, "ip_connections", "connecting_ips", ip_connections
+        )
 
     @staticmethod
     def extend_self(*types):
@@ -164,20 +175,22 @@ from grapl_analyzerlib.nodes.ip_connection import (
 
 class IpAddressExtendsIpConnectionQuery(IpConnectionQuery):
     def with_connecting_ips(self, *connecting_ips: IpAddressSchema):
-        return self.with_to_neighbor(IpAddressQuery, 'connecting_ips', 'ip_connection', connecting_ips)
+        return self.with_to_neighbor(
+            IpAddressQuery, "connecting_ips", "ip_connection", connecting_ips
+        )
 
 
 class IpAddressExtendsIpConnectionView(IpConnectionView):
     connecting_ips = None
 
     def __init__(
-            self,
-            uid: str,
-            node_key: str,
-            graph_client: Any,
-            node_types: Set[str],
-            connecting_ips: Optional[List[IpAddressView]] = None,
-            **kwargs,
+        self,
+        uid: str,
+        node_key: str,
+        graph_client: Any,
+        node_types: Set[str],
+        connecting_ips: Optional[List[IpAddressView]] = None,
+        **kwargs,
     ):
         super().__init__(
             uid=uid,
@@ -186,10 +199,16 @@ class IpAddressExtendsIpConnectionView(IpConnectionView):
             node_types=node_types,
             **kwargs,
         )
-        self.set_predicate('connecting_ips', connecting_ips or [])
+        self.set_predicate("connecting_ips", connecting_ips or [])
 
     def get_connecting_ips(self, *connecting_ips: IpAddressSchema, cached=False):
-        return self.get_neighbor(IpAddressQuery, 'connecting_ips', 'ip_connection', connecting_ips, cached=cached)
+        return self.get_neighbor(
+            IpAddressQuery,
+            "connecting_ips",
+            "ip_connection",
+            connecting_ips,
+            cached=cached,
+        )
 
 
 IpAddressSchema().init_reverse()

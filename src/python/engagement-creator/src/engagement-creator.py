@@ -78,56 +78,29 @@ def attach_risk(
 
 
 def recalculate_score(client: DgraphClient, lens: LensView) -> int:
-    query = """
-        query q0($a: string)
-        {
-          q0(func: eq(lens, $a), first: 1) @cascade
-          {
-            uid,
-            scope {
-                node_key,
-                risks {
-                    analyzer_name,
-                    risk_score
-                }
-            }
-          }
-        }
-        """
+    scope = lens.get_scope(client)
+    key_to_analyzers = defaultdict(set)
+    node_risk_scores = defaultdict(int)
+    total_risk_score = 0
+    for node in scope:
+        node_risks = node.get_risks()
+        risks_by_analyzer = {}
+        for risk in node_risks:
+            risk_score = risk.get_risk_score()
+            analyzer_name = risk.get_analyzer_name()
+            risks_by_analyzer[analyzer_name] = risk_score
+            key_to_analyzers[node.node_key].add(analyzer_name)
+        node_risk_scores[node.node_key] = sum(risks_by_analyzer.values())
+        total_risk_score += sum(risks_by_analyzer.values())
 
-    variables = {
-        "$a": lens.lens,
-    }
-    txn = client.txn(read_only=False)
-    risk_score = 0
-    try:
-        res = json.loads(txn.query(query, variables=variables).json)["q0"]
-
-        redundant_risks = set()
-        risk_map = defaultdict(list)
-        if not res:
-            LOGGER.warning("Received an empty response for risk query")
-            return 0
-        for root_node in res[0]["scope"]:
-            for risk in root_node["risks"]:
-                if risk["analyzer_name"] in redundant_risks:
-                    continue
-                redundant_risks.add(risk["analyzer_name"])
-                risk_map[risk["analyzer_name"]].append(risk)
-
-        for risks in risk_map.values():
-            node_risk = 0
-            for risk in risks:
-                node_risk += risk["risk_score"]
-            risk_multiplier = 0.10 * ((len(risks) or 1) - 1)
-            node_risk = node_risk + (node_risk * risk_multiplier)
-            risk_score += node_risk
-
-        set_score(client, lens.uid, risk_score, txn=txn)
-    finally:
-        txn.discard()
-
-    return risk_score
+    # Bonus is calculated by finding nodes with multiple analyzers
+    for key, analyzers in key_to_analyzers.items():
+        if len(analyzers) <= 1:
+            continue
+        overlapping_analyzer_count = len(analyzers)
+        bonus = node_risk_scores[key] * 2 * (overlapping_analyzer_count / 100)
+        total_risk_score += bonus
+    return total_risk_score
 
 
 def set_score(client: DgraphClient, uid: str, new_score: int, txn=None) -> None:
@@ -258,9 +231,7 @@ def lambda_handler(events: Any, context: Any) -> None:
                         create_edge(mg_client, lens.uid, "scope", to_uid)
 
         for node in nodes:
-            attach_risk(
-                mg_client, node.node.node_key, node.uid, analyzer_name, risk_score
-            )
+            attach_risk(mg_client, node.node_key, node.uid, analyzer_name, risk_score)
 
         for edge_list in edges.values():
             for edge in edge_list:

@@ -1,5 +1,4 @@
-from collections import defaultdict
-from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
+from typing import Any, TypeVar, List, Dict, Tuple, Optional
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -7,12 +6,9 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
     EdgeRelationship,
 )
-from grapl_analyzerlib.queryable import Queryable, EdgeFilter, ToOneFilter, ToManyFilter, with_to_neighbor, \
-    with_str_prop, with_int_prop
-from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
 from grapl_analyzerlib.nodes.base import BaseView, BaseQuery, BaseSchema
+from grapl_analyzerlib.queryable import with_str_prop, with_int_prop
+from grapl_analyzerlib.schema import Schema
 
 LQ = TypeVar("LQ", bound="RiskQuery")
 LV = TypeVar("LV", bound="RiskView")
@@ -48,34 +44,33 @@ class RiskSchema(BaseSchema):
 
 
 class RiskQuery(BaseQuery[LV, LQ]):
-
-    @with_str_prop('analyzer_name')
+    @with_str_prop("analyzer_name")
     def with_analyzer_name(
-            self,
-            *,
-            eq: Optional["StrOrNot"] = None,
-            contains: Optional["OneOrMany[StrOrNot]"] = None,
-            starts_with: Optional["StrOrNot"] = None,
-            ends_with: Optional["StrOrNot"] = None,
-            regexp: Optional["OneOrMany[StrOrNot]"] = None,
-            distance_lt: Optional[Tuple[str, int]] = None,
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
 
-    @with_int_prop('risk_score')
+    @with_int_prop("risk_score")
     def with_risk_score(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
     def with_scope(self, *scope) -> "RiskQuery":
-        return self.with_to_neighbor(EntityQuery, 'scope', 'in_scope', scope)
+        return self.with_to_neighbor(EntityQuery, "scope", "in_scope", scope)
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -94,6 +89,7 @@ class RiskQuery(BaseQuery[LV, LQ]):
 
 class RiskView(BaseView[LV, LQ]):
     queryable = RiskQuery
+
     def __init__(
         self,
         uid: str,
@@ -109,13 +105,13 @@ class RiskView(BaseView[LV, LQ]):
         self.scope = scope or []
 
     def get_analyzer_name(self, cached=True):
-        self.get_str('analyzer_name', cached=cached)
+        self.get_str("analyzer_name", cached=cached)
 
     def get_risk_score(self, cached=True):
-        self.get_int('risk_score', cached=cached)
+        self.get_int("risk_score", cached=cached)
 
     def get_scope(self, *scope, cached=False) -> "RiskQuery":
-        return self.get_neighbor(EntityQuery, 'scope', 'in_scope', scope, cached=cached)
+        return self.get_neighbor(EntityQuery, "scope", "in_scope", scope, cached=cached)
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -132,8 +128,6 @@ class RiskView(BaseView[LV, LQ]):
         return type("RiskView", types, {})
 
 
-from grapl_analyzerlib.comparators import Cmp, IntOrNot, StrOrNot, _str_cmps, _int_cmps
-from grapl_analyzerlib.nodes.ip_address import IpAddressSchema
+from grapl_analyzerlib.comparators import IntOrNot, StrOrNot
 
-
-from grapl_analyzerlib.nodes.entity import EntityView, EntityQuery, EntitySchema
+from grapl_analyzerlib.nodes.entity import EntityView, EntityQuery

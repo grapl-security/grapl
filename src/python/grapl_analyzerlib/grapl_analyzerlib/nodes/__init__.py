@@ -5,8 +5,12 @@ from grapl_analyzerlib.nodes.ip_address import IpAddressSchema
 from grapl_analyzerlib.nodes.ip_connection import IpConnectionSchema
 from grapl_analyzerlib.nodes.ip_port import IpPortSchema
 from grapl_analyzerlib.nodes.lens import LensSchema
-from grapl_analyzerlib.nodes.process_inbound_connection import ProcessInboundConnectionSchema
-from grapl_analyzerlib.nodes.process_outbound_connection import ProcessOutboundConnectionSchema
+from grapl_analyzerlib.nodes.process_inbound_connection import (
+    ProcessInboundConnectionSchema,
+)
+from grapl_analyzerlib.nodes.process_outbound_connection import (
+    ProcessOutboundConnectionSchema,
+)
 from grapl_analyzerlib.nodes.risk import RiskSchema
 
 AssetSchema().init_reverse()

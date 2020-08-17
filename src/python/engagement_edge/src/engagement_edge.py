@@ -259,7 +259,7 @@ def expand_forward_edges_in_scope(
 
 
 def edge_in_lens(
-        dg_client: DgraphClient, node_uid: str, edge_name: str, lens_name: str
+    dg_client: DgraphClient, node_uid: str, edge_name: str, lens_name: str
 ) -> List[Dict[str, Any]]:
     query = f"""
         query q0($node_uid: string, $lens_name: string)
@@ -306,11 +306,10 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
         node.expand()
         node.get_neighbor(
             EntityQuery,
-            'expand(_all_)',
-            '',
-            EntityQuery().with_lenses(LensQuery().with_lens_name(eq=lens_name))
+            "expand(_all_)",
+            "",
+            EntityQuery().with_lenses(LensQuery().with_lens_name(eq=lens_name)),
         )
-
 
     results = [{"node": current_graph, "edges": []}]
 

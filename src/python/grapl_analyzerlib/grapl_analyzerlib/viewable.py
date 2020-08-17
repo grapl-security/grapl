@@ -1,5 +1,19 @@
 import abc
-from typing import cast, Any, Dict, Generic, List, Optional, Set, TypeVar, Type, Union, Tuple
+from typing import (
+    cast,
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Set,
+    TypeVar,
+    Type,
+    Union,
+    Tuple,
+    Iterator,
+)
+
 from grapl_analyzerlib.extendable import Extendable
 
 MYPY = False
@@ -26,7 +40,11 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         for key, value in kwargs.items():
             self.set_predicate(key, value)
 
-    def set_predicate(self, predicate_name: str, predicate: "Union[OneOrMany[str, int, bool], 'Viewable']"):
+    def set_predicate(
+        self,
+        predicate_name: str,
+        predicate: "Union[OneOrMany[str, int, bool], 'Viewable']",
+    ):
         self.predicates[predicate_name] = predicate
         setattr(self, predicate_name, predicate)
 
@@ -36,9 +54,9 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
 
         self_node = (
             self.queryable()
-                .with_node_key(eq=self.node_key)
-                .with_str_property(property_name)
-                .query_first(self.graph_client)
+            .with_node_key(eq=self.node_key)
+            .with_str_property(property_name)
+            .query_first(self.graph_client)
         )
 
         if self_node:
@@ -52,9 +70,9 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
 
         self_node = (
             self.queryable()
-                .with_node_key(eq=self.node_key)
-                .with_int_property(property_name)
-                .query_first(self.graph_client)
+            .with_node_key(eq=self.node_key)
+            .with_int_property(property_name)
+            .query_first(self.graph_client)
         )
 
         if self_node:
@@ -62,19 +80,23 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
 
         return getattr(self, property_name, None)
 
-    def get_neighbor(self, default: 'Type[Q]', f_edge: str, r_edge: str, filters, cached=True) -> Optional['Q']:
+    def get_neighbor(
+        self, default: "Type[Q]", f_edge: str, r_edge: str, filters, cached=True
+    ) -> Optional["OneOrMany[V]"]:
         if cached and getattr(self, f_edge, None):
             return getattr(self, f_edge, None)
 
         self_node = (
             self.queryable()
-                .with_node_key(eq=self.node_key)
-                .with_to_neighbor(default, f_edge, r_edge, filters)
-                .query_first(self.graph_client)
+            .with_node_key(eq=self.node_key)
+            .with_to_neighbor(default, f_edge, r_edge, filters)
+            .query_first(self.graph_client)
         )
 
         if self_node:
-            self.set_predicate(f_edge, getattr(self_node, f_edge, None))
+            edge = getattr(self_node, f_edge, None)
+            if edge:
+                self.set_predicate(f_edge, edge)
 
         return getattr(self, f_edge, None)
 
@@ -95,6 +117,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
     @classmethod
     def from_dict(cls: Type[V], d: Dict[str, Any], graph_client: Any) -> V:
         from grapl_analyzerlib.nodes.base import BaseView
+
         self_schema = cls.node_schema()
         self_props = {}
 
@@ -108,10 +131,10 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
                 # but are still working with predicates
                 # Rather than enforcing the type via schema we infer it and set it
                 if isinstance(value, dict):
-                    if value.get('uid'):
+                    if value.get("uid"):
                         value = BaseView.from_dict(value, graph_client)
                 if isinstance(value, list):
-                    if value and value[0].get('uid'):
+                    if value and value[0].get("uid"):
                         value = [BaseView.from_dict(v, graph_client) for v in value]
                 self_props[name] = value
             elif isinstance(ty, PropType):
@@ -128,7 +151,6 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
                     edge_viewable, edge_ty, value, graph_client
                 )
             else:
-                print(name, value, ty)
                 raise NotImplementedError
         self_props["node_types"] = self_props.pop("dgraph.type")
 
@@ -179,6 +201,47 @@ def deserialize_edge(
         return edge_view
 
 
+def traverse_view_iter(
+    root_v: "Viewable", visited: Optional[Set["Viewable"]] = None
+) -> Iterator["Viewable"]:
+    if visited is None:
+        visited = set()
+
+    if root_v in visited:
+        return
+    yield root_v
+    visited.add(root_v)
+
+    for predicate in root_v.predicates.values():
+        if not predicate:
+            continue
+
+        if not is_edge(predicate):
+            continue
+
+        predicate = make_iter(predicate)
+
+        for pred in predicate:
+            for i_in in traverse_view_iter(pred, visited):
+                yield i_in
+
+
+def is_edge(v):
+    if isinstance(v, Viewable):
+        return True
+    if v and isinstance(v, list) and is_edge(v[0]):
+        return True
+    return False
+
+
+def make_iter(nl):
+    if not nl:
+        return iter(())
+    if isinstance(nl, list):
+        return nl
+    else:
+        return iter((nl,))
+
+
 from grapl_analyzerlib.schema import Schema, EdgeT
 from grapl_analyzerlib.node_types import PropType, PropPrimitive
-from grapl_analyzerlib.queryable import Queryable

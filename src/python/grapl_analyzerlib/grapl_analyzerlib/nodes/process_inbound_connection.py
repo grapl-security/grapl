@@ -61,73 +61,74 @@ class ProcessInboundConnectionSchema(EntitySchema):
 
 
 class ProcessInboundConnectionQuery(EntityQuery[POCV, POCQ]):
-
-    @with_str_prop('protocol')
+    @with_str_prop("protocol")
     def with_protocol(
-            self,
-            *,
-            eq: Optional["StrOrNot"] = None,
-            contains: Optional["OneOrMany[StrOrNot]"] = None,
-            starts_with: Optional["StrOrNot"] = None,
-            ends_with: Optional["StrOrNot"] = None,
-            regexp: Optional["OneOrMany[StrOrNot]"] = None,
-            distance_lt: Optional[Tuple[str, int]] = None,
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
 
-    @with_int_prop('created_timestamp')
+    @with_int_prop("created_timestamp")
     def with_created_timestamp(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
-    @with_int_prop('terminated_timestamp')
+    @with_int_prop("terminated_timestamp")
     def with_terminated_timestamp(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
-    @with_int_prop('port')
+    @with_int_prop("port")
     def with_port(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
-    @with_int_prop('last_seen_timestamp')
+    @with_int_prop("last_seen_timestamp")
     def with_last_seen_timestamp(
-            self,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         pass
 
     def with_bound_port(self, *ip_ports):
-        return self.with_to_neighbor(IpPortQuery, 'bound_port', 'bound_by', ip_ports)
+        return self.with_to_neighbor(IpPortQuery, "bound_port", "bound_by", ip_ports)
 
     def with_bound_ip(self, *bound_ips):
-        return self.with_to_neighbor(IpAddressQuery, 'bound_ip', 'bound_ports', bound_ips)
+        return self.with_to_neighbor(
+            IpAddressQuery, "bound_ip", "bound_ports", bound_ips
+        )
 
     @staticmethod
     def extend_self(*types):
@@ -172,25 +173,29 @@ class ProcessInboundConnectionView(EntityView[POCV, POCQ]):
         self.protocol = protocol
 
     def get_protocol(self, cached=True):
-        self.get_str('protocol', cached=cached)
+        self.get_str("protocol", cached=cached)
 
     def get_created_timestamp(self, cached=True):
-        self.get_int('created_timestamp', cached=cached)
+        self.get_int("created_timestamp", cached=cached)
 
     def get_terminated_timestamp(self, cached=True):
-        self.get_int('terminated_timestamp', cached=cached)
+        self.get_int("terminated_timestamp", cached=cached)
 
     def get_port(self, cached=True):
-        self.get_int('port', cached=cached)
+        self.get_int("port", cached=cached)
 
     def get_last_seen_timestamp(self, cached=True):
-        self.get_int('last_seen_timestamp', cached=cached)
+        self.get_int("last_seen_timestamp", cached=cached)
 
     def get_bound_port(self, *ip_ports, cached=False):
-        return self.get_neighbor(IpPortQuery, 'bound_port', 'bound_by', ip_ports, cached=cached)
+        return self.get_neighbor(
+            IpPortQuery, "bound_port", "bound_by", ip_ports, cached=cached
+        )
 
     def get_bound_ip(self, *bound_ips, cached=False):
-        return self.get_neighbor(IpAddressQuery, 'bound_ip', 'bound_ports', bound_ips, cached=cached)
+        return self.get_neighbor(
+            IpAddressQuery, "bound_ip", "bound_ports", bound_ips, cached=cached
+        )
 
     @staticmethod
     def extend_self(*types):
@@ -214,12 +219,21 @@ ProcessInboundConnectionSchema().init_reverse()
 
 class ProcessInboundConnectionExtendsIpPortQuery(IpPortQuery):
     def with_bound_port(self, *bound_ports):
-        self.with_to_neighbor(ProcessInboundConnectionQuery, 'bound_port', 'bound_by', bound_ports)
+        self.with_to_neighbor(
+            ProcessInboundConnectionQuery, "bound_port", "bound_by", bound_ports
+        )
 
 
 class ProcessInboundConnectionExtendsIpPortView(IpPortView):
     def get_bound_port(self, *bound_ports, cached=False):
-        self.get_neighbor(ProcessInboundConnectionQuery, 'bound_port', 'bound_by', bound_ports, cached=cached)
+        self.get_neighbor(
+            ProcessInboundConnectionQuery,
+            "bound_port",
+            "bound_by",
+            bound_ports,
+            cached=cached,
+        )
+
 
 IpPortQuery = IpPortQuery.extend_self(ProcessInboundConnectionExtendsIpPortQuery)
 IpPortView = IpPortView.extend_self(ProcessInboundConnectionExtendsIpPortView)

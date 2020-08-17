@@ -56,15 +56,14 @@ def with_int_prop(prop):
     return _with_int_prop
 
 
-
 def with_to_neighbor(*args):
     @functools.wraps(args)
     def _with_to_neighbor(func):
         @functools.wraps(func)
         def wrapper_with_to_neighbor(self, *edges):
-            default=args[0] or type(self)
-            f=args[1]
-            r=args[2]
+            default = args[0] or type(self)
+            f = args[1]
+            r = args[2]
             return self.with_to_neighbor(default, f, r, edges)
 
         return wrapper_with_to_neighbor
@@ -89,7 +88,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         self._property_filters["node_key"] = [[Eq("node_key", eq)]]
         return self
 
-    def with_to_neighbor(self, default, f, r, edges) -> 'Q':
+    def with_to_neighbor(self, default, f, r, edges) -> "Q":
         if edges and not isinstance(edges, tuple):
             edges = (edges,)
         edges = edges or [default()]
@@ -99,15 +98,15 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         return self
 
     def with_str_property(
-            self,
-            property_name: str,
-            *,
-            eq: Optional["StrOrNot"] = None,
-            contains: Optional["OneOrMany[StrOrNot]"] = None,
-            starts_with: Optional["StrOrNot"] = None,
-            ends_with: Optional["StrOrNot"] = None,
-            regexp: Optional["OneOrMany[StrOrNot]"] = None,
-            distance_lt: Optional[Tuple[str, int]] = None,
+        self,
+        property_name: str,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
     ):
         self._property_filters[property_name].extend(
             _str_cmps(
@@ -123,20 +122,19 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         return self
 
     def with_int_property(
-            self,
-            property_name: str,
-            *,
-            eq: Optional["IntOrNot"] = None,
-            gt: Optional["IntOrNot"] = None,
-            ge: Optional["IntOrNot"] = None,
-            lt: Optional["IntOrNot"] = None,
-            le: Optional["IntOrNot"] = None,
+        self,
+        property_name: str,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
     ):
         self._property_filters[property_name].extend(
             _int_cmps(predicate=property_name, eq=eq, gt=gt, ge=ge, lt=lt, le=le,)
         )
         return self
-
 
     @classmethod
     @abc.abstractmethod
@@ -171,7 +169,47 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
     def set_neighbor_filters(self, edge_name: str, filters: EdgeFilter[Q]):
         self._edge_filters[edge_name].extend(filters)
 
+    def query(self, graph_client, first: int) -> List[V]:
+        var_alloc, query = gen_query(self, "q0", first=first)
+
+        variables = {v: k for k, v in var_alloc.allocated.items()}
+        txn = graph_client.txn(read_only=True)
+
+        # print(query)
+        try:
+            qres = json.loads(txn.query(query, variables=variables).json)
+        finally:
+            txn.discard()
+
+        d = qres.get("query")
+        if d:
+            return [
+                self.associated_viewable().from_dict(node, graph_client) for node in d
+            ]
+        return []
+
     def query_first(
+        self, graph_client, contains_node_key: Optional[str] = None, best_effort=True,
+    ) -> Optional[V]:
+        if contains_node_key:
+            var_alloc, query = gen_query_parameterized(self, "q0", contains_node_key, 0)
+        else:
+            var_alloc, query = gen_query(self, "q0", first=1)
+
+        variables = {v: k for k, v in var_alloc.allocated.items()}
+        txn = graph_client.txn(read_only=True, best_effort=best_effort)
+
+        try:
+            qres = json.loads(txn.query(query, variables=variables).json)
+        finally:
+            txn.discard()
+
+        d = qres.get("q0")
+        if d:
+            return self.associated_viewable().from_dict(d[0], graph_client)
+        return None
+
+    def get_count(
         self, graph_client, contains_node_key: Optional[str] = None
     ) -> Optional[V]:
         if contains_node_key:

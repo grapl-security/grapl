@@ -1,7 +1,7 @@
 from copy import deepcopy
 from enum import Enum
 
-from typing import Type
+from typing import Type, Optional, List
 
 
 class PropPrimitive(Enum):
@@ -11,9 +11,47 @@ class PropPrimitive(Enum):
 
 
 class PropType(object):
-    def __init__(self, primitive: PropPrimitive, is_set: bool):
+    def __init__(
+        self,
+        primitive: PropPrimitive,
+        is_set: bool,
+        index: Optional[List[str]] = None,
+        upsert=False,
+    ):
         self.primitive = primitive
         self.is_set = is_set
+        self.index = index
+        self.upsert = upsert
+
+    def prop_index_str(self) -> str:
+        if self.index:
+            index_str = f"@index({', '.join(self.index)})"
+        elif self.primitive is PropPrimitive.Str:
+            index_str = "@index(exact, trigram)"
+        elif self.primitive is PropPrimitive.Int:
+            index_str = "@index(int)"
+        elif self.primitive is PropPrimitive.Bool:
+            index_str = "@index(bool)"
+        else:
+            raise Exception("Unreachable")
+
+        if self.upsert:
+            index_str += " @upsert"
+        return index_str
+
+    def prop_type_str(self):
+        if self.primitive is PropPrimitive.Str:
+            prim_str = "string"
+        elif self.primitive is PropPrimitive.Int:
+            prim_str = "int"
+        elif self.primitive is PropPrimitive.Bool:
+            prim_str = "bool"
+        else:
+            raise Exception("Unreachable")
+
+        if self.is_set:
+            prim_str = f"[{prim_str}]"
+        return prim_str
 
 
 class EdgeRelationship(Enum):

@@ -9,6 +9,7 @@ from grapl_analyzerlib.node_types import (
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.nodes.base import BaseView
+from grapl_analyzerlib.nodes.entity import EntitySchema
 
 AQ = TypeVar("AQ", bound="AssetQuery")
 AV = TypeVar("AV", bound="AssetView")
@@ -16,6 +17,7 @@ AV = TypeVar("AV", bound="AssetView")
 T = TypeVar("T")
 
 OneOrMany = Union[List[T], T]
+
 
 def default_asset_properties() -> Dict[str, PropType]:
     return {
@@ -40,7 +42,7 @@ def default_asset_edges() -> Dict[str, Tuple[EdgeT, str]]:
     }
 
 
-class AssetSchema(Schema):
+class AssetSchema(EntitySchema):
     def __init__(self):
         super(AssetSchema, self).__init__(
             default_asset_properties(), default_asset_edges(), lambda: AssetView
@@ -79,23 +81,26 @@ class AssetQuery(Queryable[AV, AQ]):
         )
         return self
 
-    def with_asset_ip(self, *asset_ips: 'IpAddressSchema'):
+    def with_asset_ip(self, *asset_ips: "IpAddressQuery"):
         asset_ips = asset_ips or [IpAddressSchema()]
         self.set_neighbor_filters("asset_ip", [asset_ips])
         for asset_ip in asset_ips:
             asset_ip.set_neighbor_filters("ip_assigned_to", [self])
+        return self
 
-    def with_asset_processes(self, *asset_processes: 'ProcessSchema'):
+    def with_asset_processes(self, *asset_processes: "ProcessQuery"):
         asset_processes = asset_processes or [ProcessSchema()]
-        self.set_neighbor_filters("asset_processes", [asset_ip])
+        self.set_neighbor_filters("asset_processes", [asset_processes])
         for asset_process in asset_processes:
             asset_process.set_neighbor_filters("process_asset", [self])
+        return self
 
-    def with_files_on_asset(self, *files_on_asset: 'FileSchema'):
+    def with_files_on_asset(self, *files_on_asset: "FileQuery"):
         files_on_asset = files_on_asset or [FileSchema()]
-        self.set_neighbor_filters("files_on_asset", [asset_ip])
+        self.set_neighbor_filters("files_on_asset", [files_on_asset])
         for file_on_asset in files_on_asset:
             file_on_asset.set_neighbor_filters("file_asset", [self])
+        return self
 
     @staticmethod
     def extend_self(*types):
@@ -122,17 +127,17 @@ class AssetView(BaseView[AV, AQ]):
         graph_client: Any,
         node_types: Set[str],
         hostname: Optional[str] = None,
-        asset_ip: Optional[List['IpAddressView']] = None,
-        asset_processes: Optional[List['ProcessView']] = None,
-        files_on_asset: Optional[List['FileView']] = None,
+        asset_ip: Optional[List["IpAddressView"]] = None,
+        asset_processes: Optional[List["ProcessView"]] = None,
+        files_on_asset: Optional[List["FileView"]] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, **kwargs)
-        self.set_predicate('node_types', node_types)
-        self.set_predicate('hostname', hostname)
-        self.set_predicate('asset_ip', asset_ip)
-        self.set_predicate('asset_processes', asset_processes)
-        self.set_predicate('files_on_asset', files_on_asset)
+        super().__init__(uid, node_key, graph_client, node_types=node_types, **kwargs)
+        self.set_predicate("node_types", node_types)
+        self.set_predicate("hostname", hostname)
+        self.set_predicate("asset_ip", asset_ip)
+        self.set_predicate("asset_processes", asset_processes)
+        self.set_predicate("files_on_asset", files_on_asset)
 
     def get_hostname(self, cached=True):
         if cached and self.hostname:
@@ -206,8 +211,27 @@ class AssetView(BaseView[AV, AQ]):
 
 
 from grapl_analyzerlib.comparators import StrOrNot, _str_cmps
-from grapl_analyzerlib.nodes.ip_address import IpAddressSchema, IpAddressView
-from grapl_analyzerlib.nodes.file import FileSchema, FileView
-from grapl_analyzerlib.nodes.process import ProcessSchema, ProcessView
+from grapl_analyzerlib.nodes.ip_address import (
+    IpAddressSchema,
+    IpAddressView,
+    IpAddressQuery,
+)
+from grapl_analyzerlib.nodes.file import FileSchema, FileView, FileQuery
+from grapl_analyzerlib.nodes.process import ProcessSchema, ProcessView, ProcessQuery
 
 AssetSchema().init_reverse()
+
+
+class AssetExtendsProcessQuery(ProcessQuery):
+    pass  # TODO
+
+
+class AssetExtendsProcessView(ProcessView):
+    def get_asset(self, *filters, cached=True):
+        return self.get_neighbor(
+            FileQuery, "process_asset", "asset_processes", filters, cached=cached
+        )
+
+
+ProcessQuery = ProcessQuery.extend_self(AssetExtendsProcessQuery)
+ProcessView = ProcessView.extend_self(AssetExtendsProcessView)

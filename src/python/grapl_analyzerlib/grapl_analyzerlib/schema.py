@@ -37,10 +37,10 @@ class SingletonMeta(type):
 
 class Schema(metaclass=SingletonMeta):
     def __init__(
-            self,
-            properties: Dict[str, "PropType"],
-            edges: Dict[str, Tuple["EdgeT", str]],
-            viewable: "Union[Type[Viewable], Callable[[], Type[Viewable]]]",
+        self,
+        properties: Dict[str, "PropType"],
+        edges: Dict[str, Tuple["EdgeT", str]],
+        viewable: "Union[Type[Viewable], Callable[[], Type[Viewable]]]",
     ):
         self.properties: Dict[str, "PropType"] = {**default_properties(), **properties}
         self.edges: Dict[str, Tuple["EdgeT", str]] = {}
