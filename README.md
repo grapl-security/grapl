@@ -63,7 +63,7 @@ view all of the information for it by selecting the node.
 
 
 **Analyzers**
-https://grapl-analyzerlib.readthedocs.io/en/latest/analyzers/Implementing%20An%20Analyzer/
+https://grapl.readthedocs.io/en/latest/analyzers/implementing.html
 
 Analyzers are your attacker signatures. They’re Python modules,
 deployed to Grapl’s S3 bucket, that are orchestrated to execute upon
@@ -160,9 +160,4 @@ querying capabilities.
 ## Setup
 Grapl can run locally on your computer, or you can deploy to AWS.
 
-### Local Grapl
-https://grapl-analyzerlib.readthedocs.io/en/latest/setup/local/
-
-### AWS
-
-https://grapl-analyzerlib.readthedocs.io/en/latest/setup/aws/
+https://grapl.readthedocs.io/en/latest/setup/index.html

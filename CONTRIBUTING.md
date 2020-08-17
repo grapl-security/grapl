@@ -103,7 +103,7 @@ you specified a different tag in your build step above you would want
 to specify that same tag here.
 
 See [these
-docs](https://grapl-analyzerlib.readthedocs.io/en/latest/setup/local/)
+docs](https://grapl.readthedocs.io/en/latest/setup/local.html)
 for a more in-depth guide to operating Grapl locally.
 
 We heartily welcome code contributions, but we request for the sake of
