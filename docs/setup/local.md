@@ -29,7 +29,7 @@ docker-compose up
 
 **Uploading Your Analyzer**
 
-Next, we’ll upload a basic [Analyzer (Grapl’s attack signatures)](https://grapl-analyzerlib.readthedocs.io/en/latest/analyzers/Implementing%20An%20Analyzer/), which searches for processes named "svchost" without a whitelisted parent process. We've provided a demo Analyzer in the Grapl repository. If you're interested in the code, see our Analyzer docs.
+Next, we’ll upload a basic [Analyzer (Grapl’s attack signatures)](https://grapl.readthedocs.io/en/latest/analyzers/implementing.html), which searches for processes named "svchost" without a whitelisted parent process. We've provided a demo Analyzer in the Grapl repository. If you're interested in the code, see our Analyzer docs.
 
 To upload the Analyzer to Grapl, navigate to the root of the cloned grapl repository and run the following command: 
 
@@ -108,7 +108,7 @@ As we pivot off of the data that we have, our graph expands to visually display 
 
 We’ve kept the data in our demo light so users to become familiar with Grapl’s core features, but you can keep expanding the graph using the notebook to get the full story of what the attacker did.
 
-Check out [our docs](https://grapl-analyzerlib.readthedocs.io/en/latest/) to see other ways to interact with your data.
+Check out [our docs](https://grapl.readthedocs.io/en/latest/) to see other ways to interact with your data.
 
 
 
