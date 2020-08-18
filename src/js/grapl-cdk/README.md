@@ -125,9 +125,9 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 
 # spin up ec2 resources with docker-machine
 # see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key-pair" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" aws01
-docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key-pair" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" aws02
-docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key-pair" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" aws03
+docker-machine create --driver "amazonec2" --amazonec2-region "$AWS_DEFAULT_REGION" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" aws01
+docker-machine create --driver "amazonec2" --amazonec2-region "$AWS_DEFAULT_REGION" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" aws02
+docker-machine create --driver "amazonec2" --amazonec2-region "$AWS_DEFAULT_REGION" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "docker-machine-key" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" aws03
 
 #
 # refer to the DGraph docs for more details about the rest of the setup
@@ -175,7 +175,7 @@ some operational details.
 
 First, *don't lose the key pair*. If, for example, your bastion host
 crashes and you somehow lost the key pair
-(e.g. `docker-machine-key-pair.pem` from the previous section) then
+(e.g. `docker-machine-key.pem` from the previous section) then
 `docker-machine` will no longer be able to connect to the DGraph
 cluster. This would be bad. To mitigate this risk, make sure you don't
 destroy the bastion's EBS volume. If the bastion crashes and you need

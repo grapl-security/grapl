@@ -42,6 +42,7 @@ const main = async (): Promise<void> => {
     const zip = new AdmZip("./my_file.zip");
     zip.extractAllTo(/*target path*/"./zips/", /*overwrite*/true);
 
+
 }
 
 (async () => {
@@ -52,4 +53,3 @@ const main = async (): Promise<void> => {
     // Deal with the fact the chain failed
     console.error(e);
 });
-

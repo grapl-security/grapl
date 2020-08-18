@@ -1,10 +1,8 @@
 import * as cdk from "@aws-cdk/core";
 import * as lambda from "@aws-cdk/aws-lambda";
-import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
-import {DGraphEcs} from "./dgraph";
 import * as iam from "@aws-cdk/aws-iam";
 
 export class AnalyzerDeployer extends cdk.NestedStack {
@@ -19,7 +17,6 @@ export class AnalyzerDeployer extends cdk.NestedStack {
         analyzer_request_bucket: s3.IBucket,
         analyzer_matched_bucket: s3.IBucket,
         model_plugins_bucket: s3.IBucket,
-        master_graph: DGraphEcs,
         vpc: ec2.Vpc,
     ) {
         super(scope, id);
