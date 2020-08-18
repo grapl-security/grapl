@@ -1,25 +1,21 @@
 import abc
-import json
 import functools
-
-from grapl_analyzerlib.comparators import _str_cmps, _int_cmps
+import json
 from collections import defaultdict
-
 from typing import (
     cast,
-    Any,
+    Dict,
     TypeVar,
     Generic,
     Type,
     Tuple,
     Optional,
-    Iterator,
     List,
     Union,
 )
-
 from uuid import uuid4
 
+from grapl_analyzerlib.comparators import _str_cmps, _int_cmps, StrOrNot, OneOrMany, IntOrNot
 from grapl_analyzerlib.extendable import Extendable
 
 Q = TypeVar("Q", bound="Queryable")
@@ -175,7 +171,6 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         variables = {v: k for k, v in var_alloc.allocated.items()}
         txn = graph_client.txn(read_only=True)
 
-        # print(query)
         try:
             qres = json.loads(txn.query(query, variables=variables).json)
         finally:
@@ -220,7 +215,6 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         variables = {v: k for k, v in var_alloc.allocated.items()}
         txn = graph_client.txn(read_only=True)
 
-        # print(query)
         try:
             qres = json.loads(txn.query(query, variables=variables).json)
         finally:
@@ -232,8 +226,6 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         return None
 
 
-from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.node_types import EdgeT
 from grapl_analyzerlib.comparators import Cmp, Eq
 from grapl_analyzerlib.query_gen import gen_query, gen_query_parameterized

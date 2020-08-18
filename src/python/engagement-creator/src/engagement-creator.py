@@ -75,10 +75,11 @@ def attach_risk(
     risk_node_uid = upsert(client, risk_node)
 
     create_edge(client, node_uid, "risks", risk_node_uid)
+    create_edge(client, risk_node_uid, "risky_nodes", node_uid )
 
 
-def recalculate_score(client: DgraphClient, lens: LensView) -> int:
-    scope = lens.get_scope(client)
+def recalculate_score(lens: LensView) -> int:
+    scope = lens.get_scope()
     key_to_analyzers = defaultdict(set)
     node_risk_scores = defaultdict(int)
     total_risk_score = 0
@@ -88,10 +89,11 @@ def recalculate_score(client: DgraphClient, lens: LensView) -> int:
         for risk in node_risks:
             risk_score = risk.get_risk_score()
             analyzer_name = risk.get_analyzer_name()
+            print(node.node_key, analyzer_name, risk_score)
             risks_by_analyzer[analyzer_name] = risk_score
             key_to_analyzers[node.node_key].add(analyzer_name)
-        node_risk_scores[node.node_key] = sum(risks_by_analyzer.values())
-        total_risk_score += sum(risks_by_analyzer.values())
+        node_risk_scores[node.node_key] = sum([a for a in risks_by_analyzer.values() if a])
+        total_risk_score += sum([a for a in risks_by_analyzer.values() if a])
 
     # Bonus is calculated by finding nodes with multiple analyzers
     for key, analyzers in key_to_analyzers.items():
@@ -242,7 +244,7 @@ def lambda_handler(events: Any, context: Any) -> None:
                 create_edge(mg_client, from_uid, edge_name, to_uid)
 
         for lens in lenses.values():
-            recalculate_score(mg_client, lens)
+            recalculate_score(lens)
 
 
 if IS_LOCAL:

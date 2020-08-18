@@ -103,17 +103,17 @@ class LensView(BaseView[LV, LQ]):
     ) -> "LensView":
         eg_txn = gclient.txn(read_only=False)
         try:
-            query = """
-            query res($a: string)
-            {
-              res(func: eq(node_key, $a), first: 1) @cascade
-               {
+            query = f"""
+            {{
+              res(func: eq(node_key, "{'lens-' + lens_type + lens_name}"), first: 1) @cascade
+               {{
                  uid,
                  node_type: dgraph.type,
                  node_key,
-               }
-             }"""
-            res = eg_txn.query(query, variables={"$a": "lens-" + lens_type + lens_name})
+               }}
+             }}"""
+
+            res = eg_txn.query(query)
 
             res = json.loads(res.json)["res"]
             new_uid = None

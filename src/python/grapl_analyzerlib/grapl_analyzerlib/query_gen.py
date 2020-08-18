@@ -76,7 +76,7 @@ def gen_prop_filters(q: "Queryable", var_alloc: VarAllocator) -> Optional[str]:
     return prop_filter_str
 
 
-def find_func(q: "Queryable") -> str:
+def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
     """
     `find_func` will look for the most optimal filter.
 
@@ -95,12 +95,20 @@ def find_func(q: "Queryable") -> str:
     for (prop_name, or_filter) in q.property_filters():
         for and_filter in or_filter:
             if len(and_filter) == 1 and (
-                isinstance(and_filter[0], Eq) or isinstance(and_filter[0], IntEq)
+                (isinstance(and_filter[0], Eq) or isinstance(and_filter[0], IntEq))
+                and not and_filter[0].negated
             ):
+                from copy import deepcopy
                 if prop_name == "node_key":
-                    return and_filter[0].to_filter()
+                    filter = deepcopy(and_filter[0])
+                    v = var_alloc.alloc(Eq("node_key", filter.value))
+                    filter.value = v
+                    return filter.to_filter()
                 if prop_name == "uid":
-                    return and_filter[0].to_filter()
+                    filter = deepcopy(and_filter[0])
+                    v = var_alloc.alloc(Eq("uid", filter.value))
+                    filter.value = v
+                    return filter.to_filter()
 
                 singular_eq_nu = and_filter[0].to_filter()
 
@@ -287,7 +295,7 @@ def into_var_query(
     root_node: Optional["Queryable"] = None,
     cascade: Optional[bool] = None,
 ) -> Tuple[str, str]:
-    func = func or find_func(q)
+    func = func or find_func(q, vars_alloc)
     filters, block = into_query_block(
         q, vars_alloc, binding=binding, root_node=root_node
     )
@@ -356,7 +364,7 @@ def gen_query_parameterized(
 
     node_key_var = vars_alloc.alloc(Eq("node_key", contains_node_key))
     for i, node in enumerate(traverse_query_iter(q)):
-        func = f"eq(node_key, {node_key_var}), first: 1"
+        func = f'eq(node_key, {node_key_var}), first: 1'
         binding = f"{binding_modifier}Binding{depth}_{i}"
         bindings.append(binding)
         var_name = ""
@@ -407,7 +415,7 @@ def gen_query(
 
     vars_alloc = VarAllocator()
 
-    func = find_func(q)
+    func = find_func(q, vars_alloc)
     var_query, var_block = into_var_query(q, "q0", vars_alloc, func=func, cascade=True)
     # merged_query = into_query_block_merged(q)
 
