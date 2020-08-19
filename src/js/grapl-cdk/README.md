@@ -93,11 +93,16 @@ To provision DGraph:
 2. Execute the following commands:
 
 ```bash
-# The Grapl deployment name we used in the CDK
-GRAPL_DEPLOYMENT=<YOUR_DEPLOYMENT>
-
 # install docker
 sudo yum install -y docker
+sudo systemctl enable docker.service
+sudo systemctl start docker.service
+sudo usermod -a -G docker ec2-user
+sudo su ec2-user
+cd
+
+# The Grapl deployment name we used in the CDK
+GRAPL_DEPLOYMENT=<YOUR_DEPLOYMENT>
 
 # install docker-machine
 base=https://github.com/docker/machine/releases/download/v0.16.2 &&
@@ -129,7 +134,7 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 
 # spin up ec2 resources with docker-machine
 # see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-alias dm='docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "$KEYPAIR_NAME" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" --amazonec2-region "$AWS_DEFAULT_REGION"'
+alias dm='/usr/local/bin/docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "$KEYPAIR_NAME" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" --amazonec2-region "$AWS_DEFAULT_REGION"'
 AWS01_NAME=${GRAPL_DEPLOYMENT}-aws01
 AWS02_NAME=${GRAPL_DEPLOYMENT}-aws02
 AWS03_NAME=${GRAPL_DEPLOYMENT}-aws03
@@ -148,6 +153,7 @@ dm "$AWS03_NAME"
 AWS01_IP=$(docker-machine ip "$AWS01_NAME")
 eval $(docker-machine env "$AWS01_NAME" --shell sh)
 docker swarm init --advertise-addr $AWS01_IP
+
 
 # extract the join token
 WORKER_JOIN_TOKEN=$(docker swarm join-token worker -q)
