@@ -1,6 +1,6 @@
 import os
 
-from typing import Iterator, Tuple
+from typing import Iterator, Optional, Tuple
 
 from pydgraph import DgraphClient, DgraphClientStub
 
@@ -13,7 +13,15 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 
 class GraphClient(DgraphClient):
-    pass
+    def __init__(self, alphas: Optional[Iterable[str]] = None):
+        if alphas is None:
+            super(GraphClient, self).__init__(
+                *(DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
+            )
+        else:
+            super(GraphClient, self).__init__(
+                *(DgraphClientStub(alpha) for alpha in alphas)
+            )
 
 
 class MasterGraphClient(GraphClient):
