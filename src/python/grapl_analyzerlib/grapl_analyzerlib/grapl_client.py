@@ -1,6 +1,6 @@
 import os
 
-from typing import Iterator, Optional, Tuple
+from typing import Iterable, Iterator, Optional, Tuple
 
 from pydgraph import DgraphClient, DgraphClientStub
 
