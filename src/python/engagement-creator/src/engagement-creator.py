@@ -217,7 +217,11 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 def nodes_to_attach_risk_to(
     nodes: Sequence[NodeView], risky_node_keys: Optional[Sequence[str]],
 ) -> Sequence[NodeView]:
-    if not risky_node_keys:
+    """
+    a None risky_node_keys means 'mark all as risky'
+    a [] risky_node_keys means 'mark none as risky'.
+    """
+    if risky_node_keys is None:
         return nodes
     risky_node_keys_set = frozenset(risky_node_keys)
     return [node for node in nodes if node.node_key in risky_node_keys_set]
@@ -245,7 +249,7 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
         edges = incident_graph["edges"]
         risk_score = incident_graph["risk_score"]
         lens_dict = incident_graph["lenses"]
-        risky_node_keys = incident_graph["risky_nodes"]
+        risky_node_keys = incident_graph["risky_node_keys"]
 
         LOGGER.debug(
             f"AnalyzerName {analyzer_name}, nodes: {nodes_raw} edges: {type(edges)} {edges}"
@@ -355,6 +359,8 @@ def main():
             time.sleep(2)
 
 
-if __name__ == "__main__":
-    if IS_LOCAL:
-        main()
+"""
+main does not run in prod, the entrypoint is 'lambda_handler' in production.
+"""
+if __name__ == "__main__" and IS_LOCAL:
+    main()
