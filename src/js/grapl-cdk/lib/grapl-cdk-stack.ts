@@ -427,7 +427,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         this.dgraphSwarmCluster = new Swarm(this, 'DGraphSwarmCluster', {
             prefix: props.prefix,
             vpc: props.vpc,
-            internalServicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080)],
+            internalServicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(6080), ec2.Port.tcp(7080), ec2.Port.tcp(7081), ec2.Port.tcp(7082), ec2.Port.tcp(9080), ec2.Port.tcp(9081), ec2.Port.tcp(9082)],
         });
     }
 
