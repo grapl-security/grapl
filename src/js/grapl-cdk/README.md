@@ -166,7 +166,7 @@ docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
 
 # get DGraph compose template
 cd $HOME
-wget https://github.com/dgraph-io/dgraph/raw/master/contrib/config/docker/docker-compose-multi.yml
+wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/docker-compose-multi.yml
 sed -e 's/aws01/'"${AWS01_NAME}"'/g' -i docker-compose-multi.yml
 sed -e 's/aws02/'"${AWS02_NAME}"'/g' -i docker-compose-multi.yml
 sed -e 's/aws03/'"${AWS03_NAME}"'/g' -i docker-compose-multi.yml
