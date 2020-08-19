@@ -1,7 +1,6 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
-import { PropagatedTagSource } from '@aws-cdk/aws-ecs';
 
 export interface SwarmProps {
     // Grapl deployment name prefix
