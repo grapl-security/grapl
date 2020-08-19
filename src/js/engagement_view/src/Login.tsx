@@ -68,7 +68,7 @@ export const LogIn = (_: LoginProps) => {
           const loginSuccess = await login(values.userName, password);
           
           if (loginSuccess === true) {
-            window.history.replaceState('#/login', "", "/")
+            window.history.replaceState('#/login', "", "#/")
             window.location.reload();
             console.log("Logged In")
           } else {
