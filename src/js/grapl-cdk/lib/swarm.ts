@@ -3,6 +3,8 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 
 export interface SwarmProps {
+    // Grapl deployment name prefix
+    readonly prefix: String;
 
     // The VPC where the Docker Swarm cluster will run
     readonly vpc: ec2.IVpc;
@@ -15,16 +17,14 @@ export interface SwarmProps {
 export class Swarm extends cdk.Construct {
     private readonly swarmSecurityGroup: ec2.ISecurityGroup;
 
-    constructor(
-        scope: cdk.Construct,
-        id: string,
-        swarmProps: SwarmProps
-    ) {
+    constructor(scope: cdk.Construct, id: string, swarmProps: SwarmProps) {
         super(scope, id);
 
-        const swarmSecurityGroup = new ec2.SecurityGroup(scope, id + "-swarm-security-group", {
+        const swarmSecurityGroup = new ec2.SecurityGroup(scope, 'Swarm', {
+            securityGroupName: swarmProps.prefix + '-Swarm',
+            description: `${swarmProps.prefix} DGraph Swarm security group`,
             vpc: swarmProps.vpc,
-            allowAllOutbound: false
+            allowAllOutbound: false,
         });
         // allow the bastion machine to make outbound connections to
         // the Internet for these services:
@@ -49,17 +49,17 @@ export class Swarm extends cdk.Construct {
 
         // allow hosts in the swarm security group to communicate
         // internally on the given service ports.
-        swarmProps.internalServicePorts.forEach(
-            (port, _) => swarmSecurityGroup.connections.allowInternally(port)
+        swarmProps.internalServicePorts.forEach((port, _) =>
+            swarmSecurityGroup.connections.allowInternally(port)
         );
 
         this.swarmSecurityGroup = swarmSecurityGroup;
 
-        const bastion = new ec2.BastionHostLinux(this, id + 'bastion', {
+        const bastion = new ec2.BastionHostLinux(this, 'Bastion', {
             vpc: swarmProps.vpc,
             securityGroup: swarmSecurityGroup,
-            instanceType: new ec2.InstanceType("t3a.nano"),
-            instanceName: "SwarmBastion"
+            instanceType: new ec2.InstanceType('t3a.nano'),
+            instanceName: swarmProps.prefix + '-SwarmBastion',
         });
 
         /* configure a bunch of AWS permissions to enable
@@ -129,33 +129,34 @@ export class Swarm extends cdk.Construct {
         const statement = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: [
-                "ec2:DescribeSecurityGroups",
-                "ec2:CreateSecurityGroup",
-                "ec2:DescribeSubnets",
-                "ec2:DescribeKeyPairs",
-                "ec2:CreateKeyPair",
-                "ec2:DescribeSpotInstances",
-                "ec2:DescribeSpotInstanceRequests",
-                "ec2:RequestSpotInstances",
-                "ec2:CancelSpotInstanceRequests",
-                "ec2:DescribeInstances",
-                "ec2:RunInstances",
-                "ec2:StartInstances",
-                "ec2:StopInstances",
-                "ec2:RebootInstances",
-                "ec2:TerminateInstances",
-                "ec2:CreateTags",
-                "route53:ListHostedZonesByName",
-                "route53:ChangeResourceRecordSets"
+                'ec2:DescribeSecurityGroups',
+                'ec2:CreateSecurityGroup',
+                'ec2:DescribeSubnets',
+                'ec2:DescribeKeyPairs',
+                'ec2:CreateKeyPair',
+                'ec2:DescribeSpotInstances',
+                'ec2:DescribeSpotInstanceRequests',
+                'ec2:RequestSpotInstances',
+                'ec2:CancelSpotInstanceRequests',
+                'ec2:DescribeInstances',
+                'ec2:RunInstances',
+                'ec2:StartInstances',
+                'ec2:StopInstances',
+                'ec2:RebootInstances',
+                'ec2:TerminateInstances',
+                'ec2:CreateTags',
+                'route53:ListHostedZonesByName',
+                'route53:ChangeResourceRecordSets',
             ],
-            resources: ["*"]
+            resources: ['*'],
         });
 
         bastion.role.addToPrincipalPolicy(statement);
     }
 
     public allowConnectionsFrom(
-        other: ec2.IConnectable, portRange: ec2.Port
+        other: ec2.IConnectable,
+        portRange: ec2.Port
     ): void {
         this.swarmSecurityGroup.connections.allowFrom(other, portRange);
     }

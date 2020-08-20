@@ -306,7 +306,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
                 MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
                 HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
                 HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
-                GRAPL_LOG_LEVEL: "INFO",
+                GRAPL_LOG_LEVEL: 'INFO',
                 GRPC_ENABLE_FORK_SUPPORT: '1',
             },
             vpc: props.vpc,
@@ -411,22 +411,25 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
     private readonly dgraphSwarmCluster: Swarm;
 
     constructor(
-        parent: cdk.Construct, id: string, props: DGraphSwarmClusterProps
+        parent: cdk.Construct,
+        id: string,
+        props: DGraphSwarmClusterProps
     ) {
         super(parent, id);
 
         this.dgraphAlphaZone = new route53.PrivateHostedZone(
             this,
-            id + "-DGraphSwarmZone",
+            'DGraphSwarmZone',
             {
                 vpc: props.vpc,
-                zoneName: "alpha.dgraph.graplsecurity.com"
+                zoneName: props.prefix.toLowerCase() + '.dgraph.grapl',
             }
         );
 
-        this.dgraphSwarmCluster = new Swarm(this, props.prefix + "-DGraphSwarmCluster", {
+        this.dgraphSwarmCluster = new Swarm(this, 'DGraphSwarmCluster', {
+            prefix: props.prefix,
             vpc: props.vpc,
-            internalServicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080)]
+            internalServicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080), ec2.Port.tcp(7081), ec2.Port.tcp(7082)],
         });
     }
 
@@ -436,6 +439,8 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
 
     public allowConnectionsFrom(other: ec2.IConnectable): void {
         this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9080));
+        this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9081));
+        this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9082));
     }
 }
 
@@ -476,7 +481,7 @@ class DGraphTtl extends cdk.NestedStack {
             timeout: cdk.Duration.seconds(600),
             memorySize: 128,
             description: props.version,
-            role
+            role,
         });
         event_handler.currentVersion.addAlias('live');
 
@@ -688,7 +693,7 @@ export class GraplCdkStack extends cdk.Stack {
         });
 
         const user_auth_table = new UserAuthDb(this, 'UserAuthTable', {
-            table_name: this.prefix.toLowerCase() + '-user_auth_table',
+            table_name: this.prefix + '-user_auth_table',
         });
 
         let watchful = undefined;
@@ -704,9 +709,11 @@ export class GraplCdkStack extends cdk.Stack {
         }
 
         const dgraphSwarmCluster = new DGraphSwarmCluster(
-            this, 'dgraph-swarm-cluster', {
+            this,
+            'dgraph-swarm-cluster',
+            {
                 prefix: this.prefix,
-                vpc: grapl_vpc
+                vpc: grapl_vpc,
             }
         );
 
