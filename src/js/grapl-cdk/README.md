@@ -109,6 +109,7 @@ base=https://github.com/docker/machine/releases/download/v0.16.2 &&
 curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
 sudo mv /tmp/docker-machine /usr/local/bin/docker-machine &&
 chmod +x /usr/local/bin/docker-machine
+export PATH=/usr/local/bin:$PATH
 
 # extract AWS creds into environment variables
 ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/)
@@ -135,9 +136,9 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 # spin up ec2 resources with docker-machine
 # see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
 alias dm='/usr/local/bin/docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "$KEYPAIR_NAME" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" --amazonec2-region "$AWS_DEFAULT_REGION"'
-AWS01_NAME=${GRAPL_DEPLOYMENT}-aws01
-AWS02_NAME=${GRAPL_DEPLOYMENT}-aws02
-AWS03_NAME=${GRAPL_DEPLOYMENT}-aws03
+export AWS01_NAME=${GRAPL_DEPLOYMENT}-aws01
+export AWS02_NAME=${GRAPL_DEPLOYMENT}-aws02
+export AWS03_NAME=${GRAPL_DEPLOYMENT}-aws03
 dm "$AWS01_NAME"
 dm "$AWS02_NAME"
 dm "$AWS03_NAME"
@@ -167,9 +168,6 @@ docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
 # get DGraph compose template
 cd $HOME
 wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/docker-compose-multi.yml
-sed -e 's/aws01/'"${AWS01_NAME}"'/g' -i docker-compose-multi.yml
-sed -e 's/aws02/'"${AWS02_NAME}"'/g' -i docker-compose-multi.yml
-sed -e 's/aws03/'"${AWS03_NAME}"'/g' -i docker-compose-multi.yml
 
 # start DGraph
 eval $(docker-machine env "$AWS01_NAME" --shell sh)

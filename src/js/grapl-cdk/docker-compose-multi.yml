@@ -23,7 +23,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.hostname == aws01
+          - node.hostname == ${AWS01_NAME}
     command: dgraph zero --my=zero:5080 --replicas 3
   alpha1:
     image: dgraph/dgraph:latest
@@ -38,7 +38,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.hostname == aws01
+          - node.hostname == ${AWS01_NAME}
     command: dgraph alpha --my=alpha1:7080 --lru_mb=2048 --zero=zero:5080 --whitelist=10.0.0.0/8
   alpha2:
     image: dgraph/dgraph:latest
@@ -54,7 +54,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.hostname == aws02
+          - node.hostname == ${AWS02_NAME}
     command: dgraph alpha --my=alpha2:7081 --lru_mb=2048 --zero=zero:5080 -o 1 --whitelist=10.0.0.0/8
   alpha3:
     image: dgraph/dgraph:latest
@@ -70,7 +70,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.hostname == aws03
+          - node.hostname == ${AWS03_NAME}
     command: dgraph alpha --my=alpha3:7082 --lru_mb=2048 --zero=zero:5080 -o 2 --whitelist=10.0.0.0/8
   ratel:
     image: dgraph/dgraph:latest
