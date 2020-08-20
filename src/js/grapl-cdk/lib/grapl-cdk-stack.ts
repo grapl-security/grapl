@@ -691,7 +691,7 @@ export class GraplCdkStack extends cdk.Stack {
         });
 
         const user_auth_table = new UserAuthDb(this, 'UserAuthTable', {
-            table_name: this.prefix.toLowerCase() + '-user_auth_table',
+            table_name: this.prefix + '-user_auth_table',
         });
 
         let watchful = undefined;
