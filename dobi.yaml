@@ -132,6 +132,8 @@ image=grapl-common-build:
   context: src/python/grapl-common/
   dockerfile: Dockerfile
   target: grapl-common-python-build
+  depends:
+    - python-build
   tags:
     - latest
 
