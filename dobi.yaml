@@ -127,12 +127,21 @@ image=graph-descriptions-build:
   tags:
     - latest
 
+image=grapl-common-build:
+  image: grapl/grapl-common-python-build
+  context: src/python/grapl-common/
+  dockerfile: Dockerfile
+  target: grapl-common-python-build
+  tags:
+    - latest
+
 image=grapl-analyzerlib-build:
   image: grapl/grapl-analyzerlib-python-build
   context: src/python/grapl_analyzerlib/
   dockerfile: Dockerfile
   target: grapl-analyzerlib-python-build
   depends:
+    - grapl-common-build
     - graph-descriptions-build
   tags:
     - latest
@@ -387,6 +396,12 @@ job=run-node-identifier-integration-tests:
 
 # python jobs
 
+job=run-grapl-common-unit-tests:
+  use: grapl-common-build
+  command: /bin/bash -c "source venv/bin/activate && cd grapl_common/tests && ls && py.test -n auto -m 'not integration_test'"
+  depends:
+    - grapl-common-build
+
 job=run-grapl-analyzerlib-unit-tests:
   use: grapl-analyzerlib-build
   command: /bin/bash -c "source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'not integration_test'"
@@ -552,6 +567,7 @@ alias=clean-python-build:
     - "dgraph-ttl-build:rm"
     - "model-plugin-deployer-build:rm"
     - "grapl-analyzerlib-build:rm"
+    - "grapl-common-build:rm"
     - "graph-descriptions-build:rm"
     - "python-build:rm"
   annotations:
@@ -559,6 +575,7 @@ alias=clean-python-build:
 
 alias=python-unit-tests:
   tasks:
+    - run-grapl-common-unit-tests
     - run-grapl-analyzerlib-unit-tests
     - run-analyzer-executor-unit-tests
     - run-engagement-creator-unit-tests
