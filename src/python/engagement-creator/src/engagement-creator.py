@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, Tuple, Sequence, Optional
 
 import boto3
 import botocore.exceptions
@@ -20,6 +20,13 @@ LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+"""
+https://docs.aws.amazon.com/AmazonS3/latest/dev/notification-content-structure.html
+"""
+S3Event = Dict[str, Any]
+
+EventWithReceiptHandle = Tuple[S3Event, str]
 
 
 def parse_s3_event(s3, event) -> str:
@@ -207,30 +214,49 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
         yield host, int(port)
 
 
-def lambda_handler(events: Any, context: Any) -> None:
+def nodes_to_attach_risk_to(
+    nodes: Sequence[NodeView], risky_node_keys: Optional[Sequence[str]],
+) -> Sequence[NodeView]:
+    """
+    a None risky_node_keys means 'mark all as risky'
+    a [] risky_node_keys means 'mark none as risky'.
+    """
+    if risky_node_keys is None:
+        return nodes
+    risky_node_keys_set = frozenset(risky_node_keys)
+    return [node for node in nodes if node.node_key in risky_node_keys_set]
+
+
+def lambda_handler(s3_event: S3Event, context: Any) -> None:
     mg_client_stubs = (DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
     mg_client = DgraphClient(*mg_client_stubs)
 
     s3 = get_s3_client()
-    for event in events["Records"]:
+    for event in s3_event["Records"]:
         if not IS_LOCAL:
             event = json.loads(event["body"])["Records"][0]
 
         data = parse_s3_event(s3, event)
         incident_graph = json.loads(data)
 
+        """
+        The `incident_graph` dict is emitted from analyzer-executor.py#emit_event
+        """
         analyzer_name = incident_graph["analyzer_name"]
-        nodes = incident_graph["nodes"]
+        nodes_raw: Dict[str, Any] = incident_graph[
+            "nodes"
+        ]  # same type as `.to_adjacency_list()["nodes"]`
         edges = incident_graph["edges"]
         risk_score = incident_graph["risk_score"]
         lens_dict = incident_graph["lenses"]
+        risky_node_keys = incident_graph["risky_node_keys"]
 
         LOGGER.debug(
-            f"AnalyzerName {analyzer_name}, nodes: {nodes} edges: {type(edges)} {edges}"
+            f"AnalyzerName {analyzer_name}, nodes: {nodes_raw} edges: {type(edges)} {edges}"
         )
 
         nodes = [
-            NodeView.from_node_key(mg_client, n["node_key"]) for n in nodes.values()
+            NodeView.from_node_key(mg_client, n["node_key"]) for n in nodes_raw.values()
         ]
 
         uid_map = {node.node_key: node.uid for node in nodes}
@@ -258,7 +284,8 @@ def lambda_handler(events: Any, context: Any) -> None:
                         create_edge(mg_client, lens.uid, "scope", from_uid)
                         create_edge(mg_client, lens.uid, "scope", to_uid)
 
-        for node in nodes:
+        risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_keys)
+        for node in risky_nodes:
             attach_risk(
                 mg_client, node.node.node_key, node.uid, analyzer_name, risk_score
             )
@@ -275,7 +302,7 @@ def lambda_handler(events: Any, context: Any) -> None:
             recalculate_score(mg_client, lens)
 
 
-if IS_LOCAL:
+def main():
     sqs = boto3.client(
         "sqs",
         region_name="us-east-1",
@@ -315,7 +342,7 @@ if IS_LOCAL:
             if not messages:
                 LOGGER.warning("queue was empty")
 
-            s3_events = [
+            s3_events: Sequence[EventWithReceiptHandle] = [
                 (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
             ]
             for s3_event, receipt_handle in s3_events:
@@ -330,3 +357,10 @@ if IS_LOCAL:
             LOGGER.error(f"mainloop exception {e}")
             LOGGER.error(traceback.print_exc())
             time.sleep(2)
+
+
+"""
+main does not run in prod, the entrypoint is 'lambda_handler' in production.
+"""
+if __name__ == "__main__" and IS_LOCAL:
+    main()
