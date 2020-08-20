@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple, Sequence, FrozenSet, Optional
+from typing import Any, Dict, Iterator, Tuple, Sequence, Optional
 
 import boto3
 import botocore.exceptions
