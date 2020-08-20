@@ -420,7 +420,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             'DGraphSwarmZone',
             {
                 vpc: props.vpc,
-                zoneName: 'alpha.dgraph.graplsecurity.com',
+                zoneName: props.prefix.toLowerCase() + '.dgraph.grapl',
             }
         );
 
