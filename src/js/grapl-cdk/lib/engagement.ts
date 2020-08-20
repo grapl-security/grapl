@@ -225,7 +225,7 @@ export class EngagementEdge extends cdk.NestedStack {
 }
 
 export interface EngagementNotebookProps extends GraplServiceProps {
-    model_plugins_bucket: s3.IBucket,
+    model_plugins_bucket: s3.IBucket;
 }
 
 export class EngagementNotebook extends cdk.NestedStack {
@@ -256,7 +256,6 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         props.userAuthTable.allowReadWriteFromRole(role);
         props.model_plugins_bucket.grantRead(role);
-
 
         new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
             notebookInstanceName: props.prefix + '-Notebook',
