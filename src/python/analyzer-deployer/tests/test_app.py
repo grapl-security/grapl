@@ -2,9 +2,9 @@ import dataclasses
 import json
 import unittest
 
-import hypothesis.strategies as st
+import pytest
 
-from typing import List
+import hypothesis.strategies as st
 
 from hypothesis import given
 from chalice.test import Client
@@ -115,3 +115,7 @@ class TestApp(unittest.TestCase):
         with Client(app) as client:
             response = client.http.post("1/analyzers")
             self.assertIsNotNone(response.body)
+
+    @pytest.mark.integration_test
+    def test_create_analyzer(self):
+        pass

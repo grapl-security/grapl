@@ -1,4 +1,4 @@
-FROM grapl/grapl-analyzerlib-python-build:latest AS grapl-dgraph-ttl-build
+FROM grapl/grapl-python-build:latest AS grapl-dgraph-ttl-build
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . ./dgraph-ttl

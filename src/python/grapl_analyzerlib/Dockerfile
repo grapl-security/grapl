@@ -1,4 +1,4 @@
-FROM grapl/grapl-graph-descriptions-python-build:latest AS grapl-analyzerlib-python-build
+FROM grapl/grapl-python-build:latest AS grapl-analyzerlib-python-build
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . grapl_analyzerlib
