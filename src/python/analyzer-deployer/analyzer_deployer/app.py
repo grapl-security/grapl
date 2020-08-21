@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Dict, List, Union
+from typing import List
 
 import boto3
 
@@ -24,26 +24,17 @@ class Analyzer:
     created_time: int
     last_update_time: int
 
-    def as_dict(self) -> Dict[str, Union[str, int, bool, List[int]]]:
-        dataclasses.asdict(self)
-
 
 @dataclasses.dataclass
 class PortConfig:
     protocol: str
     port: int
 
-    def as_dict(self) -> Dict[str, Union[str, int]]:
-        dataclasses.asdict(self)
-
 
 @dataclasses.dataclass
 class TableConfig:
     table: str
     write: bool
-
-    def as_dict(self) -> Dict[str, Union[str, bool]]:
-        dataclasses.asdict(self)
 
 
 @dataclasses.dataclass
@@ -52,9 +43,6 @@ class SecretConfig:
     VersionId: str = None
     VersionStage: str = None
 
-    def as_dict(self) -> Dict[str, str]:
-        dataclasses.asdict(self)
-
 
 @dataclasses.dataclass
 class AnalyzerConfig:
@@ -62,9 +50,6 @@ class AnalyzerConfig:
     requires_dynamodb: List[TableConfig] = None
     requires_graph: bool = False
     requires_secrets: List[SecretConfig] = None
-
-    def as_dict(self) -> Dict[str, Union[str, bool, int, List[Dict[str, Union[str, int]]]]]:
-        dataclasses.asdict(self)
 
 
 @dataclasses.dataclass
@@ -76,9 +61,6 @@ class AnalyzerDeployment:
     last_deployed_time: int = None
     analyzer_configuration: AnalyzerConfig = None
 
-    def as_dict(self) -> Dict[str, Union[str, int, bool]]:
-        dataclasses.asdict(self)
-
 
 @dataclasses.dataclass
 class CreateAnalyzerResponse:
@@ -86,16 +68,13 @@ class CreateAnalyzerResponse:
     analyzer_version: int
     s3_key: str
 
-    def as_dict(self) -> Dict[str, Union[str, int]]:
-        dataclasses.asdict(self)
-
 
 def _create_analyzer(
     dynamodb_client: dynamodb.DynamoDBServiceResource,
 ) -> CreateAnalyzerResponse:
     analyzer = Analyzer()
     analyzers_table = dynamodb_client.Table("Analyzers")
-    analyzers_table.put_item(Item=)
+    return CreateAnalyzerResponse("id", 0, "key")
 
 
 @app.route("/1/analyzers", methods=["POST"])
