@@ -105,9 +105,7 @@ class TestSerde(unittest.TestCase):
     ):
         serialized = json.dumps(dataclasses.asdict(create_analyzer_response))
         deserialized = json.loads(serialized)
-        self.assertDictEqual(
-            deserialized, dataclasses.asdict(create_analyzer_response)
-        )
+        self.assertDictEqual(deserialized, dataclasses.asdict(create_analyzer_response))
 
 
 class TestApp(unittest.TestCase):
