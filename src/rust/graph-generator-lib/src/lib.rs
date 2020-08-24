@@ -290,7 +290,7 @@ fn handler<
 
     let generator = generator.clone();
     let event_decoder = event_decoder.clone();
-    std::thread::spawn(move || {
+    let t = std::thread::spawn(move || {
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
         tokio_compat::run_std(async move {
@@ -382,6 +382,8 @@ fn handler<
             break;
         }
     }
+
+    t.join();
 
     info!("Completed execution");
 

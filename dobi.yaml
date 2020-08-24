@@ -133,9 +133,31 @@ image=grapl-analyzerlib-build:
   dockerfile: Dockerfile
   target: grapl-analyzerlib-python-build
   depends:
+    - python-build
     - graph-descriptions-build
   tags:
     - latest
+
+image=analyzer-deployer-build:
+  image: grapl/analyzer-deployer-build
+  context: src/python/analyzer-deployer/
+  dockerfile: Dockerfile
+  target: analyzer-deployer-build
+  depends:
+    - python-build
+  tags:
+    - latest
+
+image=analyzer-deployer:
+  image: grapl/analyzer-deployer
+  context: src/python/analyzer-deployer/
+  dockerfile: Dockerfile
+  target: analyzer-deployer
+  depends:
+    - analyzer-deployer-build
+    - python-deploy
+  tags:
+    - "{env.TAG}"
 
 image=analyzer-executor-build:
   image: grapl/analyzer-executor-build
@@ -143,6 +165,8 @@ image=analyzer-executor-build:
   dockerfile: Dockerfile
   target: analyzer-executor-build
   depends:
+    - python-build
+    - graph-descriptions-build
     - grapl-analyzerlib-build
   tags:
     - latest
@@ -164,6 +188,8 @@ image=engagement-creator-build:
   dockerfile: Dockerfile
   target: engagement-creator-build
   depends:
+    - python-build
+    - graph-descriptions-build
     - grapl-analyzerlib-build
   tags:
     - latest
@@ -185,6 +211,8 @@ image=engagement-edge-build:
   dockerfile: Dockerfile
   target: engagement-edge-build
   depends:
+    - python-build
+    - graph-descriptions-build
     - grapl-analyzerlib-build
   tags:
     - latest
@@ -206,6 +234,8 @@ image=dgraph-ttl-build:
   dockerfile: Dockerfile
   target: grapl-dgraph-ttl-build
   depends:
+    - python-build
+    - graph-descriptions-build
     - grapl-analyzerlib-build
   tags:
     - latest
@@ -227,6 +257,8 @@ image=model-plugin-deployer-build:
   dockerfile: Dockerfile
   target: grapl-model-plugin-deployer-build
   depends:
+    - python-build
+    - graph-descriptions-build
     - grapl-analyzerlib-build
   tags:
     - latest
@@ -328,6 +360,7 @@ compose=integration-env:
     - node-identifier-retry-handler
     - sysmon-subgraph-generator
     # python images
+    - analyzer-deployer
     - analyzer-executor
     - engagement-creator
     - engagement-edge
@@ -406,6 +439,31 @@ job=run-grapl-analyzerlib-integration-tests:
     - grapl-analyzerlib-build
     - integration-env
 
+job=build-analyzer-deployer:
+  use: analyzer-deployer-build
+  mounts:
+    - dist
+  artifact:
+    - ./dist/analyzer-deployer/lambda.zip
+
+job=run-analyzer-deployer-unit-tests:
+  use: analyzer-deployer-build
+  command: /bin/bash -c "source venv/bin/activate && cd analyzer-deployer && py.test -n auto -m 'not integration_test'"
+  depends:
+    - analyzer-deployer-build
+
+job=run-analyzer-deployer-integration-tests:
+  use: analyzer-deployer-build
+  net-mode: grapl-integration-tests_default
+  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd analyzer-deployer && py.test -n auto -m 'integration_test'"
+  env:
+    - GRAPL_LOG_LEVEL=INFO
+    - "BUCKET_PREFIX=local-grapl"
+    - "IS_LOCAL=True"
+  depends:
+    - analyzer-deployer-build
+    - integration-env
+
 job=build-analyzer-executor:
   use: analyzer-executor-build
   mounts:
@@ -417,7 +475,7 @@ job=run-analyzer-executor-unit-tests:
   use: analyzer-executor-build
   command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
   depends:
-    - build-analyzer-executor
+    - analyzer-executor-build
 
 job=build-engagement-creator:
   use: engagement-creator-build
@@ -528,11 +586,13 @@ alias=rust-integration-tests:
 
 alias=python:
   tasks:
+    - build-analyzer-deployer
     - build-analyzer-executor
     - build-engagement-creator
     - build-engagement-edge
     - build-dgraph-ttl
     - build-model-plugin-deployer
+    - "analyzer-deployer:tag"
     - "analyzer-executor:tag"
     - "engagement-creator:tag"
     - "engagement-edge:tag"
@@ -546,6 +606,7 @@ alias=python:
 
 alias=clean-python-build:
   tasks:
+    - "analyzer-deployer-build:rm"
     - "analyzer-executor-build:rm"
     - "engagement-creator-build:rm"
     - "engagement-edge-build:rm"
@@ -560,6 +621,7 @@ alias=clean-python-build:
 alias=python-unit-tests:
   tasks:
     - run-grapl-analyzerlib-unit-tests
+    - run-analyzer-deployer-unit-tests
     - run-analyzer-executor-unit-tests
     - run-engagement-creator-unit-tests
     - run-engagement-edge-unit-tests
@@ -571,6 +633,7 @@ alias=python-unit-tests:
 alias=python-integration-tests:
   tasks:
     - run-grapl-analyzerlib-integration-tests
+    - run-analyzer-deployer-integration-tests
   annotations:
     description: "Run the python integration tests"
 

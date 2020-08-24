@@ -464,7 +464,6 @@ def get_plugin_list(s3: BaseClient):
 @requires_auth("/listModelPlugins")
 def list_model_plugins():
     LOGGER.info("/listModelPlugins")
-    plugin_names = []
     try:
         plugin_names = get_plugin_list(get_s3_client())
     except Exception as e:
