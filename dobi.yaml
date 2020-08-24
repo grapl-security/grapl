@@ -145,6 +145,7 @@ image=grapl-analyzerlib-build:
   depends:
     - python-build
     - graph-descriptions-build
+    - grapl-common-build
   tags:
     - latest
 
