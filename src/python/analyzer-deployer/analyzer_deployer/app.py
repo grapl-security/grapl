@@ -79,7 +79,8 @@ def _create_analyzer(
 
 @app.route("/1/analyzers", methods=["POST"])
 def create_analyzer():
-    return dataclasses.asdict(_create_analyzer())
+    dynamodb_client = boto3.resource('dynamodb')
+    return dataclasses.asdict(_create_analyzer(dynamodb_client))
 
 
 # The view function above will return {"hello": "world"}
