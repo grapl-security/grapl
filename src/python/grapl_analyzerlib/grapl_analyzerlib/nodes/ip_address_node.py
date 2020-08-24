@@ -13,7 +13,7 @@ from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeQuery, DynamicNodeVi
 from grapl_analyzerlib.nodes.queryable import NQ
 from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.time_utils import Millis
+from grapl_common.time_utils import Millis
 
 IIpAddressQuery = TypeVar("IIpAddressQuery", bound="IpAddressQuery")
 
