@@ -1,0 +1,14 @@
+### Doc generation
+Sphinx==3.1.2
+# markdown support for sphinx
+recommonmark
+sphinx-rtd-theme
+
+### General Python stuff
+wheel
+
+### Requirements from projects (yes, really...)
+typing_extensions
+pydgraph
+boto3
+
