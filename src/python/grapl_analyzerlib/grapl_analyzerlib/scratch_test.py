@@ -29,6 +29,7 @@ from grapl_analyzerlib.nodes.file import (
 )
 
 from grapl_analyzerlib.nodes.lens import LensView, LensQuery, LensSchema
+from grapl_analyzerlib.prelude import RiskQuery, RiskView
 
 ProcessQuery = ProcessQuery.extend_self(FileExtendsProcessQuery)
 ProcessView = ProcessView.extend_self(FileExtendsProcessView)
@@ -127,6 +128,11 @@ def main():
         "process_name": "evil.exe",
     }  # type: Dict[str, Property]
 
+    risk = {
+        "analyzer_name": "finds_evil",
+        "risk_score": 55,
+    }  # type: Dict[str, Property]
+
     parent_bin_view = upsert(
         local_client,
         "File",
@@ -171,6 +177,10 @@ def main():
         local_client, "Lens", LensView, "0b1da9a3-b16c-4d6b-8b45-18e474a58ed0", lens,
     )
 
+    risk_view = upsert(
+        local_client, "Risk", RiskView, "66667366-7d0c-4be1-a182-be67e42d1286", risk,
+    )
+
     create_edge(local_client, parent_view.uid, "bin_file", parent_bin_view.uid)
     create_edge(local_client, parent_bin_view.uid, "spawned_from", parent_view.uid)
 
@@ -192,6 +202,12 @@ def main():
     create_edge(local_client, child_view.uid, "in_scope", lens_view.uid)
     create_edge(local_client, child_view2.uid, "in_scope", lens_view.uid)
 
+    create_edge(local_client, risk_view.uid, "risky_nodes", parent_view.uid)
+    create_edge(local_client, parent_view.uid, "risks", risk_view.uid)
+
+    create_edge(local_client, risk_view.uid, "risky_nodes", child_view.uid)
+    create_edge(local_client, child_view.uid, "risks", risk_view.uid)
+
     p = (
         ProcessQuery()
         .with_lenses()
@@ -199,7 +215,9 @@ def main():
         .with_bin_file()
         .with_process_name()
         .with_children(
-            ProcessQuery().with_process_name(eq="cmd.exe"),
+            ProcessQuery()
+            .with_process_name(eq="cmd.exe")
+            .with_risks(RiskQuery().with_analyzer_name()),
             ProcessQuery().with_process_name(eq="evil.exe"),
         )
     )
@@ -212,9 +230,7 @@ def main():
         "e03519f6-6f84-4f87-b426-196e249e7b7a",
     ):
         pv = p.query_first(local_client, contains_node_key=node_key)
-        al = pv.to_adjacency_list()
-        print(al['nodes'])
-        print(al['edges'])
+
         # print(pv.node_key)
         # print(pv.predicates)
         # pv._expand()
@@ -243,6 +259,7 @@ def main():
     #         print("lens", maybe_proc.get_lenses())
     #
 
+
 if __name__ == "__main__":
     gclient = DgraphClient(DgraphClientStub("localhost:9080"))
 
@@ -264,6 +281,8 @@ if __name__ == "__main__":
             deleted_files
 
             in_scope
+            
+            risks
         }
 
         type File {
@@ -275,12 +294,19 @@ if __name__ == "__main__":
             readers
             deleter
             in_scope
+            risks
         }
 
         type Lens {
             node_key
             lens
             scope
+        }
+
+        type Risk {
+            node_key
+            analyzer_name
+            risk_score
         }
 
         process_id: int @index(int) .
@@ -307,6 +333,12 @@ if __name__ == "__main__":
 
         scope: [uid] .
         in_scope: [uid] .
+        
+        risks: [uid] .
+        risky_nodes: [uid] .
+        
+        risk_score: int @index(int) .
+        analyzer_name: string @index(exact, trigram) .        
     """,
     )
 

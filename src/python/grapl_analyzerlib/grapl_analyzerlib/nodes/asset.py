@@ -9,7 +9,7 @@ from grapl_analyzerlib.node_types import (
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.nodes.base import BaseView
-from grapl_analyzerlib.nodes.entity import EntitySchema
+from grapl_analyzerlib.nodes.entity import EntitySchema, EntityQuery, EntityView
 
 AQ = TypeVar("AQ", bound="AssetQuery")
 AV = TypeVar("AV", bound="AssetView")
@@ -53,7 +53,7 @@ class AssetSchema(EntitySchema):
         return "Asset"
 
 
-class AssetQuery(Queryable[AV, AQ]):
+class AssetQuery(EntityQuery[AV, AQ]):
     @classmethod
     def node_schema(cls) -> "Schema":
         return AssetSchema()
@@ -113,7 +113,7 @@ class AssetQuery(Queryable[AV, AQ]):
         return type("AssetQuery", types, {})
 
 
-class AssetView(BaseView[AV, AQ]):
+class AssetView(EntityView[AV, AQ]):
     queryable = AssetQuery
 
     @classmethod

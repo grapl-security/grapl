@@ -19,13 +19,13 @@ def drop_all(client):
     client.alter(op)
 
 
-def format_schemas(schema_defs):
-    schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
+def format_schemas(schema_defs: List["BaseSchema"]) -> str:
+    schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
 
     return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
+        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
     )
 
 

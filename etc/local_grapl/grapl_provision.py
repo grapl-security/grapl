@@ -142,7 +142,7 @@ def provision_mg(mclient) -> None:
         ProcessInboundConnectionSchema(),
         ProcessOutboundConnectionSchema(),
         RiskSchema(),
-        LensSchema()
+        LensSchema(),
     )
 
     mg_schema_str = format_schemas(mg_schemas)
@@ -336,7 +336,7 @@ if __name__ == "__main__":
                 time.sleep(1)
                 provision_mg(local_dg_provision_client,)
                 mg_succ = True
-                print('Provisioned mastergraph')
+                print("Provisioned mastergraph")
                 break
         except Exception as e:
             if i > 10:

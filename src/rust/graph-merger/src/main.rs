@@ -117,6 +117,10 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
 
     let node_key = node.clone_node_key();
     let mut set_json = node.into_json();
+    let mut node_types = vec![set_json["dgraph.type"].as_str().unwrap().clone()];
+    node_types.extend_from_slice(&["Entity", "Base"]);
+    set_json["dgraph.type"] = node_types.into();
+
     set_json["uid"] = "uid(p)".into();
     set_json["last_index_time"] = (SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -513,6 +517,7 @@ where
         info!("Upserted: {} nodes", node_key_to_uid.len());
 
         info!("Inserting edges {}", subgraph.edges.len());
+        let dynamodb = init_dynamodb_client();
 
         let edge_mutations: Vec<_> = subgraph
             .edges
@@ -539,7 +544,7 @@ where
                     }
                     (Some(from), Some(to)) => {
                         info!("Upserting edge: {} {} {}", &from, &to, &edge.edge_name);
-                        Some(generate_edge_insert(&from, &to, &edge.edge_name))
+                        Some((from, to, &edge.edge_name))
                     }
                     (_, _) => {
                         edge_res = Some("Edge to uid failed".to_string());
@@ -547,10 +552,38 @@ where
                     }
                 }
             })
-            .map(|mu| upsert_edge(&self.mg_client, mu))
             .collect();
 
-        let _: Vec<_> = join_all(edge_mutations).await;
+        let mut r_edge_cache: HashMap<String, String> = HashMap::with_capacity(2);
+
+        let mut mutations = Vec::with_capacity(2);
+        for (from, to, edge_name) in edge_mutations {
+            let r_edge = match r_edge_cache.get(&edge_name.to_string()) {
+                r_edge @ Some(_) => Ok(r_edge.map(String::from)),
+                None => get_r_edge(&dynamodb, from.clone()).await,
+            };
+
+            match r_edge {
+                Ok(Some(r_edge)) if !r_edge.is_empty() => {
+                    r_edge_cache.insert(edge_name.to_owned(), r_edge.to_string());
+                    let mu = generate_edge_insert(&to, &from, &r_edge);
+                    mutations.push(upsert_edge(&self.mg_client, mu))
+                }
+                Err(e) => {
+                    error!("get_r_edge failed: {:?}", e);
+                    edge_res = Some(e.to_string());
+                }
+                _ => (),
+            }
+
+            let mu = generate_edge_insert(&from, &to, &edge_name);
+            mutations.push(upsert_edge(&self.mg_client, mu));
+        }
+
+        let edge_mut_res: Vec<_> = join_all(mutations).await;
+        if let Some(e) = edge_mut_res.iter().find(|e| e.is_err()) {
+            edge_res = Some(format!("{:?}", e));
+        }
 
         let completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
@@ -567,6 +600,64 @@ where
         };
 
         completed
+    }
+}
+
+use rusoto_dynamodb::AttributeValue;
+use rusoto_dynamodb::DynamoDbClient;
+use rusoto_dynamodb::{DynamoDb, GetItemInput, QueryInput};
+use serde::{Deserialize, Serialize};
+
+pub fn init_dynamodb_client() -> DynamoDbClient {
+    info!("Connecting to local http://dynamodb:8000");
+    DynamoDbClient::new_with(
+        HttpClient::new().expect("failed to create request dispatcher"),
+        rusoto_credential::StaticProvider::new_minimal(
+            "dummy_cred_aws_access_key_id".to_owned(),
+            "dummy_cred_aws_secret_access_key".to_owned(),
+        ),
+        Region::Custom {
+            name: "us-west-2".to_string(),
+            endpoint: "http://dynamodb:8000".to_string(),
+        },
+    )
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct EdgeMapping {
+    f_edge: String,
+    r_edge: String,
+}
+
+async fn get_r_edge(
+    client: &DynamoDbClient,
+    f_edge: String,
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let mut key = HashMap::new();
+
+    key.insert(
+        "f_edge".to_owned(),
+        AttributeValue {
+            s: Some(f_edge.to_owned()),
+            ..Default::default()
+        },
+    );
+
+    let query = GetItemInput {
+        consistent_read: Some(false),
+        table_name: std::env::var("GRAPL_SCHEMA_TABLE").expect("GRAPL_SCHEMA_TABLE"),
+        key,
+        ..Default::default()
+    };
+
+    let item = client.get_item(query).await?.item;
+
+    match item {
+        Some(item) => {
+            let mapping: EdgeMapping = serde_dynamodb::from_hashmap(item.clone())?;
+            Ok(Some(mapping.r_edge))
+        }
+        None => Ok(None),
     }
 }
 

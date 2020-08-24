@@ -15,7 +15,13 @@ from typing import (
 )
 from uuid import uuid4
 
-from grapl_analyzerlib.comparators import _str_cmps, _int_cmps, StrOrNot, OneOrMany, IntOrNot
+from grapl_analyzerlib.comparators import (
+    _str_cmps,
+    _int_cmps,
+    StrOrNot,
+    OneOrMany,
+    IntOrNot,
+)
 from grapl_analyzerlib.extendable import Extendable
 
 Q = TypeVar("Q", bound="Queryable")

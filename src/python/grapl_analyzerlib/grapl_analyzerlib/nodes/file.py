@@ -142,30 +142,28 @@ class FileView(EntityView[FV, FQ]):
     ):
         super(FileView, self).__init__(uid, node_key, graph_client, node_types)
         self.node_types = set(node_types)
-        self.file_path = file_path
-        self.file_extension = file_extension
-        self.file_mime_type = file_mime_type
-        self.file_size = file_size
-        self.file_version = file_version
-        self.file_description = file_description
-        self.file_product = file_product
-        self.file_company = file_company
-        self.file_directory = file_directory
-        self.file_inode = file_inode
-        self.file_hard_links = file_hard_links
-        self.signed = signed
-        self.signed_status = signed_status
-        self.md5_hash = md5_hash
-        self.sha1_hash = sha1_hash
-        self.sha256_hash = sha256_hash
+        self.set_predicate("file_path", file_path)
+        self.set_predicate("file_extension", file_extension)
+        self.set_predicate("file_mime_type", file_mime_type)
+        self.set_predicate("file_size", file_size)
+        self.set_predicate("file_version", file_version)
+        self.set_predicate("file_description", file_description)
+        self.set_predicate("file_product", file_product)
+        self.set_predicate("file_company", file_company)
+        self.set_predicate("file_directory", file_directory)
+        self.set_predicate("file_inode", file_inode)
+        self.set_predicate("file_hard_links", file_hard_links)
+        self.set_predicate("signed", signed)
+        self.set_predicate("signed_status", signed_status)
+        self.set_predicate("md5_hash", md5_hash)
+        self.set_predicate("sha1_hash", sha1_hash)
+        self.set_predicate("sha256_hash", sha256_hash)
 
-        self.spawned_from = spawned_from or []
-        self.creator = creator or []
-        self.writers = writers or []
-        self.readers = readers or []
-        self.deleter = deleter or []
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        self.set_predicate("spawned_from", spawned_from or [])
+        self.set_predicate("creator", creator or [])
+        self.set_predicate("writers", writers or [])
+        self.set_predicate("readers", readers or [])
+        self.set_predicate("deleter", deleter or [])
 
     def get_spawned_from(self, *filters: "ProcessQuery", cached=True):
         return self.get_neighbor(

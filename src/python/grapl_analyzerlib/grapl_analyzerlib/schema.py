@@ -61,6 +61,8 @@ class Schema(metaclass=SingletonMeta):
 
     def init_reverse(self):
         for edge_name, (edge, reverse_name) in self.edges.items():
+            if not (edge_name and reverse_name):
+                continue
             r_edge = edge.reverse()
             # The edge dest Viewable should already be constructed at this point
             edge.dest().edges[reverse_name] = (r_edge, edge_name)
@@ -83,38 +85,6 @@ class Schema(metaclass=SingletonMeta):
     @staticmethod
     @abc.abstractmethod
     def self_type() -> str:
-        raise NotImplementedError
-        # noinspection PyUnreachableCode
-        return cast(Any, None)  # satisfy pytype
-
-    @staticmethod
-    def from_graphdb(graph_client: GraphClient, type_name: str) -> "Schema":
-        """
-        Given a `type_name`, queries the graph database
-        for the schema of that type, and constructs a Schema
-        """
-
-        # query = f"""
-        #     schema(type: {type_name}) {{ }}
-        # """
-        # LOGGER.debug(f"query: {query}")
-        # txn = graph_client.txn(read_only=True)
-        # try:
-        #     res = json.loads(txn.query(query).json)
-        #     LOGGER.debug(f"res: {res}")
-        # finally:
-        #     txn.discard()
-        #
-        # pred_names = []
-        #
-        # if "types" in res:
-        #     for field in res["types"][0]["fields"]:
-        #         pred_name = (
-        #             f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
-        #         )
-        #         pred_names.append(pred_name)
-        #
-
         raise NotImplementedError
         # noinspection PyUnreachableCode
         return cast(Any, None)  # satisfy pytype

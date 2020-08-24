@@ -37,7 +37,9 @@ class BaseSchema(Schema):
     def generate_type(self) -> str:
         dgraph_builtins = {"dgraph.type", "uid"}
 
-        property_names = [p for p in self.properties.keys() if p not in dgraph_builtins]
+        property_names = [
+            p for p in self.properties.keys() if p and p not in dgraph_builtins
+        ]
         property_names.extend(self.edges.keys())
         linebreak = "\n" + ("\t" * 4)
         property_str = f"{linebreak}".join(property_names)
@@ -54,11 +56,17 @@ class BaseSchema(Schema):
         for prop_name, prop_type in self.properties.items():
             if prop_name in dgraph_builtins:
                 continue
-            prim_str = prop_type.prop_type_str()
-            index_str = prop_type.prop_index_str()
-            predicates.append(f"{prop_name}: {prim_str} {index_str} .")
+            try:
+                prim_str = prop_type.prop_type_str()
+                index_str = prop_type.prop_index_str()
+                predicates.append(f"{prop_name}: {prim_str} {index_str} .")
+            except Exception as e:
+                print(f"Failed to generate property schema {prop_name} {e}")
+                raise e
 
         for edge_name, (edge_t, r_name) in self.edges.items():
+            if not edge_name:
+                continue
             uid_t = "uid"
             if edge_t.is_to_many():
                 uid_t = f"[{uid_t}]"
@@ -68,7 +76,7 @@ class BaseSchema(Schema):
 
     @staticmethod
     def self_type() -> str:
-        return "BaseNode"
+        return "Base"
 
 
 class BaseQuery(Queryable[BCV, BCQ]):
@@ -87,6 +95,9 @@ class BaseQuery(Queryable[BCV, BCQ]):
         return BaseSchema()
 
 
+V = TypeVar("V", bound="Viewable")
+
+
 class BaseView(Viewable[BCV, BCQ]):
     queryable = BaseQuery
 
@@ -103,7 +114,7 @@ class BaseView(Viewable[BCV, BCQ]):
         self.uid = uid
         self.node_key = node_key
 
-    def into_view(self, v: Type["Viewable"]) -> Optional["Viewable"]:
+    def into_view(self, v: Type["V"]) -> Optional["V"]:
         if v.node_schema().self_type() in self.node_types:
             self.queryable = v.queryable
             return v(

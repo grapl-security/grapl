@@ -152,6 +152,7 @@ services:
       - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
       - MG_ALPHAS=master_graph:9080
+      - "GRAPL_SCHEMA_TABLE=local-grapl-grapl_schema_table"
     tty: false
     links:
       - s3:minio

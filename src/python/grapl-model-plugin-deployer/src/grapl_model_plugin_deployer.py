@@ -1,3 +1,5 @@
+from grapl_analyzerlib.schema import Schema
+
 print("init")
 import base64
 import hmac
@@ -8,25 +10,26 @@ import os
 import re
 import sys
 import traceback
-import uuid
-import jwt
-
 from base64 import b64decode
 from hashlib import sha1
+from pathlib import Path
 from typing import TypeVar, Dict, Union, List, Any
 
 import boto3
+import jwt
 import pydgraph
 from botocore.client import BaseClient
 from chalice import Chalice, Response
 from github import Github
-from grapl_analyzerlib.grapl_client import (
-    GraphClient,
-    MasterGraphClient,
-    LocalMasterGraphClient,
+from grapl_analyzerlib.node_types import (
+    PropPrimitive,
+    PropType,
+    EdgeRelationship,
+    EdgeT,
 )
-from grapl_analyzerlib.schemas import NodeSchema
-from grapl_analyzerlib.schemas.schema_builder import UidType
+from grapl_analyzerlib.prelude import *
+
+sys.path.append("/tmp/")
 
 T = TypeVar("T")
 
@@ -39,6 +42,11 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 LOGGER.info("Initializing Chalice server")
 
+try:
+    directory = Path("/tmp/model_plugins/")
+    directory.mkdir(parents=True, exist_ok=True)
+except Exception as e:
+    LOGGER.error("Failed to create directory", e)
 
 if IS_LOCAL:
     import time
@@ -95,7 +103,7 @@ def check_jwt(headers):
     try:
         jwt.decode(encoded_jwt, JWT_SECRET, algorithms=["HS256"])
         return True
-    except Exception as e:
+    except Exception:
         LOGGER.error(traceback.format_exc())
         return False
 
@@ -110,23 +118,30 @@ def set_schema(client: GraphClient, schema: str) -> None:
     client.alter(op)
 
 
-def format_schemas(schema_defs) -> str:
-    LOGGER.debug(f"schema_defs: {schema_defs}")
-    schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
-    LOGGER.debug(f"schemas: {schemas}")
+def format_schemas(schema_defs: List["BaseSchema"]) -> str:
+    schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
-    LOGGER.debug(f"types: {types}")
 
     return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
+        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
     )
 
 
+def store_schema(dynamodb, schema: "Schema"):
+    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    for f_edge, (_, r_edge) in schema.get_edges().items():
+        if not (f_edge and r_edge):
+            continue
+        table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
+        table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
+
+
 def provision_master_graph(
-    master_graph_client: GraphClient, schemas: List[NodeSchema]
+    master_graph_client: GraphClient, schemas: List["BaseSchema"]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
+    print(mg_schema_str)
     set_schema(master_graph_client, mg_schema_str)
 
 
@@ -142,6 +157,19 @@ def get_s3_client() -> Any:
         return boto3.client("s3")
 
 
+def get_dynamodb_client() -> Any:
+    if IS_LOCAL:
+        return boto3.resource(
+            "dynamodb",
+            endpoint_url="http://dynamodb:8000",
+            region_name='us-west-2',
+            aws_access_key_id="dummy_cred_aws_access_key_id",
+            aws_secret_access_key="dummy_cred_aws_secret_access_key",
+        )
+    else:
+        return boto3.resource("dynamodb")
+
+
 def git_walker(repo, directory, f):
     f(directory)
     for path in into_list(repo.get_contents(directory.path)):
@@ -152,104 +180,130 @@ def git_walker(repo, directory, f):
             git_walker(repo, inner_directory, f)
 
 
-def is_schema(plugin_name: str, schema_cls):
-    if (
-        plugin_name == "NodeSchema" or plugin_name == "AnyNodeSchema"
-    ):  # This is the base class
+def is_schema(schema_cls):
+    try:
+        schema_cls.self_type()
+    except Exception as e:
+        LOGGER.debug(f"no self_type {e}")
         return False
-    return (
-        hasattr(schema_cls, "self_type")
-        and hasattr(schema_cls, "generate_type")
-        and hasattr(schema_cls, "to_schema_str")
-    )
+    return True
 
 
-def get_schema_objects() -> Dict[str, NodeSchema]:
-    clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
-    return {an[0]: an[1]() for an in clsmembers if is_schema(an[0], an[1])}
+def get_schema_objects(meta_globals) -> "Dict[str, BaseSchema]":
+    clsmembers = [(m, c) for m, c in meta_globals.items() if inspect.isclass(c)]
+    print("clsmembers", clsmembers)
+
+    return {an[0]: an[1]() for an in clsmembers if is_schema(an[1])}
 
 
 def provision_schemas(master_graph_client, raw_schemas):
     # For every schema, exec the schema
+    meta_globals = {}
     for raw_schema in raw_schemas:
-        exec(raw_schema, globals())
+        exec(raw_schema, meta_globals)
 
     # Now fetch the schemas back from memory
-    schemas = list(get_schema_objects().values())
+    schemas = list(get_schema_objects(meta_globals).values())
+    print(f"Schemas: {schemas}")
+    LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
-    schemas = list(set(schemas) - builtin_nodes)
-    LOGGER.debug(f"deploying schemas: {[s.self_type() for s in schemas]}")
+    LOGGER.info("init_reverse")
+    for schema in schemas:
+        schema.init_reverse()
 
+    LOGGER.info("Merge the schemas with what exists in the graph")
+    for schema in schemas:
+        extend_schema(master_graph_client, schema)
+
+    LOGGER.info("Reprovision the graph")
     provision_master_graph(master_graph_client, schemas)
 
-    LOGGER.debug(f"Attaching reverse edges")
-    attach_reverse_edges(master_graph_client, schemas)
-
-
-def attach_reverse_edges(client: GraphClient, schemas: List[NodeSchema]) -> None:
-    LOGGER.debug(f"attaching reverse edges for schemas: {schemas}")
+    dynamodb = get_dynamodb_client()
     for schema in schemas:
-        if schema.self_type() != "Any":
-            for edge_name, uid_type, _ in schema.forward_edges:
-                try:
-                    add_reverse_edge_type(client, uid_type, edge_name)
-                except Exception:
-                    import traceback
-
-                    LOGGER.error(
-                        "Failed to add reverse_edge type\n", traceback.format_exc()
-                    )
+        store_schema(dynamodb, schema)
 
 
-def add_reverse_edge_type(
-    client: GraphClient, uid_type: UidType, edge_name: str
-) -> None:
-    LOGGER.debug(
-        f"adding reverse edge type uid_type: {uid_type} edge_name: {edge_name}"
-    )
-    self_type = uid_type._inner_type.self_type()
-
-    existing_predicates = query_dgraph_type(client, self_type)
-    predicates = "\n\t\t".join(existing_predicates)
-
-    # In case we've already deployed this plugin
-    if edge_name in predicates:
-        return
-
-    predicates += f"\n\t\t<~{edge_name}>"
-
-    type_str = f"""
-    type {self_type} {{
-        {predicates}
-    }}\n
-    """
-
-    op = pydgraph.Operation(schema=type_str)
-    client.alter(op)
-
-
-def query_dgraph_type(client: GraphClient, type_name: str) -> List[str]:
+def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
     query = f"""
-        schema(type: {type_name}) {{ }}
+        schema(pred: {predicate_name}) {{  }}
     """
-    LOGGER.debug(f"query: {query}")
     txn = client.txn(read_only=True)
     try:
-        res = json.loads(txn.query(query).json)
-        LOGGER.debug(f"res: {res}")
+        res = json.loads(txn.query(query).json)["schema"][0]
     finally:
         txn.discard()
 
-    pred_names = []
+    return res
 
-    if "types" in res:
-        for field in res["types"][0]["fields"]:
-            pred_name = (
-                f"<{field['name']}>" if field["name"].startswith("~") else field["name"]
-            )
-            pred_names.append(pred_name)
 
-    return pred_names
+def meta_into_edge(schema, predicate_meta):
+    if predicate_meta.get("list"):
+        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToMany)
+    else:
+        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToOne)
+
+
+def meta_into_property(schema, predicate_meta):
+    is_set = predicate_meta.get("list")
+    type_name = predicate_meta["type"]
+    primitive = None
+    if type_name == "string":
+        primitive = PropPrimitive.Str
+    if type_name == "int":
+        primitive = PropPrimitive.Int
+    if type_name == "bool":
+        primitive = PropPrimitive.Bool
+
+    return PropType(primitive, is_set, index=predicate_meta.get("index", []))
+
+
+def meta_into_predicate(schema, predicate_meta):
+    try:
+        if predicate_meta["type"] == "uid":
+            return meta_into_edge(schema, predicate_meta)
+        else:
+            return meta_into_property(schema, predicate_meta)
+    except Exception as e:
+        LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
+        raise e
+
+
+def query_dgraph_type(client: "GraphClient", type_name: str):
+    query = f"""
+        schema(type: {type_name}) {{ type }}
+    """
+    txn = client.txn(read_only=True)
+    try:
+        res = json.loads(txn.query(query).json)
+    finally:
+        txn.discard()
+
+    if not res:
+        return []
+    if not res.get("types"):
+        return []
+
+    res = res["types"][0]["fields"]
+    predicate_names = []
+    for pred in res:
+        predicate_names.append(pred["name"])
+
+    predicate_metas = []
+    for predicate_name in predicate_names:
+        predicate_metas.append(query_dgraph_predicate(client, predicate_name))
+
+    return predicate_metas
+
+
+def extend_schema(graph_client: GraphClient, schema: "BaseSchema"):
+    predicate_metas = query_dgraph_type(graph_client, schema.self_type())
+
+    for predicate_meta in predicate_metas:
+        predicate = meta_into_predicate(schema, predicate_meta)
+        if isinstance(predicate, PropType):
+            schema.add_property(predicate_meta["predicate"], predicate)
+        else:
+            schema.add_edge(predicate_meta["predicate"], predicate, "")
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
@@ -272,7 +326,7 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
 
 
 origin_re = re.compile(
-    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
+    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1, 14}amazonaws.com/',
     re.IGNORECASE,
 )
 
@@ -358,11 +412,21 @@ def no_auth(path):
 
 
 def upload_plugins(s3_client, plugin_files: Dict[str, str]):
+    plugin_files = {f: c for f, c in plugin_files.items() if not f.endswith(".pyc")}
     raw_schemas = [
         contents
         for path, contents in plugin_files.items()
         if path.endswith("schema.py") or path.endswith("schemas.py")
     ]
+
+    py_files = {f: c for f, c in plugin_files.items() if f.endswith(".py")}
+
+    for path, contents in py_files.items():
+        directory = Path(os.path.join("/tmp/model_plugins/", os.path.dirname(path)))
+
+        directory.mkdir(parents=True, exist_ok=True)
+        with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
+            f.write(contents)
 
     provision_schemas(
         LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(), raw_schemas,
@@ -370,21 +434,6 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
 
     for path, file in plugin_files.items():
         upload_plugin(s3_client, path, file)
-
-
-builtin_nodes = {
-    "Asset",
-    "File",
-    "IpAddress",
-    "IpConnection",
-    "IpPort",
-    "Lens",
-    "NetworkConnection",
-    "ProcessInboundConnection",
-    "ProcessOutboundConnection",
-    "Process",
-    "Risk",
-}
 
 
 @no_auth("/gitWebhook")
@@ -439,7 +488,7 @@ def deploy():
     request = app.current_request
     plugins = request.json_body.get("plugins", {})
 
-    LOGGER.info(f"Deploying {request.json_body}")
+    LOGGER.info(f"Deploying {request.json_body['plugins'].keys()}")
     upload_plugins(get_s3_client(), plugins)
     LOGGER.info("uploaded plugins")
     return respond(None, {"Success": True})
@@ -525,3 +574,6 @@ def nop_route():
     except Exception:
         LOGGER.error(traceback.format_exc())
         return respond("Route Server Error")
+
+
+from grapl_analyzerlib.prelude import *

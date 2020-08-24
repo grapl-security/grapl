@@ -40,6 +40,9 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         for key, value in kwargs.items():
             self.set_predicate(key, value)
 
+    def _get_uid(self) -> str:
+        return self.uid
+
     def set_predicate(
         self,
         predicate_name: str,
@@ -59,8 +62,8 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
             .query_first(self.graph_client)
         )
 
-        if self_node:
-            self.set_predicate(property_name, getattr(self_node, property_name, None))
+        if self_node and getattr(self_node, property_name, None):
+            self.set_predicate(property_name, getattr(self_node, property_name))
 
         return getattr(self, property_name, None)
 
@@ -75,8 +78,8 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
             .query_first(self.graph_client)
         )
 
-        if self_node:
-            self.set_predicate(property_name, getattr(self_node, property_name, None))
+        if self_node and getattr(self_node, property_name, None):
+            self.set_predicate(property_name, getattr(self_node, property_name))
 
         return getattr(self, property_name, None)
 

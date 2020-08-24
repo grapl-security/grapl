@@ -24,7 +24,7 @@ class PropType(object):
         self.upsert = upsert
 
     def prop_index_str(self) -> str:
-        if self.index:
+        if self.index and self.index != True:
             index_str = f"@index({', '.join(self.index)})"
         elif self.primitive is PropPrimitive.Str:
             index_str = "@index(exact, trigram)"

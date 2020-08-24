@@ -39,7 +39,7 @@ class EntitySchema(BaseSchema):
 
     @staticmethod
     def self_type() -> str:
-        return "EntityNode"
+        return "Entity"
 
 
 class EntityQuery(BaseQuery[EV, EQ]):
@@ -86,10 +86,10 @@ class EntityView(BaseView[EV, EQ]):
         self.lenses = lenses or []
 
     def get_lenses(self, *lenses, cached=False) -> "List[LensView]":
-        return self.get_neighbor(LensQuery, 'in_scope', 'scope', lenses, cached) or []
+        return self.get_neighbor(LensQuery, "in_scope", "scope", lenses, cached) or []
 
     def get_risks(self, *risks, cached=False) -> "List[RiskView]":
-        return self.get_neighbor(RiskQuery, 'risks', 'risky_nodes', risks, cached) or []
+        return self.get_neighbor(RiskQuery, "risks", "risky_nodes", risks, cached) or []
 
     def into_view(self, v: Type["Viewable"]) -> Optional["Viewable"]:
         if v.node_schema().self_type() in self.node_types:

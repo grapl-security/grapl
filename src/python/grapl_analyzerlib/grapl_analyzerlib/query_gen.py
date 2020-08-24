@@ -99,6 +99,7 @@ def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
                 and not and_filter[0].negated
             ):
                 from copy import deepcopy
+
                 if prop_name == "node_key":
                     filter = deepcopy(and_filter[0])
                     v = var_alloc.alloc(Eq("node_key", filter.value))
@@ -112,7 +113,10 @@ def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
 
                 singular_eq_nu = and_filter[0].to_filter()
 
-    return multiple_and_u or singular_eq_nu or f"type({q.node_schema().self_type()})"
+    if multiple_and_u or singular_eq_nu:
+        return multiple_and_u or singular_eq_nu
+
+    return f"type({q.node_schema().self_type()})"
 
 
 def zip_graph(q: "Queryable", into: "Queryable", visited=None):
@@ -147,14 +151,16 @@ def zip_graph(q: "Queryable", into: "Queryable", visited=None):
                         prop_filter,
                     ) in inner_neighbor_filter.property_filters():
                         merged_neighbor.set_property_filters(prop_name, prop_filter)
+                    # zip_graph(inner_neighbor_filter, merged_neighbor, visited)
+
             else:
                 for prop_name, prop_filter in neighbor_filter.property_filters():
                     merged_neighbor.set_property_filters(prop_name, prop_filter)
+                # zip_graph(neighbor_filter, merged_neighbor, visited)
 
-        zip_graph(merged_neighbor, into, visited)
-        into.set_neighbor_filters(edge_name, [merged_neighbor])
-
-        # into.set_neighbor_filters(edge_name, [merged_neighbor])
+        merged = type(q)()
+        zip_graph(merged_neighbor, merged, visited)
+        into.set_neighbor_filters(edge_name, [merged])
 
 
 def into_query_block(
@@ -364,7 +370,7 @@ def gen_query_parameterized(
 
     node_key_var = vars_alloc.alloc(Eq("node_key", contains_node_key))
     for i, node in enumerate(traverse_query_iter(q)):
-        func = f'eq(node_key, {node_key_var}), first: 1'
+        func = f"eq(node_key, {node_key_var}), first: 1"
         binding = f"{binding_modifier}Binding{depth}_{i}"
         bindings.append(binding)
         var_name = ""
@@ -417,7 +423,6 @@ def gen_query(
 
     func = find_func(q, vars_alloc)
     var_query, var_block = into_var_query(q, "q0", vars_alloc, func=func, cascade=True)
-    # merged_query = into_query_block_merged(q)
 
     merged = type(q)()
     zip_graph(q, merged)

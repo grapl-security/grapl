@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterator, Tuple
 
 import boto3
 import botocore.exceptions
-from grapl_analyzerlib.prelude import BaseView, LensView
+from grapl_analyzerlib.prelude import BaseView, LensView, RiskView
 from pydgraph import DgraphClient, DgraphClientStub
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
@@ -22,11 +22,7 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def parse_s3_event(s3, event) -> str:
-    # Retrieve body of sns message
-    # Decode json body of sns message
     LOGGER.debug("event is {}".format(event))
-    # msg = json.loads(event["body"])["Message"]
-    # msg = json.loads(msg)
 
     bucket = event["s3"]["bucket"]["name"]
     key = event["s3"]["object"]["key"]
@@ -75,7 +71,7 @@ def attach_risk(
     risk_node_uid = upsert(client, risk_node)
 
     create_edge(client, node_uid, "risks", risk_node_uid)
-    create_edge(client, risk_node_uid, "risky_nodes", node_uid )
+    create_edge(client, risk_node_uid, "risky_nodes", node_uid)
 
 
 def recalculate_score(lens: LensView) -> int:
@@ -92,7 +88,9 @@ def recalculate_score(lens: LensView) -> int:
             print(node.node_key, analyzer_name, risk_score)
             risks_by_analyzer[analyzer_name] = risk_score
             key_to_analyzers[node.node_key].add(analyzer_name)
-        node_risk_scores[node.node_key] = sum([a for a in risks_by_analyzer.values() if a])
+        node_risk_scores[node.node_key] = sum(
+            [a for a in risks_by_analyzer.values() if a]
+        )
         total_risk_score += sum([a for a in risks_by_analyzer.values() if a])
 
     # Bonus is calculated by finding nodes with multiple analyzers
@@ -129,17 +127,15 @@ def set_property(client: DgraphClient, uid: str, prop_name: str, prop_value):
         txn.discard()
 
 
-def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
-    if node_dict.get("uid"):
-        node_dict.pop("uid")
+def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
-    LOGGER.info(f"Upserting node: {node_dict}")
     query = f"""
         {{
-            q0(func: eq(node_key, "{node_key}")) {{
+            q0(func: eq(node_key, "{node_key}"), first: 1) {{
                     uid,
-                    dgraph.type,
+                    dgraph.type
+                    expand(_all_)
             }}
         }}
         """
@@ -147,19 +143,38 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
 
     try:
         res = json.loads(txn.query(query).json)["q0"]
-
+        new_uid = None
         if res:
             node_dict["uid"] = res[0]["uid"]
-            node_dict = {**node_dict, **res[0]}
+            new_uid = res[0]["uid"]
 
         mutation = node_dict
 
-        mut_res = txn.mutate(set_obj=mutation, commit_now=True)
-        new_uid = node_dict.get("uid") or mut_res.uids["blank-0"]
-        return new_uid
+        m_res = txn.mutate(set_obj=mutation, commit_now=True)
+        uids = m_res.uids
+
+        if new_uid is None:
+            new_uid = uids["blank-0"]
+        return str(new_uid)
 
     finally:
         txn.discard()
+
+
+def upsert(
+    client: DgraphClient,
+    type_name: str,
+    view_type: "Type[Viewable]",
+    node_key: str,
+    node_props: Dict[str, Any],
+) -> "Viewable":
+    node_props["node_key"] = node_key
+    node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
+    uid = _upsert(client, node_props)
+    # print(f'uid: {uid}')
+    node_props["uid"] = uid
+    # print(node_props['node_key'])
+    return view_type.from_dict(node_props, client)
 
 
 def get_s3_client():
@@ -232,8 +247,17 @@ def lambda_handler(events: Any, context: Any) -> None:
                         create_edge(mg_client, lens.uid, "scope", from_uid)
                         create_edge(mg_client, lens.uid, "scope", to_uid)
 
+        risk = upsert(
+            mg_client,
+            "Risk",
+            RiskView,
+            analyzer_name,
+            {"analyzer_name": analyzer_name, "risk_score": risk_score,},
+        )
+
         for node in nodes:
-            attach_risk(mg_client, node.node_key, node.uid, analyzer_name, risk_score)
+            create_edge(mg_client, node.uid, "risks", risk.uid)
+            create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
 
         for edge_list in edges.values():
             for edge in edge_list:

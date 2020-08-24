@@ -92,7 +92,7 @@ class LensView(BaseView[LV, LQ]):
         self.set_predicate("lens_type", lens_type)
 
     def get_lens_name(self, cached=True):
-        return self.get_str('lens', cached=cached)
+        return self.get_str("lens", cached=cached)
 
     def get_scope(self, *scope, cached=False):
         return self.get_neighbor(EntityQuery, "scope", "in_scope", scope, cached=cached)
@@ -160,3 +160,5 @@ class LensView(BaseView[LV, LQ]):
 
 
 from grapl_analyzerlib.nodes.entity import EntityView, EntityQuery
+
+LensSchema().init_reverse()
