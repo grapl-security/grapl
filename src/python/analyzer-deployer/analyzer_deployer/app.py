@@ -74,12 +74,12 @@ def _create_analyzer(
 ) -> CreateAnalyzerResponse:
     analyzer = Analyzer()
     analyzers_table = dynamodb_client.Table("Analyzers")
-    return CreateAnalyzerResponse("id", 0, "key")
+    return CreateAnalyzerResponse("id", 0, "key")  # FIXME
 
 
 @app.route("/1/analyzers", methods=["POST"])
 def create_analyzer():
-    return _create_analyzer().as_dict()
+    return dataclasses.asdict(_create_analyzer())
 
 
 # The view function above will return {"hello": "world"}
