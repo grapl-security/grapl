@@ -22,6 +22,7 @@ import { GraphQLEndpoint } from './graphql';
 import { Swarm } from './swarm';
 
 import { Watchful } from './vendor/cdk-watchful/lib/watchful';
+import { SchemaDb } from './schemadb';
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -156,6 +157,7 @@ class NodeIdentifier extends cdk.NestedStack {
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
+    schemaTable: SchemaDb;
 }
 
 class GraphMerger extends cdk.NestedStack {
@@ -196,7 +198,7 @@ class GraphMerger extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
         });
-
+        props.schemaTable.allowRead(service);
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
     }
 }
@@ -503,6 +505,7 @@ class DGraphTtl extends cdk.NestedStack {
 
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
+    schemaTable: SchemaDb;
 }
 
 export class ModelPluginDeployer extends cdk.NestedStack {
@@ -572,6 +575,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         if (event_handler.role) {
             props.jwtSecret.grantRead(event_handler.role);
             props.userAuthTable.allowReadFromRole(event_handler.role);
+            props.schemaTable.allowReadWriteFromRole(event_handler.role);
 
             props.modelPluginBucket.grantReadWrite(event_handler.role);
             props.modelPluginBucket.grantDelete(event_handler.role);
@@ -694,6 +698,10 @@ export class GraplCdkStack extends cdk.Stack {
             table_name: this.prefix + '-user_auth_table',
         });
 
+        const schema_table = new SchemaDb(this, 'SchemaTable', {
+            table_name: this.prefix + '-grapl_schema_table',
+        });
+
         let watchful = undefined;
         if (props.watchfulEmail) {
             const alarmSqs = new sqs.Queue(this, 'alarmSqs');
@@ -761,6 +769,7 @@ export class GraplCdkStack extends cdk.Stack {
             'model-plugin-deployer',
             {
                 modelPluginBucket: model_plugins_bucket,
+                schemaTable: schema_table,
                 ...graplProps,
             }
         );
@@ -788,6 +797,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const graph_merger = new GraphMerger(this, 'graph-merger', {
             writesTo: analyzer_dispatch.bucket,
+            schemaTable: schema_table,
             ...graplProps,
         });
 
