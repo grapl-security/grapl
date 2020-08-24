@@ -127,6 +127,16 @@ image=graph-descriptions-build:
   tags:
     - latest
 
+image=grapl-common-build:
+  image: grapl/grapl-common-python-build
+  context: src/python/grapl-common/
+  dockerfile: Dockerfile
+  target: grapl-common-python-build
+  depends:
+    - python-build
+  tags:
+    - latest
+
 image=grapl-analyzerlib-build:
   image: grapl/grapl-analyzerlib-python-build
   context: src/python/grapl_analyzerlib/
@@ -135,6 +145,7 @@ image=grapl-analyzerlib-build:
   depends:
     - python-build
     - graph-descriptions-build
+    - grapl-common-build
   tags:
     - latest
 
@@ -420,11 +431,13 @@ job=run-node-identifier-integration-tests:
 
 # python jobs
 
+job=run-grapl-common-unit-tests:
+  use: grapl-common-build
+  command: /bin/bash -c "source venv/bin/activate && cd grapl_common/tests && ls && py.test -n auto -m 'not integration_test'"
+
 job=run-grapl-analyzerlib-unit-tests:
   use: grapl-analyzerlib-build
   command: /bin/bash -c "source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'not integration_test'"
-  depends:
-    - grapl-analyzerlib-build
 
 job=run-grapl-analyzerlib-integration-tests:
   use: grapl-analyzerlib-build
@@ -436,7 +449,6 @@ job=run-grapl-analyzerlib-integration-tests:
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
   depends:
-    - grapl-analyzerlib-build
     - integration-env
 
 job=build-analyzer-deployer:
@@ -449,8 +461,6 @@ job=build-analyzer-deployer:
 job=run-analyzer-deployer-unit-tests:
   use: analyzer-deployer-build
   command: /bin/bash -c "source venv/bin/activate && cd analyzer-deployer && py.test -n auto -m 'not integration_test'"
-  depends:
-    - analyzer-deployer-build
 
 job=run-analyzer-deployer-integration-tests:
   use: analyzer-deployer-build
@@ -461,7 +471,6 @@ job=run-analyzer-deployer-integration-tests:
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
   depends:
-    - analyzer-deployer-build
     - integration-env
 
 job=build-analyzer-executor:
@@ -474,8 +483,6 @@ job=build-analyzer-executor:
 job=run-analyzer-executor-unit-tests:
   use: analyzer-executor-build
   command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
-  depends:
-    - analyzer-executor-build
 
 job=build-engagement-creator:
   use: engagement-creator-build
@@ -487,8 +494,6 @@ job=build-engagement-creator:
 job=run-engagement-creator-unit-tests:
   use: engagement-creator-build
   command: /bin/bash -c "source venv/bin/activate && cd engagement-creator && py.test -n auto -m 'not integration_test'"
-  depends:
-    - engagement-creator-build
 
 job=build-engagement-edge:
   use: engagement-edge-build
@@ -500,8 +505,6 @@ job=build-engagement-edge:
 job=run-engagement-edge-unit-tests:
   use: engagement-edge-build
   command: /bin/bash -c "source venv/bin/activate && cd engagement_edge && py.test -n auto -m 'not integration_test'"
-  depends:
-    - engagement-edge-build
 
 job=build-dgraph-ttl:
   use: dgraph-ttl-build
@@ -513,8 +516,6 @@ job=build-dgraph-ttl:
 job=run-dgraph-ttl-unit-tests:
   use: dgraph-ttl-build
   command: /bin/bash -c "source venv/bin/activate && cd dgraph-ttl && py.test -n auto -m 'not integration_test'"
-  depends:
-    - dgraph-ttl-build
 
 job=build-model-plugin-deployer:
   use: model-plugin-deployer-build
@@ -526,8 +527,6 @@ job=build-model-plugin-deployer:
 job=run-model-plugin-deployer-unit-tests:
   use: model-plugin-deployer-build
   command: /bin/bash -c "source venv/bin/activate && cd model-plugin-deployer && py.test -n auto -m 'not integration_test'"
-  depends:
-    - model-plugin-deployer-build
 
 # js jobs
 
@@ -536,8 +535,6 @@ job=run-model-plugin-deployer-unit-tests:
 job=run-engagement-view-unit-tests:
   use: engagement-view-build
   command: /bin/bash -c "CI=true yarn test"
-  depends:
-    - engagement-view-build
 
 job=build-graphql-endpoint:
   use: graphql-endpoint-build
@@ -613,6 +610,7 @@ alias=clean-python-build:
     - "dgraph-ttl-build:rm"
     - "model-plugin-deployer-build:rm"
     - "grapl-analyzerlib-build:rm"
+    - "grapl-common-build:rm"
     - "graph-descriptions-build:rm"
     - "python-build:rm"
   annotations:
@@ -620,6 +618,7 @@ alias=clean-python-build:
 
 alias=python-unit-tests:
   tasks:
+    - run-grapl-common-unit-tests
     - run-grapl-analyzerlib-unit-tests
     - run-analyzer-deployer-unit-tests
     - run-analyzer-executor-unit-tests

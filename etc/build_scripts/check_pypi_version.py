@@ -16,7 +16,7 @@ import sys
 import pypi_simple
 
 
-def needs_version_bumped(package, current_version, test_pypi):
+def needs_version_bumped(package: str, current_version: str, test_pypi: bool) -> bool:
     client = (
         pypi_simple.PyPISimple("https://test.pypi.org/simple/")
         if test_pypi
@@ -24,11 +24,16 @@ def needs_version_bumped(package, current_version, test_pypi):
     )
 
     project_files = client.get_project_files(package)
-    latest_version = sorted(
+    project_files = sorted(
         (f for f in project_files if f.yanked is None),
         key=lambda p: tuple(map(int, p.version.split("."))),
         reverse=True,
-    )[0].version.strip()
+    )
+    if not project_files:
+        raise Exception(
+            f"Couldn't find project files for package={package}, test_pypi={test_pypi}"
+        )
+    latest_version = project_files[0].version.strip()
 
     current_version = current_version.strip()
     current_version_parts = current_version.split(".")

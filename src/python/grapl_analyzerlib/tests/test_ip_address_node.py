@@ -13,7 +13,7 @@ from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.ip_address_node import IpAddressView
 from grapl_analyzerlib.nodes.ip_address_node import IpAddressQuery
 from grapl_analyzerlib.nodes.types import Property
-from grapl_analyzerlib.time_utils import Millis, as_millis
+from grapl_common.time_utils import Millis, as_millis
 
 from test_utils.dgraph_utils import upsert, node_key_for_test
 from test_utils.view_assertions import assert_views_equal
