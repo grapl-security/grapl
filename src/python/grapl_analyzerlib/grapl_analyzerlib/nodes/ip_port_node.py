@@ -191,6 +191,56 @@ IIpPortView = TypeVar("IIpPortView", bound="IpPortView")
 
 
 class IpPortView(Viewable):
+    """
+    .. list-table::
+        :header-rows: 1
+
+        * - Predicate
+          - Type
+          - Description
+
+        * - node_key
+          - string
+          - A unique identifier for this node.
+
+        * - first_seen_timestamp
+          - int
+          - Time the IP Port was first seen (in millis-since-epoch).
+
+        * - last_seen_timestamp
+          - int
+          - Time the IP Port was last seen (in millis-since-epoch).
+
+        * - terminated_timestamp
+          - int
+          - Time connection was terminated (in millis-since-epoch).
+
+        * - ip_address
+          - string
+          - The IP Address associated with this node. (TODO: v4? v6? both?)
+
+        * - protocol
+          - string
+          - todo: documentation
+
+        * - network_connections
+          - List[:doc:`/nodes/network_connection`]
+          - todo: documentation
+
+        * - bound_by
+          - List[:doc:`/nodes/process_inbound_connection`]
+          - todo: documentation
+
+        * - process_connections
+          - List[:doc:`/nodes/process_outbound_connection`]
+          - todo: documentation
+
+        * - process_connects
+          - List[:doc:`/nodes/process_outbound_connection`]
+          - todo: documentation
+
+    """
+
     def __init__(
         self,
         dgraph_client: DgraphClient,

@@ -101,6 +101,31 @@ class RiskQuery(Queryable["RiskView"]):
 
 
 class RiskView(Viewable):
+    """
+    .. list-table::
+        :header-rows: 1
+
+        * - Predicate
+          - Type
+          - Description
+
+        * - node_key
+          - string
+          - A unique identifier for this node
+
+        * - risk_score
+          - int
+          - todo: documentation
+
+        * - analyzer_name
+          - string
+          - The name of the analyzer that spawned this risk.
+
+        * - risky_nodes
+          - List[Node]
+          - todo: documentation
+    """
+
     def __init__(
         self,
         dgraph_client: GraphClient,
