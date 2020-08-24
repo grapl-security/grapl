@@ -193,7 +193,7 @@ some operational details.
 
 First, _don't lose the key pair_. If, for example, your bastion host
 crashes and you somehow lost the key pair
-(e.g. `docker-machine-key.pem` from the previous section) then
+(e.g. `docker-machine-key-pair.pem` from the previous section) then
 `docker-machine` will no longer be able to connect to the DGraph
 cluster. This would be bad. To mitigate this risk, make sure you don't
 destroy the bastion's EBS volume. If the bastion crashes and you need

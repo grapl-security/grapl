@@ -1,18 +1,16 @@
-import * as cdk from "@aws-cdk/core";
-import * as s3 from "@aws-cdk/aws-s3";
-import { BucketEncryption } from "@aws-cdk/aws-s3";
-import * as sns from "@aws-cdk/aws-sns";
-import * as ec2 from "@aws-cdk/aws-ec2";
-import * as lambda from "@aws-cdk/aws-lambda";
-import * as apigateway from "@aws-cdk/aws-apigateway";
+import * as cdk from '@aws-cdk/core';
+import * as s3 from '@aws-cdk/aws-s3';
+import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
+import * as ec2 from '@aws-cdk/aws-ec2';
 import * as events from '@aws-cdk/aws-events';
 import * as targets from '@aws-cdk/aws-events-targets';
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as iam from '@aws-cdk/aws-iam';
+import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as route53 from '@aws-cdk/aws-route53';
 
-import { AnalyzerDeployer } from "./analyzer_deployer"
 import { Service } from './service';
 import { UserAuthDb } from './userauthdb';
 import { HistoryDb } from './historydb';
@@ -23,7 +21,7 @@ import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
 import { Swarm } from './swarm';
 
-import { Watchful } from './vendor/cdk-watchful/lib';
+import { Watchful } from './vendor/cdk-watchful/lib/watchful';
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -767,21 +765,22 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        // TODO: We need a new dispatcher
-
-        const analyzer_request_bucket = new s3.Bucket(
+        const analyzer_executor = new AnalyzerExecutor(
             this,
-            'analyzer-request-bucket',
+            'analyzer-executor',
             {
-                encryption: BucketEncryption.S3_MANAGED
+                writesTo: engagement_creator.bucket,
+                readsAnalyzersFrom: analyzers_bucket,
+                modelPluginsBucket: model_plugins_bucket,
+                ...graplProps,
             }
-        )
+        );
 
         const analyzer_dispatch = new AnalyzerDispatch(
             this,
             'analyzer-dispatcher',
             {
-                writesTo: analyzer_request_bucket,
+                writesTo: analyzer_executor.bucket,
                 readsFrom: analyzers_bucket,
                 ...graplProps,
             }
@@ -791,18 +790,6 @@ export class GraplCdkStack extends cdk.Stack {
             writesTo: analyzer_dispatch.bucket,
             ...graplProps,
         });
-
-        new AnalyzerDeployer(
-            this,
-            'analyzer-deplyer',
-            graplProps.prefix,
-            graplProps.version,
-            analyzer_request_bucket,
-            engagement_creator.bucket,
-            model_plugins_bucket,
-            master_graph,
-            grapl_vpc,
-        );
 
         const node_identifier = new NodeIdentifier(this, 'node-identifier', {
             writesTo: graph_merger.bucket,
