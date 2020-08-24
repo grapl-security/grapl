@@ -1,19 +1,15 @@
 import json
+import os
 import threading
 import time
-import os
-
-from typing import Any, Dict
-
 from hashlib import sha256, pbkdf2_hmac
-from hmac import compare_digest
-from random import uniform
-
-import botocore
-import boto3
-import pydgraph
 from uuid import uuid4
-from grapl_analyzerlib.grapl_client import MasterGraphClient
+
+import boto3
+import botocore
+import pydgraph
+from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
+from grapl_analyzerlib.nodes.base import BaseSchema
 from grapl_analyzerlib.prelude import (
     AssetSchema,
     ProcessSchema,
@@ -45,93 +41,111 @@ def drop_all(client) -> None:
     client.alter(op)
 
 
-def format_schemas(schema_defs) -> str:
+def format_schemas(schema_defs: List["BaseSchema"]) -> str:
     schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
 
     return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
+        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
     )
 
 
-def get_type_dict(client, type_name) -> Dict[str, Any]:
+def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
     query = f"""
-    schema(type: {type_name}) {{
-      type
-      index
-    }}
+        schema(pred: {predicate_name}) {{  }}
     """
-
     txn = client.txn(read_only=True)
+    try:
+        res = json.loads(txn.query(query).json)["schema"][0]
+    finally:
+        txn.discard()
 
+    return res
+
+
+def meta_into_edge(schema, predicate_meta):
+    if predicate_meta.get("list"):
+        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToMany)
+    else:
+        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToOne)
+
+
+def meta_into_property(schema, predicate_meta):
+    is_set = predicate_meta.get("list")
+    type_name = predicate_meta["type"]
+    primitive = None
+    if type_name == "string":
+        primitive = PropPrimitive.Str
+    if type_name == "int":
+        primitive = PropPrimitive.Int
+    if type_name == "bool":
+        primitive = PropPrimitive.Bool
+
+    return PropType(primitive, is_set, index=predicate_meta.get("index", []))
+
+
+def meta_into_predicate(schema, predicate_meta):
+    try:
+        if predicate_meta["type"] == "uid":
+            return meta_into_edge(schema, predicate_meta)
+        else:
+            return meta_into_property(schema, predicate_meta)
+    except Exception as e:
+        LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
+        raise e
+
+
+def query_dgraph_type(client: "GraphClient", type_name: str):
+    query = f"""
+        schema(type: {type_name}) {{ type }}
+    """
+    txn = client.txn(read_only=True)
     try:
         res = json.loads(txn.query(query).json)
     finally:
         txn.discard()
 
-    type_dict = {}
+    if not res:
+        return []
+    if not res.get("types"):
+        return []
 
-    for d in res["types"][0]["fields"]:
-        if d["name"][0] == "~":
-            name = f"<{d['name']}>"
+    res = res["types"][0]["fields"]
+    predicate_names = []
+    for pred in res:
+        predicate_names.append(pred["name"])
+
+    predicate_metas = []
+    for predicate_name in predicate_names:
+        predicate_metas.append(query_dgraph_predicate(client, predicate_name))
+
+    return predicate_metas
+
+
+def extend_schema(graph_client: GraphClient, schema: "BaseSchema"):
+    predicate_metas = query_dgraph_type(graph_client, schema.self_type())
+
+    for predicate_meta in predicate_metas:
+        predicate = meta_into_predicate(schema, predicate_meta)
+        if isinstance(predicate, PropType):
+            schema.add_property(predicate_meta["predicate"], predicate)
         else:
-            name = d["name"]
-        type_dict[name] = d["type"]
-
-    return type_dict
+            schema.add_edge(predicate_meta["predicate"], predicate, "")
 
 
-def update_reverse_edges(client, schema):
-    type_dicts = {}
-
-    rev_edges = set()
-    for edge in schema.forward_edges:
-        edge_n = edge[0]
-        edge_t = edge[1]._inner_type.self_type()
-        if edge_t == "Any":
-            continue
-
-        rev_edges.add(("<~" + edge_n + ">", edge_t))
-
-        if not type_dicts.get(edge_t):
-            type_dicts[edge_t] = get_type_dict(client, edge_t)
-
-    if not rev_edges:
-        return
-
-    for (rev_edge_n, rev_edge_t) in rev_edges:
-        type_dicts[rev_edge_t][rev_edge_n] = "uid"
-
-    type_strs = ""
-
-    for t in type_dicts.items():
-        type_name = t[0]
-        type_d = t[1]
-
-        predicates = []
-        for predicate_name, predicate_type in type_d.items():
-            predicates.append(f"\t{predicate_name}: {predicate_type}")
-
-        predicates = "\n".join(predicates)
-        type_str = f"""
-type {type_name} {{
-{predicates}
-
-    }}
-        """
-        type_strs += "\n"
-        type_strs += type_str
-
-    op = pydgraph.Operation(schema=type_strs)
-    client.alter(op)
+def provision_master_graph(
+        master_graph_client: GraphClient, schemas: List["BaseSchema"]
+) -> None:
+    mg_schema_str = format_schemas(schemas)
+    print(mg_schema_str)
+    set_schema(master_graph_client, mg_schema_str)
 
 
 def provision_mg(mclient) -> None:
     # drop_all(mclient)
-    # drop_all(___local_dg_provision_client)
 
-    mg_schemas = (
+    schemas = (
         AssetSchema(),
         ProcessSchema(),
         FileSchema(),
@@ -145,8 +159,13 @@ def provision_mg(mclient) -> None:
         LensSchema(),
     )
 
-    mg_schema_str = format_schemas(mg_schemas)
-    set_schema(mclient, mg_schema_str)
+    for schema in schemas:
+        schema.init_reverse()
+
+    for schema in schemas:
+        extend_schema(mclient, schema)
+
+    provision_master_graph(mclient, schemas)
 
 
 BUCKET_PREFIX = "local-grapl"
@@ -191,7 +210,7 @@ def provision_sqs(sqs, service_name: str) -> None:
         "maxReceiveCount": "10",
     }
 
-    queue = sqs.create_queue(QueueName="grapl-%s-queue" % service_name,)
+    queue = sqs.create_queue(QueueName="grapl-%s-queue" % service_name, )
 
     sqs.set_queue_attributes(
         QueueUrl=queue["QueueUrl"],
@@ -334,7 +353,7 @@ if __name__ == "__main__":
         try:
             if not mg_succ:
                 time.sleep(1)
-                provision_mg(local_dg_provision_client,)
+                provision_mg(local_dg_provision_client, )
                 mg_succ = True
                 print("Provisioned mastergraph")
                 break
