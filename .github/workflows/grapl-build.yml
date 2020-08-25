@@ -68,7 +68,7 @@ jobs:
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
-      - name: Build Python services
+      - name: Run dobi python-typecheck
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux python-typecheck
 
