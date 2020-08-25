@@ -51,13 +51,6 @@ jobs:
           source .venv/bin/activate
           black --check .
 
-      # NOTE: this task always succeeds because '|| true'
-      # TODO: fix this.
-      - name: Run Mypy (Always Pass)
-        run: |
-          source .venv/bin/activate
-          mypy . || true
-
   check-pypi:
     runs-on: ubuntu-latest
 

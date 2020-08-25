@@ -708,7 +708,10 @@ alias=integration-tests:
   annotations:
     description: "Run all the integration tests"
 
-alias=typecheck:
+alias=python-typecheck:
   tasks:
+    # TODO: Add more and more here!
     - run-grapl-common-typecheck
     - run-analyzer-deployer-typecheck
+  annotations:
+    description: "Run mypy or pytype type checks on a subset of our Python libs/services"
