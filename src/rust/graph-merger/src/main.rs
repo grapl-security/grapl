@@ -34,7 +34,7 @@ use rand::thread_rng;
 use rusoto_core::{HttpClient, Region, RusotoError};
 use rusoto_s3::{S3Client, S3};
 use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
-use sqs_lambda::cache::{Cache, NopCache};
+use sqs_lambda::cache::{Cache, CacheResponse, NopCache};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
@@ -105,7 +105,6 @@ async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<Str
 }
 
 async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
-    let node_key = node.clone_node_key();
     let query = format!(
         r#"
                 {{
@@ -473,22 +472,42 @@ where
             return OutputEvent::new(Completion::Total(GeneratedSubgraphs { subgraphs: vec![] }));
         }
 
+        let mut identities = Vec::with_capacity(subgraph.nodes.len() + subgraph.edges.len());
+
         info!(
             "handling new subgraph with {} nodes {} edges",
             subgraph.nodes.len(),
             subgraph.edges.len()
         );
 
-        //        async_handler(mg_client, subgraph).await;
-
         let mut upsert_res = None;
         let mut edge_res = None;
 
         let mut node_key_to_uid = HashMap::new();
         use futures::future::FutureExt;
-        let upserts = subgraph.nodes.values().map(|node| {
-            upsert_node(&self.mg_client, node.clone()).map(move |u| (node.clone_node_key(), u))
-        });
+        let mut upserts = Vec::with_capacity(subgraph.nodes.len());
+        for node in subgraph.nodes.values() {
+            match self
+                .cache
+                .get(
+                    subgraph.nodes[node.get_node_key()]
+                        .clone()
+                        .into_json()
+                        .to_string(),
+                )
+                .await
+            {
+                Ok(CacheResponse::Hit) => {
+                    info!("Got cache hit for old_node_key, skipping node.");
+                    continue;
+                }
+                Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
+                _ => (),
+            };
+            upserts.push(
+                upsert_node(&self.mg_client, node.clone()).map(move |u| (node.clone_node_key(), u)),
+            )
+        }
 
         let upserts = log_time!("All upserts", join_all(upserts).await);
 
@@ -497,6 +516,8 @@ where
                 Ok(new_uid) => new_uid,
                 Err(e) => {
                     error!("{}", e);
+                    let identity = subgraph.nodes[&node_key].clone().into_json().to_string();
+                    identities.push(identity);
                     upsert_res = Some(e);
                     continue;
                 }
@@ -556,7 +577,7 @@ where
 
         let mut r_edge_cache: HashMap<String, String> = HashMap::with_capacity(2);
 
-        let mut mutations = Vec::with_capacity(2);
+        let mut mutations = Vec::with_capacity(edge_mutations.len());
         for (from, to, edge_name) in edge_mutations {
             let r_edge = match r_edge_cache.get(&edge_name.to_string()) {
                 r_edge @ Some(_) => Ok(r_edge.map(String::from)),
@@ -573,7 +594,7 @@ where
                     error!("get_r_edge failed: {:?}", e);
                     edge_res = Some(e.to_string());
                 }
-                _ => (),
+                _ => debug!("Missing r_edge for f_edge {}", edge_name),
             }
 
             let mu = generate_edge_insert(&from, &to, &edge_name);
@@ -582,10 +603,11 @@ where
 
         let edge_mut_res: Vec<_> = join_all(mutations).await;
         if let Some(e) = edge_mut_res.iter().find(|e| e.is_err()) {
-            edge_res = Some(format!("{:?}", e));
+            error!("Failed to upsert edge: {:?}", e);
+            edge_res = Some(format!("Failed to upsert edge: {:?}", e));
         }
 
-        let completed = match (upsert_res, edge_res) {
+        let mut completed = match (upsert_res, edge_res) {
             (Some(e), _) => OutputEvent::new(Completion::Partial((
                 GeneratedSubgraphs::new(vec![subgraph]),
                 sqs_lambda::error::Error::ProcessingError(e.to_string()),
@@ -598,6 +620,10 @@ where
                 OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
             }
         };
+
+        identities
+            .into_iter()
+            .for_each(|identity| completed.add_identity(identity));
 
         completed
     }

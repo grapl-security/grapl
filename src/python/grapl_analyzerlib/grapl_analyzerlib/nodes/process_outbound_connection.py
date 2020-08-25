@@ -168,7 +168,7 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
         protocol: Optional[str] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, **kwargs)
+        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
 
         self.created_timestamp = created_timestamp

@@ -181,6 +181,7 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
 
     // A process creates an outbound connection to dst_port
     let process = ProcessBuilder::default()
+        .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessState::Existing)
         .process_id(conn_log.event_data.process_id)
@@ -189,6 +190,7 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         .expect("outbound_connection.process");
 
     let outbound = ProcessOutboundConnectionBuilder::default()
+        .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessOutboundConnectionState::Connected)
         .ip_address(conn_log.event_data.source_ip.clone())
@@ -329,6 +331,7 @@ fn handle_inbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
 
     // A process creates an outbound connection to dst_port
     let process = ProcessBuilder::default()
+        .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessState::Existing)
         .process_id(conn_log.event_data.process_id)
@@ -337,6 +340,7 @@ fn handle_inbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         .expect("inbound_connection.process");
 
     let outbound = ProcessInboundConnectionBuilder::default()
+        .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessInboundConnectionState::Bound)
         .port(conn_log.event_data.source_port)

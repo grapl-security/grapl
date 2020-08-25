@@ -112,7 +112,7 @@ class NetworkConnectionView(EntityView[IPPV, IPPQ]):
         ip_address: Optional[str] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, **kwargs)
+        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
 
         self.port = port

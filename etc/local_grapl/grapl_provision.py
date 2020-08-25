@@ -1,14 +1,18 @@
 import json
 import os
+import logging
+import sys
 import threading
 import time
 from hashlib import sha256, pbkdf2_hmac
+from typing import List
 from uuid import uuid4
 
 import boto3
 import botocore
 import pydgraph
 from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
+from grapl_analyzerlib.node_types import EdgeRelationship, PropPrimitive, PropType
 from grapl_analyzerlib.nodes.base import BaseSchema
 from grapl_analyzerlib.prelude import (
     AssetSchema,
@@ -23,6 +27,14 @@ from grapl_analyzerlib.prelude import (
     LensSchema,
     RiskSchema,
 )
+
+
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
 
 
 def create_secret(secretsmanager):
@@ -138,7 +150,6 @@ def provision_master_graph(
         master_graph_client: GraphClient, schemas: List["BaseSchema"]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
-    print(mg_schema_str)
     set_schema(master_graph_client, mg_schema_str)
 
 
@@ -199,7 +210,7 @@ def provision_sqs(sqs, service_name: str) -> None:
     )
 
     redrive_url = redrive_queue["QueueUrl"]
-    print(f"Provisioned {service_name} retry queue at " + redrive_url)
+    LOGGER.debug(f"Provisioned {service_name} retry queue at " + redrive_url)
 
     redrive_arn = sqs.get_queue_attributes(
         QueueUrl=redrive_url, AttributeNames=["QueueArn"]
@@ -216,7 +227,7 @@ def provision_sqs(sqs, service_name: str) -> None:
         QueueUrl=queue["QueueUrl"],
         Attributes={"RedrivePolicy": json.dumps(redrive_policy)},
     )
-    print(f"Provisioned {service_name} queue at " + queue["QueueUrl"])
+    LOGGER.debug(f"Provisioned {service_name} queue at " + queue["QueueUrl"])
 
     sqs.purge_queue(QueueUrl=queue["QueueUrl"])
     sqs.purge_queue(QueueUrl=redrive_queue["QueueUrl"])
@@ -224,7 +235,7 @@ def provision_sqs(sqs, service_name: str) -> None:
 
 def provision_bucket(s3, bucket_name: str) -> None:
     s3.create_bucket(Bucket=bucket_name)
-    print(bucket_name)
+    LOGGER.debug(bucket_name)
 
 
 def bucket_provision_loop() -> None:
@@ -240,7 +251,7 @@ def bucket_provision_loop() -> None:
             )
         except Exception as e:
             if i > 10:
-                print("failed to connect to sqs or s3", e)
+                LOGGER.debug("failed to connect to sqs or s3", e)
             continue
 
         for bucket in buckets:
@@ -254,7 +265,7 @@ def bucket_provision_loop() -> None:
                         continue
 
                     if i > 10:
-                        print(e)
+                        LOGGER.debug(e)
                     time.sleep(1)
 
         if not s3_succ:
@@ -308,7 +319,7 @@ def sqs_provision_loop() -> None:
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
         except Exception as e:
-            print("failed to connect to sqs or s3", e)
+            LOGGER.debug("failed to connect to sqs or s3", e)
             time.sleep(1)
             continue
 
@@ -319,7 +330,7 @@ def sqs_provision_loop() -> None:
                     sqs_succ.discard(service)
                 except Exception as e:
                     if i > 10:
-                        print(e)
+                        LOGGER.debug(e)
                     time.sleep(1)
         if not sqs_succ:
             return
@@ -331,7 +342,7 @@ if __name__ == "__main__":
     time.sleep(5)
     local_dg_provision_client = MasterGraphClient()
 
-    print("Provisioning graph database")
+    LOGGER.debug("Provisioning graph database")
 
     for i in range(0, 150):
         try:
@@ -339,7 +350,7 @@ if __name__ == "__main__":
             break
         except Exception as e:
             time.sleep(2)
-            print("Failed to drop", e)
+            LOGGER.debug("Failed to drop", e)
 
     mg_succ = False
 
@@ -359,7 +370,7 @@ if __name__ == "__main__":
                 break
         except Exception as e:
             if i > 10:
-                print("mg provision failed with: ", e)
+                LOGGER.debug("mg provision failed with: ", e)
 
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
@@ -379,12 +390,11 @@ if __name__ == "__main__":
             if "ResourceExistsException" in e.__class__.__name__:
                 break
             if i >= 50:
-                print(e)
+                LOGGER.debug(e)
         except Exception as e:
             if i >= 50:
-                print(e)
+                LOGGER.debug(e)
             time.sleep(1)
-    print("Completed provisioning")
 
     for i in range(0, 150):
         try:
@@ -392,5 +402,7 @@ if __name__ == "__main__":
             break
         except Exception as e:
             if i >= 50:
-                print(e)
+                LOGGER.debug(e)
             time.sleep(1)
+
+    print("Completed provisioning")

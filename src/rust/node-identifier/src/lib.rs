@@ -764,6 +764,10 @@ where
             ])))
         };
 
+        identities
+            .into_iter()
+            .for_each(|identity| completed.add_identity(identity));
+
         completed
     }
 }
