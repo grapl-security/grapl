@@ -1,5 +1,5 @@
 import dataclasses
-from typing import List
+from typing import List, Optional
 
 import boto3
 
@@ -11,8 +11,8 @@ app = Chalice(app_name="analyzer-deployer")
 
 
 def _create_queue(queue_name: str):
-    client: sqs.Client = boto3.resource("sqs")
-    client.create_queue()
+    client: sqs.SQSServiceResource = boto3.resource("sqs")
+    client.create_queue(QueueName=queue_name)
     pass
 
 
@@ -40,16 +40,16 @@ class TableConfig:
 @dataclasses.dataclass
 class SecretConfig:
     SecretId: str
-    VersionId: str = None
-    VersionStage: str = None
+    VersionId: Optional[str] = None
+    VersionStage: Optional[str] = None
 
 
 @dataclasses.dataclass
 class AnalyzerConfig:
-    requires_external_internet: List[PortConfig] = None
-    requires_dynamodb: List[TableConfig] = None
+    requires_external_internet: Optional[List[PortConfig]] = None
+    requires_dynamodb: Optional[List[TableConfig]] = None
     requires_graph: bool = False
-    requires_secrets: List[SecretConfig] = None
+    requires_secrets: Optional[List[SecretConfig]] = None
 
 
 @dataclasses.dataclass
@@ -58,8 +58,8 @@ class AnalyzerDeployment:
     analyzer_version: int
     s3_key: str
     currently_deployed: bool
-    last_deployed_time: int = None
-    analyzer_configuration: AnalyzerConfig = None
+    last_deployed_time: Optional[int] = None
+    analyzer_configuration: Optional[AnalyzerConfig] = None
 
 
 @dataclasses.dataclass
@@ -72,7 +72,7 @@ class CreateAnalyzerResponse:
 def _create_analyzer(
     dynamodb_client: dynamodb.DynamoDBServiceResource,
 ) -> CreateAnalyzerResponse:
-    analyzer = Analyzer()
+    analyzer = Analyzer()  # type: ignore
     analyzers_table = dynamodb_client.Table("Analyzers")
     return CreateAnalyzerResponse("id", 0, "key")  # FIXME
 

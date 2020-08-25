@@ -435,6 +435,24 @@ job=run-grapl-common-unit-tests:
   use: grapl-common-build
   command: /bin/bash -c "source venv/bin/activate && cd grapl_common/tests && ls && py.test -n auto -m 'not integration_test'"
 
+job=run-grapl-common-typecheck:
+  use: grapl-common-build
+  command: /bin/bash -c "
+    source venv/bin/activate &&
+    pip install mypy &&
+    cd grapl_common &&
+    mypy ."
+
+job=run-analyzer-deployer-typecheck:
+  use: analyzer-deployer-build
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
+  command: /bin/bash -c "
+    source venv/bin/activate &&
+    pip install mypy &&
+    touch venv/lib/python3.7/site-packages/chalice/py.typed &&
+    cd analyzer-deployer &&
+    mypy ."
+
 job=run-grapl-analyzerlib-unit-tests:
   use: grapl-analyzerlib-build
   command: /bin/bash -c "source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'not integration_test'"
@@ -689,3 +707,8 @@ alias=integration-tests:
     # TODO: js integration tests
   annotations:
     description: "Run all the integration tests"
+
+alias=typecheck:
+  tasks:
+    - run-grapl-common-typecheck
+    - run-analyzer-deployer-typecheck
