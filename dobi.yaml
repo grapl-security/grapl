@@ -435,23 +435,36 @@ job=run-grapl-common-unit-tests:
   use: grapl-common-build
   command: /bin/bash -c "source venv/bin/activate && cd grapl_common/tests && ls && py.test -n auto -m 'not integration_test'"
 
+
+job=run-engagement-creator-typecheck:
+  use: engagement-creator-build
+  command: /bin/bash -c "
+    source venv/bin/activate &&
+    cd engagement-creator &&
+    pip install '.[typecheck]' &&
+    mypy .
+    "
+
 job=run-grapl-common-typecheck:
   use: grapl-common-build
   command: /bin/bash -c "
     source venv/bin/activate &&
-    pip install mypy &&
     cd grapl_common &&
-    mypy ."
+    pip install '.[typecheck]' &&
+    mypy .
+    "
 
 job=run-analyzer-deployer-typecheck:
   use: analyzer-deployer-build
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   command: /bin/bash -c "
     source venv/bin/activate &&
-    pip install mypy &&
     touch venv/lib/python3.7/site-packages/chalice/py.typed &&
     cd analyzer-deployer &&
-    mypy ."
+    pip install mypy &&
+    mypy .
+    "
 
 job=run-grapl-analyzerlib-unit-tests:
   use: grapl-analyzerlib-build
@@ -711,7 +724,8 @@ alias=integration-tests:
 alias=python-typecheck:
   tasks:
     # TODO: Add more and more here!
-    - run-grapl-common-typecheck
     - run-analyzer-deployer-typecheck
+    - run-engagement-creator-typecheck
+    - run-grapl-common-typecheck
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"

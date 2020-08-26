@@ -1,3 +1,4 @@
+# type: ignore
 import os
 
 from setuptools import setup, find_packages
@@ -40,4 +41,5 @@ setup(
     ],
     # We'll probably have some dataclasses in here in the future
     python_requires=">=3.7",
+    extras_require={"typecheck": ["mypy",],},
 )
