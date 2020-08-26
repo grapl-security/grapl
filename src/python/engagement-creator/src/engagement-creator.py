@@ -202,14 +202,18 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
 
 def get_s3_client() -> S3ServiceResource:
     if IS_LOCAL:
-        return cast(S3ServiceResource, boto3.resource(
-            "s3",
-            endpoint_url="http://s3:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-        ))
+        return cast(
+            S3ServiceResource,
+            boto3.resource(
+                "s3",
+                endpoint_url="http://s3:9000",
+                aws_access_key_id="minioadmin",
+                aws_secret_access_key="minioadmin",
+            ),
+        )
     else:
         return cast(S3ServiceResource, boto3.resource("s3"))
+
 
 def mg_alphas() -> Iterator[Tuple[str, int]]:
     mg_alphas = os.environ["MG_ALPHAS"].split(",")
