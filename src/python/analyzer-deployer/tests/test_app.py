@@ -24,18 +24,21 @@ from analyzer_deployer.app import (
 def _analyzers() -> st.SearchStrategy[Analyzer]:
     return st.builds(
         Analyzer,
-        **{
-            "analyzer_id": st.text(),
-            "analyzer_versions": st.lists(st.integers()),
-            "analyzer_active": st.booleans(),
-            "created_time": st.integers(),
-            "last_update_time": st.integers(),
-        }
+        st.builds(
+            dict,
+            analyzer_id=st.text(),
+            analyzer_versions=st.lists(st.integers()),
+            analyzer_active=st.booleans(),
+            created_time=st.integers(),
+            last_update_time=st.integers(),
+        ),
     )
 
 
 def _port_configs() -> st.SearchStrategy[PortConfig]:
-    return st.builds(PortConfig, **{"protocol": st.text(), "port": st.integers()})
+    return st.builds(
+        PortConfig, st.builds(dict, protocol=st.text(), port=st.integers(),)
+    )
 
 
 def _table_configs():
@@ -115,5 +118,5 @@ class TestApp(unittest.TestCase):
             self.assertIsNotNone(response.body)
 
     @pytest.mark.integration_test
-    def test_create_analyzer(self):
+    def test_create_analyzer_integration(self):
         pass

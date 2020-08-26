@@ -31,7 +31,7 @@ setup(
     ],
     zip_safe=False,
     packages=find_packages(),
-    package_data={},
+    package_data={"grapl-common": ["py.typed",]},
     include_package_data=True,
     install_requires=[
         # We might want this in the future
