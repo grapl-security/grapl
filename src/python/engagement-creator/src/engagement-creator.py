@@ -5,13 +5,16 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple, Sequence, Optional
+from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast
 
-import boto3
-import botocore.exceptions
+import boto3  # type: ignore
+import botocore.exceptions  # type: ignore
+from mypy_boto3_s3 import S3ServiceResource
+from mypy_boto3_sqs import SQSClient
+
 from grapl_analyzerlib.nodes.lens_node import LensView
 from grapl_analyzerlib.prelude import NodeView
-from pydgraph import DgraphClient, DgraphClientStub
+from pydgraph import DgraphClient, DgraphClientStub  # type: ignore
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -29,7 +32,7 @@ S3Event = Dict[str, Any]
 EventWithReceiptHandle = Tuple[S3Event, str]
 
 
-def parse_s3_event(s3, event) -> str:
+def parse_s3_event(s3: S3ServiceResource, event) -> bytes:
     # Retrieve body of sns message
     # Decode json body of sns message
     LOGGER.debug("event is {}".format(event))
@@ -41,7 +44,7 @@ def parse_s3_event(s3, event) -> str:
     return download_s3_file(s3, bucket, key)
 
 
-def download_s3_file(s3, bucket: str, key: str) -> str:
+def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
     key = key.replace("%3D", "=")
     LOGGER.info("Downloading s3 file from: {} {}".format(bucket, key))
     obj = s3.Object(bucket, key)
@@ -107,7 +110,7 @@ def recalculate_score(client: DgraphClient, lens: LensView) -> int:
         "$a": lens.lens,
     }
     txn = client.txn(read_only=False)
-    risk_score = 0
+    risk_score = 0.0
     try:
         res = json.loads(txn.query(query, variables=variables).json)["q0"]
 
@@ -124,18 +127,20 @@ def recalculate_score(client: DgraphClient, lens: LensView) -> int:
                 risk_map[risk["analyzer_name"]].append(risk)
 
         for risks in risk_map.values():
-            node_risk = 0
+            node_risk = 0.0
             for risk in risks:
                 node_risk += risk["risk_score"]
             risk_multiplier = 0.10 * ((len(risks) or 1) - 1)
             node_risk = node_risk + (node_risk * risk_multiplier)
             risk_score += node_risk
 
-        set_score(client, lens.uid, risk_score, txn=txn)
+        # During calculation, we think of the risk/node score as an int, but we store it as a truncated int.
+        stored_risk_score = int(risk_score)
+        set_score(client, lens.uid, stored_risk_score, txn=txn)
     finally:
         txn.discard()
 
-    return risk_score
+    return stored_risk_score
 
 
 def set_score(client: DgraphClient, uid: str, new_score: int, txn=None) -> None:
@@ -189,23 +194,22 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
 
         mut_res = txn.mutate(set_obj=mutation, commit_now=True)
         new_uid = node_dict.get("uid") or mut_res.uids["blank-0"]
-        return new_uid
+        return cast(str, new_uid)
 
     finally:
         txn.discard()
 
 
-def get_s3_client():
+def get_s3_client() -> S3ServiceResource:
     if IS_LOCAL:
-        return boto3.resource(
+        return cast(S3ServiceResource, boto3.resource(
             "s3",
             endpoint_url="http://s3:9000",
             aws_access_key_id="minioadmin",
             aws_secret_access_key="minioadmin",
-        )
+        ))
     else:
-        return boto3.resource("s3")
-
+        return cast(S3ServiceResource, boto3.resource("s3"))
 
 def mg_alphas() -> Iterator[Tuple[str, int]]:
     mg_alphas = os.environ["MG_ALPHAS"].split(",")
@@ -303,7 +307,7 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
 
 
 def main():
-    sqs = boto3.client(
+    sqs: SQSClient = boto3.client(
         "sqs",
         region_name="us-east-1",
         endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
