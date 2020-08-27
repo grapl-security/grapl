@@ -51,7 +51,6 @@ const corsDelegate = (req, callback) => {
 }
 
 
-// const middleware = [cors(corsDelegate)];
 const middleware = [cors(corsDelegate), validateJwt];
 
 app.options('*', cors(corsDelegate));
