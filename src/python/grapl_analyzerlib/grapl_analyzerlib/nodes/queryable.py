@@ -193,7 +193,9 @@ class Queryable(abc.ABC, Generic[NV]):
 
     @retry(delay=0.05)
     def get_count(
-        self, dgraph_client: DgraphClient, first: Optional[int] = None,
+        self,
+        dgraph_client: DgraphClient,
+        first: Optional[int] = None,
     ) -> int:
         query_str = generate_query(
             query_name="res",
@@ -454,7 +456,7 @@ def generate_root_vars(
     query: Queryable, binding_modifier: str, contains_node_key: Optional[str] = None
 ) -> Tuple[str, List[str]]:
     """
-        Generates root var blocks, and returns bindings associated with the blocks
+    Generates root var blocks, and returns bindings associated with the blocks
     """
     var_blocks = []
     root_bindings = []

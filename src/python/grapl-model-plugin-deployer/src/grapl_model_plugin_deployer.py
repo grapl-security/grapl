@@ -53,9 +53,9 @@ if IS_LOCAL:
                 endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
             )
 
-            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
-                "SecretString"
-            ]
+            JWT_SECRET = secretsmanager.get_secret_value(
+                SecretId="JWT_SECRET_ID",
+            )["SecretString"]
             break
         except Exception as e:
             LOGGER.debug(e)
@@ -67,7 +67,9 @@ else:
 
     client = boto3.client("secretsmanager")
 
-    JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
+    JWT_SECRET = client.get_secret_value(
+        SecretId=JWT_SECRET_ID,
+    )["SecretString"]
 
 ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
@@ -119,7 +121,12 @@ def format_schemas(schema_defs) -> str:
     LOGGER.debug(f"types: {types}")
 
     return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
+        [
+            "  # Type Definitions",
+            types,
+            "\n  # Schema Definitions",
+            schemas,
+        ]
     )
 
 
@@ -365,7 +372,8 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     ]
 
     provision_schemas(
-        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(), raw_schemas,
+        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
+        raw_schemas,
     )
 
     for path, file in plugin_files.items():
@@ -477,7 +485,10 @@ def list_model_plugins():
 def delete_plugin(s3_client, plugin_name):
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
-    list_response = s3_client.list_objects_v2(Bucket=plugin_bucket, Prefix=plugin_name,)
+    list_response = s3_client.list_objects_v2(
+        Bucket=plugin_bucket,
+        Prefix=plugin_name,
+    )
 
     if not list_response.get("Contents"):
         return []

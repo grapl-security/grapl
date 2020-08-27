@@ -223,7 +223,8 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 
 def nodes_to_attach_risk_to(
-    nodes: Sequence[NodeView], risky_node_keys: Optional[Sequence[str]],
+    nodes: Sequence[NodeView],
+    risky_node_keys: Optional[Sequence[str]],
 ) -> Sequence[NodeView]:
     """
     a None risky_node_keys means 'mark all as risky'

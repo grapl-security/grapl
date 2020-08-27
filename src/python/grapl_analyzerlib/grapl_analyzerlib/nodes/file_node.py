@@ -28,7 +28,9 @@ IFileView = TypeVar("IFileView", bound="FileView")
 
 
 class FileQuery(Queryable["FileView"]):
-    def __init__(self,) -> None:
+    def __init__(
+        self,
+    ) -> None:
         super(FileQuery, self).__init__(FileView)
         self._file_path = []  # type: List[List[Cmp[str]]]
         self._file_extension = []  # type: List[List[Cmp[str]]]

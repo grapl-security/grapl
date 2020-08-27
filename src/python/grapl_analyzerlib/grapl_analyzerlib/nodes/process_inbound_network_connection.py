@@ -15,7 +15,8 @@ from grapl_analyzerlib.nodes.types import PropertyT
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
 
 IProcessInboundConnectionQuery = TypeVar(
-    "IProcessInboundConnectionQuery", bound="ProcessInboundConnectionQuery",
+    "IProcessInboundConnectionQuery",
+    bound="ProcessInboundConnectionQuery",
 )
 
 

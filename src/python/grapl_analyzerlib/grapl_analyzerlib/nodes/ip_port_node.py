@@ -123,7 +123,8 @@ class IpPortQuery(Queryable):
         return self
 
     def with_bound_by(
-        self: "NQ", bound_by_query: Optional["IProcessInboundConnectionQuery"] = None,
+        self: "NQ",
+        bound_by_query: Optional["IProcessInboundConnectionQuery"] = None,
     ) -> "NQ":
         bound_by = bound_by_query or ProcessInboundConnectionQuery()
         bound_by.with_bound_port(cast(IpPortQuery, self))
@@ -316,25 +317,33 @@ class IpPortView(Viewable):
             self.protocol = cast(Optional[str], self.fetch_property("protocol", str))
         return self.protocol
 
-    def get_network_connections_from(self,) -> "List[NetworkConnectionView]":
+    def get_network_connections_from(
+        self,
+    ) -> "List[NetworkConnectionView]":
         return cast(
             List[NetworkConnectionView],
             self.fetch_edges("~inbound_ip_connection_to", NetworkConnectionView),
         )
 
-    def get_bound_by(self,) -> "List[ProcessInboundConnectionView]":
+    def get_bound_by(
+        self,
+    ) -> "List[ProcessInboundConnectionView]":
         return cast(
             List[ProcessInboundConnectionView],
             self.fetch_edges("~bound_port", ProcessInboundConnectionView),
         )
 
-    def get_process_connects(self,) -> "List[ProcessOutboundConnectionView]":
+    def get_process_connects(
+        self,
+    ) -> "List[ProcessOutboundConnectionView]":
         return cast(
             List[ProcessOutboundConnectionView],
             self.fetch_edges("~connected_over", ProcessOutboundConnectionView),
         )
 
-    def get_connections_from_processes(self,) -> "List[ProcessOutboundConnectionView]":
+    def get_connections_from_processes(
+        self,
+    ) -> "List[ProcessOutboundConnectionView]":
         return cast(
             List[ProcessOutboundConnectionView],
             self.fetch_edges(

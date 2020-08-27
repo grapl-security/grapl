@@ -91,7 +91,10 @@ class Eq(Cmp[T]):
         if isinstance(self.value, str):
             if self.predicate == "dgraph.type":
                 return f"type({self.value})"
-            return 'eq({}, "{}")'.format(self.predicate, self.value,)
+            return 'eq({}, "{}")'.format(
+                self.predicate,
+                self.value,
+            )
         if isinstance(self.value, int):
             return "eq({}, {})".format(self.predicate, self.value)
         if isinstance(self.value, Not) and isinstance(self.value.value, str):

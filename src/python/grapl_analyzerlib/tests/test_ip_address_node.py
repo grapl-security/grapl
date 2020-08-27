@@ -47,7 +47,9 @@ def get_or_create_ip_address_node(
 
 @pytest.mark.integration_test
 class TestIpAddressQuery(unittest.TestCase):
-    @hypothesis.settings(deadline=None,)
+    @hypothesis.settings(
+        deadline=None,
+    )
     @given(
         node_key=st.uuids(),
         first_seen_timestamp=st.datetimes(),
@@ -55,7 +57,11 @@ class TestIpAddressQuery(unittest.TestCase):
         ip_address=st.ip_addresses(v=4),  # TODO: support ipv6?
     )
     def test__single_ip_addr_node__query_by_node_key(
-        self, node_key, first_seen_timestamp, last_seen_timestamp, ip_address,
+        self,
+        node_key,
+        first_seen_timestamp,
+        last_seen_timestamp,
+        ip_address,
     ):
         # current function's name, but don't need to copy-paste replace
         node_key = node_key_for_test(self, node_key)

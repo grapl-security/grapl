@@ -15,7 +15,8 @@ from grapl_analyzerlib.nodes.types import PropertyT, Property
 from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView, Viewable
 
 IProcessOutboundConnectionQuery = TypeVar(
-    "IProcessOutboundConnectionQuery", bound="ProcessOutboundConnectionQuery",
+    "IProcessOutboundConnectionQuery",
+    bound="ProcessOutboundConnectionQuery",
 )
 
 
@@ -199,7 +200,8 @@ class ProcessOutboundConnectionQuery(Queryable):
 
 
 IProcessOutboundConnectionView = TypeVar(
-    "IProcessOutboundConnectionView", bound="ProcessOutboundConnectionView",
+    "IProcessOutboundConnectionView",
+    bound="ProcessOutboundConnectionView",
 )
 
 
@@ -331,16 +333,21 @@ class ProcessOutboundConnectionView(Viewable):
 
     def get_connecting_processes(self) -> List["ProcessView"]:
         return cast(
-            List[ProcessView], self.fetch_edges("~created_connections", ProcessView),
+            List[ProcessView],
+            self.fetch_edges("~created_connections", ProcessView),
         )
 
     def get_connected_over(self) -> Optional["IpPortView"]:
         return cast(
-            Optional[IpPortView], self.fetch_edge("connected_over", IpPortView),
+            Optional[IpPortView],
+            self.fetch_edge("connected_over", IpPortView),
         )
 
     def get_connected_to(self) -> Optional["IpPortView"]:
-        return cast(Optional[IpPortView], self.fetch_edge("connected_to", IpPortView),)
+        return cast(
+            Optional[IpPortView],
+            self.fetch_edge("connected_to", IpPortView),
+        )
 
     @staticmethod
     def _get_property_types() -> Mapping[str, "PropertyT"]:

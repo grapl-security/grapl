@@ -25,7 +25,12 @@ def format_schemas(schema_defs):
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
 
     return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
+        [
+            "  # Type Definitions",
+            types,
+            "\n  # Schema Definitions",
+            schemas,
+        ]
     )
 
 
@@ -130,7 +135,9 @@ if __name__ == "__main__":
     num_retries = 150
     for i in range(0, num_retries):
         try:
-            provision(local_dg_provision_client,)
+            provision(
+                local_dg_provision_client,
+            )
         except Exception as e:
             hint = ""
             if isinstance(e, RpcError) and e.code() == StatusCode.UNAVAILABLE:

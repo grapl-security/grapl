@@ -242,7 +242,9 @@ class LensQuery(Queryable["LensView"]):
         scope = scope_query or NodeQuery()  # type: NodeQuery
 
         scope.set_reverse_edge_filter(
-            "in_scope", self, "scope",
+            "in_scope",
+            self,
+            "scope",
         )
         return self
 
@@ -307,7 +309,8 @@ class LensView(Viewable):
         self.scope = scope or []
 
     def get_scope(
-        self: "NQ", match_scope: Optional[NodeQuery] = None,
+        self: "NQ",
+        match_scope: Optional[NodeQuery] = None,
     ) -> List[NodeView]:
         _match_scope = match_scope or NodeQuery()  # type: NodeQuery
 
@@ -415,7 +418,10 @@ class EngagementView(LensView):
         print("todo: removeme")
         lens = LensView.get_or_create(graph_client, lens_name, "engagement")
 
-        engagement_client = EngagementClient(lens.uid, graph_client,)
+        engagement_client = EngagementClient(
+            lens.uid,
+            graph_client,
+        )
 
         return EngagementView(engagement_client, lens.uid, lens.node_key)
 
