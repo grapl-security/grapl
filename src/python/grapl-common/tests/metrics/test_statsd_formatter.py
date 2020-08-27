@@ -3,8 +3,7 @@ from typing import Sequence
 
 import pytest
 
-from grapl_common.metrics import statsd_formatter
-from grapl_common.metrics.statsd_formatter import TagPair
+from grapl_common.metrics.statsd_formatter import TagPair, statsd_format
 
 
 class TestData:
@@ -28,13 +27,13 @@ class TestData:
 
 class TestStatsdFormatter(unittest.TestCase):
     def test_basic_counter(self):
-        result = statsd_formatter.statsd_format(
+        result = statsd_format(
             metric_name=TestData.METRIC_NAME, value=TestData.VALUE, typ="c",
         )
         assert result == "some_metric:2.0|c"
 
     def test_counter_with_sample_rate(self):
-        result = statsd_formatter.statsd_format(
+        result = statsd_format(
             metric_name=TestData.METRIC_NAME,
             value=TestData.VALUE,
             sample_rate=TestData.SAMPLE_RATE,
@@ -43,7 +42,7 @@ class TestStatsdFormatter(unittest.TestCase):
         assert result == "some_metric:2.0|c|@0.5"
 
     def test_non_counter_with_sample_rate_doesnt_include_it(self):
-        result = statsd_formatter.statsd_format(
+        result = statsd_format(
             metric_name=TestData.METRIC_NAME,
             value=TestData.VALUE,
             sample_rate=TestData.SAMPLE_RATE,
@@ -52,7 +51,7 @@ class TestStatsdFormatter(unittest.TestCase):
         assert result == "some_metric:2.0|g"
 
     def test_tags(self):
-        result = statsd_formatter.statsd_format(
+        result = statsd_format(
             metric_name=TestData.METRIC_NAME,
             value=TestData.VALUE,
             sample_rate=TestData.SAMPLE_RATE,
@@ -64,7 +63,7 @@ class TestStatsdFormatter(unittest.TestCase):
     def test_invalid_metric_names(self):
         for invalid_metric_name in TestData.INVALID_STRS:
             with pytest.raises(ValueError):
-                statsd_formatter.statsd_format(
+                statsd_format(
                     metric_name=invalid_metric_name, value=TestData.VALUE, typ="c",
                 )
 
@@ -72,7 +71,6 @@ class TestStatsdFormatter(unittest.TestCase):
         for invalid_str in TestData.INVALID_STRS:
             # mutate key, then value
             with pytest.raises(ValueError):
-                 TagPair(invalid_str, TestData.VALID_STR)
+                TagPair(invalid_str, TestData.VALID_STR)
             with pytest.raises(ValueError):
                 TagPair(TestData.VALID_STR, invalid_str)
-

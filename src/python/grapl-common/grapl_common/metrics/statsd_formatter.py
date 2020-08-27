@@ -1,9 +1,8 @@
 import re
-from dataclasses import dataclass
 from typing import Union, Sequence, Pattern
 from typing_extensions import Literal, Final
 
-DEFAULT_SAMPLE_RATE: Final[float] = 1.0
+_DEFAULT_SAMPLE_RATE: Final[float] = 1.0
 
 _INVALID_CHARS: Final[Pattern] = re.compile(r"[|#,=:]")
 
@@ -33,7 +32,7 @@ def statsd_format(
     metric_name: str,
     value: Union[int, float],
     typ: Literal["g", "c", "ms", "h"],  # |m is also valid, but I chose to ignore it
-    sample_rate: float = DEFAULT_SAMPLE_RATE,
+    sample_rate: float = _DEFAULT_SAMPLE_RATE,
     tags: Sequence[TagPair] = (),
 ):
     """
@@ -53,7 +52,7 @@ def statsd_format(
 
     # Add sample rate.
     # Counter - 'c' - is the only metric that responds to sample rate
-    if typ == "c" and sample_rate != DEFAULT_SAMPLE_RATE:
+    if typ == "c" and sample_rate != _DEFAULT_SAMPLE_RATE:
         if not (0.0 <= sample_rate <= 1.0):
             raise ValueError(f"Bad sample rate {sample_rate}")
         sections.append(f"@{sample_rate}")
