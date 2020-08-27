@@ -1,4 +1,4 @@
-#![type_length_limit="1214269"]
+#![type_length_limit = "1214269"]
 // Our types are simply too powerful
 
 use std::collections::HashSet;
