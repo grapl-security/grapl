@@ -1,3 +1,5 @@
+#![type_length_limit = "1195029"]
+
 use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
