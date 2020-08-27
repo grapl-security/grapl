@@ -28,10 +28,10 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 class BaseSchema(Schema):
     def __init__(
-            self,
-            properties: "Optional[Dict[str, PropType]]" = None,
-            edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
-            view: "Union[Type[Viewable], Callable[[], Type[Viewable]]]" = None,
+        self,
+        properties: "Optional[Dict[str, PropType]]" = None,
+        edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
+        view: "Union[Type[Viewable], Callable[[], Type[Viewable]]]" = None,
     ):
         super(BaseSchema, self).__init__(
             {

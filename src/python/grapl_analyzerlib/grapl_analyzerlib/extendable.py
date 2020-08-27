@@ -18,12 +18,12 @@ class Extendable(abc.ABC):
 
 
 def extend_self_helper(cls, *types):
-    cls_name = cls.__name__  # this might need to have the module name stripped, i forget
+    cls_name = (
+        cls.__name__
+    )  # this might need to have the module name stripped, i forget
     print(cls_name)
     for t in types:
-        method_list = [
-            method for method in dir(t) if method.startswith("__") is False
-        ]
+        method_list = [method for method in dir(t) if method.startswith("__") is False]
         for method in method_list:
             setattr(cls, method, getattr(t, method))
     return type(cls_name, types, {})

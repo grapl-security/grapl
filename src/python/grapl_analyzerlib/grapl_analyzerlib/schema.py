@@ -32,6 +32,7 @@ class SingletonMeta(type):
     """
     The SingletonMeta allows is to construct a class only once, globally.
     """
+
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -48,6 +49,7 @@ class Schema(metaclass=SingletonMeta):
     so that plugin nodes can attach new properties and edges to existing schemas.
 
     """
+
     def __init__(
         self,
         properties: Dict[str, "PropType"],

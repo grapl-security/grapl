@@ -2,7 +2,8 @@ from typing import Any, TypeVar, List, Set, Type, Optional, Callable, Union, Dic
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
-    EdgeRelationship, PropType,
+    EdgeRelationship,
+    PropType,
 )
 from grapl_analyzerlib.nodes.base import BaseView, BaseQuery, BaseSchema
 from grapl_analyzerlib.schema import Schema
@@ -31,10 +32,10 @@ def default_entity_edges():
 
 class EntitySchema(BaseSchema):
     def __init__(
-            self,
-            properties: "Optional[Dict[str, PropType]]" = None,
-            edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
-            view: "Union[Type[Viewable], Callable[[], Type[Viewable]]]" = None,
+        self,
+        properties: "Optional[Dict[str, PropType]]" = None,
+        edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
+        view: "Union[Type[Viewable], Callable[[], Type[Viewable]]]" = None,
     ):
         super(EntitySchema, self).__init__(
             {**(properties or {})},

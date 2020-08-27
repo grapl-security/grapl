@@ -12,7 +12,12 @@ import boto3
 import botocore
 import pydgraph
 from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
-from grapl_analyzerlib.node_types import EdgeRelationship, PropPrimitive, PropType, EdgeT
+from grapl_analyzerlib.node_types import (
+    EdgeRelationship,
+    PropPrimitive,
+    PropType,
+    EdgeT,
+)
 from grapl_analyzerlib.nodes.base import BaseSchema
 from grapl_analyzerlib.prelude import (
     AssetSchema,
@@ -34,7 +39,6 @@ LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-
 
 
 def create_secret(secretsmanager):
@@ -147,7 +151,7 @@ def extend_schema(graph_client: GraphClient, schema: "BaseSchema"):
 
 
 def provision_master_graph(
-        master_graph_client: GraphClient, schemas: List["BaseSchema"]
+    master_graph_client: GraphClient, schemas: List["BaseSchema"]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
     set_schema(master_graph_client, mg_schema_str)
@@ -160,7 +164,7 @@ def store_schema(table, schema: "Schema"):
 
         table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
-        print(f'stored edge mapping: {f_edge} {r_edge}')
+        print(f"stored edge mapping: {f_edge} {r_edge}")
 
 
 def provision_mg(mclient) -> None:
@@ -199,6 +203,7 @@ def provision_mg(mclient) -> None:
     table = dynamodb.Table("local-grapl-grapl_schema_table")
     for schema in schemas:
         store_schema(table, schema)
+
 
 BUCKET_PREFIX = "local-grapl"
 
@@ -242,7 +247,7 @@ def provision_sqs(sqs, service_name: str) -> None:
         "maxReceiveCount": "10",
     }
 
-    queue = sqs.create_queue(QueueName="grapl-%s-queue" % service_name, )
+    queue = sqs.create_queue(QueueName="grapl-%s-queue" % service_name,)
 
     sqs.set_queue_attributes(
         QueueUrl=queue["QueueUrl"],
@@ -390,7 +395,7 @@ if __name__ == "__main__":
         try:
             if not mg_succ:
                 time.sleep(1)
-                provision_mg(local_dg_provision_client, )
+                provision_mg(local_dg_provision_client,)
                 mg_succ = True
                 print("Provisioned mastergraph")
                 break
