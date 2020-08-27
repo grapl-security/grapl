@@ -30,7 +30,7 @@ IntOrNot = Union[int, Not]
 
 
 class Has(object):
-    def __init__(self, predicate: Union[Not, str]):
+    def __init__(self, predicate: StrOrNot):
         self.predicate = extract_value(predicate)
         self.negated = isinstance(predicate, Not)
 
@@ -60,7 +60,7 @@ class Eq(object):
 
 
 class Gt(object):
-    def __init__(self, predicate: str, value: Union[Not, int]):
+    def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
         self.negated: bool = isinstance(value, Not)
@@ -75,7 +75,7 @@ class Gt(object):
 
 
 class Ge(object):
-    def __init__(self, predicate: str, value: Union[Not, int]):
+    def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
         self.negated: bool = isinstance(value, Not)
@@ -90,7 +90,7 @@ class Ge(object):
 
 
 class Lt(object):
-    def __init__(self, predicate: str, value: Union[Not, int]):
+    def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
         self.negated: bool = isinstance(value, Not)
@@ -105,7 +105,7 @@ class Lt(object):
 
 
 class Le(object):
-    def __init__(self, predicate: str, value: Union[Not, int]):
+    def __init__(self, predicate: str, value: IntOrNot):
         self.predicate = predicate
         self.value = int(extract_value(value))
         self.negated: bool = isinstance(value, Not)
@@ -120,7 +120,7 @@ class Le(object):
 
 
 class Contains(object):
-    def __init__(self, predicate: str, value: Union[Not, str]):
+    def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
         self.negated: bool = isinstance(value, Not)
@@ -136,7 +136,7 @@ IntEq = Eq
 
 
 class StartsWith(object):
-    def __init__(self, predicate: str, value: Union[Not, str]):
+    def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
         self.negated: bool = isinstance(value, Not)
@@ -149,7 +149,7 @@ class StartsWith(object):
 
 
 class EndsWith(object):
-    def __init__(self, predicate: str, value: Union[Not, str]):
+    def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = re.escape(str(extract_value(value)))
         self.negated = isinstance(value, Not)
@@ -162,7 +162,7 @@ class EndsWith(object):
 
 
 class Rex(object):
-    def __init__(self, predicate: str, value: Union[Not, str]):
+    def __init__(self, predicate: str, value: StrOrNot):
         self.predicate = predicate
         self.value = extract_value(value)
         self.negated: bool = isinstance(value, Not)

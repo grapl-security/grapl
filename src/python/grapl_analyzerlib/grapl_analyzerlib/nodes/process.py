@@ -153,15 +153,15 @@ class ProcessQuery(EntityQuery[PV, PQ]):
     def with_parent(self, parent: PQ = None):
         pass
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(ProcessQuery, method, getattr(t, method))
-        return type("ProcessQuery", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(ProcessQuery, method, getattr(t, method))
+    #     return type("ProcessQuery", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -301,15 +301,15 @@ class ProcessView(EntityView[PV, PQ]):
             self.children = self_node.children
         return self.children
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(ProcessView, method, getattr(t, method))
-        return type("ProcessView", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(ProcessView, method, getattr(t, method))
+    #     return type("ProcessView", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":

@@ -158,15 +158,15 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def node_schema(cls) -> "Schema":
         return IpConnectionSchema()
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(IpConnectionQuery, method, getattr(t, method))
-        return type("IpConnectionQuery", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(IpConnectionQuery, method, getattr(t, method))
+    #     return type("IpConnectionQuery", types, {})
 
 
 class IpConnectionView(EntityView[IPV, IPQ]):
@@ -235,15 +235,15 @@ class IpConnectionView(EntityView[IPV, IPQ]):
     def node_schema(cls) -> "Schema":
         return IpConnectionSchema()
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(IpConnectionView, method, getattr(t, method))
-        return type("IpConnectionView", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(IpConnectionView, method, getattr(t, method))
+    #     return type("IpConnectionView", types, {})
 
 
 from grapl_analyzerlib.nodes.ip_address import (

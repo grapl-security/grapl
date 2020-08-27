@@ -1,8 +1,8 @@
-from typing import Any, TypeVar, List, Set, Type, Optional
+from typing import Any, TypeVar, List, Set, Type, Optional, Callable, Union, Dict, Tuple
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
-    EdgeRelationship,
+    EdgeRelationship, PropType,
 )
 from grapl_analyzerlib.nodes.base import BaseView, BaseQuery, BaseSchema
 from grapl_analyzerlib.schema import Schema
@@ -30,7 +30,12 @@ def default_entity_edges():
 
 
 class EntitySchema(BaseSchema):
-    def __init__(self, properties=None, edges=None, view=None):
+    def __init__(
+            self,
+            properties: "Optional[Dict[str, PropType]]" = None,
+            edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
+            view: "Union[Type[Viewable], Callable[[], Type[Viewable]]]" = None,
+    ):
         super(EntitySchema, self).__init__(
             {**(properties or {})},
             {**default_entity_edges(), **(edges or {}),},
@@ -56,10 +61,6 @@ class EntityQuery(BaseQuery[EV, EQ]):
         for risk in risks:
             risk.set_neighbor_filters("risky_nodes", [self])
         return self
-
-    @staticmethod
-    def extend_self(*types):
-        raise Exception("It is not possible to extend the EntityQuery")
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -102,10 +103,6 @@ class EntityView(BaseView[EV, EQ]):
                 **self.predicates,
             )
         return None
-
-    @staticmethod
-    def extend_self(*types):
-        raise Exception("It is not possible to extend the EntityView")
 
     @classmethod
     def node_schema(cls) -> "Schema":

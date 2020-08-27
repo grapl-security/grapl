@@ -59,15 +59,15 @@ class LensQuery(BaseQuery[LV, LQ]):
     def node_schema(cls) -> "Schema":
         return LensSchema()
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(LensQuery, method, getattr(t, method))
-        return type("LensQuery", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(LensQuery, method, getattr(t, method))
+    #     return type("LensQuery", types, {})
 
 
 class LensView(BaseView[LV, LQ]):
@@ -148,15 +148,15 @@ class LensView(BaseView[LV, LQ]):
     def node_schema(cls) -> "Schema":
         return LensSchema()
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(LensView, method, getattr(t, method))
-        return type("LensView", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(LensView, method, getattr(t, method))
+    #     return type("LensView", types, {})
 
 
 from grapl_analyzerlib.nodes.entity import EntityView, EntityQuery

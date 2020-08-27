@@ -18,7 +18,7 @@ from grapl_analyzerlib.queryable import (
 )
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
+from grapl_analyzerlib.comparators import StrCmp, Eq, Distance, IntOrNot, StrOrNot
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
 
 IPPQ = TypeVar("IPPQ", bound="IpPortQuery")
@@ -118,15 +118,15 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
             network_connections,
         )
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(IpPortQuery, method, getattr(t, method))
-        return type("IpPortQuery", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(IpPortQuery, method, getattr(t, method))
+    #     return type("IpPortQuery", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -183,15 +183,15 @@ class IpPortView(EntityView[IPPV, IPPQ]):
     def node_schema(cls) -> "Schema":
         return IpPortSchema()
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(IpPortView, method, getattr(t, method))
-        return type("IpPortView", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(IpPortView, method, getattr(t, method))
+    #     return type("IpPortView", types, {})
 
 
 from grapl_analyzerlib.nodes.network_connection import (

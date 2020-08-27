@@ -102,9 +102,9 @@ def upsert(
     node_props["node_key"] = node_key
     node_props["dgraph.type"] = [type_name]
     uid = _upsert(client, node_props)
-    # print(f'uid: {uid}')
+
     node_props["uid"] = uid
-    # print(node_props['node_key'])
+
     return view_type.from_dict(node_props, client)
 
 
@@ -231,33 +231,28 @@ def main():
     ):
         pv = p.query_first(local_client, contains_node_key=node_key)
 
-        # print(pv.node_key)
-        # print(pv.predicates)
-        # pv._expand()
-        # # print(pv.get_neighbor(EntityQuery, 'expand(_all_)', '', EntityQuery()))
-        # print(pv.predicates)
-        return
-        # break
-        # print("get_bin_file", pv.get_bin_file())
-        # print("bin_spawned", pv.get_bin_file().get_spawned_from())
-        # print(pv.parent.get_process_name())
-        # print(pv.children[0].process_name)
-        # print(pv.children[1].process_name)
+        print(pv.node_key)
+        print(pv.predicates)
+        pv._expand()
+        # print(pv.get_neighbor(EntityQuery, 'expand(_all_)', '', EntityQuery()))
+        print(pv.predicates)
+        print("get_bin_file", pv.get_bin_file())
+        print("bin_spawned", pv.get_bin_file().get_spawned_from())
+        print(pv.parent.get_process_name())
+        print(pv.children[0].process_name)
+        print(pv.children[1].process_name)
 
     # break
+    l = LensQuery().with_scope().query_first(local_client)
+    print(l)
+    if not l:
+        raise Exception("Expected lens")
+    for scoped in l.scope:
+        print(scoped)
+        maybe_proc = scoped.into_view(ProcessView)
+        if maybe_proc:
+            print("lens", maybe_proc.get_lenses())
 
-    print("-----")
-    return
-    # l = LensQuery().with_scope().query_first(local_client)
-    # print(l)
-    # if not l:
-    #     raise Exception("Expected lens")
-    # for scoped in l.scope:
-    #     print(scoped)
-    #     maybe_proc = scoped.into_view(ProcessView)
-    #     if maybe_proc:
-    #         print("lens", maybe_proc.get_lenses())
-    #
 
 
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional
 
+from grapl_analyzerlib.analyzer import OneOrMany
+from grapl_analyzerlib.comparators import StrOrNot
+
 from grapl_analyzerlib.node_types import (
     EdgeT,
     PropType,
@@ -93,16 +96,6 @@ class FileQuery(EntityQuery[FV, FQ]):
             ProcessQuery, "spawned_from", "bin_file", *spawned_from
         )
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(FileQuery, method, getattr(t, method))
-        return type("FileQuery", types, {})
-
     @classmethod
     def node_schema(cls) -> "Schema":
         return FileSchema()
@@ -169,16 +162,6 @@ class FileView(EntityView[FV, FQ]):
         return self.get_neighbor(
             ProcessQuery, "spawned_from", "bin_file", filters, cached=cached
         )
-
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(FileView, method, getattr(t, method))
-        return type("FileView", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":

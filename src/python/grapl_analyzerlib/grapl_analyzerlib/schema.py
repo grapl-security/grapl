@@ -3,11 +3,13 @@ import logging
 import os
 import sys
 import types
+import typing_extensions
+
 from typing import cast, Callable, Type, TypeVar, Any, Dict, Tuple, Union
 
 from grapl_analyzerlib.grapl_client import GraphClient
 
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
+IS_LOCAL: typing_extensions.Final[bool] = bool(os.environ.get("IS_LOCAL", False))
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
@@ -27,6 +29,9 @@ def default_properties() -> Dict[str, "PropType"]:
 
 
 class SingletonMeta(type):
+    """
+    The SingletonMeta allows is to construct a class only once, globally.
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -36,6 +41,13 @@ class SingletonMeta(type):
 
 
 class Schema(metaclass=SingletonMeta):
+    """
+    Schemas represent an abstract Singleton. Each node type should use a Schema to define itself.
+
+    We use a Singleton pattern in order to allow for arbitrary patching of the schemas. This is necessary
+    so that plugin nodes can attach new properties and edges to existing schemas.
+
+    """
     def __init__(
         self,
         properties: Dict[str, "PropType"],

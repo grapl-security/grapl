@@ -102,15 +102,15 @@ class AssetQuery(EntityQuery[AV, AQ]):
             file_on_asset.set_neighbor_filters("file_asset", [self])
         return self
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(AssetQuery, method, getattr(t, method))
-        return type("AssetQuery", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(AssetQuery, method, getattr(t, method))
+    #     return type("AssetQuery", types, {})
 
 
 class AssetView(EntityView[AV, AQ]):

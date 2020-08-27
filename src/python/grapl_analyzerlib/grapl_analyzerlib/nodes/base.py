@@ -1,4 +1,8 @@
 import json
+import logging
+import os
+import sys
+
 from typing import Any, TypeVar, Set, Type, Optional, List, Dict, Tuple
 
 from grapl_analyzerlib.grapl_client import GraphClient
@@ -11,16 +15,23 @@ from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable
 
-BCQ = TypeVar("BCQ", bound="BaseQuery")
-BCV = TypeVar("BCV", bound="BaseView")
+BQ = TypeVar("BQ", bound="BaseQuery")
+BV = TypeVar("BV", bound="BaseView")
+
+
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class BaseSchema(Schema):
     def __init__(
-        self,
-        properties=None,
-        edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
-        view=None,
+            self,
+            properties: "Optional[Dict[str, PropType]]" = None,
+            edges: "Optional[Dict[str, Tuple[EdgeT, str]]]" = None,
+            view: "Union[Type[Viewable], Callable[[], Type[Viewable]]]" = None,
     ):
         super(BaseSchema, self).__init__(
             {
@@ -61,7 +72,7 @@ class BaseSchema(Schema):
                 index_str = prop_type.prop_index_str()
                 predicates.append(f"{prop_name}: {prim_str} {index_str} .")
             except Exception as e:
-                print(f"Failed to generate property schema {prop_name} {e}")
+                LOGGER.error(f"Failed to generate property schema {prop_name} {e}")
                 raise e
 
         for edge_name, (edge_t, r_name) in self.edges.items():
@@ -79,16 +90,16 @@ class BaseSchema(Schema):
         return "Base"
 
 
-class BaseQuery(Queryable[BCV, BCQ]):
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(BaseQuery, method, getattr(t, method))
-        return type("BaseQuery", types, {})
+class BaseQuery(Queryable[BV, BQ]):
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(BaseQuery, method, getattr(t, method))
+    #     return type("BaseQuery", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -98,7 +109,7 @@ class BaseQuery(Queryable[BCV, BCQ]):
 V = TypeVar("V", bound="Viewable")
 
 
-class BaseView(Viewable[BCV, BCQ]):
+class BaseView(Viewable[BV, BQ]):
     queryable = BaseQuery
 
     def __init__(
@@ -232,15 +243,15 @@ class BaseView(Viewable[BCV, BCQ]):
         else:
             raise Exception(f"Invalid Node Type : {node}")
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(BaseView, method, getattr(t, method))
-        return type("BaseView", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(BaseView, method, getattr(t, method))
+    #     return type("BaseView", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":

@@ -27,7 +27,8 @@ OneOrMany = Union[List[T], T]
 
 
 class Viewable(Generic[V, Q], Extendable, abc.ABC):
-    queryable = None
+    queryable: "Type[Q]" = None
+
 
     def __init__(
         self, uid: str, node_key: str, graph_client: GraphClient, **kwargs
@@ -237,7 +238,8 @@ def is_edge(v):
     return False
 
 
-def make_iter(nl):
+T = TypeVar("T")
+def make_iter(nl: Union[None, T, Iterator[T]]) -> Iterator[T]:
     if not nl:
         return iter(())
     if isinstance(nl, list):

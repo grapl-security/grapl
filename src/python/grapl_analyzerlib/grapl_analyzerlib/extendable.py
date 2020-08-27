@@ -4,26 +4,26 @@ from typing import Generic, Type, TypeVar
 
 
 class Extendable(abc.ABC):
-    @staticmethod
-    @abc.abstractmethod
-    def extend_self(*types):
+    @classmethod
+    def extend_self(cls, *types):
         """
-        A valid implementation of `extend_self` must pass a string literal
-        directly as the first argument to a call to `type`, where that literal matches
-        the exact name of the class name of the calling Extendable.
+        extend_self is a method that performs some monkeypatching to allow combinations of types.
 
-        The second argument must consist of *types, and the third argument an empty
-        dict.
-
-        For example, the *only* valid implementation of `extend_self` for a class `MyQuery`
-        is as follows:
-
-        ```python
-        class MyQuery(Extendable[MyQuery]):
-            def extend_self(*types):
-                return type('MyQuery', types, {})
-        ```
         :param types: A var arg of types, all of which must implement the Extendable interface
-        :return: Returns a new class, which inherits from 'cls' and all passed in types
+        :return: Returns a new class, which inherits from 'cls' and all passed in types, the returned class
+            will also have all methods of all types that are not prefixed with __
         """
-        pass
+
+        return extend_self_helper(cls, *types)
+
+
+def extend_self_helper(cls, *types):
+    cls_name = cls.__name__  # this might need to have the module name stripped, i forget
+    print(cls_name)
+    for t in types:
+        method_list = [
+            method for method in dir(t) if method.startswith("__") is False
+        ]
+        for method in method_list:
+            setattr(cls, method, getattr(t, method))
+    return type(cls_name, types, {})

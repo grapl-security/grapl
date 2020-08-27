@@ -84,15 +84,15 @@ class NetworkConnectionQuery(EntityQuery[IPPV, IPPQ]):
             inbound_network_connection_to,
         )
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(NetworkConnectionQuery, method, getattr(t, method))
-        return type("NetworkConnectionQuery", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(NetworkConnectionQuery, method, getattr(t, method))
+    #     return type("NetworkConnectionQuery", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -139,15 +139,15 @@ class NetworkConnectionView(EntityView[IPPV, IPPQ]):
     def node_schema(cls) -> "Schema":
         return NetworkConnectionSchema()
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(NetworkConnectionView, method, getattr(t, method))
-        return type("NetworkConnectionView", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(NetworkConnectionView, method, getattr(t, method))
+    #     return type("NetworkConnectionView", types, {})
 
 
 from grapl_analyzerlib.nodes.ip_port import IpPortQuery, IpPortView

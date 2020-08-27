@@ -100,15 +100,15 @@ class IpAddressQuery(EntityQuery[IPV, IPQ]):
             IpConnectionQuery(), "ip_connections", "connecting_ips", ip_connections
         )
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(IpAddressQuery, method, getattr(t, method))
-        return type("IpAddressQuery", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(IpAddressQuery, method, getattr(t, method))
+    #     return type("IpAddressQuery", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":
@@ -152,15 +152,15 @@ class IpAddressView(EntityView[IPV, IPQ]):
             IpConnectionQuery, "ip_connections", "connecting_ips", ip_connections
         )
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(IpAddressView, method, getattr(t, method))
-        return type("IpAddressView", types, {})
+    # @staticmethod
+    # def extend_self(*types):
+    #     for t in types:
+    #         method_list = [
+    #             method for method in dir(t) if method.startswith("__") is False
+    #         ]
+    #         for method in method_list:
+    #             setattr(IpAddressView, method, getattr(t, method))
+    #     return type("IpAddressView", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":
