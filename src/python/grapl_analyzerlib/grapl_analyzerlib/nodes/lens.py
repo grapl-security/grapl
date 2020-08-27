@@ -50,7 +50,7 @@ class LensQuery(BaseQuery[LV, LQ]):
         return self.with_to_neighbor(EntityQuery, "scope", "in_scope", scope)
 
     def with_lens_name(self, eq: str):
-        return self.with_str_property("lens", eq=eq)
+        return self.with_str_property("lens_name", eq=eq)
 
     def with_lens_type(self, eq: str):
         return self.with_str_property("lens_type", eq=eq)
@@ -80,7 +80,7 @@ class LensView(BaseView[LV, LQ]):
         graph_client: Any,
         node_types: Set[str],
         scope: Optional[List["EntityView"]] = None,
-        lens: Optional[str] = None,
+        lens_name: Optional[str] = None,
         lens_type: Optional[str] = None,
         **kwargs,
     ):
@@ -88,11 +88,11 @@ class LensView(BaseView[LV, LQ]):
 
         self.set_predicate("node_types", node_types)
         self.set_predicate("scope", scope or [])
-        self.set_predicate("lens", lens)
+        self.set_predicate("lens_name", lens_name)
         self.set_predicate("lens_type", lens_type)
 
     def get_lens_name(self, cached=True):
-        return self.get_str("lens", cached=cached)
+        return self.get_str("lens_name", cached=cached)
 
     def get_scope(self, *scope, cached=False):
         return self.get_neighbor(EntityQuery, "scope", "in_scope", scope, cached=cached)
@@ -122,7 +122,7 @@ class LensView(BaseView[LV, LQ]):
             else:
                 m_res = eg_txn.mutate(
                     set_obj={
-                        "lens": lens_name,
+                        "lens_name": lens_name,
                         "lens_type": lens_type,
                         "node_key": "lens-" + lens_type + lens_name,
                         "dgraph.type": "Lens",

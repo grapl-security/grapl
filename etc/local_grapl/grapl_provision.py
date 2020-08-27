@@ -12,7 +12,7 @@ import boto3
 import botocore
 import pydgraph
 from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
-from grapl_analyzerlib.node_types import EdgeRelationship, PropPrimitive, PropType
+from grapl_analyzerlib.node_types import EdgeRelationship, PropPrimitive, PropType, EdgeT
 from grapl_analyzerlib.nodes.base import BaseSchema
 from grapl_analyzerlib.prelude import (
     AssetSchema,
@@ -27,7 +27,7 @@ from grapl_analyzerlib.prelude import (
     LensSchema,
     RiskSchema,
 )
-
+from grapl_analyzerlib.schema import Schema
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
@@ -153,6 +153,16 @@ def provision_master_graph(
     set_schema(master_graph_client, mg_schema_str)
 
 
+def store_schema(table, schema: "Schema"):
+    for f_edge, (_, r_edge) in schema.get_edges().items():
+        if not (f_edge and r_edge):
+            continue
+
+        table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
+        table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
+        print(f'stored edge mapping: {f_edge} {r_edge}')
+
+
 def provision_mg(mclient) -> None:
     # drop_all(mclient)
 
@@ -178,6 +188,17 @@ def provision_mg(mclient) -> None:
 
     provision_master_graph(mclient, schemas)
 
+    dynamodb = boto3.resource(
+        "dynamodb",
+        region_name="us-west-2",
+        endpoint_url="http://dynamodb:8000",
+        aws_access_key_id="dummy_cred_aws_access_key_id",
+        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+    )
+
+    table = dynamodb.Table("local-grapl-grapl_schema_table")
+    for schema in schemas:
+        store_schema(table, schema)
 
 BUCKET_PREFIX = "local-grapl"
 
@@ -319,7 +340,11 @@ def sqs_provision_loop() -> None:
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
         except Exception as e:
-            LOGGER.debug("failed to connect to sqs or s3", e)
+            if i > 50:
+                LOGGER.info("failed to connect to sqs or s3", e)
+            else:
+                LOGGER.debug("failed to connect to sqs or s3", e)
+
             time.sleep(1)
             continue
 
@@ -330,7 +355,7 @@ def sqs_provision_loop() -> None:
                     sqs_succ.discard(service)
                 except Exception as e:
                     if i > 10:
-                        LOGGER.debug(e)
+                        LOGGER.info(e)
                     time.sleep(1)
         if not sqs_succ:
             return
@@ -350,7 +375,8 @@ if __name__ == "__main__":
             break
         except Exception as e:
             time.sleep(2)
-            LOGGER.debug("Failed to drop", e)
+            if i > 20:
+                LOGGER.info("Failed to drop", e)
 
     mg_succ = False
 
@@ -370,7 +396,7 @@ if __name__ == "__main__":
                 break
         except Exception as e:
             if i > 10:
-                LOGGER.debug("mg provision failed with: ", e)
+                LOGGER.info("mg provision failed with: ", e)
 
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
@@ -393,7 +419,7 @@ if __name__ == "__main__":
                 LOGGER.debug(e)
         except Exception as e:
             if i >= 50:
-                LOGGER.debug(e)
+                LOGGER.info(e)
             time.sleep(1)
 
     for i in range(0, 150):
@@ -402,7 +428,7 @@ if __name__ == "__main__":
             break
         except Exception as e:
             if i >= 50:
-                LOGGER.debug(e)
+                LOGGER.info(e)
             time.sleep(1)
 
     print("Completed provisioning")

@@ -17,6 +17,7 @@ const secretsmanager = new AWS.SecretsManager({
 });
 
 const fetchJwtSecret = async () => {
+    console.log("JWT_SECRET_ID: ", JWT_SECRET_ID);
     const getSecretRes = await secretsmanager.getSecretValue({
         SecretId: JWT_SECRET_ID,
     }).promise();
@@ -33,7 +34,6 @@ const fetchJwtSecret = async () => {
         }
     } catch (e) {
         console.error(e);
-        // Deal with the fact the chain failed
     }
 })();
 
@@ -68,7 +68,10 @@ const validateJwt = async (req, res, next) => {
         }
     }
 
-    if (encoded_jwt == null) return res.sendStatus(401) // if there isn't any token
+    if (encoded_jwt == null) {
+        console.warn('Missing jwt from cookie: ', headers)
+        return res.sendStatus(401)
+    }
 
     if (await verifyToken(encoded_jwt) !== null) {
         next() 

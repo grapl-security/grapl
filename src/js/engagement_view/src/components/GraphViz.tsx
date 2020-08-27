@@ -160,12 +160,14 @@ const updateGraph = async (
     setState: (state: GraphState) => void,
 ) => {
     if (!lensName) {
+        console.log('Attempted to fetch empty lensName')
         return;
     }
 
     await retrieveGraph(lensName)
         .then(async (scope) => {
             const update = graphQLAdjacencyMatrix(scope);
+            console.log('curLensName, lensName', state.curLensName, lensName);
             console.log('update', update);
             const mergeUpdate = mergeGraphs(state.graphData, update);
             if (mergeUpdate !== null) {
@@ -176,6 +178,7 @@ const updateGraph = async (
                         graphData: mergeUpdate,
                     })
                 } else {
+                    console.log("Switched lens, updating graph", state.curLensName, 'ln', lensName);
                     setState({
                         ...state,
                         curLensName: lensName,
@@ -195,12 +198,14 @@ type GraphDisplayProps = {
 type GraphDisplayState = {
     graphData: AdjacencyMatrix,
     curLensName: string | null,
+    intervalMap: any,
 }
 
 const defaultGraphDisplayState = (lensName: string): GraphDisplayState => {
     return {
         graphData: {nodes: [], links: []},
         curLensName: lensName,
+        intervalMap: {},
     }
 }
 
@@ -232,13 +237,36 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
 
 
     useEffect(() => {
-        updateGraph(lensName, state, setState);
+        const nextLensName = lensName;
+        if (state.curLensName === nextLensName) {
+            return
+        }
+        if (!nextLensName) { return }
+        if (state.intervalMap[nextLensName]) { return }
+
         const interval = setInterval(async () => {
             if (lensName) {
-                await updateGraph(lensName, state, setState);
+                console.log('updating graph');
+                await updateGraph(nextLensName, state, setState);
             }
         }, 1000);
-        return () => clearInterval(interval);
+        if (state.intervalMap[state.curLensName]) {
+            clearInterval(state.intervalMap[state.curLensName])
+        }
+        const intervalMap = {...state.intervalMap};
+        intervalMap[nextLensName] = interval;
+        console.log('setting lensName', lensName);
+        setState({
+            ...state,
+            intervalMap,
+            curLensName: nextLensName,
+        })
+        return () => {
+            if (state.intervalMap[nextLensName]) {
+                clearInterval(state.intervalMap[nextLensName]);
+                intervalMap[nextLensName] = undefined;
+            }
+        };
     }, [lensName, state]);
 
     const graphData = state.graphData;
