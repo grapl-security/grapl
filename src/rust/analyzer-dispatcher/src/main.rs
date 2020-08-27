@@ -1,3 +1,6 @@
+#![type_length_limit="1214269"]
+// Our types are simply too powerful
+
 use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
