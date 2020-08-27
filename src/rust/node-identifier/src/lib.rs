@@ -1,3 +1,5 @@
+#![type_length_limit = "1195029"]
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
