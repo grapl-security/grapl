@@ -1,38 +1,21 @@
+use crate::metric_error::MetricError;
+use failure::Error;
 use lazy_static::lazy_static;
 use regex::Regex;
-use failure::Error;
-use std::fmt;
-use std::error::{Error as StdError};
-
-#[derive(Debug)]
-struct MetricError {
-    // TODO: should this own a string or just have a reference to it?
-}
-
-impl StdError for MetricError {}
-
-impl fmt::Display for MetricError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Bad stuff with Metrics")
-    }
-}
 
 lazy_static! {
     static ref INVALID_CHARS: Regex = Regex::new("[|#,=:]").unwrap();
 }
 // const DEFAULT_SAMPLE_RATE: f64 = 1.0;
 
-
-
-fn reject_invalid_chars(s: &str) -> Result<(), Error>{
+fn reject_invalid_chars(s: &str) -> Result<(), Error> {
     let matched = INVALID_CHARS.is_match(s);
     if !matched {
         Ok(())
     } else {
-        Err(Error::from(MetricError { } ))
+        Err(Error::from(MetricError {}))
     }
 }
-
 
 #[cfg(test)]
 mod tests {
