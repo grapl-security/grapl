@@ -1,0 +1,14 @@
+[package]
+name = "grapl-observability"
+version = "0.0.1"
+authors = ["Insanitybit <insanitybit@gmail.com>"]
+edition = "2018"
+description = "Metrics and logging support for Grapl"
+license = "Apache-2.0"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4.*"
+regex = "1.1.0"
+lazy_static = "1.2.0"
+failure = "0.1.*"
