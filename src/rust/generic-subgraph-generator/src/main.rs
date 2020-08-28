@@ -1,3 +1,5 @@
+#![type_length_limit = "1334469"]
+
 use std::fmt::Debug;
 use std::io::Cursor;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

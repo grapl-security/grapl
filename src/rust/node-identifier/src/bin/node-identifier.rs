@@ -1,3 +1,5 @@
+#![type_length_limit = "1195029"]
+
 use log::{error, info};
 use std::time::Duration;
 

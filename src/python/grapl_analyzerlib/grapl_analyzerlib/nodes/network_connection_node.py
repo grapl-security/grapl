@@ -272,7 +272,9 @@ class NetworkConnectionView(DynamicNodeView):
             self.dst_port = cast(Optional[str], self.fetch_property("dst_port", str))
         return self.dst_port
 
-    def get_connections_from(self,) -> "List[IpPortView]":
+    def get_connections_from(
+        self,
+    ) -> "List[IpPortView]":
         return cast(
             List[IpPortView], self.fetch_edges("~network_connections", IpPortView)
         )

@@ -42,7 +42,7 @@ class SubgraphCounter(object):
 
     def get_count_for(self, query: Queryable, max_count: int = 4) -> int:
         """
-            Generic caching for a subgraph query
+        Generic caching for a subgraph query
         """
 
         query_str = generate_query(

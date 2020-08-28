@@ -43,9 +43,9 @@ if IS_LOCAL:
                 endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
             )
 
-            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
-                "SecretString"
-            ]
+            JWT_SECRET = secretsmanager.get_secret_value(
+                SecretId="JWT_SECRET_ID",
+            )["SecretString"]
             break
         except Exception as e:
             LOGGER.debug(e)
@@ -55,9 +55,9 @@ else:
 
     secretsmanager = boto3.client("secretsmanager")
 
-    JWT_SECRET = secretsmanager.get_secret_value(SecretId=JWT_SECRET_ID,)[
-        "SecretString"
-    ]
+    JWT_SECRET = secretsmanager.get_secret_value(
+        SecretId=JWT_SECRET_ID,
+    )["SecretString"]
 
 ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
@@ -411,7 +411,10 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
                 LOGGER.error(f"risk edge failed: {risk} {e}")
 
         results.append(
-            {"node": node, "edges": edges,}
+            {
+                "node": node,
+                "edges": edges,
+            }
         )
 
     results.extend([n.to_dict() for n in concrete_nodes])
@@ -477,7 +480,11 @@ def respond(err, res=None, headers=None):
 
 def get_salt_and_pw(table, username):
     LOGGER.info(f"Getting salt for user: {username}")
-    response = table.get_item(Key={"username": username,})
+    response = table.get_item(
+        Key={
+            "username": username,
+        }
+    )
 
     if not response.get("Item"):
         return None, None
@@ -579,7 +586,8 @@ def lambda_login(event):
 
 
 cors_config = CORSConfig(
-    allow_origin=ORIGIN_OVERRIDE or ORIGIN, allow_credentials="true",
+    allow_origin=ORIGIN_OVERRIDE or ORIGIN,
+    allow_credentials="true",
 )
 
 

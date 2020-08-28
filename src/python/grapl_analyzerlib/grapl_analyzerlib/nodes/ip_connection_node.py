@@ -269,7 +269,9 @@ class IpConnectionView(DynamicNodeView):
             self.dst_port = cast(Optional[str], self.fetch_property("dst_port", str))
         return self.dst_port
 
-    def get_connecting_ips(self,) -> "List[IpAddressView]":
+    def get_connecting_ips(
+        self,
+    ) -> "List[IpAddressView]":
         return cast(
             List[IpAddressView], self.fetch_edges("~ip_connections", IpAddressView)
         )

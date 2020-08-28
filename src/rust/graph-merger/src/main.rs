@@ -1,3 +1,5 @@
+#![type_length_limit = "1195029"]
+
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::Cursor;
