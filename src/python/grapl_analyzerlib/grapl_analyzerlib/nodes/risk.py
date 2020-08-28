@@ -76,16 +76,6 @@ class RiskQuery(BaseQuery[LV, LQ]):
     def node_schema(cls) -> "Schema":
         return RiskSchema()
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(RiskQuery, method, getattr(t, method))
-        return type("RiskQuery", types, {})
-
 
 class RiskView(BaseView[LV, LQ]):
     queryable = RiskQuery
@@ -102,7 +92,7 @@ class RiskView(BaseView[LV, LQ]):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
 
-        self.set_predicate("risky_names", risky_nodes)
+        self.set_predicate("risky_nodes", risky_nodes)
 
     def get_analyzer_name(self, cached=True):
         return self.get_str("analyzer_name", cached=cached)
@@ -118,16 +108,6 @@ class RiskView(BaseView[LV, LQ]):
     @classmethod
     def node_schema(cls) -> "Schema":
         return RiskSchema()
-
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(RiskView, method, getattr(t, method))
-        return type("RiskView", types, {})
 
 
 from grapl_analyzerlib.comparators import IntOrNot, StrOrNot

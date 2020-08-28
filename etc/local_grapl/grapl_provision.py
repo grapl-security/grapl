@@ -346,7 +346,7 @@ def sqs_provision_loop() -> None:
             )
         except Exception as e:
             if i > 50:
-                LOGGER.info("failed to connect to sqs or s3", e)
+                LOGGER.error("failed to connect to sqs or s3", e)
             else:
                 LOGGER.debug("failed to connect to sqs or s3", e)
 
@@ -360,7 +360,7 @@ def sqs_provision_loop() -> None:
                     sqs_succ.discard(service)
                 except Exception as e:
                     if i > 10:
-                        LOGGER.info(e)
+                        LOGGER.error(e)
                     time.sleep(1)
         if not sqs_succ:
             return
@@ -381,7 +381,7 @@ if __name__ == "__main__":
         except Exception as e:
             time.sleep(2)
             if i > 20:
-                LOGGER.info("Failed to drop", e)
+                LOGGER.error("Failed to drop", e)
 
     mg_succ = False
 
@@ -401,7 +401,7 @@ if __name__ == "__main__":
                 break
         except Exception as e:
             if i > 10:
-                LOGGER.info("mg provision failed with: ", e)
+                LOGGER.error("mg provision failed with: ", e)
 
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
@@ -424,7 +424,7 @@ if __name__ == "__main__":
                 LOGGER.debug(e)
         except Exception as e:
             if i >= 50:
-                LOGGER.info(e)
+                LOGGER.error(e)
             time.sleep(1)
 
     for i in range(0, 150):
@@ -433,7 +433,7 @@ if __name__ == "__main__":
             break
         except Exception as e:
             if i >= 50:
-                LOGGER.info(e)
+                LOGGER.error(e)
             time.sleep(1)
 
     print("Completed provisioning")

@@ -118,16 +118,6 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
             network_connections,
         )
 
-    # @staticmethod
-    # def extend_self(*types):
-    #     for t in types:
-    #         method_list = [
-    #             method for method in dir(t) if method.startswith("__") is False
-    #         ]
-    #         for method in method_list:
-    #             setattr(IpPortQuery, method, getattr(t, method))
-    #     return type("IpPortQuery", types, {})
-
     @classmethod
     def node_schema(cls) -> "Schema":
         return IpPortSchema()
@@ -182,16 +172,6 @@ class IpPortView(EntityView[IPPV, IPPQ]):
     @classmethod
     def node_schema(cls) -> "Schema":
         return IpPortSchema()
-
-    # @staticmethod
-    # def extend_self(*types):
-    #     for t in types:
-    #         method_list = [
-    #             method for method in dir(t) if method.startswith("__") is False
-    #         ]
-    #         for method in method_list:
-    #             setattr(IpPortView, method, getattr(t, method))
-    #     return type("IpPortView", types, {})
 
 
 from grapl_analyzerlib.nodes.network_connection import (

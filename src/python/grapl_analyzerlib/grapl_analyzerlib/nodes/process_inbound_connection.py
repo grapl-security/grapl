@@ -10,8 +10,8 @@ from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
 from grapl_analyzerlib.queryable import with_str_prop, with_int_prop
 from grapl_analyzerlib.schema import Schema
 
-POCQ = TypeVar("POCQ", bound="ProcessInboundConnectionQuery")
-POCV = TypeVar("POCV", bound="ProcessInboundConnectionView")
+PICQ = TypeVar("PICQ", bound="ProcessInboundConnectionQuery")
+PICV = TypeVar("PICV", bound="ProcessInboundConnectionView")
 
 
 def default_process_inbound_connection_properties():
@@ -60,7 +60,7 @@ class ProcessInboundConnectionSchema(EntitySchema):
         return "ProcessInboundConnection"
 
 
-class ProcessInboundConnectionQuery(EntityQuery[POCV, POCQ]):
+class ProcessInboundConnectionQuery(EntityQuery[PICV, PICQ]):
     @with_str_prop("protocol")
     def with_protocol(
         self,
@@ -130,22 +130,12 @@ class ProcessInboundConnectionQuery(EntityQuery[POCV, POCQ]):
             IpAddressQuery, "bound_ip", "bound_ports", bound_ips
         )
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(ProcessInboundConnectionQuery, method, getattr(t, method))
-        return type("ProcessInboundConnectionQuery", types, {})
-
     @classmethod
     def node_schema(cls) -> "Schema":
         return ProcessInboundConnectionSchema()
 
 
-class ProcessInboundConnectionView(EntityView[POCV, POCQ]):
+class ProcessInboundConnectionView(EntityView[PICV, PICQ]):
     queryable = ProcessInboundConnectionQuery
 
     def __init__(
@@ -196,16 +186,6 @@ class ProcessInboundConnectionView(EntityView[POCV, POCQ]):
         return self.get_neighbor(
             IpAddressQuery, "bound_ip", "bound_ports", bound_ips, cached=cached
         )
-
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(ProcessInboundConnectionView, method, getattr(t, method))
-        return type("ProcessInboundConnectionView", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":

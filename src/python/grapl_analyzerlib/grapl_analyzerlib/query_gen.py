@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from typing import Any, Dict, Set, Optional, Iterator, Tuple, List
+from typing import Dict, Set, Optional, Iterator, Tuple, List
 
 
 class VarAllocator(object):
@@ -236,15 +236,16 @@ def into_query_block(
                     if binding and root_node:
                         if inner_neighbor_filter._id == root_node._id:
                             formatted_var_name = f"{binding} as "
-                    neighbors += f"""
 
-                {formatted_var_name}  {alias} {edge_name} {filter_str} {{
-                    {neighbor_properties}
-                }}
-                    """
+                    neighbors += (
+                        f"{formatted_var_name}  {alias} {edge_name} {filter_str} {{"
+                        + f"{neighbor_properties}"
+                        + "}"
+                    )
+
             else:
                 # Generate OR logic for query
-                (neighbor_filter_str, neighbor_properties) = into_query_block(
+                neighbor_filter_str, neighbor_properties = into_query_block(
                     neighbor_filter,
                     var_alloc,
                     visited,
@@ -265,12 +266,11 @@ def into_query_block(
                 if binding and root_node:
                     if neighbor_filter._id == root_node._id:
                         formatted_var_name = f"{binding} as "
-                neighbors += f"""
-
-                {formatted_var_name} {edge_name} {filter_str} {{
-                    {neighbor_properties}
-                }}
-                """
+                neighbors += (
+                    f"{formatted_var_name} {edge_name} {filter_str} {{"
+                    + f"{neighbor_properties}"
+                    + "}"
+                )
 
     # Grab the properties
     if is_expand:
@@ -487,7 +487,7 @@ def traverse_query_neighbors_iter(
         if not neighbor_filters:
             continue
         if root_q not in visited:
-            yield (root_q, edge_name, neighbor_filters)
+            yield root_q, edge_name, neighbor_filters
 
         visited.add(root_q)
 
@@ -507,39 +507,6 @@ from grapl_analyzerlib.comparators import (
     Eq,
     IntEq,
     Has,
-    StrCmp,
-    IntCmp,
     extract_value,
     dgraph_prop_type,
 )
-
-
-def main():
-    from grapl_analyzerlib.nodes.process import ProcessQuery
-    from pydgraph import DgraphClient, DgraphClientStub
-
-    gclient = DgraphClient(DgraphClientStub("localhost:9080"))
-
-    p = (
-        ProcessQuery()
-        .with_process_name(eq="proc")
-        .with_process_name(contains=["proc", "bad"])
-        # Either it has two or more children, one or more named bar and one or more named baz
-        .with_children(
-            ProcessQuery().with_process_name(eq="bar"),
-            ProcessQuery()
-            .with_process_name(eq="foo")
-            .with_arguments(eq="arg0 arg1")
-            .with_children(ProcessQuery().with_process_name(eq="grandchild")),
-        )
-        # Punting on supporting OR logic for edges
-        # # Or it has at least one child with the name baz
-        # .with_children(ProcessQuery().with_process_name(eq="baz"))
-        .with_parent(ProcessQuery().with_process_name(eq="evil"))
-    )
-
-    p.query_first(gclient)
-
-
-if __name__ == "__main__":
-    main()

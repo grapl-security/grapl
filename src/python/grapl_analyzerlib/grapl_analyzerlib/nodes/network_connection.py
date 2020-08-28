@@ -10,8 +10,8 @@ from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
 from grapl_analyzerlib.queryable import with_str_prop, with_int_prop
 from grapl_analyzerlib.schema import Schema
 
-IPPQ = TypeVar("IPPQ", bound="NetworkConnectionQuery")
-IPPV = TypeVar("IPPV", bound="NetworkConnectionView")
+NCQ = TypeVar("NCQ", bound="NetworkConnectionQuery")
+NCV = TypeVar("NCV", bound="NetworkConnectionView")
 
 
 def default_network_connection_properties():
@@ -50,7 +50,7 @@ class NetworkConnectionSchema(EntitySchema):
         return "NetworkConnection"
 
 
-class NetworkConnectionQuery(EntityQuery[IPPV, IPPQ]):
+class NetworkConnectionQuery(EntityQuery[NCV, NCQ]):
     @with_int_prop("port")
     def with_port(
         self,
@@ -84,22 +84,12 @@ class NetworkConnectionQuery(EntityQuery[IPPV, IPPQ]):
             inbound_network_connection_to,
         )
 
-    # @staticmethod
-    # def extend_self(*types):
-    #     for t in types:
-    #         method_list = [
-    #             method for method in dir(t) if method.startswith("__") is False
-    #         ]
-    #         for method in method_list:
-    #             setattr(NetworkConnectionQuery, method, getattr(t, method))
-    #     return type("NetworkConnectionQuery", types, {})
-
     @classmethod
     def node_schema(cls) -> "Schema":
         return NetworkConnectionSchema()
 
 
-class NetworkConnectionView(EntityView[IPPV, IPPQ]):
+class NetworkConnectionView(EntityView[NCV, NCQ]):
     queryable = NetworkConnectionQuery
 
     def __init__(
@@ -138,16 +128,6 @@ class NetworkConnectionView(EntityView[IPPV, IPPQ]):
     @classmethod
     def node_schema(cls) -> "Schema":
         return NetworkConnectionSchema()
-
-    # @staticmethod
-    # def extend_self(*types):
-    #     for t in types:
-    #         method_list = [
-    #             method for method in dir(t) if method.startswith("__") is False
-    #         ]
-    #         for method in method_list:
-    #             setattr(NetworkConnectionView, method, getattr(t, method))
-    #     return type("NetworkConnectionView", types, {})
 
 
 from grapl_analyzerlib.nodes.ip_port import IpPortQuery, IpPortView

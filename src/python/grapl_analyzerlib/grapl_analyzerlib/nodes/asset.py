@@ -102,16 +102,6 @@ class AssetQuery(EntityQuery[AV, AQ]):
             file_on_asset.set_neighbor_filters("file_asset", [self])
         return self
 
-    # @staticmethod
-    # def extend_self(*types):
-    #     for t in types:
-    #         method_list = [
-    #             method for method in dir(t) if method.startswith("__") is False
-    #         ]
-    #         for method in method_list:
-    #             setattr(AssetQuery, method, getattr(t, method))
-    #     return type("AssetQuery", types, {})
-
 
 class AssetView(EntityView[AV, AQ]):
     queryable = AssetQuery
@@ -167,7 +157,7 @@ class AssetView(EntityView[AV, AQ]):
 
         if self_node:
             self.asset_ip = self_node.asset_ip
-        return asset_ip
+        return self.asset_ip
 
     def with_asset_processes(self, *processes, cached=True):
         if cached and self.asset_processes:
@@ -182,7 +172,7 @@ class AssetView(EntityView[AV, AQ]):
 
         if self_node:
             self.asset_processes = self_node.asset_processes
-        return asset_processes
+        return self.asset_processes
 
     def with_files_on_asset(self, *files, cached=True):
         if cached and self.files_on_asset:
@@ -197,17 +187,7 @@ class AssetView(EntityView[AV, AQ]):
 
         if self_node:
             self.files_on_asset = self_node.files_on_asset
-        return files_on_asset
-
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(AssetView, method, getattr(t, method))
-        return type("AssetView", types, {})
+        return self.files_on_asset
 
 
 from grapl_analyzerlib.comparators import StrOrNot, _str_cmps

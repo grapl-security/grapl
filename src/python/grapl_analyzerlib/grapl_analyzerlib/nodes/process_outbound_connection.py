@@ -136,16 +136,6 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     ):
         pass
 
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(ProcessOutboundConnectionQuery, method, getattr(t, method))
-        return type("ProcessOutboundConnectionQuery", types, {})
-
     @classmethod
     def node_schema(cls) -> "Schema":
         return ProcessOutboundConnectionSchema()
@@ -195,16 +185,6 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
 
     def get_last_seen_timestamp(self, cached=True):
         self.get_int("last_seen_timestamp", cached=cached)
-
-    @staticmethod
-    def extend_self(*types):
-        for t in types:
-            method_list = [
-                method for method in dir(t) if method.startswith("__") is False
-            ]
-            for method in method_list:
-                setattr(ProcessOutboundConnectionView, method, getattr(t, method))
-        return type("ProcessOutboundConnectionView", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":

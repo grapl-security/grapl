@@ -91,16 +91,6 @@ class BaseSchema(Schema):
 
 
 class BaseQuery(Queryable[BV, BQ]):
-    # @staticmethod
-    # def extend_self(*types):
-    #     for t in types:
-    #         method_list = [
-    #             method for method in dir(t) if method.startswith("__") is False
-    #         ]
-    #         for method in method_list:
-    #             setattr(BaseQuery, method, getattr(t, method))
-    #     return type("BaseQuery", types, {})
-
     @classmethod
     def node_schema(cls) -> "Schema":
         return BaseSchema()
@@ -242,16 +232,6 @@ class BaseView(Viewable[BV, BQ]):
             )
         else:
             raise Exception(f"Invalid Node Type : {node}")
-
-    # @staticmethod
-    # def extend_self(*types):
-    #     for t in types:
-    #         method_list = [
-    #             method for method in dir(t) if method.startswith("__") is False
-    #         ]
-    #         for method in method_list:
-    #             setattr(BaseView, method, getattr(t, method))
-    #     return type("BaseView", types, {})
 
     @classmethod
     def node_schema(cls) -> "Schema":

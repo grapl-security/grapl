@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::Cursor;
 use std::iter::FromIterator;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::time::SystemTime;
@@ -18,10 +19,6 @@ use dgraph_rs::protos::api_grpc;
 use dgraph_rs::DgraphClient;
 use failure::{bail, Error};
 use futures::future::join_all;
-
-use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
-use graph_descriptions::node::NodeT;
-
 use grpc::ClientConf;
 use grpc::{Client, ClientStub};
 use lambda_runtime::error::HandlerError;
@@ -32,19 +29,23 @@ use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rusoto_core::{HttpClient, Region, RusotoError};
+use rusoto_dynamodb::AttributeValue;
+use rusoto_dynamodb::DynamoDbClient;
+use rusoto_dynamodb::{DynamoDb, GetItemInput, QueryInput};
 use rusoto_s3::{S3Client, S3};
 use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
-use sqs_lambda::cache::{Cache, CacheResponse, NopCache, Cacheable};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use sqs_lambda::cache::{Cache, CacheResponse, Cacheable, NopCache};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
-
-use serde_json::{json, Value};
-
-use std::str::FromStr;
 use tokio::runtime::Runtime;
+
+use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
+use graph_descriptions::node::NodeT;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -155,17 +156,6 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
         Some(uid) => Ok(uid),
         None => bail!("Could not retrieve uid after upsert for {}", &node_key),
     }
-
-    //    if let Some(uid) = upsert_res.uids.values().next() {
-    //        Ok(uid.to_owned())
-    //    } else {
-    //        match node_key_to_uid(dg, &node_key).await? {
-    //            Some(uid) => {
-    //                Ok(uid)
-    //            },
-    //            None => bail!("Could not retrieve uid after upsert for {}", &node_key),
-    //        }
-    //    }
 }
 
 fn chunk<T, U>(data: U, count: usize) -> Vec<U>
@@ -228,7 +218,10 @@ where
     }
 }
 
-async fn upsert_edge(mg_client: &DgraphClient, mu: api::Mutation) -> Result<(), dgraph_rs::errors::DgraphError> {
+async fn upsert_edge(
+    mg_client: &DgraphClient,
+    mu: api::Mutation,
+) -> Result<(), dgraph_rs::errors::DgraphError> {
     let mut txn = mg_client.new_txn();
     txn.mutate(mu).await?;
 
@@ -449,7 +442,6 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     }
 }
 
-
 #[async_trait]
 impl<CacheT> EventHandler for GraphMerger<CacheT>
 where
@@ -506,11 +498,11 @@ where
                 _ => (),
             };
             upserts.push(
-                upsert_node(&self.mg_client, node.clone()).map(move |u| (node.clone_node_key(), u)).await,
+                upsert_node(&self.mg_client, node.clone())
+                    .map(move |u| (node.clone_node_key(), u))
+                    .await,
             )
         }
-
-        // let upserts = log_time!("All upserts", join_all(upserts).await);
 
         for (node_key, upsert) in upserts.into_iter() {
             let new_uid = match upsert {
@@ -518,7 +510,7 @@ where
                     let identity = subgraph.nodes[&node_key].clone().into_json().to_string();
                     identities.push(identity);
                     new_uid
-                },
+                }
                 Err(e) => {
                     error!("{}", e);
                     upsert_res = Some(e);
@@ -552,7 +544,6 @@ where
             .flatten()
             .collect();
         for edge in flattened_edges.into_iter() {
-
             match (
                 node_key_to_uid_map.get(&edge.from[..]),
                 node_key_to_uid_map.get(&edge.to[..]),
@@ -574,34 +565,47 @@ where
                     edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name));
                 }
                 (Some(from), None) => {
-                    match  node_key_to_uid(&self.mg_client, &edge.from[..]).await {
-                        Ok(Some(to)) => edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name)),
+                    match node_key_to_uid(&self.mg_client, &edge.from[..]).await {
+                        Ok(Some(to)) => {
+                            edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name))
+                        }
                         Ok(None) => edge_res = Some("Edge to uid failed".to_string()),
                         Err(e) => edge_res = Some(e.to_string()),
                     }
                 }
-                (None, Some(to)) => {
-                    match  node_key_to_uid(&self.mg_client, &edge.to[..]).await {
-                        Ok(Some(from)) => edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name)),
-                        Ok(None) => edge_res = Some("Edge to uid failed".to_string()),
-                        Err(e) => edge_res = Some(e.to_string()),
+                (None, Some(to)) => match node_key_to_uid(&self.mg_client, &edge.to[..]).await {
+                    Ok(Some(from)) => {
+                        edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name))
                     }
-                }
+                    Ok(None) => edge_res = Some("Edge to uid failed".to_string()),
+                    Err(e) => edge_res = Some(e.to_string()),
+                },
                 (None, None) => {
                     let from = match node_key_to_uid(&self.mg_client, &edge.from[..]).await {
                         Ok(Some(from)) => from,
-                        Ok(None) => { edge_res = Some("Edge to uid failed".to_string()); continue },
-                        Err(e) => { edge_res = Some(e.to_string()); continue },
+                        Ok(None) => {
+                            edge_res = Some("Edge to uid failed".to_string());
+                            continue;
+                        }
+                        Err(e) => {
+                            edge_res = Some(e.to_string());
+                            continue;
+                        }
                     };
 
                     let to = match node_key_to_uid(&self.mg_client, &edge.to[..]).await {
                         Ok(Some(to)) => to,
-                        Ok(None) => { edge_res = Some("Edge to uid failed".to_string()); continue },
-                        Err(e) => { edge_res = Some(e.to_string()); continue },
+                        Ok(None) => {
+                            edge_res = Some("Edge to uid failed".to_string());
+                            continue;
+                        }
+                        Err(e) => {
+                            edge_res = Some(e.to_string());
+                            continue;
+                        }
                     };
 
                     edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name));
-
                 }
             }
         }
@@ -632,7 +636,6 @@ where
             mutations.push(upsert_edge(&self.mg_client, mu).await);
         }
 
-        // let edge_mut_res: Vec<_> = join_all(mutations).await;
         if let Some(e) = mutations.iter().find(|e| e.is_err()) {
             error!("Failed to upsert edge: {:?}", e);
             edge_res = Some(format!("Failed to upsert edge: {:?}", e));
@@ -659,12 +662,6 @@ where
         completed
     }
 }
-
-use rusoto_dynamodb::AttributeValue;
-use rusoto_dynamodb::DynamoDbClient;
-use rusoto_dynamodb::{DynamoDb, GetItemInput, QueryInput};
-use serde::{Deserialize, Serialize};
-
 
 pub fn init_dynamodb_client() -> DynamoDbClient {
     info!("Connecting to local http://dynamodb:8000");
@@ -707,20 +704,21 @@ async fn get_r_edge(
         ..Default::default()
     };
 
-    let item = client.get_item(query).await
-        .map_err(|e| sqs_lambda::error::Error::ProcessingError(e.to_string()))
-        ?.item;
+    let item = client
+        .get_item(query)
+        .await
+        .map_err(|e| sqs_lambda::error::Error::ProcessingError(e.to_string()))?
+        .item;
     match item {
         Some(item) => {
             let mapping: EdgeMapping = serde_dynamodb::from_hashmap(item.clone())
-                .map_err(|e| sqs_lambda::error::Error::ProcessingError(e.to_string()))
-                ?;
+                .map_err(|e| sqs_lambda::error::Error::ProcessingError(e.to_string()))?;
             Ok(Some(mapping.r_edge))
         }
         None => {
             warn!("Missing r_edge for: {}", f_edge);
             Ok(None)
-        },
+        }
     }
 }
 
@@ -739,7 +737,6 @@ fn init_sqs_client() -> SqsClient {
         },
     )
 }
-
 
 fn init_s3_client() -> S3Client {
     info!("Connecting to local http://s3:9000");
@@ -763,7 +760,6 @@ struct HashCache {
 
 #[async_trait]
 impl sqs_lambda::cache::Cache for HashCache {
-
     async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
