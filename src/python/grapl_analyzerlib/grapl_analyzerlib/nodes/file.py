@@ -1,7 +1,7 @@
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional
 
 from grapl_analyzerlib.analyzer import OneOrMany
-from grapl_analyzerlib.comparators import StrOrNot
+from grapl_analyzerlib.comparators import StrOrNot, IntOrNot
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -10,7 +10,7 @@ from grapl_analyzerlib.node_types import (
     EdgeRelationship,
 )
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
-from grapl_analyzerlib.queryable import with_str_prop
+from grapl_analyzerlib.queryable import with_str_prop, with_int_prop
 from grapl_analyzerlib.schema import Schema
 
 FQ = TypeVar("FQ", bound="FileQuery")
@@ -47,19 +47,19 @@ def default_file_properties() -> Dict[str, PropType]:
         "file_path": PropType(PropPrimitive.Str, False),
         "file_extension": PropType(PropPrimitive.Str, False),
         "file_mime_type": PropType(PropPrimitive.Str, False),
-        "file_size": PropType(PropPrimitive.Int, False),
         "file_version": PropType(PropPrimitive.Str, False),
         "file_description": PropType(PropPrimitive.Str, False),
         "file_product": PropType(PropPrimitive.Str, False),
         "file_company": PropType(PropPrimitive.Str, False),
         "file_directory": PropType(PropPrimitive.Str, False),
-        "file_inode": PropType(PropPrimitive.Int, False),
         "file_hard_links": PropType(PropPrimitive.Str, False),
         "signed": PropType(PropPrimitive.Str, False),
         "signed_status": PropType(PropPrimitive.Str, False),
         "md5_hash": PropType(PropPrimitive.Str, False),
         "sha1_hash": PropType(PropPrimitive.Str, False),
         "sha256_hash": PropType(PropPrimitive.Str, False),
+        "file_inode": PropType(PropPrimitive.Int, False),
+        "file_size": PropType(PropPrimitive.Int, False),
     }
 
 
@@ -89,6 +89,185 @@ class FileQuery(EntityQuery[FV, FQ]):
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
     ) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_extension")
+    def with_file_extension(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_mime_type")
+    def with_file_mime_type(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_version")
+    def with_file_version(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_description")
+    def with_file_description(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_product")
+    def with_file_product(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_company")
+    def with_file_company(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_directory")
+    def with_file_directory(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_hard_links")
+    def with_file_hard_links(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("signed")
+    def with_signed(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("signed_status")
+    def with_signed_status(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_str_prop("md5_hash")
+    def with_md5_hash(self, *, eq: Optional["StrOrNot"] = None,) -> "FileQuery":
+        pass
+
+    @with_str_prop("sha1_hash")
+    def with_sha1_hash(self, *, eq: Optional["StrOrNot"] = None,) -> "FileQuery":
+        pass
+
+    @with_str_prop("sha256_hash")
+    def with_sha256_hash(self, *, eq: Optional["StrOrNot"] = None,) -> "FileQuery":
+        pass
+
+    @with_str_prop("file_path")
+    def with_file_path(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ) -> "FileQuery":
+        pass
+
+    @with_int_prop("file_inode")
+    def with_file_inode(
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
+    ):
+        pass
+
+    @with_int_prop("file_size")
+    def with_file_size(
+        self,
+        *,
+        eq: Optional["IntOrNot"] = None,
+        gt: Optional["IntOrNot"] = None,
+        ge: Optional["IntOrNot"] = None,
+        lt: Optional["IntOrNot"] = None,
+        le: Optional["IntOrNot"] = None,
+    ):
         pass
 
     def with_spawned_from(self, *spawned_from: Optional["ProcessQuery"]) -> "FileQuery":
@@ -157,6 +336,91 @@ class FileView(EntityView[FV, FQ]):
         self.set_predicate("writers", writers or [])
         self.set_predicate("readers", readers or [])
         self.set_predicate("deleter", deleter or [])
+
+    def get_file_path(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_path", cached=cached)
+
+    def get_file_extension(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_extension", cached=cached)
+
+    def get_file_mime_type(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_mime_type", cached=cached)
+
+    def get_file_version(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_version", cached=cached)
+
+    def get_file_description(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_description", cached=cached)
+
+    def get_file_product(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_product", cached=cached)
+
+    def get_file_company(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_company", cached=cached)
+
+    def get_file_directory(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_directory", cached=cached)
+
+    def get_file_hard_links(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_hard_links", cached=cached)
+
+    def get_signed(
+        self, *, cached=True,
+    ):
+        return self.get_str("signed", cached=cached)
+
+    def get_signed_status(
+        self, *, cached=True,
+    ):
+        return self.get_str("signed_status", cached=cached)
+
+    def get_md5_hash(
+        self, *, cached=True,
+    ):
+        return self.get_str("md5_hash", cached=cached)
+
+    def get_sha1_hash(
+        self, *, cached=True,
+    ):
+        return self.get_str("sha1_hash", cached=cached)
+
+    def get_sha256_hash(
+        self, *, cached=True,
+    ):
+        return self.get_str("sha256_hash", cached=cached)
+
+    def get_file_path(
+        self, *, cached=True,
+    ):
+        return self.get_str("file_path", cached=cached)
+
+    def get_file_inode(
+        self, *, cached=False,
+    ):
+        return self.get_int("file_inode", cached=cached)
+
+    def get_file_size(
+        self, *, cached=False,
+    ):
+        return self.get_int("file_size", cached=cached)
 
     def get_spawned_from(self, *filters: "ProcessQuery", cached=True):
         return self.get_neighbor(
