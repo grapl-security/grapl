@@ -44,7 +44,7 @@ def default_ip_port_edges() -> Dict[str, Tuple[EdgeT, str]]:
     return {
         "network_connections": (
             EdgeT(IpPortSchema, NetworkConnectionSchema, EdgeRelationship.ManyToMany),
-            "connections_from",
+            "network_connections_from",
         )
     }
 
@@ -114,7 +114,7 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
         return self.with_to_neighbor(
             NetworkConnectionQuery,
             "network_connections",
-            "connections_from",
+            "network_connections_from",
             network_connections,
         )
 
@@ -164,7 +164,7 @@ class IpPortView(EntityView[IPPV, IPPQ]):
         return self.get_neighbor(
             NetworkConnectionQuery,
             "network_connections",
-            "connections_from",
+            "network_connections_from",
             network_connections,
             cached=cached,
         )
@@ -181,17 +181,17 @@ from grapl_analyzerlib.nodes.network_connection import (
 
 
 class IpPortExtendsNetworkConnectionQuery(NetworkConnectionQuery):
-    def with_connections_from(self, *connections_from):
+    def with_network_connections_from(self, *connections_from):
         self.with_to_neighbor(
-            IpPortQuery, "connections_from", "network_connections", connections_from
+            IpPortQuery, "network_connections_from", "network_connections", connections_from
         )
 
 
 class IpPortExtendsNetworkConnectionView(NetworkConnectionView):
-    def get_connections_from(self, *connections_from, cached=False):
+    def get_network_connections_from(self, *connections_from, cached=False):
         self.get_neighbor(
             IpPortQuery,
-            "connections_from",
+            "network_connections_from",
             "network_connections",
             connections_from,
             cached=cached,

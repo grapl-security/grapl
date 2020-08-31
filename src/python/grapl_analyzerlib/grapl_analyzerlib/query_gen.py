@@ -36,6 +36,10 @@ class VarAllocator(object):
         self.allocated.clear()
 
 
+def is_regex_based(cmp: 'Cmp') -> bool:
+    return isinstance(cmp, Contains) or isinstance(cmp, StartsWith) or isinstance(cmp, EndsWith) or isinstance(cmp, Rex)
+
+
 def gen_prop_filters(q: "Queryable", var_alloc: VarAllocator) -> Optional[str]:
     prop_filter_str = ""
     prop_filters = []
@@ -46,7 +50,7 @@ def gen_prop_filters(q: "Queryable", var_alloc: VarAllocator) -> Optional[str]:
             andeds = []
             for f in and_filter:
                 f = deepcopy(f)
-                if isinstance(f, Has):
+                if isinstance(f, Has) or is_regex_based(f):
                     continue  # We don't need a filter for Has, @cascade will sort that out for us
                 else:
                     f.value = var_alloc.alloc(f)
@@ -508,5 +512,5 @@ from grapl_analyzerlib.comparators import (
     IntEq,
     Has,
     extract_value,
-    dgraph_prop_type,
+    dgraph_prop_type, Contains, StartsWith, EndsWith, Rex,
 )

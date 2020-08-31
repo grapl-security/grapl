@@ -43,7 +43,7 @@ def default_process_outbound_connection_edges() -> Dict[str, Tuple[EdgeT, str]]:
                 IpPortSchema,
                 EdgeRelationship.ManyToOne,
             ),
-            "connections_from",
+            "ip_port_connections_from",
         ),
     }
 
@@ -209,7 +209,7 @@ class ProcessOutboundConnectionExtendsIpPortQuery(IpPortQuery):
         self.with_to_neighbor(
             ProcessOutboundConnectionQuery,
             "connected_to",
-            "connections_from",
+            "ip_port_connections_from",
             connected_to,
         )
 
@@ -224,11 +224,11 @@ class ProcessOutboundConnectionExtendsIpPortView(IpPortView):
             cached=cached,
         )
 
-    def get_connected_to(self, connected_to):
+    def get_connected_to(self, connected_to, cached=False):
         self.get_neighbor(
             ProcessOutboundConnectionQuery,
             "connected_to",
-            "connections_from",
+            "ip_port_connections_from",
             connected_to,
             cached=cached,
         )

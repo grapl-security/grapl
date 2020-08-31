@@ -79,8 +79,9 @@ class BaseSchema(Schema):
             if not edge_name:
                 continue
             uid_t = "uid"
-            if edge_t.is_to_many():
+            if edge_t.is_from_many():
                 uid_t = f"[{uid_t}]"
+            print(edge_name, edge_t.rel, r_name, edge_t.is_from_many())
             predicates.append(f"{edge_name}: {uid_t} .")
 
         return "\n".join(predicates)

@@ -72,6 +72,9 @@ class Schema(metaclass=SingletonMeta):
         self.edges[edge_name] = (edge, reverse_name)
         r_edge = edge.reverse()
         self.edges[reverse_name] = (r_edge, edge_name)
+        print ('---')
+        print(edge_name, edge.is_from_many(), edge.is_to_many(), reverse_name)
+        print(reverse_name, r_edge.is_from_many(), r_edge.is_to_many(), edge_name)
 
     def init_reverse(self):
         for edge_name, (edge, reverse_name) in self.edges.items():

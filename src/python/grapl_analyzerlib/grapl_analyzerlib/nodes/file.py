@@ -20,23 +20,23 @@ FV = TypeVar("FV", bound="FileView")
 def default_file_edges() -> Dict[str, Tuple[EdgeT, str]]:
     return {
         "spawned_from": (
-            EdgeT(FileSchema, ProcessSchema, EdgeRelationship.OneToMany),
+            EdgeT(ProcessSchema, FileSchema, EdgeRelationship.ManyToOne),
             "bin_file",
         ),
         "creator": (
-            EdgeT(FileSchema, ProcessSchema, EdgeRelationship.OneToMany),
+            EdgeT(ProcessSchema, FileSchema, EdgeRelationship.OneToMany),
             "created_files",
         ),
         "writers": (
-            EdgeT(FileSchema, ProcessSchema, EdgeRelationship.OneToMany),
+            EdgeT(ProcessSchema, FileSchema, EdgeRelationship.ManyToMany),
             "wrote_files",
         ),
         "readers": (
-            EdgeT(FileSchema, ProcessSchema, EdgeRelationship.OneToMany),
+            EdgeT(ProcessSchema, FileSchema, EdgeRelationship.ManyToMany),
             "read_files",
         ),
         "deleter": (
-            EdgeT(FileSchema, ProcessSchema, EdgeRelationship.OneToMany),
+            EdgeT(ProcessSchema, FileSchema, EdgeRelationship.OneToMany),
             "deleted_files",
         ),
     }

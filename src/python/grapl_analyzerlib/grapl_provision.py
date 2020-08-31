@@ -205,6 +205,6 @@ if __name__ == "__main__":
                 break
         except Exception as e:
             if i > 10:
-                LOGGER.error("mg provision failed with: ", e)
+                LOGGER.error(f"mg provision failed with: {e}")
 
     print("Completed provisioning")

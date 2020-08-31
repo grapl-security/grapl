@@ -308,22 +308,22 @@ class TestFileQuery(unittest.TestCase):
 
         assert node_key == queried_file.node_key
 
-        # assert file_path == queried_file.get_file_path()
-        # assert file_extension == queried_file.get_file_extension()
-        # assert file_mime_type == queried_file.get_file_mime_type()
-        # assert file_size == queried_file.get_file_size()
-        # assert file_version == queried_file.get_file_version()
-        # assert file_description == queried_file.get_file_description()
-        # assert file_product == queried_file.get_file_product()
-        # assert file_company == queried_file.get_file_company()
-        # assert file_directory == queried_file.get_file_directory()
-        # assert file_inode == queried_file.get_file_inode()
-        # assert file_hard_links == queried_file.get_file_hard_links()
-        # assert signed == queried_file.get_signed()
-        # assert signed_status == queried_file.get_signed_status()
-        # assert md5_hash == queried_file.get_md5_hash()
-        # assert sha1_hash == queried_file.get_sha1_hash()
-        # assert sha256_hash == queried_file.get_sha256_hash()
+        assert file_path == queried_file.get_file_path()
+        assert file_extension == queried_file.get_file_extension()
+        assert file_mime_type == queried_file.get_file_mime_type()
+        assert file_size == queried_file.get_file_size()
+        assert file_version == queried_file.get_file_version()
+        assert file_description == queried_file.get_file_description()
+        assert file_product == queried_file.get_file_product()
+        assert file_company == queried_file.get_file_company()
+        assert file_directory == queried_file.get_file_directory()
+        assert file_inode == queried_file.get_file_inode()
+        assert file_hard_links == queried_file.get_file_hard_links()
+        assert signed == queried_file.get_signed()
+        assert signed_status == queried_file.get_signed_status()
+        assert md5_hash == queried_file.get_md5_hash()
+        assert sha1_hash == queried_file.get_sha1_hash()
+        assert sha256_hash == queried_file.get_sha256_hash()
 
 
 if __name__ == "__main__":

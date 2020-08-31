@@ -199,7 +199,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
 
         variables = {v: k for k, v in var_alloc.allocated.items()}
         txn = graph_client.txn(read_only=True, best_effort=best_effort)
-        print(query, variables)
+
         try:
             qres = json.loads(txn.query(query, variables=variables).json)
         finally:
