@@ -36,7 +36,7 @@ services:
       - "8099:8099"
     # logging:
     #   driver: none
-    
+
 
   s3:
     image: minio/minio
@@ -193,6 +193,23 @@ services:
   # Python services
   #
 
+  analyzer-deployer:
+    image: grapl/analyzer-deployer:${TAG:-latest}
+    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8125'
+    environment:
+      - "IS_LOCAL=True"
+      - GRPC_ENABLE_FORK_SUPPORT=1
+      - "BUCKET_PREFIX=local-grapl"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+    tty: true
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/analyzer-executor.py'
@@ -248,7 +265,7 @@ services:
     links:
       - grapl-master-graph-db:master_graph
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
-      
+
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'

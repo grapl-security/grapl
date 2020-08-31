@@ -5,12 +5,20 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast
+
+import boto3  # type: ignore
+import botocore.exceptions  # type: ignore
+from mypy_boto3_s3 import S3ServiceResource
+from mypy_boto3_sqs import SQSClient
 
 import boto3
 import botocore.exceptions
 from grapl_analyzerlib.prelude import BaseView, LensView, RiskView
 from pydgraph import DgraphClient, DgraphClientStub
+from grapl_analyzerlib.nodes.lens_node import LensView
+from grapl_analyzerlib.prelude import NodeView
+from pydgraph import DgraphClient, DgraphClientStub  # type: ignore
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -20,8 +28,17 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
+"""
+https://docs.aws.amazon.com/AmazonS3/latest/dev/notification-content-structure.html
+"""
+S3Event = Dict[str, Any]
 
-def parse_s3_event(s3, event) -> str:
+EventWithReceiptHandle = Tuple[S3Event, str]
+
+
+def parse_s3_event(s3: S3ServiceResource, event) -> bytes:
+    # Retrieve body of sns message
+    # Decode json body of sns message
     LOGGER.debug("event is {}".format(event))
 
     bucket = event["s3"]["bucket"]["name"]
@@ -29,7 +46,7 @@ def parse_s3_event(s3, event) -> str:
     return download_s3_file(s3, bucket, key)
 
 
-def download_s3_file(s3, bucket: str, key: str) -> str:
+def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
     key = key.replace("%3D", "=")
     LOGGER.info("Downloading s3 file from: {} {}".format(bucket, key))
     obj = s3.Object(bucket, key)
@@ -150,15 +167,12 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
 
         mutation = node_dict
 
-        m_res = txn.mutate(set_obj=mutation, commit_now=True)
-        uids = m_res.uids
-
-        if new_uid is None:
-            new_uid = uids["blank-0"]
-        return str(new_uid)
-
+        mut_res = txn.mutate(set_obj=mutation, commit_now=True)
+        new_uid = node_dict.get("uid") or mut_res.uids["blank-0"]
+        return cast(str, new_uid)
     finally:
         txn.discard()
+
 
 
 def upsert(
@@ -177,16 +191,19 @@ def upsert(
     return view_type.from_dict(node_props, client)
 
 
-def get_s3_client():
+def get_s3_client() -> S3ServiceResource:
     if IS_LOCAL:
-        return boto3.resource(
-            "s3",
-            endpoint_url="http://s3:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
+        return cast(
+            S3ServiceResource,
+            boto3.resource(
+                "s3",
+                endpoint_url="http://s3:9000",
+                aws_access_key_id="minioadmin",
+                aws_secret_access_key="minioadmin",
+            ),
         )
     else:
-        return boto3.resource("s3")
+        return cast(S3ServiceResource, boto3.resource("s3"))
 
 
 def mg_alphas() -> Iterator[Tuple[str, int]]:
@@ -196,26 +213,46 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
         yield host, int(port)
 
 
-def lambda_handler(events: Any, context: Any) -> None:
+def nodes_to_attach_risk_to(
+    nodes: Sequence[NodeView],
+    risky_node_keys: Optional[Sequence[str]],
+) -> Sequence[NodeView]:
+    """
+    a None risky_node_keys means 'mark all as risky'
+    a [] risky_node_keys means 'mark none as risky'.
+    """
+    if risky_node_keys is None:
+        return nodes
+    risky_node_keys_set = frozenset(risky_node_keys)
+    return [node for node in nodes if node.node_key in risky_node_keys_set]
+
+
+def lambda_handler(s3_event: S3Event, context: Any) -> None:
     mg_client_stubs = (DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
     mg_client = DgraphClient(*mg_client_stubs)
 
     s3 = get_s3_client()
-    for event in events["Records"]:
+    for event in s3_event["Records"]:
         if not IS_LOCAL:
             event = json.loads(event["body"])["Records"][0]
 
         data = parse_s3_event(s3, event)
         incident_graph = json.loads(data)
 
+        """
+        The `incident_graph` dict is emitted from analyzer-executor.py#emit_event
+        """
         analyzer_name = incident_graph["analyzer_name"]
-        nodes = incident_graph["nodes"]
+        nodes_raw: Dict[str, Any] = incident_graph[
+            "nodes"
+        ]  # same type as `.to_adjacency_list()["nodes"]`
         edges = incident_graph["edges"]
         risk_score = incident_graph["risk_score"]
         lens_dict = incident_graph["lenses"]
+        risky_node_keys = incident_graph["risky_node_keys"]
 
         LOGGER.debug(
-            f"AnalyzerName {analyzer_name}, nodes: {nodes} edges: {type(edges)} {edges}"
+            f"AnalyzerName {analyzer_name}, nodes: {nodes_raw} edges: {type(edges)} {edges}"
         )
 
         nodes = [
@@ -255,7 +292,8 @@ def lambda_handler(events: Any, context: Any) -> None:
             {"analyzer_name": analyzer_name, "risk_score": risk_score,},
         )
 
-        for node in nodes:
+        risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_keys)
+        for node in risky_nodes:
             create_edge(mg_client, node.uid, "risks", risk.uid)
             create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
 
@@ -271,8 +309,8 @@ def lambda_handler(events: Any, context: Any) -> None:
             recalculate_score(lens)
 
 
-if IS_LOCAL:
-    sqs = boto3.client(
+def main():
+    sqs: SQSClient = boto3.client(
         "sqs",
         region_name="us-east-1",
         endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
@@ -311,7 +349,7 @@ if IS_LOCAL:
             if not messages:
                 LOGGER.warning("queue was empty")
 
-            s3_events = [
+            s3_events: Sequence[EventWithReceiptHandle] = [
                 (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
             ]
             for s3_event, receipt_handle in s3_events:
@@ -326,3 +364,10 @@ if IS_LOCAL:
             LOGGER.error(f"mainloop exception {e}")
             LOGGER.error(traceback.print_exc())
             time.sleep(2)
+
+
+"""
+main does not run in prod, the entrypoint is 'lambda_handler' in production.
+"""
+if __name__ == "__main__" and IS_LOCAL:
+    main()

@@ -57,6 +57,21 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-unit-tests
 
+  python-typecheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Run dobi python-typecheck
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux python-typecheck
+
   js-unit-tests:
     runs-on: ubuntu-latest
 

@@ -43,7 +43,8 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 def create_secret(secretsmanager):
     secretsmanager.create_secret(
-        Name="JWT_SECRET_ID", SecretString=str(uuid4()),
+        Name="JWT_SECRET_ID",
+        SecretString=str(uuid4()),
     )
 
 
@@ -63,7 +64,16 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
 
     return "\n".join(
+<<<<<<< HEAD
         ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
+=======
+        [
+            "  # Type Definitions",
+            types,
+            "\n  # Schema Definitions",
+            schemas,
+        ]
+>>>>>>> staging
     )
 
 
@@ -247,7 +257,9 @@ def provision_sqs(sqs, service_name: str) -> None:
         "maxReceiveCount": "10",
     }
 
-    queue = sqs.create_queue(QueueName="grapl-%s-queue" % service_name,)
+    queue = sqs.create_queue(
+        QueueName="grapl-%s-queue" % service_name,
+    )
 
     sqs.set_queue_attributes(
         QueueUrl=queue["QueueUrl"],
@@ -395,7 +407,9 @@ if __name__ == "__main__":
         try:
             if not mg_succ:
                 time.sleep(1)
-                provision_mg(local_dg_provision_client,)
+                provision_mg(
+                    local_dg_provision_client,
+                )
                 mg_succ = True
                 print("Provisioned mastergraph")
                 break

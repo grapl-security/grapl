@@ -13,7 +13,12 @@ AssetProps = NewType("AssetProps", Dict[str, PropType])
 
 def asset_props() -> st.SearchStrategy[AssetProps]:
     return st.builds(
-        AssetProps, st.builds(dict, node_key=st.uuids(), hostname=st.text(),)
+        AssetProps,
+        st.builds(
+            dict,
+            node_key=st.uuids(),
+            hostname=st.text(),
+        ),
     )
 
 
