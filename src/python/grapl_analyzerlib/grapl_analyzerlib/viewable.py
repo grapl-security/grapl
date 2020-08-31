@@ -191,14 +191,14 @@ def deserialize_edge(
 ) -> Union[EdgeV, List[EdgeV]]:
     if isinstance(value, List):
         edges = []
-        assert edge_ty.is_to_many()
+        # assert edge_ty.is_to_many()
         for serialized_edge in value:
             serialized_edge["node_types"] = serialized_edge.pop("dgraph.type")
             edge_view = edge_viewable(graph_client=graph_client, **serialized_edge)
             edges.append(edge_view)
         return edges
     else:
-        assert edge_ty.is_to_one(), (edge_ty, value)
+        # assert edge_ty.is_to_one(), (edge_ty, value)
         value["node_types"] = value.pop("dgraph.type")
         edge_view = edge_viewable(graph_client=graph_client, **value)
         return edge_view

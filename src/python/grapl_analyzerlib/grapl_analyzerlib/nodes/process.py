@@ -27,7 +27,7 @@ def default_process_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
     return {
         "children": (
-            EdgeT(ProcessSchema, ProcessSchema, EdgeRelationship.OneToMany),
+            EdgeT(ProcessSchema, ProcessSchema, EdgeRelationship.ManyToOne),
             "parent",
         ),
         "created_connections": (

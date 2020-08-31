@@ -28,15 +28,15 @@ def default_asset_properties() -> Dict[str, PropType]:
 def default_asset_edges() -> Dict[str, Tuple[EdgeT, str]]:
     return {
         "asset_ip": (
-            EdgeT(AssetSchema, IpAddressSchema, EdgeRelationship.OneToMany),
+            EdgeT(IpAddressSchema, AssetSchema, EdgeRelationship.ManyToMany),
             "ip_assigned_to",
         ),
         "asset_processes": (
-            EdgeT(AssetSchema, ProcessSchema, EdgeRelationship.OneToMany,),
+            EdgeT(ProcessSchema, AssetSchema, EdgeRelationship.ManyToOne,),
             "process_asset",
         ),
         "files_on_asset": (
-            EdgeT(AssetSchema, FileSchema, EdgeRelationship.OneToMany,),
+            EdgeT(FileSchema, AssetSchema, EdgeRelationship.ManyToOne,),
             "file_asset",
         ),
     }
