@@ -1,9 +1,9 @@
-use crate::metric_error::{Error};
-use std::fmt::Write;
+use crate::metric_error::Error;
+use crate::metric_error::Error::{MetricInvalidCharacterError, MetricInvalidSampleRateError};
 use itertools::join;
 use lazy_static::lazy_static;
 use regex::Regex;
-use crate::metric_error::Error::{MetricInvalidCharacterError, MetricInvalidSampleRateError};
+use std::fmt::Write;
 
 lazy_static! {
     static ref INVALID_CHARS: Regex = Regex::new("[|#,=:]").unwrap();
@@ -57,11 +57,13 @@ pub fn statsd_format(
     sample_rate: Option<f64>,
     tags: &[TagPair],
 ) -> Result<String, Error> {
-    let mut buf: String = String::with_capacity(128);
+    // initial capacity chosen relatively arbitrarily
+    let mut buf: String = String::with_capacity(256);
 
     reject_invalid_chars(metric_name)?;
 
-    write!(buf,
+    write!(
+        buf,
         "{metric_name}:{value}|{metric_type}",
         metric_name = metric_name,
         value = value,
@@ -80,17 +82,25 @@ pub fn statsd_format(
         _ => {}
     }
 
-    let tag_section = join(tags.into_iter().map(TagPair::statsd_serialized), ",");
-    if !tag_section.is_empty() {
-        write!(buf, "|#{}", tag_section)?;
+    let mut firstTag: bool = true;
+    if !tags.is_empty() {
+        write!(buf, "|#")?;
+        for pair in tags {
+            if !firstTag {
+                write!(buf, ",")?;
+            } else {
+                firstTag = false;
+            }
+            write!(buf, "{}", pair.statsd_serialized())?
+        }
     }
     return Ok(buf);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::statsd_formatter::{reject_invalid_chars, statsd_format, MetricType, TagPair};
     use crate::metric_error::Error::MetricInvalidCharacterError;
+    use crate::statsd_formatter::{reject_invalid_chars, statsd_format, MetricType, TagPair};
 
     const INVALID_STRS: [&str; 5] = [
         "some|metric",
@@ -126,8 +136,8 @@ mod tests {
         INVALID_STRS.iter().for_each(|invalid_str| {
             let result = reject_invalid_chars(invalid_str);
             match result.expect_err("else panic") {
-                MetricInvalidCharacterError() => {/* what we want */}
-                _ => panic!()
+                MetricInvalidCharacterError() => { /* what we want */ }
+                _ => panic!(),
             }
         });
 
