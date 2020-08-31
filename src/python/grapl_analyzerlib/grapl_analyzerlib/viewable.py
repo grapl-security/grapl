@@ -1,4 +1,7 @@
 import abc
+import logging
+import os
+import sys
 from typing import (
     cast,
     Any,
@@ -14,7 +17,18 @@ from typing import (
     Iterator,
 )
 
+import typing_extensions
+
 from grapl_analyzerlib.extendable import Extendable
+
+IS_LOCAL: typing_extensions.Final[bool] = bool(os.environ.get("IS_LOCAL", False))
+
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER.info("Initializing Chalice server")
 
 MYPY = False
 
@@ -133,6 +147,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
                 # This can happen if you're working with BaseViews, since we may not have the schema
                 # but are still working with predicates
                 # Rather than enforcing the type via schema we infer it and set it
+                LOGGER.debug(f'Could not find type: {name} {value} {ty}')
                 if isinstance(value, dict):
                     if value.get("uid"):
                         value = BaseView.from_dict(value, graph_client)

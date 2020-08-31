@@ -28,15 +28,15 @@ def default_asset_properties() -> Dict[str, PropType]:
 def default_asset_edges() -> Dict[str, Tuple[EdgeT, str]]:
     return {
         "asset_ip": (
-            EdgeT(IpAddressSchema, AssetSchema, EdgeRelationship.ManyToMany),
+            EdgeT(AssetSchema, IpAddressSchema, EdgeRelationship.ManyToMany),
             "ip_assigned_to",
         ),
         "asset_processes": (
-            EdgeT(ProcessSchema, AssetSchema, EdgeRelationship.ManyToOne,),
+            EdgeT(AssetSchema, ProcessSchema, EdgeRelationship.ManyToOne,),
             "process_asset",
         ),
         "files_on_asset": (
-            EdgeT(FileSchema, AssetSchema, EdgeRelationship.ManyToOne,),
+            EdgeT(AssetSchema, FileSchema, EdgeRelationship.ManyToOne,),
             "file_asset",
         ),
     }
@@ -45,7 +45,9 @@ def default_asset_edges() -> Dict[str, Tuple[EdgeT, str]]:
 class AssetSchema(EntitySchema):
     def __init__(self):
         super(AssetSchema, self).__init__(
-            default_asset_properties(), default_asset_edges(), lambda: AssetView
+            default_asset_properties(),
+            default_asset_edges(),
+            view=lambda: AssetView
         )
 
     @staticmethod

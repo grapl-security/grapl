@@ -61,7 +61,8 @@ const validateJwt = async (req, res, next) => {
         return res.sendStatus(401) // if there isn't any token
     }
 
-    for (const cookie of headers.cookie.split(';')) {
+    for (const _cookie of headers.cookie.split(';')) {
+        const cookie = _cookie.trim();
         if (cookie.startsWith('grapl_jwt=')) {
             encoded_jwt = cookie.split('grapl_jwt=')[1].trim()
             break
