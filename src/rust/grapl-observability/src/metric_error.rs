@@ -6,4 +6,6 @@ pub enum Error {
     MetricInvalidCharacterError(),
     #[error("MetricInvalidSampleRateError")]
     MetricInvalidSampleRateError(),
+    #[error("MetricBufWriteError")]
+    MetricBufWriteError(#[from] std::fmt::Error),
 }

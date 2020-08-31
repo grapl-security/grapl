@@ -1,4 +1,5 @@
 use crate::metric_error::{Error};
+use std::fmt::Write;
 use itertools::join;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -56,24 +57,22 @@ pub fn statsd_format(
     sample_rate: Option<f64>,
     tags: &[TagPair],
 ) -> Result<String, Error> {
-    // unlikely we'd go over this
+    let mut buf: String = String::with_capacity(128);
 
     reject_invalid_chars(metric_name)?;
 
-    let mut sections: Vec<String> = Vec::with_capacity(6);
-
-    sections.push(format!(
-        "{metric_name}:{value}",
+    write!(buf,
+        "{metric_name}:{value}|{metric_type}",
         metric_name = metric_name,
-        value = value
-    ));
-    sections.push(metric_type.statsd_type());
+        value = value,
+        metric_type = metric_type.statsd_type()
+    )?;
 
     match (metric_type, sample_rate) {
         (MetricType::Counter, Some(rate)) => {
             // a rate of 1.0 we'll just ignore
             if rate >= 0.0 && rate < 1.0 {
-                sections.push(format!("@{sample_rate}", sample_rate = rate));
+                write!(buf, "|@{sample_rate}", sample_rate = rate)?;
             } else {
                 return Err(MetricInvalidSampleRateError());
             }
@@ -83,9 +82,9 @@ pub fn statsd_format(
 
     let tag_section = join(tags.into_iter().map(TagPair::statsd_serialized), ",");
     if !tag_section.is_empty() {
-        sections.push(format!("#{}", tag_section));
+        write!(buf, "|#{}", tag_section)?;
     }
-    return Ok(sections.join("|"));
+    return Ok(buf);
 }
 
 #[cfg(test)]
