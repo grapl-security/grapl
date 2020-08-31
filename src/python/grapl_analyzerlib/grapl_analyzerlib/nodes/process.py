@@ -1,5 +1,6 @@
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional, Union
 
+from grapl_analyzerlib.analyzer import OneOrMany
 from grapl_analyzerlib.node_types import (
     EdgeT,
     PropType,
@@ -51,6 +52,7 @@ def default_process_edges() -> Dict[str, Tuple[EdgeT, str]]:
 def default_process_properties() -> Dict[str, PropType]:
     return {
         "process_name": PropType(PropPrimitive.Str, False),
+        "image_name": PropType(PropPrimitive.Str, False),
         "process_id": PropType(PropPrimitive.Int, False),
         "created_timestamp": PropType(PropPrimitive.Int, False),
         "terminate_time": PropType(PropPrimitive.Int, False),
@@ -134,14 +136,14 @@ class ProcessQuery(EntityQuery[PV, PQ]):
 
     @with_str_prop("arguments")
     def with_arguments(
-        self,
-        *,
-        eq: Optional[str] = None,
-        contains: Optional[Union[str, List[str]]] = None,
-        starts_with: Optional[str] = None,
-        ends_with: Optional[str] = None,
-        regexp: Optional[Union[str, List[str]]] = None,
-        distance_lt: Optional[Tuple[str, int]] = None,
+            self,
+            *,
+            eq: Optional["StrOrNot"] = None,
+            contains: Optional["OneOrMany[StrOrNot]"] = None,
+            starts_with: Optional["StrOrNot"] = None,
+            ends_with: Optional["StrOrNot"] = None,
+            regexp: Optional["OneOrMany[StrOrNot]"] = None,
+            distance_lt: Optional[Tuple[str, int]] = None,
     ) -> "ProcessQuery":
         pass
 
@@ -168,6 +170,7 @@ class ProcessView(EntityView[PV, PQ]):
         graph_client: Any,
         node_types: Set[str],
         process_name: Optional[str] = None,
+        image_name: Optional[str] = None,
         process_id: Optional[int] = None,
         created_timestamp: Optional[int] = None,
         terminate_time: Optional[int] = None,
@@ -179,12 +182,16 @@ class ProcessView(EntityView[PV, PQ]):
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
         self.set_predicate("node_types", node_types)
         self.set_predicate("process_name", process_name)
+        self.set_predicate("image_name", image_name)
         self.set_predicate("process_id", process_id)
         self.set_predicate("created_timestamp", created_timestamp)
         self.set_predicate("terminate_time", terminate_time)
         self.set_predicate("arguments", arguments)
         self.set_predicate("children", children or [])
         self.set_predicate("parent", parent)
+
+    def get_image_name(self, cached=True) -> Optional[str]:
+        return self.get_str("image_name", cached=cached)
 
     def get_process_name(self, cached=True) -> Optional[str]:
         if cached and self.process_name:
@@ -412,3 +419,14 @@ ProcessInboundConnectionQuery = ProcessInboundConnectionQuery.extend_self(
 ProcessInboundConnectionView = ProcessInboundConnectionView.extend_self(
     ProcessExtendsProcessInboundConnectionView
 )
+
+
+
+from grapl_analyzerlib.nodes.asset import (
+    AssetExtendsProcessQuery,
+    AssetExtendsProcessView,
+)
+
+
+ProcessQuery = ProcessQuery.extend_self(AssetExtendsProcessQuery)
+ProcessView = ProcessView.extend_self(AssetExtendsProcessView)

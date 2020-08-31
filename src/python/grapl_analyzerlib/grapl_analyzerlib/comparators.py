@@ -127,9 +127,9 @@ class Contains(object):
 
     def to_filter(self) -> str:
         if self.negated:
-            return f"NOT regexp({self.predicate}, /{self.value}/)"
+            return f"NOT regexp({self.predicate}, /.*{self.value}.*/i)"
         else:
-            return f"regexp({self.predicate}, /{self.value}/)"
+            return f"regexp({self.predicate}, /.*{self.value}.*/i)"
 
 
 IntEq = Eq

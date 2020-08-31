@@ -129,20 +129,8 @@ class AssetView(EntityView[AV, AQ]):
         self.set_predicate("asset_processes", asset_processes)
         self.set_predicate("files_on_asset", files_on_asset)
 
-    def get_hostname(self, cached=True):
-        if cached and self.hostname:
-            return self.hostname
-
-        self_node = (
-            self.queryable()
-            .with_node_key(eq=self.node_key)
-            .with_hostname()
-            .query_first(self.graph_client)
-        )
-
-        if self_node:
-            self.hostname = self_node.hostname
-        return self.hostname
+    def get_hostname(self, cached=True) -> Optional[str]:
+        return self.get_str("hostname", cached=cached)
 
     def with_asset_ip(self, *asset_ips, cached=True):
         if cached and self.asset_ip:
@@ -203,13 +191,16 @@ AssetSchema().init_reverse()
 
 
 class AssetExtendsProcessQuery(ProcessQuery):
-    pass  # TODO
+    def with_asset(self, *filters):
+        return self.with_to_neighbor(
+            AssetQuery, "process_asset", "asset_processes", filters
+        )
 
 
 class AssetExtendsProcessView(ProcessView):
     def get_asset(self, *filters, cached=True):
         return self.get_neighbor(
-            FileQuery, "process_asset", "asset_processes", filters, cached=cached
+            AssetQuery, "process_asset", "asset_processes", filters, cached=cached
         )
 
 

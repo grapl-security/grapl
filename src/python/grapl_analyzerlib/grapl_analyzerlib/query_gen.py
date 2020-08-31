@@ -238,7 +238,7 @@ def into_query_block(
                             formatted_var_name = f"{binding} as "
 
                     neighbors += (
-                        f"{formatted_var_name}  {alias} {edge_name} {filter_str} {{"
+                        f"\n{formatted_var_name}  {alias} {edge_name} {filter_str} {{"
                         + f"{neighbor_properties}"
                         + "}"
                     )
@@ -267,7 +267,7 @@ def into_query_block(
                     if neighbor_filter._id == root_node._id:
                         formatted_var_name = f"{binding} as "
                 neighbors += (
-                    f"{formatted_var_name} {edge_name} {filter_str} {{"
+                    f"\n{formatted_var_name} {edge_name} {filter_str} {{"
                     + f"{neighbor_properties}"
                     + "}"
                 )

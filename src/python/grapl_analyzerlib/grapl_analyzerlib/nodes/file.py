@@ -407,11 +407,6 @@ class FileView(EntityView[FV, FQ]):
     ):
         return self.get_str("sha256_hash", cached=cached)
 
-    def get_file_path(
-        self, *, cached=True,
-    ):
-        return self.get_str("file_path", cached=cached)
-
     def get_file_inode(
         self, *, cached=False,
     ):

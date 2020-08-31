@@ -52,7 +52,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         setattr(self, predicate_name, predicate)
 
     def get_str(self, property_name: str, cached=True) -> Optional[str]:
-        if cached and getattr(self, property_name, None):
+        if cached and getattr(self, property_name, None) is not None:
             return getattr(self, property_name, None)
 
         self_node = (
@@ -62,13 +62,13 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
             .query_first(self.graph_client)
         )
 
-        if self_node and getattr(self_node, property_name, None):
+        if self_node and getattr(self_node, property_name, None) is not None:
             self.set_predicate(property_name, getattr(self_node, property_name))
 
         return getattr(self, property_name, None)
 
     def get_int(self, property_name: str, cached=True) -> Optional[int]:
-        if cached and getattr(self, property_name, None):
+        if cached and getattr(self, property_name, None) is not None:
             return getattr(self, property_name, None)
 
         self_node = (
@@ -78,7 +78,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
             .query_first(self.graph_client)
         )
 
-        if self_node and getattr(self_node, property_name, None):
+        if self_node and getattr(self_node, property_name, None) is not None:
             self.set_predicate(property_name, getattr(self_node, property_name))
 
         return getattr(self, property_name, None)

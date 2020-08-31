@@ -190,7 +190,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         return []
 
     def query_first(
-        self, graph_client, contains_node_key: Optional[str] = None, best_effort=True,
+        self, graph_client, contains_node_key: Optional[str] = None, best_effort=False,
     ) -> Optional[V]:
         if contains_node_key:
             var_alloc, query = gen_query_parameterized(self, "q0", contains_node_key, 0)
@@ -199,7 +199,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
 
         variables = {v: k for k, v in var_alloc.allocated.items()}
         txn = graph_client.txn(read_only=True, best_effort=best_effort)
-
+        print(query, variables)
         try:
             qres = json.loads(txn.query(query, variables=variables).json)
         finally:
