@@ -52,15 +52,14 @@ impl MetricType {
 }
 
 pub fn statsd_format(
+    buf: &mut String,
     metric_name: &str,
     value: f64,
     metric_type: MetricType,
-    sample_rate: Option<f64>, // TODO: change to an `impl Into<f64>`
+    sample_rate: impl Into<Option<f64>>,
     tags: &[TagPair],
-) -> Result<String, MetricError> {
-    // initial capacity chosen relatively arbitrarily
-    let mut buf: String = String::with_capacity(256);
-
+) -> Result<(), MetricError> {
+    buf.clear();
     reject_invalid_chars(metric_name)?;
 
     write!(
@@ -71,7 +70,7 @@ pub fn statsd_format(
         metric_type = metric_type.statsd_type()
     )?;
 
-    match (metric_type, sample_rate) {
+    match (metric_type, sample_rate.into()) {
         (MetricType::Counter, Some(rate)) => {
             // a rate of 1.0 we'll just ignore
             if rate >= 0.0 && rate < 1.0 {
@@ -94,10 +93,10 @@ pub fn statsd_format(
             } else {
                 first_tag = false;
             }
-            pair.write_to_buf(&mut buf)?;
+            pair.write_to_buf(buf)?;
         }
     }
-    return Ok(buf);
+    Ok(())
 }
 
 #[cfg(test)]
@@ -143,7 +142,10 @@ mod tests {
 
     #[test]
     fn test_statsd_format_basic_counter() {
+        let mut buf: String = String::with_capacity(256);
+
         let result = statsd_format(
+            &mut buf,
             VALID_STR,
             VALID_VALUE,
             MetricType::Counter,
@@ -151,40 +153,44 @@ mod tests {
             &make_empty_tags(),
         )
         .unwrap();
-        assert_eq!(result, "some_str:12345.6|c")
+        assert_eq!(buf, "some_str:12345.6|c")
     }
 
     #[test]
     fn test__statsd_format__specify_rate() {
-        let result = statsd_format(
+        let mut buf: String = String::with_capacity(256);
+        statsd_format(
+            &mut buf,
             VALID_STR,
             VALID_VALUE,
             MetricType::Counter,
-            Some(0.5),
+            0.5,
             &make_empty_tags(),
-        )
-        .unwrap();
-        assert_eq!(result, "some_str:12345.6|c|@0.5")
+        );
+        assert_eq!(buf, "some_str:12345.6|c|@0.5")
     }
 
     #[test]
     fn test_statsd_format_tags() {
+        let mut buf: String = String::with_capacity(256);
         let result = statsd_format(
+            &mut buf,
             VALID_STR,
             VALID_VALUE,
             MetricType::Counter,
             None,
             &make_tags(),
-        )
-        .unwrap();
+        );
         assert_eq!(
-            result,
+            buf,
             "some_str:12345.6|c|#some_key=some_value,some_key_2=some_value_2"
         )
     }
     #[test]
     fn test_statsd_format_bad_tags() {
+        let mut buf: String = String::with_capacity(256);
         let result = statsd_format(
+            &mut buf,
             VALID_STR,
             VALID_VALUE,
             MetricType::Counter,
