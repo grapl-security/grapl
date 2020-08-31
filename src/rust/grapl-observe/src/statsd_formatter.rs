@@ -163,7 +163,7 @@ mod tests {
             Some(0.5),
             &make_empty_tags(),
         )
-            .unwrap();
+        .unwrap();
         assert_eq!(result, "some_str:12345.6|c|@0.5")
     }
 
