@@ -59,6 +59,9 @@ pub fn statsd_format(
     sample_rate: impl Into<Option<f64>>,
     tags: &[TagPair],
 ) -> Result<(), MetricError> {
+    /**
+    Don't call statsd_format directly; instead, prefer the public functions of MetricClient.
+    */
     buf.clear();
     reject_invalid_chars(metric_name)?;
 

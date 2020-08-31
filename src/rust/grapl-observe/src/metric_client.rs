@@ -55,6 +55,7 @@ mod tests {
     #[test]
     fn test__public_functions_smoke_test() {
         let mut mc = MetricClient::new();
-        mc.histogram("derp", 123.45f64)
+        mc.histogram("metric_name", 123.45f64);
+        mc.counter("metric_name", 123.45f64, None);
     }
 }
