@@ -53,7 +53,7 @@ impl MetricClient {
 mod tests {
     use crate::metric_client::MetricClient;
     #[test]
-    fn test__public_functions_smoke_test() {
+    fn test_public_functions_smoke_test() {
         let mut mc = MetricClient::new();
         mc.histogram("metric_name", 123.45f64);
         mc.counter("metric_name", 123.45f64, None);

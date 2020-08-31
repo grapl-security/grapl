@@ -35,13 +35,13 @@ pub enum MetricType {
     Histogram,
 }
 
+const g: &'static str = "g";
+const c: &'static str = "c";
+const ms: &'static str = "ms";
+const h: &'static str = "h";
+
 impl MetricType {
     fn statsd_type(&self) -> &'static str {
-        let g: &'static str = "g";
-        let c: &'static str = "c";
-        let ms: &'static str = "ms";
-        let h: &'static str = "h";
-
         match self {
             MetricType::Gauge => g,
             MetricType::Counter => c,
@@ -160,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn test__statsd_format__specify_rate() {
+    fn test_statsd_format_specify_rate() {
         let mut buf: String = String::with_capacity(256);
         statsd_format(
             &mut buf,
@@ -174,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn test__statsd_format__specify_bad_rate() {
+    fn test_statsd_format_specify_bad_rate() {
         let mut buf: String = String::with_capacity(256);
         let result = statsd_format(
             &mut buf,
