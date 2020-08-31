@@ -8,8 +8,8 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+itertools = "0.9.*"
+lazy_static = "1.2.0"
 log = "0.4.*"
 regex = "1.1.0"
-lazy_static = "1.2.0"
-failure = "0.1.*"
-itertools = "0.9.*"
+thiserror = "1.0.20"

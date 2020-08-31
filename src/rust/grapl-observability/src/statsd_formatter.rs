@@ -1,8 +1,8 @@
-use crate::metric_error::MetricError;
-use failure::Error;
+use crate::metric_error::{Error};
 use itertools::join;
 use lazy_static::lazy_static;
 use regex::Regex;
+use crate::metric_error::Error::{MetricInvalidCharacterError, MetricInvalidSampleRateError};
 
 lazy_static! {
     static ref INVALID_CHARS: Regex = Regex::new("[|#,=:]").unwrap();
@@ -24,7 +24,7 @@ impl TagPair {
 fn reject_invalid_chars(s: &str) -> Result<(), Error> {
     let matched = INVALID_CHARS.is_match(s);
     if matched {
-        Err(Error::from(MetricError {}))
+        Err(MetricInvalidCharacterError())
     } else {
         Ok(())
     }
@@ -52,11 +52,12 @@ impl MetricType {
 pub fn statsd_format(
     metric_name: &str,
     value: f64, // should i make a union type?
-    typ: MetricType,
+    metric_type: MetricType,
     sample_rate: Option<f64>,
     tags: &[TagPair],
 ) -> Result<String, Error> {
     // unlikely we'd go over this
+
     reject_invalid_chars(metric_name)?;
 
     let mut sections: Vec<String> = Vec::with_capacity(6);
@@ -66,15 +67,15 @@ pub fn statsd_format(
         metric_name = metric_name,
         value = value
     ));
-    sections.push(typ.statsd_type());
+    sections.push(metric_type.statsd_type());
 
-    match (typ, sample_rate) {
+    match (metric_type, sample_rate) {
         (MetricType::Counter, Some(rate)) => {
             // a rate of 1.0 we'll just ignore
             if rate >= 0.0 && rate < 1.0 {
                 sections.push(format!("@{sample_rate}", sample_rate = rate));
             } else {
-                return Err(Error::from(MetricError {}));
+                return Err(MetricInvalidSampleRateError());
             }
         }
         _ => {}
@@ -90,6 +91,7 @@ pub fn statsd_format(
 #[cfg(test)]
 mod tests {
     use crate::statsd_formatter::{reject_invalid_chars, statsd_format, MetricType, TagPair};
+    use crate::metric_error::Error::MetricInvalidCharacterError;
 
     const INVALID_STRS: [&str; 5] = [
         "some|metric",
@@ -124,7 +126,10 @@ mod tests {
     fn test_reject_invalid_chars() {
         INVALID_STRS.iter().for_each(|invalid_str| {
             let result = reject_invalid_chars(invalid_str);
-            assert!(result.is_err());
+            match result.expect_err("else panic") {
+                MetricInvalidCharacterError() => {/* what we want */}
+                _ => panic!()
+            }
         });
 
         assert!(reject_invalid_chars(VALID_STR).is_ok())
