@@ -1,5 +1,5 @@
 [package]
-name = "grapl-observability"
+name = "grapl-observe"
 version = "0.0.1"
 authors = ["Max Wittek <wimax@graplsecurity.com>"]
 edition = "2018"
@@ -8,7 +8,6 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-itertools = "0.9.*"
 lazy_static = "1.2.0"
 log = "0.4.*"
 regex = "1.1.0"

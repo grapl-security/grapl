@@ -1,6 +1,5 @@
 use crate::metric_error::Error;
 use crate::metric_error::Error::{MetricInvalidCharacterError, MetricInvalidSampleRateError};
-use itertools::join;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt::Write;
@@ -82,14 +81,16 @@ pub fn statsd_format(
         _ => {}
     }
 
-    let mut firstTag: bool = true;
+    let mut first_tag: bool = true;
     if !tags.is_empty() {
+        // begin tag section
         write!(buf, "|#")?;
         for pair in tags {
-            if !firstTag {
+            // separator
+            if !first_tag {
                 write!(buf, ",")?;
             } else {
-                firstTag = false;
+                first_tag = false;
             }
             write!(buf, "{}", pair.statsd_serialized())?
         }
