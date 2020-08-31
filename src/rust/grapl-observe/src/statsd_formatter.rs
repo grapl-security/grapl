@@ -1,5 +1,5 @@
-use crate::metric_error::Error;
-use crate::metric_error::Error::{MetricInvalidCharacterError, MetricInvalidSampleRateError};
+use crate::metric_error::MetricError;
+use crate::metric_error::MetricError::{MetricInvalidCharacterError, MetricInvalidSampleRateError};
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt::Write;
@@ -8,20 +8,18 @@ lazy_static! {
     static ref INVALID_CHARS: Regex = Regex::new("[|#,=:]").unwrap();
 }
 
-// TODO look at lifetimes, should this own or not, etc
-// seems odd to .to_string() everytihng going in here
-pub struct TagPair {
-    tag_key: String,
-    tag_value: String,
+pub struct TagPair<'a> {
+    tag_key: &'a str,
+    tag_value: &'a str,
 }
 
-impl TagPair {
+impl TagPair<'_> {
     fn statsd_serialized(&self) -> String {
         return format!("{}={}", self.tag_key, self.tag_value);
     }
 }
 
-fn reject_invalid_chars(s: &str) -> Result<(), Error> {
+fn reject_invalid_chars(s: &str) -> Result<(), MetricError> {
     let matched = INVALID_CHARS.is_match(s);
     if matched {
         Err(MetricInvalidCharacterError())
@@ -38,14 +36,18 @@ pub enum MetricType {
 }
 
 impl MetricType {
-    fn statsd_type(&self) -> String {
+    fn statsd_type(&self) -> &'static str {
+        let g: &'static str = "g";
+        let c: &'static str = "c";
+        let ms: &'static str = "ms";
+        let h: &'static str = "h";
+
         match self {
-            MetricType::Gauge => "g",
-            MetricType::Counter => "c",
-            MetricType::Millis => "ms",
-            MetricType::Histogram => "h",
+            MetricType::Gauge => g,
+            MetricType::Counter => c,
+            MetricType::Millis => ms,
+            MetricType::Histogram => h,
         }
-        .to_string()
     }
 }
 
@@ -55,7 +57,7 @@ pub fn statsd_format(
     metric_type: MetricType,
     sample_rate: Option<f64>,
     tags: &[TagPair],
-) -> Result<String, Error> {
+) -> Result<String, MetricError> {
     // initial capacity chosen relatively arbitrarily
     let mut buf: String = String::with_capacity(256);
 
@@ -100,7 +102,7 @@ pub fn statsd_format(
 
 #[cfg(test)]
 mod tests {
-    use crate::metric_error::Error::MetricInvalidCharacterError;
+    use crate::metric_error::MetricError;
     use crate::statsd_formatter::{reject_invalid_chars, statsd_format, MetricType, TagPair};
 
     const INVALID_STRS: [&str; 5] = [
@@ -114,21 +116,21 @@ mod tests {
     const VALID_STR: &str = "some_str";
     const VALID_VALUE: f64 = 12345.6;
 
-    fn make_tags() -> Vec<TagPair> {
+    fn make_tags() -> Vec<TagPair<'static>> {
         vec![
             TagPair {
-                tag_key: "some_key".to_string(),
-                tag_value: "some_value".to_string(),
+                tag_key: "some_key",
+                tag_value: "some_value",
             },
             TagPair {
-                tag_key: "some_key_2".to_string(),
-                tag_value: "some_value_2".to_string(),
+                tag_key: "some_key_2",
+                tag_value: "some_value_2",
             },
         ]
     }
 
-    fn make_empty_tags() -> [TagPair; 0] {
-        let empty_slice: [TagPair; 0] = [];
+    fn make_empty_tags() -> [TagPair<'static>; 0] {
+        let empty_slice: [TagPair<'static>; 0] = [];
         return empty_slice;
     }
 
@@ -137,7 +139,7 @@ mod tests {
         INVALID_STRS.iter().for_each(|invalid_str| {
             let result = reject_invalid_chars(invalid_str);
             match result.expect_err("else panic") {
-                MetricInvalidCharacterError() => { /* what we want */ }
+                MetricError::MetricInvalidCharacterError() => { /* what we want */ }
                 _ => panic!(),
             }
         });
