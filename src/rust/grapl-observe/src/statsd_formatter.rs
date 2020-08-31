@@ -8,14 +8,14 @@ lazy_static! {
     static ref INVALID_CHARS: Regex = Regex::new("[|#,=:]").unwrap();
 }
 
-pub struct TagPair<'a> {
-    tag_key: &'a str,
-    tag_value: &'a str,
-}
+pub struct TagPair<'a>(&'a str, &'a str);
 
 impl TagPair<'_> {
-    fn statsd_serialized(&self) -> String {
-        return format!("{}={}", self.tag_key, self.tag_value);
+    fn write_to_buf(&self, buf: &mut String) -> Result<(), MetricError> {
+        let TagPair(tag_key, tag_value) = self;
+        reject_invalid_chars(tag_key)?;
+        reject_invalid_chars(tag_value)?;
+        Ok(write!(buf, "{}={}", tag_key, tag_value)?)
     }
 }
 
@@ -53,7 +53,7 @@ impl MetricType {
 
 pub fn statsd_format(
     metric_name: &str,
-    value: f64, // should i make a union type?
+    value: f64,
     metric_type: MetricType,
     sample_rate: Option<f64>,
     tags: &[TagPair],
@@ -94,7 +94,7 @@ pub fn statsd_format(
             } else {
                 first_tag = false;
             }
-            write!(buf, "{}", pair.statsd_serialized())?
+            pair.write_to_buf(&mut buf)?;
         }
     }
     return Ok(buf);
@@ -118,14 +118,8 @@ mod tests {
 
     fn make_tags() -> Vec<TagPair<'static>> {
         vec![
-            TagPair {
-                tag_key: "some_key",
-                tag_value: "some_value",
-            },
-            TagPair {
-                tag_key: "some_key_2",
-                tag_value: "some_value_2",
-            },
+            TagPair("some_key", "some_value"),
+            TagPair("some_key_2", "some_value_2"),
         ]
     }
 
@@ -174,5 +168,19 @@ mod tests {
             result,
             "some_str:12345.6|c|#some_key=some_value,some_key_2=some_value_2"
         )
+    }
+    #[test]
+    fn test_statsd_format_bad_tags() {
+        let result = statsd_format(
+            VALID_STR,
+            VALID_VALUE,
+            MetricType::Counter,
+            None,
+            &[TagPair("some|key", "val")],
+        );
+        match result.expect_err("") {
+            MetricError::MetricInvalidCharacterError() => { /* what we want */ }
+            _ => panic!(),
+        }
     }
 }
