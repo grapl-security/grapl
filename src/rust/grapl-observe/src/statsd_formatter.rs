@@ -174,6 +174,23 @@ mod tests {
     }
 
     #[test]
+    fn test__statsd_format__specify_bad_rate() {
+        let mut buf: String = String::with_capacity(256);
+        let result = statsd_format(
+            &mut buf,
+            VALID_STR,
+            VALID_VALUE,
+            MetricType::Counter,
+            1.5,
+            &make_empty_tags(),
+        );
+        match result.expect_err("") {
+            MetricError::MetricInvalidSampleRateError() => {}
+            _ => panic!(),
+        }
+    }
+
+    #[test]
     fn test_statsd_format_tags() {
         let mut buf: String = String::with_capacity(256);
         let result = statsd_format(
