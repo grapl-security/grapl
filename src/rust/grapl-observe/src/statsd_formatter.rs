@@ -55,7 +55,7 @@ pub fn statsd_format(
     metric_name: &str,
     value: f64,
     metric_type: MetricType,
-    sample_rate: Option<f64>,
+    sample_rate: Option<f64>, // TODO: change to an `impl Into<f64>`
     tags: &[TagPair],
 ) -> Result<String, MetricError> {
     // initial capacity chosen relatively arbitrarily
@@ -152,6 +152,19 @@ mod tests {
         )
         .unwrap();
         assert_eq!(result, "some_str:12345.6|c")
+    }
+
+    #[test]
+    fn test__statsd_format__specify_rate() {
+        let result = statsd_format(
+            VALID_STR,
+            VALID_VALUE,
+            MetricType::Counter,
+            Some(0.5),
+            &make_empty_tags(),
+        )
+            .unwrap();
+        assert_eq!(result, "some_str:12345.6|c|@0.5")
     }
 
     #[test]
