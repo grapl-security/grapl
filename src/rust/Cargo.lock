@@ -3252,6 +3252,7 @@ dependencies = [
  "graph-generator-lib",
  "grapl-config",
  "grapl-graph-descriptions",
+ "grapl-observe",
  "lambda_runtime",
  "lazy_static",
  "log 0.4.8",

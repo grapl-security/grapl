@@ -3,23 +3,13 @@ use crate::metric_error::MetricError::{MetricInvalidCharacterError, MetricInvali
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt::Write;
+use crate::metric_reporter::TagPair;
 
 lazy_static! {
     static ref INVALID_CHARS: Regex = Regex::new("[|#,=:]").unwrap();
 }
 
-pub struct TagPair<'a>(&'a str, &'a str);
-
-impl TagPair<'_> {
-    fn write_to_buf(&self, buf: &mut String) -> Result<(), MetricError> {
-        let TagPair(tag_key, tag_value) = self;
-        reject_invalid_chars(tag_key)?;
-        reject_invalid_chars(tag_value)?;
-        Ok(write!(buf, "{}={}", tag_key, tag_value)?)
-    }
-}
-
-fn reject_invalid_chars(s: &str) -> Result<(), MetricError> {
+pub fn reject_invalid_chars(s: &str) -> Result<(), MetricError> {
     let matched = INVALID_CHARS.is_match(s);
     if matched {
         Err(MetricInvalidCharacterError())
