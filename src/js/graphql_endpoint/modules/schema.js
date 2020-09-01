@@ -342,6 +342,8 @@ const getNeighborsFromNode = async (dg_client, nodeUid) => {
     {
         all(func: uid($a), first: 1)
         {
+            uid,
+            dgraph_type
             expand(_all_) {
                 uid,
                 dgraph_type: dgraph.type,
@@ -424,6 +426,7 @@ const handleLensScope = async (parent, args) => {
     const lens = await getLensByName(dg_client, lens_name);
 
     lens["scope"] = lens["scope"] || [];
+    console.log(lens)
 
     for (const node of lens["scope"]) {
         node.dgraph_type = node.dgraph_type.filter((t) => (t !== 'Base' && t !== 'Entity'))
@@ -445,6 +448,7 @@ const handleLensScope = async (parent, args) => {
                 const neighbors = maybeNeighbor;
 
                 for (const neighbor of neighbors) {
+                    if (!neighbor.dgraph_type) {continue}
                     neighbor.dgraph_type = neighbor.dgraph_type.filter((t) => (t !== 'Base' && t !== 'Entity'))
 
                     const isInScope = await inLensScope(dg_client, neighbor["uid"], lens["uid"]);

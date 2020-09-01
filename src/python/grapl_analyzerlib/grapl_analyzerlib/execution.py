@@ -33,7 +33,7 @@ class ExecutionHit(object):
         self.edges = json.dumps(node_dict["edges"])
         self.lenses = lenses
         self.risk_score = risk_score
-        self.risky_node_keys = risky_nodes_keys
+        self.risky_node_keys = risky_node_keys
 
 
 class ExecutionComplete(object):

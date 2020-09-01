@@ -64,16 +64,7 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
 
     return "\n".join(
-<<<<<<< HEAD
         ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
-=======
-        [
-            "  # Type Definitions",
-            types,
-            "\n  # Schema Definitions",
-            schemas,
-        ]
->>>>>>> staging
     )
 
 
