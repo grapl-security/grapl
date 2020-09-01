@@ -31,26 +31,27 @@ fn reject_invalid_chars(s: &str) -> Result<(), MetricError> {
 pub enum MetricType {
     Gauge,
     Counter,
-    Millis,
     Histogram,
 }
 
-const g: &'static str = "g";
-const c: &'static str = "c";
-const ms: &'static str = "ms";
-const h: &'static str = "h";
+const GAUGE_STR: &'static str = "g";
+const COUNTER_STR: &'static str = "c";
+const HISTOGRAM_STR: &'static str = "h";
 
 impl MetricType {
     fn statsd_type(&self) -> &'static str {
         match self {
-            MetricType::Gauge => g,
-            MetricType::Counter => c,
-            MetricType::Millis => ms,
-            MetricType::Histogram => h,
+            MetricType::Gauge => GAUGE_STR,
+            MetricType::Counter => COUNTER_STR,
+            MetricType::Histogram => HISTOGRAM_STR,
         }
     }
 }
 
+/**
+Don't call statsd_format directly; instead, prefer the public functions of MetricClient.
+*/
+#[allow(dead_code)]
 pub fn statsd_format(
     buf: &mut String,
     metric_name: &str,
@@ -59,9 +60,6 @@ pub fn statsd_format(
     sample_rate: impl Into<Option<f64>>,
     tags: &[TagPair],
 ) -> Result<(), MetricError> {
-    /**
-    Don't call statsd_format directly; instead, prefer the public functions of MetricClient.
-    */
     buf.clear();
     reject_invalid_chars(metric_name)?;
 
@@ -131,36 +129,36 @@ mod tests {
     }
 
     #[test]
-    fn test_reject_invalid_chars() {
-        INVALID_STRS.iter().for_each(|invalid_str| {
+    fn test_reject_invalid_chars() -> Result<(), String> {
+        for invalid_str in INVALID_STRS.iter() {
             let result = reject_invalid_chars(invalid_str);
             match result.expect_err("else panic") {
-                MetricError::MetricInvalidCharacterError() => { /* what we want */ }
-                _ => panic!(),
-            }
-        });
+                MetricError::MetricInvalidCharacterError() => Ok(()),
+                _ => Err(String::from("expected invalid character error")),
+            }?
+        }
 
-        assert!(reject_invalid_chars(VALID_STR).is_ok())
+        assert!(reject_invalid_chars(VALID_STR).is_ok());
+        Ok(())
     }
 
     #[test]
-    fn test_statsd_format_basic_counter() {
+    fn test_statsd_format_basic_counter() -> Result<(), MetricError> {
         let mut buf: String = String::with_capacity(256);
-
-        let result = statsd_format(
+        statsd_format(
             &mut buf,
             VALID_STR,
             VALID_VALUE,
             MetricType::Counter,
             None,
             &make_empty_tags(),
-        )
-        .unwrap();
-        assert_eq!(buf, "some_str:12345.6|c")
+        )?;
+        assert_eq!(buf, "some_str:12345.6|c");
+        Ok(())
     }
 
     #[test]
-    fn test_statsd_format_specify_rate() {
+    fn test_statsd_format_specify_rate() -> Result<(), MetricError> {
         let mut buf: String = String::with_capacity(256);
         statsd_format(
             &mut buf,
@@ -169,12 +167,13 @@ mod tests {
             MetricType::Counter,
             0.5,
             &make_empty_tags(),
-        );
-        assert_eq!(buf, "some_str:12345.6|c|@0.5")
+        )?;
+        assert_eq!(buf, "some_str:12345.6|c|@0.5");
+        Ok(())
     }
 
     #[test]
-    fn test_statsd_format_specify_bad_rate() {
+    fn test_statsd_format_specify_bad_rate() -> Result<(), String> {
         let mut buf: String = String::with_capacity(256);
         let result = statsd_format(
             &mut buf,
@@ -185,29 +184,30 @@ mod tests {
             &make_empty_tags(),
         );
         match result.expect_err("") {
-            MetricError::MetricInvalidSampleRateError() => {}
-            _ => panic!(),
+            MetricError::MetricInvalidSampleRateError() => Ok(()),
+            _ => Err(String::from("unexpected err")),
         }
     }
 
     #[test]
-    fn test_statsd_format_tags() {
+    fn test_statsd_format_tags() -> Result<(), MetricError> {
         let mut buf: String = String::with_capacity(256);
-        let result = statsd_format(
+        statsd_format(
             &mut buf,
             VALID_STR,
             VALID_VALUE,
             MetricType::Counter,
             None,
             &make_tags(),
-        );
+        )?;
         assert_eq!(
             buf,
             "some_str:12345.6|c|#some_key=some_value,some_key_2=some_value_2"
-        )
+        );
+        Ok(())
     }
     #[test]
-    fn test_statsd_format_bad_tags() {
+    fn test_statsd_format_bad_tags() -> Result<(), String> {
         let mut buf: String = String::with_capacity(256);
         let result = statsd_format(
             &mut buf,
@@ -218,8 +218,8 @@ mod tests {
             &[TagPair("some|key", "val")],
         );
         match result.expect_err("") {
-            MetricError::MetricInvalidCharacterError() => { /* what we want */ }
-            _ => panic!(),
+            MetricError::MetricInvalidCharacterError() => Ok(()),
+            _ => Err(String::from("unexpected err")),
         }
     }
 }
