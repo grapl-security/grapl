@@ -1,6 +1,6 @@
 use crate::metric_error::MetricError;
-use crate::statsd_formatter::{statsd_format, MetricType};
 use crate::statsd_formatter;
+use crate::statsd_formatter::{statsd_format, MetricType};
 use std::fmt::Write;
 
 #[derive(Debug, Clone)]
@@ -61,7 +61,12 @@ impl MetricReporter {
         self.write_metric(metric_name, value, MetricType::Gauge, None, &[])
     }
 
-    pub fn gauge(&mut self, metric_name: &str, value: f64, tags: &[TagPair]) -> Result<(), MetricError> {
+    pub fn gauge(
+        &mut self,
+        metric_name: &str,
+        value: f64,
+        tags: &[TagPair],
+    ) -> Result<(), MetricError> {
         self.write_metric(metric_name, value, MetricType::Gauge, None, tags)
     }
 
@@ -79,8 +84,8 @@ impl MetricReporter {
 
 #[cfg(test)]
 mod tests {
-    use crate::metric_reporter::MetricReporter;
     use crate::metric_error::MetricError;
+    use crate::metric_reporter::MetricReporter;
 
     #[test]
     fn test_public_functions_smoke_test() -> Result<(), MetricError> {
@@ -103,4 +108,3 @@ impl TagPair<'_> {
         Ok(write!(buf, "{}={}", tag_key, tag_value)?)
     }
 }
-

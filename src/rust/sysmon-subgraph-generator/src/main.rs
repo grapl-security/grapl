@@ -1,5 +1,7 @@
 #![type_length_limit = "1334469"]
 
+mod metrics;
+
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::io::Cursor;
@@ -58,6 +60,7 @@ use graph_generator_lib::*;
 use graph_descriptions::node::NodeT;
 use log::*;
 
+use crate::metrics::SysmonSubgraphGeneratorMetrics;
 use grapl_config::*;
 
 macro_rules! log_time {
@@ -499,7 +502,7 @@ where
     C: Cache + Clone + Send + Sync + 'static,
 {
     cache: C,
-    metric_reporter: MetricReporter,
+    metrics: SysmonSubgraphGeneratorMetrics,
 }
 
 impl<C> Clone for SysmonSubgraphGenerator<C>
@@ -509,7 +512,7 @@ where
     fn clone(&self) -> Self {
         Self {
             cache: self.cache.clone(),
-            metric_reporter: self.metric_reporter.clone(),
+            metrics: self.metrics.clone(),
         }
     }
 }
@@ -518,8 +521,8 @@ impl<C> SysmonSubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    pub fn new(cache: C, metric_reporter: MetricReporter) -> Self {
-        Self { cache, metric_reporter }
+    pub fn new(cache: C, metrics: SysmonSubgraphGeneratorMetrics) -> Self {
+        Self { cache, metrics }
     }
 }
 
@@ -643,7 +646,6 @@ where
 
         info!("Completed mapping {} subgraphs", identities.len());
 
-
         let mut completed = if let Some(ref e) = failed {
             OutputEvent::new(Completion::Partial((
                 final_subgraph,
@@ -652,13 +654,6 @@ where
         } else {
             OutputEvent::new(Completion::Total(final_subgraph))
         };
-
-        let reported_status = if let Some(ref e) = failed {"failed"} else {"completed"};
-        self.metric_reporter.gauge(
-            "sysmon-generator-completion",
-            1.0,
-            &[TagPair("status", reported_status)]
-        ).map_err(|e| warn!("Metric failed: {}", e));
 
         identities
             .into_iter()
@@ -673,14 +668,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::init_grapl_log!();
     info!("Starting sysmon-subgraph-generator");
 
-    let metric_reporter = MetricReporter::new();
+    let metrics = SysmonSubgraphGeneratorMetrics {
+        metric_reporter: MetricReporter::new(),
+    };
 
     if grapl_config::is_local() {
-        let generator = SysmonSubgraphGenerator::new(NopCache {}, metric_reporter);
+        let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);
 
         run_graph_generator_local(generator, ZstdDecoder::default()).await;
     } else {
-        let generator = SysmonSubgraphGenerator::new(event_cache().await, metric_reporter);
+        let generator = SysmonSubgraphGenerator::new(event_cache().await, metrics);
 
         run_graph_generator_aws(generator, ZstdDecoder::default());
     }

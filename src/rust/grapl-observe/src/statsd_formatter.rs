@@ -1,9 +1,9 @@
 use crate::metric_error::MetricError;
 use crate::metric_error::MetricError::{MetricInvalidCharacterError, MetricInvalidSampleRateError};
+use crate::metric_reporter::TagPair;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt::Write;
-use crate::metric_reporter::TagPair;
 
 lazy_static! {
     static ref INVALID_CHARS: Regex = Regex::new("[|#,=:]").unwrap();
