@@ -1165,6 +1165,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "grapl-observe"
+version = "0.0.1"
+dependencies = [
+ "lazy_static",
+ "log 0.4.8",
+ "regex",
+ "thiserror",
+]
+
+[[package]]
 name = "grpc"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
