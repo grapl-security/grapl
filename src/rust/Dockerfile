@@ -63,6 +63,10 @@ COPY --chown=grapl ./graph-generator-lib/Cargo.toml graph-generator-lib/
 RUN mkdir -p grapl-config/src
 RUN touch grapl-config/src/lib.rs
 COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
+# copy in Cargo.toml for grapl-observe
+RUN mkdir -p grapl-observe/src
+RUN touch grapl-observe/src/lib.rs
+COPY --chown=grapl ./grapl-observe/Cargo.toml grapl-observe/
 
 # copy in Cargo.toml for graph-merger
 RUN mkdir -p graph-merger/src
@@ -105,10 +109,11 @@ COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/target target
 RUN rm -rf target/*/*/.fingerprint/analyzer-dispatcher*
 RUN rm -rf target/*/*/.fingerprint/derive-dynamic-node*
 RUN rm -rf target/*/*/.fingerprint/generic-subgraph-generator*
-RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
 RUN rm -rf target/*/*/.fingerprint/graph-generator-lib*
-RUN rm -rf target/*/*/.fingerprint/grapl-config*
 RUN rm -rf target/*/*/.fingerprint/graph-merger*
+RUN rm -rf target/*/*/.fingerprint/grapl-config*
+RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
+RUN rm -rf target/*/*/.fingerprint/grapl-observe*
 RUN rm -rf target/*/*/.fingerprint/node-identifier*
 RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
 # copy in the sources
@@ -117,8 +122,9 @@ COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
 COPY --chown=grapl ./generic-subgraph-generator generic-subgraph-generator
 COPY --chown=grapl ./graph-descriptions graph-descriptions
 COPY --chown=grapl ./graph-generator-lib graph-generator-lib
-COPY --chown=grapl ./grapl-config grapl-config
 COPY --chown=grapl ./graph-merger graph-merger
+COPY --chown=grapl ./grapl-config grapl-config
+COPY --chown=grapl ./grapl-observe grapl-observe
 COPY --chown=grapl ./node-identifier node-identifier
 COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator
 # copy in the top-level Cargo.toml and Cargo.lock
