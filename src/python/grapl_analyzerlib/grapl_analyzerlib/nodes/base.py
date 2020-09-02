@@ -41,7 +41,9 @@ class BaseSchema(Schema):
                 ),
                 "last_index_time": PropType(PropPrimitive.Int, False),
             },
-            {**(edges or {}),},
+            {
+                **(edges or {}),
+            },
             view or BaseView,
         )
 

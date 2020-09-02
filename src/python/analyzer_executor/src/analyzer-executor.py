@@ -171,16 +171,7 @@ def exec_analyzers(
             analyzer = analyzers[an_name]
 
             for i, query in enumerate(queries):
-                analyzer_query_types = get_analyzer_view_types(query)
-
-                # if node.get_node_type() + "View" not in [
-                #     n.__name__ for n in analyzer_query_types
-                # ]:
-                #     continue
-                print(query)
-                print(node.node_key)
                 response = query.query_first(dg_client, contains_node_key=node.node_key)
-                print(response)
                 if response:
                     analyzer.on_response(response, sender)
 
@@ -383,15 +374,21 @@ def into_sqs_message(bucket: str, key: str) -> str:
             "Records": [
                 {
                     "eventTime": datetime.utcnow().isoformat(),
-                    "principalId": {"principalId": None,},
-                    "requestParameters": {"sourceIpAddress": None,},
+                    "principalId": {
+                        "principalId": None,
+                    },
+                    "requestParameters": {
+                        "sourceIpAddress": None,
+                    },
                     "responseElements": {},
                     "s3": {
                         "schemaVersion": None,
                         "configurationId": None,
                         "bucket": {
                             "name": bucket,
-                            "ownerIdentity": {"principalId": None,},
+                            "ownerIdentity": {
+                                "principalId": None,
+                            },
                         },
                         "object": {
                             "key": key,
@@ -409,11 +406,17 @@ def into_sqs_message(bucket: str, key: str) -> str:
 
 
 def send_s3_event(
-    sqs_client: Any, queue_url: str, output_bucket: str, output_path: str,
+    sqs_client: Any,
+    queue_url: str,
+    output_bucket: str,
+    output_path: str,
 ):
     sqs_client.send_message(
         QueueUrl=queue_url,
-        MessageBody=into_sqs_message(bucket=output_bucket, key=output_path,),
+        MessageBody=into_sqs_message(
+            bucket=output_bucket,
+            key=output_path,
+        ),
     )
 
 

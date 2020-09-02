@@ -21,7 +21,10 @@ OneOrMany = Union[List[T], T]
 
 def default_asset_properties() -> Dict[str, PropType]:
     return {
-        "hostname": PropType(PropPrimitive.Str, False,),
+        "hostname": PropType(
+            PropPrimitive.Str,
+            False,
+        ),
     }
 
 
@@ -32,11 +35,19 @@ def default_asset_edges() -> Dict[str, Tuple[EdgeT, str]]:
             "ip_assigned_to",
         ),
         "asset_processes": (
-            EdgeT(AssetSchema, ProcessSchema, EdgeRelationship.ManyToOne,),
+            EdgeT(
+                AssetSchema,
+                ProcessSchema,
+                EdgeRelationship.ManyToOne,
+            ),
             "process_asset",
         ),
         "files_on_asset": (
-            EdgeT(AssetSchema, FileSchema, EdgeRelationship.ManyToOne,),
+            EdgeT(
+                AssetSchema,
+                FileSchema,
+                EdgeRelationship.ManyToOne,
+            ),
             "file_asset",
         ),
     }

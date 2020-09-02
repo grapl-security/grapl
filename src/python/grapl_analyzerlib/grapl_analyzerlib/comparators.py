@@ -35,7 +35,9 @@ class Has(object):
         self.negated = isinstance(predicate, Not)
 
     def to_filter(self) -> str:
-        filter_str = "has({})".format(self.predicate,)
+        filter_str = "has({})".format(
+            self.predicate,
+        )
         if self.negated:
             filter_str = f"(NOT {filter_str} )"
         return filter_str
@@ -51,7 +53,10 @@ class Eq(object):
         if self.predicate == "dgraph.type":
             filter_str = f"type({self.value})"
         else:
-            filter_str = "eq({}, {})".format(self.predicate, self.value,)
+            filter_str = "eq({}, {})".format(
+                self.predicate,
+                self.value,
+            )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -66,7 +71,10 @@ class Gt(object):
         self.negated: bool = isinstance(value, Not)
 
     def to_filter(self) -> str:
-        filter_str = "gt({}, {})".format(self.predicate, self.value,)
+        filter_str = "gt({}, {})".format(
+            self.predicate,
+            self.value,
+        )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -81,7 +89,10 @@ class Ge(object):
         self.negated: bool = isinstance(value, Not)
 
     def to_filter(self) -> str:
-        filter_str = "ge({}, {})".format(self.predicate, self.value,)
+        filter_str = "ge({}, {})".format(
+            self.predicate,
+            self.value,
+        )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -96,7 +107,10 @@ class Lt(object):
         self.negated: bool = isinstance(value, Not)
 
     def to_filter(self) -> str:
-        filter_str = "lt({}, {})".format(self.predicate, self.value,)
+        filter_str = "lt({}, {})".format(
+            self.predicate,
+            self.value,
+        )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -111,7 +125,10 @@ class Le(object):
         self.negated: bool = isinstance(value, Not)
 
     def to_filter(self) -> str:
-        filter_str = "le({}, {})".format(self.predicate, self.value,)
+        filter_str = "le({}, {})".format(
+            self.predicate,
+            self.value,
+        )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -248,15 +265,6 @@ def _str_cmps(
 
     if distance_lt:
         cmps.append([Distance(predicate, distance_lt[0], distance_lt[1])])
-
-    # if distance:
-    #     if isinstance(distance[0], str):
-    #         cmps.append([Distance(predicate, distance[0], distance[1])])
-    #     elif isinstance(distance[0], Not):
-    #         cmps.append([Distance(predicate, distance[0], distance[1])])
-    #     elif isinstance(distance, list):
-    #         _distance = [Distance(predicate, e[0], e[1]) for e in distance]
-    #         cmps.append(_distance)
 
     if not cmps:
         cmps.append([Has(predicate)])

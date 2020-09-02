@@ -134,7 +134,14 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         le: Optional["IntOrNot"] = None,
     ):
         self._property_filters[property_name].extend(
-            _int_cmps(predicate=property_name, eq=eq, gt=gt, ge=ge, lt=lt, le=le,)
+            _int_cmps(
+                predicate=property_name,
+                eq=eq,
+                gt=gt,
+                ge=ge,
+                lt=lt,
+                le=le,
+            )
         )
         return self
 
@@ -190,7 +197,10 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         return []
 
     def query_first(
-        self, graph_client, contains_node_key: Optional[str] = None, best_effort=False,
+        self,
+        graph_client,
+        contains_node_key: Optional[str] = None,
+        best_effort=False,
     ) -> Optional[V]:
         if contains_node_key:
             var_alloc, query = gen_query_parameterized(self, "q0", contains_node_key, 0)
@@ -211,7 +221,9 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         return None
 
     def get_count(
-        self, graph_client, first: int = 100,
+        self,
+        graph_client,
+        first: int = 100,
     ) -> int:
         var_alloc, query = gen_query(self, "q0", first=first)
 

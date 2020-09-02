@@ -83,10 +83,10 @@ def recalculate_score(lens: LensView) -> int:
             print(node.node_key, analyzer_name, risk_score)
             risks_by_analyzer[analyzer_name] = risk_score
             key_to_analyzers[node.node_key].add(analyzer_name)
-        node_risk_scores[node.node_key] = sum(
-            [a for a in risks_by_analyzer.values() if a]
-        )
-        total_risk_score += sum([a for a in risks_by_analyzer.values() if a])
+
+        analyzer_risk_sum = [a for a in risks_by_analyzer.values() if a]
+        node_risk_scores[node.node_key] = sum(analyzer_risk_sum)
+        total_risk_score += analyzer_risk_sum
 
     # Bonus is calculated by finding nodes with multiple analyzers
     for key, analyzers in key_to_analyzers.items():
@@ -162,9 +162,7 @@ def upsert(
     node_props["node_key"] = node_key
     node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
     uid = _upsert(client, node_props)
-    # print(f'uid: {uid}')
     node_props["uid"] = uid
-    # print(node_props['node_key'])
     return view_type.from_dict(node_props, client)
 
 
@@ -191,7 +189,8 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 
 def nodes_to_attach_risk_to(
-    nodes: Sequence[BaseView], risky_node_keys: Optional[Sequence[str]],
+    nodes: Sequence[BaseView],
+    risky_node_keys: Optional[Sequence[str]],
 ) -> Sequence[BaseView]:
     """
     a None risky_node_keys means 'mark all as risky'
@@ -264,7 +263,10 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
             "Risk",
             RiskView,
             analyzer_name,
-            {"analyzer_name": analyzer_name, "risk_score": risk_score,},
+            {
+                "analyzer_name": analyzer_name,
+                "risk_score": risk_score,
+            },
         )
 
         risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_keys)

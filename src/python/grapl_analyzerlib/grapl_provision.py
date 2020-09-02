@@ -199,7 +199,9 @@ if __name__ == "__main__":
         try:
             if not mg_succ:
                 time.sleep(1)
-                provision_mg(local_dg_provision_client,)
+                provision_mg(
+                    local_dg_provision_client,
+                )
                 mg_succ = True
                 print("Provisioned mastergraph")
                 break

@@ -8,7 +8,9 @@ T = TypeVar("T", bound=str)
 
 
 @st.composite
-def text_dgraph_compat(draw: Callable[[st.SearchStrategy[str]], str],) -> str:
+def text_dgraph_compat(
+    draw: Callable[[st.SearchStrategy[str]], str],
+) -> str:
     base_text = draw(st.text(min_size=3))
     # Don't fuck with newlines due to a dgraph bug
     # https://github.com/dgraph-io/dgraph/issues/4694
