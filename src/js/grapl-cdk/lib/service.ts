@@ -3,6 +3,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as sqs from '@aws-cdk/aws-sqs';
+import * as logs from '@aws-cdk/aws-logs';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as iam from '@aws-cdk/aws-iam';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
@@ -175,6 +176,9 @@ export class Service {
         if (props.subscribes_to) {
             this.addSubscription(scope, props.subscribes_to);
         }
+
+        const logGroup = new logs.LogGroup(scope, "whatever");
+        this.event_handler.
     }
 
     readsFrom(bucket: s3.IBucket, with_list?: Boolean) {
