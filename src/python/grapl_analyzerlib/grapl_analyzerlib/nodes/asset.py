@@ -45,9 +45,7 @@ def default_asset_edges() -> Dict[str, Tuple[EdgeT, str]]:
 class AssetSchema(EntitySchema):
     def __init__(self):
         super(AssetSchema, self).__init__(
-            default_asset_properties(),
-            default_asset_edges(),
-            view=lambda: AssetView
+            default_asset_properties(), default_asset_edges(), view=lambda: AssetView
         )
 
     @staticmethod

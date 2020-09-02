@@ -152,7 +152,6 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
         txn.discard()
 
 
-
 def upsert(
     client: GraphClient,
     type_name: str,
@@ -192,8 +191,7 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 
 def nodes_to_attach_risk_to(
-    nodes: Sequence[BaseView],
-    risky_node_keys: Optional[Sequence[str]],
+    nodes: Sequence[BaseView], risky_node_keys: Optional[Sequence[str]],
 ) -> Sequence[BaseView]:
     """
     a None risky_node_keys means 'mark all as risky'

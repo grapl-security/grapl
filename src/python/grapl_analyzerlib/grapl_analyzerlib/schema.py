@@ -78,7 +78,13 @@ class Schema(metaclass=SingletonMeta):
             r_edge = edge.reverse()
             # The edge dest Viewable should already be constructed at this point
             edge.dest().edges[reverse_name] = (r_edge, edge_name)
-            print(self.self_type(), edge.dest().self_type(), reverse_name, r_edge, edge_name)
+            print(
+                self.self_type(),
+                edge.dest().self_type(),
+                reverse_name,
+                r_edge,
+                edge_name,
+            )
 
     def prop_type(self, prop_name: str) -> Union[Tuple["EdgeT", str], "PropType", None]:
         return self.get_properties().get(prop_name) or self.get_edges().get(prop_name)

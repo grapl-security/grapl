@@ -36,8 +36,13 @@ class VarAllocator(object):
         self.allocated.clear()
 
 
-def is_regex_based(cmp: 'Cmp') -> bool:
-    return isinstance(cmp, Contains) or isinstance(cmp, StartsWith) or isinstance(cmp, EndsWith) or isinstance(cmp, Rex)
+def is_regex_based(cmp: "Cmp") -> bool:
+    return (
+        isinstance(cmp, Contains)
+        or isinstance(cmp, StartsWith)
+        or isinstance(cmp, EndsWith)
+        or isinstance(cmp, Rex)
+    )
 
 
 def gen_prop_filters(q: "Queryable", var_alloc: VarAllocator) -> Optional[str]:
@@ -418,7 +423,7 @@ def gen_query_parameterized(
 
 
 def gen_query(
-    q: "Queryable", query_name: str, first: Optional[int] = None,
+    q: "Queryable", query_name: str, first: Optional[int] = None, count=False,
 ) -> Tuple[VarAllocator, str]:
     if not first:
         first = 1
@@ -428,11 +433,14 @@ def gen_query(
     func = find_func(q, vars_alloc)
     var_query, var_block = into_var_query(q, "q0", vars_alloc, func=func, cascade=True)
 
-    merged = type(q)()
-    zip_graph(q, merged)
-    __merged_filters, merged_query_block = into_query_block(
-        merged, VarAllocator(), should_filter=False, should_alias=False,
-    )
+    if count:
+        merged_query_block = f"c as count(uid)"
+    else:
+        merged = type(q)()
+        zip_graph(q, merged)
+        __merged_filters, merged_query_block = into_query_block(
+            merged, VarAllocator(), should_filter=False, should_alias=False,
+        )
 
     vars_list = into_vars_list(vars_alloc)
 
@@ -512,5 +520,9 @@ from grapl_analyzerlib.comparators import (
     IntEq,
     Has,
     extract_value,
-    dgraph_prop_type, Contains, StartsWith, EndsWith, Rex,
+    dgraph_prop_type,
+    Contains,
+    StartsWith,
+    EndsWith,
+    Rex,
 )

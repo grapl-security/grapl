@@ -147,7 +147,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
                 # This can happen if you're working with BaseViews, since we may not have the schema
                 # but are still working with predicates
                 # Rather than enforcing the type via schema we infer it and set it
-                LOGGER.debug(f'Could not find type: {name} {value} {ty}')
+                LOGGER.debug(f"Could not find type: {name} {value} {ty}")
                 if isinstance(value, dict):
                     if value.get("uid"):
                         value = BaseView.from_dict(value, graph_client)

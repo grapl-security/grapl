@@ -136,14 +136,14 @@ class ProcessQuery(EntityQuery[PV, PQ]):
 
     @with_str_prop("arguments")
     def with_arguments(
-            self,
-            *,
-            eq: Optional["StrOrNot"] = None,
-            contains: Optional["OneOrMany[StrOrNot]"] = None,
-            starts_with: Optional["StrOrNot"] = None,
-            ends_with: Optional["StrOrNot"] = None,
-            regexp: Optional["OneOrMany[StrOrNot]"] = None,
-            distance_lt: Optional[Tuple[str, int]] = None,
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+        contains: Optional["OneOrMany[StrOrNot]"] = None,
+        starts_with: Optional["StrOrNot"] = None,
+        ends_with: Optional["StrOrNot"] = None,
+        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
     ) -> "ProcessQuery":
         pass
 
@@ -419,7 +419,6 @@ ProcessInboundConnectionQuery = ProcessInboundConnectionQuery.extend_self(
 ProcessInboundConnectionView = ProcessInboundConnectionView.extend_self(
     ProcessExtendsProcessInboundConnectionView
 )
-
 
 
 from grapl_analyzerlib.nodes.asset import (

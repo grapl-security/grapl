@@ -211,12 +211,9 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         return None
 
     def get_count(
-        self, graph_client, contains_node_key: Optional[str] = None
-    ) -> Optional[V]:
-        if contains_node_key:
-            var_alloc, query = gen_query_parameterized(self, "q0", contains_node_key, 0)
-        else:
-            var_alloc, query = gen_query(self, "q0", first=1)
+        self, graph_client, first: int = 100,
+    ) -> int:
+        var_alloc, query = gen_query(self, "q0", first=first)
 
         variables = {v: k for k, v in var_alloc.allocated.items()}
         txn = graph_client.txn(read_only=True)
@@ -226,10 +223,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         finally:
             txn.discard()
 
-        d = qres.get("query")
-        if d:
-            return self.associated_viewable().from_dict(d[0], graph_client)
-        return None
+        return int(qres.get("query", {}).get("c", 0))
 
 
 from grapl_analyzerlib.schema import Schema

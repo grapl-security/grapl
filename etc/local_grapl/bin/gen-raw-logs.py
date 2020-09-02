@@ -29,21 +29,15 @@ def into_sqs_message(bucket: str, key: str) -> str:
             "Records": [
                 {
                     "eventTime": datetime.utcnow().isoformat(),
-                    "principalId": {
-                        "principalId": None,
-                    },
-                    "requestParameters": {
-                        "sourceIpAddress": None,
-                    },
+                    "principalId": {"principalId": None,},
+                    "requestParameters": {"sourceIpAddress": None,},
                     "responseElements": {},
                     "s3": {
                         "schemaVersion": None,
                         "configurationId": None,
                         "bucket": {
                             "name": bucket,
-                            "ownerIdentity": {
-                                "principalId": None,
-                            },
+                            "ownerIdentity": {"principalId": None,},
                         },
                         "object": {
                             "key": key,

@@ -183,7 +183,10 @@ from grapl_analyzerlib.nodes.network_connection import (
 class IpPortExtendsNetworkConnectionQuery(NetworkConnectionQuery):
     def with_network_connections_from(self, *connections_from):
         self.with_to_neighbor(
-            IpPortQuery, "network_connections_from", "network_connections", connections_from
+            IpPortQuery,
+            "network_connections_from",
+            "network_connections",
+            connections_from,
         )
 
 
