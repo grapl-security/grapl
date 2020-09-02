@@ -84,8 +84,8 @@ def recalculate_score(lens: LensView) -> int:
             risks_by_analyzer[analyzer_name] = risk_score
             key_to_analyzers[node.node_key].add(analyzer_name)
 
-        analyzer_risk_sum = [a for a in risks_by_analyzer.values() if a]
-        node_risk_scores[node.node_key] = sum(analyzer_risk_sum)
+        analyzer_risk_sum = sum([a for a in risks_by_analyzer.values() if a])
+        node_risk_scores[node.node_key] = analyzer_risk_sum
         total_risk_score += analyzer_risk_sum
 
     # Bonus is calculated by finding nodes with multiple analyzers
@@ -93,7 +93,7 @@ def recalculate_score(lens: LensView) -> int:
         if len(analyzers) <= 1:
             continue
         overlapping_analyzer_count = len(analyzers)
-        bonus = node_risk_scores[key] * 2 * (overlapping_analyzer_count / 100)
+        bonus = node_risk_scores[key] * 2 * (overlapping_analyzer_count // 100)
         total_risk_score += bonus
     return total_risk_score
 
@@ -229,9 +229,10 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
             f"AnalyzerName {analyzer_name}, nodes: {nodes_raw} edges: {type(edges)} {edges}"
         )
 
-        nodes = [
+        _nodes = (
             BaseView.from_node_key(mg_client, n["node_key"]) for n in nodes_raw.values()
-        ]
+        )
+        nodes = [n for n in _nodes if n]
 
         uid_map = {node.node_key: node.uid for node in nodes}
 
