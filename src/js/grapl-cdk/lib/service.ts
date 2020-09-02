@@ -1,15 +1,16 @@
+
+
 import * as cdk from '@aws-cdk/core';
+import * as ec2 from '@aws-cdk/aws-ec2';
+import * as iam from '@aws-cdk/aws-iam';
+import * as lambda from '@aws-cdk/aws-lambda';
+import * as logs from '@aws-cdk/aws-logs';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
-import * as ec2 from '@aws-cdk/aws-ec2';
 import * as sqs from '@aws-cdk/aws-sqs';
-import * as logs from '@aws-cdk/aws-logs';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as iam from '@aws-cdk/aws-iam';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
-
+import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
-
 import { Watchful } from './vendor/cdk-watchful/lib/watchful';
 
 class Queues {
@@ -46,10 +47,20 @@ export interface ServiceProps {
     retry_code_name?: string;
     opt?: any;
     watchful?: Watchful;
+
+    /**
+     If set, this Service's logs containing "MONITORING|" will be forwarded to the specified lambda.
+     Logs in this format are emitted from the MetricReporter object.
+
+     Theoretically, <every Service except 1> should have this set to 1 same lambda;
+     and that 1 lambda should be the one that does not have it set.
+     (we don't want a recursive log-processor)
+     */
+    metrics_logs_ingest_lambda?: lambda.IFunction;
 }
 
 export class Service {
-    readonly event_handler: lambda.IFunction;
+    readonly event_handler: lambda.Function;
     readonly event_retry_handler: lambda.Function;
     readonly queues: Queues;
 
@@ -177,8 +188,11 @@ export class Service {
             this.addSubscription(scope, props.subscribes_to);
         }
 
-        const logGroup = new logs.LogGroup(scope, "whatever");
-        this.event_handler.
+        if (props.metrics_logs_ingest_lambda) {
+            this.forwardMetricsLogs(scope, this.event_handler, props.metrics_logs_ingest_lambda);
+            this.forwardMetricsLogs(scope, this.event_retry_handler, props.metrics_logs_ingest_lambda);
+        }
+
     }
 
     readsFrom(bucket: s3.IBucket, with_list?: Boolean) {
@@ -227,5 +241,18 @@ export class Service {
             protocol: config.protocol,
             rawMessageDelivery: true,
         });
+    }
+
+    forwardMetricsLogs(scope: cdk.Construct, fromLambdaFn: lambda.Function, toLambdaFn: lambda.IFunction) {
+        const logGroup = fromLambdaFn.logGroup;
+        logGroup.addSubscriptionFilter(
+            "send_metrics_to_lambda_" + fromLambdaFn.node.uniqueId,
+            {
+                destination: new LambdaDestination(toLambdaFn),
+                filterPattern: {
+                    logPatternString: "MONITORING|"
+                }
+            }
+        )
     }
 }
