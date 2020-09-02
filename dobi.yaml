@@ -316,6 +316,14 @@ image=dynamodb-provision:
 
 # js images
 
+image=grapl-cdk-build:
+  image: grapl/grapl-cdk-build
+  context: src/js/grapl-cdk
+  dockerfile: Dockerfile
+  target: grapl-cdk-build
+  tags:
+    - latest
+
 image=engagement-view-build:
   image: grapl/engagement-view-build
   context: src/js/engagement_view
@@ -574,6 +582,9 @@ job=build-graphql-endpoint:
   artifact:
     - ./dist/graphql-endpoint/lambda.zip
 
+job=build-grapl-cdk:
+  use: grapl-cdk-build
+
 # TODO: graphql endpoint unit tests
 
 # TODO: graphql endpoint integration tests
@@ -670,6 +681,7 @@ alias=python-integration-tests:
 alias=js:
   tasks:
     - build-graphql-endpoint
+    - build-grapl-cdk
     - "graphql-endpoint:tag"
     - "engagement-view:tag"
   annotations:
@@ -677,6 +689,7 @@ alias=js:
 
 alias=clean-js-build:
   tasks:
+    - "grapl-cdk-build:rm"
     - "graphql-endpoint-build:rm"
   annotations:
     description: "Delete the js build images"
