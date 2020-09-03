@@ -193,7 +193,7 @@ class TestFileQuery(unittest.TestCase):
         node_key = "test_single_file_contains_key" + str(node_key)
         signed = "true" if signed else "false"
 
-        local_client = GraphClient.from_host_port("localhost", 9080)
+        local_client = MasterGraphClient()
 
         get_or_create_file_node(
             local_client,
@@ -261,7 +261,7 @@ class TestFileQuery(unittest.TestCase):
     ):
         node_key = "test_single_file_view_parity_eq" + str(node_key)
         signed = "true" if signed else "false"
-        local_client = GraphClient.from_host_port("localhost", 9080)
+        local_client = MasterGraphClient()
 
         get_or_create_file_node(
             local_client,
