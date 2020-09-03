@@ -1,8 +1,16 @@
 use crate::metric_error::MetricError;
-use crate::statsd_formatter::{statsd_format, MetricType, TagPair};
+use crate::statsd_formatter;
+use crate::statsd_formatter::{statsd_format, MetricType};
+use std::fmt::Write;
+
+pub mod common_strs {
+    pub const STATUS: &'static str = "status";
+    pub const SUCCESS: &'static str = "success";
+    pub const FAIL: &'static str = "fail";
+}
 
 #[derive(Debug, Clone)]
-pub struct MetricClient {
+pub struct MetricReporter {
     /**
     So, this is a pretty odd struct. All it actually does is print things that look like
     MONITORING|<some_statsd_stuff_here>
@@ -17,10 +25,10 @@ some followup TODOs:
     - add tags to the public functions (not needed right now)
 */
 #[allow(dead_code)]
-impl MetricClient {
-    pub fn new() -> MetricClient {
-        let buf: String = String::with_capacity(256);
-        MetricClient { buffer: buf }
+impl MetricReporter {
+    pub fn new() -> MetricReporter {
+        let buf: String = String::new();
+        MetricReporter { buffer: buf }
     }
 
     fn write_metric(
@@ -55,8 +63,17 @@ impl MetricClient {
     /**
     A gauge is an instantaneous measurement of a value, like the gas gauge in a car.
     */
-    pub fn gauge(&mut self, metric_name: &str, value: f64) -> Result<(), MetricError> {
+    pub fn gauge_notags(&mut self, metric_name: &str, value: f64) -> Result<(), MetricError> {
         self.write_metric(metric_name, value, MetricType::Gauge, None, &[])
+    }
+
+    pub fn gauge(
+        &mut self,
+        metric_name: &str,
+        value: f64,
+        tags: &[TagPair],
+    ) -> Result<(), MetricError> {
+        self.write_metric(metric_name, value, MetricType::Gauge, None, tags)
     }
 
     /**
@@ -73,16 +90,27 @@ impl MetricClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::metric_client::MetricClient;
     use crate::metric_error::MetricError;
+    use crate::metric_reporter::MetricReporter;
 
     #[test]
     fn test_public_functions_smoke_test() -> Result<(), MetricError> {
-        let mut mc = MetricClient::new();
-        mc.histogram("metric_name", 123.45f64)?;
-        mc.counter("metric_name", 123.45f64, None)?;
-        mc.counter("metric_name", 123.45f64, 0.75)?;
-        mc.gauge("metric_name", 123.45f64)?;
+        let mut reporter = MetricReporter::new();
+        reporter.histogram("metric_name", 123.45f64)?;
+        reporter.counter("metric_name", 123.45f64, None)?;
+        reporter.counter("metric_name", 123.45f64, 0.75)?;
+        reporter.gauge("metric_name", 123.45f64, &[])?;
         Ok(())
+    }
+}
+
+pub struct TagPair<'a>(pub &'a str, pub &'a str);
+
+impl TagPair<'_> {
+    pub fn write_to_buf(&self, buf: &mut String) -> Result<(), MetricError> {
+        let TagPair(tag_key, tag_value) = self;
+        statsd_formatter::reject_invalid_chars(tag_key)?;
+        statsd_formatter::reject_invalid_chars(tag_value)?;
+        Ok(write!(buf, "{}={}", tag_key, tag_value)?)
     }
 }
