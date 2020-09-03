@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$VERSION" ]
+then
+  echo "Please set VERSION= (it's same as TAG= for dobi)"
+  exit 1
+fi
+
 function getzip_a() {
     cp "../../../dist/$1" ./bootstrap
     zip -9 "zips/$1-$VERSION.zip" ./bootstrap
