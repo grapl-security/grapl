@@ -166,12 +166,12 @@ export const graphQLAdjacencyMatrix = (inputGraph: (LensScopeResponse & BaseNode
 
         const vizNode = {
             name: node.uid,
+            x: 200 + randomInt(1, 5),
+            y: 150 + randomInt(1, 5),
             ...strippedNode,
             id: node.uid,
             nodeType,
             nodeLabel,
-            x: 200 + randomInt(1, 50),
-            y: 150 + randomInt(1, 50),
         };
 
         nodeMap.set(node.uid, vizNode);

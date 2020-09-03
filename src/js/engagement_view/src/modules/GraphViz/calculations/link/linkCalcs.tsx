@@ -14,14 +14,14 @@ const findNode = (id: number, nodes: VizNode[]) => {
 export const calcLinkRisk = (link: LinkType, Graph: VizGraph) => {
     // console.log("LINK", link)
     let srcNode = 
-        // findNode(link.source, Graph.nodes) || 
-        findNode(link.source.name, Graph.nodes);
+        findNode(link.source as any, Graph.nodes) ||
+        findNode(link.source.name as any, Graph.nodes);
     let dstNode = 
-    // findNode(link.target, Graph.nodes)||
-        findNode(link.target.name, Graph.nodes);
+        findNode(link.target as any, Graph.nodes) ||
+        findNode(link.target.name as any, Graph.nodes);
 
     if (!srcNode || !dstNode) {
-        console.error("Missing srcNode/dstNode", srcNode, link, dstNode);
+        console.error("Missing srcNode/dstNode", srcNode, link.source, dstNode, Graph.nodes);
         return 0;
     }
 

@@ -3,7 +3,7 @@ from typing import Optional, Any
 
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.queryable import Queryable, generate_query
+from grapl_analyzerlib.queryable import Queryable, gen_query_parameterized
 from grapl_analyzerlib.prelude import ProcessQuery
 
 
@@ -45,28 +45,7 @@ class SubgraphCounter(object):
         Generic caching for a subgraph query
         """
 
-        query_str = generate_query(
-            query_name="res", binding_modifier="res", root=query, first=1, count=True
-        )
-
-        key = type(self).__name__ + query_str
-        cached_count = None
-
-        if self.cache:
-
-            cached_count = self.cache.get(key)
-            if cached_count:
-                cached_count = int(cached_count)
-            if cached_count and cached_count >= max_count:
-                return int(cached_count)
-
         count = query.get_count(self.dgraph_client, first=max_count)
-
-        if self.cache:
-            if not cached_count:
-                self.cache.set(key, count)
-            elif count >= cached_count:
-                self.cache.set(key, count)
 
         return int(count)
 

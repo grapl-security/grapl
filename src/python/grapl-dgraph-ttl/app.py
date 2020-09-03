@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 
-from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Iterator, Optional, Tuple, Union
 
 from chalice import Chalice
 
@@ -26,7 +26,7 @@ def query_batch(
     batch_size: int,
     ttl_cutoff_ms: int,
     last_uid: Optional[str] = None,
-) -> Iterable[Dict[str, Union[Dict, str]]]:
+) -> List[Dict[str, Union[Dict, str]]]:
     after = "" if last_uid is None else f", after: {last_uid}"
     paging = f"first: {batch_size}{after}"
     query = f"""

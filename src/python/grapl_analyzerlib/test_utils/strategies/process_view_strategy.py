@@ -4,11 +4,11 @@ from typing import NewType, Dict, cast
 import hypothesis.strategies as st
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.process_node import ProcessView
-from grapl_analyzerlib.nodes.types import Property
+from grapl_analyzerlib.nodes.process import ProcessView
+from grapl_analyzerlib.node_types import PropType
 from test_utils.dgraph_utils import node_key_for_test, upsert
 
-ProcessProps = NewType("ProcessProps", Dict[str, Property])
+ProcessProps = NewType("ProcessProps", Dict[str, PropType])
 
 
 def process_props() -> st.SearchStrategy[ProcessProps]:

@@ -4,50 +4,37 @@ from typing import cast, Dict
 
 import hypothesis
 import hypothesis.strategies as st
+import pytest
 from hypothesis import given
-
 from pydgraph import DgraphClient
 
-import pytest
-
-from grapl_analyzerlib.grapl_client import MasterGraphClient
-from grapl_analyzerlib.nodes.comparators import escape_dgraph_str, Not
-from grapl_analyzerlib.nodes.file_node import FileQuery, FileView
-from grapl_analyzerlib.nodes.process_node import ProcessQuery, ProcessView
-from grapl_analyzerlib.nodes.types import Property
-from grapl_analyzerlib.nodes.viewable import Viewable, NV
-from grapl_analyzerlib.nodes.asset_node import AssetQuery
+from grapl_analyzerlib.prelude import *
 from test_utils.dgraph_utils import upsert, create_edge
+from test_utils.strategies.asset_view_strategy import (
+    asset_props,
+    get_or_create_asset,
+    AssetProps,
+)
 from test_utils.strategies.misc import text_dgraph_compat
 from test_utils.strategies.process_view_strategy import (
     process_props,
     get_or_create_process,
     ProcessProps,
 )
-from test_utils.strategies.asset_view_strategy import (
-    asset_props,
-    get_or_create_asset,
-    AssetProps,
-)
 
 
-def assert_equal_props(a: NV, b: NV) -> None:
+def assert_equal_props(a: Viewable, b: Viewable) -> None:
     """
     NOTE: Doesn't look at edges at all.
     You may need to fetch more properties from the queried one.
     """
-    assert a.get_properties() == b.get_properties()
+    for k, v in a.predicates.items():
+        assert v == b.predicates[k]
 
 
-def assert_equal_identity(a: NV, b: NV) -> None:
+def assert_equal_identity(a: Viewable, b: Viewable) -> None:
     """ Assert these nodes have the same type and uuid """
     assert a.node_key == b.node_key
-
-
-def fetch_all_properties(v: Viewable) -> None:
-    for prop_name, prop_type in v._get_property_types().items():
-        if getattr(v, prop_name, None) is None:
-            setattr(v, prop_name, v.fetch_property(prop_name, prop_type))
 
 
 def get_or_create_process_node_deprecated(
@@ -80,23 +67,6 @@ def get_or_create_process_node_deprecated(
 
 @pytest.mark.integration_test
 class TestProcessQuery(unittest.TestCase):
-
-    # @classmethod
-    # def setUpClass(cls):
-    #     local_client = MasterGraphClient()
-    #
-    #     # drop_all(local_client)
-    #     # time.sleep(3)
-    #     provision()
-    #     provision()
-
-    # @classmethod
-    # def tearDownClass(cls):
-    #     local_client = MasterGraphClient()
-    #
-    #     drop_all(local_client)
-    #     provision()
-
     @hypothesis.settings(deadline=None)
     @given(process_props=process_props())
     def test_single_process_contains_key(self, process_props: ProcessProps) -> None:
@@ -144,16 +114,16 @@ class TestProcessQuery(unittest.TestCase):
             "asset_processes",
             created_proc.uid,
         )
-
+        create_edge(local_client, created_proc.uid, "process_asset", created_asset.uid)
         # Setup complete, do some queries
 
         queried_proc = (
             ProcessQuery()
-            .with_asset(AssetQuery().with_hostname(created_asset.get_hostname()))
+            .with_asset(AssetQuery().with_hostname(eq=created_asset.get_hostname()))
             .query_first(local_client, contains_node_key=created_proc.node_key)
         )
         assert queried_proc
-        fetch_all_properties(queried_proc)
+        queried_proc._expand()
         assert_equal_props(created_proc, queried_proc)
         queried_asset = queried_proc.get_asset()
         assert_equal_identity(created_asset, queried_asset)
@@ -182,20 +152,14 @@ class TestProcessQuery(unittest.TestCase):
         assert process_props["node_key"] == queried_proc.node_key
         assert "Process" == queried_proc.get_node_type()
         assert process_props["process_id"] == queried_proc.get_process_id()
-        assert process_props["arguments"] == escape_dgraph_str(
-            queried_proc.get_arguments()
-        )
+        assert process_props["arguments"] == queried_proc.get_arguments()
         assert (
             process_props["created_timestamp"] == queried_proc.get_created_timestamp()
         )
         assert None == queried_proc.get_asset()
         assert process_props["terminate_time"] == queried_proc.get_terminate_time()
-        assert process_props["image_name"] == escape_dgraph_str(
-            queried_proc.get_image_name()
-        )
-        assert process_props["process_name"] == escape_dgraph_str(
-            queried_proc.get_process_name()
-        )
+        assert process_props["image_name"] == queried_proc.get_image_name()
+        assert process_props["process_name"] == queried_proc.get_process_name()
 
     @hypothesis.settings(deadline=None)
     @given(
@@ -242,7 +206,6 @@ class TestProcessQuery(unittest.TestCase):
             .query_first(local_client)
         )
 
-        # assert process_view.process_id == queried_proc.get_process_id()
         assert node_key == queried_proc.node_key
         assert "Process" == queried_proc.get_node_type()
         assert process_id == queried_proc.get_process_id()
@@ -310,12 +273,12 @@ class TestProcessQuery(unittest.TestCase):
         get_or_create_process_node_deprecated(
             local_client,
             node_key,
-            process_id,
-            arguments,
-            created_timestamp,
-            terminate_time,
-            image_name,
-            process_name,
+            process_id=process_id,
+            arguments=arguments,
+            created_timestamp=created_timestamp,
+            terminate_time=terminate_time,
+            image_name=image_name,
+            process_name=process_name,
         )
 
         query = ProcessQuery().with_node_key(eq=node_key)
