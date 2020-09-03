@@ -67,11 +67,9 @@ def send_s3_event(
 
 
 def list_objects(client: S3Client, bucket: str) -> Iterator[str]:
-    return (
-        e["Key"]
-        for p in client.get_paginator("list_objects_v2").paginate(Bucket=bucket)
-        for e in p["Contents"]
-    )
+    for page in client.get_paginator("list_objects_v2").paginate(Bucket=bucket):
+        for entry in page["Contents"]:
+            yield entry["Key"]
 
 
 def get_sqs_client() -> SQSClient:
@@ -102,7 +100,7 @@ def get_s3_client() -> S3Client:
 
 def main(bucket_prefix: str) -> None:
     s3, sqs = get_s3_client(), get_sqs_client()
-    queue_url = sqs.get_queue_url(QueueName='grapl-graph-merger-queue')['QueueUrl']
+    queue_url = sqs.get_queue_url(QueueName="grapl-graph-merger-queue")["QueueUrl"]
 
     bucket = bucket_prefix + "-subgraphs-generated-bucket"
     for key in list_objects(s3, bucket):
@@ -126,6 +124,6 @@ if __name__ == "__main__":
     if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
     else:
-        if args.bucket_prefix == 'local-grapl':
+        if args.bucket_prefix == "local-grapl":
             IS_LOCAL = True
         main(args.bucket_prefix)
