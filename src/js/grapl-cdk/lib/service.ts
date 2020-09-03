@@ -60,7 +60,7 @@ export interface ServiceProps {
 }
 
 export class Service {
-    readonly event_handler: lambda.Function;
+    readonly event_handler: lambda.IFunction;
     readonly event_retry_handler: lambda.Function;
     readonly queues: Queues;
 
@@ -189,8 +189,8 @@ export class Service {
         }
 
         if (props.metrics_logs_ingest_lambda) {
-            this.forwardMetricsLogs(scope, this.event_handler, props.metrics_logs_ingest_lambda);
-            this.forwardMetricsLogs(scope, this.event_retry_handler, props.metrics_logs_ingest_lambda);
+            this.forwardMetricsLogs(scope, event_handler, props.metrics_logs_ingest_lambda);
+            this.forwardMetricsLogs(scope, event_retry_handler, props.metrics_logs_ingest_lambda);
         }
 
     }
