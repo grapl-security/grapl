@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast
+from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar
 
 import boto3
 import botocore.exceptions  # type: ignore
@@ -15,6 +15,7 @@ from grapl_analyzerlib.nodes.lens import LensView
 from grapl_analyzerlib.prelude import BaseView
 from grapl_analyzerlib.prelude import RiskView
 from grapl_analyzerlib.viewable import Viewable
+from grapl_analyzerlib.queryable import Queryable
 from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_sqs import SQSClient
 from typing_extensions import Type
@@ -33,6 +34,9 @@ https://docs.aws.amazon.com/AmazonS3/latest/dev/notification-content-structure.h
 S3Event = Dict[str, Any]
 
 EventWithReceiptHandle = Tuple[S3Event, str]
+
+V = TypeVar("V", bound=Viewable)
+Q = TypeVar("Q", bound=Queryable)
 
 
 def parse_s3_event(s3: S3ServiceResource, event) -> bytes:
@@ -155,10 +159,10 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
 def upsert(
     client: GraphClient,
     type_name: str,
-    view_type: "Type[Viewable]",
+    view_type: Type[Viewable[V, Q]],
     node_key: str,
     node_props: Dict[str, Any],
-) -> "Viewable":
+) -> Viewable[V, Q]:
     node_props["node_key"] = node_key
     node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
     uid = _upsert(client, node_props)
