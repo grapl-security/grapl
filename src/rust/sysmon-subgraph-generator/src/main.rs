@@ -148,12 +148,19 @@ fn handle_process_start(process_start: &ProcessCreateEvent) -> Result<Graph, Err
     );
 
     graph.add_edge(
+        "process_asset",
+        child.clone_node_key(),
+        asset.clone_node_key(),
+    );
+
+    graph.add_edge(
         "bin_file",
         child.clone_node_key(),
         child_exe.clone_node_key(),
     );
 
     graph.add_edge("children", parent.clone_node_key(), child.clone_node_key());
+    graph.add_edge("parent", child.clone_node_key(), parent.clone_node_key());
 
     graph.add_node(asset);
     graph.add_node(parent);
@@ -176,6 +183,7 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
 
     // A process creates an outbound connection to dst_port
     let process = ProcessBuilder::default()
+        .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessState::Existing)
         .process_id(conn_log.event_data.process_id)
@@ -184,9 +192,11 @@ fn handle_outbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         .expect("outbound_connection.process");
 
     let outbound = ProcessOutboundConnectionBuilder::default()
+        .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessOutboundConnectionState::Connected)
         .ip_address(conn_log.event_data.source_ip.clone())
+        .protocol(conn_log.event_data.protocol.clone())
         .port(conn_log.event_data.source_port)
         .created_timestamp(timestamp)
         .build()
@@ -323,6 +333,7 @@ fn handle_inbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
 
     // A process creates an outbound connection to dst_port
     let process = ProcessBuilder::default()
+        .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessState::Existing)
         .process_id(conn_log.event_data.process_id)
@@ -331,10 +342,12 @@ fn handle_inbound_connection(conn_log: &NetworkEvent) -> Result<Graph, Error> {
         .expect("inbound_connection.process");
 
     let outbound = ProcessInboundConnectionBuilder::default()
+        .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessInboundConnectionState::Bound)
         .port(conn_log.event_data.source_port)
         .ip_address(conn_log.event_data.source_ip.clone())
+        .protocol(conn_log.event_data.protocol.clone())
         .created_timestamp(timestamp)
         .build()
         .expect("inbound_connection.outbound");

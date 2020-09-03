@@ -6,15 +6,16 @@ const mergeNodes = (x: Node, y: Node) => {
     let merged = false;
     mapNodeProps(y, (prop: string) => {
         if (!Object.prototype.hasOwnProperty.call(x, prop)) {
-            merged = true;
-            (x as any)[prop] = (y as any)[prop]
+            if ((x as any)[prop] !== (y as any)[prop]) {
+                (x as any)[prop] = (y as any)[prop];
+                merged = true;
+            }
         }
     });
 
     return merged;
 };
 
-// #TODO: This algorithm is exponential, and doesn't have to be
 export const mergeGraphs = (curGraph: MergeGraphType, update: MergeGraphType): MergeGraphType | null => {
     // Merges two graphs into a new graph
     // returns 'null' if there are no updates to be made
@@ -43,6 +44,7 @@ export const mergeGraphs = (curGraph: MergeGraphType, update: MergeGraphType): M
             }
         } else {
             nodes.set(newNode.uid, newNode);
+            console.log('new node added ', newNode);
             updated = true;
         }
     }
@@ -64,6 +66,7 @@ export const mergeGraphs = (curGraph: MergeGraphType, update: MergeGraphType): M
         const newLinkTarget =  newLink.target || newLink.target;
         const link = links.get(newLinkSource + newLink.label + newLinkTarget);
         if (!link) {
+            console.log('newlink', newLink)
             links.set(newLink.source + newLink.label + newLink.target, newLink);
             updated = true;
         }
