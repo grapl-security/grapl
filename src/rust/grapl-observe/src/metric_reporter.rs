@@ -3,6 +3,12 @@ use crate::statsd_formatter;
 use crate::statsd_formatter::{statsd_format, MetricType};
 use std::fmt::Write;
 
+pub mod common_strs {
+    pub const STATUS: &'static str = "status";
+    pub const SUCCESS: &'static str = "success";
+    pub const FAIL: &'static str = "fail";
+}
+
 #[derive(Debug, Clone)]
 pub struct MetricReporter {
     /**
