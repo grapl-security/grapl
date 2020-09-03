@@ -1,5 +1,7 @@
 #![type_length_limit = "1334469"]
 
+mod metrics;
+
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::io::Cursor;
@@ -50,6 +52,7 @@ use graph_descriptions::network_connection::NetworkConnectionState;
 use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use grapl_observe::metric_reporter::{MetricReporter, TagPair};
 use lazy_static::lazy_static;
 
 use graph_generator_lib::*;
@@ -57,6 +60,7 @@ use graph_generator_lib::*;
 use graph_descriptions::node::NodeT;
 use log::*;
 
+use crate::metrics::SysmonSubgraphGeneratorMetrics;
 use grapl_config::*;
 
 macro_rules! log_time {
@@ -498,6 +502,7 @@ where
     C: Cache + Clone + Send + Sync + 'static,
 {
     cache: C,
+    metrics: SysmonSubgraphGeneratorMetrics,
 }
 
 impl<C> Clone for SysmonSubgraphGenerator<C>
@@ -507,6 +512,7 @@ where
     fn clone(&self) -> Self {
         Self {
             cache: self.cache.clone(),
+            metrics: self.metrics.clone(),
         }
     }
 }
@@ -515,8 +521,8 @@ impl<C> SysmonSubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    pub fn new(cache: C) -> Self {
-        Self { cache }
+    pub fn new(cache: C, metrics: SysmonSubgraphGeneratorMetrics) -> Self {
+        Self { cache, metrics }
     }
 }
 
@@ -608,15 +614,15 @@ where
                         }
                     }
                 }
-                //                    Event::InboundNetwork(event) => {
-                //                        match handle_inbound_connection(event) {
-                //                            Ok(event) => Some(event),
-                //                            Err(e) => {
-                //                                warn!("Failed to process inbound network event: {}", e);
-                //                                None
-                //                            }
-                //                        }
-                //                    }
+                // Event::InboundNetwork(event) => {
+                //     match handle_inbound_connection(event) {
+                //         Ok(event) => Some(event),
+                //         Err(e) => {
+                //             warn!("Failed to process inbound network event: {}", e);
+                //             None
+                //         }
+                //     }
+                // }
                 Event::OutboundNetwork(event) => {
                     info!("OutboundNetwork");
                     match handle_outbound_connection(&event) {
@@ -640,7 +646,7 @@ where
 
         info!("Completed mapping {} subgraphs", identities.len());
 
-        let mut completed = if let Some(e) = failed {
+        let mut completed = if let Some(ref e) = failed {
             OutputEvent::new(Completion::Partial((
                 final_subgraph,
                 sqs_lambda::error::Error::ProcessingError((e.to_string())),
@@ -662,12 +668,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::init_grapl_log!();
     info!("Starting sysmon-subgraph-generator");
 
+    let metrics = SysmonSubgraphGeneratorMetrics {
+        metric_reporter: MetricReporter::new(),
+    };
+
     if grapl_config::is_local() {
-        let generator = SysmonSubgraphGenerator::new(NopCache {});
+        let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);
 
         run_graph_generator_local(generator, ZstdDecoder::default()).await;
     } else {
-        let generator = SysmonSubgraphGenerator::new(event_cache().await);
+        let generator = SysmonSubgraphGenerator::new(event_cache().await, metrics);
 
         run_graph_generator_aws(generator, ZstdDecoder::default());
     }
