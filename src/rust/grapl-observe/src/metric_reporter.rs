@@ -21,7 +21,7 @@ some followup TODOs:
 #[allow(dead_code)]
 impl MetricReporter {
     pub fn new() -> MetricReporter {
-        let buf: String = String::with_capacity(256);
+        let buf: String = String::new();
         MetricReporter { buffer: buf }
     }
 
