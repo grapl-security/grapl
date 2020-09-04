@@ -39,20 +39,3 @@ pub fn aws_event_to_cloudwatch_logs_data(
         Err(PoorlyFormattedEventError())
     }
 }
-
-/*
-fn send_slack_msg_from_logsdata(logs_data: CloudwatchLogsData) -> Result<(), CustomError> {
-    let msgs = logs_data
-        .log_events
-        .iter()
-        .filter_map(|logs_log_event| logs_log_event.message.clone());
-    for msg in msgs {
-        if let Err(err) = send_slack_msg(&msg) {
-            error!("{}", err);
-            return Err(err);
-        }
-    }
-
-    Ok(())
-}
- */
