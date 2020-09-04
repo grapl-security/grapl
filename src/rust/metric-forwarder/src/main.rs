@@ -12,7 +12,8 @@ use log::info;
 
 use tokio::runtime::Runtime;
 
-use rusoto_cloudwatch::{CloudWatch, CloudWatchClient};
+// not yet, gotta solve openssl issue
+// use rusoto_cloudwatch::{CloudWatch, CloudWatchClient};
 
 fn handler(event: CloudwatchLogsEvent, ctx: Context) -> Result<(), HandlerError> {
     info!("Handling event");
