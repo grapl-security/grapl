@@ -67,7 +67,10 @@ COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
 RUN mkdir -p grapl-observe/src
 RUN touch grapl-observe/src/lib.rs
 COPY --chown=grapl ./grapl-observe/Cargo.toml grapl-observe/
-
+# copy in Cargo.toml for metric-forwarder
+RUN mkdir -p metric-forwarder/src
+RUN touch metric-forwarder/src/lib.rs
+COPY --chown=grapl ./metric-forwarder/Cargo.toml metric-forwarder/
 # copy in Cargo.toml for graph-merger
 RUN mkdir -p graph-merger/src
 RUN echo 'fn main() {}' > graph-merger/src/main.rs
@@ -114,6 +117,7 @@ RUN rm -rf target/*/*/.fingerprint/graph-merger*
 RUN rm -rf target/*/*/.fingerprint/grapl-config*
 RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
 RUN rm -rf target/*/*/.fingerprint/grapl-observe*
+RUN rm -rf target/*/*/.fingerprint/metric-forwarder*
 RUN rm -rf target/*/*/.fingerprint/node-identifier*
 RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
 # copy in the sources
@@ -125,6 +129,7 @@ COPY --chown=grapl ./graph-generator-lib graph-generator-lib
 COPY --chown=grapl ./graph-merger graph-merger
 COPY --chown=grapl ./grapl-config grapl-config
 COPY --chown=grapl ./grapl-observe grapl-observe
+COPY --chown=grapl ./metric-forwarder metric-forwarder
 COPY --chown=grapl ./node-identifier node-identifier
 COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator
 # copy in the top-level Cargo.toml and Cargo.lock
@@ -145,6 +150,7 @@ RUN mkdir -p /home/grapl/dist && \
     cp target/x86_64-unknown-linux-musl/${release_target}/analyzer-dispatcher dist/analyzer-dispatcher && \
     cp target/x86_64-unknown-linux-musl/${release_target}/generic-subgraph-generator dist/generic-subgraph-generator && \
     cp target/x86_64-unknown-linux-musl/${release_target}/graph-merger dist/graph-merger && \
+    cp target/x86_64-unknown-linux-musl/${release_target}/metric-forwarder dist/metric-forwarder && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier dist/node-identifier && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler dist/node-identifier-retry-handler && \
     cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator \
