@@ -40,6 +40,7 @@ impl MetricType {
 
 /**
 Don't call statsd_format directly; instead, prefer the public functions of MetricClient.
+To go from a formatted string to usable data again, use the 'statsd-parser' crate.
 */
 #[allow(dead_code)]
 pub fn statsd_format(
