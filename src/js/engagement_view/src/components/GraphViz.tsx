@@ -168,9 +168,8 @@ const updateGraph = async (
     await retrieveGraph(lensName)
         .then(async (scope) => {
             const update = graphQLAdjacencyMatrix(scope);
-            console.log('curLensName, lensName', curLensName, state.curLensName, lensName);
-            console.log('curLensName', state);
-            console.log('update', update);
+            console.debug('state: ', state);
+            console.debug('update', update);
 
             const mergeUpdate = mergeGraphs(state.graphData, update);
             if (mergeUpdate !== null) {
