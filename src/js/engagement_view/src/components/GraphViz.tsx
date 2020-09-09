@@ -246,10 +246,6 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
             }
         }, 1000);
         console.log('setting lensName', lensName);
-        // setState({
-        //     ...state,
-        //     curLensName: nextLensName,
-        // })
         return () => {
             clearInterval(interval);
         };
