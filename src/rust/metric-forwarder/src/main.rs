@@ -15,18 +15,9 @@ use log::info;
 use crate::cloudwatch_logs_parse::parse_logs;
 use crate::cloudwatch_send::put_metric_data;
 use crate::cloudwatch_send::statsd_as_cloudwatch_metric_bulk;
-use crate::cloudwatch_send::CloudWatchPutter;
 use crate::error::{to_handler_error, MetricForwarderError};
-use rusoto_cloudwatch::{CloudWatchClient, MetricDatum};
+use rusoto_cloudwatch::CloudWatchClient;
 use std::sync::{Arc, Mutex};
-
-#[derive(Debug, Clone)]
-pub struct MetricForwarder<C>
-where
-    C: CloudWatchPutter + Send + Sync + 'static,
-{
-    cloudwatch_client: Arc<C>,
-}
 
 fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), HandlerError> {
     /**
@@ -48,7 +39,7 @@ fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), Handler
     let result = result_arc.lock().unwrap();
     result
         .as_ref()
-        .map(|&_t| ())
+        .map(|&t| t) // silly conversion from &() to ()
         .map_err(|e| to_handler_error(&e))
 }
 

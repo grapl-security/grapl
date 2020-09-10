@@ -5,12 +5,10 @@ use futures::future;
 use log::warn;
 use rayon::prelude::*;
 use rusoto_cloudwatch::PutMetricDataError;
-use rusoto_cloudwatch::{CloudWatch, CloudWatchClient, MetricDatum, PutMetricDataInput};
+use rusoto_cloudwatch::{CloudWatch, MetricDatum, PutMetricDataInput};
 use rusoto_core::RusotoError;
 use statsd_parser;
 use statsd_parser::Metric;
-use std::collections::vec_deque;
-use std::collections::VecDeque;
 
 mod units {
     // strings accepted by CloudWatch MetricDatum.unit
@@ -114,7 +112,7 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
 #[cfg(test)]
 mod tests {
     use crate::cloudwatch_logs_parse::Stat;
-    use crate::cloudwatch_send::*; // TODO fix
+    use crate::cloudwatch_send::{statsd_as_cloudwatch_metric, units};
     use rusoto_cloudwatch::MetricDatum;
     use statsd_parser;
 
@@ -144,6 +142,8 @@ mod tests {
 
     /*
     // TODO wimax: mannnn i just wanna mock this thing out!!!
+    use std::collections::vec_deque;
+    use std::collections::VecDeque;
     pub struct MockCloudwatchClient {
         pub put_calls: Vec<PutMetricDataInput>,
         response_fn: Box<dyn Fn(PutMetricDataInput) -> PutResult + Send>,

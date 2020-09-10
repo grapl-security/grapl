@@ -1,6 +1,4 @@
 use lambda_runtime::error::HandlerError;
-use rusoto_cloudwatch::PutMetricDataError;
-use rusoto_core::RusotoError;
 use std::fmt::Display;
 use thiserror::Error;
 
@@ -18,7 +16,6 @@ pub enum MetricForwarderError {
     PoorlyFormattedLogLine(String),
     #[error("Error parsing statsd log: {0}")]
     ParseStringToStatsdError(String),
-    //ParseStringToStatsdError(#[from] statsd_parser::ParseError), // no Clone
     #[error("PutMetricData to Cloudwatch error: this many failures {0}")]
     PutMetricDataError(usize),
 }
