@@ -10,7 +10,7 @@ use aws_lambda_events::event::cloudwatch_logs::CloudwatchLogsEvent;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
-use log::{info};
+use log::info;
 
 use crate::cloudwatch_logs_parse::parse_logs;
 use crate::cloudwatch_send::put_metric_data;
@@ -39,14 +39,17 @@ fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), Handler
     let thread = std::thread::spawn(move || {
         tokio_compat::run_std(async move {
             let result: R = handler_async(event).await.clone();
-             *result_arc_for_thread.lock().unwrap() = result;
+            *result_arc_for_thread.lock().unwrap() = result;
             ()
         })
     });
 
     thread.join().unwrap();
     let result = result_arc.lock().unwrap();
-    result.as_ref().map(|&_t| ()).map_err(|e| to_handler_error(&e))
+    result
+        .as_ref()
+        .map(|&_t| ())
+        .map_err(|e| to_handler_error(&e))
 }
 
 async fn handler_async(event: CloudwatchLogsEvent) -> Result<(), MetricForwarderError> {
