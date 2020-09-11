@@ -17,7 +17,7 @@ pub enum MetricForwarderError {
     #[error("Error parsing statsd log: {0}")]
     ParseStringToStatsdError(String),
     #[error("PutMetricData to Cloudwatch error: this many failures {0}")]
-    PutMetricDataError(usize),
+    PutMetricDataError(String),
 }
 
 // can't impl From for HandlerError, sadly

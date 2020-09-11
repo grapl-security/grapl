@@ -32,17 +32,18 @@ fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
            <ts>                  \t         <dont care>                \t <log contents>\n
     */
     let split: Vec<&str> = log_str.splitn(3, CLOUDWATCH_LOGS_DELIM).collect();
-    if split.len() != 3 {
-        return Err(MetricForwarderError::PoorlyFormattedLogLine(
+    match &split[..] {
+        [timestamp, _, statsd_component] => {
+            let stat = parse_statsd_component(statsd_component).map(|statsd_message| Stat {
+                timestamp: timestamp.to_string(),
+                msg: statsd_message,
+            });
+            stat
+        }
+        _ => Err(MetricForwarderError::PoorlyFormattedLogLine(
             log_str.to_string(),
-        ));
+        ))
     }
-    let timestamp = split[0];
-    let statsd_component = parse_statsd_component(split[2]);
-    statsd_component.map(|statsd_message| Stat {
-        timestamp: timestamp.to_string(),
-        msg: statsd_message,
-    })
 }
 
 fn parse_statsd_component(log_str: &str) -> Result<statsd_parser::Message, MetricForwarderError> {

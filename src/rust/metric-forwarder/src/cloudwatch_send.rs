@@ -30,7 +30,7 @@ where
     T: CloudWatch + Sync + Send,
 {
     async fn put_metric_data(&self, input: PutMetricDataInput) -> PutResult {
-        self.put_metric_data(input).await
+        CloudWatch::put_metric_data(self, input).await
     }
 }
 
@@ -56,10 +56,12 @@ pub async fn put_metric_data(
     let responses: Vec<PutResult> = future::join_all(request_futures).await;
 
     // TODO: retries
-    let failures: usize = responses.iter().filter(|resp| resp.is_err()).count();
-    match failures {
-        0 => Ok(()),
-        _ => Err(MetricForwarderError::PutMetricDataError(failures)),
+
+    // bubble up 1 of N failures
+    let first_failure = responses.iter().filter(|resp| resp.is_err()).next();
+    match first_failure {
+        Some(Err(e)) => Err(MetricForwarderError::PutMetricDataError(e.to_string())),
+        _ => Ok(()),
     }
 }
 
