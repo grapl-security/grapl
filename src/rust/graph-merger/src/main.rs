@@ -16,13 +16,15 @@ use aws_lambda_events::event::s3::{
 };
 use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
-use dgraph_rs::protos::api;
-use dgraph_rs::protos::api_grpc;
-use dgraph_rs::DgraphClient;
+
+use dgraph_tonic::{
+    Client as DgraphClient,
+    Mutate,
+    Query
+};
+
 use failure::{bail, Error};
 use futures::future::join_all;
-use grpc::ClientConf;
-use grpc::{Client, ClientStub};
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
@@ -60,24 +62,23 @@ macro_rules! log_time {
     }};
 }
 
-fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> api::Mutation {
+fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
         "uid": from,
         edge_name: {
             "uid": to
         }
-    })
-    .to_string()
-    .into_bytes();
+    });
 
-    let mut mutation = api::Mutation::new();
+    let mut mutation = dgraph_tonic::Mutation::new();
     mutation.commit_now = true;
-    mutation.set_json = mu;
+    mutation.set_set_json(&mu);
+
     mutation
 }
 
 async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<String>, Error> {
-    let mut txn = dg.new_read_only();
+    let mut txn = dg.new_read_only_txn();
 
     const QUERY: &str = r"
        query q0($a: string)
@@ -86,16 +87,16 @@ async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<Str
             uid,
             dgraph.type,
         }
-    }
-    ";
+    }";
 
     let mut vars = HashMap::new();
-    vars.insert("$a".to_string(), node_key.into());
+    vars.insert("$a".to_string(), node_key.to_string());
 
     let query_res: Value = txn
         .query_with_vars(QUERY, vars)
         .await
-        .map(|res| serde_json::from_slice(&res.json))??;
+        .map(|res| serde_json::from_slice(&res.json))
+        .map_err(AnyhowFailure::into_failure)??;
 
     let uid = query_res
         .get("q0")
@@ -118,7 +119,7 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     );
 
     let node_key = node.clone_node_key();
-    let mut set_json = node.into_json();
+    let mut set_json: serde_json::Value = node.into_json();
     let mut node_types = vec![set_json["dgraph.type"].as_str().unwrap().clone()];
     node_types.extend_from_slice(&["Entity", "Base"]);
     set_json["dgraph.type"] = node_types.into();
@@ -130,22 +131,22 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
         .as_millis() as u64)
         .into();
 
-    let mu = api::Mutation {
-        set_json: set_json.to_string().into_bytes(),
-        commit_now: true,
-        ..Default::default()
-    };
+    let mut mu = dgraph_tonic::Mutation::new();
+    mu.commit_now = true;
+    mu.set_set_json(&set_json);
 
-    let mut txn = dg.new_txn();
+    let mut txn = dg.new_mutated_txn();
     let upsert_res = match txn.upsert(query, mu).await {
         Ok(res) => res,
         Err(e) => {
-            txn.discard().await?;
-            return Err(e.into());
+            txn.discard().await.map_err(AnyhowFailure::into_failure)?;
+            return Err(e.into_failure().into());
         }
     };
 
-    txn.commit_or_abort().await?;
+    txn.commit()
+        .await
+        .map_err(AnyhowFailure::into_failure)?;
 
     info!(
         "Upsert res for {}, set_json: {} upsert_res: {:?}",
@@ -198,19 +199,12 @@ where
                 .choose(&mut rng)
                 .expect("Empty rand_alpha")
                 .to_owned();
-            let (host, port) = grapl_config::parse_host_port(rand_alpha);
 
-            debug!("connecting to DGraph {:?}:{:?}", host, port);
-            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
-                Client::new_plain(
-                    &host,
-                    port,
-                    ClientConf {
-                        ..Default::default()
-                    },
-                )
-                .expect("Failed to create dgraph client"),
-            ))])
+            debug!("connecting to DGraph {}", &rand_alpha);
+
+            // using a single URI creates a Client<LazyChannel> which is gRPC
+            // using a Vec<String> causes an Client<HTTP> to be created which is not desired
+            DgraphClient::new(rand_alpha).expect("Failed to create dgraph client")
         };
 
         Self {
@@ -222,12 +216,12 @@ where
 
 async fn upsert_edge(
     mg_client: &DgraphClient,
-    mu: api::Mutation,
-) -> Result<(), dgraph_rs::errors::DgraphError> {
-    let mut txn = mg_client.new_txn();
-    txn.mutate(mu).await?;
+    mu: dgraph_tonic::Mutation,
+) -> Result<(), failure::Error> {
+    let mut txn = mg_client.new_mutated_txn();
+    txn.mutate(mu).await.map_err(AnyhowFailure::into_failure)?;
 
-    txn.commit_or_abort().await?;
+    txn.commit().await.map_err(AnyhowFailure::into_failure)?;
 
     Ok(())
 }
@@ -892,4 +886,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+trait AnyhowFailure {
+    fn into_failure(self) -> Error;
+}
+
+impl AnyhowFailure for anyhow::Error {
+    fn into_failure(self) -> Error {
+        failure::Error::from_boxed_compat(From::from(self))
+    }
 }
