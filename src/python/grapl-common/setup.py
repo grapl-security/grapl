@@ -44,7 +44,7 @@ setup(
         "typing_extensions",
     ],
     # We'll probably have some dataclasses in here in the future
-    python_requires=">=3.7",
+    python_requires=">=3.6",
     extras_require={
         "typecheck": [
             "mypy",
