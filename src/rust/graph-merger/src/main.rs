@@ -17,11 +17,7 @@ use aws_lambda_events::event::s3::{
 use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
 
-use dgraph_tonic::{
-    Client as DgraphClient,
-    Mutate,
-    Query
-};
+use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 
 use failure::{bail, Error};
 use futures::future::join_all;
@@ -144,9 +140,7 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
         }
     };
 
-    txn.commit()
-        .await
-        .map_err(AnyhowFailure::into_failure)?;
+    txn.commit().await.map_err(AnyhowFailure::into_failure)?;
 
     info!(
         "Upsert res for {}, set_json: {} upsert_res: {:?}",
