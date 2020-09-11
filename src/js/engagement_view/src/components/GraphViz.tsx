@@ -164,14 +164,16 @@ const updateGraph = async (
         return;
     }
 
+    const curLensName = state.curLensName;
     await retrieveGraph(lensName)
         .then(async (scope) => {
             const update = graphQLAdjacencyMatrix(scope);
-            console.log('curLensName, lensName', state.curLensName, lensName);
-            console.log('update', update);
+            console.debug('state: ', state);
+            console.debug('update', update);
+
             const mergeUpdate = mergeGraphs(state.graphData, update);
             if (mergeUpdate !== null) {
-                if (state.curLensName === lensName) {
+                if (curLensName === lensName) {
                     setState({
                         ...state,
                         curLensName: lensName,
@@ -237,37 +239,17 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
 
 
     useEffect(() => {
-        const nextLensName = lensName;
-        if (state.curLensName === nextLensName) {
-            return
-        }
-        if (!nextLensName) { return }
-        if (state.intervalMap[nextLensName]) { return }
-
         const interval = setInterval(async () => {
             if (lensName) {
                 console.log('updating graph');
-                await updateGraph(nextLensName, state, setState);
+                await updateGraph(lensName, state, setState);
             }
         }, 1000);
-        if (state.intervalMap[state.curLensName]) {
-            clearInterval(state.intervalMap[state.curLensName])
-        }
-        const intervalMap = {...state.intervalMap};
-        intervalMap[nextLensName] = interval;
         console.log('setting lensName', lensName);
-        setState({
-            ...state,
-            intervalMap,
-            curLensName: nextLensName,
-        })
         return () => {
-            if (state.intervalMap[nextLensName]) {
-                clearInterval(state.intervalMap[nextLensName]);
-                intervalMap[nextLensName] = undefined;
-            }
+            clearInterval(interval);
         };
-    }, [lensName, state]);
+    }, [lensName, state, setState]);
 
     const graphData = state.graphData;
 
