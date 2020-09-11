@@ -58,6 +58,7 @@ class SysmonGraphGenerator extends cdk.NestedStack {
             writes_to: props.writesTo,
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         service.event_handler.connections.allowToAnyIpv4(
@@ -154,6 +155,29 @@ class NodeIdentifier extends cdk.NestedStack {
         );
     }
 }
+
+export interface MetricForwarderProps extends GraplServiceProps {
+    // nothing yet
+}
+
+class MetricForwarder extends cdk.NestedStack {
+    readonly service: Service;
+
+    constructor(scope: cdk.Construct, id: string, props: MetricForwarderProps) {
+        super(scope, id);
+
+        const service = new Service(this, id, {
+            prefix: props.prefix,
+            environment: {
+            },
+            vpc: props.vpc,
+            version: props.version,
+            watchful: props.watchful,
+            metric_forwarder: undefined,  // Otherwise, it'd be recursive!
+        });
+    }
+}
+
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -662,6 +686,7 @@ export interface GraplServiceProps {
     dgraphSwarmCluster: DGraphSwarmCluster;
     userAuthTable: UserAuthDb;
     watchful?: Watchful;
+    metricForwarder?: Service;
 }
 
 export interface GraplStackProps extends cdk.StackProps {
@@ -723,7 +748,7 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        const graplProps = {
+        const graplProps: GraplServiceProps = {
             prefix: this.prefix,
             version: props.version || 'latest',
             jwtSecret: jwtSecret,
@@ -732,6 +757,18 @@ export class GraplCdkStack extends cdk.Stack {
             userAuthTable: user_auth_table,
             watchful: watchful,
         };
+
+        const metric_forwarder = new MetricForwarder(
+            this,
+            'metric-forwarder',
+            {
+                ...graplProps,
+            }
+        );
+        // as we onboard more services to monitoring, add in ...enableMonitoringProps
+        const enableMonitoringProps: Pick<GraplServiceProps, 'metricForwarder'> = {
+            metricForwarder: metric_forwarder.service,
+        }
 
         const analyzers_bucket = new s3.Bucket(this, 'AnalyzersBucket', {
             bucketName: bucket_prefix + '-analyzers-bucket',
@@ -809,6 +846,7 @@ export class GraplCdkStack extends cdk.Stack {
         new SysmonGraphGenerator(this, 'sysmon-subgraph-generator', {
             writesTo: node_identifier.bucket,
             ...graplProps,
+            ...enableMonitoringProps,
         });
 
         new EngagementNotebook(this, 'engagements', {

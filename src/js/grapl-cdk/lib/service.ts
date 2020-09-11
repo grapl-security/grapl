@@ -56,7 +56,7 @@ export interface ServiceProps {
      and that 1 lambda should be the one that does not have it set.
      (we don't want a recursive log-processor)
      */
-    metrics_logs_ingest_lambda?: lambda.IFunction;
+    metric_forwarder?: Service;
 }
 
 export class Service {
@@ -188,9 +188,10 @@ export class Service {
             this.addSubscription(scope, props.subscribes_to);
         }
 
-        if (props.metrics_logs_ingest_lambda) {
-            this.forwardMetricsLogs(scope, event_handler, props.metrics_logs_ingest_lambda);
-            this.forwardMetricsLogs(scope, event_retry_handler, props.metrics_logs_ingest_lambda);
+        if (props.metric_forwarder) {
+            const forwarder_lambda = props.metric_forwarder.event_handler;
+            this.forwardMetricsLogs(scope, event_handler, forwarder_lambda);
+            this.forwardMetricsLogs(scope, event_retry_handler, forwarder_lambda);
         }
 
     }
