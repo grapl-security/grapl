@@ -42,7 +42,7 @@ fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
         }
         _ => Err(MetricForwarderError::PoorlyFormattedLogLine(
             log_str.to_string(),
-        ))
+        )),
     }
 }
 

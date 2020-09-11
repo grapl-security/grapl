@@ -85,6 +85,12 @@ pub fn statsd_as_cloudwatch_metric_bulk(
         .collect()
 }
 
+impl From<Stat> for MetricDatum {
+    fn from(s: Stat) -> MetricDatum {
+        statsd_as_cloudwatch_metric(&s)
+    }
+}
+
 fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
     let (unit, value, _sample_rate) = match &stat.msg.metric {
         // Yes, gauge and counter are - for our purposes - basically both Count
@@ -114,9 +120,14 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
 #[cfg(test)]
 mod tests {
     use crate::cloudwatch_logs_parse::Stat;
-    use crate::cloudwatch_send::{statsd_as_cloudwatch_metric, CloudWatchPutter, PutResult, units};
-    use rusoto_cloudwatch::{MetricDatum, PutMetricDataInput};
+    use crate::cloudwatch_send::{
+        put_metric_data, statsd_as_cloudwatch_metric, units, CloudWatchPutter, PutResult,
+    };
+    use crate::error::MetricForwarderError;
+    use async_trait::async_trait;
     use rusoto_cloudwatch::PutMetricDataError;
+    use rusoto_cloudwatch::{MetricDatum, PutMetricDataInput};
+    use rusoto_core::RusotoError;
     use statsd_parser;
 
     #[test]
@@ -143,48 +154,62 @@ mod tests {
         assert_eq!(datum.unit.expect(""), units::COUNT);
     }
 
-    // TODO wimax: mannnn i just wanna mock this thing out!!!
-    use std::collections::vec_deque;
-    use std::collections::VecDeque;
     pub struct MockCloudwatchClient {
-        response_fn: Box<dyn Fn(PutMetricDataInput) -> PutResult + Send>,
+        response_fn: fn(PutMetricDataInput) -> PutResult,
     }
     impl MockCloudwatchClient {
-        pub fn new(response_fn: Box<dyn Fn(PutMetricDataInput) -> PutResult + Send>) -> MockCloudwatchClient {
-            MockCloudwatchClient {
-                response_fn: response_fn,
-            }
-        }
-
-        fn return_ok(input: PutMetricDataInput) -> PutResult { 
+        fn return_ok(_input: PutMetricDataInput) -> PutResult {
             Ok(())
         }
 
-        /*
-        fn return_an_err(input: PutMetricDataInput) -> PutResult {
-            Err(RusotoError::from(PutMetricDataError::InternalServiceFault))
-
+        fn return_an_err(_input: PutMetricDataInput) -> PutResult {
+            Err(RusotoError::Service(
+                PutMetricDataError::InternalServiceFault("ya goofed".to_string()),
+            ))
         }
-        */
     }
-
 
     #[async_trait]
-    impl CloudWatchPutter for MockCloudwatchClient
-    {
-        async fn put_metric_data(
-            &mut self,
-            input: PutMetricDataInput,
-        ) -> PutResult
-        {
-            return (self.response_fn)(input)
+    impl CloudWatchPutter for MockCloudwatchClient {
+        async fn put_metric_data(&self, input: PutMetricDataInput) -> PutResult {
+            return (self.response_fn)(input);
         }
     }
 
-
-    #[test]
-    fn test_put_metric_data() {
-        let cw = MockCloudwatchClient { response_fn: MockCloudwatchClient::return_ok };
+    fn some_stat() -> Stat {
+        Stat {
+            timestamp: "ts".into(),
+            msg: statsd_parser::Message {
+                name: "msg".into(),
+                metric: statsd_parser::Metric::Counter(statsd_parser::Counter {
+                    value: 123.45,
+                    sample_rate: None,
+                }),
+                tags: None,
+            },
+        }
     }
-    
+
+    #[tokio::test]
+    async fn test_put_metric_data_client_ok() {
+        let cw_client = MockCloudwatchClient {
+            response_fn: MockCloudwatchClient::return_ok,
+        };
+        let data = vec![some_stat().into(), some_stat().into()];
+        let result = put_metric_data(&cw_client, &data).await;
+        assert_eq!(result, Ok(()))
+    }
+
+    #[tokio::test]
+    async fn test_put_metric_data_client_err() -> Result<(), ()> {
+        let cw_client = MockCloudwatchClient {
+            response_fn: MockCloudwatchClient::return_an_err,
+        };
+        let data = vec![some_stat().into(), some_stat().into()];
+        let result = put_metric_data(&cw_client, &data).await;
+        match result {
+            Err(MetricForwarderError::PutMetricDataError(_)) => Ok(()),
+            _ => Err(()),
+        }
+    }
 }
