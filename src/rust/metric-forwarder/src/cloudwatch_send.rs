@@ -114,8 +114,9 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
 #[cfg(test)]
 mod tests {
     use crate::cloudwatch_logs_parse::Stat;
-    use crate::cloudwatch_send::{statsd_as_cloudwatch_metric, units};
-    use rusoto_cloudwatch::MetricDatum;
+    use crate::cloudwatch_send::{statsd_as_cloudwatch_metric, CloudWatchPutter, PutResult, units};
+    use rusoto_cloudwatch::{MetricDatum, PutMetricDataInput};
+    use rusoto_cloudwatch::PutMetricDataError;
     use statsd_parser;
 
     #[test]
@@ -142,22 +143,31 @@ mod tests {
         assert_eq!(datum.unit.expect(""), units::COUNT);
     }
 
-    /*
     // TODO wimax: mannnn i just wanna mock this thing out!!!
     use std::collections::vec_deque;
     use std::collections::VecDeque;
     pub struct MockCloudwatchClient {
-        pub put_calls: Vec<PutMetricDataInput>,
         response_fn: Box<dyn Fn(PutMetricDataInput) -> PutResult + Send>,
     }
     impl MockCloudwatchClient {
         pub fn new(response_fn: Box<dyn Fn(PutMetricDataInput) -> PutResult + Send>) -> MockCloudwatchClient {
             MockCloudwatchClient {
-                put_calls: vec![],
                 response_fn: response_fn,
             }
         }
+
+        fn return_ok(input: PutMetricDataInput) -> PutResult { 
+            Ok(())
+        }
+
+        /*
+        fn return_an_err(input: PutMetricDataInput) -> PutResult {
+            Err(RusotoError::from(PutMetricDataError::InternalServiceFault))
+
+        }
+        */
     }
+
 
     #[async_trait]
     impl CloudWatchPutter for MockCloudwatchClient
@@ -167,13 +177,14 @@ mod tests {
             input: PutMetricDataInput,
         ) -> PutResult
         {
-            self.put_calls.push(input.clone());
             return (self.response_fn)(input)
         }
     }
 
 
     #[test]
-    fn test_put_metric_data() {}
-    */
+    fn test_put_metric_data() {
+        let cw = MockCloudwatchClient { response_fn: MockCloudwatchClient::return_ok };
+    }
+    
 }
