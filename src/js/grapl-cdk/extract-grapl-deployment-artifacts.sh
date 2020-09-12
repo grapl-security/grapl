@@ -23,6 +23,7 @@ as=(
     "node-identifier-retry-handler"
     "graph-merger"
     "analyzer-dispatcher"
+    "metric-forwarder"
 )
 
 bs=(
