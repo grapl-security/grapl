@@ -251,7 +251,7 @@ export class Service {
             {
                 destination: new LambdaDestination(toLambdaFn),
                 filterPattern: {
-                    logPatternString: "MONITORING|"
+                    logPatternString: "MONITORING"
                 }
             }
         )
