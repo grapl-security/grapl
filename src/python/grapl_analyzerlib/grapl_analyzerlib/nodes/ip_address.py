@@ -128,6 +128,7 @@ class IpAddressView(EntityView[IPV, IPQ]):
           - List[:doc:`/nodes/ip_connection`]
           - Connections made from this address.
     """
+
     queryable = IpAddressQuery
 
     def __init__(

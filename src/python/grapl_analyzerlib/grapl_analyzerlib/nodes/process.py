@@ -216,6 +216,7 @@ class ProcessView(EntityView[PV, PQ]):
           - List[:doc:`/nodes/process_inbound_connection`]
           - Inbound connections created by this process.
     """
+
     queryable = ProcessQuery
 
     def __init__(
