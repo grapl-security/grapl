@@ -16,8 +16,9 @@ import jwt
 import pydgraph
 from chalice import Chalice, Response, CORSConfig
 
-from grapl_analyzerlib.nodes.any_node import NodeView, raw_node_from_node_key
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView
+from grapl_analyzerlib.nodes.base import BaseView, BaseQuery
+from grapl_analyzerlib.nodes.entity import EntityQuery
+from grapl_analyzerlib.nodes.lens import LensQuery
 from pydgraph import DgraphClient
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
@@ -43,9 +44,9 @@ if IS_LOCAL:
                 endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
             )
 
-            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
-                "SecretString"
-            ]
+            JWT_SECRET = secretsmanager.get_secret_value(
+                SecretId="JWT_SECRET_ID",
+            )["SecretString"]
             break
         except Exception as e:
             LOGGER.debug(e)
@@ -55,9 +56,9 @@ else:
 
     secretsmanager = boto3.client("secretsmanager")
 
-    JWT_SECRET = secretsmanager.get_secret_value(SecretId=JWT_SECRET_ID,)[
-        "SecretString"
-    ]
+    JWT_SECRET = secretsmanager.get_secret_value(
+        SecretId=JWT_SECRET_ID,
+    )["SecretString"]
 
 ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
@@ -221,7 +222,7 @@ def get_lens_risks(dg_client: DgraphClient, lens: str) -> List[Dict[str, Any]]:
 
 
 def expand_forward_edges_in_scope(
-    dgraph_client: DgraphClient, node: NodeView, lens: str
+    dgraph_client: DgraphClient, node: BaseView, lens: str
 ) -> None:
     for edge_name, edge_type in node._get_forward_edge_types().items():
 
@@ -257,113 +258,34 @@ def expand_forward_edges_in_scope(
                         setattr(node, edge_name, node_edge)
 
 
-def expand_reverse_edges_in_scope(
-    dgraph_client: DgraphClient, node: NodeView, lens: str
-) -> None:
-    for edge_name, (edge_type, forward_name) in node._get_reverse_edge_types().items():
-
-        if isinstance(edge_type, list):
-            inner_edge_type = edge_type[0]
-        else:
-            inner_edge_type = edge_type
-        edges_in_lens = edge_in_lens(dgraph_client, node.uid, edge_name, lens)
-        for edge in edges_in_lens:
-            for neighbors in edge.values():
-
-                if not isinstance(neighbors, list):
-                    neighbors = [neighbors]
-
-                for neighbor in neighbors:
-                    if neighbor.get("~scope"):
-                        neighbor.pop("~scope")
-                    neighbor_view = inner_edge_type(
-                        dgraph_client,
-                        node_key=neighbor["node_key"],
-                        uid=neighbor["uid"],
-                    )
-
-                    node_edge = getattr(node, forward_name)
-
-                    if isinstance(node_edge, list):
-                        node_edge.append(neighbor_view)
-                    else:
-                        node_edge = neighbor_view
-                        setattr(node, forward_name, node_edge)
-
-
-def expand_concrete_nodes(
-    dgraph_client: DgraphClient, lens_name: str, concrete_nodes: List[NodeView]
-) -> None:
-    for node in concrete_nodes:
-        expand_forward_edges_in_scope(dgraph_client, node, lens_name)
-        expand_reverse_edges_in_scope(dgraph_client, node, lens_name)
-
-    for node in concrete_nodes:
-        for prop_name, prop_type in node._get_property_types().items():
-            setattr(node, prop_name, node.fetch_property(prop_name, prop_type))
-
-
-def expand_node_forward(
-    dgraph_client: DgraphClient, node_key: str
-) -> Optional[Dict[str, Any]]:
-    query = """
-        query res($node_key: string)
-        {
-
-            res(func: eq(node_key, $node_key))
-            {
-                uid,
-                expand(_all_) {
+def edge_in_lens(
+    dg_client: DgraphClient, node_uid: str, edge_name: str, lens_name: str
+) -> List[Dict[str, Any]]:
+    query = f"""
+        query q0($node_uid: string, $lens_name: string)
+        {{
+            q0(func: uid($node_uid)) @cascade {{
+                {edge_name} {{
                     uid,
-                    expand(_all_),
-                    node_type: dgraph.type
-                }
-                node_type: dgraph.type
-            }
-
-        }
+                    node_key,
+                    node_type: dgraph.type,
+                    ~scope @filter(eq(lens, $lens_name)) {{
+                        uid,
+                        node_type: dgraph.type,
+                    }}
+                }}
+            }}
+        }}
     """
 
-    txn = dgraph_client.txn(read_only=True)
-    variables = {"$node_key": node_key}
+    txn = dg_client.txn(read_only=True)
+
     try:
+        variables = {"$node_uid": node_uid, "$lens_name": lens_name}
         res = json.loads(txn.query(query, variables=variables).json)
+        return res["q0"]
     finally:
         txn.discard()
-    return res["res"][0]
-
-
-def expand_dynamic_node(dynamic_node: DynamicNodeView) -> Dict[str, Any]:
-    node = raw_node_from_node_key(dynamic_node.dgraph_client, dynamic_node.node_key)
-    edges = []
-    expanded_node = expand_node_forward(
-        dynamic_node.dgraph_client, dynamic_node.node_key
-    )
-    assert expanded_node, "expanded_node"
-    for prop, val in expanded_node.items():
-        if prop == "node_type" or prop == "dgraph.type" or prop == "risks":
-            continue
-
-        if isinstance(val, list):
-            if val and isinstance(val[0], dict):
-                for edge in val:
-                    edges.append(
-                        {
-                            "from": dynamic_node.node_key,
-                            "edge_name": prop,
-                            "to": edge["node_key"],
-                        }
-                    )
-        if isinstance(val, dict):
-            edges.append(
-                {
-                    "from": dynamic_node.node_key,
-                    "edge_name": prop,
-                    "to": val["node_key"],
-                }
-            )
-
-    return {"node": node, "edges": edges}
 
 
 def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, Any]]:
@@ -374,21 +296,20 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
     nodes = []
     for graph in current_graph["scope"]:
         try:
-            nodes.append(NodeView.from_dict(dgraph_client, graph))
+            nodes.append(BaseView.from_dict(dgraph_client, graph))
         except Exception as e:
             LOGGER.error("Failed to get NodeView from dict", e)
     if current_graph.get("scope"):
         current_graph.pop("scope")
 
-    concrete_nodes = [n.node for n in nodes if not isinstance(n.node, DynamicNodeView)]
-    dynamic_nodes = [n.node for n in nodes if isinstance(n.node, DynamicNodeView)]
-
-    expanded_dynamic_nodes = []
-    for dynamic_node in dynamic_nodes:
-        expanded = expand_dynamic_node(dynamic_node)
-        expanded_dynamic_nodes.append(expanded)
-
-    expand_concrete_nodes(dgraph_client, lens_name, concrete_nodes)
+    for node in nodes:
+        node.expand()
+        node.get_neighbor(
+            EntityQuery,
+            "expand(_all_)",
+            "",
+            EntityQuery().with_lenses(LensQuery().with_lens_name(eq=lens_name)),
+        )
 
     results = [{"node": current_graph, "edges": []}]
 
@@ -411,7 +332,10 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
                 LOGGER.error(f"risk edge failed: {risk} {e}")
 
         results.append(
-            {"node": node, "edges": edges,}
+            {
+                "node": node,
+                "edges": edges,
+            }
         )
 
     results.extend([n.to_dict() for n in concrete_nodes])
@@ -477,7 +401,11 @@ def respond(err, res=None, headers=None):
 
 def get_salt_and_pw(table, username):
     LOGGER.info(f"Getting salt for user: {username}")
-    response = table.get_item(Key={"username": username,})
+    response = table.get_item(
+        Key={
+            "username": username,
+        }
+    )
 
     if not response.get("Item"):
         return None, None
@@ -579,7 +507,8 @@ def lambda_login(event):
 
 
 cors_config = CORSConfig(
-    allow_origin=ORIGIN_OVERRIDE or ORIGIN, allow_credentials="true",
+    allow_origin=ORIGIN_OVERRIDE or ORIGIN,
+    allow_credentials="true",
 )
 
 

@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::io::Cursor;
 use std::ops::Deref;
 use std::str::FromStr;
-
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
@@ -764,6 +764,10 @@ where
             ])))
         };
 
+        identities
+            .into_iter()
+            .for_each(|identity| completed.add_identity(identity));
+
         completed
     }
 }
@@ -1069,30 +1073,34 @@ pub fn init_dynamodb_client() -> DynamoDbClient {
 }
 
 #[derive(Clone, Default)]
-pub struct LocalCache {
-    inner_map: HashSet<Vec<u8>>,
+struct HashCache {
+    cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
 }
 
 #[async_trait]
-impl Cache for LocalCache {
+impl sqs_lambda::cache::Cache for HashCache {
     async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
     ) -> Result<CacheResponse, sqs_lambda::error::Error> {
-        match self.inner_map.contains(&cacheable.identity()) {
-            true => Ok(CacheResponse::Hit),
-            false => Ok(CacheResponse::Miss),
+        let self_cache = self.cache.lock().unwrap();
+
+        let id = cacheable.identity();
+        if self_cache.contains(&id) {
+            Ok(CacheResponse::Hit)
+        } else {
+            Ok(CacheResponse::Miss)
         }
     }
-
     async fn store(&mut self, identity: Vec<u8>) -> Result<(), sqs_lambda::error::Error> {
-        self.inner_map.insert(identity);
+        let mut self_cache = self.cache.lock().unwrap();
+        self_cache.insert(identity);
         Ok(())
     }
 }
 
 pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let cache = LocalCache::default();
+    let cache = HashCache::default();
 
     info!("region");
     let region = Region::Custom {
@@ -1161,7 +1169,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
             proto: Vec::with_capacity(1024),
         },
         node_identifier,
-        LocalCache::default(),
+        cache.clone(),
         |_, event_result| {
             dbg!(event_result);
         },

@@ -5,13 +5,20 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple, Sequence, Optional
+from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar
 
 import boto3
+import botocore.exceptions  # type: ignore
 import botocore.exceptions
-from grapl_analyzerlib.nodes.lens_node import LensView
-from grapl_analyzerlib.prelude import NodeView
-from pydgraph import DgraphClient, DgraphClientStub
+from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
+from grapl_analyzerlib.nodes.lens import LensView
+from grapl_analyzerlib.prelude import BaseView
+from grapl_analyzerlib.prelude import RiskView
+from grapl_analyzerlib.viewable import Viewable
+from grapl_analyzerlib.queryable import Queryable
+from mypy_boto3_s3 import S3ServiceResource
+from mypy_boto3_sqs import SQSClient
+from typing_extensions import Type
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -28,20 +35,21 @@ S3Event = Dict[str, Any]
 
 EventWithReceiptHandle = Tuple[S3Event, str]
 
+V = TypeVar("V", bound=Viewable)
+Q = TypeVar("Q", bound=Queryable)
 
-def parse_s3_event(s3, event) -> str:
+
+def parse_s3_event(s3: S3ServiceResource, event) -> bytes:
     # Retrieve body of sns message
     # Decode json body of sns message
     LOGGER.debug("event is {}".format(event))
-    # msg = json.loads(event["body"])["Message"]
-    # msg = json.loads(msg)
 
     bucket = event["s3"]["bucket"]["name"]
     key = event["s3"]["object"]["key"]
     return download_s3_file(s3, bucket, key)
 
 
-def download_s3_file(s3, bucket: str, key: str) -> str:
+def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
     key = key.replace("%3D", "=")
     LOGGER.info("Downloading s3 file from: {} {}".format(bucket, key))
     obj = s3.Object(bucket, key)
@@ -49,7 +57,7 @@ def download_s3_file(s3, bucket: str, key: str) -> str:
 
 
 def create_edge(
-    client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
+    client: GraphClient, from_uid: str, edge_name: str, to_uid: str
 ) -> None:
     if edge_name[0] == "~":
         mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
@@ -65,80 +73,36 @@ def create_edge(
         txn.discard()
 
 
-def attach_risk(
-    client: DgraphClient,
-    node_key: str,
-    node_uid: str,
-    analyzer_name: str,
-    risk_score: int,
-) -> None:
+def recalculate_score(lens: LensView) -> int:
+    scope = lens.get_scope()
+    key_to_analyzers = defaultdict(set)
+    node_risk_scores = defaultdict(int)
+    total_risk_score = 0
+    for node in scope:
+        node_risks = node.get_risks()
+        risks_by_analyzer = {}
+        for risk in node_risks:
+            risk_score = risk.get_risk_score()
+            analyzer_name = risk.get_analyzer_name()
+            print(node.node_key, analyzer_name, risk_score)
+            risks_by_analyzer[analyzer_name] = risk_score
+            key_to_analyzers[node.node_key].add(analyzer_name)
 
-    risk_node = {
-        "node_key": node_key + analyzer_name,
-        "analyzer_name": analyzer_name,
-        "risk_score": risk_score,
-        "dgraph.type": "Risk",
-    }
+        analyzer_risk_sum = sum([a for a in risks_by_analyzer.values() if a])
+        node_risk_scores[node.node_key] = analyzer_risk_sum
+        total_risk_score += analyzer_risk_sum
 
-    risk_node_uid = upsert(client, risk_node)
-
-    create_edge(client, node_uid, "risks", risk_node_uid)
-
-
-def recalculate_score(client: DgraphClient, lens: LensView) -> int:
-    query = """
-        query q0($a: string)
-        {
-          q0(func: eq(lens, $a), first: 1) @cascade
-          {
-            uid,
-            scope {
-                node_key,
-                risks {
-                    analyzer_name,
-                    risk_score
-                }
-            }
-          }
-        }
-        """
-
-    variables = {
-        "$a": lens.lens,
-    }
-    txn = client.txn(read_only=False)
-    risk_score = 0
-    try:
-        res = json.loads(txn.query(query, variables=variables).json)["q0"]
-
-        redundant_risks = set()
-        risk_map = defaultdict(list)
-        if not res:
-            LOGGER.warning("Received an empty response for risk query")
-            return 0
-        for root_node in res[0]["scope"]:
-            for risk in root_node["risks"]:
-                if risk["analyzer_name"] in redundant_risks:
-                    continue
-                redundant_risks.add(risk["analyzer_name"])
-                risk_map[risk["analyzer_name"]].append(risk)
-
-        for risks in risk_map.values():
-            node_risk = 0
-            for risk in risks:
-                node_risk += risk["risk_score"]
-            risk_multiplier = 0.10 * ((len(risks) or 1) - 1)
-            node_risk = node_risk + (node_risk * risk_multiplier)
-            risk_score += node_risk
-
-        set_score(client, lens.uid, risk_score, txn=txn)
-    finally:
-        txn.discard()
-
-    return risk_score
+    # Bonus is calculated by finding nodes with multiple analyzers
+    for key, analyzers in key_to_analyzers.items():
+        if len(analyzers) <= 1:
+            continue
+        overlapping_analyzer_count = len(analyzers)
+        bonus = node_risk_scores[key] * 2 * (overlapping_analyzer_count // 100)
+        total_risk_score += bonus
+    return total_risk_score
 
 
-def set_score(client: DgraphClient, uid: str, new_score: int, txn=None) -> None:
+def set_score(client: GraphClient, uid: str, new_score: int, txn=None) -> None:
     if not txn:
         txn = client.txn(read_only=False)
 
@@ -150,7 +114,7 @@ def set_score(client: DgraphClient, uid: str, new_score: int, txn=None) -> None:
         txn.discard()
 
 
-def set_property(client: DgraphClient, uid: str, prop_name: str, prop_value):
+def set_property(client: GraphClient, uid: str, prop_name: str, prop_value):
     LOGGER.debug(f"Setting property {prop_name} as {prop_value} for {uid}")
     txn = client.txn(read_only=False)
 
@@ -162,17 +126,15 @@ def set_property(client: DgraphClient, uid: str, prop_name: str, prop_value):
         txn.discard()
 
 
-def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
-    if node_dict.get("uid"):
-        node_dict.pop("uid")
+def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
-    LOGGER.info(f"Upserting node: {node_dict}")
     query = f"""
         {{
-            q0(func: eq(node_key, "{node_key}")) {{
+            q0(func: eq(node_key, "{node_key}"), first: 1) {{
                     uid,
-                    dgraph.type,
+                    dgraph.type
+                    expand(_all_)
             }}
         }}
         """
@@ -180,31 +142,47 @@ def upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
 
     try:
         res = json.loads(txn.query(query).json)["q0"]
-
+        new_uid = None
         if res:
             node_dict["uid"] = res[0]["uid"]
-            node_dict = {**node_dict, **res[0]}
+            new_uid = res[0]["uid"]
 
         mutation = node_dict
 
         mut_res = txn.mutate(set_obj=mutation, commit_now=True)
         new_uid = node_dict.get("uid") or mut_res.uids["blank-0"]
-        return new_uid
-
+        return cast(str, new_uid)
     finally:
         txn.discard()
 
 
-def get_s3_client():
+def upsert(
+    client: GraphClient,
+    type_name: str,
+    view_type: Type[Viewable[V, Q]],
+    node_key: str,
+    node_props: Dict[str, Any],
+) -> Viewable[V, Q]:
+    node_props["node_key"] = node_key
+    node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
+    uid = _upsert(client, node_props)
+    node_props["uid"] = uid
+    return view_type.from_dict(node_props, client)
+
+
+def get_s3_client() -> S3ServiceResource:
     if IS_LOCAL:
-        return boto3.resource(
-            "s3",
-            endpoint_url="http://s3:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
+        return cast(
+            S3ServiceResource,
+            boto3.resource(
+                "s3",
+                endpoint_url="http://s3:9000",
+                aws_access_key_id="minioadmin",
+                aws_secret_access_key="minioadmin",
+            ),
         )
     else:
-        return boto3.resource("s3")
+        return cast(S3ServiceResource, boto3.resource("s3"))
 
 
 def mg_alphas() -> Iterator[Tuple[str, int]]:
@@ -215,8 +193,9 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 
 def nodes_to_attach_risk_to(
-    nodes: Sequence[NodeView], risky_node_keys: Optional[Sequence[str]],
-) -> Sequence[NodeView]:
+    nodes: Sequence[BaseView],
+    risky_node_keys: Optional[Sequence[str]],
+) -> Sequence[BaseView]:
     """
     a None risky_node_keys means 'mark all as risky'
     a [] risky_node_keys means 'mark none as risky'.
@@ -228,8 +207,7 @@ def nodes_to_attach_risk_to(
 
 
 def lambda_handler(s3_event: S3Event, context: Any) -> None:
-    mg_client_stubs = (DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
-    mg_client = DgraphClient(*mg_client_stubs)
+    mg_client = MasterGraphClient()
 
     s3 = get_s3_client()
     for event in s3_event["Records"]:
@@ -255,9 +233,10 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
             f"AnalyzerName {analyzer_name}, nodes: {nodes_raw} edges: {type(edges)} {edges}"
         )
 
-        nodes = [
-            NodeView.from_node_key(mg_client, n["node_key"]) for n in nodes_raw.values()
-        ]
+        _nodes = (
+            BaseView.from_node_key(mg_client, n["node_key"]) for n in nodes_raw.values()
+        )
+        nodes = [n for n in _nodes if n]
 
         uid_map = {node.node_key: node.uid for node in nodes}
 
@@ -284,11 +263,21 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
                         create_edge(mg_client, lens.uid, "scope", from_uid)
                         create_edge(mg_client, lens.uid, "scope", to_uid)
 
+        risk = upsert(
+            mg_client,
+            "Risk",
+            RiskView,
+            analyzer_name,
+            {
+                "analyzer_name": analyzer_name,
+                "risk_score": risk_score,
+            },
+        )
+
         risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_keys)
         for node in risky_nodes:
-            attach_risk(
-                mg_client, node.node.node_key, node.uid, analyzer_name, risk_score
-            )
+            create_edge(mg_client, node.uid, "risks", risk.uid)
+            create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
 
         for edge_list in edges.values():
             for edge in edge_list:
@@ -299,11 +288,11 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
                 create_edge(mg_client, from_uid, edge_name, to_uid)
 
         for lens in lenses.values():
-            recalculate_score(mg_client, lens)
+            recalculate_score(lens)
 
 
 def main():
-    sqs = boto3.client(
+    sqs: SQSClient = boto3.client(
         "sqs",
         region_name="us-east-1",
         endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",

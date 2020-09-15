@@ -4,16 +4,21 @@ from typing import NewType, Dict, cast
 import hypothesis.strategies as st
 from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.asset_node import AssetView
-from grapl_analyzerlib.nodes.types import Property
+from grapl_analyzerlib.nodes.asset import AssetView
+from grapl_analyzerlib.node_types import PropType
 from test_utils.dgraph_utils import node_key_for_test, upsert
 
-AssetProps = NewType("AssetProps", Dict[str, Property])
+AssetProps = NewType("AssetProps", Dict[str, PropType])
 
 
 def asset_props() -> st.SearchStrategy[AssetProps]:
     return st.builds(
-        AssetProps, st.builds(dict, node_key=st.uuids(), hostname=st.text(),)
+        AssetProps,
+        st.builds(
+            dict,
+            node_key=st.uuids(),
+            hostname=st.text(),
+        ),
     )
 
 

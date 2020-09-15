@@ -30,7 +30,6 @@ from analyzer_deployer.app import (
 
 UUID_REGEX = r"[a-f0-9]{8}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{12}"
 
-
 def _analyzers_table() -> dynamodb.ServiceResource.Table:
     dynamodb_client = boto3.resource(
         "dynamodb",
@@ -43,7 +42,14 @@ def _analyzers_table() -> dynamodb.ServiceResource.Table:
 
 
 def _port_configs() -> st.SearchStrategy[PortConfig]:
-    return st.builds(PortConfig, **{"protocol": st.text(), "port": st.integers()})
+    return st.builds(
+        PortConfig,
+        st.builds(
+            dict,
+            protocol=st.text(),
+            port=st.integers(),
+        ),
+    )
 
 
 def _table_configs():

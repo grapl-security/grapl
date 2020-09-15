@@ -413,9 +413,7 @@ def _get_analyzers_page(
     limit: int,
     start: str = None,
 ) -> ListAnalyzersResponse:
-    key_condition_expression = (
-        "partition_key = :partition_key_val AND begins_with (sort_key, :partition_key_val)"
-    )
+    key_condition_expression = "partition_key = :partition_key_val AND begins_with (sort_key, :partition_key_val)"
     expression_attribute_values = {
         ":partition_key_val": ANALYZER_PARTITION,
     }
@@ -433,7 +431,7 @@ def _get_analyzers_page(
     if start is not None:
         query_kwargs["ExclusiveStartKey"] = {
             "partition_key": ANALYZER_PARTITION,
-            "sort_key": start
+            "sort_key": start,
         }
 
     if filter_expression is not None:
@@ -445,7 +443,9 @@ def _get_analyzers_page(
     result: dynamodb.type_defs.QueryOutputTypeDef = analyzers_table.query(
         **query_kwargs
     )
-    next_page = result["LastEvaluatedKey"]["sort_key"] if "LastEvaluatedKey" in result else None
+    next_page = (
+        result["LastEvaluatedKey"]["sort_key"] if "LastEvaluatedKey" in result else None
+    )
 
     return ListAnalyzersResponse(
         limit,
