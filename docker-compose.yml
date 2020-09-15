@@ -5,7 +5,7 @@ services:
   # Infrastructure dependencies
   #
 
-  grapl-master-graph-db:
+  graphdb:
     tty: false
     image: dgraph/standalone:v1.2.2
     ports:
@@ -34,8 +34,8 @@ services:
     ports:
       - "4568:4568"
       - "8099:8099"
-    # logging:
-    #   driver: none
+    logging:
+      driver: none
 
 
   s3:
@@ -108,6 +108,7 @@ services:
       - dynamodb
       - sqs
       - grapl-dynamodb-provision
+      - grapl-graph-provision
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -138,9 +139,10 @@ services:
       - minio:127.0.0.1
     depends_on:
       - s3
-      - dynamodb
       - sqs
+      - dynamodb
       - grapl-dynamodb-provision
+      - grapl-graph-provision
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -156,7 +158,7 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
@@ -165,7 +167,7 @@ services:
       - s3
       - sqs
       - grapl-graph-provision
-      - grapl-master-graph-db
+      - graphdb
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -187,6 +189,7 @@ services:
     depends_on:
       - s3
       - sqs
+      - grapl-graph-provision
 
   #
   # Python services
@@ -197,17 +200,25 @@ services:
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8125'
     environment:
       - "IS_LOCAL=True"
+      - "ANALYZERS_TABLE=local-grapl-analyzers_table"
       - GRPC_ENABLE_FORK_SUPPORT=1
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
+      - dynamodb:dynamodb
     tty: true
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+      - dynamodb
+      - grapl-dynamodb-provision
+      - grapl-graph-provision
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
@@ -223,12 +234,17 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
     tty: true
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+      - graphdb
+      - grapl-graph-provision
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
@@ -242,11 +258,15 @@ services:
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+      - grapl-graph-provision
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
@@ -262,8 +282,14 @@ services:
 
     tty: true
     links:
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
+    depends_on:
+      - dynamodb
+      - s3
+      - secretsmanager
+      - grapl-dynamodb-provision
+      - grapl-graph-provision
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -280,11 +306,17 @@ services:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+      - secretsmanager
+      - graphdb
+      - grapl-graph-provision
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -299,9 +331,12 @@ services:
       - GRAPL_TTL_DELETE_BATCH_SIZE=${GRAPL_TTL_DELETE_BATCH_SIZE:-10}
     tty: true
     links:
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
     extra_hosts:
       - amazonaws:127.0.0.1
+    depends_on:
+      - graphdb
+      - grapl-graph-provision
 
   #
   # JS/web services
@@ -323,17 +358,24 @@ services:
       - PORT=5000
       - JWT_SECRET_ID=JWT_SECRET_ID
     links:
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     ports:
       - 5000:5000
+    depends_on:
+      - graphdb
+      - secretsmanager
+      - grapl-graph-provision
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
     links:
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
     ports:
       - 8888:8888
+    depends_on:
+      - graphdb
+      - grapl-graph-provision
 
   #
   # Utility services
@@ -349,7 +391,7 @@ services:
       - ./etc/local_grapl/:/var/run/target/
     tty: true
     links:
-      - grapl-master-graph-db:master_graph
+      - graphdb:master_graph
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
@@ -359,13 +401,16 @@ services:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
     depends_on:
-      - grapl-master-graph-db
+      - graphdb
       - s3
       - sqs
+      - secretsmanager
+      - dynamodb
+      - grapl-dynamodb-provision
 
   grapl-dynamodb-provision:
     image: grapl/grapl-dynamodb-provision:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python /var/run/target/provision_local_identity_table.py'
+    command: /bin/sh -c '. venv/bin/activate && python /var/run/target/provision_local_dynamodb.py'
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
     volumes:

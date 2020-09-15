@@ -1,9 +1,8 @@
+#![type_length_limit = "1334469"]
+
 use std::fmt::Debug;
 use std::io::Cursor;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use aws_lambda_events::event::sqs::SqsEvent;
-use regex::Regex;
 use serde::de::Error as SerdeError;
 use serde::{Deserialize, Serialize};
 use sqs_lambda::cache::{Cache, CacheResponse, NopCache};
@@ -21,8 +20,6 @@ use graph_descriptions::process_inbound_connection::ProcessInboundConnectionStat
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use graph_generator_lib::{run_graph_generator_aws, run_graph_generator_local};
 use grapl_config::event_cache;
-use lazy_static::lazy_static;
-use tracing_subscriber::EnvFilter;
 
 #[derive(Clone, Debug, Hash)]
 pub enum GenericEvent {

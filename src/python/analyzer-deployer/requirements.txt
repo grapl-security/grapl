@@ -4,3 +4,4 @@ chalice==1.18.0
 hypothesis
 pytest
 pytest-xdist
+grapl_common

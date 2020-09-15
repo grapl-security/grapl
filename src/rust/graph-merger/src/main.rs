@@ -1,9 +1,10 @@
+#![type_length_limit = "1334469"]
+
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::Cursor;
 use std::iter::FromIterator;
 use std::sync::Arc;
-use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
@@ -31,9 +32,9 @@ use log::{debug, error, info, warn};
 use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use rusoto_core::{HttpClient, Region, RusotoError};
-use rusoto_s3::{S3Client, S3};
-use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
+use rusoto_core::{HttpClient, Region};
+use rusoto_s3::S3Client;
+use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use sqs_lambda::cache::{Cache, NopCache};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
@@ -44,7 +45,6 @@ use sqs_lambda::redis_cache::RedisCache;
 use serde_json::{json, Value};
 
 use std::str::FromStr;
-use tokio::runtime::Runtime;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{

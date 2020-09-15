@@ -1,3 +1,4 @@
+#![type_length_limit = "1334469"]
 #![recursion_limit = "128"]
 extern crate proc_macro;
 

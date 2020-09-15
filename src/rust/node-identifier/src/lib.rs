@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::io::Cursor;
 use std::ops::Deref;
 use std::str::FromStr;
-use std::sync::Arc;
+
 use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;

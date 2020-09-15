@@ -1,45 +1,19 @@
-use std::collections::HashSet;
+#![type_length_limit = "1334469"]
+
 use std::fmt::Debug;
 use std::io::Cursor;
-use std::marker::PhantomData;
-use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::prelude::*;
 use failure::bail;
 use failure::Error;
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use rusoto_core::credential::AwsCredentials;
-use rusoto_core::{HttpClient, Region, RusotoError};
-use rusoto_s3::GetObjectRequest;
-use rusoto_s3::{S3Client, S3};
-use rusoto_sqs::GetQueueUrlRequest;
-use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
-use serde::Deserialize;
+
 use sqs_lambda::cache::Cache;
 use sqs_lambda::cache::{CacheResponse, NopCache};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::event_processor::{EventProcessor, EventProcessorActor};
-use sqs_lambda::event_retriever::S3PayloadRetriever;
-use sqs_lambda::local_sqs_service::local_sqs_service;
-use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::s3_event_emitter::S3EventEmitter;
-use sqs_lambda::sqs_completion_handler::{
-    CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor,
-};
-use sqs_lambda::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
-use sqs_lambda::sqs_service::sqs_service;
+
+use sqs_lambda::event_decoder::PayloadDecoder;
+
 use sysmon::*;
-use tokio::runtime::Runtime;
-use uuid::Uuid;
 
 use async_trait::async_trait;
 use graph_descriptions::file::FileState;
@@ -48,7 +22,6 @@ use graph_descriptions::network_connection::NetworkConnectionState;
 use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use lazy_static::lazy_static;
 
 use graph_generator_lib::*;
 

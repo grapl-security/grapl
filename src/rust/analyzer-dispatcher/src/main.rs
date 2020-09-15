@@ -1,3 +1,5 @@
+#![type_length_limit = "1334469"]
+
 use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
@@ -14,9 +16,9 @@ use lambda_runtime::lambda;
 use lambda_runtime::Context;
 use log::{debug, error, info, warn};
 use prost::Message;
-use rusoto_core::{HttpClient, Region, RusotoError};
+use rusoto_core::{HttpClient, Region};
 use rusoto_s3::{ListObjectsRequest, S3Client, S3};
-use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
+use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -32,7 +34,6 @@ use aws_lambda_events::event::s3::{
 use chrono::Utc;
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use std::str::FromStr;
-use tokio::runtime::Runtime;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
