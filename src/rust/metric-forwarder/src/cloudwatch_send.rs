@@ -2,6 +2,7 @@ use crate::cloudwatch_logs_parse::Stat;
 use crate::error::MetricForwarderError;
 use async_trait::async_trait;
 use futures::future;
+use log::info;
 use log::warn;
 use rayon::prelude::*;
 use rusoto_cloudwatch::PutMetricDataError;
@@ -58,6 +59,12 @@ pub async fn put_metric_data(
     // TODO: retries
 
     // bubble up 1 of N failures
+    let num_failures = responses.iter().filter(|resp| resp.is_err()).count();
+    info!(
+        "Sent {} batch-requests to Cloudwatch, of which {} failed",
+        responses.len(),
+        num_failures
+    );
     let first_failure = responses.iter().filter(|resp| resp.is_err()).next();
     match first_failure {
         Some(Err(e)) => Err(MetricForwarderError::PutMetricDataError(e.to_string())),

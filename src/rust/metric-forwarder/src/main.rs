@@ -53,6 +53,7 @@ async fn handler_async(event: CloudwatchLogsEvent) -> Result<(), MetricForwarder
             // Now we have the actual logs.
             let parsed_stats = parse_logs(logs);
             let cloudwatch_metric_data = statsd_as_cloudwatch_metric_bulk(parsed_stats);
+            info!("Received {} incoming metrics", cloudwatch_metric_data.len());
 
             // then forward them to CloudWatch in chunks of 20:
             let put_result = put_metric_data(&cw_client, &cloudwatch_metric_data);

@@ -19,6 +19,7 @@ impl SysmonSubgraphGeneratorMetrics {
                 "sysmon-generator-completion",
                 1.0,
                 &[TagPair(common_strs::STATUS, reported_status)],
-            ).unwrap_or_else(|e| warn!("Metric failed: {}", e))
+            )
+            .unwrap_or_else(|e| warn!("Metric failed: {}", e))
     }
 }

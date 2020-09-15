@@ -169,6 +169,7 @@ class MetricForwarder extends cdk.NestedStack {
         const service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
+                GRAPL_LOG_LEVEL: 'INFO',
             },
             vpc: props.vpc,
             version: props.version,
