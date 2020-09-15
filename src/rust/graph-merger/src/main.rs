@@ -37,13 +37,14 @@ use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
 
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use std::str::FromStr;
 
 use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use graph_descriptions::node::NodeT;
-use rusoto_dynamodb::{AttributeValue, DynamoDbClient, GetItemInput};
+use rusoto_dynamodb::{AttributeValue, DynamoDb, DynamoDbClient, GetItemInput};
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
