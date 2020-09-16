@@ -83,7 +83,6 @@ class BaseSchema(Schema):
             uid_t = "uid"
             if edge_t.is_from_many():
                 uid_t = f"[{uid_t}]"
-
             predicates.append(f"{edge_name}: {uid_t} .")
 
         return "\n".join(predicates)
