@@ -408,8 +408,6 @@ if __name__ == "__main__":
             if i > 10:
                 LOGGER.error("mg provision failed with: ", e)
 
-    sqs_t.join(timeout=300)
-    s3_t.join(timeout=300)
 
     for i in range(0, 150):
         try:
@@ -440,5 +438,8 @@ if __name__ == "__main__":
             if i >= 50:
                 LOGGER.error(e)
             time.sleep(1)
+
+    sqs_t.join(timeout=300)
+    s3_t.join(timeout=300)
 
     print("Completed provisioning")
