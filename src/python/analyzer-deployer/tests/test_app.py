@@ -30,7 +30,8 @@ from analyzer_deployer.app import (
 
 UUID_REGEX = r"[a-f0-9]{8}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{12}"
 
-def _analyzers_table() -> dynamodb.ServiceResource.Table:
+
+def _random_analyzers_table() -> dynamodb.ServiceResource.Table:
     dynamodb_client = boto3.resource(
         "dynamodb",
         region_name="us-west-2",
@@ -38,7 +39,7 @@ def _analyzers_table() -> dynamodb.ServiceResource.Table:
         aws_access_key_id="dummy_cred_aws_access_key_id",
         aws_secret_access_key="dummy_cred_aws_secret_access_key",
     )
-    return dynamodb_client.Table(ANALYZERS_TABLE + str(uuid.uuid4())
+    return dynamodb_client.Table(ANALYZERS_TABLE + str(uuid.uuid4()))
 
 
 def _port_configs() -> st.SearchStrategy[PortConfig]:
@@ -294,11 +295,7 @@ class TestApp(unittest.TestCase):
 
     @pytest.mark.integration_test
     def test_list_analyzers(self):
-        analyzers_table: dynamodb.ServiceResource.Table = _analyzers_table()
-        for analyzer in analyzers_table.scan()["Items"]:
-            partition_key = analyzer["partition_key"]
-            sort_key = analyzer["sort_key"]
-            analyzers_table.delete_item(Key={"partition_key": partition_key, "sort_key": sort_key})
+        analyzers_table: dynamodb.ServiceResource.Table = _random_analyzers_table()
 
         with Client(app) as client:
             create_response_1: HTTPResponse = client.http.post("api/1/analyzers")
@@ -346,11 +343,14 @@ class TestApp(unittest.TestCase):
                 f"{ANALYZERS_BUCKET}/{create_analyzer_response_3.analyzer_id}/{create_analyzer_response_3.analyzer_version}/lambda.zip",
             )
 
-            analyzer_ids = sorted(i for i in [
-                create_analyzer_response_1.analyzer_id,
-                create_analyzer_response_2.analyzer_id,
-                create_analyzer_response_3.analyzer_id
-            ])
+            analyzer_ids = sorted(
+                i
+                for i in [
+                    create_analyzer_response_1.analyzer_id,
+                    create_analyzer_response_2.analyzer_id,
+                    create_analyzer_response_3.analyzer_id,
+                ]
+            )
 
             list_response_1: HTTPResponse = client.http.get("api/1/analyzers?limit=2")
             self.assertEqual(list_response_1.status_code, 200)
@@ -363,7 +363,7 @@ class TestApp(unittest.TestCase):
 
             self.assertListEqual(
                 [a.analyzer_id for a in list_analyzers_response_1.analyzers],
-                analyzer_ids[0:2]
+                analyzer_ids[0:2],
             )
 
             list_response_2: HTTPResponse = client.http.get(
