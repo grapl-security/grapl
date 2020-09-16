@@ -1,6 +1,7 @@
 use crate::metric_error::MetricError;
 use crate::statsd_formatter;
 use crate::statsd_formatter::{statsd_format, MetricType};
+use chrono::Utc;
 use std::fmt::Write;
 
 pub mod common_strs {
@@ -47,7 +48,9 @@ impl MetricReporter {
             sample_rate,
             tags,
         )?;
-        println!("MONITORING|{}", self.buffer);
+        // TODO: dependency-inject utcnow
+        let cur_time = Utc::now().to_rfc3339();
+        println!("MONITORING|{}|{}", cur_time, self.buffer);
         Ok(())
     }
 

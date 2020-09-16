@@ -1197,6 +1197,7 @@ dependencies = [
 name = "grapl-observe"
 version = "0.0.1"
 dependencies = [
+ "chrono",
  "lazy_static",
  "log 0.4.8",
  "regex",

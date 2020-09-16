@@ -10,8 +10,7 @@ pub struct Stat {
     pub timestamp: String,
 }
 
-const MONITORING_PREFIX: &'static str = "MONITORING|";
-const CLOUDWATCH_LOGS_DELIM: &'static str = "\t";
+const MONITORING_DELIM: &'static str = "|";
 
 pub fn parse_logs(logs_data: CloudwatchLogsData) -> Vec<Result<Stat, MetricForwarderError>> {
     /*
@@ -27,31 +26,22 @@ pub fn parse_logs(logs_data: CloudwatchLogsData) -> Vec<Result<Stat, MetricForwa
 
 fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
     /*
-    a typical CloudWatch Logs log message looks like this:
-        "2017-04-26T10:41:09.023Z\tdb95c6da-2a6c-11e7-9550-c91b65931beb\tmy log message\n"
-           <ts>                  \t         <dont care>                \t <log contents>\n
-    */
-    let split: Vec<&str> = log_str.splitn(3, CLOUDWATCH_LOGS_DELIM).collect();
+    The input will look like
+    MONITORING|timestamp|statsd|stuff|goes|here
+     */
+    let split: Vec<&str> = log_str.splitn(3, MONITORING_DELIM).collect();
     match &split[..] {
-        [timestamp, _, statsd_component] => {
-            let stat = parse_statsd_component(statsd_component).map(|statsd_message| Stat {
-                timestamp: timestamp.to_string(),
-                msg: statsd_message,
-            });
-            stat
+        [_monitoring, timestamp, statsd_component] => {
+            let statsd_msg = statsd_parser::parse(statsd_component.to_string());
+            statsd_msg
+                .map(|msg| Stat {
+                    timestamp: timestamp.to_string(),
+                    msg: msg,
+                })
+                .map_err(|parse_err| {
+                    MetricForwarderError::ParseStringToStatsdError(parse_err.to_string())
+                })
         }
-        _ => Err(MetricForwarderError::PoorlyFormattedLogLine(
-            log_str.to_string(),
-        )),
-    }
-}
-
-fn parse_statsd_component(log_str: &str) -> Result<statsd_parser::Message, MetricForwarderError> {
-    let stripped = log_str.strip_prefix(MONITORING_PREFIX);
-    match stripped {
-        Some(s) => statsd_parser::parse(s).map_err(|parse_err| {
-            MetricForwarderError::ParseStringToStatsdError(parse_err.to_string())
-        }),
         _ => Err(MetricForwarderError::PoorlyFormattedLogLine(
             log_str.to_string(),
         )),
@@ -61,7 +51,7 @@ fn parse_statsd_component(log_str: &str) -> Result<statsd_parser::Message, Metri
 #[cfg(test)]
 mod tests {
     use crate::cloudwatch_logs_parse::parse_log;
-    use crate::cloudwatch_logs_parse::CLOUDWATCH_LOGS_DELIM;
+    use crate::cloudwatch_logs_parse::MONITORING_DELIM;
     use crate::error::MetricForwarderError;
     use statsd_parser::Counter;
     use statsd_parser::Metric;
@@ -69,12 +59,12 @@ mod tests {
     #[test]
     fn test_parse_one_log() -> Result<(), MetricForwarderError> {
         let input = [
+            "MONITORING",
             "2017-04-26T10:41:09.023Z",
-            "db95c6da-2a6c-11e7-9550-c91b65931beb",
             // you'll note I threw a gross, extra \t in the metric name as an edge case
-            "MONITORING|some_\tstr:12345.6|c|#some_key=some_value,some_key_2=some_value_2\n",
+            "some_\tstr:12345.6|c|#some_key=some_value,some_key_2=some_value_2\n",
         ];
-        let input_joined = input.join(CLOUDWATCH_LOGS_DELIM);
+        let input_joined = input.join(MONITORING_DELIM);
         let parsed = parse_log(input_joined.as_str())?;
         assert_eq!(parsed.msg.name, "some_\tstr");
         assert_eq!(
@@ -90,7 +80,7 @@ mod tests {
     #[test]
     fn test_parse_but_doesnt_have_three_elements_joined_by_tab() -> Result<(), String> {
         let input = ["just two", "things separated by tab"];
-        let input_joined = input.join(CLOUDWATCH_LOGS_DELIM);
+        let input_joined = input.join(MONITORING_DELIM);
         let parsed = parse_log(input_joined.as_str());
         match parsed {
             Err(e) => {
@@ -105,34 +95,13 @@ mod tests {
     }
 
     #[test]
-    fn test_no_monitoring_prefix() -> Result<(), String> {
-        let input = [
-            "2017-04-26T10:41:09.023Z",
-            "db95c6da-2a6c-11e7-9550-c91b65931beb",
-            "some_str:12345.6|c|#some_key=some_value,some_key_2=some_value_2\n",
-        ];
-        let input_joined = input.join(CLOUDWATCH_LOGS_DELIM);
-        let parsed = parse_log(input_joined.as_str());
-        match parsed {
-            Err(e) => {
-                assert_eq!(
-                    e,
-                    MetricForwarderError::PoorlyFormattedLogLine(input[2].to_string())
-                );
-                Ok(())
-            }
-            Ok(_) => Err(String::from("we expected an err here")),
-        }
-    }
-
-    #[test]
     fn test_couldnt_parse_statsd() -> Result<(), String> {
         let input = [
+            "MONITORING",
             "2017-04-26T10:41:09.023Z",
-            "db95c6da-2a6c-11e7-9550-c91b65931beb",
-            "MONITORING|some_str:12345.6|fake_metric_type",
+            "some_str:12345.6|fake_metric_type",
         ];
-        let input_joined = input.join(CLOUDWATCH_LOGS_DELIM);
+        let input_joined = input.join(MONITORING_DELIM);
         let parsed = parse_log(input_joined.as_str());
         match parsed {
             Err(MetricForwarderError::ParseStringToStatsdError(e)) => {

@@ -7,6 +7,7 @@ then
 fi
 
 function getzip_a() {
+    echo "Zipping $1"
     cp "../../../dist/$1" ./bootstrap
     zip -9 "zips/$1-$VERSION.zip" ./bootstrap
     rm ./bootstrap
