@@ -408,7 +408,6 @@ if __name__ == "__main__":
             if i > 10:
                 LOGGER.error("mg provision failed with: ", e)
 
-
     for i in range(0, 150):
         try:
             client = boto3.client(
