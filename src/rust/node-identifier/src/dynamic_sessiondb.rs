@@ -145,7 +145,7 @@ where
             match prop_val {
                 Some(val) => primary_key.push_str(&val.to_string()),
                 None => bail!(format!(
-                    "Node is missing required propery {} for identity",
+                    "Node is missing required property {} for identity",
                     prop_name
                 )),
             }
@@ -184,7 +184,7 @@ where
             match prop_val {
                 Some(val) => primary_key.push_str(&val.to_string()),
                 None => bail!(format!(
-                    "Node is missing required propery {} for identity",
+                    "Node is missing required property {} for identity",
                     prop_name
                 )),
             }
