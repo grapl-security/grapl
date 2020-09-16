@@ -176,6 +176,15 @@ class MetricForwarder extends cdk.NestedStack {
             watchful: props.watchful,
             metric_forwarder: undefined,  // Otherwise, it'd be recursive!
         });
+
+        let policy = new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['cloudwatch:PutMetricData'],
+            resources: ['*'],
+        });
+
+        service.event_handler.addToRolePolicy(policy);
+        service.event_retry_handler.addToRolePolicy(policy);
     }
 }
 

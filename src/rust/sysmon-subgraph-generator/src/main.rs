@@ -645,6 +645,7 @@ where
         }
 
         info!("Completed mapping {} subgraphs", identities.len());
+        self.metrics.report_handle_event_success(&failed);
 
         let mut completed = if let Some(ref e) = failed {
             OutputEvent::new(Completion::Partial((
@@ -668,9 +669,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::init_grapl_log!();
     info!("Starting sysmon-subgraph-generator");
 
-    let metrics = SysmonSubgraphGeneratorMetrics {
+    let mut metrics = SysmonSubgraphGeneratorMetrics {
         metric_reporter: MetricReporter::new(),
     };
+
+    metrics.report_started();
 
     if grapl_config::is_local() {
         let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);

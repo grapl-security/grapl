@@ -106,7 +106,7 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
         Metric::Histogram(h) => (units::MILLIS, h.value, h.sample_rate),
         _ => panic!("How the heck did you get an unsupported metric type in here?"),
     };
-    MetricDatum {
+    let datum = MetricDatum {
         metric_name: stat.msg.name.to_string(),
         timestamp: stat.timestamp.to_string().into(),
         unit: unit.to_string().into(),
@@ -121,7 +121,8 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
         dimensions: None,
         statistic_values: None,
         storage_resolution: None,
-    }
+    };
+    datum
 }
 
 #[cfg(test)]

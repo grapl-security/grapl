@@ -22,4 +22,10 @@ impl SysmonSubgraphGeneratorMetrics {
             )
             .unwrap_or_else(|e| warn!("Metric failed: {}", e))
     }
+
+    pub fn report_started(&mut self) {
+        self.metric_reporter
+            .gauge("sysmon-generator-started", 1.0, &[])
+            .unwrap_or_else(|e| warn!("Metric failed: {}", e))
+    }
 }

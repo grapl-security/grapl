@@ -39,7 +39,10 @@ fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
                     msg: msg,
                 })
                 .map_err(|parse_err| {
-                    MetricForwarderError::ParseStringToStatsdError(parse_err.to_string())
+                    MetricForwarderError::ParseStringToStatsdError(
+                        parse_err.to_string(),
+                        log_str.to_string(),
+                    )
                 })
         }
         _ => Err(MetricForwarderError::PoorlyFormattedLogLine(
@@ -50,11 +53,24 @@ fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
 
 #[cfg(test)]
 mod tests {
+    use crate::cloudwatch_logs_parse::Stat;
     use crate::cloudwatch_logs_parse::parse_log;
     use crate::cloudwatch_logs_parse::MONITORING_DELIM;
     use crate::error::MetricForwarderError;
     use statsd_parser::Counter;
+    use statsd_parser::Gauge;
     use statsd_parser::Metric;
+
+    fn expect_metric(input: &[&str], expected: Metric) -> Result<Stat, MetricForwarderError> {
+        let input_joined = input.join(MONITORING_DELIM);
+        let parsed = parse_log(input_joined.as_str())?;
+        assert_eq!(parsed.msg.name, "some_\tstr");
+        assert_eq!(
+            parsed.msg.metric,
+            expected,
+        );
+        Ok(parsed)
+    }
 
     #[test]
     fn test_parse_one_log() -> Result<(), MetricForwarderError> {
@@ -64,16 +80,28 @@ mod tests {
             // you'll note I threw a gross, extra \t in the metric name as an edge case
             "some_\tstr:12345.6|c|#some_key=some_value,some_key_2=some_value_2\n",
         ];
-        let input_joined = input.join(MONITORING_DELIM);
-        let parsed = parse_log(input_joined.as_str())?;
+        let expected = Metric::Counter(Counter {
+            value: 12345.6,
+            sample_rate: None,
+        });
+        let parsed = expect_metric(&input, expected)?;
         assert_eq!(parsed.msg.name, "some_\tstr");
-        assert_eq!(
-            parsed.msg.metric,
-            Metric::Counter(Counter {
-                value: 12345.6,
-                sample_rate: None
-            })
-        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_gauge() -> Result<(), MetricForwarderError> {
+        let input = [
+            "MONITORING",
+            "2017-04-26T10:41:09.023Z",
+            "some_str:12345.6|g",
+        ];
+        let expected = Metric::Gauge(Gauge {
+            value: 12345.6,
+            sample_rate: None,
+        });
+        let parsed = expect_metric(&input, expected)?;
+        assert_eq!(parsed.msg.name, "some_\tstr");
         Ok(())
     }
 
@@ -104,7 +132,7 @@ mod tests {
         let input_joined = input.join(MONITORING_DELIM);
         let parsed = parse_log(input_joined.as_str());
         match parsed {
-            Err(MetricForwarderError::ParseStringToStatsdError(e)) => {
+            Err(MetricForwarderError::ParseStringToStatsdError(e, _)) => {
                 assert_eq!(e, statsd_parser::ParseError::UnknownMetricType.to_string());
                 Ok(())
             }
