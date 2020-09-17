@@ -53,8 +53,8 @@ fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::cloudwatch_logs_parse::Stat;
     use crate::cloudwatch_logs_parse::parse_log;
+    use crate::cloudwatch_logs_parse::Stat;
     use crate::cloudwatch_logs_parse::MONITORING_DELIM;
     use crate::error::MetricForwarderError;
     use statsd_parser::Counter;
@@ -64,10 +64,7 @@ mod tests {
     fn expect_metric(input: &[&str], expected: Metric) -> Result<Stat, MetricForwarderError> {
         let input_joined = input.join(MONITORING_DELIM);
         let parsed = parse_log(input_joined.as_str())?;
-        assert_eq!(
-            parsed.msg.metric,
-            expected,
-        );
+        assert_eq!(parsed.msg.metric, expected,);
         Ok(parsed)
     }
 
@@ -104,13 +101,12 @@ mod tests {
         Ok(())
     }
 
-
     #[test]
     fn test_trim_end() -> Result<(), MetricForwarderError> {
         let input = [
             "MONITORING",
             "2017-04-26T10:41:09.023Z",
-            "sysmon-generator-started:1|g\n"
+            "sysmon-generator-started:1|g\n",
         ];
         let expected = Metric::Gauge(Gauge {
             value: 1.0,

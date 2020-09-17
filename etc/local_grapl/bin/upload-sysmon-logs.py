@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Despite the path, this is *not* tied just to Local Grapl, and can also be used on prod S3 buckets.
+Despite the path, this is *not* tied just to Local Grapl, and can also be used on true S3 buckets.
 """
 
 import argparse
@@ -123,7 +123,7 @@ def main(prefix, logfile, delay, batch_size):
 def parse_args():
     parser = argparse.ArgumentParser(description="Send sysmon logs to Grapl")
     parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
-    parser.add_argument("--logfile", dest="logfile", required=True, help="ie ~/src/grapl/etc/sample_data/eventlog.xml")
+    parser.add_argument("--logfile", dest="logfile", required=True, help="ie $GRAPLROOT/etc/sample_data/eventlog.xml")
     parser.add_argument("--delay", dest="delay", default=0, type=int)
     parser.add_argument("--batch-size", dest="batch_size", default=100, type=int)
     return parser.parse_args()

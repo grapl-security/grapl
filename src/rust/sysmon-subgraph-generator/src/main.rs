@@ -673,8 +673,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         metric_reporter: MetricReporter::new(),
     };
 
-    metrics.report_started();
-
     if grapl_config::is_local() {
         let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);
 
