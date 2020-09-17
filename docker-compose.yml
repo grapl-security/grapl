@@ -16,21 +16,24 @@ services:
       driver: none
 
   sqs:
-    image: localstack/localstack
+    image: localstack/localstack:0.11.5
     environment:
       - SERVICES=sqs:9324
       - HOSTNAME_EXTERNAL=sqs.us-east-1.amazonaws.com
+      - IMAGE_NAME=localstack/localstack:0.11.5
     ports:
       - "9324:9324"
     logging:
       driver: none
 
   secretsmanager:
-    image: localstack/localstack
+    image: localstack/localstack:0.11.5
     environment:
       - PORT_WEB_UI=8099
       - SERVICES=secretsmanager:4569
       - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
+      - IMAGE_NAME=localstack/localstack:0.11.5
+
     ports:
       - "4568:4568"
       - "8099:8099"

@@ -348,6 +348,7 @@ def sqs_provision_loop() -> None:
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
         except Exception as e:
+            print('sqs', e)
             if i > 50:
                 LOGGER.error("failed to connect to sqs or s3", e)
             else:
@@ -362,6 +363,7 @@ def sqs_provision_loop() -> None:
                     provision_sqs(sqs, service)
                     sqs_succ.discard(service)
                 except Exception as e:
+                    print('sqs2', e)
                     if i > 10:
                         LOGGER.error(e)
                     time.sleep(1)

@@ -201,14 +201,16 @@ where
                 .to_owned();
             let (host, port) = grapl_config::parse_host_port(rand_alpha);
 
-            debug!("connecting to DGraph {:?}:{:?}", host, port);
+            info!("connecting to DGraph {:?}:{:?}", host, port);
 
-            let mut clients = host
+            let mut clients = format!("{}:{}", host, port)
                 .to_socket_addrs()
-                .unwrap()
+                .expect("Invalid socket_addrs")
                 .map(|host| {
+                    let host = host.ip().to_string();
+                    info!("Connecting to host: {}", host);
                     Client::new_plain(
-                        &host.to_string(),
+                        &host,
                         port,
                         ClientConf {
                             ..Default::default()
