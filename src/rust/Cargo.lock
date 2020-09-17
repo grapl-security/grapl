@@ -624,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "derive-dynamic-node"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "grapl-config",
  "grapl-graph-descriptions",
@@ -1787,10 +1787,15 @@ dependencies = [
  "aws_lambda_events 0.2.7",
  "base64 0.10.1",
  "flate2",
+ "futures 0.3.5",
  "grapl-config",
  "lambda_runtime",
  "log 0.4.8",
+ "rayon",
+ "rusoto_cloudwatch",
+ "rusoto_core",
  "serde_json",
+ "statsd-parser",
  "thiserror",
  "tokio 0.2.21",
  "tokio-compat",
@@ -2632,6 +2637,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusoto_cloudwatch"
+version = "0.43.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d18ab2f07f31fbaadbb4b9ac23f941dce0698d7df015a462d4aa76358b05851c"
+dependencies = [
+ "async-trait",
+ "bytes 0.5.5",
+ "futures 0.3.5",
+ "rusoto_core",
+ "serde_urlencoded",
+ "xml-rs",
+]
+
+[[package]]
 name = "rusoto_core"
 version = "0.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3163,6 +3182,12 @@ checksum = "b0437cfb83762844799a60e1e3b489d5ceb6a650fbacb86437badc1b6d87b246"
 dependencies = [
  "version_check",
 ]
+
+[[package]]
+name = "statsd-parser"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad8f85387840bde2a5ee7d4d0ee9cb035334fdb9ed6b51ad5277063e4b7bef8f"
 
 [[package]]
 name = "stdweb"

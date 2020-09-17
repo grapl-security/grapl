@@ -54,6 +54,7 @@ class Schema(metaclass=SingletonMeta):
         edges: Dict[str, Tuple["EdgeT", str]],
         viewable: "Union[Type[Viewable], Callable[[], Type[Viewable]]]",
     ):
+        self.node_types = {"BaseNode", self.self_type()}
         self.properties: Dict[str, "PropType"] = {**default_properties(), **properties}
         self.edges: Dict[str, Tuple["EdgeT", str]] = {}
 
@@ -61,13 +62,14 @@ class Schema(metaclass=SingletonMeta):
             self.add_edge(edge_name, edge, r_edge_name)
 
         self.viewable = viewable
-        self.node_types = {"BaseNode", self.self_type()}
 
     def add_property(self, prop_name: str, prop: "PropType"):
         self.properties[prop_name] = prop
 
     def add_edge(self, edge_name: str, edge: "EdgeT", reverse_name: str):
         self.edges[edge_name] = (edge, reverse_name)
+        if not reverse_name:
+            return
         r_edge = edge.reverse()
         self.edges[reverse_name] = (r_edge, edge_name)
 
@@ -78,13 +80,6 @@ class Schema(metaclass=SingletonMeta):
             r_edge = edge.reverse()
             # The edge dest Viewable should already be constructed at this point
             edge.dest().edges[reverse_name] = (r_edge, edge_name)
-            print(
-                self.self_type(),
-                edge.dest().self_type(),
-                reverse_name,
-                r_edge,
-                edge_name,
-            )
 
     def prop_type(self, prop_name: str) -> Union[Tuple["EdgeT", str], "PropType", None]:
         return self.get_properties().get(prop_name) or self.get_edges().get(prop_name)
