@@ -121,6 +121,8 @@ table_defs = {
         "attribute_definitions": [
             {"AttributeName": "partition_key", "AttributeType": "S"},
             {"AttributeName": "sort_key", "AttributeType": "S"},
+        ],
+    },
     "local-grapl-grapl_schema_table": {
         "key_schema": [
             {"KeyType": "HASH", "AttributeName": "f_edge"},

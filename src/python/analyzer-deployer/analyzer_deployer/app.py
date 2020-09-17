@@ -40,6 +40,18 @@ app = Chalice(app_name="analyzer-deployer")
 ANALYZER_PARTITION = "analyzer"
 ANALYZER_DEPLOYMENT_PARTITION = "analyzer_deployment"
 
+DYNAMODB_CLIENT: dynamodb.DynamoDBServiceResource = (
+    boto3.resource(
+        "dynamodb",
+        region_name="us-west-2",
+        endpoint_url="http://dynamodb:8000",
+        aws_access_key_id="dummy_cred_aws_access_key_id",
+        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+    )
+    if IS_LOCAL
+    else boto3.resource("dynamodb")
+)
+
 #
 # data model objects
 #
@@ -349,18 +361,7 @@ def _s3_key(analyzer_id: str, analyzer_version: int) -> str:
 
 
 def _analyzers_table() -> dynamodb.ServiceResource.Table:
-    if IS_LOCAL:
-        dynamodb_client = boto3.resource(
-            "dynamodb",
-            region_name="us-west-2",
-            endpoint_url="http://dynamodb:8000",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
-    else:
-        dynamodb_client = boto3.resource("dynamodb")
-
-    return dynamodb_client.Table(ANALYZERS_TABLE)
+    return DYNAMODB_CLIENT.Table(ANALYZERS_TABLE)
 
 
 #

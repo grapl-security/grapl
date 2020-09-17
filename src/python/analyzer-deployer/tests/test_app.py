@@ -1,9 +1,11 @@
 import dataclasses
+import functools
 import json
 import unittest
 import uuid
 
 import boto3
+import botocore
 import pytest
 
 import hypothesis.strategies as st
@@ -15,6 +17,7 @@ from mypy_boto3 import dynamodb
 from analyzer_deployer.app import (
     ANALYZERS_BUCKET,
     ANALYZERS_TABLE,
+    DYNAMODB_CLIENT,
     app,
     Analyzer,
     PortConfig,
@@ -29,17 +32,67 @@ from analyzer_deployer.app import (
 )
 
 UUID_REGEX = r"[a-f0-9]{8}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{12}"
+KEY_SCHEMA = [
+    {"KeyType": "HASH", "AttributeName": "partition_key"},
+    {"KeyType": "RANGE", "AttributeName": "sort_key"},
+]
+ATTRIBUTE_DEFINITIONS = [
+    {"AttributeName": "partition_key", "AttributeType": "S"},
+    {"AttributeName": "sort_key", "AttributeType": "S"},
+]
 
 
-def _random_analyzers_table() -> dynamodb.ServiceResource.Table:
-    dynamodb_client = boto3.resource(
-        "dynamodb",
-        region_name="us-west-2",
-        endpoint_url="http://dynamodb:8000",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+def _random_analyzers_table() -> str:
+    return f"{ANALYZERS_TABLE}-{uuid.uuid4()}"
+
+
+def _analyzers_table(table_name) -> dynamodb.ServiceResource.Table:
+    table = None
+    try:
+        DYNAMODB_CLIENT.create_table(
+            TableName=table_name,
+            BillingMode="PAY_PER_REQUEST",
+            AttributeDefinitions=ATTRIBUTE_DEFINITIONS,
+            KeySchema=KEY_SCHEMA,
+        )
+        table = DYNAMODB_CLIENT.Table(table_name)
+    except botocore.exceptions.ClientError:  # probably the table already exists
+        table = DYNAMODB_CLIENT.Table(table_name)
+
+    return table
+
+
+# Monkeypatch the analyzer_deployer.app._analyzers_table() function to
+# return a different test table instead. This keeps tests independent
+# wrt DynamoDB. Make sure to decorate any tests which call this with
+# @pytest.mark.forked
+def _monkeypatch_analyzers_table(table_name):
+    import analyzer_deployer.app
+
+    analyzer_deployer.app._analyzers_table = functools.partial(
+        _analyzers_table, table_name=table_name
     )
-    return dynamodb_client.Table(ANALYZERS_TABLE + str(uuid.uuid4()))
+
+
+# Test that our schema hasn't drifted from the one defined in the
+# etc/local_dynamo/provision_local_dynamodb.py script. If this test
+# fails, update the KEY_SCHEMA and ATTRIBUTE_DEFINITIONS above to
+# match.
+class TestAnalyzersTableSchemaDrift(unittest.TestCase):
+    @pytest.mark.integration_test
+    def test_analyzers_table_schema_drift(self):
+        analyzers_table: dynamodb.ServiceResource.Table = DYNAMODB_CLIENT.Table(
+            ANALYZERS_TABLE
+        )
+        self.assertListEqual(analyzers_table.key_schema, KEY_SCHEMA)
+        self.assertListEqual(
+            analyzers_table.attribute_definitions, ATTRIBUTE_DEFINITIONS
+        )
+
+
+#
+# Hypothesis strategies
+#
 
 
 def _port_configs() -> st.SearchStrategy[PortConfig]:
@@ -152,6 +205,11 @@ def _list_analyzer_deployments_responses():
     )
 
 
+#
+# Serde tests for data model objects
+#
+
+
 class TestSerde(unittest.TestCase):
     @given(_analyzers())
     def test_analyzer_encode_decode_invariant(self, analyzer: Analyzer):
@@ -250,10 +308,18 @@ class TestSerde(unittest.TestCase):
         )
 
 
+#
+# Application integration tests against DynamoDB
+#
+
+
 class TestApp(unittest.TestCase):
+    @pytest.mark.forked
     @pytest.mark.integration_test
     def test_create_analyzer(self):
         with Client(app) as client:
+            _monkeypatch_analyzers_table(table_name=_random_analyzers_table())
+
             create_response: HTTPResponse = client.http.post("api/1/analyzers")
             self.assertEqual(create_response.status_code, 200)
             create_analyzer_response = CreateAnalyzerResponse.from_json(
@@ -293,9 +359,10 @@ class TestApp(unittest.TestCase):
             self.assertIsNone(analyzer_deployment.last_deployed_time)
             self.assertIsNone(analyzer_deployment.analyzer_configuration)
 
+    @pytest.mark.forked
     @pytest.mark.integration_test
     def test_list_analyzers(self):
-        analyzers_table: dynamodb.ServiceResource.Table = _random_analyzers_table()
+        _monkeypatch_analyzers_table(table_name=_random_analyzers_table())
 
         with Client(app) as client:
             create_response_1: HTTPResponse = client.http.post("api/1/analyzers")
@@ -377,7 +444,9 @@ class TestApp(unittest.TestCase):
             self.assertEqual(len(list_analyzers_response_2.analyzers), 1)
             self.assertIsNone(list_analyzers_response_2.next_page)
 
+    @pytest.mark.forked
     @pytest.mark.integration_test
     def test_deactivate_analyzers(self):
         with Client(app) as client:
+            _monkeypatch_analyzers_table(table_name=_random_analyzers_table())
             pass
