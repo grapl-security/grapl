@@ -645,11 +645,12 @@ where
         }
 
         info!("Completed mapping {} subgraphs", identities.len());
+        self.metrics.report_handle_event_success(&failed);
 
         let mut completed = if let Some(ref e) = failed {
             OutputEvent::new(Completion::Partial((
                 final_subgraph,
-                sqs_lambda::error::Error::ProcessingError((e.to_string())),
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             )))
         } else {
             OutputEvent::new(Completion::Total(final_subgraph))

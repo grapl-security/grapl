@@ -67,10 +67,12 @@ COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
 RUN mkdir -p grapl-observe/src
 RUN touch grapl-observe/src/lib.rs
 COPY --chown=grapl ./grapl-observe/Cargo.toml grapl-observe/
+
 # copy in Cargo.toml for metric-forwarder
 RUN mkdir -p metric-forwarder/src
-RUN touch metric-forwarder/src/lib.rs
+RUN echo 'fn main() {}' > metric-forwarder/src/main.rs 
 COPY --chown=grapl ./metric-forwarder/Cargo.toml metric-forwarder/
+
 # copy in Cargo.toml for graph-merger
 RUN mkdir -p graph-merger/src
 RUN echo 'fn main() {}' > graph-merger/src/main.rs

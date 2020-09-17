@@ -20,6 +20,6 @@ impl SysmonSubgraphGeneratorMetrics {
                 1.0,
                 &[TagPair(common_strs::STATUS, reported_status)],
             )
-            .map_err(|e| warn!("Metric failed: {}", e));
+            .unwrap_or_else(|e| warn!("Metric failed: {}", e))
     }
 }

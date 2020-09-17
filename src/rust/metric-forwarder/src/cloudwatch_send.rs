@@ -2,6 +2,7 @@ use crate::cloudwatch_logs_parse::Stat;
 use crate::error::MetricForwarderError;
 use async_trait::async_trait;
 use futures::future;
+use log::info;
 use log::warn;
 use rayon::prelude::*;
 use rusoto_cloudwatch::PutMetricDataError;
@@ -58,6 +59,12 @@ pub async fn put_metric_data(
     // TODO: retries
 
     // bubble up 1 of N failures
+    let num_failures = responses.iter().filter(|resp| resp.is_err()).count();
+    info!(
+        "Sent {} batch-requests to Cloudwatch, of which {} failed",
+        responses.len(),
+        num_failures
+    );
     let first_failure = responses.iter().filter(|resp| resp.is_err()).next();
     match first_failure {
         Some(Err(e)) => Err(MetricForwarderError::PutMetricDataError(e.to_string())),
@@ -99,7 +106,7 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
         Metric::Histogram(h) => (units::MILLIS, h.value, h.sample_rate),
         _ => panic!("How the heck did you get an unsupported metric type in here?"),
     };
-    MetricDatum {
+    let datum = MetricDatum {
         metric_name: stat.msg.name.to_string(),
         timestamp: stat.timestamp.to_string().into(),
         unit: unit.to_string().into(),
@@ -114,7 +121,8 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
         dimensions: None,
         statistic_values: None,
         storage_resolution: None,
-    }
+    };
+    datum
 }
 
 #[cfg(test)]

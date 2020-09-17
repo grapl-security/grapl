@@ -1,6 +1,7 @@
 use crate::metric_error::MetricError;
 use crate::statsd_formatter;
 use crate::statsd_formatter::{statsd_format, MetricType};
+use chrono::{DateTime, SecondsFormat, Utc};
 use std::fmt::Write;
 
 pub mod common_strs {
@@ -17,6 +18,7 @@ pub struct MetricReporter {
     to stdout; then, later, a lambda reads in these messages and writes them to Cloudwatch.
     (originally recommended in an article by Yan Cui)
     */
+    // TODO: I think I gotta mutex or arc this; two threads grab it at once and sometimes print the wrong thing!
     buffer: String,
 }
 
@@ -47,8 +49,18 @@ impl MetricReporter {
             sample_rate,
             tags,
         )?;
-        println!("MONITORING|{}", self.buffer);
+        // TODO: dependency-inject utcnow
+        println!(
+            "MONITORING|{}|{}",
+            self.format_time_for_cloudwatch(Utc::now()),
+            self.buffer
+        );
         Ok(())
+    }
+
+    fn format_time_for_cloudwatch(&self, dt: DateTime<Utc>) -> String {
+        // cloudwatch wants ISO8601, but without nanos.
+        dt.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
 
     pub fn counter(
@@ -88,10 +100,22 @@ impl MetricReporter {
     }
 }
 
+pub struct TagPair<'a>(pub &'a str, pub &'a str);
+
+impl TagPair<'_> {
+    pub fn write_to_buf(&self, buf: &mut String) -> Result<(), MetricError> {
+        let TagPair(tag_key, tag_value) = self;
+        statsd_formatter::reject_invalid_chars(tag_key)?;
+        statsd_formatter::reject_invalid_chars(tag_value)?;
+        Ok(write!(buf, "{}={}", tag_key, tag_value)?)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::metric_error::MetricError;
     use crate::metric_reporter::MetricReporter;
+    use chrono::{DateTime, Utc};
 
     #[test]
     fn test_public_functions_smoke_test() -> Result<(), MetricError> {
@@ -102,15 +126,15 @@ mod tests {
         reporter.gauge("metric_name", 123.45f64, &[])?;
         Ok(())
     }
-}
 
-pub struct TagPair<'a>(pub &'a str, pub &'a str);
-
-impl TagPair<'_> {
-    pub fn write_to_buf(&self, buf: &mut String) -> Result<(), MetricError> {
-        let TagPair(tag_key, tag_value) = self;
-        statsd_formatter::reject_invalid_chars(tag_key)?;
-        statsd_formatter::reject_invalid_chars(tag_value)?;
-        Ok(write!(buf, "{}={}", tag_key, tag_value)?)
+    #[test]
+    fn test_truncate_nanos() {
+        let reporter = MetricReporter::new();
+        let sample_with_nanos = "2020-09-16T18:53:16.985579647+00:00";
+        let dt = DateTime::parse_from_rfc3339(sample_with_nanos)
+            .expect("")
+            .with_timezone(&Utc);
+        let formatted = reporter.format_time_for_cloudwatch(dt);
+        assert_eq!(formatted, "2020-09-16T18:53:16.985Z");
     }
 }
