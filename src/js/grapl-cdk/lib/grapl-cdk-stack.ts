@@ -177,7 +177,7 @@ class MetricForwarder extends cdk.NestedStack {
             metric_forwarder: undefined,  // Otherwise, it'd be recursive!
         });
 
-        let policy = new iam.PolicyStatement({
+        const  policy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ['cloudwatch:PutMetricData'],
             resources: ['*'],
@@ -364,7 +364,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
 
         // Need to be able to GetObject in order to HEAD, can be replaced with
         // a cache later, but safe so long as there is no LIST
-        let policy = new iam.PolicyStatement({
+        const  policy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ['s3:GetObject'],
             resources: [props.writesTo.bucketArn + '/*'],

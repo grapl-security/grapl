@@ -650,7 +650,7 @@ where
         let mut completed = if let Some(ref e) = failed {
             OutputEvent::new(Completion::Partial((
                 final_subgraph,
-                sqs_lambda::error::Error::ProcessingError((e.to_string())),
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             )))
         } else {
             OutputEvent::new(Completion::Total(final_subgraph))
@@ -669,7 +669,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::init_grapl_log!();
     info!("Starting sysmon-subgraph-generator");
 
-    let mut metrics = SysmonSubgraphGeneratorMetrics {
+    let metrics = SysmonSubgraphGeneratorMetrics {
         metric_reporter: MetricReporter::new(),
     };
 

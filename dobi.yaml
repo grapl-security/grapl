@@ -386,7 +386,7 @@ compose=integration-env:
     # rust images
     - analyzer-dispatcher
     - generic-subgraph-generator
-    - metric-forwarder # TODO should I???
+    - metric-forwarder  # though, not currently used in integration
     - graph-merger
     - node-identifier
     - node-identifier-retry-handler
