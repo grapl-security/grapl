@@ -30,26 +30,6 @@ use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use std::str::FromStr;
 
-#[derive(Clone, Default)]
-pub struct ZstdJsonDecoder {
-    pub buffer: Vec<u8>,
-}
-
-impl<D> PayloadDecoder<D> for ZstdJsonDecoder
-where
-    for<'a> D: Deserialize<'a>,
-{
-    fn decode(&mut self, body: Vec<u8>) -> Result<D, Box<dyn std::error::Error>> {
-        self.buffer.clear();
-
-        let mut body = Cursor::new(&body);
-
-        zstd::stream::copy_decode(&mut body, &mut self.buffer)?;
-
-        Ok(serde_json::from_slice(&self.buffer)?)
-    }
-}
-
 #[derive(Clone, Debug, Default)]
 pub struct SubgraphSerializer {
     proto: Vec<u8>,
@@ -290,11 +270,7 @@ fn handler<
     let (tx, rx) = std::sync::mpsc::sync_channel(10);
     let completed_tx = tx.clone();
 
-    let generator = generator.clone();
-    let event_decoder = event_decoder.clone();
     let t = std::thread::spawn(move || {
-        let generator = generator.clone();
-        let event_decoder = event_decoder.clone();
         tokio_compat::run_std(async move {
             let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
             info!("Queue Url: {}", source_queue_url);
@@ -339,12 +315,12 @@ fn handler<
                 },
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
-                event_decoder.clone(),
+                event_decoder,
                 SubgraphSerializer {
                     proto: Vec::with_capacity(1024),
                 },
                 generator,
-                cache.clone(),
+                cache,
                 move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
@@ -368,7 +344,7 @@ fn handler<
             )
             .await
             .expect("service failed");
-            completed_tx.clone().send("Completed".to_owned()).unwrap();
+            completed_tx.send("Completed".to_owned()).unwrap();
         });
     });
 
@@ -427,6 +403,30 @@ pub async fn run_graph_generator_local<
     }
 }
 
+/// Graph generator implementations should invoke this function to begin processing new log events.
+///
+/// ```
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     use sqs_lambda::cache::NopCache;
+///     use graph_generator_lib::run_graph_generator;
+///
+///     grapl_config::init_grapl_log!();
+///
+///     if grapl_config::is_local() {
+///         run_graph_generator(
+///             MyNewGenerator::new(NopCache {}),
+///             MyDecoder::default()
+///         ).await?;
+///     } else {
+///         run_graph_generator(
+///             MyNewGenerator::new(grapl_config::event_cache().await),
+///             MyDecoder::default()
+///         ).await?;
+///     }
+///
+///     Ok(())
+/// }
+/// ```
 pub async fn run_graph_generator<
     IE: Send + Sync + Clone + 'static,
     EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
@@ -439,13 +439,9 @@ pub async fn run_graph_generator<
     generator: EH,
     event_decoder: ED,
 ) {
-    let is_local = std::env::var("IS_LOCAL");
+    info!("IS_LOCAL={:?}", config::is_local());
 
-    info!("IS_LOCAL={:?}", is_local);
-    if is_local
-        .map(|is_local| is_local.to_lowercase().parse().unwrap_or(false))
-        .unwrap_or(false)
-    {
+    if config::is_local() {
         run_graph_generator_local(generator, event_decoder).await;
     } else {
         run_graph_generator_aws(generator, event_decoder);
