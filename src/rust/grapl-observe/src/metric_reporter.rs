@@ -2,8 +2,8 @@ use crate::metric_error::MetricError;
 use crate::statsd_formatter;
 use crate::statsd_formatter::{statsd_format, MetricType};
 use std::fmt::Write;
-use std::sync::{Mutex};
-use std::io::{Stdout, stdout};
+use std::io::{stdout, Stdout};
+use std::sync::Mutex;
 
 pub mod common_strs {
     pub const STATUS: &'static str = "status";
@@ -11,8 +11,7 @@ pub mod common_strs {
     pub const FAIL: &'static str = "fail";
 }
 
-pub struct MetricReporter<W: std::io::Write>
-{
+pub struct MetricReporter<W: std::io::Write> {
     /**
     So, this is a pretty odd struct. All it actually does is print things that look like
     MONITORING|<some_statsd_stuff_here>
@@ -28,7 +27,7 @@ some followup TODOs:
     - add tags to the public functions (not needed right now)
 */
 #[allow(dead_code)]
-impl <W: std::io::Write> MetricReporter<W> {
+impl<W: std::io::Write> MetricReporter<W> {
     pub fn new() -> MetricReporter<Stdout> {
         let buffer: String = String::new();
         let out = stdout();
@@ -100,7 +99,10 @@ mod tests {
     #[test]
     fn test_public_functions_smoke_test() -> Result<(), Box<dyn std::error::Error>> {
         let vec: Vec<u8> = vec![];
-        let mut reporter = MetricReporter{buffer: String::new(), out: vec};
+        let mut reporter = MetricReporter {
+            buffer: String::new(),
+            out: vec,
+        };
         reporter.histogram("metric_name", 123.45f64)?;
         reporter.counter("metric_name", 123.45f64, None)?;
         reporter.counter("metric_name", 123.45f64, 0.75)?;
@@ -112,7 +114,8 @@ mod tests {
             "MONITORING|metric_name:123.45|c\n",
             "MONITORING|metric_name:123.45|c|@0.75\n",
             "MONITORING|metric_name:123.45|g\n",
-        ].join("");
+        ]
+        .join("");
         assert_eq!(written, expected);
         Ok(())
     }
