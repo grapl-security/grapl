@@ -27,9 +27,9 @@ pub fn parse_logs(logs_data: CloudwatchLogsData) -> Vec<Result<Stat, MetricForwa
 fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
     /*
     The input will look like
-    MONITORING|timestamp|statsd|stuff|goes|here
+    MONITORING|timestamp|statsd|stuff|goes|here\n
      */
-    let split: Vec<&str> = log_str.splitn(3, MONITORING_DELIM).collect();
+    let split: Vec<&str> = log_str.trim_end().splitn(3, MONITORING_DELIM).collect();
     match &split[..] {
         [_monitoring, timestamp, statsd_component] => {
             let statsd_msg = statsd_parser::parse(statsd_component.to_string());
@@ -64,7 +64,6 @@ mod tests {
     fn expect_metric(input: &[&str], expected: Metric) -> Result<Stat, MetricForwarderError> {
         let input_joined = input.join(MONITORING_DELIM);
         let parsed = parse_log(input_joined.as_str())?;
-        assert_eq!(parsed.msg.name, "some_\tstr");
         assert_eq!(
             parsed.msg.metric,
             expected,
@@ -94,7 +93,7 @@ mod tests {
         let input = [
             "MONITORING",
             "2017-04-26T10:41:09.023Z",
-            "some_str:12345.6|g",
+            "some_\tstr:12345.6|g",
         ];
         let expected = Metric::Gauge(Gauge {
             value: 12345.6,
@@ -102,6 +101,23 @@ mod tests {
         });
         let parsed = expect_metric(&input, expected)?;
         assert_eq!(parsed.msg.name, "some_\tstr");
+        Ok(())
+    }
+
+
+    #[test]
+    fn test_trim_end() -> Result<(), MetricForwarderError> {
+        let input = [
+            "MONITORING",
+            "2017-04-26T10:41:09.023Z",
+            "sysmon-generator-started:1|g\n"
+        ];
+        let expected = Metric::Gauge(Gauge {
+            value: 1.0,
+            sample_rate: None,
+        });
+        let parsed = expect_metric(&input, expected)?;
+        assert_eq!(parsed.msg.name, "sysmon-generator-started");
         Ok(())
     }
 

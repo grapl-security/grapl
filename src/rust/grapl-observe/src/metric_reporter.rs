@@ -18,6 +18,7 @@ pub struct MetricReporter {
     to stdout; then, later, a lambda reads in these messages and writes them to Cloudwatch.
     (originally recommended in an article by Yan Cui)
     */
+    // TODO: I think I gotta mutex or arc this; two threads grab it at once and sometimes print the wrong thing!
     buffer: String,
 }
 
