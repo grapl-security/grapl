@@ -208,7 +208,7 @@ where
                 .expect("Invalid socket_addrs")
                 .map(|host| {
                     let host = host.ip().to_string();
-                    info!("Connecting to host: {}", host);
+                    info!("Connecting to host: {} at port {}", host, port);
                     Client::new_plain(
                         &host,
                         port,

@@ -190,6 +190,7 @@ class GraphMerger extends cdk.NestedStack {
                     graph_merge_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT:
                     graph_merge_cache.cluster.attrRedisEndpointPort,
+                GRAPL_SCHEMA_TABLE: props.schemaTable.schema_table.tableName,
             },
             vpc: props.vpc,
             reads_from: subgraphs_generated.bucket,
