@@ -48,6 +48,7 @@ use tokio::runtime::Runtime;
 
 use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use graph_descriptions::node::NodeT;
+use std::net::ToSocketAddrs;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -201,16 +202,25 @@ where
             let (host, port) = grapl_config::parse_host_port(rand_alpha);
 
             debug!("connecting to DGraph {:?}:{:?}", host, port);
-            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
-                Client::new_plain(
-                    &host,
-                    port,
-                    ClientConf {
-                        ..Default::default()
-                    },
-                )
-                .expect("Failed to create dgraph client"),
-            ))])
+
+            let mut clients = host
+                .to_socket_addrs()
+                .unwrap()
+                .map(|host| {
+                    Client::new_plain(
+                        &host.to_string(),
+                        port,
+                        ClientConf {
+                            ..Default::default()
+                        },
+                    )
+                    .expect("Failed to create dgraph client")
+                })
+                .map(Arc::new)
+                .map(api_grpc::DgraphClient::with_client)
+                .collect::<Vec<_>>();
+
+            DgraphClient::new(clients)
         };
 
         Self {
