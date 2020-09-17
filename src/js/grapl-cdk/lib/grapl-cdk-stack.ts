@@ -166,7 +166,7 @@ class MetricForwarder extends cdk.NestedStack {
     constructor(scope: cdk.Construct, id: string, props: MetricForwarderProps) {
         super(scope, id);
 
-        const service = new Service(this, id, {
+        this.service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
                 GRAPL_LOG_LEVEL: 'INFO',
@@ -183,8 +183,8 @@ class MetricForwarder extends cdk.NestedStack {
             resources: ['*'],
         });
 
-        service.event_handler.addToRolePolicy(policy);
-        service.event_retry_handler.addToRolePolicy(policy);
+        this.service.event_handler.addToRolePolicy(policy);
+        this.service.event_retry_handler.addToRolePolicy(policy);
     }
 }
 

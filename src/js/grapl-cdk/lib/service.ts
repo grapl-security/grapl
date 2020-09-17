@@ -10,6 +10,7 @@ import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
+import { FilterPattern, SubscriptionFilter } from '@aws-cdk/aws-logs';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import { Watchful } from './vendor/cdk-watchful/lib/watchful';
 
@@ -250,9 +251,7 @@ export class Service {
             "send_metrics_to_lambda_" + fromLambdaFn.node.uniqueId,
             {
                 destination: new LambdaDestination(toLambdaFn),
-                filterPattern: {
-                    logPatternString: "MONITORING"
-                }
+                filterPattern: FilterPattern.literal("MONITORING"),
             }
         )
     }
