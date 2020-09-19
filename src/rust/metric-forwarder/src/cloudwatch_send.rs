@@ -6,10 +6,11 @@ use log::info;
 use log::warn;
 use rayon::prelude::*;
 use rusoto_cloudwatch::PutMetricDataError;
-use rusoto_cloudwatch::{CloudWatch, MetricDatum, PutMetricDataInput};
+use rusoto_cloudwatch::{CloudWatch, Dimension, MetricDatum, PutMetricDataInput};
 use rusoto_core::RusotoError;
 use statsd_parser;
 use statsd_parser::Metric;
+use std::collections::BTreeMap;
 
 mod units {
     // strings accepted by CloudWatch MetricDatum.unit
@@ -98,6 +99,23 @@ impl From<Stat> for MetricDatum {
     }
 }
 
+#[derive(Default)]
+struct Dimensions(Vec<Dimension>);
+/// create Dimensions from statsd Message.tags
+impl From<&BTreeMap<String, String>> for Dimensions {
+    fn from(source: &BTreeMap<String, String>) -> Dimensions {
+        Dimensions(
+            source
+                .into_iter()
+                .map(|(k, v)| Dimension {
+                    name: k.to_string(),
+                    value: v.to_string(),
+                })
+                .collect(),
+        )
+    }
+}
+
 fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
     let (unit, value, _sample_rate) = match &stat.msg.metric {
         // Yes, gauge and counter are - for our purposes - basically both Count
@@ -106,19 +124,24 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
         Metric::Histogram(h) => (units::MILLIS, h.value, h.sample_rate),
         _ => panic!("How the heck did you get an unsupported metric type in here?"),
     };
+    let Dimensions(dims) = stat
+        .msg
+        .tags
+        .as_ref()
+        .map(|tags| tags.into())
+        .unwrap_or_default();
     let datum = MetricDatum {
         metric_name: stat.msg.name.to_string(),
         timestamp: stat.timestamp.to_string().into(),
         unit: unit.to_string().into(),
         value: value.into(),
-        // TODO dimensions == tags
         // TODO seems like cloudwatch has no concept of sample rate, lol
         // many of the following are useful for batching:
         // e.g. counts: [1, 5] + values: [1.0, 2.0] means that
         // 1.0 was observed 1x && 2.0 was observed 5x
         counts: None,
         values: None,
-        dimensions: None,
+        dimensions: dims.into(),
         statistic_values: None,
         storage_resolution: None,
     };
@@ -127,19 +150,10 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
 
 #[cfg(test)]
 mod tests {
-    use crate::cloudwatch_logs_parse::Stat;
-    use crate::cloudwatch_send::{
-        put_metric_data, statsd_as_cloudwatch_metric, units, CloudWatchPutter, PutResult,
-    };
-    use crate::error::MetricForwarderError;
-    use async_trait::async_trait;
-    use rusoto_cloudwatch::PutMetricDataError;
-    use rusoto_cloudwatch::{MetricDatum, PutMetricDataInput};
-    use rusoto_core::RusotoError;
-    use statsd_parser;
+    use super::*;
 
     #[test]
-    fn test_convert_one_datum() {
+    fn test_convert_one_stat_into_datum() {
         let ts = "im timestamp".to_string();
         let name = "im a name".to_string();
         let counter = statsd_parser::Counter {
@@ -155,11 +169,30 @@ mod tests {
             },
         };
 
-        let datum: MetricDatum = statsd_as_cloudwatch_metric(&stat);
+        let datum: MetricDatum = stat.into();
         assert_eq!(&datum.metric_name, &name);
         assert_eq!(&datum.timestamp.expect(""), &ts);
         assert_eq!(datum.value.expect(""), 12.3);
         assert_eq!(datum.unit.expect(""), units::COUNT);
+    }
+
+    #[test]
+    fn test_convert_one_stat_with_tags_into_datum() {
+        let stat = some_stat_with_tags();
+        let datum: MetricDatum = stat.into();
+        assert_eq!(
+            datum.dimensions.expect(""),
+            vec![
+                Dimension {
+                    name: "tag1".into(),
+                    value: "val1".into()
+                },
+                Dimension {
+                    name: "tag2".into(),
+                    value: "val2".into()
+                },
+            ]
+        );
     }
 
     pub struct MockCloudwatchClient {
@@ -194,6 +227,24 @@ mod tests {
                     sample_rate: None,
                 }),
                 tags: None,
+            },
+        }
+    }
+
+    fn some_stat_with_tags() -> Stat {
+        let mut tags = BTreeMap::<String, String>::new();
+        tags.insert("tag2".into(), "val2".into());
+        tags.insert("tag1".into(), "val1".into());
+        // note - .iter() sorts these by key, so tag1 will show up first!
+        Stat {
+            timestamp: "ts".into(),
+            msg: statsd_parser::Message {
+                name: "msg".into(),
+                metric: statsd_parser::Metric::Counter(statsd_parser::Counter {
+                    value: 123.45,
+                    sample_rate: None,
+                }),
+                tags: tags.into(),
             },
         }
     }
