@@ -27,6 +27,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
     ) -> Result<Vec<Self::Output>, Self::Error> {
         let mut subgraph = Graph::new(0);
 
+        // counts nodes and edges before subgraphs are merged
         let mut pre_nodes = 0;
         let mut pre_edges = 0;
 
@@ -61,11 +62,14 @@ impl CompletionEventSerializer for SubgraphSerializer {
 
         self.proto.clear();
 
+        // encode generated subgraphs into protocol buffer
         prost::Message::encode(&subgraphs, &mut self.proto)
             .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
+
+        // compress encoded subgraph into `compressed` vector
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
             .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
 

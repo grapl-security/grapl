@@ -15,6 +15,37 @@ use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use std::time::Duration;
 
+const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
+
+/// Runs the provided graph generator implementation locally.
+///
+/// Expects SOURCE_QUEUE_URL environment variable is set
+pub(crate) async fn run_graph_generator_local<
+    IE: Send + Sync + Clone + 'static,
+    EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
+    + Send
+    + Sync
+    + Clone
+    + 'static,
+    ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
+>(
+    generator: EH,
+    event_decoder: ED,
+) {
+    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+
+    loop {
+        let generator = generator.clone();
+        let event_decoder = event_decoder.clone();
+
+        if let Err(e) = initialize_local_service(&source_queue_url, generator, event_decoder).await {
+            error!("{}", e);
+            std::thread::sleep(Duration::from_secs(2));
+        }
+    }
+}
+
+
 /// Performs some initial steps before starting a local sqs-based service with the provided [EventHandler]
 async fn initialize_local_service<
     IE: Send + Sync + Clone + 'static,
@@ -25,52 +56,58 @@ async fn initialize_local_service<
         + 'static,
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
-    queue_url: String,
+    queue_url: &str,
     generator: EH,
     event_decoder: ED,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    // ensure that local aws services (S3 and SQS) are ready and available
     let queue_name = queue_url.split("/").last().unwrap();
     grapl_config::wait_for_sqs(init_local_sqs_client(), queue_name).await?;
     grapl_config::wait_for_sqs(init_local_sqs_client(), "grapl-node-identifier-queue").await?;
     grapl_config::wait_for_s3(init_local_s3_client()).await?;
 
-    let destination_bucket = "local-grapl-unid-subgraphs-generated-bucket";
-    let local_s3_client = init_local_s3_client();
-    let local_sqs_client = init_local_sqs_client();
+    // defines a deadline for the processing to complete by
+    let service_execution_deadline = Context {
+        deadline: Utc::now().timestamp_millis() + DEADLINE_LENGTH,
+        ..Default::default()
+    };
 
-    let subgraph_serializer = SubgraphSerializer::new(Vec::with_capacity(1024));
+    // bucket for writing subgraphs containing local un-identified nodes
+    // node-identifier will read from events emitted by this bucket to continue processing
+    let destination_bucket = "local-grapl-unid-subgraphs-generated-bucket";
+
+    let event_encoder = SubgraphSerializer::new(Vec::with_capacity(1024));
 
     /*
      * queue_url - The queue to be reading incoming log events from.
      * destination_bucket - The destination S3 bucket where completed, serialized subgraphs should be written to.
-     * local_s3_client - A local s3 client
-     * local_sqs_client - A local sqs client
-     * subgraph_serializer - An event encoder used to serialize the subgraphs created by the provided generator.
+     * service_execution_deadline - defines the maximum length of time this service should spend trying to process the events
+     * event_encoder - An event encoder (SubgraphSerializer) used to serialize the subgraphs created by the provided generator.
      * generator - An EventHandler that takes in log events, parses them, and generates subgraphs based on the logs provided.
      */
     local_sqs_service(
         queue_url,
         destination_bucket,
-        Context {
-            deadline: Utc::now().timestamp_millis() + 10_000,
-            ..Default::default()
-        },
+        service_execution_deadline,
         |_| init_local_s3_client(),
-        local_s3_client,
-        local_sqs_client,
+        init_local_s3_client(),
+        init_local_sqs_client(),
         event_decoder,
-        subgraph_serializer,
+        event_encoder,
         generator,
         NopCache {},
-        |_, event_result| {
-            debug!("{:?}", event_result);
-        },
-        move |bucket, key| local_emit_event(bucket, key),
+        |_, event_result| debug!("{:?}", event_result),
+        |bucket, key| local_emit_event(bucket, key),
     )
     .await?;
     Ok(())
 }
 
+/// Sends an SQS notification to the node-identifier sqs queue that a file has been
+/// written to a particular bucket with key.
+///
+/// This is necessary for local testing as SNS cannot be used to connect
+/// S3 and SQS together (as is the design of grapl in production)
 async fn local_emit_event(
     bucket: String,
     key: String,
@@ -109,7 +146,7 @@ async fn local_emit_event(
 
     let sqs_client = init_local_sqs_client();
 
-    // publish to SQS
+    // publish to node-identifier SQS
     sqs_client
         .send_message(SendMessageRequest {
             message_body: serde_json::to_string(&output_event).expect("failed to encode s3 event"),
@@ -122,39 +159,11 @@ async fn local_emit_event(
     Ok(())
 }
 
-/// Runs the provided graph generator implementation locally.
-///
-/// Expects SOURCE_QUEUE_URL environment variable is set
-pub async fn run_graph_generator_local<
-    IE: Send + Sync + Clone + 'static,
-    EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
-        + Send
-        + Sync
-        + Clone
-        + 'static,
-    ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
->(
-    generator: EH,
-    event_decoder: ED,
-) {
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-
-    loop {
-        let queue_url = source_queue_url.clone();
-        let generator = generator.clone();
-        let event_decoder = event_decoder.clone();
-
-        if let Err(e) = initialize_local_service(queue_url, generator, event_decoder).await {
-            error!("{}", e);
-            std::thread::sleep(Duration::from_secs(2));
-        }
-    }
-}
-
 /// Creates an SQS client for local testing.
 ///
-/// Note: Region endpoint address is set in docker-compose for the container to link to a local sqs service.
-/// The endpoint does NOT point to real SQS.
+/// Note: The custom region's endpoint address is set in docker-compose as the container to talk to
+/// when interacting with the local sqs service. In other words, this endpoint does NOT
+/// point to the actual SQS service.
 fn init_local_sqs_client() -> SqsClient {
     info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
