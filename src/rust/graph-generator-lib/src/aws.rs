@@ -13,8 +13,8 @@ use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
 use std::collections::HashSet;
 use std::str::FromStr;
-use std::time::Duration;
 use std::sync::mpsc::SyncSender;
+use std::time::Duration;
 
 /// Runs the graph generator on AWS
 ///
@@ -67,7 +67,13 @@ fn lambda_handler<
     let t = std::thread::spawn(move || {
         // lambda_runtime uses tokio::runtime::Runtime internally so we need to use
         // tokio_compat::run_std if we want to invoke a new async task
-        tokio_compat::run_std(run_async_generator_handler(event, ctx, generator, event_decoder, tx));
+        tokio_compat::run_std(run_async_generator_handler(
+            event,
+            ctx,
+            generator,
+            event_decoder,
+            tx,
+        ));
     });
 
     info!("Checking acks");
@@ -105,17 +111,17 @@ fn lambda_handler<
 async fn run_async_generator_handler<
     IE: Send + Sync + Clone + 'static,
     EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
-    + Send
-    + Sync
-    + Clone
-    + 'static,
+        + Send
+        + Sync
+        + Clone
+        + 'static,
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     event: SqsEvent,
     ctx: Context,
     generator: EH,
     event_decoder: ED,
-    tx: SyncSender<String>
+    tx: SyncSender<String>,
 ) {
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
@@ -129,9 +135,7 @@ async fn run_async_generator_handler<
     let region = config::region();
     let cache = config::event_cache().await;
 
-    let initial_messages: Vec<_> = event.records.into_iter()
-        .map(map_sqs_message)
-        .collect();
+    let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
     let sqs_tx = tx.clone();
 
@@ -153,8 +157,8 @@ async fn run_async_generator_handler<
             Ok(())
         },
     )
-        .await
-        .expect("service failed");
+    .await
+    .expect("service failed");
 
     tx.send("Completed".to_owned()).unwrap();
 }

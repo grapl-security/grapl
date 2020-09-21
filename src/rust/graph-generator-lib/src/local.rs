@@ -23,10 +23,10 @@ const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
 pub(crate) async fn run_graph_generator_local<
     IE: Send + Sync + Clone + 'static,
     EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
-    + Send
-    + Sync
-    + Clone
-    + 'static,
+        + Send
+        + Sync
+        + Clone
+        + 'static,
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     generator: EH,
@@ -38,13 +38,13 @@ pub(crate) async fn run_graph_generator_local<
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
 
-        if let Err(e) = initialize_local_service(&source_queue_url, generator, event_decoder).await {
+        if let Err(e) = initialize_local_service(&source_queue_url, generator, event_decoder).await
+        {
             error!("{}", e);
             std::thread::sleep(Duration::from_secs(2));
         }
     }
 }
-
 
 /// Performs some initial steps before starting a local sqs-based service with the provided [EventHandler]
 async fn initialize_local_service<
