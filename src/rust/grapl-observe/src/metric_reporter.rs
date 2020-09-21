@@ -1,7 +1,10 @@
 use crate::metric_error::MetricError;
 use crate::statsd_formatter;
 use crate::statsd_formatter::{statsd_format, MetricType};
+use crate::writer_wrapper::WriterWrapper;
+use chrono::{DateTime, SecondsFormat, Utc};
 use std::fmt::Write;
+use std::io::{stdout, Stdout};
 
 pub mod common_strs {
     pub const STATUS: &'static str = "status";
@@ -9,8 +12,9 @@ pub mod common_strs {
     pub const FAIL: &'static str = "fail";
 }
 
-#[derive(Debug, Clone)]
-pub struct MetricReporter {
+type NowGetter = fn() -> DateTime<Utc>;
+
+pub struct MetricReporter<W: std::io::Write> {
     /**
     So, this is a pretty odd struct. All it actually does is print things that look like
     MONITORING|<some_statsd_stuff_here>
@@ -18,6 +22,8 @@ pub struct MetricReporter {
     (originally recommended in an article by Yan Cui)
     */
     buffer: String,
+    out: WriterWrapper<W>,
+    utc_now: NowGetter,
 }
 
 /**
@@ -25,10 +31,16 @@ some followup TODOs:
     - add tags to the public functions (not needed right now)
 */
 #[allow(dead_code)]
-impl MetricReporter {
-    pub fn new() -> MetricReporter {
-        let buf: String = String::new();
-        MetricReporter { buffer: buf }
+impl<W> MetricReporter<W>
+where
+    W: std::io::Write,
+{
+    pub fn new() -> MetricReporter<Stdout> {
+        MetricReporter {
+            buffer: String::new(),
+            out: WriterWrapper::new(stdout()),
+            utc_now: Utc::now,
+        }
     }
 
     fn write_metric(
@@ -47,8 +59,14 @@ impl MetricReporter {
             sample_rate,
             tags,
         )?;
-        println!("MONITORING|{}", self.buffer);
+        let time = self.format_time_for_cloudwatch((self.utc_now)());
+        write!(self.out.as_mut(), "MONITORING|{}|{}\n", time, self.buffer)?;
         Ok(())
+    }
+
+    fn format_time_for_cloudwatch(&self, dt: DateTime<Utc>) -> String {
+        // cloudwatch wants ISO8601, but without nanos.
+        dt.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
 
     pub fn counter(
@@ -88,19 +106,23 @@ impl MetricReporter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::metric_error::MetricError;
-    use crate::metric_reporter::MetricReporter;
+impl Clone for MetricReporter<Vec<u8>> {
+    fn clone(&self) -> Self {
+        Self {
+            buffer: self.buffer.clone(),
+            out: self.out.clone(),
+            utc_now: self.utc_now.clone(),
+        }
+    }
+}
 
-    #[test]
-    fn test_public_functions_smoke_test() -> Result<(), MetricError> {
-        let mut reporter = MetricReporter::new();
-        reporter.histogram("metric_name", 123.45f64)?;
-        reporter.counter("metric_name", 123.45f64, None)?;
-        reporter.counter("metric_name", 123.45f64, 0.75)?;
-        reporter.gauge("metric_name", 123.45f64, &[])?;
-        Ok(())
+impl Clone for MetricReporter<Stdout> {
+    fn clone(&self) -> Self {
+        Self {
+            buffer: self.buffer.clone(),
+            out: self.out.clone(),
+            utc_now: self.utc_now.clone(),
+        }
     }
 }
 
@@ -112,5 +134,56 @@ impl TagPair<'_> {
         statsd_formatter::reject_invalid_chars(tag_key)?;
         statsd_formatter::reject_invalid_chars(tag_value)?;
         Ok(write!(buf, "{}={}", tag_key, tag_value)?)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_utc() -> DateTime<Utc> {
+        let sample_with_nanos = "2020-01-01T01:23:45Z";
+        DateTime::parse_from_rfc3339(sample_with_nanos)
+            .expect("")
+            .with_timezone(&Utc)
+    }
+
+    #[test]
+    fn test_public_functions_smoke_test() -> Result<(), Box<dyn std::error::Error>> {
+        let vec_writer: WriterWrapper<Vec<u8>> = WriterWrapper::new(vec![]);
+        let mut reporter = MetricReporter {
+            buffer: String::new(),
+            out: vec_writer,
+            utc_now: test_utc,
+        };
+        reporter.histogram("metric_name", 123.45f64)?;
+        reporter.counter("metric_name", 123.45f64, None)?;
+        reporter.counter("metric_name", 123.45f64, 0.75)?;
+        reporter.gauge("metric_name", 123.45f64, &[])?;
+        let vec = reporter.out.release();
+
+        let written = String::from_utf8(vec)?;
+        let expected: Vec<&str> = vec![
+            "MONITORING|2020-01-01T01:23:45.000Z|metric_name:123.45|h",
+            "MONITORING|2020-01-01T01:23:45.000Z|metric_name:123.45|c",
+            "MONITORING|2020-01-01T01:23:45.000Z|metric_name:123.45|c|@0.75",
+            "MONITORING|2020-01-01T01:23:45.000Z|metric_name:123.45|g",
+        ];
+        let actual: Vec<&str> = written.split("\n").collect();
+        for (expected, actual) in expected.iter().zip(actual.iter()) {
+            assert_eq!(expected, actual)
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_truncate_nanos() {
+        let reporter = MetricReporter::<Stdout>::new();
+        let sample_with_nanos = "2020-09-16T18:53:16.985579647+00:00";
+        let dt = DateTime::parse_from_rfc3339(sample_with_nanos)
+            .expect("")
+            .with_timezone(&Utc);
+        let formatted = reporter.format_time_for_cloudwatch(dt);
+        assert_eq!(formatted, "2020-09-16T18:53:16.985Z");
     }
 }
