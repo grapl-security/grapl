@@ -41,12 +41,12 @@ class EntitySchema(BaseSchema):
         view: "Union[Type[Viewable], Callable[[], Type[Viewable]]]" = None,
     ):
         super(EntitySchema, self).__init__(
-            {**(properties or {})},
-            {
+            properties={**(properties or {})},
+            edges={
                 **default_entity_edges(),
                 **(edges or {}),
             },
-            view or EntityView,
+            view=(view or EntityView),
         )
 
     @staticmethod

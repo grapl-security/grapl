@@ -14,9 +14,9 @@ pub enum MetricForwarderError {
     PoorlyFormattedEventError(),
     #[error("Poorly formatted log line: {0}")]
     PoorlyFormattedLogLine(String),
-    #[error("Error parsing statsd log: {0}")]
-    ParseStringToStatsdError(String),
-    #[error("PutMetricData to Cloudwatch error: this many failures {0}")]
+    #[error("Error parsing statsd log. Reason: {0}, log: {1}")]
+    ParseStringToStatsdError(String, String),
+    #[error("PutMetricData to Cloudwatch error: one example: {0}")]
     PutMetricDataError(String),
 }
 
