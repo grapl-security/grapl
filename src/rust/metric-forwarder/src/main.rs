@@ -53,6 +53,7 @@ async fn handler_async(event: CloudwatchLogsEvent) -> Result<(), MetricForwarder
             // Now we have the actual logs.
             let parsed_stats = parse_logs(logs);
             let cloudwatch_metric_data = statsd_as_cloudwatch_metric_bulk(parsed_stats);
+            info!("Received {} incoming metrics", cloudwatch_metric_data.len());
 
             // then forward them to CloudWatch in chunks of 20:
             let put_result = put_metric_data(&cw_client, &cloudwatch_metric_data);
@@ -70,11 +71,9 @@ fn get_prod_cloudwatch_client() -> CloudWatchClient {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    grapl_config::init_grapl_log!();
+    let env = grapl_config::init_grapl_env!();
 
-    let is_local = std::env::var("IS_LOCAL").is_ok();
-
-    if is_local {
+    if env.is_local {
         panic!("yeah, so... this doesn't work locally yet")
 
     /*

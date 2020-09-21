@@ -39,6 +39,18 @@ image=analyzer-dispatcher:
   depends:
     - rust-build
 
+image=metric-forwarder:
+  image: grapl/metric-forwarder
+  context: src/rust/metric-forwarder
+  dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
+  target: grapl-metric-forwarder
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
 image=generic-subgraph-generator:
   image: grapl/grapl-generic-subgraph-generator
   context: src/rust/generic-subgraph-generator
@@ -374,6 +386,7 @@ compose=integration-env:
     # rust images
     - analyzer-dispatcher
     - generic-subgraph-generator
+    - metric-forwarder  # though, not currently used in integration
     - graph-merger
     - node-identifier
     - node-identifier-retry-handler
@@ -599,6 +612,7 @@ alias=rust:
     - "analyzer-dispatcher:tag"
     - "generic-subgraph-generator:tag"
     - "graph-merger:tag"
+    - "metric-forwarder:tag"
     - "node-identifier:tag"
     - "node-identifier-retry-handler:tag"
     - "sysmon-subgraph-generator:tag"
