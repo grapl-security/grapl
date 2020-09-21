@@ -474,8 +474,6 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
 
     public allowConnectionsFrom(other: ec2.IConnectable): void {
         this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9080));
-        this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9081));
-        this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9082));
     }
 }
 
