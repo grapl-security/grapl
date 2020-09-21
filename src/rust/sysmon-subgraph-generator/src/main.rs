@@ -668,7 +668,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env = grapl_config::init_grapl_env!();
     info!("Starting sysmon-subgraph-generator");
 
-    let metrics = SysmonSubgraphGeneratorMetrics::new();
+    let metrics = SysmonSubgraphGeneratorMetrics::new(&env.service_name);
 
     if env.is_local {
         let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);

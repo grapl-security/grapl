@@ -17,13 +17,14 @@ type NowGetter = fn() -> DateTime<Utc>;
 pub struct MetricReporter<W: std::io::Write> {
     /**
     So, this is a pretty odd struct. All it actually does is print things that look like
-    MONITORING|<some_statsd_stuff_here>
+    MONITORING|service_name|timestamp|<some_statsd_stuff_here>
     to stdout; then, later, a lambda reads in these messages and writes them to Cloudwatch.
     (originally recommended in an article by Yan Cui)
     */
     buffer: String,
     out: WriterWrapper<W>,
     utc_now: NowGetter,
+    service_name: String,
 }
 
 /**
@@ -35,8 +36,9 @@ impl<W> MetricReporter<W>
 where
     W: std::io::Write,
 {
-    pub fn new() -> MetricReporter<Stdout> {
+    pub fn new(service_name: &str) -> MetricReporter<Stdout> {
         MetricReporter {
+            service_name: service_name.to_string(),
             buffer: String::new(),
             out: WriterWrapper::new(stdout()),
             utc_now: Utc::now,
@@ -60,7 +62,13 @@ where
             tags,
         )?;
         let time = self.format_time_for_cloudwatch((self.utc_now)());
-        write!(self.out.as_mut(), "MONITORING|{}|{}\n", time, self.buffer)?;
+        write!(
+            self.out.as_mut(),
+            "MONITORING|{}|{}|{}\n",
+            self.service_name,
+            time,
+            self.buffer
+        )?;
         Ok(())
     }
 
@@ -112,6 +120,7 @@ impl Clone for MetricReporter<Vec<u8>> {
             buffer: self.buffer.clone(),
             out: self.out.clone(),
             utc_now: self.utc_now.clone(),
+            service_name: self.service_name.clone(),
         }
     }
 }
@@ -122,6 +131,7 @@ impl Clone for MetricReporter<Stdout> {
             buffer: self.buffer.clone(),
             out: self.out.clone(),
             utc_now: self.utc_now.clone(),
+            service_name: self.service_name.clone(),
         }
     }
 }
@@ -148,6 +158,8 @@ mod tests {
             .with_timezone(&Utc)
     }
 
+    const SERVICE_NAME: &'static str = "test_service";
+
     #[test]
     fn test_public_functions_smoke_test() -> Result<(), Box<dyn std::error::Error>> {
         let vec_writer: WriterWrapper<Vec<u8>> = WriterWrapper::new(vec![]);
@@ -155,6 +167,7 @@ mod tests {
             buffer: String::new(),
             out: vec_writer,
             utc_now: test_utc,
+            service_name: SERVICE_NAME.to_string(),
         };
         reporter.histogram("metric_name", 123.45f64)?;
         reporter.counter("metric_name", 123.45f64, None)?;
@@ -164,10 +177,10 @@ mod tests {
 
         let written = String::from_utf8(vec)?;
         let expected: Vec<&str> = vec![
-            "MONITORING|2020-01-01T01:23:45.000Z|metric_name:123.45|h",
-            "MONITORING|2020-01-01T01:23:45.000Z|metric_name:123.45|c",
-            "MONITORING|2020-01-01T01:23:45.000Z|metric_name:123.45|c|@0.75",
-            "MONITORING|2020-01-01T01:23:45.000Z|metric_name:123.45|g",
+            "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|h",
+            "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|c",
+            "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|c|@0.75",
+            "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|g",
         ];
         let actual: Vec<&str> = written.split("\n").collect();
         for (expected, actual) in expected.iter().zip(actual.iter()) {
@@ -178,7 +191,7 @@ mod tests {
 
     #[test]
     fn test_truncate_nanos() {
-        let reporter = MetricReporter::<Stdout>::new();
+        let reporter = MetricReporter::<Stdout>::new(SERVICE_NAME);
         let sample_with_nanos = "2020-09-16T18:53:16.985579647+00:00";
         let dt = DateTime::parse_from_rfc3339(sample_with_nanos)
             .expect("")

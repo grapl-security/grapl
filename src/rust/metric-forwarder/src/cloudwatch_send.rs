@@ -36,21 +36,17 @@ where
     }
 }
 
-// Hardcoded for now to defer making a decision on how we want to do this
-const CLOUDWATCH_NAMESPACE: &'static str = "grapl";
-
 pub async fn put_metric_data(
     client: &impl CloudWatchPutter,
     metrics: &[MetricDatum],
+    namespace: &str,
 ) -> Result<(), MetricForwarderError> {
     /*
     Call Cloudwatch to insert metric data. Does batching on our behalf.
     */
-
     let chunks = metrics.chunks(20).map(|chunk| chunk.to_vec());
     let put_requests = chunks.map(|data: Vec<MetricDatum>| PutMetricDataInput {
-        // TODO: should we do different namespaces for different services?
-        namespace: CLOUDWATCH_NAMESPACE.to_string(),
+        namespace: namespace.to_string(),
         metric_data: data,
     });
 
@@ -73,18 +69,36 @@ pub async fn put_metric_data(
     }
 }
 
-pub fn statsd_as_cloudwatch_metric_bulk(
-    parsed_stats: Vec<Result<Stat, MetricForwarderError>>,
-) -> Vec<MetricDatum> {
-    /*
-    Convert the platform-agnostic Stat type to Cloudwatch-specific type.
-    */
+/// A nice simplification of our Metric Forwarder is that:
+///  since we process things per-log-group,
+/// and one log group only has things from one service
+/// ---> each execution of this lambda will only be dealing with 1 namespace.
+/// We simply assert this invariant in this function.
+/// A more robust way would be to group by namespace, but, eh, not needed for us
+pub fn get_namespace(stats: &[Stat]) -> Result<String, MetricForwarderError> {
+    if let Some(first) = stats.get(0) {
+        let expected_namespace = first.service_name.clone();
+        let find_different_namespace = stats
+            .par_iter()
+            .find_any(|s| s.service_name != expected_namespace);
+        match find_different_namespace {
+            Some(different) => Err(MetricForwarderError::MoreThanOneNamespaceError(
+                expected_namespace.to_string(),
+                different.service_name.to_string(),
+            )),
+            None => Ok(expected_namespace),
+        }
+    } else {
+        // I don't expect this to ever happen.
+        Err(MetricForwarderError::NoLogsError())
+    }
+}
+
+pub fn filter_invalid_stats(parsed_stats: Vec<Result<Stat, MetricForwarderError>>) -> Vec<Stat> {
     parsed_stats
-        .par_iter()
-        // You will note that we drop metrics we couldn't parse. Theoretically it should never happen, but would be nice to know.
-        // TODO: self-instrumentation around "how many stats do we drop?" Theoretically 0. We warn in the mean time.
+        .into_par_iter()
         .filter_map(|stat_res| match stat_res {
-            Ok(stat) => Some(statsd_as_cloudwatch_metric(stat)),
+            Ok(stat) => Some(stat),
             Err(e) => {
                 warn!("Dropped metric: {}", e);
                 None
@@ -93,9 +107,19 @@ pub fn statsd_as_cloudwatch_metric_bulk(
         .collect()
 }
 
+pub fn statsd_as_cloudwatch_metric_bulk(parsed_stats: Vec<Stat>) -> Vec<MetricDatum> {
+    /*
+    Convert the platform-agnostic Stat type to Cloudwatch-specific type.
+    */
+    parsed_stats
+        .into_par_iter()
+        .map(statsd_as_cloudwatch_metric)
+        .collect()
+}
+
 impl From<Stat> for MetricDatum {
     fn from(s: Stat) -> MetricDatum {
-        statsd_as_cloudwatch_metric(&s)
+        statsd_as_cloudwatch_metric(s)
     }
 }
 
@@ -116,8 +140,8 @@ impl From<&BTreeMap<String, String>> for Dimensions {
     }
 }
 
-fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
-    let (unit, value, _sample_rate) = match &stat.msg.metric {
+fn statsd_as_cloudwatch_metric(stat: Stat) -> MetricDatum {
+    let (unit, value, _sample_rate) = match stat.msg.metric {
         // Yes, gauge and counter are - for our purposes - basically both Count
         Metric::Gauge(g) => (units::COUNT, g.value, g.sample_rate),
         Metric::Counter(c) => (units::COUNT, c.value, c.sample_rate),
@@ -152,10 +176,13 @@ fn statsd_as_cloudwatch_metric(stat: &Stat) -> MetricDatum {
 mod tests {
     use super::*;
 
+    const SERVICE_NAME: &'static str = "cool_service";
+
     #[test]
     fn test_convert_one_stat_into_datum() {
         let ts = "im timestamp".to_string();
         let name = "im a name".to_string();
+        let service_name = SERVICE_NAME.into();
         let counter = statsd_parser::Counter {
             value: 12.3,
             sample_rate: Some(0.5),
@@ -167,6 +194,7 @@ mod tests {
                 tags: None,
                 metric: statsd_parser::Metric::Counter(counter),
             },
+            service_name: service_name,
         };
 
         let datum: MetricDatum = stat.into();
@@ -228,7 +256,14 @@ mod tests {
                 }),
                 tags: None,
             },
+            service_name: SERVICE_NAME.into(),
         }
+    }
+
+    fn some_stat_with_different_service_name() -> Stat {
+        let mut stat = some_stat();
+        stat.service_name = "another_service".to_string();
+        stat
     }
 
     fn some_stat_with_tags() -> Stat {
@@ -246,7 +281,30 @@ mod tests {
                 }),
                 tags: tags.into(),
             },
+            service_name: SERVICE_NAME.into(),
         }
+    }
+
+    #[test]
+    fn test_get_namespace_different_service_names() {
+        let stats = vec![some_stat(), some_stat_with_different_service_name()];
+
+        let result = get_namespace(&stats);
+        match result {
+            Ok(_) => panic!("shouldn't get anything here"),
+            Err(e) => assert!(e
+                .to_string()
+                .contains("Expected cool_service, found another_service")),
+        }
+    }
+
+    #[test]
+    fn test_get_namespace_same_service_names() -> Result<(), MetricForwarderError> {
+        let stats = vec![some_stat(), some_stat(), some_stat()];
+
+        let result = get_namespace(&stats)?;
+        assert_eq!(result, SERVICE_NAME);
+        Ok(())
     }
 
     #[tokio::test]
@@ -255,7 +313,7 @@ mod tests {
             response_fn: MockCloudwatchClient::return_ok,
         };
         let data = vec![some_stat().into(), some_stat().into()];
-        let result = put_metric_data(&cw_client, &data).await;
+        let result = put_metric_data(&cw_client, &data, SERVICE_NAME).await;
         assert_eq!(result, Ok(()))
     }
 
@@ -265,7 +323,7 @@ mod tests {
             response_fn: MockCloudwatchClient::return_an_err,
         };
         let data = vec![some_stat().into(), some_stat().into()];
-        let result = put_metric_data(&cw_client, &data).await;
+        let result = put_metric_data(&cw_client, &data, SERVICE_NAME).await;
         match result {
             Err(MetricForwarderError::PutMetricDataError(_)) => Ok(()),
             _ => Err(()),
