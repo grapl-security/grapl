@@ -195,7 +195,6 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
             pub fn static_strategy() -> IdStrategy {
                 Static {
                     primary_key_properties: vec![
-                        #node_name_str .to_owned(),
                         #id_fields
                     ],
                     primary_key_requires_asset_id: false,

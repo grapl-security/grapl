@@ -240,7 +240,7 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
 
 def meta_into_edge(schema, predicate_meta):
     if predicate_meta.get("list"):
-        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToMany)
+        return EdgeT(type(schema), BaseSchema, EdgeRelationship.ManyToOne)
     else:
         return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToOne)
 
