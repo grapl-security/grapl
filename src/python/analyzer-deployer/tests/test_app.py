@@ -370,44 +370,17 @@ class TestApp(unittest.TestCase):
             create_analyzer_response_1 = CreateAnalyzerResponse.from_json(
                 create_response_1.json_body
             )
-            self.assertRegex(
-                create_analyzer_response_1.analyzer_id,
-                UUID_REGEX,
-            )
-            self.assertEqual(create_analyzer_response_1.analyzer_version, 0)
-            self.assertEqual(
-                create_analyzer_response_1.s3_key,
-                f"{ANALYZERS_BUCKET}/{create_analyzer_response_1.analyzer_id}/{create_analyzer_response_1.analyzer_version}/lambda.zip",
-            )
 
             create_response_2: HTTPResponse = client.http.post("api/1/analyzers")
             self.assertEqual(create_response_2.status_code, 200)
             create_analyzer_response_2 = CreateAnalyzerResponse.from_json(
                 create_response_2.json_body
             )
-            self.assertRegex(
-                create_analyzer_response_2.analyzer_id,
-                UUID_REGEX,
-            )
-            self.assertEqual(create_analyzer_response_2.analyzer_version, 0)
-            self.assertEqual(
-                create_analyzer_response_2.s3_key,
-                f"{ANALYZERS_BUCKET}/{create_analyzer_response_2.analyzer_id}/{create_analyzer_response_2.analyzer_version}/lambda.zip",
-            )
 
             create_response_3: HTTPResponse = client.http.post("api/1/analyzers")
             self.assertEqual(create_response_3.status_code, 200)
             create_analyzer_response_3 = CreateAnalyzerResponse.from_json(
                 create_response_3.json_body
-            )
-            self.assertRegex(
-                create_analyzer_response_3.analyzer_id,
-                UUID_REGEX,
-            )
-            self.assertEqual(create_analyzer_response_3.analyzer_version, 0)
-            self.assertEqual(
-                create_analyzer_response_3.s3_key,
-                f"{ANALYZERS_BUCKET}/{create_analyzer_response_3.analyzer_id}/{create_analyzer_response_3.analyzer_version}/lambda.zip",
             )
 
             analyzer_ids = sorted(
@@ -427,7 +400,6 @@ class TestApp(unittest.TestCase):
             self.assertEqual(list_analyzers_response_1.limit, 2)
             self.assertEqual(len(list_analyzers_response_1.analyzers), 2)
             self.assertIsNotNone(list_analyzers_response_1.next_page)
-
             self.assertListEqual(
                 [a.analyzer_id for a in list_analyzers_response_1.analyzers],
                 analyzer_ids[0:2],
@@ -443,10 +415,139 @@ class TestApp(unittest.TestCase):
             self.assertEqual(list_analyzers_response_2.limit, 2)
             self.assertEqual(len(list_analyzers_response_2.analyzers), 1)
             self.assertIsNone(list_analyzers_response_2.next_page)
+            self.assertListEqual(
+                [a.analyzer_id for a in list_analyzers_response_2.analyzers],
+                analyzer_ids[2:],
+            )
+
+    @pytest.mark.forked
+    @pytest.mark.integration_test
+    def test_list_analyzer_deployments(self):
+        _monkeypatch_analyzers_table(table_name=_random_analyzers_table())
+
+        with Client(app) as client:
+            create_response_1: HTTPResponse = client.http.post("api/1/analyzers")
+            self.assertEqual(create_response_1.status_code, 200)
+            create_analyzer_response_1 = CreateAnalyzerResponse.from_json(
+                create_response_1.json_body
+            )
+
+            deploy_response_1: HTTPResponse = client.http.post(
+                f"api/1/analyzers/{create_analyzer_response_1.analyzer_id}/deploy"
+            )
+            deploy_response_2: HTTPResponse = client.http.post(
+                f"api/1/analyzers/{create_analyzer_response_1.analyzer_id}/deploy"
+            )
+            deploy_response_3: HTTPResponse = client.http.post(
+                f"api/1/analyzers/{create_analyzer_response_1.analyzer_id}/deploy"
+            )
+
+            analyzer_versions = sorted(
+                i
+                for i in [
+                    deploy_analyzer_response_1.analyzer_version,
+                    deploy_analyzer_response_2.analyzer_version,
+                    deploy_analyzer_response_3.analyzer_version,
+                ]
+            )
+
+            list_response_1: HTTPResponse = client.http.get("api/1/analyzers?limit=2")
+            self.assertEqual(list_response_1.status_code, 200)
+            list_analyzer_deployments_response_1 = ListAnalyzerDeploymentsResponse.from_json(
+                list_response_1.json_body
+            )
+            self.assertEqual(list_analyzer_deployments_response_1.limit, 2)
+            self.assertEqual(len(list_analyzer_deployments_response_1.analyzers), 2)
+            self.assertIsNotNone(list_analyzer_deployments_response_1.next_page)
+            self.assertListEqual(
+                [d.analyzer_version for d in list_analyzer_deployments_response_1.analyzer_deployments],
+                analyzer_versions[0:2],
+            )
+
+            list_response_2: HTTPResponse = client.http.get("api/1/analyzers?limit=2")
+            self.assertEqual(list_response_2.status_code, 200)
+            list_analyzer_deployments_response_2 = ListAnalyzerDeploymentsResponse.from_json(
+                list_response_2.json_body
+            )
+            self.assertEqual(list_analyzer_deployments_response_2.limit, 2)
+            self.assertEqual(len(list_analyzer_deployments_response_2.analyzers), 1)
+            self.assertIsNone(list_analyzer_deployments_response_2.next_page)
+            self.assertListEqual(
+                [d.analyzer_version for d in list_analyzer_deployments_response_2.analyzer_deployments],
+                analyzer_versions[0:2],
+            )
 
     @pytest.mark.forked
     @pytest.mark.integration_test
     def test_deactivate_analyzers(self):
         with Client(app) as client:
             _monkeypatch_analyzers_table(table_name=_random_analyzers_table())
-            pass
+
+            create_response: HTTPResponse = client.http.post("api/1/analyzers")
+            self.assertEqual(create_response.status_code, 200)
+            create_analyzer_response = CreateAnalyzerResponse.from_json(
+                create_response.json_body
+            )
+
+            get_response_1: HTTPResponse = client.http.get(
+                f"api/1/analyzers/{create_analyzer_response.analyzer_id}"
+            )
+            self.assertEqual(get_response_1.status_code, 200)
+            get_analyzer_response_1 = Analyzer.from_json(get_response_1.json_body)
+            self.assertEqual(get_analyzer_response_1.analyzer_id, create_analyzer_response.analyzer_id)
+            self.assertTrue(get_analyzer_response_1.analyzer_active)
+
+            deactivate_response = client.http.delete(
+                f"api/1/analyzers/{create_analyzer_response.analyzer_id}"
+            )
+            self.assertEqual(deactivate_response.status_code, 202)
+
+            get_response_2: HTTPResponse = client.http.get(
+                f"api/1/analyzers/{create_analyzer_response.analyzer_id}"
+            )
+            self.assertEqual(get_response_2.status_code, 200)
+            get_analyzer_response_2 = Analyzer.from_json(get_response_2.json_body)
+            self.assertEqual(get_analyzer_response_2.analyzer_id, create_analyzer_response.analyzer_id)
+            self.assertFalse(get_analyzer_response_2.analyzer_active)
+
+    @pytest.mark.forked
+    @pytest.mark.integration_test
+    def test_deactivate_analyzers_returns_404_when_analyzer_does_not_exist(self):
+        with Client(app) as client:
+            _monkeypatch_analyzers_table(table_name=_random_analyzers_table())
+
+            deactivate_response = client.http.delete(f"api/1/analyzers/{uuid.uuid4()}")
+            self.assertEqual(deactivate_response.status_code, 404)
+
+    @pytest.mark.forked
+    @pytest.mark.integration_test
+    def test_deactivate_analyzers_returns_409_when_analyzer_currently_deployed(self):
+        with Client(app) as client:
+            _monkeypatch_analyzers_table(table_name=_random_analyzers_table())
+
+            create_response: HTTPResponse = client.http.post("api/1/analyzers")
+            self.assertEqual(create_response.status_code, 200)
+            create_analyzer_response = CreateAnalyzerResponse.from_json(
+                create_response.json_body
+            )
+
+            get_response_1: HTTPResponse = client.http.get(
+                f"api/1/analyzers/{create_analyzer_response.analyzer_id}"
+            )
+            self.assertEqual(get_response_1.status_code, 200)
+            get_analyzer_response_1 = Analyzer.from_json(get_response_1.json_body)
+            self.assertEqual(get_analyzer_response_1.analyzer_id, create_analyzer_response.analyzer_id)
+            self.assertTrue(get_analyzer_response_1.analyzer_active)
+
+            deactivate_response = client.http.delete(
+                f"api/1/analyzers/{create_analyzer_response.analyzer_id}"
+            )
+            self.assertEqual(deactivate_response.status_code, 202)
+
+            get_response_2: HTTPResponse = client.http.get(
+                f"api/1/analyzers/{create_analyzer_response.analyzer_id}"
+            )
+            self.assertEqual(get_response_2.status_code, 200)
+            get_analyzer_response_2 = Analyzer.from_json(get_response_2.json_body)
+            self.assertEqual(get_analyzer_response_2.analyzer_id, create_analyzer_response.analyzer_id)
+            self.assertFalse(get_analyzer_response_2.analyzer_active)

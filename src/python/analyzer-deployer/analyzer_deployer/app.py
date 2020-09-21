@@ -18,11 +18,12 @@ from typing import (
 )
 from typing_extensions import Literal
 
+import botocore
 import boto3
 
 from mypy_boto3 import dynamodb, s3, sqs
 
-from chalice import Chalice, NotFoundError
+from chalice import Chalice, ConflictError, NotFoundError, Response
 
 from grapl_common.time_utils import Millis, as_millis
 
@@ -494,7 +495,29 @@ def get_analyzer(analyzer_id: str) -> Dict[str, Any]:
 @app.route("api/1/analyzers/{analyzer_id}", methods=("DELETE",))
 def deactivate_analyzer(analyzer_id: str):
     analyzers_table = _analyzers_table()
-    analyzers_table.update_item()  # FIXME
+    try:
+        analyzer_deployments = list_analyzer_deployments(analyzer_id)
+        result = analyzers_table.update_item(
+            Key={
+                "partition_key": ANALYZER_PARTITION,
+                "sort_key": DynamoWrapper.analyzer_sort_key(analyzer_id),
+            },
+            UpdateExpression="set analyzer.analyzer_active=:active",
+            ExpressionAttributeValues={":active": False},
+            ConditionExpression=boto3.dynamodb.conditions.Attr(
+                "analyzer.analyzer_active"
+            ).eq(True)
+            & boto3.dynamodb.conditions.Attr("analyzer."),
+            ReturnValues="UPDATED_OLD",
+        )
+
+        if "Attributes" not in result:
+            raise NotFoundError("Analyzer does not exist")
+
+        return Response(body="Accepted", status_code=202)
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            raise ConflictError("Analyzer is already active")
 
 
 #
@@ -534,15 +557,62 @@ def deploy_analyzer(analyzer_id: str):
 
 
 def _extract_analyzer_deployments_paging_params() -> Tuple[
-    Optional[Literal["true", "false", "all"]], Optional[int]
+    Optional[Literal["true", "false", "all"]], Optional[int], Optional[str]
 ]:
     currently_deployed: Optional[bool] = None
     limit: Optional[int] = None
+    start: Optional[str] = None
     query_params = app.current_request.query_params
     if query_params is not None:
         currently_deployed = query_params.get("currently_deployed", "all")
         limit = int(query_params.get("limit", "100"))
-    return currently_deployed, limit
+        start = query_params.get("start", None)
+    return currently_deployed, limit, start
+
+
+def _get_analyzer_deployments_page(
+    analyzers_table: dynamodb.ServiceResource.Table,
+    currently_deployed: Literal["true", "false", "all"],
+    limit: int,
+    start: str = None,
+) -> ListAnalyzerDeploymentsResponse:
+    key_condition_expression = "partition_key = :partition_key_val AND begins_with (sort_key, :partition_key_val)"
+    expression_attribute_values = {":partition_key_val": ANALYZER_DEPLOYMENT_PARTITION}
+    filter_expression = (
+        "analyzer_deployment.currently_deployed = :currently_deployed_val"
+        if currently_deployed == "true" or currently_deployed == "false"
+        else None
+    )
+    query_kwargs = {
+        "Select": "ALL_ATTRIBUTES",
+        "KeyConditionExpression": key_condition_expression,
+        "Limit": limit,
+    }
+
+    if start is not None:
+        query_kwargs["ExclusiveStartKey"] = {
+            "partition_key": ANALYZER_DEPLOYMENT_PARTITION,
+            "sort_key": start,
+        }
+
+    if filter_expression is not None:
+        expression_attribute_values[":currently_deployed_val"] = currently_deployed
+        query_kwargs["FilterExpression"] = filter_expression
+
+    query_kwargs["ExpressionAttributeValues"] = expression_attribute_values
+
+    result: dynamodb.type_defs.QueryOutputTypeDef = analyzers_table.query(
+        **query_kwargs
+    )
+    next_page = (
+        result["LastEvaluatedKey"]["sort_key"] if "LastEvaluatedKey" in result else None
+    )
+
+    return ListAnalyzerDeploymentsResponse(
+        limit,
+        next_page,
+        [DynamoWrapper.from_json(a).analyzer_deployment for a in result["Items"]],
+    )
 
 
 @app.route("api/1/analyzers/{analyzer_id}/deployments", methods=("GET",))
