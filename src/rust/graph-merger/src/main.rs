@@ -679,7 +679,9 @@ where
 
 pub fn init_dynamodb_client() -> DynamoDbClient {
     info!("Connecting to local http://dynamodb:8000");
-    if grapl_config::is_local() {
+    let env = grapl_config::init_grapl_env!();
+
+    if env.is_local {
         DynamoDbClient::new_with(
             HttpClient::new().expect("failed to create request dispatcher"),
             rusoto_credential::StaticProvider::new_minimal(
