@@ -679,17 +679,22 @@ where
 
 pub fn init_dynamodb_client() -> DynamoDbClient {
     info!("Connecting to local http://dynamodb:8000");
-    DynamoDbClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_cred_aws_access_key_id".to_owned(),
-            "dummy_cred_aws_secret_access_key".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-west-2".to_string(),
-            endpoint: "http://dynamodb:8000".to_string(),
-        },
-    )
+    if grapl_config::is_local() {
+        DynamoDbClient::new_with(
+            HttpClient::new().expect("failed to create request dispatcher"),
+            rusoto_credential::StaticProvider::new_minimal(
+                "dummy_cred_aws_access_key_id".to_owned(),
+                "dummy_cred_aws_secret_access_key".to_owned(),
+            ),
+            Region::Custom {
+                name: "us-west-2".to_string(),
+                endpoint: "http://dynamodb:8000".to_string(),
+            },
+        )
+    } else {
+        let region = grapl_config::region();
+        DynamoDbClient::new(region.clone())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -730,7 +735,7 @@ async fn get_r_edge(
             Ok(Some(mapping.r_edge))
         }
         None => {
-            warn!("Missing r_edge for: {}", f_edge);
+            error!("Missing r_edge for: {}", f_edge);
             Ok(None)
         }
     }
