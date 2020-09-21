@@ -154,6 +154,12 @@ fn statsd_as_cloudwatch_metric(stat: Stat) -> MetricDatum {
         .as_ref()
         .map(|tags| tags.into())
         .unwrap_or_default();
+    // AWS doesn't like sending it an empty list
+    let dims_option = match dims.is_empty() {
+        true => None,
+        false => Some(dims),
+    };
+
     let datum = MetricDatum {
         metric_name: stat.msg.name.to_string(),
         timestamp: stat.timestamp.to_string().into(),
@@ -165,7 +171,7 @@ fn statsd_as_cloudwatch_metric(stat: Stat) -> MetricDatum {
         // 1.0 was observed 1x && 2.0 was observed 5x
         counts: None,
         values: None,
-        dimensions: dims.into(),
+        dimensions: dims_option,
         statistic_values: None,
         storage_resolution: None,
     };
@@ -202,6 +208,7 @@ mod tests {
         assert_eq!(&datum.timestamp.expect(""), &ts);
         assert_eq!(datum.value.expect(""), 12.3);
         assert_eq!(datum.unit.expect(""), units::COUNT);
+        assert_eq!(datum.dimensions, None);
     }
 
     #[test]
@@ -329,4 +336,22 @@ mod tests {
             _ => Err(()),
         }
     }
+
+    // I had to use a 'prod test' to figure out why a line wasn't being parsed correctly.
+    // I'll leave it here in case that ever needs to happen again in the future.
+    /*
+    use rusoto_core::region::Region;
+    use rusoto_cloudwatch::CloudWatchClient;
+    #[tokio::test]
+    async fn test_put_metric_data_prod() -> Result<(), MetricForwarderError> {
+        let input = "MONITORING|sysmon_subgraph_generator|2020-09-21T23:16:47.868Z|sysmon-generator-completion:1|g|#status:success";
+        let as_stat = crate::cloudwatch_logs_parse::parse_log(input)?;
+        let cw_client = CloudWatchClient::new(Region::UsWest2);
+        let data = vec![as_stat.into()];
+        println!("{:?}", &data);
+        let result = put_metric_data(&cw_client, &data, SERVICE_NAME).await;
+        assert_eq!(result, Ok(()));
+        Ok(())
+    }
+    */
 }

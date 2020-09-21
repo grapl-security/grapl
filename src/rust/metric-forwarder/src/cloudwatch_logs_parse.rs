@@ -25,7 +25,7 @@ pub fn parse_logs(logs_data: CloudwatchLogsData) -> Vec<Result<Stat, MetricForwa
         .collect()
 }
 
-fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
+pub fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
     /*
     The input will look like
     MONITORING|timestamp|statsd|stuff|goes|here\n

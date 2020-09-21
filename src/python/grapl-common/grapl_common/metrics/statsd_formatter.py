@@ -18,7 +18,7 @@ class TagPair:
         self.tag_value = tag_value
 
     def statsd_serialized(self) -> str:
-        return "=".join((self.tag_key, self.tag_value))
+        return ":".join((self.tag_key, self.tag_value))
 
 
 def _reject_invalid_chars(s: str):

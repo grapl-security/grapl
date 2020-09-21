@@ -143,7 +143,7 @@ impl TagPair<'_> {
         let TagPair(tag_key, tag_value) = self;
         statsd_formatter::reject_invalid_chars(tag_key)?;
         statsd_formatter::reject_invalid_chars(tag_value)?;
-        Ok(write!(buf, "{}={}", tag_key, tag_value)?)
+        Ok(write!(buf, "{}:{}", tag_key, tag_value)?)
     }
 }
 
@@ -172,7 +172,7 @@ mod tests {
         reporter.histogram("metric_name", 123.45f64)?;
         reporter.counter("metric_name", 123.45f64, None)?;
         reporter.counter("metric_name", 123.45f64, 0.75)?;
-        reporter.gauge("metric_name", 123.45f64, &[])?;
+        reporter.gauge("metric_name", 123.45f64, &[TagPair("key", "value")])?;
         let vec = reporter.out.release();
 
         let written = String::from_utf8(vec)?;
@@ -180,7 +180,7 @@ mod tests {
             "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|h",
             "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|c",
             "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|c|@0.75",
-            "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|g",
+            "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|g|#key:value",
         ];
         let actual: Vec<&str> = written.split("\n").collect();
         for (expected, actual) in expected.iter().zip(actual.iter()) {
