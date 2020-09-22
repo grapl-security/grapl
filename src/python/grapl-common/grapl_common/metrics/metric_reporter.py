@@ -95,6 +95,7 @@ class MetricReporter:
         )
 
     def histogram(
+        self,
         metric_name: str,
         value: Union[int, float],
         tags: Sequence[TagPair] = (),
