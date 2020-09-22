@@ -203,7 +203,7 @@ where
 
             info!("connecting to DGraph {:?}:{:?}", host, port);
 
-            let mut clients = format!("{}:{}", host, port)
+            let clients = format!("{}:{}", host, port)
                 .to_socket_addrs()
                 .expect("Invalid socket_addrs")
                 .flat_map(|host| {
@@ -686,11 +686,8 @@ where
 }
 
 pub fn init_dynamodb_client() -> DynamoDbClient {
-    info!("Connecting to local http://dynamodb:8000");
-    let is_local = std::env::var("IS_LOCAL")
-        .map(|is_local| is_local.to_lowercase().parse().unwrap_or(false))
-        .unwrap_or(false);
-    if is_local {
+    if grapl_config::is_local() {
+        info!("Connecting to local DynamoDB http://dynamodb:8000");
         DynamoDbClient::new_with(
             HttpClient::new().expect("failed to create request dispatcher"),
             rusoto_credential::StaticProvider::new_minimal(
@@ -703,6 +700,7 @@ pub fn init_dynamodb_client() -> DynamoDbClient {
             },
         )
     } else {
+        info!("Connecting to DynamoDB");
         let region = grapl_config::region();
         DynamoDbClient::new(region.clone())
     }
