@@ -55,6 +55,16 @@ services:
   # Rust services
   #
 
+  grapl-metric-forwarder:
+    image: grapl/metric-forwarder:${TAG:-latest}
+    tty: false
+    environment:
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - RUST_LOG=${RUST_LOG:-ERROR}
+    extra_hosts:
+      - amazonaws:127.0.0.1
+
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     tty: false
