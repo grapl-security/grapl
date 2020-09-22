@@ -206,22 +206,30 @@ where
             let mut clients = format!("{}:{}", host, port)
                 .to_socket_addrs()
                 .expect("Invalid socket_addrs")
-                .map(|host| {
+                .flat_map(|host| {
                     let host = host.ip().to_string();
                     info!("Connecting to host: {} at port {}", host, port);
-                    Client::new_plain(
+                    match Client::new_plain(
                         &host,
                         port,
                         ClientConf {
                             ..Default::default()
                         },
-                    )
-                    .expect("Failed to create dgraph client")
+                    ) {
+                        Ok(client) => Some(client),
+                        Err(e) => {
+                            error!("Error connecting to dgraph at {}: {}", host, e);
+                            None
+                        }
+                    }
                 })
                 .map(Arc::new)
                 .map(api_grpc::DgraphClient::with_client)
                 .collect::<Vec<_>>();
 
+            if clients.is_empty() {
+                panic!("Failed to connect to any DGraph client");
+            }
             DgraphClient::new(clients)
         };
 
