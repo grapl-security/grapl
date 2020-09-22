@@ -105,7 +105,7 @@ def recalculate_score(lens: LensView) -> int:
     return total_risk_score
 
 
-def set_score(client: GraphClient, uid: str, new_score: int, txn: Any=None) -> None:
+def set_score(client: GraphClient, uid: str, new_score: int, txn: Any = None) -> None:
     if not txn:
         txn = client.txn(read_only=False)
 
@@ -117,7 +117,9 @@ def set_score(client: GraphClient, uid: str, new_score: int, txn: Any=None) -> N
         txn.discard()
 
 
-def set_property(client: GraphClient, uid: str, prop_name: str, prop_value: Any) -> None:
+def set_property(
+    client: GraphClient, uid: str, prop_name: str, prop_value: Any
+) -> None:
     LOGGER.debug(f"Setting property {prop_name} as {prop_value} for {uid}")
     txn = client.txn(read_only=False)
 
