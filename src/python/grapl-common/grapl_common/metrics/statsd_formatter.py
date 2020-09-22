@@ -13,7 +13,7 @@ class TagPair:
     tag_key: str
     tag_value: str
 
-    def __init__(self, tag_key, tag_value):
+    def __init__(self, tag_key: str, tag_value: str) -> None:
         _reject_invalid_chars(tag_key)
         _reject_invalid_chars(tag_value)
         self.tag_key = tag_key
@@ -23,7 +23,7 @@ class TagPair:
         return ":".join((self.tag_key, self.tag_value))
 
 
-def _reject_invalid_chars(s: str):
+def _reject_invalid_chars(s: str) -> None:
     # TODO - consider a cache of acceptable strings, since python inters its strings
     match = _INVALID_CHARS.search(s)
     if match:
@@ -36,7 +36,7 @@ def statsd_format(
     typ: MetricType,
     sample_rate: float = DEFAULT_SAMPLE_RATE,
     tags: Sequence[TagPair] = (),
-):
+) -> str:
     """
     Mainline `statsd` hasn't chosen a tag syntax yet: https://github.com/statsd/statsd/issues/619
     However, it looks like they will be supporting the Graphite and DogStatsD formats.

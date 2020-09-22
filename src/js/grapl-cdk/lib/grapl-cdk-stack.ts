@@ -129,6 +129,7 @@ class NodeIdentifier extends cdk.NestedStack {
             retry_code_name: 'node-identifier-retry-handler',
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         history_db.allowReadWrite(service);
@@ -231,6 +232,7 @@ class GraphMerger extends cdk.NestedStack {
             writes_to: props.writesTo,
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
         props.schemaTable.allowRead(service);
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
@@ -285,6 +287,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
             writes_to: props.writesTo,
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         service.readsFrom(props.readsFrom, true);
@@ -352,6 +355,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
             },
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
@@ -418,6 +422,7 @@ class EngagementCreator extends cdk.NestedStack {
             },
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
@@ -775,8 +780,8 @@ export class GraplCdkStack extends cdk.Stack {
                 ...graplProps,
             }
         );
-        // as we onboard more services to monitoring, add in ...enableMonitoringProps
-        const enableMonitoringProps: Pick<GraplServiceProps, 'metricForwarder'> = {
+        // as we onboard more services to monitoring, add in ...enableMetricsProps
+        const enableMetricsProps: Pick<GraplServiceProps, 'metricForwarder'> = {
             metricForwarder: metric_forwarder.service,
         }
 
@@ -801,6 +806,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 publishesTo: engagements_created_topic,
                 ...graplProps,
+                ...enableMetricsProps,
             }
         );
 
@@ -856,7 +862,7 @@ export class GraplCdkStack extends cdk.Stack {
         new SysmonGraphGenerator(this, 'sysmon-subgraph-generator', {
             writesTo: node_identifier.bucket,
             ...graplProps,
-            ...enableMonitoringProps,
+            ...enableMetricsProps,
         });
 
         new EngagementNotebook(this, 'engagements', {

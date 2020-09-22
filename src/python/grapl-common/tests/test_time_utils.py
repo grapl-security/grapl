@@ -16,7 +16,7 @@ SOME_DT: Final[datetime] = datetime(
 
 
 class TestTimeUtils(unittest.TestCase):
-    def test__back_and_forth(self):
+    def test__back_and_forth(self) -> None:
         millis = as_millis(SOME_DT)
         back_to_dt = as_datetime(millis)
         assert SOME_DT == back_to_dt
