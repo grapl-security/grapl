@@ -52,7 +52,6 @@ use graph_descriptions::network_connection::NetworkConnectionState;
 use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use grapl_observe::metric_reporter::{MetricReporter, TagPair};
 use lazy_static::lazy_static;
 
 use graph_generator_lib::*;
@@ -675,11 +674,12 @@ where
         }
 
         info!("Completed mapping {} subgraphs", identities.len());
+        self.metrics.report_handle_event_success(&failed);
 
         let mut completed = if let Some(ref e) = failed {
             OutputEvent::new(Completion::Partial((
                 final_subgraph,
-                sqs_lambda::error::Error::ProcessingError((e.to_string())),
+                sqs_lambda::error::Error::ProcessingError(e.to_string()),
             )))
         } else {
             OutputEvent::new(Completion::Total(final_subgraph))
@@ -695,23 +695,19 @@ where
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    grapl_config::init_grapl_log!();
+    grapl_config::init_grapl_env!();
     info!("Starting sysmon-subgraph-generator");
 
-    let metrics = SysmonSubgraphGeneratorMetrics {
-        metric_reporter: MetricReporter::new(),
-    };
+    let metrics = SysmonSubgraphGeneratorMetrics::new();
 
     if grapl_config::is_local() {
-        run_graph_generator(
-            SysmonSubgraphGenerator::new(NopCache {}, metrics),
-            ZstdDecoder::default()
-        ).await;
+        let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);
+
+        run_graph_generator(generator, ZstdDecoder::default()).await;
     } else {
-        run_graph_generator(
-            SysmonSubgraphGenerator::new(event_cache().await, metrics),
-            ZstdDecoder::default()
-        ).await;
+        let generator = SysmonSubgraphGenerator::new(event_cache().await, metrics);
+
+        run_graph_generator(generator, ZstdDecoder::default()).await;
     }
 
     Ok(())

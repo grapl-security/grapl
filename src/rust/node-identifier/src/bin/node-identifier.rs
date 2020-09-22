@@ -11,11 +11,9 @@ use rusoto_dynamodb::DynamoDb;
 use tokio::runtime::Runtime;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    grapl_config::init_grapl_log!();
+    let env = grapl_config::init_grapl_env!();
 
-    let is_local = std::env::var("IS_LOCAL").is_ok();
-
-    if is_local {
+    if env.is_local {
         info!("Running locally");
         let mut runtime = Runtime::new().unwrap();
 
