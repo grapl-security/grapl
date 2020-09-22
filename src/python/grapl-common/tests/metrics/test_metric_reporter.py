@@ -5,11 +5,16 @@ from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 class MetricReporterTests:
     def test__smoke_test(self):
         f = Fixture()
-        f.metric_reporter.write_metric(
-            "some_metric", 2.0, "g", tags=(TagPair("k1", "v1"), TagPair("k2", "v2"))
-        )
+        tags = (TagPair("k1", "v1"), TagPair("k2", "v2"))
+        f.metric_reporter.gauge("some_metric", 1.0, tags=tags)
+        f.metric_reporter.counter("some_metric", 2.0, tags=tags)
+        f.metric_reporter.counter("some_metric", 3.0, sample_rate=0.5, tags=tags)
+        f.metric_reporter.counter("some_metric", 4.0, tags=tags)
         assert f.out.writes == [
-            "MONITORING|py_test_service|20200920T01:02:03.4000Z|some_metric:2.0|g|#k1:v1,k2:v2"
+            "MONITORING|py_test_service|20200920T01:02:03.4000Z|some_metric:1.0|g|#k1:v1,k2:v2"
+            "MONITORING|py_test_service|20200920T01:02:03.4000Z|some_metric:2.0|c|#k1:v1,k2:v2"
+            "MONITORING|py_test_service|20200920T01:02:03.4000Z|some_metric:3.0|c|@0.5|#k1:v1,k2:v2"
+            "MONITORING|py_test_service|20200920T01:02:03.4000Z|some_metric:4.0|h|#k1:v1,k2:v2"
         ]
 
 
