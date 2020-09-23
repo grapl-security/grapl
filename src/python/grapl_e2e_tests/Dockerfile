@@ -1,9 +1,10 @@
 FROM grapl/grapl-python-build:latest AS grapl-e2e-tests-build
+CMD "/bin/bash"
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . grapl_e2e_tests
-COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
+# Expose the `etc/` dir with all its test data in /home/grapl/local_grapl
+COPY --from=grapl/etc-build /home/grapl/etc etc
 
-COPY --from=grapl/grapl-common-python-build /home/grapl/grapl_common grapl_common
-#RUN /bin/bash -c "source venv/bin/activate && cd grapl_e2e_tests && python ./main.py"
-# we do the run in the dobi.yaml
+COPY --from=grapl/grapl-analyzerlib-python-build /home/grapl/venv venv
+RUN /bin/bash -c "source venv/bin/activate && pip install zstd"

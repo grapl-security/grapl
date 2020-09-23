@@ -333,6 +333,7 @@ image=grapl-e2e-tests-build:
   target: grapl-e2e-tests-build
   depends:
     - grapl-analyzerlib-build
+    - etc-build
     # probably many more
   tags:
     - latest
@@ -378,6 +379,15 @@ image=graphql-endpoint:
   target: grapl-graphql-endpoint
   depends:
     - graphql-endpoint-build
+  tags:
+    - "{env.TAG}"
+
+# local grapl
+image=etc-build:
+  image: grapl/etc-build
+  context: etc/
+  dockerfile: Dockerfile
+  target: etc-build
   tags:
     - "{env.TAG}"
 
@@ -539,7 +549,7 @@ job=run-analyzer-deployer-integration-tests:
 job=run-e2e-integration-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 5 && source venv/bin/activate && cd grapl_e2e_tests && python3 ./main.py"
+  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_e2e_tests && python3 ./main.py"
   env:
     - GRAPL_LOG_LEVEL=INFO
     - "BUCKET_PREFIX=local-grapl"
