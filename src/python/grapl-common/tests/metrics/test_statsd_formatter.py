@@ -60,7 +60,7 @@ class TestStatsdFormatter(unittest.TestCase):
             typ="ms",
             tags=TestData.TAGS,
         )
-        assert result == "some_metric:2.0|ms|#key=value,key2=value2"
+        assert result == "some_metric:2.0|ms|#key:value,key2:value2"
 
     def test_invalid_metric_names(self):
         for invalid_metric_name in TestData.INVALID_STRS:

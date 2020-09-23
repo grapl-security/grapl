@@ -417,6 +417,34 @@ jobs:
       - name: Clean up grapl_analyzerlib dist
         run: |
           rm -rf dist
+      
+
+      - name: Prepare grapl-common dist
+        run: |
+          docker create -ti --name grapl-common grapl/grapl-common-python-build:latest
+          docker cp grapl-common:/home/grapl/grapl-common/dist .
+          docker rm -f grapl-common
+
+      - name: Upload grapl-common to Test PyPI
+        if: env.CHANNEL == 'beta'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Upload grapl-common to PyPI
+        if: env.CHANNEL == 'latest'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
+
+      - name: Clean up grapl-common dist
+        run: |
+          rm -rf dist
+
+
 
   release-js-services:
     runs-on: ubuntu-latest
