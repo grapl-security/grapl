@@ -12,8 +12,27 @@ use tracing::*;
 /// Supports a generic serialization format for incoming logs. This allows the use of any log source
 /// as long as it is preprocessed to use Grapl's generic serialization format.
 ///
-/// Grapl's generic generator expects ZStandard compressed JSON logs. The log formats match the models found
-/// in [models].
+/// Grapl's generic generator expects ZStandard compressed JSON logs. The log types (and the required information)
+/// can be found in the [GenericEvent] enum definition. Each type specified is supported but does required that
+/// a `"eventname"` field is appended to the object with a value matching the string specified on the
+/// variant.
+///
+/// e.g. The following is a valid [ProcessStart](../models/process/start/struct.ProcessStart.html) event:
+///
+/// ```
+/// {
+///   "eventname": "PROCESS_START",
+///   "process_id": 2,
+///   "parent_process_id": 1,
+///   "name": "example.exe",
+///   "hostname": "EXAMPLE",
+///   "arguments": "-c 123",
+///   "exe": "C:\\Users\\test_user\\AppData\\Local\\Temp\\example.exe",
+///   "timestamp": 123
+/// }
+/// ```
+///
+/// Keep in mind that this generator expects the logs to have been compressed with ZStandard before processing.
 #[derive(Clone)]
 pub struct GenericSubgraphGenerator<C>
 where
