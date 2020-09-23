@@ -2,15 +2,14 @@ mod file;
 mod network;
 mod process;
 
-use serde::{Deserialize, Serialize};
 use crate::models::file::{FileCreate, FileDelete, FileRead, FileWrite};
 use crate::models::network::{ProcessInboundConnectionLog, ProcessOutboundConnectionLog};
 use crate::models::process::ProcessPortBindLog;
 use graph_descriptions::graph_description::*;
 use process::{ProcessStart, ProcessStop};
-use serde::de::Error;
+use serde::{Deserialize, Serialize};
+
 use std::convert::TryFrom;
-use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 #[serde(tag = "eventname")]

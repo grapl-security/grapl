@@ -5,7 +5,7 @@ mod models;
 mod serialization;
 mod tests;
 
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable, NopCache};
+use sqs_lambda::cache::{Cache, NopCache};
 
 use tracing::*;
 
