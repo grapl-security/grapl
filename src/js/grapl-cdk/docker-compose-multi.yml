@@ -46,8 +46,8 @@ services:
     volumes:
       - data-volume:/dgraph
     ports:
-      - 8081:8081
-      - 9081:9081
+      - 8080:8080
+      - 9080:9080
     networks:
       - dgraph
     deploy:
@@ -55,15 +55,15 @@ services:
       placement:
         constraints:
           - node.hostname == ${AWS02_NAME}
-    command: dgraph alpha --my=alpha2:7081 --lru_mb=2048 --zero=zero:5080 -o 1 --whitelist=10.0.0.0/8
+    command: dgraph alpha --my=alpha2:7080 --lru_mb=2048 --zero=zero:5080 --whitelist=10.0.0.0/8
   alpha3:
     image: dgraph/dgraph:latest
     hostname: "alpha3"
     volumes:
       - data-volume:/dgraph
     ports:
-      - 8082:8082
-      - 9082:9082
+      - 8080:8080
+      - 9080:9080
     networks:
       - dgraph
     deploy:
@@ -71,7 +71,7 @@ services:
       placement:
         constraints:
           - node.hostname == ${AWS03_NAME}
-    command: dgraph alpha --my=alpha3:7082 --lru_mb=2048 --zero=zero:5080 -o 2 --whitelist=10.0.0.0/8
+    command: dgraph alpha --my=alpha3:7080 --lru_mb=2048 --zero=zero:5080 --whitelist=10.0.0.0/8
   ratel:
     image: dgraph/dgraph:latest
     hostname: "ratel"

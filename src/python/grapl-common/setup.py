@@ -16,6 +16,7 @@ def find_version():
 
 __version__ = find_version()
 
+
 setup(
     name="grapl-common",
     version=__version__,
@@ -33,7 +34,7 @@ setup(
     zip_safe=False,
     packages=find_packages(),
     package_data={
-        "grapl-common": [
+        "grapl_common": [
             "py.typed",
         ]
     },

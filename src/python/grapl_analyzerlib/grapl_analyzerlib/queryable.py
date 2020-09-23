@@ -189,7 +189,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         finally:
             txn.discard()
 
-        d = qres.get("query")
+        d = qres.get("q0")
         if d:
             return [
                 self.associated_viewable().from_dict(node, graph_client) for node in d
