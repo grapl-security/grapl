@@ -24,17 +24,27 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 100
+      
+      - uses: marceloprado/has-changed-path@v1
+          id: changed-rust
+          with:
+            paths: src/rust/
 
       - name: Install dobi
+        if: steps.changed-rust.outputs.changed == 'true'
         run: |
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
       - name: Build Rust services
+        if: steps.changed-rust.outputs.changed == 'true'
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
 
       - name: Rust unit tests
+        if: steps.changed-rust.outputs.changed == 'true'
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-unit-tests
 
@@ -96,16 +106,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 100
+
+      - uses: marceloprado/has-changed-path@v1
+          id: changed-src
+          with:
+            paths: src/
 
       - name: Install dobi
+        if: steps.changed-src.outputs.changed == 'true'
         run: |
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
 
       - name: Build Grapl
+        if: steps.changed-src.outputs.changed == 'true'
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
 
       - name: Run integration tests
+        if: steps.changed-src.outputs.changed == 'true'
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration-tests
