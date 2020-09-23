@@ -1,5 +1,7 @@
 from typing_extensions import Protocol
-from typing import Optional, Callable, Sequence, Union, TextIO
+from contextlib import contextmanager
+from grapl_common.time_utils import as_millis_duration, MillisDuration
+from typing import Optional, Callable, Sequence, Union, TextIO, Iterator
 from datetime import datetime, timezone
 from sys import stdout
 from grapl_common.metrics.statsd_formatter import (
@@ -97,7 +99,7 @@ class MetricReporter:
     def histogram(
         self,
         metric_name: str,
-        value: Union[int, float],
+        value: MillisDuration,
         tags: Sequence[TagPair] = (),
     ) -> None:
         """
@@ -113,6 +115,32 @@ class MetricReporter:
             typ="h",
             tags=tags,
         )
+
+    @contextmanager
+    def histogram_ctx(
+        self,
+        metric_name: str,
+        tags: Sequence[TagPair] = (),
+    ) -> Iterator[None]:
+        """
+        A histogram is a measure of the distribution of timer values over time, calculated at the
+        server. As the data exported for timers and histograms is the same,
+        this is currently an alias for a timer.
+
+        example: the time to complete rendering of a web page for a user.
+        """
+        start = self.utc_now()
+        try:
+            yield
+        finally:
+            end = self.utc_now()
+            value = as_millis_duration(end - start)
+            self.write_metric(
+                metric_name=metric_name,
+                value=value,
+                typ="h",
+                tags=tags,
+            )
 
     _TIME_SPEC = "milliseconds"
 
