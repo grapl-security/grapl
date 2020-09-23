@@ -211,25 +211,30 @@ def nodes_to_attach_risk_to(
     return [node for node in nodes if node.node_key in risky_node_keys_set]
 
 
-def get_metrics() -> EngagementCreatorMetrics:
+def create_metrics_client() -> EngagementCreatorMetrics:
     return EngagementCreatorMetrics(SERVICE_NAME)
 
 
 def lambda_handler(s3_event: S3Event, context: Any) -> None:
     mg_client = MasterGraphClient()
     s3 = get_s3_client()
-    metrics = get_metrics()
+    metrics = create_metrics_client()
 
     for event in s3_event["Records"]:
         with metrics.time_to_process_event():
-            _process_one_event(event, s3, mg_client, metrics)
+            try:
+                _process_one_event(event, s3, mg_client)
+            except:
+                metrics.event_processed(status="failure")
+                raise
+            else:
+                metrics.event_processed(status="success")
 
 
 def _process_one_event(
     event: Any,
     s3: S3ServiceResource,
     mg_client: GraphClient,
-    metrics: EngagementCreatorMetrics,
 ) -> None:
     if not IS_LOCAL:
         event = json.loads(event["body"])["Records"][0]
@@ -309,8 +314,6 @@ def _process_one_event(
 
     for lens in lenses.values():
         recalculate_score(lens)
-
-    metrics.event_processed()
 
 
 def main() -> None:
