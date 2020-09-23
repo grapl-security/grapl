@@ -225,6 +225,7 @@ class GraphMerger extends cdk.NestedStack {
                     graph_merge_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT:
                     graph_merge_cache.cluster.attrRedisEndpointPort,
+                GRAPL_SCHEMA_TABLE: props.schemaTable.schema_table.tableName,
             },
             vpc: props.vpc,
             reads_from: subgraphs_generated.bucket,
@@ -478,8 +479,6 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
 
     public allowConnectionsFrom(other: ec2.IConnectable): void {
         this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9080));
-        this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9081));
-        this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9082));
     }
 }
 

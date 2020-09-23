@@ -48,6 +48,7 @@ use tokio::runtime::Runtime;
 
 use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use graph_descriptions::node::NodeT;
+use std::net::ToSocketAddrs;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -200,17 +201,36 @@ where
                 .to_owned();
             let (host, port) = grapl_config::parse_host_port(rand_alpha);
 
-            debug!("connecting to DGraph {:?}:{:?}", host, port);
-            DgraphClient::new(vec![api_grpc::DgraphClient::with_client(Arc::new(
-                Client::new_plain(
-                    &host,
-                    port,
-                    ClientConf {
-                        ..Default::default()
-                    },
-                )
-                .expect("Failed to create dgraph client"),
-            ))])
+            info!("connecting to DGraph {:?}:{:?}", host, port);
+
+            let clients = format!("{}:{}", host, port)
+                .to_socket_addrs()
+                .expect("Invalid socket_addrs")
+                .flat_map(|host| {
+                    let host = host.ip().to_string();
+                    info!("Connecting to host: {} at port {}", host, port);
+                    match Client::new_plain(
+                        &host,
+                        port,
+                        ClientConf {
+                            ..Default::default()
+                        },
+                    ) {
+                        Ok(client) => Some(client),
+                        Err(e) => {
+                            error!("Error connecting to dgraph at {}: {}", host, e);
+                            None
+                        }
+                    }
+                })
+                .map(Arc::new)
+                .map(api_grpc::DgraphClient::with_client)
+                .collect::<Vec<_>>();
+
+            if clients.is_empty() {
+                panic!("Failed to connect to any DGraph client");
+            }
+            DgraphClient::new(clients)
         };
 
         Self {
@@ -666,18 +686,24 @@ where
 }
 
 pub fn init_dynamodb_client() -> DynamoDbClient {
-    info!("Connecting to local http://dynamodb:8000");
-    DynamoDbClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_cred_aws_access_key_id".to_owned(),
-            "dummy_cred_aws_secret_access_key".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-west-2".to_string(),
-            endpoint: "http://dynamodb:8000".to_string(),
-        },
-    )
+    if grapl_config::is_local() {
+        info!("Connecting to local DynamoDB http://dynamodb:8000");
+        DynamoDbClient::new_with(
+            HttpClient::new().expect("failed to create request dispatcher"),
+            rusoto_credential::StaticProvider::new_minimal(
+                "dummy_cred_aws_access_key_id".to_owned(),
+                "dummy_cred_aws_secret_access_key".to_owned(),
+            ),
+            Region::Custom {
+                name: "us-west-2".to_string(),
+                endpoint: "http://dynamodb:8000".to_string(),
+            },
+        )
+    } else {
+        info!("Connecting to DynamoDB");
+        let region = grapl_config::region();
+        DynamoDbClient::new(region.clone())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -718,7 +744,7 @@ async fn get_r_edge(
             Ok(Some(mapping.r_edge))
         }
         None => {
-            warn!("Missing r_edge for: {}", f_edge);
+            error!("Missing r_edge for: {}", f_edge);
             Ok(None)
         }
     }
