@@ -8,6 +8,7 @@ use crate::error::MetricForwarderError;
 pub struct Stat {
     pub msg: statsd_parser::Message,
     pub timestamp: String,
+    pub service_name: String,
 }
 
 const MONITORING_DELIM: &'static str = "|";
@@ -24,19 +25,20 @@ pub fn parse_logs(logs_data: CloudwatchLogsData) -> Vec<Result<Stat, MetricForwa
         .collect()
 }
 
-fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
+pub fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
     /*
     The input will look like
     MONITORING|timestamp|statsd|stuff|goes|here\n
      */
-    let split: Vec<&str> = log_str.trim_end().splitn(3, MONITORING_DELIM).collect();
+    let split: Vec<&str> = log_str.trim_end().splitn(4, MONITORING_DELIM).collect();
     match &split[..] {
-        [_monitoring, timestamp, statsd_component] => {
+        [_monitoring, service_name, timestamp, statsd_component] => {
             let statsd_msg = statsd_parser::parse(statsd_component.to_string());
             statsd_msg
                 .map(|msg| Stat {
-                    timestamp: timestamp.to_string(),
                     msg: msg,
+                    timestamp: timestamp.to_string(),
+                    service_name: service_name.to_string(),
                 })
                 .map_err(|parse_err| {
                     MetricForwarderError::ParseStringToStatsdError(
@@ -72,6 +74,7 @@ mod tests {
     fn test_parse_one_log() -> Result<(), MetricForwarderError> {
         let input = [
             "MONITORING",
+            "cool_service",
             "2017-04-26T10:41:09.023Z",
             // you'll note I threw a gross, extra \t in the metric name as an edge case
             "some_\tstr:12345.6|c|#some_key=some_value,some_key_2=some_value_2\n",
@@ -82,6 +85,7 @@ mod tests {
         });
         let parsed = expect_metric(&input, expected)?;
         assert_eq!(parsed.msg.name, "some_\tstr");
+        assert_eq!(parsed.service_name, "cool_service");
         Ok(())
     }
 
@@ -89,6 +93,7 @@ mod tests {
     fn test_gauge() -> Result<(), MetricForwarderError> {
         let input = [
             "MONITORING",
+            "cool_service",
             "2017-04-26T10:41:09.023Z",
             "some_\tstr:12345.6|g",
         ];
@@ -105,6 +110,7 @@ mod tests {
     fn test_trim_end() -> Result<(), MetricForwarderError> {
         let input = [
             "MONITORING",
+            "cool_service",
             "2017-04-26T10:41:09.023Z",
             "sysmon-generator-started:1|g\n",
         ];
@@ -138,6 +144,7 @@ mod tests {
     fn test_couldnt_parse_statsd() -> Result<(), String> {
         let input = [
             "MONITORING",
+            "cool_service",
             "2017-04-26T10:41:09.023Z",
             "some_str:12345.6|fake_metric_type",
         ];

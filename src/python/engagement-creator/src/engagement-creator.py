@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar
+from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar, Type
 
 import boto3
 import botocore.exceptions  # type: ignore
@@ -16,9 +16,10 @@ from grapl_analyzerlib.prelude import BaseView
 from grapl_analyzerlib.prelude import RiskView
 from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.queryable import Queryable
+from src.metrics import EngagementCreatorMetrics
 from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_sqs import SQSClient
-from typing_extensions import Type
+from typing_extensions import Final
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -38,8 +39,10 @@ EventWithReceiptHandle = Tuple[S3Event, str]
 V = TypeVar("V", bound=Viewable)
 Q = TypeVar("Q", bound=Queryable)
 
+SERVICE_NAME: Final[str] = "engagement-creator"
 
-def parse_s3_event(s3: S3ServiceResource, event) -> bytes:
+
+def parse_s3_event(s3: S3ServiceResource, event: Any) -> bytes:
     # Retrieve body of sns message
     # Decode json body of sns message
     LOGGER.debug("event is {}".format(event))
@@ -102,7 +105,7 @@ def recalculate_score(lens: LensView) -> int:
     return total_risk_score
 
 
-def set_score(client: GraphClient, uid: str, new_score: int, txn=None) -> None:
+def set_score(client: GraphClient, uid: str, new_score: int, txn: Any = None) -> None:
     if not txn:
         txn = client.txn(read_only=False)
 
@@ -114,7 +117,9 @@ def set_score(client: GraphClient, uid: str, new_score: int, txn=None) -> None:
         txn.discard()
 
 
-def set_property(client: GraphClient, uid: str, prop_name: str, prop_value):
+def set_property(
+    client: GraphClient, uid: str, prop_name: str, prop_value: Any
+) -> None:
     LOGGER.debug(f"Setting property {prop_name} as {prop_value} for {uid}")
     txn = client.txn(read_only=False)
 
@@ -206,92 +211,112 @@ def nodes_to_attach_risk_to(
     return [node for node in nodes if node.node_key in risky_node_keys_set]
 
 
+def create_metrics_client() -> EngagementCreatorMetrics:
+    return EngagementCreatorMetrics(SERVICE_NAME)
+
+
 def lambda_handler(s3_event: S3Event, context: Any) -> None:
     mg_client = MasterGraphClient()
-
     s3 = get_s3_client()
+    metrics = create_metrics_client()
+
     for event in s3_event["Records"]:
-        if not IS_LOCAL:
-            event = json.loads(event["body"])["Records"][0]
-
-        data = parse_s3_event(s3, event)
-        incident_graph = json.loads(data)
-
-        """
-        The `incident_graph` dict is emitted from analyzer-executor.py#emit_event
-        """
-        analyzer_name = incident_graph["analyzer_name"]
-        nodes_raw: Dict[str, Any] = incident_graph[
-            "nodes"
-        ]  # same type as `.to_adjacency_list()["nodes"]`
-        edges = incident_graph["edges"]
-        risk_score = incident_graph["risk_score"]
-        lens_dict = incident_graph["lenses"]
-        risky_node_keys = incident_graph["risky_node_keys"]
-
-        LOGGER.debug(
-            f"AnalyzerName {analyzer_name}, nodes: {nodes_raw} edges: {type(edges)} {edges}"
-        )
-
-        _nodes = (
-            BaseView.from_node_key(mg_client, n["node_key"]) for n in nodes_raw.values()
-        )
-        nodes = [n for n in _nodes if n]
-
-        uid_map = {node.node_key: node.uid for node in nodes}
-
-        lenses = {}  # type: Dict[str, LensView]
-        for node in nodes:
-            LOGGER.debug(f"Copying node: {node}")
-
-            for lens_type, lens_name in lens_dict:
-                LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
-                lens_id = lens_name + lens_type
-                lens: LensView = lenses.get(lens_name) or LensView.get_or_create(
-                    mg_client, lens_name, lens_type
-                )
-                lenses[lens_id] = lens
-
-                # Attach to scope
-                create_edge(mg_client, lens.uid, "scope", node.uid)
-
-                # If a node shows up in a lens all of its connected nodes should also show up in that lens
-                for edge_list in edges.values():
-                    for edge in edge_list:
-                        from_uid = uid_map[edge["from"]]
-                        to_uid = uid_map[edge["to"]]
-                        create_edge(mg_client, lens.uid, "scope", from_uid)
-                        create_edge(mg_client, lens.uid, "scope", to_uid)
-
-        risk = upsert(
-            mg_client,
-            "Risk",
-            RiskView,
-            analyzer_name,
-            {
-                "analyzer_name": analyzer_name,
-                "risk_score": risk_score,
-            },
-        )
-
-        risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_keys)
-        for node in risky_nodes:
-            create_edge(mg_client, node.uid, "risks", risk.uid)
-            create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
-
-        for edge_list in edges.values():
-            for edge in edge_list:
-                from_uid = uid_map[edge["from"]]
-                edge_name = edge["edge_name"]
-                to_uid = uid_map[edge["to"]]
-
-                create_edge(mg_client, from_uid, edge_name, to_uid)
-
-        for lens in lenses.values():
-            recalculate_score(lens)
+        with metrics.time_to_process_event():
+            try:
+                _process_one_event(event, s3, mg_client)
+            except:
+                metrics.event_processed(status="failure")
+                raise
+            else:
+                metrics.event_processed(status="success")
 
 
-def main():
+def _process_one_event(
+    event: Any,
+    s3: S3ServiceResource,
+    mg_client: GraphClient,
+) -> None:
+    if not IS_LOCAL:
+        event = json.loads(event["body"])["Records"][0]
+
+    data = parse_s3_event(s3, event)
+    incident_graph = json.loads(data)
+
+    """
+    The `incident_graph` dict is emitted from analyzer-executor.py#emit_event
+    """
+    analyzer_name = incident_graph["analyzer_name"]
+    nodes_raw: Dict[str, Any] = incident_graph[
+        "nodes"
+    ]  # same type as `.to_adjacency_list()["nodes"]`
+    edges = incident_graph["edges"]
+    risk_score = incident_graph["risk_score"]
+    lens_dict = incident_graph["lenses"]
+    risky_node_keys = incident_graph["risky_node_keys"]
+
+    LOGGER.debug(
+        f"AnalyzerName {analyzer_name}, nodes: {nodes_raw} edges: {type(edges)} {edges}"
+    )
+
+    _nodes = (
+        BaseView.from_node_key(mg_client, n["node_key"]) for n in nodes_raw.values()
+    )
+    nodes = [n for n in _nodes if n]
+
+    uid_map = {node.node_key: node.uid for node in nodes}
+
+    lenses = {}  # type: Dict[str, LensView]
+    for node in nodes:
+        LOGGER.debug(f"Copying node: {node}")
+
+        for lens_type, lens_name in lens_dict:
+            LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
+            lens_id = lens_name + lens_type
+            lens: LensView = lenses.get(lens_name) or LensView.get_or_create(
+                mg_client, lens_name, lens_type
+            )
+            lenses[lens_id] = lens
+
+            # Attach to scope
+            create_edge(mg_client, lens.uid, "scope", node.uid)
+
+            # If a node shows up in a lens all of its connected nodes should also show up in that lens
+            for edge_list in edges.values():
+                for edge in edge_list:
+                    from_uid = uid_map[edge["from"]]
+                    to_uid = uid_map[edge["to"]]
+                    create_edge(mg_client, lens.uid, "scope", from_uid)
+                    create_edge(mg_client, lens.uid, "scope", to_uid)
+
+    risk = upsert(
+        mg_client,
+        "Risk",
+        RiskView,
+        analyzer_name,
+        {
+            "analyzer_name": analyzer_name,
+            "risk_score": risk_score,
+        },
+    )
+
+    risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_keys)
+    for node in risky_nodes:
+        create_edge(mg_client, node.uid, "risks", risk.uid)
+        create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
+
+    for edge_list in edges.values():
+        for edge in edge_list:
+            from_uid = uid_map[edge["from"]]
+            edge_name = edge["edge_name"]
+            to_uid = uid_map[edge["to"]]
+
+            create_edge(mg_client, from_uid, edge_name, to_uid)
+
+    for lens in lenses.values():
+        recalculate_score(lens)
+
+
+def main() -> None:
     sqs: SQSClient = boto3.client(
         "sqs",
         region_name="us-east-1",
@@ -344,7 +369,7 @@ def main():
 
         except Exception as e:
             LOGGER.error(f"mainloop exception {e}")
-            LOGGER.error(traceback.print_exc())
+            LOGGER.error(traceback.format_exc())
             time.sleep(2)
 
 
