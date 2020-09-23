@@ -28,9 +28,9 @@ jobs:
           fetch-depth: 100
       
       - uses: marceloprado/has-changed-path@v1
-          id: changed-rust
-          with:
-            paths: src/rust/
+        id: changed-rust
+        with:
+          paths: src/rust/
 
       - name: Install dobi
         if: steps.changed-rust.outputs.changed == 'true'
@@ -110,9 +110,9 @@ jobs:
           fetch-depth: 100
 
       - uses: marceloprado/has-changed-path@v1
-          id: changed-src
-          with:
-            paths: src/
+        id: changed-src
+        with:
+          paths: src/
 
       - name: Install dobi
         if: steps.changed-src.outputs.changed == 'true'
