@@ -121,9 +121,9 @@ class BaseView(Viewable[BV, BQ]):
         if v.node_schema().self_type() in self.node_types:
             self.queryable = v.queryable
             return v(
-                self.uid,
-                self.node_key,
-                self.graph_client,
+                uid=self.uid,
+                node_key=self.node_key,
+                graph_client=self.graph_client,
                 node_types=self.node_types,
                 **self.predicates,
             )
