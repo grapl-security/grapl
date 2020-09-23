@@ -3,6 +3,7 @@ use graph_descriptions::graph_description::*;
 use graph_descriptions::node::NodeT;
 use graph_descriptions::process::ProcessState;
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct FileRead {
@@ -13,24 +14,24 @@ pub struct FileRead {
     timestamp: u64,
 }
 
-impl From<FileRead> for Graph {
-    fn from(file_read: FileRead) -> Self {
+impl TryFrom<FileRead> for Graph {
+    type Error = String;
+
+    fn try_from(file_read: FileRead) -> Result<Self, Self::Error> {
         let deleter = ProcessBuilder::default()
             .process_name(file_read.reader_process_name.unwrap_or_default())
             .hostname(file_read.hostname.clone())
             .state(ProcessState::Existing)
             .process_id(file_read.reader_process_id)
             .last_seen_timestamp(file_read.timestamp)
-            .build()
-            .unwrap();
+            .build()?;
 
         let file = FileBuilder::default()
             .hostname(file_read.hostname)
             .state(FileState::Existing)
             .last_seen_timestamp(file_read.timestamp)
             .file_path(file_read.path)
-            .build()
-            .unwrap();
+            .build()?;
 
         let mut graph = Graph::new(file_read.timestamp);
 
@@ -42,6 +43,6 @@ impl From<FileRead> for Graph {
         graph.add_node(deleter);
         graph.add_node(file);
 
-        graph
+        Ok(graph)
     }
 }

@@ -3,6 +3,7 @@ use graph_descriptions::graph_description::*;
 use graph_descriptions::node::NodeT;
 use graph_descriptions::process::ProcessState;
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -16,23 +17,23 @@ pub struct ProcessStart {
     exe: Option<String>,
 }
 
-impl From<ProcessStart> for Graph {
-    fn from(process_start: ProcessStart) -> Self {
+impl TryFrom<ProcessStart> for Graph {
+    type Error = String;
+
+    fn try_from(process_start: ProcessStart) -> Result<Self, Self::Error> {
         let mut graph = Graph::new(process_start.timestamp);
 
         let asset = AssetBuilder::default()
             .asset_id(process_start.hostname.clone())
             .hostname(process_start.hostname.clone())
-            .build()
-            .unwrap();
+            .build()?;
 
         let parent = ProcessBuilder::default()
             .hostname(process_start.hostname.clone())
             .state(ProcessState::Existing)
             .process_id(process_start.parent_process_id)
             .last_seen_timestamp(process_start.timestamp)
-            .build()
-            .unwrap();
+            .build()?;
 
         let child = ProcessBuilder::default()
             .hostname(process_start.hostname.clone())
@@ -40,8 +41,7 @@ impl From<ProcessStart> for Graph {
             .state(ProcessState::Created)
             .process_id(process_start.process_id)
             .created_timestamp(process_start.timestamp)
-            .build()
-            .unwrap();
+            .build()?;
 
         if let Some(exe_path) = process_start.exe {
             let child_exe = FileBuilder::default()
@@ -49,8 +49,7 @@ impl From<ProcessStart> for Graph {
                 .state(FileState::Existing)
                 .last_seen_timestamp(process_start.timestamp)
                 .file_path(exe_path)
-                .build()
-                .unwrap();
+                .build()?;
 
             graph.add_edge(
                 "bin_file",
@@ -77,6 +76,6 @@ impl From<ProcessStart> for Graph {
         graph.add_node(parent);
         graph.add_node(child);
 
-        graph
+        Ok(graph)
     }
 }

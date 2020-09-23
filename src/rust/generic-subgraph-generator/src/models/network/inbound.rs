@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use graph_descriptions::network_connection::NetworkConnectionState;
 use graph_descriptions::node::NodeT;
+use std::convert::TryFrom;
 
 // In an inbound connection "src" is where the connection is coming from
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -20,15 +21,16 @@ pub struct ProcessInboundConnectionLog {
     timestamp: u64,
 }
 
-impl From<ProcessInboundConnectionLog> for Graph {
-    fn from(conn_log: ProcessInboundConnectionLog) -> Self {
+impl TryFrom<ProcessInboundConnectionLog> for Graph {
+    type Error = String;
+
+    fn try_from(conn_log: ProcessInboundConnectionLog) -> Result<Self, Self::Error> {
         let mut graph = Graph::new(conn_log.timestamp);
 
         let asset = AssetBuilder::default()
             .asset_id(conn_log.dst_hostname.clone())
             .hostname(conn_log.dst_hostname.clone())
-            .build()
-            .expect("inbound_traffic.asset");
+            .build()?;
 
         // A process creates an outbound connection to dst_port
         let process = ProcessBuilder::default()
@@ -36,8 +38,7 @@ impl From<ProcessInboundConnectionLog> for Graph {
             .state(ProcessState::Existing)
             .process_id(conn_log.pid)
             .last_seen_timestamp(conn_log.timestamp)
-            .build()
-            .expect("inbound_traffic.process");
+            .build()?;
 
         let inbound = ProcessInboundConnectionBuilder::default()
             .asset_id(conn_log.dst_hostname.clone())
@@ -46,32 +47,29 @@ impl From<ProcessInboundConnectionLog> for Graph {
             .protocol(conn_log.protocol.clone())
             .port(conn_log.dst_port)
             .created_timestamp(conn_log.timestamp)
-            .build()
-            .expect("inbound_traffic.inbound");
+            .build()?;
 
         let dst_ip = IpAddressBuilder::default()
             .ip_address(conn_log.dst_ip_addr.clone())
             .last_seen_timestamp(conn_log.timestamp)
-            .build()
-            .expect("inbound_traffic.dst_ip");
+            .build()?;
 
         let src_ip = IpAddressBuilder::default()
             .ip_address(conn_log.src_ip_addr.clone())
             .last_seen_timestamp(conn_log.timestamp)
-            .build()
-            .expect("inbound_traffic.src_ip");
+            .build()?;
 
         let src_port = IpPortBuilder::default()
             .ip_address(conn_log.src_ip_addr.clone())
+            .protocol(conn_log.protocol.clone())
             .port(conn_log.src_port)
-            .build()
-            .expect("inbound_traffic.src_port");
+            .build()?;
 
         let dst_port = IpPortBuilder::default()
             .ip_address(conn_log.dst_ip_addr.clone())
+            .protocol(conn_log.protocol.clone())
             .port(conn_log.dst_port)
-            .build()
-            .expect("inbound_traffic.dst_port");
+            .build()?;
 
         let network_connection = NetworkConnectionBuilder::default()
             .state(NetworkConnectionState::Created)
@@ -81,8 +79,7 @@ impl From<ProcessInboundConnectionLog> for Graph {
             .dst_port(conn_log.dst_port)
             .protocol(conn_log.protocol)
             .created_timestamp(conn_log.timestamp)
-            .build()
-            .expect("inbound_traffic.network_connection");
+            .build()?;
 
         // An asset is assigned an IP
         graph.add_edge("asset_ip", asset.clone_node_key(), dst_ip.clone_node_key());
@@ -137,6 +134,6 @@ impl From<ProcessInboundConnectionLog> for Graph {
         graph.add_node(dst_port);
         graph.add_node(network_connection);
 
-        graph
+        Ok(graph)
     }
 }

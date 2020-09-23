@@ -36,18 +36,18 @@ pub enum GenericEvent {
 }
 
 impl TryFrom<GenericEvent> for Graph {
-    type Error = eyre::Report;
+    type Error = String;
 
     fn try_from(generic_event: GenericEvent) -> Result<Self, Self::Error> {
         match generic_event {
-            GenericEvent::ProcessStart(event) => Ok(Graph::from(event)),
-            GenericEvent::ProcessStop(event) => Ok(Graph::from(event)),
-            GenericEvent::FileCreate(event) => Ok(Graph::from(event)),
-            GenericEvent::FileDelete(event) => Ok(Graph::from(event)),
-            GenericEvent::FileRead(event) => Ok(Graph::from(event)),
-            GenericEvent::FileWrite(event) => Ok(Graph::from(event)),
-            GenericEvent::ProcessOutboundConnectionLog(event) => Ok(Graph::from(event)),
-            GenericEvent::ProcessInboundConnectionLog(event) => Ok(Graph::from(event)),
+            GenericEvent::ProcessStart(event) => Graph::try_from(event),
+            GenericEvent::ProcessStop(event) => Graph::try_from(event),
+            GenericEvent::FileCreate(event) => Graph::try_from(event),
+            GenericEvent::FileDelete(event) => Graph::try_from(event),
+            GenericEvent::FileRead(event) => Graph::try_from(event),
+            GenericEvent::FileWrite(event) => Graph::try_from(event),
+            GenericEvent::ProcessOutboundConnectionLog(event) => Graph::try_from(event),
+            GenericEvent::ProcessInboundConnectionLog(event) => Graph::try_from(event),
             GenericEvent::ProcessPortBindLog(_event) => unimplemented!(),
         }
     }

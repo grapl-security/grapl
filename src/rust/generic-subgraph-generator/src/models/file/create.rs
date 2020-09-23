@@ -3,6 +3,7 @@ use graph_descriptions::graph_description::*;
 use graph_descriptions::node::NodeT;
 use graph_descriptions::process::ProcessState;
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -14,24 +15,24 @@ pub struct FileCreate {
     timestamp: u64,
 }
 
-impl From<FileCreate> for Graph {
-    fn from(file_create: FileCreate) -> Self {
+impl TryFrom<FileCreate> for Graph {
+    type Error = String;
+
+    fn try_from(file_create: FileCreate) -> Result<Self, Self::Error> {
         let creator = ProcessBuilder::default()
             .hostname(file_create.hostname.clone())
             .process_name(file_create.creator_process_name.unwrap_or_default())
             .state(ProcessState::Existing)
             .process_id(file_create.creator_process_id)
             .last_seen_timestamp(file_create.timestamp)
-            .build()
-            .unwrap();
+            .build()?;
 
         let file = FileBuilder::default()
             .hostname(file_create.hostname)
             .state(FileState::Created)
             .created_timestamp(file_create.timestamp)
             .file_path(file_create.path)
-            .build()
-            .unwrap();
+            .build()?;
 
         info!("file {}", file.clone().into_json());
 
@@ -45,6 +46,6 @@ impl From<FileCreate> for Graph {
         graph.add_node(creator);
         graph.add_node(file);
 
-        graph
+        Ok(graph)
     }
 }

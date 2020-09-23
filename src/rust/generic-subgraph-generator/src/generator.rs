@@ -57,7 +57,7 @@ where
     /// * Merge into Graph object
     ///
     /// Returns: A Graph, identities processed, and an optional report indicating if any errors occurred during processing
-    async fn convert_events_to_subgraph(
+    pub(crate) async fn convert_events_to_subgraph(
         &mut self,
         events: Vec<GenericEvent>,
     ) -> (Graph, Vec<impl Cacheable>, Option<eyre::Report>) {
@@ -77,7 +77,7 @@ where
                 Ok(subgraph) => subgraph,
                 Err(e) => {
                     error!("Failed to generate subgraph with: {}", e);
-                    failed = Some(e);
+                    failed = Some(eyre::Report::msg(e));
                     continue;
                 }
             };

@@ -1,6 +1,8 @@
+use crate::generator::GenericSubgraphGenerator;
 use crate::models::GenericEvent;
 use crate::serialization::ZstdJsonDecoder;
 use graph_descriptions::graph_description::*;
+use sqs_lambda::cache::NopCache;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, Result};
@@ -10,46 +12,44 @@ use tokio::io::{AsyncReadExt, Result};
 ///
 /// Verifies that a ProcessStart can be deserialized from a json log and transformed into a Subgraph
 async fn test_generic_event_deserialization() {
-    let raw_test_string = read_test_data_to_string("process_start.json")
+    let raw_test_string = read_test_data_to_string("events.json")
         .await
-        .expect("Failed to read test data for process_start.json");
+        .expect("Failed to read test data for events.json");
 
-    let event: GenericEvent = match serde_json::from_str(&raw_test_string) {
-        Ok(event) => event,
+    let events: Vec<GenericEvent> = match serde_json::from_str(&raw_test_string) {
+        Ok(events) => events,
         Err(e) => panic!(
             "Failed to deserialize event into GenericEvent.\nError: {}",
             e
         ),
     };
 
-    let process_start = match event {
-        GenericEvent::ProcessStart(process_start) => process_start,
-        _ => panic!("Failed to deserialize event into correct enum variant."),
-    };
-
-    // verify that this event has enough information to properly transform into a subgraph
-    let graph: Graph = Graph::from(process_start);
-
-    assert!(graph.nodes.len() > 0);
-    assert!(graph.edges.len() > 0);
+    // 9 events in events.json
+    assert_eq!(events.len(), 9, "Failed to deserialize all log events.");
 }
 
 #[tokio::test]
 async fn test_log_event_deserialization() {
-    let raw_test_data = read_test_data("compressed_process_start.zstd")
+    let raw_test_data = read_test_data("compressed_events.zstd")
         .await
-        .expect("Failed to read test data for process_start.json");
+        .expect("Failed to read test data for compressed_events.zstd");
+
+    let mut generator = GenericSubgraphGenerator::new(NopCache {});
 
     let mut event_deserializer = ZstdJsonDecoder::default();
 
-    let generic_event: GenericEvent = event_deserializer
+    let generic_events: Vec<GenericEvent> = event_deserializer
         .decode(raw_test_data)
-        .expect("Failed to deserialize process start event.");
+        .expect("Failed to deserialize events.");
 
-    match generic_event {
-        GenericEvent::ProcessStart(_) => {}
-        _ => panic!("Deserialized event into wrong variant."),
-    };
+    let (subgraph, identities, failed) = generator.convert_events_to_subgraph(generic_events).await;
+
+    if let Some(report) = failed {
+        panic!(
+            "An error occurred during subgraph generation. Err: {}",
+            report
+        );
+    }
 }
 
 async fn read_test_data_to_string(filename: &str) -> Result<String> {
