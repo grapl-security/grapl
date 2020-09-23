@@ -1,7 +1,6 @@
-use serde::{Deserialize, Serialize};
 use graph_descriptions::graph_description::*;
 use graph_descriptions::process::ProcessState;
-use graph_descriptions::node::NodeT;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessStop {
@@ -9,7 +8,6 @@ pub struct ProcessStop {
     name: String,
     hostname: String,
     timestamp: u64,
-    eventname: String,
 }
 
 impl From<ProcessStop> for Graph {

@@ -1,7 +1,7 @@
 mod create;
 mod delete;
-mod write;
 mod read;
+mod write;
 
 pub use create::FileCreate;
 pub use delete::FileDelete;

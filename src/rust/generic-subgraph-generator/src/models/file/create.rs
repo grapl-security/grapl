@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use graph_descriptions::graph_description::*;
-use graph_descriptions::process::ProcessState;
 use graph_descriptions::file::FileState;
+use graph_descriptions::graph_description::*;
 use graph_descriptions::node::NodeT;
+use graph_descriptions::process::ProcessState;
+use serde::{Deserialize, Serialize};
 use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -12,7 +12,6 @@ pub struct FileCreate {
     path: String,
     hostname: String,
     timestamp: u64,
-    eventname: String,
 }
 
 impl From<FileCreate> for Graph {

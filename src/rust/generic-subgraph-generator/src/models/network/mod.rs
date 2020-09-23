@@ -1,5 +1,5 @@
-mod outbound;
 mod inbound;
+mod outbound;
 
-pub use outbound::ProcessOutboundConnectionLog;
 pub use inbound::ProcessInboundConnectionLog;
+pub use outbound::ProcessOutboundConnectionLog;

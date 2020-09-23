@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use graph_descriptions::graph_description::*;
-use graph_descriptions::process::ProcessState;
 use graph_descriptions::file::FileState;
+use graph_descriptions::graph_description::*;
 use graph_descriptions::node::NodeT;
+use graph_descriptions::process::ProcessState;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct FileDelete {
@@ -11,7 +11,6 @@ pub struct FileDelete {
     path: String,
     hostname: String,
     timestamp: u64,
-    eventname: String,
 }
 
 impl From<FileDelete> for Graph {

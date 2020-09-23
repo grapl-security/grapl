@@ -1,9 +1,8 @@
-use serde::{Deserialize, Serialize};
 use graph_descriptions::graph_description::*;
 use graph_descriptions::process::ProcessState;
 use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use graph_descriptions::file::FileState;
+use serde::{Deserialize, Serialize};
+
 use graph_descriptions::network_connection::NetworkConnectionState;
 use graph_descriptions::node::NodeT;
 
@@ -19,7 +18,6 @@ pub struct ProcessInboundConnectionLog {
     dst_ip_addr: String,
     protocol: String,
     timestamp: u64,
-    eventname: String,
 }
 
 impl From<ProcessInboundConnectionLog> for Graph {

@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
 use graph_descriptions::graph_description::*;
-use graph_descriptions::process::ProcessState;
 use graph_descriptions::node::NodeT;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use graph_descriptions::process::ProcessState;
+use serde::{Deserialize, Serialize};
+
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use graph_descriptions::file::FileState;
+
 use graph_descriptions::network_connection::NetworkConnectionState;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -17,7 +17,6 @@ pub struct ProcessOutboundConnectionLog {
     src_ip_addr: String,
     dst_ip_addr: String,
     timestamp: u64,
-    eventname: String,
 }
 
 impl From<ProcessOutboundConnectionLog> for Graph {
