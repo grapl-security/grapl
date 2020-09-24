@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 class TestEndToEnd(TestCase):
     def test_analyzer_deployed_properly(self) -> None:
         pass
