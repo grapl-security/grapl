@@ -1,16 +1,18 @@
-import boto3
-import subprocess
 from os import environ
-from typing import Any
-import logging
 from resources import wait_on_resources
 from sys import stdout
+from typing import Any
+import boto3
+import logging
+import pytest
+import subprocess
 
 # mypy later maybe
 S3ServiceResource = Any
+SqsServiceResource = Any
 
 BUCKET_PREFIX = environ["BUCKET_PREFIX"]
-# assert BUCKET_PREFIX == "local-grapl"
+assert BUCKET_PREFIX == "local-grapl"
 
 
 def _upload_analyzers(s3_client: S3ServiceResource) -> None:
@@ -36,11 +38,10 @@ def _upload_analyzers(s3_client: S3ServiceResource) -> None:
 
 
 def _upload_test_data(s3_client: S3ServiceResource) -> None:
-    """
-    i hate this lol
-    """
     logging.info(f"Running upload-sysmon-logs")
 
+    # i hate this lol
+    # but it's probably better than mucking with path and importing that module...
     subprocess.run(
         [
             "python3",
@@ -63,14 +64,27 @@ def _create_s3_client() -> S3ServiceResource:
         aws_secret_access_key="minioadmin",
     )
 
+def _create_sqs_client() -> SqsServiceResource:
+    # mostly cribbed from upload-sysmon-logs
+    return boto3.client(
+        "sqs",
+        endpoint_url="http://sqs:9324",
+        region_name="us-east-1",  
+        aws_access_key_id="minioadmin",
+        aws_secret_access_key="minioadmin",
+    )
+
 
 def main() -> None:
     logging.basicConfig(stream=stdout, level=logging.INFO)
 
     s3_client = _create_s3_client()
-    wait_on_resources(s3_client, BUCKET_PREFIX)
+    sqs_client = _create_sqs_client()
+    wait_on_resources(s3_client=s3_client, sqs_client=sqs_client, bucket_prefix=BUCKET_PREFIX)
     _upload_analyzers(s3_client)
     _upload_test_data(s3_client)
+
+    pytest.main()
 
 
 if __name__ == "__main__":

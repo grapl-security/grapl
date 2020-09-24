@@ -19,21 +19,35 @@ class WaitForS3Bucket(WaitForResource):
     def exists(self) -> bool:
         try:
             self.s3_client.head_bucket(Bucket=self.bucket_name)
+            return True
         except self.s3_client.exceptions.NoSuchBucket:
             return False
-        else:
-            return True
 
     def __str__(self) -> str:
         return f"WaitForS3Bucket({self.bucket_name})"
 
+class WaitForSqsQueue(WaitForResource):
+    def __init__(self, sqs_client: Any, queue_name: str):
+        self.sqs_client = sqs_client
+        self.queue_name = queue_name
+    
+    def exists(self) -> bool:
+        try:
+            self.sqs_client.get_queue_url(QueueName=self.queue_name)
+            return True
+        except self.sqs_client.exceptions.QueueDoesNotExist:
+            return False
+    
+    def __str__(self) -> str:
+        return f"WaitForSqsQueue({self.queue_name})"
 
-def wait_on_resources(s3_client: Any, bucket_prefix: str):
-    # okay, so, as it turns out, these are instantly created, and this has no value-add
-    # but I sort of like this pattern, so, eh
+def wait_on_resources(s3_client: Any, sqs_client: Any, bucket_prefix: str):
     resources = [
+        # for uploading analyzers
         WaitForS3Bucket(s3_client, f"{bucket_prefix}-analyzers-bucket"),
+        # for upload-sysmon-logs.py
         WaitForS3Bucket(s3_client, f"{bucket_prefix}-sysmon-log-bucket"),
+        WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
     ]
 
     completed: Set[WaitForResource] = set()
