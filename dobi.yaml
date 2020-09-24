@@ -334,7 +334,6 @@ image=grapl-e2e-tests-build:
   depends:
     - grapl-analyzerlib-build
     - etc-build
-    # probably many more
   tags:
     - latest
 

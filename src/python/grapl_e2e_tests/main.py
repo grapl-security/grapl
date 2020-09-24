@@ -94,8 +94,6 @@ def main() -> None:
     _upload_analyzers(s3_client)
     _upload_test_data(s3_client)
 
-    import tests
-
     return pytest.main()
 
 
