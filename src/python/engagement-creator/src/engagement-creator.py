@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar, Type
+from typing import Any, ContextManager, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar, Type
 
 import boto3
 import botocore.exceptions  # type: ignore
@@ -18,7 +18,6 @@ from grapl_analyzerlib.queryable import Queryable
 from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_sqs import SQSClient
 from typing_extensions import Final
-from contextlib import ContextManager
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from typing_extensions import Literal
 
