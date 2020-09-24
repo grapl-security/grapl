@@ -84,7 +84,8 @@ def main() -> None:
     _upload_analyzers(s3_client)
     _upload_test_data(s3_client)
 
-    pytest.main()
+    import tests
+    return pytest.main(['--collect-only'])
 
 
 if __name__ == "__main__":
