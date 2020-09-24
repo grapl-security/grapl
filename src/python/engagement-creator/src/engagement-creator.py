@@ -5,21 +5,33 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar, Type
+from typing import (
+    Any,
+    ContextManager,
+    Dict,
+    Iterator,
+    Tuple,
+    Sequence,
+    Optional,
+    cast,
+    TypeVar,
+    Type,
+)
 
 import boto3
 import botocore.exceptions  # type: ignore
-import botocore.exceptions
 from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.nodes.lens import LensView
 from grapl_analyzerlib.prelude import BaseView
 from grapl_analyzerlib.prelude import RiskView
 from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.queryable import Queryable
-from src.metrics import EngagementCreatorMetrics
 from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_sqs import SQSClient
 from typing_extensions import Final
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
+from typing_extensions import Literal
+
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -40,6 +52,19 @@ V = TypeVar("V", bound=Viewable)
 Q = TypeVar("Q", bound=Queryable)
 
 SERVICE_NAME: Final[str] = "engagement-creator"
+
+
+class EngagementCreatorMetrics:
+    def __init__(self, service_name: str) -> None:
+        self.metric_reporter = MetricReporter.create(service_name)
+
+    def event_processed(self, status: Literal["success", "failure"]) -> None:
+        self.metric_reporter.counter(
+            metric_name="event_processed", value=1, tags=[TagPair("status", status)]
+        )
+
+    def time_to_process_event(self) -> ContextManager:
+        return self.metric_reporter.histogram_ctx(metric_name="time_to_process_event")
 
 
 def parse_s3_event(s3: S3ServiceResource, event: Any) -> bytes:
