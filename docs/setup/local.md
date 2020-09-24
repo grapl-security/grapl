@@ -31,15 +31,13 @@ docker-compose up
 
 Next, we’ll upload a basic [Analyzer (Grapl’s attack signatures)](https://grapl.readthedocs.io/en/latest/analyzers/implementing.html), which searches for processes named "svchost" without a whitelisted parent process. We've provided a demo Analyzer in the Grapl repository. If you're interested in the code, see our Analyzer docs.
 
-To upload the Analyzer to Grapl, navigate to the root of the cloned grapl repository and run the following command: 
-
-`./upload_analyzer_local.sh`
 Grapl may take a couple of minutes to get started, so if you get an error similar to “could not connect to the endpoint URL”,  give Grapl a few more minutes to  finish provisioning. 
     
 
 To upload our Analyzer to Grapl, navigate to the root of the cloned `grapl` repository and run the following command: 
 
 ```bash
+cd etc/local_grapl/bin/
 ./upload_analyzer_local.sh
 ```
 
@@ -50,6 +48,7 @@ If you get an error similar to “could not connect to the endpoint URL”,  ple
 To get data into Grapl, please run the following command: 
 
 ```bash
+cd etc/local_grapl/bin/
 python3 ./upload-sysmon-logs.py --bucket_prefix=local-grapl --logfile=eventlog.xml 
 ```
 ***Logging In to Grapl:***
