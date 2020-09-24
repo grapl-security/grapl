@@ -5,7 +5,18 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, ContextManager, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar, Type
+from typing import (
+    Any,
+    ContextManager,
+    Dict,
+    Iterator,
+    Tuple,
+    Sequence,
+    Optional,
+    cast,
+    TypeVar,
+    Type,
+)
 
 import boto3
 import botocore.exceptions  # type: ignore
@@ -41,6 +52,7 @@ V = TypeVar("V", bound=Viewable)
 Q = TypeVar("Q", bound=Queryable)
 
 SERVICE_NAME: Final[str] = "engagement-creator"
+
 
 class EngagementCreatorMetrics:
     def __init__(self, service_name: str) -> None:
