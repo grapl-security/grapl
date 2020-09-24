@@ -1,7 +1,7 @@
 from time import sleep
 import logging
 import boto3
-from typing import Any, Set
+from typing import Any, Set, Sequence
 from typing_extensions import Protocol
 from itertools import cycle
 
@@ -26,33 +26,28 @@ class WaitForS3Bucket(WaitForResource):
     def __str__(self) -> str:
         return f"WaitForS3Bucket({self.bucket_name})"
 
+
 class WaitForSqsQueue(WaitForResource):
     def __init__(self, sqs_client: Any, queue_name: str):
         self.sqs_client = sqs_client
         self.queue_name = queue_name
-    
+
     def exists(self) -> bool:
         try:
             self.sqs_client.get_queue_url(QueueName=self.queue_name)
             return True
         except self.sqs_client.exceptions.QueueDoesNotExist:
             return False
-    
+
     def __str__(self) -> str:
         return f"WaitForSqsQueue({self.queue_name})"
 
-def wait_on_resources(s3_client: Any, sqs_client: Any, bucket_prefix: str):
-    resources = [
-        # for uploading analyzers
-        WaitForS3Bucket(s3_client, f"{bucket_prefix}-analyzers-bucket"),
-        # for upload-sysmon-logs.py
-        WaitForS3Bucket(s3_client, f"{bucket_prefix}-sysmon-log-bucket"),
-        WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
-    ]
 
+def wait_on_resources(resources: Sequence[WaitForResource]):
     completed: Set[WaitForResource] = set()
 
     # Cycle through `resources` forever, until all resources are attained
+    # hacky? potentially O(infinity)? yes
     for resource in cycle(resources):
         if len(completed) == len(resources):
             break

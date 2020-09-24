@@ -1,5 +1,5 @@
 from os import environ
-from resources import wait_on_resources
+import resources
 from sys import stdout
 from typing import Any
 import boto3
@@ -64,12 +64,13 @@ def _create_s3_client() -> S3ServiceResource:
         aws_secret_access_key="minioadmin",
     )
 
+
 def _create_sqs_client() -> SqsServiceResource:
     # mostly cribbed from upload-sysmon-logs
     return boto3.client(
         "sqs",
         endpoint_url="http://sqs:9324",
-        region_name="us-east-1",  
+        region_name="us-east-1",
         aws_access_key_id="minioadmin",
         aws_secret_access_key="minioadmin",
     )
@@ -80,11 +81,21 @@ def main() -> None:
 
     s3_client = _create_s3_client()
     sqs_client = _create_sqs_client()
-    wait_on_resources(s3_client=s3_client, sqs_client=sqs_client, bucket_prefix=BUCKET_PREFIX)
+
+    wait_for = [
+        # for uploading analyzers
+        resources.WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-analyzers-bucket"),
+        # for upload-sysmon-logs.py
+        resources.WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-sysmon-log-bucket"),
+        resources.WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
+    ]
+    resources.wait_on_resources(wait_for)
+
     _upload_analyzers(s3_client)
     _upload_test_data(s3_client)
 
     import tests
+
     return pytest.main()
 
 
