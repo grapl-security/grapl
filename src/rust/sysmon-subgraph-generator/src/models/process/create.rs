@@ -1,11 +1,9 @@
-use std::convert::TryFrom;
-use sysmon::ProcessCreateEvent;
-use graph_descriptions::graph_description::*;
+use crate::models::{get_image_name, strip_file_zone_identifier, utc_to_epoch};
 use graph_descriptions::file::FileState;
-use graph_descriptions::process::ProcessState;
+use graph_descriptions::graph_description::*;
 use graph_descriptions::node::NodeT;
-use crate::models::{utc_to_epoch, get_image_name, strip_file_zone_identifier, SysmonTryFrom};
-use failure::Error;
+use graph_descriptions::process::ProcessState;
+use sysmon::ProcessCreateEvent;
 
 /// Creates a subgraph describing a `ProcessCreateEvent`.
 ///
@@ -14,7 +12,9 @@ use failure::Error;
 /// * A parent `Process` node - indicating the process that created the subject process
 /// * A subject `Process` node - indicating the process created per the `ProcessCreateEvent`
 /// * A process `File` node - indicating the file executed in creating the new process
-pub fn generate_process_create_subgraph(process_start: &ProcessCreateEvent) -> Result<Graph, failure::Error> {
+pub fn generate_process_create_subgraph(
+    process_start: &ProcessCreateEvent,
+) -> Result<Graph, failure::Error> {
     let timestamp = utc_to_epoch(&process_start.event_data.utc_time)?;
     let mut graph = Graph::new(timestamp);
 

@@ -1,13 +1,13 @@
-use chrono::{NaiveDateTime, DateTime, Utc};
-use failure::Error;
-use log::*;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use failure::bail;
-use sysmon::Event;
+use failure::Error;
 use graph_descriptions::graph_description::*;
+use log::*;
+use sysmon::Event;
 
-mod process;
 mod file;
 mod network;
+mod process;
 
 pub(crate) trait SysmonTryFrom<T>: Sized {
     type Error;

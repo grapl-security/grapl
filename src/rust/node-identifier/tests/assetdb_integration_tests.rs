@@ -1,9 +1,3 @@
-use graph_descriptions::graph_description::host::HostId;
-use node_identifier::assetdb::AssetIdDb;
-use node_identifier::init_dynamodb_client;
-use rusoto_core::Region;
-use tokio::runtime::Runtime;
-
 // Given a hostname 'H' to asset id 'A' mapping at c_timestamp 'X'
 // When attributing 'H' at c_timestamp 'Y', where 'Y' > 'X'
 // Then we should retrieve asset id 'A'

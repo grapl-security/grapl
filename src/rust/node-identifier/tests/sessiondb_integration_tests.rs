@@ -1,10 +1,6 @@
-use node_identifier::init_dynamodb_client;
-use node_identifier::sessiondb::SessionDb;
-use node_identifier::sessions::{Session, UnidSession};
 use std::time::Duration;
 
-use quickcheck_macros::quickcheck;
-use rusoto_core::{Region, RusotoError};
+use rusoto_core::RusotoError;
 use rusoto_dynamodb::{
     AttributeDefinition, CreateTableError, CreateTableInput, CreateTableOutput, DeleteTableInput,
     DynamoDb, KeySchemaElement, ProvisionedThroughput,
@@ -57,7 +53,7 @@ fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) 
 
     std::thread::sleep(Duration::from_millis(250));
 
-    while let Err(e) = runtime.block_on(try_create_table(dynamo, table_name.clone())) {
+    while let Err(_e) = runtime.block_on(try_create_table(dynamo, table_name.clone())) {
         std::thread::sleep(Duration::from_millis(250));
     }
 }

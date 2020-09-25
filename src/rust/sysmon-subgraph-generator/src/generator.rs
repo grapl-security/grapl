@@ -1,26 +1,26 @@
-use sqs_lambda::cache::{Cache, CacheResponse};
 use crate::metrics::SysmonSubgraphGeneratorMetrics;
-use sqs_lambda::event_handler::{EventHandler, OutputEvent, Completion};
-use sysmon::Event;
-use async_trait::async_trait;
-use log::*;
-use graph_descriptions::graph_description::*;
 use crate::models::SysmonTryFrom;
-use grapl_observe::log_time;
+use async_trait::async_trait;
 use failure::bail;
+use graph_descriptions::graph_description::*;
+use grapl_observe::log_time;
+use log::*;
+use sqs_lambda::cache::{Cache, CacheResponse};
+use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
+use sysmon::Event;
 
 #[derive(Clone)]
 pub(crate) struct SysmonSubgraphGenerator<C>
-    where
-        C: Cache + Clone + Send + Sync + 'static,
+where
+    C: Cache + Clone + Send + Sync + 'static,
 {
     cache: C,
     metrics: SysmonSubgraphGeneratorMetrics,
 }
 
 impl<C> SysmonSubgraphGenerator<C>
-    where
-        C: Cache + Clone + Send + Sync + 'static,
+where
+    C: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(cache: C, metrics: SysmonSubgraphGeneratorMetrics) -> Self {
         Self { cache, metrics }
@@ -29,8 +29,8 @@ impl<C> SysmonSubgraphGenerator<C>
 
 #[async_trait]
 impl<C> EventHandler for SysmonSubgraphGenerator<C>
-    where
-        C: Cache + Clone + Send + Sync + 'static,
+where
+    C: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<u8>;
     type OutputEvent = Graph;
@@ -75,7 +75,7 @@ impl<C> EventHandler for SysmonSubgraphGenerator<C>
                             bail!("Failed: {}", e);
                             Ok(())
                         })()
-                            .unwrap_err(),
+                        .unwrap_err(),
                     );
                     continue;
                 }

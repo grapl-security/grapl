@@ -1,15 +1,13 @@
 use sysmon::NetworkEvent;
-use std::convert::TryFrom;
-use sysmon::ProcessCreateEvent;
+
 use graph_descriptions::graph_description::*;
-use graph_descriptions::file::FileState;
-use graph_descriptions::process::ProcessState;
-use graph_descriptions::node::NodeT;
+
 use graph_descriptions::network_connection::NetworkConnectionState;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use graph_descriptions::node::NodeT;
+use graph_descriptions::process::ProcessState;
+
+use crate::models::utc_to_epoch;
 use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use crate::models::{utc_to_epoch, get_image_name, strip_file_zone_identifier, SysmonTryFrom};
-use failure::Error;
 
 /// Creates a subgraph describing an outbound `NetworkEvent`
 ///
@@ -19,7 +17,9 @@ use failure::Error;
 /// * A subject `OutboundConnection` node - indicating the network connection triggered by the process
 /// * Source and Destination IP Address and Port nodes
 /// * IP connection and Network connection nodes
-pub fn generate_outbound_connection_subgraph(conn_log: &NetworkEvent) -> Result<Graph, failure::Error> {
+pub fn generate_outbound_connection_subgraph(
+    conn_log: &NetworkEvent,
+) -> Result<Graph, failure::Error> {
     let timestamp = utc_to_epoch(&conn_log.event_data.utc_time)?;
 
     let mut graph = Graph::new(timestamp);
