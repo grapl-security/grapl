@@ -20,6 +20,7 @@ class TestEndToEnd(TestCase):
         wait_result = resources.wait_on_resources([lens_resource], timeout_secs=120)
         lens: LensView = wait_result[lens_resource]
         # Adding nodes to this lens is not an atomic operation, so let's add some buffer and hope for the best
+        # a better solution would be to specify the specific scope in `wait_for_lens`
         sleep(5)
         assert lens.get_lens_name() == LENS_NAME
         assert len(lens.get_scope()) == 3
