@@ -51,10 +51,6 @@ To get data into Grapl, please run the following command:
 cd etc/local_grapl/bin/
 python3 ./upload-sysmon-logs.py --bucket_prefix=local-grapl --logfile=eventlog.xml 
 ```
-***Logging In to Grapl:***
-When you navigate to localhost:3000/login, please enter the following credentials into the login form: 
-Username: grapluser
-Password: graplpassword
 
 
 **Working With Grapl Data:** 
@@ -67,11 +63,14 @@ In the first window, navigate to the Grapl's Jupyter Notebook on localhost:8888.
 
 Log in with the password "graplpassword". Once logged in, you'll see a directory with files that will be used later in the tutorial.
 
-The lenses page will show one lens. A lens associates a risk with some kind of correlation point - in this case, an asset.
-
 ![](https://static.wixstatic.com/media/aa91b3_2a9a44851cdf4ebb8703ae76af72b192~mv2.png/v1/fill/w_1480,h_455,al_c,q_90,usm_0.66_1.00_0.01/aa91b3_2a9a44851cdf4ebb8703ae76af72b192~mv2.webp)
 
-In the other window, navigate to localhost:1234 to connect to the Engagement UX. The Engagement UX displays risks in our environment. Credentials are not needed when running Grapl locally, just click the ‘submit’ button to get started! 
+***Logging In to Grapl Engagement UX:***
+Navigate to localhost:1234, and enter the following credentials into the login form: 
+Username: grapluser
+Password: graplpassword
+
+The Engagement UX displays risks in our environment. Credentials are not needed when running Grapl locally, just click the ‘submit’ button to get started! 
 
 After logging in, you’ll be redirected to the Grapl UI. The Lenses section will show one lens which associates a risk with some kind of correlation point - in this case, an asset. 
 

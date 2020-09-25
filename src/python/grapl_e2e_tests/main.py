@@ -1,6 +1,7 @@
+import time
 from os import environ
 import resources
-from sys import stdout
+from sys import stdout, exit
 from typing import Any
 import boto3
 import logging
@@ -76,7 +77,7 @@ def _create_sqs_client() -> SqsServiceResource:
     )
 
 
-def main() -> None:
+def main() -> int:
     logging.basicConfig(stream=stdout, level=logging.INFO)
 
     s3_client = _create_s3_client()
@@ -94,8 +95,15 @@ def main() -> None:
     _upload_analyzers(s3_client)
     _upload_test_data(s3_client)
 
-    return pytest.main()
+    logging.info("Waiting 60s for the pipeline to do its thing...")
+    time.sleep(60)
+
+    return pytest.main(
+        [
+            "-s",  # disable stdout capture
+        ]
+    )
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())
