@@ -12,24 +12,18 @@ use sqs_lambda::event_handler::EventHandler;
 
 /// Graph generator implementations should invoke this function to begin processing new log events.
 ///
-/// ```
+/// ```rust,ignore
+/// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     use sqs_lambda::cache::NopCache;
 ///     use graph_generator_lib::run_graph_generator;
 ///
-///     grapl_config::init_grapl_log!();
+///     grapl_config::init_grapl_env!();
 ///
-///     if grapl_config::is_local() {
-///         run_graph_generator(
-///             MyNewGenerator::new(NopCache {}),
-///             MyDecoder::default()
-///         ).await?;
-///     } else {
-///         run_graph_generator(
-///             MyNewGenerator::new(grapl_config::event_cache().await),
-///             MyDecoder::default()
-///         ).await?;
-///     }
+///     run_graph_generator(
+///         MyNewGenerator::new(),
+///         MyDecoder::default()
+///     ).await;
 ///
 ///     Ok(())
 /// }
