@@ -83,14 +83,15 @@ def main() -> int:
     s3_client = _create_s3_client()
     sqs_client = _create_sqs_client()
 
-    wait_for = [
-        # for uploading analyzers
-        resources.WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-analyzers-bucket"),
-        # for upload-sysmon-logs.py
-        resources.WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-sysmon-log-bucket"),
-        resources.WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
-    ]
-    resources.wait_on_resources(wait_for)
+    resources.wait_for(
+        [
+            # for uploading analyzers
+            resources.WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-analyzers-bucket"),
+            # for upload-sysmon-logs.py
+            resources.WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-sysmon-log-bucket"),
+            resources.WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
+        ]
+    )
 
     _upload_analyzers(s3_client)
     _upload_test_data(s3_client)
