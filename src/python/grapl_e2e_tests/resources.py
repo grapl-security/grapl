@@ -46,7 +46,7 @@ class WaitForSqsQueue(WaitForResource):
         return f"WaitForSqsQueue({self.queue_name})"
 
 
-def wait_on_resources(
+def wait_for(
     resources: Sequence[WaitForResource], timeout_secs=30
 ) -> Mapping[WaitForResource, Any]:
     completed: Dict[WaitForResource, Any] = {}

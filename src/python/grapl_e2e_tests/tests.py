@@ -17,14 +17,14 @@ class TestEndToEnd(TestCase):
 
     def test_expected_data_in_dgraph(self) -> None:
         lens_resource = wait_for_lens()
-        wait_result = resources.wait_on_resources([lens_resource], timeout_secs=120)
+        wait_result = resources.wait_for([lens_resource], timeout_secs=120)
 
         lens: LensView = wait_result[lens_resource]
         assert lens.get_lens_name() == LENS_NAME
 
         # lens scope is not atomic
-        resources.wait_on_resources(
-            [WaitForCondition(lambda: (len(lens.get_scope()) == 4))]
+        resources.wait_for(
+            [WaitForCondition(lambda: (len(lens.get_scope()) == 4))], timeout_secs=120
         )
 
 
