@@ -776,7 +776,6 @@ alias=integration-tests:
   tasks:
     - rust-integration-tests
     - python-integration-tests
-    - run-e2e-integration-tests
     # TODO: js integration tests
   annotations:
     description: "Run all the integration tests"
