@@ -32,7 +32,7 @@ def default_network_connection_edges() -> Dict[str, Tuple[EdgeT, str]]:
     return {
         "inbound_network_connection_to": (
             EdgeT(NetworkConnectionSchema, IpPortSchema, EdgeRelationship.ManyToOne),
-            "network_connections_from",
+            "inbound_network_connections_from",
         )
     }
 
@@ -80,7 +80,7 @@ class NetworkConnectionQuery(EntityQuery[NCV, NCQ]):
         return self.with_to_neighbor(
             IpPortQuery,
             "inbound_network_connection_to",
-            "network_connections_from",
+            "inbound_network_connections_from",
             inbound_network_connection_to,
         )
 
@@ -120,7 +120,7 @@ class NetworkConnectionView(EntityView[NCV, NCQ]):
         return self.get_neighbor(
             IpPortQuery,
             "inbound_network_connection_to",
-            "network_connections_from",
+            "inbound_network_connections_from",
             inbound_network_connection_to,
             cached=cached,
         )
@@ -136,22 +136,24 @@ NetworkConnectionSchema().init_reverse()
 
 
 class NetworkConnectionExtendsIpPortQuery(IpPortQuery):
-    def with_network_connections_from(self, *network_connections_from):
+    def with_inbound_network_connections_from(self, *inbound_network_connections_from):
         return self.with_to_neighbor(
             NetworkConnectionQuery,
-            "network_connections_from",
+            "inbound_network_connections_from",
             "inbound_network_connection_to",
-            network_connections_from,
+            inbound_network_connections_from,
         )
 
 
 class NetworkConnectionExtendsIpPortView(IpPortQuery):
-    def get_network_connections_from(self, *network_connections_from, cached=False):
+    def get_inbound_network_connections_from(
+        self, *inbound_network_connections_from, cached=False
+    ):
         return self.get_neighbor(
             NetworkConnectionQuery,
-            "network_connections_from",
+            "inbound_network_connections_from",
             "inbound_network_connection_to",
-            network_connections_from,
+            inbound_network_connections_from,
             cached=cached,
         )
 

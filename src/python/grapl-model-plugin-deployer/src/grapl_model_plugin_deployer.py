@@ -136,8 +136,13 @@ def store_schema(dynamodb, schema: "Schema"):
         if not (f_edge and r_edge):
             continue
         table.put_item(
-            Item={"f_edge": f_edge, "r_edge": r_edge, "relationship": int(edge_t.rel)}
+            Item={
+                "f_edge": f_edge,
+                "r_edge": r_edge,
+                "relationship": int(edge_t.rel),
+            }
         )
+
         table.put_item(
             Item={
                 "f_edge": r_edge,
@@ -224,6 +229,9 @@ def provision_schemas(master_graph_client, raw_schemas):
     LOGGER.info("Merge the schemas with what exists in the graph")
     dynamodb = get_dynamodb_client()
     for schema in schemas:
+        store_schema(dynamodb, schema)
+
+    for schema in schemas:
         extend_schema(dynamodb, master_graph_client, schema)
 
     LOGGER.info("Reprovision the graph")
@@ -248,8 +256,9 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
 
 def meta_into_edge(dynamodb, schema, f_edge):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
-    edge_res = table.get_item(Key={"f_edge": f_edge})
-    return EdgeT(type(schema), BaseSchema, EdgeRelationship(edge_res["relationships"]))
+    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
+    print(edge_res)
+    return EdgeT(type(schema), BaseSchema, EdgeRelationship(edge_res["relationship"]))
 
 
 def meta_into_property(schema, predicate_meta):
