@@ -19,7 +19,7 @@ use aws_lambda_events::event::s3::{
 };
 use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use grapl_config as config;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::Context;
