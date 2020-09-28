@@ -58,7 +58,8 @@ pub fn accumulate_metric_data(input: Vec<MetricDatum>) -> Vec<MetricDatum> {
 struct WrappedMetricDatum(MetricDatum);
 impl WrappedMetricDatum {
     fn trunc_timestamp(&self) -> DateTime<FixedOffset> {
-        let base_ts = DateTime::parse_from_rfc3339(self.0.timestamp.as_ref().unwrap()).unwrap();
+        let base_ts = DateTime::parse_from_rfc3339(self.0.timestamp.as_ref().unwrap())
+            .expect("expected a valid timestamp here");
         let truncated = base_ts.duration_trunc(Duration::minutes(1)).unwrap();
         truncated
     }
@@ -69,32 +70,32 @@ impl Hash for WrappedMetricDatum {
         let d = &self.0;
         d.metric_name.hash(state);
         d.unit.hash(state);
-        d.dimensions.as_ref().map(|dims| {
-            dims.iter().for_each(|dim| {
-                dim.name.hash(state);
-                dim.value.hash(state);
-            })
-        });
+        WrappedDimensions::from(&d.dimensions).hash(state);
         self.trunc_timestamp().hash(state)
     }
 }
 impl PartialEq for WrappedMetricDatum {
     fn eq(&self, other: &Self) -> bool {
+        let self_dims = WrappedDimensions::from(&self.0.dimensions);
+        let other_dims = WrappedDimensions::from(&self.0.dimensions);
+
         return self.0.metric_name == other.0.metric_name
             && self.0.unit == other.0.unit
-            && self.0.dimensions == other.0.dimensions
+            && self_dims == other_dims
             && self.trunc_timestamp() == other.trunc_timestamp();
     }
 }
 impl Eq for WrappedMetricDatum {}
 
-struct WrappedDimensions<'a>(&'a Vec<Dimension>);
+struct WrappedDimensions<'a>(&'a [Dimension]);
 impl<'a> WrappedDimensions<'a> {
     /// Turn [(key, value), (key2, value2)] into {key: value, key2: value2}
     /// This is then used for hashing (btreemap chosen because it provides order)
     fn dimensions_as_map(&self) -> BTreeMap<&str, &str> {
         let mut map = BTreeMap::new();
-        self.0.iter().for_each(|ref dim| { map.insert(dim.name.as_str(), dim.value.as_str()); });
+        self.0.iter().for_each(|ref dim| {
+            map.insert(dim.name.as_str(), dim.value.as_str());
+        });
         map
     }
 }
@@ -103,9 +104,20 @@ impl<'a> Hash for WrappedDimensions<'a> {
         self.dimensions_as_map().hash(_state);
     }
 }
+
 impl<'a> PartialEq for WrappedDimensions<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.dimensions_as_map() == other.dimensions_as_map()
+    }
+}
+
+static NO_DIMENSIONS: &'static [Dimension] = &[];
+impl<'a> From<&'a Option<Vec<Dimension>>> for WrappedDimensions<'a> {
+    fn from(input: &'a Option<Vec<Dimension>>) -> WrappedDimensions<'a> {
+        match input {
+            Some(dims) => WrappedDimensions(dims),
+            None => WrappedDimensions(NO_DIMENSIONS),
+        }
     }
 }
 
@@ -264,28 +276,41 @@ mod tests {
 
     #[test]
     fn test_buckets_diff_tags_differently() -> Result<(), String> {
+        let mut metric_with_diff_dims = metric(1.0);
+        metric_with_diff_dims.dimensions = Some(vec![Dimension {
+            name: "name2".to_string(),
+            value: "value2".to_string(),
+        }]);
+
         let input = vec![
             metric(1.0),
-            {
-                let mut m = metric(1.0);
-                m.dimensions = Some(vec![Dimension{name: "name2".to_string(), value: "value2".to_string()}]);
-                m
-            },
             metric(1.0),
+            metric(1.0),
+            metric_with_diff_dims.clone(),
+            metric_with_diff_dims.clone(),
         ];
 
         let mut output = accumulate_metric_data(input);
-        output.sort_by(|a, b| {
-            WrappedDimensions(&a.dimensions.unwrap())
-                .cmp(WrappedDimensions(&b.dimensions.unwrap()))
+        // the one with a lower count will have name2/value2, and come first.
+        output.sort_by_key(|datum| {
+            let value: f64 = datum.counts.as_ref().unwrap()[0];
+            OrderedFloat(value)
         });
         match &output[..] {
-            [datum] => {
-                let expected = hmap! {
-                    OrderedFloat(1.0f64) => 1.0f64
+            [datum_diff_dimensions, datum_default_dimensions] => {
+                let expected_diff_dims = hmap! {
+                    OrderedFloat(1.0f64) => 2f64
                 };
 
-                assert_eq!(to_count_map(datum), expected);
+                let expected_default_dims = hmap! {
+                    OrderedFloat(1.0f64) => 3f64
+                };
+
+                assert_eq!(to_count_map(datum_diff_dimensions), expected_diff_dims);
+                assert_eq!(
+                    to_count_map(datum_default_dimensions),
+                    expected_default_dims
+                );
                 Ok(())
             }
             _ => Err("must be exactly 2 metrics".to_string()),
