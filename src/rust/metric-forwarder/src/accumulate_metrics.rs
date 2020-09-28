@@ -4,7 +4,7 @@ use ordered_float::OrderedFloat;
 
 use rusoto_cloudwatch::{Dimension, MetricDatum};
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::hash::{Hash, Hasher};
 
 type CountMap = HashMap<OrderedFloat<f64>, f64>;
@@ -42,14 +42,14 @@ pub fn accumulate_metric_data(input: Vec<MetricDatum>) -> Vec<MetricDatum> {
         .map(|(WrappedMetricDatum(mut datum), count_map)| {
             // Erase the scalar "value", then fill "counts" and "values" vecs
             datum.value = None;
-            let mut counts = vec![];
-            let mut values: Vec<f64> = vec![];
+            let mut counts = Vec::with_capacity(count_map.len());
+            let mut values = Vec::with_capacity(count_map.len());
             count_map.into_iter().for_each(|(value, count)| {
                 values.push(value.into_inner());
                 counts.push(count);
             });
-            datum.counts = counts.into();
-            datum.values = values.into();
+            datum.counts = Some(counts);
+            datum.values = Some(values);
             datum
         })
         .collect()
@@ -89,9 +89,23 @@ impl PartialEq for WrappedMetricDatum {
 impl Eq for WrappedMetricDatum {}
 
 struct WrappedDimensions<'a>(&'a Vec<Dimension>);
+impl<'a> WrappedDimensions<'a> {
+    /// Turn [(key, value), (key2, value2)] into {key: value, key2: value2}
+    /// This is then used for hashing (btreemap chosen because it provides order)
+    fn dimensions_as_map(&self) -> BTreeMap<&str, &str> {
+        let mut map = BTreeMap::new();
+        self.0.iter().for_each(|ref dim| { map.insert(dim.name.as_str(), dim.value.as_str()); });
+        map
+    }
+}
 impl<'a> Hash for WrappedDimensions<'a> {
     fn hash<H: Hasher>(&self, _state: &mut H) {
-        let _dims = self.0;
+        self.dimensions_as_map().hash(_state);
+    }
+}
+impl<'a> PartialEq for WrappedDimensions<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.dimensions_as_map() == other.dimensions_as_map()
     }
 }
 
@@ -242,6 +256,36 @@ mod tests {
                 };
                 assert_eq!(to_count_map(datum_count), expected_for_count);
                 assert_eq!(to_count_map(datum_millis), expected_for_millis);
+                Ok(())
+            }
+            _ => Err("must be exactly 2 metrics".to_string()),
+        }
+    }
+
+    #[test]
+    fn test_buckets_diff_tags_differently() -> Result<(), String> {
+        let input = vec![
+            metric(1.0),
+            {
+                let mut m = metric(1.0);
+                m.dimensions = Some(vec![Dimension{name: "name2".to_string(), value: "value2".to_string()}]);
+                m
+            },
+            metric(1.0),
+        ];
+
+        let mut output = accumulate_metric_data(input);
+        output.sort_by(|a, b| {
+            WrappedDimensions(&a.dimensions.unwrap())
+                .cmp(WrappedDimensions(&b.dimensions.unwrap()))
+        });
+        match &output[..] {
+            [datum] => {
+                let expected = hmap! {
+                    OrderedFloat(1.0f64) => 1.0f64
+                };
+
+                assert_eq!(to_count_map(datum), expected);
                 Ok(())
             }
             _ => Err("must be exactly 2 metrics".to_string()),
