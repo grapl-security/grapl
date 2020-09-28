@@ -1763,7 +1763,6 @@ dependencies = [
  "futures 0.3.5",
  "grapl-config",
  "hmap",
- "itertools 0.9.0",
  "lambda_runtime",
  "log 0.4.8",
  "ordered-float",
