@@ -5,7 +5,7 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}
+grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
 grapl-config = {path="../grapl-config", version="*"}
 
 aws_lambda_events = "0.2.1"

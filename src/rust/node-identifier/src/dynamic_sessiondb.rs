@@ -5,10 +5,10 @@ use log::{info, warn};
 use rusoto_dynamodb::{AttributeValue, DynamoDb, GetItemInput, PutItemInput};
 use serde::{Deserialize, Serialize};
 
-use graph_descriptions::graph_description::id_strategy;
-use graph_descriptions::graph_description::Session as SessionStrategy;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::graph_description::id_strategy;
+use grapl_graph_descriptions::graph_description::Session as SessionStrategy;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::node::NodeT;
 
 use crate::assetdb::AssetIdentifier;
 use crate::sessiondb::SessionDb;

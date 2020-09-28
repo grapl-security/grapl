@@ -2,7 +2,6 @@
 
 use std::collections::HashSet;
 use std::io::Cursor;
-use std::sync::Arc;
 use std::time::Duration;
 
 use std::fmt::Debug;
@@ -19,8 +18,8 @@ use aws_lambda_events::event::s3::{
 };
 use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
-use grapl_graph_descriptions::graph_description::*;
 use grapl_config as config;
+use grapl_graph_descriptions::graph_description::*;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::Context;
 use sqs_lambda::cache::NopCache;

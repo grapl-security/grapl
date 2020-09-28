@@ -2,10 +2,7 @@
 
 use std::fmt::Debug;
 use std::io::Cursor;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use aws_lambda_events::event::sqs::SqsEvent;
-use regex::Regex;
 use serde::de::Error as SerdeError;
 use serde::{Deserialize, Serialize};
 use sqs_lambda::cache::{Cache, CacheResponse, NopCache};
@@ -14,17 +11,15 @@ use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use tracing::*;
 
 use async_trait::async_trait;
-use graph_descriptions::file::FileState;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::network_connection::NetworkConnectionState;
-use graph_descriptions::node::NodeT;
-use graph_descriptions::process::ProcessState;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use graph_generator_lib::{run_graph_generator_aws, run_graph_generator_local};
 use grapl_config::event_cache;
-use lazy_static::lazy_static;
-use tracing_subscriber::EnvFilter;
+use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::network_connection::NetworkConnectionState;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process::ProcessState;
+use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 
 #[derive(Clone, Debug, Hash)]
 pub enum GenericEvent {
