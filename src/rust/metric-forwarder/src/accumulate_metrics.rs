@@ -256,7 +256,7 @@ mod tests {
         ];
 
         let mut output = accumulate_metric_data(input);
-        output.sort_by(|a, b| a.unit.cmp(&b.timestamp));
+        output.sort_by(|a, b| a.unit.cmp(&b.unit));
         match &output[..] {
             [datum_count, datum_millis] => {
                 let expected_for_count = hmap! {
