@@ -1,6 +1,7 @@
 #![type_length_limit = "1214269"]
 // Our types are simply too powerful
 
+mod accumulate_metrics;
 mod cloudwatch_logs_parse;
 mod cloudwatch_send;
 mod deser_logs_data;
@@ -12,6 +13,7 @@ use lambda_runtime::lambda;
 use lambda_runtime::Context;
 use log::info;
 
+use crate::accumulate_metrics::accumulate_metric_data;
 use crate::cloudwatch_logs_parse::parse_logs;
 use crate::cloudwatch_send::statsd_as_cloudwatch_metric_bulk;
 use crate::cloudwatch_send::{filter_invalid_stats, get_namespace, put_metric_data};
@@ -55,9 +57,10 @@ async fn handler_async(event: CloudwatchLogsEvent) -> Result<(), MetricForwarder
             let namespace = get_namespace(&parsed_stats)?;
             let cloudwatch_metric_data = statsd_as_cloudwatch_metric_bulk(parsed_stats);
             info!("Received {} incoming metrics", cloudwatch_metric_data.len());
+            let accumulated = accumulate_metric_data(cloudwatch_metric_data);
 
             // then forward them to CloudWatch in chunks of 20:
-            let put_result = put_metric_data(&cw_client, &cloudwatch_metric_data, &namespace);
+            let put_result = put_metric_data(&cw_client, &accumulated, &namespace);
             put_result.await
         }
         Err(e) => Err(e),

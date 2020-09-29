@@ -73,7 +73,7 @@ dependencies = [
  "stopwatch",
  "tokio 0.2.21",
  "tokio-compat",
- "uuid 0.6.5",
+ "uuid 0.8.1",
  "zstd",
 ]
 
@@ -351,14 +351,16 @@ checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
 name = "chrono"
-version = "0.4.11"
+version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80094f509cf8b5ae86a4966a39b3ff66cd7e2a3e594accec3743ff3fabeab5b2"
+checksum = "d021fddb7bd3e734370acfa4a83f34095571d8570c039f1420d77540f68d5772"
 dependencies = [
+ "libc",
  "num-integer",
  "num-traits",
  "serde",
  "time 0.1.43",
+ "winapi 0.3.9",
 ]
 
 [[package]]
@@ -1064,7 +1066,7 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
- "uuid 0.6.5",
+ "uuid 0.8.1",
  "zstd",
 ]
 
@@ -1756,11 +1758,15 @@ dependencies = [
  "async-trait",
  "aws_lambda_events 0.2.7",
  "base64 0.10.1",
+ "chrono",
  "flate2",
  "futures 0.3.5",
  "grapl-config",
+ "hmap",
+ "itertools 0.8.2",
  "lambda_runtime",
  "log 0.4.8",
+ "ordered-float",
  "rayon",
  "rusoto_cloudwatch",
  "rusoto_core",
@@ -1769,7 +1775,7 @@ dependencies = [
  "thiserror",
  "tokio 0.2.21",
  "tokio-compat",
- "uuid 0.6.5",
+ "uuid 0.8.1",
 ]
 
 [[package]]
@@ -2059,6 +2065,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
 
 [[package]]
+name = "ordered-float"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fe9037165d7023b1228bc4ae9a2fa1a2b0095eca6c2998c624723dfd01314a5"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "parking_lot"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2243,7 +2258,7 @@ version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50d9500ea1488a61aa96da139039b78a92eef64a0f3c82d38173729f0ad73cf8"
 dependencies = [
- "log 0.3.9",
+ "log 0.4.8",
 ]
 
 [[package]]
@@ -3355,7 +3370,7 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
- "uuid 0.6.5",
+ "uuid 0.8.1",
  "zstd",
 ]
 
