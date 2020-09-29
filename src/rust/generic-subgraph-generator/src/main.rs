@@ -17,11 +17,11 @@ use crate::serialization::ZstdJsonDecoder;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    grapl_config::init_grapl_env!();
+    let env = grapl_config::init_grapl_env!();
 
     info!("Starting generic-subgraph-generator");
 
-    if grapl_config::is_local() {
+    if env.is_local {
         let generator = GenericSubgraphGenerator::new(NopCache {});
 
         run_graph_generator(generator, ZstdJsonDecoder::default()).await;

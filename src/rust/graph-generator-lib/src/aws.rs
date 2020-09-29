@@ -78,6 +78,7 @@ fn lambda_handler<
 
     info!("Checking acks");
 
+    // TODO: Change this from using String to using proper Enums to more semantically convey meaning
     for received_message in &rx {
         info!("Acking event: {}", &received_message);
 

@@ -9,7 +9,7 @@ pub struct ZstdDecoder;
 
 impl PayloadDecoder<Vec<u8>> for ZstdDecoder {
     fn decode(&mut self, body: Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        let mut decompressed = Vec::new();
+        let mut decompressed = Vec::with_capacity(body.len());
         let mut body = Cursor::new(&body);
 
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;
