@@ -17,9 +17,9 @@ use lambda_runtime::lambda;
 use lambda_runtime::Context;
 use log::{debug, error, info, warn};
 use prost::Message;
-use rusoto_core::{HttpClient, Region, RusotoError};
+use rusoto_core::{HttpClient, Region};
 use rusoto_s3::{ListObjectsRequest, S3Client, S3};
-use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
+use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -35,7 +35,6 @@ use aws_lambda_events::event::s3::{
 use chrono::Utc;
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use std::str::FromStr;
-use tokio::runtime::Runtime;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
@@ -468,11 +467,9 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    grapl_config::init_grapl_log!();
+    let env = grapl_config::init_grapl_env!();
 
-    let is_local = std::env::var("IS_LOCAL").is_ok();
-
-    if is_local {
+    if env.is_local {
         info!("Running locally");
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 

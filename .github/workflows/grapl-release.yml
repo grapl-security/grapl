@@ -168,6 +168,11 @@ jobs:
           rm ./bootstrap
           echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$VERSION-$CHANNEL.zip"
 
+          cp dist/metric-forwarder ./bootstrap
+          zip -9 metric-forwarder-$VERSION-$CHANNEL.zip ./bootstrap
+          rm ./bootstrap
+          echo "::set-output name=metric-forwarder::metric-forwarder-$VERSION-$CHANNEL.zip"
+
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
@@ -182,6 +187,7 @@ jobs:
           docker push grapl/grapl-node-identifier-retry-handler:$VERSION-$CHANNEL
           docker push grapl/grapl-graph-merger:$VERSION-$CHANNEL
           docker push grapl/grapl-analyzer-dispatcher:$VERSION-$CHANNEL
+          docker push grapl/grapl-metric-forwarder:$VERSION-$CHANNEL
 
       - name: Clean up dist
         run: |
@@ -245,6 +251,16 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./${{ steps.extract-rust-artifacts.outputs.analyzer-dispatcher }}
           asset_name: ${{ steps.extract-rust-artifacts.outputs.analyzer-dispatcher }}
+          asset_content_type: application/zip
+
+      - name: Upload metric-forwarder to Github
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ steps.extract-rust-artifacts.outputs.metric-forwarder }}
+          asset_name: ${{ steps.extract-rust-artifacts.outputs.metric-forwarder }}
           asset_content_type: application/zip
 
   release-python-services:
@@ -417,6 +433,34 @@ jobs:
       - name: Clean up grapl_analyzerlib dist
         run: |
           rm -rf dist
+      
+
+      - name: Prepare grapl-common dist
+        run: |
+          docker create -ti --name grapl-common grapl/grapl-common-python-build:latest
+          docker cp grapl-common:/home/grapl/grapl-common/dist .
+          docker rm -f grapl-common
+
+      - name: Upload grapl-common to Test PyPI
+        if: env.CHANNEL == 'beta'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Upload grapl-common to PyPI
+        if: env.CHANNEL == 'latest'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
+
+      - name: Clean up grapl-common dist
+        run: |
+          rm -rf dist
+
+
 
   release-js-services:
     runs-on: ubuntu-latest

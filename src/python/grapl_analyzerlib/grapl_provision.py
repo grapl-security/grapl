@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 from hashlib import sha256, pbkdf2_hmac
-from typing import List
+from typing import List, Any
 from uuid import uuid4
 
 import boto3
@@ -76,11 +76,11 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
     return res
 
 
-def meta_into_edge(schema, predicate_meta):
-    if predicate_meta.get("list"):
-        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToMany)
-    else:
-        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToOne)
+def meta_into_edge(dynamodb, schema, f_edge):
+    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
+    print(edge_res)
+    return EdgeT(type(schema), BaseSchema, EdgeRelationship(edge_res["relationship"]))
 
 
 def meta_into_property(schema, predicate_meta):
@@ -97,10 +97,10 @@ def meta_into_property(schema, predicate_meta):
     return PropType(primitive, is_set, index=predicate_meta.get("index", []))
 
 
-def meta_into_predicate(schema, predicate_meta):
+def meta_into_predicate(dynamodb, schema, predicate_meta):
     try:
         if predicate_meta["type"] == "uid":
-            return meta_into_edge(schema, predicate_meta)
+            return meta_into_edge(dynamodb, schema, predicate_meta["predicate"])
         else:
             return meta_into_property(schema, predicate_meta)
     except Exception as e:
@@ -135,11 +135,11 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
     return predicate_metas
 
 
-def extend_schema(graph_client: GraphClient, schema: "BaseSchema"):
+def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
 
     for predicate_meta in predicate_metas:
-        predicate = meta_into_predicate(schema, predicate_meta)
+        predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
         if isinstance(predicate, PropType):
             schema.add_property(predicate_meta["predicate"], predicate)
         else:
@@ -170,13 +170,44 @@ def provision_mg(mclient) -> None:
         LensSchema(),
     )
 
+    dynamodb = get_dynamodb_client()
+    for schema in schemas:
+        store_schema(dynamodb, schema)
+
     for schema in schemas:
         schema.init_reverse()
 
     for schema in schemas:
-        extend_schema(mclient, schema)
+        extend_schema(dynamodb, mclient, schema)
 
     provision_master_graph(mclient, schemas)
+
+    for schema in schemas:
+        store_schema(dynamodb, schema)
+
+
+def get_dynamodb_client() -> "Any":
+    return boto3.resource(
+        "dynamodb",
+        endpoint_url="http://dynamodb:8000",
+        region_name="us-west-2",
+        aws_access_key_id="dummy_cred_aws_access_key_id",
+        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+    )
+
+
+def store_schema(dynamodb, schema: "Schema"):
+    table = dynamodb.Table("local-grapl-grapl_schema_table")
+    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
+        if not (f_edge and r_edge):
+            continue
+        table.put_item(
+            Item={
+                "f_edge": r_edge,
+                "r_edge": f_edge,
+                "relationship": int(edge_t.rel.reverse()),
+            }
+        )
 
 
 if __name__ == "__main__":

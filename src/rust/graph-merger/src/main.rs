@@ -6,7 +6,7 @@ use std::io::Cursor;
 use std::iter::FromIterator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
@@ -28,24 +28,24 @@ use log::{debug, error, info, warn};
 use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use rusoto_core::{HttpClient, Region, RusotoError};
+use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::DynamoDbClient;
-use rusoto_dynamodb::{DynamoDb, GetItemInput, QueryInput};
-use rusoto_s3::{S3Client, S3};
-use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
+use rusoto_dynamodb::{DynamoDb, GetItemInput};
+use rusoto_s3::S3Client;
+use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable, NopCache};
+use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
-use tokio::runtime::Runtime;
 
 use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use graph_descriptions::node::NodeT;
+use std::net::ToSocketAddrs;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -193,7 +193,6 @@ where
                 .choose(&mut rng)
                 .expect("Empty rand_alpha")
                 .to_owned();
-
             debug!("connecting to DGraph {}", &rand_alpha);
 
             // using a single URI creates a Client<LazyChannel> which is gRPC
@@ -654,18 +653,24 @@ where
 }
 
 pub fn init_dynamodb_client() -> DynamoDbClient {
-    info!("Connecting to local http://dynamodb:8000");
-    DynamoDbClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_cred_aws_access_key_id".to_owned(),
-            "dummy_cred_aws_secret_access_key".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-west-2".to_string(),
-            endpoint: "http://dynamodb:8000".to_string(),
-        },
-    )
+    if grapl_config::is_local() {
+        info!("Connecting to local DynamoDB http://dynamodb:8000");
+        DynamoDbClient::new_with(
+            HttpClient::new().expect("failed to create request dispatcher"),
+            rusoto_credential::StaticProvider::new_minimal(
+                "dummy_cred_aws_access_key_id".to_owned(),
+                "dummy_cred_aws_secret_access_key".to_owned(),
+            ),
+            Region::Custom {
+                name: "us-west-2".to_string(),
+                endpoint: "http://dynamodb:8000".to_string(),
+            },
+        )
+    } else {
+        info!("Connecting to DynamoDB");
+        let region = grapl_config::region();
+        DynamoDbClient::new(region.clone())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -706,7 +711,7 @@ async fn get_r_edge(
             Ok(Some(mapping.r_edge))
         }
         None => {
-            warn!("Missing r_edge for: {}", f_edge);
+            error!("Missing r_edge for: {}", f_edge);
             Ok(None)
         }
     }
@@ -855,11 +860,9 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    grapl_config::init_grapl_log!();
+    let env = grapl_config::init_grapl_env!();
 
-    let is_local = std::env::var("IS_LOCAL").is_ok();
-
-    if is_local {
+    if env.is_local {
         info!("Running locally");
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 

@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Despite the path, this is *not* tied just to Local Grapl, and can also be used on true S3 buckets.
+"""
 
 import argparse
 import json
@@ -57,7 +60,10 @@ def into_sqs_message(bucket: str, key: str) -> str:
     )
 
 
-def main(prefix, logfile, delay, batch_size):
+def main(prefix, logfile, delay, batch_size, use_links: bool):
+    """
+    `use_links` meaning use "s3", "sqs" as opposed to localhost
+    """
     print(
         f"Writing events to {prefix} with {delay} seconds between batches of {batch_size}"
     )
@@ -66,14 +72,14 @@ def main(prefix, logfile, delay, batch_size):
     if prefix == "local-grapl":
         s3 = boto3.client(
             "s3",
-            endpoint_url="http://localhost:9000",
+            endpoint_url="http://s3:9000" if use_links else "http://localhost:9000",
             aws_access_key_id="minioadmin",
             aws_secret_access_key="minioadmin",
             region_name="us-east-3",
         )
         sqs = boto3.client(
             "sqs",
-            endpoint_url="http://localhost:9324",
+            endpoint_url="http://sqs:9324" if use_links else "http://localhost:9324",
             region_name="us-east-1",
             aws_access_key_id="dummy_cred_aws_access_key_id",
             aws_secret_access_key="dummy_cred_aws_secret_access_key",
@@ -105,8 +111,11 @@ def main(prefix, logfile, delay, batch_size):
 
         # local-grapl relies on manual eventing
         if sqs:
+            endpoint_url = (
+                "http://sqs:9324" if use_links else "http://localhost:9324",
+            )
             sqs.send_message(
-                QueueUrl="http://localhost:9324/queue/grapl-sysmon-graph-generator-queue",
+                QueueUrl=f"{endpoint_url}/queue/grapl-sysmon-graph-generator-queue",
                 MessageBody=into_sqs_message(
                     bucket="{}-sysmon-log-bucket".format(prefix), key=key
                 ),
@@ -120,9 +129,15 @@ def main(prefix, logfile, delay, batch_size):
 def parse_args():
     parser = argparse.ArgumentParser(description="Send sysmon logs to Grapl")
     parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
-    parser.add_argument("--logfile", dest="logfile", required=True)
+    parser.add_argument(
+        "--logfile",
+        dest="logfile",
+        required=True,
+        help="ie $GRAPLROOT/etc/sample_data/eventlog.xml",
+    )
     parser.add_argument("--delay", dest="delay", default=0, type=int)
     parser.add_argument("--batch-size", dest="batch_size", default=100, type=int)
+    parser.add_argument("--use-links", dest="use_links", default=False, type=bool)
     return parser.parse_args()
 
 
@@ -132,4 +147,10 @@ if __name__ == "__main__":
     if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
     else:
-        main(args.bucket_prefix, args.logfile, args.delay, args.batch_size)
+        main(
+            args.bucket_prefix,
+            args.logfile,
+            args.delay,
+            args.batch_size,
+            args.use_links,
+        )

@@ -39,6 +39,18 @@ image=analyzer-dispatcher:
   depends:
     - rust-build
 
+image=metric-forwarder:
+  image: grapl/metric-forwarder
+  context: src/rust/metric-forwarder
+  dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
+  target: grapl-metric-forwarder
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
 image=generic-subgraph-generator:
   image: grapl/grapl-generic-subgraph-generator
   context: src/rust/generic-subgraph-generator
@@ -314,6 +326,17 @@ image=dynamodb-provision:
   tags:
     - "{env.TAG}"
 
+image=grapl-e2e-tests-build:
+  image: grapl/grapl-e2e-tests-build
+  context: src/python/grapl_e2e_tests/
+  dockerfile: Dockerfile
+  target: grapl-e2e-tests-build
+  depends:
+    - grapl-analyzerlib-build
+    - etc-build
+  tags:
+    - latest
+
 # js images
 
 image=grapl-cdk-build:
@@ -358,6 +381,15 @@ image=graphql-endpoint:
   tags:
     - "{env.TAG}"
 
+# local grapl
+image=etc-build:
+  image: grapl/etc-build
+  context: etc/
+  dockerfile: Dockerfile
+  target: etc-build
+  tags:
+    - "{env.TAG}"
+
 #
 # compose
 #
@@ -374,6 +406,7 @@ compose=integration-env:
     # rust images
     - analyzer-dispatcher
     - generic-subgraph-generator
+    - metric-forwarder  # though, not currently used in integration
     - graph-merger
     - node-identifier
     - node-identifier-retry-handler
@@ -512,6 +545,18 @@ job=run-analyzer-deployer-integration-tests:
   depends:
     - integration-env
 
+job=run-e2e-integration-tests:
+  use: grapl-e2e-tests-build
+  net-mode: grapl-integration-tests_default
+  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_e2e_tests && python3 ./main.py"
+  env:
+    - GRAPL_LOG_LEVEL=INFO
+    - "BUCKET_PREFIX=local-grapl"
+    - "IS_LOCAL=True"
+    - "MG_ALPHAS=grapl-master-graph-db:9080"
+  depends:
+    - integration-env
+
 job=build-analyzer-executor:
   use: analyzer-executor-build
   mounts:
@@ -599,6 +644,7 @@ alias=rust:
     - "analyzer-dispatcher:tag"
     - "generic-subgraph-generator:tag"
     - "graph-merger:tag"
+    - "metric-forwarder:tag"
     - "node-identifier:tag"
     - "node-identifier-retry-handler:tag"
     - "sysmon-subgraph-generator:tag"

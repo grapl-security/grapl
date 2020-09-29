@@ -10,13 +10,27 @@ use std::time::Duration;
 use tracing::debug;
 
 #[macro_export]
-macro_rules! init_grapl_log {
+macro_rules! init_grapl_env {
     () => {
-        $crate::_init_grapl_log(&module_path!().replace("-", "_"));
+        $crate::_init_grapl_env(&module_path!().replace("-", "_"))
     };
     ($module_name: literal) => {
-        $crate::_init_grapl_log($module_name);
+        $crate::_init_grapl_env($module_name)
     };
+}
+
+pub struct ServiceEnv {
+    pub service_name: String,
+    pub is_local: bool,
+}
+
+pub fn _init_grapl_env(service_name: &str) -> ServiceEnv {
+    let env = ServiceEnv {
+        service_name: service_name.to_string(),
+        is_local: is_local(),
+    };
+    _init_grapl_log(&env);
+    env
 }
 
 pub fn is_local() -> bool {
@@ -64,15 +78,15 @@ pub fn grapl_log_level() -> log::Level {
     }
 }
 
-pub fn _init_grapl_log(service_name: &str) {
+pub fn _init_grapl_log(env: &ServiceEnv) {
     let filter = EnvFilter::from_default_env()
         .add_directive("warn".parse().expect("Invalid directive"))
         .add_directive(
-            format!("{}={}", service_name, grapl_log_level())
+            format!("{}={}", env.service_name, grapl_log_level())
                 .parse()
                 .expect("Invalid directive"),
         );
-    if is_local() {
+    if env.is_local {
         tracing_subscriber::fmt().with_env_filter(filter).init();
     } else {
         tracing_subscriber::fmt()
