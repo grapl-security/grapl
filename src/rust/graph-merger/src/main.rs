@@ -6,7 +6,7 @@ use std::io::Cursor;
 use std::iter::FromIterator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
@@ -20,7 +20,7 @@ use dgraph_rs::protos::api;
 use dgraph_rs::protos::api_grpc;
 use dgraph_rs::DgraphClient;
 use failure::{bail, Error};
-use futures::future::join_all;
+
 use grpc::ClientConf;
 use grpc::{Client, ClientStub};
 use lambda_runtime::error::HandlerError;
@@ -30,21 +30,20 @@ use log::{debug, error, info, warn};
 use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use rusoto_core::{HttpClient, Region, RusotoError};
+use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::DynamoDbClient;
-use rusoto_dynamodb::{DynamoDb, GetItemInput, QueryInput};
-use rusoto_s3::{S3Client, S3};
-use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
+use rusoto_dynamodb::{DynamoDb, GetItemInput};
+use rusoto_s3::S3Client;
+use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable, NopCache};
+use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
-use tokio::runtime::Runtime;
 
 use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use graph_descriptions::node::NodeT;

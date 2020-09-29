@@ -4,7 +4,6 @@ use serde_derive::Deserialize;
 
 use derive_dynamic_node::{DynamicNode, GraplStaticId};
 use graph_descriptions::graph_description::*;
-use graph_descriptions::graph_description::*;
 
 fn read_log() -> &'static [u8] {
     unimplemented!()
