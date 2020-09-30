@@ -21,7 +21,7 @@ regex = "1.1.0"
 lazy_static = "1.2.0"
 sysmon = "0.2"
 chrono = "0.4.6"
-rayon = "1.0.3"
+rayon = "1.4.1"
 stopwatch = "0.0.7"
 
 rusoto_s3 = {version="0.43.0", default_features = false, features=["rustls"]}
