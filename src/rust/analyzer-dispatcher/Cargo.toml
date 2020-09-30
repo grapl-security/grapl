@@ -10,7 +10,7 @@ grapl-config = {path="../grapl-config", version="*"}
 
 aws_lambda_events = "0.2.1"
 base64 = "0.10.1"
-base16 = "0.1.1"
+base16 = "0.2.1"
 bytes = "0.5.*"
 dgraph-rs = "0.1.2"
 failure = "0.1.*"
