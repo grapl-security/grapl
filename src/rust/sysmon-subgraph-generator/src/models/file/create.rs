@@ -45,7 +45,7 @@ pub fn generate_file_create_subgraph(
     graph.add_edge(
         "process_asset",
         creator.clone_node_key(),
-        asset.clone_node_key()
+        asset.clone_node_key(),
     );
 
     graph.add_edge(
