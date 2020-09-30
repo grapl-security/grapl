@@ -3,7 +3,7 @@ name: Grapl Staging Release
 on:
   # Every time we push to staging,
   # release that to Dockerhub with the tag 'staging'.
-  push:
+  pull_request:  # TODO reverting asap
     branches:
     - staging
 
