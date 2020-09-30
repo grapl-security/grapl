@@ -40,7 +40,7 @@ image=analyzer-dispatcher:
     - rust-build
 
 image=metric-forwarder:
-  image: grapl/metric-forwarder
+  image: grapl/grapl-metric-forwarder
   context: src/rust/metric-forwarder
   dockerfile: Dockerfile
   args:
