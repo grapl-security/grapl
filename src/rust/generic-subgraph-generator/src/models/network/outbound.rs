@@ -1,11 +1,11 @@
-use graph_descriptions::graph_description::*;
-use graph_descriptions::node::NodeT;
-use graph_descriptions::process::ProcessState;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process::ProcessState;
 use serde::{Deserialize, Serialize};
 
-use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 
-use graph_descriptions::network_connection::NetworkConnectionState;
+use grapl_graph_descriptions::network_connection::NetworkConnectionState;
 use std::convert::TryFrom;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]

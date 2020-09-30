@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 
 use crate::models::GenericEvent;
-use graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::node::NodeT;
 use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use std::convert::TryFrom;

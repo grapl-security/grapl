@@ -3,7 +3,7 @@ use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
 use chrono::Utc;
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use lambda_runtime::Context;
 use log::*;
 use rusoto_core::{HttpClient, Region};

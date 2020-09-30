@@ -17,7 +17,7 @@ path = "src/bin/node-identifier-retry-handler.rs"
 integration = []
 
 [dependencies]
-graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}
+grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
 
 bytes = "0.5.*"

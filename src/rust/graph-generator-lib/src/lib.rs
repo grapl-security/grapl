@@ -4,8 +4,8 @@ mod serialization;
 
 use log::*;
 
-use graph_descriptions::graph_description::*;
 use grapl_config as config;
+use grapl_graph_descriptions::graph_description::*;
 
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
