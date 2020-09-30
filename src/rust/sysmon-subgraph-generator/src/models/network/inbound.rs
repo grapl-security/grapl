@@ -1,11 +1,11 @@
 use sysmon::NetworkEvent;
 
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 
-use graph_descriptions::network_connection::NetworkConnectionState;
-use graph_descriptions::node::NodeT;
-use graph_descriptions::process::ProcessState;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use grapl_graph_descriptions::network_connection::NetworkConnectionState;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process::ProcessState;
+use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 
 use crate::models::utc_to_epoch;
 

@@ -36,15 +36,15 @@ use sqs_lambda::redis_cache::RedisCache;
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
-use graph_descriptions::file::FileState;
-use graph_descriptions::graph_description::host::*;
-use graph_descriptions::graph_description::node::WhichNode;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::ip_connection::IpConnectionState;
-use graph_descriptions::network_connection::NetworkConnectionState;
-use graph_descriptions::node::NodeT;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::host::*;
+use grapl_graph_descriptions::graph_description::node::WhichNode;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::ip_connection::IpConnectionState;
+use grapl_graph_descriptions::network_connection::NetworkConnectionState;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 

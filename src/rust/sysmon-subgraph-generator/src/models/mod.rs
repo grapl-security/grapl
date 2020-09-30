@@ -1,7 +1,7 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
 use failure::bail;
 use failure::Error;
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use log::*;
 use sysmon::Event;
 
@@ -9,7 +9,7 @@ mod file;
 mod network;
 mod process;
 
-/// Because this crate doesn't own sysmon::Event nor graph_descriptions::graph_description::Graph
+/// Because this crate doesn't own sysmon::Event nor grapl_graph_descriptions::graph_description::Graph
 /// we need to create a new Trait to add a function to Graph for Event.
 ///
 /// Mimics TryFrom

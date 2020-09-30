@@ -1,7 +1,7 @@
 use crate::serialization::SubgraphSerializer;
 use aws_lambda_events::event::sqs::SqsEvent;
-use graph_descriptions::graph_description::*;
 use grapl_config as config;
+use grapl_graph_descriptions::graph_description::*;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::Context;
 use log::*;

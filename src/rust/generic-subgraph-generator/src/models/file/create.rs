@@ -1,7 +1,7 @@
-use graph_descriptions::file::FileState;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::node::NodeT;
-use graph_descriptions::process::ProcessState;
+use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process::ProcessState;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use tracing::*;
