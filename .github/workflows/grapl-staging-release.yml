@@ -92,7 +92,6 @@ jobs:
           echo "::set-env name=TAG::staging"
 
       - name: Build JS services
-        env:
         run: |
           GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount js
 
@@ -101,8 +100,6 @@ jobs:
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
       - name: Publish JS images to DockerHub
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
         run: |
           docker push grapl/grapl-engagement-view:$TAG
           docker push grapl/grapl-graphql-endpoint:$TAG
