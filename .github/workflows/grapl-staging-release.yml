@@ -27,11 +27,6 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount rust
 
-      - name: Extract artifacts from Rust build
-        id: extract-rust-artifacts
-        run: |
-          ./etc/build_scripts/extract_rust_artifacts.sh
-
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
