@@ -40,7 +40,7 @@ image=analyzer-dispatcher:
     - rust-build
 
 image=metric-forwarder:
-  image: grapl/metric-forwarder
+  image: grapl/grapl-metric-forwarder
   context: src/rust/metric-forwarder
   dockerfile: Dockerfile
   args:
@@ -406,7 +406,7 @@ compose=integration-env:
     # rust images
     - analyzer-dispatcher
     - generic-subgraph-generator
-    - metric-forwarder  # though, not currently used in integration
+    - grapl-metric-forwarder  # though, not currently used in integration
     - graph-merger
     - node-identifier
     - node-identifier-retry-handler

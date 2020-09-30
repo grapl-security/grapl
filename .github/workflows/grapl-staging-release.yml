@@ -30,40 +30,7 @@ jobs:
       - name: Extract artifacts from Rust build
         id: extract-rust-artifacts
         run: |
-          cp dist/sysmon-subgraph-generator ./bootstrap
-          zip -9 sysmon-subgraph-generator-$TAG.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=sysmon-subgraph-generator::sysmon-subgraph-generator-$TAG.zip"
-
-          cp dist/generic-subgraph-generator ./bootstrap
-          zip -9 generic-subgraph-generator-$TAG.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=generic-subgraph-generator::generic-subgraph-generator-$TAG.zip"
-
-          cp dist/node-identifier ./bootstrap
-          zip -9 node-identifier-$TAG.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=node-identifier::node-identifier-$TAG.zip"
-
-          cp dist/node-identifier-retry-handler ./bootstrap
-          zip -9 node-identifier-retry-handler-$TAG.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=node-identifier-retry-handler::node-identifier-retry-handler-$TAG.zip"
-
-          cp dist/graph-merger ./bootstrap
-          zip -9 graph-merger-$TAG.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=graph-merger::graph-merger-$TAG.zip"
-
-          cp dist/analyzer-dispatcher ./bootstrap
-          zip -9 analyzer-dispatcher-$TAG.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$TAG.zip"
-
-          cp dist/metric-forwarder ./bootstrap
-          zip -9 metric-forwarder-$TAG.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=metric-forwarder::metric-forwarder-$TAG.zip"
+          ./etc/build_scripts/extract_rust_artifacts.sh
 
       - name: Log in to Docker registry
         run: |
@@ -71,13 +38,7 @@ jobs:
 
       - name: Publish Rust images to DockerHub
         run: |
-          docker push grapl/grapl-sysmon-subgraph-generator:$TAG
-          docker push grapl/grapl-generic-subgraph-generator:$TAG
-          docker push grapl/grapl-node-identifier:$TAG
-          docker push grapl/grapl-node-identifier-retry-handler:$TAG
-          docker push grapl/grapl-graph-merger:$TAG
-          docker push grapl/grapl-analyzer-dispatcher:$TAG
-          docker push grapl/grapl-metric-forwarder:$TAG
+          ./etc/build_scripts/push_rust_to_docker.sh
 
       - name: Clean up dist
         run: |
@@ -108,32 +69,7 @@ jobs:
 
       - name: Publish Python images to DockerHub
         run: |
-          docker push grapl/grapl-analyzer-executor:$TAG
-          docker push grapl/grapl-engagement-creator:$TAG
-          docker push grapl/grapl-notebook:$TAG
-          docker push grapl/grapl-engagement-edge:$TAG
-          docker push grapl/grapl-model-plugin-deployer:$TAG
-          docker push grapl/grapl-graph-provision:$TAG
-          docker push grapl/grapl-dynamodb-provision:$TAG
-          docker push grapl/grapl-dgraph-ttl:$TAG
-
-      - name: Extract Python artifacts from build
-        id: extract-python-artifacts
-        run: |
-          cp dist/analyzer-executor/lambda.zip analyzer-executor-$TAG.zip
-          echo "::set-output name=analyzer-executor::analyzer-executor-$TAG.zip"
-
-          cp dist/engagement-creator/lambda.zip engagement-creator-$TAG.zip
-          echo "::set-output name=engagement-creator::engagement-creator-$TAG.zip"
-
-          cp dist/engagement-edge/lambda.zip engagement-edge-$TAG.zip
-          echo "::set-output name=engagement-edge::engagement-edge-$TAG.zip"
-
-          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$TAG.zip
-          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$TAG.zip"
-
-          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$TAG.zip
-          echo "::set-output name=dgraph-ttl::dgraph-ttl-$TAG.zip"
+          ./etc/build_scripts/push_py_to_docker.sh
 
       - name: Clean up dist
         run: |
