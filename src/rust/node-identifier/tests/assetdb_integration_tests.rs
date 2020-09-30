@@ -1,4 +1,4 @@
-use grapl_graph_descriptions::graph_description::host::HostId;
+use grapl_graph_descriptions::graph_description::host::*;
 use node_identifier::assetdb::AssetIdDb;
 use node_identifier::init_dynamodb_client;
 use rusoto_core::Region;

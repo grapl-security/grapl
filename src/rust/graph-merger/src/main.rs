@@ -3,8 +3,10 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::Cursor;
+use std::iter::FromIterator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
@@ -18,6 +20,7 @@ use dgraph_rs::protos::api;
 use dgraph_rs::protos::api_grpc;
 use dgraph_rs::DgraphClient;
 use failure::{bail, Error};
+
 use grpc::ClientConf;
 use grpc::{Client, ClientStub};
 use lambda_runtime::error::HandlerError;
@@ -45,6 +48,17 @@ use sqs_lambda::redis_cache::RedisCache;
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use grapl_graph_descriptions::node::NodeT;
 use std::net::ToSocketAddrs;
+
+macro_rules! log_time {
+    ($msg:expr, $x:expr) => {{
+        let mut sw = stopwatch::Stopwatch::start_new();
+        #[allow(path_statements)]
+        let result = $x;
+        sw.stop();
+        info!("{} {} milliseconds", $msg, sw.elapsed_ms());
+        result
+    }};
+}
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> api::Mutation {
     let mu = json!({
@@ -144,6 +158,24 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
         Some(uid) => Ok(uid),
         None => bail!("Could not retrieve uid after upsert for {}", &node_key),
     }
+}
+
+fn chunk<T, U>(data: U, count: usize) -> Vec<U>
+where
+    U: IntoIterator<Item = T>,
+    U: FromIterator<T>,
+    <U as IntoIterator>::IntoIter: ExactSizeIterator,
+{
+    let mut iter = data.into_iter();
+    let iter = iter.by_ref();
+
+    let chunk_len = (iter.len() / count) as usize + 1;
+
+    let mut chunks = Vec::new();
+    for _ in 0..count {
+        chunks.push(iter.take(chunk_len).collect())
+    }
+    chunks
 }
 
 #[derive(Clone)]
@@ -301,6 +333,18 @@ impl CompletionEventSerializer for SubgraphSerializer {
 
         Ok(vec![compressed])
     }
+}
+
+fn time_based_key_fn(_event: &[u8]) -> String {
+    info!("event length {}", _event.len());
+    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
+        Ok(n) => n.as_millis(),
+        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+    };
+
+    let cur_day = cur_ms - (cur_ms % 86400);
+
+    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {

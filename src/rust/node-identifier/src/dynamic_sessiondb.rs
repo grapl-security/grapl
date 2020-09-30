@@ -83,7 +83,7 @@ where
             ..Default::default()
         };
 
-        let put_item_response = wait_on!(self.dyn_mapping_db.put_item(put_req))?;
+        let _put_item_response = wait_on!(self.dyn_mapping_db.put_item(put_req))?;
 
         Ok(())
     }
@@ -283,7 +283,7 @@ where
     pub async fn attribute_dynamic_nodes(
         &self,
         unid_graph: Graph,
-        unid_id_map: &mut HashMap<String, String>,
+        _unid_id_map: &mut HashMap<String, String>,
     ) -> Result<Graph, Graph> {
         let mut unid_id_map = HashMap::new();
         let mut dead_nodes = HashSet::new();

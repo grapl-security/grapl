@@ -149,7 +149,7 @@ where
         ts: u64,
     ) -> Result<(), Error> {
         let (table_key, host_id) = match host_id {
-            HostId::AssetId(id) => return Ok(()),
+            HostId::AssetId(_id) => return Ok(()),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),
         };
 
@@ -228,7 +228,7 @@ where
         };
 
         let (host_id, timestamp) = match ids {
-            (Some(asset_id), _, timestamp) => return Ok(asset_id.clone()),
+            (Some(asset_id), _, _timestamp) => return Ok(asset_id.clone()),
             (_, Some(hostname), timestamp) => (HostId::Hostname(hostname.clone()), timestamp),
             (_, _, _) => {
                 bail!("Must provide at least one of: asset_id, hostname, host_ip");
