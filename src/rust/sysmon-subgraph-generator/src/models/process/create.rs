@@ -54,9 +54,9 @@ pub fn generate_process_create_subgraph(
         .map_err(|err| failure::err_msg(err))?;
 
     graph.add_edge(
-        "asset_processes",
+        "process_asset",
+        parent.clone_node_key(),
         asset.clone_node_key(),
-        child.clone_node_key(),
     );
 
     graph.add_edge(

@@ -187,18 +187,7 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(mg_alphas: Vec<String>, cache: CacheT) -> Self {
-        let mg_client = {
-            let mut rng = thread_rng();
-            let rand_alpha = mg_alphas
-                .choose(&mut rng)
-                .expect("Empty rand_alpha")
-                .to_owned();
-            debug!("connecting to DGraph {}", &rand_alpha);
-
-            // using a single URI creates a Client<LazyChannel> which is gRPC
-            // using a Vec<String> causes an Client<HTTP> to be created which is not desired
-            DgraphClient::new(rand_alpha).expect("Failed to create dgraph client")
-        };
+        let mg_client = DgraphClient::new(mg_alphas).expect("Failed to create dgraph client.");
 
         Self {
             mg_client: Arc::new(mg_client),
