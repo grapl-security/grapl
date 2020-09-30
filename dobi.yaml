@@ -406,7 +406,7 @@ compose=integration-env:
     # rust images
     - analyzer-dispatcher
     - generic-subgraph-generator
-    - grapl-metric-forwarder  # though, not currently used in integration
+    - metric-forwarder  # though, not currently used in integration
     - graph-merger
     - node-identifier
     - node-identifier-retry-handler
