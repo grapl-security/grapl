@@ -1,4 +1,4 @@
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use log::*;
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use std::io::Cursor;

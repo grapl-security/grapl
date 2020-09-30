@@ -5,7 +5,7 @@ mod process;
 use crate::models::file::{FileCreate, FileDelete, FileRead, FileWrite};
 use crate::models::network::{ProcessInboundConnectionLog, ProcessOutboundConnectionLog};
 use crate::models::process::ProcessPortBindLog;
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use process::{ProcessStart, ProcessStop};
 use serde::{Deserialize, Serialize};
 

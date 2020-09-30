@@ -5,13 +5,11 @@ use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::time::Duration;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;
 use failure::{bail, Error};
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
@@ -236,18 +234,6 @@ where
 
         Ok(E::decode(buf)?)
     }
-}
-
-fn time_based_key_fn(_event: &[u8]) -> String {
-    info!("event length {}", _event.len());
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {

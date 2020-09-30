@@ -2,7 +2,7 @@ use crate::metrics::SysmonSubgraphGeneratorMetrics;
 use crate::models::SysmonTryFrom;
 use async_trait::async_trait;
 use failure::bail;
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::log_time;
 use log::*;
 use sqs_lambda::cache::{Cache, CacheResponse};

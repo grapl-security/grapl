@@ -43,8 +43,8 @@ use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use sqs_lambda::redis_cache::RedisCache;
 
-use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
-use graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
+use grapl_graph_descriptions::node::NodeT;
 use std::net::ToSocketAddrs;
 
 macro_rules! log_time {

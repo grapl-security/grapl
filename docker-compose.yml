@@ -59,7 +59,7 @@ services:
   #
 
   grapl-metric-forwarder:
-    image: grapl/metric-forwarder:${TAG:-latest}
+    image: grapl/grapl-metric-forwarder:${TAG:-latest}
     tty: false
     environment:
       - "IS_LOCAL=True"
