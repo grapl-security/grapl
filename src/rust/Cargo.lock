@@ -2074,6 +2074,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "osquery-subgraph-generator"
+version = "0.1.0"
+
+[[package]]
 name = "parking_lot"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

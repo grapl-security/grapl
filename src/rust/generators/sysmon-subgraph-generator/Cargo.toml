@@ -5,9 +5,9 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
-grapl-config = {path = "../grapl-config", version="*"}
-grapl-observe = {path = "../grapl-observe", version="*"}
+grapl-graph-descriptions = { path="../../graph-descriptions", version="*" }
+grapl-config = {path = "../../grapl-config", version="*"}
+grapl-observe = {path = "../../grapl-observe", version="*"}
 
 sqs-lambda = "0.20.*"
 serde = "1.0.110"

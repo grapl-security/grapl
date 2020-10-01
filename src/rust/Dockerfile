@@ -48,17 +48,17 @@ RUN mkdir -p derive-dynamic-node/src
 RUN touch derive-dynamic-node/src/lib.rs
 COPY --chown=grapl ./derive-dynamic-node/Cargo.toml derive-dynamic-node/
 # copy in Cargo.toml for generic-subgraph-generator
-RUN mkdir -p generic-subgraph-generator/src
-RUN echo 'fn main() {}' > generic-subgraph-generator/src/main.rs
-COPY --chown=grapl ./generic-subgraph-generator/Cargo.toml generic-subgraph-generator/
+RUN mkdir -p generators/generic-subgraph-generator/src
+RUN echo 'fn main() {}' > generators/generic-subgraph-generator/src/main.rs
+COPY --chown=grapl ./generators/generic-subgraph-generator/Cargo.toml generators/generic-subgraph-generator/
 # copy in Cargo.toml for graph-descriptions
 RUN mkdir -p graph-descriptions/src
 RUN touch graph-descriptions/src/lib.rs
 COPY --chown=grapl ./graph-descriptions/Cargo.toml graph-descriptions/
 # copy in Cargo.toml for graph-generator-lib
-RUN mkdir -p graph-generator-lib/src
-RUN touch graph-generator-lib/src/lib.rs
-COPY --chown=grapl ./graph-generator-lib/Cargo.toml graph-generator-lib/
+RUN mkdir -p generators/graph-generator-lib/src
+RUN touch generators/graph-generator-lib/src/lib.rs
+COPY --chown=grapl ./generators/graph-generator-lib/Cargo.toml generators/graph-generator-lib/
 # copy in Cargo.toml for grapl-config
 RUN mkdir -p grapl-config/src
 RUN touch grapl-config/src/lib.rs
@@ -83,9 +83,13 @@ RUN echo 'fn main() {}' > node-identifier/src/bin/node-identifier.rs
 RUN echo 'fn main() {}' > node-identifier/src/bin/node-identifier-retry-handler.rs
 COPY --chown=grapl ./node-identifier/Cargo.toml node-identifier/
 # copy in Cargo.toml for sysmon-subgraph-generator
-RUN mkdir -p sysmon-subgraph-generator/src
-RUN echo 'fn main() {}' > sysmon-subgraph-generator/src/main.rs
-COPY --chown=grapl ./sysmon-subgraph-generator/Cargo.toml sysmon-subgraph-generator/
+RUN mkdir -p generators/sysmon-subgraph-generator/src
+RUN echo 'fn main() {}' > generators/sysmon-subgraph-generator/src/main.rs
+COPY --chown=grapl ./generators/sysmon-subgraph-generator/Cargo.toml generators/sysmon-subgraph-generator/
+# copy in Cargo.toml for osquery-subgraph-generator
+RUN mkdir -p generators/osquery-subgraph-generator/src
+RUN echo 'fn main() {}' > generators/osquery-subgraph-generator/src/main.rs
+COPY --chown=grapl ./generators/osquery-subgraph-generator/Cargo.toml generators/osquery-subgraph-generator/
 # copy in the top-level Cargo.toml and Cargo.lock
 COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
@@ -125,15 +129,16 @@ RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
 # copy in the sources
 COPY --chown=grapl ./analyzer-dispatcher analyzer-dispatcher
 COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
-COPY --chown=grapl ./generic-subgraph-generator generic-subgraph-generator
 COPY --chown=grapl ./graph-descriptions graph-descriptions
-COPY --chown=grapl ./graph-generator-lib graph-generator-lib
 COPY --chown=grapl ./graph-merger graph-merger
 COPY --chown=grapl ./grapl-config grapl-config
 COPY --chown=grapl ./grapl-observe grapl-observe
 COPY --chown=grapl ./metric-forwarder metric-forwarder
 COPY --chown=grapl ./node-identifier node-identifier
-COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator
+COPY --chown=grapl ./generators/graph-generator-lib generators/graph-generator-lib
+COPY --chown=grapl ./generators/generic-subgraph-generator generators/generic-subgraph-generator
+COPY --chown=grapl ./generators/osquery-subgraph-generator generators/osquery-subgraph-generator
+COPY --chown=grapl ./generators/sysmon-subgraph-generator generators/sysmon-subgraph-generator
 # copy in the top-level Cargo.toml and Cargo.lock
 COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .

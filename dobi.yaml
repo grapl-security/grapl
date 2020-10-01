@@ -53,7 +53,7 @@ image=metric-forwarder:
 
 image=generic-subgraph-generator:
   image: grapl/grapl-generic-subgraph-generator
-  context: src/rust/generic-subgraph-generator
+  context: src/rust/generators/generic-subgraph-generator
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
@@ -101,7 +101,7 @@ image=node-identifier-retry-handler:
 
 image=sysmon-subgraph-generator:
   image: grapl/grapl-sysmon-subgraph-generator
-  context: src/rust/sysmon-subgraph-generator
+  context: src/rust/generators/sysmon-subgraph-generator
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
