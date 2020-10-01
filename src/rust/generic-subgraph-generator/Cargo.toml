@@ -33,7 +33,7 @@ rusoto_core = { version="0.43.0", default_features = false, features=["rustls"] 
 rusoto_sqs = { version="0.43.0", default_features = false, features=["rustls"] }
 
 futures = "0.3.*"
-aws_lambda_events = "0.2.0"
+aws_lambda_events = "0.3.0"
 simple_logger = "1.6.*"
 lambda_runtime = "0.2.*"
 async-trait = "0.1.22"
