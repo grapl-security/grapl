@@ -134,9 +134,9 @@ def store_schema(dynamodb, schema: "Schema"):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
-            print(f'missing {f_edge} {r_edge} for {schema.self_type()}')
+            print(f"missing {f_edge} {r_edge} for {schema.self_type()}")
             continue
-        print(f'{f_edge} {r_edge} {edge_t.rel}')
+        print(f"{f_edge} {r_edge} {edge_t.rel}")
         table.put_item(
             Item={
                 "f_edge": f_edge,
@@ -145,7 +145,7 @@ def store_schema(dynamodb, schema: "Schema"):
             }
         )
 
-        print(f'{r_edge} {f_edge} {edge_t.rel.reverse()}')
+        print(f"{r_edge} {f_edge} {edge_t.rel.reverse()}")
         table.put_item(
             Item={
                 "f_edge": r_edge,
@@ -212,8 +212,22 @@ def get_schema_objects(meta_globals) -> "Dict[str, BaseSchema]":
 
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[1])}
 
-builtin_schemas = {'Asset', 'Base', 'Entity', 'Process', 'File', 'Risk', 'Lens', 'IpPort', 'IpAddress',
-                   'ProcessOutboundConnection', 'ProcessInboundConnection', 'IpConnection', 'NetworkConnection', }
+
+builtin_schemas = {
+    "Asset",
+    "Base",
+    "Entity",
+    "Process",
+    "File",
+    "Risk",
+    "Lens",
+    "IpPort",
+    "IpAddress",
+    "ProcessOutboundConnection",
+    "ProcessInboundConnection",
+    "IpConnection",
+    "NetworkConnection",
+}
 
 
 def provision_schemas(master_graph_client, raw_schemas):
@@ -230,25 +244,36 @@ def provision_schemas(master_graph_client, raw_schemas):
     # loaded_builtins = [s for s in schemas if s.self_type() in builtin_schemas]
     # plugin_schemas = [s for s in schemas if s.self_type() not in builtin_schemas]
 
-    for edge in [print(s.edges) for s in schemas].items():
-        print()
+    for edges in (s.edges for s in schemas):
+        for f_edge, (edge_t, r_edge) in edges.items():
+            print("pre-reverse", f_edge, edge_t.__dict__, r_edge)
+
     LOGGER.info("init_reverse")
     for schema in schemas:
         schema.init_reverse()
 
-    [print(s.edges) for s in schemas]
+    for edges in (s.edges for s in schemas):
+        for f_edge, (edge_t, r_edge) in edges.items():
+            print("pre-store", f_edge, edge_t.__dict__, r_edge)
+
     LOGGER.info("Merge the schemas with what exists in the graph")
     dynamodb = get_dynamodb_client()
     for schema in schemas:
         store_schema(dynamodb, schema)
 
+    for edges in (s.edges for s in schemas):
+        for f_edge, (edge_t, r_edge) in edges.items():
+            print("pre-extend", f_edge, edge_t.__dict__, r_edge)
 
-    [print(s.edges) for s in schemas]
     LOGGER.info("Reprovision the graph")
     provision_master_graph(master_graph_client, schemas)
 
     for schema in schemas:
         extend_schema(dynamodb, master_graph_client, schema)
+
+    for edges in (s.edges for s in schemas):
+        for f_edge, (edge_t, r_edge) in edges.items():
+            print("2pre-store", f_edge, edge_t.__dict__, r_edge)
 
     for schema in schemas:
         store_schema(dynamodb, schema)
@@ -270,10 +295,13 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
 def meta_into_edge(dynamodb, schema: "Schema", f_edge):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
-    edge_t = schema.edges['f_edge'][0]  # type: EdgeT
+    edge_t = schema.edges[f_edge][0]  # type: EdgeT
 
-    print(f'{type(schema)}, {edge_t.dest}, {EdgeRelationship(edge_res["relationship"])}')
+    print(
+        f'{type(schema)}, {edge_t.dest}, {EdgeRelationship(edge_res["relationship"])}'
+    )
     return EdgeT(type(schema), edge_t.dest, EdgeRelationship(edge_res["relationship"]))
+
 
 def meta_into_property(predicate_meta):
     is_set = predicate_meta.get("list")
@@ -330,12 +358,12 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
 def get_reverse_edge(dynamodb, schema, f_edge):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
-    return edge_res['r_edge']
+    return edge_res["r_edge"]
 
 
 def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
-    print(f'predicate_metas, {schema.self_type()}', predicate_metas)
+    print(f"predicate_metas, {schema.self_type()}", predicate_metas)
     for predicate_meta in predicate_metas:
         predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
         if isinstance(predicate, PropType):
@@ -346,7 +374,7 @@ def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
                 print(f'f_edge {predicate_meta["predicate"]} r_edge {r_edge}')
                 schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
             except Exception as e:
-                print('error on add_edge', e)
+                print("error on add_edge", e)
                 schema.add_edge(predicate_meta["predicate"], predicate, "")
 
 
@@ -471,8 +499,6 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
         directory.mkdir(parents=True, exist_ok=True)
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
-
-
 
     provision_schemas(
         LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
