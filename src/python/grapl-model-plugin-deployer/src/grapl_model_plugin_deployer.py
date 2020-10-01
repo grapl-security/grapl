@@ -213,23 +213,6 @@ def get_schema_objects(meta_globals) -> "Dict[str, BaseSchema]":
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[1])}
 
 
-builtin_schemas = {
-    "Asset",
-    "Base",
-    "Entity",
-    "Process",
-    "File",
-    "Risk",
-    "Lens",
-    "IpPort",
-    "IpAddress",
-    "ProcessOutboundConnection",
-    "ProcessInboundConnection",
-    "IpConnection",
-    "NetworkConnection",
-}
-
-
 def provision_schemas(master_graph_client, raw_schemas):
     # For every schema, exec the schema
     meta_globals = {}
@@ -241,39 +224,20 @@ def provision_schemas(master_graph_client, raw_schemas):
     print(f"Schemas: {schemas}")
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
-    # loaded_builtins = [s for s in schemas if s.self_type() in builtin_schemas]
-    # plugin_schemas = [s for s in schemas if s.self_type() not in builtin_schemas]
-
-    for edges in (s.edges for s in schemas):
-        for f_edge, (edge_t, r_edge) in edges.items():
-            print("pre-reverse", f_edge, edge_t.__dict__, r_edge)
-
     LOGGER.info("init_reverse")
     for schema in schemas:
         schema.init_reverse()
-
-    for edges in (s.edges for s in schemas):
-        for f_edge, (edge_t, r_edge) in edges.items():
-            print("pre-store", f_edge, edge_t.__dict__, r_edge)
 
     LOGGER.info("Merge the schemas with what exists in the graph")
     dynamodb = get_dynamodb_client()
     for schema in schemas:
         store_schema(dynamodb, schema)
 
-    for edges in (s.edges for s in schemas):
-        for f_edge, (edge_t, r_edge) in edges.items():
-            print("pre-extend", f_edge, edge_t.__dict__, r_edge)
-
     LOGGER.info("Reprovision the graph")
     provision_master_graph(master_graph_client, schemas)
 
     for schema in schemas:
         extend_schema(dynamodb, master_graph_client, schema)
-
-    for edges in (s.edges for s in schemas):
-        for f_edge, (edge_t, r_edge) in edges.items():
-            print("2pre-store", f_edge, edge_t.__dict__, r_edge)
 
     for schema in schemas:
         store_schema(dynamodb, schema)
