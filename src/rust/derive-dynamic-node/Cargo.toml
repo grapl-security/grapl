@@ -17,7 +17,7 @@ grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
 grapl-config = {path="../grapl-config", version="*"}
 
 syn = "0.15.39"
-quote = "0.6.13"
+quote = "1.0.7"
 proc-macro2 = "0.4.30"
 
 serde = "1.0.110"
