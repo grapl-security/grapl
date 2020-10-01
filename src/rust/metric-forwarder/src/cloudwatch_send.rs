@@ -12,7 +12,7 @@ use statsd_parser;
 use statsd_parser::Metric;
 use std::collections::BTreeMap;
 
-mod units {
+pub mod units {
     // strings accepted by CloudWatch MetricDatum.unit
     pub const COUNT: &'static str = "Count";
     pub const MILLIS: &'static str = "Milliseconds";

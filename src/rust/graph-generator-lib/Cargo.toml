@@ -7,7 +7,7 @@ description = "Library for writing Grapl generator services"
 license = "Apache-2.0"
 
 [dependencies]
-graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="0.2.*"}
+grapl-graph-descriptions = { path="../graph-descriptions", version="0.2.*" }
 
 failure = "0.1.*"
 
