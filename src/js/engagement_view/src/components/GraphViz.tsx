@@ -160,22 +160,27 @@ const updateGraph = async (
     setState: (state: GraphState) => void,
 ) => {
     if (!lensName) {
+        console.log('Attempted to fetch empty lensName')
         return;
     }
 
+    const curLensName = state.curLensName;
     await retrieveGraph(lensName)
         .then(async (scope) => {
             const update = graphQLAdjacencyMatrix(scope);
-            console.log('update', update);
+            console.debug('state: ', state);
+            console.debug('update', update);
+
             const mergeUpdate = mergeGraphs(state.graphData, update);
             if (mergeUpdate !== null) {
-                if (state.curLensName === lensName) {
+                if (curLensName === lensName) {
                     setState({
                         ...state,
                         curLensName: lensName,
                         graphData: mergeUpdate,
                     })
                 } else {
+                    console.log("Switched lens, updating graph", state.curLensName, 'ln', lensName);
                     setState({
                         ...state,
                         curLensName: lensName,
@@ -195,12 +200,14 @@ type GraphDisplayProps = {
 type GraphDisplayState = {
     graphData: AdjacencyMatrix,
     curLensName: string | null,
+    intervalMap: any,
 }
 
 const defaultGraphDisplayState = (lensName: string): GraphDisplayState => {
     return {
         graphData: {nodes: [], links: []},
         curLensName: lensName,
+        intervalMap: {},
     }
 }
 
@@ -211,7 +218,7 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
     useEffect(() => {
         // console.log("useEffect - setting forceRef state");
         forceRef.current.d3Force("link", d3.forceLink());
-        forceRef.current.d3Force('collide', d3.forceCollide(22));
+        forceRef.current.d3Force('collide', d3.forceCollide(22));   
         forceRef.current.d3Force("charge", d3.forceManyBody());
         forceRef.current.d3Force('box', () => {
             const N = 100;
@@ -232,14 +239,17 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
 
 
     useEffect(() => {
-        updateGraph(lensName, state, setState);
         const interval = setInterval(async () => {
             if (lensName) {
+                console.log('updating graph');
                 await updateGraph(lensName, state, setState);
             }
         }, 1000);
-        return () => clearInterval(interval);
-    }, [lensName, state]);
+        console.log('setting lensName', lensName);
+        return () => {
+            clearInterval(interval);
+        };
+    }, [lensName, state, setState]);
 
     const graphData = state.graphData;
 

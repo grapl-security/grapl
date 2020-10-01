@@ -20,16 +20,24 @@ const useStyles = makeStyles(
 
 const engagement_edge = getAuthEdge();
 
-export const checkLogin = async () => {
+export const checkLogin = async (): Promise<boolean | null> => {
+
+  try { 
+
     const res = await fetch(`${engagement_edge}checkLogin`, 
       {
-        method: 'get',
+        method: 'post',
         credentials: 'include',
       }
     );
 
     const body = await res.json();
-    return body['success'] === 'True';
+
+    return (body['success'] === 'True')
+  } catch (e) {
+    console.warn(e);
+    return null
+  }
 };
 
 const validationSchema = Yup.object().shape({
@@ -60,7 +68,7 @@ export const LogIn = (_: LoginProps) => {
           const loginSuccess = await login(values.userName, password);
           
           if (loginSuccess === true) {
-            window.history.replaceState('#/login', "", "/")
+            window.history.replaceState('#/login', "", "#/")
             window.location.reload();
             console.log("Logged In")
           } else {

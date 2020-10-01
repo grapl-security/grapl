@@ -13,7 +13,9 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 
 class GraphClient(DgraphClient):
-    pass
+    @classmethod
+    def from_host_port(cls, host: str, port: int) -> "GraphClient":
+        return cls(*(DgraphClientStub(f"{host}:{port}"),))
 
 
 class MasterGraphClient(GraphClient):

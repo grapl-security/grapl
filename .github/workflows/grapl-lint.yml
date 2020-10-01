@@ -51,13 +51,6 @@ jobs:
           source .venv/bin/activate
           black --check .
 
-      # NOTE: this task always succeeds because '|| true'
-      # TODO: fix this.
-      - name: Run Mypy (Always Pass)
-        run: |
-          source .venv/bin/activate
-          mypy . || true
-
   check-pypi:
     runs-on: ubuntu-latest
 
@@ -106,6 +99,21 @@ jobs:
               python etc/build_scripts/check_pypi_version.py \
                 grapl_analyzerlib \
                 $(cat src/python/grapl_analyzerlib/VERSION) \
+                true
+          fi
+          deactivate
+
+      - name: Check whether grapl-common version has been bumped
+        run: |
+          . venv/bin/activate
+          if [[ "$CHANNEL" == "latest" ]]; then
+              python etc/build_scripts/check_pypi_version.py \
+                grapl-common \
+                $(cat src/python/grapl-common/VERSION)
+          else
+              python etc/build_scripts/check_pypi_version.py \
+                grapl-common \
+                $(cat src/python/grapl-common/VERSION) \
                 true
           fi
           deactivate

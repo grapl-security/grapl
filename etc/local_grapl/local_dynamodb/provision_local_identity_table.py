@@ -14,6 +14,7 @@ table_names = [
     "local-grapl-dynamic_session_table",
     "local-grapl-static_mapping_table",
     "local-grapl-user_auth_table",
+    "local-grapl-grapl_schema_table",
 ]
 
 table_defs = {
@@ -104,8 +105,20 @@ table_defs = {
         ],
     },
     "local-grapl-user_auth_table": {
-        "key_schema": [{"KeyType": "HASH", "AttributeName": "username"},],
-        "attribute_definitions": [{"AttributeName": "username", "AttributeType": "S"},],
+        "key_schema": [
+            {"KeyType": "HASH", "AttributeName": "username"},
+        ],
+        "attribute_definitions": [
+            {"AttributeName": "username", "AttributeType": "S"},
+        ],
+    },
+    "local-grapl-grapl_schema_table": {
+        "key_schema": [
+            {"KeyType": "HASH", "AttributeName": "f_edge"},
+        ],
+        "attribute_definitions": [
+            {"AttributeName": "f_edge", "AttributeType": "S"},
+        ],
     },
 }
 

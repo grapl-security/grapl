@@ -16,27 +16,30 @@ services:
       driver: none
 
   sqs:
-    image: localstack/localstack
+    image: localstack/localstack:0.11.5
     environment:
       - SERVICES=sqs:9324
       - HOSTNAME_EXTERNAL=sqs.us-east-1.amazonaws.com
+      - IMAGE_NAME=localstack/localstack:0.11.5
     ports:
       - "9324:9324"
     logging:
       driver: none
 
   secretsmanager:
-    image: localstack/localstack
+    image: localstack/localstack:0.11.5
     environment:
       - PORT_WEB_UI=8099
       - SERVICES=secretsmanager:4569
       - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
+      - IMAGE_NAME=localstack/localstack:0.11.5
+
     ports:
       - "4568:4568"
       - "8099:8099"
     # logging:
     #   driver: none
-    
+
 
   s3:
     image: minio/minio
@@ -54,6 +57,16 @@ services:
   #
   # Rust services
   #
+
+  grapl-metric-forwarder:
+    image: grapl/grapl-metric-forwarder:${TAG:-latest}
+    tty: false
+    environment:
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - RUST_LOG=${RUST_LOG:-ERROR}
+    extra_hosts:
+      - amazonaws:127.0.0.1
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
@@ -151,7 +164,8 @@ services:
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
-      - MG_ALPHAS=master_graph:9080
+      - MG_ALPHAS=http://master_graph:9080
+      - "GRAPL_SCHEMA_TABLE=local-grapl-grapl_schema_table"
     tty: false
     links:
       - s3:minio
@@ -191,6 +205,23 @@ services:
   #
   # Python services
   #
+
+  analyzer-deployer:
+    image: grapl/analyzer-deployer:${TAG:-latest}
+    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8125'
+    environment:
+      - "IS_LOCAL=True"
+      - GRPC_ENABLE_FORK_SUPPORT=1
+      - "BUCKET_PREFIX=local-grapl"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+    tty: true
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
@@ -247,7 +278,7 @@ services:
     links:
       - grapl-master-graph-db:master_graph
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
-      
+
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'

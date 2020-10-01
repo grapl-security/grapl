@@ -1,23 +1,38 @@
 #!/bin/bash
 
+# No unset vars please
+set -o nounset
+
+if [ -z "$VERSION" ]
+then
+  echo "Please set VERSION="
+  exit 1
+fi
+
+# Directory containing this shell script
+CDK_DIR=$(realpath $(dirname "$0"))
+cd $CDK_DIR
+GRAPLROOT=$(realpath ../../..)
+ZIPS_DIR="$CDK_DIR/zips"
+
 function getzip_a() {
-    docker create -ti --name "cp-$1" "grapl/grapl-$1"
-    docker cp "cp-$1:/$1" ./bootstrap
-    docker rm -f "cp-$1"
-    zip -9 "zips/$1-$VERSION.zip" ./bootstrap
-    rm ./bootstrap
+    echo "Zipping $1"
+    # Make a temp dir with './boostrap' in it
+    TEMPDIR="/tmp/zipped_$1"
+    mkdir $TEMPDIR
+    cd $TEMPDIR
+    cp "$GRAPLROOT/dist/$1" ./bootstrap
+    # zip it up into CDK/zips
+    zip -9 --quiet --display-globaldots "$ZIPS_DIR/$1-$VERSION.zip" ./bootstrap
+    # Go back home, clean up 
+    cd $CDK_DIR
+    rm -r $TEMPDIR
+    echo "Done zipping $1"
 }
 
 function getzip_b() {
-    docker create -ti --name "cp-$1" "grapl/grapl-$1"
-    docker cp "cp-$1:/home/grapl/lambda.zip" "zips/$1-$VERSION.zip"
-    docker rm -f "cp-$1"
-}
-
-function getzip_c() {
-    docker create -ti --name "cp-$1" "grapl/grapl-$1"
-    docker cp "cp-$1:/lambda.zip" "zips/$1-$VERSION.zip"
-    docker rm -f "cp-$1"
+    echo "Copying $1"
+    cp "$GRAPLROOT/dist/$1/lambda.zip" "$ZIPS_DIR/$1-$VERSION.zip"
 }
 
 as=(
@@ -27,6 +42,7 @@ as=(
     "node-identifier-retry-handler"
     "graph-merger"
     "analyzer-dispatcher"
+    "metric-forwarder"
 )
 
 bs=(
@@ -35,20 +51,17 @@ bs=(
     "engagement-edge"
     "model-plugin-deployer"
     "dgraph-ttl"
-)
-
-cs=(
     "graphql-endpoint"
 )
 
+# Doing the zips in parallel brings it down from 2m37s to 58s
 for a in "${as[@]}"; do
-    getzip_a $a
+    getzip_a $a &
 done
+wait
 
 for b in "${bs[@]}"; do
     getzip_b $b
 done
 
-for c in "${cs[@]}"; do
-    getzip_c $c
-done
+echo "Done extracting artifacts"

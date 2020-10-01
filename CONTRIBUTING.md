@@ -91,6 +91,9 @@ Resources:
   unit-tests           Run all the unit tests
 ```
 
+See [BUILDING.md](BUILDING.md) for a more in-depth description of
+Grapl's build system.
+
 To run your images locally, execute the following command in the
 project root (after building):
 
@@ -103,7 +106,7 @@ you specified a different tag in your build step above you would want
 to specify that same tag here.
 
 See [these
-docs](https://grapl.readthedocs.io/en/latest/setup/local.html)
+docs](https://grapl.readthedocs.io/en/latest/setup/local.html#local-grapl)
 for a more in-depth guide to operating Grapl locally.
 
 We heartily welcome code contributions, but we request for the sake of

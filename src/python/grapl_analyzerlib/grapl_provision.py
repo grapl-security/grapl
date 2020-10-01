@@ -1,111 +1,160 @@
-import time
 import json
+import os
+import logging
+import sys
+import threading
+import time
+from hashlib import sha256, pbkdf2_hmac
+from typing import List, Any
+from uuid import uuid4
+
+import boto3
+import botocore
 import pydgraph
-
-from grpc import RpcError, StatusCode
 from pydgraph import DgraphClient, DgraphClientStub
-from grapl_analyzerlib.schemas import *
 
-from grapl_analyzerlib.schemas.schema_builder import ManyToMany
+from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
+from grapl_analyzerlib.node_types import (
+    EdgeRelationship,
+    PropPrimitive,
+    PropType,
+    EdgeT,
+)
+from grapl_analyzerlib.nodes.base import BaseSchema
+from grapl_analyzerlib.prelude import (
+    AssetSchema,
+    ProcessSchema,
+    FileSchema,
+    IpConnectionSchema,
+    IpAddressSchema,
+    IpPortSchema,
+    NetworkConnectionSchema,
+    ProcessInboundConnectionSchema,
+    ProcessOutboundConnectionSchema,
+    LensSchema,
+    RiskSchema,
+)
+from grapl_analyzerlib.schema import Schema
+
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-def set_schema(client, schema, engagement=False):
+def set_schema(client, schema) -> None:
     op = pydgraph.Operation(schema=schema)
-    print(client.alter(op))
+    client.alter(op)
 
 
-def drop_all(client):
+def drop_all(client) -> None:
     op = pydgraph.Operation(drop_all=True)
     client.alter(op)
 
 
-def format_schemas(schema_defs):
-    schemas = "\n\n".join([schema.to_schema_str() for schema in schema_defs])
+def format_schemas(schema_defs: List["BaseSchema"]) -> str:
+    schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
 
     return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas,]
+        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
     )
 
 
-def get_type_dict(client, type_name):
+def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
     query = f"""
-    schema(type: {type_name}) {{
-      type
-      index
-    }}
+        schema(pred: {predicate_name}) {{  }}
     """
-
     txn = client.txn(read_only=True)
+    try:
+        res = json.loads(txn.query(query).json)["schema"][0]
+    finally:
+        txn.discard()
 
+    return res
+
+
+def meta_into_edge(dynamodb, schema, f_edge):
+    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
+    print(edge_res)
+    return EdgeT(type(schema), BaseSchema, EdgeRelationship(edge_res["relationship"]))
+
+
+def meta_into_property(schema, predicate_meta):
+    is_set = predicate_meta.get("list")
+    type_name = predicate_meta["type"]
+    primitive = None
+    if type_name == "string":
+        primitive = PropPrimitive.Str
+    if type_name == "int":
+        primitive = PropPrimitive.Int
+    if type_name == "bool":
+        primitive = PropPrimitive.Bool
+
+    return PropType(primitive, is_set, index=predicate_meta.get("index", []))
+
+
+def meta_into_predicate(dynamodb, schema, predicate_meta):
+    try:
+        if predicate_meta["type"] == "uid":
+            return meta_into_edge(dynamodb, schema, predicate_meta["predicate"])
+        else:
+            return meta_into_property(schema, predicate_meta)
+    except Exception as e:
+        LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
+        raise e
+
+
+def query_dgraph_type(client: "GraphClient", type_name: str):
+    query = f"""
+        schema(type: {type_name}) {{ type }}
+    """
+    txn = client.txn(read_only=True)
     try:
         res = json.loads(txn.query(query).json)
     finally:
         txn.discard()
 
-    type_dict = {}
+    if not res:
+        return []
+    if not res.get("types"):
+        return []
 
-    for d in res["types"][0]["fields"]:
-        if d["name"][0] == "~":
-            name = f"<{d['name']}>"
+    res = res["types"][0]["fields"]
+    predicate_names = []
+    for pred in res:
+        predicate_names.append(pred["name"])
+
+    predicate_metas = []
+    for predicate_name in predicate_names:
+        predicate_metas.append(query_dgraph_predicate(client, predicate_name))
+
+    return predicate_metas
+
+
+def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
+    predicate_metas = query_dgraph_type(graph_client, schema.self_type())
+
+    for predicate_meta in predicate_metas:
+        predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
+        if isinstance(predicate, PropType):
+            schema.add_property(predicate_meta["predicate"], predicate)
         else:
-            name = d["name"]
-        type_dict[name] = d["type"]
-
-    return type_dict
+            schema.add_edge(predicate_meta["predicate"], predicate, "")
 
 
-def update_reverse_edges(client, schema):
-
-    type_dicts = {}
-
-    rev_edges = set()
-    for edge in schema.forward_edges:
-        edge_n = edge[0]
-        edge_t = edge[1]._inner_type.self_type()
-        if edge_t == "Any":
-            continue
-
-        rev_edges.add(("<~" + edge_n + ">", edge_t))
-
-        if not type_dicts.get(edge_t):
-            type_dicts[edge_t] = get_type_dict(client, edge_t)
-
-    if not rev_edges:
-        return
-
-    for (rev_edge_n, rev_edge_t) in rev_edges:
-        type_dicts[rev_edge_t][rev_edge_n] = "uid"
-
-    type_strs = ""
-
-    for t in type_dicts.items():
-        type_name = t[0]
-        type_d = t[1]
-
-        predicates = []
-        for predicate_name, predicate_type in type_d.items():
-            predicates.append(f"\t{predicate_name}: {predicate_type}")
-
-        predicates = "\n".join(predicates)
-        type_str = f"""
-type {type_name} {{
-{predicates}
-            
-    }}
-        """
-        type_strs += "\n"
-        type_strs += type_str
-
-    op = pydgraph.Operation(schema=type_strs)
-    client.alter(op)
+def provision_master_graph(
+    master_graph_client: GraphClient, schemas: List["BaseSchema"]
+) -> None:
+    mg_schema_str = format_schemas(schemas)
+    set_schema(master_graph_client, mg_schema_str)
 
 
-def provision(mclient):
-
+def provision_mg(mclient) -> None:
     # drop_all(mclient)
-    # drop_all(___local_dg_provision_client)
 
     schemas = (
         AssetSchema(),
@@ -117,29 +166,78 @@ def provision(mclient):
         NetworkConnectionSchema(),
         ProcessInboundConnectionSchema(),
         ProcessOutboundConnectionSchema(),
+        RiskSchema(),
+        LensSchema(),
     )
 
-    mg_schema_str = format_schemas(schemas)
-    set_schema(mclient, mg_schema_str)
+    dynamodb = get_dynamodb_client()
+    for schema in schemas:
+        store_schema(dynamodb, schema)
+
+    for schema in schemas:
+        schema.init_reverse()
+
+    for schema in schemas:
+        extend_schema(dynamodb, mclient, schema)
+
+    provision_master_graph(mclient, schemas)
+
+    for schema in schemas:
+        store_schema(dynamodb, schema)
+
+
+def get_dynamodb_client() -> "Any":
+    return boto3.resource(
+        "dynamodb",
+        endpoint_url="http://dynamodb:8000",
+        region_name="us-west-2",
+        aws_access_key_id="dummy_cred_aws_access_key_id",
+        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+    )
+
+
+def store_schema(dynamodb, schema: "Schema"):
+    table = dynamodb.Table("local-grapl-grapl_schema_table")
+    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
+        if not (f_edge and r_edge):
+            continue
+        table.put_item(
+            Item={
+                "f_edge": r_edge,
+                "r_edge": f_edge,
+                "relationship": int(edge_t.rel.reverse()),
+            }
+        )
 
 
 if __name__ == "__main__":
+    time.sleep(5)
+    local_dg_provision_client = DgraphClient(DgraphClientStub(f"localhost:9080"))
 
-    local_dg_provision_client = DgraphClient(DgraphClientStub("localhost:9080"))
+    LOGGER.debug("Provisioning graph database")
 
-    num_retries = 150
-    for i in range(0, num_retries):
+    for i in range(0, 150):
         try:
-            provision(local_dg_provision_client,)
-        except Exception as e:
-            hint = ""
-            if isinstance(e, RpcError) and e.code() == StatusCode.UNAVAILABLE:
-                hint = "have you booted the local dgraph server?"
-
-            print(f"Retry {i}/{num_retries}: {hint}\n {e}")
-            time.sleep(1)
-        else:
+            drop_all(local_dg_provision_client)
             break
+        except Exception as e:
+            time.sleep(2)
+            if i > 20:
+                LOGGER.error("Failed to drop", e)
 
-    time.sleep(1)
-    print("grapl_provision complete!\n")
+    mg_succ = False
+    for i in range(0, 150):
+        try:
+            if not mg_succ:
+                time.sleep(1)
+                provision_mg(
+                    local_dg_provision_client,
+                )
+                mg_succ = True
+                print("Provisioned mastergraph")
+                break
+        except Exception as e:
+            if i > 10:
+                LOGGER.error(f"mg provision failed with: {e}")
+
+    print("Completed provisioning")
