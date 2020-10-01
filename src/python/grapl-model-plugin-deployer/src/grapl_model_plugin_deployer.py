@@ -134,9 +134,8 @@ def store_schema(dynamodb, schema: "Schema"):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
-            print(f"missing {f_edge} {r_edge} for {schema.self_type()}")
+            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
             continue
-        print(f"{f_edge} {r_edge} {edge_t.rel}")
         table.put_item(
             Item={
                 "f_edge": f_edge,
@@ -145,7 +144,6 @@ def store_schema(dynamodb, schema: "Schema"):
             }
         )
 
-        print(f"{r_edge} {f_edge} {edge_t.rel.reverse()}")
         table.put_item(
             Item={
                 "f_edge": r_edge,
@@ -159,7 +157,6 @@ def provision_master_graph(
     master_graph_client: GraphClient, schemas: List["BaseSchema"]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
-    print(mg_schema_str)
     set_schema(master_graph_client, mg_schema_str)
 
 
@@ -221,7 +218,6 @@ def provision_schemas(master_graph_client, raw_schemas):
 
     # Now fetch the schemas back from memory
     schemas = list(get_schema_objects(meta_globals).values())
-    print(f"Schemas: {schemas}")
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
     LOGGER.info("init_reverse")
@@ -261,9 +257,6 @@ def meta_into_edge(dynamodb, schema: "Schema", f_edge):
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
     edge_t = schema.edges[f_edge][0]  # type: EdgeT
 
-    print(
-        f'{type(schema)}, {edge_t.dest}, {EdgeRelationship(edge_res["relationship"])}'
-    )
     return EdgeT(type(schema), edge_t.dest, EdgeRelationship(edge_res["relationship"]))
 
 
@@ -327,19 +320,13 @@ def get_reverse_edge(dynamodb, schema, f_edge):
 
 def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
-    print(f"predicate_metas, {schema.self_type()}", predicate_metas)
     for predicate_meta in predicate_metas:
         predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
         if isinstance(predicate, PropType):
             schema.add_property(predicate_meta["predicate"], predicate)
         else:
-            try:
-                r_edge = get_reverse_edge(dynamodb, schema, predicate_meta["predicate"])
-                print(f'f_edge {predicate_meta["predicate"]} r_edge {r_edge}')
-                schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
-            except Exception as e:
-                print("error on add_edge", e)
-                schema.add_edge(predicate_meta["predicate"], predicate, "")
+            r_edge = get_reverse_edge(dynamodb, schema, predicate_meta["predicate"])
+            schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
@@ -595,7 +582,6 @@ def delete_model_plugin():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    print("nop_route")
     LOGGER.info("routing: " + app.current_request.context["path"])
 
     try:
