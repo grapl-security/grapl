@@ -394,7 +394,7 @@ jobs:
       - name: Prepare grapl-common dist
         run: |
           docker create -ti --name grapl-common grapl/grapl-common-python-build:latest
-          docker cp grapl-common:/home/grapl/grapl-common/dist .
+          docker cp grapl-common:/home/grapl/grapl_common/dist .
           docker rm -f grapl-common
 
       - name: Upload grapl-common to Test PyPI
