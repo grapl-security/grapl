@@ -251,7 +251,7 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          echo "::set-env name=TAG::$VERSION-$CHANNEL
+          echo "::set-env name=TAG::$VERSION-$CHANNEL"
 
       - name: Build Python services
         run: |
