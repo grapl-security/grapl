@@ -448,7 +448,7 @@ where
         info!(
             "handling new subgraph with {} nodes {} edges",
             subgraph.nodes.len(),
-            subgraph.edges.len()
+            subgraph.edges.len(),
         );
 
         let mut upsert_res = None;

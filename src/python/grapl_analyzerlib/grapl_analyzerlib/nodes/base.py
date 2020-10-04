@@ -80,10 +80,14 @@ class BaseSchema(Schema):
         for edge_name, (edge_t, r_name) in self.edges.items():
             if not edge_name:
                 continue
-            uid_t = "uid"
+
+            # Given an edge like ('bin_file', OneToMany, 'spawned_from')
+            # That's "one" bin_file (ie: uid) to many spawned_from (ie: [uid])
+            # which is to say that "from many" implies [uid]
             if edge_t.is_from_many():
-                uid_t = f"[{uid_t}]"
-            predicates.append(f"{edge_name}: {uid_t} .")
+                predicates.append(f"{edge_name}: [uid] .")
+            else:
+                predicates.append(f"{edge_name}: uid .")
 
         return "\n".join(predicates)
 
