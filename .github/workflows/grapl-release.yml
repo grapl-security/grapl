@@ -247,11 +247,15 @@ jobs:
           fi
           echo "::set-env name=CHANNEL::$CHANNEL"
 
-      - name: Build Python services
+      - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount python
+          echo "::set-env name=TAG::$VERSION-$CHANNEL"
+
+      - name: Build Python services
+        run: |
+          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount python
 
       - name: Log in to Docker registry
         run: |
@@ -266,20 +270,20 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          cp dist/analyzer-executor/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
-          echo "::set-output name=analyzer-executor::analyzer-executor-$VERSION-$CHANNEL.zip"
+          cp dist/analyzer-executor/lambda.zip analyzer-executor-$TAG.zip
+          echo "::set-output name=analyzer-executor::analyzer-executor-$TAG.zip"
 
-          cp dist/engagement-creator/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
-          echo "::set-output name=engagement-creator::engagement-creator-$VERSION-$CHANNEL.zip"
+          cp dist/engagement-creator/lambda.zip engagement-creator-$TAG.zip
+          echo "::set-output name=engagement-creator::engagement-creator-$TAG.zip"
 
-          cp dist/engagement-edge/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
-          echo "::set-output name=engagement-edge::engagement-edge-$VERSION-$CHANNEL.zip"
+          cp dist/engagement-edge/lambda.zip engagement-edge-$TAG.zip
+          echo "::set-output name=engagement-edge::engagement-edge-$TAG.zip"
 
-          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
-          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$VERSION-$CHANNEL.zip"
+          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$TAG.zip
+          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$TAG.zip"
 
-          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$VERSION-$CHANNEL.zip
-          echo "::set-output name=dgraph-ttl::dgraph-ttl-$VERSION-$CHANNEL.zip"
+          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$TAG.zip
+          echo "::set-output name=dgraph-ttl::dgraph-ttl-$TAG.zip"
 
       - name: Upload analyzer-executor to Github
         uses: actions/upload-release-asset@v1
@@ -390,7 +394,7 @@ jobs:
       - name: Prepare grapl-common dist
         run: |
           docker create -ti --name grapl-common grapl/grapl-common-python-build:latest
-          docker cp grapl-common:/home/grapl/grapl-common/dist .
+          docker cp grapl-common:/home/grapl/grapl_common/dist .
           docker rm -f grapl-common
 
       - name: Upload grapl-common to Test PyPI
