@@ -9,8 +9,8 @@
 # Data are persisted to a Docker volume called data-volume on the
 # swarm instances.
 #
-# Run `docker stack deploy -c docker-compose-multi.yml` on the Swarm
-# leader to start the cluster.
+# Run `docker stack deploy -c docker-compose-dgraph.yml dgraph` on the
+# Swarm leader to start the cluster.
 
 version: "3.8"
 
