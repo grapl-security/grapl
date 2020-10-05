@@ -486,7 +486,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
     }
 
     public alphaHostPort(): string {
-        return `${this.dgraphAlphaZone.zoneName}:9080`;
+	return `http://${this.dgraphAlphaZone.zoneName}:9080`;
     }
 
     public allowConnectionsFrom(other: ec2.IConnectable): void {

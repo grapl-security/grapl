@@ -109,3 +109,24 @@ jobs:
       - name: Run integration tests
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration-tests
+
+  # In the future, this should probably be merged back into `dobi integration-tests`, but
+  # since it's so timing-dependent I'm going to treat it separately until it stabilizes a bit.
+  end-to-end-integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dobi
+        run: |
+          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
+          chmod +x dobi-linux
+
+      - name: Build Grapl
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
+
+      - name: Run end-to-end integration tests
+        run: |
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests

@@ -40,7 +40,7 @@ image=analyzer-dispatcher:
     - rust-build
 
 image=metric-forwarder:
-  image: grapl/metric-forwarder
+  image: grapl/grapl-metric-forwarder
   context: src/rust/metric-forwarder
   dockerfile: Dockerfile
   args:
@@ -548,7 +548,7 @@ job=run-analyzer-deployer-integration-tests:
 job=run-e2e-integration-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 5 && source venv/bin/activate && cd grapl_e2e_tests && python3 ./main.py"
+  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_e2e_tests && python3 ./main.py"
   env:
     - GRAPL_LOG_LEVEL=INFO
     - "BUCKET_PREFIX=local-grapl"
