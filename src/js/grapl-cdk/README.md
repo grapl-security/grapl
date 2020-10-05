@@ -99,7 +99,7 @@ sudo systemctl enable docker.service
 sudo systemctl start docker.service
 sudo usermod -a -G docker ec2-user
 sudo su ec2-user
-cd
+cd $HOME
 
 # The Grapl deployment name we used in the CDK
 GRAPL_DEPLOYMENT=<YOUR_DEPLOYMENT>
@@ -135,7 +135,7 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 
 # spin up ec2 resources with docker-machine
 # see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-alias dm='/usr/local/bin/docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "$KEYPAIR_NAME" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" --amazonec2-region "$AWS_DEFAULT_REGION"'
+alias dm='/usr/local/bin/docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "$KEYPAIR_NAME" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "t3a.medium" --amazonec2-region "$AWS_DEFAULT_REGION" --amazonec2-tags "grapl-dgraph,$GRAPL_DEPLOYMENT"'
 export AWS01_NAME=${GRAPL_DEPLOYMENT}-aws01
 export AWS02_NAME=${GRAPL_DEPLOYMENT}-aws02
 export AWS03_NAME=${GRAPL_DEPLOYMENT}-aws03
@@ -165,13 +165,14 @@ docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
 eval $(docker-machine env "$AWS03_NAME" --shell sh)
 docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
 
-# get DGraph compose template
+# get DGraph configs
 cd $HOME
-wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/docker-compose-multi.yml
+wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/dgraph/docker-compose-dgraph.yml
+wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/dgraph/envoy.yaml
 
 # start DGraph
 eval $(docker-machine env "$AWS01_NAME" --shell sh)
-docker stack deploy -c docker-compose-multi.yml dgraph
+docker stack deploy -c docker-compose-dgraph.yml dgraph
 
 # add A records to route53 to make the alpha nodes discoverable
 AWS02_IP=$(docker-machine ip "$AWS02_NAME")
