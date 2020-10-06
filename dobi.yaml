@@ -304,11 +304,11 @@ image=grapl-notebook:
   tags:
     - "{env.TAG}"
 
-image=grapl-local-provision:
-  image: grapl/grapl-local-provision
-  context: src/python/grapl_local_provision/
+image=grapl-provision:
+  image: grapl/grapl-provision
+  context: src/python/grapl_provision/
   dockerfile: Dockerfile
-  target: grapl-local-provision-build
+  target: grapl-provision-build
   depends:
     - python-build
   tags:
@@ -407,7 +407,7 @@ compose=integration-env:
     - dgraph-ttl
     - model-plugin-deployer
     - grapl-notebook
-    - grapl-local-provision
+    - grapl-provision
     # js images
     - engagement-view
     - graphql-endpoint
@@ -671,7 +671,7 @@ alias=python:
     - "dgraph-ttl:tag"
     - "model-plugin-deployer:tag"
     - "grapl-notebook:tag"
-    - "grapl-local-provision:tag"
+    - "grapl-provision:tag"
   annotations:
     description: "Build artifacts and images for python services"
 
