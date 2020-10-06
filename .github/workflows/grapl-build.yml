@@ -108,7 +108,7 @@ jobs:
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust &
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python &
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js &
-	  wait && 
+          wait && 
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
 
 
