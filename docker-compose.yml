@@ -1,4 +1,4 @@
-version: '3.4'
+version: "3.8"
 services:
 
   #
@@ -7,7 +7,7 @@ services:
 
   grapl-master-graph-db:
     tty: false
-    image: dgraph/standalone:v1.2.2
+    image: dgraph/standalone:v20.07.1
     ports:
       - "8000:8000"
       - "8080:8080"
@@ -206,22 +206,24 @@ services:
   # Python services
   #
 
-  analyzer-deployer:
-    image: grapl/analyzer-deployer:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8125'
-    environment:
-      - "IS_LOCAL=True"
-      - GRPC_ENABLE_FORK_SUPPORT=1
-      - "BUCKET_PREFIX=local-grapl"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-    tty: true
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
+  # Removed per https://grapl-internal.slack.com/archives/C017PLQ8TCZ/p1601574470186700
+  # Add it back once Analyzer Deployer is ready for prime time!
+  # analyzer-deployer:
+  #   image: grapl/analyzer-deployer:${TAG:-latest}
+  #   command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8125'
+  #   environment:
+  #     - "IS_LOCAL=True"
+  #     - GRPC_ENABLE_FORK_SUPPORT=1
+  #     - "BUCKET_PREFIX=local-grapl"
+  #     - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+  #   links:
+  #     - s3:minio
+  #     - sqs:sqs.us-east-1.amazonaws.com
+  #   tty: true
+  #   extra_hosts:
+  #     - sqs:127.0.0.1
+  #     - amazonaws:127.0.0.1
+  #     - minio:127.0.0.1
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
@@ -344,6 +346,8 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
+    environment:
+      - MG_ALPHAS=master_graph:9080
     links:
       - grapl-master-graph-db:master_graph
     ports:

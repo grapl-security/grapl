@@ -134,6 +134,7 @@ def store_schema(dynamodb, schema: "Schema"):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
+            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
             continue
         table.put_item(
             Item={
@@ -156,7 +157,6 @@ def provision_master_graph(
     master_graph_client: GraphClient, schemas: List["BaseSchema"]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
-    print(mg_schema_str)
     set_schema(master_graph_client, mg_schema_str)
 
 
@@ -206,7 +206,6 @@ def is_schema(schema_cls):
 
 def get_schema_objects(meta_globals) -> "Dict[str, BaseSchema]":
     clsmembers = [(m, c) for m, c in meta_globals.items() if inspect.isclass(c)]
-    print("clsmembers", clsmembers)
 
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[1])}
 
@@ -219,7 +218,6 @@ def provision_schemas(master_graph_client, raw_schemas):
 
     # Now fetch the schemas back from memory
     schemas = list(get_schema_objects(meta_globals).values())
-    print(f"Schemas: {schemas}")
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
     LOGGER.info("init_reverse")
@@ -231,11 +229,11 @@ def provision_schemas(master_graph_client, raw_schemas):
     for schema in schemas:
         store_schema(dynamodb, schema)
 
-    for schema in schemas:
-        extend_schema(dynamodb, master_graph_client, schema)
-
     LOGGER.info("Reprovision the graph")
     provision_master_graph(master_graph_client, schemas)
+
+    for schema in schemas:
+        extend_schema(dynamodb, master_graph_client, schema)
 
     for schema in schemas:
         store_schema(dynamodb, schema)
@@ -254,14 +252,15 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
     return res
 
 
-def meta_into_edge(dynamodb, schema, f_edge):
+def meta_into_edge(dynamodb, schema: "Schema", f_edge):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
-    print(edge_res)
-    return EdgeT(type(schema), BaseSchema, EdgeRelationship(edge_res["relationship"]))
+    edge_t = schema.edges[f_edge][0]  # type: EdgeT
+
+    return EdgeT(type(schema), edge_t.dest, EdgeRelationship(edge_res["relationship"]))
 
 
-def meta_into_property(schema, predicate_meta):
+def meta_into_property(predicate_meta):
     is_set = predicate_meta.get("list")
     type_name = predicate_meta["type"]
     primitive = None
@@ -280,7 +279,7 @@ def meta_into_predicate(dynamodb, schema, predicate_meta):
         if predicate_meta["type"] == "uid":
             return meta_into_edge(dynamodb, schema, predicate_meta["predicate"])
         else:
-            return meta_into_property(schema, predicate_meta)
+            return meta_into_property(predicate_meta)
     except Exception as e:
         LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
         raise e
@@ -313,15 +312,21 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
     return predicate_metas
 
 
+def get_reverse_edge(dynamodb, schema, f_edge):
+    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
+    return edge_res["r_edge"]
+
+
 def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
-
     for predicate_meta in predicate_metas:
         predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
         if isinstance(predicate, PropType):
             schema.add_property(predicate_meta["predicate"], predicate)
         else:
-            schema.add_edge(predicate_meta["predicate"], predicate, "")
+            r_edge = get_reverse_edge(dynamodb, schema, predicate_meta["predicate"])
+            schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
@@ -577,7 +582,6 @@ def delete_model_plugin():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    print("nop_route")
     LOGGER.info("routing: " + app.current_request.context["path"])
 
     try:
