@@ -158,5 +158,6 @@ for table_name in table_names:
         try_create_loop(table_name)
     except Exception as e:
         print(table_name, e)
+        raise e
 
 print("Provisioned DynamoDB")

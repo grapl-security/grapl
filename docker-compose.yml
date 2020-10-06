@@ -87,7 +87,7 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-graph-provision
+      - grapl-local-provision
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -120,7 +120,7 @@ services:
       - s3
       - dynamodb
       - sqs
-      - grapl-dynamodb-provision
+      - grapl-local-provision
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -153,7 +153,7 @@ services:
       - s3
       - dynamodb
       - sqs
-      - grapl-dynamodb-provision
+      - grapl-local-provision
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -178,7 +178,7 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-graph-provision
+      - grapl-local-provision
       - grapl-master-graph-db
 
   grapl-analyzer-dispatcher:
@@ -357,14 +357,17 @@ services:
   # Utility services
   #
 
-  grapl-graph-provision:
-    image: grapl/grapl-graph-provision:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python /var/run/target/grapl_provision.py'
+  grapl-local-provision:
+    image: grapl/grapl-local-provision:${TAG:-latest}
+    command: |
+      /bin/sh -c '
+        . venv/bin/activate && 
+        python /home/grapl/grapl_local_provision/local_dynamodb/provision_local_identity_table.py &&
+        python /home/grapl/grapl_local_provision/grapl_provision.py
+      '
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - MG_ALPHAS=master_graph:9080
-    volumes:
-      - ./etc/local_grapl/:/var/run/target/
     tty: true
     links:
       - grapl-master-graph-db:master_graph
@@ -380,18 +383,4 @@ services:
       - grapl-master-graph-db
       - s3
       - sqs
-
-  grapl-dynamodb-provision:
-    image: grapl/grapl-dynamodb-provision:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python /var/run/target/provision_local_identity_table.py'
-    environment:
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-    volumes:
-      - ./etc/local_grapl/local_dynamodb:/var/run/target/
-    tty: false
-    links:
-      - dynamodb:dynamodb
-    extra_hosts:
-      - amazonaws:127.0.0.1
-    depends_on:
       - dynamodb
