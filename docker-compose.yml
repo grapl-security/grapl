@@ -87,7 +87,7 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-local-provision
+      - grapl-provision
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -120,7 +120,7 @@ services:
       - s3
       - dynamodb
       - sqs
-      - grapl-local-provision
+      - grapl-provision
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -153,7 +153,7 @@ services:
       - s3
       - dynamodb
       - sqs
-      - grapl-local-provision
+      - grapl-provision
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -178,7 +178,7 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-local-provision
+      - grapl-provision
       - grapl-master-graph-db
 
   grapl-analyzer-dispatcher:
@@ -357,8 +357,8 @@ services:
   # Utility services
   #
 
-  grapl-local-provision:
-    image: grapl/grapl-local-provision:${TAG:-latest}
+  grapl-provision:
+    image: grapl/grapl-provision:${TAG:-latest}
     command: |
       /bin/sh -c '
         . venv/bin/activate && 
