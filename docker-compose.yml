@@ -346,6 +346,8 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
+    environment:
+      - MG_ALPHAS=master_graph:9080
     links:
       - grapl-master-graph-db:master_graph
     ports:
