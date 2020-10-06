@@ -304,25 +304,13 @@ image=grapl-notebook:
   tags:
     - "{env.TAG}"
 
-image=graph-provision:
-  image: grapl/grapl-graph-provision
-  context: src/python/engagement_edge/
+image=grapl-local-provision:
+  image: grapl/grapl-local-provision
+  context: src/python/grapl_local_provision/
   dockerfile: Dockerfile
-  target: grapl-engagement-edge
+  target: grapl-local-provision-build
   depends:
-    - engagement-edge-build
-    - python-deploy
-  tags:
-    - "{env.TAG}"
-
-image=dynamodb-provision:
-  image: grapl/grapl-dynamodb-provision
-  context: src/python/engagement_edge/
-  dockerfile: Dockerfile
-  target: grapl-engagement-edge
-  depends:
-    - engagement-edge-build
-    - python-deploy
+    - python-build
   tags:
     - "{env.TAG}"
 
@@ -419,8 +407,7 @@ compose=integration-env:
     - dgraph-ttl
     - model-plugin-deployer
     - grapl-notebook
-    - graph-provision
-    - dynamodb-provision
+    - grapl-local-provision
     # js images
     - engagement-view
     - graphql-endpoint
@@ -684,8 +671,7 @@ alias=python:
     - "dgraph-ttl:tag"
     - "model-plugin-deployer:tag"
     - "grapl-notebook:tag"
-    - "graph-provision:tag"
-    - "dynamodb-provision:tag"
+    - "grapl-local-provision:tag"
   annotations:
     description: "Build artifacts and images for python services"
 
