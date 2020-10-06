@@ -12,6 +12,7 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
 )
 from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.retry import retry
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable
 
@@ -373,6 +374,7 @@ class BaseView(Viewable[BV, BQ]):
 
 # Proto nodes don't contain a uid so we have to fetch them. It may make sense to store these uids
 # alongside the proto in the future. This makes constructing from proto relatively expensive.
+@retry()
 def get_uid(client: GraphClient, node_key: str) -> str:
     txn = client.txn(read_only=True)
     try:
