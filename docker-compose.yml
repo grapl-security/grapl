@@ -362,7 +362,7 @@ services:
     command: |
       /bin/sh -c '
         . venv/bin/activate && 
-        python /home/grapl/grapl_local_provision/local_dynamodb/provision_local_identity_table.py &&
+        python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py
       '
     environment:
