@@ -1,6 +1,7 @@
 import time
 from os import environ
-from grapl_tests_common import resources
+from grapl_tests_common.wait import wait_for, WaitForS3Bucket, WaitForSqsQueue
+from grapl_tests_common.sleep import verbose_sleep
 from sys import stdout, exit
 from typing import Any, NamedTuple, Sequence
 import boto3  # type: ignore
@@ -35,7 +36,7 @@ def _upload_analyzers(
 
     bucket = f"{BUCKET_PREFIX}-analyzers-bucket"
     for (local_path, s3_key) in analyzers:
-        logging.info(f"S3 uploading {local_path}")
+        logging.info(f"S3 uploading analyzer from {local_path}")
         with open(local_path, "r") as f:
             s3_client.put_object(Body=f.read(), Bucket=bucket, Key=s3_key)
 
@@ -48,6 +49,7 @@ def _upload_test_data(
     # i hate this lol
     # but it's probably better than mucking with path and importing that module...
     for path in test_data_paths:
+        logging.info(f"S3 uploading test data from {path}")
         subprocess.run(
             [
                 "python3",
@@ -82,35 +84,30 @@ def _create_sqs_client() -> SqsServiceResource:
     )
 
 
-def _verbose_sleep(secs: int, reason: str) -> None:
-    logging.info(f"Sleeping for {secs} secs: {reason}")
-    time.sleep(secs)
-
-
 def setup(
     analyzers: Sequence[AnalyzerUpload],
     test_data_paths: Sequence[str],
 ) -> None:
     logging.basicConfig(stream=stdout, level=logging.INFO)
-    _verbose_sleep(10, "awaiting local aws")
+    verbose_sleep(10, "awaiting local aws")
 
     s3_client = _create_s3_client()
     sqs_client = _create_sqs_client()
 
-    resources.wait_for(
+    wait_for(
         [
             # for uploading analyzers
-            resources.WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-analyzers-bucket"),
+            WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-analyzers-bucket"),
             # for upload-sysmon-logs.py
-            resources.WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-sysmon-log-bucket"),
-            resources.WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
+            WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-sysmon-log-bucket"),
+            WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
         ]
     )
 
     _upload_analyzers(s3_client, analyzers)
     _upload_test_data(s3_client, test_data_paths)
 
-    _verbose_sleep(30, "let the pipeline do its thing")
+    verbose_sleep(60, "let the pipeline do its thing")
 
 
 def exec_pytest() -> None:
