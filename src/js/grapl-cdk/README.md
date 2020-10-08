@@ -169,8 +169,8 @@ eval $(docker-machine env "$AWS03_NAME" --shell sh)
 docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
 
 for m in $AWS01_NAME $AWS02_NAME $AWS03_NAME; do
-    docker ssh $m 'sudo mkdir /dgraph && sudo mkfs -t xfs /dev/nvme0n1 && sudo mount -t xfs /dev/nvme0n1 /dgraph'
-    dicker ssh $m 'UUID=$(sudo lsblk -o +UUID | grep nvme0n1 | rev | cut -d" " -f1 | rev); echo -e "UUID=$UUID\t/dgraph\txfs\tdefaults,nofail\t0 2" | sudo tee -a /etc/fstab'
+    docker-machine ssh $m 'sudo mkdir /dgraph && sudo mkfs -t xfs /dev/nvme0n1 && sudo mount -t xfs /dev/nvme0n1 /dgraph'
+    docker-machine ssh $m 'UUID=$(sudo lsblk -o +UUID | grep nvme0n1 | rev | cut -d" " -f1 | rev); echo -e "UUID=$UUID\t/dgraph\txfs\tdefaults,nofail\t0 2" | sudo tee -a /etc/fstab'
 done
 
 # get DGraph configs
