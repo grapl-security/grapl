@@ -108,7 +108,7 @@ jobs:
 
       - name: clean intermediate images
         run: |
-          docker image prune --force
+          docker image prune
 
       - name: Build the rest of Grapl
         run: |
