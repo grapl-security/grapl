@@ -193,7 +193,7 @@ mod tests {
         )?;
         assert_eq!(
             buf,
-            "some_str:12345.6|c|#some_key=some_value,some_key_2=some_value_2"
+            "some_str:12345.6|c|#some_key:some_value,some_key_2:some_value_2"
         );
         Ok(())
     }

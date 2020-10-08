@@ -99,7 +99,7 @@ sudo systemctl enable docker.service
 sudo systemctl start docker.service
 sudo usermod -a -G docker ec2-user
 sudo su ec2-user
-cd
+cd $HOME
 
 # The Grapl deployment name we used in the CDK
 GRAPL_DEPLOYMENT=<YOUR_DEPLOYMENT>
@@ -138,7 +138,7 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 # ami-0010d386b82bc06f0 -> Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
 EC2_INSTANCE_TYPE=t3a.medium
 EC2_AMI=ami-0010d386b82bc06f0
-alias dm='/usr/local/bin/docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "$KEYPAIR_NAME" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "$EC2_INSTANCE_TYPE" --amazonec2-region "$AWS_DEFAULT_REGION" --amazonec2-ami "$EC2_AMI" --amazonec2-ssh-user ubuntu'
+alias dm='/usr/local/bin/docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "$KEYPAIR_NAME" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "$EC2_INSTANCE_TYPE" --amazonec2-region "$AWS_DEFAULT_REGION" --amazonec2-ami "$EC2_AMI" --amazonec2-ssh-user ubuntu --amazonec2-tags "grapl-dgraph,$GRAPL_DEPLOYMENT"'
 export AWS01_NAME=${GRAPL_DEPLOYMENT}-aws01
 export AWS02_NAME=${GRAPL_DEPLOYMENT}-aws02
 export AWS03_NAME=${GRAPL_DEPLOYMENT}-aws03
@@ -173,13 +173,14 @@ for m in $AWS01_NAME $AWS02_NAME $AWS03_NAME; do
     dicker ssh $m 'UUID=$(sudo lsblk -o +UUID | grep nvme0n1 | rev | cut -d" " -f1 | rev); echo -e "UUID=$UUID\t/dgraph\txfs\tdefaults,nofail\t0 2" | sudo tee -a /etc/fstab'
 done
 
-# get DGraph compose template
+# get DGraph configs
 cd $HOME
-wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/docker-compose-multi.yml
+wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/dgraph/docker-compose-dgraph.yml
+wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/dgraph/envoy.yaml
 
 # start DGraph
 eval $(docker-machine env "$AWS01_NAME" --shell sh)
-docker stack deploy -c docker-compose-multi.yml dgraph
+docker stack deploy -c docker-compose-dgraph.yml dgraph
 
 # add A records to route53 to make the alpha nodes discoverable
 AWS02_IP=$(docker-machine ip "$AWS02_NAME")

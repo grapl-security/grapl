@@ -26,7 +26,7 @@ class TestData:
 
 
 class TestStatsdFormatter(unittest.TestCase):
-    def test_basic_counter(self):
+    def test_basic_counter(self) -> None:
         result = statsd_format(
             metric_name=TestData.METRIC_NAME,
             value=TestData.VALUE,
@@ -34,7 +34,7 @@ class TestStatsdFormatter(unittest.TestCase):
         )
         assert result == "some_metric:2.0|c"
 
-    def test_counter_with_sample_rate(self):
+    def test_counter_with_sample_rate(self) -> None:
         result = statsd_format(
             metric_name=TestData.METRIC_NAME,
             value=TestData.VALUE,
@@ -43,7 +43,7 @@ class TestStatsdFormatter(unittest.TestCase):
         )
         assert result == "some_metric:2.0|c|@0.5"
 
-    def test_non_counter_with_sample_rate_doesnt_include_it(self):
+    def test_non_counter_with_sample_rate_doesnt_include_it(self) -> None:
         result = statsd_format(
             metric_name=TestData.METRIC_NAME,
             value=TestData.VALUE,
@@ -52,7 +52,7 @@ class TestStatsdFormatter(unittest.TestCase):
         )
         assert result == "some_metric:2.0|g"
 
-    def test_tags(self):
+    def test_tags(self) -> None:
         result = statsd_format(
             metric_name=TestData.METRIC_NAME,
             value=TestData.VALUE,
@@ -60,9 +60,9 @@ class TestStatsdFormatter(unittest.TestCase):
             typ="ms",
             tags=TestData.TAGS,
         )
-        assert result == "some_metric:2.0|ms|#key=value,key2=value2"
+        assert result == "some_metric:2.0|ms|#key:value,key2:value2"
 
-    def test_invalid_metric_names(self):
+    def test_invalid_metric_names(self) -> None:
         for invalid_metric_name in TestData.INVALID_STRS:
             with pytest.raises(ValueError):
                 statsd_format(
@@ -71,7 +71,7 @@ class TestStatsdFormatter(unittest.TestCase):
                     typ="c",
                 )
 
-    def test_invalid_tag_keys_and_values(self):
+    def test_invalid_tag_keys_and_values(self) -> None:
         for invalid_str in TestData.INVALID_STRS:
             # mutate key, then value
             with pytest.raises(ValueError):

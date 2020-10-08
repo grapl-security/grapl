@@ -1,10 +1,19 @@
 use failure::Error;
 use grapl_observe::metric_reporter::{common_strs, MetricReporter, TagPair};
 use log::*;
+use std::io::Stdout;
 
 #[derive(Clone)]
 pub struct SysmonSubgraphGeneratorMetrics {
-    pub metric_reporter: MetricReporter,
+    metric_reporter: MetricReporter<Stdout>,
+}
+
+impl SysmonSubgraphGeneratorMetrics {
+    pub fn new(service_name: &str) -> SysmonSubgraphGeneratorMetrics {
+        SysmonSubgraphGeneratorMetrics {
+            metric_reporter: MetricReporter::<Stdout>::new(service_name),
+        }
+    }
 }
 
 impl SysmonSubgraphGeneratorMetrics {

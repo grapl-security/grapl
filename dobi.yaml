@@ -40,7 +40,7 @@ image=analyzer-dispatcher:
     - rust-build
 
 image=metric-forwarder:
-  image: grapl/metric-forwarder
+  image: grapl/grapl-metric-forwarder
   context: src/rust/metric-forwarder
   dockerfile: Dockerfile
   args:
@@ -304,27 +304,26 @@ image=grapl-notebook:
   tags:
     - "{env.TAG}"
 
-image=graph-provision:
-  image: grapl/grapl-graph-provision
-  context: src/python/engagement_edge/
+image=grapl-provision:
+  image: grapl/grapl-provision
+  context: src/python/grapl_provision/
   dockerfile: Dockerfile
-  target: grapl-engagement-edge
+  target: grapl-provision-build
   depends:
-    - engagement-edge-build
-    - python-deploy
+    - python-build
   tags:
     - "{env.TAG}"
 
-image=dynamodb-provision:
-  image: grapl/grapl-dynamodb-provision
-  context: src/python/engagement_edge/
+image=grapl-e2e-tests-build:
+  image: grapl/grapl-e2e-tests-build
+  context: src/python/grapl_e2e_tests/
   dockerfile: Dockerfile
-  target: grapl-engagement-edge
+  target: grapl-e2e-tests-build
   depends:
-    - engagement-edge-build
-    - python-deploy
+    - grapl-analyzerlib-build
+    - etc-build
   tags:
-    - "{env.TAG}"
+    - latest
 
 # js images
 
@@ -370,6 +369,15 @@ image=graphql-endpoint:
   tags:
     - "{env.TAG}"
 
+# local grapl
+image=etc-build:
+  image: grapl/etc-build
+  context: etc/
+  dockerfile: Dockerfile
+  target: etc-build
+  tags:
+    - "{env.TAG}"
+
 #
 # compose
 #
@@ -399,8 +407,7 @@ compose=integration-env:
     - dgraph-ttl
     - model-plugin-deployer
     - grapl-notebook
-    - graph-provision
-    - dynamodb-provision
+    - grapl-provision
     # js images
     - engagement-view
     - graphql-endpoint
@@ -522,6 +529,18 @@ job=run-analyzer-deployer-integration-tests:
     - GRAPL_LOG_LEVEL=INFO
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
+  depends:
+    - integration-env
+
+job=run-e2e-integration-tests:
+  use: grapl-e2e-tests-build
+  net-mode: grapl-integration-tests_default
+  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_e2e_tests && python3 ./main.py"
+  env:
+    - GRAPL_LOG_LEVEL=INFO
+    - "BUCKET_PREFIX=local-grapl"
+    - "IS_LOCAL=True"
+    - "MG_ALPHAS=grapl-master-graph-db:9080"
   depends:
     - integration-env
 
@@ -652,8 +671,7 @@ alias=python:
     - "dgraph-ttl:tag"
     - "model-plugin-deployer:tag"
     - "grapl-notebook:tag"
-    - "graph-provision:tag"
-    - "dynamodb-provision:tag"
+    - "grapl-provision:tag"
   annotations:
     description: "Build artifacts and images for python services"
 
