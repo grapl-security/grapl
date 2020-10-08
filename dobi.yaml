@@ -505,6 +505,16 @@ job=run-grapl-tests-common-typecheck:
       mypy .
       "
 
+job=run-e2e-integration-tests-typecheck:
+  use: grapl-e2e-tests-build
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      pip install mypy && 
+      mypy -p grapl_e2e_tests
+      "
+
 job=run-analyzer-deployer-typecheck:
   use: analyzer-deployer-build
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
@@ -797,5 +807,6 @@ alias=python-typecheck:
     - run-engagement-creator-typecheck
     - run-grapl-common-typecheck
     - run-grapl-tests-common-typecheck
+    - run-e2e-integration-tests-typecheck
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"
