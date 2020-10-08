@@ -102,15 +102,7 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Build Grapl python
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
-
-      - name: clean intermediate images
-        run: |
-          docker image prune
-
-      - name: Build the rest of Grapl
+      - name: Build Grapl
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
 
