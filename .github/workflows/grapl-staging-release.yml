@@ -14,10 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Export tag
         run: |
@@ -45,10 +45,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Export tag
         run: |
@@ -77,10 +77,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
     
       - name: Export tag
         run: |
