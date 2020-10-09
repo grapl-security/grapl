@@ -32,11 +32,11 @@ jobs:
 
       - name: Build Rust services
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux rust
 
       - name: Rust unit tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-unit-tests
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux rust-unit-tests
 
   python-unit-tests:
     runs-on: ubuntu-latest
@@ -104,11 +104,11 @@ jobs:
 
       - name: Build Grapl
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux build
 
       - name: Run integration tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration-tests
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux integration-tests
 
   # In the future, this should probably be merged back into `dobi integration-tests`, but
   # since it's so timing-dependent I'm going to treat it separately until it stabilizes a bit.
@@ -125,8 +125,8 @@ jobs:
 
       - name: Build Grapl
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux build
 
       - name: Run end-to-end integration tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux run-e2e-integration-tests

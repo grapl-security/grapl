@@ -19,7 +19,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount unit-tests
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux unit-tests
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount integration-tests
+          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux integration-tests
 
   check-pypi:
     runs-on: ubuntu-latest
@@ -135,7 +135,7 @@ jobs:
 
       - name: Build Rust services
         run: |
-          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount rust
+          GRAPL_RELEASE_TARGET=release ./dobi-linux rust
 
       - name: Extract artifacts from Rust build
         id: extract-rust-artifacts

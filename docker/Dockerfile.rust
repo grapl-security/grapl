@@ -1,0 +1,8 @@
+FROM rust:1-slim-buster
+RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev
+
+ENV PROTOC /usr/bin/protoc
+ENV PROTOC_INCLUDE /usr/include
+
+RUN rustup target add x86_64-unknown-linux-musl
+

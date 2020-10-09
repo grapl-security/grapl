@@ -7,9 +7,13 @@ meta:
 #
 
 mount=dist:
-  bind: ./dist
-  path: /home/grapl/dist
-  file: false
+  bind: ./dist/
+  path: /dist/
+
+mount=rust-src:
+  bind: ./src/rust/
+  path: /grapl/
+
 
 #
 # images
@@ -17,99 +21,111 @@ mount=dist:
 
 # rust images
 
-image=rust-build:
+image=rust-build-image:
   image: grapl/grapl-rust-src-build
-  context: src/rust
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-rust-src-build
+  context: docker
+  dockerfile: Dockerfile.rust
+  tags:
+    - latest
+
+image=rust-dist-base-image:
+  image: grapl/grapl-rust-dist-base
+  context: docker
+  dockerfile: Dockerfile.rust-dist
   tags:
     - latest
 
 image=analyzer-dispatcher:
   image: grapl/grapl-analyzer-dispatcher
-  context: src/rust/analyzer-dispatcher
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-analyzer-dispatcher
+  context: ./dist/
+  steps: |
+    FROM grapl/grapl-rust-dist-base
+    COPY analyzer-dispatcher /
+    CMD /analyzer-dispatcher
   tags:
     - "{env.TAG}"
   depends:
-    - rust-build
+    - rust-dist-base-image
+    - build-rust
 
 image=metric-forwarder:
   image: grapl/grapl-metric-forwarder
-  context: src/rust/metric-forwarder
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-metric-forwarder
+  context: ./dist/
+  steps: |
+    FROM grapl/grapl-rust-dist-base
+    COPY metric-forwarder /
+    CMD /metric-forwarder
   tags:
     - "{env.TAG}"
   depends:
-    - rust-build
+    - rust-dist-base-image
+    - build-rust
 
 image=generic-subgraph-generator:
   image: grapl/grapl-generic-subgraph-generator
-  context: src/rust/generic-subgraph-generator
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-generic-subgraph-generator
+  context: ./dist/
+  steps: |
+    FROM grapl/grapl-rust-dist-base
+    COPY generic-subgraph-generator /
+    CMD /generic-subgraph-generator
   tags:
     - "{env.TAG}"
   depends:
-    - rust-build
+    - rust-dist-base-image
+    - build-rust
 
 image=graph-merger:
   image: grapl/grapl-graph-merger
-  context: src/rust/graph-merger
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-graph-merger
+  context: ./dist/
+  steps: |
+    FROM grapl/grapl-rust-dist-base
+    COPY graph-merger /
+    CMD /graph-merger
   tags:
     - "{env.TAG}"
   depends:
-    - rust-build
+    - rust-dist-base-image
+    - build-rust
 
 image=node-identifier:
   image: grapl/grapl-node-identifier
-  context: src/rust/node-identifier
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-node-identifier
+  context: ./dist/
+  steps: |
+    FROM grapl/grapl-rust-dist-base
+    COPY node-identifier /
+    CMD /node-identifier
   tags:
     - "{env.TAG}"
   depends:
-    - rust-build
+    - rust-dist-base-image
+    - build-rust
 
 image=node-identifier-retry-handler:
   image: grapl/grapl-node-identifier-retry-handler
-  context: src/rust/node-identifier
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-node-identifier-retry-handler
+  context: ./dist/
+  steps: |
+    FROM grapl/grapl-rust-dist-base
+    COPY node-identifier /node-identifier-retry-handler
+    CMD /node-identifier-retry-handler
   tags:
     - "{env.TAG}"
   depends:
-    - rust-build
+    - rust-dist-base-image
+    - build-rust
 
 image=sysmon-subgraph-generator:
   image: grapl/grapl-sysmon-subgraph-generator
-  context: src/rust/sysmon-subgraph-generator
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-sysmon-subgraph-generator
+  context: ./dist/
+  steps: |
+    FROM grapl/grapl-rust-dist-base
+    COPY sysmon-subgraph-generator /
+    CMD /sysmon-subgraph-generator
   tags:
     - "{env.TAG}"
   depends:
-    - rust-build
+    - rust-dist-base-image
+    - build-rust
+
 
 # python images
 
@@ -419,31 +435,117 @@ compose=integration-env:
 # rust jobs
 
 job=build-rust:
-  use: rust-build
+  use: rust-build-image
+  user: '{user.uid}:{user.gid}'
+  working-dir: /grapl
+  env: 
+    - RELEASE_TARGET={env.GRAPL_RELEASE_TARGET:debug}
+  command: bash -c '
+    if test "${RELEASE_TARGET}" = "release"; then
+      cargo build --target=x86_64-unknown-linux-musl --release; 
+    elif test "${RELEASE_TARGET}" = "debug"; then
+      cargo build --target=x86_64-unknown-linux-musl; 
+    fi &&
+    cd target/x86_64-unknown-linux-musl/${RELEASE_TARGET} &&
+    cp analyzer-dispatcher /dist/ &&
+    cp generic-subgraph-generator /dist/ &&
+    cp graph-merger /dist/ &&
+    cp metric-forwarder /dist/ &&
+    cp node-identifier /dist/ &&
+    cp node-identifier-retry-handler /dist/ &&
+    cp sysmon-subgraph-generator /dist/'
   mounts:
     - dist
+    - rust-src
+  sources:
+    # This just helps dobi recognize when this task is stale.
+    # Basically just trying to exclude target/
+    - src/rust/Cargo.toml
+    - src/rust/Cargo.lock
+    - src/rust/analyzer-dispatcher
+    - src/rust/derive-dynamic-node
+    - src/rust/generic-subgraph-generator
+    - src/rust/graph-descriptions
+    - src/rust/graph-generator-lib
+    - src/rust/graph-merger
+    - src/rust/grapl-config
+    - src/rust/grapl-observe
+    - src/rust/metric-forwarder
+    - src/rust/node-identifier
+    - src/rust/sysmon-subgraph-generator
   artifact:
-    - ./dist/
+    - ./dist/analyzer-dispatcher
+    - ./dist/generic-subgraph-generator
+    - ./dist/graph-merger
+    - ./dist/metric-forwarder
+    - ./dist/node-identifier
+    - ./dist/node-identifier-retry-handler
+    - ./dist/sysmon-subgraph-generator
+  annotations:
+    description: "Build Rust sources"
+
+job=build-rust-clean:
+  use: rust-build-image
+  user: '{user.uid}:{user.gid}'
+  working-dir: /grapl
+  env: 
+    - RELEASE_TARGET={env.GRAPL_RELEASE_TARGET:debug}
+  command: bash -c '
+    if test "${RELEASE_TARGET}" = "release"; then 
+      cargo clean &&
+      cargo build --target=x86_64-unknown-linux-musl --release; 
+    elif test "${RELEASE_TARGET}" = "debug"; then 
+      cargo clean &&
+      cargo build --target=x86_64-unknown-linux-musl; 
+    fi &&
+    cd target/x86_64-unknown-linux-musl/${RELEASE_TARGET} &&
+    cp analyzer-dispatcher /dist/ &&
+    cp generic-subgraph-generator /dist/ &&
+    cp graph-merger /dist/ &&
+    cp metric-forwarder /dist/ &&
+    cp node-identifier /dist/ &&
+    cp node-identifier-retry-handler /dist/ &&
+    cp sysmon-subgraph-generator /dist/'
+  mounts:
+    - dist
+    - rust-src
+  annotations:
+    description: "Build Rust sources with cargo clean"
 
 job=run-rust-unit-tests:
-  use: rust-build
-  command: /bin/bash -c "cargo test --target=x86_64-unknown-linux-musl"
+  use: rust-build-image
+  user: '{user.uid}:{user.gid}'
+  working-dir: /grapl
+  command: cargo test --target=x86_64-unknown-linux-musl
+  mounts: 
+    - dist
+    - rust-src
+  annotations:
+    description: "Rust cargo test"
   depends:
-    - rust-build
+    - build-rust
 
 job=run-node-identifier-integration-tests:
-  use: rust-build
+  use: rust-build-image
+  user: '{user.uid}:{user.gid}'
+  working-dir: /grapl
+  command:
+    bash -c '
+    sleep 30 &&
+    cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration'
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration"
+  mounts:
+    - dist
+    - rust-src
   env:
     - GRAPL_LOG_LEVEL=INFO
     - RUST_LOG=INFO
     - RUST_BACKTRACE=1
-    - "BUCKET_PREFIX=local-grapl"
-    - "IS_LOCAL=True"
-    - "MG_ALPHAS=grapl-master-graph-db:9080"
-    - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
-    - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+    - BUCKET_PREFIX=local-grapl
+    - IS_LOCAL=True
+    - MG_ALPHAS=grapl-master-graph-db:9080
+    - SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue
+    - GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue
     - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
     - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
     - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
@@ -454,7 +556,6 @@ job=run-node-identifier-integration-tests:
     - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
     - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
   depends:
-    - rust-build
     - integration-env
 
 # python jobs
@@ -628,21 +729,36 @@ job=build-grapl-cdk:
 alias=rust:
   tasks:
     - build-rust
-    - "analyzer-dispatcher:tag"
-    - "generic-subgraph-generator:tag"
-    - "graph-merger:tag"
-    - "metric-forwarder:tag"
-    - "node-identifier:tag"
-    - "node-identifier-retry-handler:tag"
-    - "sysmon-subgraph-generator:tag"
+    - analyzer-dispatcher
+    - metric-forwarder
+    - generic-subgraph-generator
+    - graph-merger
+    - node-identifier
+    - node-identifier-retry-handler
+    - sysmon-subgraph-generator
   annotations:
     description: "Build artifacts and images for rust services"
 
-alias=clean-rust-build:
+alias=clean-rust-images:
   tasks:
-    - "rust-build:rm"
+    - "rust-build-image:rm"
+    - "rust-dist-base-image:rm"
   annotations:
-    description: "Delete the rust build image"
+    description: "Delete the Rust Docker images"
+
+alias=rust-clean:
+  tasks:
+    - clean-rust-images
+    - build-rust-clean
+    - analyzer-dispatcher
+    - metric-forwarder
+    - generic-subgraph-generator
+    - graph-merger
+    - node-identifier
+    - node-identifier-retry-handler
+    - sysmon-subgraph-generator
+  annotations:
+    description: "Delete the Rust Docker images and clean build"
 
 alias=rust-unit-tests:
   tasks:
@@ -744,7 +860,7 @@ alias=build:
 
 alias=clean-build:
   tasks:
-    - clean-rust-build
+    - clean-rust-images
     - clean-python-build
     - clean-js-build
   annotations:

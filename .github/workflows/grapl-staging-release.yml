@@ -25,7 +25,7 @@ jobs:
 
       - name: Build Rust services
         run: |
-          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount rust
+          GRAPL_RELEASE_TARGET=release ./dobi-linux rust
 
       - name: Log in to Docker registry
         run: |
