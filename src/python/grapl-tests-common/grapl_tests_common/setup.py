@@ -1,8 +1,7 @@
-import time
 from os import environ
 from grapl_tests_common.wait import wait_for, WaitForS3Bucket, WaitForSqsQueue
 from grapl_tests_common.sleep import verbose_sleep
-from sys import stdout, exit
+from sys import stdout
 from typing import Any, NamedTuple, Sequence
 import boto3  # type: ignore
 import logging

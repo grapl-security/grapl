@@ -2,8 +2,7 @@ from datetime import datetime, timezone, timedelta
 from itertools import cycle
 from time import sleep
 from typing_extensions import Protocol
-from typing import Any, Set, Sequence, Optional, Dict, Mapping, Callable
-import boto3  # type: ignore
+from typing import Any, Sequence, Optional, Dict, Mapping, Callable
 import botocore  # type: ignore
 import inspect
 import logging
