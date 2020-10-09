@@ -140,11 +140,9 @@ COPY --chown=grapl Cargo.toml .
 
 # Now do a clean build
 RUN if test "${release_target}" = "release"; then \
-      cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl --release; \
     fi
 RUN if test "${release_target}" = "debug"; then \
-      cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl; \
     fi
 # copy artifacts to dist mount
