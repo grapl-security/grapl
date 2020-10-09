@@ -12,10 +12,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Run unit tests
         run: |
@@ -28,10 +28,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Run integration tests
         run: |
@@ -112,10 +112,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
       
       - name: Determine release channel
         run: |
@@ -232,10 +232,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Determine release channel
         run: |
@@ -426,10 +426,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Determine release channel
         run: |
