@@ -33,7 +33,7 @@ pub fn _init_grapl_env(service_name: &str) -> ServiceEnv {
     env
 }
 
-fn is_local() -> bool {
+pub fn is_local() -> bool {
     std::env::var("IS_LOCAL")
         .map(|is_local| is_local.to_lowercase().parse().unwrap_or(false))
         .unwrap_or(false)

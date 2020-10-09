@@ -12,6 +12,7 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
 )
 from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.retry import retry
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable
 
@@ -80,10 +81,14 @@ class BaseSchema(Schema):
         for edge_name, (edge_t, r_name) in self.edges.items():
             if not edge_name:
                 continue
-            uid_t = "uid"
+
+            # Given an edge like ('bin_file', OneToMany, 'spawned_from')
+            # That's "one" bin_file (ie: uid) to many spawned_from (ie: [uid])
+            # which is to say that "from many" implies [uid]
             if edge_t.is_from_many():
-                uid_t = f"[{uid_t}]"
-            predicates.append(f"{edge_name}: {uid_t} .")
+                predicates.append(f"{edge_name}: [uid] .")
+            else:
+                predicates.append(f"{edge_name}: uid .")
 
         return "\n".join(predicates)
 
@@ -121,9 +126,9 @@ class BaseView(Viewable[BV, BQ]):
         if v.node_schema().self_type() in self.node_types:
             self.queryable = v.queryable
             return v(
-                self.uid,
-                self.node_key,
-                self.graph_client,
+                uid=self.uid,
+                node_key=self.node_key,
+                graph_client=self.graph_client,
                 node_types=self.node_types,
                 **self.predicates,
             )
@@ -369,6 +374,7 @@ class BaseView(Viewable[BV, BQ]):
 
 # Proto nodes don't contain a uid so we have to fetch them. It may make sense to store these uids
 # alongside the proto in the future. This makes constructing from proto relatively expensive.
+@retry()
 def get_uid(client: GraphClient, node_key: str) -> str:
     txn = client.txn(read_only=True)
     try:

@@ -9,9 +9,9 @@ pub struct SysmonSubgraphGeneratorMetrics {
 }
 
 impl SysmonSubgraphGeneratorMetrics {
-    pub fn new() -> SysmonSubgraphGeneratorMetrics {
+    pub fn new(service_name: &str) -> SysmonSubgraphGeneratorMetrics {
         SysmonSubgraphGeneratorMetrics {
-            metric_reporter: MetricReporter::<Stdout>::new(),
+            metric_reporter: MetricReporter::<Stdout>::new(service_name),
         }
     }
 }

@@ -18,6 +18,10 @@ pub enum MetricForwarderError {
     ParseStringToStatsdError(String, String),
     #[error("PutMetricData to Cloudwatch error: one example: {0}")]
     PutMetricDataError(String),
+    #[error("No logs in this Log Group")]
+    NoLogsError(),
+    #[error("More than one namespace - see `get_namespace` docs: Expected {0}, found {1}")]
+    MoreThanOneNamespaceError(String, String),
 }
 
 // can't impl From for HandlerError, sadly
