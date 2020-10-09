@@ -1,7 +1,7 @@
 # Clean up some of the stuff pre-installed on Github Actions boxes 
 # so we have >10GB to work with.
 
-echo "Starting space: $(df -h | grep /dev/sda1)"
+echo "Starting space: $(df -h | grep " /$")"
 
 # Based on https://github.com/actions/virtual-environments/issues/709
 # Removes 5GB
