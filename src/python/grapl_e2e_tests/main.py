@@ -1,6 +1,7 @@
 from os import environ
 import grapl_tests_common
 from grapl_tests_common.setup import AnalyzerUpload
+from grapl_tests_common.upload_test_data import UploadSysmonLogsTestData
 
 BUCKET_PREFIX = environ["BUCKET_PREFIX"]
 assert BUCKET_PREFIX == "local-grapl"
@@ -17,9 +18,15 @@ def main() -> None:
             "analyzers/unique_cmd_parent/main.py",
         ),
     )
+
+    test_data = (
+        UploadSysmonLogsTestData(
+            "/home/grapl/etc/sample_data/eventlog.xml",
+        ),
+    )
     grapl_tests_common.setup.setup(
         analyzers=analyzers,
-        test_data_paths=("/home/grapl/etc/sample_data/eventlog.xml",),
+        test_data=test_data,
     )
     grapl_tests_common.setup.exec_pytest()
 
