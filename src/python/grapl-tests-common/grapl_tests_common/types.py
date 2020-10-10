@@ -11,4 +11,3 @@ AnalyzerUpload = NamedTuple(
         ("s3_key", str),
     ),
 )
-

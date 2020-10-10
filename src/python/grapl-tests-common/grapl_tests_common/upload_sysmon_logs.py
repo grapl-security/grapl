@@ -1,8 +1,3 @@
-#!/usr/bin/env python
-"""
-Despite the path, this is *not* tied just to Local Grapl, and can also be used on true S3 buckets.
-"""
-
 import argparse
 import json
 import random
@@ -61,10 +56,10 @@ def into_sqs_message(bucket: str, key: str) -> str:
 
 
 def upload_sysmon_logs(
-    prefix: str, 
-    logfile: str, 
-    delay: int = 0, 
-    batch_size: int = 100, 
+    prefix: str,
+    logfile: str,
+    delay: int = 0,
+    batch_size: int = 100,
     use_links: bool = False,
 ) -> None:
     """

@@ -8,9 +8,10 @@ import sys
 from pathlib import Path
 from typing import Callable
 
+
 def hack_PATH_to_include_grapl_tests_common() -> Callable:
     """
-    Requirements: 
+    Requirements:
     - this script should be runnable from command line without Docker.
     - the logic should be exposed as a library that's callable from grapl-tests-common.
     It was either this, or forcing a `pip install .` from python code. Gross.
@@ -27,6 +28,7 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
 
     sys.path.append(str(grapl_tests_common_path))
     from upload_sysmon_logs import upload_sysmon_logs
+
     return upload_sysmon_logs
 
 
@@ -50,7 +52,8 @@ if __name__ == "__main__":
     if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
     else:
-        hack_PATH_to_include_grapl_tests_common().main(
+        upload_fn = hack_PATH_to_include_grapl_tests_common()
+        upload_fn(
             args.bucket_prefix,
             args.logfile,
             args.delay,
