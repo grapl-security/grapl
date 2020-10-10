@@ -157,7 +157,6 @@ image=grapl-tests-common-build:
   depends:
     - python-build
     - grapl-analyzerlib-build
-    - etc-build
   tags:
     - latest
 
@@ -333,6 +332,7 @@ image=grapl-e2e-tests-build:
   target: grapl-e2e-tests-build
   depends:
     - grapl-tests-common-build
+    - etc-build  # has all the test data
   tags:
     - latest
 

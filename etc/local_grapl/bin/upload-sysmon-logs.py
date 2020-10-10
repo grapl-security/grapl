@@ -10,7 +10,10 @@ from typing import Callable
 
 def hack_PATH_to_include_grapl_tests_common() -> Callable:
     """
-    It was either this, or forcing a `pip install .` from python code.
+    Requirements: 
+    - this script should be runnable from command line without Docker.
+    - the logic should be exposed as a library that's callable from grapl-tests-common.
+    It was either this, or forcing a `pip install .` from python code. Gross.
     """
     this_file = Path(__file__).resolve()
     # go to `grapl` base dir
