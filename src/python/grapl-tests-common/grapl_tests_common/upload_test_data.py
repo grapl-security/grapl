@@ -1,5 +1,6 @@
 from typing_extensions import Protocol
 from grapl_tests_common.types import S3ServiceResource
+from grapl_tests_common.upload_sysmon_logs import upload_sysmon_logs
 import logging
 import subprocess
 
@@ -15,17 +16,8 @@ class UploadSysmonLogsTestData(UploadTestData):
     
     def upload(self, s3_client: S3ServiceResource) -> None:
         logging.info(f"S3 uploading test data from {self.path}")
-        # i hate this lol
-        # but it's probably better than mucking with path and importing that module...
-        subprocess.run(
-            [
-                "python3",
-                "/home/grapl/etc/local_grapl/bin/upload-sysmon-logs.py",
-                "--bucket_prefix",
-                BUCKET_PREFIX,
-                "--logfile",
-                self.path,
-                "--use-links",
-                "True",
-            ]
+        upload_sysmon_logs(
+            prefix=BUCKET_PREFIX,
+            logfile=self.path,
+            use_links=True,
         )
