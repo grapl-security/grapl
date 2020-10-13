@@ -64,7 +64,9 @@ class WaitForCondition(WaitForResource):
 
 
 def wait_for(
-    resources: Sequence[WaitForResource], timeout_secs: int = 30
+    resources: Sequence[WaitForResource],
+    timeout_secs: int = 30,
+    sleep_secs: int = 5,
 ) -> Mapping[WaitForResource, Any]:
     completed: Dict[WaitForResource, Any] = {}
 
@@ -85,15 +87,12 @@ def wait_for(
 
         secs_remaining = int((timeout_after - now).total_seconds())
         # print an update every 5 secs
-        if secs_remaining % 5 == 0:
-            logging.info(
-                f"Waiting for resource ({secs_remaining} secs remain): {resource}"
-            )
+        logging.info(f"Waiting for resource ({secs_remaining} secs remain): {resource}")
 
         result = resource.acquire()
         if result is not None:
             completed[resource] = result
         else:
-            sleep(1)
+            sleep(sleep_secs)
 
     return completed
