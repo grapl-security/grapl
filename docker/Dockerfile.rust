@@ -5,4 +5,3 @@ ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
 
 RUN rustup target add x86_64-unknown-linux-musl
-

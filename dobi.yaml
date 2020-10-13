@@ -20,6 +20,13 @@ mount=rust-src:
 # images
 #
 
+# Dobi won't let us do a contextless image build, which
+# would be nice to avoid copying unecessary files to the
+# Docker daemon for base builds, so this is using a near
+# empty directory for context instead. A context isn't 
+# needed for `docker build` when a Dockerfile is passed 
+# to stdin.
+
 # rust images
 
 image=rust-build-image:
@@ -496,11 +503,10 @@ job=build-rust-clean:
   env: 
     - RELEASE_TARGET={env.GRAPL_RELEASE_TARGET:debug}
   command: bash -c '
-    if test "${RELEASE_TARGET}" = "release"; then 
-      cargo clean &&
+    cargo clean &&
+    if test "${RELEASE_TARGET}" = "release"; then
       cargo build --target=x86_64-unknown-linux-musl --release; 
-    elif test "${RELEASE_TARGET}" = "debug"; then 
-      cargo clean &&
+    elif test "${RELEASE_TARGET}" = "debug"; then
       cargo build --target=x86_64-unknown-linux-musl; 
     fi &&
     cd target/x86_64-unknown-linux-musl/${RELEASE_TARGET} &&
