@@ -159,6 +159,18 @@ image=grapl-common-build:
   tags:
     - latest
 
+image=grapl-tests-common-build:
+  image: grapl/grapl-tests-common-python-build
+  context: src/python/grapl-tests-common/
+  dockerfile: Dockerfile
+  target: grapl-tests-common-python-build
+  depends:
+    - python-build
+    - grapl-analyzerlib-build
+    - etc-build
+  tags:
+    - latest
+
 image=grapl-analyzerlib-build:
   image: grapl/grapl-analyzerlib-python-build
   context: src/python/grapl_analyzerlib/
@@ -330,8 +342,7 @@ image=grapl-e2e-tests-build:
   dockerfile: Dockerfile
   target: grapl-e2e-tests-build
   depends:
-    - grapl-analyzerlib-build
-    - etc-build
+    - grapl-tests-common-build
   tags:
     - latest
 
@@ -561,33 +572,56 @@ job=run-grapl-common-unit-tests:
 
 job=run-engagement-creator-typecheck:
   use: engagement-creator-build
-  command: /bin/bash -c "
-    source venv/bin/activate &&
-    cd engagement-creator &&
-    pip install '.[typecheck]' &&
-    mypy .
-    "
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd engagement-creator &&
+      pip install '.[typecheck]' &&
+      mypy .
+      "
 
 job=run-grapl-common-typecheck:
   use: grapl-common-build
-  command: /bin/bash -c "
-    source venv/bin/activate &&
-    cd grapl_common &&
-    pip install '.[typecheck]' &&
-    mypy .
-    "
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd grapl_common &&
+      pip install '.[typecheck]' &&
+      mypy .
+      "
+
+job=run-grapl-tests-common-typecheck:
+  use: grapl-tests-common-build
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd grapl-tests-common &&
+      pip install '.[typecheck]' &&
+      mypy .
+      "
+
+job=run-e2e-integration-tests-typecheck:
+  use: grapl-e2e-tests-build
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      pip install mypy && 
+      mypy -p grapl_e2e_tests
+      "
 
 job=run-analyzer-deployer-typecheck:
   use: analyzer-deployer-build
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
-  command: /bin/bash -c "
-    source venv/bin/activate &&
-    touch venv/lib/python3.7/site-packages/chalice/py.typed &&
-    cd analyzer-deployer &&
-    pip install mypy &&
-    mypy .
-    "
+  command: | 
+    /bin/bash -c "
+      source venv/bin/activate &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&
+      cd analyzer-deployer &&
+      pip install mypy &&
+      mypy .
+      "
 
 job=run-grapl-analyzerlib-unit-tests:
   use: grapl-analyzerlib-build
@@ -882,5 +916,7 @@ alias=python-typecheck:
     - run-analyzer-deployer-typecheck
     - run-engagement-creator-typecheck
     - run-grapl-common-typecheck
+    - run-grapl-tests-common-typecheck
+    - run-e2e-integration-tests-typecheck
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"
