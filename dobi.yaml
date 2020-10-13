@@ -396,6 +396,8 @@ image=etc-build:
 # integration tests. It should be identical to local Grapl. The most
 # important thing here is to keep the 'depends' list up to date.
 #
+# To view the logs during an integration test, run `dobi integration-env:attach` in another tab/tmux session.
+# (also try out `GRAPL_LOG_LEVEL=DEBUG`)
 
 compose=integration-env:
   files:
@@ -447,7 +449,7 @@ job=run-node-identifier-integration-tests:
   net-mode: grapl-integration-tests_default
   command: /bin/bash -c "sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration"
   env:
-    - GRAPL_LOG_LEVEL=INFO
+    - GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - RUST_LOG=INFO
     - RUST_BACKTRACE=1
     - "BUCKET_PREFIX=local-grapl"
@@ -537,7 +539,7 @@ job=run-grapl-analyzerlib-integration-tests:
   net-mode: grapl-integration-tests_default
   command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'integration_test'"
   env:
-    - GRAPL_LOG_LEVEL=INFO
+    -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
@@ -560,7 +562,7 @@ job=run-analyzer-deployer-integration-tests:
   net-mode: grapl-integration-tests_default
   command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd analyzer-deployer && py.test -n auto -m 'integration_test'"
   env:
-    - GRAPL_LOG_LEVEL=INFO
+    -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
   depends:
@@ -571,7 +573,7 @@ job=run-e2e-integration-tests:
   net-mode: grapl-integration-tests_default
   command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_e2e_tests && python3 ./main.py"
   env:
-    - GRAPL_LOG_LEVEL=INFO
+    -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
