@@ -1,7 +1,7 @@
 from typing import Any
 
 from grapl_analyzerlib.analyzer import Analyzer, OneOrMany
-from grapl_analyzerlib.prelude import Not, ProcessQuery, ProcessView
+from grapl_analyzerlib.prelude import Not, AssetQuery, ProcessQuery, ProcessView
 from grapl_analyzerlib.execution import ExecutionHit
 
 
@@ -21,6 +21,7 @@ class SuspiciousSvchost(Analyzer):
             ProcessQuery()
             .with_process_name(eq=invalid_parents)
             .with_children(ProcessQuery().with_process_name(eq="svchost.exe"))
+            .with_asset(AssetQuery().with_hostname())
         )
 
     def on_response(self, response: ProcessView, output: Any):
