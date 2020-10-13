@@ -8,7 +8,8 @@ meta:
 
 mount=dist:
   bind: ./dist/
-  path: /dist/
+  path: /home/grapl/dist/
+  file: false
 
 mount=rust-src:
   bind: ./src/rust/
@@ -440,13 +441,13 @@ job=build-rust:
       cargo build --target=x86_64-unknown-linux-musl; 
     fi &&
     cd target/x86_64-unknown-linux-musl/${RELEASE_TARGET} &&
-    cp analyzer-dispatcher /dist/ &&
-    cp generic-subgraph-generator /dist/ &&
-    cp graph-merger /dist/ &&
-    cp metric-forwarder /dist/ &&
-    cp node-identifier /dist/ &&
-    cp node-identifier-retry-handler /dist/ &&
-    cp sysmon-subgraph-generator /dist/'
+    cp analyzer-dispatcher /home/grapl/dist/ &&
+    cp generic-subgraph-generator /home/grapl/dist/ &&
+    cp graph-merger /home/grapl/dist/ &&
+    cp metric-forwarder /home/grapl/dist/ &&
+    cp node-identifier /home/grapl/dist/ &&
+    cp node-identifier-retry-handler /home/grapl/dist/ &&
+    cp sysmon-subgraph-generator /home/grapl/dist/'
   mounts:
     - dist
     - rust-src
@@ -492,13 +493,13 @@ job=build-rust-clean:
       cargo build --target=x86_64-unknown-linux-musl; 
     fi &&
     cd target/x86_64-unknown-linux-musl/${RELEASE_TARGET} &&
-    cp analyzer-dispatcher /dist/ &&
-    cp generic-subgraph-generator /dist/ &&
-    cp graph-merger /dist/ &&
-    cp metric-forwarder /dist/ &&
-    cp node-identifier /dist/ &&
-    cp node-identifier-retry-handler /dist/ &&
-    cp sysmon-subgraph-generator /dist/'
+    cp analyzer-dispatcher /home/grapl/dist/ &&
+    cp generic-subgraph-generator /home/grapl/dist/ &&
+    cp graph-merger /home/grapl/dist/ &&
+    cp metric-forwarder /home/grapl/dist/ &&
+    cp node-identifier /home/grapl/dist/ &&
+    cp node-identifier-retry-handler /home/grapl/dist/ &&
+    cp sysmon-subgraph-generator /home/grapl/dist/'
   mounts:
     - dist
     - rust-src
