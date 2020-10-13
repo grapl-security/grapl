@@ -77,9 +77,9 @@ jobs:
         # passing 'true' to check_pypi means "check test.pypi.org"
         run: |
           if [[ "$CHANNEL" == "latest" ]]; then
-            echo "::set-env name=CHECK_PYPI_VERSION_ARGS::false"
+            echo "CHECK_PYPI_VERSION_ARGS=false" >> $GITHUB_ENV
           else
-            echo "::set-env name=CHECK_PYPI_VERSION_ARGS::true"
+            echo "CHECK_PYPI_VERSION_ARGS=true" >> $GITHUB_ENV
           fi
 
       - name: Check whether grapl_graph_descriptions version has been bumped
