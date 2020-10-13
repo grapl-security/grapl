@@ -86,7 +86,7 @@ def setup(
     _upload_analyzers(s3_client, analyzers)
     _upload_test_data(s3_client, test_data)
 
-    verbose_sleep(60, "let the pipeline do its thing")
+    verbose_sleep(30, "let the pipeline do its thing")
 
 
 def exec_pytest() -> None:
