@@ -1,13 +1,11 @@
-import argparse
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Callable, List, Iterator, cast
+import boto3  # type: ignore
 import json
 import random
 import string
 import time
-from typing import List
-from datetime import datetime
-
-import boto3  # type: ignore
-
 import zstd  # type: ignore
 
 
@@ -55,9 +53,33 @@ def into_sqs_message(bucket: str, key: str) -> str:
     )
 
 
-def upload_sysmon_logs(
+@dataclass
+class GeneratorOptions:
+    bucket_suffix: str
+    queue_name: str
+    key_infix: str
+
+    def encode_chunk(self, input: List[bytes]) -> bytes:
+        raise NotImplementedError()
+
+
+class SysmonGeneratorOptions(GeneratorOptions):
+    def __init__(self) -> None:
+        super().__init__(
+            queue_name="grapl-sysmon-graph-generator-queue",
+            bucket_suffix="sysmon-log-bucket",
+            key_infix="sysmon",
+        )
+
+    def encode_chunk(self, input: List[bytes]) -> bytes:
+        # zstd encoded line delineated xml
+        return cast(bytes, zstd.compress(b"\n".join(input).replace(b"\n\n", b"\n"), 4))
+
+
+def upload_logs(
     prefix: str,
     logfile: str,
+    generator_options: GeneratorOptions,
     delay: int = 0,
     batch_size: int = 100,
     use_links: bool = False,
@@ -69,6 +91,7 @@ def upload_sysmon_logs(
         f"Writing events to {prefix} with {delay} seconds between batches of {batch_size}"
     )
     sqs = None
+    local_sqs_endpoint_url = "http://sqs:9324" if use_links else "http://localhost:9324"
     # local-grapl prefix is reserved for running Grapl locally
     if prefix == "local-grapl":
         s3 = boto3.client(
@@ -80,7 +103,7 @@ def upload_sysmon_logs(
         )
         sqs = boto3.client(
             "sqs",
-            endpoint_url="http://sqs:9324" if use_links else "http://localhost:9324",
+            endpoint_url=local_sqs_endpoint_url,
             region_name="us-east-1",
             aws_access_key_id="dummy_cred_aws_access_key_id",
             aws_secret_access_key="dummy_cred_aws_secret_access_key",
@@ -93,35 +116,48 @@ def upload_sysmon_logs(
         body = b.readlines()
         body = [line for line in body]
 
-    def chunker(seq: List[bytes], size: int) -> List[List[bytes]]:
-        return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
+    def chunker(seq: List[bytes], size: int) -> Iterator[List[bytes]]:
+        return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
-    for chunks in chunker(body, batch_size):
-        c_body = zstd.compress(b"\n".join(chunks).replace(b"\n\n", b"\n"), 4)
+    bucket = f"{prefix}-{generator_options.bucket_suffix}"
+
+    for chunk in chunker(body, batch_size):
+        chunk_body = generator_options.encode_chunk(chunk)
         epoch = int(time.time())
 
         key = (
             str(epoch - (epoch % (24 * 60 * 60)))
-            + "/sysmon/"
+            + f"/{generator_options.key_infix}/"
             + str(epoch)
             + rand_str(3)
         )
-        s3.put_object(
-            Body=c_body, Bucket="{}-sysmon-log-bucket".format(prefix), Key=key
-        )
+        s3.put_object(Body=chunk_body, Bucket=bucket, Key=key)
 
         # local-grapl relies on manual eventing
         if sqs:
-            endpoint_url = (
-                "http://sqs:9324" if use_links else "http://localhost:9324",
-            )
             sqs.send_message(
-                QueueUrl=f"{endpoint_url}/queue/grapl-sysmon-graph-generator-queue",
-                MessageBody=into_sqs_message(
-                    bucket="{}-sysmon-log-bucket".format(prefix), key=key
-                ),
+                QueueUrl=f"{local_sqs_endpoint_url}/queue/{generator_options.queue_name}",
+                MessageBody=into_sqs_message(bucket=bucket, key=key),
             )
 
         time.sleep(delay)
 
     print(f"Completed uploading at {time.ctime()}")
+
+
+def upload_sysmon_logs(
+    prefix: str,
+    logfile: str,
+    delay: int = 0,
+    batch_size: int = 100,
+    use_links: bool = False,
+) -> None:
+
+    upload_logs(
+        prefix=prefix,
+        logfile=logfile,
+        generator_options=SysmonGeneratorOptions(),
+        delay=delay,
+        batch_size=batch_size,
+        use_links=use_links,
+    )

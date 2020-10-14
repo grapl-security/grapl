@@ -2,6 +2,7 @@ from unittest import TestCase
 from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.wait import WaitForCondition, WaitForResource, wait_for
+from grapl_analyzerlib.retry import retry
 from typing import Any, Optional, Callable
 import inspect
 
@@ -42,6 +43,7 @@ class WaitForLens(WaitForResource):
         self.dgraph_client = dgraph_client
         self.query = query
 
+    @retry()
     def acquire(self) -> Optional[Any]:
         result = self.query.query_first(self.dgraph_client)
         return result
