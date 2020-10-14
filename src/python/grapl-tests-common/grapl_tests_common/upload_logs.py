@@ -55,6 +55,7 @@ def into_sqs_message(bucket: str, key: str) -> str:
         }
     )
 
+
 @dataclass
 class GeneratorOptions:
     bucket_suffix: str
@@ -77,6 +78,7 @@ def upload_logs(
         f"Writing events to {prefix} with {delay} seconds between batches of {batch_size}"
     )
     sqs = None
+    local_sqs_endpoint_url = "http://sqs:9324" if use_links else "http://localhost:9324"
     # local-grapl prefix is reserved for running Grapl locally
     if prefix == "local-grapl":
         s3 = boto3.client(
@@ -88,7 +90,7 @@ def upload_logs(
         )
         sqs = boto3.client(
             "sqs",
-            endpoint_url="http://sqs:9324" if use_links else "http://localhost:9324",
+            endpoint_url=local_sqs_endpoint_url,
             region_name="us-east-1",
             aws_access_key_id="dummy_cred_aws_access_key_id",
             aws_secret_access_key="dummy_cred_aws_secret_access_key",
@@ -104,6 +106,8 @@ def upload_logs(
     def chunker(seq: List[bytes], size: int) -> List[List[bytes]]:
         return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
+    bucket = f"{prefix}-{generator_options.bucket_suffix}"
+
     for chunks in chunker(body, batch_size):
         c_body = zstd.compress(b"\n".join(chunks).replace(b"\n\n", b"\n"), 4)
         epoch = int(time.time())
@@ -114,27 +118,19 @@ def upload_logs(
             + str(epoch)
             + rand_str(3)
         )
-        bucket = f"{prefix}-{generator_options.bucket_suffix}"
-        s3.put_object(
-            body=c_body, bucket=bucket, Key=key
-        )
+        s3.put_object(Body=c_body, Bucket=bucket, Key=key)
 
         # local-grapl relies on manual eventing
         if sqs:
-            endpoint_url = (
-                "http://sqs:9324" if use_links else "http://localhost:9324",
-            )
             sqs.send_message(
-                QueueUrl=f"{endpoint_url}/queue/{generator_options.queue_name}",
-                MessageBody=into_sqs_message(
-                    bucket=bucket,
-                    key=key
-                ),
+                QueueUrl=f"{local_sqs_endpoint_url}/queue/{generator_options.queue_name}",
+                MessageBody=into_sqs_message(bucket=bucket, key=key),
             )
 
         time.sleep(delay)
 
     print(f"Completed uploading at {time.ctime()}")
+
 
 def upload_sysmon_logs(
     prefix: str,
@@ -154,5 +150,5 @@ def upload_sysmon_logs(
         generator_options=generator_options,
         delay=delay,
         batch_size=batch_size,
-        use_links=use_links
+        use_links=use_links,
     )
