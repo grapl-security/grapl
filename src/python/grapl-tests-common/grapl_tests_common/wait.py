@@ -1,11 +1,11 @@
-from time import sleep
 from datetime import datetime, timezone, timedelta
-import logging
-import boto3
-import botocore
-from typing import Any, Set, Sequence, Optional, Dict, Mapping
-from typing_extensions import Protocol
 from itertools import cycle
+from time import sleep
+from typing_extensions import Protocol
+from typing import Any, Sequence, Optional, Dict, Mapping, Callable
+import botocore  # type: ignore
+import inspect
+import logging
 
 
 class WaitForResource(Protocol):
@@ -46,8 +46,27 @@ class WaitForSqsQueue(WaitForResource):
         return f"WaitForSqsQueue({self.queue_name})"
 
 
+class WaitForCondition(WaitForResource):
+    """ just something nice n generic """
+
+    def __init__(self, fn: Callable[[], Optional[bool]]) -> None:
+        self.fn = fn
+
+    def acquire(self) -> Optional[Any]:
+        result = self.fn()
+        if result:
+            return self  # just anything non-None
+        else:
+            return None
+
+    def __str__(self) -> str:
+        return f"WaitForCondition({inspect.getsource(self.fn)})"
+
+
 def wait_for(
-    resources: Sequence[WaitForResource], timeout_secs=30
+    resources: Sequence[WaitForResource],
+    timeout_secs: int = 30,
+    sleep_secs: int = 5,
 ) -> Mapping[WaitForResource, Any]:
     completed: Dict[WaitForResource, Any] = {}
 
@@ -67,12 +86,13 @@ def wait_for(
             continue
 
         secs_remaining = int((timeout_after - now).total_seconds())
+        # print an update every 5 secs
         logging.info(f"Waiting for resource ({secs_remaining} secs remain): {resource}")
 
         result = resource.acquire()
         if result is not None:
             completed[resource] = result
         else:
-            sleep(1)
+            sleep(sleep_secs)
 
     return completed
