@@ -1,6 +1,6 @@
 from typing_extensions import Protocol
 from grapl_tests_common.types import S3ServiceResource
-from grapl_tests_common.upload_sysmon_logs import upload_sysmon_logs
+from grapl_tests_common.upload_logs import upload_sysmon_logs
 import logging
 import subprocess
 
