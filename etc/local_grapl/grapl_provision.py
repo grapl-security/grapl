@@ -210,6 +210,7 @@ BUCKET_PREFIX = "local-grapl"
 
 services = (
     "sysmon-graph-generator",
+    "osquery-graph-generator",
     "generic-graph-generator",
     "node-identifier",
     "graph-merger",
@@ -220,6 +221,7 @@ services = (
 
 buckets = (
     BUCKET_PREFIX + "-sysmon-log-bucket",
+    BUCKET_PREFIX + "-osquery-log-bucket",
     BUCKET_PREFIX + "-unid-subgraphs-generated-bucket",
     BUCKET_PREFIX + "-subgraphs-generated-bucket",
     BUCKET_PREFIX + "-subgraphs-merged-bucket",

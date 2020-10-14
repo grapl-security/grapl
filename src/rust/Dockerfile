@@ -126,6 +126,7 @@ RUN rm -rf target/*/*/.fingerprint/grapl-observe*
 RUN rm -rf target/*/*/.fingerprint/metric-forwarder*
 RUN rm -rf target/*/*/.fingerprint/node-identifier*
 RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
+RUN rm -rf target/*/*/.fingerprint/osquery-subgraph-generator*
 # copy in the sources
 COPY --chown=grapl ./analyzer-dispatcher analyzer-dispatcher
 COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
@@ -137,8 +138,8 @@ COPY --chown=grapl ./metric-forwarder metric-forwarder
 COPY --chown=grapl ./node-identifier node-identifier
 COPY --chown=grapl ./generators/graph-generator-lib generators/graph-generator-lib
 COPY --chown=grapl ./generators/generic-subgraph-generator generators/generic-subgraph-generator
-COPY --chown=grapl ./generators/osquery-subgraph-generator generators/osquery-subgraph-generator
 COPY --chown=grapl ./generators/sysmon-subgraph-generator generators/sysmon-subgraph-generator
+COPY --chown=grapl ./generators/osquery-subgraph-generator generators/osquery-subgraph-generator
 # copy in the top-level Cargo.toml and Cargo.lock
 COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
@@ -160,4 +161,5 @@ RUN mkdir -p /home/grapl/dist && \
     cp target/x86_64-unknown-linux-musl/${release_target}/metric-forwarder dist/metric-forwarder && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier dist/node-identifier && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler dist/node-identifier-retry-handler && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator \
+    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator && \
+    cp target/x86_64-unknown-linux-musl/${release_target}/osquery-subgraph-generator dist/osquery-subgraph-generator \

@@ -111,6 +111,18 @@ image=sysmon-subgraph-generator:
   depends:
     - rust-build
 
+image=osquery-subgraph-generator:
+  image: grapl/grapl-osquery-subgraph-generator
+  context: src/rust/generators/osquery-subgraph-generator
+  dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
+  target: grapl-osquery-subgraph-generator
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
 # python images
 
 image=python-build:
@@ -411,6 +423,7 @@ compose=integration-env:
     - node-identifier
     - node-identifier-retry-handler
     - sysmon-subgraph-generator
+    - osquery-subgraph-generator
     # python images
     - analyzer-deployer
     - analyzer-executor
@@ -648,6 +661,7 @@ alias=rust:
     - "node-identifier:tag"
     - "node-identifier-retry-handler:tag"
     - "sysmon-subgraph-generator:tag"
+    - "osquery-subgraph-generator:tag"
   annotations:
     description: "Build artifacts and images for rust services"
 

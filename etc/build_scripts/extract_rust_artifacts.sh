@@ -3,6 +3,7 @@ set -u
 
 services=(
     "sysmon-subgraph-generator"
+    "osquery-subgraph-generator"
     "generic-subgraph-generator"
     "node-identifier"
     "node-identifier-retry-handler"
