@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import Callable, List, Iterator, cast
 import boto3  # type: ignore
 import json
 import random
@@ -59,6 +59,22 @@ class GeneratorOptions:
     queue_name: str
     key_infix: str
 
+    def encode_chunk(self, input: List[bytes]) -> bytes:
+        raise NotImplementedError()
+
+
+class SysmonGeneratorOptions(GeneratorOptions):
+    def __init__(self) -> None:
+        super().__init__(
+            queue_name="grapl-sysmon-graph-generator-queue",
+            bucket_suffix="sysmon-log-bucket",
+            key_infix="sysmon",
+        )
+
+    def encode_chunk(self, input: List[bytes]) -> bytes:
+        # zstd encoded line delineated xml
+        return cast(bytes, zstd.compress(b"\n".join(input).replace(b"\n\n", b"\n"), 4))
+
 
 def upload_logs(
     prefix: str,
@@ -100,13 +116,13 @@ def upload_logs(
         body = b.readlines()
         body = [line for line in body]
 
-    def chunker(seq: List[bytes], size: int) -> List[List[bytes]]:
-        return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
+    def chunker(seq: List[bytes], size: int) -> Iterator[List[bytes]]:
+        return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
     bucket = f"{prefix}-{generator_options.bucket_suffix}"
 
-    for chunks in chunker(body, batch_size):
-        c_body = zstd.compress(b"\n".join(chunks).replace(b"\n\n", b"\n"), 4)
+    for chunk in chunker(body, batch_size):
+        chunk_body = generator_options.encode_chunk(chunk)
         epoch = int(time.time())
 
         key = (
@@ -115,7 +131,7 @@ def upload_logs(
             + str(epoch)
             + rand_str(3)
         )
-        s3.put_object(Body=c_body, Bucket=bucket, Key=key)
+        s3.put_object(Body=chunk_body, Bucket=bucket, Key=key)
 
         # local-grapl relies on manual eventing
         if sqs:
@@ -136,15 +152,11 @@ def upload_sysmon_logs(
     batch_size: int = 100,
     use_links: bool = False,
 ) -> None:
-    generator_options = GeneratorOptions(
-        queue_name="grapl-sysmon-graph-generator-queue",
-        bucket_suffix="sysmon-log-bucket",
-        key_infix="sysmon",
-    )
+
     upload_logs(
         prefix=prefix,
         logfile=logfile,
-        generator_options=generator_options,
+        generator_options=SysmonGeneratorOptions(),
         delay=delay,
         batch_size=batch_size,
         use_links=use_links,
