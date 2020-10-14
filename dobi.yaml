@@ -452,20 +452,6 @@ job=build-rust:
   working-dir: /grapl
   env: 
     - RELEASE_TARGET={env.GRAPL_RELEASE_TARGET:debug}
-  command: bash -c '
-    if test "${RELEASE_TARGET}" = "release"; then
-      cargo build --target=x86_64-unknown-linux-musl --release; 
-    elif test "${RELEASE_TARGET}" = "debug"; then
-      cargo build --target=x86_64-unknown-linux-musl; 
-    fi &&
-    cd target/x86_64-unknown-linux-musl/${RELEASE_TARGET} &&
-    cp analyzer-dispatcher /home/grapl/dist/ &&
-    cp generic-subgraph-generator /home/grapl/dist/ &&
-    cp graph-merger /home/grapl/dist/ &&
-    cp metric-forwarder /home/grapl/dist/ &&
-    cp node-identifier /home/grapl/dist/ &&
-    cp node-identifier-retry-handler /home/grapl/dist/ &&
-    cp sysmon-subgraph-generator /home/grapl/dist/'
   mounts:
     - dist
     - rust-src
@@ -502,21 +488,7 @@ job=build-rust-clean:
   working-dir: /grapl
   env: 
     - RELEASE_TARGET={env.GRAPL_RELEASE_TARGET:debug}
-  command: bash -c '
-    cargo clean &&
-    if test "${RELEASE_TARGET}" = "release"; then
-      cargo build --target=x86_64-unknown-linux-musl --release; 
-    elif test "${RELEASE_TARGET}" = "debug"; then
-      cargo build --target=x86_64-unknown-linux-musl; 
-    fi &&
-    cd target/x86_64-unknown-linux-musl/${RELEASE_TARGET} &&
-    cp analyzer-dispatcher /home/grapl/dist/ &&
-    cp generic-subgraph-generator /home/grapl/dist/ &&
-    cp graph-merger /home/grapl/dist/ &&
-    cp metric-forwarder /home/grapl/dist/ &&
-    cp node-identifier /home/grapl/dist/ &&
-    cp node-identifier-retry-handler /home/grapl/dist/ &&
-    cp sysmon-subgraph-generator /home/grapl/dist/'
+    - CARGO_CLEAN=y # can be any value to enable
   mounts:
     - dist
     - rust-src
