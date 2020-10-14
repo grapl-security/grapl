@@ -138,13 +138,26 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 # ami-0010d386b82bc06f0 -> Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
 EC2_INSTANCE_TYPE=i3.xlarge
 EC2_AMI=ami-0010d386b82bc06f0
-alias dm='/usr/local/bin/docker-machine create --driver "amazonec2" --amazonec2-private-address-only --amazonec2-vpc-id "$SWARM_VPC_ID" --amazonec2-security-group "$SWARM_SECURITY_GROUP" --amazonec2-keypair-name "$KEYPAIR_NAME" --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" --amazonec2-subnet-id "$SWARM_SUBNET_ID" --amazonec2-instance-type "$EC2_INSTANCE_TYPE" --amazonec2-region "$AWS_DEFAULT_REGION" --amazonec2-ami "$EC2_AMI" --amazonec2-ssh-user ubuntu --amazonec2-tags "grapl-dgraph,$GRAPL_DEPLOYMENT"'
+alias dm-create='
+  /usr/local/bin/docker-machine create \
+  --driver "amazonec2" \
+  --amazonec2-private-address-only \
+  --amazonec2-vpc-id "$SWARM_VPC_ID" \
+  --amazonec2-security-group "$SWARM_SECURITY_GROUP" \
+  --amazonec2-keypair-name "$KEYPAIR_NAME" \
+  --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" \
+  --amazonec2-subnet-id "$SWARM_SUBNET_ID" \
+  --amazonec2-instance-type "$EC2_INSTANCE_TYPE" \
+  --amazonec2-region "$AWS_DEFAULT_REGION" \
+  --amazonec2-ami "$EC2_AMI" \
+  --amazonec2-ssh-user ubuntu \
+  --amazonec2-tags "grapl-dgraph,$GRAPL_DEPLOYMENT"'
 export AWS01_NAME=${GRAPL_DEPLOYMENT}-aws01
 export AWS02_NAME=${GRAPL_DEPLOYMENT}-aws02
 export AWS03_NAME=${GRAPL_DEPLOYMENT}-aws03
-dm "$AWS01_NAME"
-dm "$AWS02_NAME"
-dm "$AWS03_NAME"
+dm-create "$AWS01_NAME"
+dm-create "$AWS02_NAME"
+dm-create "$AWS03_NAME"
 
 #
 # refer to the DGraph docs for more details about the rest of the setup
