@@ -1,14 +1,11 @@
-import argparse
+from dataclasses import dataclass
+from datetime import datetime
+from typing import List
+import boto3  # type: ignore
 import json
 import random
 import string
 import time
-from typing import List
-from dataclasses import dataclass
-from datetime import datetime
-
-import boto3  # type: ignore
-
 import zstd  # type: ignore
 
 
