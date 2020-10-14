@@ -4,6 +4,7 @@ import random
 import string
 import time
 from typing import List
+from dataclasses import dataclass
 from datetime import datetime
 
 import boto3  # type: ignore
@@ -54,10 +55,17 @@ def into_sqs_message(bucket: str, key: str) -> str:
         }
     )
 
+@dataclass
+class GeneratorOptions:
+    bucket_suffix: str
+    queue_name: str
+    key_infix: str
 
-def upload_sysmon_logs(
+
+def upload_logs(
     prefix: str,
     logfile: str,
+    generator_options: GeneratorOptions,
     delay: int = 0,
     batch_size: int = 100,
     use_links: bool = False,
@@ -102,12 +110,13 @@ def upload_sysmon_logs(
 
         key = (
             str(epoch - (epoch % (24 * 60 * 60)))
-            + "/sysmon/"
+            + f"/{generator_options.key_infix}/"
             + str(epoch)
             + rand_str(3)
         )
+        bucket = f"{prefix}-{generator_options.bucket_suffix}"
         s3.put_object(
-            Body=c_body, Bucket="{}-sysmon-log-bucket".format(prefix), Key=key
+            body=c_body, bucket=bucket, Key=key
         )
 
         # local-grapl relies on manual eventing
@@ -116,12 +125,34 @@ def upload_sysmon_logs(
                 "http://sqs:9324" if use_links else "http://localhost:9324",
             )
             sqs.send_message(
-                QueueUrl=f"{endpoint_url}/queue/grapl-sysmon-graph-generator-queue",
+                QueueUrl=f"{endpoint_url}/queue/{generator_options.queue_name}",
                 MessageBody=into_sqs_message(
-                    bucket="{}-sysmon-log-bucket".format(prefix), key=key
+                    bucket=bucket,
+                    key=key
                 ),
             )
 
         time.sleep(delay)
 
     print(f"Completed uploading at {time.ctime()}")
+
+def upload_sysmon_logs(
+    prefix: str,
+    logfile: str,
+    delay: int = 0,
+    batch_size: int = 100,
+    use_links: bool = False,
+) -> None:
+    generator_options = GeneratorOptions(
+        queue_name="grapl-sysmon-graph-generator-queue",
+        bucket_suffix="sysmon-log-bucket",
+        key_infix="sysmon",
+    )
+    upload_logs(
+        prefix=prefix,
+        logfile=logfile,
+        generator_options=generator_options,
+        delay=delay,
+        batch_size=batch_size,
+        use_links=use_links
+    )
