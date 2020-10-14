@@ -36,7 +36,7 @@ from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.plugin_retriever import load_plugins
 from pydgraph import DgraphClientStub, DgraphClient
 
-sys.path.append("/tmp/")
+sys.path.insert(0, "/tmp/")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 IS_RETRY = os.environ["IS_RETRY"]
