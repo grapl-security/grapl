@@ -27,7 +27,7 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     )
 
     sys.path.append(str(grapl_tests_common_path))
-    from upload_sysmon_logs import upload_sysmon_logs
+    from upload_logs import upload_sysmon_logs
 
     return upload_sysmon_logs
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         upload_fn(
             args.bucket_prefix,
             args.logfile,
-            args.delay,
-            args.batch_size,
-            args.use_links,
+            delay=args.delay,
+            batch_size=args.batch_size,
+            use_links=args.use_links,
         )
