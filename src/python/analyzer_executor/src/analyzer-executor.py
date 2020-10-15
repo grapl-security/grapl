@@ -36,7 +36,8 @@ from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.plugin_retriever import load_plugins
 from pydgraph import DgraphClientStub, DgraphClient
 
-sys.path.insert(0, "/tmp/")
+MODEL_PLUGINS_DIR = os.environ.get("MODEL_PLUGINS_DIR", "/tmp")
+sys.path.insert(0, MODEL_PLUGINS_DIR)
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 IS_RETRY = os.environ["IS_RETRY"]
@@ -48,7 +49,7 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 try:
-    directory = Path("/tmp/model_plugins/")
+    directory = Path(MODEL_PLUGINS_DIR + "/model_plugins/")
     directory.mkdir(parents=True, exist_ok=True)
 except Exception as e:
     LOGGER.error("Failed to create directory", e)
@@ -308,7 +309,7 @@ def lambda_handler(events: Any, context: Any) -> None:
 
     s3 = get_s3_client()
 
-    load_plugins(os.environ["BUCKET_PREFIX"], s3, os.path.abspath("/tmp/"))
+    load_plugins(os.environ["BUCKET_PREFIX"], s3, os.path.abspath(MODEL_PLUGINS_DIR))
 
     for event in events["Records"]:
         if not IS_LOCAL:
