@@ -11,8 +11,8 @@ import re
 import sys
 import traceback
 from base64 import b64decode
-from enum import Enum
 from hashlib import sha1
+from http import HTTPStatus
 from pathlib import Path
 from typing import TypeVar, Dict, Union, List, Any, Optional
 
@@ -355,13 +355,7 @@ origin_re = re.compile(
 )
 
 
-class StatusCode(int, Enum):
-    OK = 200
-    BAD_REQUEST = 400
-    UNAUTHORIZED = 401
-
-
-def respond(err, res=None, headers=None, status_code: Optional[StatusCode] = None):
+def respond(err, res=None, headers=None, status_code: Optional[HTTPStatus] = None):
     req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding to origin: {req_origin}")
@@ -382,11 +376,11 @@ def respond(err, res=None, headers=None, status_code: Optional[StatusCode] = Non
         # allow_origin = override or ORIGIN
         allow_origin = req_origin
 
-    status_code = status_code or (StatusCode.BAD_REQUEST if err else StatusCode.OK)
+    status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
-        status_code=status_code,
+        status_code=status_code.value,
         headers={
             "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Credentials": "true",
@@ -411,7 +405,7 @@ def requires_auth(path):
 
             if not check_jwt(app.current_request.headers):
                 LOGGER.warning("not logged in")
-                return respond("Must log in", status_code=StatusCode.UNAUTHORIZED)
+                return respond("Must log in", status_code=HTTPStatus.UNAUTHORIZED)
             try:
                 return route_fn()
             except Exception as e:
