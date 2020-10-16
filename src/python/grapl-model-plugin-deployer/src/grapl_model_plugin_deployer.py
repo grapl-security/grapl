@@ -16,10 +16,10 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TypeVar, Dict, Union, List, Any, Optional
 
-import boto3
+import boto3  # type: ignore
 import jwt
-import pydgraph
-from botocore.client import BaseClient
+import pydgraph  # type: ignore
+from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
 from grapl_analyzerlib.node_types import (
@@ -330,7 +330,7 @@ def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
             schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
 
 
-def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
+def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Response]:
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
     plugin_parts = key.split("/")
@@ -346,7 +346,10 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
             + base64.encodebytes((plugin_key.encode("utf8"))).decode(),
         )
     except Exception:
-        LOGGER.error(f"Failed to put_object to s3 {key} {traceback.format_exc()}")
+        msg = f"Failed to put_object to s3 {key}"
+        LOGGER.error(f"{msg} {traceback.format_exc()}")
+        return respond(msg, status_code=HTTPStatus.BAD_REQUEST)
+    return None
 
 
 origin_re = re.compile(
@@ -355,7 +358,7 @@ origin_re = re.compile(
 )
 
 
-def respond(err, res=None, headers=None, status_code: Optional[HTTPStatus] = None):
+def respond(err, res=None, headers=None, status_code: Optional[HTTPStatus] = None) -> Response:
     req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding to origin: {req_origin}")
@@ -437,7 +440,7 @@ def no_auth(path):
     return route_wrapper
 
 
-def upload_plugins(s3_client, plugin_files: Dict[str, str]):
+def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response]:
     plugin_files = {f: c for f, c in plugin_files.items() if not f.endswith(".pyc")}
     raw_schemas = [
         contents
@@ -460,7 +463,10 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     )
 
     for path, file in plugin_files.items():
-        upload_plugin(s3_client, path, file)
+        upload_resp = upload_plugin(s3_client, path, file)
+        if upload_resp:
+            return upload_resp
+    return None
 
 
 @no_auth("/gitWebhook")
@@ -497,7 +503,9 @@ def webhook():
         file_contents = b64decode(path.content).decode()
         plugin_files[path.path] = file_contents
 
-    upload_plugins(get_s3_client(), plugin_files)
+    upload_plugins_resp = upload_plugins(get_s3_client(), plugin_files)
+    if upload_plugins_resp:
+        return upload_plugins_resp
     return respond(None, {})
 
 
@@ -516,7 +524,9 @@ def deploy():
     plugins = request.json_body.get("plugins", {})
 
     LOGGER.info(f"Deploying {request.json_body['plugins'].keys()}")
-    upload_plugins(get_s3_client(), plugins)
+    upload_plugins_resp = upload_plugins(get_s3_client(), plugins)
+    if upload_plugins_resp:
+        return upload_plugins_resp
     LOGGER.info("uploaded plugins")
     return respond(None, {"Success": True})
 
