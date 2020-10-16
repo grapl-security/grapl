@@ -358,7 +358,9 @@ origin_re = re.compile(
 )
 
 
-def respond(err, res=None, headers=None, status_code: Optional[HTTPStatus] = None) -> Response:
+def respond(
+    err, res=None, headers=None, status_code: Optional[HTTPStatus] = None
+) -> Response:
     req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding to origin: {req_origin}")
