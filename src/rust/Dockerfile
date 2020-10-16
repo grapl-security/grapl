@@ -1,156 +1,114 @@
 #
-# The Grapl Rust Dockerfile
-#
-# This file is where we build and create all our Rust images. This
-# is to avoid having to build the project dependencies multiple times
-# (e.g. once for each individual binary). Instead, we build all the
-# Rust code once and then pull out all the binaries into their own
-# images. Additionally, we leverage cargo vendor and docker's cache
-# to minimize the amount of compilation required during local builds.
-#
-# See:
-#  https://benjamincongdon.me/blog/2019/12/04/Fast-Rust-Docker-Builds-with-cargo-vendor/
-#  https://stackoverflow.com/questions/54952867/cache-cargo-dependencies-in-a-docker-volume
-#  https://github.com/rust-lang/cargo/issues/2644#issuecomment-436907777
-#  https://github.com/rust-lang/cargo/issues/2644#issuecomment-460076276
-#
-# TODO: Investigate using BuildKit to simplify this Dockerfile.
-
-#
 # Base image
 #
 
 FROM rust:1-slim-buster AS grapl-rust-base
-RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    apt-utils \
+    musl \
+    musl-dev \
+    musl-tools \
+    protobuf-compiler \
+    libzstd-dev \
+    zip
+
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
-RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
-USER grapl
-ENV USER grapl
-WORKDIR /home/grapl
+
+ARG USERID="1000:1000"
+USER $USERID
+
+WORKDIR /grapl
+
 RUN rustup target add x86_64-unknown-linux-musl
 
 #
-# Dependency build image
+# Build image
 #
 
-FROM grapl-rust-base AS grapl-rust-deps-build
+FROM grapl-rust-base as grapl-rust-build
+
 ARG release_target="debug"
-USER grapl
-ENV USER grapl
-WORKDIR /home/grapl
-# copy in Cargo.toml for analyzer-dispatcher
-RUN mkdir -p analyzer-dispatcher/src
-RUN echo 'fn main() {}' > analyzer-dispatcher/src/main.rs
-COPY --chown=grapl ./analyzer-dispatcher/Cargo.toml analyzer-dispatcher/
-# copy in Cargo.toml for derive-dynamic-node
-RUN mkdir -p derive-dynamic-node/src
-RUN touch derive-dynamic-node/src/lib.rs
-COPY --chown=grapl ./derive-dynamic-node/Cargo.toml derive-dynamic-node/
-# copy in Cargo.toml for generic-subgraph-generator
-RUN mkdir -p generic-subgraph-generator/src
-RUN echo 'fn main() {}' > generic-subgraph-generator/src/main.rs
-COPY --chown=grapl ./generic-subgraph-generator/Cargo.toml generic-subgraph-generator/
-# copy in Cargo.toml for graph-descriptions
-RUN mkdir -p graph-descriptions/src
-RUN touch graph-descriptions/src/lib.rs
-COPY --chown=grapl ./graph-descriptions/Cargo.toml graph-descriptions/
-# copy in Cargo.toml for graph-generator-lib
-RUN mkdir -p graph-generator-lib/src
-RUN touch graph-generator-lib/src/lib.rs
-COPY --chown=grapl ./graph-generator-lib/Cargo.toml graph-generator-lib/
-# copy in Cargo.toml for grapl-config
-RUN mkdir -p grapl-config/src
-RUN touch grapl-config/src/lib.rs
-COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
-# copy in Cargo.toml for grapl-observe
-RUN mkdir -p grapl-observe/src
-RUN touch grapl-observe/src/lib.rs
-COPY --chown=grapl ./grapl-observe/Cargo.toml grapl-observe/
+ARG USERID="1000:1000"
+USER $USERID
 
-# copy in Cargo.toml for metric-forwarder
-RUN mkdir -p metric-forwarder/src
-RUN echo 'fn main() {}' > metric-forwarder/src/main.rs 
-COPY --chown=grapl ./metric-forwarder/Cargo.toml metric-forwarder/
-
-# copy in Cargo.toml for graph-merger
-RUN mkdir -p graph-merger/src
-RUN echo 'fn main() {}' > graph-merger/src/main.rs
-COPY --chown=grapl ./graph-merger/Cargo.toml graph-merger/
-# copy in Cargo.toml for node-identifier
-RUN mkdir -p node-identifier/src/bin
-RUN echo 'fn main() {}' > node-identifier/src/bin/node-identifier.rs
-RUN echo 'fn main() {}' > node-identifier/src/bin/node-identifier-retry-handler.rs
-COPY --chown=grapl ./node-identifier/Cargo.toml node-identifier/
-# copy in Cargo.toml for sysmon-subgraph-generator
-RUN mkdir -p sysmon-subgraph-generator/src
-RUN echo 'fn main() {}' > sysmon-subgraph-generator/src/main.rs
-COPY --chown=grapl ./sysmon-subgraph-generator/Cargo.toml sysmon-subgraph-generator/
-# copy in the top-level Cargo.toml and Cargo.lock
-COPY --chown=grapl Cargo.lock .
-COPY --chown=grapl Cargo.toml .
-# vendor all the deps
-RUN mkdir -p /home/grapl/.cargo
-RUN cargo vendor --versioned-dirs --locked > /home/grapl/.cargo/config
-# debug build of all the deps
-RUN cargo build --target=x86_64-unknown-linux-musl
-
-#
-# Source build image
-#
-
-FROM grapl-rust-base AS grapl-rust-src-build
-ARG release_target="debug"
-USER grapl
-ENV USER grapl
-WORKDIR /home/grapl
-# copy in the .cargo directory from grapl-rust-deps-build
-COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/.cargo .cargo
-# copy in the vendor directory from grapl-rust-deps-build
-COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/vendor vendor
-# copy in the target directory from grapl-rust-deps-build
-COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/target target
-# "invalidate" all the grapl services, we want to rebuild them here
-RUN rm -rf target/*/*/.fingerprint/analyzer-dispatcher*
-RUN rm -rf target/*/*/.fingerprint/derive-dynamic-node*
-RUN rm -rf target/*/*/.fingerprint/generic-subgraph-generator*
-RUN rm -rf target/*/*/.fingerprint/graph-generator-lib*
-RUN rm -rf target/*/*/.fingerprint/graph-merger*
-RUN rm -rf target/*/*/.fingerprint/grapl-config*
-RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
-RUN rm -rf target/*/*/.fingerprint/grapl-observe*
-RUN rm -rf target/*/*/.fingerprint/metric-forwarder*
-RUN rm -rf target/*/*/.fingerprint/node-identifier*
-RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
-# copy in the sources
-COPY --chown=grapl ./analyzer-dispatcher analyzer-dispatcher
-COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
-COPY --chown=grapl ./generic-subgraph-generator generic-subgraph-generator
-COPY --chown=grapl ./graph-descriptions graph-descriptions
-COPY --chown=grapl ./graph-generator-lib graph-generator-lib
-COPY --chown=grapl ./graph-merger graph-merger
-COPY --chown=grapl ./grapl-config grapl-config
-COPY --chown=grapl ./grapl-observe grapl-observe
-COPY --chown=grapl ./metric-forwarder metric-forwarder
-COPY --chown=grapl ./node-identifier node-identifier
-COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator
-# copy in the top-level Cargo.toml and Cargo.lock
-COPY --chown=grapl Cargo.lock .
-COPY --chown=grapl Cargo.toml .
+COPY analyzer-dispatcher analyzer-dispatcher
+COPY derive-dynamic-node derive-dynamic-node
+COPY generic-subgraph-generator generic-subgraph-generator
+COPY graph-descriptions graph-descriptions
+COPY graph-generator-lib graph-generator-lib
+COPY graph-merger graph-merger
+COPY grapl-config grapl-config
+COPY grapl-observe grapl-observe
+COPY metric-forwarder metric-forwarder
+COPY node-identifier node-identifier
+COPY sysmon-subgraph-generator sysmon-subgraph-generator
+COPY Cargo.lock .
+COPY Cargo.toml .
 
 # Now do a clean build
 RUN if test "${release_target}" = "release"; then \
       cargo build --target=x86_64-unknown-linux-musl --release; \
-    fi
-RUN if test "${release_target}" = "debug"; then \
+    elif test "${release_target}" = "debug"; then \
       cargo build --target=x86_64-unknown-linux-musl; \
+    else \
+      echo "ERROR: Unknown build target: ${release_target}"; \
+      exit 1; \
     fi
+
 # copy artifacts to dist mount
-RUN mkdir -p /home/grapl/dist && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/analyzer-dispatcher dist/analyzer-dispatcher && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/generic-subgraph-generator dist/generic-subgraph-generator && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/graph-merger dist/graph-merger && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/metric-forwarder dist/metric-forwarder && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier dist/node-identifier && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler dist/node-identifier-retry-handler && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator \
+CMD bash -c ' \
+    mkdir /tmp/grapl && \
+    cd /tmp/grapl/ && \
+    for service in analyzer-dispatcher \
+             generic-subgraph-generator \
+             graph-merger \
+             metric-forwarder \
+             node-identifier \
+             node-identifier-retry-handler \
+             sysmon-subgraph-generator; do \
+      cp /grapl/target/x86_64-unknown-linux-musl/${release_target}/${service} ./bootstrap && \
+      zip -9 --quiet --display-globaldots /dist/${service}.zip ./bootstrap; \
+    done'
+
+#
+# Distribution images
+#
+
+FROM alpine AS grapl-rust-dist
+RUN apk add --no-cache libgcc
+
+FROM grapl-rust-dist as grapl-analyzer-dispatcher
+ARG release_target="debug"
+COPY --from=grapl-rust-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/analyzer-dispatcher /
+CMD /analyzer-dispatcher
+
+FROM grapl-rust-dist as grapl-generic-subgraph-generator
+ARG release_target="debug"
+COPY --from=grapl-rust-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/generic-subgraph-generator /
+CMD /generic-subgraph-generator
+
+FROM grapl-rust-dist as grapl-graph-merger
+ARG release_target="debug"
+COPY --from=grapl-rust-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/graph-merger /
+CMD /graph-merger
+
+FROM grapl-rust-dist as grapl-metric-forwarder
+ARG release_target="debug"
+COPY --from=grapl-rust-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/metric-forwarder /
+CMD /metric-forwarder
+
+FROM grapl-rust-dist AS grapl-node-identifier
+ARG release_target="debug"
+COPY --from=grapl-rust-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/node-identifier /
+CMD /node-identifier
+
+FROM grapl-rust-dist AS grapl-node-identifier-retry-handler
+ARG release_target="debug"
+COPY --from=grapl-rust-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler /
+CMD /node-identifier-retry-handler
+
+FROM grapl-rust-dist AS grapl-sysmon-subgraph-generator
+ARG release_target="debug"
+COPY --from=grapl-rust-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator /
+CMD /sysmon-subgraph-generator

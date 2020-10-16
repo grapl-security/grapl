@@ -60,6 +60,12 @@ services:
 
   grapl-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-metric-forwarder
+      args:
+        release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+        userid: "${UID}:${GID}"
     tty: false
     environment:
       - "IS_LOCAL=True"
@@ -70,6 +76,12 @@ services:
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-sysmon-subgraph-generator
+      args:
+        release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+        userid: "${UID}:${GID}"
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -89,8 +101,23 @@ services:
       - sqs
       - grapl-provision
 
+  # grapl-generic-subgraph-generator:
+  #   image: grapl/grapl-generic-subgraph-generator:${TAG:-latest}
+  #   build:
+  #     context: src/rust
+  #     target: grapl-generic-subgraph-generator
+  #     args:
+  #       release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+  #       id: "${UID}:${GID}"
+
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-node-identifier
+      args:
+        release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+        userid: "${UID}:${GID}"
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -124,6 +151,12 @@ services:
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-node-identifier-retry-handler
+      args:
+        release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+        userid: "${UID}:${GID}"
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -157,6 +190,12 @@ services:
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-graph-merger
+      args:
+        release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+        userid: "${UID}:${GID}"
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -183,6 +222,12 @@ services:
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-analyzer-dispatcher
+      args:
+        release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+        userid: "${UID}:${GID}"
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -210,7 +255,6 @@ services:
   # Add it back once Analyzer Deployer is ready for prime time!
   # analyzer-deployer:
   #   image: grapl/analyzer-deployer:${TAG:-latest}
-  #   command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8125'
   #   environment:
   #     - "IS_LOCAL=True"
   #     - GRPC_ENABLE_FORK_SUPPORT=1
@@ -227,7 +271,12 @@ services:
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/analyzer-executor.py'
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-analyzer-executor
+      args:
+        userid: "${UID}:${GID}"
     environment:
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
@@ -248,7 +297,12 @@ services:
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-engagement-creator
+      args:
+        userid: "${UID}:${GID}"
     environment:
       - "IS_LOCAL=True"
       - "BUCKET_PREFIX=local-grapl"
@@ -266,7 +320,12 @@ services:
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8900'
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-engagement-edge
+      args:
+        userid: "${UID}:${GID}"
     ports:
       - "8900:8900"
     environment:
@@ -283,7 +342,12 @@ services:
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-model-plugin-deployer
+      args:
+        userid: "${UID}:${GID}"
     ports:
       - "8123:8123"
     environment:
@@ -304,7 +368,12 @@ services:
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8124'
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-dgraph-ttl
+      args:
+        userid: "${UID}:${GID}"
     ports:
       - "8124:8124"
     environment:
@@ -325,6 +394,11 @@ services:
 
   grapl-engagement-view:
     image: grapl/grapl-engagement-view:${TAG:-latest}
+    build:
+      context: src/js/engagement_view
+      target: grapl-engagement-view
+      args:
+        userid: "${UID}:${GID}"
     environment:
       - PORT=1234
     ports:
@@ -332,7 +406,11 @@ services:
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    command: yarn start server
+    build:
+      context: src/js/graphql_endpoint
+      target: grapl-graphql-endpoint
+      args:
+        userid: "${UID}:${GID}"
     environment:
       - MG_ALPHAS=master_graph:9080
       - IS_LOCAL=True
@@ -346,6 +424,9 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
+    build:
+      context: src/python
+      dockerfile: grapl-notebook/Dockerfile
     environment:
       - MG_ALPHAS=master_graph:9080
     links:
@@ -359,12 +440,12 @@ services:
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
-    command: |
-      /bin/sh -c '
-        . venv/bin/activate && 
-        python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
-        python /home/grapl/grapl_local_provision/grapl_provision.py
-      '
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-provision-build
+      args:
+        userid: "${UID}:${GID}"
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - MG_ALPHAS=master_graph:9080

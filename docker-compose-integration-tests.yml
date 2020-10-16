@@ -1,0 +1,57 @@
+version: "3.8"
+services:
+
+  node-identifier-integration-tests:
+    image: grapl/grapl-rust-src-build:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-rust-build
+      args:
+        release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+        userid: "${UID}:${GID}"
+    command: /bin/bash -c 'sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration'
+    environment: 
+      - BUCKET_PREFIX=local-grapl
+      - IS_LOCAL=True
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - RUST_LOG=${RUST_LOG:-ERROR}
+      - SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue
+      - GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue
+      - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
+      - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
+      - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
+      - FILE_HISTORY_TABLE=local-grapl-file_history_table
+      - INBOUND_CONNECTION_HISTORY_TABLE=local-grapl-inbound_connection_history_table
+      - OUTBOUND_CONNECTION_HISTORY_TABLE=local-grapl-outbound_connection_history_table
+      - NETWORK_CONNECTION_HISTORY_TABLE=local-grapl-network_connection_history_table
+      - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
+      - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
+
+  grapl-analyzerlib-integration-tests:
+    image: grapl/grapl-analyzerlib-python-build:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-python-libs
+      args:
+        userid: "${UID}:${GID}"
+    command: /bin/bash -c 'sleep 30 && source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m "integration_test"'
+    environment:
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - BUCKET_PREFIX=local-grapl
+      - IS_LOCAL=True
+      - MG_ALPHAS=grapl-master-graph-db:9080
+
+  analyzer-deployer-integration-tests:
+    image: grapl/analyzer-deployer-build:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: analyzer-deployer-build
+      args:
+        userid: "${UID}:${GID}"
+    command: bash -c 'sleep 30 && source venv/bin/activate && cd analyzer-deployer && py.test -n auto -m "integration_test"'
+    environment: 
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - BUCKET_PREFIX=local-grapl
+      - IS_LOCAL=True

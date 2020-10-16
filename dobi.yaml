@@ -29,87 +29,73 @@ image=rust-build:
 
 image=analyzer-dispatcher:
   image: grapl/grapl-analyzer-dispatcher
-  context: src/rust/analyzer-dispatcher
+  context: src/rust
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-analyzer-dispatcher
   tags:
     - "{env.TAG}"
-  depends:
-    - rust-build
 
 image=metric-forwarder:
   image: grapl/grapl-metric-forwarder
-  context: src/rust/metric-forwarder
+  context: src/rust
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-metric-forwarder
   tags:
     - "{env.TAG}"
-  depends:
-    - rust-build
 
 image=generic-subgraph-generator:
   image: grapl/grapl-generic-subgraph-generator
-  context: src/rust/generic-subgraph-generator
+  context: src/rust
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-generic-subgraph-generator
   tags:
     - "{env.TAG}"
-  depends:
-    - rust-build
 
 image=graph-merger:
   image: grapl/grapl-graph-merger
-  context: src/rust/graph-merger
+  context: src/rust
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-graph-merger
   tags:
     - "{env.TAG}"
-  depends:
-    - rust-build
 
 image=node-identifier:
   image: grapl/grapl-node-identifier
-  context: src/rust/node-identifier
+  context: src/rust
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-node-identifier
   tags:
     - "{env.TAG}"
-  depends:
-    - rust-build
 
 image=node-identifier-retry-handler:
   image: grapl/grapl-node-identifier-retry-handler
-  context: src/rust/node-identifier
+  context: src/rust
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-node-identifier-retry-handler
   tags:
     - "{env.TAG}"
-  depends:
-    - rust-build
 
 image=sysmon-subgraph-generator:
   image: grapl/grapl-sysmon-subgraph-generator
-  context: src/rust/sysmon-subgraph-generator
+  context: src/rust
   dockerfile: Dockerfile
   args:
     release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
   target: grapl-sysmon-subgraph-generator
   tags:
     - "{env.TAG}"
-  depends:
-    - rust-build
 
 # python images
 
@@ -467,7 +453,6 @@ job=run-node-identifier-integration-tests:
     - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
     - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
   depends:
-    - rust-build
     - integration-env
 
 # python jobs
@@ -663,7 +648,6 @@ job=build-grapl-cdk:
 
 alias=rust:
   tasks:
-    - build-rust
     - "analyzer-dispatcher:tag"
     - "generic-subgraph-generator:tag"
     - "graph-merger:tag"

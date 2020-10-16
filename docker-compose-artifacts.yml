@@ -1,0 +1,102 @@
+version: "3.8"
+services:
+
+  rust-artifacts:
+    image: grapl/grapl-rust-build:${TAG:-latest}
+    build:
+      context: src/rust
+      target: grapl-rust-build
+      args:
+        release_target: "${GRAPL_RELEASE_TARGET:-debug}"
+        userid: "${UID}:${GID}"
+    user: ${UID}:${GID}
+    environment: 
+      - release_target=${GRAPL_RELEASE_TARGET:-debug}
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /dist/
+
+  analyzer-deployer:
+    image: grapl/analyzer-deployer:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: analyzer-deployer-build
+      args:
+        userid: "${UID}:${GID}"
+    user: ${UID}:${GID}
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /dist/
+
+  analyzer-executor:
+    image: grapl/analyzer-executor:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: analyzer-executor-build
+      args:
+        userid: "${UID}:${GID}"
+    user: ${UID}:${GID}
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /dist/
+
+  engagement-creator:
+    image: grapl/engagement-creator-build:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: engagement-creator-build
+      args:
+        userid: "${UID}:${GID}"
+    user: ${UID}:${GID}
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /dist/
+
+  engagement-edge:
+    image: grapl/engagement-edge-build:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: engagement-edge-build
+      args:
+        userid: "${UID}:${GID}"
+    user: ${UID}:${GID}
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /dist/
+
+  dgraph-ttl:
+    image: grapl/grapl-dgraph-ttl:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-dgraph-ttl-build
+      args:
+        userid: "${UID}:${GID}"
+    user: ${UID}:${GID}
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /dist/
+
+  model-plugin-deployer:
+    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: python/Dockerfile
+      target: grapl-model-plugin-deployer-build
+      args:
+        userid: "${UID}:${GID}"
+    user: ${UID}:${GID}
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /dist/
