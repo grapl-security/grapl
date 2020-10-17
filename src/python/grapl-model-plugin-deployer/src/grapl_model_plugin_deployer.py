@@ -337,6 +337,17 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
     plugin_name = plugin_parts[0]
     plugin_key = "/".join(plugin_parts[1:])
 
+    if not (plugin_name and plugin_key):
+        # if we upload a dir that looks like
+        # model_plugins/
+        #   __init__.py
+        #   grapl_aws_model_plugin/
+        #     ...lots of files...
+        # we want to skip uploading the initial __init__.py, since we can't figure out what
+        # plugin_name it would belong to.
+        LOGGER.info(f"Skipping uploading key {key}")
+        return None
+
     try:
         s3_client.put_object(
             Body=contents,
@@ -348,7 +359,7 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
     except Exception:
         msg = f"Failed to put_object to s3 {key}"
         LOGGER.error(f"{msg} {traceback.format_exc()}")
-        return respond(msg, status_code=HTTPStatus.BAD_REQUEST)
+        return respond(msg)
     return None
 
 
