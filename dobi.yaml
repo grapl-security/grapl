@@ -519,13 +519,26 @@ job=run-e2e-integration-tests-typecheck:
 
 job=run-analyzer-deployer-typecheck:
   use: analyzer-deployer-build
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
   command: | 
     /bin/bash -c "
       source venv/bin/activate &&
-      touch venv/lib/python3.7/site-packages/chalice/py.typed &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
       cd analyzer-deployer &&
+      pip install mypy &&
+      mypy .
+      "
+
+job=run-model-plugin-deployer-typecheck:
+  use: model-plugin-deployer-build
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
+  command: | 
+    /bin/bash -c "
+      source venv/bin/activate &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      cd model-plugin-deployer &&
       pip install mypy &&
       mypy .
       "
@@ -805,10 +818,11 @@ alias=integration-tests:
 alias=python-typecheck:
   tasks:
     # TODO: Add more and more here!
-    - run-analyzer-deployer-typecheck
-    - run-engagement-creator-typecheck
     - run-grapl-common-typecheck
     - run-grapl-tests-common-typecheck
+    - run-analyzer-deployer-typecheck
     - run-e2e-integration-tests-typecheck
+    - run-engagement-creator-typecheck
+    - run-model-plugin-deployer-typecheck
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"

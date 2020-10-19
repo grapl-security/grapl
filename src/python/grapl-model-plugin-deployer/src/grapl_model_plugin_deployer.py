@@ -12,13 +12,14 @@ import sys
 import traceback
 from base64 import b64decode
 from hashlib import sha1
+from http import HTTPStatus
 from pathlib import Path
-from typing import TypeVar, Dict, Union, List, Any
+from typing import TypeVar, Dict, Union, List, Any, Optional
 
-import boto3
+import boto3  # type: ignore
 import jwt
-import pydgraph
-from botocore.client import BaseClient
+import pydgraph  # type: ignore
+from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
 from grapl_analyzerlib.node_types import (
@@ -329,12 +330,23 @@ def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
             schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
 
 
-def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
+def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Response]:
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
     plugin_parts = key.split("/")
     plugin_name = plugin_parts[0]
     plugin_key = "/".join(plugin_parts[1:])
+
+    if not (plugin_name and plugin_key):
+        # if we upload a dir that looks like
+        # model_plugins/
+        #   __init__.py
+        #   grapl_aws_model_plugin/
+        #     ...lots of files...
+        # we want to skip uploading the initial __init__.py, since we can't figure out what
+        # plugin_name it would belong to.
+        LOGGER.info(f"Skipping uploading key {key}")
+        return None
 
     try:
         s3_client.put_object(
@@ -345,7 +357,10 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
             + base64.encodebytes((plugin_key.encode("utf8"))).decode(),
         )
     except Exception:
-        LOGGER.error(f"Failed to put_object to s3 {key} {traceback.format_exc()}")
+        msg = f"Failed to put_object to s3 {key}"
+        LOGGER.error(f"{msg} {traceback.format_exc()}")
+        return respond(msg)
+    return None
 
 
 origin_re = re.compile(
@@ -354,7 +369,9 @@ origin_re = re.compile(
 )
 
 
-def respond(err, res=None, headers=None):
+def respond(
+    err, res=None, headers=None, status_code: Optional[HTTPStatus] = None
+) -> Response:
     req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding to origin: {req_origin}")
@@ -375,9 +392,11 @@ def respond(err, res=None, headers=None):
         # allow_origin = override or ORIGIN
         allow_origin = req_origin
 
+    status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
+
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
-        status_code=400 if err else 200,
+        status_code=status_code.value,
         headers={
             "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Credentials": "true",
@@ -402,7 +421,7 @@ def requires_auth(path):
 
             if not check_jwt(app.current_request.headers):
                 LOGGER.warning("not logged in")
-                return respond("Must log in")
+                return respond("Must log in", status_code=HTTPStatus.UNAUTHORIZED)
             try:
                 return route_fn()
             except Exception as e:
@@ -434,7 +453,7 @@ def no_auth(path):
     return route_wrapper
 
 
-def upload_plugins(s3_client, plugin_files: Dict[str, str]):
+def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response]:
     plugin_files = {f: c for f, c in plugin_files.items() if not f.endswith(".pyc")}
     raw_schemas = [
         contents
@@ -457,7 +476,10 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
     )
 
     for path, file in plugin_files.items():
-        upload_plugin(s3_client, path, file)
+        upload_resp = upload_plugin(s3_client, path, file)
+        if upload_resp:
+            return upload_resp
+    return None
 
 
 @no_auth("/gitWebhook")
@@ -494,7 +516,9 @@ def webhook():
         file_contents = b64decode(path.content).decode()
         plugin_files[path.path] = file_contents
 
-    upload_plugins(get_s3_client(), plugin_files)
+    upload_plugins_resp = upload_plugins(get_s3_client(), plugin_files)
+    if upload_plugins_resp:
+        return upload_plugins_resp
     return respond(None, {})
 
 
@@ -513,7 +537,9 @@ def deploy():
     plugins = request.json_body.get("plugins", {})
 
     LOGGER.info(f"Deploying {request.json_body['plugins'].keys()}")
-    upload_plugins(get_s3_client(), plugins)
+    upload_plugins_resp = upload_plugins(get_s3_client(), plugins)
+    if upload_plugins_resp:
+        return upload_plugins_resp
     LOGGER.info("uploaded plugins")
     return respond(None, {"Success": True})
 
