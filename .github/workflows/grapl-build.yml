@@ -110,6 +110,7 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration-tests
 
+
   # In the future, this should probably be merged back into `dobi integration-tests`, but
   # since it's so timing-dependent I'm going to treat it separately until it stabilizes a bit.
   end-to-end-integration-tests:
@@ -130,3 +131,19 @@ jobs:
       - name: Run end-to-end integration tests
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
+            
+      # always() allows this to run even if 'run tests' failed
+      - name: 'Collect e2e test logs'
+        if: ${{ always() }}
+        run: |
+          ./etc/ci_scripts/dump_compose_logs.py --compose-project "grapl-integration-tests"
+
+      # always() allows this to run even if 'run integration tests' failed
+      - name: 'Upload e2e test logs'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: e2e-test-logs
+          # this path is specified in dump_compose_logs.py
+          path: /tmp/log_artifacts/
+          retention-days: 7
