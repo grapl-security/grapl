@@ -128,6 +128,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: 'Debug: what py3 version'
+        if: ${{ always() }}
+        run: |
+          python3 -V
 
       - name: Prepare Github Actions CI
         run: |
@@ -146,6 +150,7 @@ jobs:
       - name: 'Collect e2e test logs'
         if: ${{ always() }}
         run: |
+          python3 -V &&
           python3 ./etc/ci_scripts/dump_compose_logs.py --compose-project "grapl-integration-tests"
            
       - name: 'Upload e2e test logs'

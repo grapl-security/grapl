@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 from typing import Any, List
 from pathlib import Path
 import os
@@ -7,7 +5,7 @@ import subprocess
 import sys
 
 # need minimum 3.7 for capture_output=True
-assert sys.version_info >= (3, 7)
+assert sys.version_info >= (3, 7), f"Expected version info to be gt, but was {sys.version_info}"
 
 
 def _name_of_all_containers(compose_project: str) -> List[str]:
