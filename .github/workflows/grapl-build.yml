@@ -127,6 +127,12 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+       
+      # NOTE: This requires >= py37
+      - name: 'Collect e2e test logs'
+        if: ${{ always() }}
+        run: |
+          python3.7 ./etc/ci_scripts/dump_compose_logs.py --compose-project "grapl-integration-tests"
 
       - name: Prepare Github Actions CI
         run: |
@@ -140,13 +146,7 @@ jobs:
       - name: Run end-to-end integration tests
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
-            
-      # NOTE: This requires >= py37
-      - name: 'Collect e2e test logs'
-        if: ${{ always() }}
-        run: |
-          python ./etc/ci_scripts/dump_compose_logs.py --compose-project "grapl-integration-tests"
-
+           
       - name: 'Upload e2e test logs'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
