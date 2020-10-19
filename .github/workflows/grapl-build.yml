@@ -101,6 +101,12 @@ jobs:
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
 
+      - name: System stats before
+        run: |
+          docker system df
+          docker image ls
+          df -h
+
       - name: Build Grapl
         run: |
                 COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG USERID=$(id -u):$(id -g) docker-compose build --force-rm --compress --parallel --progress plain
@@ -110,7 +116,7 @@ jobs:
           COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG USERID=$(id -u):$(id -g) docker-compose up -d
           COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG USERID=$(id -u):$(id -g) docker-compose -f docker-compose-integration-tests.yml up
 
-      - name: System stats
+      - name: System stats after
         run: |
           docker system df
           docker image ls
