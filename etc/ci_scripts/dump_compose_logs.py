@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 from typing import Any, List
-from tempfile import TemporaryDirectory
 from pathlib import Path
 import os
 import subprocess
