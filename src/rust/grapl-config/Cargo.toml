@@ -11,9 +11,9 @@ license = "Apache-2.0"
 log = "0.4.*"
 sqs-lambda = "0.20.*"
 
-rusoto_s3 = { version="0.43.0", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.43.0", default_features = false, features=["rustls"] }
-rusoto_sqs = { version="0.43.0", default_features = false, features=["rustls"] }
+rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
+rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
+rusoto_sqs = { version="0.45.0", default_features = false, features=["rustls"] }
 
 tracing = "0.1.15"
 tracing-subscriber = "0.2.5"
