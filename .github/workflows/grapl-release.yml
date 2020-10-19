@@ -12,10 +12,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Run unit tests
         run: |
@@ -28,10 +28,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Run integration tests
         run: |
@@ -112,10 +112,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
       
       - name: Determine release channel
         run: |
@@ -242,10 +242,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Determine release channel
         run: |
@@ -257,11 +257,15 @@ jobs:
           fi
           echo "::set-env name=CHANNEL::$CHANNEL"
 
-      - name: Build Python services
+      - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount python
+          echo "::set-env name=TAG::$VERSION-$CHANNEL"
+
+      - name: Build Python services
+        run: |
+          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount python
 
       - name: Log in to Docker registry
         run: |
@@ -276,20 +280,20 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          cp dist/analyzer-executor/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
-          echo "::set-output name=analyzer-executor::analyzer-executor-$VERSION-$CHANNEL.zip"
+          cp dist/analyzer-executor/lambda.zip analyzer-executor-$TAG.zip
+          echo "::set-output name=analyzer-executor::analyzer-executor-$TAG.zip"
 
-          cp dist/engagement-creator/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
-          echo "::set-output name=engagement-creator::engagement-creator-$VERSION-$CHANNEL.zip"
+          cp dist/engagement-creator/lambda.zip engagement-creator-$TAG.zip
+          echo "::set-output name=engagement-creator::engagement-creator-$TAG.zip"
 
-          cp dist/engagement-edge/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
-          echo "::set-output name=engagement-edge::engagement-edge-$VERSION-$CHANNEL.zip"
+          cp dist/engagement-edge/lambda.zip engagement-edge-$TAG.zip
+          echo "::set-output name=engagement-edge::engagement-edge-$TAG.zip"
 
-          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
-          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$VERSION-$CHANNEL.zip"
+          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$TAG.zip
+          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$TAG.zip"
 
-          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$VERSION-$CHANNEL.zip
-          echo "::set-output name=dgraph-ttl::dgraph-ttl-$VERSION-$CHANNEL.zip"
+          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$TAG.zip
+          echo "::set-output name=dgraph-ttl::dgraph-ttl-$TAG.zip"
 
       - name: Upload analyzer-executor to Github
         uses: actions/upload-release-asset@v1
@@ -400,7 +404,7 @@ jobs:
       - name: Prepare grapl-common dist
         run: |
           docker create -ti --name grapl-common grapl/grapl-common-python-build:latest
-          docker cp grapl-common:/home/grapl/grapl-common/dist .
+          docker cp grapl-common:/home/grapl/grapl_common/dist .
           docker rm -f grapl-common
 
       - name: Upload grapl-common to Test PyPI
@@ -422,6 +426,31 @@ jobs:
         run: |
           rm -rf dist
 
+      - name: Prepare grapl-tests-common dist
+        run: |
+          docker create -ti --name grapl-tests-common grapl/grapl-tests-common-python-build:latest
+          docker cp grapl-tests-common:/home/grapl/grapl-tests-common/dist .
+          docker rm -f grapl-tests-common
+
+      - name: Upload grapl-tests-common to Test PyPI
+        if: env.CHANNEL == 'beta'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Upload grapl-tests-common to PyPI
+        if: env.CHANNEL == 'latest'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
+
+      - name: Clean up grapl-tests-common dist
+        run: |
+          rm -rf dist
+
 
 
   release-js-services:
@@ -432,10 +461,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Determine release channel
         run: |
