@@ -103,12 +103,12 @@ jobs:
 
       - name: Build Grapl
         run: |
-          COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG UID=$(id -u) GID=$(id -g) docker-compose build --force-rm --compress --parallel --progress plain
+                COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG USERID=$(id -u):$(id -g) docker-compose build --force-rm --compress --parallel --progress plain
 
       - name: Run integration tests
         run: |
-          COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG UID=$(id -u) GID=$(id -g) docker-compose up -d
-          COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG UID=$(id -u) GID=$(id -g) docker-compose -f docker-compose-integration-tests.yml up
+          COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG USERID=$(id -u):$(id -g) docker-compose up -d
+          COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 TAG=latest GRAPL_LOG_LEVEL=DEBUG USERID=$(id -u):$(id -g) docker-compose -f docker-compose-integration-tests.yml up
 
       - name: System stats
         run: |

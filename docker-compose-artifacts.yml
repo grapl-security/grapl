@@ -8,8 +8,8 @@ services:
       target: grapl-rust-build
       args:
         release_target: "${GRAPL_RELEASE_TARGET:-debug}"
-        userid: "${UID}:${GID}"
-    user: ${UID}:${GID}
+        userid: "${USERID}"
+    user: "${USERID}"
     environment: 
       - release_target=${GRAPL_RELEASE_TARGET:-debug}
     volumes:
@@ -24,8 +24,8 @@ services:
       dockerfile: python/Dockerfile
       target: analyzer-deployer-build
       args:
-        userid: "${UID}:${GID}"
-    user: ${UID}:${GID}
+        userid: "${USERID}"
+    user: "${USERID}"
     volumes:
       - type: bind
         source: ./src/js/grapl-cdk/zips
@@ -38,8 +38,8 @@ services:
       dockerfile: python/Dockerfile
       target: analyzer-executor-build
       args:
-        userid: "${UID}:${GID}"
-    user: ${UID}:${GID}
+        userid: "${USERID}"
+    user: "${USERID}"
     volumes:
       - type: bind
         source: ./src/js/grapl-cdk/zips
@@ -52,8 +52,8 @@ services:
       dockerfile: python/Dockerfile
       target: engagement-creator-build
       args:
-        userid: "${UID}:${GID}"
-    user: ${UID}:${GID}
+        userid: "${USERID}"
+    user: "${USERID}"
     volumes:
       - type: bind
         source: ./src/js/grapl-cdk/zips
@@ -66,8 +66,8 @@ services:
       dockerfile: python/Dockerfile
       target: engagement-edge-build
       args:
-        userid: "${UID}:${GID}"
-    user: ${UID}:${GID}
+        userid: "${USERID}"
+    user: "${USERID}"
     volumes:
       - type: bind
         source: ./src/js/grapl-cdk/zips
@@ -80,8 +80,8 @@ services:
       dockerfile: python/Dockerfile
       target: grapl-dgraph-ttl-build
       args:
-        userid: "${UID}:${GID}"
-    user: ${UID}:${GID}
+        userid: "${USERID}"
+    user: "${USERID}"
     volumes:
       - type: bind
         source: ./src/js/grapl-cdk/zips
@@ -94,8 +94,8 @@ services:
       dockerfile: python/Dockerfile
       target: grapl-model-plugin-deployer-build
       args:
-        userid: "${UID}:${GID}"
-    user: ${UID}:${GID}
+        userid: "${USERID}"
+    user: "${USERID}"
     volumes:
       - type: bind
         source: ./src/js/grapl-cdk/zips

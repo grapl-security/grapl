@@ -65,7 +65,7 @@ services:
       target: grapl-metric-forwarder
       args:
         release_target: "${GRAPL_RELEASE_TARGET:-debug}"
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     tty: false
     environment:
       - "IS_LOCAL=True"
@@ -81,7 +81,7 @@ services:
       target: grapl-sysmon-subgraph-generator
       args:
         release_target: "${GRAPL_RELEASE_TARGET:-debug}"
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -108,7 +108,7 @@ services:
   #     target: grapl-generic-subgraph-generator
   #     args:
   #       release_target: "${GRAPL_RELEASE_TARGET:-debug}"
-  #       id: "${UID}:${GID}"
+  #       id: "${USERID}"
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -117,7 +117,7 @@ services:
       target: grapl-node-identifier
       args:
         release_target: "${GRAPL_RELEASE_TARGET:-debug}"
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -156,7 +156,7 @@ services:
       target: grapl-node-identifier-retry-handler
       args:
         release_target: "${GRAPL_RELEASE_TARGET:-debug}"
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -195,7 +195,7 @@ services:
       target: grapl-graph-merger
       args:
         release_target: "${GRAPL_RELEASE_TARGET:-debug}"
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -227,7 +227,7 @@ services:
       target: grapl-analyzer-dispatcher
       args:
         release_target: "${GRAPL_RELEASE_TARGET:-debug}"
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -276,7 +276,7 @@ services:
       dockerfile: python/Dockerfile
       target: grapl-analyzer-executor
       args:
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
@@ -302,7 +302,7 @@ services:
       dockerfile: python/Dockerfile
       target: grapl-engagement-creator
       args:
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - "IS_LOCAL=True"
       - "BUCKET_PREFIX=local-grapl"
@@ -325,7 +325,7 @@ services:
       dockerfile: python/Dockerfile
       target: grapl-engagement-edge
       args:
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     ports:
       - "8900:8900"
     environment:
@@ -347,7 +347,7 @@ services:
       dockerfile: python/Dockerfile
       target: grapl-model-plugin-deployer
       args:
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     ports:
       - "8123:8123"
     environment:
@@ -373,7 +373,7 @@ services:
       dockerfile: python/Dockerfile
       target: grapl-dgraph-ttl
       args:
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     ports:
       - "8124:8124"
     environment:
@@ -398,7 +398,7 @@ services:
       context: src/js/engagement_view
       target: grapl-engagement-view
       args:
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - PORT=1234
     ports:
@@ -410,7 +410,7 @@ services:
       context: src/js/graphql_endpoint
       target: grapl-graphql-endpoint
       args:
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - MG_ALPHAS=master_graph:9080
       - IS_LOCAL=True
@@ -445,7 +445,7 @@ services:
       dockerfile: python/Dockerfile
       target: grapl-provision-build
       args:
-        userid: "${UID}:${GID}"
+        userid: "${USERID}"
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - MG_ALPHAS=master_graph:9080
