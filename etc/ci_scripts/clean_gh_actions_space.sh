@@ -10,8 +10,18 @@ sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
 sudo apt-get clean
 
+# Remove preloaded but unused docker images
+docker image rm jekyll/builder
+docker image rm mcr.microsoft.com/azure-pipelines/node8-typescript
+docker image rm buildpack-deps:stretch
+docker image rm buildpack-deps:buster
+docker image rm debian:8
+docker image rm debian:9
+docker image rm ubuntu
+
 # Another thing I've seen was to remove /swapfile, but that's
 # a tad aggressive. I'll leave this not about it here, though.
 # https://github.com/scikit-hep/pyhf/pull/819#issuecomment-616055763
 
 echo "Ending space: $(df -h | grep ' /$')"
+
