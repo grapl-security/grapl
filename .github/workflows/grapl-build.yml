@@ -127,6 +127,15 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+n
+      - name: TEMP TO BE REVERTED - print Python version
+        run: python -c "import sys; print(sys.version);"
+      
+      - name: TEMP TO BE REVERTED - print Python compare
+        run: python -c "import sys; print(sys.version_info >= (3, 7));"
+        
+      - name: TEMP TO BE REVERTED - what if i call it with Python
+        run: python ./etc/ci_scripts/dump_compose_logs.sh"
 
       - name: Prepare Github Actions CI
         run: |
