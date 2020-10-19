@@ -2,12 +2,12 @@
 
 import os
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages  # type: ignore
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 
-def is_comment(line):
+def is_comment(line: str) -> bool:
     """check whether a line is a comment"""
     return line.strip().startswith("#")
 
