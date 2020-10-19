@@ -17,7 +17,7 @@ docker image rm buildpack-deps:stretch
 docker image rm buildpack-deps:buster
 docker image rm debian:8
 docker image rm debian:9
-docker image rm ubuntu
+docker image rm ubuntu:14.04
 
 # Another thing I've seen was to remove /swapfile, but that's
 # a tad aggressive. I'll leave this not about it here, though.
