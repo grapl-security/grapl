@@ -116,8 +116,17 @@ jobs:
   end-to-end-integration-tests:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: [3.7]
+
     steps:
       - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Prepare Github Actions CI
         run: |
@@ -132,13 +141,12 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
             
-      # always() allows this to run even if 'run tests' failed
+      # NOTE: This requires >= py37
       - name: 'Collect e2e test logs'
         if: ${{ always() }}
         run: |
           ./etc/ci_scripts/dump_compose_logs.py --compose-project "grapl-integration-tests"
 
-      # always() allows this to run even if 'run integration tests' failed
       - name: 'Upload e2e test logs'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2

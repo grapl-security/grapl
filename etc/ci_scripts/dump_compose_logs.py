@@ -5,15 +5,10 @@ from tempfile import TemporaryDirectory
 from pathlib import Path
 import os
 import subprocess
+import sys
 
-
-def _go_to_grapl_repo_root() -> None:
-    this_file = Path(__file__).resolve()
-    # go to `grapl` base dir
-    grapl_repo_root = this_file
-    while grapl_repo_root.name != "grapl":
-        grapl_repo_root = grapl_repo_root.parent
-    os.chdir(grapl_repo_root)
+# need minimum 3.7 for capture_output=True
+assert sys.version_info >= (3, 7)
 
 
 def _name_of_all_containers(compose_project: str) -> List[str]:
@@ -63,7 +58,6 @@ LOG_ARTIFACTS_PATH = Path("/tmp/log_artifacts").resolve()
 
 
 def dump_all_logs(compose_project: str) -> None:
-    _go_to_grapl_repo_root()
     containers = _name_of_all_containers(compose_project)
     os.makedirs(LOG_ARTIFACTS_PATH, exist_ok=True)
     for container in containers:
