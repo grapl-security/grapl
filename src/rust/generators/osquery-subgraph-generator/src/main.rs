@@ -3,6 +3,7 @@ mod generator;
 mod metrics;
 mod serialization;
 mod parsers;
+mod tests;
 
 use grapl_config::*;
 use graph_generator_lib::*;
