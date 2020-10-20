@@ -123,20 +123,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: 'Debug: what py3 version'
-        if: ${{ always() }}
-        run: |
-          python3 -V
-
       - name: Prepare Github Actions CI
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Build Grapl
         run: |
