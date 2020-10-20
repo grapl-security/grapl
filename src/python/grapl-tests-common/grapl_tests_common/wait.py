@@ -1,14 +1,16 @@
-from datetime import datetime, timezone, timedelta
-from grapl_analyzerlib.grapl_client import MasterGraphClient
-from grapl_analyzerlib.nodes.base import BaseView, BaseQuery
-from grapl_analyzerlib.retry import retry
-from itertools import cycle
-from time import sleep
-from typing_extensions import Protocol
-from typing import Any, Sequence, Optional, Dict, Mapping, Callable
-import botocore  # type: ignore
 import inspect
 import logging
+from datetime import datetime, timedelta, timezone
+from itertools import cycle
+from time import sleep
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence
+
+import botocore  # type: ignore
+from typing_extensions import Protocol
+
+from grapl_analyzerlib.grapl_client import MasterGraphClient
+from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
+from grapl_analyzerlib.retry import retry
 
 
 class WaitForResource(Protocol):

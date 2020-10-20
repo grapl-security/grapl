@@ -16,9 +16,11 @@ from typing import Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
+from pydgraph import DgraphClient, DgraphClientStub
+
 from grapl_analyzerlib.analyzer import Analyzer
-from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.base import BaseView
 from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
