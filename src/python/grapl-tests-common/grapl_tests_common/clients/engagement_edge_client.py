@@ -20,6 +20,7 @@ class EngagementEdgeClient:
             json={
                 # hardcoded when IS_LOCAL
                 "username": "grapluser",
+                # sha'd and pepper'd - see engagement view Login.tsx
                 "password": "2ae5ddfb1eeeed45d502bcfd0c7b8f962f24bf85328ba942f32a31c0229c295a",
             },
             headers=_JSON_CONTENT_TYPE_HEADERS,

@@ -7,6 +7,7 @@ import requests
 from pathlib import Path
 from http import HTTPStatus
 from typing import Dict
+import logging
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 
@@ -40,11 +41,15 @@ class ModelPluginDeployerClient:
                 clean_path = str(path).split("model_plugins/")[-1]
                 contents = f.read()
                 if len(contents) == 0:
-                    # attempted hack: make __init__.py non empty
-                    # due to https://github.com/boto/botocore/pull/1328
-                    # otherwise the client just hangs
-                    assert clean_path.endswith("__init__.py")
-                    contents = "# NON_EMPTY_INIT_PY_HACK"
+                    if clean_path.endswith("__init__.py"):
+                        # attempted hack: make __init__.py non empty
+                        # due to https://github.com/boto/botocore/pull/1328
+                        # otherwise the client just hangs
+                        contents = "# NON_EMPTY_INIT_PY_HACK"
+                    else:
+                        logging.debug(f"Empty non-init file, skipping it: {clean_path}")
+                        continue
+
                 plugin_dict[clean_path] = contents
 
         resp = requests.post(
@@ -58,10 +63,11 @@ class ModelPluginDeployerClient:
         return resp
 
     def _is_valid_deployable_file(self, file_path: str) -> bool:
+        """
+        not exactly the most bulletproof heuristic in the world, feel free to modify it
+        """
         if file_path.endswith(".pyc"):
             return False
         if file_path.endswith(".ipynb"):
             return False
-        # TODO: should this just check for `.py`?
-        # would there ever be any other extension we'd want to upload?
         return True
