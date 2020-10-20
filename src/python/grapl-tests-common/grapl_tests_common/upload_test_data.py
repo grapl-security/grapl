@@ -23,4 +23,3 @@ class UploadSysmonLogsTestData(UploadTestData):
             logfile=self.path,
             use_links=True,
         )
-
