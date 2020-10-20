@@ -1,52 +1,38 @@
-from unittest import TestCase
 from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
-from grapl_tests_common.wait import WaitForCondition, WaitForResource, wait_for
 from grapl_analyzerlib.retry import retry
+from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
+from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
 from typing import Any, Optional, Callable
+from unittest import TestCase
 import inspect
+import logging
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
 
 class TestEndToEnd(TestCase):
-    def test_analyzer_deployed_properly(self) -> None:
-        assert True
-
-    def test_analyzer_fired(self) -> None:
-        assert True
-
     def test_expected_data_in_dgraph(self) -> None:
         lens_resource = wait_for_lens()
-        wait_result = wait_for([lens_resource], timeout_secs=240)
-
-        lens: LensView = wait_result[lens_resource]
+        lens: LensView = wait_for_one(lens_resource, timeout_secs=240)
         assert lens.get_lens_name() == LENS_NAME
 
         def condition() -> bool:
             # lens scope is not atomic
             length = len(lens.get_scope())
-            print(f"Expected 4 nodes in scope, currently is {length}")
+            logging.info(f"Expected 4 nodes in scope, currently is {length}")
             return length == 4
 
-        wait_for([WaitForCondition(condition)], timeout_secs=240)
+        wait_for_one(WaitForCondition(condition), timeout_secs=240)
+
+
+class TestEngagementEdgeClient(TestCase):
+    def test_engagement_edge_client(self) -> None:
+        client = EngagementEdgeClient(use_docker_links=True)
+        client.get_jwt()
 
 
 def wait_for_lens():
     local_client = MasterGraphClient()
     query = LensQuery().with_lens_name(LENS_NAME)
-    return WaitForLens(local_client, query)
-
-
-class WaitForLens(WaitForResource):
-    def __init__(self, dgraph_client: Any, query: LensQuery) -> None:
-        self.dgraph_client = dgraph_client
-        self.query = query
-
-    @retry()
-    def acquire(self) -> Optional[Any]:
-        result = self.query.query_first(self.dgraph_client)
-        return result
-
-    def __str__(self) -> str:
-        return f"WaitForLens({self.query})"
+    return WaitForQuery(local_client, query)

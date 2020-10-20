@@ -1,4 +1,6 @@
 from datetime import datetime, timezone, timedelta
+from grapl_analyzerlib.nodes.base import BaseView, BaseQuery
+from grapl_analyzerlib.retry import retry
 from itertools import cycle
 from time import sleep
 from typing_extensions import Protocol
@@ -47,7 +49,9 @@ class WaitForSqsQueue(WaitForResource):
 
 
 class WaitForCondition(WaitForResource):
-    """ just something nice n generic """
+    """
+    Retry a Callable until it returns true
+    """
 
     def __init__(self, fn: Callable[[], Optional[bool]]) -> None:
         self.fn = fn
@@ -61,6 +65,38 @@ class WaitForCondition(WaitForResource):
 
     def __str__(self) -> str:
         return f"WaitForCondition({inspect.getsource(self.fn)})"
+
+
+class WaitForNoException(WaitForResource):
+    """
+    Retry a Callable until it stops throwing exceptions.
+    """
+
+    def __init__(self, fn: Callable) -> None:
+        self.fn = fn
+
+    def acquire(self) -> Optional[Any]:
+        try:
+            return self.fn()
+        except:
+            return None
+
+    def __str__(self) -> str:
+        return f"WaitForNoException({inspect.getsource(self.fn)})"
+
+
+class WaitForQuery(WaitForResource):
+    def __init__(self, dgraph_client: Any, query: BaseQuery) -> None:
+        self.dgraph_client = dgraph_client
+        self.query = query
+
+    @retry()
+    def acquire(self) -> Optional[BaseView]:
+        result = self.query.query_first(self.dgraph_client)
+        return result
+
+    def __str__(self) -> str:
+        return f"WaitForLens({self.query})"
 
 
 def wait_for(
@@ -96,3 +132,8 @@ def wait_for(
             sleep(sleep_secs)
 
     return completed
+
+
+def wait_for_one(one: WaitForResource, timeout_secs: int = 60) -> Any:
+    results = wait_for([one], timeout_secs=timeout_secs)
+    return results[one]
