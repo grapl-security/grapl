@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.base import BaseView, BaseQuery
 from grapl_analyzerlib.retry import retry
 from itertools import cycle
@@ -86,9 +87,9 @@ class WaitForNoException(WaitForResource):
 
 
 class WaitForQuery(WaitForResource):
-    def __init__(self, dgraph_client: Any, query: BaseQuery) -> None:
-        self.dgraph_client = dgraph_client
+    def __init__(self, query: BaseQuery, dgraph_client: Any = None) -> None:
         self.query = query
+        self.dgraph_client = dgraph_client or MasterGraphClient()
 
     @retry()
     def acquire(self) -> Optional[BaseView]:

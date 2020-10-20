@@ -13,8 +13,8 @@ LENS_NAME = "DESKTOP-FVSHABR"
 
 class TestEndToEnd(TestCase):
     def test_expected_data_in_dgraph(self) -> None:
-        lens_resource = wait_for_lens()
-        lens: LensView = wait_for_one(lens_resource, timeout_secs=240)
+        query = LensQuery().with_lens_name(LENS_NAME)
+        lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=240)
         assert lens.get_lens_name() == LENS_NAME
 
         def condition() -> bool:
@@ -30,9 +30,3 @@ class TestEngagementEdgeClient(TestCase):
     def test_engagement_edge_client(self) -> None:
         client = EngagementEdgeClient(use_docker_links=True)
         client.get_jwt()
-
-
-def wait_for_lens():
-    local_client = MasterGraphClient()
-    query = LensQuery().with_lens_name(LENS_NAME)
-    return WaitForQuery(local_client, query)
