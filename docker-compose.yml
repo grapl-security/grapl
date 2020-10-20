@@ -360,15 +360,24 @@ services:
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
     command: |
-      /bin/sh -c '
+      /bin/bash -c "
+        # it doesn't seem to like waiting for sqs
+        # wait-for-it sqs:9324 &&
+        wait-for-it s3:9000 &&
+        wait-for-it dynamodb:8000 &&
+        wait-for-it grapl-master-graph-db:8080 &&
         . venv/bin/activate && 
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
-        python /home/grapl/grapl_local_provision/grapl_provision.py
-      '
+        python /home/grapl/grapl_local_provision/grapl_provision.py &&
+        # Host a server on this port, so that tests can wait-for-it
+        python -m http.server 8126
+      "
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - MG_ALPHAS=master_graph:9080
     tty: true
+    ports:
+      - 8126:8126
     links:
       - grapl-master-graph-db:master_graph
       - s3:minio
