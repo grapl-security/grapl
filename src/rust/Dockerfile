@@ -21,7 +21,7 @@
 #
 
 FROM rust:1-slim-buster AS grapl-rust-base
-RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev
+RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev wait-for-it
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
 RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
