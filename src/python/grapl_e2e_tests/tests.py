@@ -14,11 +14,11 @@ LENS_NAME = "DESKTOP-FVSHABR"
 class TestEndToEnd(TestCase):
     def test_expected_data_in_dgraph(self) -> None:
         query = LensQuery().with_lens_name(LENS_NAME)
-        lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=240)
+        lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=120)
         assert lens.get_lens_name() == LENS_NAME
 
+        # lens scope is not atomic
         def condition() -> bool:
-            # lens scope is not atomic
             length = len(lens.get_scope())
             logging.info(f"Expected 4 nodes in scope, currently is {length}")
             return length == 4
