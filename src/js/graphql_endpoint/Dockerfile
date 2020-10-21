@@ -20,9 +20,15 @@ COPY server.js lambda/server.js
 RUN cd lambda && zip --quiet -9r /home/grapl/lambda.zip .
 RUN mkdir -p dist/graphql-endpoint && cp lambda.zip dist/graphql-endpoint/lambda.zip
 
+# no-op the base image cmd, so it doesn't launch a Node repl
+CMD :
+
 FROM node:12.18-buster-slim AS grapl-graphql-endpoint
 RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends unzip
 COPY --from=grapl-graphql-endpoint-build /home/grapl/lambda.zip /
 RUN unzip -q lambda.zip
 COPY --from=grapl-graphql-endpoint-deps /home/grapl/lambda/package.json /package.json
 COPY --from=grapl-graphql-endpoint-deps /home/grapl/lambda/package-lock.json /package-lock.json
+
+# no-op the base image cmd, so it doesn't launch a Node repl
+CMD :

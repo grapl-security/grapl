@@ -21,7 +21,7 @@
 #
 
 FROM rust:1-slim-buster AS grapl-rust-base
-RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev
+RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev wait-for-it
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
 RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
@@ -140,11 +140,9 @@ COPY --chown=grapl Cargo.toml .
 
 # Now do a clean build
 RUN if test "${release_target}" = "release"; then \
-      cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl --release; \
     fi
 RUN if test "${release_target}" = "debug"; then \
-      cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl; \
     fi
 # copy artifacts to dist mount
@@ -155,4 +153,7 @@ RUN mkdir -p /home/grapl/dist && \
     cp target/x86_64-unknown-linux-musl/${release_target}/metric-forwarder dist/metric-forwarder && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier dist/node-identifier && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler dist/node-identifier-retry-handler && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator \
+    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator
+
+# no-op the base image, so it doesn't default to /bin/sh
+CMD :
