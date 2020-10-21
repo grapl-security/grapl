@@ -139,7 +139,7 @@ jobs:
 
       - name: Run end-to-end integration tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
+          GRAPL_RELEASE_TARGET=debug GRAPL_LOG_LEVEL=DEBUG TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
        
       # NOTE: This requires >= py37
       - name: 'Collect e2e test logs'
