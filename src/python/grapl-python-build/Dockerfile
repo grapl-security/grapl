@@ -1,5 +1,5 @@
 FROM python:3.7-slim-buster AS grapl-python-build
-RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends musl-dev protobuf-compiler build-essential zip bash
+RUN apt-get update && apt-get -y upgrade && apt-get -y install --no-install-recommends musl-dev protobuf-compiler build-essential zip bash wait-for-it
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
 RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl

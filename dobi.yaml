@@ -447,7 +447,11 @@ job=run-rust-unit-tests:
 job=run-node-identifier-integration-tests:
   use: rust-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration"
+  command: |
+    /bin/bash -c "
+      wait-for-it grapl-provision:8126 --timeout=60 &&
+      cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration
+      "
   env:
     - GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - RUST_LOG=INFO
@@ -519,13 +523,26 @@ job=run-e2e-integration-tests-typecheck:
 
 job=run-analyzer-deployer-typecheck:
   use: analyzer-deployer-build
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
   command: | 
     /bin/bash -c "
       source venv/bin/activate &&
-      touch venv/lib/python3.7/site-packages/chalice/py.typed &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
       cd analyzer-deployer &&
+      pip install mypy &&
+      mypy .
+      "
+
+job=run-model-plugin-deployer-typecheck:
+  use: model-plugin-deployer-build
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
+  command: | 
+    /bin/bash -c "
+      source venv/bin/activate &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      cd model-plugin-deployer &&
       pip install mypy &&
       mypy .
       "
@@ -537,7 +554,13 @@ job=run-grapl-analyzerlib-unit-tests:
 job=run-grapl-analyzerlib-integration-tests:
   use: grapl-analyzerlib-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'integration_test'"
+  command: |
+    /bin/bash -c "
+      wait-for-it grapl-provision:8126 --timeout=60 &&
+      source venv/bin/activate && 
+      cd grapl_analyzerlib && 
+      py.test -n auto -m 'integration_test'
+      "
   env:
     -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - "BUCKET_PREFIX=local-grapl"
@@ -560,7 +583,13 @@ job=run-analyzer-deployer-unit-tests:
 job=run-analyzer-deployer-integration-tests:
   use: analyzer-deployer-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd analyzer-deployer && py.test -n auto -m 'integration_test'"
+  command: |
+    /bin/bash -c "
+      wait-for-it grapl-provision:8126 --timeout=60 &&
+      source venv/bin/activate &&
+      cd analyzer-deployer && 
+      py.test -n auto -m 'integration_test'
+      "
   env:
     -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - "BUCKET_PREFIX=local-grapl"
@@ -571,7 +600,13 @@ job=run-analyzer-deployer-integration-tests:
 job=run-e2e-integration-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_e2e_tests && python3 ./main.py"
+  command: | 
+    /bin/bash -c "
+      wait-for-it grapl-provision:8126 --timeout=60 &&
+      source venv/bin/activate && 
+      cd grapl_e2e_tests && 
+      python3 ./main.py
+      "
   env:
     -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - "BUCKET_PREFIX=local-grapl"
@@ -805,10 +840,11 @@ alias=integration-tests:
 alias=python-typecheck:
   tasks:
     # TODO: Add more and more here!
-    - run-analyzer-deployer-typecheck
-    - run-engagement-creator-typecheck
     - run-grapl-common-typecheck
     - run-grapl-tests-common-typecheck
+    - run-analyzer-deployer-typecheck
     - run-e2e-integration-tests-typecheck
+    - run-engagement-creator-typecheck
+    - run-model-plugin-deployer-typecheck
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"
