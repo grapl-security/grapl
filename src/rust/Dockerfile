@@ -153,4 +153,7 @@ RUN mkdir -p /home/grapl/dist && \
     cp target/x86_64-unknown-linux-musl/${release_target}/metric-forwarder dist/metric-forwarder && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier dist/node-identifier && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler dist/node-identifier-retry-handler && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator \
+    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator
+
+# no-op the base image, so it doesn't default to /bin/sh
+CMD :
