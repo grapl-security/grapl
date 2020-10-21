@@ -1,4 +1,7 @@
 from datetime import datetime, timezone, timedelta
+from grapl_analyzerlib.grapl_client import MasterGraphClient
+from grapl_analyzerlib.nodes.base import BaseView, BaseQuery
+from grapl_analyzerlib.retry import retry
 from itertools import cycle
 from time import sleep
 from typing_extensions import Protocol
@@ -47,7 +50,9 @@ class WaitForSqsQueue(WaitForResource):
 
 
 class WaitForCondition(WaitForResource):
-    """ just something nice n generic """
+    """
+    Retry a Callable until it returns true
+    """
 
     def __init__(self, fn: Callable[[], Optional[bool]]) -> None:
         self.fn = fn
@@ -63,8 +68,42 @@ class WaitForCondition(WaitForResource):
         return f"WaitForCondition({inspect.getsource(self.fn)})"
 
 
+class WaitForNoException(WaitForResource):
+    """
+    Retry a Callable until it stops throwing exceptions.
+    """
+
+    def __init__(self, fn: Callable) -> None:
+        self.fn = fn
+
+    def acquire(self) -> Optional[Any]:
+        try:
+            return self.fn()
+        except:
+            return None
+
+    def __str__(self) -> str:
+        return f"WaitForNoException({inspect.getsource(self.fn)})"
+
+
+class WaitForQuery(WaitForResource):
+    def __init__(self, query: BaseQuery, dgraph_client: Any = None) -> None:
+        self.query = query
+        self.dgraph_client = dgraph_client or MasterGraphClient()
+
+    @retry()
+    def acquire(self) -> Optional[BaseView]:
+        result = self.query.query_first(self.dgraph_client)
+        return result
+
+    def __str__(self) -> str:
+        return f"WaitForLens({self.query})"
+
+
 def wait_for(
-    resources: Sequence[WaitForResource], timeout_secs: int = 30
+    resources: Sequence[WaitForResource],
+    timeout_secs: int = 30,
+    sleep_secs: int = 5,
 ) -> Mapping[WaitForResource, Any]:
     completed: Dict[WaitForResource, Any] = {}
 
@@ -85,15 +124,17 @@ def wait_for(
 
         secs_remaining = int((timeout_after - now).total_seconds())
         # print an update every 5 secs
-        if secs_remaining % 5 == 0:
-            logging.info(
-                f"Waiting for resource ({secs_remaining} secs remain): {resource}"
-            )
+        logging.info(f"Waiting for resource ({secs_remaining} secs remain): {resource}")
 
         result = resource.acquire()
         if result is not None:
             completed[resource] = result
         else:
-            sleep(1)
+            sleep(sleep_secs)
 
     return completed
+
+
+def wait_for_one(one: WaitForResource, timeout_secs: int = 60) -> Any:
+    results = wait_for([one], timeout_secs=timeout_secs)
+    return results[one]

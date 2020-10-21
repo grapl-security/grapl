@@ -40,7 +40,9 @@ setup(
     },
     include_package_data=True,
     install_requires=[
+        "requests",
         "typing_extensions",
+        "zstd",
     ],
     # We'll probably have some dataclasses in here in the future
     python_requires=">=3.6",

@@ -220,7 +220,7 @@ class GraphMerger extends cdk.NestedStack {
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
-                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                MG_ALPHAS: 'http://' + props.dgraphSwarmCluster.alphaHostPort(),
                 MERGED_CACHE_ADDR:
                     graph_merge_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT:
@@ -486,7 +486,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
     }
 
     public alphaHostPort(): string {
-	return `http://${this.dgraphAlphaZone.zoneName}:9080`;
+        return `${this.dgraphAlphaZone.zoneName}:9080`;
     }
 
     public allowConnectionsFrom(other: ec2.IConnectable): void {

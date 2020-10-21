@@ -1,6 +1,12 @@
 from os import environ
 from grapl_tests_common.wait import wait_for, WaitForS3Bucket, WaitForSqsQueue
 from grapl_tests_common.sleep import verbose_sleep
+from grapl_tests_common.types import (
+    S3ServiceResource,
+    SqsServiceResource,
+    AnalyzerUpload,
+)
+from grapl_tests_common.upload_test_data import UploadTestData
 from sys import stdout
 from typing import Any, NamedTuple, Sequence
 import boto3  # type: ignore
@@ -9,20 +15,10 @@ import pytest
 import subprocess
 import sys
 
-# mypy later maybe
-S3ServiceResource = Any
-SqsServiceResource = Any
-
 BUCKET_PREFIX = environ["BUCKET_PREFIX"]
 assert BUCKET_PREFIX == "local-grapl"
 
-AnalyzerUpload = NamedTuple(
-    "AnalyzerUpload",
-    (
-        ("local_path", str),
-        ("s3_key", str),
-    ),
-)
+logging.basicConfig(stream=stdout, level=logging.INFO)
 
 
 def _upload_analyzers(
@@ -41,26 +37,12 @@ def _upload_analyzers(
 
 
 def _upload_test_data(
-    s3_client: S3ServiceResource, test_data_paths: Sequence[str]
+    s3_client: S3ServiceResource, test_data: Sequence[UploadTestData]
 ) -> None:
-    logging.info(f"Running upload-sysmon-logs")
+    logging.info(f"Uploading test data...")
 
-    # i hate this lol
-    # but it's probably better than mucking with path and importing that module...
-    for path in test_data_paths:
-        logging.info(f"S3 uploading test data from {path}")
-        subprocess.run(
-            [
-                "python3",
-                "/home/grapl/etc/local_grapl/bin/upload-sysmon-logs.py",
-                "--bucket_prefix",
-                BUCKET_PREFIX,
-                "--logfile",
-                path,
-                "--use-links",
-                "True",
-            ]
-        )
+    for datum in test_data:
+        datum.upload(s3_client)
 
 
 def _create_s3_client() -> S3ServiceResource:
@@ -85,9 +67,8 @@ def _create_sqs_client() -> SqsServiceResource:
 
 def setup(
     analyzers: Sequence[AnalyzerUpload],
-    test_data_paths: Sequence[str],
+    test_data: Sequence[UploadTestData],
 ) -> None:
-    logging.basicConfig(stream=stdout, level=logging.INFO)
     verbose_sleep(10, "awaiting local aws")
 
     s3_client = _create_s3_client()
@@ -104,9 +85,8 @@ def setup(
     )
 
     _upload_analyzers(s3_client, analyzers)
-    _upload_test_data(s3_client, test_data_paths)
-
-    verbose_sleep(60, "let the pipeline do its thing")
+    _upload_test_data(s3_client, test_data)
+    # You may want to sleep(30) to let the pipeline do its thing, but setup won't force it.
 
 
 def exec_pytest() -> None:
