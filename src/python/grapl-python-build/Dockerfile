@@ -9,3 +9,6 @@ WORKDIR /home/grapl
 RUN python3 -mvenv venv
 RUN /bin/bash -c "source venv/bin/activate && pip install --upgrade pip"
 RUN /bin/bash -c "source venv/bin/activate && pip install wheel grpcio chalice hypothesis pytest pytest-xdist"
+
+# no-op the base image, so it doesn't exec python3 as a repl
+CMD :
