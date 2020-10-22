@@ -1,14 +1,16 @@
-from os import environ
-import grapl_tests_common
+from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_tests_common.setup import AnalyzerUpload
 from grapl_tests_common.sleep import verbose_sleep
 from grapl_tests_common.upload_test_data import UploadSysmonLogsTestData
+from os import environ
+import grapl_tests_common
 
 BUCKET_PREFIX = environ["BUCKET_PREFIX"]
 assert BUCKET_PREFIX == "local-grapl"
 
 
 def main() -> None:
+    wait_for_vsc_debugger("grapl_e2e_tests")
     analyzers = (
         AnalyzerUpload(
             "/home/grapl/etc/local_grapl/suspicious_svchost/main.py",
@@ -29,7 +31,7 @@ def main() -> None:
         analyzers=analyzers,
         test_data=test_data,
     )
-    verbose_sleep(15, "let the pipeline do its thing")
+
     grapl_tests_common.setup.exec_pytest()
 
 
