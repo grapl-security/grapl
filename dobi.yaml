@@ -612,8 +612,12 @@ job=run-e2e-integration-tests:
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
+    - DEBUG_SERVICES={env.DEBUG_SERVICES:}
   depends:
     - integration-env
+  ports:
+    # Used for debugger
+    - 8400:8400
 
 job=build-analyzer-executor:
   use: analyzer-executor-build

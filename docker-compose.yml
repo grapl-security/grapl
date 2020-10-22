@@ -1,3 +1,9 @@
+### Port conventions (though there are many, many exceptions)
+# 81xx - grapl services (and some `wait-for-it` http servers)
+# 82xx - TBD
+# 83xx - grapl plugin services, like grapl-aws-plugins
+# 84xx - debugger ports (see vsc_debugger.py)
+
 version: "3.8"
 services:
 
