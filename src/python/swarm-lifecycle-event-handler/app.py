@@ -88,5 +88,5 @@ def main(event, context) -> None:
         _remove_dns_ip(dns_name, ip_address, hosted_zone_id)
     else:
         LOGGER.warn(
-            f"Encountered unknown lifecycle transition "{transition}" in event: {event_json}"
+            f'Encountered unknown lifecycle transition "{transition}" in event: {event_json}'
         )

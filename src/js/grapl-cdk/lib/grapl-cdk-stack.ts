@@ -476,6 +476,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             clusterSize: 3
         });
 
+        // FIXME: this won't work
         this.dgraphSwarmCluster.instances.forEach((instance, idx) => {
             new cloudwatch.Alarm(this, `SwarmDgraphDisk-${idx}`, {
                 alarmName: `dgraph_disk_used_percent-${instance.instanceId}`,

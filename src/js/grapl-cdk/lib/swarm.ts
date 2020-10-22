@@ -221,7 +221,7 @@ export class Swarm extends cdk.Construct {
         }));
 
         // Swarm instance lifecycle event listener
-        const lifecycleListener = new lambda.Function(this, "SwarmLifecycleHandler", {
+        const lifecycleListener = new lambda.Function(this, "SwarmLifecycleListener", {
             code: lambda.Code.fromAsset(
                 `./zips/swarm-lifecycle-event-handler-${swarmProps.version}.zip`
             ),
