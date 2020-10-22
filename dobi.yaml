@@ -337,6 +337,16 @@ image=grapl-e2e-tests-build:
   tags:
     - latest
 
+image=swarm-lifecycle-event-handler-build:
+  image: grapl/swarm-lifecycle-event-handler-build
+  context: src/python/swarm-lifecycle-event-handler
+  dockerfile: Dockerfile
+  target: swarm-lifecycle-event-handler-build
+  depends:
+    - python-build
+  tags:
+    - latest
+
 # js images
 
 image=grapl-cdk-build:
@@ -612,6 +622,13 @@ job=run-model-plugin-deployer-unit-tests:
   use: model-plugin-deployer-build
   command: /bin/bash -c "source venv/bin/activate && cd model-plugin-deployer && py.test -n auto -m 'not integration_test'"
 
+job=build-swarm-lifecycle-event-handler:
+  use: swarm-lifecycle-event-handler-build
+  mounts:
+    - dist
+  artifact:
+    - ./dist/swarm-lifecycle-event-handler/lambda.zip
+
 # js jobs
 
 # TODO: more normal build job for engagement-view w/ deploy artifact
@@ -677,6 +694,7 @@ alias=python:
     - build-engagement-edge
     - build-dgraph-ttl
     - build-model-plugin-deployer
+    - build-swarm-lifecycle-event-handler
     - "analyzer-deployer:tag"
     - "analyzer-executor:tag"
     - "engagement-creator:tag"
@@ -701,6 +719,7 @@ alias=clean-python-build:
     - "grapl-common-build:rm"
     - "graph-descriptions-build:rm"
     - "python-build:rm"
+    - "swarm-lifecycle-event-handler-build:rm"
   annotations:
     description: "Delete the python build images"
 

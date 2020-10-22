@@ -1,46 +1,59 @@
+import * as asg from '@aws-cdk/aws-autoscaling'
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
+import * as lambda from '@aws-cdk/aws-lambda';
+import * as route53 from '@aws-cdk/aws-route53';
+
+import { FunctionHook } from '@aws-cdk/aws-autoscaling-hooktargets';
 
 export interface SwarmProps {
-    // Grapl deployment name prefix
+    // Grapl deployment name prefix.
     readonly prefix: String;
 
-    // The VPC where the Docker Swarm cluster will run
+    // Grapl deployment version.
+    readonly version: String;
+
+    // The VPC where the Docker Swarm cluster will run.
     readonly vpc: ec2.IVpc;
 
     // The service-specific (e.g. DGraph) ports to open internally
     // within the Docker Swarm cluster.
     readonly internalServicePorts: ec2.Port[];
+
+    // The EC2 Instance Type for the Docker Swarm instances.
+    readonly instanceType: ec2.InstanceType;
+
+    // Number of Docker Swarm instances in the cluster.
+    readonly clusterSize: number;
 }
 
 export class Swarm extends cdk.Construct {
-    private readonly swarmSecurityGroup: ec2.ISecurityGroup;
+    private readonly swarmHostedZone: route53.PrivateHostedZone;
+    private readonly swarmAsg: asg.AutoScalingGroup;
 
     constructor(scope: cdk.Construct, id: string, swarmProps: SwarmProps) {
         super(scope, id);
 
         const swarmSecurityGroup = new ec2.SecurityGroup(scope, 'Swarm', {
-            securityGroupName: swarmProps.prefix + '-Swarm',
             description: `${swarmProps.prefix} DGraph Swarm security group`,
             vpc: swarmProps.vpc,
             allowAllOutbound: false,
         });
+
         // allow the bastion machine to make outbound connections to
         // the Internet for these services:
         //   TCP 443 -- AWS SSM Agent (for handshake)
-        //   TCP 80 -- yum package manager and wget (install docker-machine)
+        //   TCP 80 -- yum package manager and wget (install Docker)
         swarmSecurityGroup.connections.allowToAnyIpv4(ec2.Port.tcp(443));
         swarmSecurityGroup.connections.allowToAnyIpv4(ec2.Port.tcp(80));
 
         // allow hosts in the swarm security group to communicate
         // internally on the following ports:
-        //   TCP 22 -- SSH
-        //   TCP 2376 -- secure docker client (docker-machine)
+        //   TCP 2376 -- secure docker client
         //   TCP 2377 -- inter-node communication (only needed on manager nodes)
         //   TCP + UDP 7946 -- container network discovery
         //   UDP 4789 -- overlay network traffic
-        swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(22));
         swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(2376));
         swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(2377));
         swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(7946));
@@ -53,8 +66,8 @@ export class Swarm extends cdk.Construct {
             swarmSecurityGroup.connections.allowInternally(port)
         );
 
-        this.swarmSecurityGroup = swarmSecurityGroup;
-
+        // Spin up a bastion instance. This is where users will
+        // perform cluster maintenance tasks.
         const bastion = new ec2.BastionHostLinux(this, 'Bastion', {
             vpc: swarmProps.vpc,
             securityGroup: swarmSecurityGroup,
@@ -62,102 +75,197 @@ export class Swarm extends cdk.Construct {
             instanceName: swarmProps.prefix + '-SwarmBastion',
         });
 
-        /* configure a bunch of AWS permissions to enable
-         * docker-machine to do things with instances.
-         *
-         * with this set of permissions, the docker-machine invocation
-         * requires the following parameters passed on the command
-         * line, else it won't work:
-         *
-         * --amazonec2-vpc-id <vpc_id>
-         * --amazonec2-security-group <security_group>
-         * --amazonec2-keypair-name <keypair_name>
-         * --amazonec2-ssh-keypath <ssh_keypath>
-         *
-         * this seems like it's a fairly locked-down configuration, yet
-         * flexible enough to allow interesting use-cases (e.g. spot
-         * instances).
-         *
-         * see this github issue comment for more info:
-         *
-         * https://github.com/docker/machine/issues/1655#issuecomment-409407523
-         *
-         * "DescribeSecurityGroups" -- required to check whether the
-         * --amazonec2-security-group actually exists
-         *
-         * "CreateSecurityGroup" -- not sure why this is required
-         *
-         * "DescribeSubnets" -- required to find the subnet
-         *
-         * "DescribeKeyPairs" -- to validate whether the keypair
-         * actually exists
-         *
-         * "CreateKeyPair" -- not sure why this is required
-         *
-         * these spot instance permissions apply if docker-machine is
-         * invoked with --amazonec2-request-spot-instance:
-         *
-         * "DescribeSpotInstances"
-         * "DescribeSpotInstanceRequests"
-         * "RequestSpotInstances"
-         * "CancelSpotInstanceRequests"
-         *
-         * "DescribeInstances" -- required to tell when an instance is
-         * ready, what its IP address is, etc
-         *
-         * "RunInstances" -- required to run an AWS instance if not
-         * --amazonec2-request-spot-instance
-         *
-         * "StartInstances" -- docker-machine start
-         *
-         * "StopInstances" -- docker-machine stop or docker-machine
-         * kill
-         *
-         * "RebootInstances" -- docker-machine restart
-         *
-         * "TerminateInstances" -- docker-machine rm
-         *
-         * "CreateTags" -- required to set the Name tag and anything
-         * that's passed via --amazonec2-tags
-         *
-         * "route53:ListHostedZonesByName" -- required to find the
-         * hosted zone ID
-         *
-         * "route53:ChangeResourceRecordSets" -- required to add A
-         * records to make DGraph discoverable.
-         */
-        const statement = new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: [
-                'ec2:DescribeSecurityGroups',
-                'ec2:CreateSecurityGroup',
-                'ec2:DescribeSubnets',
-                'ec2:DescribeKeyPairs',
-                'ec2:CreateKeyPair',
-                'ec2:DescribeSpotInstances',
-                'ec2:DescribeSpotInstanceRequests',
-                'ec2:RequestSpotInstances',
-                'ec2:CancelSpotInstanceRequests',
-                'ec2:DescribeInstances',
-                'ec2:RunInstances',
-                'ec2:StartInstances',
-                'ec2:StopInstances',
-                'ec2:RebootInstances',
-                'ec2:TerminateInstances',
-                'ec2:CreateTags',
-                'route53:ListHostedZonesByName',
-                'route53:ChangeResourceRecordSets',
-            ],
-            resources: ['*'],
+        // UserData commands for initializing bastion instance.
+        [
+            'yum install -y docker amazon-cloudwatch-agent',
+            'systemctl enable docker.service',
+            'systemctl start docker.service',
+            'usermod -a -G docker ssm-user',
+        ].forEach((cmd, _) => bastion.instance.addUserData(cmd));
+
+        // IAM Role for Swarm instances
+        const swarmInstanceRole = new iam.Role(this, 'SwarmRole', {
+            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
         });
 
-        bastion.role.addToPrincipalPolicy(statement);
+        // CloudWatchAgentServerPolicy allows the Swarm instances to
+        // run the CloudWatch Agent.
+        swarmInstanceRole.addManagedPolicy(
+            iam.ManagedPolicy.fromAwsManagedPolicyName(
+                'CloudWatchAgentServerPolicy' // FIXME: don't use managed policy
+            )
+        );
+
+        // Logging policy to allow Swarm instances to ship service
+        // logs to CloudWatch.
+        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'logs:CreateLogGroup',
+                'logs:CreateLogStream',
+                'logs:PutLogEvents',
+                'logs:DescribeLogStreams',
+            ],
+            resources: [
+                'arn:aws:logs:*:*:*', // FIXME: lock this down more?
+            ],
+        }));
+
+        // Allow users to create SSM sessions to the Swarm
+        // instances. Only allow users to terminate their own
+        // sessions.
+        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'ssm:StartSession',
+            ],
+            resources: [
+                'arn:aws:ec2:::instance/*', // FIXME: lock this down more?
+            ]
+        }));
+        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'ssm:DescribeSessions',
+                'ssm:GetConnectionStatus',
+                'ssm:DescribeInstanceProperties',
+                'ec2:DescribeInstances',
+            ],
+            resources: [
+                '*',
+            ]
+        }));
+        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'ssm:GetDocument',
+            ],
+            resources: [
+                'arn:aws:ssm:::document/SSM-SessionManagerRunShell',
+            ]
+        }));
+        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'ssm:TerminateSession',
+            ],
+            resources: [
+                'arn:aws:ssm:::session/${aws:username}-*',
+            ]
+        }));
+
+        // UserData commands for initializing the Swarm instances.
+        const swarmUserData = ec2.UserData.forLinux();
+        swarmUserData.addCommands(...[
+            'yum install -y docker amazon-cloudwatch-agent',
+            'amazon-cloudwatch-agent-ctl -m ec2 -a start',
+            'systemctl enable docker.service',
+            'systemctl start docker.service',
+            'usermod -a -G docker ec2-user',
+            'mkdir /dgraph',
+            'mkfs -t xfs /dev/nvme0n1',
+            'mount -t xfs /dev/nvme0n1 /dgraph',
+            'UUID=$(lsblk -o +UUID | grep nvme0n1 | rev | cut -d" " -f1 | rev); echo -e "UUID=$UUID\t/dgraph\txfs\tdefaults,nofail\t0 2" | tee -a /etc/fstab'
+        ]);
+
+        // Configure a Route53 Hosted Zone for the Swarm cluster.
+        this.swarmHostedZone = new route53.PrivateHostedZone(
+            this,
+            'SwarmZone',
+            {
+                vpc: swarmProps.vpc,
+                zoneName: swarmProps.prefix.toLowerCase() + '.dgraph.grapl',
+            }
+        );
+
+        // This mapping was compiled on 2020-10-14 by running the
+        // following query for each region:
+        //
+        // aws ec2 describe-images \
+        //  --owners amazon \
+        //  --filters 'Name=name,Values=amzn2-ami-hvm-2.0.????????.?-x86_64-gp2' 'Name=state,Values=available' \
+        //  --query 'reverse(sort_by(Images, &CreationDate))[:1]' \
+        //  --region us-east-1
+        //
+        // It should probably be updated periodically. Be careful that
+        // if you change one of these AMI IDs you don't accidentally
+        // blow away Docker Swarm EC2 instances.
+        const amazonLinux2Amis = {
+            'us-east-1': 'ami-0947d2ba12ee1ff75',
+            'us-east-2': 'ami-03657b56516ab7912',
+            'us-west-1': 'ami-0e4035ae3f70c400f',
+            'us-west-2': 'ami-0528a5175983e7f28'
+        }
+
+        // IAM role for lifecycle event listener
+        const lifecycleListenerRole = new iam.Role(this, 'LifecycleListenerRole', {
+            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com')
+        });
+        lifecycleListenerRole.addToPrincipalPolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'ec2:DescribeInstances',
+            ],
+            resources: [
+                'arn:aws:ec2:::instance/*', // FIXME: lock this down more?
+            ]
+        }));
+        lifecycleListenerRole.addToPrincipalPolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'route53:ChangeResourceRecordSets',
+            ],
+            resources: [
+                `arn:aws:route53:::hostedzone/${this.swarmHostedZone.hostedZoneId}`,
+            ]
+        }));
+
+        // Swarm instance lifecycle event listener
+        const lifecycleListener = new lambda.Function(this, "SwarmLifecycleHandler", {
+            code: lambda.Code.fromAsset(
+                `./zips/swarm-lifecycle-event-handler-${swarmProps.version}.zip`
+            ),
+            runtime: lambda.Runtime.PYTHON_3_7,
+            handler: 'main',
+            role: lifecycleListenerRole,
+        });
+
+        // Swarm cluster ASG
+        const zoneName = swarmProps.prefix.toLowerCase() + '.dgraph.grapl';
+        const metadata = `{"HostedZoneId":${this.swarmHostedZone.hostedZoneId},"DnsName":${zoneName}}`;
+        const swarmAsg = new asg.AutoScalingGroup(this, 'SwarmASG', {
+            vpc: swarmProps.vpc,
+            instanceType: swarmProps.instanceType,
+            userData: swarmUserData,
+            machineImage: ec2.MachineImage.genericLinux(amazonLinux2Amis),
+            role: swarmInstanceRole,
+            desiredCapacity: swarmProps.clusterSize,
+            minCapacity: swarmProps.clusterSize,
+            maxCapacity: swarmProps.clusterSize,
+        });
+        swarmAsg.addSecurityGroup(swarmSecurityGroup);
+        swarmAsg.addLifecycleHook('SwarmLaunchHook', {
+            lifecycleTransition: asg.LifecycleTransition.INSTANCE_LAUNCHING,
+            notificationTarget: new FunctionHook(lifecycleListener),
+            defaultResult: asg.DefaultResult.ABANDON,
+            notificationMetadata: metadata,
+        });
+        swarmAsg.addLifecycleHook('SwarmTerminateHook', {
+            lifecycleTransition: asg.LifecycleTransition.INSTANCE_TERMINATING,
+            notificationTarget: new FunctionHook(lifecycleListener),
+            defaultResult: asg.DefaultResult.CONTINUE,
+            notificationMetadata: metadata,
+        });
     }
 
     public allowConnectionsFrom(
         other: ec2.IConnectable,
         portRange: ec2.Port
     ): void {
-        this.swarmSecurityGroup.connections.allowFrom(other, portRange);
+        this.swarmAsg.connections.allowFrom(other, portRange);
+    }
+
+    public clusterHostPort(): string {
+        return `http://${this.swarmHostedZone.zoneName}:9080`;
     }
 }

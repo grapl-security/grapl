@@ -1,15 +1,15 @@
+import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cdk from '@aws-cdk/core';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as sns from '@aws-cdk/aws-sns';
-import * as sqs from '@aws-cdk/aws-sqs';
+import * as cloudwatch from '@aws-cdk/aws-cloudwatch';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as events from '@aws-cdk/aws-events';
-import * as targets from '@aws-cdk/aws-events-targets';
-import * as lambda from '@aws-cdk/aws-lambda';
 import * as iam from '@aws-cdk/aws-iam';
-import * as apigateway from '@aws-cdk/aws-apigateway';
+import * as lambda from '@aws-cdk/aws-lambda';
+import * as s3 from '@aws-cdk/aws-s3';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
-import * as route53 from '@aws-cdk/aws-route53';
+import * as sns from '@aws-cdk/aws-sns';
+import * as sqs from '@aws-cdk/aws-sqs';
+import * as targets from '@aws-cdk/aws-events-targets';
 
 import { Service } from './service';
 import { UserAuthDb } from './userauthdb';
@@ -447,7 +447,6 @@ interface DGraphSwarmClusterProps {
 }
 
 export class DGraphSwarmCluster extends cdk.NestedStack {
-    private readonly dgraphAlphaZone: route53.PrivateHostedZone;
     private readonly dgraphSwarmCluster: Swarm;
 
     constructor(
@@ -457,16 +456,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
     ) {
         super(parent, id);
 
-        this.dgraphAlphaZone = new route53.PrivateHostedZone(
-            this,
-            'DGraphSwarmZone',
-            {
-                vpc: props.vpc,
-                zoneName: props.prefix.toLowerCase() + '.dgraph.grapl',
-            }
-        );
-
-        this.dgraphSwarmCluster = new Swarm(this, 'DGraphSwarmCluster', {
+        this.dgraphSwarmCluster = new Swarm(this, 'SwarmCluster', {
             prefix: props.prefix,
             vpc: props.vpc,
             internalServicePorts: [
@@ -482,11 +472,44 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
                 ec2.Port.tcp(9082),
                 ec2.Port.tcp(9083)
             ],
+            instanceType: new ec2.InstanceType("t3a.medium"), // FIXME: parametrize
+            clusterSize: 3
+        });
+
+        this.dgraphSwarmCluster.instances.forEach((instance, idx) => {
+            new cloudwatch.Alarm(this, `SwarmDgraphDisk-${idx}`, {
+                alarmName: `dgraph_disk_used_percent-${instance.instanceId}`,
+                alarmDescription: `DGraph volume disk usage on ${instance.instanceId}`,
+                metric: new cloudwatch.Metric({
+                    metricName: `disk_used_percent-${instance.instanceId}`,
+                    namespace: 'CWAgent',
+                    dimensions: {
+                        'InstanceId': instance.instanceId,
+                        'path': '/dgraph'
+                    }
+                }),
+                evaluationPeriods: 1,
+                threshold: 95,
+            });
+            new cloudwatch.Alarm(this, `SwarmRootDisk-${idx}`, {
+                alarmName: `root_disk_used_percent-${instance.instanceId}`,
+                alarmDescription: `Root volume disk usage on ${instance.instanceId}`,
+                metric: new cloudwatch.Metric({
+                    metricName: `disk_used_percent-${instance.instanceId}`,
+                    namespace: 'CWAgent',
+                    dimensions: {
+                        'InstanceId': instance.instanceId,
+                        'path': '/'
+                    }
+                }),
+                evaluationPeriods: 1,
+                threshold: 95,
+            });
         });
     }
 
     public alphaHostPort(): string {
-	return `http://${this.dgraphAlphaZone.zoneName}:9080`;
+        return this.dgraphSwarmCluster.clusterHostPort();
     }
 
     public allowConnectionsFrom(other: ec2.IConnectable): void {
@@ -767,7 +790,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const dgraphSwarmCluster = new DGraphSwarmCluster(
             this,
-            'dgraph-swarm-cluster',
+            'swarm',
             {
                 prefix: this.prefix,
                 vpc: grapl_vpc,
