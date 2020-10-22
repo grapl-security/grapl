@@ -65,7 +65,8 @@ def wait_for_vsc_debugger(service: str) -> None:
 
 """
 Add the following as a `launch.json` debug configuration in VSCode.
-Obviously, you may want to much with the port and the path-mapping.
+You'll want a different configuration for each service you want to debug.
+As such, each configuration should likely have a different path-mapping and a different port.
 
 {
     "version": "0.2.0",
