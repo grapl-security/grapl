@@ -51,7 +51,7 @@ def wait_for_vsc_debugger(service: str) -> None:
         return
 
     _install_from_pip("debugpy")
-    import debugpy
+    import debugpy  # type: ignore
 
     assert (
         8400 <= port < 8500
