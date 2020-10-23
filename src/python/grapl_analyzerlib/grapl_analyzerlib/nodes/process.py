@@ -161,6 +161,62 @@ class ProcessQuery(EntityQuery[PV, PQ]):
 
 
 class ProcessView(EntityView[PV, PQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - asset_id
+          - string
+          - A unique identifier for this asset.
+        * - image_name
+          - string
+          - The name of the binary that was loaded for this process.
+        * - process_name
+          - string
+          - The name of the process.
+        * - arguments
+          - string
+          - The arguments, as passed into the process.
+        * - process_id
+          - int
+          - The process id for this process.
+        * - created_timestamp
+          - int
+          - Time of the process creation (in millis-since-epoch).
+        * - terminate_time
+          - int
+          - Time of the process termination (in millis-since-epoch).
+        * - children
+          - List[:doc:`/nodes/process`]
+          - Child processes of this process.
+        * - bin_file
+          - :doc:`/nodes/file`
+          - The file that was executed to create this process.
+        * - created_files
+          - List[:doc:`/nodes/file`]
+          - Files created by this process.
+        * - deleted_files
+          - List[:doc:`/nodes/file`]
+          - Files deleted by this process.
+        * - read_files
+          - List[:doc:`/nodes/file`]
+          - Files read by this process.
+        * - wrote_files
+          - List[:doc:`/nodes/file`]
+          - Files written by this process.
+        * - created_connections
+          - List[:doc:`/nodes/process_inbound_connection`]
+          - Outbound connections created by this process.
+        * - inbound_connections
+          - List[:doc:`/nodes/process_inbound_connection`]
+          - Inbound connections created by this process.
+    """
+
     queryable = ProcessQuery
 
     def __init__(

@@ -78,6 +78,26 @@ class RiskQuery(BaseQuery[LV, LQ]):
 
 
 class RiskView(BaseView[LV, LQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node
+        * - risk_score
+          - int
+          - todo: documentation
+        * - analyzer_name
+          - string
+          - The name of the analyzer that spawned this risk.
+        * - risky_nodes
+          - List[EntityView]
+          - todo: documentation
+    """
+
     queryable = RiskQuery
 
     def __init__(

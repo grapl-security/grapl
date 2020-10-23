@@ -6,7 +6,6 @@ import logging
 import os
 import random
 import sys
-import time
 import traceback
 
 
@@ -17,10 +16,10 @@ from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Any, Optional, Tuple, List, Dict, Type, Set, Iterator
+from typing import Any, Optional, Tuple, List, Dict, Type, Set, Iterator, Union
 
-import boto3
-import botocore.exceptions
+import boto3  # type: ignore
+import botocore.exceptions  # type: ignore
 import redis
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
@@ -34,7 +33,7 @@ from grapl_analyzerlib.query_gen import (
 from grapl_analyzerlib.subgraph_view import SubgraphView
 from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.plugin_retriever import load_plugins
-from pydgraph import DgraphClientStub, DgraphClient
+from pydgraph import DgraphClientStub, DgraphClient  # type: ignore
 
 MODEL_PLUGINS_DIR = os.environ.get("MODEL_PLUGINS_DIR", "/tmp")
 sys.path.insert(0, MODEL_PLUGINS_DIR)
@@ -63,9 +62,11 @@ class NopCache(object):
         return False
 
 
+EitherCache = Union[NopCache, redis.Redis]
+
 if IS_LOCAL:
-    message_cache = NopCache()
-    hit_cache = NopCache()
+    message_cache: EitherCache = NopCache()
+    hit_cache: EitherCache = NopCache()
 else:
     MESSAGECACHE_ADDR = os.environ["MESSAGECACHE_ADDR"]
     MESSAGECACHE_PORT = int(os.environ["MESSAGECACHE_PORT"])
@@ -155,13 +156,12 @@ def exec_analyzers(
         LOGGER.warning("Received empty array of nodes")
 
     for node in nodes:
-        querymap = defaultdict(list)
+        querymap: Dict[str, List[Queryable]] = defaultdict(list)
 
         for an_name, analyzer in analyzers.items():
             if check_caches(file, msg_id, node.node_key, an_name):
                 continue
 
-            analyzer = analyzer  # type: Analyzer
             queries = analyzer.get_queries()
             if isinstance(queries, list) or isinstance(queries, tuple):
                 querymap[an_name].extend(queries)
@@ -300,7 +300,7 @@ def update_hit_cache(file: str, node_key: str) -> None:
     hit_cache.set(event_hash, "1")
 
 
-def lambda_handler(events: Any, context: Any) -> None:
+def lambda_handler_fn(events: Any, context: Any) -> None:
     # Parse sns message
     LOGGER.debug(f"handling events: {events} context: {context}")
 
@@ -432,61 +432,3 @@ def get_s3_client():
 
     else:
         return boto3.resource("s3")
-
-
-if IS_LOCAL:
-    while True:
-        try:
-            sqs = boto3.client(
-                "sqs",
-                region_name="us-east-1",
-                endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-            )
-
-            alive = False
-            while not alive:
-                try:
-                    if "QueueUrls" not in sqs.list_queues(
-                        QueueNamePrefix="grapl-analyzer-executor-queue"
-                    ):
-                        LOGGER.info(
-                            "Waiting for grapl-analyzer-executor-queue to be created"
-                        )
-                        time.sleep(2)
-                        continue
-                except (
-                    botocore.exceptions.BotoCoreError,
-                    botocore.exceptions.ClientError,
-                    botocore.parsers.ResponseParserError,
-                ):
-                    LOGGER.info("Waiting for SQS to become available")
-                    time.sleep(2)
-                    continue
-                alive = True
-
-            res = sqs.receive_message(
-                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
-                WaitTimeSeconds=3,
-                MaxNumberOfMessages=10,
-            )
-
-            messages = res.get("Messages", [])
-            if not messages:
-                LOGGER.warning("queue was empty")
-
-            s3_events = [
-                (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
-            ]
-            for s3_event, receipt_handle in s3_events:
-                lambda_handler(s3_event, {})
-
-                sqs.delete_message(
-                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
-                    ReceiptHandle=receipt_handle,
-                )
-
-        except Exception as e:
-            LOGGER.error(traceback.format_exc())
-            time.sleep(2)

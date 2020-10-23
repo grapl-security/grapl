@@ -612,8 +612,12 @@ job=run-e2e-integration-tests:
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
+    - DEBUG_SERVICES={env.DEBUG_SERVICES:}
   depends:
     - integration-env
+  ports:
+    # Used for debugger
+    - 8400:8400
 
 job=build-analyzer-executor:
   use: analyzer-executor-build
@@ -625,6 +629,15 @@ job=build-analyzer-executor:
 job=run-analyzer-executor-unit-tests:
   use: analyzer-executor-build
   command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
+
+job=typecheck-analyzer-executor:
+  use: analyzer-executor-build
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      pip install mypy && 
+      mypy analyzer_executor/**/*.py
+      "
 
 job=build-engagement-creator:
   use: engagement-creator-build
@@ -846,5 +859,6 @@ alias=python-typecheck:
     - run-e2e-integration-tests-typecheck
     - run-engagement-creator-typecheck
     - run-model-plugin-deployer-typecheck
+    - typecheck-analyzer-executor
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"
