@@ -5,54 +5,7 @@ from typing import Dict, Type, Any
 from pydgraph import DgraphClient
 from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.viewable import Viewable
-
-
-def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
-    node_dict["uid"] = "_:blank-0"
-    node_key = node_dict["node_key"]
-    query = f"""
-        {{
-            q0(func: eq(node_key, "{node_key}"), first: 1) {{
-                    uid,
-                    dgraph.type
-                    expand(_all_)
-            }}
-        }}
-        """
-    txn = client.txn(read_only=False)
-
-    try:
-        res = json.loads(txn.query(query).json)["q0"]
-        new_uid = None
-        if res:
-            node_dict["uid"] = res[0]["uid"]
-            new_uid = res[0]["uid"]
-
-        mutation = node_dict
-
-        m_res = txn.mutate(set_obj=mutation, commit_now=True)
-        uids = m_res.uids
-
-        if new_uid is None:
-            new_uid = uids["blank-0"]
-        return str(new_uid)
-
-    finally:
-        txn.discard()
-
-
-def upsert(
-    client: DgraphClient,
-    type_name: str,
-    view_type: "Type[Viewable]",
-    node_key: str,
-    node_props: Dict[str, Any],
-) -> "Viewable":
-    node_props["node_key"] = node_key
-    node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
-    uid = _upsert(client, node_props)
-    node_props["uid"] = uid
-    return view_type.from_dict(node_props, client)
+from grapl_analyzerlib.dgraph_mutate import upsert
 
 
 def create_edge(
