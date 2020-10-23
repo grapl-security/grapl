@@ -353,11 +353,13 @@ class AnalyzerExecutor extends cdk.NestedStack {
             subscribes_to: dispatched_analyzer.topic,
             opt: {
                 runtime: lambda.Runtime.PYTHON_3_7,
+                py_entrypoint: "lambda_function.lambda_handler"
             },
             version: props.version,
             watchful: props.watchful,
             metric_forwarder: props.metricForwarder,
-        });
+        },
+        );
 
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
 
