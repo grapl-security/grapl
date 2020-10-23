@@ -12,7 +12,8 @@ use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use sqs_lambda::cache::NopCache;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
-use sqs_lambda::local_sqs_service::local_sqs_service;
+use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
+use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use std::time::Duration;
 
 const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
@@ -78,6 +79,9 @@ async fn initialize_local_service<
 
     let event_encoder = SubgraphSerializer::new(Vec::with_capacity(1024));
 
+    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
+    options_builder.with_minimal_buffer_completion_policy();
+
     /*
      * queue_url - The queue to be reading incoming log events from.
      * destination_bucket - The destination S3 bucket where completed, serialized subgraphs should be written to.
@@ -85,7 +89,7 @@ async fn initialize_local_service<
      * event_encoder - An event encoder (SubgraphSerializer) used to serialize the subgraphs created by the provided generator.
      * generator - An EventHandler that takes in log events, parses them, and generates subgraphs based on the logs provided.
      */
-    local_sqs_service(
+    local_sqs_service_with_options(
         queue_url,
         destination_bucket,
         service_execution_deadline,
@@ -98,6 +102,7 @@ async fn initialize_local_service<
         NopCache {},
         |_, event_result| debug!("{:?}", event_result),
         |bucket, key| local_emit_event(bucket, key),
+        options_builder.build(),
     )
     .await?;
     Ok(())

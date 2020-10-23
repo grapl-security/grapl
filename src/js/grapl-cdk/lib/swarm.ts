@@ -43,8 +43,8 @@ export class Swarm extends cdk.Construct {
         swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(22));
         swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(2376));
         swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(2377));
-        swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(7496));
-        swarmSecurityGroup.connections.allowInternally(ec2.Port.udp(7496));
+        swarmSecurityGroup.connections.allowInternally(ec2.Port.tcp(7946));
+        swarmSecurityGroup.connections.allowInternally(ec2.Port.udp(7946));
         swarmSecurityGroup.connections.allowInternally(ec2.Port.udp(4789));
 
         // allow hosts in the swarm security group to communicate

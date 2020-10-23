@@ -16,6 +16,12 @@ pub fn generate_file_create_subgraph(
     let timestamp = utc_to_epoch(&file_create.event_data.creation_utc_time)?;
     let mut graph = Graph::new(timestamp);
 
+    let asset = AssetBuilder::default()
+        .asset_id(file_create.system.computer.computer.clone())
+        .hostname(file_create.system.computer.computer.clone())
+        .build()
+        .map_err(|err| failure::err_msg(err))?;
+
     let creator = ProcessBuilder::default()
         .asset_id(file_create.system.computer.computer.clone())
         .state(ProcessState::Existing)
@@ -37,10 +43,18 @@ pub fn generate_file_create_subgraph(
         .map_err(|err| failure::err_msg(err))?;
 
     graph.add_edge(
+        "process_asset",
+        creator.clone_node_key(),
+        asset.clone_node_key(),
+    );
+
+    graph.add_edge(
         "created_files",
         creator.clone_node_key(),
         file.clone_node_key(),
     );
+
+    graph.add_node(asset);
     graph.add_node(creator);
     graph.add_node(file);
 
