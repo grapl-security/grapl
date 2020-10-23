@@ -142,6 +142,44 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
 
 
 class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node
+        * - created_timestamp
+          - int
+          - Time the process outbound network connection was created (in millis-since-epoch).
+        * - terminated_timestamp
+          - int
+          - Time the process outbound network connection was terminated (in millis-since-epoch).
+        * - last_seen_timestamp
+          - int
+          - Time the process outbound network connection was last seen (in millis-since-epoch)
+        * - port
+          - int
+          - Port of the outbound process network connection.
+        * - ip_address
+          - str
+          - IP Address of the outbound process network connection.
+        * - protocol
+          - int
+          - Network protocol of the outbound process network connection.
+        * - connecting_processes
+          - :doc:`/nodes/process`
+          - todo: documentation
+        * - connected_over
+          - :doc:`/nodes/ip_port`
+          - todo: documentation
+        * - connected_to
+          - :doc:`/nodes/ip_port`
+          - todo: documentation
+    """
+
     queryable = ProcessOutboundConnectionQuery
 
     def __init__(

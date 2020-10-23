@@ -220,7 +220,7 @@ class GraphMerger extends cdk.NestedStack {
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
-                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                MG_ALPHAS: 'http://' + props.dgraphSwarmCluster.alphaHostPort(),
                 MERGED_CACHE_ADDR:
                     graph_merge_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT:
@@ -353,11 +353,13 @@ class AnalyzerExecutor extends cdk.NestedStack {
             subscribes_to: dispatched_analyzer.topic,
             opt: {
                 runtime: lambda.Runtime.PYTHON_3_7,
+                py_entrypoint: "lambda_function.lambda_handler"
             },
             version: props.version,
             watchful: props.watchful,
             metric_forwarder: props.metricForwarder,
-        });
+        },
+        );
 
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
 
@@ -469,12 +471,24 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         this.dgraphSwarmCluster = new Swarm(this, 'DGraphSwarmCluster', {
             prefix: props.prefix,
             vpc: props.vpc,
-            internalServicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080), ec2.Port.tcp(7081), ec2.Port.tcp(7082)],
+            internalServicePorts: [
+                ec2.Port.tcp(5080),
+                ec2.Port.tcp(6080),
+                ec2.Port.tcp(7081),
+                ec2.Port.tcp(7082),
+                ec2.Port.tcp(7083),
+                ec2.Port.tcp(8081),
+                ec2.Port.tcp(8082),
+                ec2.Port.tcp(8083),
+                ec2.Port.tcp(9081),
+                ec2.Port.tcp(9082),
+                ec2.Port.tcp(9083)
+            ],
         });
     }
 
     public alphaHostPort(): string {
-	return `http://${this.dgraphAlphaZone.zoneName}:9080`;
+        return `${this.dgraphAlphaZone.zoneName}:9080`;
     }
 
     public allowConnectionsFrom(other: ec2.IConnectable): void {

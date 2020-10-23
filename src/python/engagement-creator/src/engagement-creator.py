@@ -276,7 +276,7 @@ def _process_one_event(
     ]  # same type as `.to_adjacency_list()["nodes"]`
     edges = incident_graph["edges"]
     risk_score = incident_graph["risk_score"]
-    lens_dict = incident_graph["lenses"]
+    lens_dict: Sequence[Tuple[str, str]] = incident_graph["lenses"]
     risky_node_keys = incident_graph["risky_node_keys"]
 
     LOGGER.debug(
@@ -295,6 +295,7 @@ def _process_one_event(
         LOGGER.debug(f"Copying node: {node}")
 
         for lens_type, lens_name in lens_dict:
+            # i.e. "hostname", "DESKTOP-WHATEVER"
             LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
             lens_id = lens_name + lens_type
             lens: LensView = lenses.get(lens_name) or LensView.get_or_create(
