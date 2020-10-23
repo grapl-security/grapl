@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::io::Cursor;
 use std::ops::Deref;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
@@ -36,15 +36,15 @@ use sqs_lambda::redis_cache::RedisCache;
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
-use graph_descriptions::file::FileState;
-use graph_descriptions::graph_description::host::*;
-use graph_descriptions::graph_description::node::WhichNode;
-use graph_descriptions::graph_description::*;
-use graph_descriptions::ip_connection::IpConnectionState;
-use graph_descriptions::network_connection::NetworkConnectionState;
-use graph_descriptions::node::NodeT;
-use graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::host::*;
+use grapl_graph_descriptions::graph_description::node::WhichNode;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::ip_connection::IpConnectionState;
+use grapl_graph_descriptions::network_connection::NetworkConnectionState;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 
@@ -407,7 +407,7 @@ fn remove_dead_edges(graph: &mut Graph) {
 }
 
 fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
-    for (node_key, edge_list) in graph.edges.iter_mut() {
+    for (_node_key, edge_list) in graph.edges.iter_mut() {
         for edge in edge_list.edges.iter_mut() {
             let from = match unid_id_map.get(&edge.from) {
                 Some(from) => from,
@@ -443,9 +443,9 @@ fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
 fn remap_nodes(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
     let mut nodes = HashMap::with_capacity(graph.nodes.len());
 
-    for (node_key, node) in graph.nodes.iter_mut() {
+    for (_node_key, node) in graph.nodes.iter_mut() {
         // DynamicNodes are identified in-place
-        if let Some(n) = node.as_dynamic_node() {
+        if let Some(_n) = node.as_dynamic_node() {
             let old_node = nodes.insert(node.clone_node_key(), node.clone());
             if let Some(ref old_node) = old_node {
                 NodeT::merge(
@@ -542,7 +542,7 @@ async fn attribute_asset_ids(
     let mut output_graph = Graph::new(unid_graph.timestamp);
     output_graph.edges = unid_graph.edges;
 
-    let node_asset_ids: HashMap<String, String> = HashMap::new();
+    let _node_asset_ids: HashMap<String, String> = HashMap::new();
     let mut err = None;
 
     for node in unid_graph.nodes.values() {
@@ -616,7 +616,7 @@ where
         subgraphs: GeneratedSubgraphs,
     ) -> OutputEvent<Self::OutputEvent, Self::Error> {
         warn!("node-identifier.handle_event");
-        let region = self.region.clone();
+        let _region = self.region.clone();
 
         let mut attribution_failure = None;
 
@@ -763,6 +763,10 @@ where
                 identified_graph,
             ])))
         };
+
+        identities
+            .into_iter()
+            .for_each(|identity| completed.add_identity(identity));
 
         completed
     }
@@ -1069,30 +1073,34 @@ pub fn init_dynamodb_client() -> DynamoDbClient {
 }
 
 #[derive(Clone, Default)]
-pub struct LocalCache {
-    inner_map: HashSet<Vec<u8>>,
+struct HashCache {
+    cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
 }
 
 #[async_trait]
-impl Cache for LocalCache {
+impl sqs_lambda::cache::Cache for HashCache {
     async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
     ) -> Result<CacheResponse, sqs_lambda::error::Error> {
-        match self.inner_map.contains(&cacheable.identity()) {
-            true => Ok(CacheResponse::Hit),
-            false => Ok(CacheResponse::Miss),
+        let self_cache = self.cache.lock().unwrap();
+
+        let id = cacheable.identity();
+        if self_cache.contains(&id) {
+            Ok(CacheResponse::Hit)
+        } else {
+            Ok(CacheResponse::Miss)
         }
     }
-
     async fn store(&mut self, identity: Vec<u8>) -> Result<(), sqs_lambda::error::Error> {
-        self.inner_map.insert(identity);
+        let mut self_cache = self.cache.lock().unwrap();
+        self_cache.insert(identity);
         Ok(())
     }
 }
 
 pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let cache = LocalCache::default();
+    let cache = HashCache::default();
 
     info!("region");
     let region = Region::Custom {
@@ -1161,7 +1169,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
             proto: Vec::with_capacity(1024),
         },
         node_identifier,
-        LocalCache::default(),
+        cache.clone(),
         |_, event_result| {
             dbg!(event_result);
         },

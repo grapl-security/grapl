@@ -1,18 +1,45 @@
-from grapl_analyzerlib.nodes.dynamic_node import DynamicNodeView, DynamicNodeQuery
-from grapl_analyzerlib.nodes.process_node import (
+from grapl_analyzerlib.nodes.process import (
     ProcessView,
     ProcessQuery,
-    IProcessView,
-    IProcessQuery,
 )
 
-from grapl_analyzerlib.nodes.file_node import FileView, FileQuery, IFileView, IFileQuery
-from grapl_analyzerlib.nodes.risk_node import RiskView, RiskQuery, IRiskView, IRiskQuery
-from grapl_analyzerlib.nodes.any_node import NodeQuery, NodeView
-from grapl_analyzerlib.nodes.lens_node import LensView, LensQuery
-from grapl_analyzerlib.nodes.queryable import Queryable, NQ
-from grapl_analyzerlib.nodes.viewable import Viewable, NV
-from grapl_analyzerlib.nodes.comparators import Not
+from grapl_analyzerlib.nodes.asset import AssetView, AssetQuery, AssetSchema
+from grapl_analyzerlib.nodes.base import BaseView, BaseQuery, BaseSchema
+from grapl_analyzerlib.nodes.entity import EntityView, EntityQuery, EntitySchema
+from grapl_analyzerlib.nodes.process import ProcessView, ProcessQuery, ProcessSchema
+from grapl_analyzerlib.nodes.file import FileView, FileQuery, FileSchema
+from grapl_analyzerlib.nodes.risk import RiskView, RiskQuery, RiskSchema
+from grapl_analyzerlib.nodes.lens import LensView, LensQuery, LensSchema
+from grapl_analyzerlib.nodes.ip_port import IpPortView, IpPortQuery, IpPortSchema
+from grapl_analyzerlib.nodes.ip_address import (
+    IpAddressView,
+    IpAddressQuery,
+    IpAddressSchema,
+)
+from grapl_analyzerlib.nodes.process_outbound_connection import (
+    ProcessOutboundConnectionView,
+    ProcessOutboundConnectionQuery,
+    ProcessOutboundConnectionSchema,
+)
+from grapl_analyzerlib.nodes.process_inbound_connection import (
+    ProcessInboundConnectionView,
+    ProcessInboundConnectionQuery,
+    ProcessInboundConnectionSchema,
+)
+from grapl_analyzerlib.nodes.ip_connection import (
+    IpConnectionView,
+    IpConnectionQuery,
+    IpConnectionSchema,
+)
+from grapl_analyzerlib.nodes.network_connection import (
+    NetworkConnectionView,
+    NetworkConnectionQuery,
+    NetworkConnectionSchema,
+)
+
+from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.viewable import Viewable
+from grapl_analyzerlib.comparators import Not
 
 from grapl_analyzerlib.execution import ExecutionHit
 from grapl_analyzerlib.grapl_client import (

@@ -19,7 +19,7 @@ if (!IS_LOCAL) {
 }
 
 const corsRegexp = new RegExp(
-    `https://${prefix}-engagement-ux-bucket.s3[\.\w\-]{1,14}amazonaws.com/`,
+    `https://${prefix}-engagement-ux-bucket.s3[\.\w\-]{1,14}amazonaws.com[/]{0,1}`,
     'i'
 );
 
@@ -51,13 +51,7 @@ const corsDelegate = (req, callback) => {
 }
 
 
-const middleware = [cors(corsDelegate)];
-
-if (!IS_LOCAL) {
-    middleware.push(validateJwt)
-} else {
-    console.info("Running locally - disabling auth");
-}
+const middleware = [cors(corsDelegate), validateJwt];
 
 app.options('*', cors(corsDelegate));
 app.use('/graphql', middleware, graphqlHTTP({

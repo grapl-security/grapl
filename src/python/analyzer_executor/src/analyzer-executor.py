@@ -24,14 +24,15 @@ import botocore.exceptions
 import redis
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
-from grapl_analyzerlib.nodes.any_node import NodeView
-from grapl_analyzerlib.nodes.queryable import (
-    Queryable,
+from grapl_analyzerlib.nodes.base import BaseView
+from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.query_gen import (
+    gen_query_parameterized,
+    VarAllocator,
     traverse_query_iter,
-    generate_query,
 )
-from grapl_analyzerlib.nodes.subgraph_view import SubgraphView
-from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.subgraph_view import SubgraphView
+from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.plugin_retriever import load_plugins
 from pydgraph import DgraphClientStub, DgraphClient
 
@@ -133,7 +134,7 @@ def handle_result_graphs(analyzer, result_graphs, sender):
 def get_analyzer_view_types(query: Queryable) -> Set[Type[Viewable]]:
     query_types = set()
     for node in traverse_query_iter(query):
-        query_types.add(node.view_type)
+        query_types.add(node.associated_viewable())
     return query_types
 
 
@@ -141,7 +142,7 @@ def exec_analyzers(
     dg_client,
     file: str,
     msg_id: str,
-    nodes: List[NodeView],
+    nodes: List[BaseView],
     analyzers: Dict[str, Analyzer],
     sender: Any,
 ):
@@ -151,9 +152,6 @@ def exec_analyzers(
 
     if not nodes:
         LOGGER.warning("Received empty array of nodes")
-
-    result_name_to_analyzer = {}
-    query_str = ""
 
     for node in nodes:
         querymap = defaultdict(list)
@@ -165,7 +163,6 @@ def exec_analyzers(
             analyzer = analyzer  # type: Analyzer
             queries = analyzer.get_queries()
             if isinstance(queries, list) or isinstance(queries, tuple):
-
                 querymap[an_name].extend(queries)
             else:
                 querymap[an_name].append(queries)
@@ -174,68 +171,9 @@ def exec_analyzers(
             analyzer = analyzers[an_name]
 
             for i, query in enumerate(queries):
-                analyzer_query_types = get_analyzer_view_types(query)
-
-                if node.node.get_node_type() + "View" not in [
-                    n.__name__ for n in analyzer_query_types
-                ]:
-                    continue
-
-                r = str(random.randint(10, 100))
-                result_name = f"{an_name}u{int(node.uid, 16)}i{i}r{r}".strip().lower()
-                result_name_to_analyzer[result_name] = (
-                    an_name,
-                    analyzer,
-                    query.view_type,
-                )
-                query_str += "\n"
-                query_str += generate_query(
-                    query_name=result_name,
-                    binding_modifier=result_name,
-                    root=query,
-                    contains_node_key=node.node_key,
-                )
-
-    if not query_str:
-        LOGGER.warning("No nodes to query")
-        return
-
-    txn = dg_client.txn(read_only=True)
-    try:
-        response = json.loads(txn.query(query_str).json)
-    finally:
-        txn.discard()
-
-    analyzer_to_results = defaultdict(list)
-    for result_name, results in response.items():
-        for result in results:
-            analyzer_meta = result_name_to_analyzer[
-                result_name
-            ]  # type: Tuple[str, Analyzer, Type[Viewable]]
-            an_name, analyzer, view_type = (
-                analyzer_meta[0],
-                analyzer_meta[1],
-                analyzer_meta[2],
-            )
-
-            result_graph = view_type.from_dict(dg_client, result)
-
-            response_ty = inspect.getfullargspec(analyzer.on_response).annotations.get(
-                "response"
-            )
-
-            if response_ty == NodeView:
-                LOGGER.warning("Analyzer on_response is expecting a NodeView")
-                result_graph = NodeView.from_view(result_graph)
-
-            analyzer_to_results[an_name].append(result_graph)
-
-    with ThreadPoolExecutor(max_workers=6) as executor:
-
-        for an_name, result_graphs in analyzer_to_results.items():
-            analyzer = analyzers[an_name]
-            executor.submit(handle_result_graphs, analyzer, result_graphs, sender)
-        executor.shutdown(wait=True)
+                response = query.query_first(dg_client, contains_node_key=node.node_key)
+                if response:
+                    analyzer.on_response(response, sender)
 
 
 def chunker(seq, size):
@@ -436,15 +374,21 @@ def into_sqs_message(bucket: str, key: str) -> str:
             "Records": [
                 {
                     "eventTime": datetime.utcnow().isoformat(),
-                    "principalId": {"principalId": None,},
-                    "requestParameters": {"sourceIpAddress": None,},
+                    "principalId": {
+                        "principalId": None,
+                    },
+                    "requestParameters": {
+                        "sourceIpAddress": None,
+                    },
                     "responseElements": {},
                     "s3": {
                         "schemaVersion": None,
                         "configurationId": None,
                         "bucket": {
                             "name": bucket,
-                            "ownerIdentity": {"principalId": None,},
+                            "ownerIdentity": {
+                                "principalId": None,
+                            },
                         },
                         "object": {
                             "key": key,
@@ -462,11 +406,17 @@ def into_sqs_message(bucket: str, key: str) -> str:
 
 
 def send_s3_event(
-    sqs_client: Any, queue_url: str, output_bucket: str, output_path: str,
+    sqs_client: Any,
+    queue_url: str,
+    output_bucket: str,
+    output_path: str,
 ):
     sqs_client.send_message(
         QueueUrl=queue_url,
-        MessageBody=into_sqs_message(bucket=output_bucket, key=output_path,),
+        MessageBody=into_sqs_message(
+            bucket=output_bucket,
+            key=output_path,
+        ),
     )
 
 

@@ -70,3 +70,4 @@ pip-log.txt
 stale_outputs_checked
 .log/
 .dobi/
+.hypothesis/

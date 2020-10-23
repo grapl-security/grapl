@@ -8,6 +8,8 @@ members = [
     "./graph-generator-lib",
     "./graph-merger",
     "./grapl-config",
+    "./grapl-observe",
+    "./metric-forwarder",
     "./node-identifier",
-    "./sysmon-subgraph-generator"
+    "./sysmon-subgraph-generator",
 ]

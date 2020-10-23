@@ -160,4 +160,4 @@ querying capabilities.
 ## Setup
 Grapl can run locally on your computer, or you can deploy to AWS.
 
-https://grapl.readthedocs.io/en/latest/setup/index.html
+https://grapl.readthedocs.io/en/latest/setup/local.html
