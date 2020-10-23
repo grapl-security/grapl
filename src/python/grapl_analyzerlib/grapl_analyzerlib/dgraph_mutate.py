@@ -14,6 +14,7 @@ from grapl_analyzerlib.queryable import Queryable
 V = TypeVar("V", bound=Viewable)
 Q = TypeVar("Q", bound=Queryable)
 
+
 def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
@@ -26,9 +27,8 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
             }}
         }}
         """
-    txn = client.txn(read_only=False)
 
-    try:
+    with client.txn_context(read_only=False) as txn:
         res = json.loads(txn.query(query).json)["q0"]
         new_uid = None
         if res:
@@ -40,8 +40,6 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
         mut_res = txn.mutate(set_obj=mutation, commit_now=True)
         new_uid = node_dict.get("uid") or mut_res.uids["blank-0"]
         return cast(str, new_uid)
-    finally:
-        txn.discard()
 
 
 def upsert(

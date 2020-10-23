@@ -2,7 +2,8 @@ import os
 
 from typing import Iterator, Tuple
 
-from pydgraph import DgraphClient, DgraphClientStub
+from pydgraph import DgraphClient, DgraphClientStub, Txn
+from contextlib import contextmanager
 
 
 def mg_alphas() -> Iterator[Tuple[str, int]]:
@@ -16,6 +17,16 @@ class GraphClient(DgraphClient):
     @classmethod
     def from_host_port(cls, host: str, port: int) -> "GraphClient":
         return cls(*(DgraphClientStub(f"{host}:{port}"),))
+
+    @contextmanager
+    def txn_context(self, read_only: bool = False) -> Iterator[Txn]:
+        # It'd be nice to - after a full migration to `txn_context` - perhaps restrict calls to `.txn()`
+
+        txn = self.txn(read_only=read_only)
+        try:
+            yield txn
+        finally:
+            txn.discard()
 
 
 class MasterGraphClient(GraphClient):

@@ -18,23 +18,7 @@ from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
 from grapl_analyzerlib.nodes.file import FileQuery, FileView
 from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.dgraph_mutate import upsert
-
-
-
-def create_edge(
-    client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
-) -> None:
-    if edge_name[0] == "~":
-        mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
-
-    else:
-        mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
-
-    txn = client.txn(read_only=False)
-    try:
-        txn.mutate(set_obj=mut, commit_now=True)
-    finally:
-        txn.discard()
+from grapl_analyzerlib.test_utils.dgraph_utils import create_edge
 
 
 def get_or_create_file_node(
