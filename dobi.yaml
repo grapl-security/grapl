@@ -630,6 +630,15 @@ job=run-analyzer-executor-unit-tests:
   use: analyzer-executor-build
   command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
 
+job=typecheck-analyzer-executor:
+  use: analyzer-executor-build
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      pip install mypy && 
+      mypy analyzer_executor/**/*.py
+      "
+
 job=build-engagement-creator:
   use: engagement-creator-build
   mounts:
@@ -850,5 +859,6 @@ alias=python-typecheck:
     - run-e2e-integration-tests-typecheck
     - run-engagement-creator-typecheck
     - run-model-plugin-deployer-typecheck
+    - typecheck-analyzer-executor
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"
