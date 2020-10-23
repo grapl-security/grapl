@@ -56,6 +56,13 @@ impl TryFrom<ProcessStart> for Graph {
                 child.clone_node_key(),
                 child_exe.clone_node_key(),
             );
+
+            graph.add_edge(
+                "files_on_asset",
+                asset.clone_node_key(),
+                child_exe.clone_node_key()
+            );
+
             info!("child_exe: {}", child_exe.clone().into_json());
             graph.add_node(child_exe);
         }
@@ -72,7 +79,13 @@ impl TryFrom<ProcessStart> for Graph {
             child.clone_node_key(),
         );
 
-        graph.add_edge("children", parent.clone_node_key(), child.clone_node_key());
+        graph.add_edge(
+            "children",
+            parent.clone_node_key(),
+            child.clone_node_key()
+        );
+
+        graph.add_node(asset);
         graph.add_node(parent);
         graph.add_node(child);
 

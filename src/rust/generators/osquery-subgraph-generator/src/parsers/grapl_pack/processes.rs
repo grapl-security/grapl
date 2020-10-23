@@ -15,7 +15,7 @@ use super::from_str;
 pub(crate) struct OSQueryProcessQuery {
     #[serde(deserialize_with = "from_str")]
     pid: u64,
-    name: String,
+    name: Option<String>,
     path: String,
     cmdline: String,
     #[serde(deserialize_with = "from_str")]
@@ -56,7 +56,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
             .hostname(process_event.host_identifier.clone())
             .state(ProcessState::Created)
             .created_timestamp(process_start_time)
-            .process_name(process_event.columns.name.clone())
+            .process_name(process_event.columns.name.clone().unwrap_or("".to_string()))
             .process_id(process_event.columns.pid)
             .build()
             .map_err(failure::err_msg)?;
@@ -74,6 +74,12 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
                 "bin_file",
                 child.clone_node_key(),
                 child_exe.clone_node_key(),
+            );
+
+            graph.add_edge(
+                "files_on_asset",
+                asset.clone_node_key(),
+                child_exe.clone_node_key()
             );
 
             graph.add_node(child_exe);

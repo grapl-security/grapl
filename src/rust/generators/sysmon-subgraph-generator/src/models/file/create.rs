@@ -54,6 +54,12 @@ pub fn generate_file_create_subgraph(
         file.clone_node_key(),
     );
 
+    graph.add_edge(
+        "files_on_asset",
+        asset.clone_node_key(),
+        file.clone_node_key()
+    );
+
     graph.add_node(asset);
     graph.add_node(creator);
     graph.add_node(file);

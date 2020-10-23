@@ -19,6 +19,11 @@ impl TryFrom<FileCreate> for Graph {
     type Error = String;
 
     fn try_from(file_create: FileCreate) -> Result<Self, Self::Error> {
+        let asset = AssetBuilder::default()
+            .hostname(file_create.hostname.clone())
+            .asset_id(file_create.hostname.clone())
+            .build()?;
+
         let creator = ProcessBuilder::default()
             .hostname(file_create.hostname.clone())
             .process_name(file_create.creator_process_name.unwrap_or_default())
@@ -43,6 +48,20 @@ impl TryFrom<FileCreate> for Graph {
             creator.clone_node_key(),
             file.clone_node_key(),
         );
+
+        graph.add_edge(
+            "asset_processes",
+            asset.clone_node_key(),
+            creator.clone_node_key()
+        );
+
+        graph.add_edge(
+            "files_on_asset",
+            asset.clone_node_key(),
+            file.clone_node_key()
+        );
+
+        graph.add_node(asset);
         graph.add_node(creator);
         graph.add_node(file);
 

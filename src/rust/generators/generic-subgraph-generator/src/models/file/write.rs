@@ -18,7 +18,12 @@ impl TryFrom<FileWrite> for Graph {
     type Error = String;
 
     fn try_from(file_write: FileWrite) -> Result<Self, Self::Error> {
-        let deleter = ProcessBuilder::default()
+        let asset = AssetBuilder::default()
+            .hostname(file_write.hostname.clone())
+            .asset_id(file_write.hostname.clone())
+            .build()?;
+
+        let writer = ProcessBuilder::default()
             .process_name(file_write.writer_process_name.unwrap_or_default())
             .hostname(file_write.hostname.clone())
             .state(ProcessState::Existing)
@@ -37,10 +42,24 @@ impl TryFrom<FileWrite> for Graph {
 
         graph.add_edge(
             "wrote_files",
-            deleter.clone_node_key(),
+            writer.clone_node_key(),
             file.clone_node_key(),
         );
-        graph.add_node(deleter);
+
+        graph.add_edge(
+            "asset_processes",
+            asset.clone_node_key(),
+            writer.clone_node_key()
+        );
+
+        graph.add_edge(
+            "files_on_asset",
+            asset.clone_node_key(),
+            file.clone_node_key()
+        );
+
+        graph.add_node(asset);
+        graph.add_node(writer);
         graph.add_node(file);
 
         Ok(graph)

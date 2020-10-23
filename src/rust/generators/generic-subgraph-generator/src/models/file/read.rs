@@ -18,6 +18,11 @@ impl TryFrom<FileRead> for Graph {
     type Error = String;
 
     fn try_from(file_read: FileRead) -> Result<Self, Self::Error> {
+        let asset = AssetBuilder::default()
+            .hostname(file_read.hostname.clone())
+            .asset_id(file_read.hostname.clone())
+            .build()?;
+
         let deleter = ProcessBuilder::default()
             .process_name(file_read.reader_process_name.unwrap_or_default())
             .hostname(file_read.hostname.clone())
@@ -40,6 +45,20 @@ impl TryFrom<FileRead> for Graph {
             deleter.clone_node_key(),
             file.clone_node_key(),
         );
+
+        graph.add_edge(
+            "asset_processes",
+            asset.clone_node_key(),
+            deleter.clone_node_key()
+        );
+
+        graph.add_edge(
+            "files_on_asset",
+            asset.clone_node_key(),
+            file.clone_node_key()
+        );
+
+        graph.add_node(asset);
         graph.add_node(deleter);
         graph.add_node(file);
 
