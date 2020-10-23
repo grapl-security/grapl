@@ -108,7 +108,7 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}

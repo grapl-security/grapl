@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 use regex::Regex;
 use grapl_graph_descriptions::graph_description::*;
 
-mod packs;
+mod grapl_pack;
 
 #[derive(Serialize, Deserialize)]
 struct OSQueryResponse<C> {
@@ -20,7 +20,6 @@ struct OSQueryResponse<C> {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(untagged)]
 enum OSQueryAction {
     #[serde(rename="added")]
     ADDED,
@@ -59,9 +58,10 @@ impl TryFrom<PartiallyDeserializedOSQueryLog> for Graph {
         let query_name = pack_match.get(2).map(|m| m.as_str())
             .ok_or(failure::err_msg(format!("Unable to parse query name from OSQuery log name field: {}", &response.name)))?;
 
-        match pack_name {
-            "grapl" => response.process_as_grapl_pack(query_name),
-            unsupported_pack_name => Err(failure::err_msg(format!("Unsupported pack: {}", unsupported_pack_name)))
+        match (pack_name, query_name) {
+            ("grapl", "processes") => response.to_graph_from_grapl_processes(),
+            ("grapl", "files") => response.to_graph_from_grapl_files(),
+            unsupported_query => Err(failure::err_msg(format!("Unsupported query: {}_{}", unsupported_query.0, unsupported_query.1)))
         }
     }
 }
