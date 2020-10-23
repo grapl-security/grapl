@@ -81,7 +81,7 @@ jobs:
         run: |
           wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
           chmod +x dobi-linux
-    
+
       - name: Export tag
         run: |
           echo "::set-env name=TAG::staging"

@@ -443,7 +443,10 @@ class EngagementCreator extends cdk.NestedStack {
 
 interface DGraphSwarmClusterProps {
     prefix: string;
+    version: string;
     vpc: ec2.IVpc;
+    instanceType: ec2.InstanceType;
+    clusterSize: number;
 }
 
 export class DGraphSwarmCluster extends cdk.NestedStack {
@@ -458,6 +461,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
 
         this.dgraphSwarmCluster = new Swarm(this, 'SwarmCluster', {
             prefix: props.prefix,
+            version: props.version,
             vpc: props.vpc,
             internalServicePorts: [
                 ec2.Port.tcp(5080),
@@ -472,41 +476,41 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
                 ec2.Port.tcp(9082),
                 ec2.Port.tcp(9083)
             ],
-            instanceType: new ec2.InstanceType("t3a.medium"), // FIXME: parametrize
-            clusterSize: 3
+            instanceType: props.instanceType,
+            clusterSize: props.clusterSize,
         });
 
         // FIXME: this won't work
-        this.dgraphSwarmCluster.instances.forEach((instance, idx) => {
-            new cloudwatch.Alarm(this, `SwarmDgraphDisk-${idx}`, {
-                alarmName: `dgraph_disk_used_percent-${instance.instanceId}`,
-                alarmDescription: `DGraph volume disk usage on ${instance.instanceId}`,
-                metric: new cloudwatch.Metric({
-                    metricName: `disk_used_percent-${instance.instanceId}`,
-                    namespace: 'CWAgent',
-                    dimensions: {
-                        'InstanceId': instance.instanceId,
-                        'path': '/dgraph'
-                    }
-                }),
-                evaluationPeriods: 1,
-                threshold: 95,
-            });
-            new cloudwatch.Alarm(this, `SwarmRootDisk-${idx}`, {
-                alarmName: `root_disk_used_percent-${instance.instanceId}`,
-                alarmDescription: `Root volume disk usage on ${instance.instanceId}`,
-                metric: new cloudwatch.Metric({
-                    metricName: `disk_used_percent-${instance.instanceId}`,
-                    namespace: 'CWAgent',
-                    dimensions: {
-                        'InstanceId': instance.instanceId,
-                        'path': '/'
-                    }
-                }),
-                evaluationPeriods: 1,
-                threshold: 95,
-            });
-        });
+        // this.dgraphSwarmCluster.instances.forEach((instance, idx) => {
+        //     new cloudwatch.Alarm(this, `SwarmDgraphDisk-${idx}`, {
+        //         alarmName: `dgraph_disk_used_percent-${instance.instanceId}`,
+        //         alarmDescription: `DGraph volume disk usage on ${instance.instanceId}`,
+        //         metric: new cloudwatch.Metric({
+        //             metricName: `disk_used_percent-${instance.instanceId}`,
+        //             namespace: 'CWAgent',
+        //             dimensions: {
+        //                 'InstanceId': instance.instanceId,
+        //                 'path': '/dgraph'
+        //             }
+        //         }),
+        //         evaluationPeriods: 1,
+        //         threshold: 95,
+        //     });
+        //     new cloudwatch.Alarm(this, `SwarmRootDisk-${idx}`, {
+        //         alarmName: `root_disk_used_percent-${instance.instanceId}`,
+        //         alarmDescription: `Root volume disk usage on ${instance.instanceId}`,
+        //         metric: new cloudwatch.Metric({
+        //             metricName: `disk_used_percent-${instance.instanceId}`,
+        //             namespace: 'CWAgent',
+        //             dimensions: {
+        //                 'InstanceId': instance.instanceId,
+        //                 'path': '/'
+        //             }
+        //         }),
+        //         evaluationPeriods: 1,
+        //         threshold: 95,
+        //     });
+        // });
     }
 
     public alphaHostPort(): string {
@@ -743,6 +747,8 @@ export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
     version?: string;
     watchfulEmail?: string;
+    dgraphInstanceType?: ec2.InstanceType;
+    dgraphClusterSize?: number;
 }
 
 export class GraplCdkStack extends cdk.Stack {
@@ -795,6 +801,9 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 prefix: this.prefix,
                 vpc: grapl_vpc,
+                version: props.version || 'latest',
+                instanceType: props.dgraphInstanceType || new ec2.InstanceType("t3a.medium"),
+                clusterSize: props.dgraphClusterSize || 3
             }
         );
 

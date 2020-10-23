@@ -8,7 +8,9 @@ import { EngagementUx } from '../lib/engagement';
 // const deployName = 'Grapl-MYDEPLOYMENT';
 // const graplVersion = 'latest';
 // const watchfulEmail = undefined;
-const region = 'us-east-1';
+const dgraphInstanceType = undefined;
+const dgraphClusterSize = undefined;
+const region = undefined;
 
 const deployName = 'jgrillo-test';
 const graplVersion = 'jgrillo-test';
@@ -20,7 +22,9 @@ const grapl = new GraplCdkStack(app, 'Grapl', {
     version: graplVersion,
     stackName: deployName,
     tags: { 'grapl deployment': deployName },
-    watchfulEmail,
+    watchfulEmail: watchfulEmail,
+    dgraphInstanceType: dgraphInstanceType,
+    dgraphClusterSize: dgraphClusterSize,
     description: 'Grapl base deployment',
     env: { 'region': region || process.env.CDK_DEFAULT_REGION }
 });
