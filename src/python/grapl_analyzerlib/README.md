@@ -5,12 +5,6 @@ A library for working with [Grapl](https://github.com/insanitybit/grapl)
 
 # Development Setup
 ```
-cd <the same folder as this readme>
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-# reads requirements from setup.py
-pip install . ".[dev]"
-# Give it a shot!
-./run_tests.sh
+TAG=latest dobi run-grapl-analyzerlib-integration-tests
+TAG=latest dobi run-grapl-analyzerlib-unit-tests
 ```
