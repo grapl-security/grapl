@@ -13,4 +13,6 @@ RUN npm run build
 
 # more useful than the Node shell
 RUN apk add bash
-CMD "/bin/bash"
+
+# no-op the base image cmd, so it doesn't launch a Node repl
+CMD :

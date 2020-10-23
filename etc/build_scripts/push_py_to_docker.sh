@@ -7,8 +7,7 @@ services=(
     notebook
     engagement-edge
     model-plugin-deployer
-    graph-provision
-    dynamodb-provision
+    provision
     dgraph-ttl
 )
 
