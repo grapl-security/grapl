@@ -1,24 +1,18 @@
 import unittest
-import json
-
 from typing import cast, Dict, Type, Any, Optional
-from uuid import uuid4
 
 import hypothesis
 
 import hypothesis.strategies as st
-from grapl_analyzerlib.node_types import PropType
 
 from hypothesis import given
 
 import pytest
 
 from pydgraph import DgraphClient
-from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
+from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.file import FileQuery, FileView
-from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.dgraph_mutate import upsert
-from grapl_analyzerlib.test_utils.dgraph_utils import create_edge
 
 
 def get_or_create_file_node(
