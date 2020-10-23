@@ -90,6 +90,38 @@ class NetworkConnectionQuery(EntityQuery[NCV, NCQ]):
 
 
 class NetworkConnectionView(EntityView[NCV, NCQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - created_timestamp
+          - int
+          - Time the network connection was created (in millis-since-epoch).
+        * - terminated_timestamp
+          - int
+          - Time the network connection was terminated (in millis-since-epoch).
+        * - last_seen_timestamp
+          - int
+          - Time the network connection was last seen (in millis-since-epoch)
+        * - src_ip_address
+          - string
+          - IP Address of the network connection's source.
+        * - src_port
+          - string
+          - Port of the network connection's source.
+        * - dst_ip_address
+          - string
+          - IP Address of the network connection's destination.
+        * - dst_port
+          - string
+          - Port of the network connection's destination.
+    """
+
     queryable = NetworkConnectionQuery
 
     def __init__(

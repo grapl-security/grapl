@@ -160,6 +160,26 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
 
 
 class IpConnectionView(EntityView[IPV, IPQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - created_timestamp
+          - int
+          - Time of the connection creation (in millis-since-epoch).
+        * - last_seen_timestamp
+          - int
+          - Time the connection was last seen (in millis-since-epoch).
+        * - terminated_timestamp
+          - int
+          - Time connection was terminated (in millis-since-epoch).
+    """
+
     queryable = IpConnectionQuery
 
     def __init__(
@@ -213,7 +233,7 @@ class IpConnectionView(EntityView[IPV, IPQ]):
         return self.get_int("last_seen_timestamp", cached=cached)
 
     def get_inbound_ip_connection_to(self, *ip_addresses, cached=False):
-        return self.with_to_neighbor(
+        return self.get_neighbor(
             IpConnectionQuery,
             "inbound_ip_connection_to",
             "ip_connections_from",
