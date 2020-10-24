@@ -15,13 +15,11 @@ use super::from_str;
 pub(crate) struct OSQueryFileQuery {
     target_path: String,
     action: OSQueryFileAction,
-    #[serde(deserialize_with = "from_str")]
-    inode: u64,
+    inode: String,
     md5: String,
     sha1: String,
     sha256: String,
-    #[serde(deserialize_with = "from_str")]
-    size: u64,
+    size: String,
     #[serde(deserialize_with = "from_str")]
     time: u64
 
@@ -65,9 +63,15 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for Graph {
             .file_path(file_event.columns.target_path.clone())
             .md5_hash(file_event.columns.md5.clone())
             .sha1_hash(file_event.columns.sha1.clone())
-            .sha256_hash(file_event.columns.sha256.clone())
-            .md5_hash(file_event.columns.md5.clone())
-            .file_inode(file_event.columns.inode.clone());
+            .sha256_hash(file_event.columns.sha256.clone());
+
+        if let Ok(inode) = u64::from_str(&file_event.columns.inode) {
+            subject_file_builder.file_inode(inode);
+        }
+
+        if let Ok(size) = u64::from_str(&file_event.columns.size) {
+            subject_file_builder.file_size(size);
+        }
 
         /*
             Technically this might not be 100% correct but the moved_to and moved_from events

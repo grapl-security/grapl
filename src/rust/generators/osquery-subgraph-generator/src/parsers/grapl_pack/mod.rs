@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 pub mod processes;
 mod files;
+mod process_files;
 
 fn from_str<'de, D, T>(deserializer: D) -> Result<T, D::Error>
     where

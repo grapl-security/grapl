@@ -61,6 +61,7 @@ impl TryFrom<PartiallyDeserializedOSQueryLog> for Graph {
         match (pack_name, query_name) {
             ("grapl", "processes") => response.to_graph_from_grapl_processes(),
             ("grapl", "files") => response.to_graph_from_grapl_files(),
+            ("grapl", "process-files") => response.to_graph_from_grapl_process_file(),
             unsupported_query => Err(failure::err_msg(format!("Unsupported query: {}_{}", unsupported_query.0, unsupported_query.1)))
         }
     }
