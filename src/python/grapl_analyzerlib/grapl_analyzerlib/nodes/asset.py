@@ -115,6 +115,23 @@ class AssetQuery(EntityQuery[AV, AQ]):
 
 
 class AssetView(EntityView[AV, AQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - hostname
+          - string
+          - The hostname of this asset.
+        * - asset_processes
+          - List[:doc:`/nodes/process`]
+          - Processes associated with this asset.
+    """
+
     queryable = AssetQuery
 
     @classmethod

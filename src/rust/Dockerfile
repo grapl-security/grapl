@@ -21,7 +21,7 @@
 #
 
 FROM rust:1-slim-buster AS grapl-rust-base
-RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev
+RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev wait-for-it
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
 RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
@@ -161,3 +161,6 @@ RUN mkdir -p /home/grapl/dist && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler dist/node-identifier-retry-handler && \
     cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator && \
     cp target/x86_64-unknown-linux-musl/${release_target}/osquery-subgraph-generator dist/osquery-subgraph-generator \
+
+# no-op the base image, so it doesn't default to /bin/sh
+CMD :

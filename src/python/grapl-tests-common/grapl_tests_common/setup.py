@@ -18,6 +18,8 @@ import sys
 BUCKET_PREFIX = environ["BUCKET_PREFIX"]
 assert BUCKET_PREFIX == "local-grapl"
 
+logging.basicConfig(stream=stdout, level=logging.INFO)
+
 
 def _upload_analyzers(
     s3_client: S3ServiceResource, analyzers: Sequence[AnalyzerUpload]
@@ -67,7 +69,6 @@ def setup(
     analyzers: Sequence[AnalyzerUpload],
     test_data: Sequence[UploadTestData],
 ) -> None:
-    logging.basicConfig(stream=stdout, level=logging.INFO)
     verbose_sleep(10, "awaiting local aws")
 
     s3_client = _create_s3_client()
@@ -85,8 +86,7 @@ def setup(
 
     _upload_analyzers(s3_client, analyzers)
     _upload_test_data(s3_client, test_data)
-
-    verbose_sleep(30, "let the pipeline do its thing")
+    # You may want to sleep(30) to let the pipeline do its thing, but setup won't force it.
 
 
 def exec_pytest() -> None:

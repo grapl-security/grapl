@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, List, Iterator, cast
+from typing import Callable, List, Iterator, Optional, cast
+from sys import maxsize
 import boto3  # type: ignore
 import json
 import random
@@ -81,15 +82,20 @@ def upload_logs(
     logfile: str,
     generator_options: GeneratorOptions,
     delay: int = 0,
-    batch_size: int = 100,
+    batch_size: Optional[int] = 100,
     use_links: bool = False,
 ) -> None:
     """
     `use_links` meaning use "s3", "sqs" as opposed to localhost
+    set `batch_size` to None to disable batching
     """
     print(
         f"Writing events to {prefix} with {delay} seconds between batches of {batch_size}"
     )
+
+    # Ugly hack to cheaply disable batching
+    batch_size = batch_size if batch_size is not None else maxsize
+
     sqs = None
     local_sqs_endpoint_url = "http://sqs:9324" if use_links else "http://localhost:9324"
     # local-grapl prefix is reserved for running Grapl locally
