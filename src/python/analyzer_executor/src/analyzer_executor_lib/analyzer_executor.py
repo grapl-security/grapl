@@ -4,36 +4,25 @@ import inspect
 import json
 import logging
 import os
-import random
 import sys
 import traceback
-
-
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from multiprocessing import Process, Pipe
+from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Any, Optional, Tuple, List, Dict, Type, Set, Iterator, Union
+from typing import Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
-import botocore.exceptions  # type: ignore
 import redis
 from grapl_analyzerlib.analyzer import Analyzer
-from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
+from grapl_analyzerlib.grapl_client import GraphClient
+from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
 from grapl_analyzerlib.nodes.base import BaseView
-from grapl_analyzerlib.queryable import Queryable
-from grapl_analyzerlib.query_gen import (
-    gen_query_parameterized,
-    VarAllocator,
-    traverse_query_iter,
-)
-from grapl_analyzerlib.subgraph_view import SubgraphView
-from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.plugin_retriever import load_plugins
-from pydgraph import DgraphClientStub, DgraphClient  # type: ignore
+from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.subgraph_view import SubgraphView
 
 MODEL_PLUGINS_DIR = os.environ.get("MODEL_PLUGINS_DIR", "/tmp")
 sys.path.insert(0, MODEL_PLUGINS_DIR)
@@ -99,7 +88,7 @@ def is_analyzer(analyzer_name, analyzer_cls):
     )
 
 
-def get_analyzer_objects(dgraph_client: DgraphClient) -> Dict[str, Analyzer]:
+def get_analyzer_objects(dgraph_client: GraphClient) -> Dict[str, Analyzer]:
     clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     return {
         an[0]: an[1].build(dgraph_client)
@@ -120,24 +109,6 @@ def check_caches(
         return True
 
     return False
-
-
-def handle_result_graphs(analyzer, result_graphs, sender):
-    LOGGER.info(f"Re" f"sult graph: {type(analyzer)} {result_graphs[0]}")
-    for result_graph in result_graphs:
-        try:
-            analyzer.on_response(result_graph, sender)
-        except Exception as e:
-            LOGGER.error(f"Analyzer {analyzer} failed with {e}")
-            sender.send(ExecutionFailed)
-            raise e
-
-
-def get_analyzer_view_types(query: Queryable) -> Set[Type[Viewable]]:
-    query_types = set()
-    for node in traverse_query_iter(query):
-        query_types.add(node.associated_viewable())
-    return query_types
 
 
 def exec_analyzers(
@@ -171,9 +142,12 @@ def exec_analyzers(
         for an_name, queries in querymap.items():
             analyzer = analyzers[an_name]
 
-            for i, query in enumerate(queries):
+            for query in queries:
                 response = query.query_first(dg_client, contains_node_key=node.node_key)
                 if response:
+                    LOGGER.debug(
+                        f"Analyzer '{an_name}' received a hit, executing on_response()"
+                    )
                     analyzer.on_response(response, sender)
 
 
@@ -181,22 +155,12 @@ def chunker(seq, size):
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def mg_alphas() -> Iterator[Tuple[str, int]]:
-    mg_alphas = os.environ["MG_ALPHAS"].split(",")
-    for mg_alpha in mg_alphas:
-        host, port = mg_alpha.split(":")
-        yield host, int(port)
-
-
 def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
     try:
         pool = ThreadPool(processes=4)
 
         exec(file, globals())
-        client_stubs = (
-            DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas()
-        )
-        client = DgraphClient(*client_stubs)
+        client = GraphClient()
 
         analyzers = get_analyzer_objects(client)
         if not analyzers:
@@ -304,8 +268,7 @@ def lambda_handler_fn(events: Any, context: Any) -> None:
     # Parse sns message
     LOGGER.debug(f"handling events: {events} context: {context}")
 
-    client_stubs = (DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
-    client = DgraphClient(*client_stubs)
+    client = GraphClient()
 
     s3 = get_s3_client()
 
@@ -328,7 +291,9 @@ def lambda_handler_fn(events: Any, context: Any) -> None:
 
         # TODO: Validate signature of S3 file
         LOGGER.info(f"event {event}")
-        rx, tx = Pipe(duplex=False)  # type: Tuple[Connection, Connection]
+        rx: Connection
+        tx: Connection
+        rx, tx = Pipe(duplex=False)
         p = Process(
             target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, "")
         )
@@ -344,7 +309,7 @@ def lambda_handler_fn(events: Any, context: Any) -> None:
                     f"Polled {analyzer_name} for {t * 5} seconds without result"
                 )
                 continue
-            result = rx.recv()  # type: Optional[Any]
+            result: Optional[Any] = rx.recv()
 
             if isinstance(result, ExecutionComplete):
                 LOGGER.info("execution complete")
