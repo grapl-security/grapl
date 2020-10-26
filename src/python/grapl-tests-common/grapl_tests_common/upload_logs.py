@@ -181,6 +181,7 @@ def upload_sysmon_logs(
         use_links=use_links,
     )
 
+
 def upload_osquery_logs(
     prefix: str,
     logfile: str,
