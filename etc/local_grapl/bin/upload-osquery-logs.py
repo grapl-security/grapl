@@ -4,126 +4,32 @@ Despite the path, this is *not* tied just to Local Grapl, and can also be used o
 """
 
 import argparse
-import json
-import random
-import string
-import time
-from datetime import datetime
-
-import boto3
-
-import zstd
+import sys
+from pathlib import Path
+from typing import Callable
 
 
-def rand_str(l):
-    # type: (int) -> str
-    return "".join(
-        random.choice(string.ascii_uppercase + string.digits) for _ in range(l)
-    )
-
-
-def into_sqs_message(bucket: str, key: str) -> str:
-    return json.dumps(
-        {
-            "Records": [
-                {
-                    "awsRegion": "us-east-1",
-                    "eventTime": datetime.utcnow().isoformat(),
-                    "principalId": {
-                        "principalId": None,
-                    },
-                    "requestParameters": {
-                        "sourceIpAddress": None,
-                    },
-                    "responseElements": {},
-                    "s3": {
-                        "schemaVersion": None,
-                        "configurationId": None,
-                        "bucket": {
-                            "name": bucket,
-                            "ownerIdentity": {
-                                "principalId": None,
-                            },
-                        },
-                        "object": {
-                            "key": key,
-                            "size": 0,
-                            "urlDecodedKey": None,
-                            "versionId": None,
-                            "eTag": None,
-                            "sequencer": None,
-                        },
-                    },
-                }
-            ]
-        }
-    )
-
-
-def main(prefix, logfile, delay, batch_size, use_links: bool):
+def hack_PATH_to_include_grapl_tests_common() -> Callable:
     """
-    `use_links` meaning use "s3", "sqs" as opposed to localhost
+    Requirements:
+    - this script should be runnable from command line without Docker.
+    - the logic should be exposed as a library that's callable from grapl-tests-common.
+    It was either this, or forcing a `pip install .` from python code. Gross.
     """
-    print(
-        f"Writing events to {prefix} with {delay} seconds between batches of {batch_size}"
+    this_file = Path(__file__).resolve()
+    # go to `grapl` base dir
+    grapl_repo_root = this_file
+    while grapl_repo_root.name != "grapl":
+        grapl_repo_root = grapl_repo_root.parent
+
+    grapl_tests_common_path = grapl_repo_root.joinpath(
+        "src/python/grapl-tests-common/grapl_tests_common"
     )
-    sqs = None
-    # local-grapl prefix is reserved for running Grapl locally
-    if prefix == "local-grapl":
-        s3 = boto3.client(
-            "s3",
-            endpoint_url="http://s3:9000" if use_links else "http://localhost:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-            region_name="us-east-3",
-        )
-        sqs = boto3.client(
-            "sqs",
-            endpoint_url="http://sqs:9324" if use_links else "http://localhost:9324",
-            region_name="us-east-1",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
 
-    else:
-        s3 = boto3.client("s3")
+    sys.path.append(str(grapl_tests_common_path))
+    from upload_logs import upload_osquery_logs
 
-    with open(logfile, "rb") as b:
-        body = b.readlines()
-        body = [line for line in body]
-
-    def chunker(seq, size):
-        return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
-
-    for chunks in chunker(body, batch_size):
-        c_body = zstd.compress(b"\n".join(chunks).replace(b"\n\n", b"\n"), 4)
-        epoch = int(time.time())
-
-        key = (
-            str(epoch - (epoch % (24 * 60 * 60)))
-            + "/osquery/"
-            + str(epoch)
-            + rand_str(3)
-        )
-        s3.put_object(
-            Body=c_body, Bucket="{}-osquery-log-bucket".format(prefix), Key=key
-        )
-
-        # local-grapl relies on manual eventing
-        if sqs:
-            endpoint_url = (
-                "http://sqs:9324" if use_links else "http://localhost:9324",
-            )
-            sqs.send_message(
-                QueueUrl=f"{endpoint_url}/queue/grapl-osquery-graph-generator-queue",
-                MessageBody=into_sqs_message(
-                    bucket="{}-osquery-log-bucket".format(prefix), key=key
-                ),
-            )
-
-        time.sleep(delay)
-
-    print(f"Completed uploading at {time.ctime()}")
+    return upload_osquery_logs
 
 
 def parse_args():
@@ -133,7 +39,7 @@ def parse_args():
         "--logfile",
         dest="logfile",
         required=True,
-        help="ie $GRAPLROOT/etc/sample_data/osquery.log",
+        help="ie $GRAPLROOT/etc/sample_data/osquery_data.logs",
     )
     parser.add_argument("--delay", dest="delay", default=0, type=int)
     parser.add_argument("--batch-size", dest="batch_size", default=100, type=int)
@@ -142,15 +48,15 @@ def parse_args():
 
 
 if __name__ == "__main__":
-
     args = parse_args()
     if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
     else:
-        main(
+        upload_fn = hack_PATH_to_include_grapl_tests_common()
+        upload_fn(
             args.bucket_prefix,
             args.logfile,
-            args.delay,
-            args.batch_size,
-            args.use_links,
+            delay=args.delay,
+            batch_size=args.batch_size,
+            use_links=args.use_links,
         )
