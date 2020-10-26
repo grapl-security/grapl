@@ -66,7 +66,7 @@ fn main() {
         "#[builder(default)]",
     );
     config.field_attribute(".graph_description.File.file_name", "#[builder(default)]");
-    // config.field_attribute(".graph_description.File.file_path", "#[builder(default)]");
+    config.field_attribute(".graph_description.File.file_path", "#[builder(default)]");
     config.field_attribute(
         ".graph_description.File.file_extension",
         "#[builder(default)]",
@@ -104,7 +104,7 @@ fn main() {
     config.field_attribute(".graph_description.File.md5_hash", "#[builder(default)]");
     config.field_attribute(".graph_description.File.sha1_hash", "#[builder(default)]");
     config.field_attribute(".graph_description.File.sha256_hash", "#[builder(default)]");
-    // config.field_attribute(".graph_description.File.asset_id", "#[builder(default)]");
+    config.field_attribute(".graph_description.File.asset_id", "#[builder(default)]");
     config.field_attribute(".graph_description.File.hostname", "#[builder(default)]");
     config.field_attribute(".graph_description.File.host_ip", "#[builder(default)]");
 
@@ -117,10 +117,10 @@ fn main() {
         "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]",
     );
 
-    /*config.field_attribute(
+    config.field_attribute(
         ".graph_description.Process.process_id",
         "#[builder(default)]",
-    );*/
+    );
     config.field_attribute(
         ".graph_description.Process.process_guid",
         "#[builder(default)]",
@@ -154,7 +154,7 @@ fn main() {
         "#[builder(default)]",
     );
 
-    //config.field_attribute(".graph_description.Process.asset_id", "#[builder(default)]");
+    config.field_attribute(".graph_description.Process.asset_id", "#[builder(default)]");
     config.field_attribute(".graph_description.Process.hostname", "#[builder(default)]");
     config.field_attribute(".graph_description.Process.host_ip", "#[builder(default)]");
 
@@ -167,10 +167,10 @@ fn main() {
         "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]",
     );
 
-    /*config.field_attribute(
+    config.field_attribute(
         ".graph_description.ProcessInboundConnection.asset_id",
         "#[builder(default)]",
-    );*/
+    );
     config.field_attribute(
         ".graph_description.ProcessInboundConnection.hostname",
         "#[builder(default)]",
@@ -202,10 +202,10 @@ fn main() {
         "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]",
     );
 
-    /*config.field_attribute(
+    config.field_attribute(
         ".graph_description.ProcessOutboundConnection.asset_id",
         "#[builder(default)]",
-    );*/
+    );
     config.field_attribute(
         ".graph_description.ProcessOutboundConnection.hostname",
         "#[builder(default)]",
@@ -237,7 +237,7 @@ fn main() {
         "#[builder(default = \"::uuid::Uuid::new_v4().to_string()\")]",
     );
 
-    //config.field_attribute(".graph_description.Asset.asset_id", "#[builder(default)]");
+    config.field_attribute(".graph_description.Asset.asset_id", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.ip_address", "#[builder(default)]");
     config.field_attribute(".graph_description.Asset.hostname", "#[builder(default)]");
     config.field_attribute(

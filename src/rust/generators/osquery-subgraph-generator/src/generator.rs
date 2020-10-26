@@ -40,26 +40,19 @@ where
     async fn handle_event(&mut self, input: Self::InputEvent) -> OutputEvent<Self::OutputEvent, Self::Error> {
         info!("Processing {} incoming OSQuery log events.", input.len());
 
-        let (subgraphs, errors): (Vec<Option<Graph>>, Vec<Option<failure::Error>>) = input.into_iter()
-            .map(|log| {
-                match Graph::try_from(log) {
-                    Ok(graph) => (Some(graph), None),
-                    Err(e) => {
-                        warn!("Unable to convert partial OSQuery log into subgraph. {}", e);
-                        (None, Some(e))
-                    }
-                }
-            }).unzip();
+        let (subgraphs, errors): (Vec<_>, Vec<_>) = input.into_iter()
+            .map(|log| Graph::try_from(log))
+            .partition(|result| result.is_ok());
 
         let final_subgraph = subgraphs.into_iter()
-            .filter_map(|subgraph| subgraph)
+            .filter_map(|subgraph| subgraph.ok())
             .fold(Graph::new(0), |mut current_graph, subgraph| {
                 current_graph.merge(&subgraph);
                 current_graph
             });
 
         let mut errors: Vec<failure::Error> = errors.into_iter()
-            .filter_map(|item| item)
+            .filter_map(|item| item.err())
             .collect();
 
         if errors.is_empty() {
