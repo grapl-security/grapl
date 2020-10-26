@@ -2,12 +2,12 @@ import json
 import unittest
 from typing import Dict, Type, Any
 
-from pydgraph import DgraphClient
 from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.viewable import Viewable
+from grapl_analyzerlib.grapl_client import GraphClient
 
 
-def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
+def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
     query = f"""
@@ -19,9 +19,8 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
             }}
         }}
         """
-    txn = client.txn(read_only=False)
 
-    try:
+    with client.txn_context(read_only=False) as txn:
         res = json.loads(txn.query(query).json)["q0"]
         new_uid = None
         if res:
@@ -37,12 +36,9 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
             new_uid = uids["blank-0"]
         return str(new_uid)
 
-    finally:
-        txn.discard()
-
 
 def upsert(
-    client: DgraphClient,
+    client: GraphClient,
     type_name: str,
     view_type: "Type[Viewable]",
     node_key: str,
@@ -56,7 +52,7 @@ def upsert(
 
 
 def create_edge(
-    client: DgraphClient, from_uid: str, edge_name: str, to_uid: str
+    client: GraphClient, from_uid: str, edge_name: str, to_uid: str
 ) -> None:
     if edge_name[0] == "~":
         mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
@@ -64,11 +60,8 @@ def create_edge(
     else:
         mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
 
-    txn = client.txn(read_only=False)
-    try:
+    with client.txn_context(read_only=False) as txn:
         txn.mutate(set_obj=mut, commit_now=True)
-    finally:
-        txn.discard()
 
 
 def node_key_for_test(test_case: unittest.TestCase, node_key: str) -> str:
