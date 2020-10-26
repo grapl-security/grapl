@@ -471,7 +471,7 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
             f.write(contents)
 
     provision_schemas(
-        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
+        GraphClient(),
         raw_schemas,
     )
 

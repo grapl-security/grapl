@@ -14,6 +14,11 @@ def mg_alphas() -> Iterator[Tuple[str, int]]:
 
 
 class GraphClient(DgraphClient):
+    def __init__(self) -> None:
+        super(GraphClient, self).__init__(
+            *(DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
+        )
+
     @classmethod
     def from_host_port(cls, host: str, port: int) -> "GraphClient":
         return cls(*(DgraphClientStub(f"{host}:{port}"),))
@@ -33,15 +38,7 @@ class GraphClient(DgraphClient):
             txn.discard()
 
 
-class MasterGraphClient(GraphClient):
-    def __init__(self) -> None:
-        super(MasterGraphClient, self).__init__(
-            *(DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
-        )
-
-
-class LocalMasterGraphClient(GraphClient):
-    def __init__(self) -> None:
-        super(LocalMasterGraphClient, self).__init__(
-            *(DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
-        )
+# These two classes were previously different, but now are unified by the MG_ALPHAS env variable.
+# Consider them deprecated, and prefer GraphClient().
+MasterGraphClient = GraphClient
+LocalMasterGraphClient = GraphClient
