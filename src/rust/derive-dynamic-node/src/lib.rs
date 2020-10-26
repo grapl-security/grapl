@@ -6,12 +6,6 @@ use proc_macro2::TokenStream as TS2;
 use quote::quote;
 use syn::{Data, Field, Fields, Ident, Type};
 
-/// #[derive(DynamicNode)]
-/// pub struct Ec2Instance2 {
-///     arn: String,
-///     launch_time: u64
-/// }
-
 fn name_and_ty(field: &Field) -> (&Ident, &Type) {
     (field.ident.as_ref().unwrap(), &field.ty)
 }
@@ -33,7 +27,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
     let methods = fields
         .iter()
         .map(name_and_ty)
-        .map(|(name, ty)| get_method(name, ty))
+        .map(|(name, ty)| property_methods(name, ty))
         .fold(quote!(), |mut acc, method| {
             acc.extend(method);
             acc
@@ -57,6 +51,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
 
         pub trait #node_trait_name {
             fn get_mut_dynamic_node(&mut self) -> &mut DynamicNode;
+            fn get_dynamic_node(&self) -> &DynamicNode;
 
             #methods
         }
@@ -206,13 +201,16 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     q.into()
 }
 
-fn get_method(property_name: &Ident, property_type: &Type) -> TS2 {
-    let method_name = format!("with_{}", property_name);
-    let method_name = syn::Ident::new(&method_name, property_name.span());
+fn property_methods(property_name: &Ident, property_type: &Type) -> TS2 {
+    let get_method_name = format!("get_{}", property_name);
+    let get_method_name = syn::Ident::new(&get_method_name, property_name.span());
+
+    let with_method_name = format!("with_{}", property_name);
+    let with_method_name = syn::Ident::new(&with_method_name, property_name.span());
 
     let property_name_str = format!("{}", property_name);
     quote!(
-        fn #method_name(&mut self, #property_name: impl Into<#property_type>) -> &mut Self {
+        fn #with_method_name(&mut self, #property_name: impl Into<#property_type>) -> &mut Self {
             let #property_name = #property_name .into();
             self.get_mut_dynamic_node()
             .properties.insert(
@@ -220,6 +218,14 @@ fn get_method(property_name: &Ident, property_type: &Type) -> TS2 {
                 #property_name .into(),
             );
             self
+        }
+
+        fn #get_method_name(&self) -> Option<#property_type> {
+            let property_result: Option<&NodeProperty> = self.get_dynamic_node().get_property(#property_name_str);
+            match property_result {
+                Some(property) => Option::< #property_type >::from(property.clone()),
+                None => None
+            }
         }
     )
 }

@@ -62,6 +62,27 @@ impl From<u64> for NodeProperty {
     }
 }
 
+impl From<NodeProperty> for Option<String> {
+    fn from(np: NodeProperty) -> Option<String> {
+        match np.as_str_prop() {
+            Some(str) => Some(String::from(str)),
+            None => None,
+        }
+    }
+}
+
+impl From<NodeProperty> for Option<u64> {
+    fn from(np: NodeProperty) -> Option<u64> {
+        np.as_uint_prop()
+    }
+}
+
+impl From<NodeProperty> for Option<i64> {
+    fn from(np: NodeProperty) -> Option<i64> {
+        np.as_int_prop()
+    }
+}
+
 impl std::string::ToString for NodeProperty {
     fn to_string(&self) -> String {
         let prop = match &self.property {
