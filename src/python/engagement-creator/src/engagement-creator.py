@@ -26,7 +26,6 @@ from grapl_analyzerlib.prelude import BaseView
 from grapl_analyzerlib.prelude import RiskView
 from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.queryable import Queryable
-from grapl_analyzerlib.dgraph_mutate import upsert
 from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_sqs import SQSClient
 from typing_extensions import Final
@@ -155,6 +154,50 @@ def set_property(
         txn.mutate(set_obj=mutation, commit_now=True)
     finally:
         txn.discard()
+
+
+def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
+    node_dict["uid"] = "_:blank-0"
+    node_key = node_dict["node_key"]
+    query = f"""
+        {{
+            q0(func: eq(node_key, "{node_key}"), first: 1) {{
+                    uid,
+                    dgraph.type
+                    expand(_all_)
+            }}
+        }}
+        """
+    txn = client.txn(read_only=False)
+
+    try:
+        res = json.loads(txn.query(query).json)["q0"]
+        new_uid = None
+        if res:
+            node_dict["uid"] = res[0]["uid"]
+            new_uid = res[0]["uid"]
+
+        mutation = node_dict
+
+        mut_res = txn.mutate(set_obj=mutation, commit_now=True)
+        new_uid = node_dict.get("uid") or mut_res.uids["blank-0"]
+        return cast(str, new_uid)
+    finally:
+        txn.discard()
+
+
+def upsert(
+    client: GraphClient,
+    type_name: str,
+    view_type: Type[Viewable[V, Q]],
+    node_key: str,
+    node_props: Dict[str, Any],
+) -> Viewable[V, Q]:
+    node_props["node_key"] = node_key
+    node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
+    uid = _upsert(client, node_props)
+    node_props["uid"] = uid
+    return view_type.from_dict(node_props, client)
 
 
 def get_s3_client() -> S3ServiceResource:
