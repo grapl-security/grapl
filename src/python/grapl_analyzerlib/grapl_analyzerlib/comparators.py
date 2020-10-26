@@ -194,14 +194,16 @@ class Rex(object):
 class Distance(object):
     def __init__(self, predicate: str, value: StrOrNot, distance: int):
         self.predicate = predicate
-        self.value = value
+        self.value = extract_value(value)
         self.negated: bool = isinstance(value, Not)
+        self.distance = distance
 
     def to_filter(self) -> str:
+        distance_query = f"distance({self.predicate}, {self.value}, {self.distance})"
         if self.negated:
-            return f"NOT distance({self.predicate}, {self.value})"
+            return f"NOT {distance_query}"
         else:
-            return f"distance({self.predicate}, {self.value})"
+            return distance_query
 
 
 StrCmp = Union[Has, Eq, Contains, StartsWith, EndsWith, Rex, Distance]

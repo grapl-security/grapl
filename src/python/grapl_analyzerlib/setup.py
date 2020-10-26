@@ -54,6 +54,6 @@ setup(
     ],
     extras_require={
         "test": TEST_REQUIREMENTS,
-        "typecheck": TEST_REQUIREMENTS + ["pytype"]
+        "typecheck": TEST_REQUIREMENTS + ["pytype"],
     },
 )
