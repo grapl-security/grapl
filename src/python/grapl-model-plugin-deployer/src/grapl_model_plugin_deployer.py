@@ -6,7 +6,9 @@ import logging
 import os
 import re
 import sys
+import threading
 import traceback
+
 from base64 import b64decode
 from hashlib import sha1
 from pathlib import Path
@@ -15,6 +17,7 @@ from typing import TypeVar, Dict, Union, List, Any
 import boto3
 import jwt
 import pydgraph
+
 from botocore.client import BaseClient
 from chalice import Chalice, Response
 from github import Github
@@ -125,6 +128,7 @@ def set_schema(client: GraphClient, schema: str) -> None:
                 raise e
             tries += 1
             time.sleep(1)
+
 
 def format_schemas(schema_defs: List["BaseSchema"]) -> str:
     schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
@@ -477,7 +481,6 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    import threading
     th = threading.Thread(target=provision_schemas, args=(
         LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
         raw_schemas,
