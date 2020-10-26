@@ -129,34 +129,6 @@ def recalculate_score(lens: LensView) -> int:
     return total_risk_score
 
 
-def set_score(client: GraphClient, uid: str, new_score: int, txn: Any = None) -> None:
-    # NOTE: This function is seemingly unused
-    if not txn:
-        txn = client.txn(read_only=False)
-
-    try:
-        mutation = {"uid": uid, "score": new_score}
-
-        txn.mutate(set_obj=mutation, commit_now=True)
-    finally:
-        txn.discard()
-
-
-def set_property(
-    client: GraphClient, uid: str, prop_name: str, prop_value: Any
-) -> None:
-    # NOTE: This function is seemingly unused
-    LOGGER.debug(f"Setting property {prop_name} as {prop_value} for {uid}")
-    txn = client.txn(read_only=False)
-
-    try:
-        mutation = {"uid": uid, prop_name: prop_value}
-
-        txn.mutate(set_obj=mutation, commit_now=True)
-    finally:
-        txn.discard()
-
-
 def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]

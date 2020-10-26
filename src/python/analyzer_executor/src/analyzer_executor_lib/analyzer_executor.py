@@ -142,7 +142,7 @@ def exec_analyzers(
         for an_name, queries in querymap.items():
             analyzer = analyzers[an_name]
 
-            for _, query in enumerate(queries):
+            for query in queries:
                 response = query.query_first(dg_client, contains_node_key=node.node_key)
                 if response:
                     LOGGER.debug(
