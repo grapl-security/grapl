@@ -1,6 +1,3 @@
-from grapl_analyzerlib.schema import Schema
-
-print("init")
 import base64
 import hmac
 import inspect
@@ -28,6 +25,7 @@ from grapl_analyzerlib.node_types import (
     EdgeT,
 )
 from grapl_analyzerlib.prelude import *
+from grapl_analyzerlib.schema import Schema
 
 sys.path.append("/tmp/")
 
@@ -116,9 +114,17 @@ def verify_payload(payload_body, key, signature):
 
 
 def set_schema(client: GraphClient, schema: str) -> None:
-    op = pydgraph.Operation(schema=schema)
-    client.alter(op)
-
+    tries = 0
+    while True:
+        try:
+            op = pydgraph.Operation(schema=schema, run_in_background=True)
+            client.alter(op)
+        except Exception as e:
+            LOGGER.warning("Failed to commit schema: ", e)
+            if tries > 10:
+                raise e
+            tries += 1
+            time.sleep(1)
 
 def format_schemas(schema_defs: List["BaseSchema"]) -> str:
     schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
@@ -134,9 +140,8 @@ def store_schema(dynamodb, schema: "Schema"):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
-            print(f"missing {f_edge} {r_edge} for {schema.self_type()}")
+            LOGGER.debug(f"missing {f_edge} {r_edge} for {schema.self_type()}")
             continue
-        print(f"{f_edge} {r_edge} {edge_t.rel}")
         table.put_item(
             Item={
                 "f_edge": f_edge,
@@ -145,7 +150,6 @@ def store_schema(dynamodb, schema: "Schema"):
             }
         )
 
-        print(f"{r_edge} {f_edge} {edge_t.rel.reverse()}")
         table.put_item(
             Item={
                 "f_edge": r_edge,
@@ -159,7 +163,6 @@ def provision_master_graph(
     master_graph_client: GraphClient, schemas: List["BaseSchema"]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
-    print(mg_schema_str)
     set_schema(master_graph_client, mg_schema_str)
 
 
@@ -238,42 +241,22 @@ def provision_schemas(master_graph_client, raw_schemas):
 
     # Now fetch the schemas back from memory
     schemas = list(get_schema_objects(meta_globals).values())
-    print(f"Schemas: {schemas}")
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
-
-    # loaded_builtins = [s for s in schemas if s.self_type() in builtin_schemas]
-    # plugin_schemas = [s for s in schemas if s.self_type() not in builtin_schemas]
-
-    for edges in (s.edges for s in schemas):
-        for f_edge, (edge_t, r_edge) in edges.items():
-            print("pre-reverse", f_edge, edge_t.__dict__, r_edge)
 
     LOGGER.info("init_reverse")
     for schema in schemas:
         schema.init_reverse()
-
-    for edges in (s.edges for s in schemas):
-        for f_edge, (edge_t, r_edge) in edges.items():
-            print("pre-store", f_edge, edge_t.__dict__, r_edge)
 
     LOGGER.info("Merge the schemas with what exists in the graph")
     dynamodb = get_dynamodb_client()
     for schema in schemas:
         store_schema(dynamodb, schema)
 
-    for edges in (s.edges for s in schemas):
-        for f_edge, (edge_t, r_edge) in edges.items():
-            print("pre-extend", f_edge, edge_t.__dict__, r_edge)
-
     LOGGER.info("Reprovision the graph")
     provision_master_graph(master_graph_client, schemas)
 
     for schema in schemas:
         extend_schema(dynamodb, master_graph_client, schema)
-
-    for edges in (s.edges for s in schemas):
-        for f_edge, (edge_t, r_edge) in edges.items():
-            print("2pre-store", f_edge, edge_t.__dict__, r_edge)
 
     for schema in schemas:
         store_schema(dynamodb, schema)
@@ -297,9 +280,6 @@ def meta_into_edge(dynamodb, schema: "Schema", f_edge):
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
     edge_t = schema.edges[f_edge][0]  # type: EdgeT
 
-    print(
-        f'{type(schema)}, {edge_t.dest}, {EdgeRelationship(edge_res["relationship"])}'
-    )
     return EdgeT(type(schema), edge_t.dest, EdgeRelationship(edge_res["relationship"]))
 
 
@@ -363,7 +343,6 @@ def get_reverse_edge(dynamodb, schema, f_edge):
 
 def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
-    print(f"predicate_metas, {schema.self_type()}", predicate_metas)
     for predicate_meta in predicate_metas:
         predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
         if isinstance(predicate, PropType):
@@ -371,10 +350,8 @@ def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
         else:
             try:
                 r_edge = get_reverse_edge(dynamodb, schema, predicate_meta["predicate"])
-                print(f'f_edge {predicate_meta["predicate"]} r_edge {r_edge}')
                 schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
             except Exception as e:
-                print("error on add_edge", e)
                 schema.add_edge(predicate_meta["predicate"], predicate, "")
 
 
@@ -500,14 +477,17 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    provision_schemas(
+    import threading
+    th = threading.Thread(target=provision_schemas, args=(
         LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
         raw_schemas,
-    )
+    ))
+    th.start()
 
     for path, file in plugin_files.items():
         upload_plugin(s3_client, path, file)
 
+    th.join()
 
 @no_auth("/gitWebhook")
 def webhook():
@@ -607,7 +587,6 @@ def delete_plugin(s3_client, plugin_name):
     if not list_response.get("Contents"):
         return []
 
-    plugin_names = set()
     for response in list_response["Contents"]:
         s3_client.delete_object(Bucket=plugin_bucket, Key=response["Key"])
 
@@ -631,7 +610,7 @@ def delete_model_plugin():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    print("nop_route")
+    LOGGER.info("nop_route")
     LOGGER.info("routing: " + app.current_request.context["path"])
 
     try:
