@@ -19,9 +19,8 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
             }}
         }}
         """
-    txn = client.txn(read_only=False)
 
-    try:
+    with client.txn_context(read_only=False) as txn:
         res = json.loads(txn.query(query).json)["q0"]
         new_uid = None
         if res:
@@ -36,9 +35,6 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
         if new_uid is None:
             new_uid = uids["blank-0"]
         return str(new_uid)
-
-    finally:
-        txn.discard()
 
 
 def upsert(
@@ -64,11 +60,8 @@ def create_edge(
     else:
         mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
 
-    txn = client.txn(read_only=False)
-    try:
+    with client.txn_context(read_only=False) as txn:
         txn.mutate(set_obj=mut, commit_now=True)
-    finally:
-        txn.discard()
 
 
 def node_key_for_test(test_case: unittest.TestCase, node_key: str) -> str:
