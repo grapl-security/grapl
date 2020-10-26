@@ -1,9 +1,10 @@
 import time
 from functools import wraps
+from typing import Type
 
 
 def retry(
-    ExceptionToCheck: Exception = Exception,
+    ExceptionToCheck: Type[Exception] = Exception,
     on_falsey: bool = True,
     tries: int = 3,
     delay: float = 0.5,

@@ -199,9 +199,9 @@ class Distance(object):
 
     def to_filter(self) -> str:
         if self.negated:
-            return f"NOT distance({self.predicate}, {self.value}, {self.distance})"
+            return f"NOT distance({self.predicate}, {self.value})"
         else:
-            return f"distance({self.predicate}, {self.value}, {self.distance})"
+            return f"distance({self.predicate}, {self.value})"
 
 
 StrCmp = Union[Has, Eq, Contains, StartsWith, EndsWith, Rex, Distance]
