@@ -1,14 +1,14 @@
-use serde::{Serialize, Deserialize, Deserializer};
-use std::convert::TryFrom;
-use crate::parsers::{PartiallyDeserializedOSQueryLog, OSQueryResponse, OSQueryAction};
-use serde::de::DeserializeOwned;
-use grapl_graph_descriptions::graph_description::*;
+use super::from_str;
+use crate::parsers::{OSQueryAction, OSQueryResponse, PartiallyDeserializedOSQueryLog};
 use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::*;
 use grapl_graph_descriptions::node::NodeT;
 use grapl_graph_descriptions::process::ProcessState;
-use std::str::FromStr;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Deserializer, Serialize};
+use std::convert::TryFrom;
 use std::fmt::Display;
-use super::from_str;
+use std::str::FromStr;
 
 /// See https://osquery.io/schema/4.5.0/#processes
 #[derive(Serialize, Deserialize)]
@@ -17,7 +17,7 @@ pub(crate) struct OSQueryProcessFileQuery {
     fd: u64,
     path: String,
     #[serde(deserialize_with = "from_str")]
-    pid: u64
+    pid: u64,
 }
 
 impl PartiallyDeserializedOSQueryLog {
@@ -30,7 +30,9 @@ impl PartiallyDeserializedOSQueryLog {
 impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
     type Error = failure::Error;
 
-    fn try_from(process_file_event: OSQueryResponse<OSQueryProcessFileQuery>) -> Result<Self, Self::Error> {
+    fn try_from(
+        process_file_event: OSQueryResponse<OSQueryProcessFileQuery>,
+    ) -> Result<Self, Self::Error> {
         let mut graph = Graph::new(process_file_event.unix_time);
 
         let asset = AssetBuilder::default()
@@ -48,47 +50,50 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
             .map_err(failure::err_msg)?;
 
         let mut file_builder = FileBuilder::default();
-        file_builder.asset_id(process_file_event.host_identifier.clone())
+        file_builder
+            .asset_id(process_file_event.host_identifier.clone())
             .file_path(process_file_event.columns.path.clone())
             .last_seen_timestamp(process_file_event.unix_time);
 
         let file = match process_file_event.action {
             OSQueryAction::ADDED => {
-                let file = file_builder.state(FileState::Created)
+                let file = file_builder
+                    .state(FileState::Created)
                     .build()
                     .map_err(failure::err_msg)?;
 
                 graph.add_edge(
                     "created_files",
                     process.clone_node_key(),
-                    file.clone_node_key()
+                    file.clone_node_key(),
                 );
 
                 file
-            },
+            }
             OSQueryAction::REMOVED => {
-                let file = file_builder.state(FileState::Deleted)
+                let file = file_builder
+                    .state(FileState::Deleted)
                     .build()
                     .map_err(failure::err_msg)?;
 
                 graph.add_edge(
                     "deleted_files",
                     process.clone_node_key(),
-                    file.clone_node_key()
+                    file.clone_node_key(),
                 );
 
                 file
-            },
-            _ =>
-                file_builder.state(FileState::Deleted)
-                    .build()
-                    .map_err(failure::err_msg)?
+            }
+            _ => file_builder
+                .state(FileState::Deleted)
+                .build()
+                .map_err(failure::err_msg)?,
         };
 
         graph.add_edge(
             "files_on_asset",
             asset.clone_node_key(),
-            file.clone_node_key()
+            file.clone_node_key(),
         );
 
         graph.add_edge(

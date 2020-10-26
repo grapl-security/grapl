@@ -1,14 +1,14 @@
-use serde::{Serialize, Deserialize, Deserializer};
-use std::convert::TryFrom;
-use crate::parsers::{PartiallyDeserializedOSQueryLog, OSQueryResponse};
-use serde::de::DeserializeOwned;
-use grapl_graph_descriptions::graph_description::*;
+use super::from_str;
+use crate::parsers::{OSQueryResponse, PartiallyDeserializedOSQueryLog};
 use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::*;
 use grapl_graph_descriptions::node::NodeT;
 use grapl_graph_descriptions::process::ProcessState;
-use std::str::FromStr;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Deserializer, Serialize};
+use std::convert::TryFrom;
 use std::fmt::Display;
-use super::from_str;
+use std::str::FromStr;
 
 /// See https://osquery.io/schema/4.5.0/#processes
 #[derive(Serialize, Deserialize)]
@@ -21,8 +21,7 @@ pub(crate) struct OSQueryFileQuery {
     sha256: String,
     size: String,
     #[serde(deserialize_with = "from_str")]
-    time: u64
-
+    time: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -34,7 +33,7 @@ pub(crate) enum OSQueryFileAction {
     DELETED,
     MOVED_FROM,
     MOVED_TO,
-    OPENED
+    OPENED,
 }
 
 impl PartiallyDeserializedOSQueryLog {
@@ -74,25 +73,19 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for Graph {
         }
 
         /*
-            Technically this might not be 100% correct but the moved_to and moved_from events
-            seem like they could easily be represented by using create/deletes.
-         */
+           Technically this might not be 100% correct but the moved_to and moved_from events
+           seem like they could easily be represented by using create/deletes.
+        */
         match &file_event.columns.action {
-            OSQueryFileAction::CREATED | OSQueryFileAction::MOVED_FROM => {
-                subject_file_builder
-                    .state(FileState::Created)
-                    .created_timestamp(file_event.columns.time)
-            },
-            OSQueryFileAction::DELETED | OSQueryFileAction::MOVED_TO => {
-                subject_file_builder
-                    .state(FileState::Deleted)
-                    .deleted_timestamp(file_event.columns.time)
-            },
-            _ => {
-                subject_file_builder
-                    .state(FileState::Existing)
-                    .last_seen_timestamp(file_event.columns.time)
-            }
+            OSQueryFileAction::CREATED | OSQueryFileAction::MOVED_FROM => subject_file_builder
+                .state(FileState::Created)
+                .created_timestamp(file_event.columns.time),
+            OSQueryFileAction::DELETED | OSQueryFileAction::MOVED_TO => subject_file_builder
+                .state(FileState::Deleted)
+                .deleted_timestamp(file_event.columns.time),
+            _ => subject_file_builder
+                .state(FileState::Existing)
+                .last_seen_timestamp(file_event.columns.time),
         };
 
         let subject_file = subject_file_builder.build().map_err(failure::err_msg)?;

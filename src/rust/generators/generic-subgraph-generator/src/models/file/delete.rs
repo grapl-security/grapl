@@ -40,22 +40,18 @@ impl TryFrom<FileDelete> for Graph {
 
         let mut graph = Graph::new(file_delete.timestamp);
 
-        graph.add_edge(
-            "deleted",
-            deleter.clone_node_key(),
-            file.clone_node_key()
-        );
+        graph.add_edge("deleted", deleter.clone_node_key(), file.clone_node_key());
 
         graph.add_edge(
             "asset_processes",
             asset.clone_node_key(),
-            deleter.clone_node_key()
+            deleter.clone_node_key(),
         );
 
         graph.add_edge(
             "files_on_asset",
             asset.clone_node_key(),
-            file.clone_node_key()
+            file.clone_node_key(),
         );
 
         graph.add_node(asset);

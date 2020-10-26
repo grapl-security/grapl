@@ -1,8 +1,8 @@
 use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::node::NodeT;
 use grapl_graph_descriptions::process::ProcessState;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
-use grapl_graph_descriptions::node::NodeT;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessStop {
@@ -34,7 +34,7 @@ impl TryFrom<ProcessStop> for Graph {
         graph.add_edge(
             "asset_processes",
             asset.clone_node_key(),
-            terminated_process.clone_node_key()
+            terminated_process.clone_node_key(),
         );
 
         graph.add_node(asset);

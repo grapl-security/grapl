@@ -52,13 +52,13 @@ impl TryFrom<FileCreate> for Graph {
         graph.add_edge(
             "asset_processes",
             asset.clone_node_key(),
-            creator.clone_node_key()
+            creator.clone_node_key(),
         );
 
         graph.add_edge(
             "files_on_asset",
             asset.clone_node_key(),
-            file.clone_node_key()
+            file.clone_node_key(),
         );
 
         graph.add_node(asset);

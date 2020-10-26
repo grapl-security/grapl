@@ -8,7 +8,7 @@ pub struct OSQueryLogDecoder;
 
 impl<D> PayloadDecoder<Vec<D>> for OSQueryLogDecoder
 where
-        for<'a> D: Deserialize<'a>,
+    for<'a> D: Deserialize<'a>,
 {
     fn decode(&mut self, mut body: Vec<u8>) -> Result<Vec<D>, Box<dyn std::error::Error>> {
         let mut decompressed = Vec::with_capacity(body.len());
@@ -16,14 +16,15 @@ where
 
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;
 
-        let (deserialized_logs, deserialization_errors): (Vec<Option<D>>, Vec<Option<serde_json::Error>>) = decompressed
+        let (deserialized_logs, deserialization_errors): (
+            Vec<Option<D>>,
+            Vec<Option<serde_json::Error>>,
+        ) = decompressed
             .split(|byte| *byte == '\n' as u8)
             .filter(|chunk| !chunk.is_empty())
-            .map(|chunk| {
-                match serde_json::from_slice(chunk) {
-                    Ok(result) => (Some(result), None),
-                    Err(e) => (None, Some(e))
-                }
+            .map(|chunk| match serde_json::from_slice(chunk) {
+                Ok(result) => (Some(result), None),
+                Err(e) => (None, Some(e)),
             })
             .unzip();
 

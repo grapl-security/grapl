@@ -1,17 +1,17 @@
-#![type_length_limit="1232619"]
+#![type_length_limit = "1232619"]
 mod generator;
 mod metrics;
-mod serialization;
 mod parsers;
+mod serialization;
 mod tests;
 
-use grapl_config::*;
-use graph_generator_lib::*;
-use log::*;
 use crate::generator::OSQuerySubgraphGenerator;
-use sqs_lambda::cache::NopCache;
 use crate::metrics::OSQuerySubgraphGeneratorMetrics;
 use crate::serialization::OSQueryLogDecoder;
+use graph_generator_lib::*;
+use grapl_config::*;
+use log::*;
+use sqs_lambda::cache::NopCache;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

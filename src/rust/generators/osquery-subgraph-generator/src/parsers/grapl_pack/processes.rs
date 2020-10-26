@@ -1,14 +1,14 @@
-use serde::{Serialize, Deserialize, Deserializer};
-use std::convert::TryFrom;
-use crate::parsers::{PartiallyDeserializedOSQueryLog, OSQueryResponse};
-use serde::de::DeserializeOwned;
-use grapl_graph_descriptions::graph_description::*;
+use super::from_str;
+use crate::parsers::{OSQueryResponse, PartiallyDeserializedOSQueryLog};
 use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::*;
 use grapl_graph_descriptions::node::NodeT;
 use grapl_graph_descriptions::process::ProcessState;
-use std::str::FromStr;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Deserializer, Serialize};
+use std::convert::TryFrom;
 use std::fmt::Display;
-use super::from_str;
+use std::str::FromStr;
 
 /// See https://osquery.io/schema/4.5.0/#processes
 #[derive(Serialize, Deserialize)]
@@ -21,7 +21,7 @@ pub(crate) struct OSQueryProcessQuery {
     #[serde(deserialize_with = "from_str")]
     parent: i64,
     #[serde(deserialize_with = "from_str")]
-    time: i64
+    time: i64,
 }
 
 impl PartiallyDeserializedOSQueryLog {
@@ -79,7 +79,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
             graph.add_edge(
                 "files_on_asset",
                 asset.clone_node_key(),
-                child_exe.clone_node_key()
+                child_exe.clone_node_key(),
             );
 
             graph.add_node(child_exe);
@@ -100,7 +100,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
             graph.add_edge(
                 "children",
                 parent_process.clone_node_key(),
-                child.clone_node_key()
+                child.clone_node_key(),
             );
 
             graph.add_edge(
