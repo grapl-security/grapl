@@ -2,12 +2,12 @@ import json
 import unittest
 from typing import Dict, Type, Any
 
-from pydgraph import DgraphClient
 from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.viewable import Viewable
+from grapl_analyzerlib.grapl_client import GraphClient
 
 
-def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
+def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
     query = f"""
@@ -38,7 +38,7 @@ def _upsert(client: DgraphClient, node_dict: Dict[str, Any]) -> str:
 
 
 def upsert(
-    client: DgraphClient,
+    client: GraphClient,
     type_name: str,
     view_type: "Type[Viewable]",
     node_key: str,

@@ -20,7 +20,11 @@ class GraphClient(DgraphClient):
 
     @contextmanager
     def txn_context(self, read_only: bool = False) -> Iterator[Txn]:
-        # It'd be nice to - after a full migration to `txn_context` - perhaps restrict calls to `.txn()`
+        """
+        Essentially, this just automates the try-finally in every
+        txn() use case, turning it into a context manager.
+        It'd be nice to - after a full migration to `txn_context` - perhaps restrict calls to `.txn()`
+        """
 
         txn = self.txn(read_only=read_only)
         try:
