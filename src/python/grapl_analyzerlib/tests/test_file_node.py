@@ -19,6 +19,7 @@ from grapl_analyzerlib.nodes.file import FileQuery, FileView
 from grapl_analyzerlib.viewable import Viewable
 from test_utils.dgraph_utils import upsert, create_edge
 
+
 def get_or_create_file_node(
     local_client: DgraphClient,
     node_key,
