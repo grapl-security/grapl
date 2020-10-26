@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import traceback
 from base64 import b64decode
 from hashlib import sha1
@@ -117,7 +118,7 @@ def verify_payload(payload_body, key, signature):
 
 
 def set_schema(client: GraphClient, schema: str) -> None:
-    op = pydgraph.Operation(schema=schema)
+    op = pydgraph.Operation(schema=schema, run_in_background=True)
     client.alter(op)
 
 
@@ -470,15 +471,17 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    provision_schemas(
+    th = threading.Thread(target=provision_schemas, args=(
         GraphClient(),
         raw_schemas,
-    )
+    ))
+    th.start()
 
     for path, file in plugin_files.items():
         upload_resp = upload_plugin(s3_client, path, file)
         if upload_resp:
             return upload_resp
+    th.join()
     return None
 
 
