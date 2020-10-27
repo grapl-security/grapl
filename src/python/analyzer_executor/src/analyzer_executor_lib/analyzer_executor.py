@@ -16,7 +16,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
-from pydgraph import DgraphClient, DgraphClientStub
 
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
