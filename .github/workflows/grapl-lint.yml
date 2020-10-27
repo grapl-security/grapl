@@ -55,7 +55,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd src/python
-          isort .
+          isort --diff --check-only .
 
   check-pypi:
     runs-on: ubuntu-latest
