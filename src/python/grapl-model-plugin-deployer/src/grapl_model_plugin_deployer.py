@@ -477,11 +477,13 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
     ))
     th.start()
 
-    for path, file in plugin_files.items():
-        upload_resp = upload_plugin(s3_client, path, file)
-        if upload_resp:
-            return upload_resp
-    th.join()
+    try:
+        for path, file in plugin_files.items():
+            upload_resp = upload_plugin(s3_client, path, file)
+            if upload_resp:
+                return upload_resp
+    finally:
+        th.join()
     return None
 
 
