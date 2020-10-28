@@ -322,6 +322,7 @@ image=grapl-provision:
   target: grapl-provision-build
   depends:
     - python-build
+    - grapl-analyzerlib-build
   tags:
     - "{env.TAG}"
 
