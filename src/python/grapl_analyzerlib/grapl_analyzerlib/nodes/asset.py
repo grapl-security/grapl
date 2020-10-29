@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional, Union
 
 from grapl_analyzerlib.node_types import (
@@ -66,7 +67,7 @@ class AssetSchema(EntitySchema):
 
 class AssetQuery(EntityQuery[AV, AQ]):
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return AssetSchema()
 
     def with_hostname(
@@ -78,7 +79,7 @@ class AssetQuery(EntityQuery[AV, AQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "AssetQuery":
+    ) -> AssetQuery:
         self._property_filters["hostname"].extend(
             _str_cmps(
                 predicate="hostname",
@@ -135,7 +136,7 @@ class AssetView(EntityView[AV, AQ]):
     queryable = AssetQuery
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return AssetSchema()
 
     def __init__(
