@@ -1,6 +1,7 @@
-import requests
-from typing import Optional
 from http import HTTPStatus
+from typing import Optional
+
+import requests
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 

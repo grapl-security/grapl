@@ -2,23 +2,20 @@ import dataclasses
 import json
 import unittest
 
-import pytest
-
 import hypothesis.strategies as st
-
-from hypothesis import given
-from chalice.test import Client
-
+import pytest
 from analyzer_deployer.app import (
-    app,
     Analyzer,
-    PortConfig,
-    SecretConfig,
-    TableConfig,
     AnalyzerConfig,
     AnalyzerDeployment,
     CreateAnalyzerResponse,
+    PortConfig,
+    SecretConfig,
+    TableConfig,
+    app,
 )
+from chalice.test import Client
+from hypothesis import given
 
 
 def _analyzers() -> st.SearchStrategy[Analyzer]:
@@ -53,7 +50,7 @@ def _table_configs():
 def _secret_configs():
     return st.builds(
         SecretConfig,
-        **{"SecretId": st.text(), "VersionId": st.text(), "VersionStage": st.text()}
+        **{"SecretId": st.text(), "VersionId": st.text(), "VersionStage": st.text()},
     )
 
 
@@ -65,7 +62,7 @@ def _analyzer_configs():
             "requires_dynamodb": st.lists(_table_configs()),
             "requires_graph": st.booleans(),
             "requires_secrets": st.lists(_secret_configs()),
-        }
+        },
     )
 
 
@@ -79,7 +76,7 @@ def _analyzer_deployments():
             "currently_deployed": st.booleans(),
             "last_deployed_time": st.integers(),
             "analyzer_configuration": _analyzer_configs(),
-        }
+        },
     )
 
 
@@ -90,7 +87,7 @@ def _create_analyzer_responses():
             "analyzer_id": st.text(),
             "analyzer_version": st.integers(),
             "s3_key": st.text(),
-        }
+        },
     )
 
 

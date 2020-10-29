@@ -9,28 +9,26 @@ from typing import (
     Any,
     ContextManager,
     Dict,
-    Tuple,
-    Sequence,
     Optional,
-    cast,
-    TypeVar,
+    Sequence,
+    Tuple,
     Type,
+    TypeVar,
+    cast,
 )
 
 import boto3
 import botocore.exceptions  # type: ignore
-from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
-from grapl_analyzerlib.nodes.lens import LensView
-from grapl_analyzerlib.prelude import BaseView
-from grapl_analyzerlib.prelude import RiskView
-from grapl_analyzerlib.viewable import Viewable
-from grapl_analyzerlib.queryable import Queryable
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_sqs import SQSClient
-from typing_extensions import Final
-from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from typing_extensions import Literal
+from typing_extensions import Final, Literal
 
+from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
+from grapl_analyzerlib.nodes.lens import LensView
+from grapl_analyzerlib.prelude import BaseView, RiskView
+from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.viewable import Viewable
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 

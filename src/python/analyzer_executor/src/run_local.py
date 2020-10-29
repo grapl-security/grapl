@@ -1,9 +1,9 @@
-import boto3  # type: ignore
-import botocore.exceptions  # type: ignore
 import json
 import time
 import traceback
 
+import boto3  # type: ignore
+import botocore.exceptions  # type: ignore
 from analyzer_executor_lib.analyzer_executor import IS_LOCAL, LOGGER, lambda_handler_fn
 
 if IS_LOCAL:
