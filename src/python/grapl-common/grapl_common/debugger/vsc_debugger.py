@@ -2,10 +2,10 @@
 I arbitrarily chose `debugpy`, the VS Code debugger (formerly known as ptsvd).
 It'd be pretty easy to add the PyCharm/IntelliJ debugger too (which uses pydevd)
 """
-import subprocess
-import sys
 import logging
 import os
+import subprocess
+import sys
 
 
 def _install_from_pip(package: str) -> None:

@@ -5,21 +5,20 @@ import re
 import sys
 import time
 import uuid
-
-from hashlib import sha256, pbkdf2_hmac
+from hashlib import pbkdf2_hmac, sha256
 from hmac import compare_digest
 from random import uniform
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import boto3
 import jwt
 import pydgraph
-from chalice import Chalice, Response, CORSConfig
+from chalice import Chalice, CORSConfig, Response
+from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.base import BaseView, BaseQuery
+from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
 from grapl_analyzerlib.nodes.entity import EntityQuery
 from grapl_analyzerlib.nodes.lens import LensQuery
-from pydgraph import DgraphClient
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 

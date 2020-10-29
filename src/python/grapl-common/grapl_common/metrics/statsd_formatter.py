@@ -1,6 +1,7 @@
 import re
-from typing import Union, Sequence, Pattern
-from typing_extensions import Literal, Final
+from typing import Pattern, Sequence, Union
+
+from typing_extensions import Final, Literal
 
 DEFAULT_SAMPLE_RATE: Final[float] = 1.0
 
