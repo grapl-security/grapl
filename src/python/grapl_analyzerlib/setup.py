@@ -2,11 +2,6 @@ import os
 
 from setuptools import setup, find_packages  # type: ignore
 
-LINTERS_REQUIREMENTS = [
-    "black",
-    "mypy",
-]
-
 TEST_REQUIREMENTS = [
     "pytest",
     # simultaneously run pytest on multiple cores with `pytest -n NUMCORES`
@@ -58,8 +53,7 @@ setup(
         "typing_extensions",
     ],
     extras_require={
-        "linters": LINTERS_REQUIREMENTS,
         "test": TEST_REQUIREMENTS,
-        "dev": LINTERS_REQUIREMENTS + TEST_REQUIREMENTS,
+        "typecheck": TEST_REQUIREMENTS + ["pytype"],
     },
 )

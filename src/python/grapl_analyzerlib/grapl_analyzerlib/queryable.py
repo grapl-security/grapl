@@ -12,6 +12,7 @@ from typing import (
     Optional,
     List,
     Union,
+    TYPE_CHECKING,
 )
 from uuid import uuid4
 
@@ -23,6 +24,9 @@ from grapl_analyzerlib.comparators import (
     IntOrNot,
 )
 from grapl_analyzerlib.extendable import Extendable
+
+if TYPE_CHECKING:
+    from grapl_analyzerlib.viewable import Viewable
 
 Q = TypeVar("Q", bound="Queryable")
 V = TypeVar("V", bound="Viewable")

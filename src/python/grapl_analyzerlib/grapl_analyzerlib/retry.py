@@ -1,14 +1,17 @@
 import time
 from functools import wraps
+from typing import Callable, Type, TypeVar, cast
+
+F = TypeVar("F", bound=Callable)
 
 
 def retry(
-    ExceptionToCheck: Exception = Exception,
+    ExceptionToCheck: Type[Exception] = Exception,
     on_falsey: bool = True,
     tries: int = 3,
     delay: float = 0.5,
     backoff: int = 2,
-):
+) -> Callable[[F], F]:
     """Retry calling the decorated function using an exponential backoff.
 
     Modified to handle 'falsey' cases with a retry
@@ -29,7 +32,7 @@ def retry(
         each retry
     """
 
-    def deco_retry(f):
+    def deco_retry(f: F) -> F:
         @wraps(f)
         def f_retry(*args, **kwargs):
             mtries, mdelay = tries, delay
