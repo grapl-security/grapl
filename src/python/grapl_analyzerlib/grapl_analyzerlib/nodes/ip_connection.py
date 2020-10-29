@@ -1,5 +1,18 @@
+from __future__ import annotations
 from collections import defaultdict
-from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
+from typing import (
+    Any,
+    TypeVar,
+    List,
+    Set,
+    Type,
+    Dict,
+    Tuple,
+    Optional,
+    Iterator,
+    Union,
+    TYPE_CHECKING,
+)
 
 from grapl_analyzerlib.node_types import (
     EdgeT,
@@ -20,6 +33,8 @@ from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable, V, Q
 from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
+from grapl_analyzerlib.comparators import IntOrNot, StrOrNot, OneOrMany
+
 
 IPQ = TypeVar("IPQ", bound="IpConnectionQuery")
 IPV = TypeVar("IPV", bound="IpConnectionView")
@@ -64,24 +79,24 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_src_ip_address(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        eq: Optional[StrOrNot] = None,
+        contains: Optional[OneOrMany[StrOrNot]] = None,
+        starts_with: Optional[StrOrNot] = None,
+        ends_with: Optional[StrOrNot] = None,
+        regexp: Optional[OneOrMany[StrOrNot]] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "ProcessQuery":
+    ) -> ProcessQuery:
         pass
 
     @with_int_prop("src_port")
     def with_src_port(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -89,24 +104,24 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_dst_ip_address(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        eq: Optional[StrOrNot] = None,
+        contains: Optional[OneOrMany[StrOrNot]] = None,
+        starts_with: Optional[StrOrNot] = None,
+        ends_with: Optional[StrOrNot] = None,
+        regexp: Optional[OneOrMany[StrOrNot]] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "ProcessQuery":
+    ) -> ProcessQuery:
         pass
 
     @with_int_prop("dst_port")
     def with_dst_port(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -114,11 +129,11 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_created_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -126,11 +141,11 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_terminated_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -138,11 +153,11 @@ class IpConnectionQuery(EntityQuery[IPV, IPQ]):
     def with_last_seen_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -280,3 +295,6 @@ class IpConnectionExtendsIpAddressView(IpAddressView):
 
 IpAddressQuery = IpAddressQuery.extend_self(IpConnectionExtendsIpAddressQuery)
 IpAddressView = IpAddressView.extend_self(IpConnectionExtendsIpAddressView)
+
+if TYPE_CHECKING:
+    from grapl_analyzerlib.nodes import ProcessQuery
