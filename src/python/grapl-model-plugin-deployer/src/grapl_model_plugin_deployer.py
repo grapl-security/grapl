@@ -15,7 +15,7 @@ from base64 import b64decode
 from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
-from typing import TypeVar, Dict, Union, List, Any, Optional
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import boto3  # type: ignore
 import jwt
@@ -23,11 +23,12 @@ import pydgraph  # type: ignore
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
+
 from grapl_analyzerlib.node_types import (
-    PropPrimitive,
-    PropType,
     EdgeRelationship,
     EdgeT,
+    PropPrimitive,
+    PropType,
 )
 from grapl_analyzerlib.prelude import *
 
