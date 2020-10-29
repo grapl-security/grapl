@@ -1,8 +1,8 @@
 import unittest
 from datetime import datetime
-from typing_extensions import Final
 
-from grapl_common.time_utils import as_millis, as_datetime
+from grapl_common.time_utils import as_datetime, as_millis
+from typing_extensions import Final
 
 SOME_DT: Final[datetime] = datetime(
     year=2020,
@@ -15,9 +15,8 @@ SOME_DT: Final[datetime] = datetime(
 )
 
 
-class TimeUtilsTests(unittest.TestCase):
-    def test__back_and_forth(self):
+class TestTimeUtils(unittest.TestCase):
+    def test__back_and_forth(self) -> None:
         millis = as_millis(SOME_DT)
-        assert millis == 1577934245006
         back_to_dt = as_datetime(millis)
         assert SOME_DT == back_to_dt

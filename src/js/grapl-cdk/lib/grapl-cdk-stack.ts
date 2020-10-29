@@ -58,6 +58,7 @@ class SysmonGraphGenerator extends cdk.NestedStack {
             writes_to: props.writesTo,
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         service.event_handler.connections.allowToAnyIpv4(
@@ -128,6 +129,7 @@ class NodeIdentifier extends cdk.NestedStack {
             retry_code_name: 'node-identifier-retry-handler',
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         history_db.allowReadWrite(service);
@@ -154,6 +156,39 @@ class NodeIdentifier extends cdk.NestedStack {
         );
     }
 }
+
+export interface MetricForwarderProps extends GraplServiceProps {
+    // nothing yet
+}
+
+class MetricForwarder extends cdk.NestedStack {
+    readonly service: Service;
+
+    constructor(scope: cdk.Construct, id: string, props: MetricForwarderProps) {
+        super(scope, id);
+
+        this.service = new Service(this, id, {
+            prefix: props.prefix,
+            environment: {
+                GRAPL_LOG_LEVEL: 'INFO',
+            },
+            vpc: props.vpc,
+            version: props.version,
+            watchful: props.watchful,
+            metric_forwarder: undefined,  // Otherwise, it'd be recursive!
+        });
+
+        const  policy = new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['cloudwatch:PutMetricData'],
+            resources: ['*'],
+        });
+
+        this.service.event_handler.addToRolePolicy(policy);
+        this.service.event_retry_handler.addToRolePolicy(policy);
+    }
+}
+
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -185,11 +220,12 @@ class GraphMerger extends cdk.NestedStack {
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
-                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                MG_ALPHAS: 'http://' + props.dgraphSwarmCluster.alphaHostPort(),
                 MERGED_CACHE_ADDR:
                     graph_merge_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT:
                     graph_merge_cache.cluster.attrRedisEndpointPort,
+                GRAPL_SCHEMA_TABLE: props.schemaTable.schema_table.tableName,
             },
             vpc: props.vpc,
             reads_from: subgraphs_generated.bucket,
@@ -197,6 +233,7 @@ class GraphMerger extends cdk.NestedStack {
             writes_to: props.writesTo,
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
         props.schemaTable.allowRead(service);
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
@@ -251,6 +288,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
             writes_to: props.writesTo,
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         service.readsFrom(props.readsFrom, true);
@@ -315,10 +353,13 @@ class AnalyzerExecutor extends cdk.NestedStack {
             subscribes_to: dispatched_analyzer.topic,
             opt: {
                 runtime: lambda.Runtime.PYTHON_3_7,
+                py_entrypoint: "lambda_function.lambda_handler"
             },
             version: props.version,
             watchful: props.watchful,
-        });
+            metric_forwarder: props.metricForwarder,
+        },
+        );
 
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
 
@@ -330,7 +371,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
 
         // Need to be able to GetObject in order to HEAD, can be replaced with
         // a cache later, but safe so long as there is no LIST
-        let policy = new iam.PolicyStatement({
+        const  policy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ['s3:GetObject'],
             resources: [props.writesTo.bucketArn + '/*'],
@@ -384,6 +425,7 @@ class EngagementCreator extends cdk.NestedStack {
             },
             version: props.version,
             watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
         });
 
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
@@ -429,7 +471,19 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         this.dgraphSwarmCluster = new Swarm(this, 'DGraphSwarmCluster', {
             prefix: props.prefix,
             vpc: props.vpc,
-            internalServicePorts: [ec2.Port.tcp(5080), ec2.Port.tcp(7080), ec2.Port.tcp(7081), ec2.Port.tcp(7082)],
+            internalServicePorts: [
+                ec2.Port.tcp(5080),
+                ec2.Port.tcp(6080),
+                ec2.Port.tcp(7081),
+                ec2.Port.tcp(7082),
+                ec2.Port.tcp(7083),
+                ec2.Port.tcp(8081),
+                ec2.Port.tcp(8082),
+                ec2.Port.tcp(8083),
+                ec2.Port.tcp(9081),
+                ec2.Port.tcp(9082),
+                ec2.Port.tcp(9083)
+            ],
         });
     }
 
@@ -439,8 +493,6 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
 
     public allowConnectionsFrom(other: ec2.IConnectable): void {
         this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9080));
-        this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9081));
-        this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9082));
     }
 }
 
@@ -662,6 +714,7 @@ export interface GraplServiceProps {
     dgraphSwarmCluster: DGraphSwarmCluster;
     userAuthTable: UserAuthDb;
     watchful?: Watchful;
+    metricForwarder?: Service;
 }
 
 export interface GraplStackProps extends cdk.StackProps {
@@ -723,7 +776,7 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
-        const graplProps = {
+        const graplProps: GraplServiceProps = {
             prefix: this.prefix,
             version: props.version || 'latest',
             jwtSecret: jwtSecret,
@@ -732,6 +785,18 @@ export class GraplCdkStack extends cdk.Stack {
             userAuthTable: user_auth_table,
             watchful: watchful,
         };
+
+        const metric_forwarder = new MetricForwarder(
+            this,
+            'metric-forwarder',
+            {
+                ...graplProps,
+            }
+        );
+        // as we onboard more services to monitoring, add in ...enableMetricsProps
+        const enableMetricsProps: Pick<GraplServiceProps, 'metricForwarder'> = {
+            metricForwarder: metric_forwarder.service,
+        }
 
         const analyzers_bucket = new s3.Bucket(this, 'AnalyzersBucket', {
             bucketName: bucket_prefix + '-analyzers-bucket',
@@ -754,6 +819,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 publishesTo: engagements_created_topic,
                 ...graplProps,
+                ...enableMetricsProps,
             }
         );
 
@@ -809,6 +875,7 @@ export class GraplCdkStack extends cdk.Stack {
         new SysmonGraphGenerator(this, 'sysmon-subgraph-generator', {
             writesTo: node_identifier.bucket,
             ...graplProps,
+            ...enableMetricsProps,
         });
 
         new EngagementNotebook(this, 'engagements', {

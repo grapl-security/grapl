@@ -10,6 +10,7 @@ import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
+import { FilterPattern, SubscriptionFilter } from '@aws-cdk/aws-logs';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import { Watchful } from './vendor/cdk-watchful/lib/watchful';
 
@@ -36,6 +37,11 @@ class Queues {
     }
 }
 
+export interface ServicePropsOptions {
+    runtime?: lambda.Runtime;
+    py_entrypoint?: string;
+}
+
 export interface ServiceProps {
     version: string;
     prefix: string;
@@ -45,7 +51,7 @@ export interface ServiceProps {
     writes_to?: s3.IBucket;
     subscribes_to?: sns.ITopic;
     retry_code_name?: string;
-    opt?: any;
+    opt?: ServicePropsOptions;
     watchful?: Watchful;
 
     /**
@@ -56,7 +62,7 @@ export interface ServiceProps {
      and that 1 lambda should be the one that does not have it set.
      (we don't want a recursive log-processor)
      */
-    metrics_logs_ingest_lambda?: lambda.IFunction;
+    metric_forwarder?: Service;
 }
 
 export class Service {
@@ -73,15 +79,23 @@ export class Service {
         const runtime =
             opt && opt.runtime
                 ? opt.runtime
-                : {
-                      name: 'provided',
+                : new lambda.Runtime('provided', undefined, {
                       supportsInlineCode: true,
-                  };
+                  });
 
-        const handler =
-            runtime === lambda.Runtime.PYTHON_3_7
-                ? `${name}.lambda_handler`
-                : name;
+        const handler = (function(): string {
+            if(runtime === lambda.Runtime.PYTHON_3_7) {
+                if (opt && opt.py_entrypoint) {
+                    // Set opt.py_entrypoint to manually specify how to resolve the `lambda_handler` function.
+                    return opt.py_entrypoint
+                } else {
+                    // For one-file python services, where we assume everything is in <name>.py
+                    return `${name}.lambda_handler`
+                }
+            } else {
+                return name
+            }
+        })()
 
         const queues = new Queues(scope, serviceName.toLowerCase());
 
@@ -188,9 +202,10 @@ export class Service {
             this.addSubscription(scope, props.subscribes_to);
         }
 
-        if (props.metrics_logs_ingest_lambda) {
-            this.forwardMetricsLogs(scope, event_handler, props.metrics_logs_ingest_lambda);
-            this.forwardMetricsLogs(scope, event_retry_handler, props.metrics_logs_ingest_lambda);
+        if (props.metric_forwarder) {
+            const forwarder_lambda = props.metric_forwarder.event_handler;
+            this.forwardMetricsLogs(scope, event_handler, forwarder_lambda);
+            this.forwardMetricsLogs(scope, event_retry_handler, forwarder_lambda);
         }
 
     }
@@ -249,9 +264,7 @@ export class Service {
             "send_metrics_to_lambda_" + fromLambdaFn.node.uniqueId,
             {
                 destination: new LambdaDestination(toLambdaFn),
-                filterPattern: {
-                    logPatternString: "MONITORING|"
-                }
+                filterPattern: FilterPattern.literal("MONITORING"),
             }
         )
     }

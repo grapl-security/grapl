@@ -40,6 +40,7 @@ impl MetricType {
 
 /**
 Don't call statsd_format directly; instead, prefer the public functions of MetricClient.
+To go from a formatted string to usable data again, use the 'statsd-parser' crate.
 */
 #[allow(dead_code)]
 pub fn statsd_format(
@@ -192,7 +193,7 @@ mod tests {
         )?;
         assert_eq!(
             buf,
-            "some_str:12345.6|c|#some_key=some_value,some_key_2=some_value_2"
+            "some_str:12345.6|c|#some_key:some_value,some_key_2:some_value_2"
         );
         Ok(())
     }

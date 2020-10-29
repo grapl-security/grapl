@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional
@@ -61,6 +62,23 @@ class LensQuery(BaseQuery[LV, LQ]):
 
 
 class LensView(BaseView[LV, LQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - lens
+          - string
+          - The name of the lens this node represents.
+        * - scope
+          - List[EntityView]
+          - todo: documentation
+    """
+
     queryable = LensQuery
 
     def __init__(

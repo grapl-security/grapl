@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections import defaultdict
 from typing import Any, TypeVar, List, Set, Type, Dict, Tuple, Optional, Iterator, Union
 
@@ -20,6 +21,7 @@ from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable, V, Q
 from grapl_analyzerlib.comparators import StrCmp, Eq, Distance, IntOrNot, StrOrNot
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
+from grapl_analyzerlib.comparators import IntOrNot, StrOrNot, OneOrMany
 
 IPPQ = TypeVar("IPPQ", bound="IpPortQuery")
 IPPV = TypeVar("IPPV", bound="IpPortView")
@@ -65,11 +67,11 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
     def with_port(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -77,11 +79,11 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
     def with_ip_address(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        eq: Optional[StrOrNot] = None,
+        contains: Optional[OneOrMany[StrOrNot]] = None,
+        starts_with: Optional[StrOrNot] = None,
+        ends_with: Optional[StrOrNot] = None,
+        regexp: Optional[OneOrMany[StrOrNot]] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
@@ -90,11 +92,11 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
     def with_first_seen_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -102,11 +104,11 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
     def with_last_seen_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -124,6 +126,44 @@ class IpPortQuery(EntityQuery[IPPV, IPPQ]):
 
 
 class IpPortView(EntityView[IPPV, IPPQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - first_seen_timestamp
+          - int
+          - Time the IP Port was first seen (in millis-since-epoch).
+        * - last_seen_timestamp
+          - int
+          - Time the IP Port was last seen (in millis-since-epoch).
+        * - terminated_timestamp
+          - int
+          - Time connection was terminated (in millis-since-epoch).
+        * - ip_address
+          - string
+          - The IP Address associated with this node. (TODO: v4? v6? both?)
+        * - protocol
+          - string
+          - todo: documentation
+        * - network_connections
+          - List[:doc:`/nodes/network_connection`]
+          - todo: documentation
+        * - bound_by
+          - List[:doc:`/nodes/process_inbound_connection`]
+          - todo: documentation
+        * - process_connections
+          - List[:doc:`/nodes/process_outbound_connection`]
+          - todo: documentation
+        * - process_connects
+          - List[:doc:`/nodes/process_outbound_connection`]
+          - todo: documentation
+    """
+
     queryable = IpPortQuery
 
     def __init__(

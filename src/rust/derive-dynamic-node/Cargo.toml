@@ -1,6 +1,6 @@
 [package]
 name = "derive-dynamic-node"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
@@ -13,7 +13,7 @@ license = "MIT"
 proc-macro = true
 
 [dependencies]
-graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}
+grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
 grapl-config = {path="../grapl-config", version="*"}
 
 syn = "0.15.39"

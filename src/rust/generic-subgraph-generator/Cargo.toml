@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 graph-generator-lib = {path = "../graph-generator-lib/", version="*"}
-graph-descriptions = {package="grapl-graph-descriptions", path="../graph-descriptions", version="*"}
+grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
 
 sqs-lambda = "0.20.*"

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, TypeVar, List, Dict, Set, Tuple, Optional
 
 from grapl_analyzerlib.node_types import (
@@ -9,6 +10,7 @@ from grapl_analyzerlib.node_types import (
 from grapl_analyzerlib.nodes.base import BaseView, BaseQuery, BaseSchema
 from grapl_analyzerlib.queryable import with_str_prop, with_int_prop
 from grapl_analyzerlib.schema import Schema
+from grapl_analyzerlib.comparators import IntOrNot, OneOrMany, StrOrNot
 
 LQ = TypeVar("LQ", bound="RiskQuery")
 LV = TypeVar("LV", bound="RiskView")
@@ -48,11 +50,11 @@ class RiskQuery(BaseQuery[LV, LQ]):
     def with_analyzer_name(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        eq: Optional[StrOrNot] = None,
+        contains: Optional[OneOrMany[StrOrNot]] = None,
+        starts_with: Optional[StrOrNot] = None,
+        ends_with: Optional[StrOrNot] = None,
+        regexp: Optional[OneOrMany[StrOrNot]] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
@@ -61,11 +63,11 @@ class RiskQuery(BaseQuery[LV, LQ]):
     def with_risk_score(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -78,6 +80,26 @@ class RiskQuery(BaseQuery[LV, LQ]):
 
 
 class RiskView(BaseView[LV, LQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node
+        * - risk_score
+          - int
+          - todo: documentation
+        * - analyzer_name
+          - string
+          - The name of the analyzer that spawned this risk.
+        * - risky_nodes
+          - List[EntityView]
+          - todo: documentation
+    """
+
     queryable = RiskQuery
 
     def __init__(

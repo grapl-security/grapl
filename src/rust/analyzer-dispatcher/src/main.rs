@@ -5,21 +5,19 @@ use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::time::Duration;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;
 use failure::{bail, Error};
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
 use log::{debug, error, info, warn};
 use prost::Message;
-use rusoto_core::{HttpClient, Region, RusotoError};
+use rusoto_core::{HttpClient, Region};
 use rusoto_s3::{ListObjectsRequest, S3Client, S3};
-use rusoto_sqs::{ListQueuesRequest, SendMessageRequest, Sqs, SqsClient};
+use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -33,9 +31,9 @@ use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
 use chrono::Utc;
-use sqs_lambda::local_sqs_service::local_sqs_service;
+use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
+use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use std::str::FromStr;
-use tokio::runtime::Runtime;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
@@ -239,18 +237,6 @@ where
     }
 }
 
-fn time_based_key_fn(_event: &[u8]) -> String {
-    info!("event length {}", _event.len());
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
-}
-
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
     rusoto_sqs::Message {
         attributes: Some(event.attributes),
@@ -393,7 +379,10 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-    local_sqs_service(
+    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
+    options_builder.with_minimal_buffer_completion_policy();
+
+    local_sqs_service_with_options(
         source_queue_url,
         "local-grapl-analyzer-dispatched-bucket",
         Context {
@@ -460,6 +449,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
 
             Ok(())
         },
+        options_builder.build(),
     )
     .await?;
 
@@ -468,11 +458,9 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    grapl_config::init_grapl_log!();
+    let env = grapl_config::init_grapl_env!();
 
-    let is_local = std::env::var("IS_LOCAL").is_ok();
-
-    if is_local {
+    if env.is_local {
         info!("Running locally");
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 

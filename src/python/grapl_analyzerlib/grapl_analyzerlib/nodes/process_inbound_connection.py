@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, TypeVar, Set, Dict, Tuple, Optional
 
 from grapl_analyzerlib.node_types import (
@@ -7,8 +8,10 @@ from grapl_analyzerlib.node_types import (
     EdgeRelationship,
 )
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
+from grapl_analyzerlib.nodes.ip_address import IpAddressQuery
 from grapl_analyzerlib.queryable import with_str_prop, with_int_prop
 from grapl_analyzerlib.schema import Schema
+from grapl_analyzerlib.comparators import IntOrNot, StrOrNot, OneOrMany
 
 PICQ = TypeVar("PICQ", bound="ProcessInboundConnectionQuery")
 PICV = TypeVar("PICV", bound="ProcessInboundConnectionView")
@@ -65,11 +68,11 @@ class ProcessInboundConnectionQuery(EntityQuery[PICV, PICQ]):
     def with_protocol(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        eq: Optional[StrOrNot] = None,
+        contains: Optional[OneOrMany[StrOrNot]] = None,
+        starts_with: Optional[StrOrNot] = None,
+        ends_with: Optional[StrOrNot] = None,
+        regexp: Optional[OneOrMany[StrOrNot]] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
@@ -78,11 +81,11 @@ class ProcessInboundConnectionQuery(EntityQuery[PICV, PICQ]):
     def with_created_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -90,11 +93,11 @@ class ProcessInboundConnectionQuery(EntityQuery[PICV, PICQ]):
     def with_terminated_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -102,11 +105,11 @@ class ProcessInboundConnectionQuery(EntityQuery[PICV, PICQ]):
     def with_port(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -114,11 +117,11 @@ class ProcessInboundConnectionQuery(EntityQuery[PICV, PICQ]):
     def with_last_seen_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -136,6 +139,41 @@ class ProcessInboundConnectionQuery(EntityQuery[PICV, PICQ]):
 
 
 class ProcessInboundConnectionView(EntityView[PICV, PICQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node
+        * - created_timestamp
+          - int
+          - Time the process inbound network connection was created (in millis-since-epoch).
+        * - terminated_timestamp
+          - int
+          - Time the process inbound network connection was terminated (in millis-since-epoch).
+        * - last_seen_timestamp
+          - int
+          - Time the process inbound network connection was last seen (in millis-since-epoch)
+        * - port
+          - int
+          - Port of the inbound process network connection.
+        * - ip_address
+          - str
+          - IP Address of the inbound process network connection.
+        * - protocol
+          - int
+          - Network protocol of the inbound process network connection.
+        * - bound_port
+          - List[:doc:`/nodes/ip_port`]
+          - todo: documentation
+        * - bound_by
+          - List[:doc:`/nodes/process`]
+          - todo: documentation
+    """
+
     queryable = ProcessInboundConnectionQuery
 
     def __init__(

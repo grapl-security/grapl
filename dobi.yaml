@@ -39,6 +39,18 @@ image=analyzer-dispatcher:
   depends:
     - rust-build
 
+image=metric-forwarder:
+  image: grapl/grapl-metric-forwarder
+  context: src/rust/metric-forwarder
+  dockerfile: Dockerfile
+  args:
+    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
+  target: grapl-metric-forwarder
+  tags:
+    - "{env.TAG}"
+  depends:
+    - rust-build
+
 image=generic-subgraph-generator:
   image: grapl/grapl-generic-subgraph-generator
   context: src/rust/generic-subgraph-generator
@@ -134,6 +146,17 @@ image=grapl-common-build:
   target: grapl-common-python-build
   depends:
     - python-build
+  tags:
+    - latest
+
+image=grapl-tests-common-build:
+  image: grapl/grapl-tests-common-python-build
+  context: src/python/grapl-tests-common/
+  dockerfile: Dockerfile
+  target: grapl-tests-common-python-build
+  depends:
+    - python-build
+    - grapl-analyzerlib-build
   tags:
     - latest
 
@@ -292,27 +315,27 @@ image=grapl-notebook:
   tags:
     - "{env.TAG}"
 
-image=graph-provision:
-  image: grapl/grapl-graph-provision
-  context: src/python/engagement_edge/
+image=grapl-provision:
+  image: grapl/grapl-provision
+  context: src/python/grapl_provision/
   dockerfile: Dockerfile
-  target: grapl-engagement-edge
+  target: grapl-provision-build
   depends:
-    - engagement-edge-build
-    - python-deploy
+    - python-build
+    - grapl-analyzerlib-build
   tags:
     - "{env.TAG}"
 
-image=dynamodb-provision:
-  image: grapl/grapl-dynamodb-provision
-  context: src/python/engagement_edge/
+image=grapl-e2e-tests-build:
+  image: grapl/grapl-e2e-tests-build
+  context: src/python/grapl_e2e_tests/
   dockerfile: Dockerfile
-  target: grapl-engagement-edge
+  target: grapl-e2e-tests-build
   depends:
-    - engagement-edge-build
-    - python-deploy
+    - grapl-tests-common-build
+    - etc-build  # has all the test data
   tags:
-    - "{env.TAG}"
+    - latest
 
 # js images
 
@@ -358,6 +381,15 @@ image=graphql-endpoint:
   tags:
     - "{env.TAG}"
 
+# local grapl
+image=etc-build:
+  image: grapl/etc-build
+  context: etc/
+  dockerfile: Dockerfile
+  target: etc-build
+  tags:
+    - "{env.TAG}"
+
 #
 # compose
 #
@@ -365,6 +397,8 @@ image=graphql-endpoint:
 # integration tests. It should be identical to local Grapl. The most
 # important thing here is to keep the 'depends' list up to date.
 #
+# To view the logs during an integration test, run `dobi integration-env:attach` in another tab/tmux session.
+# (also try out `GRAPL_LOG_LEVEL=DEBUG`)
 
 compose=integration-env:
   files:
@@ -374,6 +408,7 @@ compose=integration-env:
     # rust images
     - analyzer-dispatcher
     - generic-subgraph-generator
+    - metric-forwarder  # though, not currently used in integration
     - graph-merger
     - node-identifier
     - node-identifier-retry-handler
@@ -386,8 +421,7 @@ compose=integration-env:
     - dgraph-ttl
     - model-plugin-deployer
     - grapl-notebook
-    - graph-provision
-    - dynamodb-provision
+    - grapl-provision
     # js images
     - engagement-view
     - graphql-endpoint
@@ -414,9 +448,13 @@ job=run-rust-unit-tests:
 job=run-node-identifier-integration-tests:
   use: rust-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 30 && cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration"
+  command: |
+    /bin/bash -c "
+      wait-for-it grapl-provision:8126 --timeout=60 &&
+      cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration
+      "
   env:
-    - GRAPL_LOG_LEVEL=INFO
+    - GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - RUST_LOG=INFO
     - RUST_BACKTRACE=1
     - "BUCKET_PREFIX=local-grapl"
@@ -444,35 +482,80 @@ job=run-grapl-common-unit-tests:
   command: /bin/bash -c "source venv/bin/activate && cd grapl_common/tests && ls && py.test -n auto -m 'not integration_test'"
 
 
-job=run-engagement-creator-typecheck:
+job=typecheck-engagement-creator:
   use: engagement-creator-build
-  command: /bin/bash -c "
-    source venv/bin/activate &&
-    cd engagement-creator &&
-    pip install '.[typecheck]' &&
-    mypy .
-    "
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd engagement-creator &&
+      pip install '.[typecheck]' &&
+      mypy .
+      "
 
-job=run-grapl-common-typecheck:
+job=typecheck-grapl-common:
   use: grapl-common-build
-  command: /bin/bash -c "
-    source venv/bin/activate &&
-    cd grapl_common &&
-    pip install '.[typecheck]' &&
-    mypy .
-    "
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd grapl_common &&
+      pip install '.[typecheck]' &&
+      mypy .
+      "
 
-job=run-analyzer-deployer-typecheck:
-  use: analyzer-deployer-build
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
+job=typecheck-grapl-tests-common:
+  use: grapl-tests-common-build
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd grapl-tests-common &&
+      pip install '.[typecheck]' &&
+      mypy .
+      "
+
+job=typecheck-e2e-integration-tests:
+  use: grapl-e2e-tests-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
-  command: /bin/bash -c "
-    source venv/bin/activate &&
-    touch venv/lib/python3.7/site-packages/chalice/py.typed &&
-    cd analyzer-deployer &&
-    pip install mypy &&
-    mypy .
-    "
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      pip install mypy && 
+      mypy -p grapl_e2e_tests
+      "
+
+job=typecheck-analyzer-deployer:
+  use: analyzer-deployer-build
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
+  command: | 
+    /bin/bash -c "
+      source venv/bin/activate &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      cd analyzer-deployer &&
+      pip install mypy &&
+      mypy .
+      "
+
+job=typecheck-model-plugin-deployer:
+  use: model-plugin-deployer-build
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
+  command: | 
+    /bin/bash -c "
+      source venv/bin/activate &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      cd model-plugin-deployer &&
+      pip install mypy &&
+      mypy .
+      "
+job=typecheck-grapl-analyzerlib:
+  use: grapl-analyzerlib-build
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd grapl_analyzerlib &&
+      pip install '.[typecheck]' &&
+      pytype --config ./pytype.cfg .
+      "
 
 job=run-grapl-analyzerlib-unit-tests:
   use: grapl-analyzerlib-build
@@ -481,9 +564,15 @@ job=run-grapl-analyzerlib-unit-tests:
 job=run-grapl-analyzerlib-integration-tests:
   use: grapl-analyzerlib-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'integration_test'"
+  command: |
+    /bin/bash -c "
+      wait-for-it grapl-provision:8126 --timeout=60 &&
+      source venv/bin/activate && 
+      cd grapl_analyzerlib && 
+      py.test -n auto -m 'integration_test'
+      "
   env:
-    - GRAPL_LOG_LEVEL=INFO
+    -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
@@ -504,13 +593,41 @@ job=run-analyzer-deployer-unit-tests:
 job=run-analyzer-deployer-integration-tests:
   use: analyzer-deployer-build
   net-mode: grapl-integration-tests_default
-  command: /bin/bash -c "sleep 30 && source venv/bin/activate && cd analyzer-deployer && py.test -n auto -m 'integration_test'"
+  command: |
+    /bin/bash -c "
+      wait-for-it grapl-provision:8126 --timeout=60 &&
+      source venv/bin/activate &&
+      cd analyzer-deployer && 
+      py.test -n auto -m 'integration_test'
+      "
   env:
-    - GRAPL_LOG_LEVEL=INFO
+    -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - "BUCKET_PREFIX=local-grapl"
     - "IS_LOCAL=True"
   depends:
     - integration-env
+
+job=run-e2e-integration-tests:
+  use: grapl-e2e-tests-build
+  net-mode: grapl-integration-tests_default
+  command: | 
+    /bin/bash -c "
+      wait-for-it grapl-provision:8126 --timeout=60 &&
+      source venv/bin/activate && 
+      cd grapl_e2e_tests && 
+      python3 ./main.py
+      "
+  env:
+    -  GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
+    - "BUCKET_PREFIX=local-grapl"
+    - "IS_LOCAL=True"
+    - "MG_ALPHAS=grapl-master-graph-db:9080"
+    - DEBUG_SERVICES={env.DEBUG_SERVICES:}
+  depends:
+    - integration-env
+  ports:
+    # Used for debugger
+    - 8400:8400
 
 job=build-analyzer-executor:
   use: analyzer-executor-build
@@ -522,6 +639,15 @@ job=build-analyzer-executor:
 job=run-analyzer-executor-unit-tests:
   use: analyzer-executor-build
   command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
+
+job=typecheck-analyzer-executor:
+  use: analyzer-executor-build
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      pip install mypy && 
+      mypy analyzer_executor/**/*.py
+      "
 
 job=build-engagement-creator:
   use: engagement-creator-build
@@ -599,6 +725,7 @@ alias=rust:
     - "analyzer-dispatcher:tag"
     - "generic-subgraph-generator:tag"
     - "graph-merger:tag"
+    - "metric-forwarder:tag"
     - "node-identifier:tag"
     - "node-identifier-retry-handler:tag"
     - "sysmon-subgraph-generator:tag"
@@ -638,8 +765,7 @@ alias=python:
     - "dgraph-ttl:tag"
     - "model-plugin-deployer:tag"
     - "grapl-notebook:tag"
-    - "graph-provision:tag"
-    - "dynamodb-provision:tag"
+    - "grapl-provision:tag"
   annotations:
     description: "Build artifacts and images for python services"
 
@@ -737,8 +863,14 @@ alias=integration-tests:
 alias=python-typecheck:
   tasks:
     # TODO: Add more and more here!
-    - run-analyzer-deployer-typecheck
-    - run-engagement-creator-typecheck
-    - run-grapl-common-typecheck
+    - typecheck-grapl-common
+    - typecheck-grapl-tests-common
+    - typecheck-analyzer-deployer
+    - typecheck-e2e-integration-tests
+    - typecheck-engagement-creator
+    - typecheck-model-plugin-deployer
+    - typecheck-analyzer-executor
+    # Broken, temporarily
+    # - typecheck-grapl-analyzerlib
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"

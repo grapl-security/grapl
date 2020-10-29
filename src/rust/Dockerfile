@@ -21,7 +21,7 @@
 #
 
 FROM rust:1-slim-buster AS grapl-rust-base
-RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev
+RUN apt-get update && apt-get install -y apt-utils musl musl-dev musl-tools protobuf-compiler libzstd-dev wait-for-it
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
 RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
@@ -67,6 +67,11 @@ COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
 RUN mkdir -p grapl-observe/src
 RUN touch grapl-observe/src/lib.rs
 COPY --chown=grapl ./grapl-observe/Cargo.toml grapl-observe/
+
+# copy in Cargo.toml for metric-forwarder
+RUN mkdir -p metric-forwarder/src
+RUN echo 'fn main() {}' > metric-forwarder/src/main.rs 
+COPY --chown=grapl ./metric-forwarder/Cargo.toml metric-forwarder/
 
 # copy in Cargo.toml for graph-merger
 RUN mkdir -p graph-merger/src
@@ -114,6 +119,7 @@ RUN rm -rf target/*/*/.fingerprint/graph-merger*
 RUN rm -rf target/*/*/.fingerprint/grapl-config*
 RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
 RUN rm -rf target/*/*/.fingerprint/grapl-observe*
+RUN rm -rf target/*/*/.fingerprint/metric-forwarder*
 RUN rm -rf target/*/*/.fingerprint/node-identifier*
 RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
 # copy in the sources
@@ -125,6 +131,7 @@ COPY --chown=grapl ./graph-generator-lib graph-generator-lib
 COPY --chown=grapl ./graph-merger graph-merger
 COPY --chown=grapl ./grapl-config grapl-config
 COPY --chown=grapl ./grapl-observe grapl-observe
+COPY --chown=grapl ./metric-forwarder metric-forwarder
 COPY --chown=grapl ./node-identifier node-identifier
 COPY --chown=grapl ./sysmon-subgraph-generator sysmon-subgraph-generator
 # copy in the top-level Cargo.toml and Cargo.lock
@@ -133,11 +140,9 @@ COPY --chown=grapl Cargo.toml .
 
 # Now do a clean build
 RUN if test "${release_target}" = "release"; then \
-      cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl --release; \
     fi
 RUN if test "${release_target}" = "debug"; then \
-      cargo clean; \
       cargo build --target=x86_64-unknown-linux-musl; \
     fi
 # copy artifacts to dist mount
@@ -145,6 +150,10 @@ RUN mkdir -p /home/grapl/dist && \
     cp target/x86_64-unknown-linux-musl/${release_target}/analyzer-dispatcher dist/analyzer-dispatcher && \
     cp target/x86_64-unknown-linux-musl/${release_target}/generic-subgraph-generator dist/generic-subgraph-generator && \
     cp target/x86_64-unknown-linux-musl/${release_target}/graph-merger dist/graph-merger && \
+    cp target/x86_64-unknown-linux-musl/${release_target}/metric-forwarder dist/metric-forwarder && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier dist/node-identifier && \
     cp target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler dist/node-identifier-retry-handler && \
-    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator \
+    cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator
+
+# no-op the base image, so it doesn't default to /bin/sh
+CMD :

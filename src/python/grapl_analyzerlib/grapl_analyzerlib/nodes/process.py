@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional, Union
 
 from grapl_analyzerlib.analyzer import OneOrMany
@@ -74,43 +75,43 @@ class ProcessSchema(EntitySchema):
 class ProcessQuery(EntityQuery[PV, PQ]):
     @with_int_prop("process_id")
     def with_process_id(
-        self: "PQ",
+        self: PQ,
         *,
         eq: Optional["IntOrNot"] = None,
         gt: Optional["IntOrNot"] = None,
         ge: Optional["IntOrNot"] = None,
         lt: Optional["IntOrNot"] = None,
         le: Optional["IntOrNot"] = None,
-    ) -> "PQ":
-        pass
+    ) -> PQ:
+        return self
 
     @with_int_prop("created_timestamp")
     def with_created_timestamp(
-        self: "PQ",
+        self: PQ,
         *,
         eq: Optional["IntOrNot"] = None,
         gt: Optional["IntOrNot"] = None,
         ge: Optional["IntOrNot"] = None,
         lt: Optional["IntOrNot"] = None,
         le: Optional["IntOrNot"] = None,
-    ) -> "PQ":
-        pass
+    ) -> PQ:
+        return self
 
     @with_int_prop("terminate_time")
     def with_terminate_time(
-        self: "PQ",
+        self: PQ,
         *,
         eq: Optional["IntOrNot"] = None,
         gt: Optional["IntOrNot"] = None,
         ge: Optional["IntOrNot"] = None,
         lt: Optional["IntOrNot"] = None,
         le: Optional["IntOrNot"] = None,
-    ) -> "PQ":
-        pass
+    ) -> PQ:
+        return self
 
     @with_str_prop("process_name")
     def with_process_name(
-        self,
+        self: PQ,
         *,
         eq: Optional["StrOrNot"] = None,
         contains: Optional["OneOrMany[StrOrNot]"] = None,
@@ -118,12 +119,12 @@ class ProcessQuery(EntityQuery[PV, PQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "ProcessQuery":
-        pass
+    ) -> PQ:
+        return self
 
     @with_str_prop("image_name")
     def with_image_name(
-        self,
+        self: PQ,
         *,
         eq: Optional["StrOrNot"] = None,
         contains: Optional["OneOrMany[StrOrNot]"] = None,
@@ -131,12 +132,12 @@ class ProcessQuery(EntityQuery[PV, PQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "ProcessQuery":
-        pass
+    ) -> PQ:
+        return self
 
     @with_str_prop("arguments")
     def with_arguments(
-        self,
+        self: PQ,
         *,
         eq: Optional["StrOrNot"] = None,
         contains: Optional["OneOrMany[StrOrNot]"] = None,
@@ -144,23 +145,79 @@ class ProcessQuery(EntityQuery[PV, PQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "ProcessQuery":
-        pass
+    ) -> PQ:
+        return self
 
     @with_to_neighbor(None, "children", "parent")
-    def with_children(self, *children: PQ):
-        pass
+    def with_children(self: PQ, *children: PQ) -> PQ:
+        return self
 
     @with_to_neighbor(None, "parent", "children")
-    def with_parent(self, parent: PQ = None):
-        pass
+    def with_parent(self: PQ, parent: PQ = None) -> PQ:
+        return self
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return ProcessSchema()
 
 
 class ProcessView(EntityView[PV, PQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - asset_id
+          - string
+          - A unique identifier for this asset.
+        * - image_name
+          - string
+          - The name of the binary that was loaded for this process.
+        * - process_name
+          - string
+          - The name of the process.
+        * - arguments
+          - string
+          - The arguments, as passed into the process.
+        * - process_id
+          - int
+          - The process id for this process.
+        * - created_timestamp
+          - int
+          - Time of the process creation (in millis-since-epoch).
+        * - terminate_time
+          - int
+          - Time of the process termination (in millis-since-epoch).
+        * - children
+          - List[:doc:`/nodes/process`]
+          - Child processes of this process.
+        * - bin_file
+          - :doc:`/nodes/file`
+          - The file that was executed to create this process.
+        * - created_files
+          - List[:doc:`/nodes/file`]
+          - Files created by this process.
+        * - deleted_files
+          - List[:doc:`/nodes/file`]
+          - Files deleted by this process.
+        * - read_files
+          - List[:doc:`/nodes/file`]
+          - Files read by this process.
+        * - wrote_files
+          - List[:doc:`/nodes/file`]
+          - Files written by this process.
+        * - created_connections
+          - List[:doc:`/nodes/process_inbound_connection`]
+          - Outbound connections created by this process.
+        * - inbound_connections
+          - List[:doc:`/nodes/process_inbound_connection`]
+          - Inbound connections created by this process.
+    """
+
     queryable = ProcessQuery
 
     def __init__(

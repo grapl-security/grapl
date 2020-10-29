@@ -1,7 +1,7 @@
 # type: ignore
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md") as readme:
     README = readme.read()
@@ -15,6 +15,7 @@ def find_version():
 
 
 __version__ = find_version()
+
 
 setup(
     name="grapl-common",
@@ -33,7 +34,7 @@ setup(
     zip_safe=False,
     packages=find_packages(),
     package_data={
-        "grapl-common": [
+        "grapl_common": [
             "py.typed",
         ]
     },
@@ -44,7 +45,7 @@ setup(
         "typing_extensions",
     ],
     # We'll probably have some dataclasses in here in the future
-    python_requires=">=3.7",
+    python_requires=">=3.6",
     extras_require={
         "typecheck": [
             "mypy",
