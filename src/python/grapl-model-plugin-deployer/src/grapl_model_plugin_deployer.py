@@ -472,10 +472,13 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    th = threading.Thread(target=provision_schemas, args=(
-        GraphClient(),
-        raw_schemas,
-    ))
+    th = threading.Thread(
+        target=provision_schemas,
+        args=(
+            GraphClient(),
+            raw_schemas,
+        ),
+    )
     th.start()
 
     try:
