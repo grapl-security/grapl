@@ -447,6 +447,7 @@ interface DGraphSwarmClusterProps {
     vpc: ec2.IVpc;
     instanceType: ec2.InstanceType;
     clusterSize: number;
+    watchful?: Watchful;
 }
 
 export class DGraphSwarmCluster extends cdk.NestedStack {
@@ -478,6 +479,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             ],
             instanceType: props.instanceType,
             clusterSize: props.clusterSize,
+            watchful: props.watchful,
         });
 
         // FIXME: this won't work
@@ -803,7 +805,8 @@ export class GraplCdkStack extends cdk.Stack {
                 vpc: grapl_vpc,
                 version: props.version || 'latest',
                 instanceType: props.dgraphInstanceType || new ec2.InstanceType("t3a.medium"),
-                clusterSize: props.dgraphClusterSize || 3
+                clusterSize: props.dgraphClusterSize || 3,
+                watchful: watchful,
             }
         );
 

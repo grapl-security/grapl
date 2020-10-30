@@ -1,5 +1,5 @@
 import json
-import logger
+import logging
 import os
 import sys
 
@@ -25,7 +25,20 @@ def _instance_ip_address(instance_id: str) -> str:
     return instance.private_ip_address
 
 
-def _remove_dns_ip(dns_name: str, ip_address: str, hosted_zone_id: str) -> str:
+def _complete_lifecycle_action(
+    lifecycle_hook_name: str, autoscaling_group_name: str, instance_id: str
+) -> None:
+    autoscaling = boto3.resource("autoscaling")
+    response = autoscaling.complete_lifecycle_action(
+        LifecycleHookName=lifecycle_hook_name,
+        AutoScalingGroupName=autoscaling_group_name,
+        InstanceId=instance_id,
+        LifecycleActionResult="CONTINUE",
+    )
+    LOGGER.info(f"{json.dumps(response)}")
+
+
+def _remove_dns_ip(dns_name: str, ip_address: str, hosted_zone_id: str) -> None:
     route53 = boto3.resource("route53")
     response = route53.change_resource_record_sets(
         HostedZoneId=hosted_zone_id,
@@ -49,7 +62,7 @@ def _remove_dns_ip(dns_name: str, ip_address: str, hosted_zone_id: str) -> str:
     LOGGER.info(f"{json.dumps(response)}")
 
 
-def _insert_dns_ip(dns_name: str, ip_address: str, hosted_zone_id: str) -> str:
+def _insert_dns_ip(dns_name: str, ip_address: str, hosted_zone_id: str) -> None:
     route53 = boto3.resource("route53")
     response = route53.change_resource_record_sets(
         HostedZoneId=hosted_zone_id,
@@ -75,18 +88,50 @@ def _insert_dns_ip(dns_name: str, ip_address: str, hosted_zone_id: str) -> str:
 
 @app.lambda_function()
 def main(event, context) -> None:
-    event_json = json.loads(event)
-    transition = event_json["LifecycleTransition"]
-    notification_metadata = json.loads(event_json["NotificationMetadata"])
-    hosted_zone_id = notification_metadata["HostedZoneId"]
-    dns_name = notification_metadata["DnsName"]
-    instance_id = event_json["EC2InstanceId"]
-    ip_address = _instance_ip_address(instance_id)
-    if transition == INSTANCE_LAUNCHING:
-        _insert_dns_ip(dns_name, ip_address, hosed_zone_id)
-    elif transition == INSTANCE_TERMINATING:
-        _remove_dns_ip(dns_name, ip_address, hosted_zone_id)
-    else:
-        LOGGER.warn(
-            f'Encountered unknown lifecycle transition "{transition}" in event: {event_json}'
-        )
+    for record in event["Records"]:
+        if "Event" in record:
+            transition = record["Event"]
+
+            if "NotificationMetadata" in record:
+                notification_metadata = json.loads(record["NotificationMetadata"])
+                hosted_zone_id = notification_metadata["HostedZoneId"]
+                dns_name = notification_metadata["DnsName"]
+                prefix = notification_metadata["Prefix"]
+            else:
+                LOGGER.warn(
+                    "NotificationMetadata absent from record, skipping: {record}"
+                )
+                continue
+
+            if "EC2InstanceId" in record:
+                instance_id = record["EC2InstanceId"]
+                ip_address = _instance_ip_address(instance_id)
+            else:
+                LOGGER.warm("EC2InstanceId absent from record, skipping: {record}")
+                continue
+
+            try:
+                if transition == INSTANCE_LAUNCHING:
+                    try:
+                        _insert_dns_ip(dns_name, ip_address, hosed_zone_id)
+                    finally:
+                        _complete_lifecycle_action(
+                            lifecycle_hook_name=f"{prefix}-SwarmLaunchHook",
+                            autoscaling_group_name=autoscaling_group_name,
+                            instance_id=instance_id
+                        )
+                elif transition == INSTANCE_TERMINATING:
+                    try:
+                        _remove_dns_ip(dns_name, ip_address, hosted_zone_id)
+                    finally:
+                        _complete_lifecycle_action(
+                            lifecycle_hook_name=f"{prefix}-SwarmTerminateHook",
+                            autoscaling_group_name=autoscaling_group_name,
+                            instance_id=instance_id
+                        )
+                else:
+                    LOGGER.warn(
+                        f'Encountered unknown lifecycle transition "{transition}" in record: {record}'
+                    )
+        else:
+            LOGGER.warn("Encountered unknown record: {record}")

@@ -7,6 +7,8 @@ import * as route53 from '@aws-cdk/aws-route53';
 
 import { FunctionHook } from '@aws-cdk/aws-autoscaling-hooktargets';
 
+import { Watchful } from './vendor/cdk-watchful/lib/watchful';
+
 export interface SwarmProps {
     // Grapl deployment name prefix.
     readonly prefix: String;
@@ -26,6 +28,10 @@ export interface SwarmProps {
 
     // Number of Docker Swarm instances in the cluster.
     readonly clusterSize: number;
+
+    // CDK Watchful instance for monitoring the lifecycle event
+    // listener lambda.
+    readonly watchful?: Watchful;
 }
 
 export class Swarm extends cdk.Construct {
@@ -77,7 +83,7 @@ export class Swarm extends cdk.Construct {
 
         // UserData commands for initializing bastion instance.
         [
-            'yum install -y docker amazon-cloudwatch-agent',
+            'yum install -y docker',
             'systemctl enable docker.service',
             'systemctl start docker.service',
             'usermod -a -G docker ssm-user',
@@ -96,6 +102,14 @@ export class Swarm extends cdk.Construct {
             )
         );
 
+        // AmazonSSMManagedInstanceCore allows users to connect to
+        // instances with SSM
+        swarmInstanceRole.addManagedPolicy(
+            iam.ManagedPolicy.fromAwsManagedPolicyName(
+                'AmazonSSMManagedInstanceCore' // FIXME: don't use managed policy
+            )
+        );
+
         // Logging policy to allow Swarm instances to ship service
         // logs to CloudWatch.
         swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
@@ -109,49 +123,6 @@ export class Swarm extends cdk.Construct {
             resources: [
                 'arn:aws:logs:*:*:*', // FIXME: lock this down more?
             ],
-        }));
-
-        // Allow users to create SSM sessions to the Swarm
-        // instances. Only allow users to terminate their own
-        // sessions.
-        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: [
-                'ssm:StartSession',
-            ],
-            resources: [
-                'arn:aws:ec2:::instance/*', // FIXME: lock this down more?
-            ]
-        }));
-        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: [
-                'ssm:DescribeSessions',
-                'ssm:GetConnectionStatus',
-                'ssm:DescribeInstanceProperties',
-                'ec2:DescribeInstances',
-            ],
-            resources: [
-                '*',
-            ]
-        }));
-        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: [
-                'ssm:GetDocument',
-            ],
-            resources: [
-                'arn:aws:ssm:::document/SSM-SessionManagerRunShell',
-            ]
-        }));
-        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: [
-                'ssm:TerminateSession',
-            ],
-            resources: [
-                'arn:aws:ssm:::session/${aws:username}-*',
-            ]
         }));
 
         // UserData commands for initializing the Swarm instances.
@@ -199,7 +170,15 @@ export class Swarm extends cdk.Construct {
 
         // IAM role for lifecycle event listener
         const lifecycleListenerRole = new iam.Role(this, 'LifecycleListenerRole', {
-            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com')
+            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+            managedPolicies: [
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    'service-role/AWSLambdaBasicExecutionRole' // FIXME: remove managed policy
+                ),
+                iam.ManagedPolicy.fromAwsManagedPolicyName(
+                    'service-role/AWSLambdaVPCAccessExecutionRole' // FIXME: remove managed policy
+                ),
+            ],
         });
         lifecycleListenerRole.addToPrincipalPolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
@@ -220,19 +199,38 @@ export class Swarm extends cdk.Construct {
             ]
         }));
 
-        // Swarm instance lifecycle event listener
-        const lifecycleListener = new lambda.Function(this, "SwarmLifecycleListener", {
+        // Swarm instance lifecycle event listeners
+        const launchListener = new lambda.Function(this, "SwarmLaunchListener", {
             code: lambda.Code.fromAsset(
                 `./zips/swarm-lifecycle-event-handler-${swarmProps.version}.zip`
             ),
             runtime: lambda.Runtime.PYTHON_3_7,
-            handler: 'main',
+            handler: 'app.main',
+            role: lifecycleListenerRole,
+        });
+        const terminateListener = new lambda.Function(this, "SwarmTerminateListener", {
+            code: lambda.Code.fromAsset(
+                `./zips/swarm-lifecycle-event-handler-${swarmProps.version}.zip`
+            ),
+            runtime: lambda.Runtime.PYTHON_3_7,
+            handler: 'app.main',
             role: lifecycleListenerRole,
         });
 
+        if (swarmProps.watchful) {
+            swarmProps.watchful.watchLambdaFunction(
+                launchListener.functionName,
+                launchListener
+            );
+            swarmProps.watchful.watchLambdaFunction(
+                terminateListener.functionName,
+                terminateListener
+            );
+        }
+
         // Swarm cluster ASG
         const zoneName = swarmProps.prefix.toLowerCase() + '.dgraph.grapl';
-        const metadata = `{"HostedZoneId":${this.swarmHostedZone.hostedZoneId},"DnsName":${zoneName}}`;
+        const metadata = `{"HostedZoneId":${this.swarmHostedZone.hostedZoneId},"DnsName":${zoneName},"Prefix":${swarmProps.prefix}}`;
         const swarmAsg = new asg.AutoScalingGroup(this, 'SwarmASG', {
             vpc: swarmProps.vpc,
             instanceType: swarmProps.instanceType,
@@ -246,16 +244,20 @@ export class Swarm extends cdk.Construct {
         swarmAsg.addSecurityGroup(swarmSecurityGroup);
         swarmAsg.addLifecycleHook('SwarmLaunchHook', {
             lifecycleTransition: asg.LifecycleTransition.INSTANCE_LAUNCHING,
-            notificationTarget: new FunctionHook(lifecycleListener),
+            notificationTarget: new FunctionHook(launchListener),
             defaultResult: asg.DefaultResult.ABANDON,
             notificationMetadata: metadata,
+            lifecycleHookName: `${swarmProps.prefix}-SwarmLaunchHook`,
         });
         swarmAsg.addLifecycleHook('SwarmTerminateHook', {
             lifecycleTransition: asg.LifecycleTransition.INSTANCE_TERMINATING,
-            notificationTarget: new FunctionHook(lifecycleListener),
+            notificationTarget: new FunctionHook(terminateListener),
             defaultResult: asg.DefaultResult.CONTINUE,
             notificationMetadata: metadata,
+            lifecycleHookName: `${swarmProps.prefix}-SwarmTerminateHook`,
         });
+
+        this.swarmAsg = swarmAsg;
     }
 
     public allowConnectionsFrom(
