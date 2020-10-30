@@ -353,7 +353,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
             subscribes_to: dispatched_analyzer.topic,
             opt: {
                 runtime: lambda.Runtime.PYTHON_3_7,
-                py_entrypoint: "analyzer-executor.lambda_handler"
+                py_entrypoint: "lambda_function.lambda_handler"
             },
             version: props.version,
             watchful: props.watchful,
