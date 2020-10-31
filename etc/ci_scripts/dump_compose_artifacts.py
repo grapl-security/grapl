@@ -95,5 +95,5 @@ def parse_args() -> Any:
 
 if __name__ == "__main__":
     args = parse_args()
-    # dump_all_logs(compose_project=args.compose_project)
+    dump_all_logs(compose_project=args.compose_project)
     dump_volume(compose_project=args.compose_project, volume_name="dgraph_export")
