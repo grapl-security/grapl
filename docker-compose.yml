@@ -5,6 +5,9 @@
 # 84xx - debugger ports (see vsc_debugger.py)
 
 version: "3.8"
+volumes:
+  dgraph_export:
+
 services:
 
   #
@@ -20,6 +23,11 @@ services:
       - "9080:9080"
     logging:
       driver: none
+    volumes:
+      - type: volume
+        source: dgraph_export
+        # Hitting :8080/admin/export will force an export to be written to this directory.
+        target: /dgraph/export
 
   sqs:
     image: localstack/localstack:0.11.5
