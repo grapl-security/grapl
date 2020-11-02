@@ -7,6 +7,7 @@ from typing import Any, NamedTuple, Sequence
 
 import boto3  # type: ignore
 import pytest
+import requests
 from grapl_tests_common.sleep import verbose_sleep
 from grapl_tests_common.types import (
     AnalyzerUpload,
@@ -15,7 +16,6 @@ from grapl_tests_common.types import (
 )
 from grapl_tests_common.upload_test_data import UploadTestData
 from grapl_tests_common.wait import WaitForS3Bucket, WaitForSqsQueue, wait_for
-import requests
 
 BUCKET_PREFIX = environ["BUCKET_PREFIX"]
 assert BUCKET_PREFIX == "local-grapl"
@@ -90,6 +90,7 @@ def setup(
     _upload_test_data(s3_client, test_data)
     # You may want to sleep(30) to let the pipeline do its thing, but setup won't force it.
 
+
 def _after_tests() -> None:
     """
     Add any "after tests are executed, but before docker-compose down" stuff here.
@@ -99,6 +100,7 @@ def _after_tests() -> None:
     # The contents of the volume are made available to Github Actions via `dump_compose_artifacts.py`.
     export_request = requests.get("http://grapl-master-graph-db:8080/admin/export")
     assert export_request.json()["code"] == "Success"
+
 
 def exec_pytest() -> None:
     result = pytest.main(
