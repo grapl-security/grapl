@@ -147,6 +147,7 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
     """
     .. list-table::
         :header-rows: 1
+        
         * - Predicate
           - Type
           - Description
