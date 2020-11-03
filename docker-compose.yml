@@ -407,3 +407,8 @@ services:
       - s3
       - sqs
       - dynamodb
+
+networks:
+  default:
+    name: grapl
+    external: true
