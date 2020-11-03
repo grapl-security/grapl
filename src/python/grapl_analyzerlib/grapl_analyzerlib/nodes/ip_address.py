@@ -124,7 +124,7 @@ class IpAddressView(EntityView[IPV, IPQ]):
     """
     .. list-table::
         :header-rows: 1
-        
+
         * - Predicate
           - Type
           - Description

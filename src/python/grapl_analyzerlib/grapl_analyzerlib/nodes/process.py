@@ -165,7 +165,7 @@ class ProcessView(EntityView[PV, PQ]):
     """
     .. list-table::
         :header-rows: 1
-        
+
         * - Predicate
           - Type
           - Description

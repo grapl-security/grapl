@@ -119,7 +119,7 @@ class AssetView(EntityView[AV, AQ]):
     """
     .. list-table::
         :header-rows: 1
-        
+
         * - Predicate
           - Type
           - Description

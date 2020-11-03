@@ -65,7 +65,7 @@ class LensView(BaseView[LV, LQ]):
     """
     .. list-table::
         :header-rows: 1
-        
+
         * - Predicate
           - Type
           - Description

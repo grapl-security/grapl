@@ -142,7 +142,7 @@ class ProcessInboundConnectionView(EntityView[PICV, PICQ]):
     """
     .. list-table::
         :header-rows: 1
-        
+
         * - Predicate
           - Type
           - Description
