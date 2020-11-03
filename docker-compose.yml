@@ -418,5 +418,5 @@ services:
 
 networks:
   default:
-    name: grapl
+    name: grapl-network
     external: true
