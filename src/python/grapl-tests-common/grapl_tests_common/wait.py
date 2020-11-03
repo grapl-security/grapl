@@ -107,6 +107,7 @@ def wait_for(
     timeout_secs: int = 30,
     sleep_secs: int = 5,
 ) -> Mapping[WaitForResource, Any]:
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     completed: Dict[WaitForResource, Any] = {}
 
     get_now = lambda: datetime.now(tz=timezone.utc)
@@ -138,5 +139,6 @@ def wait_for(
 
 
 def wait_for_one(one: WaitForResource, timeout_secs: int = 60) -> Any:
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     results = wait_for([one], timeout_secs=timeout_secs)
     return results[one]
