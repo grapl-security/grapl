@@ -18,9 +18,10 @@ services:
     tty: false
     image: dgraph/standalone:v20.07.1
     ports:
-      - "8000:8000"
-      - "8080:8080"
-      - "9080:9080"
+      - "5080:5080"  # zero - used for `dgraph live` importing-data command in `integration_tests.rst`
+      - "8000:8000"  # ratel
+      - "8080:8080"  # alpha http
+      - "9080:9080"  # alpha grpc
     logging:
       driver: none
     volumes:
