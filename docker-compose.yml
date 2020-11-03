@@ -419,4 +419,3 @@ services:
 networks:
   default:
     name: grapl-network
-    external: true
