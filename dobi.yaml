@@ -447,7 +447,7 @@ job=run-rust-unit-tests:
 
 job=run-node-identifier-integration-tests:
   use: rust-build
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: |
     /bin/bash -c "
       wait-for-it grapl-provision:8126 --timeout=60 &&
@@ -563,7 +563,7 @@ job=run-grapl-analyzerlib-unit-tests:
 
 job=run-grapl-analyzerlib-integration-tests:
   use: grapl-analyzerlib-build
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: |
     /bin/bash -c "
       wait-for-it grapl-provision:8126 --timeout=60 &&
@@ -592,7 +592,7 @@ job=run-analyzer-deployer-unit-tests:
 
 job=run-analyzer-deployer-integration-tests:
   use: analyzer-deployer-build
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: |
     /bin/bash -c "
       wait-for-it grapl-provision:8126 --timeout=60 &&
@@ -609,7 +609,7 @@ job=run-analyzer-deployer-integration-tests:
 
 job=run-e2e-integration-tests:
   use: grapl-e2e-tests-build
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: | 
     /bin/bash -c "
       wait-for-it grapl-provision:8126 --timeout=60 &&
