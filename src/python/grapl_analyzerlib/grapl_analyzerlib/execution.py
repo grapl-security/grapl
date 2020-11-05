@@ -35,6 +35,10 @@ class ExecutionHit(object):
         self.risk_score = risk_score
         self.risky_node_keys = risky_node_keys
 
+        for lens_key, lens_value in lenses:
+            if lens_key is None or lens_value is None:
+                raise TypeError(f"Found an unexpected None k/v in lenses: {lenses}")
+
 
 class ExecutionComplete(object):
     pass

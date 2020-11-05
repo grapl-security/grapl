@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List
+
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from grapl_common.time_utils import MillisDuration
 

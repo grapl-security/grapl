@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, TypeVar, Set, Dict, Tuple, Optional
 
 from grapl_analyzerlib.node_types import (
@@ -9,6 +10,7 @@ from grapl_analyzerlib.node_types import (
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
 from grapl_analyzerlib.queryable import with_str_prop, with_int_prop
 from grapl_analyzerlib.schema import Schema
+from grapl_analyzerlib.comparators import IntOrNot, StrOrNot, OneOrMany
 
 POCQ = TypeVar("POCQ", bound="ProcessOutboundConnectionQuery")
 POCV = TypeVar("POCV", bound="ProcessOutboundConnectionView")
@@ -66,11 +68,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_ip_address(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        eq: Optional[StrOrNot] = None,
+        contains: Optional[OneOrMany[StrOrNot]] = None,
+        starts_with: Optional[StrOrNot] = None,
+        ends_with: Optional[StrOrNot] = None,
+        regexp: Optional[OneOrMany[StrOrNot]] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
@@ -79,11 +81,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_protocol(
         self,
         *,
-        eq: Optional["StrOrNot"] = None,
-        contains: Optional["OneOrMany[StrOrNot]"] = None,
-        starts_with: Optional["StrOrNot"] = None,
-        ends_with: Optional["StrOrNot"] = None,
-        regexp: Optional["OneOrMany[StrOrNot]"] = None,
+        eq: Optional[StrOrNot] = None,
+        contains: Optional[OneOrMany[StrOrNot]] = None,
+        starts_with: Optional[StrOrNot] = None,
+        ends_with: Optional[StrOrNot] = None,
+        regexp: Optional[OneOrMany[StrOrNot]] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
     ):
         pass
@@ -92,11 +94,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_created_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -104,11 +106,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_terminated_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -116,11 +118,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_port(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -128,11 +130,11 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
     def with_last_seen_timestamp(
         self,
         *,
-        eq: Optional["IntOrNot"] = None,
-        gt: Optional["IntOrNot"] = None,
-        ge: Optional["IntOrNot"] = None,
-        lt: Optional["IntOrNot"] = None,
-        le: Optional["IntOrNot"] = None,
+        eq: Optional[IntOrNot] = None,
+        gt: Optional[IntOrNot] = None,
+        ge: Optional[IntOrNot] = None,
+        lt: Optional[IntOrNot] = None,
+        le: Optional[IntOrNot] = None,
     ):
         pass
 
@@ -142,6 +144,45 @@ class ProcessOutboundConnectionQuery(EntityQuery[POCV, POCQ]):
 
 
 class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node
+        * - created_timestamp
+          - int
+          - Time the process outbound network connection was created (in millis-since-epoch).
+        * - terminated_timestamp
+          - int
+          - Time the process outbound network connection was terminated (in millis-since-epoch).
+        * - last_seen_timestamp
+          - int
+          - Time the process outbound network connection was last seen (in millis-since-epoch)
+        * - port
+          - int
+          - Port of the outbound process network connection.
+        * - ip_address
+          - str
+          - IP Address of the outbound process network connection.
+        * - protocol
+          - int
+          - Network protocol of the outbound process network connection.
+        * - connecting_processes
+          - :doc:`/nodes/process`
+          - todo: documentation
+        * - connected_over
+          - :doc:`/nodes/ip_port`
+          - todo: documentation
+        * - connected_to
+          - :doc:`/nodes/ip_port`
+          - todo: documentation
+    """
+
     queryable = ProcessOutboundConnectionQuery
 
     def __init__(

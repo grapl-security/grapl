@@ -1,5 +1,5 @@
 from typing import TypeVar
-from grapl_analyzerlib.nodes.viewable import Viewable
+from grapl_analyzerlib.viewable import Viewable
 
 V = TypeVar("V", bound=Viewable)
 
