@@ -95,6 +95,7 @@ class NetworkConnectionView(EntityView[NCV, NCQ]):
     """
     .. list-table::
         :header-rows: 1
+
         * - Predicate
           - Type
           - Description
