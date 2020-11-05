@@ -1,12 +1,13 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Callable, List, Iterator, Optional, cast
-from sys import maxsize
-import boto3  # type: ignore
 import json
 import random
 import string
 import time
+from dataclasses import dataclass
+from datetime import datetime
+from sys import maxsize
+from typing import Callable, Iterator, List, Optional, cast
+
+import boto3  # type: ignore
 import zstd  # type: ignore
 
 

@@ -1,8 +1,8 @@
 import unittest
 from datetime import datetime
-from typing_extensions import Final
 
-from grapl_common.time_utils import as_millis, as_datetime
+from grapl_common.time_utils import as_datetime, as_millis
+from typing_extensions import Final
 
 SOME_DT: Final[datetime] = datetime(
     year=2020,

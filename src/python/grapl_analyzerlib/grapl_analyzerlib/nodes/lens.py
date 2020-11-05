@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional
@@ -64,6 +65,7 @@ class LensView(BaseView[LV, LQ]):
     """
     .. list-table::
         :header-rows: 1
+
         * - Predicate
           - Type
           - Description

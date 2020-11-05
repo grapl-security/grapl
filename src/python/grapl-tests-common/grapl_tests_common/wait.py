@@ -1,14 +1,16 @@
-from datetime import datetime, timezone, timedelta
-from grapl_analyzerlib.grapl_client import MasterGraphClient
-from grapl_analyzerlib.nodes.base import BaseView, BaseQuery
-from grapl_analyzerlib.retry import retry
-from itertools import cycle
-from time import sleep
-from typing_extensions import Protocol
-from typing import Any, Sequence, Optional, Dict, Mapping, Callable
-import botocore  # type: ignore
 import inspect
 import logging
+from datetime import datetime, timedelta, timezone
+from itertools import cycle
+from time import sleep
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence
+
+import botocore  # type: ignore
+from typing_extensions import Protocol
+
+from grapl_analyzerlib.grapl_client import MasterGraphClient
+from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
+from grapl_analyzerlib.retry import retry
 
 
 class WaitForResource(Protocol):
@@ -105,6 +107,7 @@ def wait_for(
     timeout_secs: int = 30,
     sleep_secs: int = 5,
 ) -> Mapping[WaitForResource, Any]:
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     completed: Dict[WaitForResource, Any] = {}
 
     get_now = lambda: datetime.now(tz=timezone.utc)
@@ -136,5 +139,6 @@ def wait_for(
 
 
 def wait_for_one(one: WaitForResource, timeout_secs: int = 60) -> Any:
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     results = wait_for([one], timeout_secs=timeout_secs)
     return results[one]

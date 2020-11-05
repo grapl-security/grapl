@@ -3,11 +3,11 @@ Process
 
 ProcessView
 -----------
-.. autoclass:: grapl_analyzerlib.nodes.process_node.ProcessView
+.. autoclass:: grapl_analyzerlib.nodes.process.ProcessView
     :members:
 
 ProcessQuery
 ------------
-.. autoclass:: grapl_analyzerlib.nodes.process_node.ProcessQuery
+.. autoclass:: grapl_analyzerlib.nodes.process.ProcessQuery
     :members:
 

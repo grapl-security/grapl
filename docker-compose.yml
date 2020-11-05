@@ -5,6 +5,9 @@
 # 84xx - debugger ports (see vsc_debugger.py)
 
 version: "3.8"
+volumes:
+  dgraph_export:
+
 services:
 
   #
@@ -15,11 +18,17 @@ services:
     tty: false
     image: dgraph/standalone:v20.07.1
     ports:
-      - "8000:8000"
-      - "8080:8080"
-      - "9080:9080"
+      - "5080:5080"  # zero - used for `dgraph live` importing-data command in `integration_tests.rst`
+      - "8000:8000"  # ratel
+      - "8080:8080"  # alpha http
+      - "9080:9080"  # alpha grpc
     logging:
       driver: none
+    volumes:
+      - type: volume
+        source: dgraph_export
+        # Hitting :8080/admin/export will force an export to be written to this directory.
+        target: /dgraph/export
 
   sqs:
     image: localstack/localstack:0.11.5
@@ -29,6 +38,10 @@ services:
       - IMAGE_NAME=localstack/localstack:0.11.5
     ports:
       - "9324:9324"
+    networks:
+      default:
+        aliases:
+          - sqs.us-east-1.amazonaws.com
     logging:
       driver: none
 
@@ -52,6 +65,10 @@ services:
     command: server /data
     ports:
       - "9000:9000"
+    networks:
+      default:
+        aliases:
+          - minio
     logging:
       driver: none
 
@@ -399,3 +416,7 @@ services:
       - s3
       - sqs
       - dynamodb
+
+networks:
+  default:
+    name: grapl-network

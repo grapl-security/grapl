@@ -16,6 +16,8 @@ from pydgraph import DgraphClient, DgraphClientStub  # type: ignore
 
 IAuidQuery = TypeVar("IAuidQuery", bound="AuidQuery")
 
+NQ = TypeVar("NQ", bound="DynamicNodeQuery")
+
 
 class AuidQuery(DynamicNodeQuery):
     def __init__(self):

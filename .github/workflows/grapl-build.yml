@@ -142,17 +142,17 @@ jobs:
           GRAPL_RELEASE_TARGET=debug GRAPL_LOG_LEVEL=DEBUG TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
        
       # NOTE: This requires >= py37
-      - name: 'Collect e2e test logs'
+      - name: 'Collect e2e test artifacts'
         if: ${{ always() }}
         run: |
           python3 -V &&
-          python3 ./etc/ci_scripts/dump_compose_logs.py --compose-project "grapl-integration-tests"
+          python3 ./etc/ci_scripts/dump_compose_artifacts.py --compose-project "grapl-integration-tests"
            
-      - name: 'Upload e2e test logs'
+      - name: 'Upload e2e test artifacts'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: e2e-test-logs
-          # this path is specified in dump_compose_logs.py
-          path: /tmp/log_artifacts/
-          retention-days: 7
+          # this path is specified in dump_compose_artifacts.py
+          path: /tmp/compose_artifacts/
+          retention-days: 28

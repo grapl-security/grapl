@@ -1,13 +1,14 @@
 """
 Mostly copied from etc/local_grapl/bin/upload_plugin.py
 """
+import logging
 import os
 import sys
-import requests
-from pathlib import Path
 from http import HTTPStatus
+from pathlib import Path
 from typing import Dict
-import logging
+
+import requests
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 

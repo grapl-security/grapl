@@ -9,29 +9,26 @@ from typing import (
     Any,
     ContextManager,
     Dict,
-    Iterator,
-    Tuple,
-    Sequence,
     Optional,
-    cast,
-    TypeVar,
+    Sequence,
+    Tuple,
     Type,
+    TypeVar,
+    cast,
 )
 
 import boto3
 import botocore.exceptions  # type: ignore
-from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
-from grapl_analyzerlib.nodes.lens import LensView
-from grapl_analyzerlib.prelude import BaseView
-from grapl_analyzerlib.prelude import RiskView
-from grapl_analyzerlib.viewable import Viewable
-from grapl_analyzerlib.queryable import Queryable
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_sqs import SQSClient
-from typing_extensions import Final
-from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from typing_extensions import Literal
+from typing_extensions import Final, Literal
 
+from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
+from grapl_analyzerlib.nodes.lens import LensView
+from grapl_analyzerlib.prelude import BaseView, RiskView
+from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.viewable import Viewable
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -130,32 +127,6 @@ def recalculate_score(lens: LensView) -> int:
     return total_risk_score
 
 
-def set_score(client: GraphClient, uid: str, new_score: int, txn: Any = None) -> None:
-    if not txn:
-        txn = client.txn(read_only=False)
-
-    try:
-        mutation = {"uid": uid, "score": new_score}
-
-        txn.mutate(set_obj=mutation, commit_now=True)
-    finally:
-        txn.discard()
-
-
-def set_property(
-    client: GraphClient, uid: str, prop_name: str, prop_value: Any
-) -> None:
-    LOGGER.debug(f"Setting property {prop_name} as {prop_value} for {uid}")
-    txn = client.txn(read_only=False)
-
-    try:
-        mutation = {"uid": uid, prop_name: prop_value}
-
-        txn.mutate(set_obj=mutation, commit_now=True)
-    finally:
-        txn.discard()
-
-
 def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
@@ -213,13 +184,6 @@ def get_s3_client() -> S3ServiceResource:
         )
     else:
         return cast(S3ServiceResource, boto3.resource("s3"))
-
-
-def mg_alphas() -> Iterator[Tuple[str, int]]:
-    mg_alphas = os.environ["MG_ALPHAS"].split(",")
-    for mg_alpha in mg_alphas:
-        host, port = mg_alpha.split(":")
-        yield host, int(port)
 
 
 def nodes_to_attach_risk_to(

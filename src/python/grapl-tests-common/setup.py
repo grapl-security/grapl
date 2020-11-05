@@ -1,7 +1,7 @@
 # type: ignore
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md") as readme:
     README = readme.read()

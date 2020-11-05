@@ -1,15 +1,16 @@
-from typing_extensions import Protocol
 from contextlib import contextmanager
-from grapl_common.time_utils import as_millis_duration, MillisDuration
-from typing import Optional, Callable, Sequence, Union, TextIO, Iterator
 from datetime import datetime, timezone
 from sys import stdout
+from typing import Callable, Iterator, Optional, Sequence, TextIO, Union
+
 from grapl_common.metrics.statsd_formatter import (
-    MetricType,
     DEFAULT_SAMPLE_RATE,
-    statsd_format,
+    MetricType,
     TagPair,
+    statsd_format,
 )
+from grapl_common.time_utils import MillisDuration, as_millis_duration
+from typing_extensions import Protocol
 
 
 class Writeable(Protocol):
