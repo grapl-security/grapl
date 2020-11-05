@@ -21,7 +21,7 @@ import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
 import { Swarm } from './swarm';
 
-import { Watchful } from './vendor/cdk-watchful/lib/watchful';
+import { Watchful } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
