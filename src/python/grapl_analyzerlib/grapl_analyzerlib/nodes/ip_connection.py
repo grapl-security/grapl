@@ -178,6 +178,7 @@ class IpConnectionView(EntityView[IPV, IPQ]):
     """
     .. list-table::
         :header-rows: 1
+
         * - Predicate
           - Type
           - Description
