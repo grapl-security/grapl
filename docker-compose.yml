@@ -38,6 +38,10 @@ services:
       - IMAGE_NAME=localstack/localstack:0.11.5
     ports:
       - "9324:9324"
+    networks:
+      default:
+        aliases:
+          - sqs.us-east-1.amazonaws.com
     logging:
       driver: none
 
@@ -61,6 +65,10 @@ services:
     command: server /data
     ports:
       - "9000:9000"
+    networks:
+      default:
+        aliases:
+          - minio
     logging:
       driver: none
 
@@ -408,3 +416,7 @@ services:
       - s3
       - sqs
       - dynamodb
+
+networks:
+  default:
+    name: grapl-network
