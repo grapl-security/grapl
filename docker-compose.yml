@@ -348,6 +348,7 @@ services:
 
   grapl-engagement-view:
     image: grapl/grapl-engagement-view:${TAG:-latest}
+    command: "serve -dir /var/www"
     environment:
       - PORT=1234
     ports:
