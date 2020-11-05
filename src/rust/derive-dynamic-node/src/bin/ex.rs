@@ -59,7 +59,7 @@ fn main() {
     ec2.with_asset_id("".to_string());
 
     let _launch_time: u64 = ec2.get_launch_time().expect("Couldn't find launch_time!");
-    let _arn: String = ec2.get_arn().expect("Couldn't find arn!");
+    let _arn: &str = ec2.get_arn().expect("Couldn't find arn!");
     // println!("arn: {}\t with launch time: {}", _arn, _launch_time);
 
     let mut graph = Graph::new(log.launch_time);
