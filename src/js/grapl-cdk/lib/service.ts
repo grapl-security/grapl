@@ -12,7 +12,7 @@ import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
 import { FilterPattern, SubscriptionFilter } from '@aws-cdk/aws-logs';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
-import { Watchful } from './vendor/cdk-watchful/lib/watchful';
+import { Watchful } from 'cdk-watchful';
 
 class Queues {
     readonly queue: sqs.Queue;
