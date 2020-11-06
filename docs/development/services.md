@@ -8,7 +8,7 @@ Unless otherwise specified, the input to a service is the output of the one desc
 
 
 ### Graph Generator
-**Input:** Event logs (i.g. sysmon logs, osquery logs, Cloudtrail logs) from the customer's S3 bucket.
+**Input:** Event logs (e.g. sysmon logs, osquery logs, Cloudtrail logs) from the customer's S3 bucket.
 
 **Work:** Turns these events into a standalone subgraph, independent of existing Dgraph state.
 
@@ -16,7 +16,7 @@ Unless otherwise specified, the input to a service is the output of the one desc
 
 
 ### Node Identifier
-**Work:** Identifies nodes in the incoming subgraph against DynamoDB. 
+**Work:** Identifies nodes in the incoming subgraph against the canonical identities of nodes in DynamoDB. The incoming nodes may be new, or they may represent something already known in the master graph.
 
 For instance, an incoming subgraph may refer to a process `{PID:1234, name: "coolthing.exe", started at 1:00AM}`; it's possible that Dgraph already has a node representing this exact same process. We'd like to de-duplicate this process node.
 
@@ -30,7 +30,7 @@ For instance, an incoming subgraph may refer to a process `{PID:1234, name: "coo
 
 
 ### Analyzer Dispatcher
-**Work:** Determines which analyzers to execute against recently-merged graphs
+**Work:** Determines which analyzers to execute against recently merged graphs
 
 **Output:** TODO
 
@@ -42,7 +42,7 @@ For instance, an incoming subgraph may refer to a process `{PID:1234, name: "coo
 
 
 ### Engagement Creator
-**Work:** Simply writes the risks and lenses described in its input to Dgraph.
+**Work:** Simply appends the risks and lenses described in its input to Dgraph.
 
 **Output:** Nothing is written to S3; the desired output is a mutation to Dgraph.
 
@@ -52,7 +52,7 @@ For instance, an incoming subgraph may refer to a process `{PID:1234, name: "coo
 **Input:** 
 This services receives `stdout` from other lambdas via Cloudwatch Logs. We subscribe only to logs that contain the reserved keyword `MONITORING|`.
 
-**Work:** Metric Forwarder parses these log lines - which are basically `statsd` serialized metrics - and forwards them to Cloudwatch as metrics.
+**Work:** Metric Forwarder parses these log lines - which are `statsd` serialized metrics - and forwards them to Cloudwatch as metrics.
 
 ### Model Plugin Deployer
 TODO
