@@ -64,7 +64,7 @@ impl From<u64> for NodeProperty {
 
 impl From<NodeProperty> for Option<String> {
     fn from(np: NodeProperty) -> Option<String> {
-      np.as_str_prop().map(String::from)
+        np.as_str_prop().map(String::from)
     }
 }
 
