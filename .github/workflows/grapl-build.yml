@@ -137,9 +137,14 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
 
+      # --no-bind-mount makes dobi screw up with volumes for some reason, and it's not really required here anyway.
       - name: Run end-to-end integration tests
         run: |
-          GRAPL_RELEASE_TARGET=debug GRAPL_LOG_LEVEL=DEBUG TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
+          GRAPL_RELEASE_TARGET=debug \
+          GRAPL_LOG_LEVEL=DEBUG \
+          DUMP_ARTIFACTS=True \
+          TAG=latest \
+          ./dobi-linux run-e2e-integration-tests
        
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'
