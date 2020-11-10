@@ -150,14 +150,13 @@ jobs:
       - name: 'Collect e2e test artifacts'
         if: ${{ always() }}
         run: |
-          python3 -V &&
           python3 ./etc/ci_scripts/dump_compose_artifacts.py --compose-project "grapl-integration-tests"
            
       - name: 'Upload e2e test artifacts'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
-          name: e2e-test-logs
+          name: e2e-artifacts
           # this path is specified in dump_compose_artifacts.py
           path: /tmp/compose_artifacts/
           retention-days: 28
