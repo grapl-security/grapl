@@ -1,14 +1,7 @@
 import unittest
 
 import pytest
-
-# the divergent `from src.` here - compared with in `lambda_function.py` - annoys me, and could be solved
-# with some PATH hacking, but... that's also gross. Eh. Whatever.
-from src.analyzer_executor_lib.analyzer_executor import (
-    NopCache,
-    hit_cache,
-    message_cache,
-)
+from analyzer_executor_lib.analyzer_executor import NopCache, hit_cache, message_cache
 
 
 class TestRedisIntegration(unittest.TestCase):

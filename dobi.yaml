@@ -614,6 +614,7 @@ job=run-analyzer-executor-integration-tests:
     /bin/bash -c "
       source venv/bin/activate &&
       cd analyzer_executor && 
+      export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" &&
       py.test -n auto -m 'integration_test'
       "
   env:
