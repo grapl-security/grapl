@@ -607,6 +607,22 @@ job=run-analyzer-deployer-integration-tests:
   depends:
     - integration-env
 
+job=run-analyzer-executor-integration-tests:
+  use: analyzer-executor-build
+  net-mode: grapl-network
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd analyzer_executor && 
+      py.test -n auto -m 'integration_test'
+      "
+  env:
+    - GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
+    - IS_LOCAL=True
+    - IS_RETRY=False
+  depends:
+    - integration-env
+
 job=run-e2e-integration-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-network
@@ -801,6 +817,7 @@ alias=python-integration-tests:
   tasks:
     - run-grapl-analyzerlib-integration-tests
     - run-analyzer-deployer-integration-tests
+    - run-analyzer-executor-integration-tests
   annotations:
     description: "Run the python integration tests"
 
