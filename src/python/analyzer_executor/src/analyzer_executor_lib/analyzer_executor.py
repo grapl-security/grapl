@@ -57,8 +57,8 @@ EitherCache = Union[NopCache, redis.Redis]
 if IS_LOCAL:
     message_cache: EitherCache = NopCache()
 else:
-    MESSAGECACHE_ADDR = os.environ["MESSAGECACHE_ADDR"]
-    MESSAGECACHE_PORT = int(os.environ["MESSAGECACHE_PORT"])
+    MESSAGECACHE_ADDR = os.environ.get("MESSAGECACHE_ADDR")
+    MESSAGECACHE_PORT = int(os.environ.get("MESSAGECACHE_PORT"))
     message_cache: EitherCache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
 
 HITCACHE_ADDR = os.environ["HITCACHE_ADDR"]
