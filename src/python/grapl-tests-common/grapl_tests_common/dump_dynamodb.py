@@ -30,14 +30,17 @@ def dump_dynamodb() -> None:
             logging.info(f"No items in {table.name}")
             continue
 
-        filename = f"{table.name}.json"
-        path = DOCKER_VOLUME.joinpath(filename).resolve()
+        path = DOCKER_VOLUME.joinpath(table.name).resolve()
         with open(path, "w+") as f:
             logging.info(f"Dumped {table.name} to Docker volume")
             f.write(table_dump)
 
 
 def _dump_dynamodb_table(table: Any) -> Optional[str]:
+    """
+    Outputs a nicely-formatted Python list of all the items in the table.
+    (you may need a `from decimal import Decimal` to interact with it, though.)
+    """
     if not table.item_count:
         return None
     items = table.scan()["Items"]
