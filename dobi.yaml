@@ -655,7 +655,16 @@ job=build-analyzer-executor:
 
 job=run-analyzer-executor-unit-tests:
   use: analyzer-executor-build
-  command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd analyzer_executor &&
+      export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" &&
+      py.test -n auto -m 'not integration_test'
+    "
+  env:
+    - IS_LOCAL=True
+    - IS_RETRY=False
 
 job=typecheck-analyzer-executor:
   use: analyzer-executor-build
