@@ -56,17 +56,15 @@ EitherCache = Union[NopCache, redis.Redis]
 
 if IS_LOCAL:
     message_cache: EitherCache = NopCache()
-    hit_cache: EitherCache = NopCache()
 else:
     MESSAGECACHE_ADDR = os.environ["MESSAGECACHE_ADDR"]
     MESSAGECACHE_PORT = int(os.environ["MESSAGECACHE_PORT"])
+    message_cache: EitherCache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
 
-    HITCACHE_ADDR = os.environ["HITCACHE_ADDR"]
-    HITCACHE_PORT = os.environ["HITCACHE_PORT"]
-
-    message_cache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
-    hit_cache = redis.Redis(host=HITCACHE_ADDR, port=int(HITCACHE_PORT), db=0)
-
+HITCACHE_ADDR = os.environ["HITCACHE_ADDR"]
+HITCACHE_PORT = os.environ["HITCACHE_PORT"]
+LOGGER.debug(f"Analyzer-Executor connecting to redis at {HITCACHE_ADDR}:{HITCACHE_PORT}")
+hit_cache: EitherCache = redis.Redis(host=HITCACHE_ADDR, port=int(HITCACHE_PORT), db=0)
 
 def parse_s3_event(s3, event) -> str:
     bucket = event["s3"]["bucket"]["name"]

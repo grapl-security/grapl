@@ -30,6 +30,14 @@ services:
         # Hitting :8080/admin/export will force an export to be written to this directory.
         target: /dgraph/export
 
+  # dev uses 1 big redis instance, prod has 1:1 redis per grapl service
+  big-dumb-redis:  # silly name bc temporary
+    image: redis:latest
+    ports:
+      - "6379:6379" # redis default
+    logging:
+      driver: none
+
   sqs:
     image: localstack/localstack:0.11.5
     environment:
@@ -58,7 +66,6 @@ services:
       - "8099:8099"
     # logging:
     #   driver: none
-
 
   s3:
     image: minio/minio
@@ -252,6 +259,8 @@ services:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
+      - HITCACHE_ADDR=big-dumb-redis
+      - HITCACHE_PORT=6379
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
       - MG_ALPHAS=master_graph:9080
