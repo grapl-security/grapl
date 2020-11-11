@@ -23,7 +23,7 @@ rusoto_cloudwatch = { version="0.43.0", default_features = false, features=["rus
 rusoto_core = { version="0.43.0", default_features = false, features=["rustls"] }
 serde_json = "1.0.53"
 statsd-parser = "0.3.0"
-thiserror = "1.0.20"
+thiserror = "1.0.22"
 tokio-compat = "0.1.*"
 tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 
