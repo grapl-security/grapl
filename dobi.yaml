@@ -639,6 +639,8 @@ job=run-e2e-tests:
   ports:
     # Used for debugger
     - 8400:8400
+  annotations:
+    description: "Run end-to-end tests"
 
 job=build-analyzer-executor:
   use: analyzer-executor-build
