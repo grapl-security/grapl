@@ -259,8 +259,10 @@ services:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
-      - HITCACHE_ADDR=big-dumb-redis
-      - HITCACHE_PORT=6379
+      - "HITCACHE_ADDR=big-dumb-redis"
+      - "HITCACHE_PORT=6379"
+      - "MESSAGECACHE_ADDR=big-dumb-redis"
+      - "MESSAGECACHE_PORT=6379"
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
       - MG_ALPHAS=master_graph:9080

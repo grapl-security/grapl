@@ -25,25 +25,11 @@ from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
 
-MODEL_PLUGINS_DIR = os.environ.get("MODEL_PLUGINS_DIR", "/tmp")
-sys.path.insert(0, MODEL_PLUGINS_DIR)
+# constants
+CHUNK_SIZE_RETRY: int = 10
+CHUNK_SIZE_DEFAULT: int = 100
 
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
-IS_RETRY = os.environ["IS_RETRY"]
-
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-
-try:
-    directory = Path(MODEL_PLUGINS_DIR + "/model_plugins/")
-    directory.mkdir(parents=True, exist_ok=True)
-except Exception as e:
-    LOGGER.error("Failed to create directory", e)
-
-
+# TODO:  move generic cache stuff into its own utility file
 class NopCache(object):
     def set(self, key, value):
         pass
@@ -54,17 +40,98 @@ class NopCache(object):
 
 EitherCache = Union[NopCache, redis.Redis]
 
-if IS_LOCAL:
-    message_cache: EitherCache = NopCache()
-else:
-    MESSAGECACHE_ADDR = os.environ.get("MESSAGECACHE_ADDR")
-    MESSAGECACHE_PORT = int(os.environ.get("MESSAGECACHE_PORT"))
-    message_cache: EitherCache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
+# TODO:  these are globals, should be a config obj or class var or smth
+message_cache: EitherCache = NopCache()
+hit_cache: EitherCache = NopCache()
+CHUNK_SIZE: int = CHUNK_SIZE_DEFAULT
+IS_LOCAL = True  # safe default, though prob not the case
+LOGGER = None
 
-HITCACHE_ADDR = os.environ["HITCACHE_ADDR"]
-HITCACHE_PORT = os.environ["HITCACHE_PORT"]
-LOGGER.debug(f"Analyzer-Executor connecting to redis at {HITCACHE_ADDR}:{HITCACHE_PORT}")
-hit_cache: EitherCache = redis.Redis(host=HITCACHE_ADDR, port=int(HITCACHE_PORT), db=0)
+def prelude():
+    # This method is our 'constructor'
+    """
+    Catch-all initialization method, environmental dependencies.
+    """
+
+    # see above TODO, these should be a config object, not global state
+    global message_cache
+    global hit_cache
+    global CHUNK_SIZE
+    global IS_LOCAL
+    global LOGGER
+
+    IS_LOCAL = bool(os.getenv("IS_LOCAL", False))  # TODO move to grapl-common
+
+    # Set up plugins dir for models
+    MODEL_PLUGINS_DIR = os.getenv("MODEL_PLUGINS_DIR", "/tmp")
+    sys.path.insert(0, MODEL_PLUGINS_DIR)
+
+    # Ensure plugins dir exists
+    try:
+        directory = Path(MODEL_PLUGINS_DIR + "/model_plugins/")
+        directory.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        LOGGER.error("Failed to create model plugins directory", e)
+
+    # If we're retrying, change the chunk size
+    IS_RETRY = os.getenv("IS_RETRY")
+    if IS_RETRY == "True":
+        CHUNK_SIZE = CHUNK_SIZE_RETRY
+
+    # Set up logger
+    LOGGER = logging.getLogger(__name__)
+    LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "ERROR"))
+    LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+    # Set up message cache
+    messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
+    messagecache_port = os.getenv("MESSAGECACHE_PORT")
+    LOGGER.debug(f"{messagecache_addr}:{messagecache_port}")
+    try:
+        messagecache_port = int(messagecache_port)
+    except (TypeError, ValueError):
+        messagecache_port = None
+
+    if messagecache_addr and messagecache_port:
+        LOGGER.debug(
+            f"message cache connecting to redis at {messagecache_addr}:{messagecache_port}"
+        )
+        message_cache = redis.Redis(
+            host=messagecache_addr, port=messagecache_port, db=0
+        )
+    elif bool(messagecache_addr) ^ bool(messagecache_port):
+        LOGGER.error(
+            f"message cache falling back to no-op cache (incomplete connection details)"
+        )
+    else:
+        LOGGER.debug(
+            f"message cache falling back to no-op cache, MESSAGECACHE_ADDR and MESSAGECACHE_PORT are missing"
+        )
+
+    # Set up hit cache
+    hitcache_addr = os.getenv("HITCACHE_ADDR")
+    hitcache_port = os.getenv("HITCACHE_PORT")
+    try:
+        hitcache_port = int(hitcache_port)
+    except (TypeError, ValueError):
+        hitcache_port = None
+
+    if hitcache_addr and hitcache_port:
+        LOGGER.debug(
+            f"hit cache connecting to redis at {hitcache_addr}:{hitcache_port}"
+        )
+        hit_cache = redis.Redis(
+            host=hitcache_addr, port=int(hitcache_port), db=0
+        )
+    elif bool(hitcache_addr) ^ bool(hitcache_port):
+        LOGGER.error(
+            f"hit cache falling back to no-op cache (incomplete connection details)"
+        )
+    else:
+        LOGGER.debug(
+            f"hit cache falling back to no-op cache, HITCACHE_ADDR and HITCACHE_PORT are missing"
+        )
+
 
 def parse_s3_event(s3, event) -> str:
     bucket = event["s3"]["bucket"]["name"]
@@ -167,12 +234,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
         LOGGER.info(f"Executing analyzers: {[an for an in analyzers.keys()]}")
 
-        chunk_size = 100
-
-        if IS_RETRY == "True":
-            chunk_size = 10
-
-        for nodes in chunker([n for n in graph.node_iter()], chunk_size):
+        for nodes in chunker([n for n in graph.node_iter()], CHUNK_SIZE):
             LOGGER.info(f"Querying {len(nodes)} nodes")
 
             def exec_analyzer(nodes, sender):
@@ -223,7 +285,7 @@ def emit_event(s3, event: ExecutionHit) -> None:
     )
     obj.put(Body=event_s)
 
-    if IS_LOCAL:
+    if is_local:
         sqs = boto3.client(
             "sqs",
             region_name="us-east-1",
@@ -256,7 +318,6 @@ def check_hit_cache(file: str, node_key: str) -> bool:
     event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
     return bool(hit_cache.get(event_hash))
 
-
 def update_hit_cache(file: str, node_key: str) -> None:
     to_hash = str(file) + str(node_key)
     event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
@@ -264,6 +325,8 @@ def update_hit_cache(file: str, node_key: str) -> None:
 
 
 def lambda_handler_fn(events: Any, context: Any) -> None:
+    prelude()
+
     # Parse sns message
     LOGGER.debug(f"handling events: {events} context: {context}")
 
