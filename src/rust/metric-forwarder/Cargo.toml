@@ -21,7 +21,7 @@ ordered-float = "2.0.0"
 rayon = "1.0.3"
 rusoto_cloudwatch = { version="0.43.0", default_features = false, features=["rustls"] }
 rusoto_core = { version="0.43.0", default_features = false, features=["rustls"] }
-serde_json = "1.0.53"
+serde_json = "1.0.59"
 statsd-parser = "0.3.0"
 thiserror = "1.0.20"
 tokio-compat = "0.1.*"
