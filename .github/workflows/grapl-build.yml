@@ -25,10 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Build Rust services
         run: |
@@ -44,10 +44,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Build Python services
         run: |
@@ -63,10 +63,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Run dobi python-typecheck
         run: |
@@ -78,10 +78,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Build JS services
         run: |
@@ -97,10 +97,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Build Grapl
         run: |
@@ -110,23 +110,53 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration-tests
 
+
   # In the future, this should probably be merged back into `dobi integration-tests`, but
   # since it's so timing-dependent I'm going to treat it separately until it stabilizes a bit.
   end-to-end-integration-tests:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: [3.7]
+
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Build Grapl
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
 
+      # --no-bind-mount makes dobi screw up with volumes for some reason, and it's not really required here anyway.
       - name: Run end-to-end integration tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount run-e2e-integration-tests
+          GRAPL_RELEASE_TARGET=debug \
+          GRAPL_LOG_LEVEL=DEBUG \
+          DUMP_ARTIFACTS=True \
+          TAG=latest \
+          ./dobi-linux run-e2e-integration-tests
+       
+      # NOTE: This requires >= py37
+      - name: 'Collect e2e test artifacts'
+        if: ${{ always() }}
+        run: |
+          python3 ./etc/ci_scripts/dump_compose_artifacts.py --compose-project "grapl-integration-tests"
+           
+      - name: 'Upload e2e test artifacts'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: e2e-artifacts
+          # this path is specified in dump_compose_artifacts.py
+          path: /tmp/compose_artifacts/
+          retention-days: 28

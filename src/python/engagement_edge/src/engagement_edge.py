@@ -5,21 +5,20 @@ import re
 import sys
 import time
 import uuid
-
-from hashlib import sha256, pbkdf2_hmac
+from hashlib import pbkdf2_hmac, sha256
 from hmac import compare_digest
 from random import uniform
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import boto3
 import jwt
 import pydgraph
-from chalice import Chalice, Response, CORSConfig
+from chalice import Chalice, CORSConfig, Response
+from pydgraph import DgraphClient
 
-from grapl_analyzerlib.nodes.base import BaseView, BaseQuery
+from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
 from grapl_analyzerlib.nodes.entity import EntityQuery
 from grapl_analyzerlib.nodes.lens import LensQuery
-from pydgraph import DgraphClient
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -72,10 +71,17 @@ else:
 
 app = Chalice(app_name="engagement-edge")
 
-origin_re = re.compile(
-    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
-    re.IGNORECASE,
-)
+if IS_LOCAL:
+    # Locally we may want to connect from many origins
+    origin_re = re.compile(
+        f"http://.+/",
+        re.IGNORECASE,
+    )
+else:
+    origin_re = re.compile(
+        f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
+        re.IGNORECASE,
+    )
 
 
 def list_all_lenses(prefix: str) -> List[Dict[str, Any]]:
@@ -382,6 +388,7 @@ def respond(err, res=None, headers=None):
     else:
         LOGGER.info("Origin did not match")
         # allow_origin = override or ORIGIN
+        # todo: Fixme
         allow_origin = req_origin
 
     return Response(
@@ -408,6 +415,7 @@ def get_salt_and_pw(table, username):
     )
 
     if not response.get("Item"):
+        LOGGER.debug(f"Did not get salt for user: {username}")
         return None, None
 
     salt = response["Item"]["salt"].value

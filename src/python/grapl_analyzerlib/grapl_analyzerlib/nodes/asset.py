@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional, Union
 
 from grapl_analyzerlib.node_types import (
@@ -66,7 +67,7 @@ class AssetSchema(EntitySchema):
 
 class AssetQuery(EntityQuery[AV, AQ]):
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return AssetSchema()
 
     def with_hostname(
@@ -78,7 +79,7 @@ class AssetQuery(EntityQuery[AV, AQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "AssetQuery":
+    ) -> AssetQuery:
         self._property_filters["hostname"].extend(
             _str_cmps(
                 predicate="hostname",
@@ -115,10 +116,28 @@ class AssetQuery(EntityQuery[AV, AQ]):
 
 
 class AssetView(EntityView[AV, AQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - hostname
+          - string
+          - The hostname of this asset.
+        * - asset_processes
+          - List[:doc:`/nodes/process`]
+          - Processes associated with this asset.
+    """
+
     queryable = AssetQuery
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return AssetSchema()
 
     def __init__(

@@ -1,8 +1,7 @@
 import datetime
 import json
 import os
-
-from typing import Dict, Iterable, List, Iterator, Optional, Tuple, Union
+from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 from chalice import Chalice
 

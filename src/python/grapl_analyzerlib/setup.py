@@ -1,11 +1,6 @@
 import os
 
-from setuptools import setup, find_packages
-
-LINTERS_REQUIREMENTS = [
-    "black",
-    "mypy",
-]
+from setuptools import setup, find_packages  # type: ignore
 
 TEST_REQUIREMENTS = [
     "pytest",
@@ -58,8 +53,7 @@ setup(
         "typing_extensions",
     ],
     extras_require={
-        "linters": LINTERS_REQUIREMENTS,
         "test": TEST_REQUIREMENTS,
-        "dev": LINTERS_REQUIREMENTS + TEST_REQUIREMENTS,
+        "typecheck": TEST_REQUIREMENTS + ["pytype"],
     },
 )

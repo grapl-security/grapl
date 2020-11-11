@@ -22,6 +22,8 @@ from test_utils.strategies.process_view_strategy import (
     ProcessProps,
 )
 
+Property = str
+
 
 def assert_equal_props(a: Viewable, b: Viewable) -> None:
     """
@@ -51,14 +53,14 @@ def get_or_create_process_node_deprecated(
     """
     Deprecated in favor of property_view_strategy.py
     """
-    node_props = {
+    node_props: Dict[str, Property] = {
         "process_id": process_id,
         "arguments": arguments,
         "created_timestamp": created_timestamp,
         "terminate_time": terminate_time,
         "image_name": image_name,
         "process_name": process_name,
-    }  # type: Dict[str, Property]
+    }
 
     return cast(
         ProcessView, upsert(local_client, "Process", ProcessView, node_key, node_props)
