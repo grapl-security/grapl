@@ -21,20 +21,8 @@ Grapl comes with binaries already in the repository.
 
 Clone the repo:
 `git clone https://github.com/insanitybit/grapl.git`
-`cd ./grapl/grapl-cdk/`
-`npm i # install dependencies`
-`cdk boostrap # set up aws-cdk`
-
-Add a `.env` file, and fill it in:
-
-`BUCKET_PREFIX="<unique prefix to differentiate your buckets>"`
-
-Run the deploy script
-`./deploy_all.sh`
-
-It will require confirming some changes to security groups, and will take a few minutes to complete.
-
-This will give you a Grapl setup that’s adequate for testing out the service.
+`cd grapl/src/js/grapl-cdk/`
+`<Follow the instructions in the README.md>`
 
 ### Provisioning Grapl
 At this point you need to provision the Graph databases and create a user. You can use the `Grapl Provision` notebook in this repo, and
@@ -50,7 +38,17 @@ Run the notebook, and it will:
 
 ### Demo Data
 You can send some test data up to the service by going to the root of the grapl repo and calling:
-`python ./gen-raw-logs.py <your bucket prefix>`. 
+```
+# whatever deployment name you defined above
+export DEPLOYMENT_NAME="Grapl-MYDEPLOYMENT"
+
+# upload analyzers
+BUCKET_PREFIX=$DEPLOYMENT_NAME etc/aws/upload_analyzer_prod.sh
+# upload logs
+python3 etc/local_grapl/bin/upload-sysmon-logs.py \
+  --bucket_prefix $DEPLOYMENT_NAME \
+  --logfile etc/sample_data/eventlog.xml 
+```
 
 *Note that this will likely impose charges to your AWS account.*
 

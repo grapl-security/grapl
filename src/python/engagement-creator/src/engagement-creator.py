@@ -62,6 +62,23 @@ class EngagementCreatorMetrics:
 
     def time_to_process_event(self) -> ContextManager:
         return self.metric_reporter.histogram_ctx(metric_name="time_to_process_event")
+    
+    def risk_node(self, analyzer_name, node_key) -> None:
+        """
+        We're using the metrics scheme here as a sort of deduplication mechanism. 
+        Basically, if `suspicious_svc_host` fires 3x for 1 node - we only need 1 alert fired.
+        If a new node is registered as risky - that should be a new alert.
+        """
+        self.metric_reporter.counter(
+            metric_name=f"risk_node", 
+            value=1, 
+            tags=[
+                TagPair("analyzer_name", analyzer_name),
+                # note - the cardinality on this will likely be awful, and we should consider 
+                # doing it as a `.set_property` (not indexed) instead of a `.set_dimension` (indexed).
+                TagPair("node_key", node_key),
+            ]
+        )
 
 
 def parse_s3_event(s3: S3ServiceResource, event: Any) -> bytes:
@@ -212,7 +229,7 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
     for event in s3_event["Records"]:
         with metrics.time_to_process_event():
             try:
-                _process_one_event(event, s3, mg_client)
+                _process_one_event(event, s3, mg_client, metrics)
             except:
                 metrics.event_processed(status="failure")
                 raise
@@ -224,6 +241,7 @@ def _process_one_event(
     event: Any,
     s3: S3ServiceResource,
     mg_client: GraphClient,
+    metrics: EngagementCreatorMetrics,
 ) -> None:
     if not IS_LOCAL:
         event = json.loads(event["body"])["Records"][0]
@@ -293,6 +311,7 @@ def _process_one_event(
     for node in risky_nodes:
         create_edge(mg_client, node.uid, "risks", risk.uid)
         create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
+        metrics.
 
     for edge_list in edges.values():
         for edge in edge_list:

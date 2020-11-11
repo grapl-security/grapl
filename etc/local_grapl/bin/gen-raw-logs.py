@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+TODO: I believe this script is superceded by `upload-sysmon-logs`, which takes in both
+--bucket-prefix and --log-file.
+"""
+
 import argparse
 import json
 from datetime import datetime
