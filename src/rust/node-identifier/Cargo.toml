@@ -30,7 +30,7 @@ base64 = "0.9.2"
 rusoto_s3 = {version="0.43.0", default_features = false, features=["rustls"]}
 rusoto_core = {version="0.43.0", default_features = false, features=["rustls"]}
 rusoto_sqs = {version="0.43.0", default_features = false, features=["rustls"]}
-rusoto_dynamodb = {version="0.43.0", default_features = false, features=["rustls"]}
+rusoto_dynamodb = {version="0.45.0", default_features = false, features=["rustls"]}
 serde_dynamodb = {version="0.5.0", default_features = false, features=["rustls"]}
 
 lambda_runtime = "0.2.*"
