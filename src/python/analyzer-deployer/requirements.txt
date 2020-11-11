@@ -1,4 +1,4 @@
-boto3==1.15.9
+boto3==1.16.15
 boto3-stubs[essential]==1.14.44
 chalice==1.20.1
 hypothesis
