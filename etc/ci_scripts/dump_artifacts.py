@@ -57,7 +57,7 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
         popen.wait()
 
 
-ARTIFACTS_PATH = Path("/tmp/compose_artifacts").resolve()
+ARTIFACTS_PATH = Path("/tmp/dumped_artifacts").resolve()
 
 
 def dump_all_logs(compose_project: str) -> None:
