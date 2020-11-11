@@ -520,7 +520,7 @@ job=typecheck-grapl-tests-common:
       mypy .
       "
 
-job=typecheck-e2e-integration-tests:
+job=typecheck-e2e-tests:
   use: grapl-e2e-tests-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   command: |
@@ -615,7 +615,7 @@ job=run-analyzer-deployer-integration-tests:
   depends:
     - integration-env
 
-job=run-e2e-integration-tests:
+job=run-e2e-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-network
   command: | 
@@ -639,6 +639,8 @@ job=run-e2e-integration-tests:
   ports:
     # Used for debugger
     - 8400:8400
+  annotations:
+    description: "Run end-to-end tests"
 
 job=build-analyzer-executor:
   use: analyzer-executor-build
@@ -877,7 +879,7 @@ alias=python-typecheck:
     - typecheck-grapl-common
     - typecheck-grapl-tests-common
     - typecheck-analyzer-deployer
-    - typecheck-e2e-integration-tests
+    - typecheck-e2e-tests
     - typecheck-engagement-creator
     - typecheck-model-plugin-deployer
     - typecheck-analyzer-executor
