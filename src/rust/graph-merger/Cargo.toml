@@ -20,7 +20,7 @@ grpc = "0.6.1"
 sqs-lambda = "0.20.*"
 
 rusoto_s3 = { version="0.43.0", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.43.0", default_features = false, features=["rustls"] }
+rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_sqs = { version="0.43.0", default_features = false, features=["rustls"] }
 rusoto_sns = { version="0.43.0", default_features = false, features=["rustls"] }
 

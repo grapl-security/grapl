@@ -29,7 +29,7 @@ stopwatch = "0.0.7"
 
 
 rusoto_s3 = { version="0.43.0", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.43.0", default_features = false, features=["rustls"] }
+rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_sqs = { version="0.43.0", default_features = false, features=["rustls"] }
 
 futures = "0.3.*"
