@@ -65,6 +65,10 @@ def test_hit_cache_noop(AnalyzerExecutorSingleton, random_word) -> None:
 
 @pytest.mark.integration_test
 def test_hit_cache_redis(AnalyzerExecutorSingleton, random_word) -> None:
+    """
+    Initializes the AnalyzerExecutor singleton with Redis connection params
+    sourced from the environment, expecting hit cache to populate.
+    """
     ae = AnalyzerExecutorSingleton(stub_env=False)
 
     k1, k2 = random_word(), random_word()
@@ -103,6 +107,10 @@ def test_message_cache_noop(AnalyzerExecutorSingleton, random_word) -> None:
 
 @pytest.mark.integration_test
 def test_message_cache_redis(AnalyzerExecutorSingleton, random_word) -> None:
+    """
+    Initializes the AnalyzerExecutor singleton with Redis connection params
+    sourced from the environment, expecting message cache to populate.
+    """
     ae = AnalyzerExecutorSingleton(stub_env=False)
 
     k1, k2, k3 = random_word(), random_word(), random_word()
