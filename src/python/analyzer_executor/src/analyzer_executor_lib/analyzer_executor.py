@@ -285,15 +285,18 @@ class AnalyzerExecutor:
                 analyzer = analyzers[an_name]
 
                 for query in queries:
-                    response = query.query_first(dg_client, contains_node_key=node.node_key)
+                    response = query.query_first(
+                        dg_client, contains_node_key=node.node_key
+                    )
                     if response:
                         self.logger.debug(
                             f"Analyzer '{an_name}' received a hit, executing on_response()"
                         )
                         analyzer.on_response(response, sender)
 
-
-    def execute_file(self, name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size):
+    def execute_file(
+        self, name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size
+    ):
         try:
             pool = ThreadPool(processes=4)
 
@@ -311,12 +314,16 @@ class AnalyzerExecutor:
 
                 def exec_analyzer(nodes, sender):
                     try:
-                        self.exec_analyzers(client, file, msg_id, nodes, analyzers, sender)
+                        self.exec_analyzers(
+                            client, file, msg_id, nodes, analyzers, sender
+                        )
 
                         return nodes
                     except Exception as e:
                         self.logger.error(traceback.format_exc())
-                        self.logger.error(f"Execution of {name} failed with {e} {e.args}")
+                        self.logger.error(
+                            f"Execution of {name} failed with {e} {e.args}"
+                        )
                         sender.send(ExecutionFailed())
                         raise
 
