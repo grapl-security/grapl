@@ -25,9 +25,22 @@ from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
 
-# constants
-CHUNK_SIZE_RETRY: int = 10
-CHUNK_SIZE_DEFAULT: int = 100
+# Set up logger (this is for the whole file, including static methods)
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "ERROR"))
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+# Set up plugins dir for models
+MODEL_PLUGINS_DIR = os.getenv("MODEL_PLUGINS_DIR", "/tmp")
+sys.path.insert(0, MODEL_PLUGINS_DIR)
+
+# Ensure plugins dir exists
+try:
+    directory = Path(MODEL_PLUGINS_DIR + "/model_plugins/")
+    directory.mkdir(parents=True, exist_ok=True)
+except Exception as e:
+    LOGGER.error("Failed to create model plugins directory", e)
+
 
 # TODO:  move generic cache stuff into its own utility file
 class NopCache(object):
@@ -40,97 +53,204 @@ class NopCache(object):
 
 EitherCache = Union[NopCache, redis.Redis]
 
-# TODO:  these are globals, should be a config obj or class var or smth
-message_cache: EitherCache = NopCache()
-hit_cache: EitherCache = NopCache()
-CHUNK_SIZE: int = CHUNK_SIZE_DEFAULT
-IS_LOCAL = True  # safe default, though prob not the case
-LOGGER = None
 
-def prelude():
-    # This method is our 'constructor'
-    """
-    Catch-all initialization method, environmental dependencies.
-    """
+class AnalyzerExecutor:
 
-    # see above TODO, these should be a config object, not global state
-    global message_cache
-    global hit_cache
-    global CHUNK_SIZE
-    global IS_LOCAL
-    global LOGGER
+    # constants
+    CHUNK_SIZE_RETRY: int = 10
+    CHUNK_SIZE_DEFAULT: int = 100
 
-    IS_LOCAL = bool(os.getenv("IS_LOCAL", False))  # TODO move to grapl-common
+    def __init__(self, message_cache, hit_cache, chunk_size, is_local, logger):
+        self.message_cache = message_cache
+        self.hit_cache     = hit_cache
+        self.chunk_size    = chunk_size
+        self.is_local      = is_local
+        self.logger        = logger
 
-    # Set up plugins dir for models
-    MODEL_PLUGINS_DIR = os.getenv("MODEL_PLUGINS_DIR", "/tmp")
-    sys.path.insert(0, MODEL_PLUGINS_DIR)
 
-    # Ensure plugins dir exists
-    try:
-        directory = Path(MODEL_PLUGINS_DIR + "/model_plugins/")
-        directory.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        LOGGER.error("Failed to create model plugins directory", e)
+    @classmethod
+    def singleton(cls):
+        if not cls._singleton:
+            LOGGER.debug("initializing AnalyzerExecutor singleton")
+            is_local = bool(os.getenv("IS_LOCAL", False)) # TODO move determination to grapl-common
 
-    # If we're retrying, change the chunk size
-    IS_RETRY = os.getenv("IS_RETRY")
-    if IS_RETRY == "True":
-        CHUNK_SIZE = CHUNK_SIZE_RETRY
+            # If we're retrying, change the chunk size
+            is_retry = os.getenv("IS_RETRY", False)
+            if is_retry == "True":
+                chunk_size = cls.CHUNK_SIZE_RETRY
+            else:
+                chunk_size = cls.CHUNK_SIZE_DEFAULT
 
-    # Set up logger
-    LOGGER = logging.getLogger(__name__)
-    LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "ERROR"))
-    LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+            # Set up message cache
+            messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
+            messagecache_port = os.getenv("MESSAGECACHE_PORT")
+            LOGGER.debug(f"{messagecache_addr}:{messagecache_port}")
+            try:
+                messagecache_port = int(messagecache_port)
+            except (TypeError, ValueError):
+                LOGGER.error(
+                    f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
+                )
+                messagecache_port = None
 
-    # Set up message cache
-    messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
-    messagecache_port = os.getenv("MESSAGECACHE_PORT")
-    LOGGER.debug(f"{messagecache_addr}:{messagecache_port}")
-    try:
-        messagecache_port = int(messagecache_port)
-    except (TypeError, ValueError):
-        messagecache_port = None
+            if messagecache_addr and messagecache_port:
+                LOGGER.debug(
+                    f"message cache connecting to redis at {messagecache_addr}:{messagecache_port}"
+                )
+                message_cache = redis.Redis(
+                    host=messagecache_addr, port=messagecache_port, db=0
+                )
+            else:
+                if bool(messagecache_addr) ^ bool(messagecache_port):
+                    LOGGER.error(
+                        f"message cache falling back to no-op cache (incomplete connection details)"
+                    )
+                else:
+                    LOGGER.debug(
+                        f"message cache falling back to no-op cache (missing connection details)"
+                    )
+                message_cache: EitherCache = NopCache()
 
-    if messagecache_addr and messagecache_port:
-        LOGGER.debug(
-            f"message cache connecting to redis at {messagecache_addr}:{messagecache_port}"
-        )
-        message_cache = redis.Redis(
-            host=messagecache_addr, port=messagecache_port, db=0
-        )
-    elif bool(messagecache_addr) ^ bool(messagecache_port):
-        LOGGER.error(
-            f"message cache falling back to no-op cache (incomplete connection details)"
-        )
-    else:
-        LOGGER.debug(
-            f"message cache falling back to no-op cache, MESSAGECACHE_ADDR and MESSAGECACHE_PORT are missing"
-        )
 
-    # Set up hit cache
-    hitcache_addr = os.getenv("HITCACHE_ADDR")
-    hitcache_port = os.getenv("HITCACHE_PORT")
-    try:
-        hitcache_port = int(hitcache_port)
-    except (TypeError, ValueError):
-        hitcache_port = None
+            # Set up hit cache
+            hitcache_addr = os.getenv("HITCACHE_ADDR")
+            hitcache_port = os.getenv("HITCACHE_PORT")
+            try:
+                hitcache_port = int(hitcache_port)
+            except (TypeError, ValueError):
+                LOGGER.error(
+                    f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
+                )
+                hitcache_port = None
 
-    if hitcache_addr and hitcache_port:
-        LOGGER.debug(
-            f"hit cache connecting to redis at {hitcache_addr}:{hitcache_port}"
-        )
-        hit_cache = redis.Redis(
-            host=hitcache_addr, port=int(hitcache_port), db=0
-        )
-    elif bool(hitcache_addr) ^ bool(hitcache_port):
-        LOGGER.error(
-            f"hit cache falling back to no-op cache (incomplete connection details)"
-        )
-    else:
-        LOGGER.debug(
-            f"hit cache falling back to no-op cache, HITCACHE_ADDR and HITCACHE_PORT are missing"
-        )
+            if hitcache_addr and hitcache_port:
+                LOGGER.debug(
+                    f"hit cache connecting to redis at {hitcache_addr}:{hitcache_port}"
+                )
+                hit_cache = redis.Redis(
+                    host=hitcache_addr, port=int(hitcache_port), db=0
+                )
+            else:
+                if bool(hitcache_addr) ^ bool(hitcache_port):
+                    LOGGER.error(
+                        f"hit cache falling back to no-op cache (incomplete connection details)"
+                    )
+                else:
+                    LOGGER.debug(
+                        f"hit cache falling back to no-op cache, HITCACHE_ADDR and HITCACHE_PORT are missing"
+                    )
+                hit_cache: EitherCache = NopCache()
+
+            cls._singleton = cls(message_cache, hit_cache, chunk_size, is_local, LOGGER)
+
+        return cls._singleton
+
+
+    def check_caches(
+        self, file_hash: str, msg_id: str, node_key: str, analyzer_name: str
+    ) -> bool:
+        if self.check_msg_cache(file_hash, node_key, msg_id):
+            self.logger.debug("cache hit - already processed")
+            return True
+
+        if self.check_hit_cache(analyzer_name, node_key):
+            self.logger.debug("cache hit - already matched")
+            return True
+
+        return False
+
+
+    def check_msg_cache(self, file: str, node_key: str, msg_id: str) -> bool:
+        to_hash = str(file) + str(node_key) + str(msg_id)
+        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        return bool(self.message_cache.get(event_hash))
+
+
+    def update_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
+        to_hash = str(file) + str(node_key) + str(msg_id)
+        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        self.message_cache.set(event_hash, "1")
+
+
+    def check_hit_cache(self, file: str, node_key: str) -> bool:
+        to_hash = str(file) + str(node_key)
+        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        contents = self.hit_cache.get(event_hash)
+        LOGGER.debug(f"hit cache contents:\t'{contents}' => bool({bool(contents)})")
+        return bool(self.hit_cache.get(event_hash))
+
+
+    def update_hit_cache(self, file: str, node_key: str) -> None:
+        to_hash = str(file) + str(node_key)
+        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        self.hit_cache.set(event_hash, "1")
+
+
+    def lambda_handler_fn(self, events: Any, context: Any) -> None:
+        # Parse sns message
+        self.logger.debug(f"handling events: {events} context: {context}")
+
+        client = GraphClient()
+
+        s3 = get_s3_client(self.is_local)
+
+        load_plugins(os.environ["BUCKET_PREFIX"], s3, os.path.abspath(MODEL_PLUGINS_DIR))
+
+        for event in events["Records"]:
+            if not self.is_local:
+                event = json.loads(event["body"])["Records"][0]
+            data = parse_s3_event(s3, event)
+
+            message = json.loads(data)
+
+            LOGGER.info(f'Executing Analyzer: {message["key"]}')
+            analyzer = download_s3_file(
+                s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"]
+            )
+            analyzer_name = message["key"].split("/")[-2]
+
+            subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
+
+            # TODO: Validate signature of S3 file
+            LOGGER.info(f"event {event}")
+            rx: Connection
+            tx: Connection
+            rx, tx = Pipe(duplex=False)
+            p = Process(
+                target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, "", self.chunk_size)
+            )
+
+            p.start()
+            t = 0
+
+            while True:
+                p_res = rx.poll(timeout=5)
+                if not p_res:
+                    t += 1
+                    LOGGER.info(
+                        f"Polled {analyzer_name} for {t * 5} seconds without result"
+                    )
+                    continue
+                result: Optional[Any] = rx.recv()
+
+                if isinstance(result, ExecutionComplete):
+                    self.logger.info("execution complete")
+                    break
+
+                # emit any hits to an S3 bucket
+                if isinstance(result, ExecutionHit):
+                    self.logger.info(
+                        f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
+                    )
+                    emit_event(s3, result, self.is_local)
+                    self.update_msg_cache(analyzer, result.root_node_key, message["key"])
+                    self.update_hit_cache(analyzer_name, result.root_node_key)
+
+                assert not isinstance(
+                    result, ExecutionFailed
+                ), f"Analyzer {analyzer_name} failed."
+
+            p.join()
 
 
 def parse_s3_event(s3, event) -> str:
@@ -161,20 +281,6 @@ def get_analyzer_objects(dgraph_client: GraphClient) -> Dict[str, Analyzer]:
         for an in clsmembers
         if is_analyzer(an[0], an[1])
     }
-
-
-def check_caches(
-    file_hash: str, msg_id: str, node_key: str, analyzer_name: str
-) -> bool:
-    if check_msg_cache(file_hash, node_key, msg_id):
-        LOGGER.debug("cache hit - already processed")
-        return True
-
-    if check_hit_cache(analyzer_name, node_key):
-        LOGGER.debug("cache hit - already matched")
-        return True
-
-    return False
 
 
 def exec_analyzers(
@@ -221,7 +327,7 @@ def chunker(seq, size):
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
+def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size):
     try:
         pool = ThreadPool(processes=4)
 
@@ -234,7 +340,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
 
         LOGGER.info(f"Executing analyzers: {[an for an in analyzers.keys()]}")
 
-        for nodes in chunker([n for n in graph.node_iter()], CHUNK_SIZE):
+        for nodes in chunker([n for n in graph.node_iter()], chunk_size):
             LOGGER.info(f"Querying {len(nodes)} nodes")
 
             def exec_analyzer(nodes, sender):
@@ -264,7 +370,7 @@ def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
         raise
 
 
-def emit_event(s3, event: ExecutionHit) -> None:
+def emit_event(s3, event: ExecutionHit, is_local: bool) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     event_s = json.dumps(
@@ -301,100 +407,7 @@ def emit_event(s3, event: ExecutionHit) -> None:
         )
 
 
-def check_msg_cache(file: str, node_key: str, msg_id: str) -> bool:
-    to_hash = str(file) + str(node_key) + str(msg_id)
-    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-    return bool(message_cache.get(event_hash))
-
-
-def update_msg_cache(file: str, node_key: str, msg_id: str) -> None:
-    to_hash = str(file) + str(node_key) + str(msg_id)
-    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-    message_cache.set(event_hash, "1")
-
-
-def check_hit_cache(file: str, node_key: str) -> bool:
-    to_hash = str(file) + str(node_key)
-    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-    return bool(hit_cache.get(event_hash))
-
-def update_hit_cache(file: str, node_key: str) -> None:
-    to_hash = str(file) + str(node_key)
-    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-    hit_cache.set(event_hash, "1")
-
-
-def lambda_handler_fn(events: Any, context: Any) -> None:
-    prelude()
-
-    # Parse sns message
-    LOGGER.debug(f"handling events: {events} context: {context}")
-
-    client = GraphClient()
-
-    s3 = get_s3_client()
-
-    load_plugins(os.environ["BUCKET_PREFIX"], s3, os.path.abspath(MODEL_PLUGINS_DIR))
-
-    for event in events["Records"]:
-        if not IS_LOCAL:
-            event = json.loads(event["body"])["Records"][0]
-        data = parse_s3_event(s3, event)
-
-        message = json.loads(data)
-
-        LOGGER.info(f'Executing Analyzer: {message["key"]}')
-        analyzer = download_s3_file(
-            s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"]
-        )
-        analyzer_name = message["key"].split("/")[-2]
-
-        subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
-
-        # TODO: Validate signature of S3 file
-        LOGGER.info(f"event {event}")
-        rx: Connection
-        tx: Connection
-        rx, tx = Pipe(duplex=False)
-        p = Process(
-            target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, "")
-        )
-
-        p.start()
-        t = 0
-
-        while True:
-            p_res = rx.poll(timeout=5)
-            if not p_res:
-                t += 1
-                LOGGER.info(
-                    f"Polled {analyzer_name} for {t * 5} seconds without result"
-                )
-                continue
-            result: Optional[Any] = rx.recv()
-
-            if isinstance(result, ExecutionComplete):
-                LOGGER.info("execution complete")
-                break
-
-            # emit any hits to an S3 bucket
-            if isinstance(result, ExecutionHit):
-                LOGGER.info(
-                    f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
-                )
-                emit_event(s3, result)
-                update_msg_cache(analyzer, result.root_node_key, message["key"])
-                update_hit_cache(analyzer_name, result.root_node_key)
-
-            assert not isinstance(
-                result, ExecutionFailed
-            ), f"Analyzer {analyzer_name} failed."
-
-        p.join()
-
-
 ### LOCAL HANDLER
-
 
 def into_sqs_message(bucket: str, key: str) -> str:
     return json.dumps(
@@ -448,8 +461,8 @@ def send_s3_event(
     )
 
 
-def get_s3_client():
-    if IS_LOCAL:
+def get_s3_client(is_local: bool):
+    if is_local:
         return boto3.resource(
             "s3",
             endpoint_url="http://s3:9000",

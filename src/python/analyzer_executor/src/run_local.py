@@ -4,9 +4,9 @@ import traceback
 
 import boto3  # type: ignore
 import botocore.exceptions  # type: ignore
-from analyzer_executor_lib.analyzer_executor import prelude, LOGGER, lambda_handler_fn
+from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor, LOGGER
 
-prelude()
+ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()
 
 while True:
     try:
@@ -53,7 +53,7 @@ while True:
             (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
         ]
         for s3_event, receipt_handle in s3_events:
-            lambda_handler_fn(s3_event, {})
+            ANALYZER_EXECUTOR.lambda_handler_fn(s3_event, {})
 
             sqs.delete_message(
                 QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",

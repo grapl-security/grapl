@@ -2,80 +2,89 @@ import unittest
 from redis import Redis
 
 import pytest
-from analyzer_executor_lib.analyzer_executor import prelude, check_msg_cache, update_msg_cache, check_hit_cache, update_hit_cache
+from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
 
-SAMPLE_HOST = "localhost"
+SAMPLE_ADDR = "localhost"
 SAMPLE_PORT = "12345"
 
 @pytest.fixture
-def mock_cache_env(monkeypatch):
-    def _mock_cache_env(addr, port):
-        monkeypatch.setenv("MESSAGECACHE_ADDR", addr)
-        monkeypatch.setenv("MESSAGECACHE_PORT", port)
-        monkeypatch.setenv("HITCACHE_ADDR", addr)
-        monkeypatch.setenv("HITCACHE_PORT", port)
-    return _mock_cache_env
+def AnalyzerExecutorSingleton(monkeypatch):
+    def _AnalyzerExecutorSingleton(stub_env=False, env_addr="", env_port=""):
+        with monkeypatch.context() as mp:
+            if stub_env:
+                mp.setenv("MESSAGECACHE_ADDR", env_addr)
+                mp.setenv("HITCACHE_ADDR",     env_addr)
+                mp.setenv("MESSAGECACHE_PORT", env_port)
+                mp.setenv("HITCACHE_PORT",     env_port)
+
+            # force singleton to reinitialize,
+            # this should be idempotent?
+            AnalyzerExecutor._singleton = None
+            return AnalyzerExecutor.singleton()
+    return _AnalyzerExecutorSingleton
 
 @pytest.mark.integration_test
-def test_hit_cache_noop(mock_cache_env) -> None:
-    mock_cache_env("", "")
-    prelude()
+def test_hit_cache_noop(AnalyzerExecutorSingleton) -> None:
+    """
+    Initializes the AnalyzerExecutor singleton without valid environment
+    variables for a Redis cache connection, expecting hit cache hits to miss.
+    """
+    ae = AnalyzerExecutorSingleton(stub_env=True, env_addr="", env_port="")
 
-    assert not check_hit_cache("a", "b")
-    update_hit_cache("a", "b")
-    assert not check_hit_cache("a", "b")
+    assert not ae.check_hit_cache("a", "b")
+    ae.update_hit_cache("a", "b")
+    assert not ae.check_hit_cache("a", "b")
 
-    mock_cache_env(SAMPLE_HOST, "")
-    prelude()
+    ae = AnalyzerExecutorSingleton(stub_env=True, env_addr=SAMPLE_ADDR, env_port="")
 
-    assert not check_hit_cache("a", "b")
-    update_hit_cache("a", "b")
-    assert not check_hit_cache("a", "b")
+    assert not ae.check_hit_cache("a", "b")
+    ae.update_hit_cache("a", "b")
+    assert not ae.check_hit_cache("a", "b")
 
-    mock_cache_env("", SAMPLE_PORT)
-    prelude()
+    ae = AnalyzerExecutorSingleton(stub_env=True, env_addr="", env_port=SAMPLE_PORT)
 
-    assert not check_hit_cache("a", "b")
-    update_hit_cache("a", "b")
-    assert not check_hit_cache("a", "b")
-
-@pytest.mark.integration_test
-def test_hit_cache_redis(mock_cache_env) -> None:
-    # no mock, environment should be configured to pick up Redis
-    prelude()
-
-    assert not check_hit_cache("a", "b")
-    update_hit_cache("a", "b")
-    assert check_hit_cache("a", "b")
+    assert not ae.check_hit_cache("a", "b")
+    ae.update_hit_cache("a", "b")
+    assert not ae.check_hit_cache("a", "b")
 
 @pytest.mark.integration_test
-def test_message_cache_noop(mock_cache_env) -> None:
-    mock_cache_env("", "")
-    prelude()
+def test_hit_cache_redis(AnalyzerExecutorSingleton) -> None:
+    # defaults cribbed from actual build environment
+    ae = AnalyzerExecutorSingleton(stub_env=False)
 
-    assert not check_msg_cache("a", "b", "c")
-    update_msg_cache("a", "b", "c")
-    assert not check_msg_cache("a", "b", "c")
-
-    mock_cache_env(SAMPLE_HOST, "")
-    prelude()
-
-    assert not check_msg_cache("a", "b", "c")
-    update_msg_cache("a", "b", "c")
-    assert not check_msg_cache("a", "b", "c")
-
-    mock_cache_env("", SAMPLE_PORT)
-    prelude()
-
-    assert not check_msg_cache("a", "b", "c")
-    update_msg_cache("a", "b", "c")
-    assert not check_msg_cache("a", "b", "c")
+    assert not ae.check_hit_cache("a", "b")
+    ae.update_hit_cache("a", "b")
+    assert ae.check_hit_cache("a", "b")
 
 @pytest.mark.integration_test
-def test_message_cache_redis(mock_cache_env) -> None:
-    # no mock, environment should be configured to pick up Redis
-    prelude()
+def test_message_cache_noop(AnalyzerExecutorSingleton) -> None:
+    """
+    Initializes the AnalyzerExecutor singleton without valid environment
+    variables for a Redis cache connection, expecting hit cache hits to miss.
+    """
+    ae = AnalyzerExecutorSingleton(stub_env=True, env_addr="", env_port="")
 
-    assert not check_msg_cache("a", "b", "c")
-    update_msg_cache("a", "b", "c")
-    assert check_msg_cache("a", "b", "c")
+    assert not ae.check_msg_cache("a", "b", "c")
+    ae.update_msg_cache("a", "b", "c")
+    assert not ae.check_msg_cache("a", "b", "c")
+
+    ae = AnalyzerExecutorSingleton(stub_env=True, env_addr=SAMPLE_ADDR, env_port="")
+
+    assert not ae.check_msg_cache("a", "b", "c")
+    ae.update_msg_cache("a", "b", "c")
+    assert not ae.check_msg_cache("a", "b", "c")
+
+    ae = AnalyzerExecutorSingleton(stub_env=True, env_addr="", env_port=SAMPLE_PORT)
+
+    assert not ae.check_msg_cache("a", "b", "c")
+    ae.update_msg_cache("a", "b", "c")
+    assert not ae.check_msg_cache("a", "b", "c")
+
+@pytest.mark.integration_test
+def test_message_cache_redis(AnalyzerExecutorSingleton) -> None:
+    # defaults cribbed from actual build environment
+    ae = AnalyzerExecutorSingleton(stub_env=False)
+
+    assert not ae.check_msg_cache("a", "b", "c")
+    ae.update_msg_cache("a", "b", "c")
+    assert ae.check_msg_cache("a", "b", "c")
