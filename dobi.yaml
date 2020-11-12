@@ -844,7 +844,6 @@ alias=python-integration-tests:
   tasks:
     - run-grapl-analyzerlib-integration-tests
     - run-analyzer-deployer-integration-tests
-    - run-analyzer-executor-integration-tests
   annotations:
     description: "Run the python integration tests"
 
