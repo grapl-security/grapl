@@ -60,6 +60,9 @@ class AnalyzerExecutor:
     CHUNK_SIZE_RETRY: int = 10
     CHUNK_SIZE_DEFAULT: int = 100
 
+    # singleton
+    _singleton = None
+
     def __init__(self, message_cache, hit_cache, chunk_size, is_local, logger):
         self.message_cache = message_cache
         self.hit_cache = hit_cache
@@ -211,7 +214,7 @@ class AnalyzerExecutor:
             tx: Connection
             rx, tx = Pipe(duplex=False)
             p = Process(
-                target=execute_file,
+                target=self.execute_file,
                 args=(analyzer_name, analyzer, subgraph, tx, "", self.chunk_size),
             )
 
@@ -249,6 +252,89 @@ class AnalyzerExecutor:
 
             p.join()
 
+    def exec_analyzers(
+        self,
+        dg_client,
+        file: str,
+        msg_id: str,
+        nodes: List[BaseView],
+        analyzers: Dict[str, Analyzer],
+        sender: Any,
+    ):
+        if not analyzers:
+            self.logger.warning("Received empty dict of analyzers")
+            return
+
+        if not nodes:
+            self.logger.warning("Received empty array of nodes")
+
+        for node in nodes:
+            querymap: Dict[str, List[Queryable]] = defaultdict(list)
+
+            for an_name, analyzer in analyzers.items():
+                if self.check_caches(file, msg_id, node.node_key, an_name):
+                    continue
+
+                queries = analyzer.get_queries()
+                if isinstance(queries, list) or isinstance(queries, tuple):
+                    querymap[an_name].extend(queries)
+                else:
+                    querymap[an_name].append(queries)
+
+            for an_name, queries in querymap.items():
+                analyzer = analyzers[an_name]
+
+                for query in queries:
+                    response = query.query_first(dg_client, contains_node_key=node.node_key)
+                    if response:
+                        self.logger.debug(
+                            f"Analyzer '{an_name}' received a hit, executing on_response()"
+                        )
+                        analyzer.on_response(response, sender)
+
+
+    def execute_file(self, name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size):
+        try:
+            pool = ThreadPool(processes=4)
+
+            exec(file, globals())
+            client = GraphClient()
+
+            analyzers = get_analyzer_objects(client)
+            if not analyzers:
+                self.logger.warning(f"Got no analyzers for file: {name}")
+
+            self.logger.info(f"Executing analyzers: {[an for an in analyzers.keys()]}")
+
+            for nodes in chunker([n for n in graph.node_iter()], chunk_size):
+                self.logger.info(f"Querying {len(nodes)} nodes")
+
+                def exec_analyzer(nodes, sender):
+                    try:
+                        self.exec_analyzers(client, file, msg_id, nodes, analyzers, sender)
+
+                        return nodes
+                    except Exception as e:
+                        self.logger.error(traceback.format_exc())
+                        self.logger.error(f"Execution of {name} failed with {e} {e.args}")
+                        sender.send(ExecutionFailed())
+                        raise
+
+                exec_analyzer(nodes, sender)
+                pool.apply_async(exec_analyzer, args=(nodes, sender))
+
+            pool.close()
+
+            pool.join()
+
+            sender.send(ExecutionComplete())
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Execution of {name} failed with {e} {e.args}")
+            sender.send(ExecutionFailed())
+            raise
+
 
 def parse_s3_event(s3, event) -> str:
     bucket = event["s3"]["bucket"]["name"]
@@ -280,91 +366,8 @@ def get_analyzer_objects(dgraph_client: GraphClient) -> Dict[str, Analyzer]:
     }
 
 
-def exec_analyzers(
-    dg_client,
-    file: str,
-    msg_id: str,
-    nodes: List[BaseView],
-    analyzers: Dict[str, Analyzer],
-    sender: Any,
-):
-    if not analyzers:
-        LOGGER.warning("Received empty dict of analyzers")
-        return
-
-    if not nodes:
-        LOGGER.warning("Received empty array of nodes")
-
-    for node in nodes:
-        querymap: Dict[str, List[Queryable]] = defaultdict(list)
-
-        for an_name, analyzer in analyzers.items():
-            if check_caches(file, msg_id, node.node_key, an_name):
-                continue
-
-            queries = analyzer.get_queries()
-            if isinstance(queries, list) or isinstance(queries, tuple):
-                querymap[an_name].extend(queries)
-            else:
-                querymap[an_name].append(queries)
-
-        for an_name, queries in querymap.items():
-            analyzer = analyzers[an_name]
-
-            for query in queries:
-                response = query.query_first(dg_client, contains_node_key=node.node_key)
-                if response:
-                    LOGGER.debug(
-                        f"Analyzer '{an_name}' received a hit, executing on_response()"
-                    )
-                    analyzer.on_response(response, sender)
-
-
 def chunker(seq, size):
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
-
-
-def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size):
-    try:
-        pool = ThreadPool(processes=4)
-
-        exec(file, globals())
-        client = GraphClient()
-
-        analyzers = get_analyzer_objects(client)
-        if not analyzers:
-            LOGGER.warning(f"Got no analyzers for file: {name}")
-
-        LOGGER.info(f"Executing analyzers: {[an for an in analyzers.keys()]}")
-
-        for nodes in chunker([n for n in graph.node_iter()], chunk_size):
-            LOGGER.info(f"Querying {len(nodes)} nodes")
-
-            def exec_analyzer(nodes, sender):
-                try:
-                    exec_analyzers(client, file, msg_id, nodes, analyzers, sender)
-
-                    return nodes
-                except Exception as e:
-                    LOGGER.error(traceback.format_exc())
-                    LOGGER.error(f"Execution of {name} failed with {e} {e.args}")
-                    sender.send(ExecutionFailed())
-                    raise
-
-            exec_analyzer(nodes, sender)
-            pool.apply_async(exec_analyzer, args=(nodes, sender))
-
-        pool.close()
-
-        pool.join()
-
-        sender.send(ExecutionComplete())
-
-    except Exception as e:
-        LOGGER.error(traceback.format_exc())
-        LOGGER.error(f"Execution of {name} failed with {e} {e.args}")
-        sender.send(ExecutionFailed())
-        raise
 
 
 def emit_event(s3, event: ExecutionHit, is_local: bool) -> None:
