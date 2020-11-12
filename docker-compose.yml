@@ -33,6 +33,12 @@ services:
   # dev uses 1 big redis instance, prod has 1:1 redis per grapl service
   big-dumb-redis:  # silly name bc temporary
     image: redis:latest
+    command: |
+      sh -c "
+        # hack from https://stackoverflow.com/questions/54533308/disable-redis-persistence-in-docker
+        # to disable persistence
+        rm -f /data/dump.rdb && redis-server
+      "
     ports:
       - "6379:6379" # redis default
     logging:

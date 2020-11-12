@@ -5,3 +5,5 @@ redis
 grpcio
 protobuf
 typing_extensions
+
+faker

@@ -62,17 +62,18 @@ class AnalyzerExecutor:
 
     def __init__(self, message_cache, hit_cache, chunk_size, is_local, logger):
         self.message_cache = message_cache
-        self.hit_cache     = hit_cache
-        self.chunk_size    = chunk_size
-        self.is_local      = is_local
-        self.logger        = logger
-
+        self.hit_cache = hit_cache
+        self.chunk_size = chunk_size
+        self.is_local = is_local
+        self.logger = logger
 
     @classmethod
     def singleton(cls):
         if not cls._singleton:
             LOGGER.debug("initializing AnalyzerExecutor singleton")
-            is_local = bool(os.getenv("IS_LOCAL", False)) # TODO move determination to grapl-common
+            is_local = bool(
+                os.getenv("IS_LOCAL", False)
+            )  # TODO move determination to grapl-common
 
             # If we're retrying, change the chunk size
             is_retry = os.getenv("IS_RETRY", False)
@@ -111,7 +112,6 @@ class AnalyzerExecutor:
                     )
                 message_cache: EitherCache = NopCache()
 
-
             # Set up hit cache
             hitcache_addr = os.getenv("HITCACHE_ADDR")
             hitcache_port = os.getenv("HITCACHE_PORT")
@@ -145,7 +145,6 @@ class AnalyzerExecutor:
 
         return cls._singleton
 
-
     def check_caches(
         self, file_hash: str, msg_id: str, node_key: str, analyzer_name: str
     ) -> bool:
@@ -159,32 +158,25 @@ class AnalyzerExecutor:
 
         return False
 
-
     def check_msg_cache(self, file: str, node_key: str, msg_id: str) -> bool:
         to_hash = str(file) + str(node_key) + str(msg_id)
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         return bool(self.message_cache.get(event_hash))
-
 
     def update_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
         to_hash = str(file) + str(node_key) + str(msg_id)
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.message_cache.set(event_hash, "1")
 
-
     def check_hit_cache(self, file: str, node_key: str) -> bool:
         to_hash = str(file) + str(node_key)
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-        contents = self.hit_cache.get(event_hash)
-        LOGGER.debug(f"hit cache contents:\t'{contents}' => bool({bool(contents)})")
         return bool(self.hit_cache.get(event_hash))
-
 
     def update_hit_cache(self, file: str, node_key: str) -> None:
         to_hash = str(file) + str(node_key)
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.hit_cache.set(event_hash, "1")
-
 
     def lambda_handler_fn(self, events: Any, context: Any) -> None:
         # Parse sns message
@@ -194,7 +186,9 @@ class AnalyzerExecutor:
 
         s3 = get_s3_client(self.is_local)
 
-        load_plugins(os.environ["BUCKET_PREFIX"], s3, os.path.abspath(MODEL_PLUGINS_DIR))
+        load_plugins(
+            os.environ["BUCKET_PREFIX"], s3, os.path.abspath(MODEL_PLUGINS_DIR)
+        )
 
         for event in events["Records"]:
             if not self.is_local:
@@ -217,7 +211,8 @@ class AnalyzerExecutor:
             tx: Connection
             rx, tx = Pipe(duplex=False)
             p = Process(
-                target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, "", self.chunk_size)
+                target=execute_file,
+                args=(analyzer_name, analyzer, subgraph, tx, "", self.chunk_size),
             )
 
             p.start()
@@ -243,7 +238,9 @@ class AnalyzerExecutor:
                         f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
                     )
                     emit_event(s3, result, self.is_local)
-                    self.update_msg_cache(analyzer, result.root_node_key, message["key"])
+                    self.update_msg_cache(
+                        analyzer, result.root_node_key, message["key"]
+                    )
                     self.update_hit_cache(analyzer_name, result.root_node_key)
 
                 assert not isinstance(
@@ -408,6 +405,7 @@ def emit_event(s3, event: ExecutionHit, is_local: bool) -> None:
 
 
 ### LOCAL HANDLER
+
 
 def into_sqs_message(bucket: str, key: str) -> str:
     return json.dumps(
