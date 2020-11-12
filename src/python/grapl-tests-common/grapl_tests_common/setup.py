@@ -8,6 +8,7 @@ from typing import Any, NamedTuple, Sequence
 import boto3  # type: ignore
 import pytest
 import requests
+from grapl_tests_common.dump_dynamodb import dump_dynamodb
 from grapl_tests_common.sleep import verbose_sleep
 from grapl_tests_common.types import (
     AnalyzerUpload,
@@ -19,6 +20,9 @@ from grapl_tests_common.wait import WaitForS3Bucket, WaitForSqsQueue, wait_for
 
 BUCKET_PREFIX = environ["BUCKET_PREFIX"]
 assert BUCKET_PREFIX == "local-grapl"
+
+# Toggle if you want to dump databases, logs, etc.
+DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
 
 logging.basicConfig(stream=stdout, level=logging.INFO)
 
@@ -95,11 +99,15 @@ def _after_tests() -> None:
     """
     Add any "after tests are executed, but before docker-compose down" stuff here.
     """
+
     # Issue a command to dgraph to export the whole database.
-    # This is then stored on a volume, `compose_artifacts`.
-    # The contents of the volume are made available to Github Actions via `dump_compose_artifacts.py`.
-    export_request = requests.get("http://grapl-master-graph-db:8080/admin/export")
-    assert export_request.json()["code"] == "Success"
+    # This is then stored on a volume, `dgraph_export` (defined in docker-compose.yml)
+    # The contents of the volume are made available to Github Actions via `dump_artifacts.py`.
+    if DUMP_ARTIFACTS:
+        logging.info("Executing post-test database dumps")
+        export_request = requests.get("http://grapl-master-graph-db:8080/admin/export")
+        assert export_request.json()["code"] == "Success"
+        dump_dynamodb()
 
 
 def exec_pytest() -> None:

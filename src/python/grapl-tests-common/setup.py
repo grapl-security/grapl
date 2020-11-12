@@ -47,8 +47,6 @@ setup(
     # We'll probably have some dataclasses in here in the future
     python_requires=">=3.6",
     extras_require={
-        "typecheck": [
-            "mypy",
-        ],
+        "typecheck": ["mypy", "boto3-stubs[dynamodb]"],
     },
 )

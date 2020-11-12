@@ -36,7 +36,7 @@ with the data in Grapl.
     :maxdepth: 1
     :glob:
 
-    debugging/*
+    development/*
 
 Queries and Views
 -----------------

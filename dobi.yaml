@@ -11,6 +11,14 @@ mount=dist:
   path: /home/grapl/dist
   file: false
 
+# a volume, not a bind-mount
+# dump-compose-artifacts will take care of extracting things from it
+mount=dynamodb_dump:
+  name: dynamodb_dump
+  path: /mnt/dynamodb_dump
+  read-only: false
+  file: false
+
 #
 # images
 #
@@ -512,7 +520,7 @@ job=typecheck-grapl-tests-common:
       mypy .
       "
 
-job=typecheck-e2e-integration-tests:
+job=typecheck-e2e-tests:
   use: grapl-e2e-tests-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   command: |
@@ -628,7 +636,7 @@ job=run-analyzer-executor-integration-tests:
   depends:
     - integration-env
 
-job=run-e2e-integration-tests:
+job=run-e2e-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-network
   command: | 
@@ -644,11 +652,16 @@ job=run-e2e-integration-tests:
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
     - DEBUG_SERVICES={env.DEBUG_SERVICES:}
+    - DUMP_ARTIFACTS={env.DUMP_ARTIFACTS:-False}
   depends:
     - integration-env
+  mounts:
+    - dynamodb_dump
   ports:
     # Used for debugger
     - 8400:8400
+  annotations:
+    description: "Run end-to-end tests"
 
 job=build-analyzer-executor:
   use: analyzer-executor-build
@@ -897,7 +910,7 @@ alias=python-typecheck:
     - typecheck-grapl-common
     - typecheck-grapl-tests-common
     - typecheck-analyzer-deployer
-    - typecheck-e2e-integration-tests
+    - typecheck-e2e-tests
     - typecheck-engagement-creator
     - typecheck-model-plugin-deployer
     - typecheck-analyzer-executor

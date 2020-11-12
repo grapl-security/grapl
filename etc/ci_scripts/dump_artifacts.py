@@ -1,14 +1,17 @@
-from typing import Any, List
-from pathlib import Path
+import logging
 import os
 import subprocess
 import sys
+from pathlib import Path
+from typing import Any, List, Optional
 
 # need minimum 3.7 for capture_output=True
 assert sys.version_info >= (
     3,
     7,
 ), f"Expected version info to be gt, but was {sys.version_info}"
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
 def _name_of_all_containers(compose_project: str) -> List[str]:
@@ -54,7 +57,7 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
         popen.wait()
 
 
-ARTIFACTS_PATH = Path("/tmp/compose_artifacts").resolve()
+ARTIFACTS_PATH = Path("/tmp/dumped_artifacts").resolve()
 
 
 def dump_all_logs(compose_project: str) -> None:
@@ -64,9 +67,11 @@ def dump_all_logs(compose_project: str) -> None:
         _dump_docker_log(container_name=container, dir=ARTIFACTS_PATH)
 
 
-def dump_volume(compose_project: str, volume_name: str) -> None:
+def dump_volume(compose_project: Optional[str], volume_name: str) -> None:
     # Make a temporary container with the volume mounted
-    cmd = f"docker run -d --volume {compose_project}_{volume_name}:/{volume_name} alpine true"
+    # dobi adds a prefix on everything in the docker-compose.
+    prefix = f"{compose_project}_" if compose_project else ""
+    cmd = f"docker run -d --volume {prefix}{volume_name}:/{volume_name} alpine true"
     container_id = (
         subprocess.run(cmd.split(" "), capture_output=True)
         .stdout.decode("utf-8")
@@ -97,3 +102,6 @@ if __name__ == "__main__":
     args = parse_args()
     dump_all_logs(compose_project=args.compose_project)
     dump_volume(compose_project=args.compose_project, volume_name="dgraph_export")
+    # dynamodb dump is done in the e2e binary, which is outside compose - hence, no compose project.
+    dump_volume(compose_project=None, volume_name="dynamodb_dump")
+    logging.info(f"Dumped to {ARTIFACTS_PATH}")
