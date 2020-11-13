@@ -8,7 +8,6 @@ SAMPLE_ADDR = "localhost"
 SAMPLE_PORT = "12345"
 
 
-
 @pytest.fixture
 def AnalyzerExecutorSingleton(monkeypatch):
     def _AnalyzerExecutorSingleton(stub_env=False, env_addr=None, env_port=None):
