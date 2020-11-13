@@ -5,5 +5,4 @@ redis
 grpcio
 protobuf
 typing_extensions
-
-faker
+hypothesis

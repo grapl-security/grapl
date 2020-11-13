@@ -1,22 +1,12 @@
 import unittest
 import pytest
-from faker import Faker
 
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
 
 SAMPLE_ADDR = "localhost"
 SAMPLE_PORT = "12345"
 
-
-@pytest.fixture
-def random_word():
-    fake = Faker()
-
-    def _random_word():
-        return "-".join(fake.words(nb=4))
-
-    return _random_word
-
+from hypothesis import strategies as st
 
 @pytest.fixture
 def AnalyzerExecutorSingleton(monkeypatch):
@@ -46,14 +36,15 @@ def AnalyzerExecutorSingleton(monkeypatch):
 
 
 @pytest.mark.integration_test
-def test_hit_cache_noop(AnalyzerExecutorSingleton, random_word) -> None:
+def test_hit_cache_noop(AnalyzerExecutorSingleton) -> None:
     """
     Initializes the AnalyzerExecutor singleton without valid environment
     variables for a Redis cache connection, expecting hit cache hits to miss.
     """
     ae = AnalyzerExecutorSingleton(stub_env=True, env_addr=None, env_port=None)
 
-    k1, k2 = random_word(), random_word()
+    k1, k2 = st.text(min_size=3), st.text(min_size=3)
+    
 
     assert not ae.check_hit_cache(k1, k2)
     ae.update_hit_cache(k1, k2)
@@ -73,14 +64,14 @@ def test_partial_connection_info(AnalyzerExecutorSingleton) -> None:
 
 
 @pytest.mark.integration_test
-def test_hit_cache_redis(AnalyzerExecutorSingleton, random_word) -> None:
+def test_hit_cache_redis(AnalyzerExecutorSingleton) -> None:
     """
     Initializes the AnalyzerExecutor singleton with Redis connection params
     sourced from the environment, expecting hit cache to populate.
     """
     ae = AnalyzerExecutorSingleton(stub_env=False)
 
-    k1, k2 = random_word(), random_word()
+    k1, k2 = st.text(min_size=3), st.text(min_size=3)
 
     assert not ae.check_hit_cache(k1, k2)
     ae.update_hit_cache(k1, k2)
@@ -88,14 +79,14 @@ def test_hit_cache_redis(AnalyzerExecutorSingleton, random_word) -> None:
 
 
 @pytest.mark.integration_test
-def test_message_cache_noop(AnalyzerExecutorSingleton, random_word) -> None:
+def test_message_cache_noop(AnalyzerExecutorSingleton) -> None:
     """
     Initializes the AnalyzerExecutor singleton without valid environment
     variables for a Redis cache connection, expecting hit cache hits to miss.
     """
     ae = AnalyzerExecutorSingleton(stub_env=True, env_addr="", env_port="")
 
-    k1, k2, k3 = random_word(), random_word(), random_word()
+    k1, k2, k3 = st.text(min_size=3), st.text(min_size=3), st.text(min_size=3)
 
     assert not ae.check_msg_cache(k1, k2, k3)
     ae.update_msg_cache(k1, k2, k3)
@@ -103,14 +94,14 @@ def test_message_cache_noop(AnalyzerExecutorSingleton, random_word) -> None:
 
 
 @pytest.mark.integration_test
-def test_message_cache_redis(AnalyzerExecutorSingleton, random_word) -> None:
+def test_message_cache_redis(AnalyzerExecutorSingleton) -> None:
     """
     Initializes the AnalyzerExecutor singleton with Redis connection params
     sourced from the environment, expecting message cache to populate.
     """
     ae = AnalyzerExecutorSingleton(stub_env=False)
 
-    k1, k2, k3 = random_word(), random_word(), random_word()
+    k1, k2, k3 = st.text(min_size=3), st.text(min_size=3), st.text(min_size=3)
 
     assert not ae.check_msg_cache(k1, k2, k3)
     ae.update_msg_cache(k1, k2, k3)
