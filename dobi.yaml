@@ -626,9 +626,9 @@ job=run-analyzer-executor-integration-tests:
       py.test -n auto -m 'integration_test'
       "
   env:
-    - HITCACHE_ADDR=big-dumb-redis
+    - HITCACHE_ADDR=dev-shared-redis
     - HITCACHE_PORT=6379
-    - MESSAGECACHE_ADDR=big-dumb-redis
+    - MESSAGECACHE_ADDR=dev-shared-redis
     - MESSAGECACHE_PORT=6379
     - GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - IS_LOCAL=True

@@ -31,7 +31,7 @@ services:
         target: /dgraph/export
 
   # dev uses 1 big redis instance, prod has 1:1 redis per grapl service
-  big-dumb-redis:  # silly name bc temporary
+  dev-shared-redis:  # maybe transitory, this will eventually match prod
     image: redis:latest
     command: |
       sh -c "
@@ -265,9 +265,9 @@ services:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
-      - "HITCACHE_ADDR=big-dumb-redis"
+      - "HITCACHE_ADDR=dev-shared-redis"
       - "HITCACHE_PORT=6379"
-      - "MESSAGECACHE_ADDR=big-dumb-redis"
+      - "MESSAGECACHE_ADDR=dev-shared-redis"
       - "MESSAGECACHE_PORT=6379"
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
