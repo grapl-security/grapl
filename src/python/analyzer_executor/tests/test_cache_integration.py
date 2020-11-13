@@ -1,6 +1,6 @@
-import pytest
 import unittest
 
+import pytest
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
 from hypothesis import strategies as st
 
