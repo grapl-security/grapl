@@ -1,12 +1,12 @@
-import unittest
 import pytest
+import unittest
 
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
+from hypothesis import strategies as st
 
 SAMPLE_ADDR = "localhost"
 SAMPLE_PORT = "12345"
 
-from hypothesis import strategies as st
 
 
 @pytest.fixture
