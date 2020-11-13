@@ -88,14 +88,14 @@ class AnalyzerExecutor:
             # Set up message cache
             messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
             messagecache_port = os.getenv("MESSAGECACHE_PORT")
-            LOGGER.debug(f"{messagecache_addr}:{messagecache_port}")
-            try:
-                messagecache_port = int(messagecache_port)
-            except (TypeError, ValueError):
-                LOGGER.error(
-                    f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
-                )
-                messagecache_port = None
+            if messagecache_port:
+                try:
+                    messagecache_port = int(messagecache_port)
+                except (TypeError, ValueError) as ex:
+                    LOGGER.error(
+                        f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
+                    )
+                    raise ex
 
             if messagecache_addr and messagecache_port:
                 LOGGER.debug(
@@ -106,25 +106,24 @@ class AnalyzerExecutor:
                 )
             else:
                 if bool(messagecache_addr) ^ bool(messagecache_port):
-                    LOGGER.error(
-                        f"message cache falling back to no-op cache (incomplete connection details)"
-                    )
-                else:
-                    LOGGER.debug(
-                        f"message cache falling back to no-op cache (missing connection details)"
-                    )
-                message_cache: EitherCache = NopCache()
+                    raise ValueError(f"incomplete redis connection details for message cache")
+
+                LOGGER.warning(
+                    f"message cache falling back to no-op cache (missing connection details)"
+                )
+                message_cache = NopCache()
 
             # Set up hit cache
             hitcache_addr = os.getenv("HITCACHE_ADDR")
             hitcache_port = os.getenv("HITCACHE_PORT")
-            try:
-                hitcache_port = int(hitcache_port)
-            except (TypeError, ValueError):
-                LOGGER.error(
-                    f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
-                )
-                hitcache_port = None
+            if hitcache_port:
+                try:
+                    hitcache_port = int(hitcache_port)
+                except (TypeError, ValueError) as ex:
+                    LOGGER.error(
+                        f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
+                    )
+                    raise ex
 
             if hitcache_addr and hitcache_port:
                 LOGGER.debug(
@@ -135,15 +134,14 @@ class AnalyzerExecutor:
                 )
             else:
                 if bool(hitcache_addr) ^ bool(hitcache_port):
-                    LOGGER.error(
-                        f"hit cache falling back to no-op cache (incomplete connection details)"
-                    )
-                else:
-                    LOGGER.debug(
-                        f"hit cache falling back to no-op cache, HITCACHE_ADDR and HITCACHE_PORT are missing"
-                    )
-                hit_cache: EitherCache = NopCache()
+                    raise ValueError(f"incomplete redis connection details for hit cache")
 
+                LOGGER.warning(
+                    f"hit cache falling back to no-op cache, HITCACHE_ADDR and HITCACHE_PORT are missing"
+                )
+                hit_cache = NopCache()
+
+            # retain singleton
             cls._singleton = cls(message_cache, hit_cache, chunk_size, is_local, LOGGER)
 
         return cls._singleton
