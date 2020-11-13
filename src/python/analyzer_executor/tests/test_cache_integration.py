@@ -8,6 +8,7 @@ SAMPLE_PORT = "12345"
 
 from hypothesis import strategies as st
 
+
 @pytest.fixture
 def AnalyzerExecutorSingleton(monkeypatch):
     def _AnalyzerExecutorSingleton(stub_env=False, env_addr=None, env_port=None):
@@ -15,17 +16,17 @@ def AnalyzerExecutorSingleton(monkeypatch):
             if stub_env:
                 if env_addr:
                     mp.setenv("MESSAGECACHE_ADDR", env_addr)
-                    mp.setenv("HITCACHE_ADDR",     env_addr)
+                    mp.setenv("HITCACHE_ADDR", env_addr)
                 else:
                     mp.delenv("MESSAGECACHE_ADDR", raising=False)
-                    mp.delenv("HITCACHE_ADDR",     raising=False)
+                    mp.delenv("HITCACHE_ADDR", raising=False)
 
                 if env_port:
                     mp.setenv("MESSAGECACHE_PORT", env_port)
-                    mp.setenv("HITCACHE_PORT",     env_port)
+                    mp.setenv("HITCACHE_PORT", env_port)
                 else:
                     mp.delenv("MESSAGECACHE_PORT", raising=False)
-                    mp.delenv("HITCACHE_PORT",     raising=False)
+                    mp.delenv("HITCACHE_PORT", raising=False)
 
             # force singleton to reinitialize,
             # this should be idempotent?
@@ -36,35 +37,27 @@ def AnalyzerExecutorSingleton(monkeypatch):
 
 
 @pytest.mark.integration_test
-def test_hit_cache_noop(AnalyzerExecutorSingleton) -> None:
-    """
-    Initializes the AnalyzerExecutor singleton without valid environment
-    variables for a Redis cache connection, expecting hit cache hits to miss.
-    """
-    ae = AnalyzerExecutorSingleton(stub_env=True, env_addr=None, env_port=None)
-
-    k1, k2 = st.text(min_size=3), st.text(min_size=3)
-    
-
-    assert not ae.check_hit_cache(k1, k2)
-    ae.update_hit_cache(k1, k2)
-    assert not ae.check_hit_cache(k1, k2)
-
-@pytest.mark.integration_test
-def test_partial_connection_info(AnalyzerExecutorSingleton) -> None:
+def test_connection_info(AnalyzerExecutorSingleton) -> None:
     """
     Ensures exceptions are raised for incomplete connection info.
     """
 
     with pytest.raises(ValueError):
-        ae = AnalyzerExecutorSingleton(stub_env=True, env_addr=SAMPLE_ADDR, env_port="")
+        ae = AnalyzerExecutorSingleton(
+            stub_env=True, env_addr=SAMPLE_ADDR, env_port=None
+        )
 
     with pytest.raises(ValueError):
-        ae = AnalyzerExecutorSingleton(stub_env=True, env_addr="", env_port=SAMPLE_PORT)
+        ae = AnalyzerExecutorSingleton(
+            stub_env=True, env_addr=None, env_port=SAMPLE_PORT
+        )
+
+    with pytest.raises(ValueError):
+        ae = AnalyzerExecutorSingleton(stub_env=True, env_addr=None, env_port=None)
 
 
 @pytest.mark.integration_test
-def test_hit_cache_redis(AnalyzerExecutorSingleton) -> None:
+def test_hit_cache(AnalyzerExecutorSingleton) -> None:
     """
     Initializes the AnalyzerExecutor singleton with Redis connection params
     sourced from the environment, expecting hit cache to populate.
@@ -79,22 +72,7 @@ def test_hit_cache_redis(AnalyzerExecutorSingleton) -> None:
 
 
 @pytest.mark.integration_test
-def test_message_cache_noop(AnalyzerExecutorSingleton) -> None:
-    """
-    Initializes the AnalyzerExecutor singleton without valid environment
-    variables for a Redis cache connection, expecting hit cache hits to miss.
-    """
-    ae = AnalyzerExecutorSingleton(stub_env=True, env_addr="", env_port="")
-
-    k1, k2, k3 = st.text(min_size=3), st.text(min_size=3), st.text(min_size=3)
-
-    assert not ae.check_msg_cache(k1, k2, k3)
-    ae.update_msg_cache(k1, k2, k3)
-    assert not ae.check_msg_cache(k1, k2, k3)
-
-
-@pytest.mark.integration_test
-def test_message_cache_redis(AnalyzerExecutorSingleton) -> None:
+def test_message_cache(AnalyzerExecutorSingleton) -> None:
     """
     Initializes the AnalyzerExecutor singleton with Redis connection params
     sourced from the environment, expecting message cache to populate.

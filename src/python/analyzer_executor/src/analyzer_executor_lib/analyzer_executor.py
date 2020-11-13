@@ -105,13 +105,12 @@ class AnalyzerExecutor:
                     host=messagecache_addr, port=messagecache_port, db=0
                 )
             else:
-                if bool(messagecache_addr) ^ bool(messagecache_port):
-                    raise ValueError(f"incomplete redis connection details for message cache")
-
-                LOGGER.warning(
-                    f"message cache falling back to no-op cache (missing connection details)"
+                LOGGER.error(
+                    f"message cache failed connecting to redis | addr:\t{messagecache_addr} | port:\t{messagecache_port}"
                 )
-                message_cache = NopCache()
+                raise ValueError(
+                    f"incomplete redis connection details for message cache"
+                )
 
             # Set up hit cache
             hitcache_addr = os.getenv("HITCACHE_ADDR")
@@ -133,13 +132,10 @@ class AnalyzerExecutor:
                     host=hitcache_addr, port=int(hitcache_port), db=0
                 )
             else:
-                if bool(hitcache_addr) ^ bool(hitcache_port):
-                    raise ValueError(f"incomplete redis connection details for hit cache")
-
-                LOGGER.warning(
-                    f"hit cache falling back to no-op cache, HITCACHE_ADDR and HITCACHE_PORT are missing"
+                LOGGER.error(
+                    f"hit cache failed connecting to redis | addr:\t{hitcache_addr} | port:\t{hitcache_port}"
                 )
-                hit_cache = NopCache()
+                raise ValueError(f"incomplete redis connection details for hit cache")
 
             # retain singleton
             cls._singleton = cls(message_cache, hit_cache, chunk_size, is_local, LOGGER)
