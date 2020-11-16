@@ -135,9 +135,21 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 
 # spin up ec2 resources with docker-machine
 # see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-# ami-0010d386b82bc06f0 -> Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
+# Grapl has been tested to run on AMIs described as "Ubuntu Server 18.04 LTS (HVM), SSD Volume Type" amd64.
+# The command below will search for the latest version of that AMI:
+# aws ec2 describe-images --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64*" --query 'Images[*].[ImageId,CreationDate]' --output text  | sort -k2 -r | head -n1 | cut -f1
+#
+# To perform your own search for which AMI to use, we recommend using the EC2
+# launch wizard from the EC2 Console. For more information see on this and
+# alernative methods of findings AMI:
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html#finding-an-ami-console
+# EC2_AMI=ami-08b277333b9511393 # us-east-1
+# EC2_AMI=ami-0b9e40918b9df07e4 # us-east-2
+# EC2_AMI=ami-07c65a94ab66b122e # us-west-1
+# EC2_AMI=ami-08f6a7b1c02ad4ece # us-west-2
+# For now, just use latest for current region:
+EC2_AMI=$(aws ec2 describe-images --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64*" --query 'Images[*].[ImageId,CreationDate]' --output text  | sort -k2 -r | head -n1 | cut -f1)
 EC2_INSTANCE_TYPE=i3.xlarge
-EC2_AMI=ami-0010d386b82bc06f0
 alias dm-create='
   /usr/local/bin/docker-machine create \
   --driver "amazonec2" \
