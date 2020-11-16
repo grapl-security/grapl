@@ -62,22 +62,22 @@ class EngagementCreatorMetrics:
 
     def time_to_process_event(self) -> ContextManager:
         return self.metric_reporter.histogram_ctx(metric_name="time_to_process_event")
-    
+
     def risk_node(self, analyzer_name, node_key) -> None:
         """
-        We're using the metrics scheme here as a sort of deduplication mechanism. 
+        We're using the metrics scheme here as a sort of deduplication mechanism.
         Basically, if `suspicious_svc_host` fires 3x for 1 node - we only need 1 alert fired.
         If a new node is registered as risky - that should be a new alert.
         """
         self.metric_reporter.counter(
-            metric_name=f"risk_node", 
-            value=1, 
+            metric_name=f"risk_node",
+            value=1,
             tags=[
                 TagPair("analyzer_name", analyzer_name),
-                # note - the cardinality on this will likely be awful, and we should consider 
+                # note - the cardinality on this will likely be awful, and we should consider
                 # doing it as a `.set_property` (not indexed) instead of a `.set_dimension` (indexed).
                 TagPair("node_key", node_key),
-            ]
+            ],
         )
 
 
@@ -311,7 +311,8 @@ def _process_one_event(
     for node in risky_nodes:
         create_edge(mg_client, node.uid, "risks", risk.uid)
         create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
-        metrics.
+        # Or perhaps we should just emit per-risk instead of per-risky-node
+        metrics.risk_node(analyzer_name=analyzer_name, node_key=node.uid)
 
     for edge_list in edges.values():
         for edge in edge_list:
