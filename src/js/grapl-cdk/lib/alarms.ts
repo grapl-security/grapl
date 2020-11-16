@@ -4,12 +4,35 @@ import * as subs from '@aws-cdk/aws-sns-subscriptions';
 import * as cloudwatch from '@aws-cdk/aws-cloudwatch';
 import * as cloudwatch_actions from '@aws-cdk/aws-cloudwatch-actions';
 
+/**
+ * Our alarms setup will likely change heavily, and we may even move off of Cloudwatch in the near future.
+ * 
+ * WARNING to anybody adding alarms: Cloudwatch Alarms doesn't allow alarms based on SEARCH(), meaning,
+ * you must define *concrete metrics* to alarm on. 
+ * 
+ * As an example:
+ * If you had a metric:
+ * "I spotted a dog", dimensions: {"breed": "shar-pei", age: "puppy"}
+ * "I spotted a dog", dimensions: {"breed": "beagle", age: "adult"}
+ * 
+ * You would NOT BE ABLE to create an alarm based on a generic "new dog spotted". 
+ * Instead, you'd have to create an alarm that manually specifies every single combination of dimensions; 
+ * in this case an alarm of, manually specified,
+ *  {i saw a sharpei puppy + i saw a sharpei adult + i saw a beagle puppy + i saw a beagle adult + ...}
+ * (and also, this maxes out at 10 metrics)
+ * 
+ * As such: I think should probably just emit a metric - just for alarms - that has no dimensions; as well as a separate
+ * metric that perhaps provides that extra context.
+ */
+
 class AlarmSink {
     readonly topic: sns.Topic;
+    readonly cloudwatch_action: cloudwatch_actions.SnsAction;
 
     constructor(scope: cdk.Construct, id: string, emailAddress: string) {
         this.topic = new sns.Topic(scope, id);
         this.topic.addSubscription(new subs.EmailSubscription(emailAddress));
+        this.cloudwatch_action = new cloudwatch_actions.SnsAction(this.topic)
     }
 }
 
@@ -21,32 +44,46 @@ class RiskNodeAlarm {
         const metric = new cloudwatch.Metric({
             namespace: 'engagement-creator',
             metricName: 'risk_node',
+            dimensions: {},
         });
         const alarm = metric.createAlarm(
             scope,
             "risk_node_alarm",
             {
                 alarmName: "risk_node_alarm",
-                // if it happens once in a given hour, send an alert.
+                // TODO: Add some verbiage to the alarm description on how to actually look at what's causing the alert.
+                alarmDescription: undefined,
                 threshold: 1,
-                // Default period is 5 minutes
-                evaluationPeriods: 15,
+                evaluationPeriods: 1,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
             }
         );
-        alarm.addAlarmAction(
-            new cloudwatch_actions.SnsAction(alarm_sink.topic)
-        );
+        alarm.addAlarmAction(alarm_sink.cloudwatch_action);
     }
 }
 
+/*
+https://github.com/grapl-security/grapl/issues/423
+we can't email these yet
+
+const OPS_ALARMS_EMAIL = "operation-alarms@graplsecurity.com";
+const SEC_ALARMS_EMAIL = "security-alarms@graplsecurity.com";
+
+I'll be making these better/more configurable in an immediate followup PR.
+inickles says he's working on adding some sort of `.env` file support, which would be perfect
+for these.
+*/
+const OPS_ALARMS_EMAIL = "wimax+alarms@graplsecurity.com";
+const SEC_ALARMS_EMAIL = "wimax+alarms@graplsecurity.com";
+
 export class OperationalAlarms {
     // Alarms meant for the operator of the Grapl stack.
-    // That is to say: Grapl Inc (in the Grapl Cloud case), and VeryCool Corp (in the on-prem case).
+    // That is to say: Grapl Inc (in the Grapl Cloud case), or VeryCool Corp (in the on-prem case).
     constructor(
         scope: cdk.Construct,
     ) {
         // We probably want this email to be configurable, and sent to our operators - not necessarily
-        const alarm_sink = new AlarmSink(scope, "operational_alarm_sink", "operational-alarms@graplsecurity.com");
+        const alarm_sink = new AlarmSink(scope, "operational_alarm_sink", OPS_ALARMS_EMAIL);
     }
 }
 
@@ -57,7 +94,7 @@ export class SecurityAlarms {
         scope: cdk.Construct,
     ) {
         // We probably want this email to be configurable, and sent to our customers - not us.
-        const alarm_sink = new AlarmSink(scope, "security_alarm_sink", "security-alarms@graplsecurity.com");
+        const alarm_sink = new AlarmSink(scope, "security_alarm_sink", SEC_ALARMS_EMAIL);
         const risk_node_alarm = new RiskNodeAlarm(scope, alarm_sink);
     }
 }
