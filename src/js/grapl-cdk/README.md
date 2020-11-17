@@ -26,45 +26,67 @@ credentials.
 Execute a local Grapl build by running the following in Grapl's root:
 
 ```bash
-TAG=$YOUR_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
+TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
 ```
 
 Then extract the deployment artifacts from the build containers with
 the following script:
 
 ```bash
-VERSION=$YOUR_VERSION ./extract-grapl-deployment-artifacts.sh
+VERSION=$GRAPL_VERSION ./extract-grapl-deployment-artifacts.sh
 ```
 
-`YOUR_VERSION` can be any name you want. Just make note of it, we'll
+`GRAPL_VERSION` can be any name you want. Just make note of it, we'll
 use it in the next step.
 
 Your build outputs should appear in the `zips/` directory.
 
 ### Configuration
 
-Set your deployment name and version in `bin/grapl-cdk.ts`:
+There are three CDK deployment parameters:
+
+1. `deployName` (required)
+
+    Name for the deployment to AWS. We recommend prefixing the deployment name
+    with "Grapl-" to help identify Grapl resources in your AWS account, however
+    this isn't necessary.
+
+    Note: This name must be globally (AWS) unique, as names for AWS S3 buckets
+    will be dervied from this.
+
+    env: `GRAPL_CDK_DEPLOYMENT_NAME`
+
+2. `graplVersion'
+
+    The version of Grapl to deploy. This string will be used to look for the
+    appropirate filenames in the `zips/` directory.
+
+    Defaults to `latest`.
+
+    env: `GRAPL_VERSION`
+
+3. `watchfulEmail` (optional)
+
+    Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for
+    monitoring Grapl with email alerts.
+
+    env: `GRAPL_CDK_WATCHFUL_EMAIL`
+
+Each of these can be in `bin/grapl-cdk.ts`:
 
 ```
-export const deployName = 'Grapl-MYDEPLOYMENT';
-export const graplVersion = 'YOUR_VERSION';
+const deployName = undefined;
+const graplVersion = undefined;
+const watchfulEmail = undefined; 
 ```
 
-Some tips for choosing a deployment name:
+Alternatively, these can be set via the environment variables mentioned for each above. The environment variables take precedence over the values in 
+`bin/grapl-cdk.ts`.
 
--   Keep "Grapl" as prefix. This isn't necessary, but will help
-    identify Grapl resources in your AWS account.
--   Choose a globally unique name, as this will be used to name S3
-    buckets, which have this requirement. Using a name that includes
-    your AWS account number and deployment region should work.
-
-To enable [Watchful](https://github.com/eladb/cdk-watchful) for
-monitoring Grapl with email alerts, specify the email address to
-receive alerts:
-
-```
-export const watchfulEmail = 'YOUR@EMAIL';
-```
+When deploying to production we recommend *not* using environment variables for
+setting parameters, but rather set them in `bin/grapl-cdk.ts` and save the
+changes in a git branch. This should mhelp future maintenance of the
+deployment.
 
 ## Deploying
 

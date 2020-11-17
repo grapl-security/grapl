@@ -6,9 +6,9 @@ import { GraplCdkStack } from '../lib/grapl-cdk-stack';
 import { EngagementUx } from '../lib/engagement';
 
 // Deployment parameters
-const deployName = undefined; // ex: 'Grapl-my-deployment'
-const graplVersion = undefined;
-const watchfulEmail = undefined;
+const deployName = undefined; // ex: 'Grapl-my-deployment' - GRAPL_CDK_DEPLOYMENT_NAME
+const graplVersion = undefined; // defaults to 'latest' - GRAPL_VERSION
+const watchfulEmail = undefined; // (optional) ex: ops@example.com - GRAPL_CDK_WATCHFUL_EMAIL
 
 const stackName = process.env.GRAPL_CDK_DEPLOYMENT_NAME || deployName;
 if (!stackName) {
@@ -18,7 +18,7 @@ if (!stackName) {
 const app = new cdk.App();
 
 const grapl = new GraplCdkStack(app, 'Grapl', {
-    version:process.env.GRAPL_CDK_VERSION ||  graplVersion || 'latest',
+    version:process.env.GRAPL_VERSION ||  graplVersion || 'latest',
     stackName: stackName,
     watchfulEmail: process.env.GRAPL_CDK_WATCHFUL_EMAIL || watchfulEmail,
     tags: { 'grapl deployment': stackName},
