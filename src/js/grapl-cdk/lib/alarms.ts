@@ -25,22 +25,24 @@ import * as cloudwatch_actions from '@aws-cdk/aws-cloudwatch-actions';
  * metric that perhaps provides that extra context.
  */
 
-class AlarmSink {
+class AlarmSink extends cdk.Construct {
     readonly topic: sns.Topic;
     readonly cloudwatch_action: cloudwatch_actions.SnsAction;
 
-    constructor(scope: cdk.Construct, id: string, emailAddress: string) {
-        this.topic = new sns.Topic(scope, id);
+    constructor(scope: cdk.Construct, emailAddress: string) {
+        super(scope, "alarm_sink");
+        this.topic = new sns.Topic(scope, "topic");
         this.topic.addSubscription(new subs.EmailSubscription(emailAddress));
         this.cloudwatch_action = new cloudwatch_actions.SnsAction(this.topic)
     }
 }
 
-class RiskNodeAlarm {
+class RiskNodeAlarm extends cdk.Construct {
     constructor(
         scope: cdk.Construct,
         alarm_sink: AlarmSink,
     ) {
+        super(scope, "risk_node_alarm");
         const metric = new cloudwatch.Metric({
             namespace: 'engagement-creator',
             metricName: 'risk_node',
@@ -62,25 +64,27 @@ class RiskNodeAlarm {
     }
 }
 
-export class OperationalAlarms {
+export class OperationalAlarms extends cdk.Construct {
     // Alarms meant for the operator of the Grapl stack.
     // That is to say: Grapl Inc (in the Grapl Cloud case), or VeryCool Corp (in the on-prem case).
     constructor(
         scope: cdk.Construct,
         email: string,
     ) {
-        const alarm_sink = new AlarmSink(scope, "operational_alarm_sink", email);
+        super(scope, "operational_alarms");
+        const alarm_sink = new AlarmSink(this, email);
     }
 }
 
 
-export class SecurityAlarms {
+export class SecurityAlarms extends cdk.Construct {
     // Alarms meant for the consumer of the Grapl stack.
     constructor(
         scope: cdk.Construct,
         email: string,
     ) {
-        const alarm_sink = new AlarmSink(scope, "security_alarm_sink", email);
-        const risk_node_alarm = new RiskNodeAlarm(scope, alarm_sink);
+        super(scope, "security_alarms");
+        const alarm_sink = new AlarmSink(this, email);
+        const risk_node_alarm = new RiskNodeAlarm(this, alarm_sink);
     }
 }
