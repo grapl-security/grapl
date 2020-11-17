@@ -30,6 +30,6 @@ new EngagementUx(app, 'EngagementUX', {
     engagement_edge: grapl.engagement_edge,
     graphql_endpoint: grapl.graphql_endpoint,
     model_plugin_deployer: grapl.model_plugin_deployer,
-    stackName: deployName + '-EngagementUX',
+    stackName: stackName + '-EngagementUX',
     description: 'Grapl Engagement UX',
 });
