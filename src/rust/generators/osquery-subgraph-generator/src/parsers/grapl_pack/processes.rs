@@ -56,6 +56,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
             .hostname(process_event.host_identifier.clone())
             .state(ProcessState::Created)
             .created_timestamp(process_start_time)
+            .last_seen_timestamp(process_start_time)
             .process_name(process_event.columns.name.clone().unwrap_or("".to_string()))
             .process_id(process_event.columns.pid)
             .build()

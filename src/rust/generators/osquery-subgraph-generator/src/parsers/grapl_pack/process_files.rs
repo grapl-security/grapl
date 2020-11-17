@@ -45,6 +45,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
             .asset_id(process_file_event.host_identifier.clone())
             .hostname(process_file_event.host_identifier.clone())
             .state(ProcessState::Existing)
+            .last_seen_timestamp(process_file_event.unix_time)
             .process_id(process_file_event.columns.pid)
             .build()
             .map_err(failure::err_msg)?;
@@ -55,6 +56,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
             .file_path(process_file_event.columns.path.clone())
             .last_seen_timestamp(process_file_event.unix_time);
 
+        // TODO: maybe we should set deleted time and created time for the file here?
         let file = match process_file_event.action {
             OSQueryAction::ADDED => {
                 let file = file_builder

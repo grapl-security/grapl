@@ -4,6 +4,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{Error, Map, Value};
 use std::convert::TryFrom;
+use std::collections::HashMap;
 
 mod grapl_pack;
 
@@ -35,9 +36,11 @@ enum OSQueryAction {
 #[derive(Serialize, Deserialize, Clone)]
 pub(crate) struct PartiallyDeserializedOSQueryLog {
     pub(crate) name: String,
+    #[serde(rename = "unixTime")]
+    pub(crate) unix_time: u64,
     // holds other fields so we don't lose information by deserializing into PartialOSQueryResponse
     #[serde(flatten)]
-    other_fields: Map<String, Value>,
+    other_fields: HashMap<String, Value>,
 }
 
 impl TryFrom<PartiallyDeserializedOSQueryLog> for Graph {
@@ -76,10 +79,7 @@ impl TryFrom<PartiallyDeserializedOSQueryLog> for Graph {
             ("grapl", "processes") => response.to_graph_from_grapl_processes(),
             ("grapl", "files") => response.to_graph_from_grapl_files(),
             ("grapl", "process-files") => response.to_graph_from_grapl_process_file(),
-            unsupported_query => Err(failure::err_msg(format!(
-                "Unsupported query: {}_{}",
-                unsupported_query.0, unsupported_query.1
-            ))),
+            _ => Ok(Graph::new(response.unix_time)),
         }
     }
 }

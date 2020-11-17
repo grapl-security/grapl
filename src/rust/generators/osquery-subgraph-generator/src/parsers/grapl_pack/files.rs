@@ -62,6 +62,7 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for Graph {
             .file_path(file_event.columns.target_path.clone())
             .md5_hash(file_event.columns.md5.clone())
             .sha1_hash(file_event.columns.sha1.clone())
+            .last_seen_timestamp(file_event.columns.time)
             .sha256_hash(file_event.columns.sha256.clone());
 
         if let Ok(inode) = u64::from_str(&file_event.columns.inode) {
@@ -84,8 +85,7 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for Graph {
                 .state(FileState::Deleted)
                 .deleted_timestamp(file_event.columns.time),
             _ => subject_file_builder
-                .state(FileState::Existing)
-                .last_seen_timestamp(file_event.columns.time),
+                .state(FileState::Existing),
         };
 
         let subject_file = subject_file_builder.build().map_err(failure::err_msg)?;
