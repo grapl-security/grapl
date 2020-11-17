@@ -63,7 +63,7 @@ class EngagementCreatorMetrics:
     def time_to_process_event(self) -> ContextManager:
         return self.metric_reporter.histogram_ctx(metric_name="time_to_process_event")
 
-    def risk_node(self, analyzer_name) -> None:
+    def risk_node(self, analyzer_name: str) -> None:
         # A generic "hey, there's a new risky node" metric that we can globally alarm on.
         # Has no dimensions. (See the top of `alarms.ts` to learn why!)
         self.metric_reporter.counter(
@@ -312,7 +312,7 @@ def _process_one_event(
         create_edge(mg_client, node.uid, "risks", risk.uid)
         create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
 
-        # Or perhaps we should just emit per-risk instead of per-risky-node? 
+        # Or perhaps we should just emit per-risk instead of per-risky-node?
         # this path is here for now just to appease the soc2 gods; will improve usability later
         metrics.risk_node(analyzer_name=analyzer_name)
 
