@@ -72,20 +72,26 @@ There are three CDK deployment parameters:
 
     env: `GRAPL_CDK_WATCHFUL_EMAIL`
 
-Each of these can be in `bin/grapl-cdk.ts`:
+4. `operationalAlarmsEmail` (optional)
 
-```
-const deployName = undefined;
-const graplVersion = undefined;
-const watchfulEmail = undefined; 
-```
+    Setting this enables alarms meant for the operator of the Grapl stack.
+    
+    env: `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL`
+
+5. `securityAlarmsEmail` (optional)
+
+    Setting this enables alarms meant for the consumer of the Grapl stack, for example, "a new risk node has been found".
+
+    env: `GRAPL_CDK_SECURITY_ALARMS_EMAIL`
+
+Each of these can be found in `bin/deployment_parameters.ts`.
 
 Alternatively, these can be set via the environment variables mentioned for each above. The environment variables take precedence over the values in 
-`bin/grapl-cdk.ts`.
+`bin/deployment_parameters.ts`.
 
 When deploying to production we recommend *not* using environment variables for
-setting parameters, but rather set them in `bin/grapl-cdk.ts` and save the
-changes in a git branch. This should mhelp future maintenance of the
+setting parameters, but rather set them in `bin/deployment_parameters.ts` and save the
+changes in a git branch. This should help future maintenance of the
 deployment.
 
 ## Deploying

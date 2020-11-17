@@ -39,6 +39,8 @@ Run the notebook, and it will:
 ### Demo Data
 You can send some test data up to the service by going to the root of the grapl repo and calling:
 ```
+cd $GRAPL_ROOT
+
 # whatever deployment name you defined above
 export DEPLOYMENT_NAME="Grapl-MYDEPLOYMENT"
 
