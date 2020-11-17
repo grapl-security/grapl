@@ -11,6 +11,7 @@ test('Empty Stack', () => {
     // WHEN
     const stack = new GraplCdk.GraplCdkStack(app, 'MyTestStack', {
         stackName: 'Grapl-Test',
+        version: 'latest',
     });
     // THEN
     expectCDK(stack).to(

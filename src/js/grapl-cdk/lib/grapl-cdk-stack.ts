@@ -719,7 +719,7 @@ export interface GraplServiceProps {
 
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
-    version?: string;
+    version: string;
     watchfulEmail?: string;
 }
 
@@ -778,7 +778,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const graplProps: GraplServiceProps = {
             prefix: this.prefix,
-            version: props.version || 'latest',
+            version: props.version,
             jwtSecret: jwtSecret,
             vpc: grapl_vpc,
             dgraphSwarmCluster: dgraphSwarmCluster,
