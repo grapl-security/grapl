@@ -11,6 +11,14 @@ mount=dist:
   path: /home/grapl/dist
   file: false
 
+# a volume, not a bind-mount
+# dump-compose-artifacts will take care of extracting things from it
+mount=dynamodb_dump:
+  name: dynamodb_dump
+  path: /mnt/dynamodb_dump
+  read-only: false
+  file: false
+
 #
 # images
 #
@@ -334,6 +342,7 @@ image=grapl-provision:
   target: grapl-provision-build
   depends:
     - python-build
+    - grapl-analyzerlib-build
   tags:
     - "{env.TAG}"
 
@@ -459,7 +468,7 @@ job=run-rust-unit-tests:
 
 job=run-node-identifier-integration-tests:
   use: rust-build
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: |
     /bin/bash -c "
       wait-for-it grapl-provision:8126 --timeout=60 &&
@@ -494,7 +503,7 @@ job=run-grapl-common-unit-tests:
   command: /bin/bash -c "source venv/bin/activate && cd grapl_common/tests && ls && py.test -n auto -m 'not integration_test'"
 
 
-job=run-engagement-creator-typecheck:
+job=typecheck-engagement-creator:
   use: engagement-creator-build
   command: |
     /bin/bash -c "
@@ -504,7 +513,7 @@ job=run-engagement-creator-typecheck:
       mypy .
       "
 
-job=run-grapl-common-typecheck:
+job=typecheck-grapl-common:
   use: grapl-common-build
   command: |
     /bin/bash -c "
@@ -514,7 +523,7 @@ job=run-grapl-common-typecheck:
       mypy .
       "
 
-job=run-grapl-tests-common-typecheck:
+job=typecheck-grapl-tests-common:
   use: grapl-tests-common-build
   command: |
     /bin/bash -c "
@@ -524,7 +533,7 @@ job=run-grapl-tests-common-typecheck:
       mypy .
       "
 
-job=run-e2e-integration-tests-typecheck:
+job=typecheck-e2e-tests:
   use: grapl-e2e-tests-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   command: |
@@ -534,7 +543,7 @@ job=run-e2e-integration-tests-typecheck:
       mypy -p grapl_e2e_tests
       "
 
-job=run-analyzer-deployer-typecheck:
+job=typecheck-analyzer-deployer:
   use: analyzer-deployer-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
@@ -547,7 +556,7 @@ job=run-analyzer-deployer-typecheck:
       mypy .
       "
 
-job=run-model-plugin-deployer-typecheck:
+job=typecheck-model-plugin-deployer:
   use: model-plugin-deployer-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
@@ -559,6 +568,15 @@ job=run-model-plugin-deployer-typecheck:
       pip install mypy &&
       mypy .
       "
+job=typecheck-grapl-analyzerlib:
+  use: grapl-analyzerlib-build
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd grapl_analyzerlib &&
+      pip install '.[typecheck]' &&
+      pytype --config ./pytype.cfg .
+      "
 
 job=run-grapl-analyzerlib-unit-tests:
   use: grapl-analyzerlib-build
@@ -566,7 +584,7 @@ job=run-grapl-analyzerlib-unit-tests:
 
 job=run-grapl-analyzerlib-integration-tests:
   use: grapl-analyzerlib-build
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: |
     /bin/bash -c "
       wait-for-it grapl-provision:8126 --timeout=60 &&
@@ -595,7 +613,7 @@ job=run-analyzer-deployer-unit-tests:
 
 job=run-analyzer-deployer-integration-tests:
   use: analyzer-deployer-build
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: |
     /bin/bash -c "
       wait-for-it grapl-provision:8126 --timeout=60 &&
@@ -610,9 +628,9 @@ job=run-analyzer-deployer-integration-tests:
   depends:
     - integration-env
 
-job=run-e2e-integration-tests:
+job=run-e2e-tests:
   use: grapl-e2e-tests-build
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: | 
     /bin/bash -c "
       wait-for-it grapl-provision:8126 --timeout=60 &&
@@ -626,11 +644,16 @@ job=run-e2e-integration-tests:
     - "IS_LOCAL=True"
     - "MG_ALPHAS=grapl-master-graph-db:9080"
     - DEBUG_SERVICES={env.DEBUG_SERVICES:}
+    - DUMP_ARTIFACTS={env.DUMP_ARTIFACTS:-False}
   depends:
     - integration-env
+  mounts:
+    - dynamodb_dump
   ports:
     # Used for debugger
     - 8400:8400
+  annotations:
+    description: "Run end-to-end tests"
 
 job=build-analyzer-executor:
   use: analyzer-executor-build
@@ -867,12 +890,14 @@ alias=integration-tests:
 alias=python-typecheck:
   tasks:
     # TODO: Add more and more here!
-    - run-grapl-common-typecheck
-    - run-grapl-tests-common-typecheck
-    - run-analyzer-deployer-typecheck
-    - run-e2e-integration-tests-typecheck
-    - run-engagement-creator-typecheck
-    - run-model-plugin-deployer-typecheck
+    - typecheck-grapl-common
+    - typecheck-grapl-tests-common
+    - typecheck-analyzer-deployer
+    - typecheck-e2e-tests
+    - typecheck-engagement-creator
+    - typecheck-model-plugin-deployer
     - typecheck-analyzer-executor
+    # Broken, temporarily
+    # - typecheck-grapl-analyzerlib
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"

@@ -26,45 +26,67 @@ credentials.
 Execute a local Grapl build by running the following in Grapl's root:
 
 ```bash
-TAG=$YOUR_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
+TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
 ```
 
 Then extract the deployment artifacts from the build containers with
 the following script:
 
 ```bash
-VERSION=$YOUR_VERSION ./extract-grapl-deployment-artifacts.sh
+VERSION=$GRAPL_VERSION ./extract-grapl-deployment-artifacts.sh
 ```
 
-`YOUR_VERSION` can be any name you want. Just make note of it, we'll
+`GRAPL_VERSION` can be any name you want. Just make note of it, we'll
 use it in the next step.
 
 Your build outputs should appear in the `zips/` directory.
 
 ### Configuration
 
-Set your deployment name and version in `bin/grapl-cdk.ts`:
+There are three CDK deployment parameters:
+
+1. `deployName` (required)
+
+    Name for the deployment to AWS. We recommend prefixing the deployment name
+    with "Grapl-" to help identify Grapl resources in your AWS account, however
+    this isn't necessary.
+
+    Note: This name must be globally (AWS) unique, as names for AWS S3 buckets
+    will be dervied from this.
+
+    env: `GRAPL_CDK_DEPLOYMENT_NAME`
+
+2. `graplVersion'
+
+    The version of Grapl to deploy. This string will be used to look for the
+    appropirate filenames in the `zips/` directory.
+
+    Defaults to `latest`.
+
+    env: `GRAPL_VERSION`
+
+3. `watchfulEmail` (optional)
+
+    Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for
+    monitoring Grapl with email alerts.
+
+    env: `GRAPL_CDK_WATCHFUL_EMAIL`
+
+Each of these can be in `bin/grapl-cdk.ts`:
 
 ```
-export const deployName = 'Grapl-MYDEPLOYMENT';
-export const graplVersion = 'YOUR_VERSION';
+const deployName = undefined;
+const graplVersion = undefined;
+const watchfulEmail = undefined; 
 ```
 
-Some tips for choosing a deployment name:
+Alternatively, these can be set via the environment variables mentioned for each above. The environment variables take precedence over the values in 
+`bin/grapl-cdk.ts`.
 
--   Keep "Grapl" as prefix. This isn't necessary, but will help
-    identify Grapl resources in your AWS account.
--   Choose a globally unique name, as this will be used to name S3
-    buckets, which have this requirement. Using a name that includes
-    your AWS account number and deployment region should work.
-
-To enable [Watchful](https://github.com/eladb/cdk-watchful) for
-monitoring Grapl with email alerts, specify the email address to
-receive alerts:
-
-```
-export const watchfulEmail = 'YOUR@EMAIL';
-```
+When deploying to production we recommend *not* using environment variables for
+setting parameters, but rather set them in `bin/grapl-cdk.ts` and save the
+changes in a git branch. This should mhelp future maintenance of the
+deployment.
 
 ## Deploying
 
@@ -135,9 +157,21 @@ SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interface
 
 # spin up ec2 resources with docker-machine
 # see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-# ami-0010d386b82bc06f0 -> Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
+# Grapl has been tested to run on AMIs described as "Ubuntu Server 18.04 LTS (HVM), SSD Volume Type" amd64.
+# The command below will search for the latest version of that AMI:
+# aws ec2 describe-images --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64*" --query 'Images[*].[ImageId,CreationDate]' --output text  | sort -k2 -r | head -n1 | cut -f1
+#
+# To perform your own search for which AMI to use, we recommend using the EC2
+# launch wizard from the EC2 Console. For more information see on this and
+# alernative methods of findings AMI:
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html#finding-an-ami-console
+# EC2_AMI=ami-08b277333b9511393 # us-east-1
+# EC2_AMI=ami-0b9e40918b9df07e4 # us-east-2
+# EC2_AMI=ami-07c65a94ab66b122e # us-west-1
+# EC2_AMI=ami-08f6a7b1c02ad4ece # us-west-2
+# For now, just use latest for current region:
+EC2_AMI=$(aws ec2 describe-images --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64*" --query 'Images[*].[ImageId,CreationDate]' --output text  | sort -k2 -r | head -n1 | cut -f1)
 EC2_INSTANCE_TYPE=i3.xlarge
-EC2_AMI=ami-0010d386b82bc06f0
 alias dm-create='
   /usr/local/bin/docker-machine create \
   --driver "amazonec2" \

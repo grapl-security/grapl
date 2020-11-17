@@ -1,11 +1,13 @@
 """
+This is reasonably well-documented in `vscode_debugger.rst`.
+
 I arbitrarily chose `debugpy`, the VS Code debugger (formerly known as ptsvd).
 It'd be pretty easy to add the PyCharm/IntelliJ debugger too (which uses pydevd)
 """
-import subprocess
-import sys
 import logging
 import os
+import subprocess
+import sys
 
 
 def _install_from_pip(package: str) -> None:
@@ -61,31 +63,3 @@ def wait_for_vsc_debugger(service: str) -> None:
     debugpy.listen((host, port))
     debugpy.wait_for_client()
     logging.info(f">> Debugpy connected!")
-
-
-"""
-Add the following as a `launch.json` debug configuration in VSCode.
-You'll want a different configuration for each service you want to debug.
-As such, each configuration should likely have a different path-mapping and a different port.
-
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Debug grapl_e2e_tests",
-            "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "localhost",
-                "port": 8400
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}/src/python/grapl_e2e_tests",
-                    "remoteRoot": "/home/grapl/grapl_e2e_tests"
-                }
-            ]
-        }
-    ]
-}
-"""

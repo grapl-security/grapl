@@ -1,35 +1,36 @@
 import json
-import os
 import logging
+import os
 import sys
 import threading
 import time
-from hashlib import sha256, pbkdf2_hmac
+from hashlib import pbkdf2_hmac, sha256
 from typing import List
 from uuid import uuid4
 
 import boto3
 import botocore
 import pydgraph
-from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
+
+from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
+    EdgeT,
     PropPrimitive,
     PropType,
-    EdgeT,
 )
 from grapl_analyzerlib.nodes.base import BaseSchema
 from grapl_analyzerlib.prelude import (
     AssetSchema,
-    ProcessSchema,
     FileSchema,
-    IpConnectionSchema,
     IpAddressSchema,
+    IpConnectionSchema,
     IpPortSchema,
+    LensSchema,
     NetworkConnectionSchema,
     ProcessInboundConnectionSchema,
     ProcessOutboundConnectionSchema,
-    LensSchema,
+    ProcessSchema,
     RiskSchema,
 )
 from grapl_analyzerlib.schema import Schema

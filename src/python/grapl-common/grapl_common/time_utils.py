@@ -1,5 +1,5 @@
-from typing import NewType
 from datetime import datetime, timedelta
+from typing import NewType
 
 # we have a bunch of bare ints around the codebase
 # representing timestamps, this makes it slightly easier

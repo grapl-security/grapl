@@ -38,6 +38,10 @@ impl IAwsEc2InstanceNode for AwsEc2InstanceNode {
         &mut self.dynamic_node
     }
 
+    fn get_dynamic_node(&self) -> &DynamicNode {
+        &self.dynamic_node
+    }
+
     fn with_arn(&mut self, arn: impl Into<String>) -> &mut Self {
         info!("custom arn handler");
         self.get_mut_dynamic_node().set_property("arn", arn.into());
@@ -53,6 +57,10 @@ fn main() {
     let mut ec2 = AwsEc2InstanceNode::new(AwsEc2InstanceNode::static_strategy(), log.launch_time);
     ec2.with_arn(log.arn).with_launch_time(log.launch_time);
     ec2.with_asset_id("".to_string());
+
+    let _launch_time: u64 = ec2.get_launch_time().expect("Couldn't find launch_time!");
+    let _arn: &str = ec2.get_arn().expect("Couldn't find arn!");
+    // println!("arn: {}\t with launch time: {}", _arn, _launch_time);
 
     let mut graph = Graph::new(log.launch_time);
     graph.add_node(ec2);

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 import logging
 import os
@@ -19,7 +20,7 @@ LOGGER.info("Initializing Chalice server")
 V = TypeVar("V", bound="Viewable")
 
 
-def default_properties() -> Dict[str, "PropType"]:
+def default_properties() -> Dict[str, PropType]:
     return {
         "uid": PropType(PropPrimitive.Str, False),
         "dgraph.type": PropType(PropPrimitive.Str, True),
@@ -39,6 +40,10 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
+ViewableType = Type["Viewable"]
+ReturnsViewableType = Callable[[], ViewableType]
+
+
 class Schema(metaclass=SingletonMeta):
     """
     Schemas represent an abstract Singleton. Each node type should use a Schema to define itself.
@@ -50,9 +55,9 @@ class Schema(metaclass=SingletonMeta):
 
     def __init__(
         self,
-        properties: Dict[str, "PropType"],
-        edges: Dict[str, Tuple["EdgeT", str]],
-        viewable: "Union[Type[Viewable], Callable[[], Type[Viewable]]]",
+        properties: Dict[str, PropType],
+        edges: Dict[str, Tuple[EdgeT, str]],
+        viewable: Union[ViewableType, ReturnsViewableType],
     ):
         self.node_types = {"BaseNode", self.self_type()}
         self.properties: Dict[str, "PropType"] = {**default_properties(), **properties}
@@ -63,10 +68,10 @@ class Schema(metaclass=SingletonMeta):
 
         self.viewable = viewable
 
-    def add_property(self, prop_name: str, prop: "PropType"):
+    def add_property(self, prop_name: str, prop: PropType):
         self.properties[prop_name] = prop
 
-    def add_edge(self, edge_name: str, edge: "EdgeT", reverse_name: str):
+    def add_edge(self, edge_name: str, edge: EdgeT, reverse_name: str):
         self.edges[edge_name] = (edge, reverse_name)
         if not reverse_name:
             return
@@ -81,20 +86,21 @@ class Schema(metaclass=SingletonMeta):
             # The edge dest Viewable should already be constructed at this point
             edge.dest().edges[reverse_name] = (r_edge, edge_name)
 
-    def prop_type(self, prop_name: str) -> Union[Tuple["EdgeT", str], "PropType", None]:
+    def prop_type(self, prop_name: str) -> Union[Tuple[EdgeT, str], PropType, None]:
         return self.get_properties().get(prop_name) or self.get_edges().get(prop_name)
 
-    def get_edges(self) -> Dict[str, Tuple["EdgeT", str]]:
+    def get_edges(self) -> Dict[str, Tuple[EdgeT, str]]:
         return self.edges
 
-    def get_properties(self) -> Dict[str, "PropType"]:
+    def get_properties(self) -> Dict[str, PropType]:
         return self.properties
 
-    def associated_viewable(self) -> Type[V]:
+    def associated_viewable(self) -> ViewableType:
+        # would be better if self.viewable were Generic
         if isinstance(self.viewable, types.FunctionType):
-            self.viewable = self.viewable()
+            self.viewable = cast(ReturnsViewableType, self.viewable)()
 
-        return cast("Type[V]", self.viewable)
+        return cast(ViewableType, self.viewable)
 
     @staticmethod
     @abc.abstractmethod

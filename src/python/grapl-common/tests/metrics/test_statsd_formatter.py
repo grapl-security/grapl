@@ -2,7 +2,6 @@ import unittest
 from typing import Sequence
 
 import pytest
-
 from grapl_common.metrics.statsd_formatter import TagPair, statsd_format
 
 
