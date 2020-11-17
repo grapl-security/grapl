@@ -313,7 +313,7 @@ def _process_one_event(
         create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
 
         # Or perhaps we should just emit per-risk instead of per-risky-node?
-        # this path is here for now just to appease the soc2 gods; will improve usability later
+        # (this alarming path is definitely a candidate for changing later)
         metrics.risk_node(analyzer_name=analyzer_name)
 
     for edge_list in edges.values():

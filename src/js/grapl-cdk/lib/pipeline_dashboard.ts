@@ -2,9 +2,9 @@ import * as cdk from '@aws-cdk/core';
 import * as cloudwatch from '@aws-cdk/aws-cloudwatch';
 import { Service } from './service';
 
-function invocationsWidget(service: Service, retry?: boolean): cloudwatch.GraphWidget {
-    const titleSuffix = retry ? " (retry)" : "";
-    const handler = retry ? service.event_retry_handler : service.event_handler;
+function invocationsWidget(service: Service, isRetry?: boolean): cloudwatch.GraphWidget {
+    const titleSuffix = isRetry ? " (retry)" : "";
+    const handler = isRetry ? service.event_retry_handler : service.event_handler;
     return new cloudwatch.GraphWidget({
         title: `Invoke ${service.serviceName}${titleSuffix}`,
         left: [

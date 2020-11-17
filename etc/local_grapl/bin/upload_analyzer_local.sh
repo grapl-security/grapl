@@ -1,5 +1,5 @@
 # no unset variables please
-set -u
+set -eu
 
 ANALYZER_UPLOAD_SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 LOCAL_GRAPL_DIR=$ANALYZER_UPLOAD_SCRIPT_PATH/../

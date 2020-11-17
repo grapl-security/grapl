@@ -49,10 +49,10 @@ class RiskNodeAlarm extends cdk.Construct {
             dimensions: {},
         });
         const alarm = metric.createAlarm(
-            scope,
-            "risk_node_alarm",
+            this,
+            "alarm",
             {
-                alarmName: "risk_node_alarm",
+                alarmName: "Risk node alarm",
                 // TODO: Add some verbiage to the alarm description on how to actually look at what's causing the alarm.
                 alarmDescription: undefined,
                 threshold: 1,
@@ -78,7 +78,7 @@ export class OperationalAlarms extends cdk.Construct {
 
 
 export class SecurityAlarms extends cdk.Construct {
-    // Alarms meant for the consumer of the Grapl stack.
+    // Alarms meant for the consumer of the Grapl stack - for example, alarms triggered by analyzers.
     constructor(
         scope: cdk.Construct,
         email: string,
