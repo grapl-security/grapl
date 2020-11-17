@@ -51,7 +51,7 @@ class RiskNodeAlarm {
             "risk_node_alarm",
             {
                 alarmName: "risk_node_alarm",
-                // TODO: Add some verbiage to the alarm description on how to actually look at what's causing the alert.
+                // TODO: Add some verbiage to the alarm description on how to actually look at what's causing the alarm.
                 alarmDescription: undefined,
                 threshold: 1,
                 evaluationPeriods: 1,
@@ -63,18 +63,10 @@ class RiskNodeAlarm {
 }
 
 /*
-https://github.com/grapl-security/grapl/issues/423
-we can't email these yet
-
+I'll be making these not-hardcoded once #425 lands.
+*/
 const OPS_ALARMS_EMAIL = "operation-alarms@graplsecurity.com";
 const SEC_ALARMS_EMAIL = "security-alarms@graplsecurity.com";
-
-I'll be making these better/more configurable in an immediate followup PR.
-inickles says he's working on adding some sort of `.env` file support, which would be perfect
-for these.
-*/
-const OPS_ALARMS_EMAIL = "wimax+alarms@graplsecurity.com";
-const SEC_ALARMS_EMAIL = "wimax+alarms@graplsecurity.com";
 
 export class OperationalAlarms {
     // Alarms meant for the operator of the Grapl stack.
