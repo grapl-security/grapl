@@ -69,7 +69,6 @@ export class OperationalAlarms {
         scope: cdk.Construct,
         email: string,
     ) {
-        // We probably want this email to be configurable, and sent to our operators - not necessarily
         const alarm_sink = new AlarmSink(scope, "operational_alarm_sink", email);
     }
 }
@@ -81,7 +80,6 @@ export class SecurityAlarms {
         scope: cdk.Construct,
         email: string,
     ) {
-        // We probably want this email to be configurable, and sent to our customers - not us.
         const alarm_sink = new AlarmSink(scope, "security_alarm_sink", email);
         const risk_node_alarm = new RiskNodeAlarm(scope, alarm_sink);
     }
