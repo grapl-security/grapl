@@ -5,12 +5,27 @@ import * as cdk from '@aws-cdk/core';
 import { GraplCdkStack } from '../lib/grapl-cdk-stack';
 import { EngagementUx } from '../lib/engagement';
 
-// Deployment parameters
-const deployName = undefined; // ex: 'Grapl-my-deployment' - GRAPL_CDK_DEPLOYMENT_NAME
-const graplVersion = undefined; // defaults to 'latest' - GRAPL_VERSION
-const watchfulEmail = undefined; // (optional) ex: ops@example.com - GRAPL_CDK_WATCHFUL_EMAIL
+// Either replace the `undefined`s or specify the environment variables.
+class DeploymentParameters {
+    readonly deployName = undefined  // ex: 'Grapl-my-deployment'
+        || process.env.GRAPL_CDK_DEPLOYMENT_NAME; 
 
-const stackName = process.env.GRAPL_CDK_DEPLOYMENT_NAME || deployName;
+    readonly graplVersion = undefined 
+        || process.env.GRAPL_VERSION 
+        || "latest";
+
+    readonly watchfulEmail = undefined  // (optional) ex: ops@example.com
+        || process.env.GRAPL_CDK_WATCHFUL_EMAIL; 
+
+    readonly operationalAlarmsEmail = undefined  // (optional) ex: ops-alarms@example.com
+        || process.env.GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL; 
+
+    readonly securityAlarmsEmail = undefined  // (optional) ex: security-alarms@example.com
+        || process.env.GRAPL_CDK_SECURITY_ALARMS_EMAIL; 
+}
+const PARAMS = new DeploymentParameters();
+
+const stackName = PARAMS.deployName;
 if (!stackName) {
     throw new Error("Error: Missing Grapl deployment name. Set via bin/grapl-cdk.ts, or environment variable GRAPL_CDK_DEPLOYMENT_NAME.");
 }
@@ -18,9 +33,11 @@ if (!stackName) {
 const app = new cdk.App();
 
 const grapl = new GraplCdkStack(app, 'Grapl', {
-    version:process.env.GRAPL_VERSION ||  graplVersion || 'latest',
+    version: PARAMS.graplVersion,
     stackName: stackName,
-    watchfulEmail: process.env.GRAPL_CDK_WATCHFUL_EMAIL || watchfulEmail,
+    watchfulEmail: PARAMS.watchfulEmail,
+    operationalAlarmsEmail: PARAMS.operationalAlarmsEmail,
+    securityAlarmsEmail: PARAMS.securityAlarmsEmail,
     tags: { 'grapl deployment': stackName},
     description: 'Grapl base deployment',
 });

@@ -62,20 +62,15 @@ class RiskNodeAlarm {
     }
 }
 
-/*
-I'll be making these not-hardcoded once #425 lands.
-*/
-const OPS_ALARMS_EMAIL = "operation-alarms@graplsecurity.com";
-const SEC_ALARMS_EMAIL = "security-alarms@graplsecurity.com";
-
 export class OperationalAlarms {
     // Alarms meant for the operator of the Grapl stack.
     // That is to say: Grapl Inc (in the Grapl Cloud case), or VeryCool Corp (in the on-prem case).
     constructor(
         scope: cdk.Construct,
+        email: string,
     ) {
         // We probably want this email to be configurable, and sent to our operators - not necessarily
-        const alarm_sink = new AlarmSink(scope, "operational_alarm_sink", OPS_ALARMS_EMAIL);
+        const alarm_sink = new AlarmSink(scope, "operational_alarm_sink", email);
     }
 }
 
@@ -84,9 +79,10 @@ export class SecurityAlarms {
     // Alarms meant for the consumer of the Grapl stack.
     constructor(
         scope: cdk.Construct,
+        email: string,
     ) {
         // We probably want this email to be configurable, and sent to our customers - not us.
-        const alarm_sink = new AlarmSink(scope, "security_alarm_sink", SEC_ALARMS_EMAIL);
+        const alarm_sink = new AlarmSink(scope, "security_alarm_sink", email);
         const risk_node_alarm = new RiskNodeAlarm(scope, alarm_sink);
     }
 }

@@ -731,6 +731,8 @@ export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
     version: string;
     watchfulEmail?: string;
+    operationalAlarmsEmail?: string;
+    securityAlarmsEmail?: string;
 }
 
 export class GraplCdkStack extends cdk.Stack {
@@ -914,8 +916,12 @@ export class GraplCdkStack extends cdk.Stack {
             ux_bucket
         );
 
-        const operationalAlarms = new OperationalAlarms(this);
-        const securityAlarms = new SecurityAlarms(this);
+        if (props.operationalAlarmsEmail) {
+            new OperationalAlarms(this, props.operationalAlarmsEmail);
+        }
+        if (props.securityAlarmsEmail) {
+            new SecurityAlarms(this, props.securityAlarmsEmail);
+        }
 
         const pipelineDashboard = new PipelineDashboard(this, [
             // Order here is important - the idea is that this dashboard will help Grapl operators
