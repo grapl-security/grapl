@@ -15,7 +15,7 @@ export module DeploymentParameters {
     const deployName = process.env.GRAPL_CDK_DEPLOYMENT_NAME 
         || HardcodedDeploymentParameters.deployName; 
     if (!deployName) {
-        throw new Error("Error: Missing Grapl deployment name. Set via bin/grapl-cdk.ts, or environment variable GRAPL_CDK_DEPLOYMENT_NAME.");
+        throw new Error("Error: Missing Grapl deployment name. Set via bin/deployment_parameters.ts, or environment variable GRAPL_CDK_DEPLOYMENT_NAME.");
     }
     export const stackName = deployName;
 

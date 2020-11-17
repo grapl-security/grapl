@@ -43,7 +43,7 @@ Your build outputs should appear in the `zips/` directory.
 
 ### Configuration
 
-There are three CDK deployment parameters:
+There are a few CDK deployment parameters:
 
 1. `deployName` (required)
 
