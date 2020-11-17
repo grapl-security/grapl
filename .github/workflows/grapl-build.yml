@@ -144,7 +144,7 @@ jobs:
           GRAPL_LOG_LEVEL=DEBUG \
           DUMP_ARTIFACTS=True \
           TAG=latest \
-          ./dobi-linux run-e2e-integration-tests
+          ./dobi-linux run-e2e-tests
        
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'
