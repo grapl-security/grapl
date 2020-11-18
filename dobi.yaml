@@ -555,6 +555,20 @@ job=typecheck-model-plugin-deployer:
       pip install mypy &&
       mypy .
       "
+
+job=typecheck-engagement-edge:
+  use: engagement-edge-build
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
+  command: | 
+    /bin/bash -c "
+      source venv/bin/activate &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      cd engagement_edge &&
+      pip install .[typecheck] &&
+      mypy .
+      "
+
 job=typecheck-grapl-analyzerlib:
   use: grapl-analyzerlib-build
   command: |
@@ -881,6 +895,7 @@ alias=python-typecheck:
     - typecheck-analyzer-deployer
     - typecheck-e2e-tests
     - typecheck-engagement-creator
+    - typecheck-engagement-edge
     - typecheck-model-plugin-deployer
     - typecheck-analyzer-executor
     # Broken, temporarily
