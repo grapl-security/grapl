@@ -50,7 +50,7 @@ Run the tests with the following. (Again, this example is strictly about the E2E
 
 .. code-block:: bash
 
-    TAG=latest DEBUG_SERVICES=grapl_e2e_tests dobi run-e2e-integration-tests
+    TAG=latest DEBUG_SERVICES=grapl_e2e_tests dobi run-e2e-tests
 
 You'll see the test start up and output the following:
 
