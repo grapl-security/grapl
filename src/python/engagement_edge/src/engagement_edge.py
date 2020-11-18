@@ -35,6 +35,7 @@ from grapl_analyzerlib.nodes.lens import LensQuery
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+
     Salt = bytes
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
