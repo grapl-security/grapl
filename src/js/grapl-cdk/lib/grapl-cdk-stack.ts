@@ -943,7 +943,7 @@ export class GraplCdkStack extends cdk.Stack {
             ...enableMetricsProps,
         });
 
-        new EngagementNotebook(this, 'engagements', {
+        const engagement_notebook = new EngagementNotebook(this, 'engagements', {
             model_plugins_bucket,
             ...graplProps,
         });
@@ -951,7 +951,10 @@ export class GraplCdkStack extends cdk.Stack {
         this.engagement_edge = new EngagementEdge(
             this,
             'EngagementEdge',
-            graplProps
+            {
+                ...graplProps, 
+                engagement_notebook: engagement_notebook
+            },
         );
 
         const ux_bucket = new s3.Bucket(this, 'EdgeBucket', {

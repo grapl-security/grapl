@@ -101,13 +101,17 @@ function replaceInFile(
     });
 }
 
+export interface EngagementEdgeProps extends GraplServiceProps {
+    engagement_notebook: EngagementNotebook;
+}
+
 export class EngagementEdge extends cdk.NestedStack {
     event_handler: lambda.Function;
     integration: apigateway.LambdaRestApi;
     name: string;
     integrationName: string;
 
-    constructor(scope: cdk.Construct, id: string, props: GraplServiceProps) {
+    constructor(scope: cdk.Construct, id: string, props: EngagementEdgeProps) {
         super(scope, id);
 
         const ux_bucket = s3.Bucket.fromBucketName(
@@ -221,6 +225,9 @@ export class EngagementEdge extends cdk.NestedStack {
                 burstLimit: 500,
             },
         });
+
+        // https://github.com/grapl-security/issue-tracker/issues/115
+        props.engagement_notebook.allowCreatePresignedUrl(this.event_handler);
     }
 }
 
@@ -229,6 +236,8 @@ export interface EngagementNotebookProps extends GraplServiceProps {
 }
 
 export class EngagementNotebook extends cdk.NestedStack {
+    readonly notebookInstance: sagemaker.CfnNotebookInstance;
+
     constructor(
         scope: cdk.Construct,
         id: string,
@@ -257,7 +266,7 @@ export class EngagementNotebook extends cdk.NestedStack {
         props.userAuthTable.allowReadWriteFromRole(role);
         props.model_plugins_bucket.grantRead(role);
 
-        new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
+        this.notebookInstance = new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
             notebookInstanceName: props.prefix + '-Notebook',
             instanceType: 'ml.t2.medium',
             securityGroupIds: [securityGroup.securityGroupId],
@@ -265,6 +274,16 @@ export class EngagementNotebook extends cdk.NestedStack {
             directInternetAccess: 'Enabled',
             roleArn: role.roleArn,
         });
+    }
+
+    allowCreatePresignedUrl(lambdaFn: lambda.IFunction) {
+        const policy = new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ["sagemaker:CreatePresignedNotebookInstanceUrl"],
+            resources: [this.notebookInstance.roleArn], // is this role correct
+        });
+
+        lambdaFn.addToRolePolicy(policy);
     }
 }
 
