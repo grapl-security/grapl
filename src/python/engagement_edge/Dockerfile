@@ -9,6 +9,8 @@ RUN cd engagement_edge/src/ && zip -g ~/lambda.zip ./engagement_edge.py
 RUN mkdir -p dist/engagement-edge && cp lambda.zip dist/engagement-edge/lambda.zip
 
 FROM grapl/grapl-python-deploy AS grapl-engagement-edge
+USER root
+RUN apt-get update && apt-get install -y wait-for-it
 USER grapl
 WORKDIR /home/grapl
 COPY --from=engagement-edge-build /home/grapl/lambda.zip lambda.zip

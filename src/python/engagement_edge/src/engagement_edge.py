@@ -35,6 +35,7 @@ from grapl_analyzerlib.nodes.lens import LensQuery
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+    Salt = bytes
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -45,12 +46,16 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-Salt = bytes
+JWT_SECRET: Optional[str] = None
 
 if IS_LOCAL:
-    import time
+    # Theory: This whole code block is deprecated by the `wait-for-it grapl-provision`, 
+    # which guarantees that the JWT Secret is, now, in the secretsmanager. - wimax
 
-    while True:
+    import time
+    TIMEOUT_SECS = 30
+
+    for _ in range(TIMEOUT_SECS):
         try:
             secretsmanager = boto3.client(
                 "secretsmanager",
@@ -67,6 +72,8 @@ if IS_LOCAL:
         except Exception as e:
             LOGGER.debug(e)
             time.sleep(1)
+    if not JWT_SECRET:
+        raise TimeoutError("Expected secretsmanager to be available within {TIMEOUT_SECS} seconds")
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
