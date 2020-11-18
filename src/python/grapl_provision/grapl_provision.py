@@ -414,7 +414,7 @@ if __name__ == "__main__":
             client = boto3.client(
                 service_name="secretsmanager",
                 region_name="us-east-1",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
