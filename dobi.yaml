@@ -619,12 +619,12 @@ job=run-analyzer-executor-integration-tests:
   use: analyzer-executor-build
   net-mode: grapl-network
   command: |
-    /bin/bash -c "
+    /bin/bash -c '
       source venv/bin/activate &&
       cd analyzer_executor && 
       export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" &&
-      py.test -n auto -m 'integration_test'
-      "
+      py.test -n auto -m "integration_test"
+      '
   env:
     - HITCACHE_ADDR=dev-shared-redis
     - HITCACHE_PORT=6379
