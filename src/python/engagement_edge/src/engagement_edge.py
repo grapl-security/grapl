@@ -33,6 +33,8 @@ from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
 from grapl_analyzerlib.nodes.entity import EntityQuery
 from grapl_analyzerlib.nodes.lens import LensQuery
 
+from src.lib import sagemaker
+
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
@@ -342,3 +344,5 @@ def nop_route() -> Response:
         return check_login()
 
     return respond("InvalidPath")
+
+print(sagemaker.derp())
