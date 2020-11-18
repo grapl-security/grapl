@@ -49,10 +49,11 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 JWT_SECRET: Optional[str] = None
 
 if IS_LOCAL:
-    # Theory: This whole code block is deprecated by the `wait-for-it grapl-provision`, 
+    # Theory: This whole code block is deprecated by the `wait-for-it grapl-provision`,
     # which guarantees that the JWT Secret is, now, in the secretsmanager. - wimax
 
     import time
+
     TIMEOUT_SECS = 30
 
     for _ in range(TIMEOUT_SECS):
@@ -73,7 +74,9 @@ if IS_LOCAL:
             LOGGER.debug(e)
             time.sleep(1)
     if not JWT_SECRET:
-        raise TimeoutError(f"Expected secretsmanager to be available within {TIMEOUT_SECS} seconds")
+        raise TimeoutError(
+            f"Expected secretsmanager to be available within {TIMEOUT_SECS} seconds"
+        )
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
@@ -211,6 +214,7 @@ def login(username: str, password: str) -> Optional[str]:
         return None
 
     # Use JWT to generate token
+    assert JWT_SECRET
     return jwt.encode({"username": username}, JWT_SECRET, algorithm="HS256").decode(
         "utf8"
     )
@@ -226,6 +230,7 @@ def check_jwt(headers: Dict[str, Any]) -> bool:
         LOGGER.info("encoded_jwt %s", encoded_jwt)
         return False
 
+    assert JWT_SECRET
     try:
         jwt.decode(encoded_jwt, JWT_SECRET, algorithms=["HS256"])
         return True
