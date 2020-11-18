@@ -629,6 +629,27 @@ job=run-analyzer-deployer-integration-tests:
   depends:
     - integration-env
 
+job=run-analyzer-executor-integration-tests:
+  use: analyzer-executor-build
+  net-mode: grapl-network
+  command: |
+    /bin/bash -c '
+      source venv/bin/activate &&
+      cd analyzer_executor && 
+      export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" &&
+      py.test -n auto -m "integration_test"
+      '
+  env:
+    - HITCACHE_ADDR=dev-shared-redis
+    - HITCACHE_PORT=6379
+    - MESSAGECACHE_ADDR=dev-shared-redis
+    - MESSAGECACHE_PORT=6379
+    - GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
+    - IS_LOCAL=True
+    - IS_RETRY=False
+  depends:
+    - integration-env
+
 job=run-e2e-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-network
@@ -665,7 +686,16 @@ job=build-analyzer-executor:
 
 job=run-analyzer-executor-unit-tests:
   use: analyzer-executor-build
-  command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd analyzer_executor &&
+      export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" &&
+      py.test -n auto -m 'not integration_test'
+    "
+  env:
+    - IS_LOCAL=True
+    - IS_RETRY=False
 
 job=typecheck-analyzer-executor:
   use: analyzer-executor-build
