@@ -73,7 +73,7 @@ if IS_LOCAL:
             LOGGER.debug(e)
             time.sleep(1)
     if not JWT_SECRET:
-        raise TimeoutError("Expected secretsmanager to be available within {TIMEOUT_SECS} seconds")
+        raise TimeoutError(f"Expected secretsmanager to be available within {TIMEOUT_SECS} seconds")
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
