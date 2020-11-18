@@ -917,13 +917,13 @@ export class GraplCdkStack extends cdk.Stack {
         );
 
         if (props.operationalAlarmsEmail) {
-            new OperationalAlarms(this, props.operationalAlarmsEmail);
+            new OperationalAlarms(this, "operation_alarms", props.operationalAlarmsEmail);
         }
         if (props.securityAlarmsEmail) {
-            new SecurityAlarms(this, props.securityAlarmsEmail);
+            new SecurityAlarms(this, "security_alarms", props.securityAlarmsEmail);
         }
 
-        const pipelineDashboard = new PipelineDashboard(this, [
+        const pipeline_dashboard = new PipelineDashboard(this, "pipeline_dashboard", [
             // Order here is important - the idea is that this dashboard will help Grapl operators
             // quickly determine which service in the pipeline is failing.
             sysmon_generator.service,

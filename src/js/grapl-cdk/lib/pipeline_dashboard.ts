@@ -16,11 +16,13 @@ function invocationsWidget(service: Service, isRetry?: boolean): cloudwatch.Grap
     })
 };
 
-export class PipelineDashboard {
+export class PipelineDashboard extends cdk.Construct {
     constructor(
         scope: cdk.Construct,
+        id: string,
         services: Service[],
     ) {
+        super(scope, id);
         const dashboard = new cloudwatch.Dashboard(
             scope, 
             'GraplPipelineDashboard', 

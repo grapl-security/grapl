@@ -29,8 +29,8 @@ class AlarmSink extends cdk.Construct {
     readonly topic: sns.Topic;
     readonly cloudwatch_action: cloudwatch_actions.SnsAction;
 
-    constructor(scope: cdk.Construct, emailAddress: string) {
-        super(scope, "alarm_sink");
+    constructor(scope: cdk.Construct, id: string, emailAddress: string) {
+        super(scope, id);
         this.topic = new sns.Topic(scope, "topic");
         this.topic.addSubscription(new subs.EmailSubscription(emailAddress));
         this.cloudwatch_action = new cloudwatch_actions.SnsAction(this.topic)
@@ -40,9 +40,10 @@ class AlarmSink extends cdk.Construct {
 class RiskNodeAlarm extends cdk.Construct {
     constructor(
         scope: cdk.Construct,
+        id: string,
         alarm_sink: AlarmSink,
     ) {
-        super(scope, "risk_node_alarm");
+        super(scope, id);
         const metric = new cloudwatch.Metric({
             namespace: 'engagement-creator',
             metricName: 'risk_node',
@@ -69,10 +70,11 @@ export class OperationalAlarms extends cdk.Construct {
     // That is to say: Grapl Inc (in the Grapl Cloud case), or VeryCool Corp (in the on-prem case).
     constructor(
         scope: cdk.Construct,
+        id: string,
         email: string,
     ) {
-        super(scope, "operational_alarms");
-        const alarm_sink = new AlarmSink(this, email);
+        super(scope, id);
+        const alarm_sink = new AlarmSink(this, "alarm_sink", email);
     }
 }
 
@@ -81,10 +83,11 @@ export class SecurityAlarms extends cdk.Construct {
     // Alarms meant for the consumer of the Grapl stack - for example, alarms triggered by analyzers.
     constructor(
         scope: cdk.Construct,
+        id: string,
         email: string,
     ) {
-        super(scope, "security_alarms");
-        const alarm_sink = new AlarmSink(this, email);
-        const risk_node_alarm = new RiskNodeAlarm(this, alarm_sink);
+        super(scope, id);
+        const alarm_sink = new AlarmSink(this, "alarm_sink", email);
+        const risk_node_alarm = new RiskNodeAlarm(this, "risk_node_alarm", alarm_sink);
     }
 }
