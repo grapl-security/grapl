@@ -6,7 +6,6 @@ import os
 import re
 import sys
 import time
-import uuid
 from hashlib import pbkdf2_hmac, sha256
 from hmac import compare_digest
 from random import uniform
@@ -15,7 +14,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
     Tuple,
     TypeVar,
@@ -25,15 +23,9 @@ from typing import (
 
 import boto3
 import jwt
-import pydgraph  # type: ignore
 from chalice import Chalice, CORSConfig, Response
-from pydgraph import DgraphClient
-from src.lib.constants import GRAPL_LOG_LEVEL, IS_LOCAL
-from src.lib.sagemaker import SagemakerNotebookUrlGetter
-
-from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
-from grapl_analyzerlib.nodes.entity import EntityQuery
-from grapl_analyzerlib.nodes.lens import LensQuery
+from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
+from src.lib.sagemaker import SagemakerClient
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
@@ -89,11 +81,6 @@ ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 DYNAMO: Optional[DynamoDBServiceResource] = None
 
-if IS_LOCAL:
-    MG_ALPHA = "master_graph:9080"
-else:
-    MG_ALPHA = "alpha0.mastergraphcluster.grapl:9080"
-
 app = Chalice(app_name="engagement-edge")
 
 if IS_LOCAL:
@@ -104,7 +91,7 @@ if IS_LOCAL:
     )
 else:
     origin_re = re.compile(
-        f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
+        f"https://{BUCKET_PREFIX}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/",
         re.IGNORECASE,
     )
 
@@ -252,6 +239,7 @@ def lambda_login(event: Any) -> Optional[str]:
     return None
 
 
+# observation: this is never consumed?
 cors_config = CORSConfig(
     allow_origin=ORIGIN_OVERRIDE or ORIGIN,
     allow_credentials="true",
@@ -321,10 +309,20 @@ def login_route() -> Response:
 def check_login() -> Response:
     LOGGER.debug("/checkLogin %s", app.current_request)
     request = app.current_request
+
     if check_jwt(request.headers):
         return respond(None, "True")
     else:
         return respond(None, "False")
+
+
+@requires_auth("/getNotebook")
+def get_notebook() -> Response:
+    # cross-reference with `engagement.ts` notebookInstanceName
+    notebook_name = f"{BUCKET_PREFIX}-Notebook"
+    client = SagemakerClient.create()
+    url = client.get_presigned_url(notebook_name)
+    return respond(err=none, res={"notebook_url": url})
 
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
@@ -332,10 +330,13 @@ def nop_route() -> Response:
     LOGGER.debug(app.current_request.context["path"])
 
     path = app.current_request.context["path"]
+    path_to_handler = {
+        "/prod/login": login_route,
+        "/prod/checkLogin": check_login,
+        "/prod/getNotebook": get_notebook,
+    }
+    handler = path_to_handler.get(path, None)
+    if handler:
+        handler()
 
-    if path == "/prod/login":
-        return login_route()
-    elif path == "/prod/checkLogin":
-        return check_login()
-
-    return respond("InvalidPath")
+    return respond(err=f"Invalid path: {path}")

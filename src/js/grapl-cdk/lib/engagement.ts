@@ -154,6 +154,9 @@ export class EngagementEdge extends cdk.NestedStack {
             );
         }
 
+        // https://github.com/grapl-security/issue-tracker/issues/115
+        props.engagement_notebook.allowCreatePresignedUrl(this.event_handler);
+
         if (this.event_handler.role) {
             props.jwtSecret.grantRead(this.event_handler.role);
         }
@@ -198,6 +201,10 @@ export class EngagementEdge extends cdk.NestedStack {
                             resourcePath: '/checkLogin',
                         },
                         {
+                            httpMethod: 'GET',
+                            resourcePath: '/getNotebook',
+                        },
+                        {
                             httpMethod: 'POST',
                             resourcePath: '/{proxy+}',
                         },
@@ -225,9 +232,6 @@ export class EngagementEdge extends cdk.NestedStack {
                 burstLimit: 500,
             },
         });
-
-        // https://github.com/grapl-security/issue-tracker/issues/115
-        props.engagement_notebook.allowCreatePresignedUrl(this.event_handler);
     }
 }
 
@@ -276,11 +280,23 @@ export class EngagementNotebook extends cdk.NestedStack {
         });
     }
 
+    getNotebookArn(): string { 
+        // there's no better way to get an ARN from a Cfn (low-level Cloudformation) type object.
+        if (!this.notebookInstance.notebookInstanceName) {
+            throw new Error("gotta have a notebook name");
+        }
+        return cdk.Arn.format({
+            service: "sagemaker",
+            resource: "notebook-instance",
+            resourceName: this.notebookInstance.notebookInstanceName.toLowerCase(),
+        }, this);
+    }
+
     allowCreatePresignedUrl(lambdaFn: lambda.IFunction) {
         const policy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ["sagemaker:CreatePresignedNotebookInstanceUrl"],
-            resources: [this.notebookInstance.roleArn], // is this role correct
+            resources: [this.getNotebookArn()],
         });
 
         lambdaFn.addToRolePolicy(policy);
