@@ -2,7 +2,7 @@
 
 import os
 
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -26,6 +26,11 @@ setup(
     description="Grapl edge service for managing engagements",
     packages=find_packages(),
     install_requires=REQUIREMENTS,
+    extras_require={
+        "typecheck": [
+            "mypy",
+        ]
+    },
     setup_requires=("wheel",),
     zip_safe=False,
 )

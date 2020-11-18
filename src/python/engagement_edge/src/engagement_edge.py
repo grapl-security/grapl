@@ -8,11 +8,11 @@ import uuid
 from hashlib import pbkdf2_hmac, sha256
 from hmac import compare_digest
 from random import uniform
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypeVar, Callable, cast
 
 import boto3
 import jwt
-import pydgraph
+import pydgraph  # type: ignore
 from chalice import Chalice, CORSConfig, Response
 from pydgraph import DgraphClient
 
@@ -349,27 +349,7 @@ def lens_to_dict(dgraph_client: DgraphClient, lens_name: str) -> List[Dict[str, 
     return results
 
 
-def try_get_updated_graph(body):
-    LOGGER.info("Trying to update graph")
-    LOGGER.info(f"connecting to dgraph at {MG_ALPHA}")
-    client_stub = pydgraph.DgraphClientStub(MG_ALPHA)
-    dg_client = pydgraph.DgraphClient(client_stub)
-
-    lens = body["lens"]
-
-    # Mapping from `uid` to node hash
-    initial_graph = body["uid_hashes"]
-
-    while True:
-        LOGGER.info("Getting updated graph")
-        current_graph = lens_to_dict(dg_client, lens)
-
-        updates = {"updated_nodes": current_graph, "removed_nodes": []}
-
-        return updates
-
-
-def respond(err, res=None, headers=None):
+def respond(err, res=None, headers=None) -> Response:
     req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
@@ -544,13 +524,15 @@ def requires_auth(path):
     return route_wrapper
 
 
-def no_auth(path):
+RouteFn = TypeVar('RouteFn', bound=Callable)
+
+def no_auth(path: str):
     if not IS_LOCAL:
         path = "/{proxy+}" + path
 
-    def route_wrapper(route_fn):
+    def route_wrapper(route_fn: RouteFn) -> RouteFn:
         @app.route(path, methods=["OPTIONS", "GET", "POST"])
-        def inner_route():
+        def inner_route() -> Response:
             if app.current_request.method == "OPTIONS":
                 return respond(None, {})
             try:
@@ -559,13 +541,13 @@ def no_auth(path):
                 LOGGER.error("path %s", e)
                 return respond("Unexpected Error")
 
-        return inner_route
+        return cast(RouteFn, inner_route)
 
     return route_wrapper
 
 
 @no_auth("/login")
-def login_route():
+def login_route() -> Response:
     LOGGER.debug("/login_route")
     request = app.current_request
     cookie = lambda_login(request)
@@ -578,7 +560,7 @@ def login_route():
 
 
 @no_auth("/checkLogin")
-def check_login():
+def check_login() -> Response:
     LOGGER.debug("/checkLogin %s", app.current_request)
     request = app.current_request
     if check_jwt(request.headers):
@@ -588,7 +570,7 @@ def check_login():
 
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
-def nop_route():
+def nop_route() -> Response:
     LOGGER.debug(app.current_request.context["path"])
 
     path = app.current_request.context["path"]
