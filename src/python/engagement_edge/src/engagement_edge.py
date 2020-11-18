@@ -64,7 +64,7 @@ if IS_LOCAL:
                 region_name="us-east-1",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
             )
 
             JWT_SECRET = secretsmanager.get_secret_value(

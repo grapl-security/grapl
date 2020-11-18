@@ -49,12 +49,12 @@ services:
     image: localstack/localstack:0.11.5
     environment:
       - PORT_WEB_UI=8099
-      - SERVICES=secretsmanager  # 4566 by default
+      - SERVICES=secretsmanager:4584
       - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
       - IMAGE_NAME=localstack/localstack:0.11.5
 
     ports:
-      - "4566:4566"
+      - "4584:4584"
       - "8099:8099"
     # logging:
     #   driver: none
@@ -395,7 +395,7 @@ services:
       /bin/bash -c "
         # it doesn't seem to like waiting for sqs
         # wait-for-it sqs:9324 &&
-        wait-for-it secretsmanager:4566 &&
+        wait-for-it secretsmanager:4584 &&
         wait-for-it s3:9000 &&
         wait-for-it dynamodb:8000 &&
         wait-for-it grapl-master-graph-db:8080 &&
