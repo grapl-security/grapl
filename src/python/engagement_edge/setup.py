@@ -7,7 +7,7 @@ from setuptools import find_packages, setup  # type: ignore
 HERE = os.path.abspath(os.path.dirname(__file__))
 
 
-def is_comment(line):
+def is_comment(line: str) -> bool:
     """check whether a line is a comment"""
     return line.strip().startswith("#")
 
@@ -29,6 +29,7 @@ setup(
     extras_require={
         "typecheck": [
             "mypy",
+            "boto3-stubs[dynamodb]",
         ]
     },
     setup_requires=("wheel",),
