@@ -29,7 +29,7 @@ setup(
     extras_require={
         "typecheck": [
             "mypy",
-            "boto3-stubs[dynamodb]",
+            "boto3-stubs[dynamodb,sagemaker]",
         ]
     },
     setup_requires=("wheel",),

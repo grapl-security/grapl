@@ -28,25 +28,20 @@ import jwt
 import pydgraph  # type: ignore
 from chalice import Chalice, CORSConfig, Response
 from pydgraph import DgraphClient
+from src.lib.constants import GRAPL_LOG_LEVEL, IS_LOCAL
+from src.lib.sagemaker import SagemakerNotebookUrlGetter
 
 from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
 from grapl_analyzerlib.nodes.entity import EntityQuery
 from grapl_analyzerlib.nodes.lens import LensQuery
-
-from src.lib import sagemaker
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
     Salt = bytes
 
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
-
-
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
+LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 JWT_SECRET: Optional[str] = None
@@ -344,5 +339,3 @@ def nop_route() -> Response:
         return check_login()
 
     return respond("InvalidPath")
-
-print(sagemaker.derp())
