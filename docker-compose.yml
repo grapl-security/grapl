@@ -49,12 +49,12 @@ services:
     image: localstack/localstack:0.11.5
     environment:
       - PORT_WEB_UI=8099
-      - SERVICES=secretsmanager:4569
+      - SERVICES=secretsmanager:4584
       - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
       - IMAGE_NAME=localstack/localstack:0.11.5
 
     ports:
-      - "4568:4568"
+      - "4584:4584"
       - "8099:8099"
     # logging:
     #   driver: none
@@ -289,7 +289,13 @@ services:
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8900'
+    command: |
+      /bin/sh -c '
+        wait-for-it grapl-provision:8126 --timeout=45 &&
+        . venv/bin/activate &&
+        cd /home/grapl/app &&
+        chalice local --no-autoreload --host=0.0.0.0 --port=8900
+      '
     ports:
       - "8900:8900"
     environment:
@@ -298,6 +304,8 @@ services:
       - "UX_BUCKET_URL=localhost:3000"
       - "USER_AUTH_TABLE=local-grapl-user_auth_table"
       - "BUCKET_PREFIX=local-grapl"
+    depends_on:
+      - grapl-provision
 
     tty: true
     links:
@@ -387,6 +395,7 @@ services:
       /bin/bash -c "
         # it doesn't seem to like waiting for sqs
         # wait-for-it sqs:9324 &&
+        wait-for-it secretsmanager:4584 &&
         wait-for-it s3:9000 &&
         wait-for-it dynamodb:8000 &&
         wait-for-it grapl-master-graph-db:8080 &&
