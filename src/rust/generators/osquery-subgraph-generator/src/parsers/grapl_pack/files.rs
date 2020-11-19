@@ -84,8 +84,7 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for Graph {
             OSQueryFileAction::DELETED | OSQueryFileAction::MOVED_TO => subject_file_builder
                 .state(FileState::Deleted)
                 .deleted_timestamp(file_event.columns.time),
-            _ => subject_file_builder
-                .state(FileState::Existing),
+            _ => subject_file_builder.state(FileState::Existing),
         };
 
         let subject_file = subject_file_builder.build().map_err(failure::err_msg)?;

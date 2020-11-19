@@ -1,7 +1,7 @@
+use log::*;
 use serde::Deserialize;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use std::io::Cursor;
-use log::*;
 
 // TODO: MOVE THIS INTO A SHARED LIBRARY FOR REUSE BETWEEN GENERIC SUBGRAPH GENERATOR AND THIS GENERATOR
 #[derive(Debug, Clone, Default)]
@@ -17,14 +17,12 @@ where
 
         zstd::stream::copy_decode(&mut body, &mut decompressed)?;
 
-        let (deserialized_logs, deserialization_errors): (
-            Vec<Result<D, _>>,
-            Vec<Result<D, _>>,
-        ) = decompressed
-            .split(|byte| *byte == '\n' as u8)
-            .filter(|chunk| !chunk.is_empty())
-            .map(|chunk| serde_json::from_slice(chunk))
-            .partition(|result| result.is_ok());
+        let (deserialized_logs, deserialization_errors): (Vec<Result<D, _>>, Vec<Result<D, _>>) =
+            decompressed
+                .split(|byte| *byte == '\n' as u8)
+                .filter(|chunk| !chunk.is_empty())
+                .map(|chunk| serde_json::from_slice(chunk))
+                .partition(|result| result.is_ok());
 
         // filter out Nones from these vecs
         let deserialized_logs: Vec<D> = deserialized_logs
