@@ -125,6 +125,27 @@ services:
       - sqs
       - grapl-provision
 
+  grapl-osquery-subgraph-generator:
+    image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
+    tty: false
+    environment:
+      - "BUCKET_PREFIX=local-grapl"
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+      - grapl-provision
+
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     environment:
