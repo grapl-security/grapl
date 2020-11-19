@@ -824,8 +824,6 @@ job=build-graphql-endpoint:
 
 # TODO: graphql endpoint unit tests
 
-# TODO: graphql endpoint integration tests
-
 #
 # aliases
 #
@@ -938,7 +936,11 @@ alias=js-unit-tests:
   annotations:
     description: "Run the js unit tests"
 
-# TODO: js integration tests
+alias=js-integration-tests:
+  tasks:
+   - run-engagement-view-integration-tests
+  annotations:
+    description: "Run the js integration tests"
 
 alias=build:
   tasks:
@@ -968,7 +970,7 @@ alias=integration-tests:
   tasks:
     - rust-integration-tests
     - python-integration-tests
-    # TODO: js integration tests
+    - js-integration-tests
   annotations:
     description: "Run all the integration tests"
 
