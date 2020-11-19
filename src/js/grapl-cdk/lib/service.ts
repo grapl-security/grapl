@@ -69,9 +69,11 @@ export class Service {
     readonly event_handler: lambda.IFunction;
     readonly event_retry_handler: lambda.Function;
     readonly queues: Queues;
+    readonly serviceName: string;
 
     constructor(scope: cdk.Construct, name: string, props: ServiceProps) {
         const serviceName = `${props.prefix}-${name}`;
+        this.serviceName = serviceName;
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
         const opt = props.opt;

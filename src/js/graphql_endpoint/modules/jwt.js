@@ -13,7 +13,7 @@ const secretsmanager = new AWS.SecretsManager({
     region: IS_LOCAL ? 'us-east-1' : undefined,
     accessKeyId: IS_LOCAL ? 'dummy_cred_aws_access_key_id' : undefined,
     secretAccessKey: IS_LOCAL ? 'dummy_cred_aws_secret_access_key' : undefined,
-    endpoint: IS_LOCAL ? 'http://secretsmanager.us-east-1.amazonaws.com:4566': undefined,
+    endpoint: IS_LOCAL ? 'http://secretsmanager.us-east-1.amazonaws.com:4584': undefined,
 });
 
 const fetchJwtSecret = async () => {

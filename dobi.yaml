@@ -568,6 +568,20 @@ job=typecheck-model-plugin-deployer:
       pip install mypy &&
       mypy .
       "
+
+job=typecheck-engagement-edge:
+  use: engagement-edge-build
+  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
+  command: | 
+    /bin/bash -c "
+      source venv/bin/activate &&
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      cd engagement_edge &&
+      pip install .[typecheck] &&
+      mypy .
+      "
+
 job=typecheck-grapl-analyzerlib:
   use: grapl-analyzerlib-build
   command: |
@@ -628,6 +642,27 @@ job=run-analyzer-deployer-integration-tests:
   depends:
     - integration-env
 
+job=run-analyzer-executor-integration-tests:
+  use: analyzer-executor-build
+  net-mode: grapl-network
+  command: |
+    /bin/bash -c '
+      source venv/bin/activate &&
+      cd analyzer_executor && 
+      export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" &&
+      py.test -n auto -m "integration_test"
+      '
+  env:
+    - HITCACHE_ADDR=dev-shared-redis
+    - HITCACHE_PORT=6379
+    - MESSAGECACHE_ADDR=dev-shared-redis
+    - MESSAGECACHE_PORT=6379
+    - GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
+    - IS_LOCAL=True
+    - IS_RETRY=False
+  depends:
+    - integration-env
+
 job=run-e2e-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-network
@@ -664,7 +699,16 @@ job=build-analyzer-executor:
 
 job=run-analyzer-executor-unit-tests:
   use: analyzer-executor-build
-  command: /bin/bash -c "source venv/bin/activate && cd analyzer_executor && py.test -n auto -m 'not integration_test'"
+  command: |
+    /bin/bash -c "
+      source venv/bin/activate &&
+      cd analyzer_executor &&
+      export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" &&
+      py.test -n auto -m 'not integration_test'
+    "
+  env:
+    - IS_LOCAL=True
+    - IS_RETRY=False
 
 job=typecheck-analyzer-executor:
   use: analyzer-executor-build
@@ -895,6 +939,7 @@ alias=python-typecheck:
     - typecheck-analyzer-deployer
     - typecheck-e2e-tests
     - typecheck-engagement-creator
+    - typecheck-engagement-edge
     - typecheck-model-plugin-deployer
     - typecheck-analyzer-executor
     # Broken, temporarily
