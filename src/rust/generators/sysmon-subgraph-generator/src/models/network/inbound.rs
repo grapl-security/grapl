@@ -36,7 +36,7 @@ pub fn generate_inbound_connection_subgraph(
         .build()
         .map_err(|err| failure::err_msg(err))?;
 
-    let outbound = ProcessInboundConnectionBuilder::default()
+    let inbound = ProcessInboundConnectionBuilder::default()
         .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessInboundConnectionState::Bound)
@@ -95,41 +95,34 @@ pub fn generate_inbound_connection_subgraph(
 
     // A process creates a connection
     graph.add_edge(
-        "created_connections",
+        "inbound_connections",
         process.clone_node_key(),
-        outbound.clone_node_key(),
+        inbound.clone_node_key(),
     );
 
     // The connection is over an IP + Port
     graph.add_edge(
-        "connected_over",
-        outbound.clone_node_key(),
+        "bound_port",
+        inbound.clone_node_key(),
         src_port.clone_node_key(),
-    );
-
-    // The connection is to a dst ip + port
-    graph.add_edge(
-        "connected_to",
-        outbound.clone_node_key(),
-        dst_port.clone_node_key(),
     );
 
     // There is a network connection between the src and dst ports
     graph.add_edge(
-        "outbound_connection_to",
+        "network_connections",
         src_port.clone_node_key(),
         network_connection.clone_node_key(),
     );
 
     graph.add_edge(
-        "inbound_connection_to",
-        network_connection.clone_node_key(),
+        "network_connections",
         dst_port.clone_node_key(),
+        network_connection.clone_node_key(),
     );
 
     graph.add_node(asset);
     graph.add_node(process);
-    graph.add_node(outbound);
+    graph.add_node(inbound);
     graph.add_node(src_ip);
     graph.add_node(dst_ip);
     graph.add_node(src_port);

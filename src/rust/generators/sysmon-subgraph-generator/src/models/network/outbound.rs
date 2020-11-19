@@ -109,7 +109,7 @@ pub fn generate_outbound_connection_subgraph(
 
     // A process creates a connection
     graph.add_edge(
-        "created_connection",
+        "created_connections",
         process.clone_node_key(),
         outbound.clone_node_key(),
     );
@@ -123,36 +123,23 @@ pub fn generate_outbound_connection_subgraph(
 
     // The outbound process connection is to a dst ip + port
     graph.add_edge(
-        "external_connection",
+        "connected_to",
         outbound.clone_node_key(),
-        dst_port.clone_node_key(),
-    );
-
-    // There is a network connection between the src and dst ports
-    graph.add_edge(
-        "outbound_connection_to",
-        src_port.clone_node_key(),
-        network_connection.clone_node_key(),
-    );
-
-    graph.add_edge(
-        "inbound_connection_to",
-        network_connection.clone_node_key(),
         dst_port.clone_node_key(),
     );
 
     // There is also a connection between the two IP addresses
 
     graph.add_edge(
-        "ip_connection_to",
+        "network_connections",
         src_ip.clone_node_key(),
         ip_connection.clone_node_key(),
     );
 
     graph.add_edge(
-        "ip_connection_to",
-        ip_connection.clone_node_key(),
+        "network_connections",
         dst_ip.clone_node_key(),
+        ip_connection.clone_node_key(),
     );
 
     graph.add_node(asset);
