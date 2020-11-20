@@ -12,4 +12,4 @@ class TestEngagementEdgeChalice(unittest.TestCase):
         with Client(app) as client:
             result = client.http.post("/getNotebook")
             assert result.status_code == 400
-            assert result.json_body == {'error': 'Must log in'}
+            assert result.json_body == {"error": "Must log in"}

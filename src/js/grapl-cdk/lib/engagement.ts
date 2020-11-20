@@ -201,7 +201,7 @@ export class EngagementEdge extends cdk.NestedStack {
                             resourcePath: '/checkLogin',
                         },
                         {
-                            httpMethod: 'GET',
+                            httpMethod: 'POST',
                             resourcePath: '/getNotebook',
                         },
                         {
