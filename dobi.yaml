@@ -740,6 +740,10 @@ job=build-engagement-edge:
 job=run-engagement-edge-unit-tests:
   use: engagement-edge-build
   command: /bin/bash -c "source venv/bin/activate && cd engagement_edge && py.test -n auto -m 'not integration_test'"
+  env:
+    - IS_LOCAL=True
+    - BUCKET_PREFIX=local-grapl
+    - UX_BUCKET_URL="ux_bucket_url"
 
 job=build-dgraph-ttl:
   use: dgraph-ttl-build

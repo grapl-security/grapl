@@ -36,45 +36,61 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-JWT_SECRET: Optional[str] = None
 
-if IS_LOCAL:
-    # Theory: This whole code block is deprecated by the `wait-for-it grapl-provision`,
-    # which guarantees that the JWT Secret is, now, in the secretsmanager. - wimax
+class LazyJwtSecret:
+    def __init__(self) -> None:
+        self.secret: Optional[str] = None
 
-    import time
+    def get(self) -> str:
+        if self.secret is None:
+            self.secret = self._retrieve_jwt_secret()
+        return self.secret
 
-    TIMEOUT_SECS = 30
+    def _retrieve_jwt_secret(self) -> str:
+        if IS_LOCAL:
+            return self._retrieve_jwt_secret_local()
+        else:
+            jwt_secret_id = os.environ["JWT_SECRET_ID"]
 
-    for _ in range(TIMEOUT_SECS):
-        try:
-            secretsmanager = boto3.client(
-                "secretsmanager",
-                region_name="us-east-1",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
-            )
+            secretsmanager = boto3.client("secretsmanager")
 
-            JWT_SECRET = secretsmanager.get_secret_value(
-                SecretId="JWT_SECRET_ID",
+            jwt_secret: str = secretsmanager.get_secret_value(
+                SecretId=jwt_secret_id,
             )["SecretString"]
-            break
-        except Exception as e:
-            LOGGER.debug(e)
-            time.sleep(1)
-    if not JWT_SECRET:
-        raise TimeoutError(
-            f"Expected secretsmanager to be available within {TIMEOUT_SECS} seconds"
-        )
-else:
-    JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
+            return jwt_secret
 
-    secretsmanager = boto3.client("secretsmanager")
+    def _retrieve_jwt_secret_local(self) -> str:
+        # Theory: This whole code block is deprecated by the `wait-for-it grapl-provision`,
+        # which guarantees that the JWT Secret is, now, in the secretsmanager. - wimax
 
-    JWT_SECRET = secretsmanager.get_secret_value(
-        SecretId=JWT_SECRET_ID,
-    )["SecretString"]
+        timeout_secs = 30
+        jwt_secret: Optional[str] = None
+
+        for _ in range(timeout_secs):
+            try:
+                secretsmanager = boto3.client(
+                    "secretsmanager",
+                    region_name="us-east-1",
+                    aws_access_key_id="dummy_cred_aws_access_key_id",
+                    aws_secret_access_key="dummy_cred_aws_secret_access_key",
+                    endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
+                )
+
+                jwt_secret = secretsmanager.get_secret_value(
+                    SecretId="JWT_SECRET_ID",
+                )["SecretString"]
+                break
+            except Exception as e:
+                LOGGER.debug(e)
+                time.sleep(1)
+        if not jwt_secret:
+            raise TimeoutError(
+                f"Expected secretsmanager to be available within {timeout_secs} seconds"
+            )
+        return jwt_secret
+
+
+JWT_SECRET = LazyJwtSecret()
 
 ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
@@ -199,10 +215,9 @@ def login(username: str, password: str) -> Optional[str]:
         return None
 
     # Use JWT to generate token
-    assert JWT_SECRET
-    return jwt.encode({"username": username}, JWT_SECRET, algorithm="HS256").decode(
-        "utf8"
-    )
+    return jwt.encode(
+        {"username": username}, JWT_SECRET.get(), algorithm="HS256"
+    ).decode("utf8")
 
 
 def check_jwt(headers: Dict[str, Any]) -> bool:
@@ -215,9 +230,8 @@ def check_jwt(headers: Dict[str, Any]) -> bool:
         LOGGER.info("encoded_jwt %s", encoded_jwt)
         return False
 
-    assert JWT_SECRET
     try:
-        jwt.decode(encoded_jwt, JWT_SECRET, algorithms=["HS256"])
+        jwt.decode(encoded_jwt, JWT_SECRET.get(), algorithms=["HS256"])
         return True
     except Exception as e:
         LOGGER.error("jwt.decode %s", e)
@@ -322,7 +336,7 @@ def get_notebook() -> Response:
     notebook_name = f"{BUCKET_PREFIX}-Notebook"
     client = SagemakerClient.create()
     url = client.get_presigned_url(notebook_name)
-    return respond(err=none, res={"notebook_url": url})
+    return respond(err=None, res={"notebook_url": url})
 
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
