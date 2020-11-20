@@ -6,7 +6,6 @@ import os
 import re
 import sys
 import time
-import uuid
 from hashlib import pbkdf2_hmac, sha256
 from hmac import compare_digest
 from random import uniform
@@ -15,7 +14,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
     Tuple,
     TypeVar,
@@ -25,77 +23,79 @@ from typing import (
 
 import boto3
 import jwt
-import pydgraph  # type: ignore
 from chalice import Chalice, CORSConfig, Response
-from pydgraph import DgraphClient
-
-from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
-from grapl_analyzerlib.nodes.entity import EntityQuery
-from grapl_analyzerlib.nodes.lens import LensQuery
+from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
+from src.lib.sagemaker import SagemakerClient
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
     Salt = bytes
 
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
-
-
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
+LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-JWT_SECRET: Optional[str] = None
 
-if IS_LOCAL:
-    # Theory: This whole code block is deprecated by the `wait-for-it grapl-provision`,
-    # which guarantees that the JWT Secret is, now, in the secretsmanager. - wimax
+class LazyJwtSecret:
+    def __init__(self) -> None:
+        self.secret: Optional[str] = None
 
-    import time
+    def get(self) -> str:
+        if self.secret is None:
+            self.secret = self._retrieve_jwt_secret()
+        return self.secret
 
-    TIMEOUT_SECS = 30
+    def _retrieve_jwt_secret(self) -> str:
+        if IS_LOCAL:
+            return self._retrieve_jwt_secret_local()
+        else:
+            jwt_secret_id = os.environ["JWT_SECRET_ID"]
 
-    for _ in range(TIMEOUT_SECS):
-        try:
-            secretsmanager = boto3.client(
-                "secretsmanager",
-                region_name="us-east-1",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
-            )
+            secretsmanager = boto3.client("secretsmanager")
 
-            JWT_SECRET = secretsmanager.get_secret_value(
-                SecretId="JWT_SECRET_ID",
+            jwt_secret: str = secretsmanager.get_secret_value(
+                SecretId=jwt_secret_id,
             )["SecretString"]
-            break
-        except Exception as e:
-            LOGGER.debug(e)
-            time.sleep(1)
-    if not JWT_SECRET:
-        raise TimeoutError(
-            f"Expected secretsmanager to be available within {TIMEOUT_SECS} seconds"
-        )
-else:
-    JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
+            return jwt_secret
 
-    secretsmanager = boto3.client("secretsmanager")
+    def _retrieve_jwt_secret_local(self) -> str:
+        # Theory: This whole code block is deprecated by the `wait-for-it grapl-provision`,
+        # which guarantees that the JWT Secret is, now, in the secretsmanager. - wimax
 
-    JWT_SECRET = secretsmanager.get_secret_value(
-        SecretId=JWT_SECRET_ID,
-    )["SecretString"]
+        timeout_secs = 30
+        jwt_secret: Optional[str] = None
+
+        for _ in range(timeout_secs):
+            try:
+                secretsmanager = boto3.client(
+                    "secretsmanager",
+                    region_name="us-east-1",
+                    aws_access_key_id="dummy_cred_aws_access_key_id",
+                    aws_secret_access_key="dummy_cred_aws_secret_access_key",
+                    endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
+                )
+
+                jwt_secret = secretsmanager.get_secret_value(
+                    SecretId="JWT_SECRET_ID",
+                )["SecretString"]
+                break
+            except Exception as e:
+                LOGGER.debug(e)
+                time.sleep(1)
+        if not jwt_secret:
+            raise TimeoutError(
+                f"Expected secretsmanager to be available within {timeout_secs} seconds"
+            )
+        return jwt_secret
+
+
+JWT_SECRET = LazyJwtSecret()
 
 ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
 ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 DYNAMO: Optional[DynamoDBServiceResource] = None
-
-if IS_LOCAL:
-    MG_ALPHA = "master_graph:9080"
-else:
-    MG_ALPHA = "alpha0.mastergraphcluster.grapl:9080"
 
 app = Chalice(app_name="engagement-edge")
 
@@ -107,7 +107,7 @@ if IS_LOCAL:
     )
 else:
     origin_re = re.compile(
-        f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/',
+        f"https://{BUCKET_PREFIX}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/",
         re.IGNORECASE,
     )
 
@@ -215,10 +215,9 @@ def login(username: str, password: str) -> Optional[str]:
         return None
 
     # Use JWT to generate token
-    assert JWT_SECRET
-    return jwt.encode({"username": username}, JWT_SECRET, algorithm="HS256").decode(
-        "utf8"
-    )
+    return jwt.encode(
+        {"username": username}, JWT_SECRET.get(), algorithm="HS256"
+    ).decode("utf8")
 
 
 def check_jwt(headers: Dict[str, Any]) -> bool:
@@ -231,9 +230,8 @@ def check_jwt(headers: Dict[str, Any]) -> bool:
         LOGGER.info("encoded_jwt %s", encoded_jwt)
         return False
 
-    assert JWT_SECRET
     try:
-        jwt.decode(encoded_jwt, JWT_SECRET, algorithms=["HS256"])
+        jwt.decode(encoded_jwt, JWT_SECRET.get(), algorithms=["HS256"])
         return True
     except Exception as e:
         LOGGER.error("jwt.decode %s", e)
@@ -255,6 +253,7 @@ def lambda_login(event: Any) -> Optional[str]:
     return None
 
 
+# observation: this is never consumed?
 cors_config = CORSConfig(
     allow_origin=ORIGIN_OVERRIDE or ORIGIN,
     allow_credentials="true",
@@ -324,10 +323,20 @@ def login_route() -> Response:
 def check_login() -> Response:
     LOGGER.debug("/checkLogin %s", app.current_request)
     request = app.current_request
+
     if check_jwt(request.headers):
         return respond(None, "True")
     else:
         return respond(None, "False")
+
+
+@requires_auth("/getNotebook")
+def get_notebook() -> Response:
+    # cross-reference with `engagement.ts` notebookInstanceName
+    notebook_name = f"{BUCKET_PREFIX}-Notebook"
+    client = SagemakerClient.create()
+    url = client.get_presigned_url(notebook_name)
+    return respond(err=None, res={"notebook_url": url})
 
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
@@ -335,10 +344,13 @@ def nop_route() -> Response:
     LOGGER.debug(app.current_request.context["path"])
 
     path = app.current_request.context["path"]
+    path_to_handler = {
+        "/prod/login": login_route,
+        "/prod/checkLogin": check_login,
+        "/prod/getNotebook": get_notebook,
+    }
+    handler = path_to_handler.get(path, None)
+    if handler:
+        handler()
 
-    if path == "/prod/login":
-        return login_route()
-    elif path == "/prod/checkLogin":
-        return check_login()
-
-    return respond("InvalidPath")
+    return respond(err=f"Invalid path: {path}")
