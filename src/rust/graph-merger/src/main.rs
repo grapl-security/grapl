@@ -40,7 +40,8 @@ use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service;
+use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
+use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use sqs_lambda::redis_cache::RedisCache;
 
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
@@ -774,7 +775,10 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
     grapl_config::wait_for_s3(init_s3_client()).await?;
 
-    local_sqs_service(
+    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
+    options_builder.with_minimal_buffer_completion_policy();
+
+    local_sqs_service_with_options(
         source_queue_url,
         "local-grapl-subgraphs-merged-bucket",
         Context {
@@ -841,6 +845,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 
             Ok(())
         },
+        options_builder.build(),
     )
     .await;
 

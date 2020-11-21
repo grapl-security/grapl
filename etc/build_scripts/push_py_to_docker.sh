@@ -1,5 +1,5 @@
 #!/bin/bash
-set -u
+set -eu
 
 services=(
     analyzer-executor
@@ -7,8 +7,7 @@ services=(
     notebook
     engagement-edge
     model-plugin-deployer
-    graph-provision
-    dynamodb-provision
+    provision
     dgraph-ttl
 )
 

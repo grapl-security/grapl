@@ -2,10 +2,8 @@ import dataclasses
 from typing import List, Optional
 
 import boto3
-
-from mypy_boto3 import sqs, dynamodb
-
 from chalice import Chalice
+from mypy_boto3 import dynamodb, sqs
 
 app = Chalice(app_name="analyzer-deployer")
 

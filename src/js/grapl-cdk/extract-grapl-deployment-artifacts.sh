@@ -38,6 +38,7 @@ function getzip_b() {
 as=(
     "node-identifier"
     "sysmon-subgraph-generator"
+    "osquery-subgraph-generator"
     "generic-subgraph-generator"
     "node-identifier-retry-handler"
     "graph-merger"

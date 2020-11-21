@@ -31,7 +31,8 @@ use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
 use chrono::Utc;
-use sqs_lambda::local_sqs_service::local_sqs_service;
+use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
+use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -378,7 +379,10 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-    local_sqs_service(
+    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
+    options_builder.with_minimal_buffer_completion_policy();
+
+    local_sqs_service_with_options(
         source_queue_url,
         "local-grapl-analyzer-dispatched-bucket",
         Context {
@@ -445,6 +449,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
 
             Ok(())
         },
+        options_builder.build(),
     )
     .await?;
 

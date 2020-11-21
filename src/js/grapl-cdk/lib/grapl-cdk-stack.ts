@@ -22,15 +22,19 @@ import { EngagementNotebook } from './engagement';
 import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
 import { Swarm } from './swarm';
+import { OperationalAlarms, SecurityAlarms } from './alarms';
 
-import { Watchful } from './vendor/cdk-watchful/lib/watchful';
+import { Watchful } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
+import { PipelineDashboard } from './pipeline_dashboard';
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
 }
 
 class SysmonGraphGenerator extends cdk.NestedStack {
+    readonly service: Service;
+
     constructor(
         parent: cdk.Construct,
         id: string,
@@ -47,7 +51,7 @@ class SysmonGraphGenerator extends cdk.NestedStack {
         const event_cache = new RedisCluster(this, 'SysmonEventCache', props);
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        const service = new Service(this, id, {
+        this.service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
@@ -57,6 +61,53 @@ class SysmonGraphGenerator extends cdk.NestedStack {
             vpc: props.vpc,
             reads_from: sysmon_log.bucket,
             subscribes_to: sysmon_log.topic,
+            writes_to: props.writesTo,
+            version: props.version,
+            watchful: props.watchful,
+            metric_forwarder: props.metricForwarder,
+        });
+
+        this.service.event_handler.connections.allowToAnyIpv4(
+            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+        );
+
+        this.service.event_retry_handler.connections.allowToAnyIpv4(
+            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+        );
+    }
+}
+
+interface OSQueryGraphGeneratorProps extends GraplServiceProps {
+    writesTo: s3.IBucket;
+}
+
+class OSQueryGraphGenerator extends cdk.NestedStack {
+    constructor(
+        parent: cdk.Construct,
+        id: string,
+        props: OSQueryGraphGeneratorProps
+    ) {
+        super(parent, id);
+
+        const bucket_prefix = props.prefix.toLowerCase();
+        const osquery_log = new EventEmitter(
+            this,
+            bucket_prefix + '-osquery-log'
+        );
+
+        const event_cache = new RedisCluster(this, 'OSQueryEventCache', props);
+        event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
+
+        const service = new Service(this, id, {
+            prefix: props.prefix,
+            environment: {
+                BUCKET_PREFIX: bucket_prefix,
+                EVENT_CACHE_ADDR: event_cache.cluster.attrRedisEndpointAddress,
+                EVENT_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
+            },
+            vpc: props.vpc,
+            reads_from: osquery_log.bucket,
+            subscribes_to: osquery_log.topic,
             writes_to: props.writesTo,
             version: props.version,
             watchful: props.watchful,
@@ -80,6 +131,7 @@ export interface NodeIdentifierProps extends GraplServiceProps {
 class NodeIdentifier extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
     readonly topic: sns.Topic;
+    readonly service: Service;
 
     constructor(parent: cdk.Construct, id: string, props: NodeIdentifierProps) {
         super(parent, id);
@@ -101,7 +153,7 @@ class NodeIdentifier extends cdk.NestedStack {
         );
         retry_identity_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        const service = new Service(this, id, {
+        this.service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
@@ -134,25 +186,25 @@ class NodeIdentifier extends cdk.NestedStack {
             metric_forwarder: props.metricForwarder,
         });
 
-        history_db.allowReadWrite(service);
+        history_db.allowReadWrite(this.service);
 
-        service.event_handler.connections.allowToAnyIpv4(
+        this.service.event_handler.connections.allowToAnyIpv4(
             ec2.Port.tcp(
                 parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
             )
         );
 
-        service.event_retry_handler.connections.allowToAnyIpv4(
+        this.service.event_retry_handler.connections.allowToAnyIpv4(
             ec2.Port.tcp(
                 parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
             )
         );
 
-        service.event_handler.connections.allowToAnyIpv4(
+        this.service.event_handler.connections.allowToAnyIpv4(
             ec2.Port.tcp(443),
             'Allow outbound to S3'
         );
-        service.event_retry_handler.connections.allowToAnyIpv4(
+        this.service.event_retry_handler.connections.allowToAnyIpv4(
             ec2.Port.tcp(443),
             'Allow outbound to S3'
         );
@@ -199,6 +251,7 @@ export interface GraphMergerProps extends GraplServiceProps {
 
 class GraphMerger extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
+    readonly service: Service
 
     constructor(scope: cdk.Construct, id: string, props: GraphMergerProps) {
         super(scope, id);
@@ -217,12 +270,12 @@ class GraphMerger extends cdk.NestedStack {
         );
         graph_merge_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        const service = new Service(this, id, {
+        this.service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
-                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                MG_ALPHAS: 'http://' + props.dgraphSwarmCluster.alphaHostPort(),
                 MERGED_CACHE_ADDR:
                     graph_merge_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT:
@@ -237,8 +290,8 @@ class GraphMerger extends cdk.NestedStack {
             watchful: props.watchful,
             metric_forwarder: props.metricForwarder,
         });
-        props.schemaTable.allowRead(service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
+        props.schemaTable.allowRead(this.service);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.event_handler);
     }
 }
 
@@ -250,6 +303,7 @@ export interface AnalyzerDispatchProps extends GraplServiceProps {
 class AnalyzerDispatch extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
     readonly topic: sns.Topic;
+    readonly service: Service;
 
     constructor(
         scope: cdk.Construct,
@@ -273,7 +327,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
         );
         dispatch_event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        const service = new Service(this, id, {
+        this.service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
@@ -293,13 +347,13 @@ class AnalyzerDispatch extends cdk.NestedStack {
             metric_forwarder: props.metricForwarder,
         });
 
-        service.readsFrom(props.readsFrom, true);
+        this.service.readsFrom(props.readsFrom, true);
 
-        service.event_handler.connections.allowToAnyIpv4(
+        this.service.event_handler.connections.allowToAnyIpv4(
             ec2.Port.allTcp(),
             'Allow outbound to S3'
         );
-        service.event_retry_handler.connections.allowToAnyIpv4(
+        this.service.event_retry_handler.connections.allowToAnyIpv4(
             ec2.Port.allTcp(),
             'Allow outbound to S3'
         );
@@ -314,6 +368,7 @@ export interface AnalyzerExecutorProps extends GraplServiceProps {
 
 class AnalyzerExecutor extends cdk.NestedStack {
     readonly bucket: s3.IBucket;
+    readonly service: Service;
 
     constructor(
         scope: cdk.Construct,
@@ -333,7 +388,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
         const hit_cache = new RedisCluster(this, 'ExecutorHitCache', props);
         const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
 
-        const service = new Service(this, id, {
+        this.service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
                 ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
@@ -355,11 +410,14 @@ class AnalyzerExecutor extends cdk.NestedStack {
             subscribes_to: dispatched_analyzer.topic,
             opt: {
                 runtime: lambda.Runtime.PYTHON_3_7,
+                py_entrypoint: "lambda_function.lambda_handler"
             },
             version: props.version,
             watchful: props.watchful,
             metric_forwarder: props.metricForwarder,
-        });
+        },
+        );
+        const service = this.service;
 
         props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
 
@@ -397,6 +455,7 @@ export interface EngagementCreatorProps extends GraplServiceProps {
 
 class EngagementCreator extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
+    readonly service: Service;
 
     constructor(
         scope: cdk.Construct,
@@ -412,7 +471,7 @@ class EngagementCreator extends cdk.NestedStack {
         );
         this.bucket = analyzer_matched_sugraphs.bucket;
 
-        const service = new Service(this, id, {
+        this.service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
@@ -428,15 +487,15 @@ class EngagementCreator extends cdk.NestedStack {
             metric_forwarder: props.metricForwarder,
         });
 
-        props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.event_handler);
 
-        service.publishesToTopic(props.publishesTo);
+        this.service.publishesToTopic(props.publishesTo);
 
-        service.event_handler.connections.allowToAnyIpv4(
+        this.service.event_handler.connections.allowToAnyIpv4(
             ec2.Port.allTcp(),
             'Allow outbound to S3'
         );
-        service.event_retry_handler.connections.allowToAnyIpv4(
+        this.service.event_retry_handler.connections.allowToAnyIpv4(
             ec2.Port.allTcp(),
             'Allow outbound to S3'
         );
@@ -725,9 +784,11 @@ export interface GraplServiceProps {
 
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
-    version?: string;
+    version: string;
     watchfulEmail?: string;
     dgraphInstanceType?: ec2.InstanceType;
+    operationalAlarmsEmail?: string;
+    securityAlarmsEmail?: string;
 }
 
 export class GraplCdkStack extends cdk.Stack {
@@ -788,7 +849,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const graplProps: GraplServiceProps = {
             prefix: this.prefix,
-            version: props.version || 'latest',
+            version: props.version,
             jwtSecret: jwtSecret,
             vpc: grapl_vpc,
             dgraphSwarmCluster: dgraphSwarmCluster,
@@ -882,13 +943,19 @@ export class GraplCdkStack extends cdk.Stack {
             ...graplProps,
         });
 
-        new SysmonGraphGenerator(this, 'sysmon-subgraph-generator', {
+        const sysmon_generator = new SysmonGraphGenerator(this, 'sysmon-subgraph-generator', {
             writesTo: node_identifier.bucket,
             ...graplProps,
             ...enableMetricsProps,
         });
 
-        new EngagementNotebook(this, 'engagements', {
+        new OSQueryGraphGenerator(this, 'osquery-subgraph-generator', {
+            writesTo: node_identifier.bucket,
+            ...graplProps,
+            ...enableMetricsProps,
+        });
+
+        const engagement_notebook = new EngagementNotebook(this, 'engagements', {
             model_plugins_bucket,
             ...graplProps,
         });
@@ -896,7 +963,10 @@ export class GraplCdkStack extends cdk.Stack {
         this.engagement_edge = new EngagementEdge(
             this,
             'EngagementEdge',
-            graplProps
+            {
+                ...graplProps,
+                engagement_notebook: engagement_notebook
+            },
         );
 
         const ux_bucket = new s3.Bucket(this, 'EdgeBucket', {
@@ -913,5 +983,23 @@ export class GraplCdkStack extends cdk.Stack {
             graplProps,
             ux_bucket
         );
+
+        if (props.operationalAlarmsEmail) {
+            new OperationalAlarms(this, "operation_alarms", props.operationalAlarmsEmail);
+        }
+        if (props.securityAlarmsEmail) {
+            new SecurityAlarms(this, "security_alarms", props.securityAlarmsEmail);
+        }
+
+        new PipelineDashboard(this, "pipeline_dashboard", [
+            // Order here is important - the idea is that this dashboard will help Grapl operators
+            // quickly determine which service in the pipeline is failing.
+            sysmon_generator.service,
+            node_identifier.service,
+            graph_merger.service,
+            analyzer_dispatch.service,
+            analyzer_executor.service,
+            engagement_creator.service,
+        ]);
     }
 }

@@ -31,6 +31,13 @@ with the data in Grapl.
 
     nodes/*
 
+.. toctree::
+    :caption: Development
+    :maxdepth: 1
+    :glob:
+
+    development/*
+
 Queries and Views
 -----------------
 

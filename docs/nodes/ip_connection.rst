@@ -3,10 +3,10 @@ IpConnection
 
 IpConnectionView
 ----------------
-.. autoclass:: grapl_analyzerlib.nodes.ip_connection_node.IpConnectionView
+.. autoclass:: grapl_analyzerlib.nodes.ip_connection.IpConnectionView
     :members:
 
 IpConnectionQuery
 -----------------
-.. autoclass:: grapl_analyzerlib.nodes.ip_connection_node.IpConnectionQuery
+.. autoclass:: grapl_analyzerlib.nodes.ip_connection.IpConnectionQuery
     :members:
