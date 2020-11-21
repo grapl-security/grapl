@@ -1,15 +1,17 @@
 import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cdk from '@aws-cdk/core';
-import * as cloudwatch from '@aws-cdk/aws-cloudwatch';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as events from '@aws-cdk/aws-events';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
+import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as targets from '@aws-cdk/aws-events-targets';
+
+import * as path from 'path';
 
 import { Service } from './service';
 import { UserAuthDb } from './userauthdb';
@@ -446,7 +448,6 @@ interface DGraphSwarmClusterProps {
     version: string;
     vpc: ec2.IVpc;
     instanceType: ec2.InstanceType;
-    clusterSize: number;
     watchful?: Watchful;
 }
 
@@ -478,41 +479,18 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
                 ec2.Port.tcp(9083)
             ],
             instanceType: props.instanceType,
-            clusterSize: props.clusterSize,
             watchful: props.watchful,
         });
 
-        // FIXME: this won't work
-        // this.dgraphSwarmCluster.instances.forEach((instance, idx) => {
-        //     new cloudwatch.Alarm(this, `SwarmDgraphDisk-${idx}`, {
-        //         alarmName: `dgraph_disk_used_percent-${instance.instanceId}`,
-        //         alarmDescription: `DGraph volume disk usage on ${instance.instanceId}`,
-        //         metric: new cloudwatch.Metric({
-        //             metricName: `disk_used_percent-${instance.instanceId}`,
-        //             namespace: 'CWAgent',
-        //             dimensions: {
-        //                 'InstanceId': instance.instanceId,
-        //                 'path': '/dgraph'
-        //             }
-        //         }),
-        //         evaluationPeriods: 1,
-        //         threshold: 95,
-        //     });
-        //     new cloudwatch.Alarm(this, `SwarmRootDisk-${idx}`, {
-        //         alarmName: `root_disk_used_percent-${instance.instanceId}`,
-        //         alarmDescription: `Root volume disk usage on ${instance.instanceId}`,
-        //         metric: new cloudwatch.Metric({
-        //             metricName: `disk_used_percent-${instance.instanceId}`,
-        //             namespace: 'CWAgent',
-        //             dimensions: {
-        //                 'InstanceId': instance.instanceId,
-        //                 'path': '/'
-        //             }
-        //         }),
-        //         evaluationPeriods: 1,
-        //         threshold: 95,
-        //     });
-        // });
+        const dgraphConfigBucket = s3.Bucket.fromBucketName(
+            this,
+            'dgraphConfigBucket',
+            `${props.prefix.toLowerCase()}-dgraph-config-bucket`,
+        );
+        new s3deploy.BucketDeployment(this, "dgraphConfigDeployment", {
+            sources: [s3deploy.Source.asset(path.join(__dirname, '../dgraph/'))],
+            destinationBucket: dgraphConfigBucket,
+        });
     }
 
     public alphaHostPort(): string {
@@ -750,7 +728,6 @@ export interface GraplStackProps extends cdk.StackProps {
     version?: string;
     watchfulEmail?: string;
     dgraphInstanceType?: ec2.InstanceType;
-    dgraphClusterSize?: number;
 }
 
 export class GraplCdkStack extends cdk.Stack {
@@ -805,7 +782,6 @@ export class GraplCdkStack extends cdk.Stack {
                 vpc: grapl_vpc,
                 version: props.version || 'latest',
                 instanceType: props.dgraphInstanceType || new ec2.InstanceType("t3a.medium"),
-                clusterSize: props.dgraphClusterSize || 3,
                 watchful: watchful,
             }
         );

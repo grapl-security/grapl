@@ -75,55 +75,69 @@ To deploy Grapl with the CDK, execute the following
 3. `env CDK_NEW_BOOTSTRAP=1 cdk bootstrap --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess`
 4. `./deploy_all.sh`
 
+If you have configured an email address for Watchful (see previous
+section) you should receive an email with subject *"AWS Notification -
+Subscription Confirmation"* containing a link to activate the
+subscription. Click the link to begin receiving CloudWatch alerts.
+
 ## Provisioning DGraph
 
 Once the CDK deploy is complete you'll need to perform some additional
 manual configuration to spin up the DGraph cluster. The CDK deploy in
-the previous section has created a bastion host for cluster management
-as well as an Autoscaling Group containing EC2 Instances where we'll
-run the Docker Swarm cluster. It only remains to provision a Docker
-Swarm cluster and install DGraph on it. We use AWS Secure Session
-Manager (SSM) to access this bastion host via the AWS Console.
+the previous section has created an Autoscaling Group for the EC2
+Instances where we'll run the Docker Swarm cluster. It only remains to
+spin up the EC2 instances, provision a Docker Swarm cluster, and
+install DGraph on it.
 
 To provision DGraph:
 
-1. Navigate to the [AWS Session Manager
+1. Navigate to the [AWS Autoscaling
+   console](https://console.aws.amazon.com/ec2autoscaling) and click
+   on the Swarm Autoscaling group. Click *Edit* in the *Group Details*
+   pane and set *Desired capacity*, *Minimum capacity*, and *Maximum
+   capacity* all to 3.
+
+2. Navigate to the [AWS Route53 Hosted Zones
+   console](https://console.aws.amazon.com/route53/v2/hostedzones) and
+   click on the hosted zone with *Domain name* ending in
+   `.dgraph.grapl`. Wait until you see a DNS record of *Type* A appear
+   in the list of *Records*. It may take a few minutes and you may
+   have to click the refresh button. Ensure that the IP addresses
+   associated with the A record are the private IP addresses of the
+   instances in the Autoscaling Group from (1).
+
+3. `cd swarm` and run `python3 swarm_setup.py $GRAPL_DEPLOY_NAME`
+   where `$GRAPL_DEPLOY_NAME` is the same `deployName` you configured
+   above in `bin/grapl-cdk.ts`. This script will output logs to the
+   console indicating which instance is the swarm manager.
+
+4. Navigate to the [AWS Session Manager
    console](https://us-east-1.console.aws.amazon.com/systems-manager/session-manager)
-   and click _Start session_. A new window will open in your browser
-   with a terminal prompt on the bastion host.
-2. Execute the following commands:
+   and click *Start session*. Select the swarm manager instance. A
+   shell session will open on that instance.
 
-```bash
-#
-# refer to the DGraph docs for more details about the rest of the setup
-# procedure:
-#
-# https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-#
+5. Execute the following commands in the SSM shell on the swarm
+   manager:
+   ```bash
+   cd $HOME
 
-# create a Docker Swarm cluster
-AWS01_IP=$(docker-machine ip "$AWS01_NAME")
-eval $(docker-machine env "$AWS01_NAME" --shell sh)
-docker swarm init --advertise-addr $AWS01_IP
+   # get DGraph configs
+   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/docker-compose-dgraph.yml .
+   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yml .
+   ```
+   where `$GRAPL_DEPLOY_NAME` is the same `deployName` you configured
+   above in `bin/grapl-cdk.ts`.
+   ``` bash
+   # start DGraph
+   docker stack deploy -c docker-compose-dgraph.yml dgraph
 
-# extract the join token
-WORKER_JOIN_TOKEN=$(docker swarm join-token worker -q)
+   # check that all the services are running
+   docker service ls
+   ```
 
-# make aws02 and aws03 join the swarm
-eval $(docker-machine env "$AWS02_NAME" --shell sh)
-docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
-eval $(docker-machine env "$AWS03_NAME" --shell sh)
-docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
+# DGraph operations
 
-# get DGraph configs
-cd $HOME
-wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/dgraph/docker-compose-dgraph.yml
-wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/dgraph/envoy.yaml
-
-# start DGraph
-eval $(docker-machine env "$AWS01_NAME" --shell sh)
-docker stack deploy -c docker-compose-dgraph.yml dgraph
-
-# check that all the services are running
-docker service ls
-```
+You can manage the DGraph cluster with the docker swarm tooling by
+logging into the swarm manager with SSM. If you forget which instance
+is the swarm manager, you can find it using the EC2 instance tag
+`grapl-swarm-role=swarm-manager`.
