@@ -10,8 +10,7 @@ import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as path from 'path';
 
 import { FunctionHook } from '@aws-cdk/aws-autoscaling-hooktargets';
-
-import { Watchful } from './vendor/cdk-watchful/lib/watchful';
+import { Watchful } from 'cdk-watchful';
 import { Duration } from '@aws-cdk/core';
 
 export interface SwarmProps {

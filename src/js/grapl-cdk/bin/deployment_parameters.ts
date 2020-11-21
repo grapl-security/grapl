@@ -1,3 +1,5 @@
+import * as ec2 from '@aws-cdk/aws-ec2';
+
 module HardcodedDeploymentParameters {
     // ex: 'Grapl-my-deployment'
     export const deployName = undefined;
@@ -35,6 +37,9 @@ export module DeploymentParameters {
     export const securityAlarmsEmail = process.env.GRAPL_CDK_SECURITY_ALARMS_EMAIL
         || HardcodedDeploymentParameters.securityAlarmsEmail;
 
-    export const dgraphInstanceType = process.env.GRAPL_DGRAPH_INSTANCE_TYPE
-        || HardcodedDeploymentParameters.dgraphInstanceType;
+    const dgraphInstanceTypeName = process.env.GRAPL_DGRAPH_INSTANCE_TYPE
+        || HardcodedDeploymentParameters.dgraphInstanceType
+    export const dgraphInstanceType = new ec2.InstanceType(
+        dgraphInstanceTypeName || "t3a.medium"
+    );
 }
