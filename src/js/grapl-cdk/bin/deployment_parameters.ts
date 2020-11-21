@@ -12,9 +12,10 @@ module HardcodedDeploymentParameters {
     export const operationalAlarmsEmail = 'jgrillo@graplsecurity.com';
     export const securityAlarmsEmail = 'jgrillo@graplsecurity.com';
 
-    // instance type for DGraph nodes
+    // AWS EC2 instance type for DGraph nodes
     export const dgraphInstanceType = undefined;
 
+    // AWS region for this Grapl deployment
     export const region = 'us-east-1';
 }
 

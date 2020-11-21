@@ -273,8 +273,9 @@ export class Swarm extends cdk.Construct {
             'swarmConfigBucket',
             `${props.prefix.toLowerCase()}-swarm-config-bucket`,
         );
+        const swarmDir = path.join(__dirname, '../swarm/');
         new s3deploy.BucketDeployment(this, 'SwarmConfigDeployment', {
-            sources: [s3deploy.Source.asset(path.join(__dirname, '../swarm/'))],
+            sources: [s3deploy.Source.asset(swarmDir)],
             destinationBucket: swarmConfigBucket,
         });
     }

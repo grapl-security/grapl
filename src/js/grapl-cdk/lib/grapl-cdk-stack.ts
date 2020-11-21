@@ -546,8 +546,9 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             'dgraphConfigBucket',
             `${props.prefix.toLowerCase()}-dgraph-config-bucket`,
         );
+        const dgraphDir = path.join(__dirname, '../dgraph/');
         new s3deploy.BucketDeployment(this, "dgraphConfigDeployment", {
-            sources: [s3deploy.Source.asset(path.join(__dirname, '../dgraph/'))],
+            sources: [s3deploy.Source.asset(dgraphDir)],
             destinationBucket: dgraphConfigBucket,
         });
     }
