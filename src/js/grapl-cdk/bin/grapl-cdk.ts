@@ -17,6 +17,7 @@ const grapl = new GraplCdkStack(app, 'Grapl', {
     dgraphInstanceType: DeploymentParameters.dgraphInstanceType,
     tags: { 'grapl deployment': DeploymentParameters.stackName },
     description: 'Grapl base deployment',
+    env: { 'region': DeploymentParameters.region },
 });
 
 new EngagementUx(app, 'EngagementUX', {
