@@ -4,6 +4,9 @@ import unittest
 
 import hypothesis.strategies as st
 import pytest
+from chalice.test import Client
+from hypothesis import given
+
 from analyzer_deployer.app import (
     Analyzer,
     AnalyzerConfig,
@@ -14,8 +17,6 @@ from analyzer_deployer.app import (
     TableConfig,
     app,
 )
-from chalice.test import Client
-from hypothesis import given
 
 
 def _analyzers() -> st.SearchStrategy[Analyzer]:

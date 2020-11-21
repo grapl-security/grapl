@@ -4,6 +4,7 @@ import traceback
 
 import boto3  # type: ignore
 import botocore.exceptions  # type: ignore
+
 from analyzer_executor_lib.analyzer_executor import LOGGER, AnalyzerExecutor
 
 ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()

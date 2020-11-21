@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import boto3
+
 from src.lib.env_vars import IS_LOCAL
 
 if TYPE_CHECKING:

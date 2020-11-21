@@ -3,12 +3,11 @@ import logging
 from typing import Any, Callable, Optional
 from unittest import TestCase
 
-from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
-from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
-
 from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_analyzerlib.retry import retry
+from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
+from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
 
 LENS_NAME = "DESKTOP-FVSHABR"
 

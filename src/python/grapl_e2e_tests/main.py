@@ -1,7 +1,8 @@
 from os import environ
 
-import grapl_tests_common
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
+
+import grapl_tests_common
 from grapl_tests_common.setup import AnalyzerUpload
 from grapl_tests_common.sleep import verbose_sleep
 from grapl_tests_common.upload_test_data import UploadSysmonLogsTestData

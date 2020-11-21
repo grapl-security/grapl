@@ -22,8 +22,9 @@ from typing import (
 )
 
 import boto3
-import jwt
 from chalice import Chalice, CORSConfig, Response
+
+import jwt
 from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
 from src.lib.sagemaker import SagemakerClient
 
