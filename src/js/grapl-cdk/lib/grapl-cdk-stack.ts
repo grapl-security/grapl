@@ -541,11 +541,11 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             watchful: props.watchful,
         });
 
-        const dgraphConfigBucket = s3.Bucket.fromBucketName(
-            this,
-            'dgraphConfigBucket',
-            `${props.prefix.toLowerCase()}-dgraph-config-bucket`,
-        );
+        const dgraphConfigBucket = new s3.Bucket(this, 'DGraphConfigBucket', {
+            bucketName: `${props.prefix.toLowerCase()}-dgraph-config-bucket`,
+            publicReadAccess: false,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
         const dgraphDir = path.join(__dirname, '../dgraph/');
         new s3deploy.BucketDeployment(this, "dgraphConfigDeployment", {
             sources: [s3deploy.Source.asset(dgraphDir)],

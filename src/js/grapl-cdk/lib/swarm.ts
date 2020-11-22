@@ -268,11 +268,11 @@ export class Swarm extends cdk.Construct {
         this.swarmAsg = swarmAsg;
 
         // Deploy cluster setup scripts to S3
-        const swarmConfigBucket = s3.Bucket.fromBucketName(
-            this,
-            'swarmConfigBucket',
-            `${props.prefix.toLowerCase()}-swarm-config-bucket`,
-        );
+        const swarmConfigBucket = new s3.Bucket(this, 'SwarmConfigBucket', {
+            bucketName: `${props.prefix.toLowerCase()}-swarm-config-bucket`,
+            publicReadAccess: false,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
         const swarmDir = path.join(__dirname, '../swarm/');
         new s3deploy.BucketDeployment(this, 'SwarmConfigDeployment', {
             sources: [s3deploy.Source.asset(swarmDir)],
