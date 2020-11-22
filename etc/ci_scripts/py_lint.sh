@@ -19,7 +19,7 @@ EOF
 }
 
 GRAPL_LINT_DIR="$HOME/.venvs/grapl_lint"
-FLAG__CHECK_ONLY=false
+FLAG__CHECK_ONLY=
 
 set +u  # need to accept an unbound $1 in this case
 while :; do
