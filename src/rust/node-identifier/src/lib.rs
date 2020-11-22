@@ -63,7 +63,7 @@ pub mod sessiondb;
 pub mod sessions;
 
 #[derive(Clone)]
-struct NodeIdentifier<D, CacheT>
+pub struct NodeIdentifier<D, CacheT>
 where
     D: DynamoDb + Clone + Send + Sync + 'static,
     CacheT: Cache + Clone + Send + Sync + 'static,
@@ -1074,7 +1074,7 @@ pub fn init_dynamodb_client() -> DynamoDbClient {
 }
 
 #[derive(Clone, Default)]
-struct HashCache {
+pub struct HashCache {
     cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
 }
 
