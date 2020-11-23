@@ -93,7 +93,7 @@ def _init_docker_swarm(
                     }
                 )
             ],
-            "commandLine": ["swarm_init.py"],
+            "commandLine": ["python3 swarm_init.py"],
         },
     )
     command_id = command["Command"]["CommandId"]
@@ -131,7 +131,7 @@ def _join_worker_nodes(
                         }
                     )
                 ],
-                "commandLine": [f"swarm_join.py {join_token} {manager_ip}"],
+                "commandLine": [f"python3 swarm_join.py {join_token} {manager_ip}"],
             },
         )
         command_id = command["Command"]["CommandId"]

@@ -61,22 +61,28 @@ def _remove_dns_ip(dns_name: str, ip_address: str, hosted_zone_id: str) -> None:
         for ip in _dns_ip_addresses(route53, dns_name, None, hosted_zone_id)
         if ip != ip_address
     ]
+
+    change = {
+        "Action": "DELETE",  # delete the A record if this is the last address
+        "ResourceRecordSet": {
+            "Name": dns_name,
+            "Type": "A",
+            "TTL": 300,
+            "ResourceRecords": [{"Value": ip_address}],
+        },
+    }
+    if len(ip_addresses) > 0:
+        change["Action"] = "UPSERT"
+        change["ResourceRecordSet"]["ResourceRecords"] = [
+            {"Value": ip} for ip in ip_addresses
+        ]
+
     try:
         comment = f"Removed {ip_address} from {dns_name} DNS A Record"
         route53.change_resource_record_sets(
             HostedZoneId=hosted_zone_id,
             ChangeBatch={
-                "Changes": [
-                    {
-                        "Action": "UPSERT",
-                        "ResourceRecordSet": {
-                            "Name": dns_name,
-                            "Type": "A",
-                            "TTL": 300,
-                            "ResourceRecords": [{"Value": ip} for ip in ip_addresses],
-                        },
-                    },
-                ],
+                "Changes": [change],
                 "Comment": comment,
             },
         )

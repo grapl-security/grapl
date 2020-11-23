@@ -113,7 +113,7 @@ export class Swarm extends cdk.Construct {
         // UserData commands for initializing the Swarm instances.
         const swarmUserData = ec2.UserData.forLinux();
         swarmUserData.addCommands(...[
-            'yum install -y docker amazon-cloudwatch-agent',
+            'yum install -y docker amazon-cloudwatch-agent python3',
             'amazon-cloudwatch-agent-ctl -m ec2 -a start',
             'systemctl enable docker.service',
             'systemctl start docker.service',
