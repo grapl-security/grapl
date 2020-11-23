@@ -1,6 +1,6 @@
 import subprocess
 import sys
-import urllib
+import urllib.request
 
 
 def _get_private_ip() -> str:
