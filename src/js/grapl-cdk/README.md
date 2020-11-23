@@ -110,7 +110,8 @@ deployment.
 
 ## Deploying
 
-To deploy Grapl with the CDK, execute the following
+To deploy Grapl with the CDK, execute the following. Note that this
+process takes a while (like roughly 1hr), especially the last step.
 
 1. `npm i`
 2. `npm run build`
