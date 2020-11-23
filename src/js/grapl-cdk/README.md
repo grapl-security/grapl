@@ -155,7 +155,7 @@ To provision DGraph:
    console indicating which instance is the swarm manager.
 
 4. Navigate to the [AWS Session Manager
-   console](https://us-east-1.console.aws.amazon.com/systems-manager/session-manager)
+   console](https://console.aws.amazon.com/systems-manager/session-manager)
    and click *Start session*. Select the swarm manager instance. A
    shell session will open on that instance.
 
