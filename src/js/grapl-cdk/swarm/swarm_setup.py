@@ -1,12 +1,14 @@
 """Usage: python3 swarm_setup.py $GRAPL_DEPLOY_NAME"""
+import json
 import logging
 import os
 import sys
 import time
 
 import boto3
+import botocore
 
-from typing import Any, Iterator
+from typing import Any, Iterator, Tuple
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel("INFO")
@@ -37,14 +39,34 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
     command_id. Returns the command result.
 
     """
-    invocation = ssm.get_command_invocation(
-        CommandId=command_id, InstanceId=instance_id
-    )
+    invocation = None
+    while invocation is None:
+        try:
+            invocation = ssm.get_command_invocation(
+                CommandId=command_id,
+                InstanceId=instance_id,
+                PluginName="runShellScript",
+            )
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Code"] == "InvocationDoesNotExist":
+                time.sleep(2)
+                continue
+            else:
+                raise e
+
     while invocation["Status"] in IN_PROGRESS_STATUSES:
-        time.sleep(3)
-        invocation = ssm.get_command_invocation(
-            CommandId=command_id, InstanceId=instance_id
-        )
+        time.sleep(2)
+        try:
+            invocation = ssm.get_command_invocation(
+                CommandId=command_id,
+                InstanceId=instance_id,
+                PluginName="runShellScript",
+            )
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Code"] == "InvocationDoesNotExist":
+                continue
+            else:
+                raise e
     if invocation["Status"] == "Success":
         return invocation["StandardOutputContent"]
     else:
@@ -65,9 +87,11 @@ def _init_docker_swarm(
         Parameters={
             "sourceType": ["S3"],
             "sourceInfo": [
-                {
-                    "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/swarm_init.py"
-                }
+                json.dumps(
+                    {
+                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/swarm_init.py"
+                    }
+                )
             ],
             "commandLine": ["swarm_init.py"],
         },
@@ -101,9 +125,11 @@ def _join_worker_nodes(
             Parameters={
                 "sourceType": ["S3"],
                 "sourceInfo": [
-                    {
-                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/swarm_join.py"
-                    }
+                    json.dumps(
+                        {
+                            "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/swarm_join.py"
+                        }
+                    )
                 ],
                 "commandLine": [f"swarm_join.py {join_token} {manager_ip}"],
             },
@@ -121,16 +147,16 @@ def main(prefix: str) -> None:
     ec2 = boto3.client("ec2")
 
     LOGGER.info("Retrieving instance IDs")
-    instance_ids = _swarm_instance_ids(ec2)
+    instances = _swarm_instances(ec2)
 
     ssm = boto3.client("ssm")
 
     LOGGER.info("Initializing swarm manager")
-    manager_id, manager_ip = next(instance_ids)
+    manager_id, manager_ip = next(instances)
     join_token = _init_docker_swarm(ec2, ssm, prefix, manager_id, manager_ip)
 
     LOGGER.info("Joining worker instances")
-    _join_worker_nodes(ec2, ssm, prefix, instance_ids, join_token, manager_ip)
+    _join_worker_nodes(ec2, ssm, prefix, instances, join_token, manager_ip)
 
     LOGGER.info("Docker swarm cluster setup complete")
 

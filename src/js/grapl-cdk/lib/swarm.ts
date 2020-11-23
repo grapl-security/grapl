@@ -38,6 +38,7 @@ export interface SwarmProps {
 export class Swarm extends cdk.Construct {
     private readonly swarmHostedZone: route53.PrivateHostedZone;
     private readonly swarmAsg: asg.AutoScalingGroup;
+    readonly swarmInstanceRole: iam.Role;
 
     constructor(scope: cdk.Construct, id: string, props: SwarmProps) {
         super(scope, id);
@@ -224,6 +225,17 @@ export class Swarm extends cdk.Construct {
             );
         }
 
+        // Bucket for swarm configs
+        const swarmConfigBucket = new s3.Bucket(this, 'SwarmConfigBucket', {
+            bucketName: `${props.prefix.toLowerCase()}-swarm-config-bucket`,
+            publicReadAccess: false,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+        // grant read access to the swarm instances
+        swarmConfigBucket.grantRead(swarmInstanceRole);
+
+        this.swarmInstanceRole = swarmInstanceRole;
+
         // Swarm cluster ASG
         const zoneName = props.prefix.toLowerCase() + '.dgraph.grapl';
         const swarmAsg = new asg.AutoScalingGroup(this, 'SwarmASG', {
@@ -268,11 +280,6 @@ export class Swarm extends cdk.Construct {
         this.swarmAsg = swarmAsg;
 
         // Deploy cluster setup scripts to S3
-        const swarmConfigBucket = new s3.Bucket(this, 'SwarmConfigBucket', {
-            bucketName: `${props.prefix.toLowerCase()}-swarm-config-bucket`,
-            publicReadAccess: false,
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
-        });
         const swarmDir = path.join(__dirname, '../swarm/');
         new s3deploy.BucketDeployment(this, 'SwarmConfigDeployment', {
             sources: [s3deploy.Source.asset(swarmDir)],

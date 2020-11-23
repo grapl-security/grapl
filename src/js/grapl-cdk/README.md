@@ -13,17 +13,32 @@ Install the following dependencies:
 
 1. Node
 2. Typescript
-3. AWS CDK -- `npm i -g aws-cdk@1.47.0`
-4. AWS CLI
+3. AWS CDK -- `npm i -g aws-cdk@1.71.0`
+4. AWS CLI -- `pip install awscli`
 
 ### AWS Credentials
 
 Make sure your `~/.aws/credentials` file contains the proper AWS
 credentials.
 
-### Grapl build artifacts
+### Grapl deployment artifacts
 
-Execute a local Grapl build by running the following in Grapl's root:
+There are two options for obtaining deployment artifacts. One is to
+execute a Grapl build locally and extract artifacts from the build
+containers. Another is to download pre-built release artifacts from
+Github.
+
+#### Downloading pre-built release artifacts from Github
+
+Navigate to https://github.com/grapl-security/grapl/releases and find
+the git tag associated with the latest release. Then `cd
+src/js/grapl-cdk` and run `python3 fetch_zips_by_tag.py $TAG` where
+`$TAG` is the appropriate git tag. The script will download all the
+release artifacts to the `zips/` directory.
+
+#### Executing a Grapl build and extracting release artifacts
+
+To execute a local Grapl build, run the following in Grapl's root:
 
 ```bash
 TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
@@ -43,7 +58,8 @@ Your build outputs should appear in the `zips/` directory.
 
 ### Configuration
 
-There are a few CDK deployment parameters:
+There are a few CDK deployment parameters to configure. Each of these
+can be found in `bin/deployment_parameters.ts`:
 
 1. `deployName` (required)
 
@@ -83,8 +99,6 @@ There are a few CDK deployment parameters:
     Setting this enables alarms meant for the consumer of the Grapl stack, for example, "a new risk node has been found".
 
     env: `GRAPL_CDK_SECURITY_ALARMS_EMAIL`
-
-Each of these can be found in `bin/deployment_parameters.ts`.
 
 Alternatively, these can be set via the environment variables mentioned for each above. The environment variables take precedence over the values in
 `bin/deployment_parameters.ts`.

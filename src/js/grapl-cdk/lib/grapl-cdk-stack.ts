@@ -546,6 +546,9 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             publicReadAccess: false,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
+        // grant read access to the swarm instances
+        dgraphConfigBucket.grantRead(this.dgraphSwarmCluster.swarmInstanceRole);
+
         const dgraphDir = path.join(__dirname, '../dgraph/');
         new s3deploy.BucketDeployment(this, "dgraphConfigDeployment", {
             sources: [s3deploy.Source.asset(dgraphDir)],
