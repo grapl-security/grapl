@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 import urllib.request
@@ -17,7 +18,9 @@ def _init_docker_swarm(private_ip: str) -> str:
 
     """
     subprocess.run(
-        ["docker", "swarm", "init", "--advertise-addr", private_ip], check=True
+        ["docker", "swarm", "init", "--advertise-addr", private_ip],
+        check=True,
+        stdout=open(os.devnull, 'wb'),
     )
     result = subprocess.run(
         ["docker", "swarm", "join-token", "worker", "-q"],

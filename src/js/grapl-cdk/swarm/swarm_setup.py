@@ -46,7 +46,7 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
             invocation = ssm.get_command_invocation(
                 CommandId=command_id,
                 InstanceId=instance_id,
-                #PluginName="aws:runShellScript",
+                PluginName="runShellScript",
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "InvocationDoesNotExist":
@@ -61,7 +61,7 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
             invocation = ssm.get_command_invocation(
                 CommandId=command_id,
                 InstanceId=instance_id,
-                #PluginName="aws:runShellScript",
+                PluginName="runShellScript",
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "InvocationDoesNotExist":
