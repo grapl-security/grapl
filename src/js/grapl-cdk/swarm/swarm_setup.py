@@ -31,7 +31,8 @@ def _swarm_instances(ec2: Any) -> Iterator[Tuple[str, str]]:
     )
     for reservation in result["Reservations"]:
         for instance in reservation["Instances"]:
-            yield instance["InstanceId"], instance["PrivateIpAddress"]
+            if instance["State"]["Name"] != "terminated":
+                yield instance["InstanceId"], instance["PrivateIpAddress"]
 
 
 def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
@@ -45,7 +46,7 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
             invocation = ssm.get_command_invocation(
                 CommandId=command_id,
                 InstanceId=instance_id,
-                #PluginName="runShellScript",
+                #PluginName="aws:runShellScript",
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "InvocationDoesNotExist":
@@ -60,7 +61,7 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
             invocation = ssm.get_command_invocation(
                 CommandId=command_id,
                 InstanceId=instance_id,
-                #PluginName="runShellScript",
+                #PluginName="aws:runShellScript",
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "InvocationDoesNotExist":

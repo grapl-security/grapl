@@ -5,9 +5,7 @@ import urllib.request
 
 def _get_private_ip() -> str:
     return (
-        urllib.request.urlopen(
-            "curl http://169.254.169.254/latest/meta-data/local-ipv4"
-        )
+        urllib.request.urlopen("http://169.254.169.254/latest/meta-data/local-ipv4")
         .read()
         .decode()
     )
@@ -26,7 +24,7 @@ def _init_docker_swarm(private_ip: str) -> str:
         check=True,
         capture_output=True,
     )
-    return result.stdout
+    return result.stdout.decode('utf-8')
 
 
 def main() -> None:
