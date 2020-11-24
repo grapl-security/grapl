@@ -63,19 +63,19 @@ can be found in `bin/deployment_parameters.ts`:
 
 1. `deployName` (required)
 
-    Name for the deployment to AWS. We recommend prefixing the deployment name
-    with "Grapl-" to help identify Grapl resources in your AWS account, however
-    this isn't necessary.
+    Name for the deployment to AWS. We recommend prefixing the
+    deployment name with "Grapl-" to help identify Grapl resources in
+    your AWS account, however this isn't necessary.
 
-    Note: This name must be globally (AWS) unique, as names for AWS S3 buckets
-    will be dervied from this.
+    Note: This name must be globally (AWS) unique, as names for AWS S3
+    buckets will be dervied from this.
 
     env: `GRAPL_CDK_DEPLOYMENT_NAME`
 
 2. `graplVersion`
 
-    The version of Grapl to deploy. This string will be used to look for the
-    appropirate filenames in the `zips/` directory.
+    The version of Grapl to deploy. This string will be used to look
+    for the appropriate filenames in the `zips/` directory.
 
     Defaults to `latest`.
 
@@ -96,17 +96,19 @@ can be found in `bin/deployment_parameters.ts`:
 
 5. `securityAlarmsEmail` (optional)
 
-    Setting this enables alarms meant for the consumer of the Grapl stack, for example, "a new risk node has been found".
+    Setting this enables alarms meant for the consumer of the Grapl
+    stack, for example, "a new risk node has been found".
 
     env: `GRAPL_CDK_SECURITY_ALARMS_EMAIL`
 
-Alternatively, these can be set via the environment variables mentioned for each above. The environment variables take precedence over the values in
-`bin/deployment_parameters.ts`.
+Alternatively, these can be set via the environment variables
+mentioned for each above. The environment variables take precedence
+over the values in `bin/deployment_parameters.ts`.
 
-When deploying to production we recommend *not* using environment variables for
-setting parameters, but rather set them in `bin/deployment_parameters.ts` and save the
-changes in a git branch. This should help future maintenance of the
-deployment.
+When deploying to production we recommend *not* using environment
+variables for setting parameters, but rather set them in
+`bin/deployment_parameters.ts` and save the changes in a git
+branch. This should help future maintenance of the deployment.
 
 ## Deploying
 
@@ -149,11 +151,12 @@ To provision DGraph:
    associated with the A record are the private IP addresses of the
    instances in the Autoscaling Group from (1).
 
-3. `cd swarm` and run `python3 swarm_setup.py $GRAPL_DEPLOY_NAME`
-   where `$GRAPL_DEPLOY_NAME` is the same `deployName` you configured
-   above in `bin/grapl-cdk.ts`. This script will output logs to the
-   console indicating which instance is the swarm manager. It will
-   also output logs containing the hostname of each swarm
+3. `cd src/js/grapl-cdk/swarm` and run `python3 swarm_setup.py
+   $GRAPL_DEPLOY_NAME` where `$GRAPL_DEPLOY_NAME` is the same
+   `deployName` you configured above in
+   `src/js/grapl-cdk/bin/grapl-cdk.ts`. This script will output logs
+   to the console indicating which instance is the swarm manager. It
+   will also output logs containing the hostname of each swarm
    instance. You will need these in subsequent steps.
 
 4. Navigate to the [AWS Session Manager
