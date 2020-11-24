@@ -20,14 +20,14 @@ def _init_docker_swarm(private_ip: str) -> str:
     subprocess.run(
         ["docker", "swarm", "init", "--advertise-addr", private_ip],
         check=True,
-        stdout=open(os.devnull, 'wb'),
+        stdout=open(os.devnull, "wb"),
     )
     result = subprocess.run(
         ["docker", "swarm", "join-token", "worker", "-q"],
         check=True,
         capture_output=True,
     )
-    return result.stdout.decode('utf-8')
+    return result.stdout.decode("utf-8")
 
 
 def main() -> None:
