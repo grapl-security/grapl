@@ -165,7 +165,9 @@ To provision DGraph:
    shell session will open on that instance.
 
 5. Execute the following commands in the SSM shell on the swarm
-   manager:
+   manager. For your convenience, in step (3) above, the
+   `swarm_setup.py` script has logged them to your terminal with the
+   appropriate substitutions filled in:
    ```bash
    sudo su ec2-user
    cd $HOME
@@ -178,9 +180,9 @@ To provision DGraph:
    where `<deployName>` is the same `deployName` you configured above
    in `bin/grapl-cdk.ts`.
    ``` bash
-   AWS01_NAME=<swarm_manager_name>
-   AWS02_NAME=<swarm_worker1_name>
-   AWS02_NAME=<swarm_worker2_name>
+   export AWS01_NAME=<swarm_manager_hostname>
+   export AWS02_NAME=<swarm_worker1_hostname>
+   export AWS03_NAME=<swarm_worker2_hostname>
 
    # start DGraph
    docker stack deploy -c docker-compose-dgraph.yml dgraph
@@ -188,9 +190,9 @@ To provision DGraph:
    # check that all the services are running
    docker service ls
    ```
-   where `<swarm_manager_name>`, `<swarm_worker1_name>`, and
-   `<swarm_worker2_name` are the hostnames of all the instances from
-   the script logs in step (3) above.
+   where `<swarm_manager_hostname>`, `<swarm_worker1_hostname>`, and
+   `<swarm_worker2_hostname` are the hostnames of all the instances from
+   the script logs in step (3) above (e.g. `ip-10-0-148-238.ec2.internal`).
 
 # DGraph operations
 

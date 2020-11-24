@@ -8,7 +8,7 @@ import time
 import boto3
 import botocore
 
-from typing import Any, Iterator, Tuple
+from typing import Any, Iterator, List, Tuple
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel("INFO")
@@ -61,8 +61,18 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
         raise Exception(f"SSM Command failed with Status: \"{invocation['Status']}\"")
 
 
+def _create_disk_usage_alarms(cloudwatch: Any, instance_id: str) -> None:
+    """Create disk usage alarms for the / and /dgraph partitions"""
+    pass
+
+
 def _init_docker_swarm(
-    ec2: Any, ssm: Any, prefix: str, manager_id: str, manager_ip: str, hostname: str
+    ec2: Any,
+    ssm: Any,
+    prefix: str,
+    manager_id: str,
+    manager_ip: str,
+    manager_hostname: str,
 ) -> str:
     """Initialize the docker swarm manager. Returns the join token
     necessary to attach workers to the swarm.
@@ -91,7 +101,7 @@ def _init_docker_swarm(
         Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-manager"}],
     )
     LOGGER.info(
-        f"Instance {manager_id} with IP {manager_ip} and hostname {hostname} is the docker swarm cluster manager"
+        f"Instance {manager_id} with IP {manager_ip} and hostname {manager_hostname} is the docker swarm cluster manager"
     )
     return result
 
@@ -103,8 +113,10 @@ def _join_worker_nodes(
     instances: Iterator[str],
     join_token: str,
     manager_ip: str,
-) -> None:
-    """Join worker nodes to the swarm cluster."""
+) -> List[str]:
+    """Join worker nodes to the swarm cluster. Returns hostnames of the
+    worker nodes."""
+    hostnames = []
     for instance_id, _, hostname in instances:
         command = ssm.send_command(
             # Targets=[{"Key": "tag:Name", "Values": ["Grapl/swarm/SwarmCluster/SwarmASG"]}],
@@ -131,6 +143,8 @@ def _join_worker_nodes(
         LOGGER.info(
             f"Joined worker instance {instance_id} with hostname {hostname} to the docker swarm cluster"
         )
+        hostnames.append(hostname)
+    return hostnames
 
 
 def main(prefix: str) -> None:
@@ -142,13 +156,43 @@ def main(prefix: str) -> None:
     ssm = boto3.client("ssm")
 
     LOGGER.info("Initializing swarm manager")
-    manager_id, manager_ip, hostname = next(instances)
-    join_token = _init_docker_swarm(ec2, ssm, prefix, manager_id, manager_ip, hostname)
+    manager_id, manager_ip, manager_hostname = next(instances)
+    join_token = _init_docker_swarm(
+        ec2, ssm, prefix, manager_id, manager_ip, manager_hostname
+    )
 
     LOGGER.info("Joining worker instances")
-    _join_worker_nodes(ec2, ssm, prefix, instances, join_token, manager_ip)
+    worker_hostnames = _join_worker_nodes(
+        ec2, ssm, prefix, instances, join_token, manager_ip
+    )
 
     LOGGER.info("Docker swarm cluster setup complete")
+
+    print(
+        f"""
+##
+# Paste the following into an SSM shell on the swarm
+# manager ({manager_id}) to deploy dgraph to
+# the swarm cluster:
+##
+
+sudo su ec2-user
+cd $HOME
+
+export GRAPL_DEPLOY_NAME="{prefix}"
+export AWS01_NAME="{manager_hostname}"
+export AWS02_NAME="{worker_hostnames[0]}"
+export AWS03_NAME="{worker_hostnames[1]}"
+
+aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/docker-compose-dgraph.yml .
+aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yaml .
+
+docker stack deploy -c docker-compose-dgraph.yml dgraph
+
+docker service ls
+
+"""
+    )
 
 
 if __name__ == "__main__":
