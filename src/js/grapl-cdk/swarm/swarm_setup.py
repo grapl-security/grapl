@@ -16,7 +16,7 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 IN_PROGRESS_STATUSES = {
     "Pending",
-    "In Progress",
+    "InProgress",
     "Delayed",
 }
 
@@ -40,36 +40,21 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
     command_id. Returns the command result.
 
     """
-    invocation = None
-    while invocation is None:
-        try:
-            invocation = ssm.get_command_invocation(
-                CommandId=command_id,
-                InstanceId=instance_id,
-                PluginName="runShellScript",
-            )
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "InvocationDoesNotExist":
-                time.sleep(2)
-                continue
-            else:
-                raise e
+    while 1:
+        commands = ssm.list_commands(CommandId=command_id)
+        if commands["Commands"][0]["Status"] in IN_PROGRESS_STATUSES:
+            time.sleep(2)
+        else:
+            break
 
-    while invocation["Status"] in IN_PROGRESS_STATUSES:
-        time.sleep(2)
-        try:
-            invocation = ssm.get_command_invocation(
-                CommandId=command_id,
-                InstanceId=instance_id,
-                PluginName="runShellScript",
-            )
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "InvocationDoesNotExist":
-                continue
-            else:
-                raise e
+    invocation = ssm.get_command_invocation(
+        CommandId=command_id,
+        InstanceId=instance_id,
+        PluginName="runShellScript",
+    )
+
     if invocation["Status"] == "Success":
-        return invocation["StandardOutputContent"]
+        return invocation["StandardOutputContent"].strip()
     else:
         raise Exception(f"SSM Command failed with Status: \"{invocation['Status']}\"")
 
