@@ -27,11 +27,12 @@ prost-types = "0.6.*"
 
 base64 = "0.9.2"
 
-rusoto_s3 = {version="0.43.0", default_features = false, features=["rustls"]}
-rusoto_core = {version="0.43.0", default_features = false, features=["rustls"]}
-rusoto_sqs = {version="0.43.0", default_features = false, features=["rustls"]}
-rusoto_dynamodb = {version="0.43.0", default_features = false, features=["rustls"]}
-serde_dynamodb = {version="0.5.0", default_features = false, features=["rustls"]}
+rusoto_s3 = {version="0.45.0", default_features = false, features=["rustls"]}
+rusoto_core = {version="0.45.0", default_features = false, features=["rustls"]}
+rusoto_sqs = {version="0.45.0", default_features = false, features=["rustls"]}
+rusoto_dynamodb = {version="0.45.0", default_features = false, features=["rustls"]}
+rusoto_credential = "0.45.0"
+serde_dynamodb = {version="0.6", default_features = false, features=["rustls"]}
 
 lambda_runtime = "0.2.*"
 
@@ -59,7 +60,6 @@ tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "r
 hmap = "0.1.0"
 tracing = "0.1.13"
 chrono = "0.4.11"
-rusoto_credential = "0.43.0"
 
 [dependencies.uuid]
 version = "0.6.*"

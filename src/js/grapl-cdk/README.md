@@ -26,45 +26,73 @@ credentials.
 Execute a local Grapl build by running the following in Grapl's root:
 
 ```bash
-TAG=$YOUR_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
+TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
 ```
 
 Then extract the deployment artifacts from the build containers with
 the following script:
 
 ```bash
-VERSION=$YOUR_VERSION ./extract-grapl-deployment-artifacts.sh
+VERSION=$GRAPL_VERSION ./extract-grapl-deployment-artifacts.sh
 ```
 
-`YOUR_VERSION` can be any name you want. Just make note of it, we'll
+`GRAPL_VERSION` can be any name you want. Just make note of it, we'll
 use it in the next step.
 
 Your build outputs should appear in the `zips/` directory.
 
 ### Configuration
 
-Set your deployment name and version in `bin/grapl-cdk.ts`:
+There are a few CDK deployment parameters:
 
-```
-export const deployName = 'Grapl-MYDEPLOYMENT';
-export const graplVersion = 'YOUR_VERSION';
-```
+1. `deployName` (required)
 
-Some tips for choosing a deployment name:
+    Name for the deployment to AWS. We recommend prefixing the deployment name
+    with "Grapl-" to help identify Grapl resources in your AWS account, however
+    this isn't necessary.
 
--   Keep "Grapl" as prefix. This isn't necessary, but will help
-    identify Grapl resources in your AWS account.
--   Choose a globally unique name, as this will be used to name S3
-    buckets, which have this requirement. Using a name that includes
-    your AWS account number and deployment region should work.
+    Note: This name must be globally (AWS) unique, as names for AWS S3 buckets
+    will be dervied from this.
 
-To enable [Watchful](https://github.com/eladb/cdk-watchful) for
-monitoring Grapl with email alerts, specify the email address to
-receive alerts:
+    env: `GRAPL_CDK_DEPLOYMENT_NAME`
 
-```
-export const watchfulEmail = 'YOUR@EMAIL';
-```
+2. `graplVersion'
+
+    The version of Grapl to deploy. This string will be used to look for the
+    appropirate filenames in the `zips/` directory.
+
+    Defaults to `latest`.
+
+    env: `GRAPL_VERSION`
+
+3. `watchfulEmail` (optional)
+
+    Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for
+    monitoring Grapl with email alerts.
+
+    env: `GRAPL_CDK_WATCHFUL_EMAIL`
+
+4. `operationalAlarmsEmail` (optional)
+
+    Setting this enables alarms meant for the operator of the Grapl stack.
+    
+    env: `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL`
+
+5. `securityAlarmsEmail` (optional)
+
+    Setting this enables alarms meant for the consumer of the Grapl stack, for example, "a new risk node has been found".
+
+    env: `GRAPL_CDK_SECURITY_ALARMS_EMAIL`
+
+Each of these can be found in `bin/deployment_parameters.ts`.
+
+Alternatively, these can be set via the environment variables mentioned for each above. The environment variables take precedence over the values in 
+`bin/deployment_parameters.ts`.
+
+When deploying to production we recommend *not* using environment variables for
+setting parameters, but rather set them in `bin/deployment_parameters.ts` and save the
+changes in a git branch. This should help future maintenance of the
+deployment.
 
 ## Deploying
 
