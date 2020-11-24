@@ -152,7 +152,9 @@ To provision DGraph:
 3. `cd swarm` and run `python3 swarm_setup.py $GRAPL_DEPLOY_NAME`
    where `$GRAPL_DEPLOY_NAME` is the same `deployName` you configured
    above in `bin/grapl-cdk.ts`. This script will output logs to the
-   console indicating which instance is the swarm manager.
+   console indicating which instance is the swarm manager. It will
+   also output logs containing the hostname of each swarm
+   instance. You will need these in subsequent steps.
 
 4. Navigate to the [AWS Session Manager
    console](https://console.aws.amazon.com/systems-manager/session-manager)
@@ -162,21 +164,29 @@ To provision DGraph:
 5. Execute the following commands in the SSM shell on the swarm
    manager:
    ```bash
+   sudo su ec2-user
    cd $HOME
 
    # get DGraph configs
    aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/docker-compose-dgraph.yml .
-   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yml .
+   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yaml .
    ```
    where `$GRAPL_DEPLOY_NAME` is the same `deployName` you configured
    above in `bin/grapl-cdk.ts`.
    ``` bash
+   AWS01_NAME=$SWARM_MANAGER_NAME
+   AWS02_NAME=$SWARM_WORKER1_NAME
+   AWS02_NAME=$SWARM_WORKER2_NAME
+
    # start DGraph
    docker stack deploy -c docker-compose-dgraph.yml dgraph
 
    # check that all the services are running
    docker service ls
    ```
+   where `$SWARM_MANAGER_NAME`, `$SWARM_WORKER1_NAME`, and
+   `$SWARM_WORKER2_NAME` are the hostnames of all the instances from
+   the script logs in step (3) above.
 
 # DGraph operations
 

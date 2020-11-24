@@ -21,9 +21,9 @@ IN_PROGRESS_STATUSES = {
 }
 
 
-def _swarm_instances(ec2: Any) -> Iterator[Tuple[str, str]]:
-    """Yields tuples of (instance_id, private_ip) for all the instances in
-    the SwarmASG.
+def _swarm_instances(ec2: Any) -> Iterator[Tuple[str, str, str]]:
+    """Yields tuples of (instance_id, private_ip, hostname) for all the
+    instances in the SwarmASG.
 
     """
     result = ec2.describe_instances(
@@ -32,7 +32,9 @@ def _swarm_instances(ec2: Any) -> Iterator[Tuple[str, str]]:
     for reservation in result["Reservations"]:
         for instance in reservation["Instances"]:
             if instance["State"]["Name"] != "terminated":
-                yield instance["InstanceId"], instance["PrivateIpAddress"]
+                yield instance["InstanceId"], instance["PrivateIpAddress"], instance[
+                    "PrivateDnsName"
+                ]
 
 
 def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
@@ -60,7 +62,7 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
 
 
 def _init_docker_swarm(
-    ec2: Any, ssm: Any, prefix: str, manager_id: str, manager_ip: str
+    ec2: Any, ssm: Any, prefix: str, manager_id: str, manager_ip: str, hostname: str
 ) -> str:
     """Initialize the docker swarm manager. Returns the join token
     necessary to attach workers to the swarm.
@@ -89,7 +91,7 @@ def _init_docker_swarm(
         Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-manager"}],
     )
     LOGGER.info(
-        f"Instance {manager_id} with IP {manager_ip} is the docker swarm cluster manager"
+        f"Instance {manager_id} with IP {manager_ip} and hostname {hostname} is the docker swarm cluster manager"
     )
     return result
 
@@ -98,12 +100,12 @@ def _join_worker_nodes(
     ec2: Any,
     ssm: Any,
     prefix: str,
-    instance_ids: Iterator[str],
+    instances: Iterator[str],
     join_token: str,
     manager_ip: str,
 ) -> None:
     """Join worker nodes to the swarm cluster."""
-    for instance_id, _ in instance_ids:
+    for instance_id, _, hostname in instances:
         command = ssm.send_command(
             # Targets=[{"Key": "tag:Name", "Values": ["Grapl/swarm/SwarmCluster/SwarmASG"]}],
             InstanceIds=[instance_id],
@@ -126,7 +128,9 @@ def _join_worker_nodes(
             Resources=[instance_id],
             Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-worker"}],
         )
-        LOGGER.info(f"Joined worker instance {instance_id} to the docker swarm cluster")
+        LOGGER.info(
+            f"Joined worker instance {instance_id} with hostname {hostname} to the docker swarm cluster"
+        )
 
 
 def main(prefix: str) -> None:
@@ -138,8 +142,8 @@ def main(prefix: str) -> None:
     ssm = boto3.client("ssm")
 
     LOGGER.info("Initializing swarm manager")
-    manager_id, manager_ip = next(instances)
-    join_token = _init_docker_swarm(ec2, ssm, prefix, manager_id, manager_ip)
+    manager_id, manager_ip, hostname = next(instances)
+    join_token = _init_docker_swarm(ec2, ssm, prefix, manager_id, manager_ip, hostname)
 
     LOGGER.info("Joining worker instances")
     _join_worker_nodes(ec2, ssm, prefix, instances, join_token, manager_ip)
