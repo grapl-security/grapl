@@ -1,39 +1,22 @@
 import * as ec2 from '@aws-cdk/aws-ec2';
 
 module HardcodedDeploymentParameters {
-    // // ex: 'Grapl-my-deployment'
-    // export const deployName = undefined;
-
-    // // defaults to 'latest'
-    // export const graplVersion = undefined;
-
-    // // (optional) ex: ops@example.com
-    // export const watchfulEmail = undefined;
-    // export const operationalAlarmsEmail = undefined;
-    // export const securityAlarmsEmail = undefined;
-
-    // // AWS EC2 instance type for DGraph nodes
-    // export const dgraphInstanceType = undefined;
-
-    // // AWS region for this Grapl deployment
-    // export const region = undefined;
-
     // ex: 'Grapl-my-deployment'
-    export const deployName = 'jgrillo-test';
+    export const deployName = undefined;
 
     // defaults to 'latest'
-    export const graplVersion = 'jgrillo-test';
+    export const graplVersion = undefined;
 
     // (optional) ex: ops@example.com
-    export const watchfulEmail = 'jgrillo@graplsecurity.com';
-    export const operationalAlarmsEmail = 'jgrillo@graplsecurity.com';
-    export const securityAlarmsEmail = 'jgrillo@graplsecurity.com';
+    export const watchfulEmail = undefined;
+    export const operationalAlarmsEmail = undefined;
+    export const securityAlarmsEmail = undefined;
 
-    // // AWS EC2 instance type for DGraph nodes
-    export const dgraphInstanceType = 'i3.large';
+    // AWS EC2 instance type for DGraph nodes
+    export const dgraphInstanceType = undefined;
 
-    // // AWS region for this Grapl deployment
-    export const region = 'us-east-1';
+    // AWS region for this Grapl deployment
+    export const region = undefined;
 }
 
 export module DeploymentParameters {
