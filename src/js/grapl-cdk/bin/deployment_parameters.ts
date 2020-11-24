@@ -1,22 +1,39 @@
 import * as ec2 from '@aws-cdk/aws-ec2';
 
 module HardcodedDeploymentParameters {
+    // // ex: 'Grapl-my-deployment'
+    // export const deployName = undefined;
+
+    // // defaults to 'latest'
+    // export const graplVersion = undefined;
+
+    // // (optional) ex: ops@example.com
+    // export const watchfulEmail = undefined;
+    // export const operationalAlarmsEmail = undefined;
+    // export const securityAlarmsEmail = undefined;
+
+    // // AWS EC2 instance type for DGraph nodes
+    // export const dgraphInstanceType = undefined;
+
+    // // AWS region for this Grapl deployment
+    // export const region = undefined;
+
     // ex: 'Grapl-my-deployment'
-    export const deployName = undefined;
+    export const deployName = 'jgrillo-test';
 
     // defaults to 'latest'
-    export const graplVersion = undefined;
+    export const graplVersion = 'jgrillo-test';
 
     // (optional) ex: ops@example.com
-    export const watchfulEmail = undefined;
-    export const operationalAlarmsEmail = undefined;
-    export const securityAlarmsEmail = undefined;
+    export const watchfulEmail = 'jgrillo@graplsecurity.com';
+    export const operationalAlarmsEmail = 'jgrillo@graplsecurity.com';
+    export const securityAlarmsEmail = 'jgrillo@graplsecurity.com';
 
-    // AWS EC2 instance type for DGraph nodes
-    export const dgraphInstanceType = undefined;
+    // // AWS EC2 instance type for DGraph nodes
+    export const dgraphInstanceType = 'i3.large';
 
-    // AWS region for this Grapl deployment
-    export const region = undefined;
+    // // AWS region for this Grapl deployment
+    export const region = 'us-east-1';
 }
 
 export module DeploymentParameters {
@@ -42,9 +59,10 @@ export module DeploymentParameters {
 
     const dgraphInstanceTypeName = process.env.GRAPL_DGRAPH_INSTANCE_TYPE
         || HardcodedDeploymentParameters.dgraphInstanceType
-    export const dgraphInstanceType = new ec2.InstanceType(
-        dgraphInstanceTypeName || 't3a.medium' // FIXME: attached vs not attached
-    );
+    if (!dgraphInstanceTypeName) {
+        throw new Error('Error: Missing Grapl DGraph instance type. Set via bin/deployment_parameters.ts or environment variable GRAPL_DGRAPH_INSTANCE_TYPE.');
+    }
+    export const dgraphInstanceType = new ec2.InstanceType(dgraphInstanceTypeName);
 
     export const region = process.env.GRAPL_REGION
         || HardcodedDeploymentParameters.region

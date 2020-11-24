@@ -789,8 +789,8 @@ export interface GraplServiceProps {
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
     version: string;
+    dgraphInstanceType: ec2.InstanceType;
     watchfulEmail?: string;
-    dgraphInstanceType?: ec2.InstanceType;
     operationalAlarmsEmail?: string;
     securityAlarmsEmail?: string;
 }
@@ -846,7 +846,7 @@ export class GraplCdkStack extends cdk.Stack {
                 prefix: this.prefix,
                 vpc: grapl_vpc,
                 version: props.version || 'latest',
-                instanceType: props.dgraphInstanceType || new ec2.InstanceType("t3a.medium"),
+                instanceType: props.dgraphInstanceType,
                 watchful: watchful,
             }
         );

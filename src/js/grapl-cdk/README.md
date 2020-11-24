@@ -168,15 +168,16 @@ To provision DGraph:
    cd $HOME
 
    # get DGraph configs
+   GRAPL_DEPLOY_NAME=<deployName>
    aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/docker-compose-dgraph.yml .
    aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yaml .
    ```
-   where `$GRAPL_DEPLOY_NAME` is the same `deployName` you configured
-   above in `bin/grapl-cdk.ts`.
+   where `<deployName>` is the same `deployName` you configured above
+   in `bin/grapl-cdk.ts`.
    ``` bash
-   AWS01_NAME=$SWARM_MANAGER_NAME
-   AWS02_NAME=$SWARM_WORKER1_NAME
-   AWS02_NAME=$SWARM_WORKER2_NAME
+   AWS01_NAME=<swarm_manager_name>
+   AWS02_NAME=<swarm_worker1_name>
+   AWS02_NAME=<swarm_worker2_name>
 
    # start DGraph
    docker stack deploy -c docker-compose-dgraph.yml dgraph
@@ -184,8 +185,8 @@ To provision DGraph:
    # check that all the services are running
    docker service ls
    ```
-   where `$SWARM_MANAGER_NAME`, `$SWARM_WORKER1_NAME`, and
-   `$SWARM_WORKER2_NAME` are the hostnames of all the instances from
+   where `<swarm_manager_name>`, `<swarm_worker1_name>`, and
+   `<swarm_worker2_name` are the hostnames of all the instances from
    the script logs in step (3) above.
 
 # DGraph operations
