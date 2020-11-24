@@ -2,21 +2,21 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 
 module HardcodedDeploymentParameters {
     // ex: 'Grapl-my-deployment'
-    export const deployName = 'jgrillo-test';
+    export const deployName = undefined;
 
     // defaults to 'latest'
-    export const graplVersion = 'jgrillo-test';
+    export const graplVersion = undefined;
 
     // (optional) ex: ops@example.com
-    export const watchfulEmail = 'jgrillo@graplsecurity.com';
-    export const operationalAlarmsEmail = 'jgrillo@graplsecurity.com';
-    export const securityAlarmsEmail = 'jgrillo@graplsecurity.com';
+    export const watchfulEmail = undefined;
+    export const operationalAlarmsEmail = undefined;
+    export const securityAlarmsEmail = undefined;
 
     // AWS EC2 instance type for DGraph nodes
     export const dgraphInstanceType = undefined;
 
     // AWS region for this Grapl deployment
-    export const region = 'us-east-1';
+    export const region = undefined;
 }
 
 export module DeploymentParameters {
@@ -43,7 +43,7 @@ export module DeploymentParameters {
     const dgraphInstanceTypeName = process.env.GRAPL_DGRAPH_INSTANCE_TYPE
         || HardcodedDeploymentParameters.dgraphInstanceType
     export const dgraphInstanceType = new ec2.InstanceType(
-        dgraphInstanceTypeName || 't3a.medium'
+        dgraphInstanceTypeName || 't3a.medium' // FIXME: attached vs not attached
     );
 
     export const region = process.env.GRAPL_REGION
