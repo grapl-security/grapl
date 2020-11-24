@@ -16,10 +16,10 @@ from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import boto3  # type: ignore
 from botocore.client import BaseClient  # type: ignore
-from chalice import Chalice, Response
 
 import jwt
 import pydgraph  # type: ignore
+from chalice import Chalice, Response
 from github import Github
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,

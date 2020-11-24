@@ -1,9 +1,8 @@
 import unittest
 
 import pytest
-from hypothesis import strategies as st
-
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
+from hypothesis import strategies as st
 
 SAMPLE_ADDR = "localhost"
 SAMPLE_PORT = "12345"

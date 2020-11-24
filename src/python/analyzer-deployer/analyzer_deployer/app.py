@@ -2,6 +2,7 @@ import dataclasses
 from typing import List, Optional
 
 import boto3
+
 from chalice import Chalice
 from mypy_boto3 import dynamodb, sqs
 

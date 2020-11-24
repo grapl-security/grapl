@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from sys import stdout
 from typing import Callable, Iterator, Optional, Sequence, TextIO, Union
 
+from typing_extensions import Protocol
+
 from grapl_common.metrics.statsd_formatter import (
     DEFAULT_SAMPLE_RATE,
     MetricType,
@@ -10,7 +12,6 @@ from grapl_common.metrics.statsd_formatter import (
     statsd_format,
 )
 from grapl_common.time_utils import MillisDuration, as_millis_duration
-from typing_extensions import Protocol
 
 
 class Writeable(Protocol):
