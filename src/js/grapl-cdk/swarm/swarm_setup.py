@@ -1,12 +1,10 @@
 """Usage: python3 swarm_setup.py $GRAPL_DEPLOY_NAME"""
 import json
 import logging
-import os
 import sys
 import time
 
 import boto3
-import botocore
 
 from typing import Any, Iterator, List, Tuple
 

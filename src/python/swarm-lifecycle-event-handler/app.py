@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import sys
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Iterator, Optional
 
 import boto3
 from botocore.exceptions import ClientError
