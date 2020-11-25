@@ -122,9 +122,9 @@ export class EngagementEdge extends cdk.NestedStack {
         // });
 
         const integration = new apigateway.LambdaIntegration(this.event_handler);
-        const route = props.restApi.root.addResource('auth');
-        route.addMethod('ANY', integration);
-
+        const route = props.restApi.root.addResource('auth').addProxy({
+            defaultIntegration: integration,
+        });
         // if (props.watchful) {
         //     props.watchful.watchApiGateway(
         //         this.integrationName,

@@ -692,9 +692,10 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         }
 
         const integration = new apigateway.LambdaIntegration(event_handler);
-        const route = props.restApi.root.addResource('modelPluginEndpoint');
-        route.addMethod('ANY', integration);
-
+        props.restApi.root.addResource('modelPluginEndpoint').addProxy({
+            defaultIntegration: integration,
+        });
+        // route.addMethod('ANY', integration);
         // integration.addUsagePlan('integrationApiUsagePlan', {
         //     quota: {
         //         limit: 1000,
@@ -795,7 +796,17 @@ export class GraplCdkStack extends cdk.Stack {
         const bucket_prefix = this.prefix.toLowerCase();
 
         const api = new apigateway.RestApi(this, 'EdgeApiGateway', { });
-
+        api.addUsagePlan('EdgeApiGatewayUsagePlan', {
+            quota: {
+                limit: 1_000_000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {
+                // per minute
+                rateLimit: 1200,
+                burstLimit: 1200,
+            },
+        });
         this.edgeApiGateway = api;
 
         const grapl_vpc = new ec2.Vpc(this, this.prefix + '-VPC', {
