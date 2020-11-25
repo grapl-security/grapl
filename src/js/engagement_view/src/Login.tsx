@@ -2,7 +2,7 @@ import React from 'react';
 import './LogIn.css';
 import {Field, Form, Formik} from "formik";
 import {LoginProps} from '../src/modules/GraphViz/CustomTypes';
-import {getAuthEdge} from './modules/GraphViz/engagement_edge/getApiURLs';
+import {getEngagementEdge} from './modules/GraphViz/engagement_edge/getApiURLs';
 import * as Yup from "yup";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 
@@ -18,7 +18,7 @@ const useStyles = makeStyles(
   )
 );
 
-const engagement_edge = getAuthEdge();
+const engagement_edge = getEngagementEdge();
 
 export const checkLogin = async (): Promise<boolean | null> => {
 
