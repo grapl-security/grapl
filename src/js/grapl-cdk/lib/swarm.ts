@@ -118,10 +118,17 @@ export class Swarm extends cdk.Construct {
             'systemctl enable docker.service',
             'systemctl start docker.service',
             'usermod -a -G docker ec2-user',
+            '# create LUKS key',
+            'head -c 256 /dev/urandom > /root/luks_key',
+            'cryptsetup -v -q luksFormat /dev/nvme0n1 /root/luks_key',
+            'UUID=$(lsblk -o +UUID | grep nvme0n1 | rev | cut -d" " -f1 | rev)',
+            'echo -e "dgraph\tUUID=$UUID\t/root/luks_key\tnofail" > /etc/crypttab',
+            'systemctl daemon-reload',
+            'systemctl start systemd-cryptsetup@dgraph.service',
+            'mkfs -t xfs /dev/mapper/dgraph',
             'mkdir /dgraph',
-            'mkfs -t xfs /dev/nvme0n1',
-            'mount -t xfs /dev/nvme0n1 /dgraph',
-            'UUID=$(lsblk -o +UUID | grep nvme0n1 | rev | cut -d" " -f1 | rev); echo -e "UUID=$UUID\t/dgraph\txfs\tdefaults,nofail\t0 2" | tee -a /etc/fstab'
+            'echo -e "/dev/mapper/dgraph\t/dgraph\txfs\tdefaults,nofail\t0\t2" >> /etc/fstab',
+            'mount /dgraph',
         ]);
 
         // Configure a Route53 Hosted Zone for the Swarm cluster.
