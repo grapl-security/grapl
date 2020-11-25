@@ -63,12 +63,46 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
 
 def _create_disk_usage_alarms(cloudwatch: Any, instance_id: str) -> None:
     """Create disk usage alarms for the / and /dgraph partitions"""
-    pass
+    cloudwatch.put_metric_alarm(
+        AlarmName=f"/ disk_used_percent ({instance_id})",
+        AlarmDescription=f"Root volume disk usage percent threshold exceeded on {instance_id}",
+        ActionsEnabled=False,
+        MetricName="disk_used_percent",
+        Namespace="CWAgent",
+        Statistic="Maximum",
+        Period=300,
+        EvaluationPeriods=1,
+        ComparisonOperator="GreaterThanOrEqualToThreshold",
+        Threshold=95.0,
+        Unit="Percent",
+        Dimensions=[
+            {"Name": "InstanceId", "Value": instance_id},
+            {"Name": "path", "Value": "/"},
+        ],
+    )
+    cloudwatch.put_metric_alarm(
+        AlarmName=f"/dgraph disk_used_percent ({instance_id})",
+        AlarmDescription=f"DGraph volume disk usage percent threshold exceeded on {instance_id}",
+        ActionsEnabled=False,
+        MetricName="disk_used_percent",
+        Namespace="CWAgent",
+        Statistic="Maximum",
+        Period=300,
+        EvaluationPeriods=1,
+        ComparisonOperator="GreaterThanOrEqualToThreshold",
+        Threshold=95.0,
+        Unit="Percent",
+        Dimensions=[
+            {"Name": "InstanceId", "Value": instance_id},
+            {"Name": "path", "Value": "/dgraph"},
+        ],
+    )
 
 
 def _init_docker_swarm(
     ec2: Any,
     ssm: Any,
+    cloudwatch: Any,
     prefix: str,
     manager_id: str,
     manager_ip: str,
@@ -100,6 +134,7 @@ def _init_docker_swarm(
         Resources=[manager_id],
         Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-manager"}],
     )
+    _create_disk_usage_alarms(cloudwatch, manager_id)
     LOGGER.info(
         f"Instance {manager_id} with IP {manager_ip} and hostname {manager_hostname} is the docker swarm cluster manager"
     )
@@ -109,6 +144,7 @@ def _init_docker_swarm(
 def _join_worker_nodes(
     ec2: Any,
     ssm: Any,
+    cloudwatch: Any,
     prefix: str,
     instances: Iterator[str],
     join_token: str,
@@ -140,6 +176,7 @@ def _join_worker_nodes(
             Resources=[instance_id],
             Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-worker"}],
         )
+        _create_disk_usage_alarms(cloudwatch, instance_id)
         LOGGER.info(
             f"Joined worker instance {instance_id} with hostname {hostname} to the docker swarm cluster"
         )
@@ -154,16 +191,17 @@ def main(prefix: str) -> None:
     instances = _swarm_instances(ec2)
 
     ssm = boto3.client("ssm")
+    cloudwatch = boto3.client("cloudwatch")
 
     LOGGER.info("Initializing swarm manager")
     manager_id, manager_ip, manager_hostname = next(instances)
     join_token = _init_docker_swarm(
-        ec2, ssm, prefix, manager_id, manager_ip, manager_hostname
+        ec2, ssm, cloudwatch, prefix, manager_id, manager_ip, manager_hostname
     )
 
     LOGGER.info("Joining worker instances")
     worker_hostnames = _join_worker_nodes(
-        ec2, ssm, prefix, instances, join_token, manager_ip
+        ec2, ssm, cloudwatch, prefix, instances, join_token, manager_ip
     )
 
     LOGGER.info("Docker swarm cluster setup complete")
@@ -180,6 +218,7 @@ sudo su ec2-user
 cd $HOME
 
 export GRAPL_DEPLOY_NAME="{prefix}"
+export AWS_LOGS_GROUP="{prefix}-grapl-dgraph"
 export AWS01_NAME="{manager_hostname}"
 export AWS02_NAME="{worker_hostnames[0]}"
 export AWS03_NAME="{worker_hostnames[1]}"

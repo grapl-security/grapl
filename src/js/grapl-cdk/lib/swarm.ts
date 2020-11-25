@@ -23,6 +23,12 @@ export interface SwarmProps {
     // The VPC where the Docker Swarm cluster will run.
     readonly vpc: ec2.IVpc;
 
+    // ARN specifying the Grapl logs group for this grapl deployment
+    //
+    // Should have the following structure:
+    // arn:aws:logs:{region}:{account-id}:log-group:{log_group_name}
+    readonly logsGroupResourceArn: String;
+
     // The service-specific (e.g. DGraph) ports to open internally
     // within the Docker Swarm cluster.
     readonly internalServicePorts: ec2.Port[];
@@ -106,7 +112,7 @@ export class Swarm extends cdk.Construct {
                 'logs:DescribeLogStreams',
             ],
             resources: [
-                'arn:aws:logs:*:*:*', // FIXME: lock this down more?
+                `${props.logsGroupResourceArn}:*`
             ],
         }));
 
@@ -244,9 +250,6 @@ export class Swarm extends cdk.Construct {
             userData: swarmUserData,
             machineImage: ec2.MachineImage.genericLinux(amazonLinux2Amis),
             role: swarmInstanceRole,
-            desiredCapacity: 0,
-            minCapacity: 0,
-            maxCapacity: 0,
         });
 
         lifecycleListenerRole.addToPrincipalPolicy(new iam.PolicyStatement({

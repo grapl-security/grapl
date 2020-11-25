@@ -524,6 +524,13 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             prefix: props.prefix,
             version: props.version,
             vpc: props.vpc,
+            logsGroupResourceArn: super.formatArn({
+                partition: 'aws',
+                service: 'logs',
+                resource: 'log-group',
+                sep: ':',
+                resourceName: `${props.prefix}-grapl-dgraph`
+            }),
             internalServicePorts: [
                 ec2.Port.tcp(5080),
                 ec2.Port.tcp(6080),

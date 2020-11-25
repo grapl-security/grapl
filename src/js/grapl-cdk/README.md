@@ -180,6 +180,7 @@ To provision DGraph:
    where `<deployName>` is the same `deployName` you configured above
    in `bin/grapl-cdk.ts`.
    ``` bash
+   export AWS_LOGS_GROUP=<log_group_name>
    export AWS01_NAME=<swarm_manager_hostname>
    export AWS02_NAME=<swarm_worker1_hostname>
    export AWS03_NAME=<swarm_worker2_hostname>
@@ -190,9 +191,14 @@ To provision DGraph:
    # check that all the services are running
    docker service ls
    ```
+
    where `<swarm_manager_hostname>`, `<swarm_worker1_hostname>`, and
-   `<swarm_worker2_hostname` are the hostnames of all the instances from
-   the script logs in step (3) above (e.g. `ip-10-0-148-238.ec2.internal`).
+   `<swarm_worker2_hostname` are the hostnames of all the instances
+   from the script logs in step (3) above
+   (e.g. `ip-10-0-148-238.ec2.internal`). You can choose anything you
+   want for `<log_group_name>`, it just needs to be unique in the
+   region where Grapl is deployed. Therefore it's probably worthwhile
+   to include `$GRAPL_DEPLOY_NAME` as a name component.
 
 # DGraph operations
 
