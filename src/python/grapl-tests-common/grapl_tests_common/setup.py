@@ -6,7 +6,6 @@ from sys import stdout
 from typing import Any, NamedTuple, Sequence
 
 import boto3  # type: ignore
-
 import pytest
 import requests
 from grapl_tests_common.dump_dynamodb import dump_dynamodb

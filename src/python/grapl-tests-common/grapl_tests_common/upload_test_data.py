@@ -1,10 +1,9 @@
 import logging
 import subprocess
 
-from typing_extensions import Protocol
-
 from grapl_tests_common.types import S3ServiceResource
 from grapl_tests_common.upload_logs import upload_sysmon_logs
+from typing_extensions import Protocol
 
 BUCKET_PREFIX = "local-grapl"
 

@@ -10,8 +10,8 @@ from uuid import uuid4
 
 import boto3
 import botocore
-
 import pydgraph
+
 from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,

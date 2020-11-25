@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterator, Optional
 
 import boto3
 from botocore.exceptions import ClientError
-
 from chalice import Chalice
 
 app = Chalice(app_name="swarm-lifecycle-event-handler")

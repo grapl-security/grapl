@@ -8,7 +8,6 @@ from sys import maxsize
 from typing import Callable, Iterator, List, Optional, cast
 
 import boto3  # type: ignore
-
 import zstd  # type: ignore
 
 

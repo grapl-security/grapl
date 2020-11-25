@@ -15,8 +15,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
-
 import redis
+
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
 from grapl_analyzerlib.grapl_client import GraphClient
