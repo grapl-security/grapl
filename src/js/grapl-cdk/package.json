@@ -15,7 +15,7 @@
     "@types/jest": "26.0.x",
     "@types/node": "14.14.x",
     "@types/uuid": "8.3.x",
-    "aws-cdk": "1.71.0",
+    "aws-cdk": "^1.71.0",
     "jest": "26.6.x",
     "ts-jest": "26.4.x",
     "ts-node": "9.0.x",

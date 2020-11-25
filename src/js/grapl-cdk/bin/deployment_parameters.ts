@@ -1,9 +1,9 @@
 module HardcodedDeploymentParameters {
     // ex: 'Grapl-my-deployment'
-    export const deployName = undefined;
+    export const deployName = 'example-grapl-deployment-co';
     
     // defaults to 'latest'
-    export const graplVersion = undefined;
+    export const graplVersion = 'latest';
 
     // (optional) ex: ops@example.com
     export const watchfulEmail = undefined;

@@ -787,12 +787,17 @@ export class GraplCdkStack extends cdk.Stack {
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
     model_plugin_deployer: ModelPluginDeployer;
+    edgeApiGateway: apigateway.RestApi;
 
     constructor(scope: cdk.Construct, id: string, props: GraplStackProps) {
         super(scope, id, props);
 
         this.prefix = props.stackName;
         const bucket_prefix = this.prefix.toLowerCase();
+
+        const api = new apigateway.RestApi(this, 'EdgeApiGateway', { });
+
+        this.edgeApiGateway = api;
 
         const grapl_vpc = new ec2.Vpc(this, this.prefix + '-VPC', {
             natGateways: 1,
@@ -953,7 +958,8 @@ export class GraplCdkStack extends cdk.Stack {
             'EngagementEdge',
             {
                 ...graplProps, 
-                engagement_notebook: engagement_notebook
+                engagement_notebook: engagement_notebook,
+                restApi: api,
             },
         );
 
