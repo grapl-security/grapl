@@ -691,14 +691,8 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             props.modelPluginBucket.grantDelete(event_handler.role);
         }
 
-        // const integration = new apigateway.LambdaRestApi(this, 'Integration', {
-        //     restApiName: this.integrationName,
-        //     endpointExportName: serviceName + '-EndpointApi',
-        //     handler: event_handler,
-        // });
-
         const integration = new apigateway.LambdaIntegration(event_handler);
-        const route = props.restApi.root.addResource('modelPluginBucket');
+        const route = props.restApi.root.addResource('modelPluginEndpoint');
         route.addMethod('ANY', integration);
 
         // integration.addUsagePlan('integrationApiUsagePlan', {
