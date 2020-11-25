@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing_extensions import Protocol
 
 import boto3
 
@@ -10,7 +11,12 @@ if TYPE_CHECKING:
     )
 
 
-class SagemakerClient:
+class ISagemakerClient(Protocol):
+    def get_presigned_url(self, instance_name: str) -> str:
+        pass
+
+
+class SagemakerClient(ISagemakerClient):
     def __init__(self, client: _BotoSageMakerClient):
         self.client = client
 
@@ -21,15 +27,15 @@ class SagemakerClient:
         )
         return result["AuthorizedUrl"]
 
-    @staticmethod
-    def create(is_local: bool) -> SagemakerClient:
-        client = boto3.client("sagemaker")
-        if is_local:
-            return LocalSagemakerClient(client=client)
-        else:
-            return SagemakerClient(client=client)
 
-
-class LocalSagemakerClient(SagemakerClient):
+class LocalSagemakerClient(ISagemakerClient):
     def get_presigned_url(self, instance_name: str) -> str:
         return "http://localhost:8888"
+
+
+def create_sagemaker_client(is_local: bool) -> ISagemakerClient:
+    if is_local:
+        return LocalSagemakerClient()
+    else:
+        client = boto3.client("sagemaker")
+        return SagemakerClient(client=client)

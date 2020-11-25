@@ -2,7 +2,7 @@ import unittest
 
 from chalice.test import Client
 from src.engagement_edge import JWT_SECRET, app
-from src.lib.sagemaker import SagemakerClient
+from src.lib.sagemaker import create_sagemaker_client
 
 # gross hack because engagement edge is pseudo singleton
 JWT_SECRET.secret = "hey im a fake secret"
@@ -24,5 +24,5 @@ class TestEngagementEdgeChalice(unittest.TestCase):
 
 class TestSagemakerClient(unittest.TestCase):
     def test_when_is_local_returns_8888(self):
-        client = SagemakerClient.create(is_local=True)
-        assert client.get_presigned_url() == "http://localhost:8888/"
+        client = create_sagemaker_client(is_local=True)
+        assert client.get_presigned_url() == "http://localost:8888/"

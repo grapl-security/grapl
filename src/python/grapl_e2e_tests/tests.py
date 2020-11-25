@@ -29,6 +29,13 @@ class TestEndToEnd(TestCase):
 
 
 class TestEngagementEdgeClient(TestCase):
-    def test_engagement_edge_client(self) -> None:
+    # TODO: These should be moved to an Engagement Edge integration test
+    def test_get_jwt(self) -> None:
         client = EngagementEdgeClient(use_docker_links=True)
         client.get_jwt()
+
+    def test_get_notebook_link(self) -> None:
+        client = EngagementEdgeClient(use_docker_links=True)
+        jwt = client.get_jwt()
+        notebook_url = client.get_notebook(jwt=jwt)
+        assert "localhost:8888" in notebook_url

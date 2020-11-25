@@ -26,7 +26,7 @@ import boto3
 import jwt
 from chalice import Chalice, CORSConfig, Response
 from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
-from src.lib.sagemaker import SagemakerClient
+from src.lib.sagemaker import create_sagemaker_client
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
@@ -335,7 +335,7 @@ def check_login() -> Response:
 def get_notebook() -> Response:
     # cross-reference with `engagement.ts` notebookInstanceName
     notebook_name = f"{BUCKET_PREFIX}-Notebook"
-    client = SagemakerClient.create(is_local=IS_LOCAL)
+    client = create_sagemaker_client(is_local=IS_LOCAL)
     url = client.get_presigned_url(notebook_name)
     return respond(err=None, res={"notebook_url": url})
 

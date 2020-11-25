@@ -38,3 +38,11 @@ class EngagementEdgeClient:
                 f"Couldn't find grapl_jwt cookie in {resp.cookies}"
             )
         return cookie
+
+    def get_notebook(self, jwt: str) -> str:
+        cookies = {"grapl_jwt": jwt}
+        resp = requests.post(
+            f"{self.endpoint}/getNotebook",
+            cookies=cookies,
+        )
+        return resp.json()['success']['notebook_url']
