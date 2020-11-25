@@ -615,6 +615,7 @@ class DGraphTtl extends cdk.NestedStack {
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
     schemaTable: SchemaDb;
+    restApi: apigateway.RestApi;
 }
 
 export class ModelPluginDeployer extends cdk.NestedStack {
@@ -690,76 +691,80 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             props.modelPluginBucket.grantDelete(event_handler.role);
         }
 
-        const integration = new apigateway.LambdaRestApi(this, 'Integration', {
-            restApiName: this.integrationName,
-            endpointExportName: serviceName + '-EndpointApi',
-            handler: event_handler,
-        });
+        // const integration = new apigateway.LambdaRestApi(this, 'Integration', {
+        //     restApiName: this.integrationName,
+        //     endpointExportName: serviceName + '-EndpointApi',
+        //     handler: event_handler,
+        // });
 
-        integration.addUsagePlan('integrationApiUsagePlan', {
-            quota: {
-                limit: 1000,
-                period: apigateway.Period.DAY,
-            },
-            throttle: {
-                // per minute
-                rateLimit: 50,
-                burstLimit: 50,
-            },
-        });
+        const integration = new apigateway.LambdaIntegration(event_handler);
+        const route = props.restApi.root.addResource('modelPluginBucket');
+        route.addMethod('ANY', integration);
 
-        if (props.watchful) {
-            props.watchful.watchApiGateway(
-                serviceName + '-Integration',
-                integration,
-                {
-                    serverErrorThreshold: 1, // any 5xx alerts
-                    cacheGraph: true,
-                    watchedOperations: [
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/gitWebhook',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/gitWebHook',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/deploy',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/deploy',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/listModelPlugins',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/listModelPlugins',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/deleteModelPlugin',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/deleteModelPlugin',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/{proxy+}',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/{proxy+}',
-                        },
-                    ],
-                }
-            );
-        }
+        // integration.addUsagePlan('integrationApiUsagePlan', {
+        //     quota: {
+        //         limit: 1000,
+        //         period: apigateway.Period.DAY,
+        //     },
+        //     throttle: {
+        //         // per minute
+        //         rateLimit: 50,
+        //         burstLimit: 50,
+        //     },
+        // });
+
+        // if (props.watchful) {
+        //     props.watchful.watchApiGateway(
+        //         serviceName + '-Integration',
+        //         integration,
+        //         {
+        //             serverErrorThreshold: 1, // any 5xx alerts
+        //             cacheGraph: true,
+        //             watchedOperations: [
+        //                 {
+        //                     httpMethod: 'POST',
+        //                     resourcePath: '/gitWebhook',
+        //                 },
+        //                 {
+        //                     httpMethod: 'OPTIONS',
+        //                     resourcePath: '/gitWebHook',
+        //                 },
+        //                 {
+        //                     httpMethod: 'POST',
+        //                     resourcePath: '/deploy',
+        //                 },
+        //                 {
+        //                     httpMethod: 'OPTIONS',
+        //                     resourcePath: '/deploy',
+        //                 },
+        //                 {
+        //                     httpMethod: 'POST',
+        //                     resourcePath: '/listModelPlugins',
+        //                 },
+        //                 {
+        //                     httpMethod: 'OPTIONS',
+        //                     resourcePath: '/listModelPlugins',
+        //                 },
+        //                 {
+        //                     httpMethod: 'POST',
+        //                     resourcePath: '/deleteModelPlugin',
+        //                 },
+        //                 {
+        //                     httpMethod: 'OPTIONS',
+        //                     resourcePath: '/deleteModelPlugin',
+        //                 },
+        //                 {
+        //                     httpMethod: 'POST',
+        //                     resourcePath: '/{proxy+}',
+        //                 },
+        //                 {
+        //                     httpMethod: 'OPTIONS',
+        //                     resourcePath: '/{proxy+}',
+        //                 },
+        //             ],
+        //         }
+        //     );
+        // }
     }
 }
 
@@ -900,6 +905,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 modelPluginBucket: model_plugins_bucket,
                 schemaTable: schema_table,
+                restApi: api,
                 ...graplProps,
             }
         );
