@@ -529,7 +529,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
                 service: 'logs',
                 resource: 'log-group',
                 sep: ':',
-                resourceName: `${props.prefix}-grapl-dgraph`
+                resourceName: `${props.prefix.toLowerCase()}-grapl-dgraph`
             }),
             internalServicePorts: [
                 ec2.Port.tcp(5080),
@@ -852,7 +852,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 prefix: this.prefix,
                 vpc: grapl_vpc,
-                version: props.version || 'latest',
+                version: props.version,
                 instanceType: props.dgraphInstanceType,
                 watchful: watchful,
             }

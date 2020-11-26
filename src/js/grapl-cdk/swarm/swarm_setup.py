@@ -43,6 +43,7 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
     while 1:
         commands = ssm.list_commands(CommandId=command_id)
         if commands["Commands"][0]["Status"] in IN_PROGRESS_STATUSES:
+            LOGGER.info(f"Waiting for SSM command {command_id} to complete")
             time.sleep(2)
         else:
             break
