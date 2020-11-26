@@ -781,6 +781,10 @@ export class GraplCdkStack extends cdk.Stack {
             watchful.watchApiGateway(
                 'EdgeApiGatewayIntegration',
                 edgeApi,
+                {
+                    serverErrorThreshold: 1, // any 5xx alerts
+                    cacheGraph: true,
+                }
             );
         }
 
