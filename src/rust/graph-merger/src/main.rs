@@ -6,6 +6,7 @@ use std::io::Cursor;
 use std::iter::FromIterator;
 use std::net::ToSocketAddrs;
 use std::sync::{Arc, Mutex};
+
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
@@ -15,12 +16,11 @@ use aws_lambda_events::event::s3::{
 };
 use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
-use dgraph_rs::protos::api;
-use dgraph_rs::protos::api_grpc;
-use dgraph_rs::DgraphClient;
+
+use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
+
 use failure::{bail, Error};
-use grpc::ClientConf;
-use grpc::{Client, ClientStub};
+use futures::future::join_all;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
@@ -29,23 +29,24 @@ use prost::Message;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rusoto_core::{HttpClient, Region};
+use rusoto_dynamodb::AttributeValue;
+use rusoto_dynamodb::DynamoDbClient;
+use rusoto_dynamodb::{DynamoDb, GetItemInput};
 use rusoto_s3::S3Client;
 use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service;
+use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
+use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use sqs_lambda::redis_cache::RedisCache;
 
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-
-use std::str::FromStr;
-
-use graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
-use graph_descriptions::node::NodeT;
-use rusoto_dynamodb::{AttributeValue, DynamoDb, DynamoDbClient, GetItemInput};
+use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
+use grapl_graph_descriptions::node::NodeT;
+use std::net::ToSocketAddrs;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -58,24 +59,23 @@ macro_rules! log_time {
     }};
 }
 
-fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> api::Mutation {
+fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
         "uid": from,
         edge_name: {
             "uid": to
         }
-    })
-    .to_string()
-    .into_bytes();
+    });
 
-    let mut mutation = api::Mutation::new();
+    let mut mutation = dgraph_tonic::Mutation::new();
     mutation.commit_now = true;
-    mutation.set_json = mu;
+    mutation.set_set_json(&mu);
+
     mutation
 }
 
 async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<String>, Error> {
-    let mut txn = dg.new_read_only();
+    let mut txn = dg.new_read_only_txn();
 
     const QUERY: &str = r"
        query q0($a: string)
@@ -84,16 +84,16 @@ async fn node_key_to_uid(dg: &DgraphClient, node_key: &str) -> Result<Option<Str
             uid,
             dgraph.type,
         }
-    }
-    ";
+    }";
 
     let mut vars = HashMap::new();
-    vars.insert("$a".to_string(), node_key.into());
+    vars.insert("$a".to_string(), node_key.to_string());
 
     let query_res: Value = txn
         .query_with_vars(QUERY, vars)
         .await
-        .map(|res| serde_json::from_slice(&res.json))??;
+        .map(|res| serde_json::from_slice(&res.json))
+        .map_err(AnyhowFailure::into_failure)??;
 
     let uid = query_res
         .get("q0")
@@ -116,7 +116,7 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
     );
 
     let node_key = node.clone_node_key();
-    let mut set_json = node.into_json();
+    let mut set_json: serde_json::Value = node.into_json();
     let mut node_types = vec![set_json["dgraph.type"].as_str().unwrap().clone()];
     node_types.extend_from_slice(&["Entity", "Base"]);
     set_json["dgraph.type"] = node_types.into();
@@ -128,22 +128,20 @@ async fn upsert_node(dg: &DgraphClient, node: Node) -> Result<String, Error> {
         .as_millis() as u64)
         .into();
 
-    let mu = api::Mutation {
-        set_json: set_json.to_string().into_bytes(),
-        commit_now: true,
-        ..Default::default()
-    };
+    let mut mu = dgraph_tonic::Mutation::new();
+    mu.commit_now = true;
+    mu.set_set_json(&set_json);
 
-    let mut txn = dg.new_txn();
+    let mut txn = dg.new_mutated_txn();
     let upsert_res = match txn.upsert(query, mu).await {
         Ok(res) => res,
         Err(e) => {
-            txn.discard().await?;
-            return Err(e.into());
+            txn.discard().await.map_err(AnyhowFailure::into_failure)?;
+            return Err(e.into_failure().into());
         }
     };
 
-    txn.commit_or_abort().await?;
+    txn.commit().await.map_err(AnyhowFailure::into_failure)?;
 
     info!(
         "Upsert res for {}, set_json: {} upsert_res: {:?}",
@@ -190,45 +188,7 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(mg_alphas: Vec<String>, cache: CacheT) -> Self {
-        let mg_client = {
-            let mut rng = thread_rng();
-            let rand_alpha = mg_alphas
-                .choose(&mut rng)
-                .expect("Empty rand_alpha")
-                .to_owned();
-            let (host, port) = grapl_config::parse_host_port(rand_alpha);
-
-            info!("connecting to DGraph {:?}:{:?}", host, port);
-
-            let clients = format!("{}:{}", host, port)
-                .to_socket_addrs()
-                .expect("Invalid socket_addrs")
-                .flat_map(|host| {
-                    let host = host.ip().to_string();
-                    info!("Connecting to host: {} at port {}", host, port);
-                    match Client::new_plain(
-                        &host,
-                        port,
-                        ClientConf {
-                            ..Default::default()
-                        },
-                    ) {
-                        Ok(client) => Some(client),
-                        Err(e) => {
-                            error!("Error connecting to dgraph at {}: {}", host, e);
-                            None
-                        }
-                    }
-                })
-                .map(Arc::new)
-                .map(api_grpc::DgraphClient::with_client)
-                .collect::<Vec<_>>();
-
-            if clients.is_empty() {
-                panic!("Failed to connect to any DGraph client");
-            }
-            DgraphClient::new(clients)
-        };
+        let mg_client = DgraphClient::new(mg_alphas).expect("Failed to create dgraph client.");
 
         Self {
             mg_client: Arc::new(mg_client),
@@ -239,12 +199,12 @@ where
 
 async fn upsert_edge(
     mg_client: &DgraphClient,
-    mu: api::Mutation,
-) -> Result<(), dgraph_rs::errors::DgraphError> {
-    let mut txn = mg_client.new_txn();
-    txn.mutate(mu).await?;
+    mu: dgraph_tonic::Mutation,
+) -> Result<(), failure::Error> {
+    let mut txn = mg_client.new_mutated_txn();
+    txn.mutate(mu).await.map_err(AnyhowFailure::into_failure)?;
 
-    txn.commit_or_abort().await?;
+    txn.commit().await.map_err(AnyhowFailure::into_failure)?;
 
     Ok(())
 }
@@ -489,7 +449,7 @@ where
         info!(
             "handling new subgraph with {} nodes {} edges",
             subgraph.nodes.len(),
-            subgraph.edges.len()
+            subgraph.edges.len(),
         );
 
         let mut upsert_res = None;
@@ -815,7 +775,10 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
     grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
     grapl_config::wait_for_s3(init_s3_client()).await?;
 
-    local_sqs_service(
+    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
+    options_builder.with_minimal_buffer_completion_policy();
+
+    local_sqs_service_with_options(
         source_queue_url,
         "local-grapl-subgraphs-merged-bucket",
         Context {
@@ -882,6 +845,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
 
             Ok(())
         },
+        options_builder.build(),
     )
     .await;
 
@@ -913,4 +877,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+trait AnyhowFailure {
+    fn into_failure(self) -> Error;
+}
+
+impl AnyhowFailure for anyhow::Error {
+    fn into_failure(self) -> Error {
+        failure::Error::from_boxed_compat(From::from(self))
+    }
 }

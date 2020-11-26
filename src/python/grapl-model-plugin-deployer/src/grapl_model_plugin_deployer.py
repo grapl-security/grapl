@@ -1,6 +1,3 @@
-from grapl_analyzerlib.schema import Schema
-
-print("init")
 import base64
 import hmac
 import inspect
@@ -9,25 +6,32 @@ import logging
 import os
 import re
 import sys
+import threading
 import traceback
 from base64 import b64decode
 from hashlib import sha1
+from http import HTTPStatus
 from pathlib import Path
-from typing import TypeVar, Dict, Union, List, Any
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
-import boto3
+import boto3  # type: ignore
 import jwt
-import pydgraph
-from botocore.client import BaseClient
+import pydgraph  # type: ignore
+from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
+
 from grapl_analyzerlib.node_types import (
-    PropPrimitive,
-    PropType,
     EdgeRelationship,
     EdgeT,
+    PropPrimitive,
+    PropType,
 )
 from grapl_analyzerlib.prelude import *
+from grapl_analyzerlib.schema import Schema
+
+print("init")
+
 
 sys.path.append("/tmp/")
 
@@ -58,7 +62,7 @@ if IS_LOCAL:
                 region_name="us-east-1",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
             )
 
             JWT_SECRET = secretsmanager.get_secret_value(
@@ -116,7 +120,7 @@ def verify_payload(payload_body, key, signature):
 
 
 def set_schema(client: GraphClient, schema: str) -> None:
-    op = pydgraph.Operation(schema=schema)
+    op = pydgraph.Operation(schema=schema, run_in_background=True)
     client.alter(op)
 
 
@@ -132,18 +136,31 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
 
 def store_schema(dynamodb, schema: "Schema"):
     table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
-    for f_edge, (_, r_edge) in schema.get_edges().items():
+    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
+            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
             continue
-        table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
-        table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
+        table.put_item(
+            Item={
+                "f_edge": f_edge,
+                "r_edge": r_edge,
+                "relationship": int(edge_t.rel),
+            }
+        )
+
+        table.put_item(
+            Item={
+                "f_edge": r_edge,
+                "r_edge": f_edge,
+                "relationship": int(edge_t.rel.reverse()),
+            }
+        )
 
 
 def provision_master_graph(
     master_graph_client: GraphClient, schemas: List["BaseSchema"]
 ) -> None:
     mg_schema_str = format_schemas(schemas)
-    print(mg_schema_str)
     set_schema(master_graph_client, mg_schema_str)
 
 
@@ -193,7 +210,6 @@ def is_schema(schema_cls):
 
 def get_schema_objects(meta_globals) -> "Dict[str, BaseSchema]":
     clsmembers = [(m, c) for m, c in meta_globals.items() if inspect.isclass(c)]
-    print("clsmembers", clsmembers)
 
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[1])}
 
@@ -206,7 +222,6 @@ def provision_schemas(master_graph_client, raw_schemas):
 
     # Now fetch the schemas back from memory
     schemas = list(get_schema_objects(meta_globals).values())
-    print(f"Schemas: {schemas}")
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
     LOGGER.info("init_reverse")
@@ -214,13 +229,16 @@ def provision_schemas(master_graph_client, raw_schemas):
         schema.init_reverse()
 
     LOGGER.info("Merge the schemas with what exists in the graph")
+    dynamodb = get_dynamodb_client()
     for schema in schemas:
-        extend_schema(master_graph_client, schema)
+        store_schema(dynamodb, schema)
 
     LOGGER.info("Reprovision the graph")
     provision_master_graph(master_graph_client, schemas)
 
-    dynamodb = get_dynamodb_client()
+    for schema in schemas:
+        extend_schema(dynamodb, master_graph_client, schema)
+
     for schema in schemas:
         store_schema(dynamodb, schema)
 
@@ -238,14 +256,15 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
     return res
 
 
-def meta_into_edge(schema, predicate_meta):
-    if predicate_meta.get("list"):
-        return EdgeT(type(schema), BaseSchema, EdgeRelationship.ManyToOne)
-    else:
-        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToOne)
+def meta_into_edge(dynamodb, schema: "Schema", f_edge):
+    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
+    edge_t = schema.edges[f_edge][0]  # type: EdgeT
+
+    return EdgeT(type(schema), edge_t.dest, EdgeRelationship(edge_res["relationship"]))
 
 
-def meta_into_property(schema, predicate_meta):
+def meta_into_property(predicate_meta):
     is_set = predicate_meta.get("list")
     type_name = predicate_meta["type"]
     primitive = None
@@ -259,12 +278,12 @@ def meta_into_property(schema, predicate_meta):
     return PropType(primitive, is_set, index=predicate_meta.get("index", []))
 
 
-def meta_into_predicate(schema, predicate_meta):
+def meta_into_predicate(dynamodb, schema, predicate_meta):
     try:
         if predicate_meta["type"] == "uid":
-            return meta_into_edge(schema, predicate_meta)
+            return meta_into_edge(dynamodb, schema, predicate_meta["predicate"])
         else:
-            return meta_into_property(schema, predicate_meta)
+            return meta_into_property(predicate_meta)
     except Exception as e:
         LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
         raise e
@@ -297,23 +316,40 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
     return predicate_metas
 
 
-def extend_schema(graph_client: GraphClient, schema: "BaseSchema"):
-    predicate_metas = query_dgraph_type(graph_client, schema.self_type())
+def get_reverse_edge(dynamodb, schema, f_edge):
+    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
+    return edge_res["r_edge"]
 
+
+def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
+    predicate_metas = query_dgraph_type(graph_client, schema.self_type())
     for predicate_meta in predicate_metas:
-        predicate = meta_into_predicate(schema, predicate_meta)
+        predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
         if isinstance(predicate, PropType):
             schema.add_property(predicate_meta["predicate"], predicate)
         else:
-            schema.add_edge(predicate_meta["predicate"], predicate, "")
+            r_edge = get_reverse_edge(dynamodb, schema, predicate_meta["predicate"])
+            schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
 
 
-def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
+def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Response]:
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
     plugin_parts = key.split("/")
     plugin_name = plugin_parts[0]
     plugin_key = "/".join(plugin_parts[1:])
+
+    if not (plugin_name and plugin_key):
+        # if we upload a dir that looks like
+        # model_plugins/
+        #   __init__.py
+        #   grapl_aws_model_plugin/
+        #     ...lots of files...
+        # we want to skip uploading the initial __init__.py, since we can't figure out what
+        # plugin_name it would belong to.
+        LOGGER.info(f"Skipping uploading key {key}")
+        return None
 
     try:
         s3_client.put_object(
@@ -324,7 +360,10 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> None:
             + base64.encodebytes((plugin_key.encode("utf8"))).decode(),
         )
     except Exception:
-        LOGGER.error(f"Failed to put_object to s3 {key} {traceback.format_exc()}")
+        msg = f"Failed to put_object to s3 {key}"
+        LOGGER.error(f"{msg} {traceback.format_exc()}")
+        return respond(msg)
+    return None
 
 
 origin_re = re.compile(
@@ -333,7 +372,9 @@ origin_re = re.compile(
 )
 
 
-def respond(err, res=None, headers=None):
+def respond(
+    err, res=None, headers=None, status_code: Optional[HTTPStatus] = None
+) -> Response:
     req_origin = app.current_request.headers.get("origin", "")
 
     LOGGER.info(f"responding to origin: {req_origin}")
@@ -354,9 +395,11 @@ def respond(err, res=None, headers=None):
         # allow_origin = override or ORIGIN
         allow_origin = req_origin
 
+    status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
+
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
-        status_code=400 if err else 200,
+        status_code=status_code.value,
         headers={
             "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Credentials": "true",
@@ -381,7 +424,7 @@ def requires_auth(path):
 
             if not check_jwt(app.current_request.headers):
                 LOGGER.warning("not logged in")
-                return respond("Must log in")
+                return respond("Must log in", status_code=HTTPStatus.UNAUTHORIZED)
             try:
                 return route_fn()
             except Exception as e:
@@ -413,7 +456,7 @@ def no_auth(path):
     return route_wrapper
 
 
-def upload_plugins(s3_client, plugin_files: Dict[str, str]):
+def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response]:
     plugin_files = {f: c for f, c in plugin_files.items() if not f.endswith(".pyc")}
     raw_schemas = [
         contents
@@ -430,13 +473,23 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]):
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    provision_schemas(
-        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
-        raw_schemas,
+    th = threading.Thread(
+        target=provision_schemas,
+        args=(
+            GraphClient(),
+            raw_schemas,
+        ),
     )
+    th.start()
 
-    for path, file in plugin_files.items():
-        upload_plugin(s3_client, path, file)
+    try:
+        for path, file in plugin_files.items():
+            upload_resp = upload_plugin(s3_client, path, file)
+            if upload_resp:
+                return upload_resp
+    finally:
+        th.join()
+    return None
 
 
 @no_auth("/gitWebhook")
@@ -473,7 +526,9 @@ def webhook():
         file_contents = b64decode(path.content).decode()
         plugin_files[path.path] = file_contents
 
-    upload_plugins(get_s3_client(), plugin_files)
+    upload_plugins_resp = upload_plugins(get_s3_client(), plugin_files)
+    if upload_plugins_resp:
+        return upload_plugins_resp
     return respond(None, {})
 
 
@@ -492,7 +547,9 @@ def deploy():
     plugins = request.json_body.get("plugins", {})
 
     LOGGER.info(f"Deploying {request.json_body['plugins'].keys()}")
-    upload_plugins(get_s3_client(), plugins)
+    upload_plugins_resp = upload_plugins(get_s3_client(), plugins)
+    if upload_plugins_resp:
+        return upload_plugins_resp
     LOGGER.info("uploaded plugins")
     return respond(None, {"Success": True})
 
@@ -561,7 +618,6 @@ def delete_model_plugin():
 
 @app.route("/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    print("nop_route")
     LOGGER.info("routing: " + app.current_request.context["path"])
 
     try:
@@ -579,6 +635,3 @@ def nop_route():
     except Exception:
         LOGGER.error(traceback.format_exc())
         return respond("Route Server Error")
-
-
-from grapl_analyzerlib.prelude import *

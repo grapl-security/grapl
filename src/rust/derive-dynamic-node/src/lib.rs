@@ -5,13 +5,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TS2;
 use quote::quote;
-use syn::{Data, Field, Fields, Ident, Type};
-
-/// #[derive(DynamicNode)]
-/// pub struct Ec2Instance2 {
-///     arn: String,
-///     launch_time: u64
-/// }
+use syn::{parse_quote, Data, Field, Fields, Ident, Type};
 
 fn name_and_ty(field: &Field) -> (&Ident, &Type) {
     (field.ident.as_ref().unwrap(), &field.ty)
@@ -34,7 +28,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
     let methods = fields
         .iter()
         .map(name_and_ty)
-        .map(|(name, ty)| get_method(name, ty))
+        .map(|(name, ty)| property_methods(name, ty))
         .fold(quote!(), |mut acc, method| {
             acc.extend(method);
             acc
@@ -53,17 +47,18 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
 
         #[derive(Clone, Debug)]
         pub struct #node_name {
-            dynamic_node: graph_descriptions::graph_description::DynamicNode,
+            dynamic_node: grapl_graph_descriptions::graph_description::DynamicNode,
         }
 
         pub trait #node_trait_name {
             fn get_mut_dynamic_node(&mut self) -> &mut DynamicNode;
+            fn get_dynamic_node(&self) -> &DynamicNode;
 
             #methods
         }
 
         impl #node_name {
-            pub fn new(strategy: graph_descriptions::graph_description::IdStrategy, seen_at: u64) -> Self {
+            pub fn new(strategy: grapl_graph_descriptions::graph_description::IdStrategy, seen_at: u64) -> Self {
                 let mut properties = std::collections::HashMap::with_capacity(1);
 
                 let dynamic_node = DynamicNode {
@@ -102,39 +97,39 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl AsRef<graph_descriptions::graph_description::DynamicNode> for #node_name {
+        impl AsRef<grapl_graph_descriptions::graph_description::DynamicNode> for #node_name {
             fn as_ref(&self) -> &DynamicNode {
                 &self.dynamic_node
             }
         }
 
-        impl AsMut<graph_descriptions::graph_description::DynamicNode> for #node_name {
+        impl AsMut<grapl_graph_descriptions::graph_description::DynamicNode> for #node_name {
             fn as_mut(&mut self) -> &mut DynamicNode {
                 &mut self.dynamic_node
             }
         }
 
-        impl Into<graph_descriptions::graph_description::DynamicNode> for #node_name {
+        impl Into<grapl_graph_descriptions::graph_description::DynamicNode> for #node_name {
             fn into(self) -> DynamicNode {
                 self.dynamic_node
             }
         }
 
-        impl Into<graph_descriptions::graph_description::Node> for #node_name {
+        impl Into<grapl_graph_descriptions::graph_description::Node> for #node_name {
             fn into(self) -> Node {
                 self.dynamic_node.into()
             }
         }
 
 
-        impl Into<graph_descriptions::graph_description::Node> for & #node_name {
+        impl Into<grapl_graph_descriptions::graph_description::Node> for & #node_name {
             fn into(self) -> Node {
                 self.dynamic_node.clone().into()
             }
         }
 
 
-        impl Into<graph_descriptions::graph_description::Node> for &mut #node_name {
+        impl Into<grapl_graph_descriptions::graph_description::Node> for &mut #node_name {
             fn into(self) -> Node {
                 self.dynamic_node.clone().into()
             }
@@ -207,13 +202,19 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     q.into()
 }
 
-fn get_method(property_name: &Ident, property_type: &Type) -> TS2 {
-    let method_name = format!("with_{}", property_name);
-    let method_name = syn::Ident::new(&method_name, property_name.span());
+fn property_methods(property_name: &Ident, property_type: &Type) -> TS2 {
+    let get_method_name = format!("get_{}", property_name);
+    let get_method_name = syn::Ident::new(&get_method_name, property_name.span());
+
+    let with_method_name = format!("with_{}", property_name);
+    let with_method_name = syn::Ident::new(&with_method_name, property_name.span());
 
     let property_name_str = format!("{}", property_name);
-    quote!(
-        fn #method_name(&mut self, #property_name: impl Into<#property_type>) -> &mut Self {
+
+    let mut implementation: TS2 = quote!();
+
+    let with_method_implementation = quote!(
+        fn #with_method_name(&mut self, #property_name: impl Into<#property_type>) -> &mut Self {
             let #property_name = #property_name .into();
             self.get_mut_dynamic_node()
             .properties.insert(
@@ -222,7 +223,65 @@ fn get_method(property_name: &Ident, property_type: &Type) -> TS2 {
             );
             self
         }
-    )
+    );
+    implementation.extend(with_method_implementation);
+
+    // Given the property type, determine:
+    // - the method on `property` to call
+    // - the type of the above, which will be the return type of the function
+    /* N.B. on this implementation:
+     *
+     * Constructing pass-through getters (type T -> T) is relatively simple,
+     * because we don't need to examine T.
+     *
+     * It's more complex for situations like (type String -> &str) because we
+     * need to recognize that we're getting a String while parsing the AST.
+     *
+     * Since this is the AST, we don't know whether a given type will
+     * resolve to String (or whatever).  All we have is some AST type token.
+     * We have to say "tokens `String` and std::string::String both get
+     * handled the same way" because the AST doesn't know they resolve
+     * to the same thing.
+     */
+    let (return_type, method_ident): (syn::Type, syn::Ident) = match property_type {
+        // janky way to get String="fully::qualified::path::Type" given a TypePath
+        Type::Path(typepath) => match typepath
+            .path
+            .segments
+            .iter()
+            .into_iter()
+            .map(|x| x.ident.to_string())
+            .collect::<Vec<String>>()
+            .join("::")
+            .as_ref()
+        {
+            /* underlying struct field type    maps to this type   via this method on NodeProperty */
+            "String" | "std::string::String" => (parse_quote!(&str), parse_quote!(as_str_prop)),
+            "u64" => (parse_quote!(u64), parse_quote!(as_uint_prop)),
+            "i64" => (parse_quote!(i64), parse_quote!(as_int_prop)),
+            // Anything else no-ops out, without implementing a getter.
+            _ => return implementation,
+        },
+        // If you're seeing this panic, then a field on the struct you're deriving
+        // doesn't resolve to a TypePath.  That's a corner case, and assuming
+        // you don't actually need a getter for it, it can be handled explicitly
+        // with a no-op matcher.
+        _ => panic!("Tried to dynamically construct getter for unrecognized type!"),
+    };
+
+    let get_method_implementation = quote!(
+        fn #get_method_name(&self) -> Option<#return_type> {
+            let property_result: Option<&NodeProperty> = self.get_dynamic_node().get_property(#property_name_str);
+
+            match property_result {
+              Some(ref property) => property. #method_ident(),
+              None => None,
+            }
+        }
+    );
+    implementation.extend(get_method_implementation);
+
+    implementation
 }
 
 #[cfg(test)]

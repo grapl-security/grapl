@@ -1,7 +1,8 @@
-pydgraph==2.0.*
+pydgraph==20.7.*
 boto3
 grapl-analyzerlib==0.2.*
 redis
 grpcio
 protobuf
 typing_extensions
+hypothesis

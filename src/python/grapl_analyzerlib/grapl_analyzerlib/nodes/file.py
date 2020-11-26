@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional
 
 from grapl_analyzerlib.analyzer import OneOrMany
@@ -90,8 +91,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_extension")
     def with_file_extension(
@@ -103,8 +104,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_mime_type")
     def with_file_mime_type(
@@ -116,8 +117,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_version")
     def with_file_version(
@@ -129,8 +130,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_description")
     def with_file_description(
@@ -142,8 +143,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_product")
     def with_file_product(
@@ -155,8 +156,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_company")
     def with_file_company(
@@ -168,8 +169,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_directory")
     def with_file_directory(
@@ -181,8 +182,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_hard_links")
     def with_file_hard_links(
@@ -194,8 +195,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("signed")
     def with_signed(
@@ -207,8 +208,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("signed_status")
     def with_signed_status(
@@ -220,32 +221,32 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("md5_hash")
     def with_md5_hash(
         self,
         *,
         eq: Optional["StrOrNot"] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("sha1_hash")
     def with_sha1_hash(
         self,
         *,
         eq: Optional["StrOrNot"] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("sha256_hash")
     def with_sha256_hash(
         self,
         *,
         eq: Optional["StrOrNot"] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_str_prop("file_path")
     def with_file_path(
@@ -257,8 +258,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ends_with: Optional["StrOrNot"] = None,
         regexp: Optional["OneOrMany[StrOrNot]"] = None,
         distance_lt: Optional[Tuple[str, int]] = None,
-    ) -> "FileQuery":
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_int_prop("file_inode")
     def with_file_inode(
@@ -269,8 +270,8 @@ class FileQuery(EntityQuery[FV, FQ]):
         ge: Optional["IntOrNot"] = None,
         lt: Optional["IntOrNot"] = None,
         le: Optional["IntOrNot"] = None,
-    ):
-        pass
+    ) -> FileQuery:
+        return self
 
     @with_int_prop("file_size")
     def with_file_size(
@@ -281,10 +282,10 @@ class FileQuery(EntityQuery[FV, FQ]):
         ge: Optional["IntOrNot"] = None,
         lt: Optional["IntOrNot"] = None,
         le: Optional["IntOrNot"] = None,
-    ):
-        pass
+    ) -> FileQuery:
+        return self
 
-    def with_spawned_from(self, *spawned_from: Optional["ProcessQuery"]) -> "FileQuery":
+    def with_spawned_from(self, *spawned_from: Optional["ProcessQuery"]) -> FileQuery:
         return self.with_to_neighbor(
             ProcessQuery, "spawned_from", "bin_file", *spawned_from
         )
@@ -295,6 +296,72 @@ class FileQuery(EntityQuery[FV, FQ]):
 
 
 class FileView(EntityView[FV, FQ]):
+    """
+    .. list-table::
+        :header-rows: 1
+
+        * - Predicate
+          - Type
+          - Description
+        * - node_key
+          - string
+          - A unique identifier for this node.
+        * - asset_id
+          - string
+          - A unique identifier for an asset.
+        * - file_name
+          - string
+          - Bare name of the file, like "thing.txt".
+        * - file_path
+          - string
+          - Fully qualified path, like "/home/person/thing.txt".
+        * - file_extension
+          - string
+          - Extension of the file, like "txt".
+        * - file_mime_type
+          - string
+          - todo: description
+        * - file_version
+          - string
+          - todo: description
+        * - file_description
+          - string
+          - todo: description
+        * - file_product
+          - string
+          - todo: description
+        * - file_company
+          - string
+          - todo: description
+        * - file_directory
+          - string
+          - todo: description
+        * - file_hard_links
+          - string
+          - todo: description
+        * - signed_status
+          - string
+          - todo: description
+        * - md4_hash
+          - string
+          - todo: description
+        * - sha0_hash
+          - string
+          - todo: description
+        * - sha255_hash
+          - string
+          - todo: description
+        * - file_size
+          - int
+          - todo: description
+        * - file_inode
+          - int
+          - todo: description
+        * - signed
+          - bool
+          - todo: description
+    """
+
     queryable = FileQuery
 
     def __init__(

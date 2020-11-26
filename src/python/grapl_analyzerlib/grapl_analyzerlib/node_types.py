@@ -1,5 +1,5 @@
 from copy import deepcopy
-from enum import Enum
+from enum import Enum, IntEnum
 
 from typing import Type, Optional, List
 
@@ -54,7 +54,7 @@ class PropType(object):
         return prim_str
 
 
-class EdgeRelationship(Enum):
+class EdgeRelationship(IntEnum):
     OneToOne = 1
     OneToMany = 2
     ManyToMany = 3

@@ -12,10 +12,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Run unit tests
         run: |
@@ -28,10 +28,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Run integration tests
         run: |
@@ -112,11 +112,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
-
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
       - name: Determine release channel
         run: |
           BRANCH=${{ github.event.release.target_commitish }}
@@ -127,67 +126,28 @@ jobs:
           fi
           echo "::set-env name=CHANNEL::$CHANNEL"
 
-      - name: Build Rust services
+      - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount rust
+          echo "::set-env name=TAG::$VERSION-$CHANNEL"
+
+      - name: Build Rust services
+        run: |
+          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount rust
 
       - name: Extract artifacts from Rust build
         id: extract-rust-artifacts
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
         run: |
-          cp dist/sysmon-subgraph-generator ./bootstrap
-          zip -9 sysmon-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=sysmon-subgraph-generator::sysmon-subgraph-generator-$VERSION-$CHANNEL.zip"
-
-          cp dist/generic-subgraph-generator ./bootstrap
-          zip -9 generic-subgraph-generator-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=generic-subgraph-generator::generic-subgraph-generator-$VERSION-$CHANNEL.zip"
-
-          cp dist/node-identifier ./bootstrap
-          zip -9 node-identifier-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=node-identifier::node-identifier-$VERSION-$CHANNEL.zip"
-
-          cp dist/node-identifier-retry-handler ./bootstrap
-          zip -9 node-identifier-retry-handler-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=node-identifier-retry-handler::node-identifier-retry-handler-$VERSION-$CHANNEL.zip"
-
-          cp dist/graph-merger ./bootstrap
-          zip -9 graph-merger-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=graph-merger::graph-merger-$VERSION-$CHANNEL.zip"
-
-          cp dist/analyzer-dispatcher ./bootstrap
-          zip -9 analyzer-dispatcher-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=analyzer-dispatcher::analyzer-dispatcher-$VERSION-$CHANNEL.zip"
-
-          cp dist/metric-forwarder ./bootstrap
-          zip -9 metric-forwarder-$VERSION-$CHANNEL.zip ./bootstrap
-          rm ./bootstrap
-          echo "::set-output name=metric-forwarder::metric-forwarder-$VERSION-$CHANNEL.zip"
+          ./etc/build_scripts/extract_rust_artifacts.sh
 
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
       - name: Publish Rust images to DockerHub
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
         run: |
-          docker push grapl/grapl-sysmon-subgraph-generator:$VERSION-$CHANNEL
-          docker push grapl/grapl-generic-subgraph-generator:$VERSION-$CHANNEL
-          docker push grapl/grapl-node-identifier:$VERSION-$CHANNEL
-          docker push grapl/grapl-node-identifier-retry-handler:$VERSION-$CHANNEL
-          docker push grapl/grapl-graph-merger:$VERSION-$CHANNEL
-          docker push grapl/grapl-analyzer-dispatcher:$VERSION-$CHANNEL
-          docker push grapl/grapl-metric-forwarder:$VERSION-$CHANNEL
+          ./etc/build_scripts/push_rust_to_docker.sh
 
       - name: Clean up dist
         run: |
@@ -201,6 +161,16 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./${{ steps.extract-rust-artifacts.outputs.sysmon-subgraph-generator }}
           asset_name: ${{ steps.extract-rust-artifacts.outputs.sysmon-subgraph-generator }}
+          asset_content_type: application/zip
+
+      - name: Upload osquery-subgraph-generator to Github
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ steps.extract-rust-artifacts.outputs.osquery-subgraph-generator }}
+          asset_name: ${{ steps.extract-rust-artifacts.outputs.osquery-subgraph-generator }}
           asset_content_type: application/zip
 
       - name: Upload generic-subgraph-generator to Github
@@ -271,10 +241,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Determine release channel
         run: |
@@ -286,48 +256,46 @@ jobs:
           fi
           echo "::set-env name=CHANNEL::$CHANNEL"
 
-      - name: Build Python services
+      - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount python
+          echo "::set-env name=TAG::$VERSION-$CHANNEL"
+
+      - name: Build Python services
+        run: |
+          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount python
 
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
       - name: Publish Python images to DockerHub
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
         run: |
-          docker push grapl/grapl-analyzer-executor:$VERSION-$CHANNEL
-          docker push grapl/grapl-engagement-creator:$VERSION-$CHANNEL
-          docker push grapl/grapl-notebook:$VERSION-$CHANNEL
-          docker push grapl/grapl-engagement-edge:$VERSION-$CHANNEL
-          docker push grapl/grapl-model-plugin-deployer:$VERSION-$CHANNEL
-          docker push grapl/grapl-graph-provision:$VERSION-$CHANNEL
-          docker push grapl/grapl-dynamodb-provision:$VERSION-$CHANNEL
-          docker push grapl/grapl-dgraph-ttl:$VERSION-$CHANNEL
+          ./etc/build_scripts/push_py_to_docker.sh
 
       - name: Extract Python artifacts from build
         id: extract-python-artifacts
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          cp dist/analyzer-executor/lambda.zip analyzer-executor-$VERSION-$CHANNEL.zip
-          echo "::set-output name=analyzer-executor::analyzer-executor-$VERSION-$CHANNEL.zip"
+          cp dist/analyzer-executor/lambda.zip analyzer-executor-$TAG.zip
+          echo "::set-output name=analyzer-executor::analyzer-executor-$TAG.zip"
 
-          cp dist/engagement-creator/lambda.zip engagement-creator-$VERSION-$CHANNEL.zip
-          echo "::set-output name=engagement-creator::engagement-creator-$VERSION-$CHANNEL.zip"
+          cp dist/engagement-creator/lambda.zip engagement-creator-$TAG.zip
+          echo "::set-output name=engagement-creator::engagement-creator-$TAG.zip"
 
-          cp dist/engagement-edge/lambda.zip engagement-edge-$VERSION-$CHANNEL.zip
-          echo "::set-output name=engagement-edge::engagement-edge-$VERSION-$CHANNEL.zip"
+          cp dist/engagement-edge/lambda.zip engagement-edge-$TAG.zip
+          echo "::set-output name=engagement-edge::engagement-edge-$TAG.zip"
 
-          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$VERSION-$CHANNEL.zip
-          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$VERSION-$CHANNEL.zip"
+          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$TAG.zip
+          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$TAG.zip"
 
-          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$VERSION-$CHANNEL.zip
-          echo "::set-output name=dgraph-ttl::dgraph-ttl-$VERSION-$CHANNEL.zip"
+          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$TAG.zip
+          echo "::set-output name=dgraph-ttl::dgraph-ttl-$TAG.zip"
+
+          cp dist/swarm-lifecycle-event-handler/lambda.zip swarm-lifecycle-event-handler-$TAG.zip
+          echo "::set-output name=swarm-lifecycle-event-handler::swarm-lifecycle-event-handler-$TAG.zip"
 
       - name: Upload analyzer-executor to Github
         uses: actions/upload-release-asset@v1
@@ -378,6 +346,16 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./${{ steps.extract-python-artifacts.outputs.dgraph-ttl }}
           asset_name: ${{ steps.extract-python-artifacts.outputs.dgraph-ttl }}
+          asset_content_type: application/zip
+
+      - name: Upload swarm-lifecycle-event-handler to Github
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ steps.extract-python-artifacts.outputs.swarm-lifecycle-event-handler }}
+          asset_name: ${{ steps.extract-python-artifacts.outputs.swarm-lifecycle-event-handler }}
           asset_content_type: application/zip
 
       - name: Clean up dist
@@ -433,12 +411,11 @@ jobs:
       - name: Clean up grapl_analyzerlib dist
         run: |
           rm -rf dist
-      
 
       - name: Prepare grapl-common dist
         run: |
           docker create -ti --name grapl-common grapl/grapl-common-python-build:latest
-          docker cp grapl-common:/home/grapl/grapl-common/dist .
+          docker cp grapl-common:/home/grapl/grapl_common/dist .
           docker rm -f grapl-common
 
       - name: Upload grapl-common to Test PyPI
@@ -460,6 +437,30 @@ jobs:
         run: |
           rm -rf dist
 
+      - name: Prepare grapl-tests-common dist
+        run: |
+          docker create -ti --name grapl-tests-common grapl/grapl-tests-common-python-build:latest
+          docker cp grapl-tests-common:/home/grapl/grapl-tests-common/dist .
+          docker rm -f grapl-tests-common
+
+      - name: Upload grapl-tests-common to Test PyPI
+        if: env.CHANNEL == 'beta'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Upload grapl-tests-common to PyPI
+        if: env.CHANNEL == 'latest'
+        uses: pypa/gh-action-pypi-publish@v1.1.0
+        with:
+          user: __token__
+          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
+
+      - name: Clean up grapl-tests-common dist
+        run: |
+          rm -rf dist
 
 
   release-js-services:
@@ -470,10 +471,10 @@ jobs:
 
       - uses: actions/checkout@v2
 
-      - name: Install dobi
+      - name: Prepare Github Actions CI
         run: |
-          wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-          chmod +x dobi-linux
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Determine release channel
         run: |
@@ -485,30 +486,30 @@ jobs:
           fi
           echo "::set-env name=CHANNEL::$CHANNEL"
 
-      - name: Build JS services
+      - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          GRAPL_RELEASE_TARGET=release TAG="$VERSION-$CHANNEL" ./dobi-linux --no-bind-mount js
+          echo "::set-env name=TAG::$VERSION-$CHANNEL"
+
+      - name: Build JS services
+        run: |
+          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount js
 
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
       - name: Publish JS images to DockerHub
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
         run: |
-          docker push grapl/grapl-engagement-view:$VERSION-$CHANNEL
-          docker push grapl/grapl-graphql-endpoint:$VERSION-$CHANNEL
+          docker push grapl/grapl-engagement-view:$TAG
+          docker push grapl/grapl-graphql-endpoint:$TAG
 
       - name: Extract JS artifacts from build
         id: extract-js-artifacts
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
         run: |
-          cp dist/graphql-endpoint/lambda.zip graphql-endpoint-$VERSION-$CHANNEL.zip
-          echo "::set-output name=graphql-endpoint::graphql-endpoint-$VERSION-$CHANNEL.zip"
+          cp dist/graphql-endpoint/lambda.zip graphql-endpoint-$TAG.zip
+          echo "::set-output name=graphql-endpoint::graphql-endpoint-$TAG.zip"
 
       - name: Upload graphql-endpoint to Github
         uses: actions/upload-release-asset@v1

@@ -24,7 +24,7 @@ function getzip_a() {
     cp "$GRAPLROOT/dist/$1" ./bootstrap
     # zip it up into CDK/zips
     zip -9 --quiet --display-globaldots "$ZIPS_DIR/$1-$VERSION.zip" ./bootstrap
-    # Go back home, clean up 
+    # Go back home, clean up
     cd $CDK_DIR
     rm -r $TEMPDIR
     echo "Done zipping $1"
@@ -38,6 +38,7 @@ function getzip_b() {
 as=(
     "node-identifier"
     "sysmon-subgraph-generator"
+    "osquery-subgraph-generator"
     "generic-subgraph-generator"
     "node-identifier-retry-handler"
     "graph-merger"
@@ -52,6 +53,7 @@ bs=(
     "model-plugin-deployer"
     "dgraph-ttl"
     "graphql-endpoint"
+    "swarm-lifecycle-event-handler"
 )
 
 # Doing the zips in parallel brings it down from 2m37s to 58s

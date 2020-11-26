@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Any, TypeVar, List, Set, Type, Optional, Callable, Union, Dict, Tuple
 
 from grapl_analyzerlib.node_types import (
@@ -70,7 +71,7 @@ class EntityQuery(BaseQuery[EV, EQ]):
         return self
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return EntitySchema({}, {}, None)
 
 
@@ -93,13 +94,13 @@ class EntityView(BaseView[EV, EQ]):
         self.graph_client = graph_client
         self.lenses = lenses or []
 
-    def get_lenses(self, *lenses, cached=False) -> "List[LensView]":
+    def get_lenses(self, *lenses, cached=False) -> List[LensView]:
         return self.get_neighbor(LensQuery, "in_scope", "scope", lenses, cached) or []
 
-    def get_risks(self, *risks, cached=False) -> "List[RiskView]":
+    def get_risks(self, *risks, cached=False) -> List[RiskView]:
         return self.get_neighbor(RiskQuery, "risks", "risky_nodes", risks, cached) or []
 
-    def into_view(self, v: Type["Viewable"]) -> Optional["Viewable"]:
+    def into_view(self, v: Type[Viewable]) -> Optional[Viewable]:
         if v.node_schema().self_type() in self.node_types:
             self.queryable = v.queryable
             return v(
@@ -112,7 +113,7 @@ class EntityView(BaseView[EV, EQ]):
         return None
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return EntitySchema({}, {}, EntityView)
 
 

@@ -20,9 +20,6 @@ from analyzer_deployer.app import (
     DYNAMODB_CLIENT,
     app,
     Analyzer,
-    PortConfig,
-    SecretConfig,
-    TableConfig,
     AnalyzerConfig,
     AnalyzerDeployment,
     DynamoWrapper,
@@ -30,6 +27,8 @@ from analyzer_deployer.app import (
     ListAnalyzersResponse,
     ListAnalyzerDeploymentsResponse,
 )
+from chalice.test import Client
+from hypothesis import given
 
 UUID_REGEX = r"[a-f0-9]{8}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{12}"
 KEY_SCHEMA = [
@@ -75,7 +74,7 @@ def _monkeypatch_analyzers_table(table_name):
 
 
 # Test that our schema hasn't drifted from the one defined in the
-# etc/local_dynamo/provision_local_dynamodb.py script. If this test
+# etc/local_dynamo/provision_local_identity_table.py script. If this test
 # fails, update the KEY_SCHEMA and ATTRIBUTE_DEFINITIONS above to
 # match.
 class TestAnalyzersTableSchemaDrift(unittest.TestCase):
@@ -453,27 +452,33 @@ class TestApp(unittest.TestCase):
 
             list_response_1: HTTPResponse = client.http.get("api/1/analyzers?limit=2")
             self.assertEqual(list_response_1.status_code, 200)
-            list_analyzer_deployments_response_1 = ListAnalyzerDeploymentsResponse.from_json(
-                list_response_1.json_body
+            list_analyzer_deployments_response_1 = (
+                ListAnalyzerDeploymentsResponse.from_json(list_response_1.json_body)
             )
             self.assertEqual(list_analyzer_deployments_response_1.limit, 2)
             self.assertEqual(len(list_analyzer_deployments_response_1.analyzers), 2)
             self.assertIsNotNone(list_analyzer_deployments_response_1.next_page)
             self.assertListEqual(
-                [d.analyzer_version for d in list_analyzer_deployments_response_1.analyzer_deployments],
+                [
+                    d.analyzer_version
+                    for d in list_analyzer_deployments_response_1.analyzer_deployments
+                ],
                 analyzer_versions[0:2],
             )
 
             list_response_2: HTTPResponse = client.http.get("api/1/analyzers?limit=2")
             self.assertEqual(list_response_2.status_code, 200)
-            list_analyzer_deployments_response_2 = ListAnalyzerDeploymentsResponse.from_json(
-                list_response_2.json_body
+            list_analyzer_deployments_response_2 = (
+                ListAnalyzerDeploymentsResponse.from_json(list_response_2.json_body)
             )
             self.assertEqual(list_analyzer_deployments_response_2.limit, 2)
             self.assertEqual(len(list_analyzer_deployments_response_2.analyzers), 1)
             self.assertIsNone(list_analyzer_deployments_response_2.next_page)
             self.assertListEqual(
-                [d.analyzer_version for d in list_analyzer_deployments_response_2.analyzer_deployments],
+                [
+                    d.analyzer_version
+                    for d in list_analyzer_deployments_response_2.analyzer_deployments
+                ],
                 analyzer_versions[0:2],
             )
 
@@ -494,7 +499,10 @@ class TestApp(unittest.TestCase):
             )
             self.assertEqual(get_response_1.status_code, 200)
             get_analyzer_response_1 = Analyzer.from_json(get_response_1.json_body)
-            self.assertEqual(get_analyzer_response_1.analyzer_id, create_analyzer_response.analyzer_id)
+            self.assertEqual(
+                get_analyzer_response_1.analyzer_id,
+                create_analyzer_response.analyzer_id,
+            )
             self.assertTrue(get_analyzer_response_1.analyzer_active)
 
             deactivate_response = client.http.delete(
@@ -507,7 +515,10 @@ class TestApp(unittest.TestCase):
             )
             self.assertEqual(get_response_2.status_code, 200)
             get_analyzer_response_2 = Analyzer.from_json(get_response_2.json_body)
-            self.assertEqual(get_analyzer_response_2.analyzer_id, create_analyzer_response.analyzer_id)
+            self.assertEqual(
+                get_analyzer_response_2.analyzer_id,
+                create_analyzer_response.analyzer_id,
+            )
             self.assertFalse(get_analyzer_response_2.analyzer_active)
 
     @pytest.mark.forked
@@ -536,7 +547,10 @@ class TestApp(unittest.TestCase):
             )
             self.assertEqual(get_response_1.status_code, 200)
             get_analyzer_response_1 = Analyzer.from_json(get_response_1.json_body)
-            self.assertEqual(get_analyzer_response_1.analyzer_id, create_analyzer_response.analyzer_id)
+            self.assertEqual(
+                get_analyzer_response_1.analyzer_id,
+                create_analyzer_response.analyzer_id,
+            )
             self.assertTrue(get_analyzer_response_1.analyzer_active)
 
             deactivate_response = client.http.delete(
@@ -549,5 +563,8 @@ class TestApp(unittest.TestCase):
             )
             self.assertEqual(get_response_2.status_code, 200)
             get_analyzer_response_2 = Analyzer.from_json(get_response_2.json_body)
-            self.assertEqual(get_analyzer_response_2.analyzer_id, create_analyzer_response.analyzer_id)
+            self.assertEqual(
+                get_analyzer_response_2.analyzer_id,
+                create_analyzer_response.analyzer_id,
+            )
             self.assertFalse(get_analyzer_response_2.analyzer_active)

@@ -1,4 +1,17 @@
-version: '3.4'
+### Port conventions (though there are many, many exceptions)
+# 81xx - grapl services (and some `wait-for-it` http servers)
+# 82xx - TBD
+# 83xx - grapl plugin services, like grapl-aws-plugins
+# 84xx - debugger ports (see vsc_debugger.py)
+
+version: "3.8"
+volumes:
+  dgraph_export:
+
+networks:
+  default:
+    name: grapl-network
+
 services:
 
   #
@@ -7,11 +20,31 @@ services:
 
   graphdb:
     tty: false
-    image: dgraph/standalone:v1.2.2
+    image: dgraph/standalone:v20.07.1
     ports:
-      - "8000:8000"
-      - "8080:8080"
-      - "9080:9080"
+      - "5080:5080"  # zero - used for `dgraph live` importing-data command in `integration_tests.rst`
+      - "8000:8000"  # ratel
+      - "8080:8080"  # alpha http
+      - "9080:9080"  # alpha grpc
+    logging:
+      driver: none
+    volumes:
+      - type: volume
+        source: dgraph_export
+        # Hitting :8080/admin/export will force an export to be written to this directory.
+        target: /dgraph/export
+
+  # dev uses 1 big redis instance, prod has 1:1 redis per grapl service
+  dev-shared-redis:  # maybe transitory, this will eventually match prod
+    image: redis:latest
+    command: |
+      sh -c "
+        # hack from https://stackoverflow.com/questions/54533308/disable-redis-persistence-in-docker
+        # to disable persistence
+        rm -f /data/dump.rdb && redis-server
+      "
+    ports:
+      - "6379:6379" # redis default
     logging:
       driver: none
 
@@ -23,6 +56,10 @@ services:
       - IMAGE_NAME=localstack/localstack:0.11.5
     ports:
       - "9324:9324"
+    networks:
+      default:
+        aliases:
+          - sqs.us-east-1.amazonaws.com
     logging:
       driver: none
 
@@ -30,22 +67,25 @@ services:
     image: localstack/localstack:0.11.5
     environment:
       - PORT_WEB_UI=8099
-      - SERVICES=secretsmanager:4569
+      - SERVICES=secretsmanager:4584
       - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
       - IMAGE_NAME=localstack/localstack:0.11.5
 
     ports:
-      - "4568:4568"
+      - "4584:4584"
       - "8099:8099"
     logging:
       driver: none
-
 
   s3:
     image: minio/minio
     command: server /data
     ports:
       - "9000:9000"
+    networks:
+      default:
+        aliases:
+          - minio
     logging:
       driver: none
 
@@ -59,7 +99,7 @@ services:
   #
 
   grapl-metric-forwarder:
-    image: grapl/metric-forwarder:${TAG:-latest}
+    image: grapl/grapl-metric-forwarder:${TAG:-latest}
     tty: false
     environment:
       - "IS_LOCAL=True"
@@ -87,7 +127,28 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-graph-provision
+      - grapl-provision
+
+  grapl-osquery-subgraph-generator:
+    image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
+    tty: false
+    environment:
+      - "BUCKET_PREFIX=local-grapl"
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
+      - RUST_LOG=${RUST_LOG:-ERROR}
+    links:
+      - s3:minio
+      - sqs:sqs.us-east-1.amazonaws.com
+    extra_hosts:
+      - sqs:127.0.0.1
+      - amazonaws:127.0.0.1
+      - minio:127.0.0.1
+    depends_on:
+      - s3
+      - sqs
+      - grapl-provision
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -120,8 +181,7 @@ services:
       - s3
       - dynamodb
       - sqs
-      - grapl-dynamodb-provision
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -154,8 +214,7 @@ services:
       - s3
       - sqs
       - dynamodb
-      - grapl-dynamodb-provision
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -166,7 +225,7 @@ services:
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
-      - MG_ALPHAS=master_graph:9080
+      - MG_ALPHAS=http://master_graph:9080
       - "GRAPL_SCHEMA_TABLE=local-grapl-grapl_schema_table"
     tty: false
     links:
@@ -180,8 +239,8 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-graph-provision
       - graphdb
+      - grapl-provision
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -231,13 +290,16 @@ services:
       - s3
       - sqs
       - dynamodb
-      - grapl-dynamodb-provision
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/analyzer-executor.py'
+    command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
+      - "HITCACHE_ADDR=dev-shared-redis"
+      - "HITCACHE_PORT=6379"
+      - "MESSAGECACHE_ADDR=dev-shared-redis"
+      - "MESSAGECACHE_PORT=6379"
       - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
       - MG_ALPHAS=master_graph:9080
@@ -258,7 +320,7 @@ services:
       - s3
       - sqs
       - graphdb
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
@@ -280,11 +342,17 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8900'
+    command: |
+      /bin/sh -c '
+        wait-for-it grapl-provision:8126 --timeout=45 &&
+        . venv/bin/activate &&
+        cd /home/grapl/app &&
+        chalice local --no-autoreload --host=0.0.0.0 --port=8900
+      '
     ports:
       - "8900:8900"
     environment:
@@ -293,6 +361,8 @@ services:
       - "UX_BUCKET_URL=localhost:3000"
       - "USER_AUTH_TABLE=local-grapl-user_auth_table"
       - "BUCKET_PREFIX=local-grapl"
+    depends_on:
+      - grapl-provision
 
     tty: true
     links:
@@ -302,8 +372,7 @@ services:
       - dynamodb
       - s3
       - secretsmanager
-      - grapl-dynamodb-provision
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -358,6 +427,7 @@ services:
 
   grapl-engagement-view:
     image: grapl/grapl-engagement-view:${TAG:-latest}
+    command: "serve -dir /var/www"
     environment:
       - PORT=1234
     ports:
@@ -383,6 +453,8 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
+    environment:
+      - MG_ALPHAS=master_graph:9080
     links:
       - graphdb:master_graph
     ports:
@@ -395,15 +467,29 @@ services:
   # Utility services
   #
 
-  grapl-graph-provision:
-    image: grapl/grapl-graph-provision:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python /var/run/target/grapl_provision.py'
+  grapl-provision:
+    image: grapl/grapl-provision:${TAG:-latest}
+    command: >
+      /bin/bash -c "
+        # it doesn't seem to like waiting for sqs
+        # wait-for-it sqs:9324 &&
+        wait-for-it secretsmanager:4584 &&
+        wait-for-it s3:9000 &&
+        wait-for-it dynamodb:8000 &&
+        wait-for-it grapl-master-graph-db:8080 &&
+        wait-for-it grapl-engagement-view:1234 &&
+        . venv/bin/activate &&
+        python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
+        python /home/grapl/grapl_local_provision/grapl_provision.py &&
+        # Host a server on this port, so that tests can wait-for-it
+        python -m http.server 8126
+        "
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - MG_ALPHAS=master_graph:9080
-    volumes:
-      - ./etc/local_grapl/:/var/run/target/
     tty: true
+    ports:
+      - 8126:8126
     links:
       - graphdb:master_graph
       - s3:minio
@@ -419,20 +505,4 @@ services:
       - s3
       - sqs
       - secretsmanager
-      - dynamodb
-      - grapl-dynamodb-provision
-
-  grapl-dynamodb-provision:
-    image: grapl/grapl-dynamodb-provision:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python /var/run/target/provision_local_dynamodb.py'
-    environment:
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-    volumes:
-      - ./etc/local_grapl/local_dynamodb:/var/run/target/
-    tty: false
-    links:
-      - dynamodb:dynamodb
-    extra_hosts:
-      - amazonaws:127.0.0.1
-    depends_on:
       - dynamodb

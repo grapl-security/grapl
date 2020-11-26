@@ -5,13 +5,11 @@ use std::collections::HashSet;
 use std::io::Cursor;
 use std::sync::Arc;
 use std::time::Duration;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
 
 use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;
 use failure::{bail, Error};
-use graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::graph_description::*;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
@@ -33,7 +31,8 @@ use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
 use chrono::Utc;
-use sqs_lambda::local_sqs_service::local_sqs_service;
+use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
+use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -238,18 +237,6 @@ where
     }
 }
 
-fn time_based_key_fn(_event: &[u8]) -> String {
-    info!("event length {}", _event.len());
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
-}
-
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
     rusoto_sqs::Message {
         attributes: Some(event.attributes),
@@ -392,7 +379,10 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-    local_sqs_service(
+    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
+    options_builder.with_minimal_buffer_completion_policy();
+
+    local_sqs_service_with_options(
         source_queue_url,
         "local-grapl-analyzer-dispatched-bucket",
         Context {
@@ -459,6 +449,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
 
             Ok(())
         },
+        options_builder.build(),
     )
     .await?;
 

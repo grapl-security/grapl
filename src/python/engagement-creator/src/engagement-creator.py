@@ -5,21 +5,30 @@ import sys
 import time
 import traceback
 from collections import defaultdict
-from typing import Any, Dict, Iterator, Tuple, Sequence, Optional, cast, TypeVar, Type
+from typing import (
+    Any,
+    ContextManager,
+    Dict,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+)
 
 import boto3
 import botocore.exceptions  # type: ignore
-import botocore.exceptions
-from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
-from grapl_analyzerlib.nodes.lens import LensView
-from grapl_analyzerlib.prelude import BaseView
-from grapl_analyzerlib.prelude import RiskView
-from grapl_analyzerlib.viewable import Viewable
-from grapl_analyzerlib.queryable import Queryable
-from src.metrics import EngagementCreatorMetrics
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from mypy_boto3_s3 import S3ServiceResource
 from mypy_boto3_sqs import SQSClient
-from typing_extensions import Final
+from typing_extensions import Final, Literal
+
+from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
+from grapl_analyzerlib.nodes.lens import LensView
+from grapl_analyzerlib.prelude import BaseView, RiskView
+from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.viewable import Viewable
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -40,6 +49,36 @@ V = TypeVar("V", bound=Viewable)
 Q = TypeVar("Q", bound=Queryable)
 
 SERVICE_NAME: Final[str] = "engagement-creator"
+
+
+class EngagementCreatorMetrics:
+    def __init__(self, service_name: str) -> None:
+        self.metric_reporter = MetricReporter.create(service_name)
+
+    def event_processed(self, status: Literal["success", "failure"]) -> None:
+        self.metric_reporter.counter(
+            metric_name="event_processed", value=1, tags=[TagPair("status", status)]
+        )
+
+    def time_to_process_event(self) -> ContextManager:
+        return self.metric_reporter.histogram_ctx(metric_name="time_to_process_event")
+
+    def risk_node(self, analyzer_name: str) -> None:
+        # A generic "hey, there's a new risky node" metric that we can globally alarm on.
+        # Has no dimensions. (See the top of `alarms.ts` to learn why!)
+        self.metric_reporter.counter(
+            metric_name=f"risk_node",
+            value=1,
+        )
+        # A more-specific, per-analyzer metric, in case you wanted to define your own alarms
+        # about just "suspicious svc host", for example.
+        self.metric_reporter.counter(
+            metric_name=f"risk_node_for_analyzer",
+            value=1,
+            tags=[
+                TagPair("analyzer_name", analyzer_name),
+            ],
+        )
 
 
 def parse_s3_event(s3: S3ServiceResource, event: Any) -> bytes:
@@ -105,32 +144,6 @@ def recalculate_score(lens: LensView) -> int:
     return total_risk_score
 
 
-def set_score(client: GraphClient, uid: str, new_score: int, txn: Any = None) -> None:
-    if not txn:
-        txn = client.txn(read_only=False)
-
-    try:
-        mutation = {"uid": uid, "score": new_score}
-
-        txn.mutate(set_obj=mutation, commit_now=True)
-    finally:
-        txn.discard()
-
-
-def set_property(
-    client: GraphClient, uid: str, prop_name: str, prop_value: Any
-) -> None:
-    LOGGER.debug(f"Setting property {prop_name} as {prop_value} for {uid}")
-    txn = client.txn(read_only=False)
-
-    try:
-        mutation = {"uid": uid, prop_name: prop_value}
-
-        txn.mutate(set_obj=mutation, commit_now=True)
-    finally:
-        txn.discard()
-
-
 def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
@@ -190,13 +203,6 @@ def get_s3_client() -> S3ServiceResource:
         return cast(S3ServiceResource, boto3.resource("s3"))
 
 
-def mg_alphas() -> Iterator[Tuple[str, int]]:
-    mg_alphas = os.environ["MG_ALPHAS"].split(",")
-    for mg_alpha in mg_alphas:
-        host, port = mg_alpha.split(":")
-        yield host, int(port)
-
-
 def nodes_to_attach_risk_to(
     nodes: Sequence[BaseView],
     risky_node_keys: Optional[Sequence[str]],
@@ -223,7 +229,7 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
     for event in s3_event["Records"]:
         with metrics.time_to_process_event():
             try:
-                _process_one_event(event, s3, mg_client)
+                _process_one_event(event, s3, mg_client, metrics)
             except:
                 metrics.event_processed(status="failure")
                 raise
@@ -235,6 +241,7 @@ def _process_one_event(
     event: Any,
     s3: S3ServiceResource,
     mg_client: GraphClient,
+    metrics: EngagementCreatorMetrics,
 ) -> None:
     if not IS_LOCAL:
         event = json.loads(event["body"])["Records"][0]
@@ -251,7 +258,7 @@ def _process_one_event(
     ]  # same type as `.to_adjacency_list()["nodes"]`
     edges = incident_graph["edges"]
     risk_score = incident_graph["risk_score"]
-    lens_dict = incident_graph["lenses"]
+    lens_dict: Sequence[Tuple[str, str]] = incident_graph["lenses"]
     risky_node_keys = incident_graph["risky_node_keys"]
 
     LOGGER.debug(
@@ -270,6 +277,7 @@ def _process_one_event(
         LOGGER.debug(f"Copying node: {node}")
 
         for lens_type, lens_name in lens_dict:
+            # i.e. "hostname", "DESKTOP-WHATEVER"
             LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
             lens_id = lens_name + lens_type
             lens: LensView = lenses.get(lens_name) or LensView.get_or_create(
@@ -303,6 +311,10 @@ def _process_one_event(
     for node in risky_nodes:
         create_edge(mg_client, node.uid, "risks", risk.uid)
         create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
+
+        # Or perhaps we should just emit per-risk instead of per-risky-node?
+        # (this alarming path is definitely a candidate for changing later)
+        metrics.risk_node(analyzer_name=analyzer_name)
 
     for edge_list in edges.values():
         for edge in edge_list:

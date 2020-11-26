@@ -1,18 +1,15 @@
-
-
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
-import * as logs from '@aws-cdk/aws-logs';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
-import { FilterPattern, SubscriptionFilter } from '@aws-cdk/aws-logs';
+import { FilterPattern } from '@aws-cdk/aws-logs';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
-import { Watchful } from './vendor/cdk-watchful/lib/watchful';
+import { Watchful } from 'cdk-watchful';
 
 class Queues {
     readonly queue: sqs.Queue;
@@ -37,6 +34,11 @@ class Queues {
     }
 }
 
+export interface ServicePropsOptions {
+    runtime?: lambda.Runtime;
+    py_entrypoint?: string;
+}
+
 export interface ServiceProps {
     version: string;
     prefix: string;
@@ -46,7 +48,7 @@ export interface ServiceProps {
     writes_to?: s3.IBucket;
     subscribes_to?: sns.ITopic;
     retry_code_name?: string;
-    opt?: any;
+    opt?: ServicePropsOptions;
     watchful?: Watchful;
 
     /**
@@ -64,9 +66,11 @@ export class Service {
     readonly event_handler: lambda.IFunction;
     readonly event_retry_handler: lambda.Function;
     readonly queues: Queues;
+    readonly serviceName: string;
 
     constructor(scope: cdk.Construct, name: string, props: ServiceProps) {
         const serviceName = `${props.prefix}-${name}`;
+        this.serviceName = serviceName;
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
         const opt = props.opt;
@@ -74,15 +78,23 @@ export class Service {
         const runtime =
             opt && opt.runtime
                 ? opt.runtime
-                : {
-                      name: 'provided',
+                : new lambda.Runtime('provided', undefined, {
                       supportsInlineCode: true,
-                  };
+                  });
 
-        const handler =
-            runtime === lambda.Runtime.PYTHON_3_7
-                ? `${name}.lambda_handler`
-                : name;
+        const handler = (function(): string {
+            if(runtime === lambda.Runtime.PYTHON_3_7) {
+                if (opt && opt.py_entrypoint) {
+                    // Set opt.py_entrypoint to manually specify how to resolve the `lambda_handler` function.
+                    return opt.py_entrypoint
+                } else {
+                    // For one-file python services, where we assume everything is in <name>.py
+                    return `${name}.lambda_handler`
+                }
+            } else {
+                return name
+            }
+        })()
 
         const queues = new Queues(scope, serviceName.toLowerCase());
 
@@ -97,10 +109,10 @@ export class Service {
             description: 'Lambda execution role for: ' + serviceName,
             managedPolicies: [
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaBasicExecutionRole'
+                    'service-role/AWSLambdaBasicExecutionRole' // FIXME: remove managed policy
                 ),
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                    'service-role/AWSLambdaVPCAccessExecutionRole' // FIXME: remove managed policy
                 ),
             ],
         });
