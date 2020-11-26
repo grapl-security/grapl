@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::Cursor;
 use std::iter::FromIterator;
-use std::net::ToSocketAddrs;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 use std::time::SystemTime;
@@ -20,14 +20,11 @@ use chrono::Utc;
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 
 use failure::{bail, Error};
-use futures::future::join_all;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
 use log::{debug, error, info, warn};
 use prost::Message;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::DynamoDbClient;
@@ -46,18 +43,6 @@ use sqs_lambda::redis_cache::RedisCache;
 
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use grapl_graph_descriptions::node::NodeT;
-use std::net::ToSocketAddrs;
-
-macro_rules! log_time {
-    ($msg:expr, $x:expr) => {{
-        let mut sw = stopwatch::Stopwatch::start_new();
-        #[allow(path_statements)]
-        let result = $x;
-        sw.stop();
-        info!("{} {} milliseconds", $msg, sw.elapsed_ms());
-        result
-    }};
-}
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
