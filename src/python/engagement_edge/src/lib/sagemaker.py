@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing_extensions import Protocol
 
 import boto3
+from typing_extensions import Protocol
 
 if TYPE_CHECKING:
     from mypy_boto3_sagemaker import (

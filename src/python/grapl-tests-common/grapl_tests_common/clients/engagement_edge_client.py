@@ -45,4 +45,4 @@ class EngagementEdgeClient:
             f"{self.endpoint}/getNotebook",
             cookies=cookies,
         )
-        return resp.json()['success']['notebook_url']
+        return resp.json()["success"]["notebook_url"]
