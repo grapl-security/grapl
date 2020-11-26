@@ -4,7 +4,7 @@ import * as cdk from '@aws-cdk/core';
 
 import { GraplCdkStack } from '../lib/grapl-cdk-stack';
 import { EngagementUx } from '../lib/engagement';
-import {DeploymentParameters} from './deployment_parameters';
+import { DeploymentParameters } from './deployment_parameters';
 
 
 const app = new cdk.App();
