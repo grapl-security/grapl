@@ -4,6 +4,9 @@ import GraplHeader from "./reusableComponents/GraplHeader";
 import { Link } from 'react-router-dom';
 import { dasboardStyles } from './makeStyles/DashboardStyles';
 import LoginNotification from "./reusableComponents/Notifications";
+import {getNotebookUrl} from "./SagemakerNotebook";
+import Button from "@material-ui/core/Button";
+
 
 const useStyles = dasboardStyles; 
 
@@ -50,6 +53,7 @@ export default function Dashboard() {
                 <section className = { classes.nav }>
                         <Link to = "/engagements" className = {classes.link}> Engagements </Link>
                         <Link to = "/plugins" className = {classes.link}> Upload Plugin </Link>
+                        <Button onClick={getNotebookUrl} className = {classes.link}> Open Engagement Notebook </Button>
                 </section>
                 
                 <section className = { classes.welcome }>

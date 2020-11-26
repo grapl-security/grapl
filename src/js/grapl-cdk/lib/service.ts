@@ -1,16 +1,13 @@
-
-
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
-import * as logs from '@aws-cdk/aws-logs';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
-import { FilterPattern, SubscriptionFilter } from '@aws-cdk/aws-logs';
+import { FilterPattern } from '@aws-cdk/aws-logs';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import { Watchful } from 'cdk-watchful';
 
@@ -112,10 +109,10 @@ export class Service {
             description: 'Lambda execution role for: ' + serviceName,
             managedPolicies: [
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaBasicExecutionRole'
+                    'service-role/AWSLambdaBasicExecutionRole' // FIXME: remove managed policy
                 ),
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                    'service-role/AWSLambdaVPCAccessExecutionRole' // FIXME: remove managed policy
                 ),
             ],
         });

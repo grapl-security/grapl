@@ -116,7 +116,6 @@ jobs:
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
-      
       - name: Determine release channel
         run: |
           BRANCH=${{ github.event.release.target_commitish }}
@@ -270,7 +269,7 @@ jobs:
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
-        
+
       - name: Publish Python images to DockerHub
         run: |
           ./etc/build_scripts/push_py_to_docker.sh
@@ -294,6 +293,9 @@ jobs:
 
           cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$TAG.zip
           echo "::set-output name=dgraph-ttl::dgraph-ttl-$TAG.zip"
+
+          cp dist/swarm-lifecycle-event-handler/lambda.zip swarm-lifecycle-event-handler-$TAG.zip
+          echo "::set-output name=swarm-lifecycle-event-handler::swarm-lifecycle-event-handler-$TAG.zip"
 
       - name: Upload analyzer-executor to Github
         uses: actions/upload-release-asset@v1
@@ -344,6 +346,16 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./${{ steps.extract-python-artifacts.outputs.dgraph-ttl }}
           asset_name: ${{ steps.extract-python-artifacts.outputs.dgraph-ttl }}
+          asset_content_type: application/zip
+
+      - name: Upload swarm-lifecycle-event-handler to Github
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ steps.extract-python-artifacts.outputs.swarm-lifecycle-event-handler }}
+          asset_name: ${{ steps.extract-python-artifacts.outputs.swarm-lifecycle-event-handler }}
           asset_content_type: application/zip
 
       - name: Clean up dist
@@ -399,7 +411,6 @@ jobs:
       - name: Clean up grapl_analyzerlib dist
         run: |
           rm -rf dist
-      
 
       - name: Prepare grapl-common dist
         run: |
@@ -450,7 +461,6 @@ jobs:
       - name: Clean up grapl-tests-common dist
         run: |
           rm -rf dist
-
 
 
   release-js-services:
