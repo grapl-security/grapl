@@ -39,9 +39,6 @@ export module DeploymentParameters {
         || HardcodedDeploymentParameters.operationalAlarmsEmail;
 
     export const securityAlarmsEmail = process.env.GRAPL_CDK_SECURITY_ALARMS_EMAIL
-<<<<<<< HEAD
-        || HardcodedDeploymentParameters.securityAlarmsEmail; 
-=======
         || HardcodedDeploymentParameters.securityAlarmsEmail;
 
     const dgraphInstanceTypeName = process.env.GRAPL_DGRAPH_INSTANCE_TYPE
@@ -56,5 +53,4 @@ export module DeploymentParameters {
     if (!region) {
         throw new Error('Error: Missing Grapl region. Set via bin/deployment_parameters.ts or environment variable GRAPL_REGION.');
     }
->>>>>>> staging
 }
