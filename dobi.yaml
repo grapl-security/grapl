@@ -278,17 +278,17 @@ image=engagement-edge-build:
     - python-build
     - graph-descriptions-build
     - grapl-analyzerlib-build
-    - grapl-tests-common-build  # This is more 
   tags:
     - latest
 
 image=engagement-edge-test:
   image: grapl/engagement-edge-test
   context: src/python/engagement_edge
-  dockerfile: Dockerfile
+  dockerfile: tests.Dockerfile
   target: engagement-edge-test
   depends:
     - engagement-edge-build
+    - grapl-tests-common-build
   tags:
     - latest
 
