@@ -619,6 +619,9 @@ def delete_model_plugin():
 def nop_route():
     LOGGER.info("routing: " + app.current_request.context["path"])
 
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
+
     try:
         path = app.current_request.context["path"]
         if path == "/prod/modelPluginDeployer/gitWebhook":

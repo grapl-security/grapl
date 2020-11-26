@@ -246,7 +246,7 @@ def lambda_login(event: Any) -> Optional[str]:
     if IS_LOCAL:
         cookie = f"grapl_jwt={login_res}; HttpOnly"
     else:
-        cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None"
+        cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None; path=/"
 
     if login_res:
         return cookie
@@ -342,7 +342,9 @@ def get_notebook() -> Response:
 @app.route("/auth/{proxy+}", methods=["OPTIONS", "POST", "GET"])
 def nop_route() -> Response:
     LOGGER.debug(app.current_request.context["path"])
-
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
+    
     path = app.current_request.context["path"]
     path_to_handler = {
         "/prod/auth/login": login_route,

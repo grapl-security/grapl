@@ -61,18 +61,5 @@ export class GraphQLEndpoint extends cdk.Construct {
         props.edgeApi.root.addResource('graphQlEndpoint').addProxy({
             defaultIntegration: integration,
         });
-
-        // if (props.watchful) {
-        //     props.watchful.watchApiGateway(this.integrationName, integration, {
-        //         serverErrorThreshold: 1, // any 5xx alerts
-        //         cacheGraph: true,
-        //         watchedOperations: [
-        //             {
-        //                 httpMethod: 'POST',
-        //                 resourcePath: '/graphql',
-        //             },
-        //         ],
-        //     });
-        // }
     }
 }

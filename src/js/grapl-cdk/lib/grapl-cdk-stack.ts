@@ -692,74 +692,9 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         }
 
         const integration = new apigateway.LambdaIntegration(event_handler);
-        props.edgeApi.root.addResource('modelPluginEndpoint').addProxy({
+        props.edgeApi.root.addResource('modelPluginDeployer').addProxy({
             defaultIntegration: integration,
         });
-        // route.addMethod('ANY', integration);
-        // integration.addUsagePlan('integrationApiUsagePlan', {
-        //     quota: {
-        //         limit: 1000,
-        //         period: apigateway.Period.DAY,
-        //     },
-        //     throttle: {
-        //         // per minute
-        //         rateLimit: 50,
-        //         burstLimit: 50,
-        //     },
-        // });
-
-        // if (props.watchful) {
-        //     props.watchful.watchApiGateway(
-        //         serviceName + '-Integration',
-        //         integration,
-        //         {
-        //             serverErrorThreshold: 1, // any 5xx alerts
-        //             cacheGraph: true,
-        //             watchedOperations: [
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/gitWebhook',
-        //                 },
-        //                 {
-        //                     httpMethod: 'OPTIONS',
-        //                     resourcePath: '/gitWebHook',
-        //                 },
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/deploy',
-        //                 },
-        //                 {
-        //                     httpMethod: 'OPTIONS',
-        //                     resourcePath: '/deploy',
-        //                 },
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/listModelPlugins',
-        //                 },
-        //                 {
-        //                     httpMethod: 'OPTIONS',
-        //                     resourcePath: '/listModelPlugins',
-        //                 },
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/deleteModelPlugin',
-        //                 },
-        //                 {
-        //                     httpMethod: 'OPTIONS',
-        //                     resourcePath: '/deleteModelPlugin',
-        //                 },
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/{proxy+}',
-        //                 },
-        //                 {
-        //                     httpMethod: 'OPTIONS',
-        //                     resourcePath: '/{proxy+}',
-        //                 },
-        //             ],
-        //         }
-        //     );
-        // }
     }
 }
 
@@ -807,6 +742,7 @@ export class GraplCdkStack extends cdk.Stack {
                 burstLimit: 1200,
             },
         });
+
         this.edgeApiGateway = edgeApi;
 
         const grapl_vpc = new ec2.Vpc(this, this.prefix + '-VPC', {
@@ -839,6 +775,13 @@ export class GraplCdkStack extends cdk.Stack {
                 alarmSqs,
                 alarmSns,
             });
+        }
+
+        if (watchful) {
+            watchful.watchApiGateway(
+                'EdgeApiGatewayIntegration',
+                edgeApi,
+            );
         }
 
         const dgraphSwarmCluster = new DGraphSwarmCluster(

@@ -136,80 +136,10 @@ export class EngagementEdge extends cdk.NestedStack {
         }
         props.userAuthTable.allowReadFromRole(this.event_handler);
 
-        // this.integration = new apigateway.LambdaRestApi(this, 'Integration', {
-        //     handler: this.event_handler,
-        //     restApiName: this.integrationName,
-        //     endpointExportName: serviceName + '-EndpointApi',
-        // });
-
         const integration = new apigateway.LambdaIntegration(this.event_handler);
-        const route = props.edgeApi.root.addResource('auth').addProxy({
+        props.edgeApi.root.addResource('auth').addProxy({
             defaultIntegration: integration,
         });
-        // if (props.watchful) {
-        //     props.watchful.watchApiGateway(
-        //         this.integrationName,
-        //         this.integration,
-        //         {
-        //             serverErrorThreshold: 1, // any 5xx alerts
-        //             cacheGraph: true,
-        //             watchedOperations: [
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/login',
-        //                 },
-        //                 {
-        //                     httpMethod: 'OPTIONS',
-        //                     resourcePath: '/login',
-        //                 },
-        //                 {
-        //                     httpMethod: 'GET',
-        //                     resourcePath: '/login',
-        //                 },
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/checkLogin',
-        //                 },
-        //                 {
-        //                     httpMethod: 'OPTIONS',
-        //                     resourcePath: '/checkLogin',
-        //                 },
-        //                 {
-        //                     httpMethod: 'GET',
-        //                     resourcePath: '/checkLogin',
-        //                 },
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/getNotebook',
-        //                 },
-        //                 {
-        //                     httpMethod: 'POST',
-        //                     resourcePath: '/{proxy+}',
-        //                 },
-        //                 {
-        //                     httpMethod: 'OPTIONS',
-        //                     resourcePath: '/{proxy+}',
-        //                 },
-        //                 {
-        //                     httpMethod: 'GET',
-        //                     resourcePath: '/{proxy+}',
-        //                 },
-        //             ],
-        //         }
-        //     );
-        // }
-
-        // this.integration.addUsagePlan('loginApiUsagePlan', {
-        //     quota: {
-        //         limit: 100_000,
-        //         period: apigateway.Period.DAY,
-        //     },
-        //     throttle: {
-        //         // per minute
-        //         rateLimit: 500,
-        //         burstLimit: 500,
-        //     },
-        // });
     }
 }
 
