@@ -615,7 +615,7 @@ class DGraphTtl extends cdk.NestedStack {
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
     schemaTable: SchemaDb;
-    restApi: apigateway.RestApi;
+    edgeApi: apigateway.RestApi;
 }
 
 export class ModelPluginDeployer extends cdk.NestedStack {
@@ -692,7 +692,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         }
 
         const integration = new apigateway.LambdaIntegration(event_handler);
-        props.restApi.root.addResource('modelPluginEndpoint').addProxy({
+        props.edgeApi.root.addResource('modelPluginEndpoint').addProxy({
             defaultIntegration: integration,
         });
         // route.addMethod('ANY', integration);
@@ -795,8 +795,8 @@ export class GraplCdkStack extends cdk.Stack {
         this.prefix = props.stackName;
         const bucket_prefix = this.prefix.toLowerCase();
 
-        const api = new apigateway.RestApi(this, 'EdgeApiGateway', { });
-        api.addUsagePlan('EdgeApiGatewayUsagePlan', {
+        const edgeApi = new apigateway.RestApi(this, 'EdgeApiGateway', { });
+        edgeApi.addUsagePlan('EdgeApiGatewayUsagePlan', {
             quota: {
                 limit: 1_000_000,
                 period: apigateway.Period.DAY,
@@ -807,7 +807,7 @@ export class GraplCdkStack extends cdk.Stack {
                 burstLimit: 1200,
             },
         });
-        this.edgeApiGateway = api;
+        this.edgeApiGateway = edgeApi;
 
         const grapl_vpc = new ec2.Vpc(this, this.prefix + '-VPC', {
             natGateways: 1,
@@ -910,7 +910,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 modelPluginBucket: model_plugins_bucket,
                 schemaTable: schema_table,
-                restApi: api,
+                edgeApi,
                 ...graplProps,
             }
         );
@@ -970,7 +970,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 ...graplProps, 
                 engagement_notebook: engagement_notebook,
-                restApi: api,
+                edgeApi,
             },
         );
 
@@ -985,8 +985,11 @@ export class GraplCdkStack extends cdk.Stack {
         this.graphql_endpoint = new GraphQLEndpoint(
             this,
             'GraphqlEndpoint',
-            graplProps,
-            ux_bucket
+            {
+                ...graplProps,
+                ux_bucket,
+                edgeApi,
+            }
         );
 
         if (props.operationalAlarmsEmail) {

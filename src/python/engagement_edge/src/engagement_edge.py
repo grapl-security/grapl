@@ -36,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-
+print("abc 123")
 class LazyJwtSecret:
     def __init__(self) -> None:
         self.secret: Optional[str] = None
@@ -246,7 +246,7 @@ def lambda_login(event: Any) -> Optional[str]:
     if IS_LOCAL:
         cookie = f"grapl_jwt={login_res}; HttpOnly"
     else:
-        cookie = f"grapl_jwt={login_res}; Domain=.amazonaws.com; secure; HttpOnly; SameSite=None"
+        cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None"
 
     if login_res:
         return cookie
@@ -339,18 +339,19 @@ def get_notebook() -> Response:
     return respond(err=None, res={"notebook_url": url})
 
 
-@app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
+@app.route("/auth/{proxy+}", methods=["OPTIONS", "POST", "GET"])
 def nop_route() -> Response:
     LOGGER.debug(app.current_request.context["path"])
 
     path = app.current_request.context["path"]
     path_to_handler = {
-        "/prod/login": login_route,
-        "/prod/checkLogin": check_login,
-        "/prod/getNotebook": get_notebook,
+        "/prod/auth/login": login_route,
+        "/prod/auth/checkLogin": check_login,
+        "/prod/auth/getNotebook": get_notebook,
     }
     handler = path_to_handler.get(path, None)
     if handler:
-        handler()
+        return handler()
 
     return respond(err=f"Invalid path: {path}")
+

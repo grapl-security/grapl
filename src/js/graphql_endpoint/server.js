@@ -58,6 +58,10 @@ app.use('/graphql', middleware, graphqlHTTP({
     schema: schema,
     graphiql: IS_LOCAL !== null
 }));
+app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
+    schema: schema,
+    graphiql: IS_LOCAL !== null
+}));
 
 
 if (IS_LOCAL) {

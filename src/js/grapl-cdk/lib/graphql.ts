@@ -5,16 +5,22 @@ import * as s3 from '@aws-cdk/aws-s3';
 
 import { GraplServiceProps } from './grapl-cdk-stack';
 
+export interface GraphQLEndpointProps extends GraplServiceProps {
+    ux_bucket: s3.IBucket;
+    edgeApi: apigateway.RestApi;
+}
+
 export class GraphQLEndpoint extends cdk.Construct {
     integrationName: string;
 
     constructor(
         parent: cdk.Construct,
         id: string,
-        props: GraplServiceProps,
-        ux_bucket: s3.IBucket
+        props: GraphQLEndpointProps,
     ) {
         super(parent, id);
+
+        const ux_bucket = props.ux_bucket;
 
         const serviceName = props.prefix + '-GraphQL';
         this.integrationName = serviceName + '-Integration';
@@ -51,36 +57,22 @@ export class GraphQLEndpoint extends cdk.Construct {
         if (event_handler.role) {
             props.jwtSecret.grantRead(event_handler.role);
         }
-
-        const integration = new apigateway.LambdaRestApi(this, 'Integration', {
-            handler: event_handler,
-            restApiName: this.integrationName,
-            endpointExportName: serviceName + '-EndpointApi',
+        const integration = new apigateway.LambdaIntegration(event_handler);
+        props.edgeApi.root.addResource('graphQlEndpoint').addProxy({
+            defaultIntegration: integration,
         });
 
-        if (props.watchful) {
-            props.watchful.watchApiGateway(this.integrationName, integration, {
-                serverErrorThreshold: 1, // any 5xx alerts
-                cacheGraph: true,
-                watchedOperations: [
-                    {
-                        httpMethod: 'POST',
-                        resourcePath: '/graphql',
-                    },
-                ],
-            });
-        }
-
-        integration.addUsagePlan('graphQLApiUsagePlan', {
-            quota: {
-                limit: 1_000_000,
-                period: apigateway.Period.DAY,
-            },
-            throttle: {
-                // per minute
-                rateLimit: 5000,
-                burstLimit: 10_000,
-            },
-        });
+        // if (props.watchful) {
+        //     props.watchful.watchApiGateway(this.integrationName, integration, {
+        //         serverErrorThreshold: 1, // any 5xx alerts
+        //         cacheGraph: true,
+        //         watchedOperations: [
+        //             {
+        //                 httpMethod: 'POST',
+        //                 resourcePath: '/graphql',
+        //             },
+        //         ],
+        //     });
+        // }
     }
 }

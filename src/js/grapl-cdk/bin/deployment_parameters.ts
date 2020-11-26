@@ -1,6 +1,6 @@
 module HardcodedDeploymentParameters {
     // ex: 'Grapl-my-deployment'
-    export const deployName = 'example-grapl-deployment-co';
+    export const deployName = 'colintryagainpls';
     
     // defaults to 'latest'
     export const graplVersion = 'latest';

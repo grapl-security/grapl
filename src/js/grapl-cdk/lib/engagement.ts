@@ -17,6 +17,27 @@ import * as path from 'path';
 import * as dir from 'node-dir';
 
 
+function getEdgeGatewayId(
+    edgeApiName: string,
+    cb: (edgeApiId: string) => void
+) {
+    let apigateway = new aws.APIGateway();
+
+    apigateway.getRestApis({}, function (err, data: any) {
+        if (err) {
+            console.log('Error getting edge gateway ID', err);
+        }
+
+        for (const item of data.items) {
+            if (item.name === edgeApiName) {
+                console.log(`edgeApiId ID ${item.id}`);
+                cb(item.id);
+                return
+            }
+        }
+    });
+}
+
 function replaceInFile(
     toModify: string,
     replaceMap: Map<string, string>,
@@ -56,7 +77,7 @@ function replaceInFile(
 
 export interface EngagementEdgeProps extends GraplServiceProps {
     engagement_notebook: EngagementNotebook,
-    restApi: apigateway.RestApi,
+    edgeApi: apigateway.RestApi,
 }
 
 export class EngagementEdge extends cdk.NestedStack {
@@ -122,7 +143,7 @@ export class EngagementEdge extends cdk.NestedStack {
         // });
 
         const integration = new apigateway.LambdaIntegration(this.event_handler);
-        const route = props.restApi.root.addResource('auth').addProxy({
+        const route = props.edgeApi.root.addResource('auth').addProxy({
             defaultIntegration: integration,
         });
         // if (props.watchful) {
@@ -262,7 +283,7 @@ export class EngagementNotebook extends cdk.NestedStack {
 
 interface EngagementUxProps extends cdk.StackProps {
     prefix: string;
-    edge_api: apigateway.RestApi;
+    edgeApi: apigateway.RestApi;
 }
 
 export class EngagementUx extends cdk.Stack {
@@ -274,64 +295,66 @@ export class EngagementUx extends cdk.Stack {
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
         );
+        getEdgeGatewayId(props.edgeApi.restApiName, (edgeApiId) => {
+            const srcDir = path.join(__dirname, '../edge_ux/');
+            const packageDir = path.join(__dirname, '../edge_ux_package/');
 
-        const srcDir = path.join(__dirname, '../edge_ux/');
-        const packageDir = path.join(__dirname, '../edge_ux_package/');
-
-        if (!fs.existsSync(packageDir)) {
-            fs.mkdirSync(packageDir);
-        }
-
-        const apiUrl = `https://${props.edge_api.restApiId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
-
-        const replaceMap = new Map();
-        replaceMap.set(
-            `http://"+window.location.hostname+":8900/`,
-            apiUrl+'auth'
-        );
-        // replaceMap.set(
-        //     `http://"+window.location.hostname+":5000/`,
-        //     apiUrl+''
-        // );
-        // replaceMap.set(
-        //     `http://"+window.location.hostname+":8123/`,
-        //     apiUrl
-        // );
-
-        dir.readFiles(
-            srcDir,
-            function (
-                err: any,
-                content: any,
-                filename: string,
-                next: any
-            ) {
-                if (err) throw err;
-
-                const targetDir = path
-                    .dirname(filename)
-                    .replace('edge_ux', 'edge_ux_package');
-
-                if (!fs.existsSync(targetDir)) {
-                    fs.mkdirSync(targetDir, { recursive: true });
-                }
-
-                const newPath = filename.replace(
-                    'edge_ux',
-                    'edge_ux_package'
-                );
-
-                replaceInFile(filename, replaceMap, newPath);
-                next();
-            },
-            function (err: any, files: any) {
-                if (err) throw err;
+            if (!fs.existsSync(packageDir)) {
+                fs.mkdirSync(packageDir);
             }
-        );
 
-        new s3deploy.BucketDeployment(this, 'UxDeployment', {
-            sources: [s3deploy.Source.asset(packageDir)],
-            destinationBucket: edgeBucket,
+            const apiUrl = `https://${edgeApiId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
+
+            const replaceMap = new Map();
+            replaceMap.set(
+                `http://"+window.location.hostname+":8900/`,
+                apiUrl+'auth/'
+            );
+            replaceMap.set(
+                `http://"+window.location.hostname+":5000/`,
+                apiUrl+'graphQlEndpoint/'
+            );
+            replaceMap.set(
+                `http://"+window.location.hostname+":8123/`,
+                apiUrl+'modelPluginDeployer/'
+            );
+
+            dir.readFiles(
+                srcDir,
+                function (
+                    err: any,
+                    content: any,
+                    filename: string,
+                    next: any
+                ) {
+                    if (err) throw err;
+
+                    const targetDir = path
+                        .dirname(filename)
+                        .replace('edge_ux', 'edge_ux_package');
+
+                    if (!fs.existsSync(targetDir)) {
+                        fs.mkdirSync(targetDir, { recursive: true });
+                    }
+
+                    const newPath = filename.replace(
+                        'edge_ux',
+                        'edge_ux_package'
+                    );
+
+                    replaceInFile(filename, replaceMap, newPath);
+                    next();
+                },
+                function (err: any, files: any) {
+                    if (err) throw err;
+                }
+            );
+
+            new s3deploy.BucketDeployment(this, 'UxDeployment', {
+                sources: [s3deploy.Source.asset(packageDir)],
+                destinationBucket: edgeBucket,
+            });
+
         });
 
     }
