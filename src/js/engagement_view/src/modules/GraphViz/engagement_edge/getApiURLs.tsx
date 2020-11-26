@@ -1,4 +1,4 @@
-export const getEngagementEdge = () => {
+export const getAuthEdge = () => {
     return "http://"+window.location.hostname+":8900/"
 };
 

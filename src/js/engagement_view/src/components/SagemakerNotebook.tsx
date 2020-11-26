@@ -1,9 +1,9 @@
-import { getEngagementEdge } from "../modules/GraphViz/engagement_edge/getApiURLs";
+import { getAuthEdge } from "../modules/GraphViz/engagement_edge/getApiURLs";
 
-const notebookEdge = getEngagementEdge();
+const notebookEdge = getAuthEdge();
 
 
-export const getNotebookUrl = async (): Promise<boolean | null> => {
+export const getNotebookUrl = async (): Promise<void | null> => {
     const res = await fetch(
         `${notebookEdge}getNotebook`,
         {
@@ -25,5 +25,5 @@ export const getNotebookUrl = async (): Promise<boolean | null> => {
 
         window.open(sagemakerUrl); 
         
-        return true; 
+        return;
 };
