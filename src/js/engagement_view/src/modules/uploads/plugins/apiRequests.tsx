@@ -50,6 +50,6 @@ export const uploadFilesToDgraph = async (payload: PluginPayload ): Promise<bool
         }
     );
     const body = await res.json();
-    console.log("body", body)
+
     return body.success.Success;
 };
