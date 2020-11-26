@@ -1,12 +1,8 @@
-import inspect
 import logging
-from typing import Any, Callable, Optional
 from unittest import TestCase
 
-from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
 
-from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_analyzerlib.retry import retry
 
@@ -26,16 +22,3 @@ class TestEndToEnd(TestCase):
             return length == 4
 
         wait_for_one(WaitForCondition(condition), timeout_secs=240)
-
-
-class TestEngagementEdgeClient(TestCase):
-    # TODO: These should be moved to an Engagement Edge integration test
-    def test_get_jwt(self) -> None:
-        client = EngagementEdgeClient(use_docker_links=True)
-        client.get_jwt()
-
-    def test_get_notebook_link(self) -> None:
-        client = EngagementEdgeClient(use_docker_links=True)
-        jwt = client.get_jwt()
-        notebook_url = client.get_notebook(jwt=jwt)
-        assert "localhost:8888" in notebook_url

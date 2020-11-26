@@ -299,7 +299,7 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
             try:
                 return route_fn()
             except Exception as e:
-                LOGGER.error("path %s", e)
+                LOGGER.error(f"path {path} had an error: {e}", exc_info=e)
                 return respond("Unexpected Error")
 
         return cast(RouteFn, inner_route)

@@ -281,6 +281,17 @@ image=engagement-edge-build:
   tags:
     - latest
 
+image=engagement-edge-test:
+  image: grapl/engagement-edge-test
+  context: src/python/engagement_edge
+  dockerfile: Dockerfile
+  target: engagement-edge-test
+  depends:
+    - engagement-edge-build
+    - grapl-tests-common-build
+  tags:
+    - latest
+
 image=engagement-edge:
   image: grapl/grapl-engagement-edge
   context: src/python/engagement_edge
@@ -628,15 +639,20 @@ job=typecheck-model-plugin-deployer:
       "
 
 job=typecheck-engagement-edge:
+<<<<<<< HEAD
   use: engagement-edge-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
   command: |
+=======
+  use: engagement-edge-test
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
+  command: | 
+>>>>>>> eaf14ac1... EEdge has its own integration tests now
     /bin/bash -c "
       source venv/bin/activate &&
       touch venv/lib/python3.7/site-packages/chalice/py.typed &&
       cd engagement_edge &&
-      pip install .[typecheck] &&
       mypy .
       "
 
@@ -721,6 +737,23 @@ job=run-analyzer-executor-integration-tests:
   depends:
     - integration-env
 
+job=run-engagement-edge-integration-tests:
+  use: engagement-edge-test
+  net-mode: grapl-network
+  command: |
+    /bin/bash -c '
+      wait-for-it grapl-engagement-edge:8900 --timeout=60 &&
+      source venv/bin/activate &&
+      cd engagement_edge && 
+      py.test -n auto -m "integration_test"
+      '
+  env:
+    - IS_LOCAL=True
+    - BUCKET_PREFIX=local-grapl
+    - UX_BUCKET_URL="ux_bucket_url"
+  depends:
+    - integration-env
+
 job=run-e2e-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-network
@@ -796,7 +829,7 @@ job=build-engagement-edge:
     - ./dist/engagement-edge/lambda.zip
 
 job=run-engagement-edge-unit-tests:
-  use: engagement-edge-build
+  use: engagement-edge-test
   command: /bin/bash -c "source venv/bin/activate && cd engagement_edge && py.test -n auto -m 'not integration_test'"
   env:
     - IS_LOCAL=True
@@ -947,6 +980,8 @@ alias=python-integration-tests:
   tasks:
     - run-grapl-analyzerlib-integration-tests
     - run-analyzer-deployer-integration-tests
+    - run-analyzer-executor-integration-tests
+    - run-engagement-edge-integration-tests
   annotations:
     description: "Run the python integration tests"
 
