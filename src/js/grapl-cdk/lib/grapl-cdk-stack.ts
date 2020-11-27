@@ -969,15 +969,18 @@ export class GraplCdkStack extends cdk.Stack {
             new SecurityAlarms(this, "security_alarms", props.securityAlarmsEmail);
         }
 
-        new PipelineDashboard(this, "pipeline_dashboard", [
-            // Order here is important - the idea is that this dashboard will help Grapl operators
-            // quickly determine which service in the pipeline is failing.
-            sysmon_generator.service,
-            node_identifier.service,
-            graph_merger.service,
-            analyzer_dispatch.service,
-            analyzer_executor.service,
-            engagement_creator.service,
-        ]);
+        new PipelineDashboard(this, "pipeline_dashboard", {
+            namePrefix: this.prefix,
+            services: [
+                // Order here is important - the idea is that this dashboard will help Grapl operators
+                // quickly determine which service in the pipeline is failing.
+                sysmon_generator.service,
+                node_identifier.service,
+                graph_merger.service,
+                analyzer_dispatch.service,
+                analyzer_executor.service,
+                engagement_creator.service,
+            ]
+        });
     }
 }
