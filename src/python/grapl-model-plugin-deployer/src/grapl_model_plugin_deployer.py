@@ -1,6 +1,3 @@
-from grapl_analyzerlib.schema import Schema
-
-print("init")
 import base64
 import hmac
 import inspect
@@ -31,6 +28,10 @@ from grapl_analyzerlib.node_types import (
     PropType,
 )
 from grapl_analyzerlib.prelude import *
+from grapl_analyzerlib.schema import Schema
+
+print("init")
+
 
 sys.path.append("/tmp/")
 
@@ -634,6 +635,3 @@ def nop_route():
     except Exception:
         LOGGER.error(traceback.format_exc())
         return respond("Route Server Error")
-
-
-from grapl_analyzerlib.prelude import *

@@ -81,7 +81,6 @@ jobs:
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
-    
       - name: Export tag
         run: |
           echo "::set-env name=TAG::staging"
