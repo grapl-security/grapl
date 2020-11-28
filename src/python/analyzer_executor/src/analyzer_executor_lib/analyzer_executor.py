@@ -4,56 +4,45 @@ import inspect
 import json
 import logging
 import os
-import random
 import sys
 import traceback
-
-
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from multiprocessing import Process, Pipe
+from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Any, Optional, Tuple, List, Dict, Type, Set, Iterator, Union
+from typing import Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
-import botocore.exceptions  # type: ignore
 import redis
+
 from grapl_analyzerlib.analyzer import Analyzer
-from grapl_analyzerlib.execution import ExecutionHit, ExecutionComplete, ExecutionFailed
+from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.base import BaseView
-from grapl_analyzerlib.queryable import Queryable
-from grapl_analyzerlib.query_gen import (
-    gen_query_parameterized,
-    VarAllocator,
-    traverse_query_iter,
-)
-from grapl_analyzerlib.subgraph_view import SubgraphView
-from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.plugin_retriever import load_plugins
-from pydgraph import DgraphClientStub, DgraphClient  # type: ignore
+from grapl_analyzerlib.queryable import Queryable
+from grapl_analyzerlib.subgraph_view import SubgraphView
 
-MODEL_PLUGINS_DIR = os.environ.get("MODEL_PLUGINS_DIR", "/tmp")
-sys.path.insert(0, MODEL_PLUGINS_DIR)
-
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
-IS_RETRY = os.environ["IS_RETRY"]
-
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+# Set up logger (this is for the whole file, including static methods)
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
+LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "ERROR"))
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
+# Set up plugins dir for models
+MODEL_PLUGINS_DIR = os.getenv("MODEL_PLUGINS_DIR", "/tmp")
+sys.path.insert(0, MODEL_PLUGINS_DIR)
+
+# Ensure plugins dir exists
 try:
     directory = Path(MODEL_PLUGINS_DIR + "/model_plugins/")
     directory.mkdir(parents=True, exist_ok=True)
 except Exception as e:
-    LOGGER.error("Failed to create directory", e)
+    LOGGER.error("Failed to create model plugins directory", e)
 
 
+# TODO:  move generic cache stuff into its own utility file
 class NopCache(object):
     def set(self, key, value):
         pass
@@ -64,18 +53,288 @@ class NopCache(object):
 
 EitherCache = Union[NopCache, redis.Redis]
 
-if IS_LOCAL:
-    message_cache: EitherCache = NopCache()
-    hit_cache: EitherCache = NopCache()
-else:
-    MESSAGECACHE_ADDR = os.environ["MESSAGECACHE_ADDR"]
-    MESSAGECACHE_PORT = int(os.environ["MESSAGECACHE_PORT"])
 
-    HITCACHE_ADDR = os.environ["HITCACHE_ADDR"]
-    HITCACHE_PORT = os.environ["HITCACHE_PORT"]
+class AnalyzerExecutor:
 
-    message_cache = redis.Redis(host=MESSAGECACHE_ADDR, port=MESSAGECACHE_PORT, db=0)
-    hit_cache = redis.Redis(host=HITCACHE_ADDR, port=int(HITCACHE_PORT), db=0)
+    # constants
+    CHUNK_SIZE_RETRY: int = 10
+    CHUNK_SIZE_DEFAULT: int = 100
+
+    # singleton
+    _singleton = None
+
+    def __init__(self, message_cache, hit_cache, chunk_size, is_local, logger):
+        self.message_cache = message_cache
+        self.hit_cache = hit_cache
+        self.chunk_size = chunk_size
+        self.is_local = is_local
+        self.logger = logger
+
+    @classmethod
+    def singleton(cls):
+        if not cls._singleton:
+            LOGGER.debug("initializing AnalyzerExecutor singleton")
+            is_local = bool(
+                os.getenv("IS_LOCAL", False)
+            )  # TODO move determination to grapl-common
+
+            # If we're retrying, change the chunk size
+            is_retry = os.getenv("IS_RETRY", False)
+            if is_retry == "True":
+                chunk_size = cls.CHUNK_SIZE_RETRY
+            else:
+                chunk_size = cls.CHUNK_SIZE_DEFAULT
+
+            # Set up message cache
+            messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
+            messagecache_port = os.getenv("MESSAGECACHE_PORT")
+            if messagecache_port:
+                try:
+                    messagecache_port = int(messagecache_port)
+                except (TypeError, ValueError) as ex:
+                    LOGGER.error(
+                        f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
+                    )
+                    raise ex
+
+            if messagecache_addr and messagecache_port:
+                LOGGER.debug(
+                    f"message cache connecting to redis at {messagecache_addr}:{messagecache_port}"
+                )
+                message_cache = redis.Redis(
+                    host=messagecache_addr, port=messagecache_port, db=0
+                )
+            else:
+                LOGGER.error(
+                    f"message cache failed connecting to redis | addr:\t{messagecache_addr} | port:\t{messagecache_port}"
+                )
+                raise ValueError(
+                    f"incomplete redis connection details for message cache"
+                )
+
+            # Set up hit cache
+            hitcache_addr = os.getenv("HITCACHE_ADDR")
+            hitcache_port = os.getenv("HITCACHE_PORT")
+            if hitcache_port:
+                try:
+                    hitcache_port = int(hitcache_port)
+                except (TypeError, ValueError) as ex:
+                    LOGGER.error(
+                        f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
+                    )
+                    raise ex
+
+            if hitcache_addr and hitcache_port:
+                LOGGER.debug(
+                    f"hit cache connecting to redis at {hitcache_addr}:{hitcache_port}"
+                )
+                hit_cache = redis.Redis(
+                    host=hitcache_addr, port=int(hitcache_port), db=0
+                )
+            else:
+                LOGGER.error(
+                    f"hit cache failed connecting to redis | addr:\t{hitcache_addr} | port:\t{hitcache_port}"
+                )
+                raise ValueError(f"incomplete redis connection details for hit cache")
+
+            # retain singleton
+            cls._singleton = cls(message_cache, hit_cache, chunk_size, is_local, LOGGER)
+
+        return cls._singleton
+
+    def check_caches(
+        self, file_hash: str, msg_id: str, node_key: str, analyzer_name: str
+    ) -> bool:
+        if self.check_msg_cache(file_hash, node_key, msg_id):
+            self.logger.debug("cache hit - already processed")
+            return True
+
+        if self.check_hit_cache(analyzer_name, node_key):
+            self.logger.debug("cache hit - already matched")
+            return True
+
+        return False
+
+    def check_msg_cache(self, file: str, node_key: str, msg_id: str) -> bool:
+        to_hash = str(file) + str(node_key) + str(msg_id)
+        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        return bool(self.message_cache.get(event_hash))
+
+    def update_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
+        to_hash = str(file) + str(node_key) + str(msg_id)
+        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        self.message_cache.set(event_hash, "1")
+
+    def check_hit_cache(self, file: str, node_key: str) -> bool:
+        to_hash = str(file) + str(node_key)
+        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        return bool(self.hit_cache.get(event_hash))
+
+    def update_hit_cache(self, file: str, node_key: str) -> None:
+        to_hash = str(file) + str(node_key)
+        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        self.hit_cache.set(event_hash, "1")
+
+    def lambda_handler_fn(self, events: Any, context: Any) -> None:
+        # Parse sns message
+        self.logger.debug(f"handling events: {events} context: {context}")
+
+        client = GraphClient()
+
+        s3 = get_s3_client(self.is_local)
+
+        load_plugins(
+            os.environ["BUCKET_PREFIX"], s3, os.path.abspath(MODEL_PLUGINS_DIR)
+        )
+
+        for event in events["Records"]:
+            if not self.is_local:
+                event = json.loads(event["body"])["Records"][0]
+            data = parse_s3_event(s3, event)
+
+            message = json.loads(data)
+
+            LOGGER.info(f'Executing Analyzer: {message["key"]}')
+            analyzer = download_s3_file(
+                s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"]
+            )
+            analyzer_name = message["key"].split("/")[-2]
+
+            subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
+
+            # TODO: Validate signature of S3 file
+            LOGGER.info(f"event {event}")
+            rx: Connection
+            tx: Connection
+            rx, tx = Pipe(duplex=False)
+            p = Process(
+                target=self.execute_file,
+                args=(analyzer_name, analyzer, subgraph, tx, "", self.chunk_size),
+            )
+
+            p.start()
+            t = 0
+
+            while True:
+                p_res = rx.poll(timeout=5)
+                if not p_res:
+                    t += 1
+                    LOGGER.info(
+                        f"Polled {analyzer_name} for {t * 5} seconds without result"
+                    )
+                    continue
+                result: Optional[Any] = rx.recv()
+
+                if isinstance(result, ExecutionComplete):
+                    self.logger.info("execution complete")
+                    break
+
+                # emit any hits to an S3 bucket
+                if isinstance(result, ExecutionHit):
+                    self.logger.info(
+                        f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
+                    )
+                    emit_event(s3, result, self.is_local)
+                    self.update_msg_cache(
+                        analyzer, result.root_node_key, message["key"]
+                    )
+                    self.update_hit_cache(analyzer_name, result.root_node_key)
+
+                assert not isinstance(
+                    result, ExecutionFailed
+                ), f"Analyzer {analyzer_name} failed."
+
+            p.join()
+
+    def exec_analyzers(
+        self,
+        dg_client,
+        file: str,
+        msg_id: str,
+        nodes: List[BaseView],
+        analyzers: Dict[str, Analyzer],
+        sender: Any,
+    ):
+        if not analyzers:
+            self.logger.warning("Received empty dict of analyzers")
+            return
+
+        if not nodes:
+            self.logger.warning("Received empty array of nodes")
+
+        for node in nodes:
+            querymap: Dict[str, List[Queryable]] = defaultdict(list)
+
+            for an_name, analyzer in analyzers.items():
+                if self.check_caches(file, msg_id, node.node_key, an_name):
+                    continue
+
+                queries = analyzer.get_queries()
+                if isinstance(queries, list) or isinstance(queries, tuple):
+                    querymap[an_name].extend(queries)
+                else:
+                    querymap[an_name].append(queries)
+
+            for an_name, queries in querymap.items():
+                analyzer = analyzers[an_name]
+
+                for query in queries:
+                    response = query.query_first(
+                        dg_client, contains_node_key=node.node_key
+                    )
+                    if response:
+                        self.logger.debug(
+                            f"Analyzer '{an_name}' received a hit, executing on_response()"
+                        )
+                        analyzer.on_response(response, sender)
+
+    def execute_file(
+        self, name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size
+    ):
+        try:
+            pool = ThreadPool(processes=4)
+
+            exec(file, globals())
+            client = GraphClient()
+
+            analyzers = get_analyzer_objects(client)
+            if not analyzers:
+                self.logger.warning(f"Got no analyzers for file: {name}")
+
+            self.logger.info(f"Executing analyzers: {[an for an in analyzers.keys()]}")
+
+            for nodes in chunker([n for n in graph.node_iter()], chunk_size):
+                self.logger.info(f"Querying {len(nodes)} nodes")
+
+                def exec_analyzer(nodes, sender):
+                    try:
+                        self.exec_analyzers(
+                            client, file, msg_id, nodes, analyzers, sender
+                        )
+
+                        return nodes
+                    except Exception as e:
+                        self.logger.error(traceback.format_exc())
+                        self.logger.error(
+                            f"Execution of {name} failed with {e} {e.args}"
+                        )
+                        sender.send(ExecutionFailed())
+                        raise
+
+                exec_analyzer(nodes, sender)
+                pool.apply_async(exec_analyzer, args=(nodes, sender))
+
+            pool.close()
+
+            pool.join()
+
+            sender.send(ExecutionComplete())
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Execution of {name} failed with {e} {e.args}")
+            sender.send(ExecutionFailed())
+            raise
 
 
 def parse_s3_event(s3, event) -> str:
@@ -99,7 +358,7 @@ def is_analyzer(analyzer_name, analyzer_cls):
     )
 
 
-def get_analyzer_objects(dgraph_client: DgraphClient) -> Dict[str, Analyzer]:
+def get_analyzer_objects(dgraph_client: GraphClient) -> Dict[str, Analyzer]:
     clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
     return {
         an[0]: an[1].build(dgraph_client)
@@ -108,138 +367,11 @@ def get_analyzer_objects(dgraph_client: DgraphClient) -> Dict[str, Analyzer]:
     }
 
 
-def check_caches(
-    file_hash: str, msg_id: str, node_key: str, analyzer_name: str
-) -> bool:
-    if check_msg_cache(file_hash, node_key, msg_id):
-        LOGGER.debug("cache hit - already processed")
-        return True
-
-    if check_hit_cache(analyzer_name, node_key):
-        LOGGER.debug("cache hit - already matched")
-        return True
-
-    return False
-
-
-def handle_result_graphs(analyzer, result_graphs, sender):
-    LOGGER.info(f"Re" f"sult graph: {type(analyzer)} {result_graphs[0]}")
-    for result_graph in result_graphs:
-        try:
-            analyzer.on_response(result_graph, sender)
-        except Exception as e:
-            LOGGER.error(f"Analyzer {analyzer} failed with {e}")
-            sender.send(ExecutionFailed)
-            raise e
-
-
-def get_analyzer_view_types(query: Queryable) -> Set[Type[Viewable]]:
-    query_types = set()
-    for node in traverse_query_iter(query):
-        query_types.add(node.associated_viewable())
-    return query_types
-
-
-def exec_analyzers(
-    dg_client,
-    file: str,
-    msg_id: str,
-    nodes: List[BaseView],
-    analyzers: Dict[str, Analyzer],
-    sender: Any,
-):
-    if not analyzers:
-        LOGGER.warning("Received empty dict of analyzers")
-        return
-
-    if not nodes:
-        LOGGER.warning("Received empty array of nodes")
-
-    for node in nodes:
-        querymap: Dict[str, List[Queryable]] = defaultdict(list)
-
-        for an_name, analyzer in analyzers.items():
-            if check_caches(file, msg_id, node.node_key, an_name):
-                continue
-
-            queries = analyzer.get_queries()
-            if isinstance(queries, list) or isinstance(queries, tuple):
-                querymap[an_name].extend(queries)
-            else:
-                querymap[an_name].append(queries)
-
-        for an_name, queries in querymap.items():
-            analyzer = analyzers[an_name]
-
-            for i, query in enumerate(queries):
-                response = query.query_first(dg_client, contains_node_key=node.node_key)
-                if response:
-                    analyzer.on_response(response, sender)
-
-
 def chunker(seq, size):
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def mg_alphas() -> Iterator[Tuple[str, int]]:
-    mg_alphas = os.environ["MG_ALPHAS"].split(",")
-    for mg_alpha in mg_alphas:
-        host, port = mg_alpha.split(":")
-        yield host, int(port)
-
-
-def execute_file(name: str, file: str, graph: SubgraphView, sender, msg_id):
-    try:
-        pool = ThreadPool(processes=4)
-
-        exec(file, globals())
-        client_stubs = (
-            DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas()
-        )
-        client = DgraphClient(*client_stubs)
-
-        analyzers = get_analyzer_objects(client)
-        if not analyzers:
-            LOGGER.warning(f"Got no analyzers for file: {name}")
-
-        LOGGER.info(f"Executing analyzers: {[an for an in analyzers.keys()]}")
-
-        chunk_size = 100
-
-        if IS_RETRY == "True":
-            chunk_size = 10
-
-        for nodes in chunker([n for n in graph.node_iter()], chunk_size):
-            LOGGER.info(f"Querying {len(nodes)} nodes")
-
-            def exec_analyzer(nodes, sender):
-                try:
-                    exec_analyzers(client, file, msg_id, nodes, analyzers, sender)
-
-                    return nodes
-                except Exception as e:
-                    LOGGER.error(traceback.format_exc())
-                    LOGGER.error(f"Execution of {name} failed with {e} {e.args}")
-                    sender.send(ExecutionFailed())
-                    raise
-
-            exec_analyzer(nodes, sender)
-            pool.apply_async(exec_analyzer, args=(nodes, sender))
-
-        pool.close()
-
-        pool.join()
-
-        sender.send(ExecutionComplete())
-
-    except Exception as e:
-        LOGGER.error(traceback.format_exc())
-        LOGGER.error(f"Execution of {name} failed with {e} {e.args}")
-        sender.send(ExecutionFailed())
-        raise
-
-
-def emit_event(s3, event: ExecutionHit) -> None:
+def emit_event(s3, event: ExecutionHit, is_local: bool) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     event_s = json.dumps(
@@ -260,7 +392,7 @@ def emit_event(s3, event: ExecutionHit) -> None:
     )
     obj.put(Body=event_s)
 
-    if IS_LOCAL:
+    if is_local:
         sqs = boto3.client(
             "sqs",
             region_name="us-east-1",
@@ -274,96 +406,6 @@ def emit_event(s3, event: ExecutionHit) -> None:
             "local-grapl-analyzer-matched-subgraphs-bucket",
             key,
         )
-
-
-def check_msg_cache(file: str, node_key: str, msg_id: str) -> bool:
-    to_hash = str(file) + str(node_key) + str(msg_id)
-    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-    return bool(message_cache.get(event_hash))
-
-
-def update_msg_cache(file: str, node_key: str, msg_id: str) -> None:
-    to_hash = str(file) + str(node_key) + str(msg_id)
-    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-    message_cache.set(event_hash, "1")
-
-
-def check_hit_cache(file: str, node_key: str) -> bool:
-    to_hash = str(file) + str(node_key)
-    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-    return bool(hit_cache.get(event_hash))
-
-
-def update_hit_cache(file: str, node_key: str) -> None:
-    to_hash = str(file) + str(node_key)
-    event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
-    hit_cache.set(event_hash, "1")
-
-
-def lambda_handler_fn(events: Any, context: Any) -> None:
-    # Parse sns message
-    LOGGER.debug(f"handling events: {events} context: {context}")
-
-    client_stubs = (DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
-    client = DgraphClient(*client_stubs)
-
-    s3 = get_s3_client()
-
-    load_plugins(os.environ["BUCKET_PREFIX"], s3, os.path.abspath(MODEL_PLUGINS_DIR))
-
-    for event in events["Records"]:
-        if not IS_LOCAL:
-            event = json.loads(event["body"])["Records"][0]
-        data = parse_s3_event(s3, event)
-
-        message = json.loads(data)
-
-        LOGGER.info(f'Executing Analyzer: {message["key"]}')
-        analyzer = download_s3_file(
-            s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"]
-        )
-        analyzer_name = message["key"].split("/")[-2]
-
-        subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
-
-        # TODO: Validate signature of S3 file
-        LOGGER.info(f"event {event}")
-        rx, tx = Pipe(duplex=False)  # type: Tuple[Connection, Connection]
-        p = Process(
-            target=execute_file, args=(analyzer_name, analyzer, subgraph, tx, "")
-        )
-
-        p.start()
-        t = 0
-
-        while True:
-            p_res = rx.poll(timeout=5)
-            if not p_res:
-                t += 1
-                LOGGER.info(
-                    f"Polled {analyzer_name} for {t * 5} seconds without result"
-                )
-                continue
-            result = rx.recv()  # type: Optional[Any]
-
-            if isinstance(result, ExecutionComplete):
-                LOGGER.info("execution complete")
-                break
-
-            # emit any hits to an S3 bucket
-            if isinstance(result, ExecutionHit):
-                LOGGER.info(
-                    f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
-                )
-                emit_event(s3, result)
-                update_msg_cache(analyzer, result.root_node_key, message["key"])
-                update_hit_cache(analyzer_name, result.root_node_key)
-
-            assert not isinstance(
-                result, ExecutionFailed
-            ), f"Analyzer {analyzer_name} failed."
-
-        p.join()
 
 
 ### LOCAL HANDLER
@@ -421,8 +463,8 @@ def send_s3_event(
     )
 
 
-def get_s3_client():
-    if IS_LOCAL:
+def get_s3_client(is_local: bool):
+    if is_local:
         return boto3.resource(
             "s3",
             endpoint_url="http://s3:9000",

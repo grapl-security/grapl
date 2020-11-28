@@ -1,35 +1,36 @@
 import json
-import os
 import logging
+import os
 import sys
 import threading
 import time
-from hashlib import sha256, pbkdf2_hmac
+from hashlib import pbkdf2_hmac, sha256
 from typing import List
 from uuid import uuid4
 
 import boto3
 import botocore
 import pydgraph
-from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
+
+from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
+    EdgeT,
     PropPrimitive,
     PropType,
-    EdgeT,
 )
 from grapl_analyzerlib.nodes.base import BaseSchema
 from grapl_analyzerlib.prelude import (
     AssetSchema,
-    ProcessSchema,
     FileSchema,
-    IpConnectionSchema,
     IpAddressSchema,
+    IpConnectionSchema,
     IpPortSchema,
+    LensSchema,
     NetworkConnectionSchema,
     ProcessInboundConnectionSchema,
     ProcessOutboundConnectionSchema,
-    LensSchema,
+    ProcessSchema,
     RiskSchema,
 )
 from grapl_analyzerlib.schema import Schema
@@ -210,6 +211,7 @@ BUCKET_PREFIX = "local-grapl"
 
 services = (
     "sysmon-graph-generator",
+    "osquery-graph-generator",
     "generic-graph-generator",
     "node-identifier",
     "graph-merger",
@@ -220,6 +222,7 @@ services = (
 
 buckets = (
     BUCKET_PREFIX + "-sysmon-log-bucket",
+    BUCKET_PREFIX + "-osquery-log-bucket",
     BUCKET_PREFIX + "-unid-subgraphs-generated-bucket",
     BUCKET_PREFIX + "-subgraphs-generated-bucket",
     BUCKET_PREFIX + "-subgraphs-merged-bucket",
@@ -413,7 +416,7 @@ if __name__ == "__main__":
             client = boto3.client(
                 service_name="secretsmanager",
                 region_name="us-east-1",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )

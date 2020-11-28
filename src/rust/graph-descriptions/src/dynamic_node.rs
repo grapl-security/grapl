@@ -5,6 +5,10 @@ use crate::graph_description::{id_strategy, node_property, DynamicNode, IdStrate
 use crate::node::NodeT;
 
 impl DynamicNode {
+    pub fn get_property(&self, name: impl AsRef<str>) -> Option<&NodeProperty> {
+        self.properties.get(name.as_ref())
+    }
+
     pub fn set_property(&mut self, name: impl Into<String>, value: impl Into<NodeProperty>) {
         self.properties.insert(name.into(), value.into().into());
     }

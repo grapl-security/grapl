@@ -1,12 +1,13 @@
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Callable, List, Iterator, Optional, cast
-from sys import maxsize
-import boto3  # type: ignore
 import json
 import random
 import string
 import time
+from dataclasses import dataclass
+from datetime import datetime
+from sys import maxsize
+from typing import Callable, Iterator, List, Optional, cast
+
+import boto3  # type: ignore
 import zstd  # type: ignore
 
 
@@ -70,6 +71,19 @@ class SysmonGeneratorOptions(GeneratorOptions):
             queue_name="grapl-sysmon-graph-generator-queue",
             bucket_suffix="sysmon-log-bucket",
             key_infix="sysmon",
+        )
+
+    def encode_chunk(self, input: List[bytes]) -> bytes:
+        # zstd encoded line delineated xml
+        return cast(bytes, zstd.compress(b"\n".join(input).replace(b"\n\n", b"\n"), 4))
+
+
+class OSQueryGeneratorOptions(GeneratorOptions):
+    def __init__(self) -> None:
+        super().__init__(
+            queue_name="grapl-osquery-graph-generator-queue",
+            bucket_suffix="osquery-log-bucket",
+            key_infix="osquery",
         )
 
     def encode_chunk(self, input: List[bytes]) -> bytes:
@@ -163,6 +177,23 @@ def upload_sysmon_logs(
         prefix=prefix,
         logfile=logfile,
         generator_options=SysmonGeneratorOptions(),
+        delay=delay,
+        batch_size=batch_size,
+        use_links=use_links,
+    )
+
+
+def upload_osquery_logs(
+    prefix: str,
+    logfile: str,
+    delay: int = 0,
+    batch_size: int = 100,
+    use_links: bool = False,
+) -> None:
+    upload_logs(
+        prefix=prefix,
+        logfile=logfile,
+        generator_options=OSQueryGeneratorOptions(),
         delay=delay,
         batch_size=batch_size,
         use_links=use_links,

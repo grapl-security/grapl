@@ -1,5 +1,5 @@
-import time
 import logging
+import time
 
 
 def verbose_sleep(secs: int, reason: str) -> None:

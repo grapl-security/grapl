@@ -22,12 +22,10 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     while grapl_repo_root.name != "grapl":
         grapl_repo_root = grapl_repo_root.parent
 
-    grapl_tests_common_path = grapl_repo_root.joinpath(
-        "src/python/grapl-tests-common/grapl_tests_common"
-    )
+    grapl_tests_common_path = grapl_repo_root.joinpath("src/python/grapl-tests-common")
 
     sys.path.append(str(grapl_tests_common_path))
-    from upload_logs import upload_sysmon_logs
+    from grapl_tests_common.upload_logs import upload_sysmon_logs
 
     return upload_sysmon_logs
 

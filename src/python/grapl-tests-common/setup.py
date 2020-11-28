@@ -1,7 +1,7 @@
 # type: ignore
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.md") as readme:
     README = readme.read()
@@ -47,8 +47,6 @@ setup(
     # We'll probably have some dataclasses in here in the future
     python_requires=">=3.6",
     extras_require={
-        "typecheck": [
-            "mypy",
-        ],
+        "typecheck": ["mypy", "boto3-stubs[dynamodb]"],
     },
 )

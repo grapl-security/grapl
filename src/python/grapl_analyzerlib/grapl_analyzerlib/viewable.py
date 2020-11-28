@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 import logging
 import os
@@ -15,7 +16,11 @@ from typing import (
     Union,
     Tuple,
     Iterator,
+    TYPE_CHECKING,
 )
+
+if TYPE_CHECKING:
+    from grapl_analyzerlib.queryable import Queryable
 
 import typing_extensions
 
@@ -30,8 +35,6 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 LOGGER.info("Initializing Chalice server")
 
-MYPY = False
-
 GraphClient = Any  # todo
 
 V = TypeVar("V", bound="Viewable")
@@ -41,7 +44,7 @@ OneOrMany = Union[List[T], T]
 
 
 class Viewable(Generic[V, Q], Extendable, abc.ABC):
-    queryable: "Type[Q]" = None
+    queryable: Type[Q] = None  # pytype: disable=not-supported-yet
 
     def __init__(
         self, uid: str, node_key: str, graph_client: GraphClient, **kwargs
@@ -60,7 +63,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
     def set_predicate(
         self,
         predicate_name: str,
-        predicate: "Union[OneOrMany[str, int, bool], 'Viewable']",
+        predicate: Union[OneOrMany[Union[str, int, bool]], Viewable],
     ):
         self.predicates[predicate_name] = predicate
         setattr(self, predicate_name, predicate)

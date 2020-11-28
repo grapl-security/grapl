@@ -28,7 +28,7 @@
     "react-dom": "^16.13.1",
     "react-force-graph": "^1.32.1",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.0",
+    "react-scripts": "3.4.4",
     "semantic-ui-react": "^0.88.2",
     "typescript": "~3.7.2",
     "yup": "^0.29.1"

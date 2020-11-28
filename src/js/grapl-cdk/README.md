@@ -13,210 +13,196 @@ Install the following dependencies:
 
 1. Node
 2. Typescript
-3. AWS CDK -- `npm i -g aws-cdk@1.47.0`
-4. AWS CLI
+3. AWS CDK -- `npm i -g aws-cdk@1.71.0`
+4. AWS CLI -- `pip install awscli`
 
 ### AWS Credentials
 
 Make sure your `~/.aws/credentials` file contains the proper AWS
 credentials.
 
-### Grapl build artifacts
+### Grapl deployment artifacts
 
-Execute a local Grapl build by running the following in Grapl's root:
+There are two options for obtaining deployment artifacts. One is to
+execute a Grapl build locally and extract artifacts from the build
+containers. Another is to download pre-built release artifacts from
+Github.
+
+#### Downloading pre-built release artifacts from Github
+
+Navigate to https://github.com/grapl-security/grapl/releases and find
+the git tag associated with the latest release. Then `cd
+src/js/grapl-cdk` and run `python3 fetch_zips_by_tag.py $TAG` where
+`$TAG` is the appropriate git tag. The script will download all the
+release artifacts to the `zips/` directory.
+
+#### Executing a Grapl build and extracting release artifacts
+
+To execute a local Grapl build, run the following in Grapl's root:
 
 ```bash
-TAG=$YOUR_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
+TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
 ```
 
 Then extract the deployment artifacts from the build containers with
 the following script:
 
 ```bash
-VERSION=$YOUR_VERSION ./extract-grapl-deployment-artifacts.sh
+VERSION=$GRAPL_VERSION ./extract-grapl-deployment-artifacts.sh
 ```
 
-`YOUR_VERSION` can be any name you want. Just make note of it, we'll
+`GRAPL_VERSION` can be any name you want. Just make note of it, we'll
 use it in the next step.
 
 Your build outputs should appear in the `zips/` directory.
 
 ### Configuration
 
-Set your deployment name and version in `bin/grapl-cdk.ts`:
+There are a few CDK deployment parameters to configure. Each of these
+can be found in `bin/deployment_parameters.ts`:
 
-```
-export const deployName = 'Grapl-MYDEPLOYMENT';
-export const graplVersion = 'YOUR_VERSION';
-```
+1. `deployName` (required)
 
-Some tips for choosing a deployment name:
+    Name for the deployment to AWS. We recommend prefixing the
+    deployment name with "Grapl-" to help identify Grapl resources in
+    your AWS account, however this isn't necessary.
 
--   Keep "Grapl" as prefix. This isn't necessary, but will help
-    identify Grapl resources in your AWS account.
--   Choose a globally unique name, as this will be used to name S3
-    buckets, which have this requirement. Using a name that includes
-    your AWS account number and deployment region should work.
+    Note: This name must be globally (AWS) unique, as names for AWS S3
+    buckets will be dervied from this.
 
-To enable [Watchful](https://github.com/eladb/cdk-watchful) for
-monitoring Grapl with email alerts, specify the email address to
-receive alerts:
+    env: `GRAPL_CDK_DEPLOYMENT_NAME`
 
-```
-export const watchfulEmail = 'YOUR@EMAIL';
-```
+2. `graplVersion`
+
+    The version of Grapl to deploy. This string will be used to look
+    for the appropriate filenames in the `zips/` directory.
+
+    Defaults to `latest`.
+
+    env: `GRAPL_VERSION`
+
+3. `watchfulEmail` (optional)
+
+    Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for
+    monitoring Grapl with email alerts.
+
+    env: `GRAPL_CDK_WATCHFUL_EMAIL`
+
+4. `operationalAlarmsEmail` (optional)
+
+    Setting this enables alarms meant for the operator of the Grapl stack.
+
+    env: `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL`
+
+5. `securityAlarmsEmail` (optional)
+
+    Setting this enables alarms meant for the consumer of the Grapl
+    stack, for example, "a new risk node has been found".
+
+    env: `GRAPL_CDK_SECURITY_ALARMS_EMAIL`
+
+Alternatively, these can be set via the environment variables
+mentioned for each above. The environment variables take precedence
+over the values in `bin/deployment_parameters.ts`.
+
+When deploying to production we recommend *not* using environment
+variables for setting parameters, but rather set them in
+`bin/deployment_parameters.ts` and save the changes in a git
+branch. This should help future maintenance of the deployment.
 
 ## Deploying
 
-To deploy Grapl with the CDK, execute the following
+To deploy Grapl with the CDK, execute the following. Note that this
+process takes a while (like roughly 1hr), especially the last step.
 
 1. `npm i`
 2. `npm run build`
 3. `env CDK_NEW_BOOTSTRAP=1 cdk bootstrap --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess`
 4. `./deploy_all.sh`
 
+If you have configured an email address for Watchful (see previous
+section) you should receive an email with subject *"AWS Notification -
+Subscription Confirmation"* containing a link to activate the
+subscription. Click the link to begin receiving CloudWatch alerts.
+
 ## Provisioning DGraph
 
 Once the CDK deploy is complete you'll need to perform some additional
 manual configuration to spin up the DGraph cluster. The CDK deploy in
-the previous section has created a bastion host which we will now use
-to provision a Docker Swarm cluster and install DGraph on it. We use
-AWS Secure Session Manager (SSM) to access this bastion host via the
-AWS Console.
+the previous section has created an Autoscaling Group for the EC2
+Instances where we'll run the Docker Swarm cluster. It only remains to
+spin up the EC2 instances, provision a Docker Swarm cluster, and
+install DGraph on it.
 
 To provision DGraph:
 
-1. Navigate to the [AWS Session Manager
-   console](https://us-east-1.console.aws.amazon.com/systems-manager/session-manager)
-   and click _Start session_. A new window will open in your browser
-   with a terminal prompt on the bastion host.
-2. Execute the following commands:
+1. Navigate to the [AWS Autoscaling
+   console](https://console.aws.amazon.com/ec2autoscaling) and click
+   on the Swarm Autoscaling group. Click *Edit* in the *Group Details*
+   pane and set *Desired capacity*, *Minimum capacity*, and *Maximum
+   capacity* all to 3.
 
-```bash
-# install docker
-sudo yum install -y docker
-sudo systemctl enable docker.service
-sudo systemctl start docker.service
-sudo usermod -a -G docker ec2-user
-sudo su ec2-user
-cd $HOME
+2. Navigate to the [AWS Route53 Hosted Zones
+   console](https://console.aws.amazon.com/route53/v2/hostedzones) and
+   click on the hosted zone with *Domain name* ending in
+   `.dgraph.grapl`. Wait until you see a DNS record of *Type* A appear
+   in the list of *Records*. It may take a few minutes and you may
+   have to click the refresh button. Ensure that the IP addresses
+   associated with the A record are the private IP addresses of the
+   instances in the Autoscaling Group from (1).
 
-# The Grapl deployment name we used in the CDK
-GRAPL_DEPLOYMENT=<YOUR_DEPLOYMENT>
+3. `cd src/js/grapl-cdk/swarm` and run `python3 swarm_setup.py
+   $GRAPL_DEPLOY_NAME` where `$GRAPL_DEPLOY_NAME` is the same
+   `deployName` you configured above in
+   `src/js/grapl-cdk/bin/grapl-cdk.ts`. This script will output logs
+   to the console indicating which instance is the swarm manager. It
+   will also output logs containing the hostname of each swarm
+   instance. You will need these in subsequent steps.
 
-# install docker-machine
-base=https://github.com/docker/machine/releases/download/v0.16.2 &&
-curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
-sudo mv /tmp/docker-machine /usr/local/bin/docker-machine &&
-chmod +x /usr/local/bin/docker-machine
-export PATH=/usr/local/bin:$PATH
+4. Navigate to the [AWS Session Manager
+   console](https://console.aws.amazon.com/systems-manager/session-manager)
+   and click *Start session*. Select the swarm manager instance. A
+   shell session will open on that instance.
 
-# extract AWS creds into environment variables
-ROLE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/)
-RESPONSE=$(curl http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE)
-AWS_ACCESS_KEY_ID=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["AccessKeyId"]);')
-AWS_SECRET_ACCESS_KEY=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["SecretAccessKey"]);')
-AWS_SESSION_TOKEN=$(echo $RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["Token"]);')
+5. Execute the following commands in the SSM shell on the swarm
+   manager. For your convenience, in step (3) above, the
+   `swarm_setup.py` script has logged them to your terminal with the
+   appropriate substitutions filled in:
+   ```bash
+   sudo su ec2-user
+   cd $HOME
 
-# extract AWS region into environment variable
-AWS_DEFAULT_REGION=$(curl http://169.254.169.254/latest/meta-data/placement/region)
+   # get DGraph configs
+   GRAPL_DEPLOY_NAME=<deployName>
+   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/docker-compose-dgraph.yml .
+   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yaml .
+   ```
+   where `<deployName>` is the same `deployName` you configured above
+   in `bin/grapl-cdk.ts`.
+   ``` bash
+   export AWS_LOGS_GROUP=<log_group_name>
+   export AWS01_NAME=<swarm_manager_hostname>
+   export AWS02_NAME=<swarm_worker1_hostname>
+   export AWS03_NAME=<swarm_worker2_hostname>
 
-# create a key pair
-KEYPAIR_NAME=${GRAPL_DEPLOYMENT}-docker
-aws --region $AWS_DEFAULT_REGION ec2 create-key-pair --key-name "$KEYPAIR_NAME" --query 'KeyMaterial' --output text > $HOME/docker-machine-key.pem
-chmod 400 $HOME/docker-machine-key.pem
-ssh-keygen -y -f $HOME/docker-machine-key.pem > $HOME/docker-machine-key.pem.pub
+   # start DGraph
+   docker stack deploy -c docker-compose-dgraph.yml dgraph
 
-# extract security group and VPC ID into environment variables
-MAC=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs)
-SWARM_SECURITY_GROUP=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/security-groups)
-SWARM_VPC_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/vpc-id)
-SWARM_SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/subnet-id)
+   # check that all the services are running
+   docker service ls
+   ```
 
-# spin up ec2 resources with docker-machine
-# see https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-# ami-0010d386b82bc06f0 -> Ubuntu Server 18.04 LTS (HVM), SSD Volume Type
-EC2_INSTANCE_TYPE=i3.xlarge
-EC2_AMI=ami-0010d386b82bc06f0
-alias dm-create='
-  /usr/local/bin/docker-machine create \
-  --driver "amazonec2" \
-  --amazonec2-private-address-only \
-  --amazonec2-vpc-id "$SWARM_VPC_ID" \
-  --amazonec2-security-group "$SWARM_SECURITY_GROUP" \
-  --amazonec2-keypair-name "$KEYPAIR_NAME" \
-  --amazonec2-ssh-keypath "$HOME/docker-machine-key.pem" \
-  --amazonec2-subnet-id "$SWARM_SUBNET_ID" \
-  --amazonec2-instance-type "$EC2_INSTANCE_TYPE" \
-  --amazonec2-region "$AWS_DEFAULT_REGION" \
-  --amazonec2-ami "$EC2_AMI" \
-  --amazonec2-ssh-user ubuntu \
-  --amazonec2-tags "grapl-dgraph,$GRAPL_DEPLOYMENT"'
-export AWS01_NAME=${GRAPL_DEPLOYMENT}-aws01
-export AWS02_NAME=${GRAPL_DEPLOYMENT}-aws02
-export AWS03_NAME=${GRAPL_DEPLOYMENT}-aws03
-dm-create "$AWS01_NAME"
-dm-create "$AWS02_NAME"
-dm-create "$AWS03_NAME"
+   where `<swarm_manager_hostname>`, `<swarm_worker1_hostname>`, and
+   `<swarm_worker2_hostname` are the hostnames of all the instances
+   from the script logs in step (3) above
+   (e.g. `ip-10-0-148-238.ec2.internal`). You can choose anything you
+   want for `<log_group_name>`, it just needs to be unique in the
+   region where Grapl is deployed. Therefore it's probably worthwhile
+   to include `$GRAPL_DEPLOY_NAME` as a name component.
 
-#
-# refer to the DGraph docs for more details about the rest of the setup
-# procedure:
-#
-# https://dgraph.io/docs//deploy/multi-host-setup/#cluster-setup-using-docker-swarm
-#
+# DGraph operations
 
-# create a Docker Swarm cluster
-AWS01_IP=$(docker-machine ip "$AWS01_NAME")
-eval $(docker-machine env "$AWS01_NAME" --shell sh)
-docker swarm init --advertise-addr $AWS01_IP
-
-
-# extract the join token
-WORKER_JOIN_TOKEN=$(docker swarm join-token worker -q)
-
-# make aws02 and aws03 join the swarm
-eval $(docker-machine env "$AWS02_NAME" --shell sh)
-docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
-eval $(docker-machine env "$AWS03_NAME" --shell sh)
-docker swarm join --token $WORKER_JOIN_TOKEN "$AWS01_IP:2377"
-
-for m in $AWS01_NAME $AWS02_NAME $AWS03_NAME; do
-    docker-machine ssh $m 'sudo mkdir /dgraph && sudo mkfs -t xfs /dev/nvme0n1 && sudo mount -t xfs /dev/nvme0n1 /dgraph'
-    docker-machine ssh $m 'UUID=$(sudo lsblk -o +UUID | grep nvme0n1 | rev | cut -d" " -f1 | rev); echo -e "UUID=$UUID\t/dgraph\txfs\tdefaults,nofail\t0 2" | sudo tee -a /etc/fstab'
-done
-
-# get DGraph configs
-cd $HOME
-wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/dgraph/docker-compose-dgraph.yml
-wget https://github.com/grapl-security/grapl/raw/staging/src/js/grapl-cdk/dgraph/envoy.yaml
-
-# start DGraph
-eval $(docker-machine env "$AWS01_NAME" --shell sh)
-docker stack deploy -c docker-compose-dgraph.yml dgraph
-
-# add A records to route53 to make the alpha nodes discoverable
-AWS02_IP=$(docker-machine ip "$AWS02_NAME")
-AWS03_IP=$(docker-machine ip "$AWS03_NAME")
-DNS_NAME=$(echo $GRAPL_DEPLOYMENT | awk '{print tolower($0)}').dgraph.grapl
-HOSTED_ZONES_RESPONSE=$(aws route53 list-hosted-zones-by-name --dns-name "$DNS_NAME")
-HOSTED_ZONE_ID=$(echo $HOSTED_ZONES_RESPONSE | python -c 'import json; import sys; print(json.load(sys.stdin)["HostedZones"][0]["Id"]);')
-echo {\"Changes\": [{\"Action\": \"UPSERT\", \"ResourceRecordSet\": {\"Name\": \"$DNS_NAME\", \"Type\": \"A\", \"TTL\": 300, \"ResourceRecords\": [{\"Value\": \"$AWS01_IP\"}, {\"Value\": \"$AWS02_IP\"}, {\"Value\": \"$AWS03_IP\"}]}}]} > $HOME/batch.json
-aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch file://$HOME/batch.json
-
-# check that all the services are running
-docker service ls
-```
-
-## Operating DGraph
-
-Now that we have DGraph provisioned, it's important to be aware of
-some operational details.
-
-First, _don't lose the key pair_. If, for example, your bastion host
-crashes and you somehow lost the key pair
-(e.g. `docker-machine-key-pair.pem` from the previous section) then
-`docker-machine` will no longer be able to connect to the DGraph
-cluster. This would be bad. To mitigate this risk, make sure you don't
-destroy the bastion's EBS volume. If the bastion crashes and you need
-to make a new one, be sure to use the previous bastion's EBS volume.
+You can manage the DGraph cluster with the docker swarm tooling by
+logging into the swarm manager with SSM. If you forget which instance
+is the swarm manager, you can find it using the EC2 instance tag
+`grapl-swarm-role=swarm-manager`.

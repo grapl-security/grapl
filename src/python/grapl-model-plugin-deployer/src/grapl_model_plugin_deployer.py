@@ -1,6 +1,3 @@
-from grapl_analyzerlib.schema import Schema
-
-print("init")
 import base64
 import hmac
 import inspect
@@ -9,12 +6,13 @@ import logging
 import os
 import re
 import sys
+import threading
 import traceback
 from base64 import b64decode
 from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
-from typing import TypeVar, Dict, Union, List, Any, Optional
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import boto3  # type: ignore
 import jwt
@@ -22,13 +20,18 @@ import pydgraph  # type: ignore
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
+
 from grapl_analyzerlib.node_types import (
-    PropPrimitive,
-    PropType,
     EdgeRelationship,
     EdgeT,
+    PropPrimitive,
+    PropType,
 )
 from grapl_analyzerlib.prelude import *
+from grapl_analyzerlib.schema import Schema
+
+print("init")
+
 
 sys.path.append("/tmp/")
 
@@ -59,7 +62,7 @@ if IS_LOCAL:
                 region_name="us-east-1",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
             )
 
             JWT_SECRET = secretsmanager.get_secret_value(
@@ -117,7 +120,7 @@ def verify_payload(payload_body, key, signature):
 
 
 def set_schema(client: GraphClient, schema: str) -> None:
-    op = pydgraph.Operation(schema=schema)
+    op = pydgraph.Operation(schema=schema, run_in_background=True)
     client.alter(op)
 
 
@@ -470,15 +473,22 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    provision_schemas(
-        LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient(),
-        raw_schemas,
+    th = threading.Thread(
+        target=provision_schemas,
+        args=(
+            GraphClient(),
+            raw_schemas,
+        ),
     )
+    th.start()
 
-    for path, file in plugin_files.items():
-        upload_resp = upload_plugin(s3_client, path, file)
-        if upload_resp:
-            return upload_resp
+    try:
+        for path, file in plugin_files.items():
+            upload_resp = upload_plugin(s3_client, path, file)
+            if upload_resp:
+                return upload_resp
+    finally:
+        th.join()
     return None
 
 
@@ -625,6 +635,3 @@ def nop_route():
     except Exception:
         LOGGER.error(traceback.format_exc())
         return respond("Route Server Error")
-
-
-from grapl_analyzerlib.prelude import *
