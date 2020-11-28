@@ -4,6 +4,7 @@ import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as s3 from '@aws-cdk/aws-s3';
 
 import { GraplServiceProps } from './grapl-cdk-stack';
+import {WatchedOperation} from "cdk-watchful";
 
 export interface GraphQLEndpointProps extends GraplServiceProps {
     ux_bucket: s3.IBucket;
@@ -11,7 +12,8 @@ export interface GraphQLEndpointProps extends GraplServiceProps {
 }
 
 export class GraphQLEndpoint extends cdk.Construct {
-    integrationName: string;
+    // todo: We should use our own type here imo
+    apis: WatchedOperation[];
 
     constructor(
         parent: cdk.Construct,
@@ -23,7 +25,6 @@ export class GraphQLEndpoint extends cdk.Construct {
         const ux_bucket = props.ux_bucket;
 
         const serviceName = props.prefix + '-GraphQL';
-        this.integrationName = serviceName + '-Integration';
 
         const event_handler = new lambda.Function(this, 'Handler', {
             runtime: lambda.Runtime.NODEJS_12_X,
@@ -61,5 +62,12 @@ export class GraphQLEndpoint extends cdk.Construct {
         props.edgeApi.root.addResource('graphQlEndpoint').addProxy({
             defaultIntegration: integration,
         });
+
+        this.apis = [
+            {
+                httpMethod: 'POST',
+                resourcePath: '/graphQlEndpoint/graphql',
+            }
+        ];
     }
 }

@@ -9,12 +9,12 @@ import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 
 import * as aws from 'aws-sdk';
 
-import { GraplServiceProps, ModelPluginDeployer } from './grapl-cdk-stack';
-import { GraphQLEndpoint } from './graphql';
+import { GraplServiceProps } from './grapl-cdk-stack';
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from 'node-dir';
+import {WatchedOperation} from "cdk-watchful";
 
 
 function getEdgeGatewayId(
@@ -83,7 +83,7 @@ export interface EngagementEdgeProps extends GraplServiceProps {
 export class EngagementEdge extends cdk.NestedStack {
     event_handler: lambda.Function;
     name: string;
-    integrationName: string;
+    apis: WatchedOperation[];
 
     constructor(scope: cdk.Construct, id: string, props: EngagementEdgeProps) {
         super(scope, id);
@@ -96,7 +96,6 @@ export class EngagementEdge extends cdk.NestedStack {
 
         const serviceName = props.prefix + '-EngagementEdge';
         this.name = id + props.prefix;
-        this.integrationName = id + props.prefix + 'Integration';
 
         this.event_handler = new lambda.Function(this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,
@@ -140,6 +139,45 @@ export class EngagementEdge extends cdk.NestedStack {
         props.edgeApi.root.addResource('auth').addProxy({
             defaultIntegration: integration,
         });
+
+        this.apis = [
+            {
+                httpMethod: 'POST',
+                resourcePath: '/auth/login',
+            },
+            {
+                httpMethod: 'OPTIONS',
+                resourcePath: '/auth/login',
+            },
+            {
+                httpMethod: 'GET',
+                resourcePath: '/auth/login',
+            },
+            {
+                httpMethod: 'POST',
+                resourcePath: '/auth/checkLogin',
+            },
+            {
+                httpMethod: 'OPTIONS',
+                resourcePath: '/auth/checkLogin',
+            },
+            {
+                httpMethod: 'GET',
+                resourcePath: '/auth/checkLogin',
+            },
+            {
+                httpMethod: 'POST',
+                resourcePath: '/{proxy+}',
+            },
+            {
+                httpMethod: 'OPTIONS',
+                resourcePath: '/{proxy+}',
+            },
+            {
+                httpMethod: 'GET',
+                resourcePath: '/{proxy+}',
+            },
+        ];
     }
 }
 

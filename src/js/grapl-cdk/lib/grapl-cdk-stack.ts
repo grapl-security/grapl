@@ -24,7 +24,7 @@ import { GraphQLEndpoint } from './graphql';
 import { Swarm } from './swarm';
 import { OperationalAlarms, SecurityAlarms } from './alarms';
 
-import { Watchful } from 'cdk-watchful';
+import { Watchful, WatchedOperation } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 import { PipelineDashboard } from './pipeline_dashboard';
 
@@ -638,7 +638,7 @@ export interface ModelPluginDeployerProps extends GraplServiceProps {
 }
 
 export class ModelPluginDeployer extends cdk.NestedStack {
-    integrationName: string;
+    apis: WatchedOperation[];
 
     constructor(
         parent: cdk.Construct,
@@ -648,7 +648,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         super(parent, id);
 
         const serviceName = props.prefix + '-ModelPluginDeployer';
-        this.integrationName = id + props.prefix + 'Integration';
+
         const ux_bucket = s3.Bucket.fromBucketName(
             this,
             'uxBucket',
@@ -714,6 +714,49 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         props.edgeApi.root.addResource('modelPluginDeployer').addProxy({
             defaultIntegration: integration,
         });
+
+        this.apis = [
+            {
+                httpMethod: 'POST',
+                resourcePath: '/modelPluginDeployer/gitWebhook',
+            },
+            {
+                httpMethod: 'OPTIONS',
+                resourcePath: '/modelPluginDeployer/gitWebHook',
+            },
+            {
+                httpMethod: 'POST',
+                resourcePath: '/modelPluginDeployer/deploy',
+            },
+            {
+                httpMethod: 'OPTIONS',
+                resourcePath: '/modelPluginDeployer/deploy',
+            },
+            {
+                httpMethod: 'POST',
+                resourcePath: '/modelPluginDeployer/listModelPlugins',
+            },
+            {
+                httpMethod: 'OPTIONS',
+                resourcePath: '/modelPluginDeployer/listModelPlugins',
+            },
+            {
+                httpMethod: 'POST',
+                resourcePath: '/modelPluginDeployer/deleteModelPlugin',
+            },
+            {
+                httpMethod: 'OPTIONS',
+                resourcePath: '/modelPluginDeployer/deleteModelPlugin',
+            },
+            {
+                httpMethod: 'POST',
+                resourcePath: '/{proxy+}',
+            },
+            {
+                httpMethod: 'OPTIONS',
+                resourcePath: '/{proxy+}',
+            },
+        ];
     }
 }
 
@@ -795,17 +838,6 @@ export class GraplCdkStack extends cdk.Stack {
                 alarmSqs,
                 alarmSns,
             });
-        }
-
-        if (watchful) {
-            watchful.watchApiGateway(
-                'EdgeApiGatewayIntegration',
-                edgeApi,
-                {
-                    serverErrorThreshold: 1, // any 5xx alerts
-                    cacheGraph: true,
-                }
-            );
         }
 
         const dgraphSwarmCluster = new DGraphSwarmCluster(
@@ -961,6 +993,23 @@ export class GraplCdkStack extends cdk.Stack {
                 edgeApi,
             }
         );
+
+        if (watchful) {
+            const watchedOperations = [
+                ...this.graphql_endpoint.apis,
+                ...this.engagement_edge.apis,
+                ...this.model_plugin_deployer.apis,
+            ];
+
+            watchful.watchApiGateway(
+                'EdgeApiGatewayIntegration',
+                edgeApi,
+                {
+                    serverErrorThreshold: 1, // any 5xx alerts
+                    cacheGraph: true,
+                }
+            );
+        }
 
         if (props.operationalAlarmsEmail) {
             new OperationalAlarms(this, "operation_alarms", props.operationalAlarmsEmail);
