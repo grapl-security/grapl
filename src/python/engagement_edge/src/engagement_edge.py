@@ -37,6 +37,8 @@ LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 print("abc 123")
+
+
 class LazyJwtSecret:
     def __init__(self) -> None:
         self.secret: Optional[str] = None
@@ -344,7 +346,7 @@ def nop_route() -> Response:
     LOGGER.debug(app.current_request.context["path"])
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
-    
+
     path = app.current_request.context["path"]
     path_to_handler = {
         "/prod/auth/login": login_route,
@@ -356,4 +358,3 @@ def nop_route() -> Response:
         return handler()
 
     return respond(err=f"Invalid path: {path}")
-

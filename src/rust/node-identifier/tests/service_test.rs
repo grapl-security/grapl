@@ -1,18 +1,15 @@
 use tracing::info;
 
-
-
-
-
-use node_identifier::{NodeIdentifier, init_dynamodb_client, HashCache};
-use node_identifier::assetdb::{AssetIdentifier, AssetIdDb};
-use node_identifier::dynamic_sessiondb::{DynamicNodeIdentifier, DynamicMappingDb};
+use node_identifier::assetdb::{AssetIdDb, AssetIdentifier};
+use node_identifier::dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
 use node_identifier::sessiondb::SessionDb;
+use node_identifier::{init_dynamodb_client, HashCache, NodeIdentifier};
 use rusoto_core::Region;
 use rusoto_dynamodb::DynamoDbClient;
 
-
-async fn init_local_node_identifier(should_default: bool) -> Result<NodeIdentifier<DynamoDbClient, HashCache>, Box<dyn std::error::Error>> {
+async fn init_local_node_identifier(
+    should_default: bool,
+) -> Result<NodeIdentifier<DynamoDbClient, HashCache>, Box<dyn std::error::Error>> {
     let cache = HashCache::default();
 
     info!("region");
@@ -51,19 +48,16 @@ async fn init_local_node_identifier(should_default: bool) -> Result<NodeIdentifi
     let asset_id_db = AssetIdDb::new(init_dynamodb_client());
 
     info!("node_identifier");
-    Ok(
-        NodeIdentifier::new(
-            asset_id_db,
-            dyn_node_identifier,
-            asset_identifier,
-            dynamo.clone(),
-            should_default,
-            cache.clone(),
-            region.clone(),
-        )
-    )
+    Ok(NodeIdentifier::new(
+        asset_id_db,
+        dyn_node_identifier,
+        asset_identifier,
+        dynamo.clone(),
+        should_default,
+        cache.clone(),
+        region.clone(),
+    ))
 }
-
 
 /// Given:
 ///     * A Graph with 4 Session-Identifiable Nodes; A, B, C, D
@@ -78,6 +72,6 @@ async fn init_local_node_identifier(should_default: bool) -> Result<NodeIdentifi
 async fn test_service() -> Result<(), Box<dyn std::error::Error>> {
     // todo: I think should_default could in fact be random? It shouldn't matter for this test.
     let node_identifier = init_local_node_identifier(false).await;
-    
+
     Ok(())
 }
