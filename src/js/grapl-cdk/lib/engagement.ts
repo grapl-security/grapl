@@ -139,45 +139,13 @@ export class EngagementEdge extends cdk.NestedStack {
         props.edgeApi.root.addResource('auth').addProxy({
             defaultIntegration: integration,
         });
-
-        this.apis = [
-            {
-                httpMethod: 'POST',
-                resourcePath: '/auth/login',
-            },
-            {
-                httpMethod: 'OPTIONS',
-                resourcePath: '/auth/login',
-            },
-            {
-                httpMethod: 'GET',
-                resourcePath: '/auth/login',
-            },
-            {
-                httpMethod: 'POST',
-                resourcePath: '/auth/checkLogin',
-            },
-            {
-                httpMethod: 'OPTIONS',
-                resourcePath: '/auth/checkLogin',
-            },
-            {
-                httpMethod: 'GET',
-                resourcePath: '/auth/checkLogin',
-            },
-            {
-                httpMethod: 'POST',
-                resourcePath: '/{proxy+}',
-            },
-            {
-                httpMethod: 'OPTIONS',
-                resourcePath: '/{proxy+}',
-            },
-            {
-                httpMethod: 'GET',
-                resourcePath: '/{proxy+}',
-            },
-        ];
+        this.apis = [];
+        for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
+            for (const resourcePath of ['/login', '/checkLogin', '/{proxy+}']) {
+                this.apis.push({httpMethod, resourcePath});
+                this.apis.push({httpMethod, resourcePath: '/auth' + resourcePath});
+            }
+        }
     }
 }
 

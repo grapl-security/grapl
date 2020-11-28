@@ -6,7 +6,7 @@ module HardcodedDeploymentParameters {
     export const deployName = undefined;
 
     // defaults to 'latest'
-    export const graplVersion = 'undefined';
+    export const graplVersion = undefined;
 
     // (optional) ex: ops@example.com
     export const watchfulEmail = undefined;

@@ -714,49 +714,13 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         props.edgeApi.root.addResource('modelPluginDeployer').addProxy({
             defaultIntegration: integration,
         });
-
-        this.apis = [
-            {
-                httpMethod: 'POST',
-                resourcePath: '/modelPluginDeployer/gitWebhook',
-            },
-            {
-                httpMethod: 'OPTIONS',
-                resourcePath: '/modelPluginDeployer/gitWebHook',
-            },
-            {
-                httpMethod: 'POST',
-                resourcePath: '/modelPluginDeployer/deploy',
-            },
-            {
-                httpMethod: 'OPTIONS',
-                resourcePath: '/modelPluginDeployer/deploy',
-            },
-            {
-                httpMethod: 'POST',
-                resourcePath: '/modelPluginDeployer/listModelPlugins',
-            },
-            {
-                httpMethod: 'OPTIONS',
-                resourcePath: '/modelPluginDeployer/listModelPlugins',
-            },
-            {
-                httpMethod: 'POST',
-                resourcePath: '/modelPluginDeployer/deleteModelPlugin',
-            },
-            {
-                httpMethod: 'OPTIONS',
-                resourcePath: '/modelPluginDeployer/deleteModelPlugin',
-            },
-            {
-                httpMethod: 'POST',
-                resourcePath: '/{proxy+}',
-            },
-            {
-                httpMethod: 'OPTIONS',
-                resourcePath: '/{proxy+}',
-            },
-        ];
+        this.apis = [];
+        for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
+            for (const resourcePath of ['/gitWebhook', '/deploy', '/listModelPlugins', 'deleteModelPlugin', '/{proxy+}']) {
+                this.apis.push({httpMethod, resourcePath});
+                this.apis.push({httpMethod, resourcePath: '/modelPluginDeployer' + resourcePath});
+            }
+        }
     }
 }
 

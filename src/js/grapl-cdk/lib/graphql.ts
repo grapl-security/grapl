@@ -63,11 +63,12 @@ export class GraphQLEndpoint extends cdk.Construct {
             defaultIntegration: integration,
         });
 
-        this.apis = [
-            {
-                httpMethod: 'POST',
-                resourcePath: '/graphQlEndpoint/graphql',
+        this.apis = [];
+        for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
+            for (const resourcePath of ['/graphql', '/{proxy+}']) {
+                this.apis.push({httpMethod, resourcePath});
+                this.apis.push({httpMethod, resourcePath: '/graphQlEndpoint' + resourcePath});
             }
-        ];
+        }
     }
 }
