@@ -36,8 +36,6 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-print("abc 123")
-
 
 class LazyJwtSecret:
     def __init__(self) -> None:

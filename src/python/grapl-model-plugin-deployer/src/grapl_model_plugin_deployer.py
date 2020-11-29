@@ -30,9 +30,6 @@ from grapl_analyzerlib.node_types import (
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schema import Schema
 
-print("init")
-
-
 sys.path.append("/tmp/")
 
 T = TypeVar("T")

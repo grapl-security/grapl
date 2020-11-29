@@ -126,7 +126,6 @@ def recalculate_score(lens: LensView) -> int:
         for risk in node_risks:
             risk_score = risk.get_risk_score()
             analyzer_name = risk.get_analyzer_name()
-            print(node.node_key, analyzer_name, risk_score)
             risks_by_analyzer[analyzer_name] = risk_score
             key_to_analyzers[node.node_key].add(analyzer_name)
 
