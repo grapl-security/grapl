@@ -2,6 +2,7 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 
 module HardcodedDeploymentParameters {
     // ex: 'Grapl-my-deployment'
+
     export const deployName = undefined;
 
     // defaults to 'latest'

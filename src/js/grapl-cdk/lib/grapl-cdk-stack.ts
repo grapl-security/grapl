@@ -24,7 +24,7 @@ import { GraphQLEndpoint } from './graphql';
 import { Swarm } from './swarm';
 import { OperationalAlarms, SecurityAlarms } from './alarms';
 
-import { Watchful } from 'cdk-watchful';
+import { Watchful, WatchedOperation } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 import { PipelineDashboard } from './pipeline_dashboard';
 
@@ -634,10 +634,11 @@ class DGraphTtl extends cdk.NestedStack {
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
     schemaTable: SchemaDb;
+    edgeApi: apigateway.RestApi;
 }
 
 export class ModelPluginDeployer extends cdk.NestedStack {
-    integrationName: string;
+    apis: WatchedOperation[];
 
     constructor(
         parent: cdk.Construct,
@@ -647,7 +648,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         super(parent, id);
 
         const serviceName = props.prefix + '-ModelPluginDeployer';
-        this.integrationName = id + props.prefix + 'Integration';
+
         const ux_bucket = s3.Bucket.fromBucketName(
             this,
             'uxBucket',
@@ -709,75 +710,16 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             props.modelPluginBucket.grantDelete(event_handler.role);
         }
 
-        const integration = new apigateway.LambdaRestApi(this, 'Integration', {
-            restApiName: this.integrationName,
-            endpointExportName: serviceName + '-EndpointApi',
-            handler: event_handler,
+        const integration = new apigateway.LambdaIntegration(event_handler);
+        props.edgeApi.root.addResource('modelPluginDeployer').addProxy({
+            defaultIntegration: integration,
         });
-
-        integration.addUsagePlan('integrationApiUsagePlan', {
-            quota: {
-                limit: 1000,
-                period: apigateway.Period.DAY,
-            },
-            throttle: {
-                // per minute
-                rateLimit: 50,
-                burstLimit: 50,
-            },
-        });
-
-        if (props.watchful) {
-            props.watchful.watchApiGateway(
-                serviceName + '-Integration',
-                integration,
-                {
-                    serverErrorThreshold: 1, // any 5xx alerts
-                    cacheGraph: true,
-                    watchedOperations: [
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/gitWebhook',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/gitWebHook',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/deploy',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/deploy',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/listModelPlugins',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/listModelPlugins',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/deleteModelPlugin',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/deleteModelPlugin',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/{proxy+}',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/{proxy+}',
-                        },
-                    ],
-                }
-            );
+        this.apis = [];
+        for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
+            for (const resourcePath of ['/gitWebhook', '/deploy', '/listModelPlugins', 'deleteModelPlugin', '/{proxy+}']) {
+                this.apis.push({httpMethod, resourcePath});
+                this.apis.push({httpMethod, resourcePath: '/modelPluginDeployer' + resourcePath});
+            }
         }
     }
 }
@@ -807,12 +749,28 @@ export class GraplCdkStack extends cdk.Stack {
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
     model_plugin_deployer: ModelPluginDeployer;
+    edgeApiGateway: apigateway.RestApi;
 
     constructor(scope: cdk.Construct, id: string, props: GraplStackProps) {
         super(scope, id, props);
 
         this.prefix = props.stackName;
         const bucket_prefix = this.prefix.toLowerCase();
+
+        const edgeApi = new apigateway.RestApi(this, 'EdgeApiGateway', { });
+        edgeApi.addUsagePlan('EdgeApiGatewayUsagePlan', {
+            quota: {
+                limit: 1_000_000,
+                period: apigateway.Period.DAY,
+            },
+            throttle: {
+                // per minute
+                rateLimit: 1200,
+                burstLimit: 1200,
+            },
+        });
+
+        this.edgeApiGateway = edgeApi;
 
         const grapl_vpc = new ec2.Vpc(this, this.prefix + '-VPC', {
             natGateways: 1,
@@ -918,6 +876,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 modelPluginBucket: model_plugins_bucket,
                 schemaTable: schema_table,
+                edgeApi,
                 ...graplProps,
             }
         );
@@ -975,8 +934,9 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'EngagementEdge',
             {
-                ...graplProps,
-                engagement_notebook: engagement_notebook
+                ...graplProps, 
+                engagement_notebook: engagement_notebook,
+                edgeApi,
             },
         );
 
@@ -991,9 +951,29 @@ export class GraplCdkStack extends cdk.Stack {
         this.graphql_endpoint = new GraphQLEndpoint(
             this,
             'GraphqlEndpoint',
-            graplProps,
-            ux_bucket
+            {
+                ...graplProps,
+                ux_bucket,
+                edgeApi,
+            }
         );
+
+        if (watchful) {
+            const watchedOperations = [
+                ...this.graphql_endpoint.apis,
+                ...this.engagement_edge.apis,
+                ...this.model_plugin_deployer.apis,
+            ];
+
+            watchful.watchApiGateway(
+                'EdgeApiGatewayIntegration',
+                edgeApi,
+                {
+                    serverErrorThreshold: 1, // any 5xx alerts
+                    cacheGraph: true,
+                }
+            );
+        }
 
         if (props.operationalAlarmsEmail) {
             new OperationalAlarms(this, "operation_alarms", props.operationalAlarmsEmail);
@@ -1002,15 +982,18 @@ export class GraplCdkStack extends cdk.Stack {
             new SecurityAlarms(this, "security_alarms", props.securityAlarmsEmail);
         }
 
-        new PipelineDashboard(this, "pipeline_dashboard", [
-            // Order here is important - the idea is that this dashboard will help Grapl operators
-            // quickly determine which service in the pipeline is failing.
-            sysmon_generator.service,
-            node_identifier.service,
-            graph_merger.service,
-            analyzer_dispatch.service,
-            analyzer_executor.service,
-            engagement_creator.service,
-        ]);
+        new PipelineDashboard(this, "pipeline_dashboard", {
+            namePrefix: this.prefix,
+            services: [
+                // Order here is important - the idea is that this dashboard will help Grapl operators
+                // quickly determine which service in the pipeline is failing.
+                sysmon_generator.service,
+                node_identifier.service,
+                graph_merger.service,
+                analyzer_dispatch.service,
+                analyzer_executor.service,
+                engagement_creator.service,
+            ]
+        });
     }
 }
