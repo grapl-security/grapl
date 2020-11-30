@@ -298,6 +298,6 @@ export class Swarm extends cdk.Construct {
     }
 
     public clusterHostPort(): string {
-        return `http://${this.swarmHostedZone.zoneName}:9080`;
+        return `${this.swarmHostedZone.zoneName}:9080`;
     }
 }
