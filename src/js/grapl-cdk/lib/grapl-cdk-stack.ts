@@ -275,7 +275,7 @@ class GraphMerger extends cdk.NestedStack {
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
-                MG_ALPHAS: 'http://' + props.dgraphSwarmCluster.alphaHostPort(),
+                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 MERGED_CACHE_ADDR:
                     graph_merge_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT:
