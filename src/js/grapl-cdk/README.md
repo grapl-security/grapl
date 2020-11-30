@@ -154,10 +154,10 @@ To provision DGraph:
 3. `cd src/js/grapl-cdk/swarm` and run `python3 swarm_setup.py
    $GRAPL_DEPLOY_NAME` where `$GRAPL_DEPLOY_NAME` is the same
    `deployName` you configured above in
-   `src/js/grapl-cdk/bin/grapl-cdk.ts`. This script will output logs
-   to the console indicating which instance is the swarm manager. It
-   will also output logs containing the hostname of each swarm
-   instance. You will need these in subsequent steps.
+   `src/js/grapl-cdk/bin/deployment_parameters.ts`. This script will output
+    logs to the console indicating which instance is the swarm manager. It 
+    will also output logs containing the hostname of each swarm instance. 
+    You will need these in subsequent steps.
 
 4. Navigate to the [AWS Session Manager
    console](https://console.aws.amazon.com/systems-manager/session-manager)
@@ -174,11 +174,11 @@ To provision DGraph:
 
    # get DGraph configs
    GRAPL_DEPLOY_NAME=<deployName>
-   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/docker-compose-dgraph.yml .
-   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yaml .
+   aws s3 cp s3://${GRAPL_DEPLOY_NAME,,}-dgraph-config-bucket/docker-compose-dgraph.yml .
+   aws s3 cp s3://${GRAPL_DEPLOY_NAME,,}-dgraph-config-bucket/envoy.yaml .
    ```
    where `<deployName>` is the same `deployName` you configured above
-   in `bin/grapl-cdk.ts`.
+   in `bin/deployment_parameters.ts`.
    ``` bash
    export AWS_LOGS_GROUP=<log_group_name>
    export AWS01_NAME=<swarm_manager_hostname>
