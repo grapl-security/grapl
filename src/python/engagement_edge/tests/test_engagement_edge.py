@@ -10,6 +10,8 @@ JWT_SECRET.secret = "hey im a fake secret"
 class TestEngagementEdgeChalice(unittest.TestCase):
     def test__a_requires_auth_path_fails_without_cookie_headers(self):
         with Client(app) as client:
-            result = client.http.post("/getNotebook")
+            result = client.http.post("/getNotebook", headers={
+                "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com"
+            })
             assert result.status_code == 400
             assert result.json_body == {"error": "Must log in"}

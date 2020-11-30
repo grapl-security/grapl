@@ -23,6 +23,7 @@ from typing import (
 
 import boto3
 import jwt
+from http import HTTPStatus
 from chalice import Chalice, CORSConfig, Response
 from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
 from src.lib.sagemaker import SagemakerClient
@@ -102,12 +103,12 @@ app = Chalice(app_name="engagement-edge")
 if IS_LOCAL:
     # Locally we may want to connect from many origins
     origin_re = re.compile(
-        f"http://.+/",
+        f"https?://.+",
         re.IGNORECASE,
     )
 else:
     origin_re = re.compile(
-        f"https://{BUCKET_PREFIX}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/",
+        f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{2}-[a-z]{1,9}-\\d)?[.]amazonaws[.]com/?",
         re.IGNORECASE,
     )
 
@@ -138,9 +139,7 @@ def respond(
         allow_origin = req_origin
     else:
         LOGGER.info("Origin did not match")
-        # allow_origin = override or ORIGIN
-        # todo: Fixme
-        allow_origin = req_origin
+        return Response(body = {"error": "Mismatched origin."}, status_code = HTTPStatus.BAD_REQUEST)
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),

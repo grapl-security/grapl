@@ -364,7 +364,7 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
 
 
 origin_re = re.compile(
-    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3.[\w-]+.amazonaws.com',
+    f"https://{re.escape(os.environ["BUCKET_PREFIX"])}-engagement-ux-bucket[.]s3([.][a-z]{2}-[a-z]{1,9}-\\d)?[.]amazonaws[.]com/?",
     re.IGNORECASE,
 )
 
@@ -389,8 +389,8 @@ def respond(
         allow_origin = req_origin
     else:
         LOGGER.info("Origin did not match")
-        # allow_origin = override or ORIGIN
-        allow_origin = req_origin
+        return Response(body = {"error": "Mismatched origin."}, status_code = HTTPStatus.BAD_REQUEST)
+
 
     status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
 
