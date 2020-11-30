@@ -140,7 +140,10 @@ To provision DGraph:
    console](https://console.aws.amazon.com/ec2autoscaling) and click
    on the Swarm Autoscaling group. Click *Edit* in the *Group Details*
    pane and set *Desired capacity*, *Minimum capacity*, and *Maximum
-   capacity* all to 3.
+   capacity* all to 0. Wait for the cluster to scale down to zero
+   instances. Then set *Desired capacity*, *Minimum capacity*, and
+   *Maximum capacity* all to 3. Wait for the cluster to scale up to 3
+   instances.
 
 2. Navigate to the [AWS Route53 Hosted Zones
    console](https://console.aws.amazon.com/route53/v2/hostedzones) and
@@ -154,10 +157,10 @@ To provision DGraph:
 3. `cd src/js/grapl-cdk/swarm` and run `python3 swarm_setup.py
    $GRAPL_DEPLOY_NAME` where `$GRAPL_DEPLOY_NAME` is the same
    `deployName` you configured above in
-   `src/js/grapl-cdk/bin/deployment_parameters.ts`. This script will output
-    logs to the console indicating which instance is the swarm manager. It 
-    will also output logs containing the hostname of each swarm instance. 
-    You will need these in subsequent steps.
+   `src/js/grapl-cdk/bin/deployment_parameters.ts`. This script will
+   output logs to the console indicating which instance is the swarm
+   manager. It will also output logs containing the hostname of each
+   swarm instance.  You will need these in subsequent steps.
 
 4. Navigate to the [AWS Session Manager
    console](https://console.aws.amazon.com/systems-manager/session-manager)
