@@ -124,13 +124,13 @@ jobs:
           else
               CHANNEL="beta"
           fi
-          echo "::set-env name=CHANNEL::$CHANNEL"
+          echo "CHANNEL=$CHANNEL" >> $GITHUB_ENV
 
       - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          echo "::set-env name=TAG::$VERSION-$CHANNEL"
+          echo "TAG=$VERSION-$CHANNEL" >> $GITHUB_ENV
 
       - name: Build Rust services
         run: |
@@ -254,13 +254,13 @@ jobs:
           else
               CHANNEL="beta"
           fi
-          echo "::set-env name=CHANNEL::$CHANNEL"
+          echo "CHANNEL=$CHANNEL" >> $GITHUB_ENV
 
       - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          echo "::set-env name=TAG::$VERSION-$CHANNEL"
+          echo "TAG=$VERSION-$CHANNEL" >> $GITHUB_ENV
 
       - name: Build Python services
         run: |
@@ -484,13 +484,13 @@ jobs:
           else
               CHANNEL="beta"
           fi
-          echo "::set-env name=CHANNEL::$CHANNEL"
+          echo "CHANNEL=$CHANNEL" >> $GITHUB_ENV
 
       - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          echo "::set-env name=TAG::$VERSION-$CHANNEL"
+          echo "TAG=$VERSION-$CHANNEL" >> $GITHUB_ENV
 
       - name: Build JS services
         run: |

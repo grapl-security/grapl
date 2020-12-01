@@ -25,4 +25,5 @@ new EngagementUx(app, 'EngagementUX', {
     edgeApi: grapl.edgeApiGateway,
     stackName: DeploymentParameters.stackName + '-EngagementUX',
     description: 'Grapl Engagement UX',
+    env: { 'region': DeploymentParameters.region },
 });

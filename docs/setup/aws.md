@@ -25,16 +25,23 @@ Clone the repo:
 `<Follow the instructions in the README.md>`
 
 ### Provisioning Grapl
-At this point you need to provision the Graph databases and create a user. You can use the `Grapl Provision` notebook in this repo, and
-the newly created 'engagement' notebook in your AWS account.
+At this point you need to provision the Graph databases and create a user. 
+- Go to the AWS Console
+- Open AWS Sagemaker from the Services list
+- Click 'Notebook Instances' on the left bar
+- Click 'Open Jupyter' next to the single notebook
+- Finally, hit the 'Upload' button and navigate to `$GRAPL_REPO_ROOT/etc/Grapl\ Provision.ipynb`
+
+
+You should be presented with a view something like this:
 
 ![](https://s3.amazonaws.com/media-p.slid.es/uploads/650602/images/6396963/Screenshot_from_2019-07-27_22-27-35.png)
 
-Go to your AWS Sagemaker Console, open the Jupyter Notebook Grapl created for you, and upload the `Grapl Provision.ipynb` in this repository.
 
-Run the notebook, and it will:
+Run each cell in the notebook, and it will:
 * Set up the schemas for your graph database
-* Create a username, as well as a password, which you can use to log into your Grapl instance.
+* Create a username + password, which you can use to log into your Grapl instance.
+  * Hide this password somewhere safe - it's the only time we'll give it to you!
 
 ### Demo Data
 You can send some test data up to the service by going to the root of the grapl repo and calling:

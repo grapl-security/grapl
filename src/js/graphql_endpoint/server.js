@@ -1,4 +1,5 @@
 const express = require('express');
+const regexEscape = require('regex-escape');
 const graphqlHTTP = require('express-graphql');
 const schema = require('./modules/schema.js');
 const cors = require('cors');
@@ -19,7 +20,7 @@ if (!IS_LOCAL) {
 }
 
 const corsRegexp = new RegExp(
-    `https://${prefix}-engagement-ux-bucket.s3[\.\w\-]{1,14}amazonaws.com[/]{0,1}`,
+    `https:\/\/${regexEscape(prefix)}-engagement-ux-bucket[.]s3([.][a-z]{2}-[a-z]{1,9}-\\d)?[.]amazonaws[.]com\/?`,
     'i'
 );
 
