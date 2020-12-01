@@ -203,9 +203,16 @@ To provision DGraph:
    region where Grapl is deployed. Therefore it's probably worthwhile
    to include `$GRAPL_DEPLOY_NAME` as a name component.
 
-# DGraph operations
+## DGraph operations
 
 You can manage the DGraph cluster with the docker swarm tooling by
 logging into the swarm manager with SSM. If you forget which instance
 is the swarm manager, you can find it using the EC2 instance tag
 `grapl-swarm-role=swarm-manager`.
+
+## Next steps
+
+See [Provisioning
+Grapl](https://grapl.readthedocs.io/en/latest/setup/aws.html#provisioning-grapl)
+for instructions to provision the database and start using your Grapl
+deployment.
