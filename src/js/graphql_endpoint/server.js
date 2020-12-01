@@ -14,7 +14,7 @@ let origin = true;
 let prefix = 'local-grapl';
 
 if (!IS_LOCAL) {
-    prefix = process.env.PREFIX;
+    prefix = process.env.BUCKET_PREFIX;
     origin = process.env.UX_BUCKET_URL;
     console.log("origin: " + origin);
 }
