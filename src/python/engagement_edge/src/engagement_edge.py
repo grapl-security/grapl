@@ -108,7 +108,7 @@ if IS_LOCAL:
     )
 else:
     origin_re = re.compile(
-        f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{2}-[a-z]{1,9}-\\d)?[.]amazonaws[.]com/?",
+        f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
         re.IGNORECASE,
     )
 

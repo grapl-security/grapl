@@ -365,7 +365,7 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
 
 BUCKET_PREFIX = os.environ["BUCKET_PREFIX"]
 origin_re = re.compile(
-    f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{2}-[a-z]{1,9}-\\d)?[.]amazonaws[.]com/?",
+    f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
     re.IGNORECASE,
 )
 

@@ -20,7 +20,7 @@ if (!IS_LOCAL) {
 }
 
 const corsRegexp = new RegExp(
-    `https:\/\/${regexEscape(prefix)}-engagement-ux-bucket[.]s3([.][a-z]{2}-[a-z]{1,9}-\d)?[.]amazonaws[.]com\/?`,
+    `https:\/\/${regexEscape(prefix)}-engagement-ux-bucket[.]s3([.][a-z]{2}-[a-z]{1,9}-\\d)?[.]amazonaws[.]com\/?`,
     'i'
 );
 
