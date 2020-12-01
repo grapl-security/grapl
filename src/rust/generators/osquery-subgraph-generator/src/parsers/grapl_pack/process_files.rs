@@ -53,14 +53,14 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
         let mut file_builder = FileBuilder::default();
         file_builder
             .asset_id(process_file_event.host_identifier.clone())
-            .file_path(process_file_event.columns.path.clone())
-            .last_seen_timestamp(process_file_event.unix_time);
+            .file_path(process_file_event.columns.path.clone());
 
         // TODO: maybe we should set deleted time and created time for the file here?
         let file = match process_file_event.action {
             OSQueryAction::ADDED => {
                 let file = file_builder
                     .state(FileState::Created)
+                    .created_timestamp(process_file_event.unix_time)
                     .build()
                     .map_err(failure::err_msg)?;
 
@@ -75,6 +75,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
             OSQueryAction::REMOVED => {
                 let file = file_builder
                     .state(FileState::Deleted)
+                    .deleted_timestamp(process_file_event.unix_time)
                     .build()
                     .map_err(failure::err_msg)?;
 
@@ -88,6 +89,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
             }
             _ => file_builder
                 .state(FileState::Deleted)
+                .last_seen_timestamp(process_file_event.unix_time)
                 .build()
                 .map_err(failure::err_msg)?,
         };
