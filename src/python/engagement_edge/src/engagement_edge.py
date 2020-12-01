@@ -8,6 +8,7 @@ import sys
 import time
 from hashlib import pbkdf2_hmac, sha256
 from hmac import compare_digest
+from http import HTTPStatus
 from random import uniform
 from typing import (
     TYPE_CHECKING,
@@ -23,7 +24,6 @@ from typing import (
 
 import boto3
 import jwt
-from http import HTTPStatus
 from chalice import Chalice, CORSConfig, Response
 from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
 from src.lib.sagemaker import SagemakerClient
@@ -139,7 +139,9 @@ def respond(
         allow_origin = req_origin
     else:
         LOGGER.info("Origin did not match")
-        return Response(body = {"error": "Mismatched origin."}, status_code = HTTPStatus.BAD_REQUEST)
+        return Response(
+            body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
+        )
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
