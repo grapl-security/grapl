@@ -21,7 +21,7 @@ jobs:
 
       - name: Export tag
         run: |
-          echo "::set-env name=TAG::staging"
+          echo "TAG=staging" >> $GITHUB_ENV
 
       - name: Build Rust services
         run: |
@@ -52,7 +52,7 @@ jobs:
 
       - name: Export tag
         run: |
-          echo "::set-env name=TAG::staging"
+          echo "TAG=staging" >> $GITHUB_ENV
 
       - name: Build Python services
         run: |
@@ -83,7 +83,7 @@ jobs:
           ./etc/ci_scripts/install_requirements.sh
       - name: Export tag
         run: |
-          echo "::set-env name=TAG::staging"
+          echo "TAG=staging" >> $GITHUB_ENV
 
       - name: Build JS services
         run: |
