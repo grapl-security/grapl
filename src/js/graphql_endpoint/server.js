@@ -55,10 +55,7 @@ const corsDelegate = (req, callback) => {
 const middleware = [cors(corsDelegate), validateJwt];
 
 app.options('*', cors(corsDelegate));
-app.use('/graphql', middleware, graphqlHTTP({
-    schema: schema,
-    graphiql: IS_LOCAL !== null
-}));
+
 app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
     schema: schema,
     graphiql: IS_LOCAL !== null
