@@ -46,7 +46,7 @@ const unpackPluginNodes = (nodes: BaseNode[]) => {
 export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & BaseNode)> => {
     const query = expandScope(lens);
 
-    const res = await fetch(`${graphql_edge}graphql`,
+    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
         {
             method: 'post',
             body: JSON.stringify({ query }),

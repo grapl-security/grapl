@@ -481,7 +481,7 @@ job=run-node-identifier-integration-tests:
   net-mode: grapl-network
   command: |
     /bin/bash -c "
-      wait-for-it grapl-provision:8126 --timeout=60 &&
+      wait-for-it grapl-provision:8126 --timeout=120 &&
       cargo test --target=x86_64-unknown-linux-musl --manifest-path node-identifier/Cargo.toml --features integration
       "
   env:
@@ -549,18 +549,18 @@ job=typecheck-e2e-tests:
   command: |
     /bin/bash -c "
       source venv/bin/activate &&
-      pip install mypy && 
+      pip install mypy &&
       mypy -p grapl_e2e_tests
       "
 
 job=typecheck-analyzer-deployer:
   use: analyzer-deployer-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
-  command: | 
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
+  command: |
     /bin/bash -c "
       source venv/bin/activate &&
-      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&
       cd analyzer-deployer &&
       pip install mypy &&
       mypy .
@@ -569,11 +569,11 @@ job=typecheck-analyzer-deployer:
 job=typecheck-model-plugin-deployer:
   use: model-plugin-deployer-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
-  command: | 
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
+  command: |
     /bin/bash -c "
       source venv/bin/activate &&
-      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&
       cd model-plugin-deployer &&
       pip install mypy &&
       mypy .
@@ -582,11 +582,11 @@ job=typecheck-model-plugin-deployer:
 job=typecheck-engagement-edge:
   use: engagement-edge-build
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
-  command: | 
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
+  command: |
     /bin/bash -c "
       source venv/bin/activate &&
-      touch venv/lib/python3.7/site-packages/chalice/py.typed &&	
+      touch venv/lib/python3.7/site-packages/chalice/py.typed &&
       cd engagement_edge &&
       pip install .[typecheck] &&
       mypy .
@@ -611,9 +611,9 @@ job=run-grapl-analyzerlib-integration-tests:
   net-mode: grapl-network
   command: |
     /bin/bash -c "
-      wait-for-it grapl-provision:8126 --timeout=60 &&
-      source venv/bin/activate && 
-      cd grapl_analyzerlib && 
+      wait-for-it grapl-provision:8126 --timeout=120 &&
+      source venv/bin/activate &&
+      cd grapl_analyzerlib &&
       py.test -n auto -m 'integration_test'
       "
   env:
@@ -640,9 +640,9 @@ job=run-analyzer-deployer-integration-tests:
   net-mode: grapl-network
   command: |
     /bin/bash -c "
-      wait-for-it grapl-provision:8126 --timeout=60 &&
+      wait-for-it grapl-provision:8126 --timeout=120 &&
       source venv/bin/activate &&
-      cd analyzer-deployer && 
+      cd analyzer-deployer &&
       py.test -n auto -m 'integration_test'
       "
   env:
@@ -658,7 +658,7 @@ job=run-analyzer-executor-integration-tests:
   command: |
     /bin/bash -c '
       source venv/bin/activate &&
-      cd analyzer_executor && 
+      cd analyzer_executor &&
       export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" &&
       py.test -n auto -m "integration_test"
       '
@@ -676,11 +676,11 @@ job=run-analyzer-executor-integration-tests:
 job=run-e2e-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-network
-  command: | 
+  command: |
     /bin/bash -c "
-      wait-for-it grapl-provision:8126 --timeout=60 &&
-      source venv/bin/activate && 
-      cd grapl_e2e_tests && 
+      wait-for-it grapl-provision:8126 --timeout=120 &&
+      source venv/bin/activate &&
+      cd grapl_e2e_tests &&
       python3 ./main.py
       "
   env:
@@ -725,7 +725,7 @@ job=typecheck-analyzer-executor:
   command: |
     /bin/bash -c "
       source venv/bin/activate &&
-      pip install mypy && 
+      pip install mypy &&
       mypy analyzer_executor/**/*.py
       "
 

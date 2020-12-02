@@ -181,7 +181,7 @@ const getLenses = async (first: number, offset: number) => {
         }
     `;
     // console.log(`connecting to: ${graphql_edge}graphql`);
-    const res = await fetch(`${graphql_edge}graphql`,
+    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
         {
             method: 'post',
             body: JSON.stringify({ query: query }),
