@@ -3,19 +3,18 @@
 # of other services/builds.
 
 FROM node:alpine3.10 AS grapl-cdk-build
-WORKDIR /home/grapl
+WORKDIR /home/grapl/grapl-cdk
 # no-op the base image cmd, so it doesn't launch a Node repl
 CMD :
 RUN apk add bash
 RUN npm install --global aws-cdk
 
-# Takes a little while.
-# I do this separately from the below 'copy .' to take advantage of docker layer caching
-COPY ./node_modules /home/grapl/grapl-cdk/node_modules
-
-COPY . /home/grapl/grapl-cdk
-
-WORKDIR /home/grapl/grapl-cdk
+# Grab all dependencies
+COPY ./package.json ./package.json
+COPY ./package-lock.json ./package-lock.json
 RUN npm install
+
+# Copy in the rest of the source
+COPY . .
 # does typechecking, which is nice
-RUN cd /home/grapl/grapl-cdk && npm run build
+RUN npm run build
