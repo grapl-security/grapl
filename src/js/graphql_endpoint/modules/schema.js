@@ -263,19 +263,19 @@ const get_random = (list) => {
 
 
 const mg_alpha = get_random(process.env.MG_ALPHAS.split(","));
+console.log("mg alpha", mg_alpha);
 
 const getDgraphClient = () => {
 
     const clientStub = new dgraph.DgraphClientStub(
         // addr: optional, default: "localhost:9080"
-        mg_alpha,
-        // credentials: optional, default: grpc.credentials.createInsecure()
+        "http://" + mg_alpha,
         false
     );
 
     return new dgraph.DgraphClient(clientStub);
 }
-// return lens
+
 const getLenses = async (dg_client, first, offset) => {
     console.log("first offset", first, offset);
     const query = `
