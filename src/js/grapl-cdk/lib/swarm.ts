@@ -132,7 +132,7 @@ export class Swarm extends cdk.Construct {
             'mkdir /dgraph',
             'echo -e "/dev/mapper/dgraph\t/dgraph\txfs\tdefaults,nofail\t0\t2" >> /etc/fstab',
             'mount /dgraph',
-            'echo -e "{\n    \"data-root\": \"/dgraph\"\n}" > /etc/docker/daemon.json',
+            'echo -e \'{"data-root":"/dgraph"}\' > /etc/docker/daemon.json',
             'systemctl enable docker.service',
             'systemctl start docker.service',
             'usermod -a -G docker ec2-user',
