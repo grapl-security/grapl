@@ -300,7 +300,8 @@ const getLenses = async (dg_client, first, offset) => {
     const txn = dg_client.newTxn();
     try {
         const res = await txn.queryWithVars(query, {'$a': first.toString(), '$b': offset.toString()});
-        return res.getJson()['all'];
+        console.log("lens res", res)
+        return res.data.all;
     } finally {
         await txn.discard();
     }
@@ -330,7 +331,7 @@ const getLensByName = async (dg_client, lensName) => {
     const txn = dg_client.newTxn();
     try {
         const res = await txn.queryWithVars(query, {'$a': lensName});
-        return res.getJson()['all'][0];
+        return res.data.all[0];
     } finally {
         await txn.discard();
     }
@@ -354,7 +355,7 @@ const getNeighborsFromNode = async (dg_client, nodeUid) => {
     const txn = dg_client.newTxn();
     try {
         const res = await txn.queryWithVars(query, {'$a': nodeUid});
-        return res.getJson()['all'][0];
+        return res.data.all[0];
     } finally {
         await txn.discard();
     }
@@ -385,7 +386,7 @@ const getRisksFromNode = async (dg_client, nodeUid) => {
     const txn = dg_client.newTxn();
     try {
         const res = await txn.queryWithVars(query, {'$a': nodeUid});
-        return res.getJson()['all'][0]['risks'];
+        return res.data.all[0]['risks'];
     } finally {
         await txn.discard();
     }
@@ -411,8 +412,8 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
         const res = await txn.queryWithVars(query, {
             '$a': nodeUid, '$b': lensUid
         });
-        const json_res = res.getJson();
-        return json_res['all'].length !== 0;
+        const json_res = res;
+        return json_res.data.all.length !== 0;
     } finally {
         await txn.discard();
     }

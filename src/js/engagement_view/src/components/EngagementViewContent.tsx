@@ -192,6 +192,7 @@ const getLenses = async (first: number, offset: number) => {
         })
         .then(res => res.json())
         .then(res => {
+            console.log("res", res)
             if (res.errors) {
                 console.error("lenses failed", res.errors);
                 res.data = {lenses: []};
@@ -201,6 +202,7 @@ const getLenses = async (first: number, offset: number) => {
         .then((res) => res.data);
 
         const jres = await res;
+        console.log('jres',jres)
     return jres;
 };
 
