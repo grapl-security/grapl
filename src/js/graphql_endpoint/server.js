@@ -14,7 +14,7 @@ let origin = true;
 let prefix = 'local-grapl';
 
 if (!IS_LOCAL) {
-    prefix = process.env.PREFIX;
+    prefix = process.env.BUCKET_PREFIX;
     origin = process.env.UX_BUCKET_URL;
     console.log("origin: " + origin);
 }
@@ -55,10 +55,7 @@ const corsDelegate = (req, callback) => {
 const middleware = [cors(corsDelegate), validateJwt];
 
 app.options('*', cors(corsDelegate));
-app.use('/graphql', middleware, graphqlHTTP({
-    schema: schema,
-    graphiql: IS_LOCAL !== null
-}));
+
 app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
     schema: schema,
     graphiql: IS_LOCAL !== null

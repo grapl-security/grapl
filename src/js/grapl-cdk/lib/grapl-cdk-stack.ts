@@ -979,7 +979,10 @@ export class GraplCdkStack extends cdk.Stack {
             new OperationalAlarms(this, "operation_alarms", props.operationalAlarmsEmail);
         }
         if (props.securityAlarmsEmail) {
-            new SecurityAlarms(this, "security_alarms", props.securityAlarmsEmail);
+            new SecurityAlarms(this, "security_alarms", {
+                prefix: this.prefix,
+                email: props.securityAlarmsEmail
+            });
         }
 
         new PipelineDashboard(this, "pipeline_dashboard", {
