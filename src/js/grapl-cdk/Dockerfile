@@ -4,15 +4,15 @@
 
 FROM node:alpine3.10 AS grapl-cdk-build
 WORKDIR /home/grapl
-COPY . .
-RUN npm install
-RUN npm install --global aws-cdk
-
-# does typechecking, which is nice
-RUN npm run build
-
-# more useful than the Node shell
-RUN apk add bash
-
 # no-op the base image cmd, so it doesn't launch a Node repl
 CMD :
+RUN apk add bash
+RUN npm install --global aws-cdk
+
+# Takes a little while due to node_modules
+COPY . /home/grapl/grapl-cdk
+
+WORKDIR /home/grapl/grapl-cdk
+RUN npm install
+# does typechecking, which is nice
+RUN cd /home/grapl/grapl-cdk && npm run build

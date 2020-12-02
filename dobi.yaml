@@ -369,6 +369,7 @@ image=swarm-lifecycle-event-handler-build:
 
 # js images
 
+# Exists primarily for typechecking, though I intend to add real unit tests before 2021 ~ wimax
 image=grapl-cdk-build:
   image: grapl/grapl-cdk-build
   context: src/js/grapl-cdk
@@ -376,6 +377,8 @@ image=grapl-cdk-build:
   target: grapl-cdk-build
   tags:
     - latest
+  annotations:
+    description: "Run npm build over the typescript cdk"
 
 image=engagement-view-build:
   image: grapl/engagement-view-build
@@ -799,9 +802,6 @@ job=build-graphql-endpoint:
   artifact:
     - ./dist/graphql-endpoint/lambda.zip
 
-job=build-grapl-cdk:
-  use: grapl-cdk-build
-
 # TODO: graphql endpoint unit tests
 
 # TODO: graphql endpoint integration tests
@@ -901,7 +901,6 @@ alias=python-integration-tests:
 alias=js:
   tasks:
     - build-graphql-endpoint
-    - build-grapl-cdk
     - "graphql-endpoint:tag"
     - "engagement-view:tag"
   annotations:
@@ -909,7 +908,6 @@ alias=js:
 
 alias=clean-js-build:
   tasks:
-    - "grapl-cdk-build:rm"
     - "graphql-endpoint-build:rm"
   annotations:
     description: "Delete the js build images"
