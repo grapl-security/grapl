@@ -54,7 +54,7 @@ class RiskNodeAlarm extends cdk.Construct {
             metricName: 'risk_node',
             dimensions: {},
         });
-        const alarm = metric.createAlarm(
+        const alarm = new cloudwatch.Alarm(
             this,
             "alarm",
             {
@@ -64,6 +64,7 @@ class RiskNodeAlarm extends cdk.Construct {
                 threshold: 1,
                 evaluationPeriods: 1,
                 treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+                metric,
             }
         );
         alarm.addAlarmAction(props.alarm_sink.cloudwatch_action);
