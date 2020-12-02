@@ -9,7 +9,10 @@ CMD :
 RUN apk add bash
 RUN npm install --global aws-cdk
 
-# Takes a little while due to node_modules
+# Takes a little while.
+# I do this separately from the below 'copy .' to take advantage of docker layer caching
+COPY ./node_modules /home/grapl/grapl-cdk/node_modules
+
 COPY . /home/grapl/grapl-cdk
 
 WORKDIR /home/grapl/grapl-cdk
