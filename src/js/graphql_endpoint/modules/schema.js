@@ -1,5 +1,5 @@
-const dgraph = require("dgraph-js");
-const grpc = require("grpc");
+// const dgraph = require("dgraph-js");
+const dgraph = require("dgraph-js-http");
 const { GraphQLJSONObject } = require('graphql-type-json');
 
 const { 
@@ -270,7 +270,7 @@ const getDgraphClient = () => {
         // addr: optional, default: "localhost:9080"
         mg_alpha,
         // credentials: optional, default: grpc.credentials.createInsecure()
-        grpc.credentials.createInsecure(),
+        false
     );
 
     return new dgraph.DgraphClient(clientStub);
