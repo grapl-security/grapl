@@ -59,12 +59,12 @@ app.options('*', cors(corsDelegate));
 if (IS_LOCAL) {
     app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
         schema: schema,
-        graphiql: IS_LOCAL !== null
+        graphiql: true
     }));
 } else {
     app.use('/graphQlEndpoint/{+proxy}', middleware, graphqlHTTP({
         schema: schema,
-        graphiql: IS_LOCAL !== null
+        graphiql: false
     }));
 }
 
