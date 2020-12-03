@@ -44,7 +44,7 @@ export const mergeGraphs = (curGraph: MergeGraphType, update: MergeGraphType): M
             }
         } else {
             nodes.set(newNode.uid, newNode);
-            console.log('new node added ', newNode);
+            console.debug('new node added ', newNode);
             updated = true;
         }
     }
@@ -66,7 +66,7 @@ export const mergeGraphs = (curGraph: MergeGraphType, update: MergeGraphType): M
         const newLinkTarget =  newLink.target || newLink.target;
         const link = links.get(newLinkSource + newLink.label + newLinkTarget);
         if (!link) {
-            console.log('newlink', newLink)
+            console.debug('newlink', newLink)
             links.set(newLink.source + newLink.label + newLink.target, newLink);
             updated = true;
         }

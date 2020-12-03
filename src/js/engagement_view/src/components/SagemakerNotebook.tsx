@@ -15,7 +15,6 @@ export const getNotebookUrl = async (): Promise<void | null> => {
         })
         .then(res => res.json())
         .then(res => {
-            console.log("Res", res)
             if (res.errors) {
                 console.error("Unable to retrieve Sagemaker url", res.errors);            }
             return res
