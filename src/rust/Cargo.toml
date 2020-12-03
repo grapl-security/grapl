@@ -6,6 +6,7 @@ members = [
     "./graph-descriptions",
     "./graph-merger",
     "./grapl-config",
+    "./grapl-prelude",
     "./grapl-observe",
     "./metric-forwarder",
     "./node-identifier",

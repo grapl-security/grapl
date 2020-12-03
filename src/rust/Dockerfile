@@ -24,11 +24,12 @@ WORKDIR /grapl
 # copy sources
 COPY . .
 
-#
+
 # build
 #
 # the `base` stage isn't used by the build system, but let's 
 # make `base` and `build` in case it becomes convenient.
+################################################################################
 FROM base AS build
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
@@ -45,9 +46,8 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     esac
 
 
-#
 # zip
-#
+################################################################################
 FROM build AS zip
 
 RUN mkdir -p /grapl/zips; \
@@ -60,11 +60,8 @@ RUN mkdir -p /grapl/zips; \
     grapl-zip metric-forwarder
 
 
-
-
-#
 # build test stages
-#
+################################################################################
 FROM build AS build-test-unit
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
@@ -81,9 +78,8 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     cargo test --manifest-path node-identifier/Cargo.toml --features integration --no-run
 
 
-#
 # images for running services
-#
+################################################################################
 FROM debian:buster-slim AS rust-dist
 
 ARG CARGO_PROFILE=debug
