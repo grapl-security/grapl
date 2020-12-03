@@ -262,7 +262,7 @@ services:
     depends_on:
       - s3
       - sqs
-      - grapl-graph-provision
+      - grapl-provision
 
   #
   # Python services
@@ -399,7 +399,7 @@ services:
       - sqs
       - secretsmanager
       - graphdb
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -419,7 +419,7 @@ services:
       - amazonaws:127.0.0.1
     depends_on:
       - graphdb
-      - grapl-graph-provision
+      - grapl-provision
 
   #
   # JS/web services
@@ -449,7 +449,7 @@ services:
     depends_on:
       - graphdb
       - secretsmanager
-      - grapl-graph-provision
+      - grapl-provision
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
@@ -461,7 +461,7 @@ services:
       - 8888:8888
     depends_on:
       - graphdb
-      - grapl-graph-provision
+      - grapl-provision
 
   #
   # Utility services
@@ -483,7 +483,7 @@ services:
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
         # Host a server on this port, so that tests can wait-for-it
         python -m http.server 8126
-        "
+      "
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - MG_ALPHAS=master_graph:9080
