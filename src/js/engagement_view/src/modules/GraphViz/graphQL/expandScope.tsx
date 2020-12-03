@@ -64,7 +64,7 @@ export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & 
         .then((res) => res.lens_scope);
 
     const lensWithScope = await res;
-    console.log('LensWithScope: ', lensWithScope);
+    console.debug('LensWithScope: ', lensWithScope);
     unpackPluginNodes(lensWithScope.scope);
     return lensWithScope;
 };
