@@ -14,14 +14,15 @@
     "aws-serverless-express": "^3.3.8",
     "axios": "^0.19.2",
     "cors": "^2.8.5",
-    "dgraph-js": "^20.3.0",
+    "dgraph-js": "^20.3.1",
+    "dgraph-js-http": "^20.7.3",
     "express": "^4.17.1",
     "express-graphql": "^0.9.0",
     "graphql": "^15.0.0",
     "graphql-type-json": "^0.3.1",
-    "grpc": "^1.24.3",
     "jsonwebtoken": "^8.5.1",
-    "protobufjs": "^6.9.0"
+    "protobufjs": "^6.9.0",
+    "regex-escape": "^3.4.10"
   },
   "devDependencies": {
     "@types/google-protobuf": "^3.7.2",

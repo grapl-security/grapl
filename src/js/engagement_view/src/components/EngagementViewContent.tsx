@@ -180,8 +180,8 @@ const getLenses = async (first: number, offset: number) => {
             }
         }
     `;
-    // console.log(`connecting to: ${graphql_edge}graphql`);
-    const res = await fetch(`${graphql_edge}graphql`,
+    console.log("graphql_edge", graphql_edge)
+    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
         {
             method: 'post',
             body: JSON.stringify({ query: query }),
@@ -192,6 +192,7 @@ const getLenses = async (first: number, offset: number) => {
         })
         .then(res => res.json())
         .then(res => {
+            console.log("res", res)
             if (res.errors) {
                 console.error("lenses failed", res.errors);
                 res.data = {lenses: []};
@@ -201,6 +202,7 @@ const getLenses = async (first: number, offset: number) => {
         .then((res) => res.data);
 
         const jres = await res;
+        console.log('jres',jres)
     return jres;
 };
 

@@ -222,8 +222,8 @@ export AWS01_NAME="{manager_hostname}"
 export AWS02_NAME="{worker_hostnames[0]}"
 export AWS03_NAME="{worker_hostnames[1]}"
 
-aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/docker-compose-dgraph.yml .
-aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yaml .
+aws s3 cp s3://${{GRAPL_DEPLOY_NAME,,}}-dgraph-config-bucket/docker-compose-dgraph.yml .
+aws s3 cp s3://${{GRAPL_DEPLOY_NAME,,}}-dgraph-config-bucket/envoy.yaml .
 
 docker stack deploy -c docker-compose-dgraph.yml dgraph
 

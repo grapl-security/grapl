@@ -30,9 +30,6 @@ from grapl_analyzerlib.node_types import (
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schema import Schema
 
-print("init")
-
-
 sys.path.append("/tmp/")
 
 T = TypeVar("T")
@@ -366,8 +363,9 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
     return None
 
 
+BUCKET_PREFIX = os.environ["BUCKET_PREFIX"]
 origin_re = re.compile(
-    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3.[\w-]+.amazonaws.com',
+    f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
     re.IGNORECASE,
 )
 
@@ -392,8 +390,9 @@ def respond(
         allow_origin = req_origin
     else:
         LOGGER.info("Origin did not match")
-        # allow_origin = override or ORIGIN
-        allow_origin = req_origin
+        return Response(
+            body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
+        )
 
     status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
 
@@ -616,19 +615,22 @@ def delete_model_plugin():
     return respond(None, {"Success": "Deleted plugins"})
 
 
-@app.route("/{proxy+}", methods=["OPTIONS", "POST"])
+@app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
     LOGGER.info("routing: " + app.current_request.context["path"])
 
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
+
     try:
         path = app.current_request.context["path"]
-        if path == "/prod/gitWebhook":
+        if path == "/prod/modelPluginDeployer/gitWebhook":
             return webhook()
-        if path == "/prod/deploy":
+        if path == "/prod/modelPluginDeployer/deploy":
             return deploy()
-        if path == "/prod/listModelPlugins":
+        if path == "/prod/modelPluginDeployer/listModelPlugins":
             return list_model_plugins()
-        if path == "/prod/deleteModelPlugin":
+        if path == "/prod/modelPluginDeployer/deleteModelPlugin":
             return delete_model_plugin()
 
         return respond("InvalidPath")
