@@ -808,7 +808,7 @@ job=run-engagement-view-unit-tests:
 
 job=run-engagement-view-integration-tests:
   use: cypress
-  net-mode: grapl-integration-tests_default
+  net-mode: grapl-network
   command: cypress verify && cypress run
   depends:
     - integration-env
