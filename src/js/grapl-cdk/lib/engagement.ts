@@ -248,7 +248,7 @@ export class EngagementUx extends cdk.Stack {
             );
             replaceMap.set(
                 `http://"+window.location.hostname+":5000/`,
-                apiUrl+'graphQlEndpoint/'
+                apiUrl
             );
             replaceMap.set(
                 `http://"+window.location.hostname+":8123/`,
