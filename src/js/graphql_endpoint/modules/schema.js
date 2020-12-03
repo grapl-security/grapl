@@ -1,5 +1,5 @@
-const dgraph = require("dgraph-js");
-const grpc = require("grpc");
+// const dgraph = require("dgraph-js");
+const dgraph = require("dgraph-js-http");
 const { GraphQLJSONObject } = require('graphql-type-json');
 
 const { 
@@ -263,19 +263,19 @@ const get_random = (list) => {
 
 
 const mg_alpha = get_random(process.env.MG_ALPHAS.split(","));
+console.log("mg alpha", mg_alpha);
 
 const getDgraphClient = () => {
 
     const clientStub = new dgraph.DgraphClientStub(
         // addr: optional, default: "localhost:9080"
-        mg_alpha,
-        // credentials: optional, default: grpc.credentials.createInsecure()
-        grpc.credentials.createInsecure(),
+        "http://" + mg_alpha,
+        false
     );
 
     return new dgraph.DgraphClient(clientStub);
 }
-// return lens
+
 const getLenses = async (dg_client, first, offset) => {
     console.log("first offset", first, offset);
     const query = `
@@ -300,7 +300,8 @@ const getLenses = async (dg_client, first, offset) => {
     const txn = dg_client.newTxn();
     try {
         const res = await txn.queryWithVars(query, {'$a': first.toString(), '$b': offset.toString()});
-        return res.getJson()['all'];
+        console.log("lens res", res)
+        return res.data['all'];
     } finally {
         await txn.discard();
     }
@@ -330,7 +331,7 @@ const getLensByName = async (dg_client, lensName) => {
     const txn = dg_client.newTxn();
     try {
         const res = await txn.queryWithVars(query, {'$a': lensName});
-        return res.getJson()['all'][0];
+        return res.data['all'][0];
     } finally {
         await txn.discard();
     }
@@ -354,7 +355,7 @@ const getNeighborsFromNode = async (dg_client, nodeUid) => {
     const txn = dg_client.newTxn();
     try {
         const res = await txn.queryWithVars(query, {'$a': nodeUid});
-        return res.getJson()['all'][0];
+        return res.data['all'][0];
     } finally {
         await txn.discard();
     }
@@ -385,7 +386,7 @@ const getRisksFromNode = async (dg_client, nodeUid) => {
     const txn = dg_client.newTxn();
     try {
         const res = await txn.queryWithVars(query, {'$a': nodeUid});
-        return res.getJson()['all'][0]['risks'];
+        return res.data['all'][0]['risks'];
     } finally {
         await txn.discard();
     }
@@ -411,8 +412,8 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
         const res = await txn.queryWithVars(query, {
             '$a': nodeUid, '$b': lensUid
         });
-        const json_res = res.getJson();
-        return json_res['all'].length !== 0;
+        const json_res = res;
+        return json_res.data['all'].length !== 0;
     } finally {
         await txn.discard();
     }
