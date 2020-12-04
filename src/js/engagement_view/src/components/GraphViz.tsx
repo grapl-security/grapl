@@ -241,11 +241,11 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
     useEffect(() => {
         const interval = setInterval(async () => {
             if (lensName) {
-                console.log('updating graph');
+                console.debug('updating graph');
                 await updateGraph(lensName, state, setState);
             }
         }, 1000);
-        console.log('setting lensName', lensName);
+        console.debug('setting lensName', lensName);
         return () => {
             clearInterval(interval);
         };
