@@ -6,7 +6,9 @@ const cors = require('cors');
 const app = express();
 const awsServerlessExpress = require('aws-serverless-express')
 const {validateJwt} = require('./modules/jwt.js');
+
 console.log('server.js entrypoint')
+
 const PORT = process.env.PORT || 5000;
 const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;  // get this from environment
 
@@ -14,7 +16,7 @@ let origin = true;
 let prefix = 'local-grapl';
 
 if (!IS_LOCAL) {
-    prefix = process.env.PREFIX;
+    prefix = process.env.BUCKET_PREFIX;
     origin = process.env.UX_BUCKET_URL;
     console.log("origin: " + origin);
 }
@@ -24,6 +26,7 @@ const corsRegexp = new RegExp(
     'i'
 );
 
+console.log("corsRegexp", corsRegexp);
 
 const corsDelegate = (req, callback) => {
     let corsOptions = {
@@ -37,7 +40,6 @@ const corsDelegate = (req, callback) => {
         callback(null, corsOptions);
         return; 
     }
-
     if (req.header('Origin') === origin) {
         console.log("exact matched origin: ", req.header('Origin'));
         corsOptions = {...corsOptions, origin: true}
@@ -51,28 +53,37 @@ const corsDelegate = (req, callback) => {
     callback(null, corsOptions) // callback expects two parameters: error and options
 }
 
-
 const middleware = [cors(corsDelegate), validateJwt];
 
 app.options('*', cors(corsDelegate));
-app.use('/graphql', middleware, graphqlHTTP({
-    schema: schema,
-    graphiql: IS_LOCAL !== null
-}));
-app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
-    schema: schema,
-    graphiql: IS_LOCAL !== null
-}));
 
+if (IS_LOCAL) {
+    app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
+        schema: schema,
+        graphiql: true
+    }));
+} else {
+    app.use('/graphQlEndpoint/{proxy+}', middleware, graphqlHTTP({
+        schema: schema,
+        graphiql: false
+    }));
+    
+}
+
+app.use(function(req, res){
+    console.warn(req);
+    console.warn(req.path);
+    res.sendStatus(404);
+});
 
 if (IS_LOCAL) {
     app.listen(PORT, function () {
         console.log("GraphQL Server started on Port " + PORT);
     });
 } else {
-    const server = awsServerlessExpress.createServer(app)
+    const server = awsServerlessExpress.createServer(app);
+    console.log("AWS Server", server);
     exports.handler = (event, context) => {
         awsServerlessExpress.proxy(server, event, context)
     }
-
 }

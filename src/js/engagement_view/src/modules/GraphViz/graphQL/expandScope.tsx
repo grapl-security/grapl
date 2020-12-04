@@ -45,8 +45,10 @@ const unpackPluginNodes = (nodes: BaseNode[]) => {
 
 export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & BaseNode)> => {
     const query = expandScope(lens);
+    
+    console.log("in retreive graph calling graphql edge", graphql_edge);
 
-    const res = await fetch(`${graphql_edge}graphql`,
+    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
         {
             method: 'post',
             body: JSON.stringify({ query }),
@@ -57,6 +59,9 @@ export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & 
         })
         .then(res => res.json())
         .then(res => {
+            if(res.errors){
+                console.log("graphql query failed in retrieve graph, expand scope ln 63: ", res.errors)
+            }
             console.log('retrieveGraph res', res);
             return res
         })
@@ -64,13 +69,17 @@ export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & 
         .then((res) => res.lens_scope);
 
     const lensWithScope = await res;
-    console.log('LensWithScope: ', lensWithScope);
+
+    console.debug('LensWithScope: ', lensWithScope);
+
     unpackPluginNodes(lensWithScope.scope);
+
     return lensWithScope;
 };
 
 export const expandScope = (lensName: string) => {
-    
+    console.log("expanding scope for: ", lensName);
+
     const query = `
     {
         lens_scope(lens_name: "${lensName}") {
