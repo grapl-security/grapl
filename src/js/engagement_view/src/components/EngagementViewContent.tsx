@@ -180,6 +180,9 @@ const getLenses = async (first: number, offset: number) => {
             }
         }
     `;
+
+    console.log("calling graphql_edge: " + graphql_edge + "with query: " + query);
+    
     const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
         {
             method: 'post',
@@ -200,6 +203,8 @@ const getLenses = async (first: number, offset: number) => {
         .then((res) => res.data);
 
         const jres = await res;
+
+        console.log("queried graphql_edge in engagement view content", jres);
     return jres;
 };
 
