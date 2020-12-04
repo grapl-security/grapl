@@ -57,18 +57,10 @@ const middleware = [cors(corsDelegate), validateJwt];
 
 app.options('*', cors(corsDelegate));
 
-if (IS_LOCAL) {
-    app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
-        schema: schema,
-        graphiql: true
-    }));
-} else {
-    app.use('/graphQlEndpoint/{proxy+}', middleware, graphqlHTTP({
-        schema: schema,
-        graphiql: false
-    }));
-    
-}
+app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
+    schema: schema,
+    graphiql: IS_LOCAL
+}));
 
 app.use(function(req, res){
     console.warn(req);
