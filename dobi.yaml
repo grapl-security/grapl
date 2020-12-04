@@ -380,6 +380,18 @@ image=grapl-cdk-build:
   annotations:
     description: "Run npm build over the typescript cdk"
 
+image=grapl-cdk-test:
+  image: grapl/grapl-cdk-test
+  context: src/js/grapl-cdk
+  dockerfile: Dockerfile
+  target: grapl-cdk-test
+  tags:
+    - latest
+  annotations:
+    description: "Run npm test over the typescript cdk"
+  depends:
+    - grapl-cdk-build
+
 image=engagement-view-build:
   image: grapl/engagement-view-build
   context: src/js/engagement_view
