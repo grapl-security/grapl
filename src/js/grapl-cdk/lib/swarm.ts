@@ -41,7 +41,7 @@ export interface SwarmProps {
     readonly watchful?: Watchful;
 }
 
-export class Swarm extends cdk.NestedStack {
+export class Swarm extends cdk.Construct {
     private readonly swarmHostedZone: route53.PrivateHostedZone;
     private readonly swarmAsg: asg.AutoScalingGroup;
     readonly swarmInstanceRole: iam.Role;
@@ -252,13 +252,11 @@ export class Swarm extends cdk.NestedStack {
 
         // Swarm cluster ASG
         const zoneName = props.prefix.toLowerCase() + '.dgraph.grapl';
-        const image = ec2.MachineImage.genericLinux(amazonLinux2Amis);
-
         const swarmAsg = new asg.AutoScalingGroup(this, 'SwarmASG', {
             vpc: props.vpc,
             instanceType: props.instanceType,
             userData: swarmUserData,
-            machineImage: image,
+            machineImage: ec2.MachineImage.genericLinux(amazonLinux2Amis),
             role: swarmInstanceRole,
         });
 
