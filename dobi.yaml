@@ -11,6 +11,16 @@ mount=dist:
   path: /home/grapl/dist
   file: false
 
+mount=test-outputs-screenshots:
+  bind: ./test/integration-outputs/screenshots
+  path: /test/cypress/screenshots
+  file: false
+
+mount=test-outputs-videos:
+  bind: ./test/integration-outputs/videos
+  path: /test/cypress/videos
+  file: false
+
 # a volume, not a bind-mount
 # dump-compose-artifacts will take care of extracting things from it
 mount=dynamodb_dump:
@@ -426,7 +436,7 @@ image=etc-build:
 # utility images
 image=cypress:
   image: grapl/cypress
-  context: test/cypress
+  context: test
   dockerfile: Dockerfile
   target: cypress
   tags:
@@ -809,9 +819,9 @@ job=run-engagement-view-unit-tests:
 job=run-engagement-view-integration-tests:
   use: cypress
   net-mode: grapl-network
-  command: cypress verify && cypress run
-  env:
-    - CYPRESS_video=false # If this is true, it creates a video file of the browser running the test
+  mounts:
+    - test-outputs-screenshots
+    - test-outputs-videos
   depends:
     - integration-env
 
@@ -942,11 +952,18 @@ alias=js-integration-tests:
   annotations:
     description: "Run the js integration tests"
 
+alias=tool:
+  tasks:
+    - "cypress:tag"
+  annotations:
+    description: "Build developer tool images, for testing and debugging."
+
 alias=build:
   tasks:
     - rust
     - python
     - js
+    - tool
   annotations:
     description: "Build artifacts and images for all services"
 
