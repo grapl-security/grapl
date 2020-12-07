@@ -409,13 +409,14 @@ const getRisksFromNode = async (dg_client, nodeUid) => {
         const res = await txn.queryWithVars(query, {'$a': nodeUid});
         console.log("getRisksFromNode response", res);
         const objRes = res.getJson();
-        
+
         if (objRes['all'] && objRes['all'][0]) {
-            res.data['all'][0]['risks'] || [];
+            return res.getJson()['all'][0]['risks'] || [];
         }
         else {
             return [];
-        }
+        }        
+        
     } finally {
         await txn.discard();
     }
