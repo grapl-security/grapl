@@ -415,6 +415,9 @@ const getRisksFromNode = async (dg_client, nodeUid) => {
 
 
 const inLensScope = async (dg_client, nodeUid, lensUid) => {
+    console.log("dg_client", dg_client);
+    console.log("node_uid", nodeUid);
+    console.log("lens_uid", lensUid);
 
     const query = `
     query all($a: string, $b: string)
@@ -426,7 +429,10 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
                 uid,
             }
         }
+    
     }`;
+
+    console.log("inLensScope query", query)
 
     const txn = dg_client.newTxn();
     try {
