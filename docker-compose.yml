@@ -437,7 +437,7 @@ services:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     command: yarn start server
     environment:
-      - MG_ALPHAS=master_graph:8080
+      - MG_ALPHAS=master_graph:9080
       - IS_LOCAL=True
       - PORT=5000
       - JWT_SECRET_ID=JWT_SECRET_ID
