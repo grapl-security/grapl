@@ -1,5 +1,6 @@
-// const dgraph = require("dgraph-js");
-const dgraph = require("dgraph-js-http");
+const dgraph = require("dgraph-js");
+const grpc = require("@grpc/grpc-js");
+
 const { GraphQLJSONObject } = require('graphql-type-json');
 
 const { 
@@ -264,14 +265,13 @@ const get_random = (list) => {
 
 
 const mg_alpha = get_random(process.env.MG_ALPHAS.split(","));
-console.log("mg alpha", mg_alpha);
 
 const getDgraphClient = () => {
 
     const clientStub = new dgraph.DgraphClientStub(
         // addr: optional, default: "localhost:9080"
-        "http://" + mg_alpha,
-        false
+        mg_alpha,
+        grpc.credentials.createInsecure(),
     );
 
     return new dgraph.DgraphClient(clientStub);
@@ -308,7 +308,7 @@ const getLenses = async (dg_client, first, offset) => {
         console.log("Querying DGraph for: getLenses");
         const res = await txn.queryWithVars(query, {'$a': first.toString(), '$b': offset.toString()});
         console.log("lens res from DGraph", res);
-        return res.data['all'];
+        return res.getJson()['all'];
     } catch (e){
         console.error("Error in DGraph txn getLenses: ", e);
     }
@@ -344,7 +344,7 @@ const getLensByName = async (dg_client, lensName) => {
         console.log("Querying DGraph for: getLensByName");
         const res = await txn.queryWithVars(query, {'$a': lensName});
         console.log("getLensByName", res);
-        return res.data['all'][0];
+        return res.getJson()['all'][0];
     } catch(e){
         console.error("Error in DGraph txn: getLensByName", e);
     } finally {
@@ -372,7 +372,7 @@ const getNeighborsFromNode = async (dg_client, nodeUid) => {
         console.log("Querying DGraph for: getNeighborsFromNode");
         const res = await txn.queryWithVars(query, {'$a': nodeUid});
         console.log("retrieving neighbors", res);
-        return res.data['all'][0];
+        return res.getJson()['all'][0];
     } catch(e){
         console.error("Error in DGraph txn: getNeighborsFromNode", e)
     } finally {
@@ -407,7 +407,7 @@ const getRisksFromNode = async (dg_client, nodeUid) => {
         console.log("Querying DGraph for: getRisksFromNode");
         const res = await txn.queryWithVars(query, {'$a': nodeUid});
         console.log("getRisksFromNode response", res)
-        return res.data['all'][0]['risks'];
+        return res.getJson()['all'][0]['risks'];
     } finally {
         await txn.discard();
     }
@@ -434,9 +434,9 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
         const res = await txn.queryWithVars(query, {
             '$a': nodeUid, '$b': lensUid
         });
-        const json_res = res;
+        const json_res = res.getJson();
         console.log("inLensScope response", json_res);
-        return json_res.data['all'].length !== 0;
+        return json_res['all'].length !== 0;
     }catch(e){
         console.error("Error in Dgraph txn: inLensScope", e)
     } finally {
