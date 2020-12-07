@@ -37,7 +37,7 @@ services:
   # dev uses 1 big redis instance, prod has 1:1 redis per grapl service
   dev-shared-redis:  # maybe transitory, this will eventually match prod
     image: redis:latest
-    command: |
+    command: >
       sh -c "
         # hack from https://stackoverflow.com/questions/54533308/disable-redis-persistence-in-docker
         # to disable persistence
@@ -340,19 +340,20 @@ services:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
     depends_on:
+      - graphdb
       - s3
       - sqs
       - grapl-provision
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
-    command: |
-      /bin/sh -c '
-        wait-for-it grapl-provision:8126 --timeout=45 &&
+    command: >
+      /bin/sh -c "
+        wait-for-it grapl-provision:8126 --timeout=120 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=8900
-      '
+      "
     ports:
       - "8900:8900"
     environment:
@@ -370,6 +371,7 @@ services:
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     depends_on:
       - dynamodb
+      - graphdb
       - s3
       - secretsmanager
       - grapl-provision
@@ -472,12 +474,12 @@ services:
     command: >
       /bin/bash -c "
         # it doesn't seem to like waiting for sqs
-        # wait-for-it sqs:9324 &&
-        wait-for-it secretsmanager:4584 &&
-        wait-for-it s3:9000 &&
-        wait-for-it dynamodb:8000 &&
-        wait-for-it grapl-master-graph-db:8080 &&
-        wait-for-it grapl-engagement-view:1234 &&
+        #wait-for-it --timeout=30 sqs:9324 &&
+        wait-for-it --timeout=30 secretsmanager:4584 &&
+        wait-for-it --timeout=30 s3:9000 &&
+        wait-for-it --timeout=30 dynamodb:8000 &&
+        wait-for-it --timeout=30 master_graph:8080 &&
+        wait-for-it --timeout=30 grapl-engagement-view:1234 &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
