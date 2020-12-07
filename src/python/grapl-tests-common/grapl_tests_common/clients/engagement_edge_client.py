@@ -27,8 +27,8 @@ class EngagementEdgeClient:
             # TODO: Should consume the deployment name instead of hardcoded.
             headers={
                 **_JSON_CONTENT_TYPE_HEADERS,
-                "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com"
-            }
+                "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com",
+            },
         )
         if resp.status_code != HTTPStatus.OK:
             raise EngagementEdgeException(f"{resp.status_code}: {resp.text}")
