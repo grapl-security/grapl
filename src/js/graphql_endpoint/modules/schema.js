@@ -382,32 +382,41 @@ const getNeighborsFromNode = async (dg_client, nodeUid) => {
 
 const getRisksFromNode = async (dg_client, nodeUid) => {
     if (!nodeUid) {
-        console.warn('nodeUid can not be null, undefined, or empty')
-        return
+        console.warn('nodeUid can not be null, undefined, or empty');
+        return;
     }
     const query = `
     query all($a: string)
-    {
-        all(func: uid($a)) @cascade
         {
-            uid,
-            dgraph_type: dgraph.type
-            node_key
-            risks {
-                uid
+            all(func: uid($a)) @cascade
+            {
+                uid,
                 dgraph_type: dgraph.type
                 node_key
-                analyzer_name
-                risk_score
+                risks {
+                    uid
+                    dgraph_type: dgraph.type
+                    node_key
+                    analyzer_name
+                    risk_score
+                }
             }
         }
-    }`;
+    `;
     const txn = dg_client.newTxn();
     try {
         console.log("Querying DGraph for: getRisksFromNode");
         const res = await txn.queryWithVars(query, {'$a': nodeUid});
-        console.log("getRisksFromNode response", res)
-        return res.getJson()['all'][0]['risks'];
+        console.log("getRisksFromNode response", res);
+        const objRes = res.getJson();
+
+        if (objRes['all'] && objRes['all'][0]) {
+            return res.getJson()['all'][0]['risks'] || [];
+        }
+        else {
+            return [];
+        }        
+        
     } finally {
         await txn.discard();
     }
@@ -415,6 +424,9 @@ const getRisksFromNode = async (dg_client, nodeUid) => {
 
 
 const inLensScope = async (dg_client, nodeUid, lensUid) => {
+    console.log("dg_client", dg_client);
+    console.log("node_uid", nodeUid);
+    console.log("lens_uid", lensUid);
 
     const query = `
     query all($a: string, $b: string)
@@ -426,7 +438,10 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
                 uid,
             }
         }
+    
     }`;
+
+    console.log("inLensScope query", query)
 
     const txn = dg_client.newTxn();
     try {
