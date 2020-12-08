@@ -334,6 +334,17 @@ image=grapl-notebook:
   dockerfile: Dockerfile
   tags:
     - "{env.TAG}"
+  depends:
+    - grapl-analyzerlib-build
+
+image=grapl-notebook-test:
+  image: grapl/grapl-notebook-test
+  context: src/python/grapl-notebook
+  dockerfile: tests.Dockerfile
+  tags:
+    - "{env.TAG}"
+  depends:
+    - grapl-notebook
 
 image=grapl-provision:
   image: grapl/grapl-provision
