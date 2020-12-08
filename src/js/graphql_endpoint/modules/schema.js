@@ -1,8 +1,8 @@
 const dgraph = require("dgraph-js");
-const grpc = require("@grpc/grpc-js");
+const grpc = require("grpc");
 
 const { GraphQLJSONObject } = require('graphql-type-json');
-
+    
 const { 
     GraphQLObjectType, 
     GraphQLInt, 
