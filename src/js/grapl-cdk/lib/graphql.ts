@@ -40,7 +40,7 @@ export class GraphQLEndpoint extends cdk.Construct {
                 BUCKET_PREFIX: props.prefix,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
             },
-            timeout: cdk.Duration.seconds(25),
+            timeout: cdk.Duration.seconds(30),
             memorySize: 128,
             description: props.version,
         });
