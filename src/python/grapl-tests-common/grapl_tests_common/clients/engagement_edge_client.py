@@ -24,7 +24,11 @@ class EngagementEdgeClient:
                 # sha'd and pepper'd - see engagement view Login.tsx
                 "password": "2ae5ddfb1eeeed45d502bcfd0c7b8f962f24bf85328ba942f32a31c0229c295a",
             },
-            headers=_JSON_CONTENT_TYPE_HEADERS,
+            # TODO: Should consume the deployment name instead of hardcoded.
+            headers={
+                **_JSON_CONTENT_TYPE_HEADERS,
+                "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com",
+            },
         )
         if resp.status_code != HTTPStatus.OK:
             raise EngagementEdgeException(f"{resp.status_code}: {resp.text}")
