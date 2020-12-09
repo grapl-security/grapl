@@ -5,13 +5,14 @@ import json
 import logging
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Iterator, List, NamedTuple
+from typing import TYPE_CHECKING, Any, Iterator, List, NamedTuple, Optional
 
 import boto3
 
 if TYPE_CHECKING:
     from mypy_boto3_cloudwatch.client import CloudWatchClient
     from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
+    from mypy_boto3_sns.client import SNSClient
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel("INFO")
@@ -80,6 +81,25 @@ CW_NAMESPACE = "CWAgent"
 CW_DISK_USAGE_METRIC_NAME = "disk_used_percent"
 
 
+def _find_operational_alarms_arn(
+    prefix: str,
+    sns: Optional[SNSClient] = None,
+) -> str:
+    sns = sns or boto3.client("sns")
+    topics_raw = sns.list_topics()
+    all_topic_arns = [d["TopicArn"] for d in topics_raw["Topics"]]
+
+    def seems_like_the_desired_arn(arn: str) -> bool:
+        # see CDK class OperationalAlarms
+        # note: the prefix should *not* be lower-ized
+        return f"{prefix}-operational-alarms-sink" in arn
+
+    arn = next((arn for arn in all_topic_arns if seems_like_the_desired_arn(arn)), None)
+    if not arn:
+        raise Exception(f"Couldn't find a good candidate arn among {all_topic_arns}")
+    return arn
+
+
 def _find_metric_for_instance(
     cloudwatch: CloudWatchClient,
     instance_id: str,
@@ -121,16 +141,23 @@ def _find_metric_for_instance(
     metrics = metrics_result["Metrics"]
     if len(metrics) != 1:
         raise Exception(
-            f"Tried querying for disk metrics on {instance_id} - expected 1, got {metrics}"
+            f"Tried querying for disk metrics in path {path} on {instance_id} - expected 1, got {metrics}\n"
+            "(Try waiting ~5m after provisioning an Autoscaling Group for the expected metric to show up.)"
         )
     return metrics[0]
 
 
-def _create_disk_usage_alarms(cloudwatch: CloudWatchClient, instance_id: str) -> None:
+def _create_disk_usage_alarms(
+    cloudwatch: CloudWatchClient,
+    instance_id: str,
+    prefix: str,
+) -> None:
+    ops_alarm_action = _find_operational_alarms_arn(prefix)
 
     root_metric = _find_metric_for_instance(cloudwatch, instance_id, path="/")
     """Create disk usage alarms for the / and /dgraph partitions"""
     cloudwatch.put_metric_alarm(
+        AlarmActions=[ops_alarm_action],
         AlarmName=f"/ disk_used_percent ({instance_id})",
         AlarmDescription=f"Root volume disk usage percent threshold exceeded on {instance_id}",
         ActionsEnabled=False,
@@ -149,6 +176,7 @@ def _create_disk_usage_alarms(cloudwatch: CloudWatchClient, instance_id: str) ->
         cloudwatch, instance_id, path="/dgraph"
     )
     cloudwatch.put_metric_alarm(
+        AlarmActions=[ops_alarm_action],
         AlarmName=f"/dgraph disk_used_percent ({instance_id})",
         AlarmDescription=f"DGraph volume disk usage percent threshold exceeded on {instance_id}",
         ActionsEnabled=False,
@@ -177,6 +205,7 @@ def _init_docker_swarm(
     necessary to attach workers to the swarm.
 
     """
+    _create_disk_usage_alarms(cloudwatch, manager_id, prefix)
     command = ssm.send_command(
         # Targets=[{"Key": "tag:Name", "Values": ["Grapl/swarm/SwarmCluster/SwarmASG"]}],
         InstanceIds=[manager_id],
@@ -199,7 +228,6 @@ def _init_docker_swarm(
         Resources=[manager_id],
         Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-manager"}],
     )
-    _create_disk_usage_alarms(cloudwatch, manager_id)
     LOGGER.info(
         f"Instance {manager_id} with IP {manager_ip} and hostname {manager_hostname} is the docker swarm cluster manager"
     )
@@ -219,6 +247,7 @@ def _join_worker_nodes(
     worker nodes."""
     hostnames = []
     for instance_id, _, hostname in instances:
+        _create_disk_usage_alarms(cloudwatch, instance_id, prefix)
         command = ssm.send_command(
             # Targets=[{"Key": "tag:Name", "Values": ["Grapl/swarm/SwarmCluster/SwarmASG"]}],
             InstanceIds=[instance_id],
@@ -241,7 +270,6 @@ def _join_worker_nodes(
             Resources=[instance_id],
             Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-worker"}],
         )
-        _create_disk_usage_alarms(cloudwatch, instance_id)
         LOGGER.info(
             f"Joined worker instance {instance_id} with hostname {hostname} to the docker swarm cluster"
         )
