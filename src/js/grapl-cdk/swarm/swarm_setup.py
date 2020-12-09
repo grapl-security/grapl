@@ -5,11 +5,12 @@ import json
 import logging
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Iterator, List, NamedTuple
+from typing import TYPE_CHECKING, Any, Iterator, List, NamedTuple, Optional
 
 import boto3
 
 if TYPE_CHECKING:
+    from mypy_boto3_sns.client import SNSClient
     from mypy_boto3_cloudwatch.client import CloudWatchClient
     from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
 
@@ -80,6 +81,21 @@ CW_NAMESPACE = "CWAgent"
 CW_DISK_USAGE_METRIC_NAME = "disk_used_percent"
 
 
+def _find_operational_alarms_arn(
+    prefix: str,
+    sns: Optional[SNSClient] = None,
+) -> str:
+    sns = sns or boto3.client("sns")
+    topics_raw = sns.list_topics()
+    all_topic_arns = [d["TopicArn"] for d in topics_raw["Topics"]]
+
+    def seems_like_the_desired_arn(arn: str) -> bool:
+        # see CDK class OperationalAlarms
+        return f"{prefix.lower()}-operational-alarms-sink" in arn
+
+    return next((arn for arn in all_topic_arns if seems_like_the_desired_arn(arn)))
+
+
 def _find_metric_for_instance(
     cloudwatch: CloudWatchClient,
     instance_id: str,
@@ -126,11 +142,17 @@ def _find_metric_for_instance(
     return metrics[0]
 
 
-def _create_disk_usage_alarms(cloudwatch: CloudWatchClient, instance_id: str) -> None:
+def _create_disk_usage_alarms(
+    cloudwatch: CloudWatchClient,
+    instance_id: str,
+    prefix: str,
+) -> None:
+    ops_alarm_action = _find_operational_alarms_arn(prefix)
 
     root_metric = _find_metric_for_instance(cloudwatch, instance_id, path="/")
     """Create disk usage alarms for the / and /dgraph partitions"""
     cloudwatch.put_metric_alarm(
+        AlarmActions=[ops_alarm_action],
         AlarmName=f"/ disk_used_percent ({instance_id})",
         AlarmDescription=f"Root volume disk usage percent threshold exceeded on {instance_id}",
         ActionsEnabled=False,
@@ -149,6 +171,7 @@ def _create_disk_usage_alarms(cloudwatch: CloudWatchClient, instance_id: str) ->
         cloudwatch, instance_id, path="/dgraph"
     )
     cloudwatch.put_metric_alarm(
+        AlarmActions=[ops_alarm_action],
         AlarmName=f"/dgraph disk_used_percent ({instance_id})",
         AlarmDescription=f"DGraph volume disk usage percent threshold exceeded on {instance_id}",
         ActionsEnabled=False,
@@ -199,7 +222,7 @@ def _init_docker_swarm(
         Resources=[manager_id],
         Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-manager"}],
     )
-    _create_disk_usage_alarms(cloudwatch, manager_id)
+    _create_disk_usage_alarms(cloudwatch, manager_id, prefix)
     LOGGER.info(
         f"Instance {manager_id} with IP {manager_ip} and hostname {manager_hostname} is the docker swarm cluster manager"
     )
@@ -241,7 +264,7 @@ def _join_worker_nodes(
             Resources=[instance_id],
             Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-worker"}],
         )
-        _create_disk_usage_alarms(cloudwatch, instance_id)
+        _create_disk_usage_alarms(cloudwatch, instance_id, prefix)
         LOGGER.info(
             f"Joined worker instance {instance_id} with hostname {hostname} to the docker swarm cluster"
         )

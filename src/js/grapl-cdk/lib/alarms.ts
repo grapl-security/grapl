@@ -25,14 +25,24 @@ import * as cloudwatch_actions from '@aws-cdk/aws-cloudwatch-actions';
  * metric that perhaps provides that extra context.
  */
 
+class AlarmSinkProps {
+    topic_name: string;
+    email: string;
+    prefix: string;
+}
+
 class AlarmSink extends cdk.Construct {
     readonly topic: sns.Topic;
     readonly cloudwatch_action: cloudwatch_actions.SnsAction;
 
-    constructor(scope: cdk.Construct, id: string, emailAddress: string) {
+    constructor(scope: cdk.Construct, id: string, props: AlarmSinkProps) {
         super(scope, id);
-        this.topic = new sns.Topic(scope, "topic");
-        this.topic.addSubscription(new subs.EmailSubscription(emailAddress));
+
+        const topic_name = `${props.prefix}-${props.topic_name}`;
+        this.topic = new sns.Topic(scope, "topic", {
+            topicName: topic_name
+        });
+        this.topic.addSubscription(new subs.EmailSubscription(props.email));
         this.cloudwatch_action = new cloudwatch_actions.SnsAction(this.topic)
     }
 }
@@ -70,16 +80,25 @@ class RiskNodeAlarm extends cdk.Construct {
     }
 }
 
+export interface OperationalAlarmsProps {
+    prefix: string;
+    email: string;
+}
+
 export class OperationalAlarms extends cdk.Construct {
     // Alarms meant for the operator of the Grapl stack.
     // That is to say: Grapl Inc (in the Grapl Cloud case), or VeryCool Corp (in the on-prem case).
     constructor(
         scope: cdk.Construct,
         id: string,
-        email: string,
+        props: OperationalAlarmsProps,
     ) {
         super(scope, id);
-        const alarm_sink = new AlarmSink(this, "alarm_sink", email);
+        const alarm_sink_props: AlarmSinkProps = {
+            topic_name: "operational-alarms-sink",
+            ...props
+        }
+        const alarm_sink = new AlarmSink(this, "alarm_sink", alarm_sink_props);
     }
 }
 
@@ -96,7 +115,11 @@ export class SecurityAlarms extends cdk.Construct {
         props: SecurityAlarmsProps,
     ) {
         super(scope, id);
-        const alarm_sink = new AlarmSink(this, "alarm_sink", props.email);
+        const alarm_sink_props: AlarmSinkProps = {
+            topic_name: "security-alarms-sink",
+            ...props
+        }
+        const alarm_sink = new AlarmSink(this, "alarm_sink", alarm_sink_props);
         const risk_node_alarm = new RiskNodeAlarm(this, "risk_node_alarm", {
             prefix: props.prefix,
             alarm_sink: alarm_sink
