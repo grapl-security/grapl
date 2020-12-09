@@ -23,3 +23,25 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
+
+Cypress.Commands.add("login", () => {
+    cy.visit('/')
+
+    // assert no login cookie
+
+    // click 'LOGIN' button
+    cy.contains(/login/i).click()
+
+    // wait for page change
+    cy.location('href').should('include', '/login');
+
+    // enter username
+    cy.get("[placeholder='Username']").type('grapluser') // known good demo password
+
+    // enter password
+    cy.get("[placeholder='Password']").type('graplpassword') // known good demo password
+
+    // click 'SUBMIT' button
+    cy.contains(/submit/i).click()
+
+})

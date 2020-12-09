@@ -7,13 +7,13 @@ describe('basic test', () => {
 describe('application loads', () => {
   it('visits the front page', () => {
     // set cypress.json's baseUrl: to this
-    cy.visit('http://grapl-engagement-view:1234')
+    cy.visit('/')
   })
 })
 
 describe('authentication', () => {
   it('allows the user to log in with a valid username and password', () => {
-    cy.visit('http://grapl-engagement-view:1234')
+    cy.visit('/')
 
     // assert no login cookie
 
