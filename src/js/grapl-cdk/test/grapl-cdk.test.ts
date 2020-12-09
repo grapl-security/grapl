@@ -40,6 +40,8 @@ describe('Standard GraplCdkStack', () => {
     version: 'latest',
     dgraphInstanceType: new ec2.InstanceType('t3a.medium'),
     env: ENV,
+    operationalAlarmsEmail: "fake@fake.domain",
+    securityAlarmsEmail: "fake@fake.domain",
   });
 
   const allConstructs = new CollectAllConstructs();
