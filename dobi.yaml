@@ -975,7 +975,6 @@ alias=python-typecheck:
     - typecheck-engagement-edge
     - typecheck-model-plugin-deployer
     - typecheck-analyzer-executor
-    # Broken, temporarily
-    # - typecheck-grapl-analyzerlib
+    - typecheck-grapl-analyzerlib
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"
