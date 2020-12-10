@@ -18,6 +18,12 @@
 module.exports = (on, config) => {
   // `on` is used to hook into various events Cypress emits
   // `config` is the resolved Cypress config
+
+  // Per https://github.com/cypress-io/cypress/issues/350:
+  // dockerized Cypress has a conflict with Chrome, something to do with
+  // how IPC is conducted over shared memory.
+  // Setting this flag for Chrome to make it use /tmp instead of /dev/shm,
+  // which resolves the issue and raises no noticeable side-effects.
   on("before:browser:launch", (browser = {}, launchOptions) => {
     if (browser.name === "chrome") {
       launchOptions.args.push("--disable-dev-shm-usage");
