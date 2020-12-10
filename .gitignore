@@ -5,7 +5,7 @@ src/rust/graph-descriptions/grapl_graph_descriptions
 .DS_Store
 
 # Test outputs
-/test/outputs/**/*
+/test/integration-outputs/**/*
 
 grapl-cdk/cdk.out/
 lambda/
