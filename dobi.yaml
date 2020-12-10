@@ -345,6 +345,7 @@ image=grapl-notebook-test:
     - "{env.TAG}"
   depends:
     - grapl-notebook
+    - etc-build
 
 image=grapl-provision:
   image: grapl/grapl-provision
