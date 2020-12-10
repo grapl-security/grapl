@@ -57,7 +57,7 @@ jobs:
         run: |
           GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-unit-tests
 
-  cdk-build:
+  cdk-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -68,9 +68,9 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Run dobi grapl-cdk-build
+      - name: Run dobi grapl-cdk-test
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux grapl-cdk-build
+          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux grapl-cdk-test
 
   python-typecheck:
     runs-on: ubuntu-latest

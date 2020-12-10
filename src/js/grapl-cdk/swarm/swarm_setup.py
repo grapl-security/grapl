@@ -1,12 +1,18 @@
 """Usage: python3 swarm_setup.py $GRAPL_DEPLOY_NAME"""
+from __future__ import annotations
+
 import json
 import logging
 import sys
 import time
+from typing import TYPE_CHECKING, Any, Iterator, List, NamedTuple, Optional
 
 import boto3
 
-from typing import Any, Iterator, List, Tuple
+if TYPE_CHECKING:
+    from mypy_boto3_cloudwatch.client import CloudWatchClient
+    from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
+    from mypy_boto3_sns.client import SNSClient
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel("INFO")
@@ -18,8 +24,17 @@ IN_PROGRESS_STATUSES = {
     "Delayed",
 }
 
+InstanceTuple = NamedTuple(
+    "InstanceTuple",
+    (
+        ("instance_id", str),
+        ("private_ip_address", str),
+        ("private_dns_name", str),
+    ),
+)
 
-def _swarm_instances(ec2: Any) -> Iterator[Tuple[str, str, str]]:
+
+def _swarm_instances(ec2: Any) -> Iterator[InstanceTuple]:
     """Yields tuples of (instance_id, private_ip, hostname) for all the
     instances in the SwarmASG.
 
@@ -30,9 +45,11 @@ def _swarm_instances(ec2: Any) -> Iterator[Tuple[str, str, str]]:
     for reservation in result["Reservations"]:
         for instance in reservation["Instances"]:
             if instance["State"]["Name"] != "terminated":
-                yield instance["InstanceId"], instance["PrivateIpAddress"], instance[
-                    "PrivateDnsName"
-                ]
+                yield InstanceTuple(
+                    instance_id=instance["InstanceId"],
+                    private_ip_address=instance["PrivateIpAddress"],
+                    private_dns_name=instance["PrivateDnsName"],
+                )
 
 
 def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
@@ -60,48 +77,125 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
         raise Exception(f"SSM Command failed with Status: \"{invocation['Status']}\"")
 
 
-def _create_disk_usage_alarms(cloudwatch: Any, instance_id: str) -> None:
+CW_NAMESPACE = "CWAgent"
+CW_DISK_USAGE_METRIC_NAME = "disk_used_percent"
+
+
+def _find_operational_alarms_arn(
+    prefix: str,
+    sns: Optional[SNSClient] = None,
+) -> str:
+    sns = sns or boto3.client("sns")
+    topics_raw = sns.list_topics()
+    all_topic_arns = [d["TopicArn"] for d in topics_raw["Topics"]]
+
+    def seems_like_the_desired_arn(arn: str) -> bool:
+        # see CDK class OperationalAlarms
+        # note: the prefix should *not* be lower-ized
+        return f"{prefix}-operational-alarms-sink" in arn
+
+    arn = next((arn for arn in all_topic_arns if seems_like_the_desired_arn(arn)), None)
+    if not arn:
+        raise Exception(f"Couldn't find a good candidate arn among {all_topic_arns}")
+    return arn
+
+
+def _find_metric_for_instance(
+    cloudwatch: CloudWatchClient,
+    instance_id: str,
+    path: str,
+) -> MetricTypeDef:
+    """
+    To define a Cloudwatch Alarm, one must specify *all* the dimensions complete with values.
+    (The dimension names are part of the identity of the metric. Gross!)
+    So, before we define an alarm, we do a quick query on path + instance id to get the
+    other dimensions.
+    """
+    metrics_result = cloudwatch.list_metrics(
+        Namespace=CW_NAMESPACE,
+        MetricName=CW_DISK_USAGE_METRIC_NAME,
+        Dimensions=[
+            {
+                "Name": "path",
+                "Value": path,
+            },
+            {
+                "Name": "InstanceId",
+                "Value": instance_id,
+            },
+            {
+                "Name": "AutoScalingGroupName",
+            },
+            {
+                "Name": "ImageId",
+            },
+            {
+                "Name": "InstanceType",
+            },
+            {
+                "Name": "device",
+            },
+            {"Name": "fstype"},
+        ],
+    )
+    metrics = metrics_result["Metrics"]
+    if len(metrics) != 1:
+        raise Exception(
+            f"Tried querying for disk metrics in path {path} on {instance_id} - expected 1, got {metrics}\n"
+            "(Try waiting ~5m after provisioning an Autoscaling Group for the expected metric to show up.)"
+        )
+    return metrics[0]
+
+
+def _create_disk_usage_alarms(
+    cloudwatch: CloudWatchClient,
+    instance_id: str,
+    prefix: str,
+) -> None:
+    ops_alarm_action = _find_operational_alarms_arn(prefix)
+
+    root_metric = _find_metric_for_instance(cloudwatch, instance_id, path="/")
     """Create disk usage alarms for the / and /dgraph partitions"""
     cloudwatch.put_metric_alarm(
+        AlarmActions=[ops_alarm_action],
         AlarmName=f"/ disk_used_percent ({instance_id})",
         AlarmDescription=f"Root volume disk usage percent threshold exceeded on {instance_id}",
         ActionsEnabled=False,
-        MetricName="disk_used_percent",
-        Namespace="CWAgent",
+        MetricName=root_metric["MetricName"],
+        Namespace=root_metric["Namespace"],
         Statistic="Maximum",
         Period=300,
         EvaluationPeriods=1,
         ComparisonOperator="GreaterThanOrEqualToThreshold",
         Threshold=95.0,
         Unit="Percent",
-        Dimensions=[
-            {"Name": "InstanceId", "Value": instance_id},
-            {"Name": "path", "Value": "/"},
-        ],
+        Dimensions=root_metric["Dimensions"],
+    )
+
+    dgraph_partition_metric = _find_metric_for_instance(
+        cloudwatch, instance_id, path="/dgraph"
     )
     cloudwatch.put_metric_alarm(
+        AlarmActions=[ops_alarm_action],
         AlarmName=f"/dgraph disk_used_percent ({instance_id})",
         AlarmDescription=f"DGraph volume disk usage percent threshold exceeded on {instance_id}",
         ActionsEnabled=False,
-        MetricName="disk_used_percent",
-        Namespace="CWAgent",
+        MetricName=dgraph_partition_metric["MetricName"],
+        Namespace=dgraph_partition_metric["Namespace"],
         Statistic="Maximum",
         Period=300,
         EvaluationPeriods=1,
         ComparisonOperator="GreaterThanOrEqualToThreshold",
         Threshold=95.0,
         Unit="Percent",
-        Dimensions=[
-            {"Name": "InstanceId", "Value": instance_id},
-            {"Name": "path", "Value": "/dgraph"},
-        ],
+        Dimensions=dgraph_partition_metric["Dimensions"],
     )
 
 
 def _init_docker_swarm(
     ec2: Any,
     ssm: Any,
-    cloudwatch: Any,
+    cloudwatch: CloudWatchClient,
     prefix: str,
     manager_id: str,
     manager_ip: str,
@@ -111,6 +205,7 @@ def _init_docker_swarm(
     necessary to attach workers to the swarm.
 
     """
+    _create_disk_usage_alarms(cloudwatch, manager_id, prefix)
     command = ssm.send_command(
         # Targets=[{"Key": "tag:Name", "Values": ["Grapl/swarm/SwarmCluster/SwarmASG"]}],
         InstanceIds=[manager_id],
@@ -133,7 +228,6 @@ def _init_docker_swarm(
         Resources=[manager_id],
         Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-manager"}],
     )
-    _create_disk_usage_alarms(cloudwatch, manager_id)
     LOGGER.info(
         f"Instance {manager_id} with IP {manager_ip} and hostname {manager_hostname} is the docker swarm cluster manager"
     )
@@ -143,9 +237,9 @@ def _init_docker_swarm(
 def _join_worker_nodes(
     ec2: Any,
     ssm: Any,
-    cloudwatch: Any,
+    cloudwatch: CloudWatchClient,
     prefix: str,
-    instances: Iterator[str],
+    instances: Iterator[InstanceTuple],
     join_token: str,
     manager_ip: str,
 ) -> List[str]:
@@ -153,6 +247,7 @@ def _join_worker_nodes(
     worker nodes."""
     hostnames = []
     for instance_id, _, hostname in instances:
+        _create_disk_usage_alarms(cloudwatch, instance_id, prefix)
         command = ssm.send_command(
             # Targets=[{"Key": "tag:Name", "Values": ["Grapl/swarm/SwarmCluster/SwarmASG"]}],
             InstanceIds=[instance_id],
@@ -175,7 +270,6 @@ def _join_worker_nodes(
             Resources=[instance_id],
             Tags=[{"Key": "grapl-swarm-role", "Value": "swarm-worker"}],
         )
-        _create_disk_usage_alarms(cloudwatch, instance_id)
         LOGGER.info(
             f"Joined worker instance {instance_id} with hostname {hostname} to the docker swarm cluster"
         )
@@ -190,7 +284,7 @@ def main(prefix: str) -> None:
     instances = _swarm_instances(ec2)
 
     ssm = boto3.client("ssm")
-    cloudwatch = boto3.client("cloudwatch")
+    cloudwatch: CloudWatchClient = boto3.client("cloudwatch")
 
     LOGGER.info("Initializing swarm manager")
     manager_id, manager_ip, manager_hostname = next(instances)
