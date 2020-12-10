@@ -3,7 +3,7 @@
 
 FROM grapl/grapl-notebook
 WORKDIR /home/grapl
-RUN source venv/bin/activate && pip install nbqa mypy
+RUN source venv/bin/activate && pip install nbqa mypy boto3-stubs[essential]
 RUN source venv/bin/activate && cd grapl-notebook && nbqa mypy Demo_Engagement.ipynb
 
 # While the grapl provision notebook technically has nothing to do with grapl-notebook,
