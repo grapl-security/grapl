@@ -236,4 +236,4 @@ IpConnectionQuery = IpConnectionQuery.extend_self(IpAddressExtendsIpConnectionQu
 IpConnectionView = IpConnectionView.extend_self(IpAddressExtendsIpConnectionView)
 
 if TYPE_CHECKING:
-    from grapl_analyzerlib.nodes import ProcessQuery
+    from grapl_analyzerlib.nodes.process import ProcessQuery
