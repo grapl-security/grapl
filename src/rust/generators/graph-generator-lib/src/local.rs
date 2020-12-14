@@ -14,9 +14,9 @@ use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
 use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use std::time::Duration;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+use std::time::Duration;
 
 const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
 
@@ -44,12 +44,13 @@ pub(crate) async fn run_graph_generator_local<
         let event_decoder = event_decoder.clone();
 
         if let Err(e) = initialize_local_service(
-                &source_queue_url,
-                generator,
-                event_decoder,
-                completion_policy.clone(),
-                consume_policy.clone(),
-            ).await
+            &source_queue_url,
+            generator,
+            event_decoder,
+            completion_policy.clone(),
+            consume_policy.clone(),
+        )
+        .await
         {
             error!("{}", e);
             std::thread::sleep(Duration::from_secs(2));
@@ -93,7 +94,8 @@ async fn initialize_local_service<
 
     let mut options_builder = LocalSqsServiceOptionsBuilder::default();
     options_builder.with_completion_policy(completion_policy);
-    options_builder.with_consume_policy(consume_policy.build(Utc::now().timestamp_millis() + 10_000));
+    options_builder
+        .with_consume_policy(consume_policy.build(Utc::now().timestamp_millis() + 10_000));
 
     /*
      * queue_url - The queue to be reading incoming log events from.

@@ -11,12 +11,12 @@ use rusoto_sqs::SqsClient;
 use rusoto_sts::{StsAssumeRoleSessionCredentialsProvider, StsClient};
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::mpsc::SyncSender;
 use std::time::Duration;
-use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 
 /// Runs the graph generator on AWS
 ///
@@ -43,7 +43,7 @@ pub(crate) fn run_graph_generator_aws<
             consume_policy.build(context),
             completion_policy.clone(),
             generator.clone(),
-            event_decoder.clone()
+            event_decoder.clone(),
         )
     })
 }
