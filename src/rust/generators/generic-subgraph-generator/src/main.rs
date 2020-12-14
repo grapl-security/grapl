@@ -14,9 +14,9 @@ use grapl_config::event_cache;
 
 use crate::generator::GenericSubgraphGenerator;
 use crate::serialization::ZstdJsonDecoder;
-use std::time::Duration;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -35,7 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 1,                      // Buffer up to 1 message
                 Duration::from_secs(1), // Buffer for up to 1 second
             ),
-        ).await;
+        )
+        .await;
     } else {
         let generator = GenericSubgraphGenerator::new(event_cache().await);
 
@@ -48,7 +49,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ZstdJsonDecoder::default(),
             completion_policy,
             CompletionPolicy::new(10, Duration::from_secs(2)),
-        ).await;
+        )
+        .await;
     }
 
     Ok(())

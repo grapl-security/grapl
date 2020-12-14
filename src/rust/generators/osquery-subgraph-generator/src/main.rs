@@ -14,8 +14,8 @@ use grapl_config::*;
 use log::*;
 use sqs_lambda::cache::NopCache;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use std::time::Duration;
 use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -35,7 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 1,                      // Buffer up to 1 message
                 Duration::from_secs(1), // Buffer for up to 1 second
             ),
-        ).await;
+        )
+        .await;
     } else {
         let generator = OSQuerySubgraphGenerator::new(event_cache().await, metrics);
         let completion_policy = ConsumePolicyBuilder::default()
@@ -47,7 +48,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             OSQueryLogDecoder::default(),
             completion_policy,
             CompletionPolicy::new(10, Duration::from_secs(2)),
-        ).await;
+        )
+        .await;
     }
 
     Ok(())

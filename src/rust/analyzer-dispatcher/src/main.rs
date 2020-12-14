@@ -33,9 +33,9 @@ use aws_lambda_events::event::s3::{
 use chrono::Utc;
 use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
 use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use std::str::FromStr;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>

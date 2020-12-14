@@ -7,8 +7,8 @@ use std::iter::FromIterator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use std::time::{SystemTime, Duration};
 use std::time::UNIX_EPOCH;
+use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
 use aws_lambda_events::event::s3::{
@@ -46,9 +46,9 @@ use sqs_lambda::redis_cache::RedisCache;
 
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use grapl_graph_descriptions::node::NodeT;
-use std::net::ToSocketAddrs;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use std::net::ToSocketAddrs;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
