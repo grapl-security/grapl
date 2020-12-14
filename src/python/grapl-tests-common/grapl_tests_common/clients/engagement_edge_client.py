@@ -4,6 +4,9 @@ from typing import Optional
 import requests
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
+_ORIGIN = {
+    "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com",
+}
 
 
 class EngagementEdgeException(Exception):
@@ -27,7 +30,7 @@ class EngagementEdgeClient:
             # TODO: Should consume the deployment name instead of hardcoded.
             headers={
                 **_JSON_CONTENT_TYPE_HEADERS,
-                "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com",
+                **_ORIGIN,
             },
         )
         if resp.status_code != HTTPStatus.OK:
@@ -44,6 +47,7 @@ class EngagementEdgeClient:
         resp = requests.post(
             f"{self.endpoint}/getNotebook",
             cookies=cookies,
+            headers=_ORIGIN,
         )
         url: str = resp.json()["success"]["notebook_url"]
         return url

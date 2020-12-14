@@ -24,10 +24,6 @@ class TestEngagementEdgeChalice(unittest.TestCase):
 
 @pytest.mark.integration_test
 class TestEngagementEdgeClient(unittest.TestCase):
-    def test_get_jwt(self) -> None:
-        client = EngagementEdgeClient(use_docker_links=True)
-        client.get_jwt()
-
     def test_get_notebook_link(self) -> None:
         client = EngagementEdgeClient(use_docker_links=True)
         jwt = client.get_jwt()

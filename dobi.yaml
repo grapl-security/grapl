@@ -639,16 +639,9 @@ job=typecheck-model-plugin-deployer:
       "
 
 job=typecheck-engagement-edge:
-<<<<<<< HEAD
-  use: engagement-edge-build
-  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
-  command: |
-=======
   use: engagement-edge-test
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
   command: | 
->>>>>>> eaf14ac1... EEdge has its own integration tests now
     /bin/bash -c "
       source venv/bin/activate &&
       touch venv/lib/python3.7/site-packages/chalice/py.typed &&
