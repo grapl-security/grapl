@@ -3,7 +3,7 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 module HardcodedDeploymentParameters {
     // ex: 'Grapl-my-deployment'
 
-    export const deployName = undefined;
+    export const deployName = 'nlattimer-debug';
 
     // defaults to 'latest'
     export const graplVersion = undefined;
@@ -14,10 +14,10 @@ module HardcodedDeploymentParameters {
     export const securityAlarmsEmail = undefined;
 
     // AWS EC2 instance type for DGraph nodes
-    export const dgraphInstanceType = undefined;
+    export const dgraphInstanceType = 't3.small';
 
     // AWS region for this Grapl deployment
-    export const region = undefined;
+    export const region = 'us-east-2';
 }
 
 export module DeploymentParameters {

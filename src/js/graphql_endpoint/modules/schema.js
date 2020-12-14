@@ -217,7 +217,7 @@ const builtins = new Set([
 const resolveType = (data) => {
     data.dgraph_type = data.dgraph_type.filter((t) => (t !== 'Entity' && t !=='Base'))
 
-    if (data.dgraph_type === 'Process') {
+    if (data.dgraph_type[0] === 'Process') {
         return 'Process';
     }
 
@@ -313,6 +313,44 @@ const getLenses = async (dg_client, first, offset) => {
         console.error("Error in DGraph txn getLenses: ", e);
     }
     finally {
+        await txn.discard();
+    }
+}
+
+const getLensSubgraphByName = async (dg_client, lens_name) => {
+    const query = `
+    query all($a: string, $b: first, $c: offset) {
+        all(func: eq(lens_name, $a), first: 1) {
+            uid,
+            dgraph_type: dgraph.type,
+            node_key,
+            lens_name,
+            lens_type,
+            score,
+            scope @filter(has(node_key)) {
+                uid,
+                dgraph_type: dgraph.type,
+                expand(_all_) {
+                    uid,
+                    dgraph_type: dgraph.type,
+                    expand(_all_)
+                }
+            }
+        }
+    }
+    `;
+
+    console.log("Creating dgraphtxn in getLensSubgraphByName");
+    const txn = dg_client.newTxn();
+
+    try {
+        console.log("Querying DGraph for: getLensSubgraphByName");
+        const res = await txn.queryWithVars(query, {'$a': lens_name});
+        console.log("getLensSubgraphByName", res);
+        return res.getJson()['all'][0];
+    } catch(e){
+        console.error("Error in DGraph txn: getLensSubgraphByName", e);
+    } finally {
         await txn.discard();
     }
 }
@@ -442,6 +480,65 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
     } finally {
         await txn.discard();
     }
+}
+
+const handleLensScope2 = async (parent, args) => {
+    console.log("in handle lensScope, args: ", args)
+    const dg_client = getDgraphClient();
+
+    const lens_name = args.lens_name;
+
+    const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
+    lens_subgraph["uid"] = parseInt(lens_subgraph["uid"], 16);
+    lens_subgraph["scope"] = lens_subgraph["scope"] || [];
+
+    const neighbor_uids = new Set(lens_subgraph["scope"].map(node => node["uid"]));
+    console.log(neighbor_uids);
+
+    // neighbors
+    for (let neighbor of lens_subgraph["scope"]) {
+        neighbor["uid"] = parseInt(neighbor["uid"], 16);
+        neighbor["dgraph_type"] = neighbor["dgraph_type"].filter((t) => (t !== 'Base' && t !== 'Entity'));
+
+        if(!neighbor["dgraph_type"]) {
+            console.warn("No DGraph Type", neighbor);
+        }
+
+        // neighbor of neighbor
+        for (const predicate in neighbor) {
+            // No dgraph_type? Not a node; skip it!
+            //if (!neighbor[predicate].dgraph_type) { continue }
+
+            // If this edge is 1-to-many, we need to filter down the list to neighbor -> neighbord connections
+            if (Array.isArray(neighbor[predicate]) && neighbor[predicate] && neighbor[predicate][0]["uid"]) {
+                console.log(`ARR: ${predicate} - ${neighbor[predicate].length}`);
+                
+                neighbor[predicate] = neighbor[predicate].filter(second_neighbor => neighbor_uids.has(second_neighbor["uid"]));
+                neighbor[predicate].forEach(node => node["uid"] = parseInt(node["uid"], 16));
+                neighbor[predicate].forEach(node => node["dgraph_type"] = node["dgraph_type"].filter((t) => (t !== 'Base' && t !== 'Entity')));
+
+                console.log(`ARR AFTER: ${predicate} - ${neighbor[predicate].length}`);
+
+                // If we filtered all the connections down, might as well delete this predicate
+                if (neighbor[predicate].length === 0) {
+                    delete neighbor[predicate];
+                }
+            }
+            // If this edge is 1-to-1, we need to determine if we need to delete the edge
+            else if (typeof neighbor[predicate] === 'object' && neighbor[predicate]["uid"]) {
+                if(!neighbor_uids.has(neighbor[predicate]["uid"])) {
+                    console.log(`DELETING EDGE: ${JSON.stringify(neighbor[predicate])}`);
+                    delete neighbor[predicate];
+                } else {
+                    neighbor[predicate]["uid"] = parseInt(neighbor[predicate]["uid"], 16);
+                    neighbor[predicate]["dgraph_type"] = neighbor[predicate]["dgraph_type"].filter((t) => (t !== 'Base' && t !== 'Entity'))
+                }
+            }
+        }
+
+    }
+
+    return lens_subgraph;
 }
 
 const handleLensScope = async (parent, args) => {
@@ -586,7 +683,7 @@ const RootQuery = new GraphQLObjectType({
             resolve: async (parent, args) => {
                 try {
                     console.log("calling handleLensScope: args", args);
-                    return await handleLensScope(parent, args);
+                    return await handleLensScope2(parent, args);
                 } catch (e) { 
                     console.error("Failed to handle lens scope", e);
                     throw e;
