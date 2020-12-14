@@ -11,6 +11,16 @@ mount=dist:
   path: /home/grapl/dist
   file: false
 
+mount=test-outputs-screenshots:
+  bind: ./test/integration-outputs/screenshots
+  path: /test/cypress/screenshots
+  file: false
+
+mount=test-outputs-videos:
+  bind: ./test/integration-outputs/videos
+  path: /test/cypress/videos
+  file: false
+
 # a volume, not a bind-mount
 # dump-compose-artifacts will take care of extracting things from it
 mount=dynamodb_dump:
@@ -334,6 +344,18 @@ image=grapl-notebook:
   dockerfile: Dockerfile
   tags:
     - "{env.TAG}"
+  depends:
+    - grapl-analyzerlib-build
+
+image=grapl-notebook-test:
+  image: grapl/grapl-notebook-test
+  context: src/python/grapl-notebook
+  dockerfile: tests.Dockerfile
+  tags:
+    - "{env.TAG}"
+  depends:
+    - grapl-notebook
+    - etc-build
 
 image=grapl-provision:
   image: grapl/grapl-provision
@@ -435,6 +457,15 @@ image=etc-build:
   tags:
     - "{env.TAG}"
 
+# utility images
+image=cypress:
+  image: grapl/cypress
+  context: test
+  dockerfile: Dockerfile
+  target: cypress
+  tags:
+    - "{env.TAG}"
+
 #
 # compose
 #
@@ -471,6 +502,8 @@ compose=integration-env:
     # js images
     - engagement-view
     - graphql-endpoint
+    # utility images
+    - cypress
 
 #
 # jobs -- these are where we build release artifacts
@@ -807,6 +840,15 @@ job=run-engagement-view-unit-tests:
   use: engagement-view-build
   command: /bin/bash -c "CI=true yarn test"
 
+job=run-engagement-view-integration-tests:
+  use: cypress
+  net-mode: grapl-network
+  mounts:
+    - test-outputs-screenshots
+    - test-outputs-videos
+  depends:
+    - integration-env
+
 job=build-graphql-endpoint:
   use: graphql-endpoint-build
   mounts:
@@ -815,8 +857,6 @@ job=build-graphql-endpoint:
     - ./dist/graphql-endpoint/lambda.zip
 
 # TODO: graphql endpoint unit tests
-
-# TODO: graphql endpoint integration tests
 
 #
 # aliases
@@ -930,13 +970,24 @@ alias=js-unit-tests:
   annotations:
     description: "Run the js unit tests"
 
-# TODO: js integration tests
+alias=js-integration-tests:
+  tasks:
+   - run-engagement-view-integration-tests
+  annotations:
+    description: "Run the js integration tests"
+
+alias=tool:
+  tasks:
+    - "cypress:tag"
+  annotations:
+    description: "Build developer tool images, for testing and debugging."
 
 alias=build:
   tasks:
     - rust
     - python
     - js
+    - tool
   annotations:
     description: "Build artifacts and images for all services"
 
@@ -960,7 +1011,7 @@ alias=integration-tests:
   tasks:
     - rust-integration-tests
     - python-integration-tests
-    # TODO: js integration tests
+    - js-integration-tests
   annotations:
     description: "Run all the integration tests"
 
