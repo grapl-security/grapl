@@ -7,7 +7,7 @@ use std::iter::FromIterator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use std::time::SystemTime;
+use std::time::{SystemTime, Duration};
 use std::time::UNIX_EPOCH;
 
 use async_trait::async_trait;
@@ -47,6 +47,8 @@ use sqs_lambda::redis_cache::RedisCache;
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use grapl_graph_descriptions::node::NodeT;
 use std::net::ToSocketAddrs;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
@@ -359,11 +361,16 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
+            let completion_policy = ConsumePolicyBuilder::default()
+                .with_max_empty_receives(1)
+                .with_stop_at(Duration::from_secs(10));
+
             sqs_lambda::sqs_service::sqs_service(
                 source_queue_url,
                 initial_messages,
                 bucket,
-                ctx,
+                completion_policy.build(ctx),
+                CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),

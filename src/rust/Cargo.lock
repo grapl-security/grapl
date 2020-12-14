@@ -63,7 +63,7 @@ dependencies = [
  "serde_json",
  "sha2 0.8.2",
  "simple_logger",
- "sqs-lambda 0.20.23",
+ "sqs-lambda",
  "stopwatch",
  "tokio 0.2.24",
  "tokio-compat",
@@ -772,9 +772,9 @@ dependencies = [
 
 [[package]]
 name = "dgraph-tonic"
-version = "0.8.2"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "048631750492c35658a08060f055d805ab7ef49daaee7f0be27d322165c59095"
+checksum = "d04f893e65c442e827b4cbaabce584ad55f3bbd57bd4e0322fe46d70d3032b51"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -1195,7 +1195,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "simple_logger",
- "sqs-lambda 0.20.23",
+ "sqs-lambda",
  "stopwatch",
  "tokio 0.2.24",
  "tokio-compat",
@@ -1251,7 +1251,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.7.1",
- "sqs-lambda 0.21.0",
+ "sqs-lambda",
  "tokio 0.2.24",
  "tokio-compat",
  "zstd",
@@ -1290,7 +1290,7 @@ dependencies = [
  "serde_json",
  "sha2 0.8.2",
  "simple_logger",
- "sqs-lambda 0.20.23",
+ "sqs-lambda",
  "stopwatch",
  "tokio 0.2.24",
  "tokio-compat",
@@ -1308,7 +1308,7 @@ dependencies = [
  "rusoto_core",
  "rusoto_s3",
  "rusoto_sqs",
- "sqs-lambda 0.21.0",
+ "sqs-lambda",
  "tokio 0.2.24",
  "tracing",
  "tracing-futures",
@@ -2077,7 +2077,7 @@ dependencies = [
  "sha2 0.7.1",
  "sha256",
  "simple_logger",
- "sqs-lambda 0.20.23",
+ "sqs-lambda",
  "stopwatch",
  "tokio 0.2.24",
  "tokio-compat",
@@ -2251,7 +2251,7 @@ dependencies = [
  "rusoto_sqs",
  "serde",
  "serde_json",
- "sqs-lambda 0.20.23",
+ "sqs-lambda",
  "tokio 0.2.24",
  "tokio-compat",
  "zstd",
@@ -3368,47 +3368,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "sqs-lambda"
-version = "0.20.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3e329490048a9d7f5a9755f487b6de3e49ec3cf6bacd9ee311e292b2f713527"
-dependencies = [
- "aktors",
- "async-trait",
- "aws_lambda_events 0.2.7",
- "chrono",
- "color-eyre",
- "crossbeam-channel 0.4.4",
- "darkredis",
- "derive-aktor",
- "eyre",
- "futures 0.3.8",
- "futures-retry",
- "hex",
- "lambda_runtime",
- "log 0.4.11",
- "notify",
- "num_cpus",
- "prost",
- "rand 0.7.3",
- "rand_xorshift 0.2.0",
- "rusoto_core",
- "rusoto_s3",
- "rusoto_sqs",
- "serde",
- "serde_json",
- "simple_logger",
- "thiserror",
- "tokio 0.2.24",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
- "uuid 0.8.1",
- "zstd",
-]
-
-[[package]]
-name = "sqs-lambda"
 version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f2d471d3644089da4e0cb76dd6d463c2460f4bd3153a376ee1cf6a04ce2460a"
 dependencies = [
  "aktors",
  "async-trait",
@@ -3648,7 +3610,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "simple_logger",
- "sqs-lambda 0.21.0",
+ "sqs-lambda",
  "stopwatch",
  "sysmon",
  "tokio 0.2.24",

@@ -34,6 +34,8 @@ use chrono::Utc;
 use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
 use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use std::str::FromStr;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
@@ -279,12 +281,16 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
             };
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
+            let completion_policy = ConsumePolicyBuilder::default()
+                .with_max_empty_receives(1)
+                .with_stop_at(Duration::from_secs(10));
 
             sqs_lambda::sqs_service::sqs_service(
                 source_queue_url,
                 initial_messages,
                 bucket,
-                ctx,
+                completion_policy.build(ctx),
+                CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
