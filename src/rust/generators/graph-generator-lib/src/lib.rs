@@ -9,6 +9,8 @@ use grapl_graph_descriptions::graph_description::*;
 
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
+use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 
 /// Graph generator implementations should invoke this function to begin processing new log events.
 ///
@@ -39,12 +41,14 @@ pub async fn run_graph_generator<
 >(
     generator: EH,
     event_decoder: ED,
+    consume_policy: ConsumePolicyBuilder,
+    completion_policy: CompletionPolicy,
 ) {
     info!("IS_LOCAL={:?}", config::is_local());
 
     if config::is_local() {
-        local::run_graph_generator_local(generator, event_decoder).await;
+        local::run_graph_generator_local(generator, event_decoder, consume_policy, completion_policy).await;
     } else {
-        aws::run_graph_generator_aws(generator, event_decoder);
+        aws::run_graph_generator_aws(generator, event_decoder,  consume_policy, completion_policy);
     }
 }

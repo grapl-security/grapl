@@ -15,6 +15,11 @@ use crate::generator::SysmonSubgraphGenerator;
 use crate::metrics::SysmonSubgraphGeneratorMetrics;
 use crate::serialization::ZstdDecoder;
 use grapl_config::*;
+use std::time::Duration;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use chrono::Utc;
+use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+use sqs_lambda::event_handler::Completion;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,11 +31,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if grapl_config::is_local() {
         let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);
 
-        run_graph_generator(generator, ZstdDecoder::default()).await;
+        run_graph_generator(
+            generator,
+            ZstdDecoder::default(),
+            ConsumePolicyBuilder::default(),
+            CompletionPolicy::new(
+                1,                      // Buffer up to 1 message
+                Duration::from_secs(1), // Buffer for up to 1 second
+            ),
+        ).await;
     } else {
         let generator = SysmonSubgraphGenerator::new(event_cache().await, metrics);
 
-        run_graph_generator(generator, ZstdDecoder::default()).await;
+        let completion_policy =
+            ConsumePolicyBuilder::default()
+                .with_max_empty_receives(1)
+                .with_stop_at(Duration::from_secs(10));
+
+        run_graph_generator(
+            generator,
+            ZstdDecoder::default(),
+            completion_policy,
+            CompletionPolicy::new(
+                10,
+                Duration::from_secs(2),
+            ),
+        ).await;
     }
 
     Ok(())
