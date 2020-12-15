@@ -71,7 +71,7 @@ async fn init_local_node_identifier(
 #[tokio::test]
 async fn test_service() -> Result<(), Box<dyn std::error::Error>> {
     // todo: I think should_default could in fact be random? It shouldn't matter for this test.
-    let node_identifier = init_local_node_identifier(false).await;
+    // let node_identifier = init_local_node_identifier(false).await;
 
     Ok(())
 }
