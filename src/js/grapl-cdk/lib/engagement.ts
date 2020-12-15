@@ -15,6 +15,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from 'node-dir';
 import {WatchedOperation} from "cdk-watchful";
+import { SchemaDb } from './schemadb';
 
 
 function getEdgeGatewayId(
@@ -151,6 +152,7 @@ export class EngagementEdge extends cdk.NestedStack {
 
 export interface EngagementNotebookProps extends GraplServiceProps {
     model_plugins_bucket: s3.IBucket;
+    schema_db: SchemaDb;
 }
 
 export class EngagementNotebook extends cdk.NestedStack {
@@ -183,6 +185,7 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         props.userAuthTable.allowReadWriteFromRole(role);
         props.model_plugins_bucket.grantRead(role);
+        props.schema_db.allowReadWriteFromRole(role);
 
         this.notebookInstance = new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
             notebookInstanceName: props.prefix + '-Notebook',

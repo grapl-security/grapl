@@ -304,7 +304,10 @@ def main(prefix: str) -> None:
 ##
 # Paste the following into an SSM shell on the swarm
 # manager ({manager_id}) to deploy dgraph to
-# the swarm cluster:
+# the swarm cluster.
+#
+# With awscli:
+# aws ssm start-session --target {manager_id}
 ##
 
 sudo su ec2-user
