@@ -119,20 +119,26 @@ export class Swarm extends cdk.Construct {
         // UserData commands for initializing the Swarm instances.
         const swarmUserData = ec2.UserData.forLinux();
         swarmUserData.addCommands(...[
-            'yum install -y docker amazon-cloudwatch-agent python3',
-            'amazon-cloudwatch-agent-ctl -m ec2 -a start',
-            '# create LUKS key',
+            // create LUKS key
             'head -c 256 /dev/urandom > /root/luks_key',
             'cryptsetup -v -q luksFormat /dev/nvme0n1 /root/luks_key',
             'UUID=$(lsblk -o +UUID | grep nvme0n1 | rev | cut -d" " -f1 | rev)',
             'echo -e "dgraph\tUUID=$UUID\t/root/luks_key\tnofail" > /etc/crypttab',
             'systemctl daemon-reload',
             'systemctl start systemd-cryptsetup@dgraph.service',
+
+            // Set up the dgraph partition/mount
             'mkfs -t xfs /dev/mapper/dgraph',
             'mkdir /dgraph',
             'echo -e "/dev/mapper/dgraph\t/dgraph\txfs\tdefaults,nofail\t0\t2" >> /etc/fstab',
             'mount /dgraph',
             'echo -e \'{"data-root":"/dgraph"}\' > /etc/docker/daemon.json',
+
+            // install CWAgent
+            'yum install -y docker amazon-cloudwatch-agent python3',
+
+            // Finally, after everything is set up, start all the daemons
+            'amazon-cloudwatch-agent-ctl -m ec2 -a start',
             'systemctl enable docker.service',
             'systemctl start docker.service',
             'usermod -a -G docker ec2-user',
