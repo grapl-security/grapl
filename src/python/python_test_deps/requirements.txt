@@ -4,4 +4,4 @@ hypothesis
 
 mypy
 pytype
-boto3-stubs[essential]
+boto3-stubs[essential,sagemaker]

@@ -718,14 +718,8 @@ job=typecheck-model-plugin-deployer:
 
 job=typecheck-engagement-edge:
   use: engagement-edge-test
-<<<<<<< HEAD
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
-  command: | 
-=======
-  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
   command: |
->>>>>>> Proof of concept - quicker typechecks
     /bin/bash -c "
       source venv/bin/activate &&
       touch venv/lib/python3.7/site-packages/chalice/py.typed &&
