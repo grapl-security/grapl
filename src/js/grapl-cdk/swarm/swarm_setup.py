@@ -205,7 +205,6 @@ def _init_docker_swarm(
     necessary to attach workers to the swarm.
 
     """
-    _create_disk_usage_alarms(cloudwatch, manager_id, prefix)
     command = ssm.send_command(
         # Targets=[{"Key": "tag:Name", "Values": ["Grapl/swarm/SwarmCluster/SwarmASG"]}],
         InstanceIds=[manager_id],
@@ -247,7 +246,6 @@ def _join_worker_nodes(
     worker nodes."""
     hostnames = []
     for instance_id, _, hostname in instances:
-        _create_disk_usage_alarms(cloudwatch, instance_id, prefix)
         command = ssm.send_command(
             # Targets=[{"Key": "tag:Name", "Values": ["Grapl/swarm/SwarmCluster/SwarmASG"]}],
             InstanceIds=[instance_id],
@@ -281,20 +279,24 @@ def main(prefix: str) -> None:
     ec2 = boto3.client("ec2")
 
     LOGGER.info("Retrieving instance IDs")
-    instances = _swarm_instances(ec2)
+    instances = list(_swarm_instances(ec2))
 
     ssm = boto3.client("ssm")
     cloudwatch: CloudWatchClient = boto3.client("cloudwatch")
 
+    LOGGER.info("Creating disk usage alarms")
+    for instance_id, _, _ in instances:
+        _create_disk_usage_alarms(cloudwatch, instance_id, prefix)
+
     LOGGER.info("Initializing swarm manager")
-    manager_id, manager_ip, manager_hostname = next(instances)
+    manager_id, manager_ip, manager_hostname = instances[0]
     join_token = _init_docker_swarm(
         ec2, ssm, cloudwatch, prefix, manager_id, manager_ip, manager_hostname
     )
 
     LOGGER.info("Joining worker instances")
     worker_hostnames = _join_worker_nodes(
-        ec2, ssm, cloudwatch, prefix, instances, join_token, manager_ip
+        ec2, ssm, cloudwatch, prefix, instances[1:], join_token, manager_ip
     )
 
     LOGGER.info("Docker swarm cluster setup complete")
@@ -313,11 +315,16 @@ def main(prefix: str) -> None:
 sudo su ec2-user
 cd $HOME
 
+# Write the following exports to a file so they can be re-sourced in future
+cat >all_exports <<DELIM
 export GRAPL_DEPLOY_NAME="{prefix}"
 export AWS_LOGS_GROUP="{prefix}-grapl-dgraph"
 export AWS01_NAME="{manager_hostname}"
 export AWS02_NAME="{worker_hostnames[0]}"
 export AWS03_NAME="{worker_hostnames[1]}"
+DELIM
+
+source ./all_exports
 
 aws s3 cp s3://${{GRAPL_DEPLOY_NAME,,}}-dgraph-config-bucket/docker-compose-dgraph.yml .
 aws s3 cp s3://${{GRAPL_DEPLOY_NAME,,}}-dgraph-config-bucket/envoy.yaml .
