@@ -1,6 +1,12 @@
 src/js/grapl-cdk/edge_ux_package/*
 src/rust/graph-descriptions/grapl_graph_descriptions
 
+# Mac OS
+.DS_Store
+
+# Test outputs
+/test/integration-outputs/**/*
+
 grapl-cdk/cdk.out/
 lambda/
 __pycache__/

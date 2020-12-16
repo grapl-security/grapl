@@ -11,6 +11,16 @@ mount=dist:
   path: /home/grapl/dist
   file: false
 
+mount=test-outputs-screenshots:
+  bind: ./test/integration-outputs/screenshots
+  path: /test/cypress/screenshots
+  file: false
+
+mount=test-outputs-videos:
+  bind: ./test/integration-outputs/videos
+  path: /test/cypress/videos
+  file: false
+
 # a volume, not a bind-mount
 # dump-compose-artifacts will take care of extracting things from it
 mount=dynamodb_dump:
@@ -271,6 +281,17 @@ image=engagement-edge-build:
   tags:
     - latest
 
+image=engagement-edge-test:
+  image: grapl/engagement-edge-test
+  context: src/python/engagement_edge
+  dockerfile: tests.Dockerfile
+  target: engagement-edge-test
+  depends:
+    - engagement-edge-build
+    - grapl-tests-common-build
+  tags:
+    - latest
+
 image=engagement-edge:
   image: grapl/grapl-engagement-edge
   context: src/python/engagement_edge
@@ -334,6 +355,18 @@ image=grapl-notebook:
   dockerfile: Dockerfile
   tags:
     - "{env.TAG}"
+  depends:
+    - grapl-analyzerlib-build
+
+image=grapl-notebook-test:
+  image: grapl/grapl-notebook-test
+  context: src/python/grapl-notebook
+  dockerfile: tests.Dockerfile
+  tags:
+    - "{env.TAG}"
+  depends:
+    - grapl-notebook
+    - etc-build
 
 image=grapl-provision:
   image: grapl/grapl-provision
@@ -435,6 +468,15 @@ image=etc-build:
   tags:
     - "{env.TAG}"
 
+# utility images
+image=cypress:
+  image: grapl/cypress
+  context: test
+  dockerfile: Dockerfile
+  target: cypress
+  tags:
+    - "{env.TAG}"
+
 #
 # compose
 #
@@ -471,6 +513,8 @@ compose=integration-env:
     # js images
     - engagement-view
     - graphql-endpoint
+    # utility images
+    - cypress
 
 #
 # jobs -- these are where we build release artifacts
@@ -595,15 +639,13 @@ job=typecheck-model-plugin-deployer:
       "
 
 job=typecheck-engagement-edge:
-  use: engagement-edge-build
-  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
-  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
-  command: |
+  use: engagement-edge-test
+  # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in	
+  command: | 
     /bin/bash -c "
       source venv/bin/activate &&
       touch venv/lib/python3.7/site-packages/chalice/py.typed &&
       cd engagement_edge &&
-      pip install .[typecheck] &&
       mypy .
       "
 
@@ -688,6 +730,23 @@ job=run-analyzer-executor-integration-tests:
   depends:
     - integration-env
 
+job=run-engagement-edge-integration-tests:
+  use: engagement-edge-test
+  net-mode: grapl-network
+  command: |
+    /bin/bash -c '
+      wait-for-it grapl-engagement-edge:8900 --timeout=60 &&
+      source venv/bin/activate &&
+      cd engagement_edge && 
+      py.test -n auto -m "integration_test"
+      '
+  env:
+    - IS_LOCAL=True
+    - BUCKET_PREFIX=local-grapl
+    - UX_BUCKET_URL="ux_bucket_url"
+  depends:
+    - integration-env
+
 job=run-e2e-tests:
   use: grapl-e2e-tests-build
   net-mode: grapl-network
@@ -763,7 +822,7 @@ job=build-engagement-edge:
     - ./dist/engagement-edge/lambda.zip
 
 job=run-engagement-edge-unit-tests:
-  use: engagement-edge-build
+  use: engagement-edge-test
   command: /bin/bash -c "source venv/bin/activate && cd engagement_edge && py.test -n auto -m 'not integration_test'"
   env:
     - IS_LOCAL=True
@@ -807,6 +866,15 @@ job=run-engagement-view-unit-tests:
   use: engagement-view-build
   command: /bin/bash -c "CI=true yarn test"
 
+job=run-engagement-view-integration-tests:
+  use: cypress
+  net-mode: grapl-network
+  mounts:
+    - test-outputs-screenshots
+    - test-outputs-videos
+  depends:
+    - integration-env
+
 job=build-graphql-endpoint:
   use: graphql-endpoint-build
   mounts:
@@ -815,8 +883,6 @@ job=build-graphql-endpoint:
     - ./dist/graphql-endpoint/lambda.zip
 
 # TODO: graphql endpoint unit tests
-
-# TODO: graphql endpoint integration tests
 
 #
 # aliases
@@ -907,6 +973,8 @@ alias=python-integration-tests:
   tasks:
     - run-grapl-analyzerlib-integration-tests
     - run-analyzer-deployer-integration-tests
+    - run-analyzer-executor-integration-tests
+    - run-engagement-edge-integration-tests
   annotations:
     description: "Run the python integration tests"
 
@@ -930,13 +998,24 @@ alias=js-unit-tests:
   annotations:
     description: "Run the js unit tests"
 
-# TODO: js integration tests
+alias=js-integration-tests:
+  tasks:
+   - run-engagement-view-integration-tests
+  annotations:
+    description: "Run the js integration tests"
+
+alias=tool:
+  tasks:
+    - "cypress:tag"
+  annotations:
+    description: "Build developer tool images, for testing and debugging."
 
 alias=build:
   tasks:
     - rust
     - python
     - js
+    - tool
   annotations:
     description: "Build artifacts and images for all services"
 
@@ -960,7 +1039,7 @@ alias=integration-tests:
   tasks:
     - rust-integration-tests
     - python-integration-tests
-    # TODO: js integration tests
+    - js-integration-tests
   annotations:
     description: "Run all the integration tests"
 
