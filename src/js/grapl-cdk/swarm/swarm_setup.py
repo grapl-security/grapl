@@ -5,7 +5,7 @@ import json
 import logging
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Iterator, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Iterator, List, NamedTuple, Optional, Sequence
 
 import boto3
 
@@ -238,7 +238,7 @@ def _join_worker_nodes(
     ssm: Any,
     cloudwatch: CloudWatchClient,
     prefix: str,
-    instances: Iterator[InstanceTuple],
+    instances: Sequence[InstanceTuple],
     join_token: str,
     manager_ip: str,
 ) -> List[str]:
@@ -280,6 +280,8 @@ def main(prefix: str) -> None:
 
     LOGGER.info("Retrieving instance IDs")
     instances = list(_swarm_instances(ec2))
+    manager_instance = instances[0]
+    worker_instances = instances[1:]
 
     ssm = boto3.client("ssm")
     cloudwatch: CloudWatchClient = boto3.client("cloudwatch")
@@ -289,14 +291,14 @@ def main(prefix: str) -> None:
         _create_disk_usage_alarms(cloudwatch, instance_id, prefix)
 
     LOGGER.info("Initializing swarm manager")
-    manager_id, manager_ip, manager_hostname = instances[0]
+    manager_id, manager_ip, manager_hostname = manager_instance
     join_token = _init_docker_swarm(
         ec2, ssm, cloudwatch, prefix, manager_id, manager_ip, manager_hostname
     )
 
     LOGGER.info("Joining worker instances")
     worker_hostnames = _join_worker_nodes(
-        ec2, ssm, cloudwatch, prefix, instances[1:], join_token, manager_ip
+        ec2, ssm, cloudwatch, prefix, worker_instances, join_token, manager_ip
     )
 
     LOGGER.info("Docker swarm cluster setup complete")
