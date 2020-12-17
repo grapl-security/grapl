@@ -927,6 +927,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const engagement_notebook = new EngagementNotebook(this, 'engagements', {
             model_plugins_bucket,
+            schema_db: schema_table,
             ...graplProps,
         });
 

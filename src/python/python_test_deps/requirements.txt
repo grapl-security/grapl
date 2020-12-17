@@ -1,0 +1,7 @@
+pytest
+pytest-xdist
+hypothesis
+
+mypy
+pytype
+boto3-stubs[essential,sagemaker]

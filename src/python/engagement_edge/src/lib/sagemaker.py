@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import boto3
-from src.lib.env_vars import IS_LOCAL
+from typing_extensions import Protocol
 
 if TYPE_CHECKING:
     from mypy_boto3_sagemaker import (
@@ -11,7 +11,12 @@ if TYPE_CHECKING:
     )
 
 
-class SagemakerClient:
+class ISagemakerClient(Protocol):
+    def get_presigned_url(self, instance_name: str) -> str:
+        pass
+
+
+class SagemakerClient(ISagemakerClient):
     def __init__(self, client: _BotoSageMakerClient):
         self.client = client
 
@@ -22,12 +27,15 @@ class SagemakerClient:
         )
         return result["AuthorizedUrl"]
 
-    @staticmethod
-    def create() -> SagemakerClient:
-        if IS_LOCAL:
-            # Technically, we could put in some mock that just returns the Jupyter url, but
-            # at that point you're getting pretty far from the AWS implementation.
-            raise NotImplementedError("There's no localstack Sagemaker yet!")
 
+class LocalSagemakerClient(ISagemakerClient):
+    def get_presigned_url(self, instance_name: str) -> str:
+        return "http://localhost:8888"
+
+
+def create_sagemaker_client(is_local: bool) -> ISagemakerClient:
+    if is_local:
+        return LocalSagemakerClient()
+    else:
         client = boto3.client("sagemaker")
         return SagemakerClient(client=client)
