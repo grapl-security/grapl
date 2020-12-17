@@ -50,7 +50,8 @@ def get_assets_info(version: str) -> List[Asset]:
         [
             "curl",
             "-s",
-            "https://api.github.com/repos/grapl-security/grapl/releases/tags/%s" % version,
+            "https://api.github.com/repos/grapl-security/grapl/releases/tags/%s"
+            % version,
         ],
         capture_output=True,
     ).stdout
