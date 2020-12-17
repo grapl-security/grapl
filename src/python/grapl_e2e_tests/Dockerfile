@@ -3,6 +3,7 @@ CMD "/bin/bash"
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . grapl_e2e_tests
+
 # Expose the `etc/` dir with all its test data in /home/grapl/etc
 COPY --from=grapl/etc-build /home/grapl/etc etc
 
