@@ -11,6 +11,8 @@ use rusoto_sqs::SqsClient;
 use rusoto_sts::{StsAssumeRoleSessionCredentialsProvider, StsClient};
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::mpsc::SyncSender;
@@ -31,9 +33,18 @@ pub(crate) fn run_graph_generator_aws<
 >(
     generator: EH,
     event_decoder: ED,
+    consume_policy: ConsumePolicyBuilder,
+    completion_policy: CompletionPolicy,
 ) {
     lambda_runtime::lambda!(|event, context| {
-        lambda_handler(event, context, generator.clone(), event_decoder.clone())
+        let consume_policy = consume_policy.clone();
+        lambda_handler(
+            event,
+            consume_policy.build(context),
+            completion_policy.clone(),
+            generator.clone(),
+            event_decoder.clone(),
+        )
     })
 }
 
@@ -47,7 +58,8 @@ fn lambda_handler<
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     event: SqsEvent,
-    ctx: Context,
+    consume_policy: ConsumePolicy,
+    completion_policy: CompletionPolicy,
     generator: EH,
     event_decoder: ED,
 ) -> Result<(), HandlerError> {
@@ -69,7 +81,8 @@ fn lambda_handler<
         // tokio_compat::run_std if we want to invoke a new async task
         tokio_compat::run_std(run_async_generator_handler(
             event,
-            ctx,
+            consume_policy,
+            completion_policy,
             generator,
             event_decoder,
             tx,
@@ -119,7 +132,8 @@ async fn run_async_generator_handler<
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     event: SqsEvent,
-    ctx: Context,
+    consume_policy: ConsumePolicy,
+    completion_policy: CompletionPolicy,
     generator: EH,
     event_decoder: ED,
     tx: SyncSender<String>,
@@ -144,7 +158,8 @@ async fn run_async_generator_handler<
         source_queue_url,
         initial_messages,
         destination_bucket,
-        ctx,
+        consume_policy,
+        completion_policy,
         |region_str| init_production_s3_client(region_str),
         S3Client::new(region.clone()),
         SqsClient::new(region.clone()),
