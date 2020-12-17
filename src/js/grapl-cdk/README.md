@@ -32,9 +32,11 @@ Github.
 
 Navigate to https://github.com/grapl-security/grapl/releases and find
 the git tag associated with the latest release. Then `cd
-src/js/grapl-cdk` and run `python3 fetch_zips_by_tag.py $TAG` where
-`$TAG` is the appropriate git tag. The script will download all the
-release artifacts to the `zips/` directory.
+src/js/grapl-cdk` and run 
+`python3 fetch_zips_by_tag.py --tag $TAG --version $VERSION`
+where `$TAG` is the appropriate git tag (i.e. 'v0.1.2') 
+and `$VERSION` is the build version, like 'latest`.
+The script will download all the release artifacts to the `zips/` directory.
 
 #### Executing a Grapl build and extracting release artifacts
 
