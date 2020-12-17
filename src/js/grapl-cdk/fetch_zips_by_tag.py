@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+PSA: The 'tag' verbiage gets a bit conflated once we hit release.
+Github Tags = vX.Y.Z
+Grapl Versions = vX.Y.Z
+"""
 import argparse
 import json
 import os
@@ -10,7 +15,7 @@ Asset = Dict[str, Any]
 
 SUCCESS_EMOJI = "\U00002705"
 
-valid_tag = re.compile("v\d+\.\d+\.\d+")
+valid_version = re.compile("v\d+\.\d+\.\d+")
 
 GRAPL_CDK_FOLDER_PATH = os.path.dirname(os.path.realpath(__file__))
 assert GRAPL_CDK_FOLDER_PATH.endswith("grapl-cdk")
@@ -23,29 +28,29 @@ def parse_args() -> argparse.Namespace:
         description="Fetch prebuilt release zips from Github"
     )
     parser.add_argument(
-        "--tag",
-        dest="tag",
+        "--version",
+        dest="version",
         required=True,
         help="For example, `v0.1.0` - don't forget the v!",
     )
     parser.add_argument(
-        "--version",
-        dest="version",
+        "--channel",
+        dest="channel",
         required=True,
         help="For example, `latest` or `beta`",
     )
     return parser.parse_args()
 
 
-def get_assets_info(tag: str) -> List[Asset]:
+def get_assets_info(version: str) -> List[Asset]:
     """
-    Query github for all the Grapl releases for a given tag
+    Query github for all the Grapl releases for a given tag-version
     """
     raw = subprocess.run(
         [
             "curl",
             "-s",
-            "https://api.github.com/repos/grapl-security/grapl/releases/tags/%s" % tag,
+            "https://api.github.com/repos/grapl-security/grapl/releases/tags/%s" % version,
         ],
         capture_output=True,
     ).stdout
@@ -61,7 +66,7 @@ def download_asset(asset: Asset, args: argparse.Namespace) -> subprocess.Popen:
     url = asset["browser_download_url"]
     filename = asset["name"]
     filename_on_disk = filename.replace(
-        f"-{args.tag}-{args.version}.zip", f"-{args.version}.zip"
+        f"-{args.version}-{args.channel}.zip", f"-{args.channel}.zip"
     )
 
     print(f"Downloading {url}")
@@ -81,13 +86,13 @@ def download_asset(asset: Asset, args: argparse.Namespace) -> subprocess.Popen:
 
 def main() -> None:
     args = parse_args()
-    if not valid_tag.match(args.tag):
-        raise Exception(f"Tag '{args.tag}' invalid - must be of format vX.Y.Z")
+    if not valid_version.match(args.version):
+        raise Exception(f"Tag '{args.version}' invalid - must be of format vX.Y.Z")
 
-    if args.version not in ("latest", "beta", "staging"):
-        print("WARNING: You're using an unconventional --version, beware!")
+    if args.channel not in ("latest", "beta", "staging"):
+        print("WARNING: You're using an unconventional --channel, beware!")
 
-    assets = get_assets_info(args.tag)
+    assets = get_assets_info(args.version)
 
     # Quick benchmark: as of Nov 24 2020, before parallel, 71s; after parallel, 34s
     download_processes: List[subprocess.Popen] = [
