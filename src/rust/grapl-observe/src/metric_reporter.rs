@@ -109,8 +109,8 @@ where
 
     example: the time to complete rendering of a web page for a user.
     */
-    pub fn histogram(&mut self, metric_name: &str, value: f64) -> Result<(), MetricError> {
-        self.write_metric(metric_name, value, MetricType::Histogram, None, &[])
+    pub fn histogram(&mut self, metric_name: &str, value: f64, tags: &[TagPair]) -> Result<(), MetricError> {
+        self.write_metric(metric_name, value, MetricType::Histogram, None, tags)
     }
 }
 
