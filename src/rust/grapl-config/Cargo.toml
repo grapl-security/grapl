@@ -9,7 +9,7 @@ license = "Apache-2.0"
 
 [dependencies]
 log = "0.4.*"
-sqs-lambda = "0.21.0"
+sqs-lambda = "0.21.*"
 
 rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
