@@ -202,9 +202,7 @@ async fn upsert_edge(
     mu: dgraph_tonic::Mutation,
 ) -> Result<(), failure::Error> {
     let mut txn = mg_client.new_mutated_txn();
-    txn.mutate(mu).await.map_err(AnyhowFailure::into_failure)?;
-
-    txn.commit().await.map_err(AnyhowFailure::into_failure)?;
+    txn.mutate_and_commit_now(mu).await.map_err(AnyhowFailure::into_failure)?;
 
     Ok(())
 }
