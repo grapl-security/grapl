@@ -5,7 +5,7 @@ extern crate sqs_lambda;
 extern crate tokio;
 
 use std::error::Error;
-use std::io::Cursor;
+use std::io::{Cursor, Stdout};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use prost::Message;
@@ -29,6 +29,7 @@ use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use std::fmt::Debug;
 use tracing_subscriber::EnvFilter;
+use grapl_observe::metric_reporter::MetricReporter;
 
 struct MyService<C>
 where
@@ -243,6 +244,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         SubgraphSerializer {},
         service,
         NopCache {},
+        MetricReporter::<Stdout>::new("test-service"),
         |_, event_result| {
             dbg!(event_result);
         },
