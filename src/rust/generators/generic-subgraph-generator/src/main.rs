@@ -17,6 +17,8 @@ use crate::serialization::ZstdJsonDecoder;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 use std::time::Duration;
+use std::io::Stdout;
+use grapl_observe::metric_reporter::MetricReporter;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -35,6 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 1,                      // Buffer up to 1 message
                 Duration::from_secs(1), // Buffer for up to 1 second
             ),
+            MetricReporter::<Stdout>::new("generic-subgraph-generator"),
         )
         .await;
     } else {
@@ -49,6 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ZstdJsonDecoder::default(),
             completion_policy,
             CompletionPolicy::new(10, Duration::from_secs(2)),
+            MetricReporter::<Stdout>::new("generic-subgraph-generator"),
         )
         .await;
     }

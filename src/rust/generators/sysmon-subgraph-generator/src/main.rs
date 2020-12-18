@@ -20,6 +20,8 @@ use sqs_lambda::event_handler::Completion;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
 use std::time::Duration;
+use grapl_observe::metric_reporter::MetricReporter;
+use std::io::Stdout;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -39,6 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 1,                      // Buffer up to 1 message
                 Duration::from_secs(1), // Buffer for up to 1 second
             ),
+            MetricReporter::<Stdout>::new("sysmon-subgraph-generator")
         )
         .await;
     } else {
@@ -53,6 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ZstdDecoder::default(),
             completion_policy,
             CompletionPolicy::new(10, Duration::from_secs(2)),
+            MetricReporter::<Stdout>::new("sysmon-subgraph-generator")
         )
         .await;
     }

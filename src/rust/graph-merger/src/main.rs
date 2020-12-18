@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
-use std::io::Cursor;
+use std::io::{Cursor, Stdout};
 use std::iter::FromIterator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -18,7 +18,7 @@ use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
 
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
-
+use grapl_observe::metric_reporter::MetricReporter;
 use failure::{bail, Error};
 use futures::future::join_all;
 use lambda_runtime::error::HandlerError;
@@ -380,6 +380,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 },
                 graph_merger,
                 cache.clone(),
+                MetricReporter::<Stdout>::new("graph-merger"),
                 move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
@@ -801,6 +802,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         },
         graph_merger,
         cache.clone(),
+        MetricReporter::<Stdout>::new("graph-merger"),
         |_, event_result| {
             dbg!(event_result);
         },
