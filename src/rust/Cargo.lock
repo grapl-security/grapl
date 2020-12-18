@@ -49,6 +49,7 @@ dependencies = [
  "futures 0.3.8",
  "grapl-config",
  "grapl-graph-descriptions",
+ "grapl-observe",
  "grpc",
  "lambda_runtime",
  "log 0.4.11",
@@ -1182,6 +1183,7 @@ dependencies = [
  "graph-generator-lib",
  "grapl-config",
  "grapl-graph-descriptions",
+ "grapl-observe",
  "lambda_runtime",
  "lazy_static",
  "log 0.4.11",
@@ -1240,6 +1242,7 @@ dependencies = [
  "failure",
  "grapl-config",
  "grapl-graph-descriptions",
+ "grapl-observe",
  "lambda_runtime",
  "log 0.4.11",
  "prost",
@@ -1272,6 +1275,7 @@ dependencies = [
  "futures 0.3.8",
  "grapl-config",
  "grapl-graph-descriptions",
+ "grapl-observe",
  "grpc",
  "itertools 0.8.2",
  "lambda_runtime",
@@ -1341,6 +1345,7 @@ dependencies = [
  "lazy_static",
  "log 0.4.11",
  "regex",
+ "stopwatch",
  "thiserror",
 ]
 
@@ -2058,6 +2063,7 @@ dependencies = [
  "futures 0.3.8",
  "grapl-config",
  "grapl-graph-descriptions",
+ "grapl-observe",
  "hex",
  "hmap",
  "lambda_runtime",
@@ -3370,8 +3376,6 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 [[package]]
 name = "sqs-lambda"
 version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8658223f63ad9440a58946e170962549d94ef6c5ecfb7e0cb3ebd81947612b9"
 dependencies = [
  "aktors",
  "async-trait",
@@ -3384,6 +3388,7 @@ dependencies = [
  "eyre",
  "futures 0.3.8",
  "futures-retry",
+ "grapl-observe",
  "hex",
  "lambda_runtime",
  "log 0.4.11",

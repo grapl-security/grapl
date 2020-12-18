@@ -4,6 +4,7 @@ use aws_lambda_events::event::s3::{
 };
 use chrono::Utc;
 use grapl_graph_descriptions::graph_description::*;
+use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::Context;
 use log::*;
 use rusoto_core::{HttpClient, Region};
@@ -16,6 +17,7 @@ use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
 use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+use std::io::Stdout;
 use std::time::Duration;
 
 const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
@@ -36,6 +38,7 @@ pub(crate) async fn run_graph_generator_local<
     event_decoder: ED,
     consume_policy: ConsumePolicyBuilder,
     completion_policy: CompletionPolicy,
+    metric_reporter: MetricReporter<Stdout>,
 ) {
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
@@ -49,6 +52,7 @@ pub(crate) async fn run_graph_generator_local<
             event_decoder,
             completion_policy.clone(),
             consume_policy.clone(),
+            metric_reporter.clone(),
         )
         .await
         {
@@ -73,6 +77,7 @@ async fn initialize_local_service<
     event_decoder: ED,
     completion_policy: CompletionPolicy,
     consume_policy: ConsumePolicyBuilder,
+    metric_reporter: MetricReporter<Stdout>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // ensure that local aws services (S3 and SQS) are ready and available
     let queue_name = queue_url.split("/").last().unwrap();
@@ -115,6 +120,7 @@ async fn initialize_local_service<
         event_encoder,
         generator,
         NopCache {},
+        metric_reporter,
         |_, event_result| debug!("{:?}", event_result),
         |bucket, key| local_emit_event(bucket, key),
         options_builder.build(),
