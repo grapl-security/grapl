@@ -241,7 +241,8 @@ class AnalyzerExecutor:
                     self.logger.info(
                         f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
                     )
-                    emit_event(s3, result, self.is_local)
+                    with self.metric_reporter.histogram_ctx("analyzer-executor.emit_event.ms", tags):
+                        emit_event(s3, result, self.is_local)
                     self.update_msg_cache(
                         analyzer, result.root_node_key, message["key"]
                     )
@@ -286,6 +287,7 @@ class AnalyzerExecutor:
                 analyzer = analyzers[an_name]
 
                 for query in queries:
+                    # TODO: Whether it was a hit or not is a good Tag
                     tags = (TagPair("analyzer_name", an_name),)
                     with self.metric_reporter.histogram_ctx("analyzer-executor.query_first.ms", tags):
                         response = query.query_first(
