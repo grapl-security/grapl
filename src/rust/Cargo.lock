@@ -1272,6 +1272,7 @@ dependencies = [
  "futures 0.3.8",
  "grapl-config",
  "grapl-graph-descriptions",
+ "grapl-observe",
  "grpc",
  "itertools 0.8.2",
  "lambda_runtime",
