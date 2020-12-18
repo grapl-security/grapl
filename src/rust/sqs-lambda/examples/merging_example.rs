@@ -18,6 +18,7 @@ use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
 use chrono::Utc;
+use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::Context;
 use prost::bytes::Bytes;
 use rusoto_core::Region;
@@ -29,7 +30,6 @@ use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 use sqs_lambda::local_sqs_service::local_sqs_service;
 use std::fmt::Debug;
 use tracing_subscriber::EnvFilter;
-use grapl_observe::metric_reporter::MetricReporter;
 
 struct MyService<C>
 where
