@@ -11,9 +11,7 @@ import * as aws from 'aws-sdk';
 
 import { GraplServiceProps } from './grapl-cdk-stack';
 
-import * as fs from 'fs';
 import * as path from 'path';
-import * as dir from 'node-dir';
 import {WatchedOperation} from "cdk-watchful";
 import { SchemaDb } from './schemadb';
 
@@ -39,42 +37,6 @@ function getEdgeGatewayId(
     });
 }
 
-function replaceInFile(
-    toModify: string,
-    replaceMap: Map<string, string>,
-    outputFile: string
-) {
-    return fs.readFile(toModify, { encoding: 'utf8' }, (err, data) => {
-        if (err) {
-            return console.log(err);
-        }
-
-        let replaced = data;
-        for (const [toReplace, replaceWith] of replaceMap.entries()) {
-            replaced = replaced.split(toReplace).join(replaceWith);
-        }
-
-        if (outputFile) {
-            fs.writeFile(
-                outputFile,
-                replaced,
-                { encoding: 'utf8' },
-                (err: any) => {
-                    if (err) return console.log(err);
-                }
-            );
-        } else {
-            fs.writeFile(
-                toModify,
-                replaced,
-                { encoding: 'utf8' },
-                (err: any) => {
-                    if (err) return console.log(err);
-                }
-            );
-        }
-    });
-}
 
 export interface EngagementEdgeProps extends GraplServiceProps {
     engagement_notebook: EngagementNotebook,
@@ -225,6 +187,7 @@ interface EngagementUxProps extends cdk.StackProps {
     edgeApi: apigateway.RestApi;
 }
 
+const packageDir = path.join(__dirname, '../edge_ux_package/');
 export class EngagementUx extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props: EngagementUxProps) {
         super(scope, id, props);
@@ -234,67 +197,10 @@ export class EngagementUx extends cdk.Stack {
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
         );
-        getEdgeGatewayId(props.edgeApi.restApiName, (edgeApiId) => {
-            const srcDir = path.join(__dirname, '../edge_ux/');
-            const packageDir = path.join(__dirname, '../edge_ux_package/');
 
-            if (!fs.existsSync(packageDir)) {
-                fs.mkdirSync(packageDir);
-            }
-
-            const apiUrl = `https://${edgeApiId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
-
-            const replaceMap = new Map();
-            replaceMap.set(
-                `http://"+window.location.hostname+":8900/`,
-                apiUrl+'auth/'
-            );
-            replaceMap.set(
-                `http://"+window.location.hostname+":5000/`,
-                apiUrl
-            );
-            replaceMap.set(
-                `http://"+window.location.hostname+":8123/`,
-                apiUrl+'modelPluginDeployer/'
-            );
-
-            dir.readFiles(
-                srcDir,
-                function (
-                    err: any,
-                    content: any,
-                    filename: string,
-                    next: any
-                ) {
-                    if (err) throw err;
-
-                    const targetDir = path
-                        .dirname(filename)
-                        .replace('edge_ux', 'edge_ux_package');
-
-                    if (!fs.existsSync(targetDir)) {
-                        fs.mkdirSync(targetDir, { recursive: true });
-                    }
-
-                    const newPath = filename.replace(
-                        'edge_ux',
-                        'edge_ux_package'
-                    );
-
-                    replaceInFile(filename, replaceMap, newPath);
-                    next();
-                },
-                function (err: any, files: any) {
-                    if (err) throw err;
-                }
-            );
-
-            new s3deploy.BucketDeployment(this, 'UxDeployment', {
-                sources: [s3deploy.Source.asset(packageDir)],
-                destinationBucket: edgeBucket,
-            });
-
+        new s3deploy.BucketDeployment(this, 'UxDeployment', {
+            sources: [s3deploy.Source.asset(packageDir)],
+            destinationBucket: edgeBucket,
         });
-
     }
 }
