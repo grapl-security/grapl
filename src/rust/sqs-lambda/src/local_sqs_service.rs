@@ -1,13 +1,13 @@
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::cache::Cache;
+use crate::completion_event_serializer::CompletionEventSerializer;
+use crate::event_decoder::PayloadDecoder;
+use grapl_observe::metric_reporter::MetricReporter;
 use log::info;
 use rusoto_s3::S3;
 use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use std::io::{stdout, Stdout};
-use grapl_observe::metric_reporter::MetricReporter;
-use crate::cache::Cache;
-use crate::completion_event_serializer::CompletionEventSerializer;
-use crate::event_decoder::PayloadDecoder;
 
 use crate::event_handler::EventHandler;
 use crate::event_processor::{EventProcessor, EventProcessorActor};
@@ -149,7 +149,11 @@ where
                 sqs_consumer.clone(),
                 sqs_completion_handler.clone(),
                 event_handler.clone(),
-                S3PayloadRetriever::new(s3_init.clone(), event_decoder.clone(), metric_reporter.clone()),
+                S3PayloadRetriever::new(
+                    s3_init.clone(),
+                    event_decoder.clone(),
+                    metric_reporter.clone(),
+                ),
                 metric_reporter.clone(),
             ))
         })

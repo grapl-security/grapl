@@ -136,7 +136,11 @@ where
                 sqs_consumer.clone(),
                 sqs_completion_handler.clone(),
                 event_handler.clone(),
-                S3PayloadRetriever::new(s3_init.clone(), event_decoder.clone(), metric_reporter.clone()),
+                S3PayloadRetriever::new(
+                    s3_init.clone(),
+                    event_decoder.clone(),
+                    metric_reporter.clone(),
+                ),
                 metric_reporter.clone(),
             ))
         })

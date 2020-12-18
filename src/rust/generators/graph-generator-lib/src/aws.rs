@@ -2,6 +2,7 @@ use crate::serialization::SubgraphSerializer;
 use aws_lambda_events::event::sqs::SqsEvent;
 use grapl_config as config;
 use grapl_graph_descriptions::graph_description::*;
+use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::Context;
 use log::*;
@@ -14,11 +15,10 @@ use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
 use std::collections::HashSet;
+use std::io::Stdout;
 use std::str::FromStr;
 use std::sync::mpsc::SyncSender;
 use std::time::Duration;
-use std::io::Stdout;
-use grapl_observe::metric_reporter::MetricReporter;
 
 /// Runs the graph generator on AWS
 ///

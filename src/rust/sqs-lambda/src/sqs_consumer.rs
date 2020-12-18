@@ -6,8 +6,8 @@ use async_trait::async_trait;
 use chrono::Utc;
 use lambda_runtime::Context;
 use log::{debug, error};
-use rusoto_sqs::{ReceiveMessageRequest, Sqs};
 use rusoto_sqs::Message as SqsMessage;
+use rusoto_sqs::{ReceiveMessageRequest, Sqs};
 use tokio::sync::mpsc::{channel, Sender};
 use tracing::instrument;
 
@@ -98,9 +98,9 @@ impl ConsumePolicy {
 }
 
 pub struct SqsConsumer<S, CH>
-    where
-        S: Sqs + Send + Sync + 'static,
-        CH: CompletionHandler + Clone + Send + Sync + 'static,
+where
+    S: Sqs + Send + Sync + 'static,
+    CH: CompletionHandler + Clone + Send + Sync + 'static,
 {
     sqs_client: S,
     queue_url: String,
@@ -113,9 +113,9 @@ pub struct SqsConsumer<S, CH>
 }
 
 impl<S, CH> SqsConsumer<S, CH>
-    where
-        S: Sqs + Send + Sync + 'static,
-        CH: CompletionHandler + Clone + Send + Sync + 'static,
+where
+    S: Sqs + Send + Sync + 'static,
+    CH: CompletionHandler + Clone + Send + Sync + 'static,
 {
     pub fn new(
         sqs_client: S,
@@ -125,8 +125,8 @@ impl<S, CH> SqsConsumer<S, CH>
         metric_reporter: MetricReporter<Stdout>,
         shutdown_subscriber: tokio::sync::oneshot::Sender<()>,
     ) -> SqsConsumer<S, CH>
-        where
-            S: Sqs,
+    where
+        S: Sqs,
     {
         Self {
             sqs_client,
@@ -142,12 +142,17 @@ impl<S, CH> SqsConsumer<S, CH>
 }
 
 impl<S: Sqs + Send + Sync + 'static, CH: CompletionHandler + Clone + Send + Sync + 'static>
-SqsConsumer<S, CH>
+    SqsConsumer<S, CH>
 {
     #[instrument(skip(self))]
-    pub async fn batch_get_events(&mut self, wait_time_seconds: i64) -> eyre::Result<Vec<SqsMessage>> {
+    pub async fn batch_get_events(
+        &mut self,
+        wait_time_seconds: i64,
+    ) -> eyre::Result<Vec<SqsMessage>> {
         debug!("Calling receive_message");
-        let visibility_timeout = Duration::from_millis(self.consume_policy.get_time_remaining_millis() as u64).as_secs() + 1;
+        let visibility_timeout =
+            Duration::from_millis(self.consume_policy.get_time_remaining_millis() as u64).as_secs()
+                + 1;
         let recv = self.sqs_client.receive_message(ReceiveMessageRequest {
             max_number_of_messages: Some(10),
             queue_url: self.queue_url.clone(),
@@ -160,15 +165,24 @@ SqsConsumer<S, CH>
         let (recv, ms) = time_fut_ms(recv).await;
         let recv = recv??;
         debug!("Called receive_message : {:?}", recv);
-        self.metric_reporter.histogram("sqs_consumer.receive_message.ms", ms as f64, &[])
-            .unwrap_or_else(|e| error!("failed to report sqs_consumer.receive_message.ms: {:?}", e));
+        self.metric_reporter
+            .histogram("sqs_consumer.receive_message.ms", ms as f64, &[])
+            .unwrap_or_else(|e| {
+                error!("failed to report sqs_consumer.receive_message.ms: {:?}", e)
+            });
 
-        self.metric_reporter.counter(
-            "sqs_consumer.receive_message.count",
-            recv.messages.as_ref().map(|m| m.len()).unwrap_or_default() as f64,
-            None
-        )
-            .unwrap_or_else(|e| error!("failed to report sqs_consumer.receive_message.count: {:?}", e));
+        self.metric_reporter
+            .counter(
+                "sqs_consumer.receive_message.count",
+                recv.messages.as_ref().map(|m| m.len()).unwrap_or_default() as f64,
+                None,
+            )
+            .unwrap_or_else(|e| {
+                error!(
+                    "failed to report sqs_consumer.receive_message.count: {:?}",
+                    e
+                )
+            });
 
         Ok(recv.messages.unwrap_or(vec![]))
     }
@@ -176,7 +190,7 @@ SqsConsumer<S, CH>
 
 #[derive_aktor::derive_actor]
 impl<S: Sqs + Send + Sync + 'static, CH: CompletionHandler + Clone + Send + Sync + 'static>
-SqsConsumer<S, CH>
+    SqsConsumer<S, CH>
 {
     #[instrument(skip(self, event_processor))]
     pub async fn get_new_event(&mut self, event_processor: EventProcessorActor<SqsMessage>) {
@@ -252,9 +266,9 @@ SqsConsumer<S, CH>
 
 #[async_trait]
 impl<S, CH> Consumer<SqsMessage> for SqsConsumerActor<S, CH>
-    where
-        S: Sqs + Send + Sync + 'static,
-        CH: CompletionHandler + Clone + Send + Sync + 'static,
+where
+    S: Sqs + Send + Sync + 'static,
+    CH: CompletionHandler + Clone + Send + Sync + 'static,
 {
     #[instrument(skip(self, event_processor))]
     async fn get_next_event(&self, event_processor: EventProcessorActor<SqsMessage>) {
@@ -268,8 +282,8 @@ impl<S, CH> Consumer<SqsMessage> for SqsConsumerActor<S, CH>
             if let Err(e) = sender.send(msg).await {
                 panic!(
                     concat!(
-                    "Receiver has failed with {}, propagating error. ",
-                    "SqsConsumerActor.get_next_event"
+                        "Receiver has failed with {}, propagating error. ",
+                        "SqsConsumerActor.get_next_event"
                     ),
                     e
                 )

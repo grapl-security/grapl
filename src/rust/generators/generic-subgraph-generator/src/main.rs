@@ -14,11 +14,11 @@ use grapl_config::event_cache;
 
 use crate::generator::GenericSubgraphGenerator;
 use crate::serialization::ZstdJsonDecoder;
+use grapl_observe::metric_reporter::MetricReporter;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use std::time::Duration;
 use std::io::Stdout;
-use grapl_observe::metric_reporter::MetricReporter;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

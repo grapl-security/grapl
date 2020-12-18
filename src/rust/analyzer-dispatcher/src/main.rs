@@ -1,11 +1,11 @@
 #![type_length_limit = "1214269"]
 // Our types are simply too powerful
 
+use grapl_observe::metric_reporter::MetricReporter;
 use std::collections::HashSet;
 use std::io::{Cursor, Stdout};
 use std::sync::Arc;
 use std::time::Duration;
-use grapl_observe::metric_reporter::MetricReporter;
 
 use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;

@@ -2,9 +2,9 @@ use crate::serialization::SubgraphSerializer;
 use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
-use grapl_observe::metric_reporter::MetricReporter;
 use chrono::Utc;
 use grapl_graph_descriptions::graph_description::*;
+use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::Context;
 use log::*;
 use rusoto_core::{HttpClient, Region};
@@ -17,8 +17,8 @@ use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
 use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
-use std::time::Duration;
 use std::io::Stdout;
+use std::time::Duration;
 
 const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
 

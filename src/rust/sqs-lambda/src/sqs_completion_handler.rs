@@ -16,8 +16,8 @@ use async_trait::async_trait;
 use crate::completion_handler::CompletionHandler;
 use color_eyre::Help;
 use grapl_observe::metric_reporter::MetricReporter;
-use std::io::Stdout;
 use grapl_observe::timers::time_fut_ms;
+use std::io::Stdout;
 
 #[derive(Debug, Clone)]
 pub struct CompletionPolicy {
@@ -253,8 +253,18 @@ where
             }
         }
 
-        self.metric_reporter.histogram("sqs_completion_handler.completed_messages.count", self.completed_messages.len() as f64, &[])
-            .unwrap_or_else(|e| error!("failed to report sqs_completion_handler.completed_messages.count: {:?}", e));
+        self.metric_reporter
+            .histogram(
+                "sqs_completion_handler.completed_messages.count",
+                self.completed_messages.len() as f64,
+                &[],
+            )
+            .unwrap_or_else(|e| {
+                error!(
+                    "failed to report sqs_completion_handler.completed_messages.count: {:?}",
+                    e
+                )
+            });
 
         let mut acks = vec![];
         for chunk in self.completed_messages.chunks(10) {
@@ -283,8 +293,18 @@ where
             });
 
             let (res, ms) = time_fut_ms(res).await;
-            self.metric_reporter.histogram("sqs_completion_handler.delete_message_batch.ms", ms as f64, &[])
-                .unwrap_or_else(|e| error!("failed to report sqs_completion_handler.delete_message_batch.ms: {:?}", e));
+            self.metric_reporter
+                .histogram(
+                    "sqs_completion_handler.delete_message_batch.ms",
+                    ms as f64,
+                    &[],
+                )
+                .unwrap_or_else(|e| {
+                    error!(
+                        "failed to report sqs_completion_handler.delete_message_batch.ms: {:?}",
+                        e
+                    )
+                });
 
             match res {
                 Ok(dmb) => acks.push((dmb, msg_ids)),

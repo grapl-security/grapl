@@ -59,6 +59,12 @@ pub async fn run_graph_generator<
         )
         .await;
     } else {
-        aws::run_graph_generator_aws(generator, event_decoder, consume_policy, completion_policy, metric_reporter);
+        aws::run_graph_generator_aws(
+            generator,
+            event_decoder,
+            consume_policy,
+            completion_policy,
+            metric_reporter,
+        );
     }
 }

@@ -6,14 +6,14 @@ use std::time::Duration;
 use rusoto_s3::{GetObjectRequest, S3};
 use rusoto_sqs::Message as SqsMessage;
 use tokio::prelude::*;
-use tracing::{debug, info, error};
+use tracing::{debug, error, info};
 
 use async_trait::async_trait;
 
 use crate::event_decoder::PayloadDecoder;
-use std::collections::HashMap;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_observe::timers::time_fut_ms;
+use std::collections::HashMap;
 
 #[async_trait]
 pub trait PayloadRetriever<T> {
@@ -101,7 +101,8 @@ where
         let s3_data = tokio::time::timeout(Duration::from_secs(5), s3_data);
         let (s3_data, ms) = time_fut_ms(s3_data).await;
         let s3_data = s3_data??;
-        self.metric_reporter.histogram("s3_consumer.get_object.ms", ms as f64, &[])
+        self.metric_reporter
+            .histogram("s3_consumer.get_object.ms", ms as f64, &[])
             .unwrap_or_else(|e| error!("failed to report s3_consumer.get_object.ms: {:?}", e));
 
         let object_size = record["object"]["size"].as_u64().unwrap_or_default();
@@ -122,7 +123,8 @@ where
             .read_to_end(&mut body)
             .await?;
 
-        self.metric_reporter.gauge("s3_retriever.bytes", body.len() as f64, &[])
+        self.metric_reporter
+            .gauge("s3_retriever.bytes", body.len() as f64, &[])
             .unwrap_or_else(|e| error!("failed to report s3_retriever.bytes: {:?}", e));
 
         info!("Read s3 payload body");

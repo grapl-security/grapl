@@ -27,15 +27,11 @@ impl LocalSqsServiceOptionsBuilder {
         self
     }
 
-
     pub fn build(self) -> LocalSqsServiceOptions {
         LocalSqsServiceOptions {
-            completion_policy: self.completion_policy.unwrap_or_else(|| {
-                CompletionPolicy::new(
-                    10,
-                    Duration::from_secs(3),
-                )
-            }),
+            completion_policy: self
+                .completion_policy
+                .unwrap_or_else(|| CompletionPolicy::new(10, Duration::from_secs(3))),
             consume_policy: self.consume_policy.unwrap_or_else(|| {
                 ConsumePolicy::new(
                     Utc::now().timestamp_millis() + 10_000,

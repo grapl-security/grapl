@@ -1,5 +1,5 @@
 use tokio::sync::mpsc::{channel, Sender};
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 use crate::completion_handler::CompletionHandler;
 use crate::consumer::Consumer;
@@ -10,11 +10,11 @@ use std::fmt::Debug;
 use aktors::actor::Actor;
 use async_trait::async_trait;
 
-use serde::export::Formatter;
-use tracing::instrument;
-use std::io::Stdout;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_observe::timers::time_fut_ms;
+use serde::export::Formatter;
+use std::io::Stdout;
+use tracing::instrument;
 
 #[derive(Copy, Clone, Debug)]
 pub enum ProcessorState {
@@ -157,9 +157,13 @@ where
 
         if let Some(retrieved_event) = retrieved_event {
             info!("Handling retrieved event");
-            let (output_event, ms) = time_fut_ms(self.event_handler.handle_event(retrieved_event)).await;
-            self.metric_reporter.histogram("event_processor.handle_event.ms", ms as f64, &[])
-                .unwrap_or_else(|e| error!("failed to report event_processor.handle_event.ms: {:?}", e));
+            let (output_event, ms) =
+                time_fut_ms(self.event_handler.handle_event(retrieved_event)).await;
+            self.metric_reporter
+                .histogram("event_processor.handle_event.ms", ms as f64, &[])
+                .unwrap_or_else(|e| {
+                    error!("failed to report event_processor.handle_event.ms: {:?}", e)
+                });
 
             self.completion_handler
                 .mark_complete(event, output_event)

@@ -18,8 +18,8 @@ use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;
 use chrono::Utc;
 use failure::{bail, Error};
-use lambda_runtime::Context;
 use lambda_runtime::error::HandlerError;
+use lambda_runtime::Context;
 use log::*;
 use prost::Message;
 use rusoto_core::{HttpClient, Region};
@@ -31,9 +31,9 @@ use sha2::Digest;
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
 use grapl_graph_descriptions::file::FileState;
-use grapl_graph_descriptions::graph_description::*;
 use grapl_graph_descriptions::graph_description::host::*;
 use grapl_graph_descriptions::graph_description::node::WhichNode;
+use grapl_graph_descriptions::graph_description::*;
 use grapl_graph_descriptions::ip_connection::IpConnectionState;
 use grapl_graph_descriptions::network_connection::NetworkConnectionState;
 use grapl_graph_descriptions::node::NodeT;
@@ -42,7 +42,7 @@ use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnec
 use grapl_observe::metric_reporter::MetricReporter;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
-use sqs_lambda::cache::{Cache, Cacheable, CacheResponse};
+use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
@@ -986,7 +986,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                 node_identifier,
                 cache.clone(),
                 MetricReporter::<Stdout>::new("node-identifier"),
-            move |_self_actor, result: Result<String, String>| match result {
+                move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
                             "Handled an event, which was successfully deleted: {}",
@@ -1182,7 +1182,6 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
         },
         node_identifier,
         cache.clone(),
-
         MetricReporter::<Stdout>::new("node-identifier"),
         |_, event_result| {
             dbg!(event_result);

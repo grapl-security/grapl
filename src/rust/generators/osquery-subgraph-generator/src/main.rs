@@ -11,13 +11,13 @@ use crate::metrics::OSQuerySubgraphGeneratorMetrics;
 use crate::serialization::OSQueryLogDecoder;
 use graph_generator_lib::*;
 use grapl_config::*;
+use grapl_observe::metric_reporter::MetricReporter;
 use log::*;
 use sqs_lambda::cache::NopCache;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use std::time::Duration;
-use grapl_observe::metric_reporter::MetricReporter;
 use std::io::Stdout;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
