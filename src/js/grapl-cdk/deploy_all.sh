@@ -22,8 +22,6 @@ cdk deploy \
     Grapl
 rm -rf ./edge_ux_package
 npm run create_edge_ux_package
-cdk synth \
-    $PROFILE_FLAG
 cdk deploy \
     --require-approval=never \
     $PROFILE_FLAG \
