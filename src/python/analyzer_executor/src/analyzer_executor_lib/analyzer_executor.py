@@ -25,6 +25,8 @@ from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
 
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
+
 # Set up logger (this is for the whole file, including static methods)
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "ERROR"))
@@ -63,12 +65,13 @@ class AnalyzerExecutor:
     # singleton
     _singleton = None
 
-    def __init__(self, message_cache, hit_cache, chunk_size, is_local, logger):
+    def __init__(self, message_cache, hit_cache, chunk_size, is_local, logger, metric_reporter):
         self.message_cache = message_cache
         self.hit_cache = hit_cache
         self.chunk_size = chunk_size
         self.is_local = is_local
         self.logger = logger
+        self.metric_reporter = metric_reporter
 
     @classmethod
     def singleton(cls):
@@ -137,23 +140,25 @@ class AnalyzerExecutor:
                 )
                 raise ValueError(f"incomplete redis connection details for hit cache")
 
+            metric_reporter = MetricReporter.create('analyzer-executor')
             # retain singleton
-            cls._singleton = cls(message_cache, hit_cache, chunk_size, is_local, LOGGER)
+            cls._singleton = cls(message_cache, hit_cache, chunk_size, is_local, LOGGER, metric_reporter)
 
         return cls._singleton
 
     def check_caches(
         self, file_hash: str, msg_id: str, node_key: str, analyzer_name: str
     ) -> bool:
-        if self.check_msg_cache(file_hash, node_key, msg_id):
-            self.logger.debug("cache hit - already processed")
-            return True
+        with self.metric_reporter.histogram_ctx("analyzer-executor.check_caches"):
+            if self.check_msg_cache(file_hash, node_key, msg_id):
+                self.logger.debug("cache hit - already processed")
+                return True
 
-        if self.check_hit_cache(analyzer_name, node_key):
-            self.logger.debug("cache hit - already matched")
-            return True
+            if self.check_hit_cache(analyzer_name, node_key):
+                self.logger.debug("cache hit - already matched")
+                return True
 
-        return False
+            return False
 
     def check_msg_cache(self, file: str, node_key: str, msg_id: str) -> bool:
         to_hash = str(file) + str(node_key) + str(msg_id)
@@ -195,9 +200,11 @@ class AnalyzerExecutor:
             message = json.loads(data)
 
             LOGGER.info(f'Executing Analyzer: {message["key"]}')
-            analyzer = download_s3_file(
-                s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"]
-            )
+
+            with self.metric_reporter.histogram_ctx("analyzer-executor.download_s3_file"):
+                analyzer = download_s3_file(
+                    s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"]
+                )
             analyzer_name = message["key"].split("/")[-2]
 
             subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
@@ -279,14 +286,17 @@ class AnalyzerExecutor:
                 analyzer = analyzers[an_name]
 
                 for query in queries:
-                    response = query.query_first(
-                        dg_client, contains_node_key=node.node_key
-                    )
+                    tags = (TagPair("analyzer_name", an_name),)
+                    with self.metric_reporter.histogram_ctx("analyzer-executor.query_first.ms", tags):
+                        response = query.query_first(
+                            dg_client, contains_node_key=node.node_key
+                        )
                     if response:
                         self.logger.debug(
                             f"Analyzer '{an_name}' received a hit, executing on_response()"
                         )
-                        analyzer.on_response(response, sender)
+                        with self.metric_reporter.histogram_ctx("analyzer-executor.on_response.ms", tags):
+                            analyzer.on_response(response, sender)
 
     def execute_file(
         self, name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size
@@ -321,7 +331,7 @@ class AnalyzerExecutor:
                         sender.send(ExecutionFailed())
                         raise
 
-                exec_analyzer(nodes, sender)
+                # exec_analyzer(nodes, sender)
                 pool.apply_async(exec_analyzer, args=(nodes, sender))
 
             pool.close()
