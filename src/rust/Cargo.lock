@@ -1337,6 +1337,7 @@ name = "grapl-observe"
 version = "0.0.1"
 dependencies = [
  "chrono",
+ "dgraph-tonic",
  "lazy_static",
  "log 0.4.11",
  "regex",
