@@ -48,6 +48,8 @@ use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnecti
 use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -963,12 +965,16 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
             );
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
+            let completion_policy = ConsumePolicyBuilder::default()
+                .with_max_empty_receives(1)
+                .with_stop_at(Duration::from_secs(10));
 
             sqs_lambda::sqs_service::sqs_service(
                 source_queue_url,
                 initial_messages,
                 bucket,
-                ctx,
+                completion_policy.build(ctx),
+                CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),

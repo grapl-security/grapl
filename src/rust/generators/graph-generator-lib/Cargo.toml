@@ -10,6 +10,7 @@ license = "Apache-2.0"
 grapl-graph-descriptions = { path="../../graph-descriptions", version="0.2.*" }
 
 failure = "0.1.*"
+sqs-lambda = "0.21.*"
 
 sha2 = "0.7.1"
 rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
@@ -25,7 +26,6 @@ log = "0.4.3"
 base16 = "0.1.1"
 zstd = "0.5.1"
 aws_lambda_events = "0.3.0"
-sqs-lambda = "0.20.*"
 
 lambda_runtime = "0.2.1"
 chrono = "0.4.11"

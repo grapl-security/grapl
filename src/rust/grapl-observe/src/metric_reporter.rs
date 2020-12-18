@@ -109,8 +109,13 @@ where
 
     example: the time to complete rendering of a web page for a user.
     */
-    pub fn histogram(&mut self, metric_name: &str, value: f64) -> Result<(), MetricError> {
-        self.write_metric(metric_name, value, MetricType::Histogram, None, &[])
+    pub fn histogram(
+        &mut self,
+        metric_name: &str,
+        value: f64,
+        tags: &[TagPair],
+    ) -> Result<(), MetricError> {
+        self.write_metric(metric_name, value, MetricType::Histogram, None, tags)
     }
 }
 
@@ -169,7 +174,7 @@ mod tests {
             utc_now: test_utc,
             service_name: SERVICE_NAME.to_string(),
         };
-        reporter.histogram("metric_name", 123.45f64)?;
+        reporter.histogram("metric_name", 123.45f64, &[])?;
         reporter.counter("metric_name", 123.45f64, None)?;
         reporter.counter("metric_name", 123.45f64, 0.75)?;
         reporter.gauge("metric_name", 123.45f64, &[TagPair("key", "value")])?;
