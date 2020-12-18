@@ -11,5 +11,8 @@ cdk.out
 .cache
 .build
 
+# This file is produced upon running `deploy_all.sh` and is different per-deployment
+cdk-output.json
+
 # do not ignore our UX
 !edge_ux/**/*.js
