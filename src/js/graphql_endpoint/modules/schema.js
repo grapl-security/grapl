@@ -497,61 +497,78 @@ const inLensScope = async (dg_client, nodeUid, lensUid) => {
     }
 }
 
+const filterDefaultDgraphNodeTypes = (node_type) => {
+    return node_type !== 'Base' && node_type !== 'Entity';
+}
+
 const handleLensScope2 = async (parent, args) => {
     console.log("in handle lensScope, args: ", args)
     const dg_client = getDgraphClient();
 
     const lens_name = args.lens_name;
 
+    // grab the graph of lens, lens scope, and neighbors to nodes in-scope of the lens ((lens) -> (neighbor) -> (neighbor's neighbor))
     const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
     lens_subgraph["uid"] = parseInt(lens_subgraph["uid"], 16);
+    // if it's undefined/null, might as well make it an array
     lens_subgraph["scope"] = lens_subgraph["scope"] || [];
 
+    // start enriching the nodes within the scope
+    lens_subgraph["scope"].forEach(neighbor => neighbor["uid"] = parseInt(neighbor["uid"], 16));
+    lens_subgraph["scope"].forEach(neighbor => neighbor["dgraph_type"] = neighbor["dgraph_type"]
+        .filter(filterDefaultDgraphNodeTypes));
+    // No dgraph_type? Not a node; skip it!
+    lens_subgraph["scope"] = lens_subgraph["scope"].filter(neighbor => neighbor["dgraph_type"].length > 0);
+
+    // record the uids of all direct neighbors to the lens.
+    // These are the only nodes we should keep by the end of this process.
+    // We'll then try to get all neighbor connections that only correspond to these nodes
     const neighbor_uids = new Set(lens_subgraph["scope"].map(node => node["uid"]));
-    console.log(neighbor_uids);
 
-    // neighbors
+    // lens neighbors
     for (let neighbor of lens_subgraph["scope"]) {
-        neighbor["uid"] = parseInt(neighbor["uid"], 16);
-        neighbor["dgraph_type"] = neighbor["dgraph_type"].filter((t) => (t !== 'Base' && t !== 'Entity'));
-
-        if(!neighbor["dgraph_type"]) {
-            console.warn("No DGraph Type", neighbor);
-        }
-
-        // neighbor of neighbor
+        // neighbor of a lens neighbor
         for (const predicate in neighbor) {
-            // No dgraph_type? Not a node; skip it!
-            //if (!neighbor[predicate].dgraph_type) { continue }
+            // we want to keep risks and enrich them at the same time
+            if(predicate === "risks") {
+                neighbor[predicate].forEach(risk_node => {
+                    risk_node["uid"] = parseInt(risk_node["uid"], 16);
 
-            // If this edge is 1-to-many, we need to filter down the list to neighbor -> neighbord connections
+                    if("dgraph_type" in risk_node) {
+                        risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(filterDefaultDgraphNodeTypes);
+                    }
+                });
+
+                // filter out nodes that don't have dgraph_types
+                neighbor[predicate] = neighbor[predicate].filter(node => ("dgraph_type" in node) && !!node["dgraph_type"]);
+
+                continue;
+            }
+
+            // If this edge is 1-to-many, we need to filter down the list to lens-neighbor -> lens-neighbor connections
             if (Array.isArray(neighbor[predicate]) && neighbor[predicate] && neighbor[predicate][0]["uid"]) {
-                console.log(`ARR: ${predicate} - ${neighbor[predicate].length}`);
-                
-                neighbor[predicate] = neighbor[predicate].filter(second_neighbor => neighbor_uids.has(second_neighbor["uid"]));
                 neighbor[predicate].forEach(node => node["uid"] = parseInt(node["uid"], 16));
-                neighbor[predicate].forEach(node => node["dgraph_type"] = node["dgraph_type"].filter((t) => (t !== 'Base' && t !== 'Entity')));
+                neighbor[predicate].forEach(node => node["dgraph_type"] = node["dgraph_type"].filter(filterDefaultDgraphNodeTypes));
+                neighbor[predicate] = neighbor[predicate].filter(second_neighbor => neighbor_uids.has(second_neighbor["uid"]));
 
-                console.log(`ARR AFTER: ${predicate} - ${neighbor[predicate].length}`);
-
-                // If we filtered all the connections down, might as well delete this predicate
+                // If we filtered all the edges down, might as well delete this predicate
                 if (neighbor[predicate].length === 0) {
                     delete neighbor[predicate];
                 }
             }
             // If this edge is 1-to-1, we need to determine if we need to delete the edge
             else if (typeof neighbor[predicate] === 'object' && neighbor[predicate]["uid"]) {
-                if(!neighbor_uids.has(neighbor[predicate]["uid"])) {
-                    console.log(`DELETING EDGE: ${JSON.stringify(neighbor[predicate])}`);
+                if(!neighbor_uids.has(parseInt(neighbor[predicate]["uid"], 16))) {
                     delete neighbor[predicate];
                 } else {
                     neighbor[predicate]["uid"] = parseInt(neighbor[predicate]["uid"], 16);
-                    neighbor[predicate]["dgraph_type"] = neighbor[predicate]["dgraph_type"].filter((t) => (t !== 'Base' && t !== 'Entity'))
+                    neighbor[predicate]["dgraph_type"] = neighbor[predicate]["dgraph_type"].filter(filterDefaultDgraphNodeTypes)
                 }
             }
         }
-
     }
+
+    console.log(JSON.stringify(lens_subgraph["scope"]));
 
     return lens_subgraph;
 }
