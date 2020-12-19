@@ -250,7 +250,7 @@ class AnalyzerExecutor:
                         f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
                     )
                     with self.metric_reporter.histogram_ctx(
-                        "analyzer-executor.emit_event.ms", tags
+                        "analyzer-executor.emit_event.ms", (TagPair("analyzer_name", result.analyzer_name),)
                     ):
                         emit_event(s3, result, self.is_local)
                     self.update_msg_cache(
