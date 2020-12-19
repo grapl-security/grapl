@@ -65,7 +65,9 @@ class AnalyzerExecutor:
     # singleton
     _singleton = None
 
-    def __init__(self, message_cache, hit_cache, chunk_size, is_local, logger, metric_reporter):
+    def __init__(
+        self, message_cache, hit_cache, chunk_size, is_local, logger, metric_reporter
+    ):
         self.message_cache = message_cache
         self.hit_cache = hit_cache
         self.chunk_size = chunk_size
@@ -140,9 +142,11 @@ class AnalyzerExecutor:
                 )
                 raise ValueError(f"incomplete redis connection details for hit cache")
 
-            metric_reporter = MetricReporter.create('analyzer-executor')
+            metric_reporter = MetricReporter.create("analyzer-executor")
             # retain singleton
-            cls._singleton = cls(message_cache, hit_cache, chunk_size, is_local, LOGGER, metric_reporter)
+            cls._singleton = cls(
+                message_cache, hit_cache, chunk_size, is_local, LOGGER, metric_reporter
+            )
 
         return cls._singleton
 
@@ -201,9 +205,13 @@ class AnalyzerExecutor:
 
             LOGGER.info(f'Executing Analyzer: {message["key"]}')
 
-            with self.metric_reporter.histogram_ctx("analyzer-executor.download_s3_file"):
+            with self.metric_reporter.histogram_ctx(
+                "analyzer-executor.download_s3_file"
+            ):
                 analyzer = download_s3_file(
-                    s3, f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket", message["key"]
+                    s3,
+                    f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket",
+                    message["key"],
                 )
             analyzer_name = message["key"].split("/")[-2]
 
@@ -241,7 +249,9 @@ class AnalyzerExecutor:
                     self.logger.info(
                         f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
                     )
-                    with self.metric_reporter.histogram_ctx("analyzer-executor.emit_event.ms", tags):
+                    with self.metric_reporter.histogram_ctx(
+                        "analyzer-executor.emit_event.ms", tags
+                    ):
                         emit_event(s3, result, self.is_local)
                     self.update_msg_cache(
                         analyzer, result.root_node_key, message["key"]
@@ -289,7 +299,9 @@ class AnalyzerExecutor:
                 for query in queries:
                     # TODO: Whether it was a hit or not is a good Tag
                     tags = (TagPair("analyzer_name", an_name),)
-                    with self.metric_reporter.histogram_ctx("analyzer-executor.query_first.ms", tags):
+                    with self.metric_reporter.histogram_ctx(
+                        "analyzer-executor.query_first.ms", tags
+                    ):
                         response = query.query_first(
                             dg_client, contains_node_key=node.node_key
                         )
@@ -297,7 +309,9 @@ class AnalyzerExecutor:
                         self.logger.debug(
                             f"Analyzer '{an_name}' received a hit, executing on_response()"
                         )
-                        with self.metric_reporter.histogram_ctx("analyzer-executor.on_response.ms", tags):
+                        with self.metric_reporter.histogram_ctx(
+                            "analyzer-executor.on_response.ms", tags
+                        ):
                             analyzer.on_response(response, sender)
 
     def execute_file(
