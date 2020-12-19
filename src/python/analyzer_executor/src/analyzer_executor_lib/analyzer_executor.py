@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
@@ -24,8 +25,6 @@ from grapl_analyzerlib.nodes.base import BaseView
 from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
-
-from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
 # Set up logger (this is for the whole file, including static methods)
 LOGGER = logging.getLogger(__name__)
@@ -250,7 +249,8 @@ class AnalyzerExecutor:
                         f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
                     )
                     with self.metric_reporter.histogram_ctx(
-                        "analyzer-executor.emit_event.ms", (TagPair("analyzer_name", result.analyzer_name),)
+                        "analyzer-executor.emit_event.ms",
+                        (TagPair("analyzer_name", result.analyzer_name),),
                     ):
                         emit_event(s3, result, self.is_local)
                     self.update_msg_cache(
