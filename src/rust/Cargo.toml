@@ -13,4 +13,5 @@ members = [
     "./generators/generic-subgraph-generator",
     "./generators/osquery-subgraph-generator",
     "./generators/sysmon-subgraph-generator",
+    "./sqs-lambda",
 ]

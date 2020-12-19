@@ -38,7 +38,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
         }
 
         if subgraph.is_empty() {
-            warn!(
+            debug!(
                 concat!(
                     "Output subgraph is empty. Serializing to empty vector.",
                     "pre_nodes: {} pre_edges: {}"
@@ -48,7 +48,8 @@ impl CompletionEventSerializer for SubgraphSerializer {
             return Ok(vec![]);
         }
 
-        info!(
+        // TODO: This should be a monitor
+        debug!(
             "Serializing {} nodes {} edges. Down from {} nodes {} edges.",
             subgraph.nodes.len(),
             subgraph.edges.len(),

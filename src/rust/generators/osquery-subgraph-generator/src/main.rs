@@ -11,10 +11,12 @@ use crate::metrics::OSQuerySubgraphGeneratorMetrics;
 use crate::serialization::OSQueryLogDecoder;
 use graph_generator_lib::*;
 use grapl_config::*;
+use grapl_observe::metric_reporter::MetricReporter;
 use log::*;
 use sqs_lambda::cache::NopCache;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use std::io::Stdout;
 use std::time::Duration;
 
 #[tokio::main]
@@ -35,6 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 1,                      // Buffer up to 1 message
                 Duration::from_secs(1), // Buffer for up to 1 second
             ),
+            MetricReporter::<Stdout>::new("osquery-subgraph-generator"),
         )
         .await;
     } else {
@@ -48,6 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             OSQueryLogDecoder::default(),
             completion_policy,
             CompletionPolicy::new(10, Duration::from_secs(2)),
+            MetricReporter::<Stdout>::new("osquery-subgraph-generator"),
         )
         .await;
     }
