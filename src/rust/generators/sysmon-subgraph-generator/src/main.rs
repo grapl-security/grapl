@@ -26,11 +26,11 @@ use std::time::Duration;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env = grapl_config::init_grapl_env!();
-    info!("Starting sysmon-subgraph-generator");
 
     let metrics = SysmonSubgraphGeneratorMetrics::new(&env.service_name);
 
     if grapl_config::is_local() {
+        info!("Starting sysmon-subgraph-generator locally");
         let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);
 
         run_graph_generator(
@@ -45,6 +45,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await;
     } else {
+        info!("Starting sysmon-subgraph-generator in aws");
+
         let generator = SysmonSubgraphGenerator::new(event_cache().await, metrics);
 
         let completion_policy = ConsumePolicyBuilder::default()

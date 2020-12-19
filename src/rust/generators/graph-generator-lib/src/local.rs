@@ -42,11 +42,11 @@ pub(crate) async fn run_graph_generator_local<
 ) {
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
-    loop {
+    for i in 0u64.. {
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
 
-        if let Err(e) = initialize_local_service(
+        match initialize_local_service(
             &source_queue_url,
             generator,
             event_decoder,
@@ -56,8 +56,11 @@ pub(crate) async fn run_graph_generator_local<
         )
         .await
         {
-            error!("{}", e);
-            std::thread::sleep(Duration::from_secs(2));
+            Ok(_) => debug!("Restarting service: {}", i),
+            Err(e) => {
+                error!("{}", e);
+                std::thread::sleep(Duration::from_secs(2));
+            }
         }
     }
 }
@@ -99,8 +102,7 @@ async fn initialize_local_service<
 
     let mut options_builder = LocalSqsServiceOptionsBuilder::default();
     options_builder.with_completion_policy(completion_policy);
-    options_builder
-        .with_consume_policy(consume_policy.build(Utc::now().timestamp_millis() + 10_000));
+    options_builder.with_consume_policy(consume_policy.build(service_execution_deadline.clone()));
 
     /*
      * queue_url - The queue to be reading incoming log events from.

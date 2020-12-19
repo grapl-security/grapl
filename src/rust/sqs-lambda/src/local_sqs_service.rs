@@ -19,6 +19,7 @@ use crate::sqs_consumer::{ConsumePolicy, IntoDeadline, SqsConsumer, SqsConsumerA
 
 use std::error::Error;
 use std::future::Future;
+use tracing::debug;
 
 fn time_based_key_fn(_event: &[u8]) -> String {
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -132,6 +133,8 @@ where
             metric_reporter.clone(),
         ));
 
+    debug!("Created SqsCompletionHandler");
+
     let (sqs_consumer, sqs_consumer_handle) = SqsConsumerActor::new(SqsConsumer::new(
         sqs_client.clone(),
         queue_url.clone(),
@@ -141,6 +144,8 @@ where
         tx,
     ))
     .await;
+
+    debug!("Created SqsConsumerActor");
 
     let event_processors: Vec<_> = (0..1)
         .into_iter()
@@ -158,7 +163,7 @@ where
             ))
         })
         .collect();
-    info!("created event_processors");
+    debug!("created event_processors");
 
     futures::future::join_all(event_processors.iter().map(|ep| ep.0.start_processing())).await;
 
