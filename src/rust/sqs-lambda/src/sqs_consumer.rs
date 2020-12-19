@@ -11,12 +11,13 @@ use rusoto_sqs::{ReceiveMessageRequest, Sqs};
 use tokio::sync::mpsc::{channel, Sender};
 use tracing::instrument;
 
-use grapl_observe::metric_reporter::MetricReporter;
-
 use crate::completion_handler::CompletionHandler;
 use crate::consumer::Consumer;
 use crate::event_processor::EventProcessorActor;
+use grapl_observe::metric_reporter::MetricReporter;
 use grapl_observe::timers::time_fut_ms;
+use std::convert::TryInto;
+use tracing::warn;
 
 #[derive(Debug, Clone, Default)]
 pub struct ConsumePolicyBuilder {
@@ -51,6 +52,7 @@ pub struct ConsumePolicy {
     stop_at: Duration,
     max_empty_receives: u16,
     empty_receives: u16,
+    first_flush: bool,
 }
 
 pub trait IntoDeadline {
@@ -70,12 +72,22 @@ impl IntoDeadline for i64 {
 }
 
 impl ConsumePolicy {
-    pub fn new(deadline: impl IntoDeadline, stop_at: Duration, max_empty_receives: u16) -> Self {
+    pub fn new(
+        deadline: impl IntoDeadline,
+        stop_at: Duration,
+        mut max_empty_receives: u16,
+    ) -> Self {
+        debug_assert!(max_empty_receives > 0);
+        if max_empty_receives == 0 {
+            warn!("max_empty_receives must be greater than 0!");
+            max_empty_receives += 1;
+        }
         Self {
             deadline: deadline.into_deadline(),
             stop_at,
             max_empty_receives,
             empty_receives: 0,
+            first_flush: true,
         }
     }
 
@@ -83,7 +95,11 @@ impl ConsumePolicy {
         self.deadline - Utc::now().timestamp_millis()
     }
 
-    pub fn should_consume(&self) -> bool {
+    pub fn should_consume(&mut self) -> bool {
+        if self.first_flush {
+            self.first_flush = false;
+            return true;
+        }
         (self.stop_at.as_millis() <= self.get_time_remaining_millis() as u128)
             && self.empty_receives <= self.max_empty_receives
     }
@@ -150,9 +166,13 @@ impl<S: Sqs + Send + Sync + 'static, CH: CompletionHandler + Clone + Send + Sync
         wait_time_seconds: i64,
     ) -> eyre::Result<Vec<SqsMessage>> {
         debug!("Calling receive_message");
-        let visibility_timeout =
-            Duration::from_millis(self.consume_policy.get_time_remaining_millis() as u64).as_secs()
-                + 1;
+        let remaining_time = self.consume_policy.get_time_remaining_millis();
+        if remaining_time <= 1 {
+            return Ok(vec![]);
+        }
+        let remaining_time: u64 = remaining_time.try_into()?;
+        let mut visibility_timeout = Duration::from_millis(remaining_time).as_secs() + 1;
+
         let recv = self.sqs_client.receive_message(ReceiveMessageRequest {
             max_number_of_messages: Some(10),
             queue_url: self.queue_url.clone(),
