@@ -367,6 +367,15 @@ image=swarm-lifecycle-event-handler-build:
   tags:
     - latest
 
+# FIXME: depend on python-build once grapl-python-build is updated for poetry
+image=graplctl-build:
+  image: grapl/graplctl-build
+  context: src/python/graplctl
+  dockerfile: Dockerfile
+  target: graplctl-build
+  tags:
+    - latest
+
 # js images
 
 # Exists primarily for typechecking, though I intend to add real unit tests before 2021 ~ wimax
@@ -617,6 +626,10 @@ job=typecheck-grapl-analyzerlib:
       pytype --config ./pytype.cfg .
       "
 
+job=typecheck-graplctl:
+  use: graplctl-build
+  command: /bin/bash -c "poetry run mypy ."
+
 job=run-grapl-analyzerlib-unit-tests:
   use: grapl-analyzerlib-build
   command: /bin/bash -c "source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'not integration_test'"
@@ -799,6 +812,10 @@ job=build-swarm-lifecycle-event-handler:
   artifact:
     - ./dist/swarm-lifecycle-event-handler/lambda.zip
 
+job=run-graplctl-unit-tests:
+  use: graplctl-build
+  command: /bin/bash -c "poetry run pytest"
+
 # js jobs
 
 # TODO: more normal build job for engagement-view w/ deploy artifact
@@ -887,6 +904,7 @@ alias=clean-python-build:
     - "graph-descriptions-build:rm"
     - "python-build:rm"
     - "swarm-lifecycle-event-handler-build:rm"
+    - "graplctl-build:rm"
   annotations:
     description: "Delete the python build images"
 
@@ -900,6 +918,7 @@ alias=python-unit-tests:
     - run-engagement-edge-unit-tests
     - run-dgraph-ttl-unit-tests
     - run-model-plugin-deployer-unit-tests
+    - run-graplctl-unit-tests
   annotations:
     description: "Run the python unit tests"
 
@@ -976,5 +995,6 @@ alias=python-typecheck:
     - typecheck-model-plugin-deployer
     - typecheck-analyzer-executor
     - typecheck-grapl-analyzerlib
+    - typecheck-graplctl
   annotations:
     description: "Run mypy or pytype type checks on a subset of our Python libs/services"
