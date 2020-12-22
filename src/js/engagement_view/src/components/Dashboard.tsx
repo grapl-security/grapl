@@ -44,11 +44,14 @@ export default function Dashboard() {
 
   const loggedIn = state.loggedIn;
 
-  if (asyncSagemakerUrl.loading || !asyncSagemakerUrl.result) {
-    return <div>Loading...</div>;
-  }
-
-  const openSagemakerUrl = () => window.open(asyncSagemakerUrl.result);
+  const openSagemakerUrl = () => {
+    if (asyncSagemakerUrl.loading || !asyncSagemakerUrl.result) {
+      alert('sagemaker url not ready');
+      return;
+    }
+    
+    window.open(asyncSagemakerUrl.result);
+  };
 
   return (
     <>
