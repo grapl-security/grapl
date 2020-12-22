@@ -216,9 +216,7 @@ def login(username: str, password: str) -> Optional[str]:
         return None
 
     # Use JWT to generate token
-    return jwt.encode(
-        {"username": username}, JWT_SECRET.get(), algorithm="HS256"
-    ).decode("utf8")
+    return jwt.encode({"username": username}, JWT_SECRET.get(), algorithm="HS256")
 
 
 def check_jwt(headers: Dict[str, Any]) -> bool:
