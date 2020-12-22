@@ -1,8 +1,9 @@
 #![type_length_limit = "1214269"]
 // Our types are simply too powerful
 
+use grapl_observe::metric_reporter::MetricReporter;
 use std::collections::HashSet;
-use std::io::Cursor;
+use std::io::{Cursor, Stdout};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -300,6 +301,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 },
                 analyzer_dispatcher,
                 cache.clone(),
+                MetricReporter::<Stdout>::new("analyzer-dispatcher"),
                 move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
@@ -404,6 +406,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
         },
         analyzer_dispatcher,
         NopCache {},
+        MetricReporter::<Stdout>::new("analyzer-dispatcher"),
         |_, event_result| {
             dbg!(event_result);
         },

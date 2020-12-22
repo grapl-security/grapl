@@ -19,6 +19,7 @@ integration = []
 [dependencies]
 grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
+grapl-observe = {path="../grapl-observe", version="*"}
 
 bytes = "0.5.*"
 failure = "0.1.*"
@@ -44,7 +45,7 @@ stopwatch = "0.0.7"
 
 zstd = "0.5.1"
 futures = "0.3.*"
-sqs-lambda = "0.21.*"
+sqs-lambda = { path = "../sqs-lambda/" }
 
 aws_lambda_events = "0.2.0"
 
