@@ -1,7 +1,7 @@
 const apiFetch = async (urlSlug: string, method = "get") => {
-  const url = `/${encodeURIComponent(urlSlug)}`;
+  // const url = `api/${encodeURIComponent(urlSlug)}`;
 
-  const response = await fetch(url, {
+  const response = await fetch(urlSlug, {
     method,
     credentials: "include",
     headers: new Headers({
