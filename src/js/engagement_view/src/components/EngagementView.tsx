@@ -73,8 +73,7 @@ export default function EngagementView({
               <b className={classes.header}> GRAPL </b>
             </Typography>
             <Link to="/" className={classes.link}>
-              {" "}
-              <Home />{" "}
+              <Home />
             </Link>
           </div>
         </Toolbar>
