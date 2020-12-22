@@ -8,7 +8,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "create_edge_ux_package": "node bin/create_edge_ux_package.js"
   },
   "devDependencies": {
     "@aws-cdk/assert": "1.71.0",

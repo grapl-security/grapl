@@ -19,6 +19,7 @@ use chrono::Utc;
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 use failure::{bail, Error};
 use futures::future::join_all;
+use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
@@ -409,6 +410,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 },
                 graph_merger,
                 cache.clone(),
+                MetricReporter::<Stdout>::new("graph-merger"),
                 move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
@@ -853,6 +855,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         },
         graph_merger,
         cache.clone(),
+        MetricReporter::<Stdout>::new("graph-merger"),
         |_, event_result| {
             dbg!(event_result);
         },
