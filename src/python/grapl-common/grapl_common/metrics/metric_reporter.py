@@ -23,6 +23,15 @@ class Writeable(Protocol):
         pass
 
 
+_RESERVED_UNIT_TAG = "_unit"
+
+
+class HistogramUnit(str, Enum):
+    MILLIS = "millis"
+    MICROS = "micros"
+    SECONDS = "seconds"
+
+
 class MetricReporter:
     """
     Print metrics to stdout that are picked up by Metric Forwarder later.
@@ -116,6 +125,23 @@ class MetricReporter:
             typ="h",
             tags=tags,
         )
+
+    def histogram_with_units(
+        self,
+        metric_name: str,
+        value: int,
+        unit: HistogramUnit,
+        tags: Sequence[TagPair] = (),
+    ) -> None:
+        """
+        A histogram is a measure of the distribution of timer values over time, calculated at the
+        server. As the data exported for timers and histograms is the same,
+        this is currently an alias for a timer.
+
+        example: the time to complete rendering of a web page for a user.
+        """
+        tags = [TagPair(_RESERVED_UNIT_TAG, unit.value)] + tags
+        self.histogram(metric_name, value, tags)
 
     @contextmanager
     def histogram_ctx(

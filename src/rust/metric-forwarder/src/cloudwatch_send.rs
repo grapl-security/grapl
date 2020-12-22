@@ -19,6 +19,7 @@ pub mod cw_units {
     pub const MICROS: &'static str = "Microseconds";
     pub const SECONDS: &'static str = "Seconds";
 }
+const RESERVED_UNIT_TAG: &'static str = "_unit";
 
 type PutResult = Result<(), RusotoError<PutMetricDataError>>;
 
@@ -145,7 +146,7 @@ impl From<&BTreeMap<String, String>> for Dimensions {
 impl Dimensions {
     fn find_dimension(&self, dimension_name: &str) -> Option<Dimension> {
         let found = self.0.iter().find(|ref d| d.name == dimension_name);
-        return found.map(Dimension::clone)
+        return found.map(Dimension::clone);
     }
 
     fn remove_dimension(&mut self, dimension: &Dimension) {
@@ -159,7 +160,7 @@ fn override_unit_from_dims(mut unit: &'static str, dims: &mut Dimensions) -> &'s
     // assumption of milliseconds.
     // Remove the _unit dimension from dimensions.
 
-    let units_dimension_option = dims.find_dimension("_unit");
+    let units_dimension_option = dims.find_dimension(RESERVED_UNIT_FLAG);
     if let Some(units_dimension) = units_dimension_option {
         // Right now, we only specify `_unit` for histograms.
         assert_eq!(unit, cw_units::MILLIS);
@@ -356,7 +357,7 @@ mod tests {
     fn some_histogram_stat_with_unit_tag() -> Stat {
         let mut tags = BTreeMap::<String, String>::new();
         tags.insert("tag1".into(), "val1".into());
-        tags.insert("_unit".into(), "micros".into());
+        tags.insert(RESERVED_UNIT_TAG.into(), "micros".into());
         Stat {
             timestamp: "ts".into(),
             msg: statsd_parser::Message {

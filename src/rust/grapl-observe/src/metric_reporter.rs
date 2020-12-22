@@ -19,6 +19,7 @@ pub enum HistogramUnit {
     Millis,
     Micros,
 }
+const RESERVED_UNIT_TAG: &'static str = "_unit";
 
 type NowGetter = fn() -> DateTime<Utc>;
 
@@ -140,7 +141,7 @@ where
     ) -> Result<(), MetricError> {
         let mut tags_with_unit: Vec<TagPair> = tags.to_vec();
         tags_with_unit.push(TagPair(
-            "_unit",
+            RESERVED_UNIT_TAG,
             match unit {
                 HistogramUnit::Micros => "micros",
                 HistogramUnit::Millis => "millis",
