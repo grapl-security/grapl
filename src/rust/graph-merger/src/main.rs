@@ -100,7 +100,8 @@ async fn node_key_to_uid(
         .map_err(AnyhowFailure::into_failure)?;
 
     // todo: is there a way to differentiate this query metric from others?
-    metric_reporter.query(&query_res, &[])
+    metric_reporter
+        .query(&query_res, &[])
         .unwrap_or_else(|e| error!("query metric failed: {}", e));
 
     let query_res: Value = serde_json::from_slice(&query_res.json)?;
@@ -155,7 +156,8 @@ async fn upsert_node(
         }
     };
 
-    metric_reporter.mutation(&upsert_res, &[])
+    metric_reporter
+        .mutation(&upsert_res, &[])
         .unwrap_or_else(|e| error!("mutation metric failed: {}", e));
     txn.commit().await.map_err(AnyhowFailure::into_failure)?;
 
@@ -229,7 +231,8 @@ async fn upsert_edge(
         .mutate_and_commit_now(mu)
         .await
         .map_err(AnyhowFailure::into_failure)?;
-    metric_reporter.mutation(&mut_res, &[])
+    metric_reporter
+        .mutation(&mut_res, &[])
         .unwrap_or_else(|e| error!("edge mutation metric failed: {}", e));
 
     Ok(())
