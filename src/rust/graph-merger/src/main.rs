@@ -19,7 +19,6 @@ use chrono::Utc;
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 use failure::{bail, Error};
 use futures::future::join_all;
-use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
