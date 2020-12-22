@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
-grapl-observe = {path="../grapl-observe/"}
+grapl-observe = {path="../grapl-observe", version="*"}
 anyhow = "1.0.*"
 failure = "0.1.*"
 serde = "1.0.110"
