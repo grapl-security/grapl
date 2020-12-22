@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
-
+grapl-observe = {path="../grapl-observe/"}
 anyhow = "1.0.*"
 failure = "0.1.*"
 serde = "1.0.110"
@@ -17,7 +17,7 @@ log = "0.4.*"
 
 dgraph-tonic = { version = "0.8", features = ["dgraph-1-1"] }
 grpc = "0.6.1"
-sqs-lambda = "0.20.*"
+sqs-lambda = { path = "../sqs-lambda/" }
 
 rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }

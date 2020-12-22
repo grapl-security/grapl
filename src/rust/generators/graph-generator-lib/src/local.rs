@@ -4,6 +4,7 @@ use aws_lambda_events::event::s3::{
 };
 use chrono::Utc;
 use grapl_graph_descriptions::graph_description::*;
+use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::Context;
 use log::*;
 use rusoto_core::{HttpClient, Region};
@@ -14,6 +15,9 @@ use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
 use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+use std::io::Stdout;
 use std::time::Duration;
 
 const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
@@ -32,17 +36,31 @@ pub(crate) async fn run_graph_generator_local<
 >(
     generator: EH,
     event_decoder: ED,
+    consume_policy: ConsumePolicyBuilder,
+    completion_policy: CompletionPolicy,
+    metric_reporter: MetricReporter<Stdout>,
 ) {
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
-    loop {
+    for i in 0u64.. {
         let generator = generator.clone();
         let event_decoder = event_decoder.clone();
 
-        if let Err(e) = initialize_local_service(&source_queue_url, generator, event_decoder).await
+        match initialize_local_service(
+            &source_queue_url,
+            generator,
+            event_decoder,
+            completion_policy.clone(),
+            consume_policy.clone(),
+            metric_reporter.clone(),
+        )
+        .await
         {
-            error!("{}", e);
-            std::thread::sleep(Duration::from_secs(2));
+            Ok(_) => debug!("Restarting service: {}", i),
+            Err(e) => {
+                error!("{}", e);
+                std::thread::sleep(Duration::from_secs(2));
+            }
         }
     }
 }
@@ -60,6 +78,9 @@ async fn initialize_local_service<
     queue_url: &str,
     generator: EH,
     event_decoder: ED,
+    completion_policy: CompletionPolicy,
+    consume_policy: ConsumePolicyBuilder,
+    metric_reporter: MetricReporter<Stdout>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // ensure that local aws services (S3 and SQS) are ready and available
     let queue_name = queue_url.split("/").last().unwrap();
@@ -80,7 +101,8 @@ async fn initialize_local_service<
     let event_encoder = SubgraphSerializer::new(Vec::with_capacity(1024));
 
     let mut options_builder = LocalSqsServiceOptionsBuilder::default();
-    options_builder.with_minimal_buffer_completion_policy();
+    options_builder.with_completion_policy(completion_policy);
+    options_builder.with_consume_policy(consume_policy.build(service_execution_deadline.clone()));
 
     /*
      * queue_url - The queue to be reading incoming log events from.
@@ -100,6 +122,7 @@ async fn initialize_local_service<
         event_encoder,
         generator,
         NopCache {},
+        metric_reporter,
         |_, event_result| debug!("{:?}", event_result),
         |bucket, key| local_emit_event(bucket, key),
         options_builder.build(),

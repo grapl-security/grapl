@@ -11,6 +11,16 @@ mount=dist:
   path: /home/grapl/dist
   file: false
 
+mount=test-outputs-screenshots:
+  bind: ./test/integration-outputs/screenshots
+  path: /test/cypress/screenshots
+  file: false
+
+mount=test-outputs-videos:
+  bind: ./test/integration-outputs/videos
+  path: /test/cypress/videos
+  file: false
+
 # a volume, not a bind-mount
 # dump-compose-artifacts will take care of extracting things from it
 mount=dynamodb_dump:
@@ -141,6 +151,15 @@ image=python-build:
   tags:
     - latest
 
+image=python-test-deps:
+  image: grapl/python-test-deps
+  context: src/python/python_test_deps
+  dockerfile: Dockerfile
+  tags:
+    - latest
+  depends:
+    - python-build
+
 image=python-deploy:
   image: grapl/grapl-python-deploy
   context: src/python/grapl-python-deploy/
@@ -159,13 +178,33 @@ image=graph-descriptions-build:
   tags:
     - latest
 
+image=graph-descriptions-test:
+  image: grapl/grapl-graph-descriptions-test
+  context: src/rust/graph-descriptions/
+  dockerfile: tests.Dockerfile
+  target: grapl-graph-descriptions-test
+  depends:
+    - graph-descriptions-build
+    - python-test-deps
+  tags:
+    - latest
+
 image=grapl-common-build:
   image: grapl/grapl-common-python-build
   context: src/python/grapl-common/
   dockerfile: Dockerfile
-  target: grapl-common-python-build
   depends:
     - python-build
+  tags:
+    - latest
+
+image=grapl-common-test:
+  image: grapl/grapl-common-test
+  context: src/python/grapl-common/
+  dockerfile: tests.Dockerfile
+  depends:
+    - grapl-common-build
+    - python-test-deps
   tags:
     - latest
 
@@ -175,8 +214,9 @@ image=grapl-tests-common-build:
   dockerfile: Dockerfile
   target: grapl-tests-common-python-build
   depends:
-    - python-build
     - grapl-analyzerlib-build
+    - python-build
+    - python-test-deps
   tags:
     - latest
 
@@ -189,6 +229,16 @@ image=grapl-analyzerlib-build:
     - python-build
     - graph-descriptions-build
     - grapl-common-build
+  tags:
+    - latest
+
+image=grapl-analyzerlib-test:
+  image: grapl/grapl-analyzerlib-test
+  context: src/python/grapl_analyzerlib/
+  dockerfile: tests.Dockerfile
+  depends:
+    - grapl-analyzerlib-build
+    - python-test-deps
   tags:
     - latest
 
@@ -225,6 +275,16 @@ image=analyzer-executor-build:
   tags:
     - latest
 
+image=analyzer-executor-test:
+  image: grapl/analyzer-executor-test
+  context: src/python/analyzer_executor/
+  dockerfile: tests.Dockerfile
+  depends:
+    - analyzer-executor-build
+    - python-test-deps
+  tags:
+    - latest
+
 image=analyzer-executor:
   image: grapl/grapl-analyzer-executor
   context: src/python/analyzer_executor/
@@ -248,6 +308,14 @@ image=engagement-creator-build:
   tags:
     - latest
 
+image=engagement-creator-test:
+  image: grapl/engagement-creator-test
+  context: src/python/engagement-creator
+  dockerfile: tests.Dockerfile
+  depends:
+    - engagement-creator-build
+    - python-test-deps
+
 image=engagement-creator:
   image: grapl/grapl-engagement-creator
   context: src/python/engagement-creator
@@ -268,6 +336,18 @@ image=engagement-edge-build:
     - python-build
     - graph-descriptions-build
     - grapl-analyzerlib-build
+  tags:
+    - latest
+
+image=engagement-edge-test:
+  image: grapl/engagement-edge-test
+  context: src/python/engagement_edge
+  dockerfile: tests.Dockerfile
+  target: engagement-edge-test
+  depends:
+    - engagement-edge-build
+    - grapl-tests-common-build
+    - python-test-deps
   tags:
     - latest
 
@@ -294,6 +374,16 @@ image=dgraph-ttl-build:
   tags:
     - latest
 
+image=dgraph-ttl-test:
+  image: grapl/grapl-dgraph-ttl-test
+  context: src/python/grapl-dgraph-ttl
+  dockerfile: tests.Dockerfile
+  depends:
+    - dgraph-ttl-build
+    - python-test-deps
+  tags:
+    - latest
+
 image=dgraph-ttl:
   image: grapl/grapl-dgraph-ttl
   context: src/python/grapl-dgraph-ttl
@@ -317,6 +407,16 @@ image=model-plugin-deployer-build:
   tags:
     - latest
 
+image=model-plugin-deployer-test:
+  image: grapl/grapl-model-plugin-deployer-test
+  context: src/python/grapl-model-plugin-deployer
+  dockerfile: tests.Dockerfile
+  depends:
+    - model-plugin-deployer-build
+    - python-test-deps
+  tags:
+    - latest
+
 image=model-plugin-deployer:
   image: grapl/grapl-model-plugin-deployer
   context: src/python/grapl-model-plugin-deployer
@@ -334,6 +434,18 @@ image=grapl-notebook:
   dockerfile: Dockerfile
   tags:
     - "{env.TAG}"
+  depends:
+    - grapl-analyzerlib-build
+
+image=grapl-notebook-test:
+  image: grapl/grapl-notebook-test
+  context: src/python/grapl-notebook
+  dockerfile: tests.Dockerfile
+  tags:
+    - "{env.TAG}"
+  depends:
+    - grapl-notebook
+    - etc-build
 
 image=grapl-provision:
   image: grapl/grapl-provision
@@ -444,6 +556,15 @@ image=etc-build:
   tags:
     - "{env.TAG}"
 
+# utility images
+image=cypress:
+  image: grapl/cypress
+  context: test
+  dockerfile: Dockerfile
+  target: cypress
+  tags:
+    - "{env.TAG}"
+
 #
 # compose
 #
@@ -480,6 +601,8 @@ compose=integration-env:
     # js images
     - engagement-view
     - graphql-endpoint
+    # utility images
+    - cypress
 
 #
 # jobs -- these are where we build release artifacts
@@ -533,22 +656,21 @@ job=run-node-identifier-integration-tests:
 # python jobs
 
 job=run-grapl-common-unit-tests:
-  use: grapl-common-build
+  use: grapl-common-test
   command: /bin/bash -c "source venv/bin/activate && cd grapl_common/tests && ls && py.test -n auto -m 'not integration_test'"
 
 
 job=typecheck-engagement-creator:
-  use: engagement-creator-build
+  use: engagement-creator-test
   command: |
     /bin/bash -c "
       source venv/bin/activate &&
       cd engagement-creator &&
-      pip install '.[typecheck]' &&
       mypy .
       "
 
 job=typecheck-grapl-common:
-  use: grapl-common-build
+  use: grapl-common-test
   command: |
     /bin/bash -c "
       source venv/bin/activate &&
@@ -591,7 +713,7 @@ job=typecheck-analyzer-deployer:
       "
 
 job=typecheck-model-plugin-deployer:
-  use: model-plugin-deployer-build
+  use: model-plugin-deployer-test
   # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
   command: |
@@ -604,20 +726,18 @@ job=typecheck-model-plugin-deployer:
       "
 
 job=typecheck-engagement-edge:
-  use: engagement-edge-build
-  # since there's no setup.py, I have an explicit `pip install mypy` instead of `.[typecheck]`
+  use: engagement-edge-test
   # the `touch` is a hack for mypy until https://github.com/aws/chalice/pull/1500 is in
   command: |
     /bin/bash -c "
       source venv/bin/activate &&
       touch venv/lib/python3.7/site-packages/chalice/py.typed &&
       cd engagement_edge &&
-      pip install .[typecheck] &&
       mypy .
       "
 
 job=typecheck-grapl-analyzerlib:
-  use: grapl-analyzerlib-build
+  use: grapl-analyzerlib-test
   command: |
     /bin/bash -c "
       source venv/bin/activate &&
@@ -631,11 +751,11 @@ job=typecheck-graplctl:
   command: /bin/bash -c "poetry run mypy ."
 
 job=run-grapl-analyzerlib-unit-tests:
-  use: grapl-analyzerlib-build
+  use: grapl-analyzerlib-test
   command: /bin/bash -c "source venv/bin/activate && cd grapl_analyzerlib && py.test -n auto -m 'not integration_test'"
 
 job=run-grapl-analyzerlib-integration-tests:
-  use: grapl-analyzerlib-build
+  use: grapl-analyzerlib-test
   net-mode: grapl-network
   command: |
     /bin/bash -c "
@@ -681,7 +801,7 @@ job=run-analyzer-deployer-integration-tests:
     - integration-env
 
 job=run-analyzer-executor-integration-tests:
-  use: analyzer-executor-build
+  use: analyzer-executor-test
   net-mode: grapl-network
   command: |
     /bin/bash -c '
@@ -698,6 +818,23 @@ job=run-analyzer-executor-integration-tests:
     - GRAPL_LOG_LEVEL={env.GRAPL_LOG_LEVEL:INFO}
     - IS_LOCAL=True
     - IS_RETRY=False
+  depends:
+    - integration-env
+
+job=run-engagement-edge-integration-tests:
+  use: engagement-edge-test
+  net-mode: grapl-network
+  command: |
+    /bin/bash -c '
+      wait-for-it grapl-engagement-edge:8900 --timeout=60 &&
+      source venv/bin/activate &&
+      cd engagement_edge && 
+      py.test -n auto -m "integration_test"
+      '
+  env:
+    - IS_LOCAL=True
+    - BUCKET_PREFIX=local-grapl
+    - UX_BUCKET_URL="ux_bucket_url"
   depends:
     - integration-env
 
@@ -736,7 +873,7 @@ job=build-analyzer-executor:
     - ./dist/analyzer-executor/lambda.zip
 
 job=run-analyzer-executor-unit-tests:
-  use: analyzer-executor-build
+  use: analyzer-executor-test
   command: |
     /bin/bash -c "
       source venv/bin/activate &&
@@ -749,7 +886,7 @@ job=run-analyzer-executor-unit-tests:
     - IS_RETRY=False
 
 job=typecheck-analyzer-executor:
-  use: analyzer-executor-build
+  use: analyzer-executor-test
   command: |
     /bin/bash -c "
       source venv/bin/activate &&
@@ -765,7 +902,7 @@ job=build-engagement-creator:
     - ./dist/engagement-creator/lambda.zip
 
 job=run-engagement-creator-unit-tests:
-  use: engagement-creator-build
+  use: engagement-creator-test
   command: /bin/bash -c "source venv/bin/activate && cd engagement-creator && py.test -n auto -m 'not integration_test'"
 
 job=build-engagement-edge:
@@ -776,7 +913,7 @@ job=build-engagement-edge:
     - ./dist/engagement-edge/lambda.zip
 
 job=run-engagement-edge-unit-tests:
-  use: engagement-edge-build
+  use: engagement-edge-test
   command: /bin/bash -c "source venv/bin/activate && cd engagement_edge && py.test -n auto -m 'not integration_test'"
   env:
     - IS_LOCAL=True
@@ -791,7 +928,7 @@ job=build-dgraph-ttl:
     - ./dist/dgraph-ttl/lambda.zip
 
 job=run-dgraph-ttl-unit-tests:
-  use: dgraph-ttl-build
+  use: dgraph-ttl-test
   command: /bin/bash -c "source venv/bin/activate && cd dgraph-ttl && py.test -n auto -m 'not integration_test'"
 
 job=build-model-plugin-deployer:
@@ -802,7 +939,7 @@ job=build-model-plugin-deployer:
     - ./dist/model-plugin-deployer/lambda.zip
 
 job=run-model-plugin-deployer-unit-tests:
-  use: model-plugin-deployer-build
+  use: model-plugin-deployer-test
   command: /bin/bash -c "source venv/bin/activate && cd model-plugin-deployer && py.test -n auto -m 'not integration_test'"
 
 job=build-swarm-lifecycle-event-handler:
@@ -824,6 +961,15 @@ job=run-engagement-view-unit-tests:
   use: engagement-view-build
   command: /bin/bash -c "CI=true yarn test"
 
+job=run-engagement-view-integration-tests:
+  use: cypress
+  net-mode: grapl-network
+  mounts:
+    - test-outputs-screenshots
+    - test-outputs-videos
+  depends:
+    - integration-env
+
 job=build-graphql-endpoint:
   use: graphql-endpoint-build
   mounts:
@@ -832,8 +978,6 @@ job=build-graphql-endpoint:
     - ./dist/graphql-endpoint/lambda.zip
 
 # TODO: graphql endpoint unit tests
-
-# TODO: graphql endpoint integration tests
 
 #
 # aliases
@@ -895,13 +1039,21 @@ alias=clean-python-build:
   tasks:
     - "analyzer-deployer-build:rm"
     - "analyzer-executor-build:rm"
+    - "analyzer-executor-test:rm"
     - "engagement-creator-build:rm"
+    - "engagement-creator-test:rm"
     - "engagement-edge-build:rm"
+    - "engagement-edge-test:rm"
     - "dgraph-ttl-build:rm"
+    - "dgraph-ttl-test:rm"
     - "model-plugin-deployer-build:rm"
+    - "model-plugin-deployer-test:rm"
     - "grapl-analyzerlib-build:rm"
+    - "grapl-analyzerlib-test:rm"
     - "grapl-common-build:rm"
+    - "grapl-common-test:rm"
     - "graph-descriptions-build:rm"
+    - "graph-descriptions-test:rm"
     - "python-build:rm"
     - "swarm-lifecycle-event-handler-build:rm"
     - "graplctl-build:rm"
@@ -910,6 +1062,7 @@ alias=clean-python-build:
 
 alias=python-unit-tests:
   tasks:
+    - graph-descriptions-test  # Test is baked into the Dockerfile
     - run-grapl-common-unit-tests
     - run-grapl-analyzerlib-unit-tests
     - run-analyzer-deployer-unit-tests
@@ -926,6 +1079,8 @@ alias=python-integration-tests:
   tasks:
     - run-grapl-analyzerlib-integration-tests
     - run-analyzer-deployer-integration-tests
+    - run-analyzer-executor-integration-tests
+    - run-engagement-edge-integration-tests
   annotations:
     description: "Run the python integration tests"
 
@@ -949,13 +1104,24 @@ alias=js-unit-tests:
   annotations:
     description: "Run the js unit tests"
 
-# TODO: js integration tests
+alias=js-integration-tests:
+  tasks:
+   - run-engagement-view-integration-tests
+  annotations:
+    description: "Run the js integration tests"
+
+alias=tool:
+  tasks:
+    - "cypress:tag"
+  annotations:
+    description: "Build developer tool images, for testing and debugging."
 
 alias=build:
   tasks:
     - rust
     - python
     - js
+    - tool
   annotations:
     description: "Build artifacts and images for all services"
 
@@ -979,7 +1145,7 @@ alias=integration-tests:
   tasks:
     - rust-integration-tests
     - python-integration-tests
-    # TODO: js integration tests
+    - js-integration-tests
   annotations:
     description: "Run all the integration tests"
 

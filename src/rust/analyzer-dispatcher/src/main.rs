@@ -1,8 +1,9 @@
 #![type_length_limit = "1214269"]
 // Our types are simply too powerful
 
+use grapl_observe::metric_reporter::MetricReporter;
 use std::collections::HashSet;
-use std::io::Cursor;
+use std::io::{Cursor, Stdout};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -33,6 +34,8 @@ use aws_lambda_events::event::s3::{
 use chrono::Utc;
 use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
 use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -279,12 +282,16 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
             };
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
+            let completion_policy = ConsumePolicyBuilder::default()
+                .with_max_empty_receives(1)
+                .with_stop_at(Duration::from_secs(10));
 
             sqs_lambda::sqs_service::sqs_service(
                 source_queue_url,
                 initial_messages,
                 bucket,
-                ctx,
+                completion_policy.build(ctx),
+                CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
@@ -294,6 +301,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 },
                 analyzer_dispatcher,
                 cache.clone(),
+                MetricReporter::<Stdout>::new("analyzer-dispatcher"),
                 move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
@@ -398,6 +406,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
         },
         analyzer_dispatcher,
         NopCache {},
+        MetricReporter::<Stdout>::new("analyzer-dispatcher"),
         |_, event_result| {
             dbg!(event_result);
         },

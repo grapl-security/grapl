@@ -2,13 +2,13 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
-use std::io::Cursor;
+use std::io::{Cursor, Stdout};
 use std::iter::FromIterator;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
 use aws_lambda_events::event::s3::{
@@ -18,9 +18,9 @@ use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
 
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
-
 use failure::{bail, Error};
 use futures::future::join_all;
+use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
@@ -46,6 +46,8 @@ use sqs_lambda::redis_cache::RedisCache;
 
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use grapl_graph_descriptions::node::NodeT;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 use std::net::ToSocketAddrs;
 
 macro_rules! log_time {
@@ -202,9 +204,9 @@ async fn upsert_edge(
     mu: dgraph_tonic::Mutation,
 ) -> Result<(), failure::Error> {
     let mut txn = mg_client.new_mutated_txn();
-    txn.mutate(mu).await.map_err(AnyhowFailure::into_failure)?;
-
-    txn.commit().await.map_err(AnyhowFailure::into_failure)?;
+    txn.mutate_and_commit_now(mu)
+        .await
+        .map_err(AnyhowFailure::into_failure)?;
 
     Ok(())
 }
@@ -359,11 +361,16 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
 
+            let completion_policy = ConsumePolicyBuilder::default()
+                .with_max_empty_receives(1)
+                .with_stop_at(Duration::from_secs(10));
+
             sqs_lambda::sqs_service::sqs_service(
                 source_queue_url,
                 initial_messages,
                 bucket,
-                ctx,
+                completion_policy.build(ctx),
+                CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
@@ -373,6 +380,7 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 },
                 graph_merger,
                 cache.clone(),
+                MetricReporter::<Stdout>::new("graph-merger"),
                 move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
@@ -794,6 +802,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
         },
         graph_merger,
         cache.clone(),
+        MetricReporter::<Stdout>::new("graph-merger"),
         |_, event_result| {
             dbg!(event_result);
         },

@@ -1,14 +1,18 @@
-mod aws;
-mod local;
-mod serialization;
+use std::io::Stdout;
 
 use log::*;
 
 use grapl_config as config;
 use grapl_graph_descriptions::graph_description::*;
-
+use grapl_observe::metric_reporter::MetricReporter;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+
+mod aws;
+mod local;
+mod serialization;
 
 /// Graph generator implementations should invoke this function to begin processing new log events.
 ///
@@ -39,12 +43,28 @@ pub async fn run_graph_generator<
 >(
     generator: EH,
     event_decoder: ED,
+    consume_policy: ConsumePolicyBuilder,
+    completion_policy: CompletionPolicy,
+    metric_reporter: MetricReporter<Stdout>,
 ) {
     info!("IS_LOCAL={:?}", config::is_local());
 
     if config::is_local() {
-        local::run_graph_generator_local(generator, event_decoder).await;
+        local::run_graph_generator_local(
+            generator,
+            event_decoder,
+            consume_policy,
+            completion_policy,
+            metric_reporter,
+        )
+        .await;
     } else {
-        aws::run_graph_generator_aws(generator, event_decoder);
+        aws::run_graph_generator_aws(
+            generator,
+            event_decoder,
+            consume_policy,
+            completion_policy,
+            metric_reporter,
+        );
     }
 }
