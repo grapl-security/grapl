@@ -13,7 +13,7 @@ import Button from "@material-ui/core/Button";
 import { Node } from "../modules/GraphViz/CustomTypes";
 import Home from "@material-ui/icons/Home";
 import { Link } from "react-router-dom";
-import { checkLogin } from "../Login";
+import { checkLogin } from "../services/loginService";
 import { LoginNotification } from "./reusableComponents";
 import { useStyles } from "./makeStyles/GraphVizStyles";
 

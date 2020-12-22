@@ -3,7 +3,7 @@ import { GraplHeader } from "./reusableComponents";
 import { useStyles } from "../modules/uploads/plugins/useStyles";
 import { UploadForm } from "../modules/uploads/plugins/uploadPlugins";
 import { PluginTable } from "../modules/uploads/plugins/pluginTable";
-import { checkLogin } from "../Login";
+import { checkLogin } from "../services/loginService";
 import { LoginNotification } from "./reusableComponents";
 
 const UploadPlugin = () => {
