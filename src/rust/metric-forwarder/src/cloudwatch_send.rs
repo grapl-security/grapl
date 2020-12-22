@@ -12,7 +12,7 @@ use statsd_parser;
 use statsd_parser::Metric;
 use std::collections::BTreeMap;
 
-pub mod units {
+pub mod CloudwatchUnits {
     // strings accepted by CloudWatch MetricDatum.unit
     pub const COUNT: &'static str = "Count";
     pub const MILLIS: &'static str = "Milliseconds";
@@ -143,9 +143,9 @@ impl From<&BTreeMap<String, String>> for Dimensions {
 fn statsd_as_cloudwatch_metric(stat: Stat) -> MetricDatum {
     let (unit, value, _sample_rate) = match stat.msg.metric {
         // Yes, gauge and counter are - for our purposes - basically both Count
-        Metric::Gauge(g) => (units::COUNT, g.value, g.sample_rate),
-        Metric::Counter(c) => (units::COUNT, c.value, c.sample_rate),
-        Metric::Histogram(h) => (units::MILLIS, h.value, h.sample_rate),
+        Metric::Gauge(g) => (CloudwatchUnits::COUNT, g.value, g.sample_rate),
+        Metric::Counter(c) => (CloudwatchUnits::COUNT, c.value, c.sample_rate),
+        Metric::Histogram(h) => (CloudwatchUnits::MILLIS, h.value, h.sample_rate),
         _ => panic!("How the heck did you get an unsupported metric type in here?"),
     };
     let Dimensions(dims) = stat
@@ -207,7 +207,7 @@ mod tests {
         assert_eq!(&datum.metric_name, &name);
         assert_eq!(&datum.timestamp.expect(""), &ts);
         assert_eq!(datum.value.expect(""), 12.3);
-        assert_eq!(datum.unit.expect(""), units::COUNT);
+        assert_eq!(datum.unit.expect(""), CloudwatchUnits::COUNT);
         assert_eq!(datum.dimensions, None);
     }
 
