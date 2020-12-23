@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from enum import Enum
 from sys import stdout
 from typing import Callable, Iterator, Optional, Sequence, TextIO, Union
 
@@ -111,6 +112,7 @@ class MetricReporter:
         metric_name: str,
         value: MillisDuration,
         tags: Sequence[TagPair] = (),
+        unit: Optional[HistogramUnit] = None,
     ) -> None:
         """
         A histogram is a measure of the distribution of timer values over time, calculated at the
@@ -119,29 +121,14 @@ class MetricReporter:
 
         example: the time to complete rendering of a web page for a user.
         """
+        if unit:
+            tags = [TagPair(_RESERVED_UNIT_TAG, unit.value)] + [t for t in tags]
         self.write_metric(
             metric_name=metric_name,
             value=value,
             typ="h",
             tags=tags,
         )
-
-    def histogram_with_units(
-        self,
-        metric_name: str,
-        value: int,
-        unit: HistogramUnit,
-        tags: Sequence[TagPair] = (),
-    ) -> None:
-        """
-        A histogram is a measure of the distribution of timer values over time, calculated at the
-        server. As the data exported for timers and histograms is the same,
-        this is currently an alias for a timer.
-
-        example: the time to complete rendering of a web page for a user.
-        """
-        tags = [TagPair(_RESERVED_UNIT_TAG, unit.value)] + tags
-        self.histogram(metric_name, value, tags)
 
     @contextmanager
     def histogram_ctx(

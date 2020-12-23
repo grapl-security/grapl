@@ -132,14 +132,14 @@ where
      * special "_unit" tag that will
      * be popped off in the metric forwarder.
      */
-    pub fn histogram_with_units(
+    pub fn histogram_with_units<'a>(
         &mut self,
         metric_name: &str,
         value: f64,
         unit: HistogramUnit,
-        tags: &[TagPair],
+        tags: impl Into<Vec<TagPair<'a>>>,
     ) -> Result<(), MetricError> {
-        let mut tags_with_unit: Vec<TagPair> = tags.to_vec();
+        let mut tags_with_unit: Vec<TagPair> = tags.into();
         tags_with_unit.push(TagPair(
             RESERVED_UNIT_TAG,
             match unit {
@@ -148,7 +148,13 @@ where
                 HistogramUnit::Seconds => "seconds",
             },
         ));
-        self.write_metric(metric_name, value, MetricType::Histogram, None, tags)
+        self.write_metric(
+            metric_name,
+            value,
+            MetricType::Histogram,
+            None,
+            &tags_with_unit,
+        )
     }
 }
 

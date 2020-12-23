@@ -160,7 +160,7 @@ fn override_unit_from_dims(mut unit: &'static str, dims: &mut Dimensions) -> &'s
     // assumption of milliseconds.
     // Remove the _unit dimension from dimensions.
 
-    let units_dimension_option = dims.find_dimension(RESERVED_UNIT_FLAG);
+    let units_dimension_option = dims.find_dimension(RESERVED_UNIT_TAG);
     if let Some(units_dimension) = units_dimension_option {
         // Right now, we only specify `_unit` for histograms.
         assert_eq!(unit, cw_units::MILLIS);
