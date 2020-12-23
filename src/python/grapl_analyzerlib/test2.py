@@ -1,13 +1,9 @@
 from typing import *
 
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
+from grapl_analyzerlib.nodes.viewable import ForwardEdgeView
 from grapl_analyzerlib.nodes.comparators import (
     Cmp,
-    IntCmp,
     _int_cmps,
-    StrCmp,
-    _str_cmps,
 )
 from grapl_analyzerlib.prelude import *
 
@@ -94,15 +90,6 @@ class AuidView(DynamicNodeView):
 
 from typing import *
 
-from grapl_analyzerlib.nodes.types import PropertyT
-from grapl_analyzerlib.nodes.viewable import EdgeViewT, ForwardEdgeView
-from grapl_analyzerlib.nodes.comparators import (
-    Cmp,
-    IntCmp,
-    _int_cmps,
-    StrCmp,
-    _str_cmps,
-)
 from grapl_analyzerlib.prelude import *
 
 from pydgraph import DgraphClient

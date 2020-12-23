@@ -8,6 +8,7 @@ import sys
 import time
 from hashlib import pbkdf2_hmac, sha256
 from hmac import compare_digest
+from http import HTTPStatus
 from random import uniform
 from typing import (
     TYPE_CHECKING,
@@ -25,7 +26,7 @@ import boto3
 import jwt
 from chalice import Chalice, CORSConfig, Response
 from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
-from src.lib.sagemaker import SagemakerClient
+from src.lib.sagemaker import create_sagemaker_client
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
@@ -102,12 +103,12 @@ app = Chalice(app_name="engagement-edge")
 if IS_LOCAL:
     # Locally we may want to connect from many origins
     origin_re = re.compile(
-        f"http://.+/",
+        f"https?://.+",
         re.IGNORECASE,
     )
 else:
     origin_re = re.compile(
-        f"https://{BUCKET_PREFIX}-engagement-ux-bucket.s3[.\w\-]{1,14}amazonaws.com/",
+        f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
         re.IGNORECASE,
     )
 
@@ -138,9 +139,9 @@ def respond(
         allow_origin = req_origin
     else:
         LOGGER.info("Origin did not match")
-        # allow_origin = override or ORIGIN
-        # todo: Fixme
-        allow_origin = req_origin
+        return Response(
+            body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
+        )
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
@@ -215,9 +216,7 @@ def login(username: str, password: str) -> Optional[str]:
         return None
 
     # Use JWT to generate token
-    return jwt.encode(
-        {"username": username}, JWT_SECRET.get(), algorithm="HS256"
-    ).decode("utf8")
+    return jwt.encode({"username": username}, JWT_SECRET.get(), algorithm="HS256")
 
 
 def check_jwt(headers: Dict[str, Any]) -> bool:
@@ -246,7 +245,7 @@ def lambda_login(event: Any) -> Optional[str]:
     if IS_LOCAL:
         cookie = f"grapl_jwt={login_res}; HttpOnly"
     else:
-        cookie = f"grapl_jwt={login_res}; Domain=.amazonaws.com; secure; HttpOnly; SameSite=None"
+        cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None; path=/"
 
     if login_res:
         return cookie
@@ -298,7 +297,7 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
             try:
                 return route_fn()
             except Exception as e:
-                LOGGER.error("path %s", e)
+                LOGGER.error(f"path {path} had an error: {e}")
                 return respond("Unexpected Error")
 
         return cast(RouteFn, inner_route)
@@ -334,23 +333,25 @@ def check_login() -> Response:
 def get_notebook() -> Response:
     # cross-reference with `engagement.ts` notebookInstanceName
     notebook_name = f"{BUCKET_PREFIX}-Notebook"
-    client = SagemakerClient.create()
+    client = create_sagemaker_client(is_local=IS_LOCAL)
     url = client.get_presigned_url(notebook_name)
     return respond(err=None, res={"notebook_url": url})
 
 
-@app.route("/{proxy+}", methods=["OPTIONS", "POST", "GET"])
+@app.route("/auth/{proxy+}", methods=["OPTIONS", "POST", "GET"])
 def nop_route() -> Response:
     LOGGER.debug(app.current_request.context["path"])
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
 
     path = app.current_request.context["path"]
     path_to_handler = {
-        "/prod/login": login_route,
-        "/prod/checkLogin": check_login,
-        "/prod/getNotebook": get_notebook,
+        "/prod/auth/login": login_route,
+        "/prod/auth/checkLogin": check_login,
+        "/prod/auth/getNotebook": get_notebook,
     }
     handler = path_to_handler.get(path, None)
     if handler:
-        handler()
+        return handler()
 
     return respond(err=f"Invalid path: {path}")

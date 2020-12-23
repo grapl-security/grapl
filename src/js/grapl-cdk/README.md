@@ -32,9 +32,11 @@ Github.
 
 Navigate to https://github.com/grapl-security/grapl/releases and find
 the git tag associated with the latest release. Then `cd
-src/js/grapl-cdk` and run `python3 fetch_zips_by_tag.py $TAG` where
-`$TAG` is the appropriate git tag. The script will download all the
-release artifacts to the `zips/` directory.
+src/js/grapl-cdk` and run 
+`python3 fetch_zips_by_tag.py --version $VERSION --channel $CHANNEL`
+where `$VERSION` is the appropriate git release tag (i.e. 'v0.1.2') 
+and `$CHANNEL` is the build channel - for most users, 'latest`.
+The script will download all the release artifacts to the `zips/` directory.
 
 #### Executing a Grapl build and extracting release artifacts
 
@@ -140,7 +142,10 @@ To provision DGraph:
    console](https://console.aws.amazon.com/ec2autoscaling) and click
    on the Swarm Autoscaling group. Click *Edit* in the *Group Details*
    pane and set *Desired capacity*, *Minimum capacity*, and *Maximum
-   capacity* all to 3.
+   capacity* all to 0. Wait for the cluster to scale down to zero
+   instances. Then set *Desired capacity*, *Minimum capacity*, and
+   *Maximum capacity* all to 3. Wait for the cluster to scale up to 3
+   instances.
 
 2. Navigate to the [AWS Route53 Hosted Zones
    console](https://console.aws.amazon.com/route53/v2/hostedzones) and
@@ -154,10 +159,10 @@ To provision DGraph:
 3. `cd src/js/grapl-cdk/swarm` and run `python3 swarm_setup.py
    $GRAPL_DEPLOY_NAME` where `$GRAPL_DEPLOY_NAME` is the same
    `deployName` you configured above in
-   `src/js/grapl-cdk/bin/grapl-cdk.ts`. This script will output logs
-   to the console indicating which instance is the swarm manager. It
-   will also output logs containing the hostname of each swarm
-   instance. You will need these in subsequent steps.
+   `src/js/grapl-cdk/bin/deployment_parameters.ts`. This script will
+   output logs to the console indicating which instance is the swarm
+   manager. It will also output logs containing the hostname of each
+   swarm instance.  You will need these in subsequent steps.
 
 4. Navigate to the [AWS Session Manager
    console](https://console.aws.amazon.com/systems-manager/session-manager)
@@ -174,11 +179,11 @@ To provision DGraph:
 
    # get DGraph configs
    GRAPL_DEPLOY_NAME=<deployName>
-   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/docker-compose-dgraph.yml .
-   aws s3 cp s3://$GRAPL_DEPLOY_NAME-dgraph-config-bucket/envoy.yaml .
+   aws s3 cp s3://${GRAPL_DEPLOY_NAME,,}-dgraph-config-bucket/docker-compose-dgraph.yml .
+   aws s3 cp s3://${GRAPL_DEPLOY_NAME,,}-dgraph-config-bucket/envoy.yaml .
    ```
    where `<deployName>` is the same `deployName` you configured above
-   in `bin/grapl-cdk.ts`.
+   in `bin/deployment_parameters.ts`.
    ``` bash
    export AWS_LOGS_GROUP=<log_group_name>
    export AWS01_NAME=<swarm_manager_hostname>
@@ -200,9 +205,16 @@ To provision DGraph:
    region where Grapl is deployed. Therefore it's probably worthwhile
    to include `$GRAPL_DEPLOY_NAME` as a name component.
 
-# DGraph operations
+## DGraph operations
 
 You can manage the DGraph cluster with the docker swarm tooling by
 logging into the swarm manager with SSM. If you forget which instance
 is the swarm manager, you can find it using the EC2 instance tag
 `grapl-swarm-role=swarm-manager`.
+
+## Next steps
+
+See [Provisioning
+Grapl](https://grapl.readthedocs.io/en/latest/setup/aws.html#provisioning-grapl)
+for instructions to provision the database and start using your Grapl
+deployment.

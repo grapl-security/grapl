@@ -6,10 +6,9 @@ from grapl_analyzerlib.comparators import (
     Has,
     Eq,
 )
-from typing_extensions import Final
 
-PREDICATE: Final[str] = "pred"
-VALUE: Final[str] = "value"
+PREDICATE: str = "pred"
+VALUE: str = "value"
 
 
 class TestComparators(unittest.TestCase):

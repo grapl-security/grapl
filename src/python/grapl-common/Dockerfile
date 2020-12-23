@@ -1,4 +1,4 @@
-FROM grapl/grapl-python-build:latest AS grapl-common-python-build
+FROM grapl/grapl-python-build:latest
 USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl . grapl_common

@@ -25,23 +25,38 @@ import * as cloudwatch_actions from '@aws-cdk/aws-cloudwatch-actions';
  * metric that perhaps provides that extra context.
  */
 
+class AlarmSinkProps {
+    topic_name: string;
+    email: string;
+    prefix: string;
+}
+
 class AlarmSink extends cdk.Construct {
     readonly topic: sns.Topic;
     readonly cloudwatch_action: cloudwatch_actions.SnsAction;
 
-    constructor(scope: cdk.Construct, id: string, emailAddress: string) {
+    constructor(scope: cdk.Construct, id: string, props: AlarmSinkProps) {
         super(scope, id);
-        this.topic = new sns.Topic(scope, "topic");
-        this.topic.addSubscription(new subs.EmailSubscription(emailAddress));
+
+        const topic_name = `${props.prefix}-${props.topic_name}`;
+        this.topic = new sns.Topic(scope, "topic", {
+            topicName: topic_name
+        });
+        this.topic.addSubscription(new subs.EmailSubscription(props.email));
         this.cloudwatch_action = new cloudwatch_actions.SnsAction(this.topic)
     }
+}
+
+interface RiskNodeAlarmProps {
+    prefix: string;
+    alarm_sink: AlarmSink;
 }
 
 class RiskNodeAlarm extends cdk.Construct {
     constructor(
         scope: cdk.Construct,
         id: string,
-        alarm_sink: AlarmSink,
+        props: RiskNodeAlarmProps,
     ) {
         super(scope, id);
         const metric = new cloudwatch.Metric({
@@ -53,7 +68,7 @@ class RiskNodeAlarm extends cdk.Construct {
             this,
             "alarm",
             {
-                alarmName: "Risk node alarm",
+                alarmName: props.prefix + " - Risk node alarm",
                 // TODO: Add some verbiage to the alarm description on how to actually look at what's causing the alarm.
                 alarmDescription: undefined,
                 threshold: 1,
@@ -61,8 +76,13 @@ class RiskNodeAlarm extends cdk.Construct {
                 treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
             }
         );
-        alarm.addAlarmAction(alarm_sink.cloudwatch_action);
+        alarm.addAlarmAction(props.alarm_sink.cloudwatch_action);
     }
+}
+
+export interface OperationalAlarmsProps {
+    prefix: string;
+    email: string;
 }
 
 export class OperationalAlarms extends cdk.Construct {
@@ -71,23 +91,38 @@ export class OperationalAlarms extends cdk.Construct {
     constructor(
         scope: cdk.Construct,
         id: string,
-        email: string,
+        props: OperationalAlarmsProps,
     ) {
         super(scope, id);
-        const alarm_sink = new AlarmSink(this, "alarm_sink", email);
+        const alarm_sink_props: AlarmSinkProps = {
+            topic_name: "operational-alarms-sink",
+            ...props
+        }
+        const alarm_sink = new AlarmSink(this, "alarm_sink", alarm_sink_props);
     }
 }
 
+export interface SecurityAlarmsProps {
+    prefix: string;
+    email: string;
+}
 
 export class SecurityAlarms extends cdk.Construct {
     // Alarms meant for the consumer of the Grapl stack - for example, alarms triggered by analyzers.
     constructor(
         scope: cdk.Construct,
         id: string,
-        email: string,
+        props: SecurityAlarmsProps,
     ) {
         super(scope, id);
-        const alarm_sink = new AlarmSink(this, "alarm_sink", email);
-        const risk_node_alarm = new RiskNodeAlarm(this, "risk_node_alarm", alarm_sink);
+        const alarm_sink_props: AlarmSinkProps = {
+            topic_name: "security-alarms-sink",
+            ...props
+        }
+        const alarm_sink = new AlarmSink(this, "alarm_sink", alarm_sink_props);
+        const risk_node_alarm = new RiskNodeAlarm(this, "risk_node_alarm", {
+            prefix: props.prefix,
+            alarm_sink: alarm_sink
+        });
     }
 }
