@@ -187,7 +187,7 @@ interface EngagementUxProps extends cdk.StackProps {
     edgeApi: apigateway.RestApi;
 }
 
-const packageDir = path.join(__dirname, '../edge_ux_package/');
+const packageDir = path.join(__dirname, '../edge_ux_post_replace/');
 export class EngagementUx extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props: EngagementUxProps) {
         super(scope, id, props);
