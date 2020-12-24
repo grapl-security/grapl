@@ -8,9 +8,9 @@ import { DeploymentParameters } from './deployment_parameters';
  * - (before this file runs) in deploy_all.sh, we deploy the Grapl stack, which
  *     outputs a `cdk-output.json`
  * - read in the "cdk-output.json" file to look for an apiUrl
- * - inject that into "edge_ux"'s files
- * - write those injected files to "edge_ux_package"
- * - (after this file runs) deploy the `edge_ux_package`
+ * - inject that into "edge_ux_pre_replace"'s files
+ * - write those injected files to "edge_ux_post_replace"
+ * - (after this file runs) deploy the `edge_ux_post_replace`
  * 
  * Learn more at https://github.com/grapl-security/issue-tracker/issues/25
  */
@@ -68,8 +68,8 @@ function getEdgeApiUrl(): string {
 }
 
 function createEdgeUxPackage(apiUrl: string) {
-    const srcDir = path.join(__dirname, '../edge_ux/');
-    const packageDir = path.join(__dirname, '../edge_ux_package/');
+    const srcDir = path.join(__dirname, '../edge_ux_pre_replace/');
+    const packageDir = path.join(__dirname, '../edge_ux_post_replace/');
 
     if (!fs.existsSync(packageDir)) {
         fs.mkdirSync(packageDir);
@@ -101,15 +101,15 @@ function createEdgeUxPackage(apiUrl: string) {
 
             const targetDir = path
                 .dirname(filename)
-                .replace('edge_ux', 'edge_ux_package');
+                .replace('edge_ux_pre_replace', 'edge_ux_post_replace');
 
             if (!fs.existsSync(targetDir)) {
                 fs.mkdirSync(targetDir, { recursive: true });
             }
 
             const newPath = filename.replace(
-                'edge_ux',
-                'edge_ux_package'
+                'edge_ux_pre_replace',
+                'edge_ux_post_replace'
             );
 
             replaceInFile(filename, replaceMap, newPath);

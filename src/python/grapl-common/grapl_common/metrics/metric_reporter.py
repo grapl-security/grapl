@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from enum import Enum
 from sys import stdout
 from typing import Callable, Iterator, Optional, Sequence, TextIO, Union
 
@@ -21,6 +22,15 @@ class Writeable(Protocol):
 
     def write(self, some_str: str) -> int:
         pass
+
+
+_RESERVED_UNIT_TAG = "_unit"
+
+
+class HistogramUnit(str, Enum):
+    MILLIS = "millis"
+    MICROS = "micros"
+    SECONDS = "seconds"
 
 
 class MetricReporter:
@@ -102,6 +112,7 @@ class MetricReporter:
         metric_name: str,
         value: MillisDuration,
         tags: Sequence[TagPair] = (),
+        unit: Optional[HistogramUnit] = None,
     ) -> None:
         """
         A histogram is a measure of the distribution of timer values over time, calculated at the
@@ -110,6 +121,8 @@ class MetricReporter:
 
         example: the time to complete rendering of a web page for a user.
         """
+        if unit:
+            tags = [TagPair(_RESERVED_UNIT_TAG, unit.value)] + [t for t in tags]
         self.write_metric(
             metric_name=metric_name,
             value=value,
