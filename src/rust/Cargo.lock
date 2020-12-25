@@ -68,7 +68,7 @@ dependencies = [
  "stopwatch",
  "tokio 0.2.24",
  "tokio-compat",
- "uuid 0.6.5",
+ "uuid 0.8.1",
  "zstd",
 ]
 
@@ -433,9 +433,24 @@ dependencies = [
  "backtrace",
  "color-backtrace",
  "color-spantrace",
- "eyre",
+ "eyre 0.4.3",
  "indenter",
  "once_cell",
+ "tracing-error",
+]
+
+[[package]]
+name = "color-eyre"
+version = "0.5.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b29030875fd8376e4a28ef497790d5b4a7843d8d1396bf08ce46f5eec562c5c"
+dependencies = [
+ "backtrace",
+ "color-spantrace",
+ "eyre 0.6.3",
+ "indenter",
+ "once_cell",
+ "owo-colors",
  "tracing-error",
 ]
 
@@ -892,6 +907,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "eyre"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f29abf4740a4778632fe27a4f681ef5b7a6f659aeba3330ac66f48e20cfa3b7"
+dependencies = [
+ "indenter",
+ "once_cell",
+]
+
+[[package]]
 name = "failure"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1177,7 +1202,7 @@ dependencies = [
  "aws_lambda_events 0.2.7",
  "base16",
  "chrono",
- "eyre",
+ "eyre 0.4.3",
  "failure",
  "futures 0.3.8",
  "graph-generator-lib",
@@ -1197,14 +1222,14 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "simple_logger",
- "sqs-lambda",
+ "sqs-executor",
  "stopwatch",
  "tokio 0.2.24",
  "tokio-compat",
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
- "uuid 0.6.5",
+ "uuid 0.8.1",
  "zstd",
 ]
 
@@ -1306,8 +1331,8 @@ dependencies = [
 name = "grapl-config"
 version = "0.0.2"
 dependencies = [
- "color-eyre",
- "eyre",
+ "color-eyre 0.3.4",
+ "eyre 0.4.3",
  "log 0.4.11",
  "rusoto_core",
  "rusoto_s3",
@@ -1943,7 +1968,7 @@ dependencies = [
  "thiserror",
  "tokio 0.2.24",
  "tokio-compat",
- "uuid 0.6.5",
+ "uuid 0.8.1",
 ]
 
 [[package]]
@@ -2481,7 +2506,7 @@ version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50d9500ea1488a61aa96da139039b78a92eef64a0f3c82d38173729f0ad73cf8"
 dependencies = [
- "log 0.3.9",
+ "log 0.4.11",
 ]
 
 [[package]]
@@ -3374,6 +3399,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
+name = "sqs-executor"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "color-eyre 0.5.10",
+ "eyre 0.6.3",
+ "futures 0.3.8",
+ "futures-util",
+ "grapl-observe",
+ "prost",
+ "rusoto_core",
+ "rusoto_s3",
+ "rusoto_sqs",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio 0.2.24",
+ "tracing",
+ "tracing-futures",
+ "uuid 0.8.1",
+ "zstd",
+]
+
+[[package]]
 name = "sqs-lambda"
 version = "0.21.1"
 dependencies = [
@@ -3381,11 +3430,11 @@ dependencies = [
  "async-trait",
  "aws_lambda_events 0.2.7",
  "chrono",
- "color-eyre",
+ "color-eyre 0.3.4",
  "crossbeam-channel 0.4.4",
  "darkredis",
  "derive-aktor",
- "eyre",
+ "eyre 0.4.3",
  "futures 0.3.8",
  "futures-retry",
  "grapl-observe",
@@ -3624,7 +3673,7 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
- "uuid 0.6.5",
+ "uuid 0.8.1",
  "zstd",
 ]
 
