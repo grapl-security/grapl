@@ -928,7 +928,7 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     let s3_payload_retriever = vec![S3PayloadRetriever::new(
         |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
         ZstdProtoDecoder::default(),
-        MetricReporter::<Stdout>::new("sysmon-subgraph-generator"),
+        MetricReporter::<Stdout>::new("node-identifier"),
     ); 10];
 
     let mut s3_payload_retriever: [_; 10] = s3_payload_retriever.try_into().unwrap_or_else(|_|panic!("ahhh"));

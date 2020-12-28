@@ -190,28 +190,7 @@ class NodeIdentifier extends cdk.NestedStack {
             ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
         );
 
-        // history_db.allowReadWrite(this.service);
-
-        // this.service.event_handler.connections.allowToAnyIpv4(
-        //     ec2.Port.tcp(
-        //         parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
-        //     )
-        // );
-        //
-        // this.service.event_retry_handler.connections.allowToAnyIpv4(
-        //     ec2.Port.tcp(
-        //         parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
-        //     )
-        // );
-        //
-        // this.service.event_handler.connections.allowToAnyIpv4(
-        //     ec2.Port.tcp(443),
-        //     'Allow outbound to S3'
-        // );
-        // this.service.event_retry_handler.connections.allowToAnyIpv4(
-        //     ec2.Port.tcp(443),
-        //     'Allow outbound to S3'
-        // );
+        history_db.allowReadWrite2(this.service);
     }
 }
 
@@ -255,7 +234,7 @@ export interface GraphMergerProps extends GraplServiceProps {
 
 class GraphMerger extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
-    readonly service: Service
+    readonly service: FargateService
 
     constructor(scope: cdk.Construct, id: string, props: GraphMergerProps) {
         super(scope, id);
@@ -267,35 +246,40 @@ class GraphMerger extends cdk.NestedStack {
         );
         this.bucket = subgraphs_generated.bucket;
 
-        const graph_merge_cache = new RedisCluster(
+        const event_cache = new RedisCluster(
             this,
             'GraphMergerMergedCache',
             props
         );
-        graph_merge_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
+        event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new Service(this, id, {
+
+        this.service = new FargateService(this, id, {
             prefix: props.prefix,
             environment: {
+                RUST_LOG: "DEBUG",
                 BUCKET_PREFIX: bucket_prefix,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
                 MG_ALPHAS: 'http://' + props.dgraphSwarmCluster.alphaHostPort(),
-                MERGED_CACHE_ADDR:
-                    graph_merge_cache.cluster.attrRedisEndpointAddress,
-                MERGED_CACHE_PORT:
-                    graph_merge_cache.cluster.attrRedisEndpointPort,
+                MERGED_CACHE_ADDR: event_cache.cluster.attrRedisEndpointAddress,
+                MERGED_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
                 GRAPL_SCHEMA_TABLE: props.schemaTable.schema_table.tableName,
             },
             vpc: props.vpc,
-            reads_from: subgraphs_generated.bucket,
-            subscribes_to: subgraphs_generated.topic,
-            writes_to: props.writesTo,
+            readsFrom: subgraphs_generated.bucket,
+            subscribesTo: subgraphs_generated.topic,
+            writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            metric_forwarder: props.metricForwarder,
+            serviceImage: ContainerImage.fromAsset('../../../src/rust/graph-merger/')
+            // metric_forwarder: props.metricForwarder,
         });
-        props.schemaTable.allowRead(this.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.event_handler);
+
+        this.service.service.cluster.connections.allowToAnyIpv4(
+            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+        );
+        props.schemaTable.allowRead2(this.service);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster.connections);
     }
 }
 
@@ -990,18 +974,19 @@ export class GraplCdkStack extends cdk.Stack {
             email: props.securityAlarmsEmail
         });
 
-        new PipelineDashboard(this, "pipeline_dashboard", {
-            namePrefix: this.prefix,
-            services: [
-                // Order here is important - the idea is that this dashboard will help Grapl operators
-                // quickly determine which service in the pipeline is failing.
-                // sysmon_generator.service,
-                // node_identifier.service,
-                graph_merger.service,
-                analyzer_dispatch.service,
-                analyzer_executor.service,
-                engagement_creator.service,
-            ]
-        });
+        // todo: Don't accept a PR without porting this
+        // new PipelineDashboard(this, "pipeline_dashboard", {
+        //     namePrefix: this.prefix,
+        //     services: [
+        //         // Order here is important - the idea is that this dashboard will help Grapl operators
+        //         // quickly determine which service in the pipeline is failing.
+        //         // sysmon_generator.service,
+        //         // node_identifier.service,
+        //         // graph_merger.service,
+        //         analyzer_dispatch.service,
+        //         analyzer_executor.service,
+        //         engagement_creator.service,
+        //     ]
+        // });
     }
 }

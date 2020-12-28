@@ -21,6 +21,17 @@ pub enum SysmonGeneratorError {
     Unexpected,
 }
 
+impl CheckedError for SysmonGeneratorError {
+    fn error_type(&self) -> Recoverable {
+        match self {
+            Self::DeserializeError(_) => Recoverable::Persistent,
+            Self::E(_) => Recoverable::Persistent,
+            Self::Unexpected => Recoverable::Transient,
+        }
+    }
+}
+
+
 #[derive(Clone)]
 pub(crate) struct SysmonSubgraphGenerator<C>
 where
@@ -83,18 +94,6 @@ where
         }
 
         (final_subgraph, identities, last_failure)
-    }
-}
-
-
-impl CheckedError for SysmonGeneratorError {
-    fn error_type(&self) -> Recoverable {
-        // todo: We should have parse errors not be transient
-        match self {
-            Self::DeserializeError(_) => Recoverable::Persistent,
-            Self::E(_) => Recoverable::Persistent,
-            Self::Unexpected => Recoverable::Transient,
-        }
     }
 }
 

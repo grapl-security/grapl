@@ -4,6 +4,7 @@ import * as iam from '@aws-cdk/aws-iam';
 
 import { Service } from './service';
 import { RemovalPolicy } from '@aws-cdk/core';
+import {FargateService} from "./fargate_service";
 
 export interface SchemaDbProps {
     table_name: string;
@@ -30,6 +31,10 @@ export class SchemaDb extends cdk.Construct {
     allowRead(service: Service) {
         this.schema_table.grantReadData(service.event_handler);
         this.schema_table.grantReadData(service.event_retry_handler);
+    }
+
+    allowRead2(service: FargateService) {
+        this.schema_table.grantReadData(service.service.taskDefinition.taskRole);
     }
 
     allowReadWrite(service: Service) {

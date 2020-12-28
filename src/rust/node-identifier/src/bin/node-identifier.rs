@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Running node-identifier");
     let env = grapl_config::init_grapl_env!();
 
-    handler(false).await;
+    handler(false).await?;
 
     Ok(())
 }
