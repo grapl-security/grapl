@@ -14,6 +14,7 @@ import * as targets from '@aws-cdk/aws-events-targets';
 import * as path from 'path';
 
 import { Service } from './service';
+import { FargateService } from './fargate_service';
 import { UserAuthDb } from './userauthdb';
 import { HistoryDb } from './historydb';
 import { EventEmitter } from './event_emitters';
@@ -27,13 +28,14 @@ import { OperationalAlarms, SecurityAlarms } from './alarms';
 import { Watchful, WatchedOperation } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 import { PipelineDashboard } from './pipeline_dashboard';
+import {ContainerImage} from "@aws-cdk/aws-ecs";
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
 }
 
 class SysmonGraphGenerator extends cdk.NestedStack {
-    readonly service: Service;
+    readonly service: FargateService;
 
     constructor(
         parent: cdk.Construct,
@@ -51,7 +53,7 @@ class SysmonGraphGenerator extends cdk.NestedStack {
         const event_cache = new RedisCluster(this, 'SysmonEventCache', props);
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new Service(this, id, {
+        this.service = new FargateService(this, id, {
             prefix: props.prefix,
             environment: {
                 BUCKET_PREFIX: bucket_prefix,
@@ -59,21 +61,22 @@ class SysmonGraphGenerator extends cdk.NestedStack {
                 EVENT_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
             },
             vpc: props.vpc,
-            reads_from: sysmon_log.bucket,
-            subscribes_to: sysmon_log.topic,
-            writes_to: props.writesTo,
+            readsFrom: sysmon_log.bucket,
+            subscribesTo: sysmon_log.topic,
+            writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            metric_forwarder: props.metricForwarder,
+            serviceImage: ContainerImage.fromAsset('../../../src/rust/generators/sysmon-subgraph-generator/')
+            // metric_forwarder: props.metricForwarder,
         });
 
-        this.service.event_handler.connections.allowToAnyIpv4(
+        this.service.service.cluster.connections.allowToAnyIpv4(
             ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
         );
-
-        this.service.event_retry_handler.connections.allowToAnyIpv4(
-            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
-        );
+        //
+        // this.service.connections.allowToAnyIpv4(
+        //     ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+        // );
     }
 }
 
@@ -991,7 +994,7 @@ export class GraplCdkStack extends cdk.Stack {
             services: [
                 // Order here is important - the idea is that this dashboard will help Grapl operators
                 // quickly determine which service in the pipeline is failing.
-                sysmon_generator.service,
+                // sysmon_generator.service,
                 node_identifier.service,
                 graph_merger.service,
                 analyzer_dispatch.service,

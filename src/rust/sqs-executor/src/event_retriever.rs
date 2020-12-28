@@ -3,7 +3,7 @@ use std::io::{Read, Stdout};
 use std::marker::PhantomData;
 use std::time::Duration;
 
-use rusoto_s3::{GetObjectRequest, S3};
+use rusoto_s3::{GetObjectRequest, S3, GetObjectError};
 use rusoto_sqs::Message as SqsMessage;
 use tokio::prelude::*;
 use tracing::{debug, error, info};
@@ -14,11 +14,16 @@ use crate::event_decoder::PayloadDecoder;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_observe::timers::time_fut_ms;
 use std::collections::HashMap;
+use crate::errors::{CheckedError, Recoverable};
+use rusoto_core::RusotoError;
+use tokio::time::Elapsed;
 
 #[async_trait]
-pub trait PayloadRetriever<T> {
+pub trait PayloadRetriever<T>
+{
     type Message;
-    async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<T>, Box<dyn Error>>;
+    type Error: CheckedError;
+    async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<T>, Self::Error>;
 }
 
 #[derive(Clone)]
@@ -65,6 +70,49 @@ impl<S, SInit, D, E> S3PayloadRetriever<S, SInit, D, E>
     }
 }
 
+
+#[derive(thiserror::Error, Debug)]
+pub enum S3PayloadRetrieverError {
+    #[error("S3Error: {0}")]
+    S3Error(#[from] RusotoError<GetObjectError>),
+    #[error("Decode error")]
+    DecodeError(#[from] Box<dyn Error>),
+    #[error("IO")]
+    Io(#[from] std::io::Error),
+    #[error("JSON")]
+    Json(#[from] serde_json::Error),
+    #[error("Timeout")]
+    Timeout(#[from] Elapsed),
+}
+
+/// ```
+/// with open("your file path", "r") as f:
+///     words = f.read().split()
+///
+// seen_words = set()
+// output = []
+// for word in words:
+//     if word in seen_words:
+//         output.append(word)
+//     else:
+//         seen_words.add(word)
+///
+/// with open("new file", "w") as f:
+///     f.write(output)
+/// ```
+
+impl CheckedError for S3PayloadRetrieverError {
+    fn error_type(&self) -> Recoverable {
+        match self {
+            Self::S3Error(_) => Recoverable::Transient,
+            Self::DecodeError(_) => Recoverable::Persistent,
+            Self::Io(_) => Recoverable::Transient,
+            Self::Json(_) => Recoverable::Persistent,
+            Self::Timeout(_) => Recoverable::Transient,
+        }
+    }
+}
+
 #[async_trait]
 impl<S, SInit, D, E> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E>
     where
@@ -74,8 +122,9 @@ impl<S, SInit, D, E> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E>
         E: Send + 'static,
 {
     type Message = SqsMessage;
+    type Error = S3PayloadRetrieverError;
     #[tracing::instrument(skip(self, msg))]
-    async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<E>, Box<dyn Error>> {
+    async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<E>, Self::Error> {
         let body = msg.body.as_ref().unwrap();
         debug!("Got body from message: {}", body);
         let event: serde_json::Value = serde_json::from_str(body)?;
@@ -128,6 +177,6 @@ impl<S, SInit, D, E> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E>
             .unwrap_or_else(|e| error!("failed to report s3_retriever.bytes: {:?}", e));
 
         info!("Read s3 payload body");
-        self.decoder.decode(body).map(Option::from)
+        Ok(self.decoder.decode(body).map(Option::from)?)
     }
 }

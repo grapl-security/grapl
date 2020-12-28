@@ -11,7 +11,7 @@ use rusoto_s3::{S3, S3Client};
 use rusoto_sqs::{DeleteMessageError, DeleteMessageRequest, Message as SqsMessage, ReceiveMessageError, ReceiveMessageRequest};
 use rusoto_sqs::{Sqs, SqsClient};
 use thiserror::Error;
-use tracing::error;
+use tracing::{info, error, warn};
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
@@ -22,8 +22,11 @@ use crate::completion_event_serializer::CompletionEventSerializer;
 use crate::errors::{CheckedError, ExecutorError, Recoverable};
 use crate::event_decoder::PayloadDecoder;
 use crate::event_retriever::PayloadRetriever;
+use crate::event_handler::CompletedEvents;
+use tracing::debug;
 
 pub mod cache;
+pub mod redis_cache;
 pub mod event_retriever;
 pub mod event_decoder;
 pub mod event_handler;
@@ -31,7 +34,6 @@ pub mod event_emitter;
 pub mod s3_event_emitter;
 pub mod completion_event_serializer;
 pub mod errors;
-pub mod example; // todo: remove
 
 // Message - Contains information necessary to retrieve payload
 // Payload - Encoded set of Events
@@ -49,8 +51,15 @@ pub async fn get_message<SqsT>(queue_url: String, sqs_client: SqsT) -> Result<Ve
         visibility_timeout: Some(30),
         wait_time_seconds: Some(20),
         ..Default::default()
-    }).await?
-        .messages.unwrap_or_else(|| vec![]);
+    });
+
+    let messages = tokio::time::timeout(
+        std::time::Duration::from_secs(21),
+        messages,
+    );
+    let messages = messages.await.expect("timeout")?
+    .messages.unwrap_or_else(|| vec![]);
+
     Ok(messages)
 }
 
@@ -92,7 +101,7 @@ fn delete_message<SqsT>(
     sqs_client: SqsT,
     queue_url: String,
     receipt_handle: String,
-)
+) -> tokio::task::JoinHandle<()>
     where SqsT: Sqs + Clone + Send + Sync + 'static,
 {
     tokio::task::spawn(async move {
@@ -113,7 +122,7 @@ fn delete_message<SqsT>(
                 }
             }
         }
-    });
+    })
 }
 
 async fn process_message<
@@ -165,6 +174,7 @@ async fn process_message<
             Error=SerializerErrorT,
         >
 {
+    info!("Retrieving payload");
     let payload = s3_payload_retriever.retrieve_event(&next_message).await;
 
     let events = match payload {
@@ -179,14 +189,27 @@ async fn process_message<
             return;
         }
         Err(e) => {
-            // Determine if we should retry?
-            // If it's a decode error we have to just drop it anyway
+            // If this thing's persistent, let's just delete the message
+            // todo: It should actually be moved to the dead-letter, not deleted
+            if let Recoverable::Persistent = e.error_type() {
+                delete_message(
+                    sqs_client.clone(),
+                    queue_url.to_owned(),
+                    next_message.receipt_handle.expect("missing receipt_handle"),
+                );
+            }
             return;
         }
     };
+
+    // todo: We can lift this
+    let mut completed = CompletedEvents::default();
+
+    // completed.clear();
     let processing_result = event_handler.handle_event(
-        events
+        events, &mut completed,
     ).await;
+
 
     match processing_result {
         Ok(total) => {
@@ -199,17 +222,14 @@ async fn process_message<
             s3_emitter.emit_event(event).await
                 .expect("Failed to emit event");
             // ack the message
-            // todo: we should retry deletion, and probably do it in the background
-            sqs_client.delete_message(
-                DeleteMessageRequest {
-                    queue_url: queue_url.to_owned(),
-                    receipt_handle: next_message.receipt_handle.expect("missing receipt_handle"),
-                }
-            )
-                .await
-                .expect("Failed to delete message");
+            delete_message(
+                sqs_client.clone(),
+                queue_url.to_owned(),
+                next_message.receipt_handle.expect("missing receipt_handle"),
+            ).await;
         }
-        Err(Ok(partial)) => {
+        Err(Ok((partial, e))) => {
+            warn!("Processing failed with: {:?}", e);
             let event = serializer
                 .serialize_completed_events(&[partial])
                 .expect("Serializing failed");
@@ -221,6 +241,11 @@ async fn process_message<
         Err(Err(e)) => {
             if let Recoverable::Persistent = e.error_type() {
                 // todo: We should move this to the deadletter directly
+                delete_message(
+                    sqs_client.clone(),
+                    queue_url.to_owned(),
+                    next_message.receipt_handle.expect("missing receipt_handle"),
+                );
             }
             // should we retry? idk
             // otherwise we can just do nothing
@@ -278,11 +303,17 @@ async fn _process_loop<
         >
 {
     loop {
+        info!("Retrieving messages");
+        println!("Retrieving messages");
         let message_batch = get_message(
             queue_url.to_string(),
             sqs_client.clone(),
         ).await.expect("failed to get messages");
-
+        info!("Received {} messages", message_batch.len());
+        println!("Received {} messages", message_batch.len());
+        if message_batch.is_empty() {
+            continue
+        }
         // We can't parallelize this because of the shared mutable state
         // of the retriever, emitter, and serializer
 
@@ -363,6 +394,7 @@ pub async fn process_loop<
         >
 {
     loop {
+        debug!("Outer process loop");
         let f = _process_loop(
             queue_url.clone(),
             cache,
@@ -376,8 +408,10 @@ pub async fn process_loop<
         if let Err(e) = f.catch_unwind().await {
             if let Some(e) = e.downcast_ref::<Box<dyn std::fmt::Debug>>() {
                 error!("Processing loop failed {:?}", e);
+            } else {
+                error!("Unexpected error");
             }
-            tokio::time::delay_for(std::time::Duration::from_millis(100));
+            tokio::time::delay_for(std::time::Duration::from_millis(100)).await;
             // todo: maybe a sleep/ backoff with random jitter?
         }
     }

@@ -73,6 +73,11 @@ RUN mkdir -p sqs-lambda/src
 RUN touch sqs-lambda/src/lib.rs
 COPY --chown=grapl ./sqs-lambda/Cargo.toml sqs-lambda/
 
+# copy in Cargo.toml for sqs-executor
+RUN mkdir -p sqs-executor/src
+RUN touch sqs-executor/src/lib.rs
+COPY --chown=grapl ./sqs-executor/Cargo.toml sqs-executor/
+
 # copy in Cargo.toml for metric-forwarder
 RUN mkdir -p metric-forwarder/src
 RUN echo 'fn main() {}' > metric-forwarder/src/main.rs 
@@ -129,6 +134,7 @@ RUN rm -rf target/*/*/.fingerprint/grapl-config*
 RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
 RUN rm -rf target/*/*/.fingerprint/grapl-observe*
 RUN rm -rf target/*/*/.fingerprint/sqs-lambda*
+RUN rm -rf target/*/*/.fingerprint/sqs-executor*
 RUN rm -rf target/*/*/.fingerprint/metric-forwarder*
 RUN rm -rf target/*/*/.fingerprint/node-identifier*
 RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
@@ -141,6 +147,7 @@ COPY --chown=grapl ./graph-merger graph-merger
 COPY --chown=grapl ./grapl-config grapl-config
 COPY --chown=grapl ./grapl-observe grapl-observe
 COPY --chown=grapl ./sqs-lambda sqs-lambda
+COPY --chown=grapl ./sqs-executor sqs-executor
 COPY --chown=grapl ./metric-forwarder metric-forwarder
 COPY --chown=grapl ./node-identifier node-identifier
 COPY --chown=grapl ./generators/graph-generator-lib generators/graph-generator-lib

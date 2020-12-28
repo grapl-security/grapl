@@ -5,10 +5,19 @@ use failure::bail;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::log_time;
 use log::*;
-use sqs_lambda::cache::{Cache, CacheResponse};
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
+use sqs_executor::cache::{Cache, CacheResponse};
+use sqs_executor::event_handler::{EventHandler, CompletedEvents};
 use std::borrow::Cow;
 use sysmon::Event;
+use sqs_executor::errors::{CheckedError, Recoverable};
+
+#[derive(thiserror::Error, Debug)]
+pub enum SysmonGeneratorError {
+    #[error("Generator failed")]
+    E(failure::Error),
+    #[error("Generator failed")]
+    Unexpected,
+}
 
 #[derive(Clone)]
 pub(crate) struct SysmonSubgraphGenerator<C>
@@ -75,6 +84,14 @@ where
     }
 }
 
+
+impl CheckedError for SysmonGeneratorError {
+    fn error_type(&self) -> Recoverable {
+        // todo: We should have parse errors not be transient
+        Recoverable::Transient
+    }
+}
+
 #[async_trait]
 impl<C> EventHandler for SysmonSubgraphGenerator<C>
 where
@@ -82,12 +99,13 @@ where
 {
     type InputEvent = Vec<u8>;
     type OutputEvent = Graph;
-    type Error = sqs_lambda::error::Error;
+    type Error = SysmonGeneratorError;
 
     async fn handle_event(
         &mut self,
         events: Vec<u8>,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
+        completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         info!("Handling raw event");
 
         /*
@@ -123,18 +141,13 @@ where
         info!("Completed mapping {} subgraphs", identities.len());
         self.metrics.report_handle_event_success(&last_failure);
 
-        let mut completed = match last_failure {
-            Some(e) => OutputEvent::new(Completion::Partial((
-                final_subgraph,
-                sqs_lambda::error::Error::ProcessingError(e.to_string()),
-            ))),
-            None => OutputEvent::new(Completion::Total(final_subgraph)),
-        };
-
         identities
             .into_iter()
             .for_each(|identity| completed.add_identity(identity));
 
-        completed
+        match last_failure {
+            Some(e) => Err(Ok((final_subgraph, SysmonGeneratorError::E(e)))),
+            None => Ok(final_subgraph),
+        }
     }
 }

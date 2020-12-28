@@ -79,13 +79,13 @@ pub fn grapl_log_level() -> log::Level {
 }
 
 pub fn _init_grapl_log(env: &ServiceEnv) {
-    let filter = EnvFilter::from_default_env()
-        .add_directive("warn".parse().expect("Invalid directive"))
-        .add_directive(
-            format!("{}={}", env.service_name, grapl_log_level())
-                .parse()
-                .expect("Invalid directive"),
-        );
+    let filter = EnvFilter::from_default_env();
+        // .add_directive("warn".parse().expect("Invalid directive"))
+        // .add_directive(
+        //     format!("{}={}", env.service_name, grapl_log_level())
+        //         .parse()
+        //         .expect("Invalid directive"),
+        // );
     if env.is_local {
         tracing_subscriber::fmt().with_env_filter(filter).init();
     } else {

@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 
 use async_trait::async_trait;
 
-use crate::errors::CheckedError;
+use crate::errors::{CheckedError, Recoverable};
 
 pub trait Cacheable {
     fn identity(&self) -> Vec<u8>;
@@ -29,46 +29,54 @@ pub enum CacheResponse {
 
 #[async_trait]
 pub trait Cache: Clone {
+    type CacheErrorT: CheckedError + Send + Sync + 'static;
     async fn get<
         CA: Cacheable + Send + Sync + 'static,
-        CacheErrorT: CheckedError + Send + Sync + 'static,
     >(
         &mut self,
         cacheable: CA,
-    ) -> Result<CacheResponse, CacheErrorT>;
-    async fn store<
-        CacheErrorT: CheckedError + Send + Sync + 'static,
-    >(&mut self, identity: Vec<u8>) -> Result<(), CacheErrorT>;
+    ) -> Result<CacheResponse, Self::CacheErrorT>;
+    async fn store(&mut self, identity: Vec<u8>) -> Result<(), Self::CacheErrorT>;
 }
 
-#[async_trait]
-pub trait ReadableCache {
-    async fn get<
-        CA: Cacheable + Send + Sync + 'static,
-        CacheErrorT: CheckedError + Send + Sync + 'static,
-    >(
-        &mut self,
-        cacheable: CA,
-    ) -> Result<CacheResponse, CacheErrorT>;
+// #[async_trait]
+// pub trait ReadableCache {
+//     async fn get<
+//         CA: Cacheable + Send + Sync + 'static,
+//     >(
+//         &mut self,
+//         cacheable: CA,
+//     ) -> Result<CacheResponse, CacheErrorT>;
+// }
+
+#[derive(thiserror::Error, Debug)]
+pub enum NopCacheError {
+    #[error("NopCache never errors")]
+    Never
 }
 
-#[derive(Clone)]
+impl CheckedError for NopCacheError {
+    fn error_type(&self) -> Recoverable {
+        panic!("NopCache can not error")
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct NopCache {}
 
 #[async_trait]
 impl Cache for NopCache {
+    type CacheErrorT = NopCacheError;
+
     async fn get<
         CA: Cacheable + Send + Sync + 'static,
-        CacheErrorT: CheckedError + Send + Sync + 'static,
     >(
         &mut self,
         _cacheable: CA,
-    ) -> Result<CacheResponse, CacheErrorT> {
+    ) -> Result<CacheResponse, Self::CacheErrorT> {
         Ok(CacheResponse::Miss)
     }
-    async fn store<
-        CacheErrorT: CheckedError + Send + Sync + 'static,
-    >(&mut self, _identity: Vec<u8>) -> Result<(), CacheErrorT> {
+    async fn store(&mut self, _identity: Vec<u8>) -> Result<(), Self::CacheErrorT> {
         Ok(())
     }
 }
