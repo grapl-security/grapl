@@ -73,10 +73,6 @@ class SysmonGraphGenerator extends cdk.NestedStack {
         this.service.service.cluster.connections.allowToAnyIpv4(
             ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
         );
-        //
-        // this.service.connections.allowToAnyIpv4(
-        //     ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
-        // );
     }
 }
 
@@ -134,7 +130,7 @@ export interface NodeIdentifierProps extends GraplServiceProps {
 class NodeIdentifier extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
     readonly topic: sns.Topic;
-    readonly service: Service;
+    readonly service: FargateService;
 
     constructor(parent: cdk.Construct, id: string, props: NodeIdentifierProps) {
         super(parent, id);
@@ -149,21 +145,22 @@ class NodeIdentifier extends cdk.NestedStack {
         this.bucket = unid_subgraphs.bucket;
         this.topic = unid_subgraphs.topic;
 
-        const retry_identity_cache = new RedisCluster(
+        const event_cache = new RedisCluster(
             this,
             'NodeIdentifierRetryCache',
             props
         );
-        retry_identity_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
+        event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new Service(this, id, {
+        this.service = new FargateService(this, id, {
             prefix: props.prefix,
             environment: {
+                RUST_LOG: "DEBUG",
                 BUCKET_PREFIX: bucket_prefix,
                 RETRY_IDENTITY_CACHE_ADDR:
-                    retry_identity_cache.cluster.attrRedisEndpointAddress,
+                    event_cache.cluster.attrRedisEndpointAddress,
                 RETRY_IDENTITY_CACHE_PORT:
-                    retry_identity_cache.cluster.attrRedisEndpointPort,
+                    event_cache.cluster.attrRedisEndpointPort,
                 STATIC_MAPPING_TABLE: history_db.static_mapping_table.tableName,
                 DYNAMIC_SESSION_TABLE:
                     history_db.dynamic_session_table.tableName,
@@ -180,37 +177,41 @@ class NodeIdentifier extends cdk.NestedStack {
                 ASSET_ID_MAPPINGS: history_db.asset_history.tableName,
             },
             vpc: props.vpc,
-            reads_from: unid_subgraphs.bucket,
-            subscribes_to: unid_subgraphs.topic,
-            writes_to: props.writesTo,
-            retry_code_name: 'node-identifier-retry-handler',
+            readsFrom: unid_subgraphs.bucket,
+            subscribesTo: unid_subgraphs.topic,
+            writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            metric_forwarder: props.metricForwarder,
+            serviceImage: ContainerImage.fromAsset('../../../src/rust/node-identifier/')
+            // metric_forwarder: props.metricForwarder,
         });
 
-        history_db.allowReadWrite(this.service);
-
-        this.service.event_handler.connections.allowToAnyIpv4(
-            ec2.Port.tcp(
-                parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
-            )
+        this.service.service.cluster.connections.allowToAnyIpv4(
+            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
         );
 
-        this.service.event_retry_handler.connections.allowToAnyIpv4(
-            ec2.Port.tcp(
-                parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
-            )
-        );
+        // history_db.allowReadWrite(this.service);
 
-        this.service.event_handler.connections.allowToAnyIpv4(
-            ec2.Port.tcp(443),
-            'Allow outbound to S3'
-        );
-        this.service.event_retry_handler.connections.allowToAnyIpv4(
-            ec2.Port.tcp(443),
-            'Allow outbound to S3'
-        );
+        // this.service.event_handler.connections.allowToAnyIpv4(
+        //     ec2.Port.tcp(
+        //         parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
+        //     )
+        // );
+        //
+        // this.service.event_retry_handler.connections.allowToAnyIpv4(
+        //     ec2.Port.tcp(
+        //         parseInt(retry_identity_cache.cluster.attrRedisEndpointPort)
+        //     )
+        // );
+        //
+        // this.service.event_handler.connections.allowToAnyIpv4(
+        //     ec2.Port.tcp(443),
+        //     'Allow outbound to S3'
+        // );
+        // this.service.event_retry_handler.connections.allowToAnyIpv4(
+        //     ec2.Port.tcp(443),
+        //     'Allow outbound to S3'
+        // );
     }
 }
 
@@ -995,7 +996,7 @@ export class GraplCdkStack extends cdk.Stack {
                 // Order here is important - the idea is that this dashboard will help Grapl operators
                 // quickly determine which service in the pipeline is failing.
                 // sysmon_generator.service,
-                node_identifier.service,
+                // node_identifier.service,
                 graph_merger.service,
                 analyzer_dispatch.service,
                 analyzer_executor.service,

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::fmt::Debug;
 use std::io::{Cursor, Stdout};
 use std::ops::Deref;
@@ -42,19 +42,18 @@ use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnec
 use grapl_observe::metric_reporter::MetricReporter;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
+use sqs_executor::completion_event_serializer::CompletionEventSerializer;
+use sqs_executor::event_decoder::PayloadDecoder;
+use sqs_executor::event_handler::{EventHandler, CompletedEvents};
+use sqs_executor::redis_cache::RedisCache;
+use sqs_executor::errors::{CheckedError, Recoverable};
+use sqs_executor::event_retriever::S3PayloadRetriever;
+use sqs_executor::s3_event_emitter::S3EventEmitter;
+use sqs_executor::time_based_key_fn;
 
 macro_rules! wait_on {
     ($x:expr) => {{
-        //            let rt = tokio::runtime::current_thread::Runtime::new()?;
         $x.await
     }};
 }
@@ -605,6 +604,19 @@ async fn attribute_asset_ids(
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum NodeIdentifierError {
+
+    #[error("Unexpected error")]
+    Unexpected,
+}
+
+impl CheckedError for NodeIdentifierError {
+    fn error_type(&self) -> Recoverable {
+        unimplemented!()
+    }
+}
+
 #[async_trait]
 impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
 where
@@ -613,12 +625,13 @@ where
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = GeneratedSubgraphs;
-    type Error = sqs_lambda::error::Error;
+    type Error = NodeIdentifierError;
 
     async fn handle_event(
         &mut self,
         subgraphs: GeneratedSubgraphs,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
+        completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         warn!("node-identifier.handle_event");
         let _region = self.region.clone();
 
@@ -628,7 +641,7 @@ where
 
         if subgraphs.subgraphs.is_empty() {
             warn!("Received empty unid subgraph");
-            return OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![])));
+            return Ok(GeneratedSubgraphs::new(vec![]));
         }
 
         // Merge all of the subgraphs into one subgraph to avoid
@@ -649,7 +662,7 @@ where
 
         if unid_subgraph.is_empty() {
             warn!("Received empty subgraph");
-            return OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![])));
+            return Ok(GeneratedSubgraphs::new(vec![]));
         }
 
         info!(
@@ -661,9 +674,7 @@ where
         // Create any implicit asset id mappings
         if let Err(e) = create_asset_id_mappings(&self.asset_mapping_db, &unid_subgraph).await {
             error!("Asset mapping creation failed with {}", e);
-            return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(e.to_string()),
-            ));
+            return Err(Err(NodeIdentifierError::Unexpected));
         }
 
         // Map all host_ids into asset_ids. This has to happen before node key
@@ -746,42 +757,29 @@ where
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
 
         if identified_graph.is_empty() {
-            return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(
-                    "All nodes failed to identify".to_string(),
-                ),
-            ));
+            return Err(Err(NodeIdentifierError::Unexpected))
         }
 
-        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
+        let identities: Vec<_> = unid_id_map.keys().collect();
 
-        let mut completed = if !dead_node_ids.is_empty() || attribution_failure.is_some() {
+        identities
+            .iter()
+            .for_each(|identity| completed.add_identity(identity.clone()));
+
+        if !dead_node_ids.is_empty() || attribution_failure.is_some() {
             info!("Partial Success, identified {} nodes", identities.len());
-            OutputEvent::new(Completion::Partial((
+            Err(Ok((
                 GeneratedSubgraphs::new(vec![identified_graph]),
-                sqs_lambda::error::Error::ProcessingError(attribution_failure.unwrap().to_string()),
+                NodeIdentifierError::Unexpected,  // todo: Use a real error here
+                // sqs_lambda::error::Error::ProcessingError(attribution_failure.unwrap().to_string()),
             )))
         } else {
             info!("Identified all nodes");
-            OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![
+            Ok(GeneratedSubgraphs::new(vec![
                 identified_graph,
-            ])))
-        };
-
-        identities
-            .into_iter()
-            .for_each(|identity| completed.add_identity(identity));
-
-        completed
+            ]))
+        }
     }
-}
-
-pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    _handler(event, ctx, false)
-}
-
-pub fn retry_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    _handler(event, ctx, true)
 }
 
 #[derive(Clone, Debug, Default)]
@@ -789,10 +787,17 @@ pub struct SubgraphSerializer {
     proto: Vec<u8>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum SubgraphSerializerError {
+    #[error("IO")]
+    Io(#[from] std::io::Error),
+    #[error("EncodeError")]
+    EncodeError(#[from] prost::EncodeError),
+}
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = GeneratedSubgraphs;
     type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error;
+    type Error = SubgraphSerializerError;
 
     fn serialize_completed_events(
         &mut self,
@@ -817,8 +822,8 @@ impl CompletionEventSerializer for SubgraphSerializer {
         if subgraph.is_empty() {
             warn!(
                 concat!(
-                    "Output subgraph is empty. Serializing to empty vector.",
-                    "pre_nodes: {} pre_edges: {}"
+                "Output subgraph is empty. Serializing to empty vector.",
+                "pre_nodes: {} pre_edges: {}"
                 ),
                 pre_nodes, pre_edges,
             );
@@ -839,13 +844,11 @@ impl CompletionEventSerializer for SubgraphSerializer {
 
         self.proto.clear();
 
-        prost::Message::encode(&subgraphs, &mut self.proto)
-            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
+        prost::Message::encode(&subgraphs, &mut self.proto)?;
 
         let mut compressed = Vec::with_capacity(self.proto.len());
         let mut proto = Cursor::new(&self.proto);
-        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
+        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)?;
         Ok(vec![compressed])
     }
 }
@@ -872,167 +875,166 @@ where
     }
 }
 
-fn time_based_key_fn(_event: &[u8]) -> String {
-    info!("event length {}", _event.len());
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+
+pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
+    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+    debug!("Queue Url: {}", source_queue_url);
+    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+
+
+    let sqs_client = SqsClient::new(grapl_config::region());
+    let s3_client = S3Client::new(grapl_config::region());
+
+    let cache_address = {
+        let retry_identity_cache_addr =
+            std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
+        let retry_identity_cache_port =
+            std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
+
+        format!(
+            "{}:{}",
+            retry_identity_cache_addr, retry_identity_cache_port,
+        )
     };
+    let destination_bucket = bucket_prefix + "-subgraphs-generated-bucket";
 
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
-}
-
-fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
-    rusoto_sqs::Message {
-        attributes: Some(event.attributes),
-        body: event.body,
-        md5_of_body: event.md5_of_body,
-        md5_of_message_attributes: event.md5_of_message_attributes,
-        message_attributes: None,
-        message_id: event.message_id,
-        receipt_handle: event.receipt_handle,
+    let mut cache = Vec::with_capacity(10);
+    for _ in 0..10u8 {
+        let c = RedisCache::new(cache_address.to_owned())
+            .await
+            .expect("Could not create redis client");
+        cache.push(c);
     }
-}
+    let mut cache: [_; 10] = cache.try_into().unwrap_or_else(|_| panic!("ahhh"));
+    let cache = &mut cache;
 
-fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), HandlerError> {
-    info!("Handling event");
+    let serializer = vec![SubgraphSerializer::default(); 10];
+    let mut serializer: [_; 10] = serializer.try_into().unwrap_or_else(|_| panic!("ahhh"));
+    let mut serializer = &mut serializer;
 
-    let mut initial_events: HashSet<String> = event
-        .records
-        .iter()
-        .map(|event| event.message_id.clone().unwrap())
-        .collect();
-
-    info!("Initial Events {:?}", initial_events);
-
-    let (tx, rx) = std::sync::mpsc::sync_channel(10);
-
-    let completed_tx = tx.clone();
-
-    std::thread::spawn(move || {
-        tokio_compat::run_std(async move {
-            let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-            debug!("Queue Url: {}", source_queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-            let cache_address = {
-                let retry_identity_cache_addr =
-                    std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
-                let retry_identity_cache_port =
-                    std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
-
-                format!(
-                    "{}:{}",
-                    retry_identity_cache_addr, retry_identity_cache_port,
-                )
-            };
-
-            let bucket = bucket_prefix + "-subgraphs-generated-bucket";
-            info!("Output events to: {}", bucket);
-            let region = grapl_config::region();
-            let cache = RedisCache::new(cache_address.to_owned())
-                .await
-                .expect("Could not create redis client");
-
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-
-            let dynamo = DynamoDbClient::new(region.clone());
-            let dyn_session_db =
-                SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-            let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
-            let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-            let dyn_node_identifier = DynamicNodeIdentifier::new(
-                asset_identifier,
-                dyn_session_db,
-                dyn_mapping_db,
-                should_default,
-            );
-
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-
-            let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-            let node_identifier = NodeIdentifier::new(
-                asset_id_db,
-                dyn_node_identifier,
-                asset_identifier,
-                dynamo.clone(),
-                should_default,
-                cache.clone(),
-                region.clone(),
-            );
-
-            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
-            let completion_policy = ConsumePolicyBuilder::default()
-                .with_max_empty_receives(1)
-                .with_stop_at(Duration::from_secs(10));
-
-            sqs_lambda::sqs_service::sqs_service(
-                source_queue_url,
-                initial_messages,
-                bucket,
-                completion_policy.build(ctx),
-                CompletionPolicy::new(10, Duration::from_secs(2)),
-                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-                S3Client::new(region.clone()),
-                SqsClient::new(region.clone()),
-                ZstdProtoDecoder::default(),
-                SubgraphSerializer {
-                    proto: Vec::with_capacity(1024),
-                },
-                node_identifier,
-                cache.clone(),
-                MetricReporter::<Stdout>::new("node-identifier"),
-                move |_self_actor, result: Result<String, String>| match result {
-                    Ok(worked) => {
-                        info!(
-                            "Handled an event, which was successfully deleted: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                    Err(worked) => {
-                        info!(
-                            "Handled an initial_event, though we failed to delete it: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                },
-                move |_, _| async move { Ok(()) },
-            )
-            .await;
-
-            completed_tx.clone().send("Completed".to_owned()).unwrap();
-        })
-    });
-
-    info!("Checking acks");
-    for r in &rx {
-        info!("Acking event: {}", &r);
-        initial_events.remove(&r);
-        if r == "Completed" {
-            // If we're done go ahead and try to clear out any remaining
-            while let Ok(r) = rx.recv_timeout(Duration::from_millis(100)) {
-                initial_events.remove(&r);
-            }
-            break;
-        }
+    let mut s3_emitter = Vec::with_capacity(10);
+    for _ in 0..10u8 {
+        let emitter = S3EventEmitter::new(
+            s3_client.clone(),
+            destination_bucket.clone(),
+            time_based_key_fn,
+            move |_, _| async move { Ok(()) },
+        );
+        s3_emitter.push(emitter);
     }
+    let mut s3_emitter: [_; 10] = s3_emitter.try_into().unwrap_or_else(|_| panic!("ahhh"));
+    let s3_emitter = &mut s3_emitter;
 
-    info!("Completed execution");
+    let s3_payload_retriever = vec![S3PayloadRetriever::new(
+        |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+        ZstdProtoDecoder::default(),
+        MetricReporter::<Stdout>::new("sysmon-subgraph-generator"),
+    ); 10];
 
-    if initial_events.is_empty() {
-        info!("Successfully acked all initial events");
-        Ok(())
-    } else {
-        Err(lambda_runtime::error::HandlerError::from(
-            "Failed to ack all initial events",
-        ))
-    }
+    let mut s3_payload_retriever: [_; 10] = s3_payload_retriever.try_into().unwrap_or_else(|_|panic!("ahhh"));
+    let s3_payload_retriever = &mut s3_payload_retriever;
+
+    info!("Output events to: {}", destination_bucket);
+    let region = grapl_config::region();
+
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+
+    let dynamo = DynamoDbClient::new(region.clone());
+    let dyn_session_db =
+        SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
+    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
+    let asset_identifier = AssetIdentifier::new(asset_id_db);
+
+    let dyn_node_identifier = DynamicNodeIdentifier::new(
+        asset_identifier,
+        dyn_session_db,
+        dyn_mapping_db,
+        should_default,
+    );
+
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+
+    let asset_identifier = AssetIdentifier::new(asset_id_db);
+
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+    // let node_identifier = NodeIdentifier::new(
+    //     asset_id_db,
+    //     dyn_node_identifier,
+    //     asset_identifier,
+    //     dynamo.clone(),
+    //     should_default,
+    //     cache.clone(),
+    //     region.clone(),
+    // );
+
+
+    let fake_generator = vec![
+        NodeIdentifier::new(
+            asset_id_db.clone(),
+            dyn_node_identifier.clone(),
+            asset_identifier.clone(),
+            dynamo.clone(),
+            should_default,
+            cache[0].to_owned(),
+            region.clone(),
+        );
+        10
+    ];
+    let mut fake_generator: [_; 10] = fake_generator.try_into().unwrap_or_else(|_|panic!("ahhh"));
+    let mut fake_generator = &mut fake_generator;
+
+    info!("Starting process_loop");
+    sqs_executor::process_loop(
+        std::env::var("QUEUE_URL").expect("QUEUE_URL"),
+        cache,
+        sqs_client.clone(),
+        fake_generator,
+        s3_payload_retriever,
+        s3_emitter,
+        serializer,
+    ).await;
+
+    info!("Exiting");
+    println!("Exiting");
+
+    unimplemented!()
+
+    // sqs_lambda::sqs_service::sqs_service(
+    //     source_queue_url,
+    //     initial_messages,
+    //     bucket,
+    //     completion_policy.build(ctx),
+    //     CompletionPolicy::new(10, Duration::from_secs(2)),
+    //     |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+    //     S3Client::new(region.clone()),
+    //     SqsClient::new(region.clone()),
+    //     ZstdProtoDecoder::default(),
+    //     SubgraphSerializer {
+    //         proto: Vec::with_capacity(1024),
+    //     },
+    //     node_identifier,
+    //     cache.clone(),
+    //     MetricReporter::<Stdout>::new("node-identifier"),
+    //     move |_self_actor, result: Result<String, String>| match result {
+    //         Ok(worked) => {
+    //             info!(
+    //                 "Handled an event, which was successfully deleted: {}",
+    //                 &worked
+    //             );
+    //             tx.send(worked).unwrap();
+    //         }
+    //         Err(worked) => {
+    //             info!(
+    //                 "Handled an initial_event, though we failed to delete it: {}",
+    //                 &worked
+    //             );
+    //             tx.send(worked).unwrap();
+    //         }
+    //     },
+    //     move |_, _| async move { Ok(()) },
+    // )
+    //     .await;
+
 }
 
 pub fn init_sqs_client() -> SqsClient {
@@ -1086,12 +1088,26 @@ pub struct HashCache {
     cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum HashCacheError {
+    #[error("Unreachable error")]
+    Unreachable
+}
+
+impl CheckedError for HashCacheError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Persistent
+    }
+}
+
 #[async_trait]
-impl sqs_lambda::cache::Cache for HashCache {
+impl Cache for HashCache {
+    type CacheErrorT = HashCacheError;
+
     async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
-    ) -> Result<CacheResponse, sqs_lambda::error::Error> {
+    ) -> Result<CacheResponse, HashCacheError> {
         let self_cache = self.cache.lock().unwrap();
 
         let id = cacheable.identity();
@@ -1101,141 +1117,9 @@ impl sqs_lambda::cache::Cache for HashCache {
             Ok(CacheResponse::Miss)
         }
     }
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), sqs_lambda::error::Error> {
+    async fn store(&mut self, identity: Vec<u8>) -> Result<(), HashCacheError> {
         let mut self_cache = self.cache.lock().unwrap();
         self_cache.insert(identity);
         Ok(())
     }
-}
-
-pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let cache = HashCache::default();
-
-    info!("region");
-    let region = Region::Custom {
-        name: "dynamo".to_string(),
-        endpoint: "http://dynamo:8222".to_string(),
-    };
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("dynamo");
-    let dynamo = init_dynamodb_client();
-    info!("dyn_session_db");
-    let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-    info!("dyn_mapping_db");
-    let dyn_mapping_db = DynamicMappingDb::new(init_dynamodb_client());
-    info!("asset_identifier");
-    let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-    info!("dyn_node_identifier");
-    let dyn_node_identifier = DynamicNodeIdentifier::new(
-        asset_identifier,
-        dyn_session_db,
-        dyn_mapping_db,
-        should_default,
-    );
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("asset_identifier");
-    let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("node_identifier");
-    let node_identifier = NodeIdentifier::new(
-        asset_id_db,
-        dyn_node_identifier,
-        asset_identifier,
-        dynamo.clone(),
-        should_default,
-        cache.clone(),
-        region.clone(),
-    );
-
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-
-    let queue_name = source_queue_url.split("/").last().unwrap();
-    grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
-    grapl_config::wait_for_s3(init_s3_client()).await?;
-
-    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
-    options_builder.with_minimal_buffer_completion_policy();
-
-    local_sqs_service_with_options(
-        source_queue_url,
-        "local-grapl-subgraphs-generated-bucket",
-        Context {
-            deadline: Utc::now().timestamp_millis() + 10_000,
-            ..Default::default()
-        },
-        |_| init_s3_client(),
-        init_s3_client(),
-        init_sqs_client(),
-        ZstdProtoDecoder::default(),
-        SubgraphSerializer {
-            proto: Vec::with_capacity(1024),
-        },
-        node_identifier,
-        cache.clone(),
-        MetricReporter::<Stdout>::new("node-identifier"),
-        |_, event_result| {
-            dbg!(event_result);
-        },
-        move |bucket, key| async move {
-            let output_event = S3Event {
-                records: vec![S3EventRecord {
-                    event_version: None,
-                    event_source: None,
-                    aws_region: Some("us-east-1".to_owned()),
-                    event_time: chrono::Utc::now(),
-                    event_name: None,
-                    principal_id: S3UserIdentity { principal_id: None },
-                    request_parameters: S3RequestParameters {
-                        source_ip_address: None,
-                    },
-                    response_elements: Default::default(),
-                    s3: S3Entity {
-                        schema_version: None,
-                        configuration_id: None,
-                        bucket: S3Bucket {
-                            name: Some(bucket),
-                            owner_identity: S3UserIdentity { principal_id: None },
-                            arn: None,
-                        },
-                        object: S3Object {
-                            key: Some(key),
-                            size: 0,
-                            url_decoded_key: None,
-                            version_id: None,
-                            e_tag: None,
-                            sequencer: None,
-                        },
-                    },
-                }],
-            };
-
-            let sqs_client = init_sqs_client();
-
-            // publish to SQS
-            sqs_client
-                .send_message(SendMessageRequest {
-                    message_body: serde_json::to_string(&output_event)
-                        .expect("failed to encode s3 event"),
-                    queue_url: std::env::var("GRAPH_MERGER_QUEUE_URL")
-                        .expect("GRAPH_MERGER_QUEUE_URL"),
-                    ..Default::default()
-                })
-                .await?;
-
-            Ok(())
-        },
-        options_builder.build(),
-    )
-    .await;
-    Ok(())
 }

@@ -141,7 +141,9 @@ def upload_logs(
 
     bucket = f"{prefix}-{generator_options.bucket_suffix}"
 
+    chunk_count = 0
     for chunk in chunker(body, batch_size):
+        chunk_count += 1
         chunk_body = generator_options.encode_chunk(chunk)
         epoch = int(time.time())
 
@@ -162,7 +164,7 @@ def upload_logs(
 
         time.sleep(delay)
 
-    print(f"Completed uploading at {time.ctime()}")
+    print(f"Completed uploading {chunk_count} chunks at {time.ctime()}")
 
 
 def upload_sysmon_logs(

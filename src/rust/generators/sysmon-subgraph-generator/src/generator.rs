@@ -15,6 +15,8 @@ use sqs_executor::errors::{CheckedError, Recoverable};
 pub enum SysmonGeneratorError {
     #[error("Generator failed")]
     E(failure::Error),
+    #[error("DeserializeError")]
+    DeserializeError(failure::Error),
     #[error("Generator failed")]
     Unexpected,
 }
@@ -40,8 +42,8 @@ where
     async fn process_events(
         &mut self,
         events: Vec<Cow<'_, str>>,
-    ) -> (Graph, Vec<Event>, Option<failure::Error>) {
-        let mut last_failure: Option<failure::Error> = None;
+    ) -> (Graph, Vec<Event>, Option<SysmonGeneratorError>) {
+        let mut last_failure: Option<SysmonGeneratorError> = None;
         let mut identities = Vec::with_capacity(events.len());
         let mut final_subgraph = Graph::new(0);
 
@@ -51,7 +53,7 @@ where
                 Err(e) => {
                     warn!("Failed to deserialize event: {}, {}", e, event);
 
-                    last_failure = Some(failure::err_msg(format!("Failed: {}", e)));
+                    last_failure = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(format!("Failed: {}", e))));
 
                     continue;
                 }
@@ -70,7 +72,7 @@ where
                 Ok(subgraph) => subgraph,
                 Err(e) => {
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
-                    last_failure = Some(e);
+                    last_failure = Some(SysmonGeneratorError::E(e));
                     continue;
                 }
             };
@@ -88,7 +90,11 @@ where
 impl CheckedError for SysmonGeneratorError {
     fn error_type(&self) -> Recoverable {
         // todo: We should have parse errors not be transient
-        Recoverable::Transient
+        match self {
+            Self::DeserializeError(_) => Recoverable::Persistent,
+            Self::E(_) => Recoverable::Persistent,
+            Self::Unexpected => Recoverable::Transient,
+        }
     }
 }
 
@@ -139,14 +145,14 @@ where
         let (final_subgraph, identities, last_failure) = self.process_events(events).await;
 
         info!("Completed mapping {} subgraphs", identities.len());
-        self.metrics.report_handle_event_success(&last_failure);
+        self.metrics.report_handle_event_success(last_failure.is_some());
 
         identities
             .into_iter()
             .for_each(|identity| completed.add_identity(identity));
 
         match last_failure {
-            Some(e) => Err(Ok((final_subgraph, SysmonGeneratorError::E(e)))),
+            Some(e) => Err(Ok((final_subgraph, e))),
             None => Ok(final_subgraph),
         }
     }

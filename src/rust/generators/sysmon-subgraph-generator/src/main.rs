@@ -40,18 +40,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sqs_client = SqsClient::new(grapl_config::region());
     let s3_client = S3Client::new(grapl_config::region());
 
-    // let cache_address = {
-    //     let generic_event_cache_addr =
-    //         std::env::var("EVENT_CACHE_ADDR").expect("GENERIC_EVENT_CACHE_ADDR");
-    //     let generic_event_cache_port =
-    //         std::env::var("EVENT_CACHE_PORT").expect("GENERIC_EVENT_CACHE_PORT");
-    //
-    //     format!("{}:{}", generic_event_cache_addr, generic_event_cache_port, )
-    // };
-    //
-    // let cache = RedisCache::new(cache_address.to_owned())
-    //     .await
-    //     .expect("Could not create redis client");
+    let cache_address = {
+        let generic_event_cache_addr =
+            std::env::var("EVENT_CACHE_ADDR").expect("GENERIC_EVENT_CACHE_ADDR");
+        let generic_event_cache_port =
+            std::env::var("EVENT_CACHE_PORT").expect("GENERIC_EVENT_CACHE_PORT");
+
+        format!("{}:{}", generic_event_cache_addr, generic_event_cache_port, )
+    };
+
+    let mut cache = Vec::with_capacity(10);
+    for _ in 0..10 {
+        let c = RedisCache::new(cache_address.to_owned())
+            .await
+            .expect("Could not create redis client");
+        cache.push(c);
+    }
+    let mut cache: [_; 10] = cache.try_into().unwrap_or_else(|_| panic!("ahhh"));
+    let cache = &mut cache;
 
     let fake_generator = vec![
         SysmonSubgraphGenerator::new(NopCache {}, SysmonSubgraphGeneratorMetrics::new(&env.service_name));

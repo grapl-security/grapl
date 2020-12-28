@@ -72,6 +72,7 @@ export class FargateService {
             enableLogging: true,
             environment: {
                 "QUEUE_URL": this.queues.queue.queueUrl,
+                "SOURCE_QUEUE_URL": this.queues.queue.queueUrl,
                 "GRAPL_LOG_LEVEL": "DEBUG",
                 "RUST_LOG": "DEBUG",
                 ...props.environment
@@ -79,7 +80,6 @@ export class FargateService {
             image: props.serviceImage,
             queue: queues.queue,
             serviceName,
-            // vpc: props.vpc,
             cpu: 256,
             memoryLimitMiB: 512,
         });

@@ -113,10 +113,13 @@ fn delete_message<SqsT>(
                 }
             )
                 .await {
-                Ok(_) => return,
+                Ok(_) => {
+                    debug!("Deleted message: {}", receipt_handle.clone());
+                    return
+                },
                 Err(e) => {
+                    error!("Failed to delete_message with: {:?} {:?}", e, e.error_type());
                     if let Recoverable::Persistent = e.error_type() {
-                        error!("Failed to delete_message with: {:?}", e);
                         return;
                     }
                 }
@@ -221,6 +224,12 @@ async fn process_message<
             // todo: we should retry event emission
             s3_emitter.emit_event(event).await
                 .expect("Failed to emit event");
+
+            for identity in completed.identities.drain(..) {
+                if let Err(e) = cache.store(identity).await {
+                    warn!("Failed to store identity in cache: {:?}", e);
+                }
+            }
             // ack the message
             delete_message(
                 sqs_client.clone(),
@@ -229,7 +238,7 @@ async fn process_message<
             ).await;
         }
         Err(Ok((partial, e))) => {
-            warn!("Processing failed with: {:?}", e);
+            error!("Processing failed with: {:?}", e);
             let event = serializer
                 .serialize_completed_events(&[partial])
                 .expect("Serializing failed");
@@ -237,8 +246,24 @@ async fn process_message<
             // todo: we should retry event emission
             s3_emitter.emit_event(event).await
                 .expect("Failed to emit event");
+
+            for identity in completed.identities.drain(..) {
+                if let Err(e) = cache.store(identity).await {
+                    warn!("Failed to store identity in cache: {:?}", e);
+                }
+            }
+
+            if let Recoverable::Persistent = e.error_type() {
+                // todo: We should move this to the deadletter directly
+                delete_message(
+                    sqs_client.clone(),
+                    queue_url.to_owned(),
+                    next_message.receipt_handle.expect("missing receipt_handle"),
+                );
+            }
         }
         Err(Err(e)) => {
+            error!("Handler failed with: {:?} Recoverable: {:?}", e, e.error_type());
             if let Recoverable::Persistent = e.error_type() {
                 // todo: We should move this to the deadletter directly
                 delete_message(

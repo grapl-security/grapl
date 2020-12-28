@@ -5,7 +5,7 @@ use crate::cache::Cacheable;
 
 #[derive(Default)]
 pub struct CompletedEvents {
-    identities: Vec<Vec<u8>>,
+    pub identities: Vec<Vec<u8>>,
 }
 
 impl CompletedEvents {

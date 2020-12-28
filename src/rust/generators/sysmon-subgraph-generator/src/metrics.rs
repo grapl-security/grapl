@@ -17,8 +17,8 @@ impl SysmonSubgraphGeneratorMetrics {
 }
 
 impl SysmonSubgraphGeneratorMetrics {
-    pub fn report_handle_event_success(&mut self, failed: &Option<Error>) {
-        let reported_status = if let Some(_) = failed {
+    pub fn report_handle_event_success(&mut self, failed: bool) {
+        let reported_status = if failed {
             common_strs::FAIL
         } else {
             common_strs::SUCCESS

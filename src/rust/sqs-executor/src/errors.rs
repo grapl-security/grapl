@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+#[derive(Debug)]
 pub enum Recoverable {
     Transient,
     Persistent,
