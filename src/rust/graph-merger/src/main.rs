@@ -257,6 +257,7 @@ pub enum SubgraphSerializerError {
     #[error("EncodeError")]
     EncodeError(#[from] prost::EncodeError),
 }
+
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = GeneratedSubgraphs;
     type Output = Vec<u8>;

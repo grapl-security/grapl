@@ -38,7 +38,8 @@ tokio-compat = "0.1.*"
 tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 chrono = "0.4.11"
 rusoto_credential = "0.45.0"
-sqs-lambda = { path = "../sqs-lambda/" }
+sqs-executor = { path = "../sqs-executor/" }
+thiserror = "1.0.23"
 
 [dependencies.uuid]
 version = "*"

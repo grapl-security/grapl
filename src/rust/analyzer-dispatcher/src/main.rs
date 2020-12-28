@@ -1,42 +1,39 @@
 #![type_length_limit = "1214269"]
 // Our types are simply too powerful
 
-use grapl_observe::metric_reporter::MetricReporter;
 use std::collections::HashSet;
+use std::convert::TryInto;
 use std::io::{Cursor, Stdout};
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
-
-use aws_lambda_events::event::sqs::SqsEvent;
-use bytes::Bytes;
-use failure::{bail, Error};
-use grapl_graph_descriptions::graph_description::*;
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use log::{debug, error, info, warn};
-use prost::Message;
-use rusoto_core::{HttpClient, Region};
-use rusoto_s3::{ListObjectsRequest, S3Client, S3};
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
 
 use async_trait::async_trait;
 use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
+use aws_lambda_events::event::sqs::SqsEvent;
+use bytes::Bytes;
 use chrono::Utc;
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use std::str::FromStr;
+use failure::{bail, Error};
+use log::{debug, error, info, warn};
+use prost::Message;
+use rusoto_core::{HttpClient, Region};
+use rusoto_s3::{ListObjectsRequest, S3, S3Client};
+use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+
+use grapl_graph_descriptions::graph_description::*;
+use grapl_observe::metric_reporter::MetricReporter;
+use sqs_executor::cache::NopCache;
+use sqs_executor::completion_event_serializer::CompletionEventSerializer;
+use sqs_executor::errors::{CheckedError, Recoverable};
+use sqs_executor::event_decoder::PayloadDecoder;
+use sqs_executor::event_handler::{CompletedEvents, EventHandler};
+use sqs_executor::event_retriever::S3PayloadRetriever;
+use sqs_executor::s3_event_emitter::S3EventEmitter;
+use sqs_executor::time_based_key_fn;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
@@ -98,6 +95,18 @@ fn encode_subgraph(subgraph: &Graph) -> Result<Vec<u8>, Error> {
     Ok(buf)
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum AnalyzerDispatcherError {
+    #[error("Unexpected")]
+    Unexpected(String),
+}
+
+impl CheckedError for AnalyzerDispatcherError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Transient
+    }
+}
+
 #[async_trait]
 impl<S> EventHandler for AnalyzerDispatcher<S>
 where
@@ -105,12 +114,13 @@ where
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = Vec<AnalyzerDispatchEvent>;
-    type Error = sqs_lambda::error::Error;
+    type Error = AnalyzerDispatcherError;
 
     async fn handle_event(
         &mut self,
-        subgraphs: GeneratedSubgraphs,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
+        subgraphs: Self::InputEvent,
+        completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let bucket = std::env::var("BUCKET_PREFIX")
             .map(|prefix| format!("{}-analyzers-bucket", prefix))
             .expect("BUCKET_PREFIX");
@@ -124,15 +134,15 @@ where
 
         if subgraph.is_empty() {
             warn!("Attempted to handle empty subgraph");
-            return OutputEvent::new(Completion::Total(vec![]));
+            return Ok(vec![]);
         }
 
         info!("Retrieving S3 keys");
         let keys = match get_s3_keys(self.s3_client.as_ref(), &bucket).await {
             Ok(keys) => keys,
             Err(e) => {
-                return OutputEvent::new(Completion::Error(
-                    sqs_lambda::error::Error::ProcessingError(format!(
+                return Err(Err(
+                    AnalyzerDispatcherError::Unexpected(format!(
                         "Failed to list bucket: {} with {:?}",
                         bucket, e
                     )),
@@ -159,18 +169,17 @@ where
             });
         }
 
-        let completed = if let Some(e) = failed {
-            OutputEvent::new(Completion::Partial((
+        if let Some(e) = failed {
+            Err(Ok((
                 dispatch_events,
-                sqs_lambda::error::Error::ProcessingError(e.to_string()),
+                AnalyzerDispatcherError::Unexpected(e.to_string()),
             )))
         } else {
-            OutputEvent::new(Completion::Total(dispatch_events))
-        };
+            Ok(dispatch_events)
+        }
 
         // identities.into_iter().for_each(|identity| completed.add_identity(identity));
 
-        completed
     }
 }
 
@@ -179,10 +188,21 @@ pub struct SubgraphSerializer {
     proto: Vec<u8>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum SubgraphSerializerError {
+    #[error("IO")]
+    Io(#[from] std::io::Error),
+    #[error("EncodeError")]
+    JsonEncodeError(#[from] serde_json::Error),
+    #[error("ProtoEncodeError")]
+    ProtoEncodeError(Error)
+}
+
+
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = Vec<AnalyzerDispatchEvent>;
     type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error;
+    type Error = SubgraphSerializerError;
 
     fn serialize_completed_events(
         &mut self,
@@ -201,15 +221,11 @@ impl CompletionEventSerializer for SubgraphSerializer {
         for event in unique_events {
             let event = json!({
                 "key": event.key,
-                "subgraph": encode_subgraph(&final_subgraph)
-                    .map_err(|e| {
-                        sqs_lambda::error::Error::EncodeError(e.to_string())
-                    })?
+                "subgraph": encode_subgraph(&final_subgraph).map_err(|e| SubgraphSerializerError::ProtoEncodeError(e))?
             });
 
             serialized.push(
-                serde_json::to_vec(&event)
-                    .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?,
+                serde_json::to_vec(&event)?,
             );
         }
 
@@ -240,113 +256,74 @@ where
     }
 }
 
-fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
-    rusoto_sqs::Message {
-        attributes: Some(event.attributes),
-        body: event.body,
-        md5_of_body: event.md5_of_body,
-        md5_of_message_attributes: event.md5_of_message_attributes,
-        message_attributes: None,
-        message_id: event.message_id,
-        receipt_handle: event.receipt_handle,
-    }
-}
-
-fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     info!("Handling event");
 
-    let mut initial_events: HashSet<String> = event
-        .records
-        .iter()
-        .map(|event| event.message_id.clone().unwrap())
-        .collect();
+    let sqs_client = SqsClient::new(grapl_config::region());
+    let s3_client = S3Client::new(grapl_config::region());
+    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+    debug!("Queue Url: {}", source_queue_url);
+    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-    info!("Initial Events {:?}", initial_events);
+    let destination_bucket = bucket_prefix + "-dispatched-analyzer-bucket";
+    info!("Output events to: {}", destination_bucket);
+    let region = grapl_config::region();
 
-    let (tx, rx) = std::sync::mpsc::sync_channel(10);
-    let completed_tx = tx.clone();
+    let mut cache = [NopCache {}; 10];
+    let cache = &mut cache;
 
-    std::thread::spawn(move || {
-        tokio_compat::run_std(async move {
-            let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-            debug!("Queue Url: {}", source_queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+    let serializer = vec![SubgraphSerializer::default(); 10];
+    let mut serializer: [_; 10] = serializer.try_into().unwrap_or_else(|_| panic!("ahhh"));
+    let mut serializer = &mut serializer;
 
-            let bucket = bucket_prefix + "-dispatched-analyzer-bucket";
-            info!("Output events to: {}", bucket);
-            let region = grapl_config::region();
-
-            let cache = grapl_config::event_cache().await;
-            let analyzer_dispatcher = AnalyzerDispatcher {
-                s3_client: Arc::new(S3Client::new(region.clone())),
-            };
-
-            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
-            let completion_policy = ConsumePolicyBuilder::default()
-                .with_max_empty_receives(1)
-                .with_stop_at(Duration::from_secs(10));
-
-            sqs_lambda::sqs_service::sqs_service(
-                source_queue_url,
-                initial_messages,
-                bucket,
-                completion_policy.build(ctx),
-                CompletionPolicy::new(10, Duration::from_secs(2)),
-                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-                S3Client::new(region.clone()),
-                SqsClient::new(region.clone()),
-                ZstdProtoDecoder::default(),
-                SubgraphSerializer {
-                    proto: Vec::with_capacity(1024),
-                },
-                analyzer_dispatcher,
-                cache.clone(),
-                MetricReporter::<Stdout>::new("analyzer-dispatcher"),
-                move |_self_actor, result: Result<String, String>| match result {
-                    Ok(worked) => {
-                        info!(
-                            "Handled an event, which was successfully deleted: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                    Err(worked) => {
-                        warn!(
-                            "Handled an initial_event, though we failed to delete it: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                },
-                move |_, _| async move { Ok(()) },
-            )
-            .await;
-            completed_tx.clone().send("Completed".to_owned()).unwrap();
-        });
-    });
-
-    info!("Checking acks");
-    for r in &rx {
-        info!("Acking event: {}", &r);
-        initial_events.remove(&r);
-        if r == "Completed" {
-            while let Ok(r) = rx.try_recv() {
-                initial_events.remove(&r);
-            }
-            break;
-        }
+    let mut s3_emitter = Vec::with_capacity(10);
+    for _ in 0..10u8 {
+        let emitter = S3EventEmitter::new(
+            s3_client.clone(),
+            destination_bucket.clone(),
+            time_based_key_fn,
+            move |_, _| async move { Ok(()) },
+        );
+        s3_emitter.push(emitter);
     }
+    let mut s3_emitter: [_; 10] = s3_emitter.try_into().unwrap_or_else(|_| panic!("ahhh"));
+    let s3_emitter = &mut s3_emitter;
 
-    info!("Completed execution");
+    let s3_payload_retriever = vec![S3PayloadRetriever::new(
+        |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+        ZstdProtoDecoder::default(),
+        MetricReporter::<Stdout>::new("graph-merger"),
+    ); 10];
 
-    if initial_events.is_empty() {
-        info!("Successfully acked all initial events");
-        Ok(())
-    } else {
-        Err(lambda_runtime::error::HandlerError::from(
-            "Failed to ack all initial events",
-        ))
-    }
+    let mut s3_payload_retriever: [_; 10] = s3_payload_retriever.try_into().unwrap_or_else(|_|panic!("ahhh"));
+    let s3_payload_retriever = &mut s3_payload_retriever;
+
+    info!("Output events to: {}", destination_bucket);
+
+    // let metric_reporter = MetricReporter::<Stdout>::new("graph-merger");
+
+    let fake_generator = vec![
+        AnalyzerDispatcher {
+            s3_client: Arc::new(S3Client::new(region.clone())),
+        };
+        10
+    ];
+    let mut fake_generator: [_; 10] = fake_generator.try_into().unwrap_or_else(|_|panic!("ahhh"));
+    let mut fake_generator = &mut fake_generator;
+
+    info!("Starting process_loop");
+    sqs_executor::process_loop(
+        std::env::var("QUEUE_URL").expect("QUEUE_URL"),
+        cache,
+        sqs_client.clone(),
+        fake_generator,
+        s3_payload_retriever,
+        s3_emitter,
+        serializer,
+    ).await;
+
+    info!("Exiting");
+    Ok(())
 }
 
 fn init_sqs_client() -> SqsClient {
@@ -380,115 +357,10 @@ fn init_s3_client() -> S3Client {
     )
 }
 
-async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
-    std::env::set_var("BUCKET_PREFIX", "local-grapl");
-    let analyzer_dispatcher = AnalyzerDispatcher {
-        s3_client: Arc::new(init_s3_client()),
-    };
-
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
-    options_builder.with_minimal_buffer_completion_policy();
-
-    local_sqs_service_with_options(
-        source_queue_url,
-        "local-grapl-analyzer-dispatched-bucket",
-        Context {
-            deadline: Utc::now().timestamp_millis() + 10_000,
-            ..Default::default()
-        },
-        |_| init_s3_client(),
-        init_s3_client(),
-        init_sqs_client(),
-        ZstdProtoDecoder::default(),
-        SubgraphSerializer {
-            proto: Vec::with_capacity(1024),
-        },
-        analyzer_dispatcher,
-        NopCache {},
-        MetricReporter::<Stdout>::new("analyzer-dispatcher"),
-        |_, event_result| {
-            dbg!(event_result);
-        },
-        move |bucket, key| async move {
-            let output_event = S3Event {
-                records: vec![S3EventRecord {
-                    event_version: None,
-                    event_source: None,
-                    aws_region: Some("us-east-1".to_owned()),
-                    event_time: chrono::Utc::now(),
-                    event_name: None,
-                    principal_id: S3UserIdentity { principal_id: None },
-                    request_parameters: S3RequestParameters {
-                        source_ip_address: None,
-                    },
-                    response_elements: Default::default(),
-                    s3: S3Entity {
-                        schema_version: None,
-                        configuration_id: None,
-                        bucket: S3Bucket {
-                            name: Some(bucket),
-                            owner_identity: S3UserIdentity { principal_id: None },
-                            arn: None,
-                        },
-                        object: S3Object {
-                            key: Some(key),
-                            size: 0,
-                            url_decoded_key: None,
-                            version_id: None,
-                            e_tag: None,
-                            sequencer: None,
-                        },
-                    },
-                }],
-            };
-
-            let sqs_client = init_sqs_client();
-
-            // publish to SQS
-            sqs_client
-                .send_message(SendMessageRequest {
-                    message_body: serde_json::to_string(&output_event)
-                        .expect("failed to encode s3 event"),
-                    queue_url: std::env::var("ANALYZER_EXECUTOR_QUEUE_URL")
-                        .expect("ANALYZER_EXECUTOR_QUEUE_URL"),
-                    ..Default::default()
-                })
-                .await?;
-
-            Ok(())
-        },
-        options_builder.build(),
-    )
-    .await?;
-
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env = grapl_config::init_grapl_env!();
-
-    if env.is_local {
-        info!("Running locally");
-        let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-
-        grapl_config::wait_for_sqs(
-            init_sqs_client(),
-            source_queue_url.split("/").last().unwrap(),
-        )
-        .await?;
-        grapl_config::wait_for_s3(init_s3_client()).await?;
-
-        loop {
-            if let Err(e) = local_handler().await {
-                error!("local_handler: {}", e);
-            };
-        }
-    } else {
-        info!("Running in AWS");
-        lambda!(handler);
-    }
+    handler().await?;
 
     Ok(())
 }
