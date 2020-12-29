@@ -37,15 +37,15 @@ use sqs_executor::time_based_key_fn;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
+    where
+        S: S3 + Send + Sync + 'static,
 {
     s3_client: Arc<S>,
 }
 
 impl<S> Clone for AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
+    where
+        S: S3 + Send + Sync + 'static,
 {
     fn clone(&self) -> Self {
         Self {
@@ -57,7 +57,7 @@ where
 async fn get_s3_keys(
     s3_client: &impl S3,
     bucket: impl Into<String>,
-) -> Result<impl IntoIterator<Item = Result<String, Error>>, Error> {
+) -> Result<impl IntoIterator<Item=Result<String, Error>>, Error> {
     let bucket = bucket.into();
 
     let list_res = tokio::time::timeout(
@@ -67,7 +67,7 @@ async fn get_s3_keys(
             ..Default::default()
         }),
     )
-    .await??;
+        .await??;
 
     let contents = match list_res.contents {
         Some(contents) => contents,
@@ -109,8 +109,8 @@ impl CheckedError for AnalyzerDispatcherError {
 
 #[async_trait]
 impl<S> EventHandler for AnalyzerDispatcher<S>
-where
-    S: S3 + Send + Sync + 'static,
+    where
+        S: S3 + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = Vec<AnalyzerDispatchEvent>;
@@ -146,7 +146,7 @@ where
                         "Failed to list bucket: {} with {:?}",
                         bucket, e
                     )),
-                ))
+                ));
             }
         };
 
@@ -179,7 +179,6 @@ where
         }
 
         // identities.into_iter().for_each(|identity| completed.add_identity(identity));
-
     }
 }
 
@@ -195,7 +194,7 @@ pub enum SubgraphSerializerError {
     #[error("EncodeError")]
     JsonEncodeError(#[from] serde_json::Error),
     #[error("ProtoEncodeError")]
-    ProtoEncodeError(Error)
+    ProtoEncodeError(Error),
 }
 
 
@@ -237,12 +236,12 @@ impl CompletionEventSerializer for SubgraphSerializer {
 pub struct ZstdProtoDecoder;
 
 impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-where
-    E: Message + Default,
-{
-    fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
     where
         E: Message + Default,
+{
+    fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
+        where
+            E: Message + Default,
     {
         let mut decompressed = Vec::new();
 
@@ -295,7 +294,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
         MetricReporter::<Stdout>::new("graph-merger"),
     ); 10];
 
-    let mut s3_payload_retriever: [_; 10] = s3_payload_retriever.try_into().unwrap_or_else(|_|panic!("ahhh"));
+    let mut s3_payload_retriever: [_; 10] = s3_payload_retriever.try_into().unwrap_or_else(|_| panic!("ahhh"));
     let s3_payload_retriever = &mut s3_payload_retriever;
 
     info!("Output events to: {}", destination_bucket);
@@ -308,7 +307,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
         };
         10
     ];
-    let mut fake_generator: [_; 10] = fake_generator.try_into().unwrap_or_else(|_|panic!("ahhh"));
+    let mut fake_generator: [_; 10] = fake_generator.try_into().unwrap_or_else(|_| panic!("ahhh"));
     let mut fake_generator = &mut fake_generator;
 
     info!("Starting process_loop");
@@ -361,6 +360,5 @@ fn init_s3_client() -> S3Client {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env = grapl_config::init_grapl_env!();
     handler().await?;
-
     Ok(())
 }

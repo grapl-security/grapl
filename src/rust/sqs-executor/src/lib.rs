@@ -33,6 +33,7 @@ pub mod event_handler;
 pub mod event_emitter;
 pub mod s3_event_emitter;
 pub mod completion_event_serializer;
+pub mod key_creator;
 pub mod errors;
 
 // Message - Contains information necessary to retrieve payload

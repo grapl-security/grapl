@@ -66,7 +66,13 @@ class SysmonGraphGenerator extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset('../../../src/rust/generators/sysmon-subgraph-generator/')
+            serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
+                target: "grapl-sysmon-subgraph-generator",
+                buildArgs: {
+                    "release_target": "debug"
+                },
+            }),
+            command: ["/sysmon-subgraph-generator"],
             // metric_forwarder: props.metricForwarder,
         });
 
@@ -182,7 +188,13 @@ class NodeIdentifier extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset('../../../src/rust/node-identifier/')
+            serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
+                target: "grapl-node-identifier",
+                buildArgs: {
+                    "release_target": "debug"
+                },
+            }),
+            command: ["/node-identifier"],
             // metric_forwarder: props.metricForwarder,
         });
 
@@ -271,7 +283,13 @@ class GraphMerger extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset('../../../src/rust/graph-merger/')
+            serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
+                target: "grapl-graph-merger",
+                buildArgs: {
+                    "release_target": "debug"
+                },
+            }),
+            command: ["/graph-merger"],
             // metric_forwarder: props.metricForwarder,
         });
 
@@ -291,7 +309,7 @@ export interface AnalyzerDispatchProps extends GraplServiceProps {
 class AnalyzerDispatch extends cdk.NestedStack {
     readonly bucket: s3.Bucket;
     readonly topic: sns.Topic;
-    readonly service: Service;
+    readonly service: FargateService;
 
     constructor(
         scope: cdk.Construct,
@@ -315,9 +333,10 @@ class AnalyzerDispatch extends cdk.NestedStack {
         );
         dispatch_event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new Service(this, id, {
+        this.service = new FargateService(this, id, {
             prefix: props.prefix,
             environment: {
+                RUST_LOG: "DEBUG",
                 BUCKET_PREFIX: bucket_prefix,
                 EVENT_CACHE_ADDR:
                     dispatch_event_cache.cluster.attrRedisEndpointAddress,
@@ -327,24 +346,25 @@ class AnalyzerDispatch extends cdk.NestedStack {
                 SUBGRAPH_MERGED_BUCKET: subgraphs_merged.bucket.bucketName,
             },
             vpc: props.vpc,
-            reads_from: subgraphs_merged.bucket,
-            subscribes_to: subgraphs_merged.topic,
-            writes_to: props.writesTo,
+            readsFrom: this.bucket,
+            subscribesTo: this.topic,
+            writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            metric_forwarder: props.metricForwarder,
+            serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
+                target: "grapl-analyzer-dispatcher",
+                buildArgs: {
+                    "release_target": "debug"
+                },
+            }),
+            command: ["/analyzer-dispatcher"],
+            // metric_forwarder: props.metricForwarder,
         });
 
-        this.service.readsFrom(props.readsFrom, true);
+        this.service.service.cluster.connections.allowToAnyIpv4(
+            ec2.Port.tcp(parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort))
+        );
 
-        this.service.event_handler.connections.allowToAnyIpv4(
-            ec2.Port.allTcp(),
-            'Allow outbound to S3'
-        );
-        this.service.event_retry_handler.connections.allowToAnyIpv4(
-            ec2.Port.allTcp(),
-            'Allow outbound to S3'
-        );
     }
 }
 

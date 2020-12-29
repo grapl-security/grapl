@@ -176,5 +176,44 @@ RUN mkdir -p /home/grapl/dist && \
     cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator && \
     cp target/x86_64-unknown-linux-musl/${release_target}/osquery-subgraph-generator dist/osquery-subgraph-generator
 
-# no-op the base image, so it doesn't default to /bin/sh
+#CMD :
+# Build a small image with just the binary for each service
+FROM alpine AS grapl-rust-dist
+RUN apk add --no-cache libgcc
+
+FROM grapl-rust-dist as grapl-analyzer-dispatcher
+ARG release_target="debug"
+COPY --from=grapl-rust-src-build /home/grapl/target/x86_64-unknown-linux-musl/${release_target}/analyzer-dispatcher /
+CMD /analyzer-dispatcher
+
+FROM grapl-rust-dist as grapl-generic-subgraph-generator
+ARG release_target="debug"
+COPY --from=grapl-rust-src-build /home/grapl/target/x86_64-unknown-linux-musl/${release_target}/generic-subgraph-generator /
+CMD /generic-subgraph-generator
+
+FROM grapl-rust-dist as grapl-graph-merger
+ARG release_target="debug"
+COPY --from=grapl-rust-src-build /home/grapl/target/x86_64-unknown-linux-musl/${release_target}/graph-merger /
+CMD /graph-merger
+
+FROM grapl-rust-dist as grapl-metric-forwarder
+ARG release_target="debug"
+COPY --from=grapl-rust-src-build /home/grapl/target/x86_64-unknown-linux-musl/${release_target}/metric-forwarder /
+CMD /metric-forwarder
+
+FROM grapl-rust-dist AS grapl-node-identifier
+ARG release_target="debug"
+COPY --from=grapl-rust-src-build /home/grapl/target/x86_64-unknown-linux-musl/${release_target}/node-identifier /
+CMD /node-identifier
+
+# TODO: Re-enable this
+#FROM grapl-rust-dist AS grapl-node-identifier-retry-handler
+#COPY --from=grapl-rust-src-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler /
+#CMD /node-identifier-retry-handler
+
+FROM grapl-rust-dist AS grapl-sysmon-subgraph-generator
+ARG release_target="debug"
+COPY --from=grapl-rust-src-build /home/grapl/target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator /
+CMD /sysmon-subgraph-generator
+
 CMD :

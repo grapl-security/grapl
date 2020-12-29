@@ -38,15 +38,16 @@ export class Queues {
 export interface FargateServiceProps {
     prefix: string;
     version: string;
-    watchful: Watchful | undefined;
     readsFrom: s3.IBucket;
     subscribesTo: sns.ITopic;
-    writesTo: s3.IBucket | undefined;
     serviceImage: ContainerImage;
     vpc: ec2.IVpc;
     environment: {
         [key: string]: string;
     };
+    writesTo?: s3.IBucket | undefined;
+    command?: string[] | undefined;
+    watchful?: Watchful | undefined;
 }
 
 export class FargateService {
@@ -67,8 +68,9 @@ export class FargateService {
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
             scope,
-            `${serviceName}Service`, {
+            `${props.prefix}-${serviceName}Service`, {
             cluster,
+            command: props.command,
             enableLogging: true,
             environment: {
                 "QUEUE_URL": this.queues.queue.queueUrl,
