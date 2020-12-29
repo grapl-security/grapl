@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { checkLogin } from '../services/loginService';
-import GraplHeader from "./reusableComponents/GraplHeader";
 import { Link } from 'react-router-dom';
-import { dasboardStyles } from './styles/DashboardStyles';
-import LoginNotification from "./reusableComponents/Notifications";
-import {getNotebookUrl} from "../services/notebookService";
 import Button from "@material-ui/core/Button";
 
+import GraplHeader from "../reusableComponents/GraplHeader";
+import LoginNotification from "../reusableComponents/Notifications";
+
+import { checkLogin } from '../../services/loginService';
+import { getNotebookUrl } from "../../services/notebookService";
+
+import { dasboardStyles } from './dashboardStyles';
 
 const useStyles = dasboardStyles; 
 
@@ -37,13 +39,13 @@ export default function Dashboard() {
                 });
             }, 2000);
 
-            return () => { clearInterval(interval) }
+            return () => clearInterval(interval) 
         }, 
-    [state, setState])
-
-    console.log("state - loggedin", state.loggedIn); 
+        [state, setState]
+    )
 
     const loggedIn = state.loggedIn;
+    console.log("Logged in ", state.loggedIn); 
 
     return (
         <> 
@@ -60,8 +62,6 @@ export default function Dashboard() {
                     <div className = {classes.loggedIn}>
                         {!loggedIn ? <LoginNotification /> : ""}
                     </div>
-
-                    <h1> Welcome! </h1>
                 </section>
             </div>
         </>
