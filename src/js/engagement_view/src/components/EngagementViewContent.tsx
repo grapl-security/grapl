@@ -10,14 +10,14 @@ import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
-import { Lens } from "../modules/GraphViz/CustomTypes";
-import { getGraphQlEdge } from "../modules/GraphViz/engagement_edge/getApiURLs";
+import { Lens } from "utils/GraphViz/CustomTypes";
+import { getGraphQlEdge } from "../utils/GraphViz/engagement_edge/getApiURLs";
 
 import TablePagination from '@material-ui/core/TablePagination';
 import { ClassNameMap } from '@material-ui/styles/withStyles';
-import {SelectLensProps, ToggleLensTableProps, ToggleLensTableState, EngagementViewContentProps, NodeDetailsProps, ToggleNodeTableProps, PaginationState} from "../modules/GraphViz/CustomTypes"
+import {SelectLensProps, ToggleLensTableProps, ToggleLensTableState, EngagementViewContentProps, NodeDetailsProps, ToggleNodeTableProps, PaginationState} from "utils/GraphViz/CustomTypes"
 
-import { useStyles } from './makeStyles/EngagementViewContentStyles';
+import { useStyles } from './styles/EngagementViewContentStyles';
 
 function SelectLens(props: SelectLensProps) {
     const classes = useStyles();

@@ -1,4 +1,4 @@
-import { RouteState } from '../GraphViz/CustomTypes';
+import { RouteState } from './CustomTypes';
 
 
 export const defaultRouteState = (): RouteState => {

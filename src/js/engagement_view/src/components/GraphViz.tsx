@@ -2,14 +2,14 @@
 import React, { useEffect, useRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import * as d3 from "d3";
-import { BKDRHash, riskColor, calcNodeRgb , calcLinkColor} from "../modules/GraphViz/graphColoring/coloring.tsx";
-import { retrieveGraph } from '../modules/GraphViz/graphQL/expandScope.tsx';
-import { mapLabel } from '../modules/GraphViz/graph/labels.tsx';
-import { nodeSize } from '../modules/GraphViz/calculations/node/nodeCalcs.tsx'
-import { calcLinkDirectionalArrowRelPos, calcLinkParticleWidth  } from '../modules/GraphViz/calculations/link/linkCalcs.tsx'
-import {mergeGraphs} from '../modules/GraphViz/graph/mergeGraphs.tsx'
-import {graphQLAdjacencyMatrix} from '../modules/GraphViz/graphQL/graphQLAdjacencyMatrix.tsx'
-import { Node, LinkType, GraphType, ColorHashOptions } from "../modules/GraphViz/CustomTypes"
+import { BKDRHash, riskColor, calcNodeRgb , calcLinkColor} from "../utils/GraphViz/graphColoring/coloring.tsx";
+import { retrieveGraph } from '../utils/GraphViz/graphQL/expandScope.tsx';
+import { mapLabel } from '../utils/GraphViz/graph/labels.tsx';
+import { nodeSize } from '../utils/GraphViz/calculations/node/nodeCalcs.tsx'
+import { calcLinkDirectionalArrowRelPos, calcLinkParticleWidth  } from '../utils/GraphViz/calculations/link/linkCalcs.tsx'
+import {mergeGraphs} from '../utils/GraphViz/graph/mergeGraphs.tsx'
+import {graphQLAdjacencyMatrix} from '../utils/GraphViz/graphQL/graphQLAdjacencyMatrix.tsx'
+import { Node, LinkType, GraphType, ColorHashOptions } from "../utils/GraphViz/CustomTypes.tsx"
 
 type ColorHashOptions = {
     lightness: number,

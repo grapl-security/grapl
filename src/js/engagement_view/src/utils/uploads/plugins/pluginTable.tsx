@@ -8,9 +8,9 @@ import TableHead from '@material-ui/core/TableHead';
 import TablePagination from '@material-ui/core/TablePagination';
 import Button from "@material-ui/core/Button";
 import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
-import { PluginTableState } from "../plugins/uploadPluginTypes"
-import { getPluginList, deletePlugin} from "../plugins/apiRequests";
-import { useStyles } from "../plugins/useStyles";
+import { PluginTableState } from "./uploadPluginTypes"
+import { getPluginList, deletePlugin} from "./apiRequests";
+import { useStyles } from "./useStyles";
 
 const defaultPluginTableState = (): PluginTableState => {
     return {
@@ -24,6 +24,7 @@ export const PluginTable = () => {
     const [state, setState] = React.useState(defaultPluginTableState());
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+
     const handleChangePage = (event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null, newPage:number) => {
         setPage(newPage);
     }
@@ -36,17 +37,25 @@ export const PluginTable = () => {
     const emptyRows =
         rowsPerPage - Math.min(rowsPerPage, state.rows.length - page * rowsPerPage);
 
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            await getPluginList().then((rows) => {
-                setState({
-                    toggle: state.toggle ,
-                    rows
-                })
-            });
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [state.toggle])
+    useEffect(
+        () => {
+            try{    
+                const interval = setInterval(async () => {
+                    await getPluginList()
+                    .then((rows) => {
+                        setState({
+                            toggle: state.toggle ,
+                            rows
+                        })
+                    });
+                }, 1000);
+                return () => clearInterval(interval);
+            } catch (e) {
+                console.error("Unable to retrieve plugin list", e);
+            }
+        }, 
+        [state.toggle]
+    )
 
     return(
         <>

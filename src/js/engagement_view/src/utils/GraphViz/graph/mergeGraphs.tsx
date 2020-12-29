@@ -1,4 +1,4 @@
-import {mapNodeProps} from '../../../../src/components/GraphViz';
+import {mapNodeProps} from '../../../components/GraphViz';
 import {Node, MergeGraphType} from '../CustomTypes'; 
 
 // merges y into x, returns true if update occurred

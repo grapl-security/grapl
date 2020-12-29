@@ -10,12 +10,12 @@ import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
 import KeyboardArrowLeftIcon from "@material-ui/icons/KeyboardArrowLeft";
 import Button from "@material-ui/core/Button";
-import { Node } from "../modules/GraphViz/CustomTypes";
+import { Node } from "utils/GraphViz/CustomTypes";
 import Home from "@material-ui/icons/Home";
 import { Link } from "react-router-dom";
 import { checkLogin } from "../services/loginService";
 import { LoginNotification } from "./reusableComponents";
-import { useStyles } from "./makeStyles/GraphVizStyles";
+import { useStyles } from "./styles/GraphVizStyles";
 
 type EngagementViewProps = {
   setLens: (lens: string) => void;

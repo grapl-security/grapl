@@ -5,10 +5,10 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import { mapEdgeProps } from '../modules/GraphViz/graph/graph_traverse';
+import { mapEdgeProps } from '../utils/GraphViz/graph/graph_traverse';
 import { mapNodeProps } from './GraphViz';
-import { Node } from "../modules/GraphViz/CustomTypes";
-import { useStyles } from "./makeStyles/NodeTableStyles"; 
+import { Node } from "../utils/GraphViz/CustomTypes";
+import { useStyles } from "./styles/NodeTableStyles"; 
 
 function innerTable(node: Node, styles: any) {
     if(node) {

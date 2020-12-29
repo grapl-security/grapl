@@ -1,4 +1,4 @@
-import {BaseNode, LensScopeResponse} from '../../GraphViz/CustomTypes'
+import {BaseNode, LensScopeResponse} from '../CustomTypes'
 import {mapGraph} from "../graph/graph_traverse";
 import {getGraphQlEdge} from '../engagement_edge/getApiURLs';
 

@@ -1,32 +1,37 @@
-import { PluginPayload } from "../plugins/uploadPluginTypes";
+import { PluginPayload } from "./uploadPluginTypes";
 import {getModelPluginEdge} from "../../GraphViz/engagement_edge/getApiURLs"
 
 export const getPluginList = async () => {
+    console.log("getModelPluginEdge", getModelPluginEdge())
     const res = await fetch(`${getModelPluginEdge()}listModelPlugins`, 
         {
-            method: 'post',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             credentials: 'include',
         }
     );
+    
+    console.log("res", res);
 
     const body = await res.json() as any;
-
+    
+    console.log("body", body)
     try { 
         let pluginList: string[] = body.success.plugin_list;
+
         return pluginList
     } catch (e) {
-        console.warn(e);
-        return []
+        console.warn("Error retrieving pluginList", e);
+        return [];
     }
 }
 
 export const deletePlugin = async ( pluginName: string ): Promise <boolean> => {
     const res = await fetch(`${getModelPluginEdge()}deleteModelPlugin`, 
         {
-            method: 'post',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -41,7 +46,7 @@ export const deletePlugin = async ( pluginName: string ): Promise <boolean> => {
 export const uploadFilesToDgraph = async (payload: PluginPayload ): Promise<boolean> => {
     const res = await fetch(`${getModelPluginEdge()}deploy`, 
         {
-            method: 'post',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },

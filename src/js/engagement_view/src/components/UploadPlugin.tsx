@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { GraplHeader } from "./reusableComponents";
-import { useStyles } from "../modules/uploads/plugins/useStyles";
-import { UploadForm } from "../modules/uploads/plugins/uploadPlugins";
-import { PluginTable } from "../modules/uploads/plugins/pluginTable";
+import { useStyles } from "../utils/uploads/plugins/useStyles";
+import { UploadForm } from "../utils/uploads/plugins/uploadPlugins";
+import { PluginTable } from "../utils/uploads/plugins/pluginTable";
 import { checkLogin } from "../services/loginService";
 import { LoginNotification } from "./reusableComponents";
 
