@@ -1,5 +1,5 @@
 import { PluginPayload } from "./uploadPluginTypes";
-import {getModelPluginEdge} from "../../GraphViz/engagement_edge/getApiURLs"
+import {getModelPluginEdge} from "../../../services/getApiURLs"
 
 export const getPluginList = async () => {
     console.log("getModelPluginEdge", getModelPluginEdge())
