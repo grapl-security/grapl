@@ -1350,6 +1350,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "grapl-service-common"
+version = "0.0.1"
+dependencies = [
+ "log 0.4.11",
+ "thiserror",
+]
+
+[[package]]
 name = "grpc"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

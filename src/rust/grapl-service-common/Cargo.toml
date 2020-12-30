@@ -1,0 +1,12 @@
+[package]
+name = "grapl-service-common"
+version = "0.0.1"
+authors = ["Max Wittek <wimax@graplsecurity.com>"]
+edition = "2018"
+description = "Common shared utilities across Grapl services"
+license = "Apache-2.0"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4.*"
+thiserror = "1.0.20"

@@ -67,6 +67,10 @@ COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
 RUN mkdir -p grapl-observe/src
 RUN touch grapl-observe/src/lib.rs
 COPY --chown=grapl ./grapl-observe/Cargo.toml grapl-observe/
+# copy in Cargo.toml for grapl-service-common
+RUN mkdir -p grapl-service-common/src
+RUN touch grapl-service-common/src/lib.rs
+COPY --chown=grapl ./grapl-service-common/Cargo.toml grapl-service-common/
 
 # copy in Cargo.toml for sqs-lambda
 RUN mkdir -p sqs-lambda/src
@@ -128,6 +132,7 @@ RUN rm -rf target/*/*/.fingerprint/graph-merger*
 RUN rm -rf target/*/*/.fingerprint/grapl-config*
 RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
 RUN rm -rf target/*/*/.fingerprint/grapl-observe*
+RUN rm -rf target/*/*/.fingerprint/grapl-service-common*
 RUN rm -rf target/*/*/.fingerprint/sqs-lambda*
 RUN rm -rf target/*/*/.fingerprint/metric-forwarder*
 RUN rm -rf target/*/*/.fingerprint/node-identifier*
@@ -140,6 +145,7 @@ COPY --chown=grapl ./graph-descriptions graph-descriptions
 COPY --chown=grapl ./graph-merger graph-merger
 COPY --chown=grapl ./grapl-config grapl-config
 COPY --chown=grapl ./grapl-observe grapl-observe
+COPY --chown=grapl ./grapl-service-common grapl-service-common
 COPY --chown=grapl ./sqs-lambda sqs-lambda
 COPY --chown=grapl ./metric-forwarder metric-forwarder
 COPY --chown=grapl ./node-identifier node-identifier
