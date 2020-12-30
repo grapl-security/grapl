@@ -1,7 +1,7 @@
 import { calcNodeRiskPercentile } from '../calculations/node/nodeCalcs';
 import { calcLinkRiskPercentile } from '../calculations/link/linkCalcs';
-import { LinkType, VizGraph, VizNode } from '../GraphVizCustomTypes'
-import { ColorHash } from '../../GraphViz';
+import { LinkType, VizGraph, VizNode } from '../../../../types/CustomTypes'
+import { ColorHash } from '../../GraphDisplay';
 
 export const BKDRHash = (str: string) => {
     const seed = 131;

@@ -1,5 +1,5 @@
 import { calcNodeRiskPercentile } from '../calculations/node/nodeCalcs';
-import { VizNode, VizGraph } from '../GraphVizCustomTypes';
+import { VizNode, VizGraph } from '../../../../types/CustomTypes';
 
 export const nodeSize = (node: VizNode, Graph: VizGraph) => {
     const nodes = [...Graph.nodes].map(node => node.risk);

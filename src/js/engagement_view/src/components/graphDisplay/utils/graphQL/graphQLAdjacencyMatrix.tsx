@@ -1,6 +1,6 @@
 import { traverseNodes, traverseNeighbors, mapEdges } from "../graph/graph_traverse"
 import { getNodeLabel } from '../graph/labels';
-import {LensScopeResponse, BaseNode} from "../GraphVizCustomTypes"
+import {LensScopeResponse, BaseNode} from "../../../../types/CustomTypes"
 
 interface IVizNode {
     uid: number,

@@ -1,5 +1,5 @@
 import { calcNodeRiskPercentile } from '../node/nodeCalcs'; 
-import { LinkType, VizNode, VizGraph } from '../../GraphVizCustomTypes';
+import { LinkType, VizNode, VizGraph } from '../../../../../types/CustomTypes';
 
 
 const findNode = (id: number, nodes: VizNode[]) => {

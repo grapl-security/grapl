@@ -7,9 +7,9 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 
-import { mapEdgeProps } from '../../graphViz/utils/graph/graph_traverse';
-import { mapNodeProps } from '../../graphViz/GraphViz';
-import { Node } from "../../graphViz/utils/GraphVizCustomTypes";
+import { mapEdgeProps } from '../../graphDisplay/utils/graph/graph_traverse';
+import { mapNodeProps } from '../../graphDisplay/GraphDisplay';
+import { Node } from "../../../types/CustomTypes";
 
 import { nodeTableStyles } from "./styles"; 
 

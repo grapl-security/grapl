@@ -3,20 +3,37 @@ import React, { useEffect, useRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import * as d3 from "d3";
 
+import { retrieveGraph } from "../../apiRequests/graphQlEndpointRetrieveGraphReq";
+
 import { BKDRHash, riskColor, calcNodeRgb , calcLinkColor} from "./utils/graphColoring/coloring.tsx";
-import { retrieveGraph } from './utils/graphQL/expandScope.tsx';
 import { mapLabel } from './utils/graph/labels.tsx';
 import { nodeSize } from './utils/calculations/node/nodeCalcs.tsx'
 import { calcLinkDirectionalArrowRelPos, calcLinkParticleWidth  } from './utils/calculations/link/linkCalcs.tsx'
 import {mergeGraphs} from './utils/graph/mergeGraphs.tsx'
 import {graphQLAdjacencyMatrix} from './utils/graphQL/graphQLAdjacencyMatrix.tsx'
-import { Node, LinkType, GraphType, ColorHashOptions } from "./utils/GraphVizCustomTypes.tsx"
+import { Node, LinkType, GraphType, ColorHashOptions } from "../../types/CustomTypes.tsx"
 
 type ColorHashOptions = {
     lightness: number,
     saturation: number,
     hue: number,
     hash: BKDRHash,
+}
+
+type GraphDisplayProps = {
+    lensName: string | null,
+    setCurNode: (string) => void,
+}
+
+type GraphDisplayState = {
+    graphData: AdjacencyMatrix,
+    curLensName: string | null,
+    intervalMap: any,
+}
+
+type GraphState = {
+    curLensName: LensType[], 
+    graphData: GraphType[]
 }
 
 /**
@@ -28,6 +45,7 @@ type ColorHashOptions = {
  * @param {Number} L Lightness ∈ [0, 1]
  * @returns {Array} R, G, B ∈ [0, 255]
  */
+
 const HSL2RGB = (H: number, S: number, L: number) => {
     H /= 360;
 
@@ -150,11 +168,6 @@ export const mapNodeProps = (node: Node, f: (string) => void) => {
     }
 };
 
-type GraphState = {
-    curLensName: LensType[], 
-    graphData: GraphType[]
-}
-
 const updateGraph = async (
     lensName: string, 
     state: GraphState, 
@@ -193,16 +206,6 @@ const updateGraph = async (
         .catch((e) => console.error("Failed to retrieveGraph ", e))
 }
 
-type GraphDisplayProps = {
-    lensName: string | null,
-    setCurNode: (string) => void,
-}
-
-type GraphDisplayState = {
-    graphData: AdjacencyMatrix,
-    curLensName: string | null,
-    intervalMap: any,
-}
 
 const defaultGraphDisplayState = (lensName: string): GraphDisplayState => {
     return {

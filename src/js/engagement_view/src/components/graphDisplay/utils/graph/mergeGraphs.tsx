@@ -1,5 +1,5 @@
-import {mapNodeProps} from '../../GraphViz';
-import {Node, MergeGraphType} from '../GraphVizCustomTypes'; 
+import {mapNodeProps} from '../../GraphDisplay';
+import {Node, MergeGraphType} from '../../../../types/CustomTypes'; 
 
 // merges y into x, returns true if update occurred
 const mergeNodes = (x: Node, y: Node) => {

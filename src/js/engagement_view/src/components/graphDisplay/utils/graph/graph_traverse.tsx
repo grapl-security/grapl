@@ -1,4 +1,4 @@
-import { Node } from "../GraphVizCustomTypes";
+import { Node } from "../../../../types/CustomTypes";
 
 const _mapGraph = (node: Node, visited: Set<string>, f:(node:Node, prop:string, neighbor: Node) => void) => {
     mapEdgeProps(node, (edgeName: string, neighbor:Node) => {

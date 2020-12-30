@@ -1,4 +1,4 @@
-import { Node }  from '../GraphVizCustomTypes'
+import { Node }  from '../../../../types/CustomTypes'
 
 const getNodeLabel = (nodeType: string, node: Node) => {
     console.log('nodetype', nodeType);

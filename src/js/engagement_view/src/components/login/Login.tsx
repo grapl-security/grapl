@@ -4,7 +4,7 @@ import {Field, Form, Formik} from "formik";
 
 import './LogIn.css';
 import {loginStyles} from './styles';
-import {LoginProps} from '../../components/graphViz/utils/GraphVizCustomTypes';
+import {LoginProps} from '../../types/CustomTypes';
 import {engagementEdgeLoginReq} from '../../apiRequests/engagementEdgeLoginReq';
 import {sha256WithPepper} from './utils/passwordHashing';
 

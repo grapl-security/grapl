@@ -1,4 +1,4 @@
-import {VizGraph, VizNode} from '../../GraphVizCustomTypes';
+import {VizGraph, VizNode} from '../../../../../types/CustomTypes';
 
 export const calcNodeRiskPercentile = (_nodeRisk: number | {risk: number}, _allRisks: any) => {
     let nodeRisk = _nodeRisk;

@@ -1,4 +1,4 @@
-import {Node} from '../../graphViz/utils/GraphVizCustomTypes'
+import {Node, Lens} from '../../../types/CustomTypes'
 
 export type SelectLensProps = {
     lens: string,
@@ -13,5 +13,10 @@ export type NodeDetailsProps = {
 }
 
 export type ToggleNodeTableProps = {
+    curNode: Node | null
+}
+
+export type EngagementViewContentProps = {
+    setLens: (lens: string) => void, 
     curNode: Node | null
 }
