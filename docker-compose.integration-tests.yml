@@ -4,10 +4,13 @@ services:
 
   node-identifier-integration-tests:
     image: grapl/rust-base:${TAG:-latest}
+    build:
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
+      target: base
     volumes: 
       - ./src/rust:/grapl
     working_dir: /grapl
-    user: "${UID:-1000}:${GID:-1000}"
     command: bash -c "
       wait-for-it grapl-provision:8126 --timeout=120 && 
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"
@@ -32,6 +35,10 @@ services:
 
   grapl-analyzerlib-integration-tests:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: grapl-analyzerlib-test
     command: bash -c '
       wait-for-it grapl-provision:8126 --timeout=120 &&
       source venv/bin/activate &&
@@ -47,6 +54,10 @@ services:
 
   analyzer-executor-integration-tests:
     image: grapl/grapl-analyzer-executor-test:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: analyzer-executor-test
     command: bash -c '
       source venv/bin/activate &&
       cd analyzer_executor &&
@@ -63,6 +74,10 @@ services:
 
   engagement-edge-integration-tests:
     image: grapl/grapl-engagement-edge-test:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: engagement-edge-test
     command: bash -c '
       wait-for-it grapl-engagement-edge:8900 --timeout=60 &&
       source venv/bin/activate &&
@@ -75,6 +90,8 @@ services:
 
   engagement-view-integration-tests:
     image: grapl/cypress
+    build: 
+      context: test
     volumes: 
       - ./test/integration-outputs/screenshots:/test/cypress/screenshots
       - ./test/integration-outputs/videos:/test/cypress/videos
