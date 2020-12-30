@@ -2,15 +2,15 @@ use std::str::FromStr;
 use tracing_subscriber::EnvFilter;
 
 use color_eyre::Help;
+use grapl_observe::metric_reporter::MetricReporter;
 use rusoto_core::{Region, RusotoError};
 use rusoto_s3::S3;
 use rusoto_sqs::{ListQueuesRequest, Sqs};
+use sqs_executor::make_ten;
 use sqs_executor::redis_cache::RedisCache;
+use std::io::Stdout;
 use std::time::Duration;
 use tracing::debug;
-use std::io::Stdout;
-use grapl_observe::metric_reporter::MetricReporter;
-use sqs_executor::make_ten;
 
 pub mod env_helpers;
 
@@ -45,13 +45,14 @@ pub fn is_local() -> bool {
 }
 
 pub async fn event_cache(env: &ServiceEnv) -> RedisCache {
-    let cache_address = std::env::var("EVENT_CACHE_CLUSTER_ADDRESS").expect("EVENT_CACHE_CLUSTER_ADDRESS");
+    let cache_address =
+        std::env::var("EVENT_CACHE_CLUSTER_ADDRESS").expect("EVENT_CACHE_CLUSTER_ADDRESS");
     RedisCache::new(
         cache_address.to_owned(),
         MetricReporter::<Stdout>::new(&env.service_name),
     )
-        .await
-        .expect("Could not create redis client")
+    .await
+    .expect("Could not create redis client")
 }
 
 pub async fn event_caches(env: &ServiceEnv) -> [RedisCache; 10] {

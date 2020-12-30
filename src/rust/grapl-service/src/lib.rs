@@ -1,6 +1,5 @@
-pub mod serialization;
 pub mod decoder;
-
+pub mod serialization;
 
 #[cfg(test)]
 mod tests {

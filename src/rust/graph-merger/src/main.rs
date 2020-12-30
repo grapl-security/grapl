@@ -1,5 +1,6 @@
 #![type_length_limit = "1195029"]
 
+use futures::future::FutureExt;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::{Cursor, Stdout};
@@ -9,7 +10,6 @@ use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::UNIX_EPOCH;
 use std::time::{Duration, SystemTime};
-use futures::future::FutureExt;
 
 use async_trait::async_trait;
 use aws_lambda_events::event::s3::{
@@ -38,6 +38,8 @@ use sqs_executor::event_decoder::PayloadDecoder;
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::redis_cache::RedisCache;
 
+use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
+use grapl_config::event_caches;
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use grapl_graph_descriptions::node::NodeT;
 use grapl_observe::dgraph_reporter::DgraphMetricReporter;
@@ -47,8 +49,6 @@ use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::make_ten;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use std::convert::TryInto;
-use grapl_config::event_caches;
-use grapl_config::env_helpers::{FromEnv, s3_event_emitters_from_env};
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({

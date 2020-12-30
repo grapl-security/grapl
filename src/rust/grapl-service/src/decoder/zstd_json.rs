@@ -6,8 +6,8 @@ use std::io::Cursor;
 pub struct ZstdJsonDecoder;
 
 impl<D> PayloadDecoder<D> for ZstdJsonDecoder
-    where
-            for<'a> D: Deserialize<'a>,
+where
+    for<'a> D: Deserialize<'a>,
 {
     fn decode(&mut self, body: Vec<u8>) -> Result<D, Box<dyn std::error::Error>> {
         let mut decompressed = Vec::new();

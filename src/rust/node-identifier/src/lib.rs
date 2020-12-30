@@ -30,6 +30,8 @@ use sha2::Digest;
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
+use grapl_config::env_helpers::FromEnv;
+use grapl_config::event_caches;
 use grapl_graph_descriptions::file::FileState;
 use grapl_graph_descriptions::graph_description::host::*;
 use grapl_graph_descriptions::graph_description::node::WhichNode;
@@ -51,7 +53,6 @@ use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::redis_cache::RedisCache;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use sqs_executor::{make_ten, time_based_key_fn};
-use grapl_config::env_helpers::FromEnv;
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -873,33 +874,12 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     let env = grapl_config::init_grapl_env!();
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
     debug!("Queue Url: {}", source_queue_url);
-    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
     let sqs_client = SqsClient::from_env();
     let s3_client = S3Client::from_env();
 
-    let cache_address = {
-        let retry_identity_cache_addr =
-            std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
-        let retry_identity_cache_port =
-            std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
-
-        format!(
-            "{}:{}",
-            retry_identity_cache_addr, retry_identity_cache_port,
-        )
-    };
-    let destination_bucket = bucket_prefix + "-subgraphs-generated-bucket";
-
-    let cache = &mut make_ten(async {
-        RedisCache::new(
-            cache_address.to_owned(),
-            MetricReporter::<Stdout>::new(&env.service_name),
-        )
-        .await
-        .expect("Could not create redis client")
-    })
-    .await;
+    let destination_bucket = grapl_config::dest_bucket();
+    let cache = &mut event_caches(&env).await;
 
     let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
 

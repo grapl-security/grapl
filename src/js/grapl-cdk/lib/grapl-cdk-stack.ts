@@ -344,11 +344,8 @@ class AnalyzerDispatch extends cdk.NestedStack {
             prefix: props.prefix,
             environment: {
                 RUST_LOG: "DEBUG",
-                BUCKET_PREFIX: bucket_prefix,
-                EVENT_CACHE_ADDR:
-                    dispatch_event_cache.cluster.attrRedisEndpointAddress,
-                EVENT_CACHE_PORT:
-                    dispatch_event_cache.cluster.attrRedisEndpointPort,
+                ANALYZERS_BUCKET: props.prefix + "-analyzers-bucket",
+                EVENT_CACHE_CLUSTER_ADDRESS: dispatch_event_cache.address,
                 DISPATCHED_ANALYZER_BUCKET: props.writesTo.bucketName,
                 SUBGRAPH_MERGED_BUCKET: subgraphs_merged.bucket.bucketName,
             },

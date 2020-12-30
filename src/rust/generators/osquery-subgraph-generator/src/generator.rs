@@ -5,10 +5,10 @@ use crate::parsers::PartiallyDeserializedOSQueryLog;
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
 use sqs_executor::cache::{Cache, CacheResponse};
-use sqs_executor::event_handler::{EventHandler, CompletedEvents};
+use sqs_executor::errors::{CheckedError, Recoverable};
+use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use std::borrow::Cow;
 use std::convert::TryFrom;
-use sqs_executor::errors::{CheckedError, Recoverable};
 
 #[derive(Clone)]
 pub(crate) struct OSQuerySubgraphGenerator<C>
@@ -31,7 +31,7 @@ where
 #[derive(thiserror::Error, Debug)]
 pub enum OSQuerySubgraphGeneratorError {
     #[error("Unexpected")]
-    Unexpected(failure::Error)
+    Unexpected(failure::Error),
 }
 
 impl CheckedError for OSQuerySubgraphGeneratorError {

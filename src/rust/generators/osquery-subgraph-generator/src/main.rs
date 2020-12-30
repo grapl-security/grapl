@@ -10,21 +10,21 @@ use crate::generator::OSQuerySubgraphGenerator;
 use crate::metrics::OSQuerySubgraphGeneratorMetrics;
 use crate::serialization::OSQueryLogDecoder;
 use graph_generator_lib::*;
+use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
 use grapl_config::*;
 use grapl_observe::metric_reporter::MetricReporter;
-use log::*;
-use sqs_executor::cache::NopCache;
-use std::io::Stdout;
-use std::time::Duration;
-use rusoto_s3::S3Client;
-use rusoto_core::Region;
-use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
-use grapl_service::serialization::zstd_proto::SubgraphSerializer;
-use rusoto_sqs::SqsClient;
-use std::str::FromStr;
-use sqs_executor::{make_ten, time_based_key_fn};
-use sqs_executor::event_retriever::S3PayloadRetriever;
 use grapl_service::decoder::zstd_json::ZstdJsonDecoder;
+use grapl_service::serialization::zstd_proto::SubgraphSerializer;
+use log::*;
+use rusoto_core::Region;
+use rusoto_s3::S3Client;
+use rusoto_sqs::SqsClient;
+use sqs_executor::cache::NopCache;
+use sqs_executor::event_retriever::S3PayloadRetriever;
+use sqs_executor::{make_ten, time_based_key_fn};
+use std::io::Stdout;
+use std::str::FromStr;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -39,10 +39,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cache = &mut event_caches(&env).await;
 
     let metrics = OSQuerySubgraphGeneratorMetrics::new(&env.service_name);
-    let osquery_subgraph_generator = &mut make_ten(async {
-        OSQuerySubgraphGenerator::new(cache[0].clone(), metrics.clone())
-    })
-        .await;
+    let osquery_subgraph_generator =
+        &mut make_ten(async { OSQuerySubgraphGenerator::new(cache[0].clone(), metrics.clone()) })
+            .await;
 
     let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
     let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
@@ -54,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             MetricReporter::new(&env.service_name),
         )
     })
-        .await;
+    .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
@@ -68,7 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         serializer,
         MetricReporter::new(&env.service_name),
     )
-        .await;
+    .await;
 
     info!("Exiting");
 

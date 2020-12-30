@@ -77,8 +77,7 @@ where
 }
 
 #[async_trait]
-impl<S, F> EventEmitter
-    for S3EventEmitter<S, F>
+impl<S, F> EventEmitter for S3EventEmitter<S, F>
 where
     S: S3 + Send + Sync + 'static,
     F: Fn(&[u8]) -> String + Send + Sync,

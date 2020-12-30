@@ -24,6 +24,7 @@ use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
+use grapl_config::env_helpers::FromEnv;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::metric_reporter::MetricReporter;
 use sqs_executor::cache::NopCache;
@@ -34,7 +35,6 @@ use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use sqs_executor::{make_ten, time_based_key_fn};
-use grapl_config::env_helpers::FromEnv;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>

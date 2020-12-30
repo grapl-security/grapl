@@ -18,9 +18,9 @@ use crate::cloudwatch_logs_parse::parse_logs;
 use crate::cloudwatch_send::statsd_as_cloudwatch_metric_bulk;
 use crate::cloudwatch_send::{filter_invalid_stats, get_namespace, put_metric_data};
 use crate::error::{to_handler_error, MetricForwarderError};
+use grapl_config::env_helpers::FromEnv;
 use rusoto_cloudwatch::CloudWatchClient;
 use std::sync::{Arc, Mutex};
-use grapl_config::env_helpers::FromEnv;
 
 fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), HandlerError> {
     /**
@@ -67,7 +67,6 @@ async fn handler_async(event: CloudwatchLogsEvent) -> Result<(), MetricForwarder
         Err(e) => Err(e),
     }
 }
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
