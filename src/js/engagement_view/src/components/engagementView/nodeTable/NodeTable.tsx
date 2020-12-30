@@ -7,11 +7,13 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 
-import { mapEdgeProps } from '../graphViz/utils/graph/graph_traverse';
-import { mapNodeProps } from '../graphViz/GraphViz';
-import { Node } from "../graphViz/utils/GraphVizCustomTypes";
+import { mapEdgeProps } from '../../graphViz/utils/graph/graph_traverse';
+import { mapNodeProps } from '../../graphViz/GraphViz';
+import { Node } from "../../graphViz/utils/GraphVizCustomTypes";
 
-import { useStyles } from "./NodeTableStyles"; 
+import { nodeTableStyles } from "./styles"; 
+
+const useStyles = nodeTableStyles; 
 
 function innerTable(node: Node, styles: any) {
     if(node) {

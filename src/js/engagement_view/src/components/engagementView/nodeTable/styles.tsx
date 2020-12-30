@@ -1,6 +1,6 @@
 import { makeStyles } from '@material-ui/core/styles';
 
-export const useStyles = makeStyles({
+export const nodeTableStyles = makeStyles({
     root: {
         fontSize: ".75em"
     },

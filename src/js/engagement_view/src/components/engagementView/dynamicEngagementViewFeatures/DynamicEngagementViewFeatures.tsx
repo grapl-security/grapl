@@ -1,52 +1,40 @@
 import React, {useEffect, useState} from "react";
 
 import Button from "@material-ui/core/Button";
+
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
-import LensIcon from '@material-ui/icons/Lens';
+
 import Divider from "@material-ui/core/Divider";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
-import TableRow from "@material-ui/core/TableRow";
 import TablePagination from '@material-ui/core/TablePagination';
 import { ClassNameMap } from '@material-ui/styles/withStyles';
+import NodeTable from '../nodeTable/NodeTable';
 
-import { getGraphQlEdge } from "../../services/getApiURLs";
-import NodeTable from './NodeTable';
-import { Lens } from "components/graphViz/utils/GraphVizCustomTypes";
+import { NodeDetailsProps } from "./types";
+
+import { Lens, Node } from "components/graphViz/utils/GraphVizCustomTypes";
+
+import {getLenses} from "../../../apiRequests/graphQlEndpointGetLensesReq";
+
+import {ToggleNodeTable} from './utils/toggleNodeTable';
 import {
-    SelectLensProps, 
     ToggleLensTableProps, 
     ToggleLensTableState, 
-    EngagementViewContentProps, 
-    NodeDetailsProps, 
-    ToggleNodeTableProps,
     PaginationState
-} from "components/graphViz/utils/GraphVizCustomTypes"
+} from "components/graphViz/utils/GraphVizCustomTypes";
 
-import { useStyles } from './dynamicEngagementViewFeaturesStyles';
+import {SelectLens} from './utils/selectLens';
 
-function SelectLens(props: SelectLensProps) {
-    const classes = useStyles();
-    return (
-        <>
-            <TableRow key={props.uid}>
-                <TableCell component="th" scope="row">
-                <Button className = {classes.lensName}
-                    onClick={
-                        () => { 
-                            props.setLens(props.lens)    
-                        }
-                }>
-                    {/* #TODO: change color of lens name based on score */}
-                    {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
-                </Button>
-                </TableCell>
-            </TableRow>
-        </>
-    )
+import { useStyles } from './styles';
+
+
+
+type EngagementViewContentProps = {
+    setLens: (lens: string) => void, 
+    curNode: Node | null
 }
 
 const defaultToggleLensTableState = (): ToggleLensTableState => {
@@ -57,7 +45,13 @@ const defaultToggleLensTableState = (): ToggleLensTableState => {
         offset: 0, // by default, start from page 0
     }
 }
-
+export const NodeDetails = ({node}: NodeDetailsProps) => {
+    return (
+        <>
+            <NodeTable node={node} />
+        </>
+    )
+}
 
 const pagedTable = (
     state: PaginationState, 
@@ -173,87 +167,49 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
     )
 }
 
-const graphql_edge = getGraphQlEdge();
+// const graphql_edge = getGraphQlEdge();
 
-const getLenses = async (first: number, offset: number) => {
-    // console.log('fetching graph from', graphql_edge);
+// const getLenses = async (first: number, offset: number) => {
+//     // console.log('fetching graph from', graphql_edge);
 
-    const query = `
-        {
-            lenses(first: ${first}, offset: ${offset}) {
-                uid,
-                node_key,
-                lens_name,
-                score, 
-                lens_type,
-            }
-        }
-    `;
+//     const query = `
+//         {
+//             lenses(first: ${first}, offset: ${offset}) {
+//                 uid,
+//                 node_key,
+//                 lens_name,
+//                 score, 
+//                 lens_type,
+//             }
+//         }
+//     `;
 
-    console.log("calling graphql_edge: " + graphql_edge + "with query: " + query);
+//     console.log("calling graphql_edge: " + graphql_edge + "with query: " + query);
     
-    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
-        {
-            method: 'post',
-            body: JSON.stringify({ query: query }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-        })
-        .then(res => res.json())
-        .then(res => {
-            if (res.errors) {
-                console.error("lenses failed", res.errors);
-                res.data = {lenses: []};
-            }
-            return res
-        })
-        .then((res) => res.data);
+//     const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
+//         {
+//             method: 'post',
+//             body: JSON.stringify({ query: query }),
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//             credentials: 'include',
+//         })
+//         .then(res => res.json())
+//         .then(res => {
+//             if (res.errors) {
+//                 console.error("lenses failed", res.errors);
+//                 res.data = {lenses: []};
+//             }
+//             return res
+//         })
+//         .then((res) => res.data);
 
-        const jres = await res;
+//         const jres = await res;
 
-        console.log("queried graphql_edge in engagement view content", jres);
-    return jres;
-};
-
-const NodeDetails = ({node}: NodeDetailsProps) => {
-    return (
-        <>
-            <NodeTable node={node} />
-        </>
-    )
-}
-
-function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
-    const [toggled, toggle] = useState(true);
-    const classes = useStyles();
-    return (
-        <>
-        <div>
-            <div className={classes.header}>
-                <b className={classes.title}><LensIcon className={classes.icon}/> NODE</b>
-                <Button
-                    className = {classes.button}
-                    onClick={
-                        () => { toggle(toggled => !toggled) }
-                    }> 	
-                    <ExpandMoreIcon className={classes.expand}/> 
-                </Button>
-            </div>
-
-            <div className="nodeToggle">
-                {
-                    toggled && curNode && 
-                        <>
-                            { <NodeDetails node={curNode}/> }
-                        </>
-                }
-            </div>
-        </div>
-        </>
-    )
-}
+//         console.log("queried graphql_edge in engagement view content", jres);
+//     return jres;
+// };
 
 export default function EngagementViewContent({setLens, curNode}: EngagementViewContentProps) {
     return (

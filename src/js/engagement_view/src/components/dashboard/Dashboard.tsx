@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Button from "@material-ui/core/Button";
 
-import GraplHeader from "../reusableComponents/GraplHeader";
-import LoginNotification from "../reusableComponents/Notifications";
+import GraplHeader from "../reusableComponents/graplHeader/GraplHeader";
+import LoginNotification from "../reusableComponents/notifications/Notifications";
 
 import { checkLogin } from '../../services/loginService';
 import { getNotebookUrl } from "../../services/notebookService";
 
-import { dasboardStyles } from './dashboardStyles';
+import { dasboardStyles } from './styles';
 
 const useStyles = dasboardStyles; 
 

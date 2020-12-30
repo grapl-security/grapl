@@ -1,10 +1,12 @@
 import React, { SyntheticEvent } from 'react';
 import { Field, Form, Formik } from "formik";
+
 import Button from "@material-ui/core/Button";
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
+
 import { Event, UploadFormState, DirectoryUpload, MessageProps} from "./uploadPluginTypes"
-import { uploadFilesToDgraph } from "./apiRequests";
-import { useStyles } from "./useStyles";
+import { uploadFilesToDgraph } from "./uploadPluginApiRequests";
+import { useStyles } from "../uploadPluginStyles";
 
 const readFile = async (file: Blob): Promise <string> => {
     return await new Promise(

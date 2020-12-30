@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { GraplHeader } from "../reusableComponents";
-import { useStyles } from "../../utils/uploads/plugins/useStyles";
-import { UploadForm } from "../../utils/uploads/plugins/uploadPlugins";
-import { PluginTable } from "../../utils/uploads/plugins/pluginTable";
+
+import { UploadForm } from "./utils/uploadPlugins";
+import { PluginTable } from "./utils/pluginTable";
 import { checkLogin } from "../../services/loginService";
 import { LoginNotification } from "../reusableComponents";
+
+import { useStyles } from "./uploadPluginStyles";
 
 const UploadPlugin = () => {
   const classes = useStyles();

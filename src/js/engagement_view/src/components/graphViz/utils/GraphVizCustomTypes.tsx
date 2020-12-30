@@ -178,15 +178,6 @@ export type MergeGraphType = {
     links: MergeLinkType[],
 }
 
-
-export type SelectLensProps = {
-    lens: string,
-    score: number,
-    uid: number,
-    lens_type: string,
-    setLens: (lens: string) => void,
-}
-
 export type ToggleLensTableProps = {
     setLens: (lens: string) => void,
 }
@@ -198,18 +189,8 @@ export type ToggleLensTableState = {
     offset: number,
 }
 
-export type EngagementViewContentProps = {
-    setLens: (lens: string) => void, 
-    curNode: Node | null
-}
 
-export type NodeDetailsProps = {
-    node: Node
-}
 
-export type ToggleNodeTableProps = {
-    curNode: Node | null
-}
 
 export type PaginationState = {
     first: number, 

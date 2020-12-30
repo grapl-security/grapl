@@ -1,6 +1,6 @@
 import React from "react";
-import "../LogIn.css";
-import { LogIn } from "../Login";
+import "../components/login/LogIn.css";
+import { LogIn } from "../components/login/Login";
 import { EngagementUx } from "../components/engagementView/EngagementView";
 import Dashboard from "../components/dashboard/Dashboard";
 import UploadPlugin from "../components/uploadPlugin/UploadPlugin";

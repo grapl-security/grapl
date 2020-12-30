@@ -14,7 +14,7 @@ import Home from "@material-ui/icons/Home";
 
 import { Node } from "components/graphViz/utils/GraphVizCustomTypes";
 import GraphDisplay from "../graphViz/GraphViz";
-import EngagementViewContent from "./DynamicEngagementViewFeatures";
+import EngagementViewContent from "./dynamicEngagementViewFeatures/DynamicEngagementViewFeatures";
 import { LoginNotification } from "../reusableComponents";
 import { checkLogin } from "../../services/loginService";
 import { useStyles } from "../graphViz/GraphVizStyles";

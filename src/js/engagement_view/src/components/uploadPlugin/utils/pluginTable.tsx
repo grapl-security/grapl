@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import Table from '@material-ui/core/Table';
 import TableRow from '@material-ui/core/TableRow';
 import TableBody from '@material-ui/core/TableBody';
@@ -9,8 +10,9 @@ import TablePagination from '@material-ui/core/TablePagination';
 import Button from "@material-ui/core/Button";
 import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
 import { PluginTableState } from "./uploadPluginTypes"
-import { getPluginList, deletePlugin} from "./apiRequests";
-import { useStyles } from "./useStyles";
+
+import { getPluginList, deletePlugin} from "./uploadPluginApiRequests";
+import { useStyles } from "../uploadPluginStyles";
 
 const defaultPluginTableState = (): PluginTableState => {
     return {
