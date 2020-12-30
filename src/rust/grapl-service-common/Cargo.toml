@@ -10,3 +10,9 @@ license = "Apache-2.0"
 [dependencies]
 log = "0.4.*"
 thiserror = "1.0.20"
+grapl-config = {path="../grapl-config", version="*"}
+rusoto_s3 = {version="0.45.0", default_features = false, features=["rustls"]}
+rusoto_core = {version="0.45.0", default_features = false, features=["rustls"]}
+rusoto_sqs = {version="0.45.0", default_features = false, features=["rustls"]}
+rusoto_dynamodb = {version="0.45.0", default_features = false, features=["rustls"]}
+rusoto_credential = "0.45.0"

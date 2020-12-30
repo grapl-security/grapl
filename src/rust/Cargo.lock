@@ -1353,7 +1353,13 @@ dependencies = [
 name = "grapl-service-common"
 version = "0.0.1"
 dependencies = [
+ "grapl-config",
  "log 0.4.11",
+ "rusoto_core",
+ "rusoto_credential",
+ "rusoto_dynamodb",
+ "rusoto_s3",
+ "rusoto_sqs",
  "thiserror",
 ]
 
