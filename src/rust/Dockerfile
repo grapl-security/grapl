@@ -59,10 +59,12 @@ COPY --chown=grapl ./graph-descriptions/Cargo.toml graph-descriptions/
 RUN mkdir -p generators/graph-generator-lib/src
 RUN touch generators/graph-generator-lib/src/lib.rs
 COPY --chown=grapl ./generators/graph-generator-lib/Cargo.toml generators/graph-generator-lib/
+
 # copy in Cargo.toml for grapl-config
 RUN mkdir -p grapl-config/src
 RUN touch grapl-config/src/lib.rs
 COPY --chown=grapl ./grapl-config/Cargo.toml grapl-config/
+
 # copy in Cargo.toml for grapl-observe
 RUN mkdir -p grapl-observe/src
 RUN touch grapl-observe/src/lib.rs

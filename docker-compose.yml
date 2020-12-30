@@ -111,7 +111,7 @@ services:
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "IS_LOCAL=True"
-      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-subgraph-generator"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-subgraph-generator-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-subgraph-generator-dead-letter-queue"
       - "DEST_BUCKET_NAME=local-grapl-unid-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
@@ -169,9 +169,6 @@ services:
       - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
       - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
-      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
-      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
-      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
       - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
       - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
@@ -213,10 +210,6 @@ services:
       - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
       - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
-      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
-      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
-      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
-      - "IS_LOCAL=True"
       - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
       - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
       - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
@@ -277,7 +270,6 @@ services:
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     environment:
-      - RUST_LOG=${RUST_LOG:-ERROR}
       - "ANALYZERS_BUCKET=local-grapl-analyzers-bucket"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-dead-letter-queue"

@@ -52,29 +52,6 @@ where
             | RusotoError::ParseError(_)
             | RusotoError::Unknown(_)
             | RusotoError::Blocking => Recoverable::Transient,
-            // // Unfortunately there's no enum stating *what* the error is
-            // // but possible errors would include timeouts etc, which are transient
-            // RusotoError::HttpDispatch(e) => {
-            //     Recoverable::Transient
-            // }
-            // RusotoError::Credentials(_) => {
-            //     // todo: Reasonable
-            //     Recoverable::Transient
-            // }
-            // RusotoError::Validation(_) => {
-            //     // todo: Reasonable?
-            //     Recoverable::Transient
-            // }
-            // RusotoError::ParseError(_) => {
-            //     // todo: Is this reasonable?
-            //     Recoverable::Transient
-            // }
-            // RusotoError::Unknown(_) => {
-            //     Recoverable::Transient
-            // }
-            // RusotoError::Blocking => {
-            //     Recoverable::Transient
-            // }
         }
     }
 }
@@ -147,7 +124,7 @@ where
     tokio::task::spawn(async move {
         let metric_reporter = &mut metric_reporter;
         let mut last_err = None;
-        for _ in 0..5u8 {
+        for i in 0..5u64 {
             let sqs_client = sqs_client.clone();
             let res = sqs_client.send_message(SendMessageRequest {
                 queue_url: queue_url.clone(),
@@ -180,6 +157,7 @@ where
                         return Err(SendMessageError::from(e));
                     } else {
                         last_err = Some(SendMessageError::from(e));
+                        tokio::time::delay_for(std::time::Duration::from_millis((10 * i))).await;
                     }
                 }
                 (Err(e), ms) => {
@@ -190,6 +168,7 @@ where
                     );
                     error!("Timed out sending message {:?}", e);
                     last_err = Some(SendMessageError::from(e));
+                    tokio::time::delay_for(std::time::Duration::from_millis((10 * i))).await;
                 }
             }
         }
