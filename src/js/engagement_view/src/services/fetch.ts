@@ -1,4 +1,4 @@
-export const apiFetch = async (urlSlug: string, method = "get") => {
+export const apiFetch = async (urlSlug: string, method = "GET") => {
   // const url = `api/${encodeURIComponent(urlSlug)}`;
 
   const response = await fetch(urlSlug, {
@@ -9,7 +9,7 @@ export const apiFetch = async (urlSlug: string, method = "get") => {
     }),
   }).catch((e) => {
     console.warn(e);
-    throw new Error(`Error: ${e}`);
+    throw new Error(`API Request Error: ${e}`);
   });
 
   return response.json();
@@ -19,7 +19,7 @@ export const apiFetch = async (urlSlug: string, method = "get") => {
 // export default apiFetch;
 
 
-export const apiPostFetch = async(urlSlug: string, method = "post", body:string) => {
+export const apiFetchPostRequest = async(urlSlug: string, method = "POST", body: string) => {
   const response = await fetch(urlSlug, {
     method,
     credentials: "include",
@@ -29,7 +29,7 @@ export const apiPostFetch = async(urlSlug: string, method = "post", body:string)
     body: body,
   }).catch((e) => {
     console.warn(e);
-    throw new Error(`Error: ${e}`);
+    throw new Error(`Error with Post Request: ${e}`);
   });
 
   return response.json();

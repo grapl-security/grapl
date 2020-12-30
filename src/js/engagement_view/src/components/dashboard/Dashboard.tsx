@@ -30,7 +30,7 @@ export default function Dashboard() {
                 await checkLogin()
                 .then((loggedIn) => {
                     if(!loggedIn){
-                        console.warn("Logged out")
+                        console.warn("Logged out");
                     }
                     setState({
                         loggedIn: loggedIn || false, 
@@ -45,6 +45,7 @@ export default function Dashboard() {
     )
 
     const loggedIn = state.loggedIn;
+    
     console.log("Logged in ", state.loggedIn); 
 
     return (
