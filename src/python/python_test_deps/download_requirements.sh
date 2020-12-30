@@ -1,8 +1,7 @@
 #!/bin/bash
 set -eu
-THIS_DIR="/home/grapl/python_test_deps"
-cd /home/grapl
+THIS_DIR="${PWD}/python_test_deps"
 source venv/bin/activate 
 
-cd $THIS_DIR
+cd "$THIS_DIR"
 pip download -r requirements.txt

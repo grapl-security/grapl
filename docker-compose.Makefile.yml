@@ -393,7 +393,9 @@ services:
   #
 
   grapl-engagement-view:
-    image: grapl/grapl-engagement-view:${TAG:-latest}
+    image: syntaqx/serve
+    volumes:
+      - ./src/js/grapl-cdk/edge_ux_pre_replace:/var/www:ro
     command: "serve -dir /var/www"
     environment:
       - PORT=1234
@@ -416,6 +418,7 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
+    user: grapl
     environment:
       - MG_ALPHAS=master_graph:9080
     links:

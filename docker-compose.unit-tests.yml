@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+
+  #
+  # Rust
+  #
+
+  grapl-rust-test:
+    image: grapl/rust-base:${TAG:-latest}
+    volumes: 
+      - ./src/rust:/grapl
+    working_dir: /grapl
+    user: "${UID:-1000}:${GID:-1000}"
+    command: cargo test
+
+  #
+  # Python services
+  #
+
+  grapl-graph-descriptions-test:
+    image: grapl/grapl-graph-descriptions-test:${TAG:-latest}
+
+  grapl-common-test:
+    image: grapl/grapl-grapl-common-test:${TAG:-latest}
+
+  grapl-analyzerlib-test:
+    image: grapl/grapl-analyzerlib-test:${TAG:-latest}
+
+  # grapl-analyzer-deployer:
+  #   image: grapl/grapl-analyzer-deployer-test:${TAG:-latest}
+
+  grapl-analyzer-executor-test:
+    image: grapl/grapl-analyzer-executor-test:${TAG:-latest}
+
+  grapl-engagement-creator-test:
+    image: grapl/grapl-engagement-creator-test:${TAG:-latest}
+
+  grapl-engagement-edge-test:
+    image: grapl/grapl-engagement-edge-test:${TAG:-latest}
+
+  grapl-model-plugin-deployer-test:
+    image: grapl/grapl-model-plugin-deployer-test:${TAG:-latest}
+
+  grapl-dgraph-ttl-test:
+    image: grapl/grapl-dgraph-ttl-test:${TAG:-latest}
+
+  #
+  # JS/web services
+  #
+
+  grapl-engagement-view-test:
+    image: grapl/grapl-engagement-view-build:${TAG:-latest}
+
+  # grapl-graphql-endpoint:
+  #   image: grapl/grapl-graphql-endpoint-test:${TAG:-latest}
+
+  grapl-notebook-test:
+    image: grapl/grapl-notebook-test:${TAG:-latest}
+    volumes:
+      - ./etc:/grapl-etc:ro
