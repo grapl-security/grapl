@@ -1,4 +1,4 @@
-import {BaseNode} from '../../types/CustomTypes'
+import {BaseNode} from '../../../types/CustomTypes'
 import {mapGraph} from "components/graphDisplay/utils/graph/graph_traverse";
 
 const builtins = new Set([

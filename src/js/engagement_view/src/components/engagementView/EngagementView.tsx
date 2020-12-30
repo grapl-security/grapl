@@ -16,7 +16,7 @@ import { Node } from "types/CustomTypes";
 import GraphDisplay from "../graphDisplay/GraphDisplay";
 import EngagementViewContent from "./dynamicEngagementViewFeatures/DynamicEngagementViewFeatures";
 import { LoginNotification } from "../reusableComponents";
-import { checkLogin } from "../../services/loginService";
+import { checkLogin } from "../../services/login/checkLoginService";
 import { useStyles } from "../graphDisplay/GraphDisplayStyles";
 
 type EngagementViewProps = {

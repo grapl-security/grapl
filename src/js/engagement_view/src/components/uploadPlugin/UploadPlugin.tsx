@@ -3,7 +3,7 @@ import { GraplHeader } from "../reusableComponents";
 
 import { UploadForm } from "./utils/uploadPlugins";
 import { PluginTable } from "./utils/pluginTable";
-import { checkLogin } from "../../services/loginService";
+import { checkLogin } from "../../services/login/checkLoginService";
 import { LoginNotification } from "../reusableComponents";
 
 import { useStyles } from "./uploadPluginStyles";

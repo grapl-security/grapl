@@ -5,8 +5,8 @@ import Button from "@material-ui/core/Button";
 import GraplHeader from "../reusableComponents/graplHeader/GraplHeader";
 import LoginNotification from "../reusableComponents/notifications/Notifications";
 
-import { checkLogin } from '../../services/loginService';
-import { getNotebookUrl } from "../../services/notebookService";
+import { checkLogin } from '../../services/login/checkLoginService';
+import { getNotebookUrl } from "../../services/sagemakerNotebook/notebookService";
 
 import { dasboardStyles } from './styles';
 

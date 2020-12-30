@@ -1,4 +1,4 @@
-import { getGraphQlEdge } from "../services/getApiURLs";
+import { getGraphQlEdge } from "../getApiURLs";
 
 const graphql_edge = getGraphQlEdge();
 

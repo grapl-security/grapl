@@ -6,7 +6,8 @@ import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import Divider from "@material-ui/core/Divider";
 
 import { pagedTable } from "../utils/pagedTable";
-import { getLenses}  from "../../../../apiRequests/graphQlEndpointGetLensesReq";
+import { getLenses}  from "../../../../services/graphQL/graphQlEndpointGetLensesReq";
+
 
 import {
     ToggleLensTableProps, 

@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { ForceGraph2D } from 'react-force-graph';
 import * as d3 from "d3";
 
-import { retrieveGraph } from "../../apiRequests/graphQlEndpointRetrieveGraphReq";
+import { retrieveGraph } from "../../services/graphQL/graphQlEndpointRetrieveGraphReq";
 
 import { BKDRHash, riskColor, calcNodeRgb , calcLinkColor} from "./utils/graphColoring/coloring.tsx";
 import { mapLabel } from './utils/graph/labels.tsx';

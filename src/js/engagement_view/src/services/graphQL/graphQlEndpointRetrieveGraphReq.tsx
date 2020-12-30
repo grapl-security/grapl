@@ -1,5 +1,5 @@
-import {BaseNode, LensScopeResponse} from '../types/CustomTypes';
-import {getGraphQlEdge} from '../services/getApiURLs';
+import {BaseNode, LensScopeResponse} from '../../types/CustomTypes';
+import {getGraphQlEdge} from '../getApiURLs';
 import {unpackPluginNodes} from './utils_GraphQlEndpointRetrieveGraph/unpackPluginNodes';
 import {expandScopeQuery} from './utils_GraphQlEndpointRetrieveGraph/expandScopeQuery'
 

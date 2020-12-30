@@ -5,7 +5,7 @@ import {Field, Form, Formik} from "formik";
 import './LogIn.css';
 import {loginStyles} from './styles';
 import {LoginProps} from '../../types/CustomTypes';
-import {engagementEdgeLoginReq} from '../../apiRequests/engagementEdgeLoginReq';
+import {loginService} from '../../services/login/loginService';
 import {sha256WithPepper} from './utils/passwordHashing';
 
 
@@ -37,7 +37,7 @@ export const LogIn = (_: LoginProps) => {
                 values.userName, values.password
               );
               
-              const loginSuccess = await engagementEdgeLoginReq(values.userName, password);
+              const loginSuccess = await loginService(values.userName, password);
               
               if (loginSuccess === true) {
                 window.history.replaceState('#/login', "", "#/")

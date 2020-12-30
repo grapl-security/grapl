@@ -4,40 +4,16 @@ import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 
 import { mapEdgeProps } from '../../graphDisplay/utils/graph/graph_traverse';
 import { mapNodeProps } from '../../graphDisplay/GraphDisplay';
 import { Node } from "../../../types/CustomTypes";
 
+import { innerTable } from "./innerTable";
 import { nodeTableStyles } from "./styles"; 
 
 const useStyles = nodeTableStyles; 
-
-function innerTable(node: Node, styles: any) {
-    if(node) {
-        return (
-        <TableHead >
-            <TableRow>
-                <TableCell 
-                    align="left" 
-                    className={styles.tableHeader}>
-                    <b> PROPERTY </b>
-                </TableCell>
-                <TableCell 
-                    align="left"
-                    className={styles.tableHeader}
-                >
-                    <b> VALUE </b>
-                </TableCell>
-            </TableRow>
-        </TableHead>
-    )
-    } else {
-        return <></>
-    }
-}
 
 type NodeTableProps = {
     node: Node
@@ -75,9 +51,7 @@ function NodeTable({node}: NodeTableProps){
     return(
         <TableContainer>
             <Table className={classes.nodeTable}>
-            {
-                innerTable(node, classes)
-            }
+            { innerTable(node, classes) }
             <TableBody>
                     {
                         Object.entries(displayNode).map((entry) => {
