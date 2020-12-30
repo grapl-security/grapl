@@ -1002,18 +1002,18 @@ export class GraplCdkStack extends cdk.Stack {
         });
 
         // todo: Don't accept a PR without porting this
-        // new PipelineDashboard(this, "pipeline_dashboard", {
-        //     namePrefix: this.prefix,
-        //     services: [
-        //         // Order here is important - the idea is that this dashboard will help Grapl operators
-        //         // quickly determine which service in the pipeline is failing.
-        //         // sysmon_generator.service,
-        //         // node_identifier.service,
-        //         // graph_merger.service,
-        //         analyzer_dispatch.service,
-        //         analyzer_executor.service,
-        //         engagement_creator.service,
-        //     ]
-        // });
+        new PipelineDashboard(this, "pipeline_dashboard", {
+            namePrefix: this.prefix,
+            services: [
+                // Order here is important - the idea is that this dashboard will help Grapl operators
+                // quickly determine which service in the pipeline is failing.
+                sysmon_generator.service,
+                node_identifier.service,
+                graph_merger.service,
+                analyzer_dispatch.service,
+                analyzer_executor.service,
+                engagement_creator.service,
+            ]
+        });
     }
 }

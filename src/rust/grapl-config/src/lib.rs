@@ -58,35 +58,22 @@ pub async fn event_caches(env: &ServiceEnv) -> [RedisCache; 10] {
     make_ten(event_cache(env)).await
 }
 
-pub fn source_bucket() -> String {
-    std::env::var("SOURCE_BUCKET_NAME").expect("SOURCE_BUCKET_NAME")
-}
-
 pub fn dest_bucket() -> String {
     std::env::var("DEST_BUCKET_NAME").expect("DEST_BUCKET_NAME")
 }
 
 pub fn region() -> Region {
-    let region_override = std::env::var("AWS_REGION_OVERRIDE");
+    let region_override_endpoint = std::env::var("AWS_REGION_ENDPOINT_OVERRIDE");
 
-    match region_override {
-        Ok(region) => Region::Custom {
+    match region_override_endpoint {
+        Ok(region_override_endpoint) => Region::Custom {
             name: "override".to_string(),
-            endpoint: region,
+            endpoint: region_override_endpoint,
         },
         Err(_) => {
             let region_str = std::env::var("AWS_REGION").expect("AWS_REGION");
             Region::from_str(&region_str).expect("Region error")
         }
-    }
-}
-
-pub fn grapl_log_level() -> log::Level {
-    match std::env::var("GRAPL_LOG_LEVEL") {
-        Ok(level) => {
-            log::Level::from_str(&level).expect(&format!("Invalid logging level {}", level))
-        }
-        Err(_) => log::Level::Error,
     }
 }
 

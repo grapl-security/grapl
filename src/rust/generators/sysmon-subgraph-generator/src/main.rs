@@ -22,6 +22,7 @@ use crate::metrics::SysmonSubgraphGeneratorMetrics;
 use crate::serialization::{SubgraphSerializer, ZstdDecoder};
 use rusoto_s3::S3Client;
 use std::convert::TryInto;
+use grapl_config::env_helpers::FromEnv;
 
 mod generator;
 mod metrics;
@@ -36,8 +37,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
     let destination_bucket = format!("{}-unid-subgraphs-generated-bucket", bucket_prefix);
 
-    let sqs_client = SqsClient::new(grapl_config::region());
-    let s3_client = S3Client::new(grapl_config::region());
+    let sqs_client = SqsClient::from_env();
+    let s3_client = S3Client::from_env();
 
     let cache_address = {
         let generic_event_cache_addr =

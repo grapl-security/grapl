@@ -497,7 +497,7 @@ where
         info!("Upserted: {} nodes", node_key_to_uid_map.len());
 
         info!("Inserting edges {}", subgraph.edges.len());
-        let dynamodb = init_dynamodb_client();
+        let dynamodb = DynamoDbClient::from_env();
 
         let mut edge_mutations: Vec<_> = vec![];
 
@@ -643,27 +643,6 @@ where
             ))),
             (None, None) => Ok(GeneratedSubgraphs::new(vec![subgraph])),
         }
-    }
-}
-
-pub fn init_dynamodb_client() -> DynamoDbClient {
-    if grapl_config::is_local() {
-        info!("Connecting to local DynamoDB http://dynamodb:8000");
-        DynamoDbClient::new_with(
-            HttpClient::new().expect("failed to create request dispatcher"),
-            rusoto_credential::StaticProvider::new_minimal(
-                "dummy_cred_aws_access_key_id".to_owned(),
-                "dummy_cred_aws_secret_access_key".to_owned(),
-            ),
-            Region::Custom {
-                name: "us-west-2".to_string(),
-                endpoint: "http://dynamodb:8000".to_string(),
-            },
-        )
-    } else {
-        info!("Connecting to DynamoDB");
-        let region = grapl_config::region();
-        DynamoDbClient::new(region.clone())
     }
 }
 

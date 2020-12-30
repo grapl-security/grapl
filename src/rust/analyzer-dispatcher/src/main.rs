@@ -34,6 +34,7 @@ use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use sqs_executor::{make_ten, time_based_key_fn};
+use grapl_config::env_helpers::FromEnv;
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
@@ -255,15 +256,14 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Handling event");
 
-    let sqs_client = SqsClient::new(grapl_config::region());
-    let s3_client = S3Client::new(grapl_config::region());
+    let sqs_client = SqsClient::from_env();
+    let s3_client = S3Client::from_env();
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
     debug!("Queue Url: {}", source_queue_url);
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
     let destination_bucket = bucket_prefix + "-dispatched-analyzer-bucket";
     info!("Output events to: {}", destination_bucket);
-    let region = grapl_config::region();
 
     let cache = &mut make_ten(async {
         NopCache {}
@@ -294,7 +294,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     .await;
     let analyzer_dispatcher = &mut make_ten(async {
         AnalyzerDispatcher {
-            s3_client: Arc::new(S3Client::new(region.clone())),
+            s3_client: Arc::new(S3Client::from_env()),
         }
     })
     .await;

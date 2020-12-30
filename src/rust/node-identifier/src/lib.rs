@@ -51,6 +51,7 @@ use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::redis_cache::RedisCache;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use sqs_executor::{make_ten, time_based_key_fn};
+use grapl_config::env_helpers::FromEnv;
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -76,7 +77,6 @@ where
     node_id_db: D,
     should_default: bool,
     cache: CacheT,
-    region: Region,
 }
 
 impl<D, CacheT> NodeIdentifier<D, CacheT>
@@ -91,7 +91,6 @@ where
         node_id_db: D,
         should_default: bool,
         cache: CacheT,
-        region: Region,
     ) -> Self {
         Self {
             asset_mapping_db,
@@ -100,7 +99,6 @@ where
             node_id_db,
             should_default,
             cache,
-            region,
         }
     }
 
@@ -632,7 +630,6 @@ where
         completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         warn!("node-identifier.handle_event");
-        let _region = self.region.clone();
 
         let mut attribution_failure = None;
 
@@ -878,8 +875,8 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     debug!("Queue Url: {}", source_queue_url);
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
 
-    let sqs_client = SqsClient::new(grapl_config::region());
-    let s3_client = S3Client::new(grapl_config::region());
+    let sqs_client = SqsClient::from_env();
+    let s3_client = S3Client::from_env();
 
     let cache_address = {
         let retry_identity_cache_addr =
@@ -925,13 +922,12 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     })
     .await;
     info!("Output events to: {}", destination_bucket);
-    let region = grapl_config::region();
 
-    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
 
-    let dynamo = DynamoDbClient::new(region.clone());
+    let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
+    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::from_env());
     let asset_identifier = AssetIdentifier::new(asset_id_db);
 
     let dyn_node_identifier = DynamicNodeIdentifier::new(
@@ -941,11 +937,11 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
         should_default,
     );
 
-    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
 
     let asset_identifier = AssetIdentifier::new(asset_id_db);
 
-    let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
     let node_identifier = &mut make_ten(async {
         NodeIdentifier::new(
             asset_id_db,
@@ -954,7 +950,6 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
             dynamo.clone(),
             should_default,
             cache[0].to_owned(),
-            region.clone(),
         )
     })
     .await;
@@ -976,52 +971,6 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     info!("Exiting");
     println!("Exiting");
     Ok(())
-}
-
-pub fn init_sqs_client() -> SqsClient {
-    info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
-
-    SqsClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_sqs".to_owned(),
-            "dummy_sqs".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-east-1".to_string(),
-            endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        },
-    )
-}
-
-pub fn init_s3_client() -> S3Client {
-    info!("Connecting to local http://s3:9000");
-    S3Client::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "minioadmin".to_owned(),
-            "minioadmin".to_owned(),
-        ),
-        Region::Custom {
-            name: "locals3".to_string(),
-            endpoint: "http://s3:9000".to_string(),
-        },
-    )
-}
-
-pub fn init_dynamodb_client() -> DynamoDbClient {
-    info!("Connecting to local http://dynamodb:8000");
-    DynamoDbClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_cred_aws_access_key_id".to_owned(),
-            "dummy_cred_aws_secret_access_key".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-west-2".to_string(),
-            endpoint: "http://dynamodb:8000".to_string(),
-        },
-    )
 }
 
 #[derive(Clone, Default)]

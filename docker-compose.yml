@@ -109,10 +109,17 @@ services:
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
-      - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "IS_LOCAL=True"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-subgraph-generator"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
+      - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_sqs"
+      - "SQS_ACCESS_KEY_SECRET=dummy_sqs"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -151,7 +158,9 @@ services:
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
@@ -183,11 +192,24 @@ services:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     environment:
       - "BUCKET_PREFIX=local-grapl"
-      - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "IS_LOCAL=True"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
-      - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
+      - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_sqs"
+      - "SQS_ACCESS_KEY_SECRET=dummy_sqs"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "IS_LOCAL=True"
       - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
       - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
       - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
@@ -216,11 +238,20 @@ services:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     environment:
       - "BUCKET_PREFIX=local-grapl"
-      - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
-      - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "IS_LOCAL=True"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_sqs"
+      - "SQS_ACCESS_KEY_SECRET=dummy_sqs"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - MG_ALPHAS=http://master_graph:9080
       - "GRAPL_SCHEMA_TABLE=local-grapl-grapl_schema_table"
     tty: false
