@@ -162,7 +162,7 @@ class NodeIdentifier extends cdk.NestedStack {
             prefix: props.prefix,
             environment: {
                 RUST_LOG: "DEBUG",
-                BUCKET_PREFIX: bucket_prefix,
+                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
                 RETRY_IDENTITY_CACHE_ADDR:
                     event_cache.cluster.attrRedisEndpointAddress,
                 RETRY_IDENTITY_CACHE_PORT:
@@ -194,7 +194,14 @@ class NodeIdentifier extends cdk.NestedStack {
                     "release_target": "debug"
                 },
             }),
+            retryServiceImage: ContainerImage.fromAsset('../../../src/rust/', {
+                target: "grapl-node-identifier-retry-handler",
+                buildArgs: {
+                    "release_target": "debug"
+                },
+            }),
             command: ["/node-identifier"],
+            retryCommand: ["/node-identifier-retry-handler"],
             // metric_forwarder: props.metricForwarder,
         });
 

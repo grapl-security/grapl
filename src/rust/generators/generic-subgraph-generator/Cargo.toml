@@ -5,12 +5,12 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-graph-generator-lib = {path = "../graph-generator-lib/", version="*"}
+#graph-generator-lib = {path = "../graph-generator-lib/", version="*"}
 grapl-graph-descriptions = { path="../../graph-descriptions", version="*"}
 grapl-config = {path="../../grapl-config", version="*"}
 
-#sqs-executor = { path = "../../sqs-executor/" }
-sqs-lambda = { path = "../../sqs-lambda/" }
+sqs-executor = { path = "../../sqs-executor/" }
+grapl-service = { path = "../../grapl-service/" }
 grapl-observe = { path = "../../grapl-observe/" }
 serde = "1.0.110"
 serde_json = "1.0.53"
@@ -46,6 +46,7 @@ tracing = "0.1.15"
 tracing-futures = "0.2.4"
 tracing-subscriber = "0.2.5"
 eyre = "0.4.3"
+thiserror = "1.0.23"
 #openssl-probe = "0.1.2"
 
 

@@ -3,9 +3,8 @@ use crate::metrics::OSQuerySubgraphGeneratorMetrics;
 use crate::serialization::OSQueryLogDecoder;
 use crate::tests::utils;
 use regex::internal::Input;
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::event_handler::Completion;
-use sqs_lambda::event_handler::EventHandler;
+use sqs_executor::cache::NopCache;
+use sqs_executor::event_handler::EventHandler;
 
 #[tokio::test]
 async fn test_subgraph_generation_process_create() {
@@ -19,10 +18,10 @@ async fn test_subgraph_generation_process_create() {
     let output_event = generator.handle_event(logs).await;
 
     match &output_event.completed_event {
-        Completion::Total(subgraph) => {
+        Ok(subgraph) => {
             assert!(!subgraph.is_empty(), "Generated subgraph was empty.")
         }
-        Completion::Partial((subgraph, e)) => {
+        Err(Ok((subgraph, e))) => {
             assert!(
                 !subgraph.is_empty(),
                 "Generated subgraph was empty and errors were generated"
@@ -32,7 +31,7 @@ async fn test_subgraph_generation_process_create() {
                 e
             );
         }
-        Completion::Error(e) => panic!(
+        Err(Err(e)) => panic!(
             "OSQuery subgraph generator failed to generate subgraph with error: {}",
             e
         ),

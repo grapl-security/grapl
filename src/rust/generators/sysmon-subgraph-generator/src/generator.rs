@@ -6,10 +6,10 @@ use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::log_time;
 use log::*;
 use sqs_executor::cache::{Cache, CacheResponse};
-use sqs_executor::event_handler::{EventHandler, CompletedEvents};
+use sqs_executor::errors::{CheckedError, Recoverable};
+use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use std::borrow::Cow;
 use sysmon::Event;
-use sqs_executor::errors::{CheckedError, Recoverable};
 
 #[derive(thiserror::Error, Debug)]
 pub enum SysmonGeneratorError {
@@ -30,7 +30,6 @@ impl CheckedError for SysmonGeneratorError {
         }
     }
 }
-
 
 #[derive(Clone)]
 pub(crate) struct SysmonSubgraphGenerator<C>
@@ -64,7 +63,9 @@ where
                 Err(e) => {
                     warn!("Failed to deserialize event: {}, {}", e, event);
 
-                    last_failure = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(format!("Failed: {}", e))));
+                    last_failure = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(
+                        format!("Failed: {}", e),
+                    )));
 
                     continue;
                 }
@@ -144,7 +145,8 @@ where
         let (final_subgraph, identities, last_failure) = self.process_events(events).await;
 
         info!("Completed mapping {} subgraphs", identities.len());
-        self.metrics.report_handle_event_success(last_failure.is_some());
+        self.metrics
+            .report_handle_event_success(last_failure.is_some());
 
         identities
             .into_iter()

@@ -1,7 +1,7 @@
-use std::fmt::Debug;
-use async_trait::async_trait;
-use crate::errors::CheckedError;
 use crate::cache::Cacheable;
+use crate::errors::CheckedError;
+use async_trait::async_trait;
+use std::fmt::Debug;
 
 #[derive(Default)]
 pub struct CompletedEvents {
@@ -17,7 +17,6 @@ impl CompletedEvents {
         self.identities.push(identity.identity());
     }
 }
-
 
 #[async_trait]
 pub trait EventHandler {

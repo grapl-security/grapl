@@ -19,7 +19,7 @@ use failure::{bail, Error};
 use log::{debug, error, info, warn};
 use prost::Message;
 use rusoto_core::{HttpClient, Region};
-use rusoto_s3::{ListObjectsRequest, S3, S3Client};
+use rusoto_s3::{ListObjectsRequest, S3Client, S3};
 use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -33,19 +33,19 @@ use sqs_executor::event_decoder::PayloadDecoder;
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
-use sqs_executor::time_based_key_fn;
+use sqs_executor::{make_ten, time_based_key_fn};
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
-    where
-        S: S3 + Send + Sync + 'static,
+where
+    S: S3 + Send + Sync + 'static,
 {
     s3_client: Arc<S>,
 }
 
 impl<S> Clone for AnalyzerDispatcher<S>
-    where
-        S: S3 + Send + Sync + 'static,
+where
+    S: S3 + Send + Sync + 'static,
 {
     fn clone(&self) -> Self {
         Self {
@@ -57,7 +57,7 @@ impl<S> Clone for AnalyzerDispatcher<S>
 async fn get_s3_keys(
     s3_client: &impl S3,
     bucket: impl Into<String>,
-) -> Result<impl IntoIterator<Item=Result<String, Error>>, Error> {
+) -> Result<impl IntoIterator<Item = Result<String, Error>>, Error> {
     let bucket = bucket.into();
 
     let list_res = tokio::time::timeout(
@@ -67,7 +67,7 @@ async fn get_s3_keys(
             ..Default::default()
         }),
     )
-        .await??;
+    .await??;
 
     let contents = match list_res.contents {
         Some(contents) => contents,
@@ -109,8 +109,8 @@ impl CheckedError for AnalyzerDispatcherError {
 
 #[async_trait]
 impl<S> EventHandler for AnalyzerDispatcher<S>
-    where
-        S: S3 + Send + Sync + 'static,
+where
+    S: S3 + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
     type OutputEvent = Vec<AnalyzerDispatchEvent>;
@@ -141,12 +141,10 @@ impl<S> EventHandler for AnalyzerDispatcher<S>
         let keys = match get_s3_keys(self.s3_client.as_ref(), &bucket).await {
             Ok(keys) => keys,
             Err(e) => {
-                return Err(Err(
-                    AnalyzerDispatcherError::Unexpected(format!(
-                        "Failed to list bucket: {} with {:?}",
-                        bucket, e
-                    )),
-                ));
+                return Err(Err(AnalyzerDispatcherError::Unexpected(format!(
+                    "Failed to list bucket: {} with {:?}",
+                    bucket, e
+                ))));
             }
         };
 
@@ -197,7 +195,6 @@ pub enum SubgraphSerializerError {
     ProtoEncodeError(Error),
 }
 
-
 impl CompletionEventSerializer for SubgraphSerializer {
     type CompletedEvent = Vec<AnalyzerDispatchEvent>;
     type Output = Vec<u8>;
@@ -223,9 +220,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
                 "subgraph": encode_subgraph(&final_subgraph).map_err(|e| SubgraphSerializerError::ProtoEncodeError(e))?
             });
 
-            serialized.push(
-                serde_json::to_vec(&event)?,
-            );
+            serialized.push(serde_json::to_vec(&event)?);
         }
 
         Ok(serialized)
@@ -236,12 +231,12 @@ impl CompletionEventSerializer for SubgraphSerializer {
 pub struct ZstdProtoDecoder;
 
 impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-    where
-        E: Message + Default,
+where
+    E: Message + Default,
 {
     fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-        where
-            E: Message + Default,
+    where
+        E: Message + Default,
     {
         let mut decompressed = Vec::new();
 
@@ -256,6 +251,8 @@ impl<E> PayloadDecoder<E> for ZstdProtoDecoder
 }
 
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
+    let env = grapl_config::init_grapl_env!();
+
     info!("Handling event");
 
     let sqs_client = SqsClient::new(grapl_config::region());
@@ -268,97 +265,60 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     info!("Output events to: {}", destination_bucket);
     let region = grapl_config::region();
 
-    let mut cache = [NopCache {}; 10];
-    let cache = &mut cache;
+    let cache = &mut make_ten(async {
+        NopCache {}
+        // RedisCache::new(cache_address.to_owned(), MetricReporter::<Stdout>::new(&env.service_name)).await
+        //     .expect("Could not create redis client")
+    })
+    .await;
 
-    let serializer = vec![SubgraphSerializer::default(); 10];
-    let mut serializer: [_; 10] = serializer.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let mut serializer = &mut serializer;
+    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
 
-    let mut s3_emitter = Vec::with_capacity(10);
-    for _ in 0..10u8 {
-        let emitter = S3EventEmitter::new(
+    let s3_emitter = &mut make_ten(async {
+        S3EventEmitter::new(
             s3_client.clone(),
             destination_bucket.clone(),
             time_based_key_fn,
-            move |_, _| async move { Ok(()) },
-        );
-        s3_emitter.push(emitter);
-    }
-    let mut s3_emitter: [_; 10] = s3_emitter.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let s3_emitter = &mut s3_emitter;
+            MetricReporter::new(&env.service_name),
+        )
+    })
+    .await;
 
-    let s3_payload_retriever = vec![S3PayloadRetriever::new(
-        |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-        ZstdProtoDecoder::default(),
-        MetricReporter::<Stdout>::new("graph-merger"),
-    ); 10];
-
-    let mut s3_payload_retriever: [_; 10] = s3_payload_retriever.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let s3_payload_retriever = &mut s3_payload_retriever;
-
-    info!("Output events to: {}", destination_bucket);
-
-    // let metric_reporter = MetricReporter::<Stdout>::new("graph-merger");
-
-    let fake_generator = vec![
+    let s3_payload_retriever = &mut make_ten(async {
+        S3PayloadRetriever::new(
+            |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+            ZstdProtoDecoder::default(),
+            MetricReporter::new(&env.service_name),
+        )
+    })
+    .await;
+    let analyzer_dispatcher = &mut make_ten(async {
         AnalyzerDispatcher {
             s3_client: Arc::new(S3Client::new(region.clone())),
-        };
-        10
-    ];
-    let mut fake_generator: [_; 10] = fake_generator.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let mut fake_generator = &mut fake_generator;
+        }
+    })
+    .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
         std::env::var("QUEUE_URL").expect("QUEUE_URL"),
+        std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
         cache,
         sqs_client.clone(),
-        fake_generator,
+        analyzer_dispatcher,
         s3_payload_retriever,
         s3_emitter,
         serializer,
-    ).await;
+        MetricReporter::new(&env.service_name),
+    )
+    .await;
 
     info!("Exiting");
     Ok(())
 }
 
-fn init_sqs_client() -> SqsClient {
-    info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
-
-    SqsClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_sqs".to_owned(),
-            "dummy_sqs".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-east-1".to_string(),
-            endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        },
-    )
-}
-
-fn init_s3_client() -> S3Client {
-    info!("Connecting to local http://s3:9000");
-    S3Client::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "minioadmin".to_owned(),
-            "minioadmin".to_owned(),
-        ),
-        Region::Custom {
-            name: "locals3".to_string(),
-            endpoint: "http://s3:9000".to_string(),
-        },
-    )
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
     handler().await?;
     Ok(())
 }

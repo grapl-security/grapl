@@ -73,6 +73,11 @@ RUN mkdir -p sqs-lambda/src
 RUN touch sqs-lambda/src/lib.rs
 COPY --chown=grapl ./sqs-lambda/Cargo.toml sqs-lambda/
 
+# copy in Cargo.toml for grapl-service
+RUN mkdir -p grapl-service/src
+RUN touch grapl-service/src/lib.rs
+COPY --chown=grapl ./grapl-service/Cargo.toml grapl-service/
+
 # copy in Cargo.toml for sqs-executor
 RUN mkdir -p sqs-executor/src
 RUN touch sqs-executor/src/lib.rs
@@ -134,6 +139,7 @@ RUN rm -rf target/*/*/.fingerprint/grapl-config*
 RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
 RUN rm -rf target/*/*/.fingerprint/grapl-observe*
 RUN rm -rf target/*/*/.fingerprint/sqs-lambda*
+RUN rm -rf target/*/*/.fingerprint/grapl-service*
 RUN rm -rf target/*/*/.fingerprint/sqs-executor*
 RUN rm -rf target/*/*/.fingerprint/metric-forwarder*
 RUN rm -rf target/*/*/.fingerprint/node-identifier*
@@ -148,6 +154,7 @@ COPY --chown=grapl ./grapl-config grapl-config
 COPY --chown=grapl ./grapl-observe grapl-observe
 COPY --chown=grapl ./sqs-lambda sqs-lambda
 COPY --chown=grapl ./sqs-executor sqs-executor
+COPY --chown=grapl ./grapl-service grapl-service
 COPY --chown=grapl ./metric-forwarder metric-forwarder
 COPY --chown=grapl ./node-identifier node-identifier
 COPY --chown=grapl ./generators/graph-generator-lib generators/graph-generator-lib
@@ -206,10 +213,11 @@ ARG release_target="debug"
 COPY --from=grapl-rust-src-build /home/grapl/target/x86_64-unknown-linux-musl/${release_target}/node-identifier /
 CMD /node-identifier
 
-# TODO: Re-enable this
-#FROM grapl-rust-dist AS grapl-node-identifier-retry-handler
-#COPY --from=grapl-rust-src-build /grapl/target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler /
-#CMD /node-identifier-retry-handler
+FROM grapl-rust-dist AS grapl-node-identifier-retry-handler
+ARG release_target="debug"
+COPY --from=grapl-rust-src-build /home/grapl/target/x86_64-unknown-linux-musl/${release_target}/node-identifier-retry-handler /
+CMD /node-identifier-retry-handler
+
 
 FROM grapl-rust-dist AS grapl-sysmon-subgraph-generator
 ARG release_target="debug"

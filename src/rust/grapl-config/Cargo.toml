@@ -9,7 +9,9 @@ license = "Apache-2.0"
 
 [dependencies]
 log = "0.4.*"
-sqs-lambda = { path = "../sqs-lambda/" }
+sqs-executor = { path = "../sqs-executor/" }
+grapl-observe = { path = "../grapl-observe/" }
+#sqs-lambda = { path = "../sqs-lambda/" }
 
 rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
@@ -21,3 +23,4 @@ tracing-futures = "0.2.4"
 tokio = { version = "0.2.4", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 color-eyre = "0.3.4"
 eyre = "0.4.3"
+async-trait = "0.1.42"

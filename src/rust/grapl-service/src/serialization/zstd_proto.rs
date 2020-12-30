@@ -1,25 +1,6 @@
-use sqs_executor::event_decoder::PayloadDecoder;
-use std::io::Cursor;
-
-/// A [PayloadDecoder] used to decompress zstd encoded events sent to an [EventHandler].
-///
-/// This `struct` is typically used in conjunction with a subsequent call to [run_graph_generator].
-#[derive(Debug, Clone, Default)]
-pub struct ZstdDecoder;
-
-impl PayloadDecoder<Vec<u8>> for ZstdDecoder {
-    fn decode(&mut self, body: Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-        let mut decompressed = Vec::with_capacity(body.len());
-        let mut body = Cursor::new(&body);
-
-        zstd::stream::copy_decode(&mut body, &mut decompressed)?;
-
-        Ok(decompressed)
-    }
-}
 
 use grapl_graph_descriptions::graph_description::*;
-use log::*;
+use tracing::{info, debug, error};
 use prost::EncodeError;
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;
 
@@ -28,11 +9,18 @@ use sqs_executor::completion_event_serializer::CompletionEventSerializer;
 #[derive(Clone, Debug, Default)]
 pub struct SubgraphSerializer {
     proto: Vec<u8>,
+    compressed: Vec<u8>,
 }
 
 impl SubgraphSerializer {
-    pub fn new(proto: Vec<u8>) -> Self {
-        Self { proto }
+    pub fn new(
+        proto: Vec<u8>,
+        compressed: Vec<u8>,
+    ) -> Self {
+        Self {
+            proto,
+            compressed,
+        }
     }
 }
 
@@ -68,8 +56,8 @@ impl CompletionEventSerializer for SubgraphSerializer {
         if subgraph.is_empty() {
             debug!(
                 concat!(
-                    "Output subgraph is empty. Serializing to empty vector.",
-                    "pre_nodes: {} pre_edges: {}"
+                "Output subgraph is empty. Serializing to empty vector.",
+                "pre_nodes: {} pre_edges: {}"
                 ),
                 pre_nodes, pre_edges,
             );
@@ -90,16 +78,17 @@ impl CompletionEventSerializer for SubgraphSerializer {
         };
 
         self.proto.clear();
+        self.compressed.clear();
 
         // encode generated subgraphs into protocol buffer
         prost::Message::encode(&subgraphs, &mut self.proto)?;
 
-        let mut compressed = Vec::with_capacity(self.proto.len());
-        let mut proto = Cursor::new(&self.proto);
+        let mut compressed = &mut self.compressed;
+        let mut proto = std::io::Cursor::new(&self.proto);
 
         // compress encoded subgraph into `compressed` vector
         zstd::stream::copy_encode(&mut proto, &mut compressed, 4)?;
 
-        Ok(vec![compressed])
+        Ok(vec![compressed.clone()])
     }
 }

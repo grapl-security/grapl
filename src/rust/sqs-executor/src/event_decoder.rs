@@ -5,8 +5,8 @@ pub trait PayloadDecoder<E> {
 }
 
 impl<T, F> PayloadDecoder<T> for F
-    where
-        F: Fn(Vec<u8>) -> Result<T, Box<dyn std::error::Error>>,
+where
+    F: Fn(Vec<u8>) -> Result<T, Box<dyn std::error::Error>>,
 {
     fn decode(&mut self, body: Vec<u8>) -> Result<T, Box<dyn std::error::Error>> {
         (self)(body)

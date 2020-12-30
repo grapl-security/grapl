@@ -9,6 +9,7 @@ use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::UNIX_EPOCH;
 use std::time::{Duration, SystemTime};
+use futures::future::FutureExt;
 
 use async_trait::async_trait;
 use aws_lambda_events::event::s3::{
@@ -34,7 +35,7 @@ use serde_json::{json, Value};
 use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;
 use sqs_executor::event_decoder::PayloadDecoder;
-use sqs_executor::event_handler::{EventHandler, CompletedEvents};
+use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::redis_cache::RedisCache;
 
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
@@ -42,9 +43,12 @@ use grapl_graph_descriptions::node::NodeT;
 use grapl_observe::dgraph_reporter::DgraphMetricReporter;
 use grapl_observe::metric_reporter::MetricReporter;
 use sqs_executor::errors::{CheckedError, Recoverable};
-use std::convert::TryInto;
 use sqs_executor::event_retriever::S3PayloadRetriever;
+use sqs_executor::make_ten;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
+use std::convert::TryInto;
+use grapl_config::event_caches;
+use grapl_config::env_helpers::{FromEnv, s3_event_emitters_from_env};
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
@@ -286,8 +290,8 @@ impl CompletionEventSerializer for SubgraphSerializer {
         if subgraph.is_empty() {
             warn!(
                 concat!(
-                "Output subgraph is empty. Serializing to empty vector.",
-                "pre_nodes: {} pre_edges: {}"
+                    "Output subgraph is empty. Serializing to empty vector.",
+                    "pre_nodes: {} pre_edges: {}"
                 ),
                 pre_nodes, pre_edges,
             );
@@ -317,7 +321,6 @@ impl CompletionEventSerializer for SubgraphSerializer {
     }
 }
 
-
 fn time_based_key_fn(_event: &[u8]) -> String {
     info!("event length {}", _event.len());
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -343,87 +346,49 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
 }
 
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
+    let env = grapl_config::init_grapl_env!();
     info!("Handling event");
 
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-    debug!("Queue Url: {}", source_queue_url);
-    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
+    let sqs_client = SqsClient::from_env();
+    let s3_client = S3Client::from_env();
 
+    let destination_bucket = grapl_config::dest_bucket();
+    let cache = &mut event_caches(&env).await;
 
-    let sqs_client = SqsClient::new(grapl_config::region());
-    let s3_client = S3Client::new(grapl_config::region());
-
-    let cache_address = {
-        let cache_addr =
-            std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
-        let cache_port =
-            std::env::var("MERGED_CACHE_PORT").expect("MERGED_CACHE_PORT");
-
-        format!(
-            "{}:{}",
-            cache_addr, cache_port,
+    let graph_merger = &mut make_ten(async {
+        GraphMerger::new(
+            grapl_config::mg_alphas(),
+            MetricReporter::new(&env.service_name),
+            cache[0].clone(),
         )
-    };
+    })
+    .await;
 
-    let destination_bucket = bucket_prefix + "-subgraphs-merged-bucket";
+    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
 
-    let mut cache = Vec::with_capacity(10);
-    for _ in 0..10u8 {
-        let c = RedisCache::new(cache_address.to_owned())
-            .await
-            .expect("Could not create redis client");
-        cache.push(c);
-    }
-    let mut cache: [_; 10] = cache.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let cache = &mut cache;
-
-    let serializer = vec![SubgraphSerializer::default(); 10];
-    let mut serializer: [_; 10] = serializer.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let mut serializer = &mut serializer;
-
-    let mut s3_emitter = Vec::with_capacity(10);
-    for _ in 0..10u8 {
-        let emitter = S3EventEmitter::new(
-            s3_client.clone(),
-            destination_bucket.clone(),
-            time_based_key_fn,
-            move |_, _| async move { Ok(()) },
-        );
-        s3_emitter.push(emitter);
-    }
-    let mut s3_emitter: [_; 10] = s3_emitter.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let s3_emitter = &mut s3_emitter;
-
-    let s3_payload_retriever = vec![S3PayloadRetriever::new(
-        |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-        ZstdProtoDecoder::default(),
-        MetricReporter::<Stdout>::new("graph-merger"),
-    ); 10];
-
-    let mut s3_payload_retriever: [_; 10] = s3_payload_retriever.try_into().unwrap_or_else(|_|panic!("ahhh"));
-    let s3_payload_retriever = &mut s3_payload_retriever;
-
-    info!("Output events to: {}", destination_bucket);
-
-    let metric_reporter = MetricReporter::<Stdout>::new("graph-merger");
-
-    let fake_generator = vec![
-        GraphMerger::new(grapl_config::mg_alphas(), metric_reporter.clone(), cache[0].clone());
-        10
-    ];
-    let mut fake_generator: [_; 10] = fake_generator.try_into().unwrap_or_else(|_|panic!("ahhh"));
-    let mut fake_generator = &mut fake_generator;
+    let s3_payload_retriever = &mut make_ten(async {
+        S3PayloadRetriever::new(
+            |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+            ZstdProtoDecoder::default(),
+            MetricReporter::new(&env.service_name),
+        )
+    })
+    .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
-        std::env::var("QUEUE_URL").expect("QUEUE_URL"),
+        grapl_config::source_queue_url(),
+        grapl_config::dead_letter_queue_url(),
         cache,
         sqs_client.clone(),
-        fake_generator,
+        graph_merger,
         s3_payload_retriever,
         s3_emitter,
         serializer,
-    ).await;
+        MetricReporter::new(&env.service_name),
+    )
+    .await;
 
     info!("Exiting");
     println!("Exiting");
@@ -479,7 +444,6 @@ where
         let mut edge_res = None;
 
         let mut node_key_to_uid_map = HashMap::new();
-        use futures::future::FutureExt;
         let mut upserts = Vec::with_capacity(subgraph.nodes.len());
         for node in subgraph.nodes.values() {
             match self
@@ -524,12 +488,10 @@ where
         }
 
         if node_key_to_uid_map.is_empty() && upsert_res.is_some() {
-            return Err(Err(
-                GraphMergerError::Unexpected(format!(
-                    "All nodes failed to upsert {:?}",
-                    upsert_res
-                )),
-            ));
+            return Err(Err(GraphMergerError::Unexpected(format!(
+                "All nodes failed to upsert {:?}",
+                upsert_res
+            ))));
         }
 
         info!("Upserted: {} nodes", node_key_to_uid_map.len());
@@ -679,9 +641,7 @@ where
                 GeneratedSubgraphs::new(vec![subgraph]),
                 GraphMergerError::Unexpected(e.to_string()),
             ))),
-            (None, None) => {
-                Ok(GeneratedSubgraphs::new(vec![subgraph]))
-            }
+            (None, None) => Ok(GeneratedSubgraphs::new(vec![subgraph])),
         }
     }
 }
@@ -791,7 +751,7 @@ struct HashCache {
 pub enum HashCacheError {
     // standin until the never type (`!`) is stable
     #[error("HashCacheError.Unreachable")]
-    Unreachable
+    Unreachable,
 }
 
 impl CheckedError for HashCacheError {
@@ -823,7 +783,6 @@ impl sqs_executor::cache::Cache for HashCache {
         Ok(())
     }
 }
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

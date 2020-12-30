@@ -15,15 +15,16 @@ import {Watchful} from "cdk-watchful";
 export class Queues {
     readonly queue: sqs.Queue;
     readonly retry_queue: sqs.Queue;
+    readonly deadLetterQueue: sqs.Queue;
 
     constructor(scope: cdk.Construct, queue_name: string) {
-        const dead_letter_queue = new sqs.Queue(scope, 'DeadLetterQueue', {
+        this.deadLetterQueue = new sqs.Queue(scope, 'DeadLetterQueue', {
             queueName: queue_name + '-dead-letter-queue',
         });
 
         this.retry_queue = new sqs.Queue(scope, 'RetryQueue', {
             queueName: queue_name + '-retry-queue',
-            deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 3 },
+            deadLetterQueue: { queue: this.deadLetterQueue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(360),
         });
 
@@ -35,18 +36,21 @@ export class Queues {
     }
 }
 
+
 export interface FargateServiceProps {
     prefix: string;
     version: string;
     readsFrom: s3.IBucket;
     subscribesTo: sns.ITopic;
     serviceImage: ContainerImage;
+    retryServiceImage?: ContainerImage | undefined;
     vpc: ec2.IVpc;
     environment: {
         [key: string]: string;
     };
     writesTo?: s3.IBucket | undefined;
     command?: string[] | undefined;
+    retryCommand?: string[] | undefined;
     watchful?: Watchful | undefined;
 }
 
@@ -54,6 +58,7 @@ export class FargateService {
     readonly queues: Queues;
     readonly serviceName: string;
     readonly service: ecs_patterns.QueueProcessingFargateService;
+    readonly retryService: ecs_patterns.QueueProcessingFargateService;
 
     constructor(scope: cdk.Construct, serviceName: string, props: FargateServiceProps) {
         const cluster = new ecs.Cluster(scope, `${serviceName}Cluster`, {
@@ -65,6 +70,19 @@ export class FargateService {
         this.queues = queues;
         this.serviceName = serviceName;
 
+        const defaultEnv: { [key: string]: string; } = {
+            "BUCKET_PREFIX": props.prefix,
+            "DEAD_LETTER_QUEUE_URL": this.queues.deadLetterQueue.queueUrl,
+            "SOURCE_BUCKET_NAME": props.readsFrom.bucketName,
+            "GRAPL_LOG_LEVEL": "DEBUG",
+            "RUST_LOG": "warn,main=debug,sqs-executor=info",
+        };
+
+        const optionalEnv: { [key: string]: string;} = {};
+        if (props.writesTo) {
+            optionalEnv["DEST_BUCKET_NAME"] = props.writesTo.bucketName;
+        }
+
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
             scope,
@@ -75,8 +93,8 @@ export class FargateService {
             environment: {
                 "QUEUE_URL": this.queues.queue.queueUrl,
                 "SOURCE_QUEUE_URL": this.queues.queue.queueUrl,
-                "GRAPL_LOG_LEVEL": "DEBUG",
-                "RUST_LOG": "DEBUG",
+                ...optionalEnv,
+                ...defaultEnv,
                 ...props.environment
             },
             image: props.serviceImage,
@@ -84,8 +102,34 @@ export class FargateService {
             serviceName,
             cpu: 256,
             memoryLimitMiB: 512,
+            desiredTaskCount: 1,
         });
 
+        this.retryService = new ecs_patterns.QueueProcessingFargateService(
+            scope,
+            `${props.prefix}-${serviceName}RetryService`, {
+                cluster,
+                command: props.retryCommand || props.command,
+                enableLogging: true,
+                environment: {
+                    "QUEUE_URL": this.queues.retry_queue.queueUrl,
+                    "SOURCE_QUEUE_URL": this.queues.retry_queue.queueUrl,
+                    ...optionalEnv,
+                    ...defaultEnv,
+                    ...props.environment
+                },
+                image: props.retryServiceImage || props.serviceImage,
+                queue: queues.retry_queue,
+                serviceName: serviceName+"-retry-handler",
+                cpu: 256,
+                memoryLimitMiB: 512,
+                desiredTaskCount: 1,
+            });
+
+
+        // todo: we need permissions to publish to the dead letter queue
+        this.queues.deadLetterQueue.grantSendMessages(this.service.taskDefinition.taskRole);
+        this.queues.deadLetterQueue.grantSendMessages(this.retryService.taskDefinition.taskRole);
 
         if (props.readsFrom) {
             this.readsFrom(props.readsFrom);

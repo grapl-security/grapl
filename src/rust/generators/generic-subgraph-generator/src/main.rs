@@ -5,20 +5,27 @@ mod models;
 mod serialization;
 mod tests;
 
-use sqs_lambda::cache::{Cache, NopCache};
+use sqs_executor::cache::{Cache, NopCache};
 
 use tracing::*;
 
-use graph_generator_lib::run_graph_generator;
-use grapl_config::event_cache;
+use grapl_config::{event_cache, event_caches};
+use sqs_executor::event_decoder::PayloadDecoder;
 
 use crate::generator::GenericSubgraphGenerator;
 use crate::serialization::ZstdJsonDecoder;
 use grapl_observe::metric_reporter::MetricReporter;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 use std::io::Stdout;
 use std::time::Duration;
+use grapl_config::env_helpers::s3_event_emitters_from_env;
+use sqs_executor::event_retriever::S3PayloadRetriever;
+use rusoto_s3::S3Client;
+use rusoto_core::Region;
+use rusoto_sqs::SqsClient;
+use grapl_config::env_helpers::FromEnv;
+use std::str::FromStr;
+use sqs_executor::{make_ten, time_based_key_fn};
+use grapl_service::serialization::zstd_proto::SubgraphSerializer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,36 +33,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting generic-subgraph-generator");
 
-    if env.is_local {
-        let generator = GenericSubgraphGenerator::new(NopCache {});
+    let sqs_client = SqsClient::from_env();
+    let s3_client = S3Client::from_env();
 
-        run_graph_generator(
-            generator,
-            ZstdJsonDecoder::default(),
-            ConsumePolicyBuilder::default(),
-            CompletionPolicy::new(
-                1,                      // Buffer up to 1 message
-                Duration::from_secs(1), // Buffer for up to 1 second
-            ),
-            MetricReporter::<Stdout>::new("generic-subgraph-generator"),
-        )
+    let destination_bucket = grapl_config::dest_bucket();
+    let cache = &mut event_caches(&env).await;
+
+    let generic_subgraph_generator = &mut make_ten(async {
+        GenericSubgraphGenerator::new(NopCache {})
+    })
         .await;
-    } else {
-        let generator = GenericSubgraphGenerator::new(event_cache().await);
 
-        let completion_policy = ConsumePolicyBuilder::default()
-            .with_max_empty_receives(1)
-            .with_stop_at(Duration::from_secs(10));
+    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
 
-        run_graph_generator(
-            generator,
+    let s3_payload_retriever = &mut make_ten(async {
+        S3PayloadRetriever::new(
+            |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
             ZstdJsonDecoder::default(),
-            completion_policy,
-            CompletionPolicy::new(10, Duration::from_secs(2)),
-            MetricReporter::<Stdout>::new("generic-subgraph-generator"),
+            MetricReporter::new(&env.service_name),
         )
+    })
         .await;
-    }
+
+    info!("Starting process_loop");
+    sqs_executor::process_loop(
+        grapl_config::source_queue_url(),
+        grapl_config::dead_letter_queue_url(),
+        cache,
+        sqs_client.clone(),
+        generic_subgraph_generator,
+        s3_payload_retriever,
+        s3_emitter,
+        serializer,
+        MetricReporter::new(&env.service_name),
+    )
+        .await;
+
+    info!("Exiting");
+    println!("Exiting");
+
 
     Ok(())
 }

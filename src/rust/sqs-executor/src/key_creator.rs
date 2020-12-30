@@ -6,7 +6,6 @@ pub trait KeyGenerator {
     fn generate_key(&mut self, capability: u64) -> String;
 }
 
-
 pub struct S3KeyGenerator {
     bucket: String,
     serialization: String,
@@ -17,7 +16,7 @@ impl S3KeyGenerator {
     pub fn new(
         bucket: impl Into<String>,
         serialization: impl Into<String>,
-        compression: impl Into<String>
+        compression: impl Into<String>,
     ) -> Self {
         Self {
             bucket: bucket.into(),
@@ -38,28 +37,21 @@ impl KeyGenerator for S3KeyGenerator {
 
         format!(
             "{bucket}/{day}/{seconds}/{serialization}/{compression}-{capability}",
-            bucket=self.bucket,
-            day=cur_day,
-            seconds=cur_secs,
-            serialization=self.serialization,
-            compression=self.compression,
-            capability=capability,
+            bucket = self.bucket,
+            day = cur_day,
+            seconds = cur_secs,
+            serialization = self.serialization,
+            compression = self.compression,
+            capability = capability,
         )
-
     }
 }
 
 pub struct ZstdProtoKeyGenerator(S3KeyGenerator);
 
 impl ZstdProtoKeyGenerator {
-    pub fn new(
-        bucket: impl Into<String>,
-    ) -> Self {
-        Self(
-            S3KeyGenerator::new(
-                bucket, "proto_v0" ,"zstd_nodict",
-            )
-        )
+    pub fn new(bucket: impl Into<String>) -> Self {
+        Self(S3KeyGenerator::new(bucket, "proto_v0", "zstd_nodict"))
     }
 }
 

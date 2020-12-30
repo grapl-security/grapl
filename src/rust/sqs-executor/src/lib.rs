@@ -1,132 +1,68 @@
 use std::error::Error;
 use std::fmt::Debug;
 use std::future::Future;
+use std::io::Stdout;
 use std::panic::AssertUnwindSafe;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use async_trait::async_trait;
 use futures_util::FutureExt;
 use rusoto_core::RusotoError;
-use rusoto_s3::{S3, S3Client};
-use rusoto_sqs::{DeleteMessageError, DeleteMessageRequest, Message as SqsMessage, ReceiveMessageError, ReceiveMessageRequest};
+use rusoto_s3::{S3Client, S3};
+use rusoto_sqs::{
+    DeleteMessageError, DeleteMessageRequest, Message as SqsMessage, ReceiveMessageError,
+    ReceiveMessageRequest, SendMessageError as InnerSendMessageError, SendMessageRequest,
+};
 use rusoto_sqs::{Sqs, SqsClient};
 use thiserror::Error;
-use tracing::{info, error, warn};
+use tokio::task::{JoinError, JoinHandle};
+use tokio::time::Elapsed;
+use tracing::debug;
+use tracing::{error, info, warn};
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
 use event_retriever::S3PayloadRetriever;
+use grapl_observe::metric_reporter::MetricReporter;
+use grapl_observe::timers::time_fut_ms;
 use s3_event_emitter::S3EventEmitter;
 
 use crate::completion_event_serializer::CompletionEventSerializer;
 use crate::errors::{CheckedError, ExecutorError, Recoverable};
 use crate::event_decoder::PayloadDecoder;
-use crate::event_retriever::PayloadRetriever;
 use crate::event_handler::CompletedEvents;
-use tracing::debug;
+use crate::event_retriever::PayloadRetriever;
 
 pub mod cache;
-pub mod redis_cache;
-pub mod event_retriever;
-pub mod event_decoder;
-pub mod event_handler;
-pub mod event_emitter;
-pub mod s3_event_emitter;
 pub mod completion_event_serializer;
-pub mod key_creator;
 pub mod errors;
+pub mod event_decoder;
+pub mod event_emitter;
+pub mod event_handler;
+pub mod event_retriever;
+pub mod key_creator;
+pub mod redis_cache;
+pub mod rusoto_helpers;
+pub mod s3_event_emitter;
 
-// Message - Contains information necessary to retrieve payload
-// Payload - Encoded set of Events
-// Event - Individual unit to process, each Event must have an identity
-
-// Sqs Message -> S3 Payload -> Sysmon Event
-//
-
-pub async fn get_message<SqsT>(queue_url: String, sqs_client: SqsT) -> Result<Vec<SqsMessage>, RusotoError<ReceiveMessageError>>
-    where SqsT: Sqs + Clone + Send + Sync + 'static,
+pub async fn make_ten<F, T>(f: F) -> [T; 10]
+where
+    F: Future<Output = T>,
+    T: Clone,
 {
-    let messages = sqs_client.receive_message(ReceiveMessageRequest {
-        max_number_of_messages: Some(10),
-        queue_url,
-        visibility_timeout: Some(30),
-        wait_time_seconds: Some(20),
-        ..Default::default()
-    });
-
-    let messages = tokio::time::timeout(
-        std::time::Duration::from_secs(21),
-        messages,
-    );
-    let messages = messages.await.expect("timeout")?
-    .messages.unwrap_or_else(|| vec![]);
-
-    Ok(messages)
-}
-
-impl CheckedError for RusotoError<DeleteMessageError> {
-    fn error_type(&self) -> Recoverable {
-        match self {
-            RusotoError::Service(DeleteMessageError::InvalidIdFormat(_)) => {
-                Recoverable::Persistent
-            }
-            RusotoError::Service(DeleteMessageError::ReceiptHandleIsInvalid(_)) => {
-                Recoverable::Persistent
-            }
-            RusotoError::HttpDispatch(e) => {
-                Recoverable::Transient
-            }
-            RusotoError::Credentials(_) => {
-                // todo: Reasonable
-                Recoverable::Transient
-            }
-            RusotoError::Validation(_) => {
-                // todo: Reasonable?
-                Recoverable::Transient
-            }
-            RusotoError::ParseError(_) => {
-                // todo: Is this reasonable?
-                Recoverable::Transient
-            }
-            RusotoError::Unknown(_) => {
-                Recoverable::Transient
-            }
-            RusotoError::Blocking => {
-                Recoverable::Transient
-            }
-        }
-    }
-}
-
-fn delete_message<SqsT>(
-    sqs_client: SqsT,
-    queue_url: String,
-    receipt_handle: String,
-) -> tokio::task::JoinHandle<()>
-    where SqsT: Sqs + Clone + Send + Sync + 'static,
-{
-    tokio::task::spawn(async move {
-        for _ in 0..5u8 {
-            match sqs_client.clone().delete_message(
-                DeleteMessageRequest {
-                    queue_url: queue_url.clone(),
-                    receipt_handle: receipt_handle.clone(),
-                }
-            )
-                .await {
-                Ok(_) => {
-                    debug!("Deleted message: {}", receipt_handle.clone());
-                    return
-                },
-                Err(e) => {
-                    error!("Failed to delete_message with: {:?} {:?}", e, e.error_type());
-                    if let Recoverable::Persistent = e.error_type() {
-                        return;
-                    }
-                }
-            }
-        }
-    })
+    let t = f.await;
+    [
+        t.clone(),
+        t.clone(),
+        t.clone(),
+        t.clone(),
+        t.clone(),
+        t.clone(),
+        t.clone(),
+        t.clone(),
+        t.clone(),
+        t,
+    ]
 }
 
 async fn process_message<
@@ -141,42 +77,36 @@ async fn process_message<
     SerializerErrorT,
     S3ClientT,
     F,
-    OnEmission,
-    EmissionResult,
     CompletionEventSerializerT,
 >(
     next_message: SqsMessage,
     queue_url: String,
+    dead_letter_queue_url: String,
     cache: &mut CacheT,
     sqs_client: SqsT,
     event_handler: &mut EventHandlerT,
     s3_payload_retriever: &mut S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT>,
-    s3_emitter: &mut S3EventEmitter<S3ClientT, F, OnEmission, EmissionResult>,
+    s3_emitter: &mut S3EventEmitter<S3ClientT, F>,
     serializer: &mut CompletionEventSerializerT,
-)
-    where
-        CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
-        SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
-        SqsT: Sqs + Clone + Send + Sync + 'static,
-        DecoderT: PayloadDecoder<InputEventT> + Clone + Send + 'static,
-        InputEventT: Send,
-        EventHandlerT: EventHandler<
-            InputEvent=InputEventT,
-            OutputEvent=OutputEventT,
-            Error=HandlerErrorT,
-        >,
-        OutputEventT: Clone + Send + Sync + 'static,
-        HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
-        SerializerErrorT: Error + Debug + Send + Sync + 'static,
-        S3ClientT: S3 + Clone + Send + Sync + 'static,
-        F: Fn(&[u8]) -> String + Send + Sync,
-        EmissionResult: Future<Output=Result<(), Box<dyn Error + Send + Sync + 'static>>> + Send + 'static,
-        OnEmission: Fn(String, String) -> EmissionResult + Send + Sync + 'static,
-        CompletionEventSerializerT: CompletionEventSerializer<
-            CompletedEvent=OutputEventT,
-            Output=Vec<u8>,
-            Error=SerializerErrorT,
-        >
+    mut metric_reporter: MetricReporter<Stdout>,
+) where
+    CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
+    SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
+    SqsT: Sqs + Clone + Send + Sync + 'static,
+    DecoderT: PayloadDecoder<InputEventT> + Clone + Send + 'static,
+    InputEventT: Send,
+    EventHandlerT:
+        EventHandler<InputEvent = InputEventT, OutputEvent = OutputEventT, Error = HandlerErrorT>,
+    OutputEventT: Clone + Send + Sync + 'static,
+    HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
+    SerializerErrorT: Error + Debug + Send + Sync + 'static,
+    S3ClientT: S3 + Clone + Send + Sync + 'static,
+    F: Fn(&[u8]) -> String + Send + Sync,
+    CompletionEventSerializerT: CompletionEventSerializer<
+        CompletedEvent = OutputEventT,
+        Output = Vec<u8>,
+        Error = SerializerErrorT,
+    >,
 {
     info!("Retrieving payload");
     let payload = s3_payload_retriever.retrieve_event(&next_message).await;
@@ -184,23 +114,26 @@ async fn process_message<
     let events = match payload {
         Ok(Some(events)) => events,
         Ok(None) => {
-            delete_message(
+            rusoto_helpers::delete_message(
                 sqs_client.clone(),
                 queue_url.to_owned(),
                 next_message.receipt_handle.expect("missing receipt_handle"),
+                metric_reporter.clone(),
             );
-
+            // metric_reporter.histogram();
             return;
         }
         Err(e) => {
-            // If this thing's persistent, let's just delete the message
-            // todo: It should actually be moved to the dead-letter, not deleted
             if let Recoverable::Persistent = e.error_type() {
-                delete_message(
+                rusoto_helpers::move_to_dead_letter(
                     sqs_client.clone(),
+                    next_message.body.as_ref().unwrap(),
+                    dead_letter_queue_url,
                     queue_url.to_owned(),
                     next_message.receipt_handle.expect("missing receipt_handle"),
-                );
+                    metric_reporter.clone(),
+                )
+                .await;
             }
             return;
         }
@@ -210,10 +143,7 @@ async fn process_message<
     let mut completed = CompletedEvents::default();
 
     // completed.clear();
-    let processing_result = event_handler.handle_event(
-        events, &mut completed,
-    ).await;
-
+    let processing_result = event_handler.handle_event(events, &mut completed).await;
 
     match processing_result {
         Ok(total) => {
@@ -223,7 +153,9 @@ async fn process_message<
                 .expect("Serializing failed");
             // emit event
             // todo: we should retry event emission
-            s3_emitter.emit_event(event).await
+            s3_emitter
+                .emit_event(event)
+                .await
                 .expect("Failed to emit event");
 
             for identity in completed.identities.drain(..) {
@@ -232,11 +164,13 @@ async fn process_message<
                 }
             }
             // ack the message
-            delete_message(
+            rusoto_helpers::delete_message(
                 sqs_client.clone(),
                 queue_url.to_owned(),
                 next_message.receipt_handle.expect("missing receipt_handle"),
-            ).await;
+                metric_reporter.clone(),
+            )
+            .await;
         }
         Err(Ok((partial, e))) => {
             error!("Processing failed with: {:?}", e);
@@ -245,7 +179,9 @@ async fn process_message<
                 .expect("Serializing failed");
             // emit event
             // todo: we should retry event emission
-            s3_emitter.emit_event(event).await
+            s3_emitter
+                .emit_event(event)
+                .await
                 .expect("Failed to emit event");
 
             for identity in completed.identities.drain(..) {
@@ -253,32 +189,41 @@ async fn process_message<
                     warn!("Failed to store identity in cache: {:?}", e);
                 }
             }
-
             if let Recoverable::Persistent = e.error_type() {
                 // todo: We should move this to the deadletter directly
-                delete_message(
+                rusoto_helpers::move_to_dead_letter(
                     sqs_client.clone(),
+                    next_message.body.as_ref().unwrap(),
+                    dead_letter_queue_url,
                     queue_url.to_owned(),
                     next_message.receipt_handle.expect("missing receipt_handle"),
-                );
+                    metric_reporter.clone(),
+                )
+                .await;
             }
         }
         Err(Err(e)) => {
-            error!("Handler failed with: {:?} Recoverable: {:?}", e, e.error_type());
+            error!(
+                "Handler failed with: {:?} Recoverable: {:?}",
+                e,
+                e.error_type()
+            );
             if let Recoverable::Persistent = e.error_type() {
-                // todo: We should move this to the deadletter directly
-                delete_message(
+                rusoto_helpers::move_to_dead_letter(
                     sqs_client.clone(),
+                    next_message.body.as_ref().unwrap(),
+                    dead_letter_queue_url,
                     queue_url.to_owned(),
                     next_message.receipt_handle.expect("missing receipt_handle"),
-                );
+                    metric_reporter.clone(),
+                )
+                .await;
             }
             // should we retry? idk
             // otherwise we can just do nothing
         }
     }
 }
-
 
 async fn _process_loop<
     CacheT,
@@ -292,53 +237,52 @@ async fn _process_loop<
     SerializerErrorT,
     S3ClientT,
     F,
-    OnEmission,
-    EmissionResult,
     CompletionEventSerializerT,
 >(
     queue_url: String,
+    dead_letter_queue_url: String,
     cache: &mut [CacheT; 10],
     sqs_client: SqsT,
     event_handler: &mut [EventHandlerT; 10],
     s3_payload_retriever: &mut [S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT>; 10],
-    s3_emitter: &mut [S3EventEmitter<S3ClientT, F, OnEmission, EmissionResult>; 10],
+    s3_emitter: &mut [S3EventEmitter<S3ClientT, F>; 10],
     serializer: &mut [CompletionEventSerializerT; 10],
-)
-    where
-        CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
-        SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
-        SqsT: Sqs + Clone + Send + Sync + 'static,
-        DecoderT: PayloadDecoder<InputEventT> + Clone + Send + 'static,
-        InputEventT: Send,
-        EventHandlerT: EventHandler<
-            InputEvent=InputEventT,
-            OutputEvent=OutputEventT,
-            Error=HandlerErrorT,
-        >,
-        OutputEventT: Clone + Send + Sync + 'static,
-        HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
-        SerializerErrorT: Error + Debug + Send + Sync + 'static,
-        S3ClientT: S3 + Clone + Send + Sync + 'static,
-        F: Fn(&[u8]) -> String + Send + Sync,
-        EmissionResult: Future<Output=Result<(), Box<dyn Error + Send + Sync + 'static>>> + Send + 'static,
-        OnEmission: Fn(String, String) -> EmissionResult + Send + Sync + 'static,
-        CompletionEventSerializerT: CompletionEventSerializer<
-            CompletedEvent=OutputEventT,
-            Output=Vec<u8>,
-            Error=SerializerErrorT,
-        >
+    mut metric_reporter: MetricReporter<Stdout>,
+) where
+    CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
+    SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
+    SqsT: Sqs + Clone + Send + Sync + 'static,
+    DecoderT: PayloadDecoder<InputEventT> + Clone + Send + 'static,
+    InputEventT: Send,
+    EventHandlerT:
+        EventHandler<InputEvent = InputEventT, OutputEvent = OutputEventT, Error = HandlerErrorT>,
+    OutputEventT: Clone + Send + Sync + 'static,
+    HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
+    SerializerErrorT: Error + Debug + Send + Sync + 'static,
+    S3ClientT: S3 + Clone + Send + Sync + 'static,
+    F: Fn(&[u8]) -> String + Send + Sync,
+    CompletionEventSerializerT: CompletionEventSerializer<
+        CompletedEvent = OutputEventT,
+        Output = Vec<u8>,
+        Error = SerializerErrorT,
+    >,
 {
     loop {
         info!("Retrieving messages");
         println!("Retrieving messages");
-        let message_batch = get_message(
+        let message_batch = rusoto_helpers::get_message(
             queue_url.to_string(),
             sqs_client.clone(),
-        ).await.expect("failed to get messages");
-        info!("Received {} messages", message_batch.len());
-        println!("Received {} messages", message_batch.len());
+            &mut metric_reporter,
+        )
+        .await
+        .expect("failed to get messages");
+        let message_batch_len = message_batch.len();
+
+        info!("Received {} messages", message_batch_len);
+        println!("Received {} messages", message_batch_len);
         if message_batch.is_empty() {
-            continue
+            continue;
         }
         // We can't parallelize this because of the shared mutable state
         // of the retriever, emitter, and serializer
@@ -347,27 +291,35 @@ async fn _process_loop<
         // and then just pick one of them at a time.
 
         // let mut tasks = Vec::with_capacity(message_batch.len());
-        let combos = message_batch.into_iter()
+        let combos = message_batch
+            .into_iter()
             .zip(&mut *event_handler)
             .zip(&mut *s3_payload_retriever)
             .zip(&mut *s3_emitter)
             .zip(&mut *serializer)
-            .zip(&mut *cache)
-            ;
+            .zip(&mut *cache);
+
+        let mut process_futs = Vec::with_capacity(message_batch_len);
         for combo in combos {
-            let ((((((next_message, event_handler), s3_payload_retriever)), s3_emitter), serializer), cache) = combo;
-            process_message(
+            let (
+                (((((next_message, event_handler), s3_payload_retriever)), s3_emitter), serializer),
+                cache,
+            ) = combo;
+            let p = process_message(
                 next_message,
                 queue_url.clone(),
+                dead_letter_queue_url.clone(),
                 cache,
                 sqs_client.clone(),
                 event_handler,
                 s3_payload_retriever,
                 s3_emitter,
                 serializer,
-            ).await;
+                metric_reporter.clone(),
+            );
+            process_futs.push(p);
         }
-        // let results = futures::future::join_all(tasks).await;
+        futures::future::join_all(process_futs).await;
     }
 }
 
@@ -383,52 +335,48 @@ pub async fn process_loop<
     SerializerErrorT,
     S3ClientT,
     F,
-    OnEmission,
-    EmissionResult,
     CompletionEventSerializerT,
 >(
     queue_url: String,
+    dead_letter_queue_url: String,
     cache: &mut [CacheT; 10],
     sqs_client: SqsT,
     event_handler: &mut [EventHandlerT; 10],
     s3_payload_retriever: &mut [S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT>; 10],
-    s3_emitter: &mut [S3EventEmitter<S3ClientT, F, OnEmission, EmissionResult>; 10],
+    s3_emitter: &mut [S3EventEmitter<S3ClientT, F>; 10],
     serializer: &mut [CompletionEventSerializerT; 10],
-)
-    where
-        CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
-        SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
-        SqsT: Sqs + Clone + Send + Sync + 'static,
-        DecoderT: PayloadDecoder<InputEventT> + Clone + Send + 'static,
-        InputEventT: Send,
-        EventHandlerT: EventHandler<
-            InputEvent=InputEventT,
-            OutputEvent=OutputEventT,
-            Error=HandlerErrorT,
-        >,
-        OutputEventT: Clone + Send + Sync + 'static,
-        HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
-        SerializerErrorT: Error + Debug + Send + Sync + 'static,
-        S3ClientT: S3 + Clone + Send + Sync + 'static,
-        F: Fn(&[u8]) -> String + Send + Sync,
-        EmissionResult: Future<Output=Result<(), Box<dyn Error + Send + Sync + 'static>>> + Send + 'static,
-        OnEmission: Fn(String, String) -> EmissionResult + Send + Sync + 'static,
-        CompletionEventSerializerT: CompletionEventSerializer<
-            CompletedEvent=OutputEventT,
-            Output=Vec<u8>,
-            Error=SerializerErrorT,
-        >
+    mut metric_reporter: MetricReporter<Stdout>,
+) where
+    CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
+    SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
+    SqsT: Sqs + Clone + Send + Sync + 'static,
+    DecoderT: PayloadDecoder<InputEventT> + Clone + Send + 'static,
+    InputEventT: Send,
+    EventHandlerT:
+        EventHandler<InputEvent = InputEventT, OutputEvent = OutputEventT, Error = HandlerErrorT>,
+    OutputEventT: Clone + Send + Sync + 'static,
+    HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
+    SerializerErrorT: Error + Debug + Send + Sync + 'static,
+    S3ClientT: S3 + Clone + Send + Sync + 'static,
+    F: Fn(&[u8]) -> String + Send + Sync,
+    CompletionEventSerializerT: CompletionEventSerializer<
+        CompletedEvent = OutputEventT,
+        Output = Vec<u8>,
+        Error = SerializerErrorT,
+    >,
 {
     loop {
         debug!("Outer process loop");
         let f = _process_loop(
             queue_url.clone(),
+            dead_letter_queue_url.clone(),
             cache,
             sqs_client.clone(),
             event_handler,
             s3_payload_retriever,
             s3_emitter,
             serializer,
+            metric_reporter.clone(),
         );
         let f = AssertUnwindSafe(f);
         if let Err(e) = f.catch_unwind().await {

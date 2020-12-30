@@ -1,6 +1,6 @@
 use log::*;
 use serde::Deserialize;
-use sqs_lambda::event_decoder::PayloadDecoder;
+use sqs_executor::event_decoder::PayloadDecoder;
 use std::io::Cursor;
 
 // TODO: MOVE THIS INTO A SHARED LIBRARY FOR REUSE BETWEEN GENERIC SUBGRAPH GENERATOR AND THIS GENERATOR

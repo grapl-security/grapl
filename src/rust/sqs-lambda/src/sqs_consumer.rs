@@ -192,7 +192,7 @@ impl<S: Sqs + Send + Sync + 'static, CH: CompletionHandler + Clone + Send + Sync
             });
 
         self.metric_reporter
-            .counter(
+            .counter_notags(
                 "sqs_consumer.receive_message.count",
                 recv.messages.as_ref().map(|m| m.len()).unwrap_or_default() as f64,
                 None,

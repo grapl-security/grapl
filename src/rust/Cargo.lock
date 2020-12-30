@@ -39,7 +39,7 @@ name = "analyzer-dispatcher"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "base16",
  "base64 0.10.1",
  "bytes 0.5.6",
@@ -178,20 +178,6 @@ checksum = "8ef69d388b3f3692968c696e7a2356c23bd16fe88ff0c402c34fe8a5fa262aa2"
 dependencies = [
  "base64 0.9.3",
  "bytes 0.4.12",
- "chrono",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
-name = "aws_lambda_events"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fa8d1a23d23df1036a0976b032f40860d7521c98ef65c03c385b1acd1c8fb62"
-dependencies = [
- "base64 0.12.3",
- "bytes 0.5.6",
  "chrono",
  "serde",
  "serde_derive",
@@ -365,9 +351,6 @@ name = "bytes"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4cec68f03f32e44924783795810fa50a7035d8c8ebe78580ad7e6c703fba38"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "cc"
@@ -1211,16 +1194,16 @@ name = "generic-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "base16",
  "chrono",
  "eyre 0.4.3",
  "failure",
  "futures 0.3.8",
- "graph-generator-lib",
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
+ "grapl-service",
  "lambda_runtime",
  "lazy_static",
  "log 0.4.11",
@@ -1234,8 +1217,9 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "simple_logger",
- "sqs-lambda",
+ "sqs-executor",
  "stopwatch",
+ "thiserror",
  "tokio 0.2.24",
  "tokio-compat",
  "tracing",
@@ -1271,31 +1255,6 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 [[package]]
 name = "graph-generator-lib"
 version = "0.1.9"
-dependencies = [
- "aws_lambda_events 0.3.1",
- "base16",
- "base64 0.9.3",
- "chrono",
- "failure",
- "grapl-config",
- "grapl-graph-descriptions",
- "grapl-observe",
- "lambda_runtime",
- "log 0.4.11",
- "prost",
- "rusoto_core",
- "rusoto_credential",
- "rusoto_s3",
- "rusoto_sqs",
- "rusoto_sts",
- "serde",
- "serde_json",
- "sha2 0.7.1",
- "sqs-lambda",
- "tokio 0.2.24",
- "tokio-compat",
- "zstd",
-]
 
 [[package]]
 name = "graph-merger"
@@ -1303,7 +1262,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "base16",
  "base64 0.10.1",
  "chrono",
@@ -1343,13 +1302,15 @@ dependencies = [
 name = "grapl-config"
 version = "0.0.2"
 dependencies = [
+ "async-trait",
  "color-eyre 0.3.4",
  "eyre 0.4.3",
+ "grapl-observe",
  "log 0.4.11",
  "rusoto_core",
  "rusoto_s3",
  "rusoto_sqs",
- "sqs-lambda",
+ "sqs-executor",
  "tokio 0.2.24",
  "tracing",
  "tracing-futures",
@@ -1381,9 +1342,25 @@ dependencies = [
  "dgraph-tonic",
  "lazy_static",
  "log 0.4.11",
+ "pin-project 1.0.2",
  "regex",
  "stopwatch",
  "thiserror",
+]
+
+[[package]]
+name = "grapl-service"
+version = "0.1.0"
+dependencies = [
+ "grapl-config",
+ "grapl-graph-descriptions",
+ "prost",
+ "serde",
+ "serde_json",
+ "sqs-executor",
+ "thiserror",
+ "tracing",
+ "zstd",
 ]
 
 [[package]]
@@ -1961,7 +1938,7 @@ name = "metric-forwarder"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "base64 0.10.1",
  "chrono",
  "flate2",
@@ -2091,7 +2068,7 @@ name = "node-identifier"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "base58",
  "base64 0.9.3",
  "bytes 0.5.6",
@@ -2288,6 +2265,7 @@ dependencies = [
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
+ "grapl-service",
  "lambda_runtime",
  "log 0.4.11",
  "regex",
@@ -2296,9 +2274,11 @@ dependencies = [
  "rusoto_sqs",
  "serde",
  "serde_json",
- "sqs-lambda",
+ "sqs-executor",
+ "thiserror",
  "tokio 0.2.24",
  "tokio-compat",
+ "tracing",
  "zstd",
 ]
 
@@ -3025,22 +3005,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusoto_sts"
-version = "0.45.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3815b8c0fc1c50caf9e87603f23daadfedb18d854de287b361c69f68dc9d49e0"
-dependencies = [
- "async-trait",
- "bytes 0.5.6",
- "chrono",
- "futures 0.3.8",
- "rusoto_core",
- "serde_urlencoded",
- "tempfile",
- "xml-rs",
-]
-
-[[package]]
 name = "rust-argon2"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3253,9 +3217,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.60"
+version = "1.0.61"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1500e84d27fe482ed1dc791a56eddc2f230046a040fa908c08bda1d9fb615779"
+checksum = "4fceb2595057b6891a4ee808f70054bd2d12f0e97f1cbb78689b59f676df325a"
 dependencies = [
  "itoa",
  "ryu",
@@ -3429,6 +3393,7 @@ dependencies = [
  "rusoto_sqs",
  "serde",
  "serde_json",
+ "tap",
  "thiserror",
  "tokio 0.2.24",
  "tracing",
@@ -3443,7 +3408,7 @@ version = "0.21.1"
 dependencies = [
  "aktors",
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "chrono",
  "color-eyre 0.3.4",
  "crossbeam-channel 0.4.4",
@@ -3657,12 +3622,11 @@ name = "sysmon-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "base16",
  "chrono",
  "failure",
  "futures 0.3.8",
- "graph-generator-lib",
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
@@ -3692,6 +3656,12 @@ dependencies = [
  "uuid 0.8.1",
  "zstd",
 ]
+
+[[package]]
+name = "tap"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36474e732d1affd3a6ed582781b3683df3d0563714c59c39591e8ff707cf078e"
 
 [[package]]
 name = "tempdir"

@@ -44,13 +44,13 @@ use sessiondb::SessionDb;
 use sessions::UnidSession;
 use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;
-use sqs_executor::event_decoder::PayloadDecoder;
-use sqs_executor::event_handler::{EventHandler, CompletedEvents};
-use sqs_executor::redis_cache::RedisCache;
 use sqs_executor::errors::{CheckedError, Recoverable};
+use sqs_executor::event_decoder::PayloadDecoder;
+use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
+use sqs_executor::redis_cache::RedisCache;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
-use sqs_executor::time_based_key_fn;
+use sqs_executor::{make_ten, time_based_key_fn};
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -606,7 +606,6 @@ async fn attribute_asset_ids(
 
 #[derive(thiserror::Error, Debug)]
 pub enum NodeIdentifierError {
-
     #[error("Unexpected error")]
     Unexpected,
 }
@@ -757,7 +756,7 @@ where
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
 
         if identified_graph.is_empty() {
-            return Err(Err(NodeIdentifierError::Unexpected))
+            return Err(Err(NodeIdentifierError::Unexpected));
         }
 
         let identities: Vec<_> = unid_id_map.keys().collect();
@@ -770,14 +769,12 @@ where
             info!("Partial Success, identified {} nodes", identities.len());
             Err(Ok((
                 GeneratedSubgraphs::new(vec![identified_graph]),
-                NodeIdentifierError::Unexpected,  // todo: Use a real error here
-                // sqs_lambda::error::Error::ProcessingError(attribution_failure.unwrap().to_string()),
+                NodeIdentifierError::Unexpected, // todo: Use a real error here
+                                                 // sqs_lambda::error::Error::ProcessingError(attribution_failure.unwrap().to_string()),
             )))
         } else {
             info!("Identified all nodes");
-            Ok(GeneratedSubgraphs::new(vec![
-                identified_graph,
-            ]))
+            Ok(GeneratedSubgraphs::new(vec![identified_graph]))
         }
     }
 }
@@ -822,8 +819,8 @@ impl CompletionEventSerializer for SubgraphSerializer {
         if subgraph.is_empty() {
             warn!(
                 concat!(
-                "Output subgraph is empty. Serializing to empty vector.",
-                "pre_nodes: {} pre_edges: {}"
+                    "Output subgraph is empty. Serializing to empty vector.",
+                    "pre_nodes: {} pre_edges: {}"
                 ),
                 pre_nodes, pre_edges,
             );
@@ -875,12 +872,11 @@ where
     }
 }
 
-
 pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
+    let env = grapl_config::init_grapl_env!();
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
     debug!("Queue Url: {}", source_queue_url);
     let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-
 
     let sqs_client = SqsClient::new(grapl_config::region());
     let s3_client = S3Client::new(grapl_config::region());
@@ -898,50 +894,43 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     };
     let destination_bucket = bucket_prefix + "-subgraphs-generated-bucket";
 
-    let mut cache = Vec::with_capacity(10);
-    for _ in 0..10u8 {
-        let c = RedisCache::new(cache_address.to_owned())
-            .await
-            .expect("Could not create redis client");
-        cache.push(c);
-    }
-    let mut cache: [_; 10] = cache.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let cache = &mut cache;
+    let cache = &mut make_ten(async {
+        RedisCache::new(
+            cache_address.to_owned(),
+            MetricReporter::<Stdout>::new(&env.service_name),
+        )
+        .await
+        .expect("Could not create redis client")
+    })
+    .await;
 
-    let serializer = vec![SubgraphSerializer::default(); 10];
-    let mut serializer: [_; 10] = serializer.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let mut serializer = &mut serializer;
+    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
 
-    let mut s3_emitter = Vec::with_capacity(10);
-    for _ in 0..10u8 {
-        let emitter = S3EventEmitter::new(
+    let s3_emitter = &mut make_ten(async {
+        S3EventEmitter::new(
             s3_client.clone(),
             destination_bucket.clone(),
             time_based_key_fn,
-            move |_, _| async move { Ok(()) },
-        );
-        s3_emitter.push(emitter);
-    }
-    let mut s3_emitter: [_; 10] = s3_emitter.try_into().unwrap_or_else(|_| panic!("ahhh"));
-    let s3_emitter = &mut s3_emitter;
+            MetricReporter::new(&env.service_name),
+        )
+    })
+    .await;
 
-    let s3_payload_retriever = vec![S3PayloadRetriever::new(
-        |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-        ZstdProtoDecoder::default(),
-        MetricReporter::<Stdout>::new("node-identifier"),
-    ); 10];
-
-    let mut s3_payload_retriever: [_; 10] = s3_payload_retriever.try_into().unwrap_or_else(|_|panic!("ahhh"));
-    let s3_payload_retriever = &mut s3_payload_retriever;
-
+    let s3_payload_retriever = &mut make_ten(async {
+        S3PayloadRetriever::new(
+            |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+            ZstdProtoDecoder::default(),
+            MetricReporter::new(&env.service_name),
+        )
+    })
+    .await;
     info!("Output events to: {}", destination_bucket);
     let region = grapl_config::region();
 
     let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
 
     let dynamo = DynamoDbClient::new(region.clone());
-    let dyn_session_db =
-        SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
+    let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
     let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
     let asset_identifier = AssetIdentifier::new(asset_id_db);
 
@@ -957,84 +946,36 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     let asset_identifier = AssetIdentifier::new(asset_id_db);
 
     let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-    // let node_identifier = NodeIdentifier::new(
-    //     asset_id_db,
-    //     dyn_node_identifier,
-    //     asset_identifier,
-    //     dynamo.clone(),
-    //     should_default,
-    //     cache.clone(),
-    //     region.clone(),
-    // );
-
-
-    let fake_generator = vec![
+    let node_identifier = &mut make_ten(async {
         NodeIdentifier::new(
-            asset_id_db.clone(),
-            dyn_node_identifier.clone(),
-            asset_identifier.clone(),
+            asset_id_db,
+            dyn_node_identifier,
+            asset_identifier,
             dynamo.clone(),
             should_default,
             cache[0].to_owned(),
             region.clone(),
-        );
-        10
-    ];
-    let mut fake_generator: [_; 10] = fake_generator.try_into().unwrap_or_else(|_|panic!("ahhh"));
-    let mut fake_generator = &mut fake_generator;
+        )
+    })
+    .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
         std::env::var("QUEUE_URL").expect("QUEUE_URL"),
+        std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
         cache,
         sqs_client.clone(),
-        fake_generator,
+        node_identifier,
         s3_payload_retriever,
         s3_emitter,
         serializer,
-    ).await;
+        MetricReporter::new(&env.service_name),
+    )
+    .await;
 
     info!("Exiting");
     println!("Exiting");
-
-    unimplemented!()
-
-    // sqs_lambda::sqs_service::sqs_service(
-    //     source_queue_url,
-    //     initial_messages,
-    //     bucket,
-    //     completion_policy.build(ctx),
-    //     CompletionPolicy::new(10, Duration::from_secs(2)),
-    //     |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-    //     S3Client::new(region.clone()),
-    //     SqsClient::new(region.clone()),
-    //     ZstdProtoDecoder::default(),
-    //     SubgraphSerializer {
-    //         proto: Vec::with_capacity(1024),
-    //     },
-    //     node_identifier,
-    //     cache.clone(),
-    //     MetricReporter::<Stdout>::new("node-identifier"),
-    //     move |_self_actor, result: Result<String, String>| match result {
-    //         Ok(worked) => {
-    //             info!(
-    //                 "Handled an event, which was successfully deleted: {}",
-    //                 &worked
-    //             );
-    //             tx.send(worked).unwrap();
-    //         }
-    //         Err(worked) => {
-    //             info!(
-    //                 "Handled an initial_event, though we failed to delete it: {}",
-    //                 &worked
-    //             );
-    //             tx.send(worked).unwrap();
-    //         }
-    //     },
-    //     move |_, _| async move { Ok(()) },
-    // )
-    //     .await;
-
+    Ok(())
 }
 
 pub fn init_sqs_client() -> SqsClient {
@@ -1091,7 +1032,7 @@ pub struct HashCache {
 #[derive(thiserror::Error, Debug)]
 pub enum HashCacheError {
     #[error("Unreachable error")]
-    Unreachable
+    Unreachable,
 }
 
 impl CheckedError for HashCacheError {

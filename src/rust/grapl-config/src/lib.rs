@@ -5,9 +5,14 @@ use color_eyre::Help;
 use rusoto_core::{Region, RusotoError};
 use rusoto_s3::S3;
 use rusoto_sqs::{ListQueuesRequest, Sqs};
-use sqs_lambda::redis_cache::RedisCache;
+use sqs_executor::redis_cache::RedisCache;
 use std::time::Duration;
 use tracing::debug;
+use std::io::Stdout;
+use grapl_observe::metric_reporter::MetricReporter;
+use sqs_executor::make_ten;
+
+pub mod env_helpers;
 
 #[macro_export]
 macro_rules! init_grapl_env {
@@ -39,19 +44,26 @@ pub fn is_local() -> bool {
         .unwrap_or(false)
 }
 
-pub async fn event_cache() -> RedisCache {
-    let cache_address = {
-        let generic_event_cache_addr =
-            std::env::var("EVENT_CACHE_ADDR").expect("GENERIC_EVENT_CACHE_ADDR");
-        let generic_event_cache_port =
-            std::env::var("EVENT_CACHE_PORT").expect("GENERIC_EVENT_CACHE_PORT");
-
-        format!("{}:{}", generic_event_cache_addr, generic_event_cache_port,)
-    };
-
-    RedisCache::new(cache_address.to_owned())
+pub async fn event_cache(env: &ServiceEnv) -> RedisCache {
+    let cache_address = std::env::var("EVENT_CACHE_CLUSTER_ADDRESS").expect("EVENT_CACHE_CLUSTER_ADDRESS");
+    RedisCache::new(
+        cache_address.to_owned(),
+        MetricReporter::<Stdout>::new(&env.service_name),
+    )
         .await
         .expect("Could not create redis client")
+}
+
+pub async fn event_caches(env: &ServiceEnv) -> [RedisCache; 10] {
+    make_ten(event_cache(env)).await
+}
+
+pub fn source_bucket() -> String {
+    std::env::var("SOURCE_BUCKET_NAME").expect("SOURCE_BUCKET_NAME")
+}
+
+pub fn dest_bucket() -> String {
+    std::env::var("DEST_BUCKET_NAME").expect("DEST_BUCKET_NAME")
 }
 
 pub fn region() -> Region {
@@ -80,12 +92,6 @@ pub fn grapl_log_level() -> log::Level {
 
 pub fn _init_grapl_log(env: &ServiceEnv) {
     let filter = EnvFilter::from_default_env();
-        // .add_directive("warn".parse().expect("Invalid directive"))
-        // .add_directive(
-        //     format!("{}={}", env.service_name, grapl_log_level())
-        //         .parse()
-        //         .expect("Invalid directive"),
-        // );
     if env.is_local {
         tracing_subscriber::fmt().with_env_filter(filter).init();
     } else {
@@ -94,6 +100,14 @@ pub fn _init_grapl_log(env: &ServiceEnv) {
             .with_env_filter(filter)
             .init();
     }
+}
+
+pub fn source_queue_url() -> String {
+    std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL")
+}
+
+pub fn dead_letter_queue_url() -> String {
+    std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL")
 }
 
 pub fn mg_alphas() -> Vec<String> {

@@ -1,8 +1,8 @@
 use crate::generator::GenericSubgraphGenerator;
 use crate::models::GenericEvent;
 use crate::serialization::ZstdJsonDecoder;
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::event_decoder::PayloadDecoder;
+use sqs_executor::cache::NopCache;
+use sqs_executor::event_decoder::PayloadDecoder;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, Result};
 

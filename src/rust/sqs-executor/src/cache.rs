@@ -10,8 +10,8 @@ pub trait Cacheable {
 }
 
 impl<H> Cacheable for H
-    where
-        H: Hash,
+where
+    H: Hash,
 {
     fn identity(&self) -> Vec<u8> {
         let mut hasher = DefaultHasher::new();
@@ -30,9 +30,7 @@ pub enum CacheResponse {
 #[async_trait]
 pub trait Cache: Clone {
     type CacheErrorT: CheckedError + Send + Sync + 'static;
-    async fn get<
-        CA: Cacheable + Send + Sync + 'static,
-    >(
+    async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
     ) -> Result<CacheResponse, Self::CacheErrorT>;
@@ -52,7 +50,7 @@ pub trait Cache: Clone {
 #[derive(thiserror::Error, Debug)]
 pub enum NopCacheError {
     #[error("NopCache never errors")]
-    Never
+    Never,
 }
 
 impl CheckedError for NopCacheError {
@@ -68,9 +66,7 @@ pub struct NopCache {}
 impl Cache for NopCache {
     type CacheErrorT = NopCacheError;
 
-    async fn get<
-        CA: Cacheable + Send + Sync + 'static,
-    >(
+    async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         _cacheable: CA,
     ) -> Result<CacheResponse, Self::CacheErrorT> {

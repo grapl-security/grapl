@@ -3,24 +3,24 @@ use std::io::{Read, Stdout};
 use std::marker::PhantomData;
 use std::time::Duration;
 
-use rusoto_s3::{GetObjectRequest, S3, GetObjectError};
+use async_trait::async_trait;
+use rusoto_s3::{GetObjectError, GetObjectRequest, Tag, S3};
 use rusoto_sqs::Message as SqsMessage;
+use tap::tap::Tap;
 use tokio::prelude::*;
 use tracing::{debug, error, info};
 
-use async_trait::async_trait;
-
-use crate::event_decoder::PayloadDecoder;
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_observe::timers::time_fut_ms;
-use std::collections::HashMap;
 use crate::errors::{CheckedError, Recoverable};
+use crate::event_decoder::PayloadDecoder;
+use futures::FutureExt;
+use grapl_observe::metric_reporter::{tag, HistogramUnit, MetricReporter};
+use grapl_observe::timers::{time_it, TimedFutureExt};
 use rusoto_core::RusotoError;
+use std::collections::HashMap;
 use tokio::time::Elapsed;
 
 #[async_trait]
-pub trait PayloadRetriever<T>
-{
+pub trait PayloadRetriever<T> {
     type Message;
     type Error: CheckedError;
     async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<T>, Self::Error>;
@@ -28,11 +28,11 @@ pub trait PayloadRetriever<T>
 
 #[derive(Clone)]
 pub struct S3PayloadRetriever<S, SInit, D, E>
-    where
-        S: S3 + Clone + Send + Sync + 'static,
-        SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-        D: PayloadDecoder<E> + Clone + Send + 'static,
-        E: Send + 'static,
+where
+    S: S3 + Clone + Send + Sync + 'static,
+    SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
+    D: PayloadDecoder<E> + Clone + Send + 'static,
+    E: Send + 'static,
 {
     s3_init: SInit,
     s3_clients: HashMap<String, S>,
@@ -42,11 +42,11 @@ pub struct S3PayloadRetriever<S, SInit, D, E>
 }
 
 impl<S, SInit, D, E> S3PayloadRetriever<S, SInit, D, E>
-    where
-        S: S3 + Clone + Send + Sync + 'static,
-        SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-        D: PayloadDecoder<E> + Clone + Send + 'static,
-        E: Send + 'static,
+where
+    S: S3 + Clone + Send + Sync + 'static,
+    SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
+    D: PayloadDecoder<E> + Clone + Send + 'static,
+    E: Send + 'static,
 {
     pub fn new(s3: SInit, decoder: D, metric_reporter: MetricReporter<Stdout>) -> Self {
         Self {
@@ -70,7 +70,6 @@ impl<S, SInit, D, E> S3PayloadRetriever<S, SInit, D, E>
     }
 }
 
-
 #[derive(thiserror::Error, Debug)]
 pub enum S3PayloadRetrieverError {
     #[error("S3Error: {0}")]
@@ -84,22 +83,6 @@ pub enum S3PayloadRetrieverError {
     #[error("Timeout")]
     Timeout(#[from] Elapsed),
 }
-
-/// ```
-/// with open("your file path", "r") as f:
-///     words = f.read().split()
-///
-// seen_words = set()
-// output = []
-// for word in words:
-//     if word in seen_words:
-//         output.append(word)
-//     else:
-//         seen_words.add(word)
-///
-/// with open("new file", "w") as f:
-///     f.write(output)
-/// ```
 
 impl CheckedError for S3PayloadRetrieverError {
     fn error_type(&self) -> Recoverable {
@@ -115,11 +98,11 @@ impl CheckedError for S3PayloadRetrieverError {
 
 #[async_trait]
 impl<S, SInit, D, E> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E>
-    where
-        S: S3 + Clone + Send + Sync + 'static,
-        SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-        D: PayloadDecoder<E> + Clone + Send + 'static,
-        E: Send + 'static,
+where
+    S: S3 + Clone + Send + Sync + 'static,
+    SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
+    D: PayloadDecoder<E> + Clone + Send + 'static,
+    E: Send + 'static,
 {
     type Message = SqsMessage;
     type Error = S3PayloadRetrieverError;
@@ -148,11 +131,21 @@ impl<S, SInit, D, E> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E>
         });
 
         let s3_data = tokio::time::timeout(Duration::from_secs(5), s3_data);
-        let (s3_data, ms) = time_fut_ms(s3_data).await;
-        let s3_data = s3_data??;
-        self.metric_reporter
-            .histogram("s3_consumer.get_object.ms", ms as f64, &[])
-            .unwrap_or_else(|e| error!("failed to report s3_consumer.get_object.ms: {:?}", e));
+        let s3_data = s3_data
+            .timed()
+            .map(|(s3_data, ms)| {
+                self.metric_reporter
+                    .histogram(
+                        "s3_consumer.get_object.ms",
+                        ms as f64,
+                        &[tag("success", s3_data.is_ok())],
+                    )
+                    .unwrap_or_else(|e| {
+                        error!("failed to report s3_consumer.get_object.ms: {:?}", e)
+                    });
+                s3_data
+            })
+            .await??;
 
         let object_size = record["object"]["size"].as_u64().unwrap_or_default();
         let prealloc = if object_size < 1024 {
@@ -170,13 +163,38 @@ impl<S, SInit, D, E> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E>
             .expect("Missing S3 body")
             .into_async_read()
             .read_to_end(&mut body)
+            .timed()
+            .map(|(res, ms)| {
+                self.metric_reporter
+                    .histogram(
+                        "s3_consumer.read_to_end.ms",
+                        ms as f64,
+                        &[tag("success", res.is_ok())],
+                    )
+                    .unwrap_or_else(|e| {
+                        error!("failed to report s3_consumer.read_to_end.ms: {:?}", e)
+                    });
+                res
+            })
             .await?;
 
         self.metric_reporter
             .gauge("s3_retriever.bytes", body.len() as f64, &[])
             .unwrap_or_else(|e| error!("failed to report s3_retriever.bytes: {:?}", e));
 
-        info!("Read s3 payload body");
-        Ok(self.decoder.decode(body).map(Option::from)?)
+        debug!("Read s3 payload body");
+
+        let (decoded, ms) = time_it(|| self.decoder.decode(body));
+
+        self.metric_reporter
+            .histogram_with_units(
+                "s3_retriever.decoded.micros",
+                ms.as_micros() as f64,
+                HistogramUnit::Micros,
+                &[tag("success", true)][..],
+            )
+            .unwrap_or_else(|e| error!("failed to report s3_retriever.decoded.micros: {:?}", e));
+
+        Ok(Some(decoded?))
     }
 }

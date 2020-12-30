@@ -4,10 +4,24 @@ use grapl_graph_descriptions::graph_description::*;
 
 use crate::models::GenericEvent;
 use grapl_graph_descriptions::node::NodeT;
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
+use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
+use sqs_executor::event_handler::{EventHandler, CompletedEvents};
 use std::convert::TryFrom;
 use tracing::*;
+use sqs_executor::errors::{CheckedError, Recoverable};
+
+
+#[derive(thiserror::Error, Debug)]
+pub enum GenericSubgraphGeneratorError {
+    #[error("Unexpected")]
+    Unexpected(String),
+}
+
+impl CheckedError for GenericSubgraphGeneratorError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Transient
+    }
+}
 
 /// Supports a generic serialization format for incoming logs. This allows the use of any log source
 /// as long as it is preprocessed to use Grapl's generic serialization format.
@@ -97,30 +111,29 @@ where
 {
     type InputEvent = Vec<GenericEvent>;
     type OutputEvent = Graph;
-    type Error = sqs_lambda::error::Error;
+    type Error = GenericSubgraphGeneratorError;
 
-    #[tracing::instrument(skip(self, events))]
+    #[tracing::instrument(skip(self, events, completed))]
     async fn handle_event(
         &mut self,
         events: Vec<GenericEvent>,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
+        completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let (subgraph, processed_identities, error_report) =
             self.convert_events_to_subgraph(events).await;
 
-        // if an error occurred while converting generic events to a subgraph, we should record it
-        let mut completed_event = if let Some(event_error) = error_report {
-            OutputEvent::new(Completion::Partial((
-                subgraph,
-                sqs_lambda::error::Error::ProcessingError(event_error.to_string()),
-            )))
-        } else {
-            OutputEvent::new(Completion::Total(subgraph))
-        };
-
         processed_identities
             .into_iter()
-            .for_each(|identity| completed_event.add_identity(identity));
+            .for_each(|identity| completed.add_identity(identity));
 
-        completed_event
+        // if an error occurred while converting generic events to a subgraph, we should record it
+        if let Some(event_error) = error_report {
+            Err(Ok((
+                subgraph,
+                GenericSubgraphGeneratorError::Unexpected(event_error.to_string()),
+            )))
+        } else {
+            Ok(subgraph)
+        }
     }
 }
