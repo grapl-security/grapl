@@ -1,3 +1,4 @@
+use grapl_config::ServiceEnv;
 use log::info;
 use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::DynamoDbClient;
@@ -13,6 +14,14 @@ pub trait AwsClientFactory: Sync + Send + Clone {
 #[derive(Clone)]
 pub struct ProdAwsClientFactory {
     region: Region,
+}
+
+impl ProdAwsClientFactory {
+    pub fn new_from_service_env(env: &ServiceEnv) -> ProdAwsClientFactory {
+        ProdAwsClientFactory {
+            region: env.get_region(),
+        }
+    }
 }
 
 impl AwsClientFactory for ProdAwsClientFactory {

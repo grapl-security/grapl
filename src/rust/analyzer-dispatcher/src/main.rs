@@ -270,6 +270,8 @@ fn handler(event: SqsEvent, ctx: Context, env: ServiceEnv) -> Result<(), Handler
     let (tx, rx) = std::sync::mpsc::sync_channel(10);
     let completed_tx = tx.clone();
 
+    let aws_client_factory = ProdAwsClientFactory::new_from_service_env(&env);
+
     std::thread::spawn(move || {
         tokio_compat::run_std(async move {
             let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
@@ -281,7 +283,7 @@ fn handler(event: SqsEvent, ctx: Context, env: ServiceEnv) -> Result<(), Handler
 
             let cache = grapl_config::event_cache().await;
             let analyzer_dispatcher = AnalyzerDispatcher {
-                s3_client: Arc::new(S3Client::new(env.get_region())),
+                s3_client: Arc::new(aws_client_factory.get_s3_client()),
             };
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
@@ -296,8 +298,8 @@ fn handler(event: SqsEvent, ctx: Context, env: ServiceEnv) -> Result<(), Handler
                 completion_policy.build(ctx),
                 CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-                S3Client::new(env.get_region()),
-                SqsClient::new(env.get_region()),
+                aws_client_factory.get_s3_client(),
+                aws_client_factory.get_sqs_client(),
                 ZstdProtoDecoder::default(),
                 SubgraphSerializer {
                     proto: Vec::with_capacity(1024),
@@ -353,7 +355,7 @@ fn handler(event: SqsEvent, ctx: Context, env: ServiceEnv) -> Result<(), Handler
 }
 
 async fn local_handler(
-    aws_client_factory: LocalAwsClientFactory
+    aws_client_factory: LocalAwsClientFactory,
 ) -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("BUCKET_PREFIX", "local-grapl");
     let analyzer_dispatcher = AnalyzerDispatcher {
@@ -446,7 +448,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if env.is_local {
         info!("Running locally");
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-        let aws_client_factory = LocalAwsClientFactory{};
+        let aws_client_factory = LocalAwsClientFactory {};
 
         grapl_config::wait_for_sqs(
             aws_client_factory.get_sqs_client(),
