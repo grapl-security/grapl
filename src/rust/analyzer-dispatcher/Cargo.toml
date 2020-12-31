@@ -8,6 +8,7 @@ edition = "2018"
 grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
 grapl-config = {path="../grapl-config", version="*"}
 grapl-observe = {path = "../grapl-observe"}
+grapl-service-common = { path = "../grapl-service-common/" }
 aws_lambda_events = "0.2.1"
 base64 = "0.10.1"
 base16 = "0.1.1"
@@ -39,6 +40,7 @@ tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "r
 chrono = "0.4.11"
 rusoto_credential = "0.45.0"
 sqs-lambda = { path = "../sqs-lambda/" }
+
 
 [dependencies.uuid]
 version = "*"

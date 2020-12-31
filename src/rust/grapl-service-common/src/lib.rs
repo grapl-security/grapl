@@ -1,1 +1,1 @@
-mod aws_client;
+pub mod aws_client_factory;

@@ -1,21 +1,45 @@
+use grapl_config::ServiceEnv;
+use log::info;
+use rusoto_core::{HttpClient, Region};
+use rusoto_dynamodb::DynamoDbClient;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 
-use log::{info};
-use rusoto_core::{HttpClient, Region};
-use rusoto_dynamodb::{DynamoDbClient};
-use grapl_config::ServiceEnv;
-
-pub struct AwsClientFactory {
-    is_local: bool
+pub trait AwsClientFactory: Sync + Send {
+    fn get_sqs_client(&self) -> SqsClient;
+    fn get_s3_client(&self) -> S3Client;
+    fn get_dynamodb_client(&self) -> DynamoDbClient;
 }
 
-impl AwsClientFactory {
-    pub fn new_from_grapl_config(env: &ServiceEnv) -> AwsClientFactory {
-        AwsClientFactory { is_local: env.is_local }
+pub fn new_aws_client_factory(env: &ServiceEnv) -> Box<dyn AwsClientFactory> {
+    match env.is_local {
+        true => Box::new(LocalAwsClientFactory {}),
+        false => Box::new(ProdAwsClientFactory {
+            region: env.get_region(),
+        }),
     }
+}
 
-    pub fn get_sqs_client(&self) -> SqsClient {
+pub struct ProdAwsClientFactory {
+    region: Region,
+}
+
+impl AwsClientFactory for ProdAwsClientFactory {
+    fn get_sqs_client(&self) -> SqsClient {
+        SqsClient::new(self.region.clone())
+    }
+    fn get_s3_client(&self) -> S3Client {
+        S3Client::new(self.region.clone())
+    }
+    fn get_dynamodb_client(&self) -> DynamoDbClient {
+        DynamoDbClient::new(self.region.clone())
+    }
+}
+
+pub struct LocalAwsClientFactory {}
+
+impl AwsClientFactory for LocalAwsClientFactory {
+    fn get_sqs_client(&self) -> SqsClient {
         info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
 
         SqsClient::new_with(
@@ -31,7 +55,7 @@ impl AwsClientFactory {
         )
     }
 
-    pub fn get_s3_client(&self) -> S3Client {
+    fn get_s3_client(&self) -> S3Client {
         info!("Connecting to local http://s3:9000");
         S3Client::new_with(
             HttpClient::new().expect("failed to create request dispatcher"),
@@ -46,7 +70,7 @@ impl AwsClientFactory {
         )
     }
 
-    pub fn get_dynamodb_client(&self) -> DynamoDbClient {
+    fn get_dynamodb_client(&self) -> DynamoDbClient {
         info!("Connecting to local http://dynamodb:8000");
         DynamoDbClient::new_with(
             HttpClient::new().expect("failed to create request dispatcher"),
@@ -60,3 +84,4 @@ impl AwsClientFactory {
             },
         )
     }
+}

@@ -22,12 +22,20 @@ macro_rules! init_grapl_env {
 pub struct ServiceEnv {
     pub service_name: String,
     pub is_local: bool,
+    region: Region,
+}
+
+impl ServiceEnv {
+    pub fn get_region(&self) -> Region {
+        self.region.clone()
+    }
 }
 
 pub fn _init_grapl_env(service_name: &str) -> ServiceEnv {
     let env = ServiceEnv {
         service_name: service_name.to_string(),
         is_local: is_local(),
+        region: region(),
     };
     _init_grapl_log(&env);
     env
@@ -54,6 +62,10 @@ pub async fn event_cache() -> RedisCache {
         .expect("Could not create redis client")
 }
 
+#[deprecated(
+    since = "0.0.2",
+    note = "This will be made non-public in the near future; prefer ServiceEnv::get_region()"
+)]
 pub fn region() -> Region {
     let region_override = std::env::var("AWS_REGION_OVERRIDE");
 

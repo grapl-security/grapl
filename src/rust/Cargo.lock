@@ -50,6 +50,7 @@ dependencies = [
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
+ "grapl-service-common",
  "grpc",
  "lambda_runtime",
  "log 0.4.11",

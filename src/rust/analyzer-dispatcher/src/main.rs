@@ -1,7 +1,9 @@
 #![type_length_limit = "1214269"]
 // Our types are simply too powerful
 
+use grapl_config::ServiceEnv;
 use grapl_observe::metric_reporter::MetricReporter;
+use grapl_service_common::aws_client_factory::{new_aws_client_factory, AwsClientFactory};
 use std::collections::HashSet;
 use std::io::{Cursor, Stdout};
 use std::sync::Arc;
@@ -252,7 +254,7 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
     }
 }
 
-fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
+fn handler(event: SqsEvent, ctx: Context, env: &ServiceEnv) -> Result<(), HandlerError> {
     info!("Handling event");
 
     let mut initial_events: HashSet<String> = event
@@ -274,11 +276,10 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
 
             let bucket = bucket_prefix + "-dispatched-analyzer-bucket";
             info!("Output events to: {}", bucket);
-            let region = grapl_config::region();
 
             let cache = grapl_config::event_cache().await;
             let analyzer_dispatcher = AnalyzerDispatcher {
-                s3_client: Arc::new(S3Client::new(region.clone())),
+                s3_client: Arc::new(S3Client::new(env.get_region())),
             };
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
@@ -293,8 +294,8 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
                 completion_policy.build(ctx),
                 CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-                S3Client::new(region.clone()),
-                SqsClient::new(region.clone()),
+                S3Client::new(env.get_region()),
+                SqsClient::new(env.get_region()),
                 ZstdProtoDecoder::default(),
                 SubgraphSerializer {
                     proto: Vec::with_capacity(1024),
@@ -349,41 +350,12 @@ fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
     }
 }
 
-fn init_sqs_client() -> SqsClient {
-    info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
-
-    SqsClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_sqs".to_owned(),
-            "dummy_sqs".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-east-1".to_string(),
-            endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        },
-    )
-}
-
-fn init_s3_client() -> S3Client {
-    info!("Connecting to local http://s3:9000");
-    S3Client::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "minioadmin".to_owned(),
-            "minioadmin".to_owned(),
-        ),
-        Region::Custom {
-            name: "locals3".to_string(),
-            endpoint: "http://s3:9000".to_string(),
-        },
-    )
-}
-
-async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
+async fn local_handler(
+    aws_client_factory: Box<dyn AwsClientFactory>,
+) -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("BUCKET_PREFIX", "local-grapl");
     let analyzer_dispatcher = AnalyzerDispatcher {
-        s3_client: Arc::new(init_s3_client()),
+        s3_client: Arc::new(aws_client_factory.get_s3_client()),
     };
 
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
@@ -397,9 +369,9 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
-        |_| init_s3_client(),
-        init_s3_client(),
-        init_sqs_client(),
+        |_| aws_client_factory.get_s3_client(),
+        aws_client_factory.get_s3_client(),
+        aws_client_factory.get_sqs_client(),
         ZstdProtoDecoder::default(),
         SubgraphSerializer {
             proto: Vec::with_capacity(1024),
@@ -443,7 +415,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
                 }],
             };
 
-            let sqs_client = init_sqs_client();
+            let sqs_client = aws_client_factory.get_sqs_client();
 
             // publish to SQS
             sqs_client
@@ -468,26 +440,27 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env = grapl_config::init_grapl_env!();
+    let aws_client_factory = new_aws_client_factory(&env);
 
     if env.is_local {
         info!("Running locally");
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
         grapl_config::wait_for_sqs(
-            init_sqs_client(),
+            aws_client_factory.get_sqs_client(),
             source_queue_url.split("/").last().unwrap(),
         )
         .await?;
-        grapl_config::wait_for_s3(init_s3_client()).await?;
+        grapl_config::wait_for_s3(aws_client_factory.get_s3_client()).await?;
 
         loop {
-            if let Err(e) = local_handler().await {
+            if let Err(e) = local_handler(aws_client_factory).await {
                 error!("local_handler: {}", e);
             };
         }
     } else {
         info!("Running in AWS");
-        lambda!(handler);
+        lambda!(|event, ctx| handler(event, ctx, &env));
     }
 
     Ok(())
