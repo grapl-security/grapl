@@ -19,6 +19,7 @@ macro_rules! init_grapl_env {
     };
 }
 
+#[derive(Clone)]
 pub struct ServiceEnv {
     pub service_name: String,
     pub is_local: bool,

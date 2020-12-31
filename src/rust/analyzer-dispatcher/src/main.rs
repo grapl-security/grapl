@@ -3,7 +3,9 @@
 
 use grapl_config::ServiceEnv;
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service_common::aws_client_factory::{new_aws_client_factory, AwsClientFactory};
+use grapl_service_common::aws_client_factory::{
+    AwsClientFactory, LocalAwsClientFactory, ProdAwsClientFactory,
+};
 use std::collections::HashSet;
 use std::io::{Cursor, Stdout};
 use std::sync::Arc;
@@ -254,7 +256,7 @@ fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_s
     }
 }
 
-fn handler(event: SqsEvent, ctx: Context, env: &ServiceEnv) -> Result<(), HandlerError> {
+fn handler(event: SqsEvent, ctx: Context, env: ServiceEnv) -> Result<(), HandlerError> {
     info!("Handling event");
 
     let mut initial_events: HashSet<String> = event
@@ -351,7 +353,7 @@ fn handler(event: SqsEvent, ctx: Context, env: &ServiceEnv) -> Result<(), Handle
 }
 
 async fn local_handler(
-    aws_client_factory: Box<dyn AwsClientFactory>,
+    aws_client_factory: LocalAwsClientFactory
 ) -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("BUCKET_PREFIX", "local-grapl");
     let analyzer_dispatcher = AnalyzerDispatcher {
@@ -369,7 +371,7 @@ async fn local_handler(
             deadline: Utc::now().timestamp_millis() + 10_000,
             ..Default::default()
         },
-        |_| aws_client_factory.get_s3_client(),
+        move |_| aws_client_factory.get_s3_client(),
         aws_client_factory.get_s3_client(),
         aws_client_factory.get_sqs_client(),
         ZstdProtoDecoder::default(),
@@ -440,11 +442,11 @@ async fn local_handler(
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let env = grapl_config::init_grapl_env!();
-    let aws_client_factory = new_aws_client_factory(&env);
 
     if env.is_local {
         info!("Running locally");
         let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+        let aws_client_factory = LocalAwsClientFactory{};
 
         grapl_config::wait_for_sqs(
             aws_client_factory.get_sqs_client(),
@@ -460,7 +462,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     } else {
         info!("Running in AWS");
-        lambda!(|event, ctx| handler(event, ctx, &env));
+        lambda!(|event, ctx| handler(event, ctx, env.clone()));
     }
 
     Ok(())

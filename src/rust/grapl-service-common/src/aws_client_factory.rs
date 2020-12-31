@@ -1,25 +1,16 @@
-use grapl_config::ServiceEnv;
 use log::info;
 use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 
-pub trait AwsClientFactory: Sync + Send {
+pub trait AwsClientFactory: Sync + Send + Clone {
     fn get_sqs_client(&self) -> SqsClient;
     fn get_s3_client(&self) -> S3Client;
     fn get_dynamodb_client(&self) -> DynamoDbClient;
 }
 
-pub fn new_aws_client_factory(env: &ServiceEnv) -> Box<dyn AwsClientFactory> {
-    match env.is_local {
-        true => Box::new(LocalAwsClientFactory {}),
-        false => Box::new(ProdAwsClientFactory {
-            region: env.get_region(),
-        }),
-    }
-}
-
+#[derive(Clone)]
 pub struct ProdAwsClientFactory {
     region: Region,
 }
@@ -36,6 +27,7 @@ impl AwsClientFactory for ProdAwsClientFactory {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct LocalAwsClientFactory {}
 
 impl AwsClientFactory for LocalAwsClientFactory {
