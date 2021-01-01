@@ -54,6 +54,9 @@ use sqs_executor::redis_cache::RedisCache;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use sqs_executor::{make_ten, time_based_key_fn};
 
+use grapl_service::serialization::SubgraphSerializer;
+use grapl_service::decoder::ZstdProtoDecoder;
+
 macro_rules! wait_on {
     ($x:expr) => {{
         $x.await
@@ -622,7 +625,7 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
-    type OutputEvent = GeneratedSubgraphs;
+    type OutputEvent = Graph;
     type Error = NodeIdentifierError;
 
     async fn handle_event(
@@ -638,7 +641,7 @@ where
 
         if subgraphs.subgraphs.is_empty() {
             warn!("Received empty unid subgraph");
-            return Ok(GeneratedSubgraphs::new(vec![]));
+            return Ok(Graph::new(0));
         }
 
         // Merge all of the subgraphs into one subgraph to avoid
@@ -659,7 +662,7 @@ where
 
         if unid_subgraph.is_empty() {
             warn!("Received empty subgraph");
-            return Ok(GeneratedSubgraphs::new(vec![]));
+            return Ok(Graph::new(0));
         }
 
         info!(
@@ -765,108 +768,14 @@ where
 
         if !dead_node_ids.is_empty() || attribution_failure.is_some() {
             info!("Partial Success, identified {} nodes", identities.len());
-            Err(Ok((
-                GeneratedSubgraphs::new(vec![identified_graph]),
-                NodeIdentifierError::Unexpected, // todo: Use a real error here
-                                                 // sqs_lambda::error::Error::ProcessingError(attribution_failure.unwrap().to_string()),
-            )))
+            Err(Ok(
+                (identified_graph,
+                NodeIdentifierError::Unexpected,) // todo: Use a real error here
+            ))
         } else {
             info!("Identified all nodes");
-            Ok(GeneratedSubgraphs::new(vec![identified_graph]))
+            Ok(identified_graph)
         }
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct SubgraphSerializer {
-    proto: Vec<u8>,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum SubgraphSerializerError {
-    #[error("IO")]
-    Io(#[from] std::io::Error),
-    #[error("EncodeError")]
-    EncodeError(#[from] prost::EncodeError),
-}
-impl CompletionEventSerializer for SubgraphSerializer {
-    type CompletedEvent = GeneratedSubgraphs;
-    type Output = Vec<u8>;
-    type Error = SubgraphSerializerError;
-
-    fn serialize_completed_events(
-        &mut self,
-        completed_events: &[Self::CompletedEvent],
-    ) -> Result<Vec<Self::Output>, Self::Error> {
-        if completed_events.is_empty() {
-            warn!("No events to serialize");
-            return Ok(Vec::new());
-        }
-        let mut subgraph = Graph::new(0);
-
-        let mut pre_nodes = 0;
-        let mut pre_edges = 0;
-        for completed_event in completed_events {
-            for sg in completed_event.subgraphs.iter() {
-                pre_nodes += sg.nodes.len();
-                pre_edges += sg.edges.len();
-                subgraph.merge(sg);
-            }
-        }
-
-        if subgraph.is_empty() {
-            warn!(
-                concat!(
-                    "Output subgraph is empty. Serializing to empty vector.",
-                    "pre_nodes: {} pre_edges: {}"
-                ),
-                pre_nodes, pre_edges,
-            );
-            return Ok(vec![]);
-        }
-
-        info!(
-            "Serializing {} nodes {} edges. Down from {} nodes {} edges.",
-            subgraph.nodes.len(),
-            subgraph.edges.len(),
-            pre_nodes,
-            pre_edges,
-        );
-
-        let subgraphs = GeneratedSubgraphs {
-            subgraphs: vec![subgraph],
-        };
-
-        self.proto.clear();
-
-        prost::Message::encode(&subgraphs, &mut self.proto)?;
-
-        let mut compressed = Vec::with_capacity(self.proto.len());
-        let mut proto = Cursor::new(&self.proto);
-        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)?;
-        Ok(vec![compressed])
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ZstdProtoDecoder;
-
-impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-where
-    E: Message + Default,
-{
-    fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-    where
-        E: Message + Default,
-    {
-        let mut decompressed = Vec::new();
-
-        let mut body = Cursor::new(&body);
-
-        zstd::stream::copy_decode(&mut body, &mut decompressed)?;
-
-        let buf = Bytes::from(decompressed);
-        Ok(E::decode(buf)?)
     }
 }
 
@@ -936,7 +845,7 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
-        std::env::var("QUEUE_URL").expect("QUEUE_URL"),
+        grapl_config::source_queue_url(),
         std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
         cache,
         sqs_client.clone(),

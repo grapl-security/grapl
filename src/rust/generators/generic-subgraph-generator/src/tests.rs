@@ -1,6 +1,7 @@
 use crate::generator::GenericSubgraphGenerator;
 use crate::models::GenericEvent;
-use crate::serialization::ZstdJsonDecoder;
+use grapl_service::serialization::SubgraphSerializer;
+use grapl_service::decoder::ZstdJsonDecoder;
 use sqs_executor::cache::NopCache;
 use sqs_executor::event_decoder::PayloadDecoder;
 use tokio::fs::File;
@@ -41,7 +42,7 @@ async fn test_log_event_deserialization() {
         .decode(raw_test_data)
         .expect("Failed to deserialize events.");
 
-    let (subgraph, identities, failed) = generator.convert_events_to_subgraph(generic_events).await;
+    let (_subgraph, _identities, failed) = generator.convert_events_to_subgraph(generic_events).await;
 
     if let Some(report) = failed {
         panic!(

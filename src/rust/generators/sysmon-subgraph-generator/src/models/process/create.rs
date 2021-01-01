@@ -4,6 +4,8 @@ use grapl_graph_descriptions::graph_description::*;
 use grapl_graph_descriptions::node::NodeT;
 use grapl_graph_descriptions::process::ProcessState;
 use sysmon::ProcessCreateEvent;
+use crate::generator::SysmonGeneratorError;
+
 
 /// Creates a subgraph describing a `ProcessCreateEvent`.
 ///
@@ -14,7 +16,7 @@ use sysmon::ProcessCreateEvent;
 /// * A process `File` node - indicating the file executed in creating the new process
 pub fn generate_process_create_subgraph(
     process_start: &ProcessCreateEvent,
-) -> Result<Graph, failure::Error> {
+) -> Result<Graph, SysmonGeneratorError> {
     let timestamp = utc_to_epoch(&process_start.event_data.utc_time)?;
     let mut graph = Graph::new(timestamp);
 
@@ -22,7 +24,7 @@ pub fn generate_process_create_subgraph(
         .asset_id(process_start.system.computer.computer.clone())
         .hostname(process_start.system.computer.computer.clone())
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let parent = ProcessBuilder::default()
         .asset_id(process_start.system.computer.computer.clone())
@@ -33,7 +35,7 @@ pub fn generate_process_create_subgraph(
         .last_seen_timestamp(timestamp)
         //        .created_timestamp(process_start.event_data.parent_process_guid.get_creation_timestamp())
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let child = ProcessBuilder::default()
         .asset_id(process_start.system.computer.computer.clone())
@@ -43,7 +45,7 @@ pub fn generate_process_create_subgraph(
         .process_id(process_start.event_data.process_id)
         .created_timestamp(timestamp)
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let child_exe = FileBuilder::default()
         .asset_id(process_start.system.computer.computer.clone())
@@ -51,7 +53,7 @@ pub fn generate_process_create_subgraph(
         .last_seen_timestamp(timestamp)
         .file_path(strip_file_zone_identifier(&process_start.event_data.image))
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     graph.add_edge(
         "process_asset",

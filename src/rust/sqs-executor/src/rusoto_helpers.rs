@@ -152,7 +152,7 @@ where
                         ms as f64,
                         &[tag("success", false)],
                     );
-                    debug!("Send message: {}", queue_url.clone());
+                    warn!("Send message failed: {}", queue_url.clone());
                     if let Recoverable::Persistent = e.error_type() {
                         return Err(SendMessageError::from(e));
                     } else {

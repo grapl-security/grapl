@@ -76,6 +76,10 @@ services:
   s3:
     image: minio/minio
     command: server /data
+    environment:
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_REGION_NAME=us-east-1
     ports:
       - "9000:9000"
     networks:
@@ -111,12 +115,12 @@ services:
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "IS_LOCAL=True"
-      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-subgraph-generator-queue"
-      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-subgraph-generator-dead-letter-queue"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-dead-letter-queue"
       - "DEST_BUCKET_NAME=local-grapl-unid-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
-      - "SQS_ACCESS_KEY_ID=dummy_sqs"
-      - "SQS_ACCESS_KEY_SECRET=dummy_sqs"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - "S3_ENDPOINT=http://s3:9000"
       - "S3_ACCESS_KEY_ID=minioadmin"
       - "S3_ACCESS_KEY_SECRET=minioadmin"
@@ -157,12 +161,13 @@ services:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     environment:
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
-      - "SQS_ACCESS_KEY_ID=dummy_sqs"
-      - "SQS_ACCESS_KEY_SECRET=dummy_sqs"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - "S3_ENDPOINT=http://s3:9000"
       - "S3_ACCESS_KEY_ID=minioadmin"
       - "S3_ACCESS_KEY_SECRET=minioadmin"
@@ -198,12 +203,13 @@ services:
     environment:
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "IS_LOCAL=True"
+      - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
-      - "SQS_ACCESS_KEY_ID=dummy_sqs"
-      - "SQS_ACCESS_KEY_SECRET=dummy_sqs"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - "S3_ENDPOINT=http://s3:9000"
       - "S3_ACCESS_KEY_ID=minioadmin"
       - "S3_ACCESS_KEY_SECRET=minioadmin"
@@ -238,12 +244,13 @@ services:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     environment:
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-dead-letter-queue"
       - "DEST_BUCKET_NAME=local-grapl-subgraphs-merged-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
-      - "SQS_ACCESS_KEY_ID=dummy_sqs"
-      - "SQS_ACCESS_KEY_SECRET=dummy_sqs"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - "S3_ENDPOINT=http://s3:9000"
       - "S3_ACCESS_KEY_ID=minioadmin"
       - "S3_ACCESS_KEY_SECRET=minioadmin"
@@ -275,8 +282,8 @@ services:
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-dead-letter-queue"
       - "DEST_BUCKET_NAME=local-grapl-dispatched-analyzer-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
-      - "SQS_ACCESS_KEY_ID=dummy_sqs"
-      - "SQS_ACCESS_KEY_SECRET=dummy_sqs"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - "S3_ENDPOINT=http://s3:9000"
       - "S3_ACCESS_KEY_ID=minioadmin"
       - "S3_ACCESS_KEY_SECRET=minioadmin"

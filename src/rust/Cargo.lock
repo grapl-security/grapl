@@ -50,6 +50,7 @@ dependencies = [
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
+ "grapl-service",
  "grpc",
  "lambda_runtime",
  "log 0.4.11",
@@ -351,6 +352,12 @@ name = "bytes"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4cec68f03f32e44924783795810fa50a7035d8c8ebe78580ad7e6c703fba38"
+
+[[package]]
+name = "bytes"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad1f8e949d755f9d79112b5bb46938e0ef9d3804a0b16dfab13aafcaa5f0fa72"
 
 [[package]]
 name = "cc"
@@ -1272,6 +1279,7 @@ dependencies = [
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
+ "grapl-service",
  "grpc",
  "itertools 0.8.2",
  "log 0.4.11",
@@ -1355,6 +1363,7 @@ dependencies = [
 name = "grapl-service"
 version = "0.1.0"
 dependencies = [
+ "bytes 1.0.0",
  "grapl-config",
  "grapl-graph-descriptions",
  "prost",
@@ -2081,6 +2090,7 @@ dependencies = [
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
+ "grapl-service",
  "hex",
  "hmap",
  "lambda_runtime",
@@ -3633,6 +3643,7 @@ dependencies = [
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
+ "grapl-service",
  "lambda_runtime",
  "lazy_static",
  "log 0.4.11",

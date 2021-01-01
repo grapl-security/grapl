@@ -13,10 +13,16 @@ use sysmon::Event;
 
 #[derive(thiserror::Error, Debug)]
 pub enum SysmonGeneratorError {
-    #[error("Generator failed")]
-    E(failure::Error),
     #[error("DeserializeError")]
     DeserializeError(failure::Error),
+    #[error("ChronoError")]
+    NegativeEventTime(i64),
+    #[error("TimeError")]
+    TimeError(#[from] chrono::ParseError),
+    #[error("DeserializeError")]
+    GraphBuilderError(String),
+    #[error("Unsupported event type")]
+    UnsupportedEventType(String),
     #[error("Generator failed")]
     Unexpected,
 }
@@ -25,7 +31,10 @@ impl CheckedError for SysmonGeneratorError {
     fn error_type(&self) -> Recoverable {
         match self {
             Self::DeserializeError(_) => Recoverable::Persistent,
-            Self::E(_) => Recoverable::Persistent,
+            Self::NegativeEventTime(_) => Recoverable::Persistent,
+            Self::TimeError(_) => Recoverable::Persistent,
+            Self::GraphBuilderError(_) => Recoverable::Persistent,
+            Self::UnsupportedEventType(_) => Recoverable::Persistent,
             Self::Unexpected => Recoverable::Transient,
         }
     }
@@ -84,7 +93,7 @@ where
                 Ok(subgraph) => subgraph,
                 Err(e) => {
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
-                    last_failure = Some(SysmonGeneratorError::E(e));
+                    last_failure = Some(e);
                     continue;
                 }
             };

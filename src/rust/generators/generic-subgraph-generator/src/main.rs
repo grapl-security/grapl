@@ -2,22 +2,21 @@
 
 mod generator;
 mod models;
-mod serialization;
 mod tests;
 
 use sqs_executor::cache::{Cache, NopCache};
-
+use grapl_service::serialization::SubgraphSerializer;
+use grapl_service::decoder::ZstdJsonDecoder;
 use tracing::*;
 
 use grapl_config::{event_cache, event_caches};
 use sqs_executor::event_decoder::PayloadDecoder;
 
 use crate::generator::GenericSubgraphGenerator;
-use crate::serialization::ZstdJsonDecoder;
+
 use grapl_config::env_helpers::s3_event_emitters_from_env;
 use grapl_config::env_helpers::FromEnv;
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::serialization::zstd_proto::SubgraphSerializer;
 use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;

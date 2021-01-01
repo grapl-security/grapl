@@ -111,8 +111,8 @@ COPY --chown=grapl ./generators/osquery-subgraph-generator/Cargo.toml generators
 COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
 # vendor all the deps
-RUN mkdir -p /home/grapl/.cargo
-RUN cargo vendor --versioned-dirs --locked > /home/grapl/.cargo/config
+#RUN mkdir -p /home/grapl/.cargo
+#RUN cargo vendor --versioned-dirs --locked > /home/grapl/.cargo/config
 # debug build of all the deps
 RUN cargo build --target=x86_64-unknown-linux-musl
 
@@ -126,11 +126,11 @@ USER grapl
 ENV USER grapl
 WORKDIR /home/grapl
 # copy in the .cargo directory from grapl-rust-deps-build
-COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/.cargo .cargo
-# copy in the vendor directory from grapl-rust-deps-build
-COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/vendor vendor
-# copy in the target directory from grapl-rust-deps-build
-COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/target target
+#COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/.cargo .cargo
+## copy in the vendor directory from grapl-rust-deps-build
+#COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/vendor vendor
+## copy in the target directory from grapl-rust-deps-build
+#COPY --from=grapl-rust-deps-build --chown=grapl /home/grapl/target target
 # "invalidate" all the grapl services, we want to rebuild them here
 RUN rm -rf target/*/*/.fingerprint/analyzer-dispatcher*
 RUN rm -rf target/*/*/.fingerprint/derive-dynamic-node*
@@ -148,24 +148,25 @@ RUN rm -rf target/*/*/.fingerprint/node-identifier*
 RUN rm -rf target/*/*/.fingerprint/sysmon-subgraph-generator*
 RUN rm -rf target/*/*/.fingerprint/osquery-subgraph-generator*
 # copy in the sources
-COPY --chown=grapl ./analyzer-dispatcher analyzer-dispatcher
-COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
-COPY --chown=grapl ./graph-descriptions graph-descriptions
-COPY --chown=grapl ./graph-merger graph-merger
-COPY --chown=grapl ./grapl-config grapl-config
-COPY --chown=grapl ./grapl-observe grapl-observe
-COPY --chown=grapl ./sqs-lambda sqs-lambda
-COPY --chown=grapl ./sqs-executor sqs-executor
-COPY --chown=grapl ./grapl-service grapl-service
-COPY --chown=grapl ./metric-forwarder metric-forwarder
-COPY --chown=grapl ./node-identifier node-identifier
-COPY --chown=grapl ./generators/graph-generator-lib generators/graph-generator-lib
-COPY --chown=grapl ./generators/generic-subgraph-generator generators/generic-subgraph-generator
-COPY --chown=grapl ./generators/sysmon-subgraph-generator generators/sysmon-subgraph-generator
-COPY --chown=grapl ./generators/osquery-subgraph-generator generators/osquery-subgraph-generator
+COPY --chown=grapl . .
+#COPY --chown=grapl ./analyzer-dispatcher analyzer-dispatcher
+#COPY --chown=grapl ./derive-dynamic-node derive-dynamic-node
+#COPY --chown=grapl ./graph-descriptions graph-descriptions
+#COPY --chown=grapl ./graph-merger graph-merger
+#COPY --chown=grapl ./grapl-config grapl-config
+#COPY --chown=grapl ./grapl-observe grapl-observe
+#COPY --chown=grapl ./sqs-lambda sqs-lambda
+#COPY --chown=grapl ./sqs-executor sqs-executor
+#COPY --chown=grapl ./grapl-service grapl-service
+#COPY --chown=grapl ./metric-forwarder metric-forwarder
+#COPY --chown=grapl ./node-identifier node-identifier
+#COPY --chown=grapl ./generators/graph-generator-lib generators/graph-generator-lib
+#COPY --chown=grapl ./generators/generic-subgraph-generator generators/generic-subgraph-generator
+#COPY --chown=grapl ./generators/sysmon-subgraph-generator generators/sysmon-subgraph-generator
+#COPY --chown=grapl ./generators/osquery-subgraph-generator generators/osquery-subgraph-generator
 # copy in the top-level Cargo.toml and Cargo.lock
-COPY --chown=grapl Cargo.lock .
-COPY --chown=grapl Cargo.toml .
+#COPY --chown=grapl Cargo.lock .
+#COPY --chown=grapl Cargo.toml .
 
 # Now do a clean build
 RUN if test "${release_target}" = "release"; then \
@@ -185,7 +186,7 @@ RUN mkdir -p /home/grapl/dist && \
     cp target/x86_64-unknown-linux-musl/${release_target}/sysmon-subgraph-generator dist/sysmon-subgraph-generator && \
     cp target/x86_64-unknown-linux-musl/${release_target}/osquery-subgraph-generator dist/osquery-subgraph-generator
 
-#CMD :
+CMD :
 # Build a small image with just the binary for each service
 FROM alpine AS grapl-rust-dist
 RUN apk add --no-cache libgcc

@@ -20,6 +20,7 @@ integration = []
 grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
 grapl-observe = {path="../grapl-observe", version="*"}
+grapl-service = {path="../grapl-service"}
 
 bytes = "0.5.*"
 failure = "0.1.*"

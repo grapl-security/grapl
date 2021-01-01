@@ -1,17 +1,18 @@
 #![type_length_limit = "1214269"]
 // Our types are simply too powerful
+pub mod dispatch_event;
 
 use std::collections::HashSet;
+use aws_lambda_events::event::s3::{
+    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
+};
 use std::convert::TryInto;
 use std::io::{Cursor, Stdout};
 use std::str::FromStr;
 use std::sync::Arc;
-use std::time::Duration;
 
+use std::time::Duration;
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
 use aws_lambda_events::event::sqs::SqsEvent;
 use bytes::Bytes;
 use chrono::Utc;
@@ -35,6 +36,8 @@ use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use sqs_executor::{make_ten, time_based_key_fn};
+use grapl_service::decoder::ZstdProtoDecoder;
+use crate::dispatch_event::{AnalyzerDispatchEvent, AnalyzerDispatchSerializer};
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
@@ -84,17 +87,6 @@ async fn get_s3_keys(
     }))
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AnalyzerDispatchEvent {
-    key: String,
-    subgraph: Graph,
-}
-
-fn encode_subgraph(subgraph: &Graph) -> Result<Vec<u8>, Error> {
-    let mut buf = Vec::with_capacity(5000);
-    subgraph.encode(&mut buf)?;
-    Ok(buf)
-}
 
 #[derive(thiserror::Error, Debug)]
 pub enum AnalyzerDispatcherError {
@@ -162,10 +154,7 @@ where
                 }
             };
 
-            dispatch_events.push(AnalyzerDispatchEvent {
-                key,
-                subgraph: subgraph.clone(),
-            });
+            dispatch_events.push(AnalyzerDispatchEvent::new(key, subgraph.clone()));
         }
 
         if let Some(e) = failed {
@@ -181,75 +170,6 @@ where
     }
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct SubgraphSerializer {
-    proto: Vec<u8>,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum SubgraphSerializerError {
-    #[error("IO")]
-    Io(#[from] std::io::Error),
-    #[error("EncodeError")]
-    JsonEncodeError(#[from] serde_json::Error),
-    #[error("ProtoEncodeError")]
-    ProtoEncodeError(Error),
-}
-
-impl CompletionEventSerializer for SubgraphSerializer {
-    type CompletedEvent = Vec<AnalyzerDispatchEvent>;
-    type Output = Vec<u8>;
-    type Error = SubgraphSerializerError;
-
-    fn serialize_completed_events(
-        &mut self,
-        completed_events: &[Self::CompletedEvent],
-    ) -> Result<Vec<Self::Output>, Self::Error> {
-        let unique_events: Vec<_> = completed_events.iter().flatten().collect();
-
-        let mut final_subgraph = Graph::new(0);
-
-        for event in unique_events.iter() {
-            final_subgraph.merge(&event.subgraph);
-        }
-
-        let mut serialized = Vec::with_capacity(unique_events.len());
-
-        for event in unique_events {
-            let event = json!({
-                "key": event.key,
-                "subgraph": encode_subgraph(&final_subgraph).map_err(|e| SubgraphSerializerError::ProtoEncodeError(e))?
-            });
-
-            serialized.push(serde_json::to_vec(&event)?);
-        }
-
-        Ok(serialized)
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ZstdProtoDecoder;
-
-impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-where
-    E: Message + Default,
-{
-    fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-    where
-        E: Message + Default,
-    {
-        let mut decompressed = Vec::new();
-
-        let mut body = Cursor::new(&body);
-
-        zstd::stream::copy_decode(&mut body, &mut decompressed)?;
-
-        let buf = Bytes::from(decompressed);
-
-        Ok(E::decode(buf)?)
-    }
-}
 
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let env = grapl_config::init_grapl_env!();
@@ -258,11 +178,9 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
 
     let sqs_client = SqsClient::from_env();
     let s3_client = S3Client::from_env();
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+    let source_queue_url = grapl_config::source_queue_url();
     debug!("Queue Url: {}", source_queue_url);
-    let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-
-    let destination_bucket = bucket_prefix + "-dispatched-analyzer-bucket";
+    let destination_bucket = grapl_config::dest_bucket();;
     info!("Output events to: {}", destination_bucket);
 
     let cache = &mut make_ten(async {
@@ -272,7 +190,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     })
     .await;
 
-    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+    let serializer = &mut make_ten(async { AnalyzerDispatchSerializer::default() }).await;
 
     let s3_emitter = &mut make_ten(async {
         S3EventEmitter::new(
@@ -301,7 +219,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
-        std::env::var("QUEUE_URL").expect("QUEUE_URL"),
+        source_queue_url,
         std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
         cache,
         sqs_client.clone(),

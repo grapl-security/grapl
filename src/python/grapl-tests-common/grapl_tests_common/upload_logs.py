@@ -119,7 +119,7 @@ def upload_logs(
             endpoint_url="http://s3:9000" if use_links else "http://localhost:9000",
             aws_access_key_id="minioadmin",
             aws_secret_access_key="minioadmin",
-            region_name="us-east-3",
+            region_name="us-east-1",
         )
         sqs = boto3.client(
             "sqs",

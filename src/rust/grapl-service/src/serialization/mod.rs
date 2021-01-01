@@ -1,1 +1,3 @@
-pub mod zstd_proto;
+pub mod zstd_proto_graph;
+
+pub use zstd_proto_graph::{SubgraphSerializer, SubgraphSerializerError};

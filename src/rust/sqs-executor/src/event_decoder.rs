@@ -1,14 +1,18 @@
 use std::error::Error;
+use crate::errors::CheckedError;
 
 pub trait PayloadDecoder<E> {
-    fn decode(&mut self, bytes: Vec<u8>) -> Result<E, Box<dyn Error>>;
+    type DecoderError: CheckedError;
+    fn decode(&mut self, bytes: Vec<u8>) -> Result<E, Self::DecoderError>;
 }
 
-impl<T, F> PayloadDecoder<T> for F
+impl<T, F, E> PayloadDecoder<T> for F
 where
-    F: Fn(Vec<u8>) -> Result<T, Box<dyn std::error::Error>>,
+    F: Fn(Vec<u8>) -> Result<T, E>,
+    E: CheckedError,
 {
-    fn decode(&mut self, body: Vec<u8>) -> Result<T, Box<dyn std::error::Error>> {
+    type DecoderError = E;
+    fn decode(&mut self, body: Vec<u8>) -> Result<T, Self::DecoderError> {
         (self)(body)
     }
 }

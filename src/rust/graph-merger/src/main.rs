@@ -49,6 +49,8 @@ use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::make_ten;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use std::convert::TryInto;
+use grapl_service::decoder::ZstdProtoDecoder;
+use grapl_service::serialization::SubgraphSerializer;
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
@@ -228,98 +230,6 @@ async fn upsert_edge(
     Ok(())
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct ZstdProtoDecoder;
-
-impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-where
-    E: Message + Default,
-{
-    fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-    where
-        E: Message + Default,
-    {
-        let mut decompressed = Vec::new();
-
-        let mut body = Cursor::new(&body);
-
-        zstd::stream::copy_decode(&mut body, &mut decompressed)?;
-
-        Ok(E::decode(Cursor::new(decompressed))?)
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct SubgraphSerializer {
-    proto: Vec<u8>,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum SubgraphSerializerError {
-    #[error("IO")]
-    Io(#[from] std::io::Error),
-    #[error("EncodeError")]
-    EncodeError(#[from] prost::EncodeError),
-}
-
-impl CompletionEventSerializer for SubgraphSerializer {
-    type CompletedEvent = GeneratedSubgraphs;
-    type Output = Vec<u8>;
-    type Error = SubgraphSerializerError;
-
-    fn serialize_completed_events(
-        &mut self,
-        completed_events: &[Self::CompletedEvent],
-    ) -> Result<Vec<Self::Output>, Self::Error> {
-        if completed_events.is_empty() {
-            warn!("No events to serialize");
-            return Ok(Vec::new());
-        }
-        let mut subgraph = Graph::new(0);
-
-        let mut pre_nodes = 0;
-        let mut pre_edges = 0;
-        for completed_event in completed_events {
-            for sg in completed_event.subgraphs.iter() {
-                pre_nodes += sg.nodes.len();
-                pre_edges += sg.edges.len();
-                subgraph.merge(sg);
-            }
-        }
-
-        if subgraph.is_empty() {
-            warn!(
-                concat!(
-                    "Output subgraph is empty. Serializing to empty vector.",
-                    "pre_nodes: {} pre_edges: {}"
-                ),
-                pre_nodes, pre_edges,
-            );
-            return Ok(vec![]);
-        }
-
-        info!(
-            "Serializing {} nodes {} edges. Down from {} nodes {} edges.",
-            subgraph.nodes.len(),
-            subgraph.edges.len(),
-            pre_nodes,
-            pre_edges,
-        );
-
-        let subgraphs = GeneratedSubgraphs {
-            subgraphs: vec![subgraph],
-        };
-
-        self.proto.clear();
-
-        prost::Message::encode(&subgraphs, &mut self.proto)?;
-
-        let mut compressed = Vec::with_capacity(self.proto.len());
-        let mut proto = Cursor::new(&self.proto);
-        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)?;
-        Ok(vec![compressed])
-    }
-}
 
 fn time_based_key_fn(_event: &[u8]) -> String {
     info!("event length {}", _event.len());
@@ -333,21 +243,9 @@ fn time_based_key_fn(_event: &[u8]) -> String {
     format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
-fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
-    rusoto_sqs::Message {
-        attributes: Some(event.attributes),
-        body: event.body,
-        md5_of_body: event.md5_of_body,
-        md5_of_message_attributes: event.md5_of_message_attributes,
-        message_attributes: None,
-        message_id: event.message_id,
-        receipt_handle: event.receipt_handle,
-    }
-}
-
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let env = grapl_config::init_grapl_env!();
-    info!("Handling event");
+    info!("Starting graph-merger 0");
 
     let sqs_client = SqsClient::from_env();
     let s3_client = S3Client::from_env();
@@ -414,7 +312,7 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
-    type OutputEvent = GeneratedSubgraphs;
+    type OutputEvent = Graph;
     type Error = GraphMergerError;
 
     async fn handle_event(
@@ -429,7 +327,7 @@ where
 
         if subgraph.is_empty() {
             warn!("Attempted to merge empty subgraph. Short circuiting.");
-            return Ok(GeneratedSubgraphs { subgraphs: vec![] });
+            return Ok(Graph::default());
         }
 
         let mut identities = Vec::with_capacity(subgraph.nodes.len() + subgraph.edges.len());
@@ -634,14 +532,14 @@ where
 
         match (upsert_res, edge_res) {
             (Some(e), _) => Err(Ok((
-                GeneratedSubgraphs::new(vec![subgraph]),
+                subgraph,
                 GraphMergerError::Unexpected(e.to_string()),
             ))),
             (_, Some(e)) => Err(Ok((
-                GeneratedSubgraphs::new(vec![subgraph]),
+                subgraph,
                 GraphMergerError::Unexpected(e.to_string()),
             ))),
-            (None, None) => Ok(GeneratedSubgraphs::new(vec![subgraph])),
+            (None, None) => Ok(subgraph),
         }
     }
 }
@@ -765,8 +663,6 @@ impl sqs_executor::cache::Cache for HashCache {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
-    info!("Starting graph-merger 0");
     handler().await?;
     Ok(())
 }

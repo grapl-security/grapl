@@ -3,18 +3,17 @@
 mod generator;
 mod metrics;
 mod parsers;
-mod serialization;
+
 mod tests;
 
 use crate::generator::OSQuerySubgraphGenerator;
 use crate::metrics::OSQuerySubgraphGeneratorMetrics;
-use crate::serialization::OSQueryLogDecoder;
+
 use graph_generator_lib::*;
 use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
 use grapl_config::*;
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::decoder::zstd_json::ZstdJsonDecoder;
-use grapl_service::serialization::zstd_proto::SubgraphSerializer;
+use grapl_service::serialization::zstd_proto_graph::SubgraphSerializer;
 use log::*;
 use rusoto_core::Region;
 use rusoto_s3::S3Client;
@@ -25,6 +24,7 @@ use sqs_executor::{make_ten, time_based_key_fn};
 use std::io::Stdout;
 use std::str::FromStr;
 use std::time::Duration;
+use grapl_service::decoder::ZstdJsonDecoder;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-            OSQueryLogDecoder::default(),
+            ZstdJsonDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })

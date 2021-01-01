@@ -79,7 +79,7 @@ where
 #[async_trait]
 impl<S, F> EventEmitter for S3EventEmitter<S, F>
 where
-    S: S3 + Send + Sync + 'static,
+    S: Clone + S3 + Send + Sync + 'static,
     F: Fn(&[u8]) -> String + Send + Sync,
 {
     type Event = Vec<u8>;
@@ -92,20 +92,23 @@ where
         for event in events {
             let output_bucket = self.output_bucket.clone();
             let key = (self.key_fn)(&event);
-            let put_object = self
-                .s3
-                .put_object(PutObjectRequest {
-                    body: Some(event.into()),
-                    bucket: output_bucket.clone(),
-                    key,
-                    ..Default::default()
-                })
-                .timed();
+            let s3 = self.s3.clone();
+            let put_object = async move {
+                tracing::debug!("uploading event to: {} {}", output_bucket, key);
+                s3
+                    .put_object(PutObjectRequest {
+                        body: Some(event.into()),
+                        bucket: output_bucket.clone(),
+                        key,
+                        ..Default::default()
+                    })
+                    .timed().await
+            };
             event_uploads.push(put_object)
         }
 
         let event_uploads = tokio::time::timeout(
-            Duration::from_secs(5),
+            Duration::from_secs(2),
             futures::future::join_all(event_uploads),
         )
         .await?;
@@ -131,3 +134,4 @@ where
 use futures_util::TryFutureExt;
 use grapl_observe::timers::TimedFutureExt;
 use tokio::time::{Duration, Elapsed};
+use tracing::field::debug;

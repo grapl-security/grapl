@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 from hashlib import pbkdf2_hmac, sha256
-from typing import List
+from typing import List, Dict, Optional, Any
 from uuid import uuid4
 
 import boto3
@@ -233,36 +233,67 @@ buckets = (
 )
 
 
+class SqsQueue(object):
+    def __init__(
+            self,
+            sqs: Any,
+            q: Any,
+            queue_name: str,
+            queue_arn: str,
+            queue_url: str,
+    ):
+        self.sqs = sqs
+        self.q = q
+        self.queue_name = queue_name
+        self.queue_arn = queue_arn
+        self.queue_url = queue_url
+
+    @staticmethod
+    def create_queue(sqs, queue_name: str, attributes: Optional[Dict[str, str]]=None) -> 'SqsQueue':
+        attributes = attributes or {}
+        q = sqs.create_queue(
+            QueueName=queue_name,
+            Attributes={"MessageRetentionPeriod": "86400", **attributes},
+        )
+        queue_url = q["QueueUrl"]
+        queue_arn = sqs.get_queue_attributes(
+            QueueUrl=queue_url, AttributeNames=["QueueArn"]
+        )["Attributes"]["QueueArn"]
+        return SqsQueue(
+            sqs, q, queue_name, queue_arn, queue_url,
+        )
+
+    def attach_deadletter_queue(self, dl_queue: 'SqsQueue', max_receives: int = 10, attributes: Optional[Dict[str, str]]=None):
+        attributes = attributes or {}
+        dl_redrive_policy = {
+            "deadLetterTargetArn": dl_queue.queue_arn,
+            "maxReceiveCount": str(max_receives),
+        }
+        self.sqs.set_queue_attributes(
+            QueueUrl=self.queue_url,
+            Attributes={"RedrivePolicy": json.dumps(dl_redrive_policy), **attributes},
+        )
+
+    def purge(self):
+        self.sqs.purge_queue(QueueUrl=self.queue_url)
+
+
 def provision_sqs(sqs, service_name: str) -> None:
-    redrive_queue = sqs.create_queue(
-        QueueName="grapl-%s-retry-queue" % service_name,
-        Attributes={"MessageRetentionPeriod": "86400"},
-    )
+    LOGGER.debug("Provisioning: grapl-%s-queue" % service_name)
+    q = SqsQueue.create_queue(sqs, "grapl-%s-queue" % service_name)
+    LOGGER.debug("Provisioning: grapl-%s-redrive-queue" % service_name)
+    rd_q = SqsQueue.create_queue(sqs, "grapl-%s-redrive-queue" % service_name)
+    LOGGER.debug("Provisioning: grapl-%s-dead-letter-queue" % service_name)
+    dl_q = SqsQueue.create_queue(sqs, "grapl-%s-dead-letter-queue" % service_name)
 
-    redrive_url = redrive_queue["QueueUrl"]
-    LOGGER.debug(f"Provisioned {service_name} retry queue at " + redrive_url)
+    q.attach_deadletter_queue(rd_q)
+    rd_q.attach_deadletter_queue(dl_q)
 
-    redrive_arn = sqs.get_queue_attributes(
-        QueueUrl=redrive_url, AttributeNames=["QueueArn"]
-    )["Attributes"]["QueueArn"]
+    LOGGER.debug(f"Provisioned {service_name} queue at " + q.queue_url)
+    LOGGER.debug(f"Provisioned {service_name} queue at " + rd_q.queue_url)
+    LOGGER.debug(f"Provisioned {service_name} queue at " + dl_q.queue_url)
 
-    redrive_policy = {
-        "deadLetterTargetArn": redrive_arn,
-        "maxReceiveCount": "10",
-    }
-
-    queue = sqs.create_queue(
-        QueueName="grapl-%s-queue" % service_name,
-    )
-
-    sqs.set_queue_attributes(
-        QueueUrl=queue["QueueUrl"],
-        Attributes={"RedrivePolicy": json.dumps(redrive_policy)},
-    )
-    LOGGER.debug(f"Provisioned {service_name} queue at " + queue["QueueUrl"])
-
-    sqs.purge_queue(QueueUrl=queue["QueueUrl"])
-    sqs.purge_queue(QueueUrl=redrive_queue["QueueUrl"])
+    q.purge(), rd_q.purge(), dl_q.purge()
 
 
 def provision_bucket(s3, bucket_name: str) -> None:
@@ -365,6 +396,7 @@ def sqs_provision_loop() -> None:
                     provision_sqs(sqs, service)
                     sqs_succ.discard(service)
                 except Exception as e:
+                    LOGGER.debug(e)
                     if i > 10:
                         LOGGER.error(e)
                     time.sleep(1)

@@ -26,26 +26,46 @@ pub trait PayloadRetriever<T> {
     async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<T>, Self::Error>;
 }
 
-#[derive(Clone)]
-pub struct S3PayloadRetriever<S, SInit, D, E>
+pub struct S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
 where
     S: S3 + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-    D: PayloadDecoder<E> + Clone + Send + 'static,
+    D: PayloadDecoder<E, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+    DecoderErrorT: CheckedError + Send + 'static,
     E: Send + 'static,
 {
     s3_init: SInit,
     s3_clients: HashMap<String, S>,
     decoder: D,
     metric_reporter: MetricReporter<Stdout>,
-    phantom: PhantomData<E>,
+    phantom: PhantomData<(E, DecoderErrorT)>,
 }
 
-impl<S, SInit, D, E> S3PayloadRetriever<S, SInit, D, E>
+impl<S, SInit, D, E, DecoderErrorT> Clone for S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
+    where
+        S: S3 + Clone + Send + Sync + 'static,
+        SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
+        D: PayloadDecoder<E, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+        DecoderErrorT: CheckedError + Send + 'static,
+        E: Send + 'static,
+{
+    fn clone(&self) -> Self {
+        Self {
+            s3_init: self.s3_init.clone(),
+            s3_clients: self.s3_clients.clone(),
+            decoder: self.decoder.clone(),
+            metric_reporter: self.metric_reporter.clone(),
+            phantom: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<S, SInit, D, E, DecoderErrorT> S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
 where
     S: S3 + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-    D: PayloadDecoder<E> + Clone + Send + 'static,
+    D: PayloadDecoder<E, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+    DecoderErrorT: CheckedError + Send + 'static,
     E: Send + 'static,
 {
     pub fn new(s3: SInit, decoder: D, metric_reporter: MetricReporter<Stdout>) -> Self {
@@ -70,12 +90,16 @@ where
     }
 }
 
+// PayloadDecoder
+
 #[derive(thiserror::Error, Debug)]
-pub enum S3PayloadRetrieverError {
+pub enum S3PayloadRetrieverError<DecoderErrorT>
+    where DecoderErrorT: CheckedError + 'static
+{
     #[error("S3Error: {0}")]
     S3Error(#[from] RusotoError<GetObjectError>),
     #[error("Decode error")]
-    DecodeError(#[from] Box<dyn Error>),
+    DecodeError(#[from] DecoderErrorT),
     #[error("IO")]
     Io(#[from] std::io::Error),
     #[error("JSON")]
@@ -84,7 +108,9 @@ pub enum S3PayloadRetrieverError {
     Timeout(#[from] Elapsed),
 }
 
-impl CheckedError for S3PayloadRetrieverError {
+impl<DecoderErrorT> CheckedError for S3PayloadRetrieverError<DecoderErrorT>
+    where DecoderErrorT: CheckedError + 'static
+{
     fn error_type(&self) -> Recoverable {
         match self {
             Self::S3Error(_) => Recoverable::Transient,
@@ -97,18 +123,21 @@ impl CheckedError for S3PayloadRetrieverError {
 }
 
 #[async_trait]
-impl<S, SInit, D, E> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E>
+impl<S, SInit, D, E, DecoderErrorT> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
 where
     S: S3 + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-    D: PayloadDecoder<E> + Clone + Send + 'static,
+    D: PayloadDecoder<E, DecoderError=DecoderErrorT> + Clone + Send + 'static,
     E: Send + 'static,
+    DecoderErrorT: CheckedError + Send + 'static,
 {
     type Message = SqsMessage;
-    type Error = S3PayloadRetrieverError;
+    type Error = S3PayloadRetrieverError<DecoderErrorT>;
+
     #[tracing::instrument(skip(self, msg))]
     async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<E>, Self::Error> {
         let body = msg.body.as_ref().unwrap();
+        println!("Got body from message: {}", body);
         debug!("Got body from message: {}", body);
         let event: serde_json::Value = serde_json::from_str(body)?;
 
@@ -130,7 +159,7 @@ where
             ..Default::default()
         });
 
-        let s3_data = tokio::time::timeout(Duration::from_secs(5), s3_data);
+        let s3_data = tokio::time::timeout(Duration::from_secs(3), s3_data);
         let s3_data = s3_data
             .timed()
             .map(|(s3_data, ms)| {
