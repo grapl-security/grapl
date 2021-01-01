@@ -19,9 +19,11 @@ RUN rm -rf lambda/node_modules/grpc/build/
 COPY modules lambda/modules
 COPY server.js lambda/server.js
 
-CMD ORIG_DIR=$(pwd); \
-    cd /lambda && \
-    zip -qr "${ORIG_DIR}/lambda.zip" ./
+# zip
+FROM graphql-endpoint-build AS graphql-endpoint-zip
+
+RUN cd /lambda && \
+    zip -qr /lambda.zip ./
 
 # deploy
 FROM node:12.18-buster-slim AS graphql-endpoint-deploy

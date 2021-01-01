@@ -11,11 +11,7 @@ services:
     build:
       context: src/rust
       dockerfile: Dockerfile.Makefile
-      target: base
-    volumes: 
-      - ./src/rust:/grapl
-    working_dir: /grapl
-    user: "${UID:-1000}:${GID:-1000}"
+      target: build-sccache
     command: cargo test
 
   #

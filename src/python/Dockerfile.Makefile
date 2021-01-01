@@ -164,11 +164,14 @@ RUN source venv/bin/activate && \
     cd analyzer_executor && \
     pip install .
 
-CMD ORIG_DIR=$(pwd); \
+# zip
+FROM analyzer-executor-build AS analyzer-executor-zip
+
+RUN ORIG_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages && \
     zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
     cd ~/analyzer_executor/src && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" {} \;
+    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS analyzer-executor-deploy
@@ -209,11 +212,14 @@ RUN source venv/bin/activate && \
     cd engagement-creator && \
     pip install .
 
-CMD ORIG_DIR=$(pwd); \
+# zip
+FROM engagement-creator-build AS engagement-creator-zip
+
+RUN ORIG_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages/ && \
     zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
     cd ~/engagement-creator/src && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" {} \;
+    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS engagement-creator-deploy
@@ -254,11 +260,14 @@ RUN source venv/bin/activate && \
     cd engagement_edge && \
     pip install .
 
-CMD ORIG_DIR=$(pwd); \
+# zip
+FROM engagement-edge-build AS engagement-edge-zip
+
+RUN ORIG_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages/ && \
     zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
     cd ~/engagement_edge/src && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" {} \;
+    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS engagement-edge-deploy
@@ -308,7 +317,10 @@ COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     pip install -r dgraph-ttl/requirements.txt
 
-CMD ORIG_DIR=$(pwd); \
+# zip
+FROM dgraph-ttl-build AS dgraph-ttl-zip
+
+RUN ORIG_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages && \
     zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
     cd ~/dgraph-ttl && \
@@ -349,11 +361,14 @@ RUN source venv/bin/activate && \
     cd model-plugin-deployer && \
     pip install .
 
-CMD ORIG_DIR=$(pwd); \
+# zip
+FROM model-plugin-deployer-build AS model-plugin-deployer-zip
+
+RUN ORIG_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages && \
     zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
     cd ~/model-plugin-deployer/src && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" {} \;
+    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS model-plugin-deployer-deploy
@@ -392,11 +407,14 @@ COPY --chown=grapl python/swarm-lifecycle-event-handler swarm-lifecycle-event-ha
 RUN source venv/bin/activate && \
     pip install -r swarm-lifecycle-event-handler/requirements.txt
 
-CMD ORIG_DIR=$(pwd); \
+# zip
+FROM swarm-lifecycle-event-handler-build AS swarm-lifecycle-event-handler-zip
+
+RUN ORIG_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages && \
     zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
     cd ~/swarm-lifecycle-event-handler && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" {} \;
+    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS swarm-lifecycle-event-handler-deploy
@@ -465,3 +483,21 @@ FROM grapl-python-build AS grapl-provision
 
 COPY --chown=grapl python/grapl_provision grapl_local_provision
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+
+#
+# Sync point and zip extraction
+#
+
+# FROM python:3.7-slim-buster AS zips
+
+# ENV TAG=latest
+
+# RUN mkdir zips
+# COPY --from=analyzer-executor-zip             /home/grapl/lambda.zip zips/analyzer-executor
+# COPY --from=dgraph-ttl-zip                    /home/grapl/lambda.zip zips/dgraph-ttl
+# COPY --from=engagement-creator-zip            /home/grapl/lambda.zip zips/engagement-creator
+# COPY --from=engagement-edge-zip               /home/grapl/lambda.zip zips/engagement-edge
+# COPY --from=model-plugin-deployer-zip         /home/grapl/lambda.zip zips/model-plugin-deployer
+# COPY --from=swarm-lifecycle-event-handler-zip /home/grapl/lambda.zip zips/swarm-lifecycle-event-handler
+
+# CMD for f in $(ls /zips); do cp /zips/$f ./$f-${TAG}.zip; done

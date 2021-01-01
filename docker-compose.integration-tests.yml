@@ -7,10 +7,7 @@ services:
     build:
       context: src/rust
       dockerfile: Dockerfile.Makefile
-      target: base
-    volumes: 
-      - ./src/rust:/grapl
-    working_dir: /grapl
+      target: build-sccache
     command: bash -c "
       wait-for-it grapl-provision:8126 --timeout=120 && 
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"
@@ -89,12 +86,12 @@ services:
       - UX_BUCKET_URL="ux_bucket_url"
 
   engagement-view-integration-tests:
-    image: grapl/cypress
-    build: 
-      context: test
+    image: cypress/included:5.6.0
+    user: "${UID}:${GID}"
+    working_dir: /test
+    command: --browser chrome --headless # enctrypoint is: cypress run
     volumes: 
-      - ./test/integration-outputs/screenshots:/test/cypress/screenshots
-      - ./test/integration-outputs/videos:/test/cypress/videos
+      - ./test:/test
 
 
 networks:

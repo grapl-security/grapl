@@ -97,8 +97,8 @@ services:
   grapl-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
     build:
-      context: src/rust/target/x86_64-unknown-linux-musl
-      dockerfile: ../../Dockerfile.Makefile
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
       target: metric-forwarder-deploy
     tty: false
     environment:
@@ -111,8 +111,8 @@ services:
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     build:
-      context: src/rust/target/x86_64-unknown-linux-musl
-      dockerfile: ../../Dockerfile.Makefile
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
       target: sysmon-subgraph-generator-deploy
     tty: false
     environment:
@@ -136,8 +136,8 @@ services:
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
     build:
-      context: src/rust/target/x86_64-unknown-linux-musl
-      dockerfile: ../../Dockerfile.Makefile
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
       target: osquery-subgraph-generator-deploy
     tty: false
     environment:
@@ -161,8 +161,8 @@ services:
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     build:
-      context: src/rust/target/x86_64-unknown-linux-musl
-      dockerfile: ../../Dockerfile.Makefile
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
       target: node-identifier-deploy
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -198,8 +198,8 @@ services:
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     build:
-      context: src/rust/target/x86_64-unknown-linux-musl
-      dockerfile: ../../Dockerfile.Makefile
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
       target: node-identifier-retry-handler-deploy
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -235,8 +235,8 @@ services:
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     build:
-      context: src/rust/target/x86_64-unknown-linux-musl
-      dockerfile: ../../Dockerfile.Makefile
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
       target: graph-merger-deploy
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -265,8 +265,8 @@ services:
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     build:
-      context: src/rust/target/x86_64-unknown-linux-musl
-      dockerfile: ../../Dockerfile.Makefile
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
       target: analyzer-dispatcher-deploy
     environment:
       - "BUCKET_PREFIX=local-grapl"
