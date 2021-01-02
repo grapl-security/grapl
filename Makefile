@@ -87,7 +87,7 @@ zip: ## Generate zips for use in AWS
 		docker-compose -f docker-compose.zips.yml up
 
 .PHONY: up
-up: build ## build local services and docker-compose up
+up: build-local ## build local services and docker-compose up
 	docker-compose -f docker-compose.Makefile.yml up
 
 .PHONY: down
