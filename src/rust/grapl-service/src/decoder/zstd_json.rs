@@ -1,7 +1,7 @@
 use serde::Deserialize;
+use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_decoder::PayloadDecoder;
 use std::io::Cursor;
-use sqs_executor::errors::{Recoverable, CheckedError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ZstdJsonDecoderError {
@@ -19,7 +19,6 @@ impl CheckedError for ZstdJsonDecoderError {
         }
     }
 }
-
 
 #[derive(Debug, Clone, Default)]
 pub struct ZstdJsonDecoder;

@@ -1,10 +1,10 @@
+use crate::generator::SysmonGeneratorError;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use failure::bail;
 use failure::Error;
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
 use sysmon::Event;
-use crate::generator::SysmonGeneratorError;
 
 mod file;
 mod network;
@@ -83,7 +83,9 @@ impl SysmonTryFrom<Event> for Graph {
 
                 warn!("{}", message);
 
-                Err(SysmonGeneratorError::UnsupportedEventType(get_event_type(unsupported_event)))
+                Err(SysmonGeneratorError::UnsupportedEventType(get_event_type(
+                    unsupported_event,
+                )))
             }
         }
     }
@@ -126,7 +128,7 @@ pub fn utc_to_epoch(utc: &str) -> Result<u64, SysmonGeneratorError> {
     let ts = dt.timestamp_millis();
 
     if ts < 0 {
-        return Err(SysmonGeneratorError::NegativeEventTime(ts))
+        return Err(SysmonGeneratorError::NegativeEventTime(ts));
     }
 
     if ts < 1_000_000_000_000 {

@@ -62,6 +62,9 @@ pub async fn event_caches(env: &ServiceEnv) -> [RedisCache; 10] {
 pub fn dest_bucket() -> String {
     std::env::var("DEST_BUCKET_NAME").expect("DEST_BUCKET_NAME")
 }
+pub fn dest_queue_url() -> String {
+    std::env::var("DEST_QUEUE_URL").expect("DEST_QUEUE_URL")
+}
 
 pub fn region() -> Region {
     let region_override_endpoint = std::env::var("AWS_REGION_ENDPOINT_OVERRIDE");
@@ -96,6 +99,10 @@ pub fn source_queue_url() -> String {
 
 pub fn dead_letter_queue_url() -> String {
     std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL")
+}
+
+pub fn retry_queue_url() -> String {
+    std::env::var("RETRY_QUEUE_URL").expect("RETRY_QUEUE_URL")
 }
 
 pub fn mg_alphas() -> Vec<String> {

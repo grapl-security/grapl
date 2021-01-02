@@ -8,6 +8,7 @@ use log::*;
 use sqs_executor::cache::{Cache, CacheResponse};
 use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
+use sqs_executor::event_status::EventStatus;
 use std::borrow::Cow;
 use sysmon::Event;
 
@@ -61,9 +62,9 @@ where
     async fn process_events(
         &mut self,
         events: Vec<Cow<'_, str>>,
-    ) -> (Graph, Vec<Event>, Option<SysmonGeneratorError>) {
+        identities: &mut CompletedEvents,
+    ) -> Result<Graph, Result<(Graph, SysmonGeneratorError), SysmonGeneratorError>> {
         let mut last_failure: Option<SysmonGeneratorError> = None;
-        let mut identities = Vec::with_capacity(events.len());
         let mut final_subgraph = Graph::new(0);
 
         for event in events {
@@ -72,6 +73,8 @@ where
                 Err(e) => {
                     warn!("Failed to deserialize event: {}, {}", e, event);
 
+                    // If `e` is Persistent we should cache that
+                    // identities.add_identity(event, Success::F);
                     last_failure = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(
                         format!("Failed: {}", e),
                     )));
@@ -92,18 +95,23 @@ where
             let graph = match Graph::try_from(event.clone()) {
                 Ok(subgraph) => subgraph,
                 Err(e) => {
+                    // If `e` is Persistent we should cache that
+                    // identities.add_identity(event, Success::F);
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
                     last_failure = Some(e);
                     continue;
                 }
             };
 
-            identities.push(event);
-
             final_subgraph.merge(&graph);
+            identities.add_identity(event, EventStatus::Success);
         }
 
-        (final_subgraph, identities, last_failure)
+        match (last_failure, identities.identities.is_empty()) {
+            (Some(last_failure), true) => Err(Err(last_failure)),
+            (Some(last_failure), false) => Err(Ok((final_subgraph, last_failure))),
+            (None, _) => Ok(final_subgraph),
+        }
     }
 }
 
@@ -151,19 +159,11 @@ where
 
         info!("Handling {} events", events.len());
 
-        let (final_subgraph, identities, last_failure) = self.process_events(events).await;
+        let final_subgraph = self.process_events(events, completed).await;
 
-        info!("Completed mapping {} subgraphs", identities.len());
-        self.metrics
-            .report_handle_event_success(last_failure.is_some());
+        info!("Completed mapping {} subgraphs", completed.len());
+        self.metrics.report_handle_event_success(&final_subgraph);
 
-        identities
-            .into_iter()
-            .for_each(|identity| completed.add_identity(identity));
-
-        match last_failure {
-            Some(e) => Err(Ok((final_subgraph, e))),
-            None => Ok(final_subgraph),
-        }
+        final_subgraph
     }
 }

@@ -1,9 +1,9 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use grapl_graph_descriptions::graph_description::*;
-use sqs_executor::completion_event_serializer::CompletionEventSerializer;
-use serde_json::json;
 use prost::Message;
+use serde_json::json;
+use sqs_executor::completion_event_serializer::CompletionEventSerializer;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalyzerDispatchEvent {
@@ -13,9 +13,7 @@ pub struct AnalyzerDispatchEvent {
 
 impl AnalyzerDispatchEvent {
     pub fn new(key: String, subgraph: Graph) -> Self {
-        Self {
-            key, subgraph
-        }
+        Self { key, subgraph }
     }
 }
 

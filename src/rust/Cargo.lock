@@ -39,7 +39,7 @@ name = "analyzer-dispatcher"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base16",
  "base64 0.10.1",
  "bytes 0.5.6",
@@ -179,6 +179,20 @@ checksum = "8ef69d388b3f3692968c696e7a2356c23bd16fe88ff0c402c34fe8a5fa262aa2"
 dependencies = [
  "base64 0.9.3",
  "bytes 0.4.12",
+ "chrono",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
+name = "aws_lambda_events"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fa8d1a23d23df1036a0976b032f40860d7521c98ef65c03c385b1acd1c8fb62"
+dependencies = [
+ "base64 0.12.3",
+ "bytes 0.5.6",
  "chrono",
  "serde",
  "serde_derive",
@@ -352,6 +366,9 @@ name = "bytes"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e4cec68f03f32e44924783795810fa50a7035d8c8ebe78580ad7e6c703fba38"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "bytes"
@@ -1201,7 +1218,7 @@ name = "generic-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base16",
  "chrono",
  "eyre 0.4.3",
@@ -1269,7 +1286,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base16",
  "base64 0.10.1",
  "chrono",
@@ -1950,7 +1967,7 @@ name = "metric-forwarder"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base64 0.10.1",
  "chrono",
  "flate2",
@@ -2080,7 +2097,7 @@ name = "node-identifier"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base58",
  "base64 0.9.3",
  "bytes 0.5.6",
@@ -3392,6 +3409,8 @@ name = "sqs-executor"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "aws_lambda_events 0.3.1",
+ "chrono",
  "color-eyre 0.5.10",
  "darkredis 0.7.0",
  "eyre 0.6.3",
@@ -3421,7 +3440,7 @@ version = "0.21.1"
 dependencies = [
  "aktors",
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "chrono",
  "color-eyre 0.3.4",
  "crossbeam-channel 0.4.4",
@@ -3635,7 +3654,7 @@ name = "sysmon-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
+ "aws_lambda_events 0.2.7",
  "base16",
  "chrono",
  "failure",

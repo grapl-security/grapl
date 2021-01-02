@@ -7,6 +7,7 @@ use grapl_graph_descriptions::node::NodeT;
 use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
 use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
+use sqs_executor::event_status::EventStatus;
 use std::convert::TryFrom;
 use tracing::*;
 
@@ -73,10 +74,10 @@ where
     pub(crate) async fn convert_events_to_subgraph(
         &mut self,
         events: Vec<GenericEvent>,
-    ) -> (Graph, Vec<impl Cacheable>, Option<eyre::Report>) {
+        completed: &mut CompletedEvents,
+    ) -> (Graph, Option<eyre::Report>) {
         let mut final_subgraph = Graph::new(0);
         let mut failed: Option<eyre::Report> = None;
-        let mut identities = Vec::with_capacity(events.len());
 
         for event in events {
             let identity = event.clone();
@@ -95,11 +96,11 @@ where
                 }
             };
 
-            identities.push(identity);
+            completed.add_identity(identity, EventStatus::Success);
             final_subgraph.merge(&subgraph);
         }
 
-        (final_subgraph, identities, failed)
+        (final_subgraph, failed)
     }
 }
 
@@ -118,12 +119,7 @@ where
         events: Vec<GenericEvent>,
         completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        let (subgraph, processed_identities, error_report) =
-            self.convert_events_to_subgraph(events).await;
-
-        processed_identities
-            .into_iter()
-            .for_each(|identity| completed.add_identity(identity));
+        let (subgraph, error_report) = self.convert_events_to_subgraph(events, completed).await;
 
         // if an error occurred while converting generic events to a subgraph, we should record it
         if let Some(event_error) = error_report {

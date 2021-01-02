@@ -14,7 +14,7 @@ use grapl_observe::metric_reporter::MetricReporter;
 use sqs_executor::cache::NopCache;
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::redis_cache::RedisCache;
-use sqs_executor::s3_event_emitter::S3EventEmitter;
+use sqs_executor::s3_event_emitter::{send_s3_notification, S3EventEmitter};
 use sqs_executor::{make_ten, time_based_key_fn};
 
 use crate::generator::SysmonSubgraphGenerator;
@@ -22,6 +22,7 @@ use crate::metrics::SysmonSubgraphGeneratorMetrics;
 use crate::serialization::{SubgraphSerializer, ZstdDecoder};
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::S3Client;
+use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use std::convert::TryInto;
 
 mod generator;
@@ -55,6 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             s3_client.clone(),
             destination_bucket.clone(),
             time_based_key_fn,
+            S3ToSqsEventNotifier::from_env(),
             MetricReporter::new(&env.service_name),
         )
     })

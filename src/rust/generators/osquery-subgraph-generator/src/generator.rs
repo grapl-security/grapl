@@ -52,7 +52,7 @@ where
     async fn handle_event(
         &mut self,
         input: Self::InputEvent,
-        completed: &mut CompletedEvents,
+        _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         info!("Processing {} incoming OSQuery log events.", input.len());
 

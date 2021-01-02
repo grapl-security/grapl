@@ -7,8 +7,8 @@ use grapl_graph_descriptions::node::NodeT;
 use grapl_graph_descriptions::process::ProcessState;
 use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 
-use crate::models::utc_to_epoch;
 use crate::generator::SysmonGeneratorError;
+use crate::models::utc_to_epoch;
 
 // Inbound is the 'src' in sysmon
 /// Creates a subgraph describing an inbound `NetworkEvent`

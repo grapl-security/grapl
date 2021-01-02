@@ -20,6 +20,14 @@ use chrono::Utc;
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 use failure::{bail, Error};
 use futures::future::join_all;
+use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
+use grapl_config::event_caches;
+use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
+use grapl_graph_descriptions::node::NodeT;
+use grapl_observe::dgraph_reporter::DgraphMetricReporter;
+use grapl_observe::metric_reporter::MetricReporter;
+use grapl_service::decoder::ZstdProtoDecoder;
+use grapl_service::serialization::SubgraphSerializer;
 use log::{debug, error, info, warn};
 use prost::Message;
 use rand::seq::SliceRandom;
@@ -34,23 +42,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;
+use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_decoder::PayloadDecoder;
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
-use sqs_executor::redis_cache::RedisCache;
-
-use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
-use grapl_config::event_caches;
-use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
-use grapl_graph_descriptions::node::NodeT;
-use grapl_observe::dgraph_reporter::DgraphMetricReporter;
-use grapl_observe::metric_reporter::MetricReporter;
-use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::make_ten;
+use sqs_executor::redis_cache::RedisCache;
 use sqs_executor::s3_event_emitter::S3EventEmitter;
+use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use std::convert::TryInto;
-use grapl_service::decoder::ZstdProtoDecoder;
-use grapl_service::serialization::SubgraphSerializer;
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
@@ -230,7 +230,6 @@ async fn upsert_edge(
     Ok(())
 }
 
-
 fn time_based_key_fn(_event: &[u8]) -> String {
     info!("event length {}", _event.len());
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
@@ -263,11 +262,14 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     .await;
 
     let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
-    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
+
+    let s3_emitter =
+        &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from_env())
+            .await;
 
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
-            |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+            |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
             ZstdProtoDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
@@ -330,8 +332,6 @@ where
             return Ok(Graph::default());
         }
 
-        let mut identities = Vec::with_capacity(subgraph.nodes.len() + subgraph.edges.len());
-
         info!(
             "handling new subgraph with {} nodes {} edges",
             subgraph.nodes.len(),
@@ -370,11 +370,7 @@ where
 
         for (node_key, upsert) in upserts.into_iter() {
             let new_uid = match upsert {
-                Ok(new_uid) => {
-                    let identity = subgraph.nodes[&node_key].clone().into_json().to_string();
-                    identities.push(identity);
-                    new_uid
-                }
+                Ok(new_uid) => new_uid,
                 Err(e) => {
                     error!("{}", e);
                     upsert_res = Some(e);
@@ -518,7 +514,9 @@ where
             }
 
             let mu = generate_edge_insert(&from, &to, &edge_name);
-            mutations.push(upsert_edge(&self.mg_client, &mut self.metric_reporter, mu).await);
+            let upsert_res = upsert_edge(&self.mg_client, &mut self.metric_reporter, mu).await;
+
+            mutations.push(upsert_res);
         }
 
         if let Some(e) = mutations.iter().find(|e| e.is_err()) {
@@ -526,19 +524,9 @@ where
             edge_res = Some(format!("Failed to upsert edge: {:?}", e));
         }
 
-        identities
-            .into_iter()
-            .for_each(|identity| completed.add_identity(identity));
-
         match (upsert_res, edge_res) {
-            (Some(e), _) => Err(Ok((
-                subgraph,
-                GraphMergerError::Unexpected(e.to_string()),
-            ))),
-            (_, Some(e)) => Err(Ok((
-                subgraph,
-                GraphMergerError::Unexpected(e.to_string()),
-            ))),
+            (Some(e), _) => Err(Ok((subgraph, GraphMergerError::Unexpected(e.to_string())))),
+            (_, Some(e)) => Err(Ok((subgraph, GraphMergerError::Unexpected(e.to_string())))),
             (None, None) => Ok(subgraph),
         }
     }
@@ -586,37 +574,6 @@ async fn get_r_edge(
             Ok(None)
         }
     }
-}
-
-fn init_sqs_client() -> SqsClient {
-    info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
-
-    SqsClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_sqs".to_owned(),
-            "dummy_sqs".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-east-1".to_string(),
-            endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        },
-    )
-}
-
-fn init_s3_client() -> S3Client {
-    info!("Connecting to local http://s3:9000");
-    S3Client::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "minioadmin".to_owned(),
-            "minioadmin".to_owned(),
-        ),
-        Region::Custom {
-            name: "locals3".to_string(),
-            endpoint: "http://s3:9000".to_string(),
-        },
-    )
 }
 
 #[derive(Clone, Default)]

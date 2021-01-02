@@ -4,10 +4,12 @@ use rusoto_cloudwatch::CloudWatchClient;
 use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_s3::{S3Client, S3};
-use rusoto_sqs::SqsClient;
+use rusoto_sqs::{Sqs, SqsClient};
+use sqs_executor::errors::CheckedError;
 use sqs_executor::redis_cache::RedisCache;
-use sqs_executor::s3_event_emitter::S3EventEmitter;
+use sqs_executor::s3_event_emitter::{OnEventEmit, S3EventEmitter, S3ToSqsEventNotifier};
 use sqs_executor::{make_ten, time_based_key_fn};
+use std::future::Future;
 use std::io::Stdout;
 use std::str::FromStr;
 
@@ -18,6 +20,14 @@ pub trait AsyncFrom<T, S> {
 
 pub trait FromEnv<S> {
     fn from_env() -> S;
+}
+
+impl FromEnv<S3ToSqsEventNotifier<SqsClient>> for S3ToSqsEventNotifier<SqsClient> {
+    fn from_env() -> Self {
+        let sqs_client = SqsClient::from_env();
+        let dest_queue_url = crate::dest_queue_url();
+        Self::new(sqs_client, dest_queue_url)
+    }
 }
 
 impl FromEnv<CloudWatchClient> for CloudWatchClient {
@@ -108,8 +118,14 @@ impl FromEnv<SqsClient> for SqsClient {
         println!("overriding sqs_endpoint: {:?}", sqs_endpoint);
         tracing::info!("overriding sqs_access_key_id: {:?}", sqs_access_key_id);
         println!("overriding sqs_access_key_id: {:?}", sqs_access_key_id);
-        tracing::info!("overriding sqs_access_key_secret: {:?}", sqs_access_key_secret);
-        println!("overriding sqs_access_key_secret: {:?}", sqs_access_key_secret);
+        tracing::info!(
+            "overriding sqs_access_key_secret: {:?}",
+            sqs_access_key_secret
+        );
+        println!(
+            "overriding sqs_access_key_secret: {:?}",
+            sqs_access_key_secret
+        );
 
         match (sqs_endpoint, sqs_access_key_id, sqs_access_key_secret) {
             (Some(sqs_endpoint), Some(sqs_access_key_id), Some(sqs_access_key_secret)) => {
@@ -139,15 +155,13 @@ impl FromEnv<SqsClient> for SqsClient {
 
 #[tracing::instrument]
 pub fn init_s3_client(region_name: &str) -> S3Client {
-
     let region = match std::env::var("S3_ENDPOINT").ok() {
-        Some(custom_endpoint) => {
-            Region::Custom {
-                name: region_name.to_string(),
-                endpoint: custom_endpoint.to_string(),
-            }
+        Some(custom_endpoint) => Region::Custom {
+            name: region_name.to_string(),
+            endpoint: custom_endpoint.to_string(),
         },
-        None => Region::from_str(&region_name).unwrap_or_else(|e| panic!("Invalid region name: {:?} {:?}", region_name, e))
+        None => Region::from_str(&region_name)
+            .unwrap_or_else(|e| panic!("Invalid region name: {:?} {:?}", region_name, e)),
     };
 
     let s3_access_key_id = std::env::var("S3_ACCESS_KEY_ID").ok();
@@ -155,10 +169,22 @@ pub fn init_s3_client(region_name: &str) -> S3Client {
 
     match (s3_access_key_id, s3_access_key_secret) {
         (Some(s3_access_key_id), Some(s3_access_key_secret)) => {
-            tracing::debug!("init_s3_client. - overriding s3_access_key_id: {:?}", s3_access_key_id);
-            println!("init_s3_client. - overriding s3_access_key_id: {:?}", s3_access_key_id);
-            tracing::debug!("init_s3_client. - overriding s3_access_key_secret: {:?}", s3_access_key_secret);
-            println!("init_s3_client. - overriding s3_access_key_secret: {:?}", s3_access_key_secret);
+            tracing::debug!(
+                "init_s3_client. - overriding s3_access_key_id: {:?}",
+                s3_access_key_id
+            );
+            println!(
+                "init_s3_client. - overriding s3_access_key_id: {:?}",
+                s3_access_key_id
+            );
+            tracing::debug!(
+                "init_s3_client. - overriding s3_access_key_secret: {:?}",
+                s3_access_key_secret
+            );
+            println!(
+                "init_s3_client. - overriding s3_access_key_secret: {:?}",
+                s3_access_key_secret
+            );
             tracing::debug!("init_s3_client. - overriding region_name: {:?}", region);
             println!("init_s3_client. - overriding region_name: {:?}", region);
             S3Client::new_with(
@@ -173,8 +199,10 @@ pub fn init_s3_client(region_name: &str) -> S3Client {
         (None, None) => {
             tracing::debug!("init_s3_client - custom region: {:?}", region);
             S3Client::new(region)
-        },
-        (_, _) => panic!("Must specify no overrides, or both of s3_access_key_id, s3_access_key_secret")
+        }
+        (_, _) => {
+            panic!("Must specify no overrides, or both of s3_access_key_id, s3_access_key_secret")
+        }
     }
 }
 
@@ -189,8 +217,14 @@ impl FromEnv<S3Client> for S3Client {
         println!("overriding s3_endpoint: {:?}", s3_endpoint);
         tracing::debug!("overriding s3_access_key_id: {:?}", s3_access_key_id);
         println!("overriding s3_access_key_id: {:?}", s3_access_key_id);
-        tracing::debug!("overriding s3_access_key_secret: {:?}", s3_access_key_secret);
-        println!("overriding s3_access_key_secret: {:?}", s3_access_key_secret);
+        tracing::debug!(
+            "overriding s3_access_key_secret: {:?}",
+            s3_access_key_secret
+        );
+        println!(
+            "overriding s3_access_key_secret: {:?}",
+            s3_access_key_secret
+        );
         tracing::debug!("overriding region_name: {:?}", region_name);
         println!("overriding region_name: {:?}", region_name);
 
@@ -226,24 +260,34 @@ impl From<&ServiceEnv> for MetricReporter<Stdout> {
     }
 }
 
-pub fn s3_event_emitter_from_env<F>(env: &ServiceEnv, key_fn: F) -> S3EventEmitter<S3Client, F>
-    where
-        F: Fn(&[u8]) -> String,
+pub fn s3_event_emitter_from_env<F, OnEmit, OnEmitError>(
+    env: &ServiceEnv,
+    key_fn: F,
+    on_emit: OnEmit,
+) -> S3EventEmitter<S3Client, F, OnEmit, OnEmitError>
+where
+    F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
+    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
+    OnEmitError: CheckedError + Send + Sync + 'static,
 {
     S3EventEmitter::new(
         S3Client::from_env(),
         crate::dest_bucket(),
         key_fn,
+        on_emit,
         MetricReporter::new(&env.service_name),
     )
 }
 
-pub async fn s3_event_emitters_from_env<F>(
+pub async fn s3_event_emitters_from_env<F, OnEmit, OnEmitError>(
     env: &ServiceEnv,
     key_fn: F,
-) -> [S3EventEmitter<S3Client, F>; 10]
-    where
-        F: Clone + Fn(&[u8]) -> String,
+    on_emit: OnEmit,
+) -> [S3EventEmitter<S3Client, F, OnEmit, OnEmitError>; 10]
+where
+    F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
+    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
+    OnEmitError: CheckedError + Send + Sync + 'static,
 {
-    make_ten(async { s3_event_emitter_from_env(env, key_fn) }).await
+    make_ten(async { s3_event_emitter_from_env(env, key_fn, on_emit) }).await
 }

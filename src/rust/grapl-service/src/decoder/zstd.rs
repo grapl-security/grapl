@@ -1,6 +1,6 @@
+use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_decoder::PayloadDecoder;
 use std::io::Cursor;
-use sqs_executor::errors::{CheckedError, Recoverable};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ZstdDecoderError {
@@ -15,7 +15,6 @@ impl CheckedError for ZstdDecoderError {
         }
     }
 }
-
 
 /// A [PayloadDecoder] used to decompress zstd encoded events sent to an [EventHandler].
 ///

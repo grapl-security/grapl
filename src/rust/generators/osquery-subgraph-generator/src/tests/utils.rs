@@ -4,6 +4,7 @@ use tokio::fs;
 
 use grapl_service::decoder::{ZstdJsonDecoder, ZstdJsonDecoderError};
 
+#[cfg(test)]
 pub(crate) async fn read_osquery_test_data(
     path: &str,
 ) -> Result<Vec<PartiallyDeserializedOSQueryLog>, ZstdJsonDecoderError> {

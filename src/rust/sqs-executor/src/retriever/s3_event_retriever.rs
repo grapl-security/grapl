@@ -12,6 +12,7 @@ use tracing::{debug, error, info};
 
 use crate::errors::{CheckedError, Recoverable};
 use crate::event_decoder::PayloadDecoder;
+use crate::PayloadRetriever;
 use futures::FutureExt;
 use grapl_observe::metric_reporter::{tag, HistogramUnit, MetricReporter};
 use grapl_observe::timers::{time_it, TimedFutureExt};
@@ -19,18 +20,11 @@ use rusoto_core::RusotoError;
 use std::collections::HashMap;
 use tokio::time::Elapsed;
 
-#[async_trait]
-pub trait PayloadRetriever<T> {
-    type Message;
-    type Error: CheckedError;
-    async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<T>, Self::Error>;
-}
-
 pub struct S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
 where
     S: S3 + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-    D: PayloadDecoder<E, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+    D: PayloadDecoder<E, DecoderError = DecoderErrorT> + Clone + Send + 'static,
     DecoderErrorT: CheckedError + Send + 'static,
     E: Send + 'static,
 {
@@ -42,12 +36,12 @@ where
 }
 
 impl<S, SInit, D, E, DecoderErrorT> Clone for S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
-    where
-        S: S3 + Clone + Send + Sync + 'static,
-        SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-        D: PayloadDecoder<E, DecoderError=DecoderErrorT> + Clone + Send + 'static,
-        DecoderErrorT: CheckedError + Send + 'static,
-        E: Send + 'static,
+where
+    S: S3 + Clone + Send + Sync + 'static,
+    SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
+    D: PayloadDecoder<E, DecoderError = DecoderErrorT> + Clone + Send + 'static,
+    DecoderErrorT: CheckedError + Send + 'static,
+    E: Send + 'static,
 {
     fn clone(&self) -> Self {
         Self {
@@ -64,7 +58,7 @@ impl<S, SInit, D, E, DecoderErrorT> S3PayloadRetriever<S, SInit, D, E, DecoderEr
 where
     S: S3 + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-    D: PayloadDecoder<E, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+    D: PayloadDecoder<E, DecoderError = DecoderErrorT> + Clone + Send + 'static,
     DecoderErrorT: CheckedError + Send + 'static,
     E: Send + 'static,
 {
@@ -94,7 +88,8 @@ where
 
 #[derive(thiserror::Error, Debug)]
 pub enum S3PayloadRetrieverError<DecoderErrorT>
-    where DecoderErrorT: CheckedError + 'static
+where
+    DecoderErrorT: CheckedError + 'static,
 {
     #[error("S3Error: {0}")]
     S3Error(#[from] RusotoError<GetObjectError>),
@@ -109,7 +104,8 @@ pub enum S3PayloadRetrieverError<DecoderErrorT>
 }
 
 impl<DecoderErrorT> CheckedError for S3PayloadRetrieverError<DecoderErrorT>
-    where DecoderErrorT: CheckedError + 'static
+where
+    DecoderErrorT: CheckedError + 'static,
 {
     fn error_type(&self) -> Recoverable {
         match self {
@@ -123,11 +119,12 @@ impl<DecoderErrorT> CheckedError for S3PayloadRetrieverError<DecoderErrorT>
 }
 
 #[async_trait]
-impl<S, SInit, D, E, DecoderErrorT> PayloadRetriever<E> for S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
+impl<S, SInit, D, E, DecoderErrorT> PayloadRetriever<E>
+    for S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
 where
     S: S3 + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S) + Clone + Send + Sync + 'static,
-    D: PayloadDecoder<E, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+    D: PayloadDecoder<E, DecoderError = DecoderErrorT> + Clone + Send + 'static,
     E: Send + 'static,
     DecoderErrorT: CheckedError + Send + 'static,
 {

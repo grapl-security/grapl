@@ -1,9 +1,5 @@
 #![type_length_limit = "1195029"]
 
-use std::time::Duration;
-
-use log::{error, info};
-
 use node_identifier::handler;
 
 #[tokio::main]

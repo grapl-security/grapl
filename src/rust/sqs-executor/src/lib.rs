@@ -1,3 +1,5 @@
+pub mod retriever;
+
 use std::error::Error;
 use std::fmt::Debug;
 use std::future::Future;
@@ -27,11 +29,14 @@ use grapl_observe::metric_reporter::MetricReporter;
 use grapl_observe::timers::time_fut_ms;
 use s3_event_emitter::S3EventEmitter;
 
+use crate::cache::Cache;
 use crate::completion_event_serializer::CompletionEventSerializer;
 use crate::errors::{CheckedError, ExecutorError, Recoverable};
 use crate::event_decoder::PayloadDecoder;
 use crate::event_handler::CompletedEvents;
 use crate::event_retriever::PayloadRetriever;
+use crate::event_status::EventStatus;
+use crate::s3_event_emitter::OnEventEmit;
 
 pub mod cache;
 pub mod completion_event_serializer;
@@ -39,7 +44,9 @@ pub mod errors;
 pub mod event_decoder;
 pub mod event_emitter;
 pub mod event_handler;
-pub mod event_retriever;
+pub use retriever::event_retriever;
+pub use retriever::s3_event_retriever;
+pub mod event_status;
 pub mod key_creator;
 pub mod redis_cache;
 pub mod rusoto_helpers;
@@ -66,6 +73,22 @@ where
     ]
 }
 
+async fn cache_completed<CacheT>(cache: &mut CacheT, completed: &mut CompletedEvents)
+where
+    CacheT: Cache,
+{
+    for (identity, status) in completed.identities.drain(..) {
+        match status {
+            EventStatus::Success | EventStatus::Failure => {
+                if let Err(e) = cache.store(identity).await {
+                    warn!("Failed to store identity in cache: {:?}", e);
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
 async fn process_message<
     CacheT,
     SInit,
@@ -78,6 +101,8 @@ async fn process_message<
     HandlerErrorT,
     SerializerErrorT,
     S3ClientT,
+    OnEmit,
+    OnEmitError,
     F,
     CompletionEventSerializerT,
 >(
@@ -87,15 +112,21 @@ async fn process_message<
     cache: &mut CacheT,
     sqs_client: SqsT,
     event_handler: &mut EventHandlerT,
-    s3_payload_retriever: &mut S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT, DecoderErrorT>,
-    s3_emitter: &mut S3EventEmitter<S3ClientT, F>,
+    s3_payload_retriever: &mut S3PayloadRetriever<
+        S3ClientT,
+        SInit,
+        DecoderT,
+        InputEventT,
+        DecoderErrorT,
+    >,
+    s3_emitter: &mut S3EventEmitter<S3ClientT, F, OnEmit, OnEmitError>,
     serializer: &mut CompletionEventSerializerT,
     mut metric_reporter: MetricReporter<Stdout>,
 ) where
     CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
     SqsT: Sqs + Clone + Send + Sync + 'static,
-    DecoderT: PayloadDecoder<InputEventT, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+    DecoderT: PayloadDecoder<InputEventT, DecoderError = DecoderErrorT> + Clone + Send + 'static,
     DecoderErrorT: CheckedError + Send + 'static,
     InputEventT: Send,
     EventHandlerT:
@@ -104,7 +135,9 @@ async fn process_message<
     HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,
-    F: Fn(&[u8]) -> String + Send + Sync,
+    F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
+    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
+    OnEmitError: CheckedError + Send,
     CompletionEventSerializerT: CompletionEventSerializer<
         CompletedEvent = OutputEventT,
         Output = Vec<u8>,
@@ -162,11 +195,7 @@ async fn process_message<
                 .await
                 .expect("Failed to emit event");
 
-            for identity in completed.identities.drain(..) {
-                if let Err(e) = cache.store(identity).await {
-                    warn!("Failed to store identity in cache: {:?}", e);
-                }
-            }
+            cache_completed(cache, &mut completed).await;
             // ack the message - we could probably not block on this
             rusoto_helpers::delete_message(
                 sqs_client.clone(),
@@ -192,11 +221,8 @@ async fn process_message<
                 .await
                 .expect("Failed to emit event");
 
-            for identity in completed.identities.drain(..) {
-                if let Err(e) = cache.store(identity).await {
-                    warn!("Failed to store identity in cache: {:?}", e);
-                }
-            }
+            cache_completed(cache, &mut completed).await;
+
             if let Recoverable::Persistent = e.error_type() {
                 rusoto_helpers::move_to_dead_letter(
                     sqs_client.clone(),
@@ -245,6 +271,8 @@ async fn _process_loop<
     SerializerErrorT,
     S3ClientT,
     F,
+    OnEmit,
+    OnEmitError,
     CompletionEventSerializerT,
 >(
     queue_url: String,
@@ -252,15 +280,16 @@ async fn _process_loop<
     cache: &mut [CacheT; 10],
     sqs_client: SqsT,
     event_handler: &mut [EventHandlerT; 10],
-    s3_payload_retriever: &mut [S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT, DecoderErrorT>; 10],
-    s3_emitter: &mut [S3EventEmitter<S3ClientT, F>; 10],
+    s3_payload_retriever: &mut [S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT, DecoderErrorT>;
+             10],
+    s3_emitter: &mut [S3EventEmitter<S3ClientT, F, OnEmit, OnEmitError>; 10],
     serializer: &mut [CompletionEventSerializerT; 10],
     mut metric_reporter: MetricReporter<Stdout>,
 ) where
     CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
     SqsT: Sqs + Clone + Send + Sync + 'static,
-    DecoderT: PayloadDecoder<InputEventT, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+    DecoderT: PayloadDecoder<InputEventT, DecoderError = DecoderErrorT> + Clone + Send + 'static,
     DecoderErrorT: CheckedError + Send + 'static,
     InputEventT: Send,
     EventHandlerT:
@@ -269,7 +298,9 @@ async fn _process_loop<
     HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,
-    F: Fn(&[u8]) -> String + Send + Sync,
+    F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
+    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
+    OnEmitError: CheckedError + Send,
     CompletionEventSerializerT: CompletionEventSerializer<
         CompletedEvent = OutputEventT,
         Output = Vec<u8>,
@@ -295,12 +326,12 @@ async fn _process_loop<
             Ok(message_batch) => {
                 i = 1;
                 message_batch
-            },
+            }
             Err(e) => {
                 error!("get_message from queue {} failed: {:?}", queue_url, e);
                 tokio::time::delay_for(std::time::Duration::from_millis(i * 250)).await;
                 i += 1;
-                continue
+                continue;
             }
         };
         let message_batch_len = message_batch.len();
@@ -362,6 +393,8 @@ pub async fn process_loop<
     HandlerErrorT,
     SerializerErrorT,
     S3ClientT,
+    OnEmit,
+    OnEmitError,
     F,
     CompletionEventSerializerT,
 >(
@@ -370,15 +403,16 @@ pub async fn process_loop<
     cache: &mut [CacheT; 10],
     sqs_client: SqsT,
     event_handler: &mut [EventHandlerT; 10],
-    s3_payload_retriever: &mut [S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT, DecoderErrorT>; 10],
-    s3_emitter: &mut [S3EventEmitter<S3ClientT, F>; 10],
+    s3_payload_retriever: &mut [S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT, DecoderErrorT>;
+             10],
+    s3_emitter: &mut [S3EventEmitter<S3ClientT, F, OnEmit, OnEmitError>; 10],
     serializer: &mut [CompletionEventSerializerT; 10],
     mut metric_reporter: MetricReporter<Stdout>,
 ) where
     CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
     SqsT: Sqs + Clone + Send + Sync + 'static,
-    DecoderT: PayloadDecoder<InputEventT, DecoderError=DecoderErrorT> + Clone + Send + 'static,
+    DecoderT: PayloadDecoder<InputEventT, DecoderError = DecoderErrorT> + Clone + Send + 'static,
     DecoderErrorT: CheckedError + Send + 'static,
     InputEventT: Send,
     EventHandlerT:
@@ -387,15 +421,15 @@ pub async fn process_loop<
     HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,
-    F: Fn(&[u8]) -> String + Send + Sync,
+    F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
+    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
+    OnEmitError: CheckedError + Send,
     CompletionEventSerializerT: CompletionEventSerializer<
         CompletedEvent = OutputEventT,
         Output = Vec<u8>,
         Error = SerializerErrorT,
     >,
 {
-
-
     loop {
         debug!("Outer process loop");
         let f = _process_loop(

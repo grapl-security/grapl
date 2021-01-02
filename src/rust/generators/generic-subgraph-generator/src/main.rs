@@ -4,9 +4,9 @@ mod generator;
 mod models;
 mod tests;
 
-use sqs_executor::cache::{Cache, NopCache};
-use grapl_service::serialization::SubgraphSerializer;
 use grapl_service::decoder::ZstdJsonDecoder;
+use grapl_service::serialization::SubgraphSerializer;
+use sqs_executor::cache::{Cache, NopCache};
 use tracing::*;
 
 use grapl_config::{event_cache, event_caches};
@@ -21,6 +21,7 @@ use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use sqs_executor::event_retriever::S3PayloadRetriever;
+use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use sqs_executor::{make_ten, time_based_key_fn};
 use std::io::Stdout;
 use std::str::FromStr;
@@ -42,7 +43,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &mut make_ten(async { GenericSubgraphGenerator::new(NopCache {}) }).await;
 
     let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
-    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
+    let s3_emitter =
+        &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from_env())
+            .await;
 
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(

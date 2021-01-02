@@ -30,7 +30,7 @@ use sha2::Digest;
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
-use grapl_config::env_helpers::FromEnv;
+use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
 use grapl_config::event_caches;
 use grapl_graph_descriptions::file::FileState;
 use grapl_graph_descriptions::graph_description::host::*;
@@ -51,11 +51,12 @@ use sqs_executor::event_decoder::PayloadDecoder;
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::redis_cache::RedisCache;
-use sqs_executor::s3_event_emitter::S3EventEmitter;
+use sqs_executor::s3_event_emitter::{S3EventEmitter, S3ToSqsEventNotifier};
 use sqs_executor::{make_ten, time_based_key_fn};
 
-use grapl_service::serialization::SubgraphSerializer;
 use grapl_service::decoder::ZstdProtoDecoder;
+use grapl_service::serialization::SubgraphSerializer;
+use sqs_executor::event_status::EventStatus;
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -614,7 +615,7 @@ pub enum NodeIdentifierError {
 
 impl CheckedError for NodeIdentifierError {
     fn error_type(&self) -> Recoverable {
-        unimplemented!()
+        Recoverable::Transient
     }
 }
 
@@ -713,6 +714,7 @@ where
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
                     dead_node_ids.insert(node.clone_node_key());
+                    completed.add_identity(node.clone_node_key(), EventStatus::Failure);
                     attribution_failure = Some(e);
                     continue;
                 }
@@ -764,13 +766,12 @@ where
 
         identities
             .iter()
-            .for_each(|identity| completed.add_identity(identity.clone()));
+            .for_each(|identity| completed.add_identity(identity.clone(), EventStatus::Success));
 
         if !dead_node_ids.is_empty() || attribution_failure.is_some() {
             info!("Partial Success, identified {} nodes", identities.len());
             Err(Ok(
-                (identified_graph,
-                NodeIdentifierError::Unexpected,) // todo: Use a real error here
+                (identified_graph, NodeIdentifierError::Unexpected), // todo: Use a real error here
             ))
         } else {
             info!("Identified all nodes");
@@ -781,7 +782,7 @@ where
 
 pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     let env = grapl_config::init_grapl_env!();
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
+    let source_queue_url = grapl_config::source_queue_url();
     debug!("Queue Url: {}", source_queue_url);
 
     let sqs_client = SqsClient::from_env();
@@ -792,19 +793,13 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
 
     let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
 
-    let s3_emitter = &mut make_ten(async {
-        S3EventEmitter::new(
-            s3_client.clone(),
-            destination_bucket.clone(),
-            time_based_key_fn,
-            MetricReporter::new(&env.service_name),
-        )
-    })
-    .await;
+    let s3_emitter =
+        &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from_env())
+            .await;
 
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
-            |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
+            |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
             ZstdProtoDecoder::default(),
             MetricReporter::new(&env.service_name),
         )

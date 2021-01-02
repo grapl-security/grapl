@@ -1,3 +1,4 @@
+#[allow(warnings)]
 use log::info;
 
 use serde_derive::Deserialize;
