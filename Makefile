@@ -14,6 +14,15 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 # Just build
 #
 
+.PHONY: create-builder
+create-builder:
+	docker buildx inspect grapl-builder 2>/dev/null 1>/dev/null || \
+	docker buildx create \
+		--driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=-1 \
+		--driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=-1 \
+		--driver-opt network=host \
+		--name grapl-builder
+
 .PHONY: build
 build: build-all ## alias for `build-aws`
 
@@ -26,12 +35,12 @@ build-all: ## build all targets (incl. local, test, zip)
 		 -f docker-compose.zips.yml
 
 .PHONY: build-unit-tests
-build-unit-tests: 
-	docker buildx bake -f docker-compose.unit-tests.yml
+build-unit-tests: create-builder
+	docker buildx bake --builder grapl-builder -f docker-compose.unit-tests.yml
 
 .PHONY: build-integration-tests
-build-integration-tests: 
-	docker buildx bake -f docker-compose.Makefile.yml -f docker-compose.integration-tests.yml
+build-integration-tests: create-builder
+	docker buildx bake --builder grapl-builder -f docker-compose.Makefile.yml -f docker-compose.integration-tests.yml
 
 .PHONY: build-local
 build-local: ## build services for local Grapl
