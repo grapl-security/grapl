@@ -1,4 +1,3 @@
-
 use std::io::{Read, Stdout};
 use std::marker::PhantomData;
 use std::time::Duration;

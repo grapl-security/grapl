@@ -5,7 +5,6 @@ use rusoto_sqs::{
     Sqs,
 };
 
-
 use rusoto_s3::PutObjectError as InnerPutObjectError;
 
 use tokio::task::{JoinError, JoinHandle};

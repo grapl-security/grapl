@@ -1,6 +1,5 @@
 use crate::errors::CheckedError;
 
-
 pub trait PayloadDecoder<E> {
     type DecoderError: CheckedError;
     fn decode(&mut self, bytes: Vec<u8>) -> Result<E, Self::DecoderError>;

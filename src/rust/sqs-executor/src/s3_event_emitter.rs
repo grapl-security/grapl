@@ -1,5 +1,3 @@
-
-
 use crate::event_emitter::EventEmitter;
 use async_trait::async_trait;
 
@@ -20,7 +18,6 @@ use std::io::Stdout;
 use tap::prelude::TapFallible;
 use tokio::time::{Duration, Elapsed};
 use tracing::error;
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum S3EventEmitterError<OnEmitError>

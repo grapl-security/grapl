@@ -4,12 +4,10 @@ use rusoto_sqs::{ChangeMessageVisibilityRequest, Sqs};
 
 use std::time::Duration;
 
-
 use tokio::stream::StreamExt;
 use tokio::sync::mpsc::{channel as mpsc_channel, Receiver as MpscReceiver, Sender as MpscSender};
 use tokio::sync::oneshot::{
-    channel as one_shot, Receiver as OneShotReceiver,
-    Sender as OneShotSender,
+    channel as one_shot, Receiver as OneShotReceiver, Sender as OneShotSender,
 };
 
 struct SqsTimeoutManager<S>
@@ -56,35 +54,34 @@ where
             // wait for N / 2 seconds or a message to stop
             match future::select(timeout_fut, future_2).await {
                 Either::Left(_) => {
-                    let res = s.change_message_visibility(ChangeMessageVisibilityRequest {
-                        queue_url: queue_url.clone(),
-                        receipt_handle: receipt_handle.clone(),
-                        visibility_timeout: visibility_timeout * (i + 1),
-                    })
+                    let res = s
+                        .change_message_visibility(ChangeMessageVisibilityRequest {
+                            queue_url: queue_url.clone(),
+                            receipt_handle: receipt_handle.clone(),
+                            visibility_timeout: visibility_timeout * (i + 1),
+                        })
                         .await;
 
                     match res {
                         Ok(()) => {
                             tracing::debug!("Updated message visibility: {}", i);
-                        },
+                        }
                         Err(rusoto_core::RusotoError::Service(e)) => {
                             tracing::error!("Failed to change message visibility: {:?}", e);
-                            break  // These errors are not retryable
-                        },
+                            break; // These errors are not retryable
+                        }
                         Err(e) => {
                             tracing::error!("Failed to change message visibility: {:?}", e);
-                        },
+                        }
                     };
                 }
-                Either::Right(_) => {
-                    break
-                },
+                Either::Right(_) => break,
             };
 
             tracing::debug!("message-visibility-loop: {} {}", i, &receipt_handle);
         }
 
-        tracing::warn!("message still has not processed after 100 iterators", );
+        tracing::warn!("message still has not processed after 100 iterators",);
         // let elapsed = sw.elapsed_ms();
     }
 }
@@ -104,9 +101,7 @@ pub struct Sender {
 }
 
 impl Sender {
-    pub fn stop(self) {
-
-    }
+    pub fn stop(self) {}
 }
 
 impl Drop for Sender {

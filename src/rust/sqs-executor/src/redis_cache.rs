@@ -10,9 +10,9 @@ use async_trait::async_trait;
 use crate::cache::{Cache, CacheResponse, Cacheable};
 use crate::errors::{CheckedError, Recoverable};
 use grapl_observe::metric_reporter::{tag, MetricReporter};
-use grapl_observe::timers::{TimedFutureExt};
+use grapl_observe::timers::TimedFutureExt;
 use std::io::Stdout;
-use tokio::time::{Elapsed};
+use tokio::time::Elapsed;
 
 #[derive(thiserror::Error, Debug)]
 pub enum RedisCacheError {
