@@ -27,7 +27,8 @@ build-all: ## build all targets (incl. local, test, zip)
 
 .PHONY: build-unit-tests
 build-unit-tests:
-	docker buildx bake -f docker-compose.unit-tests.yml
+	docker-compose -f docker-compose.unit-tests.yml build --parallel
+	# docker buildx bake -f docker-compose.unit-tests.yml
 
 .PHONY: build-integration-tests
 build-integration-tests:
