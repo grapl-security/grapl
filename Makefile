@@ -55,7 +55,7 @@ test-integration: build-integration-tests ## build and run integration tests
 	# save exit code to allow for `make down` in event of test failure
 	test/docker-compose-with-error.sh -f docker-compose.integration-tests.yml; \
 	EXIT_CODE=$$?; \
-	docker-compose -f docker-compose.Makefile.yml logs grapl-provision; \
+	docker-compose -f docker-compose.Makefile.yml logs; \
 	$(MAKE) down; \
 	exit $$EXIT_CODE
 
