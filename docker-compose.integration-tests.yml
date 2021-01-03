@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile.Makefile
       target: build-sccache
     command: bash -c "
-      wait-for-it grapl-provision:8126 --timeout=120 && 
+      wait-for-it grapl-provision:8126 --timeout=180 &&
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
@@ -37,7 +37,7 @@ services:
       dockerfile: ./python/Dockerfile.Makefile
       target: grapl-analyzerlib-test
     command: bash -c '
-      wait-for-it grapl-provision:8126 --timeout=120 &&
+      wait-for-it grapl-provision:8126 --timeout=180 &&
       source venv/bin/activate &&
       cd grapl_analyzerlib &&
       py.test -n auto -m "integration_test"'
@@ -76,7 +76,7 @@ services:
       dockerfile: ./python/Dockerfile.Makefile
       target: engagement-edge-test
     command: bash -c '
-      wait-for-it grapl-engagement-edge:8900 --timeout=60 &&
+      wait-for-it grapl-engagement-edge:8900 --timeout=180 &&
       source venv/bin/activate &&
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'

@@ -369,7 +369,7 @@ services:
       target: engagement-edge-deploy
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:8126 --timeout=45 &&
+        wait-for-it grapl-provision:8126 --timeout=120 &&
         . venv/bin/activate &&
         cd app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=8900'
@@ -495,11 +495,11 @@ services:
       /bin/bash -c "
         # it doesn't seem to like waiting for sqs
         # wait-for-it sqs:9324 &&
-        wait-for-it secretsmanager:4584 &&
-        wait-for-it s3:9000 &&
-        wait-for-it dynamodb:8000 &&
-        wait-for-it grapl-master-graph-db:8080 &&
-        wait-for-it grapl-engagement-view:1234 &&
+        wait-for-it secretsmanager:4584 --timeout=90 &&
+        wait-for-it s3:9000 --timeout=90 &&
+        wait-for-it dynamodb:8000 --timeout=90 &&
+        wait-for-it grapl-master-graph-db:8080 --timeout=90 &&
+        wait-for-it grapl-engagement-view:1234 --timeout=90 &&
         . venv/bin/activate && 
         python grapl_local_provision/provision_local_identity_table.py &&
         python grapl_local_provision/grapl_provision.py &&
