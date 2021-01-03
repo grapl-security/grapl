@@ -34,7 +34,9 @@ WORKDIR $HOME
 
 COPY . .
 
-RUN if test "${TARGET}" = "release"; then \
+RUN --mount=type=cache,target=/rust/sccache \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    if test "${TARGET}" = "release"; then \
       cargo build --release; \
       sccache -s; \
     elif test "${TARGET}" = "debug"; then \
