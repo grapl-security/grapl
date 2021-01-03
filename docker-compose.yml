@@ -91,6 +91,9 @@ services:
 
   dynamodb:
     image: amazon/dynamodb-local
+    environment:
+      - AWS_REGION="us-east-1"
+      - REGION="us-east-1"
     logging:
       driver: none
 
@@ -116,7 +119,9 @@ services:
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "IS_LOCAL=True"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-retry-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "DEST_BUCKET_NAME=local-grapl-unid-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
@@ -144,6 +149,7 @@ services:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-retry-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
     links:
       - s3:minio
@@ -163,7 +169,9 @@ services:
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
@@ -205,6 +213,7 @@ services:
       - "IS_LOCAL=True"
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-retry-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
@@ -246,7 +255,9 @@ services:
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-retry-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - "DEST_BUCKET_NAME=local-grapl-subgraphs-merged-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
@@ -279,8 +290,11 @@ services:
     environment:
       - "ANALYZERS_BUCKET=local-grapl-analyzers-bucket"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-retry-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-dead-letter-queue"
-      - "DEST_BUCKET_NAME=local-grapl-dispatched-analyzer-bucket"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - "DEST_BUCKET_NAME=local-grapl-analyzer-dispatched-bucket"
+      - "ANALYZER_BUCKET=local-grapl-analyzers-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
@@ -341,6 +355,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-retry-queue"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
