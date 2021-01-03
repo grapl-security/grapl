@@ -1,14 +1,14 @@
 use futures::future::{self, Either};
 use futures::pin_mut;
 use rusoto_sqs::{ChangeMessageVisibilityRequest, Sqs};
-use std::future::Future;
+
 use std::time::Duration;
-use stopwatch::Stopwatch;
-use tap::prelude::TapFallible;
+
+
 use tokio::stream::StreamExt;
 use tokio::sync::mpsc::{channel as mpsc_channel, Receiver as MpscReceiver, Sender as MpscSender};
 use tokio::sync::oneshot::{
-    channel as one_shot, channel, error::RecvError, Receiver as OneShotReceiver,
+    channel as one_shot, Receiver as OneShotReceiver,
     Sender as OneShotSender,
 };
 

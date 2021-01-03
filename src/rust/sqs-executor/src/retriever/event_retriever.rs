@@ -1,12 +1,12 @@
-use std::error::Error;
+
 use std::io::{Read, Stdout};
 use std::marker::PhantomData;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use rusoto_s3::{GetObjectError, GetObjectRequest, Tag, S3};
+use rusoto_s3::{GetObjectError, GetObjectRequest, S3};
 use rusoto_sqs::Message as SqsMessage;
-use tap::tap::Tap;
+
 use tokio::prelude::*;
 use tracing::{debug, error, info};
 

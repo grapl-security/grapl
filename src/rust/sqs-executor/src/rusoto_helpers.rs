@@ -4,7 +4,7 @@ use rusoto_sqs::{
     ReceiveMessageError as InnerReceiveMessageError, ReceiveMessageRequest, SendMessageRequest,
     Sqs,
 };
-use tap::prelude::*;
+
 
 use rusoto_s3::PutObjectError as InnerPutObjectError;
 
@@ -15,7 +15,7 @@ use crate::errors::{CheckedError, Recoverable};
 use grapl_observe::metric_reporter::{tag, MetricReporter};
 use grapl_observe::timers::{time_fut_ms, TimedFutureExt};
 use std::io::Stdout;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, warn};
 
 impl CheckedError for InnerDeleteMessageError {
     fn error_type(&self) -> Recoverable {

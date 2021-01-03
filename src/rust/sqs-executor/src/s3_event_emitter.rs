@@ -1,4 +1,4 @@
-use std::error::Error;
+
 
 use crate::event_emitter::EventEmitter;
 use async_trait::async_trait;
@@ -7,7 +7,7 @@ use crate::errors::{CheckedError, Recoverable};
 use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
-use futures_util::FutureExt;
+
 use futures_util::TryFutureExt;
 use grapl_observe::metric_reporter::{tag, MetricReporter};
 use grapl_observe::timers::TimedFutureExt;
@@ -15,12 +15,12 @@ use rusoto_core::RusotoError;
 use rusoto_s3::{PutObjectError, PutObjectRequest, S3};
 use rusoto_sqs::{SendMessageError, SqsClient};
 use rusoto_sqs::{SendMessageRequest, Sqs};
-use std::future::Future;
+
 use std::io::Stdout;
 use tap::prelude::TapFallible;
 use tokio::time::{Duration, Elapsed};
 use tracing::error;
-use tracing::field::debug;
+
 
 #[derive(thiserror::Error, Debug)]
 pub enum S3EventEmitterError<OnEmitError>

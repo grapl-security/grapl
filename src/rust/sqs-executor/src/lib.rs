@@ -24,18 +24,18 @@ use std::io::Stdout;
 use std::panic::AssertUnwindSafe;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use async_trait::async_trait;
+
 use futures_util::FutureExt;
-use rusoto_core::RusotoError;
-use rusoto_s3::{S3Client, S3};
+
+use rusoto_s3::{S3};
 use rusoto_sqs::{
     DeleteMessageError, DeleteMessageRequest, Message as SqsMessage, ReceiveMessageError,
     ReceiveMessageRequest, SendMessageError as InnerSendMessageError, SendMessageRequest,
 };
-use rusoto_sqs::{Sqs, SqsClient};
-use thiserror::Error;
-use tokio::task::{JoinError, JoinHandle};
-use tokio::time::Elapsed;
+use rusoto_sqs::{Sqs};
+
+
+
 use tracing::debug;
 use tracing::{error, info, warn};
 
@@ -43,12 +43,12 @@ use event_emitter::EventEmitter;
 use event_handler::EventHandler;
 use event_retriever::S3PayloadRetriever;
 use grapl_observe::metric_reporter::{MetricReporter, tag};
-use grapl_observe::timers::{time_fut_ms, TimedFutureExt};
+use grapl_observe::timers::{TimedFutureExt};
 use s3_event_emitter::S3EventEmitter;
 
 use crate::cache::{Cache, CacheResponse};
 use crate::completion_event_serializer::CompletionEventSerializer;
-use crate::errors::{CheckedError, ExecutorError, Recoverable};
+use crate::errors::{CheckedError, Recoverable};
 use crate::event_decoder::PayloadDecoder;
 use crate::event_handler::CompletedEvents;
 use crate::event_retriever::PayloadRetriever;

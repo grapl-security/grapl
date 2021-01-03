@@ -1,5 +1,5 @@
 use crate::errors::CheckedError;
-use std::error::Error;
+
 
 pub trait PayloadDecoder<E> {
     type DecoderError: CheckedError;
