@@ -17,7 +17,7 @@ if [ -z $f ] ; then
     usage
 fi
 
-docker-compose -f "$f" up
+docker-compose -f "$f" up --force-recreate
 
 # check for container exit codes other than 0
 for test in $(docker-compose -f "$f" ps -q); do
