@@ -16,6 +16,7 @@ where
 {
     queue_url: String,
     receipt_handle: String,
+    message_id: String,
     visibility_timeout: i64,
     receiver: MpscReceiver<()>,
     s: S,
@@ -29,6 +30,7 @@ where
         let Self {
             queue_url,
             receipt_handle,
+            message_id,
             visibility_timeout,
             mut receiver,
             s,
@@ -43,7 +45,7 @@ where
         // todo: Metrics
         // if we ever go beyond a deadline we should be sure to
         let mut last_timeout = visibility_timeout;
-
+        let message_id = &message_id;
         for i in 1..100 {
             let timeout_fut = async {
                 tokio::time::delay_for(Duration::from_secs(((last_timeout * i) as u64) / 2)).await
@@ -64,24 +66,24 @@ where
 
                     match res {
                         Ok(()) => {
-                            tracing::debug!("Updated message visibility: {}", i);
+                            tracing::debug!("Updated message visibility: {} {} {}", i, message_id, &receipt_handle);
                         }
                         Err(rusoto_core::RusotoError::Service(e)) => {
-                            tracing::error!("Failed to change message visibility: {:?}", e);
+                            tracing::error!("Failed to change message visibility: {} {} {}", i, message_id, &receipt_handle);
                             break; // These errors are not retryable
                         }
                         Err(e) => {
-                            tracing::error!("Failed to change message visibility: {:?}", e);
+                            tracing::error!("Failed to change message visibility: {} {} {}", i, message_id, &receipt_handle);
                         }
                     };
                 }
                 Either::Right(_) => break,
             };
 
-            tracing::debug!("message-visibility-loop: {} {}", i, &receipt_handle);
+            tracing::debug!("message-visibility-loop: {} {} {}", i, message_id, &receipt_handle);
         }
 
-        tracing::warn!("message still has not processed after 100 iterators",);
+        tracing::warn!("message still has not processed after 100 iterators {} {}", message_id, &receipt_handle);
         // let elapsed = sw.elapsed_ms();
     }
 }
@@ -114,9 +116,10 @@ impl Drop for Sender {
 
 /// Given a message receipt, a queue, and a timeout, `keep_alive` will ensure
 /// that a message will stay alive during the lifetime of the returned `Sender`.
-pub fn cleanup_message<S>(
+pub fn keep_alive<S>(
     s: S,
     receipt_handle: String,
+    message_id: String,
     queue_url: String,
     visibility_timeout: i64,
 ) -> Sender
@@ -130,6 +133,7 @@ where
         let manager = SqsTimeoutManager {
             queue_url,
             receipt_handle,
+            message_id,
             visibility_timeout,
             receiver: mpsc_rx,
             s,

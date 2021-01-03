@@ -61,6 +61,7 @@ fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::
 async fn node_key_to_uid(
     dg: &DgraphClient,
     metric_reporter: &mut MetricReporter<Stdout>,
+    uid_cache: &mut UidCache,
     node_key: &str,
 ) -> Result<Option<String>, Error> {
     let mut txn = dg.new_read_only_txn();
@@ -99,11 +100,15 @@ async fn node_key_to_uid(
     Ok(uid)
 }
 
-async fn upsert_node(
+async fn upsert_node<CacheT>(
     dg: &DgraphClient,
+    cache: &mut CacheT,
+    uid_cache: &mut UidCache,
     metric_reporter: &mut MetricReporter<Stdout>,
     node: Node,
-) -> Result<String, Error> {
+) -> Result<String, Error>
+    where CacheT: Cache
+{
     let query = format!(
         r#"
                 {{
@@ -120,59 +125,70 @@ async fn upsert_node(
     set_json["dgraph.type"] = node_types.into();
 
     set_json["uid"] = "uid(p)".into();
-    set_json["last_index_time"] = (SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Something is very wrong with the system clock")
-        .as_millis() as u64)
-        .into();
+    let cache_key = serde_json::to_string(&set_json).expect("mutation was invalid json");
 
-    let mut mu = dgraph_tonic::Mutation::new();
-    mu.commit_now = true;
-    mu.set_set_json(&set_json);
+    match cache.get(cache_key.clone()).await {
+        Ok(CacheResponse::Miss) => {
+            set_json["last_index_time"] = (SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Something is very wrong with the system clock")
+                .as_millis() as u64)
+                .into();
 
-    let mut txn = dg.new_mutated_txn();
-    let upsert_res = match txn.upsert(query, mu).await {
-        Ok(res) => res,
-        Err(e) => {
-            txn.discard().await.map_err(AnyhowFailure::into_failure)?;
-            return Err(e.into_failure().into());
-        }
-    };
+            let mut mu = dgraph_tonic::Mutation::new();
+            mu.commit_now = true;
+            mu.set_set_json(&set_json);
 
-    metric_reporter
-        .mutation(&upsert_res, &[])
-        .unwrap_or_else(|e| error!("mutation metric failed: {}", e));
-    txn.commit().await.map_err(AnyhowFailure::into_failure)?;
+            let mut txn = dg.new_mutated_txn();
+            let upsert_res = match txn.upsert(query, mu).await {
+                Ok(res) => res,
+                Err(e) => {
+                    txn.discard().await.map_err(AnyhowFailure::into_failure)?;
+                    return Err(e.into_failure().into());
+                }
+            };
 
-    info!(
-        "Upsert res for {}, set_json: {} upsert_res: {:?}",
-        node_key,
-        set_json.to_string(),
-        upsert_res,
-    );
+            metric_reporter
+                .mutation(&upsert_res, &[])
+                .unwrap_or_else(|e| error!("mutation metric failed: {}", e));
+            txn.commit().await.map_err(AnyhowFailure::into_failure)?;
 
-    match node_key_to_uid(dg, metric_reporter, &node_key).await? {
-        Some(uid) => Ok(uid),
+            info!(
+                "Upsert res for {}, set_json: {} upsert_res: {:?}",
+                node_key,
+                set_json.to_string(),
+                upsert_res,
+            );
+
+            cache.store(cache_key.into_bytes());
+        },
+        Err(e) => error!("Failed to get upsert from cache: {}", e),
+        Ok(CacheResponse::Hit) => (),
+    }
+
+    match node_key_to_uid(dg, metric_reporter, uid_cache, &node_key).await? {
+        Some(uid) => { Ok(uid) },
         None => bail!("Could not retrieve uid after upsert for {}", &node_key),
     }
 }
 
-fn chunk<T, U>(data: U, count: usize) -> Vec<U>
-where
-    U: IntoIterator<Item = T>,
-    U: FromIterator<T>,
-    <U as IntoIterator>::IntoIter: ExactSizeIterator,
-{
-    let mut iter = data.into_iter();
-    let iter = iter.by_ref();
+#[derive(Debug, Default, Clone)]
+struct UidCache {
+    cache: Arc<Mutex<HashMap<String, String>>>,
+}
 
-    let chunk_len = (iter.len() / count) as usize + 1;
-
-    let mut chunks = Vec::new();
-    for _ in 0..count {
-        chunks.push(iter.take(chunk_len).collect())
+impl UidCache {
+    fn get(
+        &self,
+        node_key: &str,
+    ) -> Option<String> {
+        let self_cache = self.cache.lock().unwrap();
+        self_cache.get(node_key).map(String::from)
     }
-    chunks
+    fn store(&mut self, node_key: String, uid: String) {
+        let mut self_cache = self.cache.lock().unwrap();
+        self_cache.insert(node_key, uid);
+    }
 }
 
 #[derive(Clone)]
@@ -182,7 +198,9 @@ where
 {
     mg_client: Arc<DgraphClient>,
     metric_reporter: MetricReporter<Stdout>,
+    r_edge_cache: HashMap<String, String>,
     cache: CacheT,
+    uid_cache: UidCache,
 }
 
 impl<CacheT> GraphMerger<CacheT>
@@ -199,16 +217,33 @@ where
         Self {
             mg_client: Arc::new(mg_client),
             metric_reporter,
+            r_edge_cache: HashMap::with_capacity(100),
+            uid_cache: UidCache::default(),
             cache,
         }
     }
 }
 
-async fn upsert_edge(
+async fn upsert_edge<CacheT>(
     mg_client: &DgraphClient,
     metric_reporter: &mut MetricReporter<Stdout>,
-    mu: dgraph_tonic::Mutation,
-) -> Result<(), failure::Error> {
+    cache: &mut CacheT,
+    to: &str,
+    from: &str,
+    edge_name: &str,
+
+) -> Result<(), failure::Error>
+    where CacheT: Cache,
+{
+
+    let cache_key = format!("{}{}{}", &to, &from, &edge_name);
+    match cache.get(cache_key.as_bytes().to_owned()).await {
+        Ok(CacheResponse::Hit) => return Ok(()),
+        Ok(CacheResponse::Miss) => (),
+        Err(e) => error!("Failed to retrieve from edge_cache: {:?}", e)
+    };
+
+    let mu = generate_edge_insert(&to, &from, &edge_name);
     let mut txn = mg_client.new_mutated_txn();
     let mut_res = txn
         .mutate_and_commit_now(mu)
@@ -218,6 +253,7 @@ async fn upsert_edge(
         .mutation(&mut_res, &[])
         .unwrap_or_else(|e| error!("edge mutation metric failed: {}", e));
 
+    cache.store(cache_key.into_bytes()).await;
     Ok(())
 }
 
@@ -311,7 +347,7 @@ where
     async fn handle_event(
         &mut self,
         generated_subgraphs: GeneratedSubgraphs,
-        completed: &mut CompletedEvents,
+        _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let mut subgraph = Graph::new(0);
         for generated_subgraph in generated_subgraphs.subgraphs {
@@ -353,7 +389,7 @@ where
                 _ => (),
             };
             upserts.push(
-                upsert_node(&self.mg_client, &mut self.metric_reporter, node.clone())
+                upsert_node(&self.mg_client, &mut self.cache, &mut self.uid_cache, &mut self.metric_reporter, node.clone())
                     .map(move |u| (node.clone_node_key(), u))
                     .await,
             )
@@ -417,6 +453,7 @@ where
                     match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
+                        &mut self.uid_cache,
                         &edge.from[..],
                     )
                     .await
@@ -429,11 +466,11 @@ where
                     }
                 }
                 (None, Some(to)) => {
-                    match node_key_to_uid(&self.mg_client, &mut self.metric_reporter, &edge.to[..])
+                    match node_key_to_uid(&self.mg_client, &mut self.metric_reporter, &mut self.uid_cache, &edge.to[..])
                         .await
                     {
                         Ok(Some(from)) => {
-                            edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name))
+                            edge_mutations.push((from.to_owned(), to.to_owned(),  &edge.edge_name))
                         }
                         Ok(None) => edge_res = Some("Edge to uid failed".to_string()),
                         Err(e) => edge_res = Some(e.to_string()),
@@ -443,6 +480,7 @@ where
                     let from = match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
+                        &mut self.uid_cache,
                         &edge.from[..],
                     )
                     .await
@@ -461,6 +499,7 @@ where
                     let to = match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
+                        &mut self.uid_cache,
                         &edge.to[..],
                     )
                     .await
@@ -481,7 +520,7 @@ where
             }
         }
 
-        let mut r_edge_cache: HashMap<String, String> = HashMap::with_capacity(2);
+        let r_edge_cache = &mut self.r_edge_cache;
 
         let mut mutations = Vec::with_capacity(edge_mutations.len());
         for (from, to, edge_name) in edge_mutations {
@@ -493,9 +532,8 @@ where
             match r_edge {
                 Ok(Some(r_edge)) if !r_edge.is_empty() => {
                     r_edge_cache.insert(edge_name.to_owned(), r_edge.to_string());
-                    let mu = generate_edge_insert(&to, &from, &r_edge);
                     mutations
-                        .push(upsert_edge(&self.mg_client, &mut self.metric_reporter, mu).await)
+                        .push(upsert_edge(&self.mg_client, &mut self.metric_reporter, &mut self.cache, &to, &from, &r_edge).await)
                 }
                 Err(e) => {
                     error!("get_r_edge failed: {:?}", e);
@@ -504,16 +542,15 @@ where
                 _ => warn!("Missing r_edge for f_edge {}", edge_name),
             }
 
-            let mu = generate_edge_insert(&from, &to, &edge_name);
-            let upsert_res = upsert_edge(&self.mg_client, &mut self.metric_reporter, mu).await;
+            let upsert_res = upsert_edge(&self.mg_client, &mut self.metric_reporter, &mut self.cache,&from, &to, &edge_name).await;
 
-            mutations.push(upsert_res);
+
+            if let Err(e) = upsert_res {
+                error!("Failed to upsert edge: {} {} {} {:?}", &from, &to, &edge_name, e);
+                edge_res = Some(format!("Failed to upsert edge: {:?}", e));
+            }
         }
 
-        if let Some(e) = mutations.iter().find(|e| e.is_err()) {
-            error!("Failed to upsert edge: {:?}", e);
-            edge_res = Some(format!("Failed to upsert edge: {:?}", e));
-        }
 
         match (upsert_res, edge_res) {
             (Some(e), _) => Err(Ok((subgraph, GraphMergerError::Unexpected(e.to_string())))),

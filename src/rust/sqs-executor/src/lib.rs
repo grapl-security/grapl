@@ -41,7 +41,7 @@ pub mod errors;
 pub mod event_decoder;
 pub mod event_emitter;
 pub mod event_handler;
-use crate::sqs_timeout_manager::cleanup_message;
+use crate::sqs_timeout_manager::keep_alive;
 pub use retriever::event_retriever;
 pub use retriever::s3_event_retriever;
 
@@ -150,6 +150,12 @@ async fn process_message<
         Error = SerializerErrorT,
     >,
 {
+    let inner_loop_span = tracing::span!(
+        tracing::Level::INFO,
+        "inner_loop_span",
+        message_id=next_message.message_id.as_ref().unwrap().as_str(),
+    );
+
     if let Ok(CacheResponse::Hit) = cache
         .get(next_message.message_id.clone().unwrap().into_bytes())
         .await
@@ -172,9 +178,15 @@ async fn process_message<
         .as_ref()
         .expect("missing receipt_handle")
         .to_owned();
-    let msg_handle = cleanup_message(
+    let message_id = next_message
+        .message_id
+        .as_ref()
+        .expect("missing message_id")
+        .to_owned();
+    let msg_handle = keep_alive(
         sqs_client.clone(),
         receipt_handle.clone(),
+        message_id,
         queue_url.clone(),
         30,
     );

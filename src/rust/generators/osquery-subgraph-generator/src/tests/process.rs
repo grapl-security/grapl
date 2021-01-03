@@ -4,7 +4,7 @@ use crate::tests::utils;
 use grapl_service::decoder::ZstdJsonDecoder;
 use regex::internal::Input;
 use sqs_executor::cache::NopCache;
-use sqs_executor::event_handler::EventHandler;
+use sqs_executor::event_handler::{EventHandler, CompletedEvents};
 
 #[tokio::test]
 async fn test_subgraph_generation_process_create() {
@@ -15,9 +15,10 @@ async fn test_subgraph_generation_process_create() {
         .await
         .expect("Failed to parse process_create.zstd logs into OSQueryLogs.");
 
-    let output_event = generator.handle_event(logs).await;
+    let mut completion = CompletedEvents::default();
+    let output_event = generator.handle_event(logs, &mut completion).await;
 
-    match &output_event.completed_event {
+    match &output_event {
         Ok(subgraph) => {
             assert!(!subgraph.is_empty(), "Generated subgraph was empty.")
         }

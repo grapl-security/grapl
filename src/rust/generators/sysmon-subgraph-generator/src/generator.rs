@@ -94,9 +94,11 @@ where
 
             let graph = match Graph::try_from(event.clone()) {
                 Ok(subgraph) => subgraph,
+                Err(SysmonGeneratorError::UnsupportedEventType(s)) => {
+                    continue
+                }
                 Err(e) => {
-                    // If `e` is Persistent we should cache that
-                    // identities.add_identity(event, Success::F);
+                    error!("Graph::try_from failed with: {:?}", e);
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
                     last_failure = Some(e);
                     continue;

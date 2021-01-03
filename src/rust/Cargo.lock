@@ -1279,6 +1279,18 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 [[package]]
 name = "graph-generator-lib"
 version = "0.1.9"
+dependencies = [
+ "grapl-config",
+ "grapl-graph-descriptions",
+ "grapl-observe",
+ "grapl-service",
+ "rusoto_core",
+ "rusoto_s3",
+ "rusoto_sqs",
+ "rusoto_sts",
+ "sqs-executor",
+ "tracing",
+]
 
 [[package]]
 name = "graph-merger"
@@ -3078,6 +3090,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusoto_sts"
+version = "0.45.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3815b8c0fc1c50caf9e87603f23daadfedb18d854de287b361c69f68dc9d49e0"
+dependencies = [
+ "async-trait",
+ "bytes 0.5.6",
+ "chrono",
+ "futures 0.3.8",
+ "rusoto_core",
+ "serde_urlencoded",
+ "tempfile",
+ "xml-rs",
+]
+
+[[package]]
 name = "rust-argon2"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3704,6 +3732,7 @@ dependencies = [
  "chrono",
  "failure",
  "futures 0.3.8",
+ "graph-generator-lib",
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
