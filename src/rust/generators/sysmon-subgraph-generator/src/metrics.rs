@@ -1,4 +1,3 @@
-use failure::Error;
 use grapl_observe::metric_reporter::{common_strs, MetricReporter, TagPair};
 use log::*;
 use std::io::Stdout;

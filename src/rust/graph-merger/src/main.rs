@@ -1,25 +1,20 @@
 #![type_length_limit = "1195029"]
 
 use futures::future::FutureExt;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt::Debug;
-use std::io::{Cursor, Stdout};
+use std::io::Stdout;
 use std::iter::FromIterator;
-use std::net::ToSocketAddrs;
-use std::str::FromStr;
+
 use std::sync::{Arc, Mutex};
+use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
-use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use aws_lambda_events::event::sqs::SqsEvent;
-use chrono::Utc;
+
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 use failure::{bail, Error};
-use futures::future::join_all;
+
 use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
 use grapl_config::event_caches;
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
@@ -28,29 +23,25 @@ use grapl_observe::dgraph_reporter::DgraphMetricReporter;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::decoder::ZstdProtoDecoder;
 use grapl_service::serialization::SubgraphSerializer;
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use prost::Message;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
-use rusoto_core::{HttpClient, Region};
+
 use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_dynamodb::{DynamoDb, GetItemInput};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
+use rusoto_sqs::SqsClient;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
-use sqs_executor::completion_event_serializer::CompletionEventSerializer;
+
 use sqs_executor::errors::{CheckedError, Recoverable};
-use sqs_executor::event_decoder::PayloadDecoder;
+
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::make_ten;
-use sqs_executor::redis_cache::RedisCache;
-use sqs_executor::s3_event_emitter::S3EventEmitter;
+
 use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
-use std::convert::TryInto;
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({

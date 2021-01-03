@@ -1,28 +1,19 @@
 #![type_length_limit = "1214269"]
+
 // Our types are simply too powerful
 pub mod dispatch_event;
 
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use std::collections::HashSet;
-use std::convert::TryInto;
-use std::io::{Cursor, Stdout};
-use std::str::FromStr;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use aws_lambda_events::event::sqs::SqsEvent;
-use bytes::Bytes;
-use chrono::Utc;
+
 use failure::{bail, Error};
 use log::{debug, error, info, warn};
 use prost::Message;
-use rusoto_core::{HttpClient, Region};
+
 use rusoto_s3::{ListObjectsRequest, S3Client, S3};
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
+use rusoto_sqs::SqsClient;
+
 use std::time::Duration;
 
 use crate::dispatch_event::{AnalyzerDispatchEvent, AnalyzerDispatchSerializer};
@@ -31,12 +22,12 @@ use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::decoder::ZstdProtoDecoder;
 use sqs_executor::cache::NopCache;
-use sqs_executor::completion_event_serializer::CompletionEventSerializer;
+
 use sqs_executor::errors::{CheckedError, Recoverable};
-use sqs_executor::event_decoder::PayloadDecoder;
+
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
-use sqs_executor::s3_event_emitter::S3EventEmitter;
+
 use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use sqs_executor::{make_ten, time_based_key_fn};
 

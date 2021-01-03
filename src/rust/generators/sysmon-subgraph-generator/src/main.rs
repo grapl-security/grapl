@@ -1,20 +1,15 @@
 #![type_length_limit = "1334469"]
 
-use std::io::Stdout;
-use std::str::FromStr;
-use std::time::Duration;
-
-use chrono::Utc;
 use log::*;
-use rusoto_core::Region;
+
 use rusoto_sqs::SqsClient;
 
 use grapl_config::*;
 use grapl_observe::metric_reporter::MetricReporter;
-use sqs_executor::cache::NopCache;
+
 use sqs_executor::event_retriever::S3PayloadRetriever;
-use sqs_executor::redis_cache::RedisCache;
-use sqs_executor::s3_event_emitter::{send_s3_notification, S3EventEmitter};
+
+use sqs_executor::s3_event_emitter::S3EventEmitter;
 use sqs_executor::{make_ten, time_based_key_fn};
 
 use crate::generator::SysmonSubgraphGenerator;
@@ -23,7 +18,6 @@ use crate::serialization::{SubgraphSerializer, ZstdDecoder};
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::S3Client;
 use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
-use std::convert::TryInto;
 
 mod generator;
 mod metrics;

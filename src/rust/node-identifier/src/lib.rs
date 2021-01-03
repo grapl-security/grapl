@@ -1,31 +1,23 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 use std::fmt::Debug;
-use std::io::{Cursor, Stdout};
+
 use std::ops::Deref;
-use std::str::FromStr;
+
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
 
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use aws_lambda_events::event::sqs::SqsEvent;
-use bytes::Bytes;
-use chrono::Utc;
+
 use failure::{bail, Error};
 use lambda_runtime::error::HandlerError;
-use lambda_runtime::Context;
+
 use log::*;
 use prost::Message;
-use rusoto_core::{HttpClient, Region};
+
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
+use rusoto_sqs::SqsClient;
 use sha2::Digest;
 
 use assetdb::{AssetIdDb, AssetIdentifier};
@@ -45,13 +37,13 @@ use grapl_observe::metric_reporter::MetricReporter;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
-use sqs_executor::completion_event_serializer::CompletionEventSerializer;
+
 use sqs_executor::errors::{CheckedError, Recoverable};
-use sqs_executor::event_decoder::PayloadDecoder;
+
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_retriever::S3PayloadRetriever;
-use sqs_executor::redis_cache::RedisCache;
-use sqs_executor::s3_event_emitter::{S3EventEmitter, S3ToSqsEventNotifier};
+
+use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use sqs_executor::{make_ten, time_based_key_fn};
 
 use grapl_service::decoder::ZstdProtoDecoder;
@@ -762,7 +754,7 @@ where
             if let Some(e) = attribution_failure {
                 return Err(Err(NodeIdentifierError::Unexpected));
             }
-            return Ok(Graph::new(0))
+            return Ok(Graph::new(0));
         }
 
         let identities: Vec<_> = unid_id_map.keys().collect();
