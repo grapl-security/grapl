@@ -3,6 +3,15 @@ import time
 
 import boto3
 import botocore
+import logging
+import os
+import sys
+
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
+LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(LEVEL)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 table_names = [
     "local-grapl-process_history_table",
@@ -125,7 +134,7 @@ table_defs = {
 
 dynamodb = boto3.client(
     "dynamodb",
-    region_name="us-west-2",
+    region_name="us-east-1",
     endpoint_url="http://dynamodb:8000",
     aws_access_key_id="dummy_cred_aws_access_key_id",
     aws_secret_access_key="dummy_cred_aws_secret_access_key",
@@ -147,10 +156,17 @@ def try_create_loop(table_name):
             if "ResourceInUseException" in e.__class__.__name__:
                 break
             else:
-                print(table_name, e)
+                if i >= 5:
+                    LOGGER.warn(f"failed to provision dynamodb table: {table_name} {e}")
+                else:
+                    LOGGER.debug(f"failed to provision dynamodb table: {table_name} {e}")
                 time.sleep(2)
         except Exception as e:
-            print(table_name, e)
+            if i >= 5:
+                LOGGER.warn(f"failed to provision dynamodb table: {table_name} {e}")
+            else:
+                LOGGER.debug(f"failed to provision dynamodb table: {table_name} {e}")
+
             time.sleep(2)
 
 

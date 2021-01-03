@@ -759,7 +759,10 @@ where
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
 
         if identified_graph.is_empty() {
-            return Err(Err(NodeIdentifierError::Unexpected));
+            if let Some(e) = attribution_failure {
+                return Err(Err(NodeIdentifierError::Unexpected));
+            }
+            return Ok(Graph::new(0))
         }
 
         let identities: Vec<_> = unid_id_map.keys().collect();

@@ -170,7 +170,7 @@ def store_schema(table, schema: "Schema"):
 
 
 def provision_mg(mclient) -> None:
-    # drop_all(mclient)
+    drop_all(mclient)
 
     schemas = (
         AssetSchema(),
@@ -190,13 +190,16 @@ def provision_mg(mclient) -> None:
         schema.init_reverse()
 
     for schema in schemas:
-        extend_schema(mclient, schema)
+        try:
+            extend_schema(mclient, schema)
+        except Exception as e:
+            LOGGER.warn(f"Failed to extend_schema: {schema} {e}")
 
     provision_master_graph(mclient, schemas)
 
     dynamodb = boto3.resource(
         "dynamodb",
-        region_name="us-west-2",
+        region_name="us-east-1",
         endpoint_url="http://dynamodb:8000",
         aws_access_key_id="dummy_cred_aws_access_key_id",
         aws_secret_access_key="dummy_cred_aws_secret_access_key",
@@ -204,8 +207,10 @@ def provision_mg(mclient) -> None:
 
     table = dynamodb.Table("local-grapl-grapl_schema_table")
     for schema in schemas:
-        store_schema(table, schema)
-
+        try:
+            store_schema(table, schema)
+        except Exception as e:
+            LOGGER.warn(f"storing schema: {schema} {table} {e}")
 
 BUCKET_PREFIX = "local-grapl"
 
@@ -289,9 +294,9 @@ def provision_sqs(sqs, service_name: str) -> None:
     q.attach_deadletter_queue(rd_q)
     rd_q.attach_deadletter_queue(dl_q)
 
-    LOGGER.debug(f"Provisioned {service_name} queue at " + q.queue_url)
-    LOGGER.debug(f"Provisioned {service_name} queue at " + rd_q.queue_url)
-    LOGGER.debug(f"Provisioned {service_name} queue at " + dl_q.queue_url)
+    LOGGER.info(f"Provisioned {service_name} queue at " + q.queue_url)
+    LOGGER.info(f"Provisioned {service_name} queue at " + rd_q.queue_url)
+    LOGGER.info(f"Provisioned {service_name} queue at " + dl_q.queue_url)
 
     q.purge(), rd_q.purge(), dl_q.purge()
 
@@ -346,7 +351,7 @@ def create_user(username, cleartext):
     assert cleartext
     dynamodb = boto3.resource(
         "dynamodb",
-        region_name="us-west-2",
+        region_name="us-east-1",
         endpoint_url="http://dynamodb:8000",
         aws_access_key_id="dummy_cred_aws_access_key_id",
         aws_secret_access_key="dummy_cred_aws_secret_access_key",
@@ -441,7 +446,7 @@ if __name__ == "__main__":
                 break
         except Exception as e:
             if i > 10:
-                LOGGER.error("mg provision failed with: ", e)
+                LOGGER.error(f"mg provision failed with: {e}")
 
     for i in range(0, 150):
         try:

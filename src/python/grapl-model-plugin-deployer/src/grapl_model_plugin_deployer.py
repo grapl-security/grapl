@@ -178,7 +178,7 @@ def get_dynamodb_client() -> Any:
         return boto3.resource(
             "dynamodb",
             endpoint_url="http://dynamodb:8000",
-            region_name="us-west-2",
+            region_name="us-east-1",
             aws_access_key_id="dummy_cred_aws_access_key_id",
             aws_secret_access_key="dummy_cred_aws_secret_access_key",
         )

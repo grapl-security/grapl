@@ -17,6 +17,7 @@ use rusoto_sqs::{SendMessageError, SqsClient};
 use rusoto_sqs::{SendMessageRequest, Sqs};
 use std::future::Future;
 use std::io::Stdout;
+use tap::prelude::TapFallible;
 use tokio::time::{Duration, Elapsed};
 use tracing::error;
 use tracing::field::debug;
@@ -155,7 +156,8 @@ where
                         on_emit
                             .event_notification(output_bucket, key)
                             .await
-                            .map_err(|e| S3EventEmitterError::OnEmitError(e))?;
+                            .map_err(|e| S3EventEmitterError::OnEmitError(e))
+                            .tap_err(|e| error!("event_notification failed: {:?}", e))?;
                         Ok(())
                     }
                     Err(e) => {

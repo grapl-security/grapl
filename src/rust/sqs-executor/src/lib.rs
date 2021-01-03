@@ -1,4 +1,21 @@
+#![allow(
+    dead_code,
+    non_camel_case_types,
+    non_upper_case_globals,
+    unreachable_code,
+    unused_must_use,
+    unused_mut,
+    unused_parens,
+    unused_variables,
+)]
 pub mod retriever;
+
+
+
+
+
+
+
 
 use std::error::Error;
 use std::fmt::Debug;
@@ -25,11 +42,11 @@ use tracing::{error, info, warn};
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
 use event_retriever::S3PayloadRetriever;
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_observe::timers::time_fut_ms;
+use grapl_observe::metric_reporter::{MetricReporter, tag};
+use grapl_observe::timers::{time_fut_ms, TimedFutureExt};
 use s3_event_emitter::S3EventEmitter;
 
-use crate::cache::Cache;
+use crate::cache::{Cache, CacheResponse};
 use crate::completion_event_serializer::CompletionEventSerializer;
 use crate::errors::{CheckedError, ExecutorError, Recoverable};
 use crate::event_decoder::PayloadDecoder;
@@ -46,11 +63,14 @@ pub mod event_emitter;
 pub mod event_handler;
 pub use retriever::event_retriever;
 pub use retriever::s3_event_retriever;
+use crate::sqs_timeout_manager::cleanup_message;
+
 pub mod event_status;
 pub mod key_creator;
 pub mod redis_cache;
 pub mod rusoto_helpers;
 pub mod s3_event_emitter;
+pub mod sqs_timeout_manager;
 
 pub async fn make_ten<F, T>(f: F) -> [T; 10]
 where
@@ -77,16 +97,22 @@ async fn cache_completed<CacheT>(cache: &mut CacheT, completed: &mut CompletedEv
 where
     CacheT: Cache,
 {
+    let mut cache_stores = Vec::with_capacity(completed.identities.len());
     for (identity, status) in completed.identities.drain(..) {
-        match status {
-            EventStatus::Success | EventStatus::Failure => {
-                if let Err(e) = cache.store(identity).await {
-                    warn!("Failed to store identity in cache: {:?}", e);
+        let mut cache = cache.clone();
+        let cache_store = async move {
+            match status {
+                EventStatus::Success | EventStatus::Failure => {
+                    if let Err(e) = cache.store(identity).await {
+                        warn!("Failed to store identity in cache: {:?}", e);
+                    }
                 }
+                _ => (),
             }
-            _ => (),
-        }
+        };
+        cache_stores.push(cache_store);
     }
+    futures::future::join_all(cache_stores).await;
 }
 
 async fn process_message<
@@ -144,7 +170,19 @@ async fn process_message<
         Error = SerializerErrorT,
     >,
 {
-    info!("Retrieving payload");
+    if let Ok(CacheResponse::Hit) = cache.get(next_message.message_id.clone().unwrap().into_bytes()).await {
+        info!("Message has already been processed: {:?}", next_message.message_id);
+        rusoto_helpers::delete_message(
+            sqs_client.clone(),
+            queue_url.to_owned(),
+            next_message.receipt_handle.expect("missing receipt_handle"),
+            metric_reporter,
+        );
+        return
+    }
+    info!("Retrieving payload from: {:?}", next_message.message_id);
+    let receipt_handle = next_message.receipt_handle.as_ref().expect("missing receipt_handle").to_owned();
+    let msg_handle = cleanup_message(sqs_client.clone(), receipt_handle.clone(), queue_url.clone(), 30,);
     let payload = s3_payload_retriever.retrieve_event(&next_message).await;
 
     let events = match payload {
@@ -153,10 +191,9 @@ async fn process_message<
             rusoto_helpers::delete_message(
                 sqs_client.clone(),
                 queue_url.to_owned(),
-                next_message.receipt_handle.expect("missing receipt_handle"),
+                receipt_handle,
                 metric_reporter.clone(),
             );
-            // metric_reporter.histogram();
             return;
         }
         Err(e) => {
@@ -167,7 +204,7 @@ async fn process_message<
                     next_message.body.as_ref().unwrap(),
                     dead_letter_queue_url,
                     queue_url.to_owned(),
-                    next_message.receipt_handle.expect("missing receipt_handle"),
+                    receipt_handle,
                     metric_reporter.clone(),
                 )
                 .await;
@@ -180,7 +217,17 @@ async fn process_message<
     let mut completed = CompletedEvents::default();
 
     // completed.clear();
-    let processing_result = event_handler.handle_event(events, &mut completed).await;
+
+    let processing_result = async {
+        let (processing_result, ms) = event_handler.handle_event(events, &mut completed)
+            .timed().await;
+        metric_reporter.histogram(
+            "event_handler.handle_event",
+            ms as f64,
+            &[tag("success", processing_result.is_ok())]
+        );
+        processing_result
+    }.await;
 
     match processing_result {
         Ok(total) => {
@@ -195,12 +242,15 @@ async fn process_message<
                 .await
                 .expect("Failed to emit event");
 
+            cache.store(next_message.message_id.clone().unwrap().into_bytes()).await;
             cache_completed(cache, &mut completed).await;
             // ack the message - we could probably not block on this
+
+            msg_handle.stop();
             rusoto_helpers::delete_message(
                 sqs_client.clone(),
                 queue_url.to_owned(),
-                next_message.receipt_handle.expect("missing receipt_handle"),
+                receipt_handle,
                 metric_reporter.clone(),
             )
             .await;
@@ -224,12 +274,14 @@ async fn process_message<
             cache_completed(cache, &mut completed).await;
 
             if let Recoverable::Persistent = e.error_type() {
+
+                msg_handle.stop();
                 rusoto_helpers::move_to_dead_letter(
                     sqs_client.clone(),
                     next_message.body.as_ref().unwrap(),
                     dead_letter_queue_url,
                     queue_url.to_owned(),
-                    next_message.receipt_handle.expect("missing receipt_handle"),
+                    receipt_handle,
                     metric_reporter.clone(),
                 )
                 .await;
@@ -242,12 +294,13 @@ async fn process_message<
                 e.error_type()
             );
             if let Recoverable::Persistent = e.error_type() {
+                msg_handle.stop();
                 rusoto_helpers::move_to_dead_letter(
                     sqs_client.clone(),
                     next_message.body.as_ref().unwrap(),
                     dead_letter_queue_url,
                     queue_url.to_owned(),
-                    next_message.receipt_handle.expect("missing receipt_handle"),
+                    receipt_handle,
                     metric_reporter.clone(),
                 )
                 .await;
@@ -337,7 +390,7 @@ async fn _process_loop<
         let message_batch_len = message_batch.len();
 
         info!("Received {} messages", message_batch_len);
-        println!("Received {} messages", message_batch_len);
+
         if message_batch.is_empty() {
             tokio::time::delay_for(std::time::Duration::from_millis(250)).await;
             continue;

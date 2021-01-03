@@ -1,6 +1,6 @@
 pydgraph==20.7.0
 boto3
-grapl-analyzerlib==0.2.71
+grapl-analyzerlib
 redis
 grpcio
 protobuf
