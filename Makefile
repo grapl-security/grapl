@@ -51,9 +51,8 @@ test-unit: build-unit-tests ## build and run unit tests
 
 .PHONY: test-integration
 test-integration: build-integration-tests ## build and run integration tests
-	docker-compose -f docker-compose.Makefile.yml up -d;
+	docker-compose -f docker-compose.Makefile.yml up -d
 	# save exit code to allow for `make down` in event of test failure
-	export UID=$(UID) GID=$(GID); \
 	test/docker-compose-with-error.sh -f docker-compose.integration-tests.yml; \
 	EXIT_CODE=$$?; \
 	$(MAKE) down; \
@@ -91,8 +90,8 @@ up: build-local ## build local services and docker-compose up
 	docker-compose -f docker-compose.Makefile.yml up
 
 .PHONY: down
-down: ## docker-compose down
-	docker-compose -f docker-compose.Makefile.yml down
+down: ## docker-compose down --remove-orphans
+	docker-compose -f docker-compose.Makefile.yml down --remove-orphans
 
 .PHONY: help
 help: ## print this help
