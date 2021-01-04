@@ -10,7 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use futures_util::FutureExt;
 
 use rusoto_s3::S3;
-use rusoto_sqs::Sqs;
+use rusoto_sqs::{Sqs, ListQueuesRequest, ListQueuesError};
 use rusoto_sqs::{
     DeleteMessageError, DeleteMessageRequest, Message as SqsMessage, ReceiveMessageError,
     ReceiveMessageRequest, SendMessageError as InnerSendMessageError, SendMessageRequest,
@@ -44,6 +44,8 @@ pub mod event_handler;
 use crate::sqs_timeout_manager::keep_alive;
 pub use retriever::event_retriever;
 pub use retriever::s3_event_retriever;
+use darkredis::MSetBuilder;
+use rusoto_core::RusotoError;
 
 pub mod event_status;
 pub mod key_creator;
@@ -75,26 +77,37 @@ where
 
 async fn cache_completed<CacheT>(cache: &mut CacheT, completed: &mut CompletedEvents)
 where
-    CacheT: Cache,
+    CacheT: Cache + Send,
 {
-    let mut cache_stores = Vec::with_capacity(completed.identities.len());
+    //todo: lift, or avoid this entirely
+    let mut to_cache = Vec::with_capacity(completed.len());
+
     for (identity, status) in completed.identities.drain(..) {
-        let mut cache = cache.clone();
-        let cache_store = async move {
             match status {
                 EventStatus::Success | EventStatus::Failure => {
-                    if let Err(e) = cache.store(identity).await {
-                        warn!("Failed to store identity in cache: {:?}", e);
-                    }
+                    to_cache.push(identity);
                 }
                 _ => (),
             }
-        };
-        cache_stores.push(cache_store);
     }
-    futures::future::join_all(cache_stores).await;
+
+    cache.store_all(to_cache).await
+        .unwrap_or_else(|e| error!(error=e.to_string().as_str(), "Failed to store_all in cache"));
+
 }
 
+#[tracing::instrument(skip(
+    next_message,
+    queue_url,
+    dead_letter_queue_url,
+    cache,
+    sqs_client,
+    event_handler,
+    s3_payload_retriever,
+    s3_emitter,
+    serializer,
+    metric_reporter,
+))]
 async fn process_message<
     CacheT,
     SInit,
@@ -150,19 +163,20 @@ async fn process_message<
         Error = SerializerErrorT,
     >,
 {
-    let inner_loop_span = tracing::span!(
+    let message_id = next_message.message_id.as_ref().unwrap().as_str();
+    let _inner_loop_span = tracing::span!(
         tracing::Level::INFO,
         "inner_loop_span",
-        message_id=next_message.message_id.as_ref().unwrap().as_str(),
+        message_id=message_id,
     );
 
     if let Ok(CacheResponse::Hit) = cache
-        .get(next_message.message_id.clone().unwrap().into_bytes())
+        .get(message_id.as_bytes().to_owned())
         .await
     {
         info!(
-            "Message has already been processed: {:?}",
-            next_message.message_id
+            message_id=message_id,
+            "Message has already been processed",
         );
         rusoto_helpers::delete_message(
             sqs_client.clone(),
@@ -172,21 +186,20 @@ async fn process_message<
         );
         return;
     }
-    info!("Retrieving payload from: {:?}", next_message.message_id);
+    info!(
+        message_id=message_id,
+        "Retrieving payload from",
+    );
     let receipt_handle = next_message
         .receipt_handle
         .as_ref()
         .expect("missing receipt_handle")
         .to_owned();
-    let message_id = next_message
-        .message_id
-        .as_ref()
-        .expect("missing message_id")
-        .to_owned();
+
     let msg_handle = keep_alive(
         sqs_client.clone(),
         receipt_handle.clone(),
-        message_id,
+        message_id.to_owned(),
         queue_url.clone(),
         30,
     );
@@ -204,7 +217,12 @@ async fn process_message<
             return;
         }
         Err(e) => {
-            error!("Failed to retrieve payload with: {:?}", e);
+            error!(
+                queue_url=queue_url.as_str(),
+                message_id=message_id,
+                error=e.to_string().as_str(),
+                "Failed to retrieve payload with"
+            );
             if let Recoverable::Persistent = e.error_type() {
                 rusoto_helpers::move_to_dead_letter(
                     sqs_client.clone(),
@@ -322,6 +340,17 @@ async fn process_message<
     }
 }
 
+#[tracing::instrument(skip(
+    cache,
+    queue_url,
+    dead_letter_queue_url,
+    sqs_client,
+    event_handler,
+    s3_payload_retriever,
+    s3_emitter,
+    serializer,
+    metric_reporter,
+))]
 async fn _process_loop<
     CacheT,
     SInit,
@@ -377,8 +406,10 @@ async fn _process_loop<
             i = 2;
         }
 
-        info!("Retrieving messages from {}", queue_url);
-        println!("Retrieving messages from {}", queue_url);
+        info!(
+            queue_url=queue_url.as_str(),
+            "Retrieving SQS messages"
+        );
         let message_batch = rusoto_helpers::get_message(
             queue_url.to_string(),
             sqs_client.clone(),
@@ -392,7 +423,11 @@ async fn _process_loop<
                 message_batch
             }
             Err(e) => {
-                error!("get_message from queue {} failed: {:?}", queue_url, e);
+                error!(
+                    queue_url=queue_url.as_str(),
+                    error=e.to_string().as_str(),
+                    "Failed to get_message from queue"
+                );
                 tokio::time::delay_for(std::time::Duration::from_millis(i * 250)).await;
                 i += 1;
                 continue;
@@ -400,7 +435,10 @@ async fn _process_loop<
         };
         let message_batch_len = message_batch.len();
 
-        info!("Received {} messages", message_batch_len);
+        info!(
+            message_batch_len=message_batch_len,
+            "Received messages"
+        );
 
         if message_batch.is_empty() {
             tokio::time::delay_for(std::time::Duration::from_millis(250)).await;
@@ -421,10 +459,11 @@ async fn _process_loop<
             .zip(&mut *serializer)
             .zip(&mut *cache);
 
-        let mut process_futs = Vec::with_capacity(message_batch_len);
+        let mut process_futs = Vec::with_capacity(10);
+
         for combo in combos {
             let (
-                (((((next_message, event_handler), s3_payload_retriever)), s3_emitter), serializer),
+                ((((next_message, event_handler), s3_payload_retriever), s3_emitter), serializer),
                 cache,
             ) = combo;
             let p = process_message(
@@ -441,10 +480,21 @@ async fn _process_loop<
             );
             process_futs.push(p);
         }
-        futures::future::join_all(process_futs).await;
+
+        let (_r, ms) = futures::future::join_all(process_futs).timed().await;
+        metric_reporter.histogram("sqs_executor.all_processing.ms", ms as f64, &[]);
     }
 }
 
+#[tracing::instrument(skip(
+    cache,
+    sqs_client,
+    event_handler,
+    s3_payload_retriever,
+    s3_emitter,
+    serializer,
+    metric_reporter,
+))]
 pub async fn process_loop<
     CacheT,
     SInit,
@@ -471,7 +521,7 @@ pub async fn process_loop<
              10],
     s3_emitter: &mut [S3EventEmitter<S3ClientT, F, OnEmit, OnEmitError>; 10],
     serializer: &mut [CompletionEventSerializerT; 10],
-    mut metric_reporter: MetricReporter<Stdout>,
+    metric_reporter: MetricReporter<Stdout>,
 ) where
     CacheT: crate::cache::Cache + Clone + Send + Sync + 'static,
     SInit: (Fn(String) -> S3ClientT) + Clone + Send + Sync + 'static,
@@ -494,8 +544,12 @@ pub async fn process_loop<
         Error = SerializerErrorT,
     >,
 {
+    let queue_name = queue_url.split("/").last()
+        .unwrap_or_else(|| panic!("invalid queue_url: {}", &queue_url));
+    wait_for_sqs(sqs_client.clone(), queue_name.clone()).await;
+
     loop {
-        debug!("Outer process loop");
+        tracing::trace!("Outer process loop");
         let f = _process_loop(
             queue_url.clone(),
             dead_letter_queue_url.clone(),
@@ -508,17 +562,93 @@ pub async fn process_loop<
             metric_reporter.clone(),
         );
         let f = AssertUnwindSafe(f);
+
         if let Err(e) = f.catch_unwind().await {
-            if let Some(e) = e.downcast_ref::<Box<dyn std::fmt::Debug>>() {
-                error!("Processing loop failed {:?}", e);
+            if let Some(e) = e.downcast_ref::<Box<dyn std::error::Error + 'static>>() {
+                error!(
+                    queue_url=queue_url.as_str(),
+                    error=e.to_string().as_str(),
+                    "Processing loop panicked"
+                );
+            } else if let Some(e) = e.downcast_ref::<Box<dyn std::fmt::Debug>>() {
+                error!(
+                    error=format!("{:?}", e).as_str(),
+                    "Processing loop panicked"
+                );
             } else {
                 error!("Unexpected error");
             }
             tokio::time::delay_for(std::time::Duration::from_millis(200)).await;
-            // todo: maybe a sleep/ backoff with random jitter?
         }
     }
 }
+
+async fn wait_loop<F, T, E>(max_tries: u32, f: impl Fn() -> F) -> Result<T, E>
+    where
+        F: std::future::Future<Output = Result<T, E>>,
+        T: Send + Sync + 'static,
+        E: std::error::Error + Send + Sync + 'static,
+{
+    let mut errs = None;
+    for _ in 0..max_tries {
+        match (f)().await {
+            Ok(t) => return Ok(t),
+            Err(e) => {
+                errs = Some(Err(e));
+            }
+        };
+
+        tokio::time::delay_for(std::time::Duration::from_secs(2)).await;
+    }
+
+    if let Some(e) = errs {
+        e
+    } else {
+        unreachable!()
+    }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum WaitForSqsError {
+    #[error("ListQueuesError")]
+    ListQueuesError(#[from] RusotoError<ListQueuesError>),
+    #[error("EmptyList")]
+    EmptyList,
+}
+
+pub async fn wait_for_sqs(
+    sqs_client: impl Sqs,
+    queue_name_prefix: impl Into<String>,
+) -> Result<(), WaitForSqsError> {
+    let queue_name_prefix = queue_name_prefix.into();
+    wait_loop(150, || async {
+        let list_res = sqs_client.list_queues(ListQueuesRequest {
+                max_results: None,
+                next_token: None,
+                queue_name_prefix: Some(queue_name_prefix.clone()),
+            })
+            .await;
+        match list_res
+        {
+            Err(e) => {
+                debug!("Waiting for sqs to become available: {:?}", e);
+                Err(WaitForSqsError::ListQueuesError(e))
+            }
+            Ok(res) => {
+                if let Some(res) = res.queue_urls {
+                    if res.is_empty() {
+                        return Err(WaitForSqsError::EmptyList)
+                    }
+                }
+                Ok(())
+            },
+        }
+    })
+        .await?;
+
+    Ok(())
+}
+
 
 pub fn time_based_key_fn(_event: &[u8]) -> String {
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {

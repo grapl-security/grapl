@@ -17,7 +17,7 @@ impl OSQuerySubgraphGeneratorMetrics {
 }
 
 impl OSQuerySubgraphGeneratorMetrics {
-    pub fn report_handle_event_success(&mut self, failed: &Option<Error>) {
+    pub fn report_handle_event_success(&mut self, failed: &Option<&Error>) {
         let reported_status = if let Some(_) = failed {
             common_strs::FAIL
         } else {

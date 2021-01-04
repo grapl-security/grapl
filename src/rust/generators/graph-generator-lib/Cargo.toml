@@ -9,8 +9,6 @@ license = "Apache-2.0"
 [dependencies]
 grapl-graph-descriptions = { path="../../graph-descriptions", version="0.2.*" }
 #
-#failure = "0.1.*"
-#sqs-lambda = { path = "../../sqs-lambda/" }
 grapl-observe = {path = "../../grapl-observe/"}
 sqs-executor = {path="../../sqs-executor"}
 grapl-service = {path="../../grapl-service"}

@@ -31,7 +31,7 @@ where
 {
     fn error_type(&self) -> Recoverable {
         match self {
-            Self::SqsReceiveError(e) => Recoverable::Transient,
+            Self::SqsReceiveError(_e) => Recoverable::Transient,
             Self::CacheError(e) => e.error_type(),
             Self::HandlerError(e) => e.error_type(),
         }

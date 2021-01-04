@@ -35,16 +35,26 @@ pub trait Cache: Clone {
         cacheable: CA,
     ) -> Result<CacheResponse, Self::CacheErrorT>;
     async fn store(&mut self, identity: Vec<u8>) -> Result<(), Self::CacheErrorT>;
+
+    async fn store_all(&mut self, identities: Vec<Vec<u8>>) -> Result<(), Self::CacheErrorT> {
+        for identity in identities.into_iter() {
+            self.store(identity).await?;
+        }
+        Ok(())
+    }
 }
 
 // #[async_trait]
 // pub trait ReadableCache {
+//     type CacheErrorT: CheckedError + Send + Sync + 'static;
 //     async fn get<
 //         CA: Cacheable + Send + Sync + 'static,
 //     >(
 //         &mut self,
 //         cacheable: CA,
-//     ) -> Result<CacheResponse, CacheErrorT>;
+//     ) -> Result<CacheResponse, Self::CacheErrorT> {
+//         Cache::get(self, cacheable).await
+//     }
 // }
 
 #[derive(thiserror::Error, Debug)]
@@ -70,9 +80,11 @@ impl Cache for NopCache {
         &mut self,
         _cacheable: CA,
     ) -> Result<CacheResponse, Self::CacheErrorT> {
+        tracing::debug!("nopcache.get operation");
         Ok(CacheResponse::Miss)
     }
     async fn store(&mut self, _identity: Vec<u8>) -> Result<(), Self::CacheErrorT> {
+        tracing::debug!("nopcache.store operation");
         Ok(())
     }
 }

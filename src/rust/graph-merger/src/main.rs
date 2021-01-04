@@ -11,6 +11,7 @@ use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
 use async_trait::async_trait;
+use lru_cache::LruCache;
 
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 use failure::{bail, Error};
@@ -20,7 +21,7 @@ use grapl_config::event_caches;
 use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
 use grapl_graph_descriptions::node::NodeT;
 use grapl_observe::dgraph_reporter::DgraphMetricReporter;
-use grapl_observe::metric_reporter::MetricReporter;
+use grapl_observe::metric_reporter::{MetricReporter, tag};
 use grapl_service::decoder::ZstdProtoDecoder;
 use grapl_service::serialization::SubgraphSerializer;
 use log::{error, info, warn};
@@ -64,6 +65,26 @@ async fn node_key_to_uid(
     uid_cache: &mut UidCache,
     node_key: &str,
 ) -> Result<Option<String>, Error> {
+    if uid_cache.is_empty() {
+        tracing::debug!("uid_cache is empty");
+    }
+    if let Some(uid) = uid_cache.get(node_key) {
+        let _ = metric_reporter.counter(
+            "node_key_to_uid.cache.count",
+            1.0,
+            0.1,
+            &[tag("hit", true)]
+        );
+        return Ok(Some(uid))
+    } else {
+        let _ = metric_reporter.counter(
+            "node_key_to_uid.cache.count",
+            1.0,
+            0.1,
+            &[tag("hit", false)]
+        );
+    }
+
     let mut txn = dg.new_read_only_txn();
 
     const QUERY: &str = r"
@@ -96,8 +117,12 @@ async fn node_key_to_uid(
         .and_then(|uid| uid.get("uid"))
         .and_then(|uid| uid.as_str())
         .map(String::from);
-
-    Ok(uid)
+    if let Some(uid) = uid {
+        uid_cache.store(node_key.to_string(), uid.to_owned());
+        Ok(Some(uid))
+    } else {
+        Ok(None)
+    }
 }
 
 async fn upsert_node<CacheT>(
@@ -129,6 +154,12 @@ async fn upsert_node<CacheT>(
 
     match cache.get(cache_key.clone()).await {
         Ok(CacheResponse::Miss) => {
+            let _ = metric_reporter.counter(
+                "upsert_node.cache.count",
+                1.0,
+                0.5,
+                &[tag("hit", false)]
+            );
             set_json["last_index_time"] = (SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .expect("Something is very wrong with the system clock")
@@ -159,11 +190,17 @@ async fn upsert_node<CacheT>(
                 set_json.to_string(),
                 upsert_res,
             );
-
             cache.store(cache_key.into_bytes());
         },
         Err(e) => error!("Failed to get upsert from cache: {}", e),
-        Ok(CacheResponse::Hit) => (),
+        Ok(CacheResponse::Hit) => {
+            let _ = metric_reporter.counter(
+                "upsert_node.cache.count",
+                1.0,
+                0.1,
+                &[tag("hit", true)]
+            );
+        },
     }
 
     match node_key_to_uid(dg, metric_reporter, uid_cache, &node_key).await? {
@@ -172,18 +209,36 @@ async fn upsert_node<CacheT>(
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 struct UidCache {
-    cache: Arc<Mutex<HashMap<String, String>>>,
+    cache: Arc<Mutex<LruCache<String, String>>>,
+}
+
+impl Default for UidCache {
+    fn default() -> Self {
+        Self {
+            cache: Arc::new(Mutex::new(LruCache::new(100_000)))
+        }
+    }
 }
 
 impl UidCache {
+    fn is_empty(&self) -> bool {
+        let mut self_cache = self.cache.lock().unwrap();
+        self_cache.is_empty()
+    }
     fn get(
         &self,
         node_key: &str,
     ) -> Option<String> {
-        let self_cache = self.cache.lock().unwrap();
-        self_cache.get(node_key).map(String::from)
+        let mut self_cache = self.cache.lock().unwrap();
+        let cache_res = self_cache.get_mut(node_key);
+        if cache_res.is_some() {
+            tracing::debug!("Cache hit");
+        } else {
+            tracing::debug!("Cache miss")
+        }
+        cache_res.cloned()
     }
     fn store(&mut self, node_key: String, uid: String) {
         let mut self_cache = self.cache.lock().unwrap();
@@ -269,9 +324,10 @@ fn time_based_key_fn(_event: &[u8]) -> String {
     format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
+#[tracing::instrument]
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
-    info!("Starting graph-merger 0");
+    let (env, _guard) = grapl_config::init_grapl_env!();
+    info!("Starting graph-merger");
 
     let sqs_client = SqsClient::from_env();
     let s3_client = S3Client::from_env();
@@ -279,6 +335,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let destination_bucket = grapl_config::dest_bucket();
     let cache = &mut event_caches(&env).await;
 
+    // todo: the intiializer should give a cache to each service
     let graph_merger = &mut make_ten(async {
         GraphMerger::new(
             grapl_config::mg_alphas(),
@@ -368,7 +425,7 @@ where
         let mut upsert_res = None;
         let mut edge_res = None;
 
-        let mut node_key_to_uid_map = HashMap::new();
+        let node_key_to_uid_map = &mut self.uid_cache;
         let mut upserts = Vec::with_capacity(subgraph.nodes.len());
         for node in subgraph.nodes.values() {
             match self
@@ -389,33 +446,35 @@ where
                 _ => (),
             };
             upserts.push(
-                upsert_node(&self.mg_client, &mut self.cache, &mut self.uid_cache, &mut self.metric_reporter, node.clone())
+                upsert_node(&self.mg_client, &mut self.cache, node_key_to_uid_map, &mut self.metric_reporter, node.clone())
                     .map(move |u| (node.clone_node_key(), u))
                     .await,
             )
         }
 
+        let mut upsert_count = 0;
         for (node_key, upsert) in upserts.into_iter() {
+            upsert_count += 1;
             let new_uid = match upsert {
                 Ok(new_uid) => new_uid,
                 Err(e) => {
-                    error!("{}", e);
+                    error!("upser_error: {}", e);
                     upsert_res = Some(e);
                     continue;
                 }
             };
 
-            node_key_to_uid_map.insert(node_key, new_uid);
+            node_key_to_uid_map.store(node_key, new_uid);
         }
 
-        if node_key_to_uid_map.is_empty() && upsert_res.is_some() {
+        if (upsert_count == 0) && upsert_res.is_some() {
             return Err(Err(GraphMergerError::Unexpected(format!(
                 "All nodes failed to upsert {:?}",
                 upsert_res
             ))));
         }
 
-        info!("Upserted: {} nodes", node_key_to_uid_map.len());
+        info!("Upserted: {} nodes", upsert_count);
 
         info!("Inserting edges {}", subgraph.edges.len());
         let dynamodb = DynamoDbClient::from_env();
@@ -453,7 +512,7 @@ where
                     match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
-                        &mut self.uid_cache,
+                        node_key_to_uid_map,
                         &edge.from[..],
                     )
                     .await
@@ -466,7 +525,7 @@ where
                     }
                 }
                 (None, Some(to)) => {
-                    match node_key_to_uid(&self.mg_client, &mut self.metric_reporter, &mut self.uid_cache, &edge.to[..])
+                    match node_key_to_uid(&self.mg_client, &mut self.metric_reporter, node_key_to_uid_map, &edge.to[..])
                         .await
                     {
                         Ok(Some(from)) => {
@@ -480,7 +539,7 @@ where
                     let from = match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
-                        &mut self.uid_cache,
+                        node_key_to_uid_map,
                         &edge.from[..],
                     )
                     .await
@@ -499,7 +558,7 @@ where
                     let to = match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
-                        &mut self.uid_cache,
+                        node_key_to_uid_map,
                         &edge.to[..],
                     )
                     .await

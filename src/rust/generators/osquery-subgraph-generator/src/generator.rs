@@ -61,6 +61,9 @@ where
             .map(|log| Graph::try_from(log))
             .partition(|result| result.is_ok());
 
+        for res in errors.iter().map(|e| e.as_ref().err()) {
+            self.metrics.report_handle_event_success(&res);
+        }
         let final_subgraph = subgraphs
             .into_iter()
             .filter_map(|subgraph| subgraph.ok())
@@ -72,12 +75,14 @@ where
         let mut errors: Vec<failure::Error> =
             errors.into_iter().filter_map(|item| item.err()).collect();
 
+
         if errors.is_empty() {
             Ok(final_subgraph)
         } else {
             let sqs_executor_error = errors
-                .pop()
+                .into_iter()
                 .map(|err| OSQuerySubgraphGeneratorError::Unexpected(err))
+                .next()
                 .unwrap();
 
             Err(Ok((final_subgraph, sqs_executor_error)))

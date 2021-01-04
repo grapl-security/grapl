@@ -70,11 +70,6 @@ RUN mkdir -p grapl-observe/src
 RUN touch grapl-observe/src/lib.rs
 COPY --chown=grapl ./grapl-observe/Cargo.toml grapl-observe/
 
-# copy in Cargo.toml for sqs-lambda
-RUN mkdir -p sqs-lambda/src
-RUN touch sqs-lambda/src/lib.rs
-COPY --chown=grapl ./sqs-lambda/Cargo.toml sqs-lambda/
-
 # copy in Cargo.toml for grapl-service
 RUN mkdir -p grapl-service/src
 RUN touch grapl-service/src/lib.rs
@@ -140,7 +135,6 @@ RUN rm -rf target/*/*/.fingerprint/graph-merger*
 RUN rm -rf target/*/*/.fingerprint/grapl-config*
 RUN rm -rf target/*/*/.fingerprint/grapl-graph-descriptions*
 RUN rm -rf target/*/*/.fingerprint/grapl-observe*
-RUN rm -rf target/*/*/.fingerprint/sqs-lambda*
 RUN rm -rf target/*/*/.fingerprint/grapl-service*
 RUN rm -rf target/*/*/.fingerprint/sqs-executor*
 RUN rm -rf target/*/*/.fingerprint/metric-forwarder*
@@ -155,7 +149,6 @@ COPY --chown=grapl . .
 #COPY --chown=grapl ./graph-merger graph-merger
 #COPY --chown=grapl ./grapl-config grapl-config
 #COPY --chown=grapl ./grapl-observe grapl-observe
-#COPY --chown=grapl ./sqs-lambda sqs-lambda
 #COPY --chown=grapl ./sqs-executor sqs-executor
 #COPY --chown=grapl ./grapl-service grapl-service
 #COPY --chown=grapl ./metric-forwarder metric-forwarder

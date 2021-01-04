@@ -160,7 +160,7 @@ where
 }
 
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
+    let (env, _guard) = grapl_config::init_grapl_env!();
 
     info!("Handling event");
 

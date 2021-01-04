@@ -70,7 +70,7 @@ async fn handler_async(event: CloudwatchLogsEvent) -> Result<(), MetricForwarder
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
+    let (env, _guard) = grapl_config::init_grapl_env!();
 
     if env.is_local {
         panic!("yeah, so... this doesn't work locally yet")

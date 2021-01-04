@@ -29,7 +29,7 @@ use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
+    let (env, _guard) = grapl_config::init_grapl_env!();
 
     info!("Starting generic-subgraph-generator");
 

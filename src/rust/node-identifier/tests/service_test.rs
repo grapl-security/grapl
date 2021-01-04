@@ -3,9 +3,10 @@ use tracing::info;
 use node_identifier::assetdb::{AssetIdDb, AssetIdentifier};
 use node_identifier::dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
 use node_identifier::sessiondb::SessionDb;
-use node_identifier::{init_dynamodb_client, HashCache, NodeIdentifier};
+use node_identifier::{ HashCache, NodeIdentifier};
 use rusoto_core::Region;
 use rusoto_dynamodb::DynamoDbClient;
+use grapl_config::env_helpers::FromEnv;
 
 async fn init_local_node_identifier(
     should_default: bool,
@@ -13,10 +14,7 @@ async fn init_local_node_identifier(
     let cache = HashCache::default();
 
     info!("region");
-    let region = Region::Custom {
-        name: "dynamo".to_string(),
-        endpoint: "http://dynamo:8222".to_string(),
-    };
+    let region = DynamoDbClient::from_env();
 
     info!("asset_id_db");
     let asset_id_db = AssetIdDb::new(init_dynamodb_client());
@@ -48,6 +46,7 @@ async fn init_local_node_identifier(
     let asset_id_db = AssetIdDb::new(init_dynamodb_client());
 
     info!("node_identifier");
+
     Ok(NodeIdentifier::new(
         asset_id_db,
         dyn_node_identifier,
@@ -55,7 +54,6 @@ async fn init_local_node_identifier(
         dynamo.clone(),
         should_default,
         cache.clone(),
-        region.clone(),
     ))
 }
 

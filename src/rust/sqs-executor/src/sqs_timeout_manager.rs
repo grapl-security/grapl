@@ -44,7 +44,7 @@ where
         // todo: Handle errors - we can retry some of the errors
         // todo: Metrics
         // if we ever go beyond a deadline we should be sure to
-        let mut last_timeout = visibility_timeout;
+        let last_timeout = visibility_timeout;
         let message_id = &message_id;
         for i in 1..100 {
             let timeout_fut = async {
@@ -66,24 +66,59 @@ where
 
                     match res {
                         Ok(()) => {
-                            tracing::debug!("Updated message visibility: {} {} {}", i, message_id, &receipt_handle);
+                            tracing::debug!(
+                                iteration=i,
+                                message_id=message_id.as_str(),
+                                receipt_handle=receipt_handle.as_str(),
+                                "Successfully changed message visibility"
+                            );
                         }
                         Err(rusoto_core::RusotoError::Service(e)) => {
-                            tracing::error!("Failed to change message visibility: {} {} {}", i, message_id, &receipt_handle);
+                            tracing::error!(
+                                error=e.to_string().as_str(),
+                                iteration=i,
+                                message_id=message_id.as_str(),
+                                receipt_handle=receipt_handle.as_str(),
+                                "Failed to change message visibility"
+                            );
                             break; // These errors are not retryable
                         }
                         Err(e) => {
-                            tracing::error!("Failed to change message visibility: {} {} {}", i, message_id, &receipt_handle);
+                            tracing::warn!(
+                                error=e.to_string().as_str(),
+                                iteration=i,
+                                message_id=message_id.as_str(),
+                                receipt_handle=receipt_handle.as_str(),
+                                "Failed to change message visibility, but it's probably fine"
+                            );
+                            return
                         }
                     };
                 }
-                Either::Right(_) => break,
+                Either::Right(_) => {
+                    tracing::debug!(
+                        iteration=i,
+                        message_id=message_id.as_str(),
+                        receipt_handle=receipt_handle.as_str(),
+                        "Message no longer needs to be kept alive"
+                    );
+                    return
+                },
             };
 
-            tracing::debug!("message-visibility-loop: {} {} {}", i, message_id, &receipt_handle);
+            tracing::debug!(
+                iteration=i,
+                message_id=message_id.as_str(),
+                receipt_handle=receipt_handle.as_str(),
+                "message-visibility-loop",
+            );
         }
 
-        tracing::warn!("message still has not processed after 100 iterators {} {}", message_id, &receipt_handle);
+        tracing::warn!(
+            message_id=message_id.as_str(),
+            receipt_handle=receipt_handle.as_str(),
+            "message still has not processed after 100 iterators"
+        );
         // let elapsed = sw.elapsed_ms();
     }
 }
@@ -109,7 +144,7 @@ impl Sender {
 impl Drop for Sender {
     fn drop(&mut self) {
         if let Some(sender) = self.sender.take() {
-            let _ = sender.send(());
+            let _ = sender.send(()).map_err(|()| tracing::error!("Attempting to drop queue sender, but channel was closed."));
         }
     }
 }

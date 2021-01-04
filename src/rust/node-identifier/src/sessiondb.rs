@@ -328,7 +328,7 @@ where
                 return Ok(session.session_id);
             }
 
-            warn!(
+            tracing::debug!(
                 "UNID: {} - {} - {}",
                 unid.pseudo_key, unid.timestamp, unid.pseudo_key
             );

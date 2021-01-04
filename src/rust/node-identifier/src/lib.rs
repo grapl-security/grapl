@@ -626,8 +626,6 @@ where
         subgraphs: GeneratedSubgraphs,
         completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        warn!("node-identifier.handle_event");
-
         let mut attribution_failure = None;
 
         info!("Handling raw event");
@@ -776,7 +774,7 @@ where
 }
 
 pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
-    let env = grapl_config::init_grapl_env!();
+    let (env, _guard) = grapl_config::init_grapl_env!();
     let source_queue_url = grapl_config::source_queue_url();
     debug!("Queue Url: {}", source_queue_url);
 

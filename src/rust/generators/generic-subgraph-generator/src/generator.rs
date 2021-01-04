@@ -75,7 +75,7 @@ where
         &mut self,
         events: Vec<GenericEvent>,
         completed: &mut CompletedEvents,
-    ) -> (Graph, Option<eyre::Report>) {
+    ) -> Result<Graph, Result<(Graph, GenericSubgraphGeneratorError), GenericSubgraphGeneratorError>> {
         let mut final_subgraph = Graph::new(0);
         let mut failed: Option<eyre::Report> = None;
 
@@ -100,7 +100,11 @@ where
             final_subgraph.merge(&subgraph);
         }
 
-        (final_subgraph, failed)
+        match failed {
+            Some(e) if final_subgraph.is_empty() => Err(Err(GenericSubgraphGeneratorError::Unexpected(e.to_string()))),
+            Some(e) => Err(Ok((final_subgraph, GenericSubgraphGeneratorError::Unexpected(e.to_string())))),
+            None => Ok(final_subgraph),
+        }
     }
 }
 
@@ -119,16 +123,6 @@ where
         events: Vec<GenericEvent>,
         completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        let (subgraph, error_report) = self.convert_events_to_subgraph(events, completed).await;
-
-        // if an error occurred while converting generic events to a subgraph, we should record it
-        if let Some(event_error) = error_report {
-            Err(Ok((
-                subgraph,
-                GenericSubgraphGeneratorError::Unexpected(event_error.to_string()),
-            )))
-        } else {
-            Ok(subgraph)
-        }
+        self.convert_events_to_subgraph(events, completed).await
     }
 }

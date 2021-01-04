@@ -29,13 +29,13 @@ pub struct ServiceEnv {
     pub is_local: bool,
 }
 
-pub fn _init_grapl_env(service_name: &str) -> ServiceEnv {
+pub fn _init_grapl_env(service_name: &str) -> (ServiceEnv, tracing_appender::non_blocking::WorkerGuard) {
     let env = ServiceEnv {
         service_name: service_name.to_string(),
         is_local: is_local(),
     };
-    _init_grapl_log(&env);
-    env
+    let tracing_guard = _init_grapl_log(&env);
+    (env, tracing_guard)
 }
 
 pub fn is_local() -> bool {
@@ -81,16 +81,22 @@ pub fn region() -> Region {
     }
 }
 
-pub fn _init_grapl_log(env: &ServiceEnv) {
+pub fn _init_grapl_log(env: &ServiceEnv) -> tracing_appender::non_blocking::WorkerGuard {
     let filter = EnvFilter::from_default_env();
+    let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
     if env.is_local {
-        tracing_subscriber::fmt().with_env_filter(filter).init();
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .with_writer(non_blocking)
+            .init();
     } else {
         tracing_subscriber::fmt()
             .json()
             .with_env_filter(filter)
+            .with_writer(non_blocking)
             .init();
     }
+    guard
 }
 
 pub fn source_queue_url() -> String {

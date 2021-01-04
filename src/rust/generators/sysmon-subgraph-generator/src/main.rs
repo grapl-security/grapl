@@ -27,7 +27,7 @@ mod serialization;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
+    let (env, _guard) = grapl_config::init_grapl_env!();
     let service_name = env.service_name.clone();
     info!("Starting sysmon-subgraph-generator");
     run_graph_generator(

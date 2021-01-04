@@ -6,6 +6,7 @@ use sqs_executor::cache::NopCache;
 use sqs_executor::event_decoder::PayloadDecoder;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, Result};
+use sqs_executor::event_handler::CompletedEvents;
 
 #[tokio::test]
 /// Tests if generic event serialization is working as expected.
@@ -42,14 +43,25 @@ async fn test_log_event_deserialization() {
         .decode(raw_test_data)
         .expect("Failed to deserialize events.");
 
-    let (_subgraph, _identities, failed) =
-        generator.convert_events_to_subgraph(generic_events).await;
+    let mut completed_events = CompletedEvents::default();
 
-    if let Some(report) = failed {
-        panic!(
-            "An error occurred during subgraph generation. Err: {}",
-            report
-        );
+    let result =
+        generator.convert_events_to_subgraph(generic_events, &mut completed_events).await;
+
+    match result {
+        Err(e) => {
+            panic!(
+                "An error occurred during subgraph generation. Err: {}",
+                e
+            );
+        }
+        Err(Err(e)) => {
+            panic!(
+                "An error occurred during subgraph generation. Err: {}",
+                e
+            );
+        }
+        Ok(_) => (),
     }
 }
 
