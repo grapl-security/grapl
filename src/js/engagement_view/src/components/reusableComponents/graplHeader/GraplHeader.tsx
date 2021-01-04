@@ -7,7 +7,7 @@ import Typography from "@material-ui/core/Typography";
 import Home from '@material-ui/icons/Home';
 
 import {graplHeaderStyles} from './styles';
-import {GraplHeaderProps} from './types'; 
+import {GraplHeaderProps} from '../../../types/GraplHeaderTypes'; 
 
 const useStyles = graplHeaderStyles; 
 

@@ -189,9 +189,6 @@ export type ToggleLensTableState = {
     offset: number,
 }
 
-
-
-
 export type PaginationState = {
     first: number, 
     lenses: Lens[],

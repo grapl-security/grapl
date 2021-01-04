@@ -1,9 +1,5 @@
-// import { PluginPayload } from "../../components/uploadPlugin/utils/uploadPluginTypes";
-// import {getModelPluginEdge} from "../getApiURLs"
 import DEV_API_EDGES from '../constants';
 import {apiFetchPostRequest} from '../fetch';
-
-
 
 export const deletePlugin = async ( pluginName: string ): Promise <boolean> => {
     const body = JSON.stringify( {plugins_to_delete: [pluginName]} );

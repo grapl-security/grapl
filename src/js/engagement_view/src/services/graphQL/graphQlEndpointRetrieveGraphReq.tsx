@@ -1,40 +1,32 @@
 import {BaseNode, LensScopeResponse} from '../../types/CustomTypes';
-import {getGraphQlEdge} from '../getApiURLs';
 import {unpackPluginNodes} from './utils_GraphQlEndpointRetrieveGraph/unpackPluginNodes';
-import {expandScopeQuery} from './utils_GraphQlEndpointRetrieveGraph/expandScopeQuery'
+import {expandScopeQuery} from './utils_GraphQlEndpointRetrieveGraph/expandScopeQuery';
 
-const graphql_edge = getGraphQlEdge();
+import DEV_API_EDGES from '../constants';
+import {apiFetchPostRequest} from '../fetch';
 
 export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & BaseNode)> => {
-    const query = expandScopeQuery(lens);
-    
-    console.log("in retreive graph calling graphql edge", graphql_edge);
+    const expandScopeQueryData = expandScopeQuery(lens);
 
-    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
-        {
-            method: 'post',
-            body: JSON.stringify({ query }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-        })
-        .then(res => res.json())
-        .then(res => {
-            if(res.errors){
-                console.log("graphql query failed in retrieve graph, expand scope ln 63: ", res.errors)
-            }
-            console.log('retrieveGraph res', res);
-            return res
-        })
-        .then((res) => res.data)
-        .then((res) => res.lens_scope);
+    const lensScopeQuery = JSON.stringify({ expandScopeQueryData })
 
-    const lensWithScope = await res;
+    const res = 
+        await apiFetchPostRequest(`${DEV_API_EDGES.graphQL}/graphQlEndpoint/graphql`, "POST", lensScopeQuery)
+            .then(res => res.json())
+            .then(res => {
+                if(res.errors){
+                    console.log("Unable to retrieve graph data ", res.errors)
+                }
+                console.log('Retrieved Graph Data: ', res);
+                return res
+            })
+            .then((res) => res.data)
+            .then((res) => res.lens_scope);
 
-    console.debug('LensWithScope: ', lensWithScope);
+    const lensWithScopeData = await res;
+    console.debug('LensWithScope: ', lensWithScopeData);
 
-    unpackPluginNodes(lensWithScope.scope);
+    unpackPluginNodes(lensWithScopeData.scope);
 
-    return lensWithScope;
+    return lensWithScopeData;
 };

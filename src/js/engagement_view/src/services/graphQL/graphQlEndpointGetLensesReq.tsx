@@ -1,6 +1,5 @@
-import { getGraphQlEdge } from "../getApiURLs";
-
-const graphql_edge = getGraphQlEdge();
+import DEV_API_EDGES from '../constants';
+import {apiFetchPostRequest} from '../fetch';
 
 export const getLenses = async (first: number, offset: number) => {
     const gqlQuery = `
@@ -15,29 +14,22 @@ export const getLenses = async (first: number, offset: number) => {
         }
     `;
 
-    console.log("calling graphql_edge: " + graphql_edge + "with query: " + gqlQuery);
+    const graphQLQuery = JSON.stringify({ query: gqlQuery })
     
-    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
-        {
-            method: 'post',
-            body: JSON.stringify({ query: gqlQuery }),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-        })
-        .then(res => res.json())
-        .then(res => {
-            if (res.errors) {
-                console.error("lenses failed", res.errors);
-                res.data = {lenses: []};
-            }
-            return res
-        })
-        .then((res) => res.data);
+    const response = 
+        await apiFetchPostRequest(`${DEV_API_EDGES.graphQL}/graphQlEndpoint/graphql`, "POST", graphQLQuery)
+            .then(res => res)
+            .then(res => {
+                if (res.errors) {
+                    console.error("Unable to retrieve lenses ", res.errors);
+                    res.data = {lenses: []};
+                }
+                return res
+            })
+            .then((res) => res.data);
 
-        const jres = await res;
-
-        console.log("queried graphql_edge in engagement view content", jres);
-    return jres;
+    const lensQueryData = await response;
+    console.log("Retrieved lenses: ", lensQueryData);
+    
+    return lensQueryData;
 };
