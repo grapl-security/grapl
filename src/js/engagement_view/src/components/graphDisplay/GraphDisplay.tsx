@@ -7,7 +7,7 @@ import { retrieveGraph } from "../../services/graphQL/graphQlEndpointRetrieveGra
 
 import { BKDRHash, riskColor, calcNodeRgb , calcLinkColor} from "./utils/graphColoring/coloring.tsx";
 import { mapLabel } from './utils/graph/labels.tsx';
-import { nodeSize } from './utils/calculations/node/nodeCalcs.tsx'
+import { nodeRisk } from './utils/calculations/node/nodeCalcs.tsx'
 import { calcLinkDirectionalArrowRelPos, calcLinkParticleWidth  } from './utils/calculations/link/linkCalcs.tsx'
 import {mergeGraphs} from './utils/graph/mergeGraphs.tsx'
 import {graphQLAdjacencyMatrix} from './utils/graphQL/graphQLAdjacencyMatrix.tsx'
@@ -340,7 +340,7 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
                 nodeCanvasObject={((node: Node, ctx: any, globalScale: any) => {
                     // add ring just for highlighted nodes
 
-                    const NODE_R = nodeSize(node, graphData);
+                    const NODE_R = nodeRisk(node, graphData);
                     ctx.save();
 
                     // Risk outline color

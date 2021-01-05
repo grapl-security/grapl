@@ -25,7 +25,7 @@ export const calcNodeRiskPercentile = (_nodeRisk: number | {risk: number}, _allR
 };
 
 
-export const nodeSize = (node: VizNode, Graph: VizGraph) => {
+export const nodeRisk = (node: VizNode, Graph: VizGraph) => {
     const nodes = [...Graph.nodes].map(node => node.risk);
     const riskPercentile = calcNodeRiskPercentile(node.risk, nodes);
 

@@ -6,7 +6,7 @@ import TableRow from '@material-ui/core/TableRow';
 
 import { Node } from "../../../types/CustomTypes";
 
-export function innerTable(node: Node, styles: any) {
+export function tableHeader(node: Node, styles: any) {
     if(node) {
         return (
         <TableHead >

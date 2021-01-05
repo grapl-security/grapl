@@ -10,7 +10,7 @@ import { mapEdgeProps } from '../../graphDisplay/utils/graph/graph_traverse';
 import { mapNodeProps } from '../../graphDisplay/GraphDisplay';
 import { Node } from "../../../types/CustomTypes";
 
-import { innerTable } from "./innerTable";
+import { tableHeader } from "./nodeTableHeader";
 import { nodeTableStyles } from "./styles"; 
 
 const useStyles = nodeTableStyles; 
@@ -51,7 +51,7 @@ function NodeTable({node}: NodeTableProps){
     return(
         <TableContainer>
             <Table className={classes.nodeTable}>
-            { innerTable(node, classes) }
+            { tableHeader(node, classes) }
             <TableBody>
                     {
                         Object.entries(displayNode).map((entry) => {

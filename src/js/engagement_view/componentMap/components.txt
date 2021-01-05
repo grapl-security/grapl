@@ -1,0 +1,128 @@
+src
+|____components 
+        - React Components
+    |____dashboard
+        |____Dashboard.tsx 
+                - Dashboard JSX for navigating Grapl
+        |____styles.tsx 
+                // MaterialUI Styles for Dashboard Component
+    |____engagementView
+        |____dynamicEngagementViewFeatures
+            |____utils
+                |____lensPagedTable.tsx 
+                        - MaterialUI Table container for that allows users to page through Lenses
+                |____selectLens.tsx 
+                        - Functionality to select a Lens Name that generates Graph for selected Lens
+                |____toggleLensTable.tsx 
+                        - MaterialUI Toggle for Lens Table that displays a list of Lens Names
+                |____toggleNodeTable.tsx 
+                        - MaterialUI Toggle for Node Table that displays a data for selected graph Node
+            |____DynmaicEngagmentViewFeatures.tsx 
+                    - Engagement View Sidebar displaying Lens and Node Tables
+            |____styles.tsx 
+                    - MaterialUI Styles for DynamicEngagementViewFeatures.tsx
+        |____nodeTable
+            |____nodeTableHeader.tsx
+                    - Container for "Property" and "Value" Table headers 
+            |____NodeTable.tsx
+                    - Displays data for selected node from GraphDisplay
+            |____styles.tsx
+                    - NodeTable styles
+        ____EngagmentView.tsx
+                - Engagement View Component containing state - Display Lens and Node Table Sidebar and Graph Visualization
+    |____graphDisplay
+        |____utils
+            |____calculations
+                |____link
+                    |____linkCalcs.tsx
+                        - D3 Particle Width & edge arrow direction calculations | Node Risk percentile calculations
+                |____node
+                    |____nodeCalcs.tsx
+                        - D3 Node Size Calculatiions | Node Risk Calcuation
+            |____graph
+                |____graph_traverse.tsx
+                    - Graph traversal to determine node neighbors 
+                |____labels.tsx
+                    - Logic for Node Labels
+                |____mergeGraphs.tsx
+                     - Merges two graphs into a new, single graph, returns 'null' if there are no updates 
+            |____graphColoring
+                |____coloring.tsx
+                    - Determine rgba colors for Nodes, Risks, Links  
+            |____graphQL
+                |____graphQLAdjacencyMatrix.tsx
+                    - Using Lens scope returned from GraphQL query, create properties for D3 graph vizualization
+        |____GraphDisplay.tsx
+                - D3 Vizualization Logic
+        |____GraphDisplayStyles.tsx
+                - Styles for Engagmenent View
+    |____login
+        |____utils
+            |____passwordHashing.tsx
+                - sha256 & sha256WithPepper hash functions
+        |____Login.css 
+                - Styles for Login Page
+        |____Login.tsx
+                - Login Form using Formik
+        |____routing.tsx
+                - Check for cookie to ensure user is authenticated when changing routes. 
+        |____styles.tsx
+    |____reusableComponents
+        |____graphHeader
+            |____GraplHeader.tsx
+            |____styles.tsx
+        |____notifications
+            |____Notifications.tsx
+            |____styles.tsx
+        |____index.ts
+    |____uploadPlugin
+        |____utils
+            |____pluginTable.tsx
+            |____uploadPlugins.tsx
+            |____uploadPluginTypes.tsx
+            |____UploadPlugin.tsx
+            |____uploadPluginStyles.tsx
+|____css
+    |____sidebar.css 
+|____images
+    |____nodes.jpg
+|____routes
+    |____index.ts
+    |____routes.tsx
+|____services
+    |____graphQL
+        |____utils_GraphQLEndpointRetrieveGraph
+            |____expandScopeQuery.tsx 
+            |____unpackPluginNodes.tsx
+        |____graphQlEndpointGetLensesReq.tsx
+        |____graphQlEndpointRetrieveGraphReq.tsx
+    |____login
+        |____checkLoginServices.ts
+        |____loginService.tsx
+    |____sagemakerNotebook
+        |____notebookService.tsx
+    |____uploadPlugin
+        |____deletePlugin.tsx 
+        |____getPluginList.tsx
+        |____uploadFilesToDgraph.tsx
+    |____constants.tsx
+    |____fetch.ts
+    |____getApiURLS.tsx
+|____tests
+|____types
+    |____CustomTypes.tsx
+    |____DynamicEngagementViewTypes.tsx
+    |____GraplHeaderTypes.tsx
+|____App.test.tsx
+|____App.tsx
+|____index.css 
+|____index.tsx
+|____serviceWorker.ts
+|____setupTests.ts
+|____build.sh
+|____Dockerfile
+|____package-lock.json
+|____package.json
+|____README.md
+|____tsconfig.json
+|____yarn.lock

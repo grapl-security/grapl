@@ -8,11 +8,11 @@ import {apiFetchPostRequest} from '../fetch';
 export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & BaseNode)> => {
     const expandScopeQueryData = expandScopeQuery(lens);
 
-    const lensScopeQuery = JSON.stringify({ expandScopeQueryData })
+    const lensScopeQuery = JSON.stringify({ query: expandScopeQueryData })
 
-    const res = 
+    const queryResponse = 
         await apiFetchPostRequest(`${DEV_API_EDGES.graphQL}/graphQlEndpoint/graphql`, "POST", lensScopeQuery)
-            .then(res => res.json())
+            .then(res => res)
             .then(res => {
                 if(res.errors){
                     console.log("Unable to retrieve graph data ", res.errors)
@@ -23,7 +23,7 @@ export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & 
             .then((res) => res.data)
             .then((res) => res.lens_scope);
 
-    const lensWithScopeData = await res;
+    const lensWithScopeData = await queryResponse;
     console.debug('LensWithScope: ', lensWithScopeData);
 
     unpackPluginNodes(lensWithScopeData.scope);

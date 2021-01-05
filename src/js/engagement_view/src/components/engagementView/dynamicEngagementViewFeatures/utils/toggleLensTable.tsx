@@ -5,7 +5,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import Divider from "@material-ui/core/Divider";
 
-import { pagedTable } from "../utils/pagedTable";
+import { pagedTable } from "./lensPagedTable";
 import { getLenses}  from "../../../../services/graphQL/graphQlEndpointGetLensesReq";
 
 
