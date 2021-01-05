@@ -5,6 +5,8 @@ src/rust/graph-descriptions/grapl_graph_descriptions
 
 # Test outputs
 /test/integration-outputs/**/*
+test/cypress/screenshots
+test/cypress/videos
 
 lambda/
 __pycache__/

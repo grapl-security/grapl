@@ -30,13 +30,9 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Build Rust services
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
-
       - name: Rust unit tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-unit-tests
+          make test-unit-rust
 
   python-unit-tests:
     runs-on: ubuntu-latest
@@ -49,28 +45,10 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Build Python services
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
-
       - name: Python unit tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-unit-tests
+          make test-unit-python
 
-  cdk-tests:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Prepare Github Actions CI
-        run: |
-          ./etc/ci_scripts/clean_gh_actions_space.sh
-          ./etc/ci_scripts/install_requirements.sh
-
-      - name: Run dobi grapl-cdk-test
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux grapl-cdk-test
 
   python-typecheck:
     runs-on: ubuntu-latest
@@ -98,13 +76,9 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Build JS services
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js
-
       - name: JS unit tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js-unit-tests
+          make test-unit-js
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -117,13 +91,9 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Build Grapl
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
-
       - name: Run integration tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration-tests
+          make test-integration
 
 
   # In the future, this should probably be merged back into `dobi integration-tests`, but
