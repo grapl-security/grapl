@@ -1,4 +1,3 @@
-
 export const expandScopeQuery = (lensName: string) => {
     console.log("expanding scope for: ", lensName);
 

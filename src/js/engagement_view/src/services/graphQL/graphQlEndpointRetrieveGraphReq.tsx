@@ -24,6 +24,7 @@ export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & 
             .then((res) => res.lens_scope);
 
     const lensWithScopeData = await queryResponse;
+    
     console.debug('LensWithScope: ', lensWithScopeData);
 
     unpackPluginNodes(lensWithScopeData.scope);

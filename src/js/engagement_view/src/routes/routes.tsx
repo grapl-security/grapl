@@ -3,7 +3,7 @@ import "../components/login/LogIn.css";
 import { LogIn } from "../components/login/Login";
 import { EngagementUx } from "../components/engagementView/EngagementView";
 import Dashboard from "../components/dashboard/Dashboard";
-import UploadPlugin from "../components/uploadPlugin/UploadPlugin";
+import UploadPlugin from "../components/uploadPlugin/UploadPluginView";
 import { HashRouter, Route, Switch } from "react-router-dom";
 
 // Updates our react state, as well as localStorage state, to reflect the page

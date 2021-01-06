@@ -1,6 +1,4 @@
 export const apiFetch = async (urlSlug: string, method = "GET") => {
-  // const url = `api/${encodeURIComponent(urlSlug)}`;
-
   const response = await fetch(urlSlug, {
     method,
     credentials: "include",
@@ -14,10 +12,6 @@ export const apiFetch = async (urlSlug: string, method = "GET") => {
 
   return response.json();
 };
-
-
-// export default apiFetch;
-
 
 export const apiFetchPostRequest = async(urlSlug: string, method = "POST", body: string) => {
   const response = await fetch(urlSlug, {

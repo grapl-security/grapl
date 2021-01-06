@@ -4,7 +4,7 @@ import { Field, Form, Formik } from "formik";
 import Button from "@material-ui/core/Button";
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 
-import { Event, UploadFormState, DirectoryUpload, MessageProps} from "./uploadPluginTypes"
+import { Event, UploadFormState, DirectoryUpload, MessageProps} from "../../../types/uploadPluginTypes"
 import { uploadFilesToDgraph } from "../../../services/uploadPlugin/uploadFilesToDgraph";
 import { useStyles } from "../uploadPluginStyles";
 

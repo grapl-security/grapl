@@ -9,7 +9,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TablePagination from '@material-ui/core/TablePagination';
 import Button from "@material-ui/core/Button";
 import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
-import { PluginTableState } from "./uploadPluginTypes"
+import { PluginTableState } from "../../../types/uploadPluginTypes"
 
 import { getPluginList } from "../../../services/uploadPlugin/getPluginList";
 import { deletePlugin } from "../../../services/uploadPlugin/deletePlugin";

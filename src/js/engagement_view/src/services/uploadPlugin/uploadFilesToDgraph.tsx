@@ -1,4 +1,4 @@
-import { PluginPayload } from "../../components/uploadPlugin/utils/uploadPluginTypes";
+import { PluginPayload } from "../../types/uploadPluginTypes";
 import DEV_API_EDGES from "../constants";
 import {apiFetchPostRequest} from '../fetch';
 

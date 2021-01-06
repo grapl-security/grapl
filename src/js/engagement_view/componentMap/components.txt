@@ -64,50 +64,68 @@ src
                 - Styles for Login Page
         |____Login.tsx
                 - Login Form using Formik
-        |____routing.tsx
-                - Check for cookie to ensure user is authenticated when changing routes. 
         |____styles.tsx
+                - MaterialUI styles for login error message
     |____reusableComponents
         |____graphHeader
             |____GraplHeader.tsx
+                    - Header component jsx
             |____styles.tsx
+                    - Header component styles
         |____notifications
             |____Notifications.tsx
+                    - Login notification indicating whether or not a user is logged in
             |____styles.tsx
+                    - Login notification styles
         |____index.ts
+            - Grapl Header Exports
     |____uploadPlugin
         |____utils
             |____pluginTable.tsx
+                    - JSX for plugin table display
             |____uploadPlugins.tsx
-            |____uploadPluginTypes.tsx
+                    - Upload plugin componet that reads contents of user selected plugin folder 
             |____UploadPlugin.tsx
+                    - Calls referenced components
             |____uploadPluginStyles.tsx
-|____css
-    |____sidebar.css 
+                    - MaterialUI styles for Upload Plugin
 |____images
     |____nodes.jpg
 |____routes
     |____index.ts
+            - Route Export
     |____routes.tsx
+            - Hash Router that defines list of accessible routes 
 |____services
     |____graphQL
         |____utils_GraphQLEndpointRetrieveGraph
             |____expandScopeQuery.tsx 
+                    - GraphQL Query that expands lensScope
             |____unpackPluginNodes.tsx
+                    - Maps properties to plugins Nodes for Graph Vizualization display 
         |____graphQlEndpointGetLensesReq.tsx
+                - GraphQL query that returns a list of Lenses 
         |____graphQlEndpointRetrieveGraphReq.tsx
+                - GraphQL Query that returns nodes within each lens to display in Graph 
     |____login
         |____checkLoginServices.ts
+                - Check to see if user is logged in for each route
         |____loginService.tsx
+                - Request to validate credentials
     |____sagemakerNotebook
         |____notebookService.tsx
+                - Retrieves URL to open SageMaker Jupyter Notebook
     |____uploadPlugin
         |____deletePlugin.tsx 
+                - Request to delete a plugin
         |____getPluginList.tsx
+                - Request to list plugins
         |____uploadFilesToDgraph.tsx
+                - Request to upload a plugin
     |____constants.tsx
+            - Contains an object of URLS for API Requests
     |____fetch.ts
-    |____getApiURLS.tsx
+            - Fetch Function 
 |____tests
 |____types
     |____CustomTypes.tsx
@@ -115,8 +133,11 @@ src
     |____GraplHeaderTypes.tsx
 |____App.test.tsx
 |____App.tsx
+        - Calls <Routes>
 |____index.css 
+        - Base background & font color 
 |____index.tsx
+        - MaterialUI Theme Import
 |____serviceWorker.ts
 |____setupTests.ts
 |____build.sh
