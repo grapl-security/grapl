@@ -12,7 +12,7 @@
   "dependencies": {
     "aws-sdk": "^2.683.0",
     "aws-serverless-express": "^3.3.8",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "cors": "^2.8.5",
     "dgraph-js": "^20.3.0",
     "express": "^4.17.1",
