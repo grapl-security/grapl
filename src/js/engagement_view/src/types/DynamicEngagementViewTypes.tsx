@@ -1,4 +1,4 @@
-import {Node, Lens} from './CustomTypes'
+import {Node} from './CustomTypes'
 
 export type SelectLensProps = {
     lens: string,
