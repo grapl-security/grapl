@@ -6,6 +6,7 @@ import { EventEmitter } from '../event_emitters';
 import { RedisCluster } from '../redis';
 import { GraplServiceProps } from '../grapl-cdk-stack';
 import { SchemaDb } from '../schemadb';
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -13,7 +14,7 @@ export interface GraphMergerProps extends GraplServiceProps {
 }
 
 export class GraphMerger extends cdk.NestedStack {
-    readonly bucket: s3.Bucket;
+    readonly bucket: GraplS3Bucket;
     readonly service: Service;
 
     constructor(scope: cdk.Construct, id: string, props: GraphMergerProps) {

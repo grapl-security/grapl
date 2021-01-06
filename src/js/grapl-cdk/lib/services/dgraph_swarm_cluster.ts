@@ -1,10 +1,10 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
-import * as s3 from '@aws-cdk/aws-s3';
 import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as path from 'path';
 import { Swarm } from '../swarm';
 import { Watchful } from 'cdk-watchful';
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface DGraphSwarmClusterProps {
     prefix: string;
@@ -52,7 +52,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
             watchful: props.watchful,
         });
 
-        const dgraphConfigBucket = new s3.Bucket(this, 'DGraphConfigBucket', {
+        const dgraphConfigBucket = new GraplS3Bucket(this, 'DGraphConfigBucket', {
             bucketName: `${props.prefix.toLowerCase()}-dgraph-config-bucket`,
             publicReadAccess: false,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
