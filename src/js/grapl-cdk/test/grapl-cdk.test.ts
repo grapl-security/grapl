@@ -20,7 +20,9 @@ class CollectAllConstructs implements cdk.IAspect {
     this.constructs.push(node);
   }
 
-  public getAllOfType<T extends cdk.IConstruct>(type: { new(...args: any[]): T }): T[] {
+  //
+  //public getAllOfType<T extends cdk.IConstruct>(type: { new(...args: any[]): T }): T[] {
+  public getAllOfType(type: any): any[] {
     const filtered: T[] = [];
     for (const c of this.constructs) {
       if (c instanceof type) {
