@@ -384,8 +384,6 @@ def respond(
         LOGGER.info(f"overriding origin with {override}")
     else:
         override = ORIGIN_OVERRIDE
-    # DO NOT COMMIT THIS - THIS IS FOR LOCAL CHANGES ONLY
-    if origin_re.match(req_origin) or override:
         LOGGER.info("Origin matched")
         allow_origin = req_origin
     else:
