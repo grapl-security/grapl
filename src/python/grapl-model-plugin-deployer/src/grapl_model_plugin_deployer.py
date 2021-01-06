@@ -383,6 +383,12 @@ def respond(
         override = req_origin
         LOGGER.info(f"overriding origin with {override}")
     else:
+        override = ORIGIN_OVERRIDE
+
+    if origin_re.match(req_origin):
+        LOGGER.info("Origin matched")
+        allow_origin = req_origin
+    else:
         LOGGER.info("Origin did not match")
         return Response(
             body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
