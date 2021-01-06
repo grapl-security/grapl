@@ -40,10 +40,7 @@ class MetricReporter:
     """
 
     def __init__(
-        self,
-        service_name: str,
-        utc_now: Callable[[], datetime],
-        out: Writeable,
+        self, service_name: str, utc_now: Callable[[], datetime], out: Writeable,
     ):
         self.service_name = service_name
         self.utc_now = utc_now
@@ -63,13 +60,7 @@ class MetricReporter:
     ) -> None:
         now = self.utc_now()
         now_ts = self._format_time_for_cloudwatch(now)
-        statsd = statsd_format(
-            metric_name,
-            value,
-            typ,
-            sample_rate,
-            tags,
-        )
+        statsd = statsd_format(metric_name, value, typ, sample_rate, tags,)
         self.out.write(f"MONITORING|{self.service_name}|{now_ts}|{statsd}\n")
 
     def counter(
@@ -92,19 +83,13 @@ class MetricReporter:
         )
 
     def gauge(
-        self,
-        metric_name: str,
-        value: Union[int, float],
-        tags: Sequence[TagPair] = (),
+        self, metric_name: str, value: Union[int, float], tags: Sequence[TagPair] = (),
     ) -> None:
         """
         An instantaneous measurement of a value, like the gas gauge in a car.
         """
         self.write_metric(
-            metric_name=metric_name,
-            value=value,
-            typ="g",
-            tags=tags,
+            metric_name=metric_name, value=value, typ="g", tags=tags,
         )
 
     def histogram(
@@ -124,17 +109,12 @@ class MetricReporter:
         if unit:
             tags = [TagPair(_RESERVED_UNIT_TAG, unit.value)] + [t for t in tags]
         self.write_metric(
-            metric_name=metric_name,
-            value=value,
-            typ="h",
-            tags=tags,
+            metric_name=metric_name, value=value, typ="h", tags=tags,
         )
 
     @contextmanager
     def histogram_ctx(
-        self,
-        metric_name: str,
-        tags: Sequence[TagPair] = (),
+        self, metric_name: str, tags: Sequence[TagPair] = (),
     ) -> Iterator[None]:
         """
         A histogram is a measure of the distribution of timer values over time, calculated at the
@@ -150,10 +130,7 @@ class MetricReporter:
             end = self.utc_now()
             value = as_millis_duration(end - start)
             self.write_metric(
-                metric_name=metric_name,
-                value=value,
-                typ="h",
-                tags=tags,
+                metric_name=metric_name, value=value, typ="h", tags=tags,
             )
 
     _TIME_SPEC = "milliseconds"

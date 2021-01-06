@@ -72,12 +72,7 @@ def download_asset(asset: Asset, args: argparse.Namespace) -> subprocess.Popen:
 
     print(f"Downloading {url}")
     process = subprocess.Popen(
-        [
-            "wget",
-            "--output-document",
-            f"{ZIPS_PATH}{filename_on_disk}",
-            url,
-        ],
+        ["wget", "--output-document", f"{ZIPS_PATH}{filename_on_disk}", url,],
         # Capture instead of printing it; combine into one stream
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

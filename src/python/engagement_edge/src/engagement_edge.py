@@ -55,9 +55,9 @@ class LazyJwtSecret:
 
             secretsmanager = boto3.client("secretsmanager")
 
-            jwt_secret: str = secretsmanager.get_secret_value(
-                SecretId=jwt_secret_id,
-            )["SecretString"]
+            jwt_secret: str = secretsmanager.get_secret_value(SecretId=jwt_secret_id,)[
+                "SecretString"
+            ]
             return jwt_secret
 
     def _retrieve_jwt_secret_local(self) -> str:
@@ -77,9 +77,9 @@ class LazyJwtSecret:
                     endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
                 )
 
-                jwt_secret = secretsmanager.get_secret_value(
-                    SecretId="JWT_SECRET_ID",
-                )["SecretString"]
+                jwt_secret = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
+                    "SecretString"
+                ]
                 break
             except Exception as e:
                 LOGGER.debug(e)
@@ -102,10 +102,7 @@ app = Chalice(app_name="engagement-edge")
 
 if IS_LOCAL:
     # Locally we may want to connect from many origins
-    origin_re = re.compile(
-        f"https?://.+",
-        re.IGNORECASE,
-    )
+    origin_re = re.compile(f"https?://.+", re.IGNORECASE,)
 else:
     origin_re = re.compile(
         f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
@@ -162,11 +159,7 @@ def get_salt_and_pw(
     table: Table, username: str
 ) -> Tuple[Optional[Salt], Optional[str]]:
     LOGGER.info(f"Getting salt for user: {username}")
-    response = table.get_item(
-        Key={
-            "username": username,
-        }
-    )
+    response = table.get_item(Key={"username": username,})
 
     if not response.get("Item"):
         LOGGER.debug(f"Did not get salt for user: {username}")
@@ -254,8 +247,7 @@ def lambda_login(event: Any) -> Optional[str]:
 
 # observation: this is never consumed?
 cors_config = CORSConfig(
-    allow_origin=ORIGIN_OVERRIDE or ORIGIN,
-    allow_credentials="true",
+    allow_origin=ORIGIN_OVERRIDE or ORIGIN, allow_credentials="true",
 )
 
 RouteFn = TypeVar("RouteFn", bound=Callable[..., Response])

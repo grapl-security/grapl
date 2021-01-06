@@ -38,12 +38,7 @@ def load_plugins_local():
 
 
 class PluginRetriever(object):
-    def __init__(
-        self,
-        plugin_bucket: str,
-        plugin_directory: str,
-        s3_client,
-    ) -> None:
+    def __init__(self, plugin_bucket: str, plugin_directory: str, s3_client,) -> None:
         self.plugin_bucket = plugin_bucket
         self.s3_client = s3_client
         self.plugin_directory = plugin_directory
@@ -53,9 +48,9 @@ class PluginRetriever(object):
         LOGGER.info(f'Writing out plugins to: {os.path.join(path, "model_plugins")}')
 
         # list plugin files
-        plugin_objects = self.s3_client.list_objects(
-            Bucket=self.plugin_bucket,
-        ).get("Contents", [])
+        plugin_objects = self.s3_client.list_objects(Bucket=self.plugin_bucket,).get(
+            "Contents", []
+        )
 
         # Download each one to the /plugins/ directory
         for plugin_object in plugin_objects:

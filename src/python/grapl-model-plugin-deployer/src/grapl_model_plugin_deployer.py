@@ -62,9 +62,9 @@ if IS_LOCAL:
                 endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
             )
 
-            JWT_SECRET = secretsmanager.get_secret_value(
-                SecretId="JWT_SECRET_ID",
-            )["SecretString"]
+            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
+                "SecretString"
+            ]
             break
         except Exception as e:
             LOGGER.debug(e)
@@ -76,9 +76,7 @@ else:
 
     client = boto3.client("secretsmanager")
 
-    JWT_SECRET = client.get_secret_value(
-        SecretId=JWT_SECRET_ID,
-    )["SecretString"]
+    JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
 ORIGIN = os.environ["UX_BUCKET_URL"].lower()
 
@@ -138,11 +136,7 @@ def store_schema(dynamodb, schema: "Schema"):
             LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
             continue
         table.put_item(
-            Item={
-                "f_edge": f_edge,
-                "r_edge": r_edge,
-                "relationship": int(edge_t.rel),
-            }
+            Item={"f_edge": f_edge, "r_edge": r_edge, "relationship": int(edge_t.rel),}
         )
 
         table.put_item(
@@ -383,10 +377,6 @@ def respond(
         override = req_origin
         LOGGER.info(f"overriding origin with {override}")
     else:
-        override = ORIGIN_OVERRIDE
-        LOGGER.info("Origin matched")
-        allow_origin = req_origin
-    else:
         LOGGER.info("Origin did not match")
         return Response(
             body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
@@ -470,13 +460,7 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    th = threading.Thread(
-        target=provision_schemas,
-        args=(
-            GraphClient(),
-            raw_schemas,
-        ),
-    )
+    th = threading.Thread(target=provision_schemas, args=(GraphClient(), raw_schemas,),)
     th.start()
 
     try:
@@ -581,10 +565,7 @@ def list_model_plugins():
 def delete_plugin(s3_client, plugin_name):
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
 
-    list_response = s3_client.list_objects_v2(
-        Bucket=plugin_bucket,
-        Prefix=plugin_name,
-    )
+    list_response = s3_client.list_objects_v2(Bucket=plugin_bucket, Prefix=plugin_name,)
 
     if not list_response.get("Contents"):
         return []

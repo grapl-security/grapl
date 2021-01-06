@@ -28,10 +28,7 @@ class EngagementEdgeClient:
                 "password": "2ae5ddfb1eeeed45d502bcfd0c7b8f962f24bf85328ba942f32a31c0229c295a",
             },
             # TODO: Should consume the deployment name instead of hardcoded.
-            headers={
-                **_JSON_CONTENT_TYPE_HEADERS,
-                **_ORIGIN,
-            },
+            headers={**_JSON_CONTENT_TYPE_HEADERS, **_ORIGIN,},
         )
         if resp.status_code != HTTPStatus.OK:
             raise EngagementEdgeException(f"{resp.status_code}: {resp.text}")
@@ -45,9 +42,7 @@ class EngagementEdgeClient:
     def get_notebook(self, jwt: str) -> str:
         cookies = {"grapl_jwt": jwt}
         resp = requests.post(
-            f"{self.endpoint}/getNotebook",
-            cookies=cookies,
-            headers=_ORIGIN,
+            f"{self.endpoint}/getNotebook", cookies=cookies, headers=_ORIGIN,
         )
         url: str = resp.json()["success"]["notebook_url"]
         return url

@@ -46,13 +46,7 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
     destination = dir / f"{container_name}.log"
     with open(destination, "wb") as out_stream:
         popen = subprocess.Popen(
-            [
-                "docker",
-                "logs",
-                "--timestamps",
-                container_name,
-            ],
-            stdout=out_stream,
+            ["docker", "logs", "--timestamps", container_name,], stdout=out_stream,
         )
         popen.wait()
 

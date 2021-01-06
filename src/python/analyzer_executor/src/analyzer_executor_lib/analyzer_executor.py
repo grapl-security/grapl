@@ -443,21 +443,15 @@ def into_sqs_message(bucket: str, key: str) -> str:
             "Records": [
                 {
                     "eventTime": datetime.utcnow().isoformat(),
-                    "principalId": {
-                        "principalId": None,
-                    },
-                    "requestParameters": {
-                        "sourceIpAddress": None,
-                    },
+                    "principalId": {"principalId": None,},
+                    "requestParameters": {"sourceIpAddress": None,},
                     "responseElements": {},
                     "s3": {
                         "schemaVersion": None,
                         "configurationId": None,
                         "bucket": {
                             "name": bucket,
-                            "ownerIdentity": {
-                                "principalId": None,
-                            },
+                            "ownerIdentity": {"principalId": None,},
                         },
                         "object": {
                             "key": key,
@@ -475,17 +469,11 @@ def into_sqs_message(bucket: str, key: str) -> str:
 
 
 def send_s3_event(
-    sqs_client: Any,
-    queue_url: str,
-    output_bucket: str,
-    output_path: str,
+    sqs_client: Any, queue_url: str, output_bucket: str, output_path: str,
 ):
     sqs_client.send_message(
         QueueUrl=queue_url,
-        MessageBody=into_sqs_message(
-            bucket=output_bucket,
-            key=output_path,
-        ),
+        MessageBody=into_sqs_message(bucket=output_bucket, key=output_path,),
     )
 
 

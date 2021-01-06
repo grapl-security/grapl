@@ -45,10 +45,7 @@ def view_from_proto(graph_client: GraphClient, node) -> BaseView:
         uid = get_uid(graph_client, node.ip_address_node.node_key)
 
         return IpAddressView(
-            uid,
-            node.ip_address_node.node_key,
-            graph_client,
-            node_types={"IpAddress"},
+            uid, node.ip_address_node.node_key, graph_client, node_types={"IpAddress"},
         )
     elif node.HasField("ip_port_node"):
         uid = get_uid(graph_client, node.ip_port_node.node_key)

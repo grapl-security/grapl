@@ -4,10 +4,4 @@ from typing import Any, NamedTuple
 S3ServiceResource = Any
 SqsServiceResource = Any
 
-AnalyzerUpload = NamedTuple(
-    "AnalyzerUpload",
-    (
-        ("local_path", str),
-        ("s3_key", str),
-    ),
-)
+AnalyzerUpload = NamedTuple("AnalyzerUpload", (("local_path", str), ("s3_key", str),),)

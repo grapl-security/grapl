@@ -21,21 +21,15 @@ def into_sqs_message(bucket: str, key: str, region: str) -> str:
                 {
                     "eventTime": datetime.utcnow().isoformat(),
                     "awsRegion": region,
-                    "principalId": {
-                        "principalId": None,
-                    },
-                    "requestParameters": {
-                        "sourceIpAddress": None,
-                    },
+                    "principalId": {"principalId": None,},
+                    "requestParameters": {"sourceIpAddress": None,},
                     "responseElements": {},
                     "s3": {
                         "schemaVersion": None,
                         "configurationId": None,
                         "bucket": {
                             "name": bucket,
-                            "ownerIdentity": {
-                                "principalId": None,
-                            },
+                            "ownerIdentity": {"principalId": None,},
                         },
                         "object": {
                             "key": key,
@@ -53,17 +47,12 @@ def into_sqs_message(bucket: str, key: str, region: str) -> str:
 
 
 def send_s3_event(
-    sqs_client: SQSClient,
-    queue_url: str,
-    output_bucket: str,
-    output_path: str,
+    sqs_client: SQSClient, queue_url: str, output_bucket: str, output_path: str,
 ):
     sqs_client.send_message(
         QueueUrl=queue_url,
         MessageBody=into_sqs_message(
-            bucket=output_bucket,
-            key=output_path,
-            region=sqs_client.meta.region_name,
+            bucket=output_bucket, key=output_path, region=sqs_client.meta.region_name,
         ),
     )
 
@@ -108,10 +97,7 @@ def main(bucket_prefix: str) -> None:
     bucket = bucket_prefix + "-subgraphs-generated-bucket"
     for key in list_objects(s3, bucket):
         send_s3_event(
-            sqs,
-            queue_url,
-            bucket,
-            key,
+            sqs, queue_url, bucket, key,
         )
 
 
