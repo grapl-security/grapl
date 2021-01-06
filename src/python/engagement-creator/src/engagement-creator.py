@@ -67,14 +67,17 @@ class EngagementCreatorMetrics:
         # A generic "hey, there's a new risky node" metric that we can globally alarm on.
         # Has no dimensions. (See the top of `alarms.ts` to learn why!)
         self.metric_reporter.counter(
-            metric_name=f"risk_node", value=1,
+            metric_name=f"risk_node",
+            value=1,
         )
         # A more-specific, per-analyzer metric, in case you wanted to define your own alarms
         # about just "suspicious svc host", for example.
         self.metric_reporter.counter(
             metric_name=f"risk_node_for_analyzer",
             value=1,
-            tags=[TagPair("analyzer_name", analyzer_name),],
+            tags=[
+                TagPair("analyzer_name", analyzer_name),
+            ],
         )
 
 
@@ -200,7 +203,8 @@ def get_s3_client() -> S3ServiceResource:
 
 
 def nodes_to_attach_risk_to(
-    nodes: Sequence[BaseView], risky_node_keys: Optional[Sequence[str]],
+    nodes: Sequence[BaseView],
+    risky_node_keys: Optional[Sequence[str]],
 ) -> Sequence[BaseView]:
     """
     a None risky_node_keys means 'mark all as risky'
@@ -296,7 +300,10 @@ def _process_one_event(
         "Risk",
         RiskView,
         analyzer_name,
-        {"analyzer_name": analyzer_name, "risk_score": risk_score,},
+        {
+            "analyzer_name": analyzer_name,
+            "risk_score": risk_score,
+        },
     )
 
     risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_keys)

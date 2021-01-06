@@ -35,7 +35,9 @@ class Has(object):
         self.negated = isinstance(predicate, Not)
 
     def to_filter(self) -> str:
-        filter_str = "has({})".format(self.predicate,)
+        filter_str = "has({})".format(
+            self.predicate,
+        )
         if self.negated:
             filter_str = f"(NOT {filter_str} )"
         return filter_str
@@ -51,7 +53,10 @@ class Eq(object):
         if self.predicate == "dgraph.type":
             filter_str = f"type({self.value})"
         else:
-            filter_str = "eq({}, {})".format(self.predicate, self.value,)
+            filter_str = "eq({}, {})".format(
+                self.predicate,
+                self.value,
+            )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -66,7 +71,10 @@ class Gt(object):
         self.negated: bool = isinstance(value, Not)
 
     def to_filter(self) -> str:
-        filter_str = "gt({}, {})".format(self.predicate, self.value,)
+        filter_str = "gt({}, {})".format(
+            self.predicate,
+            self.value,
+        )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -81,7 +89,10 @@ class Ge(object):
         self.negated: bool = isinstance(value, Not)
 
     def to_filter(self) -> str:
-        filter_str = "ge({}, {})".format(self.predicate, self.value,)
+        filter_str = "ge({}, {})".format(
+            self.predicate,
+            self.value,
+        )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -96,7 +107,10 @@ class Lt(object):
         self.negated: bool = isinstance(value, Not)
 
     def to_filter(self) -> str:
-        filter_str = "lt({}, {})".format(self.predicate, self.value,)
+        filter_str = "lt({}, {})".format(
+            self.predicate,
+            self.value,
+        )
 
         if self.negated:
             return "(NOT " + filter_str + ")"
@@ -111,7 +125,10 @@ class Le(object):
         self.negated: bool = isinstance(value, Not)
 
     def to_filter(self) -> str:
-        filter_str = "le({}, {})".format(self.predicate, self.value,)
+        filter_str = "le({}, {})".format(
+            self.predicate,
+            self.value,
+        )
 
         if self.negated:
             return "(NOT " + filter_str + ")"

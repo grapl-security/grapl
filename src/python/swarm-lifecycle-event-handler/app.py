@@ -29,7 +29,8 @@ def _dns_ip_addresses(
     route53: Any, dns_name: str, ip_address: Optional[str], hosted_zone_id: str
 ) -> Iterator[str]:
     for rrset in route53.list_resource_record_sets(
-        HostedZoneId=hosted_zone_id, StartRecordName=dns_name,
+        HostedZoneId=hosted_zone_id,
+        StartRecordName=dns_name,
     )["ResourceRecordSets"]:
         if rrset["Type"] == "A":
             for rrecord in rrset["ResourceRecords"]:
@@ -80,7 +81,10 @@ def _remove_dns_ip(dns_name: str, ip_address: str, hosted_zone_id: str) -> None:
         comment = f"Removed {ip_address} from {dns_name} DNS A Record"
         route53.change_resource_record_sets(
             HostedZoneId=hosted_zone_id,
-            ChangeBatch={"Changes": [change], "Comment": comment,},
+            ChangeBatch={
+                "Changes": [change],
+                "Comment": comment,
+            },
         )
         LOGGER.info(comment)
     except ClientError as e:

@@ -34,7 +34,12 @@ def _analyzers() -> st.SearchStrategy[Analyzer]:
 
 def _port_configs() -> st.SearchStrategy[PortConfig]:
     return st.builds(
-        PortConfig, st.builds(dict, protocol=st.text(), port=st.integers(),),
+        PortConfig,
+        st.builds(
+            dict,
+            protocol=st.text(),
+            port=st.integers(),
+        ),
     )
 
 
