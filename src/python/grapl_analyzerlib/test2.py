@@ -251,14 +251,18 @@ class AuidAssumptionExtendsProcessQuery(ProcessQuery):
 
 
 class AuidAssumptionExtendsAuidView(AuidView):
-    def get_auid_assumptions(self,) -> "AuidAssumptionView":
+    def get_auid_assumptions(
+        self,
+    ) -> "AuidAssumptionView":
         return cast(
             "AuidAssumptionView", self.fetch_edge("~assumed_auid", AuidAssumptionView)
         )
 
 
 class AuidAssumptionExtendsProcessView(ProcessView):
-    def get_assumed_auid(self,) -> "AuidAssumptionView":
+    def get_assumed_auid(
+        self,
+    ) -> "AuidAssumptionView":
         return cast(
             "AuidAssumptionView",
             self.fetch_edge("~assuming_process", AuidAssumptionView),

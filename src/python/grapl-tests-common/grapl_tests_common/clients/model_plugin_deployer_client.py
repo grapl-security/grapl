@@ -22,7 +22,11 @@ class ModelPluginDeployerClient:
         hostname = "grapl-model-plugin-deployer" if use_docker_links else "localhost"
         self.endpoint = f"http://{hostname}:8123"
 
-    def deploy(self, plugins_folder: Path, jwt: str,) -> requests.Response:
+    def deploy(
+        self,
+        plugins_folder: Path,
+        jwt: str,
+    ) -> requests.Response:
         paths = []
         for subdir, _dirs, files in os.walk(plugins_folder):
             for file in files:

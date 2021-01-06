@@ -26,7 +26,11 @@ IN_PROGRESS_STATUSES = {
 
 InstanceTuple = NamedTuple(
     "InstanceTuple",
-    (("instance_id", str), ("private_ip_address", str), ("private_dns_name", str),),
+    (
+        ("instance_id", str),
+        ("private_ip_address", str),
+        ("private_dns_name", str),
+    ),
 )
 
 
@@ -62,7 +66,9 @@ def _get_command_result(ssm: Any, command_id: str, instance_id: str) -> str:
             break
 
     invocation = ssm.get_command_invocation(
-        CommandId=command_id, InstanceId=instance_id, PluginName="runShellScript",
+        CommandId=command_id,
+        InstanceId=instance_id,
+        PluginName="runShellScript",
     )
 
     if invocation["Status"] == "Success":
@@ -75,7 +81,10 @@ CW_NAMESPACE = "CWAgent"
 CW_DISK_USAGE_METRIC_NAME = "disk_used_percent"
 
 
-def _find_operational_alarms_arn(prefix: str, sns: Optional[SNSClient] = None,) -> str:
+def _find_operational_alarms_arn(
+    prefix: str,
+    sns: Optional[SNSClient] = None,
+) -> str:
     sns = sns or boto3.client("sns")
     topics_raw = sns.list_topics()
     all_topic_arns = [d["TopicArn"] for d in topics_raw["Topics"]]
@@ -92,7 +101,9 @@ def _find_operational_alarms_arn(prefix: str, sns: Optional[SNSClient] = None,) 
 
 
 def _find_metric_for_instance(
-    cloudwatch: CloudWatchClient, instance_id: str, path: str,
+    cloudwatch: CloudWatchClient,
+    instance_id: str,
+    path: str,
 ) -> MetricTypeDef:
     """
     To define a Cloudwatch Alarm, one must specify *all* the dimensions complete with values.
@@ -104,12 +115,26 @@ def _find_metric_for_instance(
         Namespace=CW_NAMESPACE,
         MetricName=CW_DISK_USAGE_METRIC_NAME,
         Dimensions=[
-            {"Name": "path", "Value": path,},
-            {"Name": "InstanceId", "Value": instance_id,},
-            {"Name": "AutoScalingGroupName",},
-            {"Name": "ImageId",},
-            {"Name": "InstanceType",},
-            {"Name": "device",},
+            {
+                "Name": "path",
+                "Value": path,
+            },
+            {
+                "Name": "InstanceId",
+                "Value": instance_id,
+            },
+            {
+                "Name": "AutoScalingGroupName",
+            },
+            {
+                "Name": "ImageId",
+            },
+            {
+                "Name": "InstanceType",
+            },
+            {
+                "Name": "device",
+            },
             {"Name": "fstype"},
         ],
     )
@@ -123,7 +148,9 @@ def _find_metric_for_instance(
 
 
 def _create_disk_usage_alarms(
-    cloudwatch: CloudWatchClient, instance_id: str, prefix: str,
+    cloudwatch: CloudWatchClient,
+    instance_id: str,
+    prefix: str,
 ) -> None:
     ops_alarm_action = _find_operational_alarms_arn(prefix)
 

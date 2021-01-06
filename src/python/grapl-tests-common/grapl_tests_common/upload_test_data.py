@@ -20,5 +20,7 @@ class UploadSysmonLogsTestData(UploadTestData):
     def upload(self, s3_client: S3ServiceResource) -> None:
         logging.info(f"S3 uploading test data from {self.path}")
         upload_sysmon_logs(
-            prefix=BUCKET_PREFIX, logfile=self.path, use_links=True,
+            prefix=BUCKET_PREFIX,
+            logfile=self.path,
+            use_links=True,
         )
