@@ -591,6 +591,7 @@ def delete_model_plugin():
 
     return respond(None, {"Success": "Deleted plugins"})
 
+
 @app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
     LOGGER.info("routing: " + app.current_request.context["path"])
