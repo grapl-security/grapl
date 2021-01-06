@@ -5,6 +5,7 @@ import * as sns from '@aws-cdk/aws-sns';
 import { Service } from '../service';
 import { EventEmitter } from '../event_emitters';
 import { GraplServiceProps } from '../grapl-cdk-stack';
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface EngagementCreatorProps extends GraplServiceProps {
     publishesTo: sns.ITopic;
