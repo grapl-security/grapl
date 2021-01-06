@@ -1,7 +1,7 @@
 import React from "react";
 
 import NodeTable from '../nodeTable/NodeTable';
-import { NodeDetailsProps, EngagementViewContentProps } from "../../../types/DynamicEngagementViewTypes";
+import { NodeDetailsProps, EngagementViewContentProps } from "types/DynamicEngagementViewTypes";
 
 import {ToggleLensTable} from "./utils/toggleLensTable";
 import {ToggleNodeTable} from './utils/toggleNodeTable';

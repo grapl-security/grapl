@@ -6,7 +6,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 import {
     ToggleNodeTableProps,
-} from "../../../../types/DynamicEngagementViewTypes";
+} from "types/DynamicEngagementViewTypes";
 
 
 import {NodeDetails} from '../DynamicEngagementViewFeatures'

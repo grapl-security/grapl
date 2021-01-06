@@ -8,7 +8,7 @@ import TableRow from '@material-ui/core/TableRow';
 
 import { mapEdgeProps } from '../../graphDisplay/utils/graph/graph_traverse';
 import { mapNodeProps } from '../../graphDisplay/GraphDisplay';
-import { Node } from "../../../types/CustomTypes";
+import { Node } from "types/CustomTypes";
 
 import { tableHeader } from "./nodeTableHeader";
 import { nodeTableStyles } from "./styles"; 

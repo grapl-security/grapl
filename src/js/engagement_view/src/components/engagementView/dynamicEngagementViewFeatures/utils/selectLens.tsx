@@ -6,7 +6,7 @@ import TableRow from "@material-ui/core/TableRow";
 
 import { useStyles } from '../styles';
 
-import { SelectLensProps } from "../../../../types/DynamicEngagementViewTypes"
+import { SelectLensProps } from "types/DynamicEngagementViewTypes"
 
 export function SelectLens(props: SelectLensProps) {
     const classes = useStyles();
