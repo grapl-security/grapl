@@ -113,9 +113,9 @@ def _after_tests() -> None:
 def exec_pytest() -> None:
     result = pytest.main(
         [
-            "-s",  # disable stdout capture
+            "-s",
         ]
-    )
+    )  # disable stdout capture
     _after_tests()
 
     sys.exit(result)
