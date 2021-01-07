@@ -11,19 +11,17 @@ import { SelectLensProps } from "types/DynamicEngagementViewTypes"
 export function SelectLens(props: SelectLensProps) {
     const classes = useStyles();
     return (
-        <>
-            <TableRow key={props.uid}>
-                <TableCell component="th" scope="row">
-                <Button className = {classes.lensName}
-                    onClick={
-                        () => { 
-                            props.setLens(props.lens)    
-                        }
-                }>
-                    {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
-                </Button>
-                </TableCell>
-            </TableRow>
-        </>
+        <TableRow key={props.uid}>
+            <TableCell component="th" scope="row">
+            <Button className = {classes.lensName}
+                onClick={
+                    () => { 
+                        props.setLens(props.lens)    
+                    }
+            }>
+                {props.lens_type + " :\t\t" + props.lens + "\t\t" + props.score}
+            </Button>
+            </TableCell>
+        </TableRow>
     )
 }

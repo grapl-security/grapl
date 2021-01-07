@@ -18,7 +18,6 @@ export function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
     const [toggled, toggle] = useState(true);
     const classes = useStyles();
     return (
-        <>
         <div>
             <div className={classes.header}>
                 <b className={classes.title}><LensIcon className={classes.icon}/> NODE</b>
@@ -40,6 +39,5 @@ export function ToggleNodeTable({curNode}: ToggleNodeTableProps) {
                 }
             </div>
         </div>
-        </>
     )
 }
