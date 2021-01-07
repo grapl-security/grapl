@@ -20,10 +20,7 @@ class CollectAllConstructs implements cdk.IAspect {
     this.constructs.push(node);
   }
 
-  // originally <T extends cdk.IConstruct>
-  // TODO: Sadly, 1.71->1.82 upgrade broke this T type bound. Would be nice to resurrect, but
-  // there's some weird packaging around aws-cloudwatch.
-  public getAllOfType<T>(type: { new(...args: any[]): T }): T[] {
+  public getAllOfType<T extends cdk.IConstruct>(type: { new(...args: any[]): T }): T[] {
     const filtered: T[] = [];
     for (const c of this.constructs) {
       if (c instanceof type) {
