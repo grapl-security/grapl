@@ -6,6 +6,7 @@ WORKDIR /grapl
 # install deps as separate steps to leverage build cache
 COPY package.json package.json
 COPY package-lock.json package-lock.json
+COPY yarn.lock yarn.lock
 RUN yarn install
 
 # now copy all sources
