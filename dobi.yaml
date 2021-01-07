@@ -974,7 +974,7 @@ alias=rust:
     - "graph-merger:tag"
     - "metric-forwarder:tag"
     - "node-identifier:tag"
-    # - "node-identifier-retry-handler:tag"
+    - "node-identifier-retry-handler:tag"
     - "sysmon-subgraph-generator:tag"
     - "osquery-subgraph-generator:tag"
   annotations:

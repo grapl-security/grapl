@@ -44,19 +44,6 @@ pub trait Cache: Clone {
     }
 }
 
-// #[async_trait]
-// pub trait ReadableCache {
-//     type CacheErrorT: CheckedError + Send + Sync + 'static;
-//     async fn get<
-//         CA: Cacheable + Send + Sync + 'static,
-//     >(
-//         &mut self,
-//         cacheable: CA,
-//     ) -> Result<CacheResponse, Self::CacheErrorT> {
-//         Cache::get(self, cacheable).await
-//     }
-// }
-
 #[derive(thiserror::Error, Debug)]
 pub enum NopCacheError {
     #[error("NopCache never errors")]
