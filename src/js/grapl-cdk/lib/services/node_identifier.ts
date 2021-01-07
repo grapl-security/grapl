@@ -7,13 +7,14 @@ import { HistoryDb } from '../historydb';
 import { EventEmitter } from '../event_emitters';
 import { RedisCluster } from '../redis';
 import { GraplServiceProps } from '../grapl-cdk-stack';
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface NodeIdentifierProps extends GraplServiceProps {
     writesTo: s3.IBucket;
 }
 
 export class NodeIdentifier extends cdk.NestedStack {
-    readonly bucket: s3.Bucket;
+    readonly bucket: GraplS3Bucket;
     readonly topic: sns.Topic;
     readonly service: Service;
 

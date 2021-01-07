@@ -6,6 +6,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 import { WatchedOperation } from 'cdk-watchful';
 import { GraplServiceProps } from '../grapl-cdk-stack';
 import { SchemaDb } from '../schemadb';
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
@@ -25,7 +26,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
 
         const serviceName = props.prefix + '-ModelPluginDeployer';
 
-        const ux_bucket = s3.Bucket.fromBucketName(
+        const ux_bucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'

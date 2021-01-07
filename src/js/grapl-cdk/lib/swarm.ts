@@ -4,7 +4,6 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as route53 from '@aws-cdk/aws-route53';
-import * as s3 from '@aws-cdk/aws-s3';
 import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 
 import * as path from 'path';
@@ -12,6 +11,7 @@ import * as path from 'path';
 import { FunctionHook } from '@aws-cdk/aws-autoscaling-hooktargets';
 import { Watchful } from 'cdk-watchful';
 import { Duration } from '@aws-cdk/core';
+import { GraplS3Bucket } from './grapl_s3_bucket';
 
 export interface SwarmProps {
     // Grapl deployment name prefix.
@@ -246,7 +246,7 @@ export class Swarm extends cdk.Construct {
         }
 
         // Bucket for swarm configs
-        const swarmConfigBucket = new s3.Bucket(this, 'SwarmConfigBucket', {
+        const swarmConfigBucket = new GraplS3Bucket(this, 'SwarmConfigBucket', {
             bucketName: `${props.prefix.toLowerCase()}-swarm-config-bucket`,
             publicReadAccess: false,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
