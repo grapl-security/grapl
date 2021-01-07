@@ -428,7 +428,6 @@ mod tests {
         let as_stat = crate::cloudwatch_logs_parse::parse_log(input)?;
         let cw_client = CloudWatchClient::new(Region::UsWest2);
         let data = vec![as_stat.into()];
-        println!("{:?}", &data);
         let result = put_metric_data(&cw_client, &data, SERVICE_NAME).await;
         assert_eq!(result, Ok(()));
         Ok(())

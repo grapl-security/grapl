@@ -202,8 +202,9 @@ impl Cache for RedisCache {
         let span = tracing::span!(
             tracing::Level::TRACE,
             "redis_cache.get",
-            address=self.address.as_str(),
+            address=?self.address,
         );
+        let _enter = span.enter();
         let (res, ms) = self._get(cacheable).timed().await;
 
         // todo: Refactor metrics into their own structure
@@ -249,6 +250,8 @@ impl Cache for RedisCache {
             "redis_cache.store",
             address=self.address.as_str(),
         );
+
+        let _enter = span.enter();
         let (res, ms) = self._store(identity).timed().await;
         self.metric_reporter
             .histogram(
@@ -268,6 +271,7 @@ impl Cache for RedisCache {
             address=self.address.as_str(),
             identities_len=identities.len(),
         );
+        let _enter = span.enter();
         let (res, ms) = self._store_all(identities).timed().await;
         self.metric_reporter
             .histogram(

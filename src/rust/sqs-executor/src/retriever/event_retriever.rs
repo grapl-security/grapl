@@ -139,7 +139,6 @@ where
     #[tracing::instrument(skip(self, msg))]
     async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<E>, Self::Error> {
         let body = msg.body.as_ref().unwrap();
-        println!("Got body from message: {}", body);
         debug!("Got body from message: {}", body);
         let event: serde_json::Value = serde_json::from_str(body)?;
 

@@ -115,14 +115,8 @@ impl FromEnv<SqsClient> for SqsClient {
         let region_name = std::env::var("AWS_REGION").unwrap_or_else(|_| "us-east-1".to_string());
 
         tracing::info!("overriding sqs_endpoint: {:?}", sqs_endpoint);
-        println!("overriding sqs_endpoint: {:?}", sqs_endpoint);
         tracing::info!("overriding sqs_access_key_id: {:?}", sqs_access_key_id);
-        println!("overriding sqs_access_key_id: {:?}", sqs_access_key_id);
         tracing::info!(
-            "overriding sqs_access_key_secret: {:?}",
-            sqs_access_key_secret
-        );
-        println!(
             "overriding sqs_access_key_secret: {:?}",
             sqs_access_key_secret
         );
@@ -173,20 +167,11 @@ pub fn init_s3_client(region_name: &str) -> S3Client {
                 "init_s3_client. - overriding s3_access_key_id: {:?}",
                 s3_access_key_id
             );
-            println!(
-                "init_s3_client. - overriding s3_access_key_id: {:?}",
-                s3_access_key_id
-            );
             tracing::debug!(
                 "init_s3_client. - overriding s3_access_key_secret: {:?}",
                 s3_access_key_secret
             );
-            println!(
-                "init_s3_client. - overriding s3_access_key_secret: {:?}",
-                s3_access_key_secret
-            );
             tracing::debug!("init_s3_client. - overriding region_name: {:?}", region);
-            println!("init_s3_client. - overriding region_name: {:?}", region);
             S3Client::new_with(
                 HttpClient::new().expect("failed to create request dispatcher"),
                 rusoto_credential::StaticProvider::new_minimal(
@@ -214,19 +199,12 @@ impl FromEnv<S3Client> for S3Client {
         let region_name = std::env::var("AWS_REGION").unwrap_or_else(|_| "us-east-1".to_string());
 
         tracing::debug!("overriding s3_endpoint: {:?}", s3_endpoint);
-        println!("overriding s3_endpoint: {:?}", s3_endpoint);
         tracing::debug!("overriding s3_access_key_id: {:?}", s3_access_key_id);
-        println!("overriding s3_access_key_id: {:?}", s3_access_key_id);
         tracing::debug!(
             "overriding s3_access_key_secret: {:?}",
             s3_access_key_secret
         );
-        println!(
-            "overriding s3_access_key_secret: {:?}",
-            s3_access_key_secret
-        );
         tracing::debug!("overriding region_name: {:?}", region_name);
-        println!("overriding region_name: {:?}", region_name);
 
         match (s3_endpoint, s3_access_key_id, s3_access_key_secret) {
             (Some(s3_endpoint), Some(s3_access_key_id), Some(s3_access_key_secret)) => {

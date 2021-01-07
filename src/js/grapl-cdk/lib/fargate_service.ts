@@ -9,39 +9,39 @@ import * as ecs from "@aws-cdk/aws-ecs";
 import * as sqs from "@aws-cdk/aws-sqs";
 import * as ecs_patterns from "@aws-cdk/aws-ecs-patterns";
 import {ContainerImage} from "@aws-cdk/aws-ecs";
-import {GraplServiceProps} from "./grapl-cdk-stack";
 import {Watchful} from "cdk-watchful";
+import {EventEmitter} from "./event_emitters";
 
 export class Queues {
     readonly queue: sqs.Queue;
-    readonly retry_queue: sqs.Queue;
+    readonly retryQueue: sqs.Queue;
     readonly deadLetterQueue: sqs.Queue;
 
-    constructor(scope: cdk.Construct, queue_name: string) {
+    constructor(scope: cdk.Construct, queueName: string) {
         this.deadLetterQueue = new sqs.Queue(scope, 'DeadLetterQueue', {
-            queueName: queue_name + '-dead-letter-queue',
+            queueName: queueName + '-dead-letter-queue',
         });
 
-        this.retry_queue = new sqs.Queue(scope, 'RetryQueue', {
-            queueName: queue_name + '-retry-queue',
+        this.retryQueue = new sqs.Queue(scope, 'RetryQueue', {
+            queueName: queueName + '-retry-queue',
             deadLetterQueue: { queue: this.deadLetterQueue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(360),
         });
 
         this.queue = new sqs.Queue(scope, 'Queue', {
-            queueName: queue_name + '-queue',
-            deadLetterQueue: { queue: this.retry_queue, maxReceiveCount: 3 },
+            queueName: queueName + '-queue',
+            deadLetterQueue: { queue: this.retryQueue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(180),
         });
     }
 }
 
 
+
 export interface FargateServiceProps {
     prefix: string;
     version: string;
-    readsFrom: s3.IBucket;
-    subscribesTo: sns.ITopic;
+    eventEmitter: EventEmitter;
     serviceImage: ContainerImage;
     retryServiceImage?: ContainerImage | undefined;
     vpc: ec2.IVpc;
@@ -64,8 +64,10 @@ export class FargateService {
         const cluster = new ecs.Cluster(scope, `${serviceName}Cluster`, {
             vpc: props.vpc,
         });
+        const readsFrom = props.eventEmitter.bucket;
+        const subscribesTo = props.eventEmitter.topic;
 
-        const queues = new Queues(scope, `${serviceName}`);
+        const queues = new Queues(scope, serviceName);
 
         this.queues = queues;
         this.serviceName = serviceName;
@@ -111,14 +113,14 @@ export class FargateService {
                 command: props.retryCommand || props.command,
                 enableLogging: true,
                 environment: {
-                    "QUEUE_URL": this.queues.retry_queue.queueUrl,
-                    "SOURCE_QUEUE_URL": this.queues.retry_queue.queueUrl,
+                    "QUEUE_URL": this.queues.retryQueue.queueUrl,
+                    "SOURCE_QUEUE_URL": this.queues.retryQueue.queueUrl,
                     ...optionalEnv,
                     ...defaultEnv,
                     ...props.environment
                 },
                 image: props.retryServiceImage || props.serviceImage,
-                queue: queues.retry_queue,
+                queue: queues.retryQueue,
                 serviceName: serviceName+"-retry-handler",
                 cpu: 256,
                 memoryLimitMiB: 512,
@@ -130,20 +132,20 @@ export class FargateService {
         this.queues.deadLetterQueue.grantSendMessages(this.service.taskDefinition.taskRole);
         this.queues.deadLetterQueue.grantSendMessages(this.retryService.taskDefinition.taskRole);
 
-        if (props.readsFrom) {
-            this.readsFrom(props.readsFrom);
+        if (readsFrom) {
+            this.readsFromBucket(readsFrom);
         }
 
         if (props.writesTo) {
             this.writesToBucket(props.writesTo);
         }
 
-        if (props.subscribesTo) {
-            this.addSubscription(scope, props.subscribesTo);
+        if (subscribesTo) {
+            this.addSubscription(scope, subscribesTo);
         }
     }
 
-    readsFrom(bucket: s3.IBucket, with_list?: Boolean) {
+    readsFromBucket(bucket: s3.IBucket, with_list?: Boolean) {
         let policy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ['s3:GetObject'],
@@ -188,5 +190,3 @@ export class FargateService {
         });
     }
 }
-
-

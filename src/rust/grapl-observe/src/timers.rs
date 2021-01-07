@@ -84,7 +84,7 @@ where
     }
 }
 
-pub trait HistoGramFutExt<'a>: Future + 'a {
+pub trait HistogramFutExt<'a>: Future + 'a {
     fn histogram(self, msg: impl Into<String>, tags: &'a [TagPair<'a>], m: &'a mut MetricReporter<Stdout>) -> HistoGramFut<'a, Self>
         where
             Self: Sized,
@@ -97,7 +97,7 @@ pub trait HistoGramFutExt<'a>: Future + 'a {
 #[must_use = "futures do nothing unless you `.await` or poll them"]
 pub struct HistoGramFut<'a, Fut>(#[pin] Fut, Stopwatch, String, &'a [TagPair<'a>], &'a mut MetricReporter<Stdout>);
 
-impl<'a, T> HistoGramFutExt<'a> for T where T: Future + 'a {}
+impl<'a, T> HistogramFutExt<'a> for T where T: Future + 'a {}
 
 impl<'a, Fut> HistoGramFut<'a, Fut>
     where

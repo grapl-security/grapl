@@ -14,14 +14,15 @@ use crate::errors::{CheckedError, Recoverable};
 use grapl_observe::metric_reporter::{tag, MetricReporter};
 use grapl_observe::timers::{time_fut_ms, TimedFutureExt};
 use std::io::Stdout;
-use tracing::{debug, error, warn};
+use tracing::{debug, error, warn, Instrument};
 use tap::prelude::TapFallible;
 
 impl CheckedError for InnerDeleteMessageError {
+
     fn error_type(&self) -> Recoverable {
         match self {
-            InnerDeleteMessageError::InvalidIdFormat(_) => Recoverable::Persistent,
-            InnerDeleteMessageError::ReceiptHandleIsInvalid(_) => Recoverable::Persistent,
+            Self::InvalidIdFormat(_) => Recoverable::Persistent,
+            Self::ReceiptHandleIsInvalid(_) => Recoverable::Persistent,
         }
     }
 }
@@ -209,6 +210,7 @@ where
     })
 }
 
+#[tracing::instrument(skip(sqs_client, queue_url, receipt_handle, metric_reporter))]
 pub fn delete_message<SqsT>(
     sqs_client: SqsT,
     queue_url: String,
@@ -218,7 +220,7 @@ pub fn delete_message<SqsT>(
 where
     SqsT: Sqs + Clone + Send + Sync + 'static,
 {
-    tokio::task::spawn(async move {
+    let delete_f = async move {
         let metric_reporter = &mut metric_reporter;
         for _ in 0..5u8 {
             match sqs_client
@@ -260,7 +262,8 @@ where
                 }
             }
         }
-    })
+    };
+    tokio::task::spawn(delete_f.in_current_span())
 }
 
 #[derive(thiserror::Error, Debug)]

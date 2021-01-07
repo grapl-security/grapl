@@ -9,6 +9,7 @@ use tokio::sync::mpsc::{channel as mpsc_channel, Receiver as MpscReceiver, Sende
 use tokio::sync::oneshot::{
     channel as one_shot, Receiver as OneShotReceiver, Sender as OneShotSender,
 };
+use tracing_futures::Instrument;
 
 struct SqsTimeoutManager<S>
 where
@@ -35,18 +36,18 @@ where
             mut receiver,
             s,
         } = self;
+        tracing::info!(
+            "Starting keep_alive for message"
+        );
 
         // let mut sw = Stopwatch::start_new();
         // every N / 2 seconds, set the visibility timeout to N * 2, set N to N * 2
         // Basically, we double the timeout every time, and update it halfway through
         // We could be a bit smarter about it though if we wanted to and update it more than halfway
         // but whatever
-        // todo: Handle errors - we can retry some of the errors
-        // todo: Metrics
-        // if we ever go beyond a deadline we should be sure to
         let last_timeout = visibility_timeout;
         let message_id = &message_id;
-        for i in 1..100 {
+        for i in 1..500 {
             let timeout_fut = async {
                 tokio::time::delay_for(Duration::from_secs(((last_timeout * i) as u64) / 2)).await
             };
@@ -119,7 +120,6 @@ where
             receipt_handle=receipt_handle.as_str(),
             "message still has not processed after 100 iterators"
         );
-        // let elapsed = sw.elapsed_ms();
     }
 }
 
@@ -164,7 +164,15 @@ where
     let (os_tx, os_rx) = one_shot();
     let (mpsc_tx, mpsc_rx) = mpsc_channel(1);
 
-    tokio::task::spawn(async move {
+    let span = tracing::span!(
+        tracing::Level::INFO,
+        "keep_alive",
+        receipt_handle=receipt_handle.as_str(),
+        message_id=message_id.as_str(),
+        queue_url=queue_url.as_str(),
+    );
+    let _enter = span.enter();
+    let start_f = async move {
         let manager = SqsTimeoutManager {
             queue_url,
             receipt_handle,
@@ -174,11 +182,13 @@ where
             s,
         };
         manager.start().await;
-    });
+    }.in_current_span();
+    tokio::task::spawn(start_f);
 
-    tokio::task::spawn(async move {
+    let route_f = async move {
         route_oneshot(os_rx, mpsc_tx).await;
-    });
+    }.in_current_span();
+    tokio::task::spawn(route_f);
 
     Sender {
         sender: Some(os_tx),

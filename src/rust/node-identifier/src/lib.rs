@@ -846,7 +846,6 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     .await;
 
     info!("Exiting");
-    println!("Exiting");
     Ok(())
 }
 

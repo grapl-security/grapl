@@ -16,11 +16,11 @@ use sysmon::Event;
 pub enum SysmonGeneratorError {
     #[error("DeserializeError")]
     DeserializeError(failure::Error),
-    #[error("ChronoError")]
+    #[error("NegativeEventTime")]
     NegativeEventTime(i64),
     #[error("TimeError")]
     TimeError(#[from] chrono::ParseError),
-    #[error("DeserializeError")]
+    #[error("GraphBuilderError")]
     GraphBuilderError(String),
     #[error("Unsupported event type")]
     UnsupportedEventType(String),

@@ -61,8 +61,7 @@ class SysmonGraphGenerator extends cdk.NestedStack {
                 EVENT_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
             },
             vpc: props.vpc,
-            readsFrom: sysmon_log.bucket,
-            subscribesTo: sysmon_log.topic,
+            eventEmitter: sysmon_log,
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
@@ -183,8 +182,7 @@ class NodeIdentifier extends cdk.NestedStack {
                 ASSET_ID_MAPPINGS: history_db.asset_history.tableName,
             },
             vpc: props.vpc,
-            readsFrom: unid_subgraphs.bucket,
-            subscribesTo: unid_subgraphs.topic,
+            eventEmitter: unid_subgraphs,
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
@@ -285,8 +283,7 @@ class GraphMerger extends cdk.NestedStack {
                 GRAPL_SCHEMA_TABLE: props.schemaTable.schema_table.tableName,
             },
             vpc: props.vpc,
-            readsFrom: subgraphs_generated.bucket,
-            subscribesTo: subgraphs_generated.topic,
+            eventEmitter: subgraphs_generated,
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
@@ -350,8 +347,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
                 SUBGRAPH_MERGED_BUCKET: subgraphs_merged.bucket.bucketName,
             },
             vpc: props.vpc,
-            readsFrom: this.bucket,
-            subscribesTo: this.topic,
+            eventEmitter: subgraphs_merged,
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
@@ -998,7 +994,6 @@ export class GraplCdkStack extends cdk.Stack {
             email: props.securityAlarmsEmail
         });
 
-        // todo: Don't accept a PR without porting this
         new PipelineDashboard(this, "pipeline_dashboard", {
             namePrefix: this.prefix,
             services: [
@@ -1007,8 +1002,8 @@ export class GraplCdkStack extends cdk.Stack {
                 sysmon_generator.service,
                 node_identifier.service,
                 graph_merger.service,
-                analyzer_dispatch.service,
                 analyzer_executor.service,
+                analyzer_dispatch.service,
                 engagement_creator.service,
             ]
         });

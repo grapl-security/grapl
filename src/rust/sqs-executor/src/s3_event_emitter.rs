@@ -128,7 +128,6 @@ where
             let mut metric_reporter = self.metric_reporter.clone();
             let put_object = async move {
                 tracing::debug!("uploading event to: {} {}", output_bucket, key);
-                println!("uploading event to: {} {}", output_bucket, key);
                 let (res, ms) = s3
                     .put_object(PutObjectRequest {
                         body: Some(event.into()),
@@ -149,7 +148,6 @@ where
                 match res {
                     Ok(res) => {
                         tracing::debug!("PutObject succeeded: {:?}", res);
-                        println!("PutObject succeeded: {:?}", res);
                         on_emit
                             .event_notification(output_bucket, key)
                             .await
@@ -159,7 +157,6 @@ where
                     }
                     Err(e) => {
                         tracing::warn!("PutObject failed: {:?}", e);
-                        println!("PutObject failed: {:?}", e);
                         Err(S3EventEmitterError::from(e))
                     }
                 }
@@ -187,7 +184,9 @@ pub enum S3NotificationError {
 
 impl CheckedError for S3NotificationError {
     fn error_type(&self) -> Recoverable {
-        Recoverable::Transient
+        match self {
+            Self::PublishError(e) => e.error_type(),
+        }
     }
 }
 
@@ -250,10 +249,6 @@ where
             self.dest_queue_url,
             bucket,
             key
-        );
-        println!(
-            "event_notification: {} {}/{}",
-            self.dest_queue_url, bucket, key
         );
         send_s3_notification(
             self.sqs_client.clone(),

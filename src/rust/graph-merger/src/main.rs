@@ -375,7 +375,6 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     .await;
 
     info!("Exiting");
-    println!("Exiting");
 
     Ok(())
 }

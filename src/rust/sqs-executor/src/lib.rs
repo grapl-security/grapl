@@ -164,11 +164,12 @@ async fn process_message<
     >,
 {
     let message_id = next_message.message_id.as_ref().unwrap().as_str();
-    let _inner_loop_span = tracing::span!(
+    let inner_loop_span = tracing::span!(
         tracing::Level::INFO,
         "inner_loop_span",
         message_id=message_id,
     );
+    let _enter = inner_loop_span.enter();
 
     if let Ok(CacheResponse::Hit) = cache
         .get(message_id.as_bytes().to_owned())
@@ -183,7 +184,7 @@ async fn process_message<
             queue_url.to_owned(),
             next_message.receipt_handle.expect("missing receipt_handle"),
             metric_reporter,
-        );
+        ).await;
         return;
     }
     info!(
@@ -406,10 +407,12 @@ async fn _process_loop<
             i = 2;
         }
 
-        info!(
+        let span = tracing::span!(
+            tracing::Level::DEBUG,
+            "inner_process_loop",
             queue_url=queue_url.as_str(),
-            "Retrieving SQS messages"
         );
+        let _enter = span.enter();
         let message_batch = rusoto_helpers::get_message(
             queue_url.to_string(),
             sqs_client.clone(),
