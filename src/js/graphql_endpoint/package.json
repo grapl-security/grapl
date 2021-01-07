@@ -13,7 +13,6 @@
     "@grpc/grpc-js": "^1.2.2",
     "aws-sdk": "^2.683.0",
     "aws-serverless-express": "^3.3.8",
-    "axios": "^0.19.2",
     "cors": "^2.8.5",
     "dgraph-js": "^20.3.1",
     "dgraph-js-http": "^20.7.3",
