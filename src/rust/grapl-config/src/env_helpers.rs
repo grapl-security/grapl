@@ -22,11 +22,12 @@ pub trait FromEnv<S> {
     fn from_env() -> S;
 }
 
-impl FromEnv<S3ToSqsEventNotifier<SqsClient>> for S3ToSqsEventNotifier<SqsClient> {
-    fn from_env() -> Self {
+
+impl From<&ServiceEnv> for S3ToSqsEventNotifier<SqsClient> {
+    fn from(env: &ServiceEnv) -> Self {
         let sqs_client = SqsClient::from_env();
         let dest_queue_url = crate::dest_queue_url();
-        Self::new(sqs_client, dest_queue_url)
+        Self::new(env.is_local, sqs_client, dest_queue_url)
     }
 }
 

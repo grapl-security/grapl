@@ -196,10 +196,17 @@ pub trait OnEventEmit {
     async fn event_notification(&self, bucket: String, key: String) -> Result<(), Self::Error>;
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum NopEventEmitterError {
+    #[error("Never")]
+    Never
+}
+
 pub struct S3ToSqsEventNotifier<S>
 where
     S: Sqs + Clone + Send + Sync + 'static,
 {
+    enabled: bool,
     sqs_client: S,
     dest_queue_url: String,
 }
@@ -210,6 +217,7 @@ where
 {
     fn clone(&self) -> Self {
         Self {
+            enabled: self.enabled,
             sqs_client: self.sqs_client.clone(),
             dest_queue_url: self.dest_queue_url.clone(),
         }
@@ -220,8 +228,9 @@ impl<S> S3ToSqsEventNotifier<S>
 where
     S: Sqs + Clone + Send + Sync + 'static,
 {
-    pub fn new(sqs_client: S, dest_queue_url: String) -> Self {
+    pub fn new(enabled: bool, sqs_client: S, dest_queue_url: String) -> Self {
         Self {
+            enabled,
             sqs_client,
             dest_queue_url,
         }
@@ -229,8 +238,9 @@ where
 }
 
 impl S3ToSqsEventNotifier<SqsClient> {
-    pub fn from_sqs_client(sqs_client: SqsClient, dest_queue_url: String) -> Self {
+    pub fn from_sqs_client(enabled: bool, sqs_client: SqsClient, dest_queue_url: String) -> Self {
         Self {
+            enabled,
             sqs_client,
             dest_queue_url,
         }
@@ -244,6 +254,9 @@ where
 {
     type Error = S3NotificationError;
     async fn event_notification(&self, bucket: String, key: String) -> Result<(), Self::Error> {
+        if !self.enabled {
+            return Ok(())
+        }
         tracing::debug!(
             "event_notification: {} {}/{}",
             self.dest_queue_url,

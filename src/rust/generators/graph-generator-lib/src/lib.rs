@@ -5,7 +5,7 @@ use tracing::info;
 use grapl_config::{ServiceEnv, event_caches};
 use rusoto_sqs::SqsClient;
 use rusoto_s3::S3Client;
-use crate::grapl_config::env_helpers::FromEnv;
+use crate::grapl_config::env_helpers::{FromEnv, s3_event_emitters_from_env};
 use sqs_executor::{make_ten, time_based_key_fn};
 use sqs_executor::s3_event_emitter::S3EventEmitter;
 use sqs_executor::event_retriever::S3PayloadRetriever;
@@ -51,16 +51,9 @@ pub async fn run_graph_generator<
         .await;
     let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
 
-    let s3_emitter = &mut make_ten(async {
-        S3EventEmitter::new(
-            s3_client.clone(),
-            destination_bucket.clone(),
-            time_based_key_fn,
-            S3ToSqsEventNotifier::from_env(),
-            MetricReporter::new(&env.service_name),
-        )
-    })
-        .await;
+    let s3_emitter =
+        &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
+            .await;
 
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
