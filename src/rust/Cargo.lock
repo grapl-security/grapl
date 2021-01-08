@@ -798,6 +798,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dgraph_query_lib"
+version = "0.1.0"
+source = "git+ssh://git@github.com/d0nutptr/dgraph_query_lib.git?branch=main#c670b06b26f3fed2e4946e2a4ef386d75e165b67"
+dependencies = [
+ "derive_builder",
+ "itertools 0.9.0",
+ "rand 0.7.3",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "digest"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1324,6 +1336,7 @@ name = "grapl-graph-descriptions"
 version = "0.2.10"
 dependencies = [
  "derive_builder",
+ "dgraph_query_lib",
  "log 0.4.11",
  "prost",
  "prost-build",
