@@ -1,5 +1,5 @@
 #!/bin/bash
-set -u
+set -eu
 
 services=(
     analyzer-executor

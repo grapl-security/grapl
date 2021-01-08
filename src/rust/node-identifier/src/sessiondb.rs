@@ -328,6 +328,11 @@ where
                 return Ok(session.session_id);
             }
 
+            warn!(
+                "UNID: {} - {} - {}",
+                unid.pseudo_key, unid.timestamp, unid.pseudo_key
+            );
+
             // If the timestamps are the same, we've found the session_id
             // No need to update the database here - it's already canonical,
             // with an accurate timestamp

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::fmt::Debug;
-use std::io::Cursor;
+use std::io::{Cursor, Stdout};
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -27,13 +27,6 @@ use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
 use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
 use sha2::Digest;
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::redis_cache::RedisCache;
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
@@ -46,8 +39,18 @@ use grapl_graph_descriptions::network_connection::NetworkConnectionState;
 use grapl_graph_descriptions::node::NodeT;
 use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use grapl_observe::metric_reporter::MetricReporter;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
+use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
+use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
+use sqs_lambda::event_decoder::PayloadDecoder;
+use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
+use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
+use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
+use sqs_lambda::redis_cache::RedisCache;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -63,7 +66,7 @@ pub mod sessiondb;
 pub mod sessions;
 
 #[derive(Clone)]
-struct NodeIdentifier<D, CacheT>
+pub struct NodeIdentifier<D, CacheT>
 where
     D: DynamoDb + Clone + Send + Sync + 'static,
     CacheT: Cache + Clone + Send + Sync + 'static,
@@ -963,12 +966,16 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
             );
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
+            let completion_policy = ConsumePolicyBuilder::default()
+                .with_max_empty_receives(1)
+                .with_stop_at(Duration::from_secs(10));
 
             sqs_lambda::sqs_service::sqs_service(
                 source_queue_url,
                 initial_messages,
                 bucket,
-                ctx,
+                completion_policy.build(ctx),
+                CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
@@ -978,6 +985,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                 },
                 node_identifier,
                 cache.clone(),
+                MetricReporter::<Stdout>::new("node-identifier"),
                 move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
@@ -1074,7 +1082,7 @@ pub fn init_dynamodb_client() -> DynamoDbClient {
 }
 
 #[derive(Clone, Default)]
-struct HashCache {
+pub struct HashCache {
     cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
 }
 
@@ -1174,6 +1182,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
         },
         node_identifier,
         cache.clone(),
+        MetricReporter::<Stdout>::new("node-identifier"),
         |_, event_result| {
             dbg!(event_result);
         },

@@ -1,16 +1,13 @@
-
-
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
-import * as logs from '@aws-cdk/aws-logs';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
-import { FilterPattern, SubscriptionFilter } from '@aws-cdk/aws-logs';
+import { FilterPattern } from '@aws-cdk/aws-logs';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import { Watchful } from 'cdk-watchful';
 
@@ -25,13 +22,13 @@ class Queues {
 
         this.retry_queue = new sqs.Queue(scope, 'RetryQueue', {
             queueName: queue_name + '-retry-queue',
-            deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 10 },
+            deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(360),
         });
 
         this.queue = new sqs.Queue(scope, 'Queue', {
             queueName: queue_name + '-queue',
-            deadLetterQueue: { queue: this.retry_queue, maxReceiveCount: 5 },
+            deadLetterQueue: { queue: this.retry_queue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(180),
         });
     }
@@ -69,9 +66,11 @@ export class Service {
     readonly event_handler: lambda.IFunction;
     readonly event_retry_handler: lambda.Function;
     readonly queues: Queues;
+    readonly serviceName: string;
 
     constructor(scope: cdk.Construct, name: string, props: ServiceProps) {
         const serviceName = `${props.prefix}-${name}`;
+        this.serviceName = serviceName;
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
         const opt = props.opt;
@@ -110,10 +109,10 @@ export class Service {
             description: 'Lambda execution role for: ' + serviceName,
             managedPolicies: [
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaBasicExecutionRole'
+                    'service-role/AWSLambdaBasicExecutionRole' // FIXME: remove managed policy
                 ),
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                    'service-role/AWSLambdaVPCAccessExecutionRole' // FIXME: remove managed policy
                 ),
             ],
         });
@@ -128,8 +127,8 @@ export class Service {
                 IS_RETRY: 'False',
                 ...environment,
             },
-            timeout: cdk.Duration.seconds(180),
-            memorySize: 256,
+            timeout: cdk.Duration.seconds(45),
+            memorySize: 128,
             description: props.version,
             role,
         });
@@ -162,8 +161,8 @@ export class Service {
                 IS_RETRY: 'True',
                 ...environment,
             },
-            timeout: cdk.Duration.seconds(360),
-            memorySize: 512,
+            timeout: cdk.Duration.seconds(90),
+            memorySize: 256,
             description: props.version,
             role,
         });

@@ -9,108 +9,50 @@ import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 
 import * as aws from 'aws-sdk';
 
-import { GraplServiceProps, ModelPluginDeployer } from './grapl-cdk-stack';
-import { GraphQLEndpoint } from './graphql';
+import { GraplServiceProps } from './grapl-cdk-stack';
 
-import * as fs from 'fs';
 import * as path from 'path';
-import * as dir from 'node-dir';
+import {WatchedOperation} from "cdk-watchful";
+import { SchemaDb } from './schemadb';
+import { GraplS3Bucket } from './grapl_s3_bucket';
+
 
 function getEdgeGatewayId(
-    [loginName, graphqlName, modelPluginName]: [string, string, string],
-    cb: (loginId: string, graphqlId: string, modelPluginId: string) => void
+    edgeApiName: string,
+    cb: (edgeApiId: string) => void
 ) {
     let apigateway = new aws.APIGateway();
 
     apigateway.getRestApis({}, function (err, data: any) {
-        let edgeId = undefined;
-        let graphId = undefined;
-        let modelPluginId = undefined;
-
         if (err) {
             console.log('Error getting edge gateway ID', err);
         }
 
         for (const item of data.items) {
-            if (item.name === loginName) {
-                console.log(`login restApi ID ${item.id}`);
-                edgeId = item.id;
-                continue;
+            if (item.name === edgeApiName) {
+                console.log(`edgeApiId ID ${item.id}`);
+                cb(item.id);
+                return
             }
-            if (item.name === graphqlName) {
-                console.log(`graphql restApi ID ${item.id}`);
-                graphId = item.id;
-                continue;
-            }
-            if (item.name === modelPluginName) {
-                console.log(`modelPlugin restApi ID ${item.id}`);
-                modelPluginId = item.id;
-                continue;
-            }
-
-            if (edgeId && graphId && modelPluginId) {
-                break;
-            }
-        }
-
-        if (edgeId && graphId && modelPluginId) {
-            cb(edgeId, graphId, modelPluginId);
-        } else {
-            console.warn(
-                false,
-                'Could not find any integrations. Ensure you have deployed engagement edge.'
-            );
         }
     });
 }
 
-function replaceInFile(
-    toModify: string,
-    replaceMap: Map<string, string>,
-    outputFile: string
-) {
-    return fs.readFile(toModify, { encoding: 'utf8' }, (err, data) => {
-        if (err) {
-            return console.log(err);
-        }
 
-        let replaced = data;
-        for (const [toReplace, replaceWith] of replaceMap.entries()) {
-            replaced = replaced.split(toReplace).join(replaceWith);
-        }
-
-        if (outputFile) {
-            fs.writeFile(
-                outputFile,
-                replaced,
-                { encoding: 'utf8' },
-                (err: any) => {
-                    if (err) return console.log(err);
-                }
-            );
-        } else {
-            fs.writeFile(
-                toModify,
-                replaced,
-                { encoding: 'utf8' },
-                (err: any) => {
-                    if (err) return console.log(err);
-                }
-            );
-        }
-    });
+export interface EngagementEdgeProps extends GraplServiceProps {
+    engagement_notebook: EngagementNotebook,
+    edgeApi: apigateway.RestApi,
 }
 
 export class EngagementEdge extends cdk.NestedStack {
     event_handler: lambda.Function;
-    integration: apigateway.LambdaRestApi;
     name: string;
-    integrationName: string;
+    apis: WatchedOperation[];
 
-    constructor(scope: cdk.Construct, id: string, props: GraplServiceProps) {
+    constructor(scope: cdk.Construct, id: string, props: EngagementEdgeProps) {
         super(scope, id);
 
-        const ux_bucket = s3.Bucket.fromBucketName(
+        const ux_bucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
@@ -118,11 +60,10 @@ export class EngagementEdge extends cdk.NestedStack {
 
         const serviceName = props.prefix + '-EngagementEdge';
         this.name = id + props.prefix;
-        this.integrationName = id + props.prefix + 'Integration';
 
         this.event_handler = new lambda.Function(this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,
-            handler: `engagement_edge.app`,
+            handler: `src.engagement_edge.app`,
             functionName: serviceName + '-Handler',
             code: lambda.Code.fromAsset(
                 `./zips/engagement-edge-${props.version}.zip`
@@ -150,85 +91,36 @@ export class EngagementEdge extends cdk.NestedStack {
             );
         }
 
+        // https://github.com/grapl-security/issue-tracker/issues/115
+        props.engagement_notebook.allowCreatePresignedUrl(this.event_handler);
+
         if (this.event_handler.role) {
             props.jwtSecret.grantRead(this.event_handler.role);
         }
         props.userAuthTable.allowReadFromRole(this.event_handler);
 
-        this.integration = new apigateway.LambdaRestApi(this, 'Integration', {
-            handler: this.event_handler,
-            restApiName: this.integrationName,
-            endpointExportName: serviceName + '-EndpointApi',
+        const integration = new apigateway.LambdaIntegration(this.event_handler);
+        props.edgeApi.root.addResource('auth').addProxy({
+            defaultIntegration: integration,
         });
-
-        if (props.watchful) {
-            props.watchful.watchApiGateway(
-                this.integrationName,
-                this.integration,
-                {
-                    serverErrorThreshold: 1, // any 5xx alerts
-                    cacheGraph: true,
-                    watchedOperations: [
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/login',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/login',
-                        },
-                        {
-                            httpMethod: 'GET',
-                            resourcePath: '/login',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/checkLogin',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/checkLogin',
-                        },
-                        {
-                            httpMethod: 'GET',
-                            resourcePath: '/checkLogin',
-                        },
-                        {
-                            httpMethod: 'POST',
-                            resourcePath: '/{proxy+}',
-                        },
-                        {
-                            httpMethod: 'OPTIONS',
-                            resourcePath: '/{proxy+}',
-                        },
-                        {
-                            httpMethod: 'GET',
-                            resourcePath: '/{proxy+}',
-                        },
-                    ],
-                }
-            );
+        this.apis = [];
+        for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
+            for (const resourcePath of ['/login', '/checkLogin', '/{proxy+}']) {
+                this.apis.push({httpMethod, resourcePath});
+                this.apis.push({httpMethod, resourcePath: '/auth' + resourcePath});
+            }
         }
-
-        this.integration.addUsagePlan('loginApiUsagePlan', {
-            quota: {
-                limit: 100_000,
-                period: apigateway.Period.DAY,
-            },
-            throttle: {
-                // per minute
-                rateLimit: 500,
-                burstLimit: 500,
-            },
-        });
     }
 }
 
 export interface EngagementNotebookProps extends GraplServiceProps {
     model_plugins_bucket: s3.IBucket;
+    schema_db: SchemaDb;
 }
 
 export class EngagementNotebook extends cdk.NestedStack {
+    readonly notebookInstance: sagemaker.CfnNotebookInstance;
+
     constructor(
         scope: cdk.Construct,
         id: string,
@@ -256,8 +148,9 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         props.userAuthTable.allowReadWriteFromRole(role);
         props.model_plugins_bucket.grantRead(role);
+        props.schema_db.allowReadWriteFromRole(role);
 
-        new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
+        this.notebookInstance = new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
             notebookInstanceName: props.prefix + '-Notebook',
             instanceType: 'ml.t2.medium',
             securityGroupIds: [securityGroup.securityGroupId],
@@ -266,97 +159,49 @@ export class EngagementNotebook extends cdk.NestedStack {
             roleArn: role.roleArn,
         });
     }
+
+    getNotebookArn(): string { 
+        // there's no better way to get an ARN from a Cfn (low-level Cloudformation) type object.
+        if (!this.notebookInstance.notebookInstanceName) {
+            throw new Error("gotta have a notebook name");
+        }
+        return cdk.Arn.format({
+            service: "sagemaker",
+            resource: "notebook-instance",
+            resourceName: this.notebookInstance.notebookInstanceName.toLowerCase(),
+        }, this);
+    }
+
+    allowCreatePresignedUrl(lambdaFn: lambda.IFunction) {
+        const policy = new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ["sagemaker:CreatePresignedNotebookInstanceUrl"],
+            resources: [this.getNotebookArn()],
+        });
+
+        lambdaFn.addToRolePolicy(policy);
+    }
 }
 
 interface EngagementUxProps extends cdk.StackProps {
     prefix: string;
-    engagement_edge: EngagementEdge;
-    graphql_endpoint: GraphQLEndpoint;
-    model_plugin_deployer: ModelPluginDeployer;
+    edgeApi: apigateway.RestApi;
 }
 
+const packageDir = path.join(__dirname, '../edge_ux_post_replace/');
 export class EngagementUx extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props: EngagementUxProps) {
         super(scope, id, props);
 
-        const edgeBucket = s3.Bucket.fromBucketName(
+        const edgeBucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
         );
 
-        getEdgeGatewayId(
-            [
-                props.engagement_edge.integrationName,
-                props.graphql_endpoint.integrationName,
-                props.model_plugin_deployer.integrationName,
-            ],
-            (
-                loginGatewayId: string,
-                graphQLGatewayId: string,
-                modelPluginGatewayId: string
-            ) => {
-                const srcDir = path.join(__dirname, '../edge_ux/');
-                const packageDir = path.join(__dirname, '../edge_ux_package/');
-
-                if (!fs.existsSync(packageDir)) {
-                    fs.mkdirSync(packageDir);
-                }
-
-                const loginUrl = `https://${loginGatewayId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
-                const graphQLUrl = `https://${graphQLGatewayId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
-                const modelPluginUrl = `https://${modelPluginGatewayId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
-
-                const replaceMap = new Map();
-                replaceMap.set(
-                    `http://"+window.location.hostname+":8900/`,
-                    loginUrl
-                );
-                replaceMap.set(
-                    `http://"+window.location.hostname+":5000/`,
-                    graphQLUrl
-                );
-                replaceMap.set(
-                    `http://"+window.location.hostname+":8123/`,
-                    modelPluginUrl
-                );
-
-                dir.readFiles(
-                    srcDir,
-                    function (
-                        err: any,
-                        content: any,
-                        filename: string,
-                        next: any
-                    ) {
-                        if (err) throw err;
-
-                        const targetDir = path
-                            .dirname(filename)
-                            .replace('edge_ux', 'edge_ux_package');
-
-                        if (!fs.existsSync(targetDir)) {
-                            fs.mkdirSync(targetDir, { recursive: true });
-                        }
-
-                        const newPath = filename.replace(
-                            'edge_ux',
-                            'edge_ux_package'
-                        );
-
-                        replaceInFile(filename, replaceMap, newPath);
-                        next();
-                    },
-                    function (err: any, files: any) {
-                        if (err) throw err;
-                    }
-                );
-
-                new s3deploy.BucketDeployment(this, 'UxDeployment', {
-                    sources: [s3deploy.Source.asset(packageDir)],
-                    destinationBucket: edgeBucket,
-                });
-            }
-        );
+        new s3deploy.BucketDeployment(this, 'UxDeployment', {
+            sources: [s3deploy.Source.asset(packageDir)],
+            destinationBucket: edgeBucket,
+        });
     }
 }

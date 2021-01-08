@@ -1,8 +1,9 @@
 #!/bin/bash
-set -u
+set -eu
 
 services=(
     "sysmon-subgraph-generator"
+    "osquery-subgraph-generator"
     "generic-subgraph-generator"
     "node-identifier"
     "node-identifier-retry-handler"

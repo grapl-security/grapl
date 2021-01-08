@@ -1,0 +1,66 @@
+/* Login Page */
+
+.backgroundImage{
+  width: 100vw;
+  height: 100vh;
+  background: url("../../images/nodes.jpg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  display: flex;
+  flex-direction: row;
+}
+
+.grapl{
+  width: 30%; 
+  text-align: center;
+  color: white;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 5rem;
+  margin: 3em 1em;
+  font-family: "Arial";
+}
+
+.formContainer{
+  margin-top: 8.5em;
+  margin-left: 8em;
+  width: 350px;
+  height: 350px;
+  background-color:white;
+  display: flex;
+  align-items: center;
+  font-size: 1.25em;
+  box-shadow: 3px 5px 9px #888888;
+}
+
+input{
+  border: 1px solid darkgrey;
+  width: 85%;
+  opacity: 1;
+  padding: .2em;
+  font-size: 1em;
+} 
+
+input, 
+.submitBtn{
+  margin: .5em;
+}
+
+.submitBtn{
+  background-color: #26B4FF;
+  border: none;
+  padding: .25em;
+  color: white;
+  font-size: 1.15rem;
+}
+
+@media (max-width: 800px) {
+  .backgroundImage {
+    flex-direction: column;
+  }
+  .grapl{
+    margin: .5em;
+  }
+  .formContainer{margin:.5em 2.5em;}
+}

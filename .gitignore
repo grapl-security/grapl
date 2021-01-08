@@ -1,7 +1,11 @@
-src/js/grapl-cdk/edge_ux_package/*
 src/rust/graph-descriptions/grapl_graph_descriptions
 
-grapl-cdk/cdk.out/
+# Mac OS
+.DS_Store
+
+# Test outputs
+/test/integration-outputs/**/*
+
 lambda/
 __pycache__/
 *.pyc
@@ -18,8 +22,6 @@ node_modules/
 venv/
 
 log2/
-
-src/js/grapl-cdk/index.js
 
 word-macro-analyzer/*/
 bootstrap

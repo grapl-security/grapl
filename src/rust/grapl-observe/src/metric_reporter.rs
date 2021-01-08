@@ -12,6 +12,15 @@ pub mod common_strs {
     pub const FAIL: &'static str = "fail";
 }
 
+pub enum HistogramUnit {
+    // Notably, we should not support nanoseconds for the foreseeable future.
+    // See https://github.com/grapl-security/issue-tracker/issues/132
+    Seconds,
+    Millis,
+    Micros,
+}
+const RESERVED_UNIT_TAG: &'static str = "_unit";
+
 type NowGetter = fn() -> DateTime<Utc>;
 
 pub struct MetricReporter<W: std::io::Write> {
@@ -109,8 +118,43 @@ where
 
     example: the time to complete rendering of a web page for a user.
     */
-    pub fn histogram(&mut self, metric_name: &str, value: f64) -> Result<(), MetricError> {
-        self.write_metric(metric_name, value, MetricType::Histogram, None, &[])
+    pub fn histogram(
+        &mut self,
+        metric_name: &str,
+        value_millis: f64,
+        tags: &[TagPair],
+    ) -> Result<(), MetricError> {
+        self.write_metric(metric_name, value_millis, MetricType::Histogram, None, tags)
+    }
+
+    /**
+     * In order to shoehorn units into the statsd protocol, we specify a
+     * special "_unit" tag that will
+     * be popped off in the metric forwarder.
+     */
+    pub fn histogram_with_units<'a>(
+        &mut self,
+        metric_name: &str,
+        value: f64,
+        unit: HistogramUnit,
+        tags: impl Into<Vec<TagPair<'a>>>,
+    ) -> Result<(), MetricError> {
+        let mut tags_with_unit: Vec<TagPair> = tags.into();
+        tags_with_unit.push(TagPair(
+            RESERVED_UNIT_TAG,
+            match unit {
+                HistogramUnit::Micros => "micros",
+                HistogramUnit::Millis => "millis",
+                HistogramUnit::Seconds => "seconds",
+            },
+        ));
+        self.write_metric(
+            metric_name,
+            value,
+            MetricType::Histogram,
+            None,
+            &tags_with_unit,
+        )
     }
 }
 
@@ -136,6 +180,7 @@ impl Clone for MetricReporter<Stdout> {
     }
 }
 
+#[derive(Clone)]
 pub struct TagPair<'a>(pub &'a str, pub &'a str);
 
 impl TagPair<'_> {
@@ -169,7 +214,7 @@ mod tests {
             utc_now: test_utc,
             service_name: SERVICE_NAME.to_string(),
         };
-        reporter.histogram("metric_name", 123.45f64)?;
+        reporter.histogram("metric_name", 123.45f64, &[])?;
         reporter.counter("metric_name", 123.45f64, None)?;
         reporter.counter("metric_name", 123.45f64, 0.75)?;
         reporter.gauge("metric_name", 123.45f64, &[TagPair("key", "value")])?;

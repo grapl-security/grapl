@@ -124,7 +124,7 @@ impl<'a> From<&'a Option<Vec<Dimension>>> for WrappedDimensions<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cloudwatch_send::units;
+    use crate::cloudwatch_send::cw_units;
     use hmap::hmap;
 
     const TS: &str = "2020-01-01T01:23:45.000Z";
@@ -137,7 +137,7 @@ mod tests {
         MetricDatum {
             metric_name: "metric_name".to_string(),
             timestamp: TS.to_string().into(),
-            unit: units::COUNT.to_string().into(),
+            unit: cw_units::COUNT.to_string().into(),
             value: value.into(),
             counts: None,
             values: None,
@@ -249,7 +249,7 @@ mod tests {
             metric(1.0),
             {
                 let mut m = metric(1.0);
-                m.unit = units::MILLIS.to_string().into();
+                m.unit = cw_units::MILLIS.to_string().into();
                 m
             },
             metric(1.0),

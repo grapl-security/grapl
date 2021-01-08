@@ -21,36 +21,43 @@ Grapl comes with binaries already in the repository.
 
 Clone the repo:
 `git clone https://github.com/insanitybit/grapl.git`
-`cd ./grapl/grapl-cdk/`
-`npm i # install dependencies`
-`cdk boostrap # set up aws-cdk`
-
-Add a `.env` file, and fill it in:
-
-`BUCKET_PREFIX="<unique prefix to differentiate your buckets>"`
-
-Run the deploy script
-`./deploy_all.sh`
-
-It will require confirming some changes to security groups, and will take a few minutes to complete.
-
-This will give you a Grapl setup that’s adequate for testing out the service.
+`cd grapl/src/js/grapl-cdk/`
+`<Follow the instructions in the README.md>`
 
 ### Provisioning Grapl
-At this point you need to provision the Graph databases and create a user. You can use the `Grapl Provision` notebook in this repo, and
-the newly created 'engagement' notebook in your AWS account.
+At this point you need to provision the Graph databases and create a user. 
+- Go to the AWS Console
+- Open AWS Sagemaker from the Services list
+- Click 'Notebook Instances' on the left bar
+- Click 'Open Jupyter' next to the single notebook
+- Finally, hit the 'Upload' button and navigate to `$GRAPL_REPO_ROOT/etc/Grapl\ Provision.ipynb`
+
+
+You should be presented with a view something like this:
 
 ![](https://s3.amazonaws.com/media-p.slid.es/uploads/650602/images/6396963/Screenshot_from_2019-07-27_22-27-35.png)
 
-Go to your AWS Sagemaker Console, open the Jupyter Notebook Grapl created for you, and upload the `Grapl Provision.ipynb` in this repository.
 
-Run the notebook, and it will:
+Run each cell in the notebook, and it will:
 * Set up the schemas for your graph database
-* Create a username, as well as a password, which you can use to log into your Grapl instance.
+* Create a username + password, which you can use to log into your Grapl instance.
+  * Hide this password somewhere safe - it's the only time we'll give it to you!
 
 ### Demo Data
 You can send some test data up to the service by going to the root of the grapl repo and calling:
-`python ./gen-raw-logs.py <your bucket prefix>`. 
+```
+cd $GRAPL_ROOT
+
+# whatever deployment name you defined above
+export DEPLOYMENT_NAME="Grapl-MYDEPLOYMENT"
+
+# upload analyzers
+BUCKET_PREFIX=$DEPLOYMENT_NAME etc/aws/upload_analyzer_prod.sh
+# upload logs
+python3 etc/local_grapl/bin/upload-sysmon-logs.py \
+  --bucket_prefix $DEPLOYMENT_NAME \
+  --logfile etc/sample_data/eventlog.xml 
+```
 
 *Note that this will likely impose charges to your AWS account.*
 

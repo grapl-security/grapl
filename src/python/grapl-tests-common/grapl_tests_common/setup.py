@@ -101,8 +101,8 @@ def _after_tests() -> None:
     """
 
     # Issue a command to dgraph to export the whole database.
-    # This is then stored on a volume, `compose_artifacts`.
-    # The contents of the volume are made available to Github Actions via `dump_compose_artifacts.py`.
+    # This is then stored on a volume, `dgraph_export` (defined in docker-compose.yml)
+    # The contents of the volume are made available to Github Actions via `dump_artifacts.py`.
     if DUMP_ARTIFACTS:
         logging.info("Executing post-test database dumps")
         export_request = requests.get("http://grapl-master-graph-db:8080/admin/export")
@@ -113,9 +113,9 @@ def _after_tests() -> None:
 def exec_pytest() -> None:
     result = pytest.main(
         [
-            "-s",  # disable stdout capture
+            "-s",
         ]
-    )
+    )  # disable stdout capture
     _after_tests()
 
     sys.exit(result)

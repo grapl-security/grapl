@@ -139,6 +139,8 @@ pub async fn wait_for_sqs(
     wait_loop(150, || async {
         match sqs_client
             .list_queues(ListQueuesRequest {
+                max_results: None,
+                next_token: None,
                 queue_name_prefix: Some(queue_name_prefix.clone()),
             })
             .await
