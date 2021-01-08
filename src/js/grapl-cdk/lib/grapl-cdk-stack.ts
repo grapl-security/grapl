@@ -56,9 +56,9 @@ class SysmonGraphGenerator extends cdk.NestedStack {
         this.service = new FargateService(this, id, {
             prefix: props.prefix,
             environment: {
+                RUST_LOG: props.sysmonSubgraphGeneratorLogLevel,
                 BUCKET_PREFIX: bucket_prefix,
-                EVENT_CACHE_ADDR: event_cache.cluster.attrRedisEndpointAddress,
-                EVENT_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
+                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
             },
             vpc: props.vpc,
             eventEmitter: sysmon_log,
@@ -105,9 +105,9 @@ class OSQueryGraphGenerator extends cdk.NestedStack {
         const service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
+                RUST_LOG: props.osquerySubgraphGeneratorLogLevel,
                 BUCKET_PREFIX: bucket_prefix,
-                EVENT_CACHE_ADDR: event_cache.cluster.attrRedisEndpointAddress,
-                EVENT_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
+                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
             },
             vpc: props.vpc,
             reads_from: osquery_log.bucket,
@@ -160,25 +160,25 @@ class NodeIdentifier extends cdk.NestedStack {
         this.service = new FargateService(this, id, {
             prefix: props.prefix,
             environment: {
-                RUST_LOG: "DEBUG",
+                RUST_LOG: props.nodeIdentifierLogLevel,
                 EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
                 RETRY_IDENTITY_CACHE_ADDR:
-                    event_cache.cluster.attrRedisEndpointAddress,
+                event_cache.cluster.attrRedisEndpointAddress,
                 RETRY_IDENTITY_CACHE_PORT:
-                    event_cache.cluster.attrRedisEndpointPort,
+                event_cache.cluster.attrRedisEndpointPort,
                 STATIC_MAPPING_TABLE: history_db.static_mapping_table.tableName,
                 DYNAMIC_SESSION_TABLE:
-                    history_db.dynamic_session_table.tableName,
+                history_db.dynamic_session_table.tableName,
                 PROCESS_HISTORY_TABLE: history_db.proc_history.tableName,
                 FILE_HISTORY_TABLE: history_db.file_history.tableName,
                 INBOUND_CONNECTION_HISTORY_TABLE:
-                    history_db.inbound_connection_history.tableName,
+                history_db.inbound_connection_history.tableName,
                 OUTBOUND_CONNECTION_HISTORY_TABLE:
-                    history_db.outbound_connection_history.tableName,
+                history_db.outbound_connection_history.tableName,
                 NETWORK_CONNECTION_HISTORY_TABLE:
-                    history_db.network_connection_history.tableName,
+                history_db.network_connection_history.tableName,
                 IP_CONNECTION_HISTORY_TABLE:
-                    history_db.ip_connection_history.tableName,
+                history_db.ip_connection_history.tableName,
                 ASSET_ID_MAPPINGS: history_db.asset_history.tableName,
             },
             vpc: props.vpc,
@@ -274,7 +274,8 @@ class GraphMerger extends cdk.NestedStack {
         this.service = new FargateService(this, id, {
             prefix: props.prefix,
             environment: {
-                RUST_LOG: "DEBUG",
+                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
+                RUST_LOG: props.graphMergerLogLevel,
                 BUCKET_PREFIX: bucket_prefix,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
                 MG_ALPHAS: 'http://' + props.dgraphSwarmCluster.alphaHostPort(),
@@ -340,7 +341,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
         this.service = new FargateService(this, id, {
             prefix: props.prefix,
             environment: {
-                RUST_LOG: "DEBUG",
+                RUST_LOG: props.analyzerDispatcherLogLevel,
                 ANALYZERS_BUCKET: props.prefix + "-analyzers-bucket",
                 EVENT_CACHE_CLUSTER_ADDRESS: dispatch_event_cache.address,
                 DISPATCHED_ANALYZER_BUCKET: props.writesTo.bucketName,
@@ -482,6 +483,7 @@ class EngagementCreator extends cdk.NestedStack {
         this.service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
+                GRAPL_LOG_LEVEL: props.analyzerExecutorLogLevel,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
             },
             vpc: props.vpc,
@@ -609,9 +611,9 @@ class DGraphTtl extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
+                GRAPL_LOG_LEVEL: props.defaultLogLevel,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 GRAPL_DGRAPH_TTL_S: '2678400', // 60 * 60 * 24 * 31 == 1 month
-                GRAPL_LOG_LEVEL: 'INFO',
                 GRAPL_TTL_DELETE_BATCH_SIZE: '1000',
             },
             timeout: cdk.Duration.seconds(600),
@@ -686,12 +688,12 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
+                GRAPL_LOG_LEVEL: props.defaultLogLevel,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 BUCKET_PREFIX: props.prefix,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
-                GRAPL_LOG_LEVEL: 'DEBUG',
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
@@ -734,6 +736,14 @@ export class ModelPluginDeployer extends cdk.NestedStack {
 
 export interface GraplServiceProps {
     prefix: string;
+    defaultLogLevel: string;
+    sysmonSubgraphGeneratorLogLevel: string;
+    osquerySubgraphGeneratorLogLevel: string;
+    nodeIdentifierLogLevel: string;
+    graphMergerLogLevel: string;
+    analyzerDispatcherLogLevel: string;
+    analyzerExecutorLogLevel: string;
+    engagementCreatorLogLevel: string;
     version: string;
     jwtSecret: secretsmanager.Secret;
     vpc: ec2.IVpc;
@@ -745,6 +755,14 @@ export interface GraplServiceProps {
 
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
+    defaultLogLevel: string;
+    sysmonSubgraphGeneratorLogLevel: string;
+    osquerySubgraphGeneratorLogLevel: string;
+    nodeIdentifierLogLevel: string;
+    graphMergerLogLevel: string;
+    analyzerDispatcherLogLevel: string;
+    analyzerExecutorLogLevel: string;
+    engagementCreatorLogLevel: string;
     version: string;
     dgraphInstanceType: ec2.InstanceType;
     watchfulEmail?: string;
@@ -826,6 +844,14 @@ export class GraplCdkStack extends cdk.Stack {
 
         const graplProps: GraplServiceProps = {
             prefix: this.prefix,
+            sysmonSubgraphGeneratorLogLevel: props.sysmonSubgraphGeneratorLogLevel,
+            defaultLogLevel: props.defaultLogLevel,
+            osquerySubgraphGeneratorLogLevel: props.osquerySubgraphGeneratorLogLevel,
+            nodeIdentifierLogLevel: props.nodeIdentifierLogLevel,
+            graphMergerLogLevel: props.graphMergerLogLevel,
+            analyzerDispatcherLogLevel: props.analyzerDispatcherLogLevel,
+            analyzerExecutorLogLevel: props.analyzerExecutorLogLevel,
+            engagementCreatorLogLevel: props.engagementCreatorLogLevel,
             version: props.version,
             jwtSecret: jwtSecret,
             vpc: grapl_vpc,

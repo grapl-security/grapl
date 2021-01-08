@@ -577,7 +577,7 @@ compose=integration-env:
     - metric-forwarder  # though, not currently used in integration
     - graph-merger
     - node-identifier
-    # - node-identifier-retry-handler
+    - node-identifier-retry-handler
     - sysmon-subgraph-generator
     - osquery-subgraph-generator
     # python images

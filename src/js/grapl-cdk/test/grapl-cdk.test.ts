@@ -42,6 +42,14 @@ describe('Standard GraplCdkStack', () => {
     env: ENV,
     operationalAlarmsEmail: "fake@fake.domain",
     securityAlarmsEmail: "fake@fake.domain",
+    defaultLogLevel: "DEBUG",
+    sysmonSubgraphGeneratorLogLevel: "DEBUG",
+    osquerySubgraphGeneratorLogLevel: "DEBUG",
+    nodeIdentifierLogLevel: "DEBUG",
+    graphMergerLogLevel: "DEBUG",
+    analyzerDispatcherLogLevel: "DEBUG",
+    analyzerExecutorLogLevel: "DEBUG",
+    engagementCreatorLogLevel: "DEBUG",
   });
 
   const allConstructs = new CollectAllConstructs();

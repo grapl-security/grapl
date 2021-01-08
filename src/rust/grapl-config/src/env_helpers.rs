@@ -25,8 +25,13 @@ pub trait FromEnv<S> {
 
 impl From<&ServiceEnv> for S3ToSqsEventNotifier<SqsClient> {
     fn from(env: &ServiceEnv) -> Self {
+        // todo: When local we should return a different event notifier
         let sqs_client = SqsClient::from_env();
-        let dest_queue_url = crate::dest_queue_url();
+        let dest_queue_url = if env.is_local {
+            crate::dest_queue_url()
+        } else {
+            "".to_string()
+        };
         Self::new(env.is_local, sqs_client, dest_queue_url)
     }
 }
