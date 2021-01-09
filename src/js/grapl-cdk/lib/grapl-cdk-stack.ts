@@ -1,31 +1,20 @@
 import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
-import * as events from '@aws-cdk/aws-events';
-import * as iam from '@aws-cdk/aws-iam';
-import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
-import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
-import * as targets from '@aws-cdk/aws-events-targets';
-
-import * as path from 'path';
 
 import { Service } from './service';
 import { FargateService } from './fargate_service';
 import { UserAuthDb } from './userauthdb';
-import { HistoryDb } from './historydb';
-import { EventEmitter } from './event_emitters';
-import { RedisCluster } from './redis';
 import { EngagementNotebook } from './engagement';
 import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
-import { Swarm } from './swarm';
 import { OperationalAlarms, SecurityAlarms } from './alarms';
 
-import { Watchful, WatchedOperation } from 'cdk-watchful';
+import { Watchful } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 import { PipelineDashboard } from './pipeline_dashboard';
 import {ContainerImage} from "@aws-cdk/aws-ecs";
@@ -733,6 +722,17 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         }
     }
 }
+import { AnalyzerDispatch } from './services/analyzer_dispatcher';
+import { AnalyzerExecutor } from './services/analyzer_executor';
+import { DGraphSwarmCluster } from './services/dgraph_swarm_cluster';
+import { DGraphTtl } from './services/dgraph_ttl';
+import { EngagementCreator } from './services/engagement_creator';
+import { GraphMerger } from './services/graph_merger';
+import { MetricForwarder } from './services/metric_forwarder';
+import { ModelPluginDeployer } from './services/model_plugin_deployer';
+import { NodeIdentifier } from './services/node_identifier';
+import { OSQueryGraphGenerator } from './services/osquery_graph_generator';
+import { SysmonGraphGenerator } from './services/sysmon_graph_generator';
 
 export interface GraplServiceProps {
     prefix: string;

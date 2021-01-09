@@ -19,7 +19,7 @@ COPY . .
 # does typechecking, which is nice
 RUN npm run build
 
-FROM grapl/grapl-cdk-build AS grapl-cdk-test
+FROM grapl-cdk-build AS grapl-cdk-test
 # Make fake zip files to appease the CDK tests
 WORKDIR /home/grapl/grapl-cdk/zips
 RUN touch \
@@ -39,4 +39,4 @@ RUN touch \
   swarm-lifecycle-event-handler-latest.zip \
   sysmon-subgraph-generator-latest.zip
 
-RUN cd /home/grapl/grapl-cdk && npm run test
+CMD cd /home/grapl/grapl-cdk && npm run test
