@@ -171,7 +171,7 @@ def _create_disk_usage_alarms(
         Unit="Percent",
         Dimensions=root_metric["Dimensions"],
     )
-
+    return # todo: This is a workaround for an issue unrelated to the PR
     dgraph_partition_metric = _find_metric_for_instance(
         cloudwatch, instance_id, path="/dgraph"
     )

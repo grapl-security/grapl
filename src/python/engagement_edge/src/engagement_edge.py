@@ -107,10 +107,12 @@ if IS_LOCAL:
         re.IGNORECASE,
     )
 else:
+    _origin_re = f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3[.-][\w-]*\.?amazonaws\.com/?"
     origin_re = re.compile(
-        f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
+        _origin_re,
         re.IGNORECASE,
     )
+    LOGGER.debug(f"origin_re: {_origin_re}")
 
 
 # Sometimes we pass in a dict. Sometimes we pass the string "True". Weird.
