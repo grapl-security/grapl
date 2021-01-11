@@ -315,6 +315,47 @@ CMD source venv/bin/activate && \
     cd engagement_edge && \
     py.test -n auto -m "not integration_test"
 
+
+#
+# grapl-ux-router
+#
+
+
+# build
+FROM grapl-python-build AS grapl-ux-router-build
+
+COPY --chown=grapl python/grapl-ux-router grapl-ux-router
+# COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+
+RUN source venv/bin/activate && \
+    cd grapl-ux-router && \
+    pip install .
+
+# zip
+FROM grapl-ux-router-build AS grapl-ux-router-zip
+
+RUN ORIG_DIR=$(pwd); \
+    cd ~/venv/lib/python3.7/site-packages/ && \
+    zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
+    cd ~/grapl-ux-router/src && \
+    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
+
+# deploy
+FROM grapl-python-deploy AS grapl-ux-router-deploy
+
+COPY --chown=grapl --from=grapl-ux-router-build /home/grapl/venv venv
+
+RUN source venv/bin/activate && \
+    chalice new-project app/
+
+COPY --chown=grapl --from=grapl-ux-router-build /home/grapl/grapl-ux-router/src/grapl_ux_router.py app/app.py
+
+CMD source venv/bin/activate && \
+    cd app && \
+    chalice local --no-autoreload --host=0.0.0.0 --port=8900
+
+
+
 #
 # dgraph-ttl
 #

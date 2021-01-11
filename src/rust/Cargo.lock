@@ -2449,7 +2449,7 @@ version = "2.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50d9500ea1488a61aa96da139039b78a92eef64a0f3c82d38173729f0ad73cf8"
 dependencies = [
- "log 0.3.9",
+ "log 0.4.11",
 ]
 
 [[package]]

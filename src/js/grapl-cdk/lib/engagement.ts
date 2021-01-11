@@ -159,7 +159,7 @@ export class EngagementNotebook extends cdk.NestedStack {
         });
     }
 
-    getNotebookArn(): string { 
+    getNotebookArn(): string {
         // there's no better way to get an ARN from a Cfn (low-level Cloudformation) type object.
         if (!this.notebookInstance.notebookInstanceName) {
             throw new Error("gotta have a notebook name");

@@ -23,6 +23,9 @@ cdk deploy \
     --outputs-file=./cdk-output.json \
     Grapl
 rm -rf "${EDGE_UX_ARTIFACT_DIR}"
+
+mkdir -p "${EDGE_UX_ARTIFACT_DIR}"
+
 npm run create_edge_ux_package
 cdk deploy \
     --require-approval=never \

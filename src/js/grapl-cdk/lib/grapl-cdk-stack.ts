@@ -1,20 +1,31 @@
 import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
+import * as events from '@aws-cdk/aws-events';
+import * as iam from '@aws-cdk/aws-iam';
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
+import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
+import * as targets from '@aws-cdk/aws-events-targets';
+
+import * as path from 'path';
 
 import { Service } from './service';
 import { FargateService } from './fargate_service';
 import { UserAuthDb } from './userauthdb';
+import { HistoryDb } from './historydb';
+import { EventEmitter } from './event_emitters';
+import { RedisCluster } from './redis';
 import { EngagementNotebook } from './engagement';
 import { EngagementEdge } from './engagement';
 import { GraphQLEndpoint } from './graphql';
+import { Swarm } from './swarm';
 import { OperationalAlarms, SecurityAlarms } from './alarms';
 
-import { Watchful } from 'cdk-watchful';
+import { Watchful, WatchedOperation } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 import { PipelineDashboard } from './pipeline_dashboard';
 import {ContainerImage} from "@aws-cdk/aws-ecs";
@@ -55,10 +66,11 @@ class SysmonGraphGenerator extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-sysmon-subgraph-generator",
+                target: "sysmon-subgraph-generator-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             command: ["/sysmon-subgraph-generator"],
             // metric_forwarder: props.metricForwarder,
@@ -176,16 +188,18 @@ class NodeIdentifier extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-node-identifier",
+                target: "node-identifier-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             retryServiceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-node-identifier-retry-handler",
+                target: "node-identifier-retry-handler-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             command: ["/node-identifier"],
             retryCommand: ["/node-identifier-retry-handler"],
@@ -278,10 +292,11 @@ class GraphMerger extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-graph-merger",
+                target: "graph-merger-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             command: ["/graph-merger"],
             // metric_forwarder: props.metricForwarder,
@@ -342,10 +357,11 @@ class AnalyzerDispatch extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-analyzer-dispatcher",
+                target: "analyzer-dispatcher-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             command: ["/analyzer-dispatcher"],
             // metric_forwarder: props.metricForwarder,
@@ -387,33 +403,33 @@ class AnalyzerExecutor extends cdk.NestedStack {
         const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
 
         this.service = new Service(this, id, {
-            prefix: props.prefix,
-            environment: {
-                ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
-                BUCKET_PREFIX: bucket_prefix,
-                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
-                COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
-                COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
-                MESSAGECACHE_ADDR:
+                prefix: props.prefix,
+                environment: {
+                    ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
+                    BUCKET_PREFIX: bucket_prefix,
+                    MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                    COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
+                    COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
+                    MESSAGECACHE_ADDR:
                     message_cache.cluster.attrRedisEndpointAddress,
-                MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
-                HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
-                HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
-                GRAPL_LOG_LEVEL: 'INFO',
-                GRPC_ENABLE_FORK_SUPPORT: '1',
+                    MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
+                    HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
+                    HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
+                    GRAPL_LOG_LEVEL: 'INFO',
+                    GRPC_ENABLE_FORK_SUPPORT: '1',
+                },
+                vpc: props.vpc,
+                reads_from: dispatched_analyzer.bucket,
+                writes_to: props.writesTo,
+                subscribes_to: dispatched_analyzer.topic,
+                opt: {
+                    runtime: lambda.Runtime.PYTHON_3_7,
+                    py_entrypoint: "lambda_function.lambda_handler"
+                },
+                version: props.version,
+                watchful: props.watchful,
+                metric_forwarder: props.metricForwarder,
             },
-            vpc: props.vpc,
-            reads_from: dispatched_analyzer.bucket,
-            writes_to: props.writesTo,
-            subscribes_to: dispatched_analyzer.topic,
-            opt: {
-                runtime: lambda.Runtime.PYTHON_3_7,
-                py_entrypoint: "lambda_function.lambda_handler"
-            },
-            version: props.version,
-            watchful: props.watchful,
-            metric_forwarder: props.metricForwarder,
-        },
         );
         const service = this.service;
 
@@ -722,17 +738,6 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         }
     }
 }
-import { AnalyzerDispatch } from './services/analyzer_dispatcher';
-import { AnalyzerExecutor } from './services/analyzer_executor';
-import { DGraphSwarmCluster } from './services/dgraph_swarm_cluster';
-import { DGraphTtl } from './services/dgraph_ttl';
-import { EngagementCreator } from './services/engagement_creator';
-import { GraphMerger } from './services/graph_merger';
-import { MetricForwarder } from './services/metric_forwarder';
-import { ModelPluginDeployer } from './services/model_plugin_deployer';
-import { NodeIdentifier } from './services/node_identifier';
-import { OSQueryGraphGenerator } from './services/osquery_graph_generator';
-import { SysmonGraphGenerator } from './services/sysmon_graph_generator';
 
 export interface GraplServiceProps {
     prefix: string;
@@ -969,7 +974,7 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'EngagementEdge',
             {
-                ...graplProps, 
+                ...graplProps,
                 engagement_notebook: engagement_notebook,
                 edgeApi,
             },

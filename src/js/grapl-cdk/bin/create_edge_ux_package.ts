@@ -8,9 +8,9 @@ import { DeploymentParameters } from './deployment_parameters';
  * - (before this file runs) in deploy_all.sh, we deploy the Grapl stack, which
  *     outputs a `cdk-output.json`
  * - read in the "cdk-output.json" file to look for an apiUrl
- * - inject that into "edge_ux_pre_replace"'s files
- * - write those injected files to "edge_ux_post_replace"
- * - (after this file runs) deploy the `edge_ux_post_replace`
+ * - inject that into "edge_ux"'s files
+ * - write those injected files to "edge_ux_package"
+ * - (after this file runs) deploy the `edge_ux_package`
  * 
  * Learn more at https://github.com/grapl-security/issue-tracker/issues/25
  */
@@ -74,7 +74,7 @@ function createEdgeUxPackage(apiUrl: string) {
     if (!fs.existsSync(packageDir)) {
         fs.mkdirSync(packageDir);
     }
-
+    console.log("Replacing with ", apiUrl);
     const replaceMap = new Map();
     replaceMap.set(
         `http://"+window.location.hostname+":8900/`,
@@ -89,6 +89,32 @@ function createEdgeUxPackage(apiUrl: string) {
         apiUrl+'modelPluginDeployer/'
     );
 
+    replaceMap.set(
+        "${DEV_API_EDGES.auth}",
+        apiUrl+'auth'
+    );
+    replaceMap.set(
+        "${DEV_API_EDGES.graphQL}",
+        apiUrl
+    );
+    replaceMap.set(
+        "${DEV_API_EDGES.modelPluginEdge}",
+        apiUrl+'modelPluginDeployer'
+    );
+
+    replaceMap.set(
+        `http://" + window.location.hostname + ":8900`,
+        apiUrl+'auth'
+    );
+    replaceMap.set(
+        `http://" + window.location.hostname + ":5000`,
+        apiUrl
+    );
+    replaceMap.set(
+        `http://" + window.location.hostname + ":8123`,
+        apiUrl+'modelPluginDeployer'
+    );
+
     dir.readFiles(
         srcDir,
         function (
@@ -101,21 +127,22 @@ function createEdgeUxPackage(apiUrl: string) {
 
             const targetDir = path
                 .dirname(filename)
-                .replace('edge_ux_pre_replace', 'edge_ux_post_replace');
+                .replace(srcDir, packageDir);
 
             if (!fs.existsSync(targetDir)) {
                 fs.mkdirSync(targetDir, { recursive: true });
             }
 
             const newPath = filename.replace(
-                'edge_ux_pre_replace',
-                'edge_ux_post_replace'
+                srcDir,
+                packageDir
             );
 
             replaceInFile(filename, replaceMap, newPath);
             next();
         },
         function (err: any, files: any) {
+            console.warn(err);
             if (err) throw err;
         }
     );

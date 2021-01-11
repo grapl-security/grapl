@@ -111,6 +111,7 @@ const sha256WithPepper = async (username: string, password: string) => {
 
 const login = async (username: string, password: string) => {
       try {
+          console.log(`logging in via ${engagement_edge}login`)
           const res = await fetch(`${engagement_edge}login`, {
               method: 'post',
               body: JSON.stringify({
