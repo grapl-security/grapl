@@ -29,6 +29,7 @@ import { Watchful, WatchedOperation } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 import { PipelineDashboard } from './pipeline_dashboard';
 import {ContainerImage} from "@aws-cdk/aws-ecs";
+import {UxRouter} from "./ux_router";
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -779,6 +780,7 @@ export class GraplCdkStack extends cdk.Stack {
     prefix: string;
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
+    ux_router: UxRouter;
     model_plugin_deployer: ModelPluginDeployer;
     edgeApiGateway: apigateway.RestApi;
 
@@ -983,10 +985,19 @@ export class GraplCdkStack extends cdk.Stack {
         const ux_bucket = new s3.Bucket(this, 'EdgeBucket', {
             bucketName:
                 graplProps.prefix.toLowerCase() + '-engagement-ux-bucket',
-            publicReadAccess: true,
+            publicReadAccess: false,
             websiteIndexDocument: 'index.html',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
+
+        this.ux_router = new UxRouter(
+            this,
+            'UxRouter',
+            {
+                ...graplProps,
+                edgeApi,
+            },
+        );
 
         this.graphql_endpoint = new GraphQLEndpoint(
             this,
@@ -1003,7 +1014,9 @@ export class GraplCdkStack extends cdk.Stack {
                 ...this.graphql_endpoint.apis,
                 ...this.engagement_edge.apis,
                 ...this.model_plugin_deployer.apis,
+                ...this.ux_router.apis,
             ];
+
 
             watchful.watchApiGateway(
                 'EdgeApiGatewayIntegration',
@@ -1011,6 +1024,7 @@ export class GraplCdkStack extends cdk.Stack {
                 {
                     serverErrorThreshold: 1, // any 5xx alerts
                     cacheGraph: true,
+                    watchedOperations,
                 }
             );
         }

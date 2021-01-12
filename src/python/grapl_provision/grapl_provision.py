@@ -235,6 +235,7 @@ buckets = (
     BUCKET_PREFIX + "-analyzers-bucket",
     BUCKET_PREFIX + "-analyzer-matched-subgraphs-bucket",
     BUCKET_PREFIX + "-model-plugins-bucket",
+    BUCKET_PREFIX + "-engagement-ux-bucket",
 )
 
 
@@ -286,8 +287,8 @@ class SqsQueue(object):
 def provision_sqs(sqs, service_name: str) -> None:
     LOGGER.debug("Provisioning: grapl-%s-queue" % service_name)
     q = SqsQueue.create_queue(sqs, "grapl-%s-queue" % service_name)
-    LOGGER.debug("Provisioning: grapl-%s-redrive-queue" % service_name)
-    rd_q = SqsQueue.create_queue(sqs, "grapl-%s-redrive-queue" % service_name)
+    LOGGER.debug("Provisioning: grapl-%s-retry-queue" % service_name)
+    rd_q = SqsQueue.create_queue(sqs, "grapl-%s-retry-queue" % service_name)
     LOGGER.debug("Provisioning: grapl-%s-dead-letter-queue" % service_name)
     dl_q = SqsQueue.create_queue(sqs, "grapl-%s-dead-letter-queue" % service_name)
 

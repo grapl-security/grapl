@@ -90,10 +90,22 @@ services:
     logging:
       driver: none
 
+  nginx:
+    image: nginxinc/nginx-unprivileged
+    command: nginx
+    volumes:
+      - ./etc/local_grapl/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "3128:3128"
+    depends_on:
+      - s3
+      - sqs
+      - grapl-provision
+#    extra_hosts:
+#      - minio:127.0.0.1
   #
   # Rust services
   #
-
   grapl-rust-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
     build:
@@ -109,6 +121,7 @@ services:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "AWS_REGION=us-east-1"
     extra_hosts:
       - amazonaws:127.0.0.1
 
@@ -124,11 +137,20 @@ services:
         - PROFILE=${PROFILE:-debug}
     tty: false
     environment:
-      - "BUCKET_PREFIX=local-grapl"
-      - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
+      - "IS_LOCAL=True"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-retry-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
+      - "DEST_BUCKET_NAME=local-grapl-unid-subgraphs-generated-bucket"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -153,10 +175,21 @@ services:
         - PROFILE=${PROFILE:-debug}
     tty: false
     environment:
+      - "AWS_REGION=us-east-1"
       - "BUCKET_PREFIX=local-grapl"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-subgraph-generator-dead-letter-queue"
+      - "DEST_BUCKET_NAME=local-grapl-unid-subgraphs-generated-bucket"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "IS_LOCAL=True"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-osquery-subgraph-generator-retry-queue"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-osquery-subgraph-generator-queue"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
     links:
       - s3:minio
@@ -181,12 +214,23 @@ services:
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
         - PROFILE=${PROFILE:-debug}
     environment:
-      - "BUCKET_PREFIX=local-grapl"
-      - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - IS_LOCAL=true,
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
-      - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
       - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
       - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
@@ -222,12 +266,23 @@ services:
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
         - PROFILE=${PROFILE:-debug}
     environment:
-      - "BUCKET_PREFIX=local-grapl"
-      - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "IS_LOCAL=True"
+      - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
-      - "GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
       - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
       - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
@@ -263,12 +318,23 @@ services:
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
         - PROFILE=${PROFILE:-debug}
     environment:
-      - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
-      - "ANALYZER_DISPATCHER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
+      - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-retry-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
+      - "DEST_BUCKET_NAME=local-grapl-subgraphs-merged-bucket"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - MG_ALPHAS=http://master_graph:9080
       - "GRAPL_SCHEMA_TABLE=local-grapl-grapl_schema_table"
     tty: false
@@ -297,11 +363,22 @@ services:
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
         - PROFILE=${PROFILE:-debug}
     environment:
-      - "BUCKET_PREFIX=local-grapl"
-      - "IS_LOCAL=True"
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "ANALYZERS_BUCKET=local-grapl-analyzers-bucket"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
-      - "ANALYZER_EXECUTOR_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-retry-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - "DEST_BUCKET_NAME=local-grapl-analyzer-dispatched-bucket"
+      - "ANALYZER_BUCKET=local-grapl-analyzers-bucket"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - RUST_LOG=${RUST_LOG:-ERROR}
     tty: false
     links:
@@ -314,6 +391,7 @@ services:
     depends_on:
       - s3
       - sqs
+
 
   #
   # Python services
@@ -346,11 +424,11 @@ services:
       target: analyzer-executor-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
+      - "IS_LOCAL=True"
       - "HITCACHE_ADDR=dev-shared-redis"
       - "HITCACHE_PORT=6379"
       - "MESSAGECACHE_ADDR=dev-shared-redis"
       - "MESSAGECACHE_PORT=6379"
-      - "IS_LOCAL=True"
       - GRPC_ENABLE_FORK_SUPPORT=1
       - MG_ALPHAS=master_graph:9080
       - "IS_RETRY=False"
@@ -412,11 +490,46 @@ services:
       - "BUCKET_PREFIX=local-grapl"
     depends_on:
       - grapl-provision
-
     tty: true
     links:
       - grapl-master-graph-db:master_graph
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
+    networks:
+      default:
+        aliases:
+          - grapl_auth
+
+  grapl-ux-router:
+    image: grapl/grapl-ux-router:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: grapl-ux-router-deploy
+    command: |
+      /bin/sh -c '
+        wait-for-it grapl-provision:8126 --timeout=10;
+        . venv/bin/activate &&
+        cd app &&
+        chalice local --no-autoreload --host=0.0.0.0 --port=8901
+      '
+    ports:
+      - "8901:8901"
+    environment:
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=DEBUG
+#      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - "UX_BUCKET_NAME=local-grapl-engagement-ux-bucket"
+    depends_on:
+      - grapl-provision
+    tty: true
+    links:
+      - s3:minio
+    extra_hosts:
+      - minio:127.0.0.1
+    networks:
+      default:
+        aliases:
+          - ux_router
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -442,6 +555,10 @@ services:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
+    networks:
+      default:
+        aliases:
+          - model_plugin_deployer
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -495,6 +612,10 @@ services:
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     ports:
       - 5000:5000
+    networks:
+      default:
+        aliases:
+          - graphql_endpoint
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}

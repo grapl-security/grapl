@@ -2,7 +2,7 @@ import { PluginPayload } from "../plugins/uploadPluginTypes";
 import {getModelPluginEdge} from "../../GraphViz/engagement_edge/getApiURLs"
 
 export const getPluginList = async () => {
-    const res = await fetch(`${getModelPluginEdge()}listModelPlugins`, 
+    const res = await fetch(`/prod/modelPluginDeployer/listModelPlugins`,
         {
             method: 'post',
             headers: {
@@ -24,7 +24,7 @@ export const getPluginList = async () => {
 }
 
 export const deletePlugin = async ( pluginName: string ): Promise <boolean> => {
-    const res = await fetch(`${getModelPluginEdge()}deleteModelPlugin`, 
+    const res = await fetch(`/prod/modelPluginDeployer/deleteModelPlugin`,
         {
             method: 'post',
             headers: {
@@ -39,7 +39,7 @@ export const deletePlugin = async ( pluginName: string ): Promise <boolean> => {
 };
 
 export const uploadFilesToDgraph = async (payload: PluginPayload ): Promise<boolean> => {
-    const res = await fetch(`${getModelPluginEdge()}deploy`, 
+    const res = await fetch(`/prod/modelPluginDeployer/deploy`,
         {
             method: 'post',
             headers: {

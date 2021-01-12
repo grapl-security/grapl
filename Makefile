@@ -144,6 +144,10 @@ up: build-local ## build local services and docker-compose up
 down: ## docker-compose down
 	docker-compose -f docker-compose.Makefile.yml down
 
+.PHONY: restart
+down: ## docker-compose down
+	docker-compose -f docker-compose.Makefile.yml down
+
 .PHONY: help
 help: ## print this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

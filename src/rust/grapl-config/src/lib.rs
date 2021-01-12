@@ -24,6 +24,7 @@ macro_rules! init_grapl_env {
     };
 }
 
+#[derive(Debug)]
 pub struct ServiceEnv {
     pub service_name: String,
     pub is_local: bool,
@@ -35,6 +36,7 @@ pub fn _init_grapl_env(service_name: &str) -> (ServiceEnv, tracing_appender::non
         is_local: is_local(),
     };
     let tracing_guard = _init_grapl_log(&env);
+    tracing::info!(env=?env, "initializing environment");
     (env, tracing_guard)
 }
 

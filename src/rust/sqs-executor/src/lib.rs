@@ -547,10 +547,6 @@ pub async fn process_loop<
         Error = SerializerErrorT,
     >,
 {
-    let queue_name = queue_url.split("/").last()
-        .unwrap_or_else(|| panic!("invalid queue_url: {}", &queue_url));
-    wait_for_sqs(sqs_client.clone(), queue_name.clone()).await;
-
     loop {
         tracing::trace!("Outer process loop");
         let f = _process_loop(

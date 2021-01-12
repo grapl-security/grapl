@@ -93,28 +93,10 @@ class LazyJwtSecret:
 
 JWT_SECRET = LazyJwtSecret()
 
-ORIGIN = os.environ["UX_BUCKET_URL"].lower()
-
-ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
 DYNAMO: Optional[DynamoDBServiceResource] = None
 
 app = Chalice(app_name="engagement-edge")
-
-if IS_LOCAL:
-    # Locally we may want to connect from many origins
-    origin_re = re.compile(
-        f"https?://.+",
-        re.IGNORECASE,
-    )
-else:
-    _origin_re = f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3[.-][\w-]*\.?amazonaws\.com/?"
-    origin_re = re.compile(
-        _origin_re,
-        re.IGNORECASE,
-    )
-    LOGGER.debug(f"origin_re: {_origin_re}")
-
-
+app.api.cors = False
 # Sometimes we pass in a dict. Sometimes we pass the string "True". Weird.
 Res = Union[Dict[str, Any], str]
 
@@ -123,38 +105,23 @@ def respond(
     err: Optional[str],
     res: Optional[Res] = None,
     headers: Optional[Dict[str, Any]] = None,
+    status_code:int=500,
 ) -> Response:
-    req_origin = app.current_request.headers.get("origin", "")
-
-    LOGGER.info(f"responding, origin: {app.current_request.headers.get('origin', '')}")
     if not headers:
         headers = {}
-
     if IS_LOCAL:
         override = app.current_request.headers.get("origin", "")
-        LOGGER.info(f"overriding origin with {override}")
-    else:
-        override = ORIGIN_OVERRIDE
-
-    if origin_re.match(req_origin):
-        LOGGER.info("Origin matched")
-        allow_origin = req_origin
-    else:
-        LOGGER.info("Origin did not match")
-        return Response(
-            body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
-        )
-
+        LOGGER.warning(f"overriding origin: {override}")
+        headers = {"Access-Control-Allow-Origin": override, **headers}
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
-        status_code=400 if err else 200,
+        status_code=status_code if err else 200,
         headers={
-            "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Credentials": "true",
             "Content-Type": "application/json",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             "X-Requested-With": "*",
-            "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
+            "Access-Control-Allow-Headers": ":authority, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
             **headers,
         },
     )
@@ -245,7 +212,7 @@ def lambda_login(event: Any) -> Optional[str]:
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
     if IS_LOCAL:
-        cookie = f"grapl_jwt={login_res}; HttpOnly"
+        cookie = f"grapl_jwt={login_res}; HttpOnly; path=/"
     else:
         cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None; path=/"
 
@@ -253,12 +220,6 @@ def lambda_login(event: Any) -> Optional[str]:
         return cookie
     return None
 
-
-# observation: this is never consumed?
-cors_config = CORSConfig(
-    allow_origin=ORIGIN_OVERRIDE or ORIGIN,
-    allow_credentials="true",
-)
 
 RouteFn = TypeVar("RouteFn", bound=Callable[..., Response])
 
@@ -274,8 +235,8 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
                 return respond(None, {})
 
             if not check_jwt(app.current_request.headers):
-                LOGGER.warn("not logged in")
-                return respond("Must log in")
+                LOGGER.warning("not logged in")
+                return respond("Must log in", status_code=403)
             try:
                 return route_fn()
             except Exception as e:
@@ -316,13 +277,13 @@ def login_route() -> Response:
         LOGGER.info("logged in")
         return respond(None, "True", headers={"Set-Cookie": cookie})
     else:
-        LOGGER.warn("not logged in")
-        return respond("Failed to login")
+        LOGGER.warning("not logged in")
+        return respond("Failed to login", status_code=403)
 
 
 @no_auth("/checkLogin")
 def check_login() -> Response:
-    LOGGER.debug("/checkLogin %s", app.current_request)
+    LOGGER.debug(f'/checkLogin {app.current_request}')
     request = app.current_request
 
     if check_jwt(request.headers):
@@ -339,21 +300,47 @@ def get_notebook() -> Response:
     url = client.get_presigned_url(notebook_name)
     return respond(err=None, res={"notebook_url": url})
 
-
-@app.route("/auth/{proxy+}", methods=["OPTIONS", "POST", "GET"])
-def nop_route() -> Response:
-    LOGGER.debug(app.current_request.context["path"])
+@app.route("/prod/auth/{proxy+}", methods=["OPTIONS", "POST", "GET"])
+def prod_nop_route() -> Response:
+    LOGGER.debug(f'nop_route {app.current_request.context["path"]}')
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
 
+    LOGGER.debug(f"current_request {app.current_request.to_dict()}")
     path = app.current_request.context["path"]
     path_to_handler = {
         "/prod/auth/login": login_route,
         "/prod/auth/checkLogin": check_login,
         "/prod/auth/getNotebook": get_notebook,
+        "/auth/login": login_route,
+        "/auth/checkLogin": check_login,
+        "/auth/getNotebook": get_notebook,
     }
     handler = path_to_handler.get(path, None)
     if handler:
         return handler()
 
-    return respond(err=f"Invalid path: {path}")
+    return respond(err=f"Invalid path: {path}", status_code=404)
+
+
+@app.route("/auth/{proxy+}", methods=["OPTIONS", "POST", "GET"])
+def nop_route() -> Response:
+    LOGGER.debug(f'nop_route {app.current_request.context["path"]}')
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
+
+    LOGGER.debug(f"current_request {app.current_request.to_dict()}")
+    path = app.current_request.context["path"]
+    path_to_handler = {
+        "/prod/auth/login": login_route,
+        "/prod/auth/checkLogin": check_login,
+        "/prod/auth/getNotebook": get_notebook,
+        "/auth/login": login_route,
+        "/auth/checkLogin": check_login,
+        "/auth/getNotebook": get_notebook,
+    }
+    handler = path_to_handler.get(path, None)
+    if handler:
+        return handler()
+
+    return respond(err=f"Invalid path: {path}", status_code=404)

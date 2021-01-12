@@ -80,13 +80,7 @@ else:
         SecretId=JWT_SECRET_ID,
     )["SecretString"]
 
-ORIGIN = os.environ["UX_BUCKET_URL"].lower()
-
-ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
-
-LOGGER.debug("Origin: %s", ORIGIN)
 app = Chalice(app_name="model-plugin-deployer")
-
 
 def into_list(t: Union[T, List[T]]) -> List[T]:
     if isinstance(t, list):
@@ -364,45 +358,25 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
 
 
 BUCKET_PREFIX = os.environ["BUCKET_PREFIX"]
-origin_re = re.compile(
-    f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
-    re.IGNORECASE,
-)
 
 
 def respond(
     err, res=None, headers=None, status_code: Optional[HTTPStatus] = None
 ) -> Response:
-    req_origin = app.current_request.headers.get("origin", "")
-
-    LOGGER.info(f"responding to origin: {req_origin}")
     if not headers:
         headers = {}
 
     if IS_LOCAL:
-        override = req_origin
-        LOGGER.info(f"overriding origin with {override}")
-    else:
-        override = ORIGIN_OVERRIDE
-
-    if origin_re.match(req_origin):
-        LOGGER.info("Origin matched")
-        allow_origin = req_origin
-    else:
-        LOGGER.info("Origin did not match")
-        return Response(
-            body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
-        )
-
+        override = app.current_request.headers.get("origin", "")
+        headers = {"Access-Control-Allow-Origin": override, **headers}
     status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=status_code.value,
         headers={
-            "Access-Control-Allow-Origin": allow_origin,
-            "Access-Control-Allow-Credentials": "true",
             "Content-Type": "application/json",
+            "Access-Control-Allow-Credentials": "true",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             "X-Requested-With": "*",
             "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",

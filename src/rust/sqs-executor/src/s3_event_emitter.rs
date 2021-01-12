@@ -255,6 +255,7 @@ where
     type Error = S3NotificationError;
     async fn event_notification(&self, bucket: String, key: String) -> Result<(), Self::Error> {
         if !self.enabled {
+            tracing::debug!("event notifications are disabled");
             return Ok(())
         }
         tracing::debug!(
@@ -263,6 +264,7 @@ where
             bucket,
             key
         );
+
         send_s3_notification(
             self.sqs_client.clone(),
             self.dest_queue_url.clone(),

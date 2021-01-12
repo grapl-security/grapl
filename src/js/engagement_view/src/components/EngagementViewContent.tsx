@@ -183,7 +183,7 @@ const getLenses = async (first: number, offset: number) => {
 
     console.log("calling graphql_edge: " + graphql_edge + "with query: " + query);
     
-    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
+    const res = await fetch(`/prod/graphQlEndpoint/graphql`,
         {
             method: 'post',
             body: JSON.stringify({ query: query }),
@@ -256,4 +256,3 @@ export default function EngagementViewContent({setLens, curNode}: EngagementView
         </>
     );
 }
-

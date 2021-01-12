@@ -61,22 +61,23 @@ export class FargateService {
     readonly retryService: ecs_patterns.QueueProcessingFargateService;
 
     constructor(scope: cdk.Construct, serviceName: string, props: FargateServiceProps) {
-        const cluster = new ecs.Cluster(scope, `${serviceName}Cluster`, {
+        this.serviceName = `${props.prefix}-${serviceName}`;
+        const cluster = new ecs.Cluster(scope, `${this.serviceName}Cluster`, {
             vpc: props.vpc,
         });
         const readsFrom = props.eventEmitter.bucket;
         const subscribesTo = props.eventEmitter.topic;
 
-        const queues = new Queues(scope, serviceName);
+        const queues = new Queues(scope, this.serviceName);
 
         this.queues = queues;
-        this.serviceName = serviceName;
 
         const defaultEnv: { [key: string]: string; } = {
             "BUCKET_PREFIX": props.prefix,
             "DEAD_LETTER_QUEUE_URL": this.queues.deadLetterQueue.queueUrl,
             "GRAPL_LOG_LEVEL": "DEBUG",
             "RUST_LOG": "warn,main=debug,sqs-executor=info",
+            RETRY_QUEUE_URL: this.queues.retryQueue.queueUrl,
         };
 
         const optionalEnv: { [key: string]: string;} = {};
@@ -127,10 +128,12 @@ export class FargateService {
                 desiredTaskCount: 1,
             });
 
-
-        // todo: we need permissions to publish to the dead letter queue
-        this.queues.deadLetterQueue.grantSendMessages(this.service.taskDefinition.taskRole);
-        this.queues.deadLetterQueue.grantSendMessages(this.retryService.taskDefinition.taskRole);
+        for (const q of [this.queues.queue, this.queues.retryQueue, this.queues.deadLetterQueue]) {
+            q.grantConsumeMessages(this.service.taskDefinition.taskRole);
+            q.grantConsumeMessages(this.retryService.taskDefinition.taskRole);
+            q.grantSendMessages(this.service.taskDefinition.taskRole);
+            q.grantSendMessages(this.retryService.taskDefinition.taskRole);
+        }
 
         if (readsFrom) {
             this.readsFromBucket(readsFrom);

@@ -332,7 +332,7 @@ RUN source venv/bin/activate && \
     pip install .
 
 # zip
-FROM grapl-ux-router-build AS grapl-ux-router-zip
+FROM grapl-ux-router-build AS ux-router-zip
 
 RUN ORIG_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages/ && \
@@ -352,7 +352,7 @@ COPY --chown=grapl --from=grapl-ux-router-build /home/grapl/grapl-ux-router/src/
 
 CMD source venv/bin/activate && \
     cd app && \
-    chalice local --no-autoreload --host=0.0.0.0 --port=8900
+    chalice local --no-autoreload --host=0.0.0.0 --port=8901
 
 
 

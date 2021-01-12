@@ -74,47 +74,34 @@ function createEdgeUxPackage(apiUrl: string) {
     if (!fs.existsSync(packageDir)) {
         fs.mkdirSync(packageDir);
     }
-    console.log("Replacing with ", apiUrl);
+    console.log("Replacing with /prod/");
+    // TODO: Use base
+    // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
     const replaceMap = new Map();
     replaceMap.set(
-        `http://"+window.location.hostname+":8900/`,
-        apiUrl+'auth/'
+        `script src="/`,
+        `script src="/prod/`,
     );
     replaceMap.set(
-        `http://"+window.location.hostname+":5000/`,
-        apiUrl
+        `link href="/`,
+        `link href="/prod/`,
     );
     replaceMap.set(
-        `http://"+window.location.hostname+":8123/`,
-        apiUrl+'modelPluginDeployer/'
-    );
-
-    replaceMap.set(
-        "${DEV_API_EDGES.auth}",
-        apiUrl+'auth'
+        `"static/`,
+        `"prod/static/`,
     );
     replaceMap.set(
-        "${DEV_API_EDGES.graphQL}",
-        apiUrl
+        `"/static/`,
+        `"/prod/static/`,
     );
     replaceMap.set(
-        "${DEV_API_EDGES.modelPluginEdge}",
-        apiUrl+'modelPluginDeployer'
-    );
-
-    replaceMap.set(
-        `http://" + window.location.hostname + ":8900`,
-        apiUrl+'auth'
+        `"url(/static/`,
+        `"url(/prod/static/`,
     );
     replaceMap.set(
-        `http://" + window.location.hostname + ":5000`,
-        apiUrl
+        `"index.html`,
+        `"prod/index.html`,
     );
-    replaceMap.set(
-        `http://" + window.location.hostname + ":8123`,
-        apiUrl+'modelPluginDeployer'
-    );
-
     dir.readFiles(
         srcDir,
         function (

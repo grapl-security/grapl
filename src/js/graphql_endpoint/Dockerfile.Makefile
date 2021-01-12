@@ -48,7 +48,8 @@ USER grapl
 WORKDIR /home/grapl
 
 COPY --chown=grapl --from=graphql-endpoint-build /home/grapl/lambda lambda
-COPY --chown=grapl package.json lambda/package.json
-COPY --chown=grapl package-lock.json lambda/package-lock.json
+WORKDIR /home/grapl/lambda/
+COPY --chown=grapl package.json package.json
+COPY --chown=grapl package-lock.json package-lock.json
 
 CMD yarn start server

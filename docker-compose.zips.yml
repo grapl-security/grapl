@@ -86,6 +86,20 @@ services:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip engagement-edge-${TAG}.zip
 
+  grapl-ux-router-zip:
+    image: grapl/grapl-ux-router-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: ux-router-zip
+    volumes:
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment:
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip ux-router-${TAG}.zip
+
   grapl-model-plugin-deployer-zip:
     image: grapl/grapl-model-plugin-deployer-zip:${TAG:-latest}
     build:
