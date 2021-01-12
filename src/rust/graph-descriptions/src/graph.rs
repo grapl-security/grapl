@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::graph_description::{Edge, EdgeList, GeneratedSubgraphs, Graph, Node};
+use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 use crate::node::NodeT;
 
 impl Graph {
@@ -72,6 +73,17 @@ impl Graph {
             })
             .edges
             .push(edge);
+    }
+
+    pub async fn perform_upsert(&self, dgraph_client: &DgraphClient) {
+
+    }
+
+    async fn upsert_nodes(&self, dgraph_client: &DgraphClient) {
+        self.nodes.iter()
+            .map(|(node_key, node)| {
+
+            })
     }
 }
 
