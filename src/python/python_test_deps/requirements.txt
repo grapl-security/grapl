@@ -4,4 +4,4 @@ hypothesis
 
 mypy
 pytype
-boto3-stubs[essential,sagemaker]
+boto3-stubs[essential,sagemaker]==1.16.54.0

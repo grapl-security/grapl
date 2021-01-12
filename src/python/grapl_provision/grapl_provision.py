@@ -280,6 +280,7 @@ def bucket_provision_loop() -> None:
                 endpoint_url="http://s3:9000",
                 aws_access_key_id="minioadmin",
                 aws_secret_access_key="minioadmin",
+                region_name="us-east-1",
             )
         except Exception as e:
             if i > 10:
@@ -397,6 +398,7 @@ if __name__ == "__main__":
     sqs_t.start()
     s3_t.start()
 
+    print("Starting to provision master graph")
     for i in range(0, 150):
         try:
             if not mg_succ:
@@ -405,12 +407,13 @@ if __name__ == "__main__":
                     local_dg_provision_client,
                 )
                 mg_succ = True
-                print("Provisioned mastergraph")
+                print("Provisioned master graph")
                 break
         except Exception as e:
             if i > 10:
                 LOGGER.error("mg provision failed with: ", e)
 
+    print("Starting to provision Secrets Manager")
     for i in range(0, 150):
         try:
             client = boto3.client(
@@ -421,6 +424,7 @@ if __name__ == "__main__":
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
             create_secret(client)
+            print("Done provisioning Secrets Manager")
             break
         except botocore.exceptions.ClientError as e:
             if "ResourceExistsException" in e.__class__.__name__:
@@ -432,16 +436,20 @@ if __name__ == "__main__":
                 LOGGER.error(e)
             time.sleep(1)
 
+    print("Starting to provision Grapl user")
     for i in range(0, 150):
         try:
             create_user("grapluser", "graplpassword")
+            print("Done provisioning Grapl user")
             break
         except Exception as e:
             if i >= 50:
                 LOGGER.error(e)
             time.sleep(1)
 
+    print("Ensuring S3/SQS completed...")
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
+    print("S3/SQS completed")
 
     print("Completed provisioning")
