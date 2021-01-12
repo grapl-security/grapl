@@ -94,6 +94,7 @@ services:
   engagement-view-integration-tests:
     image: cypress/included:5.6.0
     working_dir: /test
+    user: node
     command: --browser chrome --headless # enctrypoint is: cypress run
     volumes: 
       - .:/test
