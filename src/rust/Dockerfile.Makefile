@@ -43,9 +43,9 @@ COPY --chown=grapl . .
 FROM base AS build-sccache-none
 
 RUN if test "${PROFILE}" = "release"; then \
-      cargo build --target=${TARGET} --release; \
+      cargo build --target="${TARGET}" --release; \
     elif test "${PROFILE}" = "debug"; then \
-      cargo build --target=${TARGET}; \
+      cargo build --target="${TARGET}"; \
     else \
       echo "ERROR: Unknown build profile: ${PROFILE}"; \
       exit 1; \
@@ -82,9 +82,9 @@ FROM sccache AS build-sccache-container
 RUN --mount=type=cache,uid=19999,gid=19999,target=/home/grapl/.cargo/registry \
     --mount=type=cache,uid=19999,gid=19999,target=/home/grapl/sccache \
     if test "${PROFILE}" = "release"; then \
-      cargo build --target=${TARGET} --release; \
+      cargo build --target="${TARGET}" --release; \
     elif test "${PROFILE}" = "debug"; then \
-      cargo build --target=${TARGET}; \
+      cargo build --target="${TARGET}"; \
     else \
       echo "ERROR: Unknown build profile: ${PROFILE}"; \
       exit 1; \
@@ -108,9 +108,9 @@ RUN --mount=type=cache,uid=19999,gid=19999,target=/home/grapl/.cargo/registry \
     --mount=type=secret,uid=19999,gid=19999,id=aws,dst=/home/grapl/awscreds \
     source /home/grapl/awscreds && \
     if test "${PROFILE}" = "release"; then \
-      cargo build --target=${TARGET} --release; \
+      cargo build --target="${TARGET}" --release; \
     elif test "${PROFILE}" = "debug"; then \
-      cargo build --target=${TARGET}; \
+      cargo build --target="${TARGET}"; \
     else \
       echo "ERROR: Unknown build profile: ${PROFILE}"; \
       exit 1; \
@@ -130,10 +130,10 @@ SHELL ["/bin/bash", "-c"]
 
 RUN mkdir /home/grapl/zips; \
     grapl-zip() { \
-      TMPDIR=$(mktemp -d); \
-      cd $TMPDIR; \
+      TMPDIR="$(mktemp -d)"; \
+      cd "$TMPDIR"; \
       cp "/home/grapl/target/${TARGET}/${PROFILE}/$1" bootstrap && \
-      zip -q -9 -dg /home/grapl/zips/${f}.zip bootstrap; \
+      zip -q -9 -dg "/home/grapl/zips/${f}.zip" bootstrap; \
     }; \
     for f in analyzer-dispatcher \
 			       generic-subgraph-generator \
@@ -149,7 +149,7 @@ RUN mkdir /home/grapl/zips; \
     wait
 
 CMD for f in $(ls /home/grapl/zips | sed -e 's/.zip$//g'); do \
-      cp -r /home/grapl/zips/${f}.zip ./${f}-${TAG}.zip; \
+      cp -r "/home/grapl/zips/${f}.zip" "./${f}-${TAG}.zip"; \
     done
 
 
@@ -169,46 +169,46 @@ USER nobody
 FROM rust-dist AS analyzer-dispatcher-deploy
 
 COPY --from=build "/home/grapl/target/${TARGET}/${PROFILE}/analyzer-dispatcher" /analyzer-dispatcher
-CMD /analyzer-dispatcher
+CMD ["/analyzer-dispatcher"]
 
 # generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
 COPY --from=build "/home/grapl/target/${TARGET}/${PROFILE}/generic-subgraph-generator" /generic-subgraph-generator
-CMD /generic-subgraph-generator
+CMD ["/generic-subgraph-generator"]
 
 # graph-merger
 FROM rust-dist AS graph-merger-deploy
 
 COPY --from=build "/home/grapl/target/${TARGET}/${PROFILE}/graph-merger" /graph-merger
-CMD /graph-merger
+CMD ["/graph-merger"]
 
 # metric-forwarder
 FROM rust-dist AS metric-forwarder-deploy
 
 COPY --from=build "/home/grapl/target/${TARGET}/${PROFILE}/metric-forwarder" /metric-forwarder
-CMD /metric-forwarder
+CMD ["/metric-forwarder"]
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 
 COPY --from=build "/home/grapl/target/${TARGET}/${PROFILE}/node-identifier" /node-identifier
-CMD /node-identifier
+CMD ["/node-identifier"]
 
 # node-identifier-retry-handler
 FROM rust-dist AS node-identifier-retry-handler-deploy
 
 COPY --from=build "/home/grapl/target/${TARGET}/${PROFILE}/node-identifier-retry-handler" /node-identifier-retry-handler
-CMD /node-identifier-retry-handler
+CMD ["/node-identifier-retry-handler"]
 
 # sysmon-subgraph-generator
 FROM rust-dist AS sysmon-subgraph-generator-deploy
 
 COPY --from=build "/home/grapl/target/${TARGET}/${PROFILE}/sysmon-subgraph-generator" /sysmon-subgraph-generator
-CMD /sysmon-subgraph-generator
+CMD ["/sysmon-subgraph-generator"]
 
 # osquery-subgraph-generator
 FROM rust-dist AS osquery-subgraph-generator-deploy
 
 COPY --from=build "/home/grapl/target/${TARGET}/${PROFILE}/osquery-subgraph-generator" /osquery-subgraph-generator
-CMD /osquery-subgraph-generator
+CMD ["/osquery-subgraph-generator"]
