@@ -32,9 +32,9 @@ where
     Output: Send + Sync + Clone + 'static,
     ER: PayloadRetriever<Input, Message = M> + Send + Sync + Clone + 'static,
     CH: CompletionHandler<
-        Message = M,
-        CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
-    > + Send
+            Message = M,
+            CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
+        > + Send
         + Sync
         + Clone
         + 'static,
@@ -58,9 +58,9 @@ where
     Output: Send + Sync + Clone + 'static,
     ER: PayloadRetriever<Input, Message = M> + Send + Sync + Clone + 'static,
     CH: CompletionHandler<
-        Message = M,
-        CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
-    > + Send
+            Message = M,
+            CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
+        > + Send
         + Sync
         + Clone
         + 'static,
@@ -90,9 +90,9 @@ where
     Output: Send + Sync + Clone + 'static,
     ER: PayloadRetriever<Input, Message = M> + Send + Sync + Clone + 'static,
     CH: CompletionHandler<
-        Message = M,
-        CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
-    > + Send
+            Message = M,
+            CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
+        > + Send
         + Sync
         + Clone
         + 'static,
@@ -125,9 +125,9 @@ where
     Output: Send + Sync + Clone + 'static,
     ER: PayloadRetriever<Input, Message = M> + Send + Sync + Clone + 'static,
     CH: CompletionHandler<
-        Message = M,
-        CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
-    > + Send
+            Message = M,
+            CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
+        > + Send
         + Sync
         + Clone
         + 'static,
@@ -225,9 +225,9 @@ where
     Output: Send + Sync + Clone + 'static,
     ER: PayloadRetriever<Input, Message = M> + Send + Sync + Clone + 'static,
     CH: CompletionHandler<
-        Message = M,
-        CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
-    > + Send
+            Message = M,
+            CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
+        > + Send
         + Sync
         + Clone
         + 'static,
@@ -302,9 +302,9 @@ where
         Output: Send + Sync + Clone + 'static,
         ER: PayloadRetriever<Input, Message = M> + Send + Sync + Clone + 'static,
         CH: CompletionHandler<
-            Message = M,
-            CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
-        > + Send
+                Message = M,
+                CompletedEvent = OutputEvent<Output, <EH as EventHandler>::Error>,
+            > + Send
             + Sync
             + Clone
             + 'static,

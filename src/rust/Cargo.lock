@@ -2974,6 +2974,7 @@ version = "0.21.1"
 dependencies = [
  "aktors",
  "async-trait",
+ "aws_lambda_events",
  "chrono",
  "color-eyre",
  "darkredis",
@@ -3000,6 +3001,7 @@ dependencies = [
  "tracing-futures",
  "tracing-subscriber",
  "uuid 0.8.2",
+ "zstd",
 ]
 
 [[package]]

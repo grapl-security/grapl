@@ -14,6 +14,8 @@ rusoto_core = {version = "0.45", default_features = false, features=["rustls"]}
 rusoto_s3 = {version = "0.45", default_features = false, features=["rustls"]}
 rusoto_sqs = {version = "0.45", default_features = false, features=["rustls"]}
 
+aws_lambda_events = "0.4"
+zstd = "0.6"
 futures = { version = "0.3", features=["compat"] }
 
 tokio = { version = "0.2", features = ["io-util", "sync", "macros", "time"] }
