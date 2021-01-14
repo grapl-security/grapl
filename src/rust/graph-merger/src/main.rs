@@ -45,7 +45,6 @@ use grapl_graph_descriptions::node::NodeT;
 use grapl_observe::dgraph_reporter::DgraphMetricReporter;
 use grapl_observe::metric_reporter::MetricReporter;
 
-
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
         "uid": from,

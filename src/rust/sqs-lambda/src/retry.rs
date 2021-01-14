@@ -29,7 +29,7 @@ impl<E> ErrorHandler<RusotoError<E>> for RetryHandler {
 
         match e {
             RusotoError::HttpDispatch(_) | RusotoError::Unknown(_) => {
-                let jitter: u64 = self.rng.gen_range(10 .. 50);
+                let jitter: u64 = self.rng.gen_range(10..50);
                 let backoff = jitter + (attempt as u64 * 10);
                 RetryPolicy::WaitRetry(Duration::from_millis(backoff))
             }

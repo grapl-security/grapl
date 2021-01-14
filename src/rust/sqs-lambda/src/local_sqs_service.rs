@@ -1,5 +1,3 @@
-
-
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::cache::Cache;
@@ -87,26 +85,26 @@ where
     EventT: Clone + Send + Sync + 'static,
     EventDecoderT: PayloadDecoder<EventT> + Clone + Send + Sync + 'static,
     EventEncoderT: CompletionEventSerializer<
-            CompletedEvent = CompletedEventT,
-            Output = Vec<u8>,
-            Error = <EventHandlerT as EventHandler>::Error,
-        > + Clone
+        CompletedEvent = CompletedEventT,
+        Output = Vec<u8>,
+        Error = <EventHandlerT as EventHandler>::Error,
+    > + Clone
         + Send
         + Sync
         + 'static,
     EventHandlerT: EventHandler<
-            InputEvent = EventT,
-            OutputEvent = CompletedEventT,
-            Error = crate::error::Error,
-        > + Clone
+        InputEvent = EventT,
+        OutputEvent = CompletedEventT,
+        Error = crate::error::Error,
+    > + Clone
         + Send
         + Sync
         + 'static,
     CacheT: Cache + Clone + Send + Sync + 'static,
     OnAck: Fn(
-            SqsCompletionHandlerActor<CompletedEventT, <EventHandlerT as EventHandler>::Error, SqsT>,
-            Result<String, String>,
-        ) + Send
+        SqsCompletionHandlerActor<CompletedEventT, <EventHandlerT as EventHandler>::Error, SqsT>,
+        Result<String, String>,
+    ) + Send
         + Sync
         + 'static,
     OnEmission: Fn(String, String) -> EmissionResult + Send + Sync + 'static,
@@ -219,26 +217,26 @@ where
     EventT: Clone + Send + Sync + 'static,
     EventDecoderT: PayloadDecoder<EventT> + Clone + Send + Sync + 'static,
     EventEncoderT: CompletionEventSerializer<
-            CompletedEvent = CompletedEventT,
-            Output = Vec<u8>,
-            Error = <EventHandlerT as EventHandler>::Error,
-        > + Clone
+        CompletedEvent = CompletedEventT,
+        Output = Vec<u8>,
+        Error = <EventHandlerT as EventHandler>::Error,
+    > + Clone
         + Send
         + Sync
         + 'static,
     EventHandlerT: EventHandler<
-            InputEvent = EventT,
-            OutputEvent = CompletedEventT,
-            Error = crate::error::Error,
-        > + Clone
+        InputEvent = EventT,
+        OutputEvent = CompletedEventT,
+        Error = crate::error::Error,
+    > + Clone
         + Send
         + Sync
         + 'static,
     CacheT: Cache + Clone + Send + Sync + 'static,
     OnAck: Fn(
-            SqsCompletionHandlerActor<CompletedEventT, <EventHandlerT as EventHandler>::Error, SqsT>,
-            Result<String, String>,
-        ) + Send
+        SqsCompletionHandlerActor<CompletedEventT, <EventHandlerT as EventHandler>::Error, SqsT>,
+        Result<String, String>,
+    ) + Send
         + Sync
         + 'static,
     OnEmission: Fn(String, String) -> EmissionResult + Send + Sync + 'static,

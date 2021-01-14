@@ -43,6 +43,7 @@ use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnec
 use grapl_observe::metric_reporter::MetricReporter;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
+use sha2::Digest;
 use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
@@ -52,7 +53,6 @@ use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use sqs_lambda::redis_cache::RedisCache;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
 use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use sha2::Digest;
 
 macro_rules! wait_on {
     ($x:expr) => {{
