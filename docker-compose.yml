@@ -87,6 +87,8 @@ services:
       default:
         aliases:
           - minio
+    logging:	
+      driver: none	
 
   dynamodb:
     image: amazon/dynamodb-local
