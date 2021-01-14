@@ -4,7 +4,6 @@ use grapl_config as config;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::error::HandlerError;
-use lambda_runtime::Context;
 use log::*;
 use rusoto_core::Region;
 use rusoto_s3::S3Client;

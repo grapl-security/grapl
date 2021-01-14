@@ -171,7 +171,7 @@ impl<S: Sqs + Send + Sync + 'static, CH: CompletionHandler + Clone + Send + Sync
             return Ok(vec![]);
         }
         let remaining_time: u64 = remaining_time.try_into()?;
-        let mut visibility_timeout = Duration::from_millis(remaining_time).as_secs() + 1;
+        let visibility_timeout = Duration::from_millis(remaining_time).as_secs() + 1;
 
         let recv = self.sqs_client.receive_message(ReceiveMessageRequest {
             max_number_of_messages: Some(10),
