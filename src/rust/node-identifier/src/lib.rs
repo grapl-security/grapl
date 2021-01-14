@@ -776,6 +776,7 @@ where
 pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     let (env, _guard) = grapl_config::init_grapl_env!();
     let source_queue_url = grapl_config::source_queue_url();
+    println!("handler_init: {:?}", env);
     tracing::info!(
         source_queue_url=?source_queue_url,
         env=?env,

@@ -8,6 +8,8 @@ from analyzer_executor_lib.analyzer_executor import LOGGER, AnalyzerExecutor
 
 ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()
 
+i = 0
+LOGGER.info("Starting analyzer-executor")
 while True:
     try:
         sqs = boto3.client(
@@ -34,7 +36,11 @@ while True:
                 botocore.exceptions.ClientError,
                 botocore.parsers.ResponseParserError,
             ):
-                LOGGER.info("Waiting for SQS to become available")
+                i += 1
+                if i >= 10:
+                    LOGGER.error(f"Waiting for SQS to become available {i}")
+                else:
+                    LOGGER.warning(f"Waiting for SQS to become available {i}")
                 time.sleep(2)
                 continue
             alive = True
@@ -63,3 +69,5 @@ while True:
     except Exception as e:
         LOGGER.error(traceback.format_exc())
         time.sleep(2)
+
+LOGGER.info("Exiting")

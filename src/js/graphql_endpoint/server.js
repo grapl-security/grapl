@@ -66,7 +66,6 @@ app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP(async (request, resp
 
 
 app.use(function(req, res){
-    console.warn(req);
     console.warn(req.path);
     res.sendStatus(404);
 });

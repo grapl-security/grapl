@@ -10,6 +10,7 @@ use tokio::sync::oneshot::{
     channel as one_shot, Receiver as OneShotReceiver, Sender as OneShotSender,
 };
 use tracing_futures::Instrument;
+use stopwatch::Stopwatch;
 
 struct SqsTimeoutManager<S>
 where
@@ -40,28 +41,25 @@ where
             "Starting keep_alive for message"
         );
 
-        // let mut sw = Stopwatch::start_new();
-        // every N / 2 seconds, set the visibility timeout to N * 2, set N to N * 2
-        // Basically, we double the timeout every time, and update it halfway through
-        // We could be a bit smarter about it though if we wanted to and update it more than halfway
-        // but whatever
-        let last_timeout = visibility_timeout;
+        let mut sw = Stopwatch::start_new();
+
+        // Sleep for N - 10 seconds, set timeout to 2N
         let message_id = &message_id;
-        for i in 1..500 {
+        let max_iter = 10;
+        for i in 1..=max_iter {
             let timeout_fut = async {
-                tokio::time::delay_for(Duration::from_secs(((last_timeout * i) as u64) / 2)).await
+                tokio::time::delay_for(Duration::from_secs(((visibility_timeout * i) as u64) - 10)).await
             };
             let future_2 = async { receiver.recv().await };
             pin_mut!(timeout_fut);
             pin_mut!(future_2);
-            // wait for N / 2 seconds or a message to stop
             match future::select(timeout_fut, future_2).await {
                 Either::Left(_) => {
                     let res = s
                         .change_message_visibility(ChangeMessageVisibilityRequest {
                             queue_url: queue_url.clone(),
                             receipt_handle: receipt_handle.clone(),
-                            visibility_timeout: visibility_timeout * (i + 1),
+                            visibility_timeout: visibility_timeout * i,
                         })
                         .await;
 
@@ -71,15 +69,17 @@ where
                                 iteration=i,
                                 message_id=message_id.as_str(),
                                 receipt_handle=receipt_handle.as_str(),
+                                time_taken=sw.elapsed_ms(),
                                 "Successfully changed message visibility"
                             );
                         }
                         Err(rusoto_core::RusotoError::Service(e)) => {
                             tracing::error!(
-                                error=e.to_string().as_str(),
+                                error=?e,
                                 iteration=i,
                                 message_id=message_id.as_str(),
                                 receipt_handle=receipt_handle.as_str(),
+                                time_taken=sw.elapsed_ms(),
                                 "Failed to change message visibility"
                             );
                             break; // These errors are not retryable
@@ -90,6 +90,7 @@ where
                                 iteration=i,
                                 message_id=message_id.as_str(),
                                 receipt_handle=receipt_handle.as_str(),
+                                time_taken=sw.elapsed_ms(),
                                 "Failed to change message visibility, but it's probably fine"
                             );
                             return
@@ -101,6 +102,7 @@ where
                         iteration=i,
                         message_id=message_id.as_str(),
                         receipt_handle=receipt_handle.as_str(),
+                        time_taken=sw.elapsed_ms(),
                         "Message no longer needs to be kept alive"
                     );
                     return
@@ -111,14 +113,17 @@ where
                 iteration=i,
                 message_id=message_id.as_str(),
                 receipt_handle=receipt_handle.as_str(),
+                time_taken=sw.elapsed_ms(),
                 "message-visibility-loop",
             );
         }
 
         tracing::warn!(
+            iteration=max_iter,
             message_id=message_id.as_str(),
             receipt_handle=receipt_handle.as_str(),
-            "message still has not processed after 100 iterators"
+            time_taken=sw.elapsed_ms(),
+            "message still has not processed"
         );
     }
 }

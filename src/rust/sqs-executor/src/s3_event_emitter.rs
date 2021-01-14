@@ -127,7 +127,7 @@ where
             let s3 = self.s3.clone();
             let mut metric_reporter = self.metric_reporter.clone();
             let put_object = async move {
-                tracing::debug!("uploading event to: {} {}", output_bucket, key);
+                tracing::info!("uploading event to: {} {}", output_bucket, key);
                 let (res, ms) = s3
                     .put_object(PutObjectRequest {
                         body: Some(event.into()),

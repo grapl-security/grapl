@@ -274,6 +274,9 @@ class GraphMerger extends cdk.NestedStack {
         );
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
+        const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
+            vpc: props.vpc,
+        });
 
         this.service = new FargateService(this, id, {
             prefix: props.prefix,
@@ -306,8 +309,21 @@ class GraphMerger extends cdk.NestedStack {
         this.service.service.cluster.connections.allowToAnyIpv4(
             ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
         );
+        // probably only needs 9080
+        this.service.service.cluster.connections.allowToAnyIpv4(
+            ec2.Port.allTcp()
+        );
+        // probably only needs 9080
+        this.service.retryService.cluster.connections.allowToAnyIpv4(
+            ec2.Port.allTcp()
+        );
+        // probably only needs 9080
+        this.service.retryService.cluster.connections.allowToAnyIpv4(
+            ec2.Port.allTcp()
+        );
         props.schemaTable.allowRead2(this.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster.connections);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.cluster);
     }
 }
 
@@ -416,7 +432,7 @@ class AnalyzerExecutor extends cdk.NestedStack {
                     MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
                     HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
                     HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
-                    GRAPL_LOG_LEVEL: 'INFO',
+                    GRAPL_LOG_LEVEL: props.analyzerExecutorLogLevel,
                     GRPC_ENABLE_FORK_SUPPORT: '1',
                 },
                 vpc: props.vpc,

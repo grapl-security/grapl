@@ -101,8 +101,6 @@ services:
       - s3
       - sqs
       - grapl-provision
-#    extra_hosts:
-#      - minio:127.0.0.1
   #
   # Rust services
   #
@@ -214,7 +212,7 @@ services:
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
         - PROFILE=${PROFILE:-debug}
     environment:
-      - IS_LOCAL=true,
+      - "IS_LOCAL=True"
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
@@ -380,6 +378,7 @@ services:
       - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "IS_LOCAL=True"
     tty: false
     links:
       - s3:minio

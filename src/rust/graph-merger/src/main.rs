@@ -7,7 +7,7 @@ use std::io::Stdout;
 use std::iter::FromIterator;
 
 use std::sync::{Arc, Mutex};
-use std::time::SystemTime;
+use std::time::{SystemTime, Duration};
 use std::time::UNIX_EPOCH;
 
 use async_trait::async_trait;
@@ -99,9 +99,9 @@ async fn node_key_to_uid(
     let mut vars = HashMap::new();
     vars.insert("$a".to_string(), node_key.to_string());
 
-    let query_res = txn
-        .query_with_vars(QUERY, vars)
-        .await
+    let query_res = tokio::time::timeout(Duration::from_secs(3),txn
+        .query_with_vars(QUERY, vars))
+        .await?
         .map_err(AnyhowFailure::into_failure)?;
 
     // todo: is there a way to differentiate this query metric from others?
@@ -171,18 +171,18 @@ async fn upsert_node<CacheT>(
             mu.set_set_json(&set_json);
 
             let mut txn = dg.new_mutated_txn();
-            let upsert_res = match txn.upsert(query, mu).await {
+            let upsert_res = match tokio::time::timeout(Duration::from_secs(10), txn.upsert(query, mu)).await? {
                 Ok(res) => res,
                 Err(e) => {
-                    txn.discard().await.map_err(AnyhowFailure::into_failure)?;
+                    tokio::time::timeout(Duration::from_secs(10), txn.discard()).await?.map_err(AnyhowFailure::into_failure)?;
                     return Err(e.into_failure().into());
-                }
+                },
             };
 
             metric_reporter
                 .mutation(&upsert_res, &[])
                 .unwrap_or_else(|e| error!("mutation metric failed: {}", e));
-            txn.commit().await.map_err(AnyhowFailure::into_failure)?;
+            tokio::time::timeout(Duration::from_secs(3), txn.commit()).await?.map_err(AnyhowFailure::into_failure)?;
 
             info!(
                 "Upsert res for {}, set_json: {} upsert_res: {:?}",
@@ -300,9 +300,9 @@ async fn upsert_edge<CacheT>(
 
     let mu = generate_edge_insert(&to, &from, &edge_name);
     let mut txn = mg_client.new_mutated_txn();
-    let mut_res = txn
-        .mutate_and_commit_now(mu)
-        .await
+    let mut_res = tokio::time::timeout(Duration::from_secs(10), txn
+        .mutate_and_commit_now(mu))
+        .await?
         .map_err(AnyhowFailure::into_failure)?;
     metric_reporter
         .mutation(&mut_res, &[])
@@ -457,7 +457,7 @@ where
             let new_uid = match upsert {
                 Ok(new_uid) => new_uid,
                 Err(e) => {
-                    error!("upser_error: {}", e);
+                    error!("upsert_error: {}", e);
                     upsert_res = Some(e);
                     continue;
                 }
@@ -644,9 +644,10 @@ async fn get_r_edge(
         ..Default::default()
     };
 
-    let item = client
-        .get_item(query)
+    let item = tokio::time::timeout(Duration::from_secs(2),client
+        .get_item(query))
         .await
+        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .item;
     match item {

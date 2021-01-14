@@ -328,6 +328,7 @@ def _process_one_event(
 
 
 def main() -> None:
+    LOGGER.info("Starting engagement-creator")
     sqs: SQSClient = boto3.client(
         "sqs",
         region_name="us-east-1",

@@ -447,13 +447,6 @@ async fn _process_loop<
             tokio::time::delay_for(std::time::Duration::from_millis(250)).await;
             continue;
         }
-        // We can't parallelize this because of the shared mutable state
-        // of the retriever, emitter, and serializer
-
-        // We could just preallocate multiple of each - like 10 of each,
-        // and then just pick one of them at a time.
-
-        // let mut tasks = Vec::with_capacity(message_batch.len());
         let combos = message_batch
             .into_iter()
             .zip(&mut *event_handler)
