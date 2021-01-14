@@ -1,10 +1,9 @@
-#![type_length_limit = "1195029"]
+#![allow(unused_must_use)]
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::{Cursor, Stdout};
 use std::iter::FromIterator;
-use std::net::ToSocketAddrs;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::UNIX_EPOCH;
@@ -18,14 +17,11 @@ use aws_lambda_events::event::sqs::SqsEvent;
 use chrono::Utc;
 use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
 use failure::{bail, Error};
-use futures::future::join_all;
 use lambda_runtime::error::HandlerError;
 use lambda_runtime::lambda;
 use lambda_runtime::Context;
 use log::{debug, error, info, warn};
 use prost::Message;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::DynamoDbClient;
@@ -49,16 +45,6 @@ use grapl_graph_descriptions::node::NodeT;
 use grapl_observe::dgraph_reporter::DgraphMetricReporter;
 use grapl_observe::metric_reporter::MetricReporter;
 
-macro_rules! log_time {
-    ($msg:expr, $x:expr) => {{
-        let mut sw = stopwatch::Stopwatch::start_new();
-        #[allow(path_statements)]
-        let result = $x;
-        sw.stop();
-        info!("{} {} milliseconds", $msg, sw.elapsed_ms());
-        result
-    }};
-}
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
@@ -174,7 +160,7 @@ async fn upsert_node(
     }
 }
 
-fn chunk<T, U>(data: U, count: usize) -> Vec<U>
+fn _chunk<T, U>(data: U, count: usize) -> Vec<U>
 where
     U: IntoIterator<Item = T>,
     U: FromIterator<T>,
@@ -226,7 +212,7 @@ async fn upsert_edge(
     metric_reporter: &mut MetricReporter<Stdout>,
     mu: dgraph_tonic::Mutation,
 ) -> Result<(), failure::Error> {
-    let mut txn = mg_client.new_mutated_txn();
+    let txn = mg_client.new_mutated_txn();
     let mut_res = txn
         .mutate_and_commit_now(mu)
         .await
@@ -322,7 +308,7 @@ impl CompletionEventSerializer for SubgraphSerializer {
     }
 }
 
-fn time_based_key_fn(_event: &[u8]) -> String {
+fn _time_based_key_fn(_event: &[u8]) -> String {
     info!("event length {}", _event.len());
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(n) => n.as_millis(),
@@ -881,7 +867,7 @@ async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
                         },
                         object: S3Object {
                             key: Some(key),
-                            size: 0,
+                            size: None,
                             url_decoded_key: None,
                             version_id: None,
                             e_tag: None,

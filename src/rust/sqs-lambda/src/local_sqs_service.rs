@@ -1,3 +1,5 @@
+
+
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::cache::Cache;
@@ -6,8 +8,8 @@ use crate::event_decoder::PayloadDecoder;
 use grapl_observe::metric_reporter::MetricReporter;
 use log::info;
 use rusoto_s3::S3;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use std::io::{stdout, Stdout};
+use rusoto_sqs::Sqs;
+use std::io::Stdout;
 
 use crate::event_handler::EventHandler;
 use crate::event_processor::{EventProcessor, EventProcessorActor};
@@ -15,7 +17,7 @@ use crate::event_retriever::S3PayloadRetriever;
 use crate::local_sqs_service_options::{LocalSqsServiceOptions, LocalSqsServiceOptionsBuilder};
 use crate::s3_event_emitter::S3EventEmitter;
 use crate::sqs_completion_handler::{SqsCompletionHandler, SqsCompletionHandlerActor};
-use crate::sqs_consumer::{ConsumePolicy, IntoDeadline, SqsConsumer, SqsConsumerActor};
+use crate::sqs_consumer::{IntoDeadline, SqsConsumer, SqsConsumerActor};
 
 use std::error::Error;
 use std::future::Future;
@@ -35,7 +37,7 @@ fn time_based_key_fn(_event: &[u8]) -> String {
 #[tracing::instrument(skip(
     queue_url,
     dest_bucket,
-    deadline,
+    _deadline,
     s3_init,
     s3_client,
     sqs_client,
@@ -64,7 +66,7 @@ pub async fn local_sqs_service_with_options<
 >(
     queue_url: impl Into<String>,
     dest_bucket: impl Into<String>,
-    deadline: impl IntoDeadline,
+    _deadline: impl IntoDeadline,
     s3_init: SInit,
     s3_client: S3T,
     sqs_client: SqsT,

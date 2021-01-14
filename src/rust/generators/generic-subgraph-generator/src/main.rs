@@ -1,11 +1,9 @@
-#![type_length_limit = "1232619"]
-
 mod generator;
 mod models;
 mod serialization;
 mod tests;
 
-use sqs_lambda::cache::{Cache, NopCache};
+use sqs_lambda::cache::NopCache;
 
 use tracing::*;
 
