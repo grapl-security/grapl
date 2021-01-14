@@ -3,27 +3,6 @@ version: "3.8"
 services:
 
   #
-  # Rust
-  #
-
-  grapl-rust-zips:
-    image: grapl/rust-zip:${TAG:-latest}
-    build:
-      context: src/rust
-      dockerfile: Dockerfile.Makefile
-      target: zips
-      args:
-        - SCCACHE_LOCATION=${SCCACHE_LOCATION:-container}
-        - SCCACHE_BUCKET=${SCCACHE_BUCKET}
-        - PROFILE=${PROFILE:-debug}
-    volumes: 
-      - ./src/js/grapl-cdk/zips:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    environment: 
-      - TAG=${TAG:-latest}
-
-  #
   # Python services
   #
 
