@@ -1606,6 +1606,8 @@ dependencies = [
  "flate2",
  "futures 0.3.10",
  "grapl-config",
+ "hmap",
+ "itertools 0.8.2",
  "lambda_runtime",
  "log",
  "ordered-float",
