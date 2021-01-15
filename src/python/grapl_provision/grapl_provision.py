@@ -166,7 +166,7 @@ def store_schema(table, schema: "Schema"):
 
         table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
-        print(f"stored edge mapping: {f_edge} {r_edge}")
+        LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
 
 
 def provision_mg(mclient) -> None:
@@ -398,7 +398,7 @@ if __name__ == "__main__":
     sqs_t.start()
     s3_t.start()
 
-    print("Starting to provision master graph")
+    LOGGER.info("Starting to provision master graph")
     for i in range(0, 150):
         try:
             if not mg_succ:
@@ -407,13 +407,13 @@ if __name__ == "__main__":
                     local_dg_provision_client,
                 )
                 mg_succ = True
-                print("Provisioned master graph")
+                LOGGER.info("Provisioned master graph")
                 break
         except Exception as e:
             if i > 10:
                 LOGGER.error("mg provision failed with: ", e)
 
-    print("Starting to provision Secrets Manager")
+    LOGGER.info("Starting to provision Secrets Manager")
     for i in range(0, 150):
         try:
             client = boto3.client(
@@ -424,7 +424,7 @@ if __name__ == "__main__":
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
             create_secret(client)
-            print("Done provisioning Secrets Manager")
+            LOGGER.info("Done provisioning Secrets Manager")
             break
         except botocore.exceptions.ClientError as e:
             if "ResourceExistsException" in e.__class__.__name__:
@@ -436,20 +436,20 @@ if __name__ == "__main__":
                 LOGGER.error(e)
             time.sleep(1)
 
-    print("Starting to provision Grapl user")
+    LOGGER.info("Starting to provision Grapl user")
     for i in range(0, 150):
         try:
             create_user("grapluser", "graplpassword")
-            print("Done provisioning Grapl user")
+            LOGGER.info("Done provisioning Grapl user")
             break
         except Exception as e:
             if i >= 50:
                 LOGGER.error(e)
             time.sleep(1)
 
-    print("Ensuring S3/SQS completed...")
+    LOGGER.info("Ensuring S3/SQS completed...")
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
-    print("S3/SQS completed")
+    LOGGER.info("S3/SQS completed")
 
-    print("Completed provisioning")
+    LOGGER.info("Completed provisioning")
