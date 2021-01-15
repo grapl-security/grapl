@@ -1,9 +1,9 @@
 import React from 'react';
-import './LogIn.css';
+import * as Yup from "yup";
 import {Field, Form, Formik} from "formik";
+import './LogIn.css';
 import {LoginProps} from '../src/modules/GraphViz/CustomTypes';
 import {getAuthEdge} from './modules/GraphViz/engagement_edge/getApiURLs';
-import * as Yup from "yup";
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 
 const useStyles = makeStyles(
@@ -19,26 +19,6 @@ const useStyles = makeStyles(
 );
 
 const engagement_edge = getAuthEdge();
-
-export const checkLogin = async (): Promise<boolean | null> => {
-
-  try { 
-
-    const res = await fetch(`${engagement_edge}checkLogin`, 
-      {
-        method: 'post',
-        credentials: 'include',
-      }
-    );
-
-    const body = await res.json();
-
-    return (body['success'] === 'True')
-  } catch (e) {
-    console.warn(e);
-    return null
-  }
-};
 
 const validationSchema = Yup.object().shape({
   userName: Yup.string().required("Username Required"),
@@ -131,7 +111,8 @@ const sha256WithPepper = async (username: string, password: string) => {
 
 const login = async (username: string, password: string) => {
       try {
-          const res = await fetch(`${engagement_edge}login`, {
+          console.log(`logging in via /login`)
+          const res = await fetch(`/prod/auth/login`, {
               method: 'post',
               body: JSON.stringify({
                   'username': username,

@@ -24,6 +24,7 @@ macro_rules! init_grapl_env {
     };
 }
 
+#[derive(Debug)]
 pub struct ServiceEnv {
     pub service_name: String,
     pub is_local: bool,
@@ -35,12 +36,13 @@ pub fn _init_grapl_env(service_name: &str) -> (ServiceEnv, tracing_appender::non
         is_local: is_local(),
     };
     let tracing_guard = _init_grapl_log(&env);
+    tracing::info!(env=?env, "initializing environment");
     (env, tracing_guard)
 }
 
 pub fn is_local() -> bool {
     std::env::var("IS_LOCAL")
-        .map(|is_local| is_local.to_lowercase().parse().unwrap_or(false))
+        .map(|is_local| is_local.to_lowercase() == "true")
         .unwrap_or(false)
 }
 
@@ -97,6 +99,10 @@ pub fn _init_grapl_log(env: &ServiceEnv) -> tracing_appender::non_blocking::Work
             .init();
     }
     guard
+}
+
+pub fn ux_bucket() -> String {
+    std::env::var("UX_BUCKET").expect("UX_BUCKET")
 }
 
 pub fn source_queue_url() -> String {

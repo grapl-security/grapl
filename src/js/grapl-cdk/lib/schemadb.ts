@@ -35,6 +35,7 @@ export class SchemaDb extends cdk.Construct {
 
     allowRead2(service: FargateService) {
         this.schema_table.grantReadData(service.service.taskDefinition.taskRole);
+        this.schema_table.grantReadData(service.retryService.taskDefinition.taskRole);
     }
 
     allowReadWrite(service: Service) {

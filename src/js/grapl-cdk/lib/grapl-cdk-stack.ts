@@ -29,6 +29,7 @@ import { Watchful, WatchedOperation } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 import { PipelineDashboard } from './pipeline_dashboard';
 import {ContainerImage} from "@aws-cdk/aws-ecs";
+import {UxRouter} from "./ux_router";
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -66,10 +67,11 @@ class SysmonGraphGenerator extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-sysmon-subgraph-generator",
+                target: "sysmon-subgraph-generator-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             command: ["/sysmon-subgraph-generator"],
             // metric_forwarder: props.metricForwarder,
@@ -187,16 +189,18 @@ class NodeIdentifier extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-node-identifier",
+                target: "node-identifier-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             retryServiceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-node-identifier-retry-handler",
+                target: "node-identifier-retry-handler-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             command: ["/node-identifier"],
             retryCommand: ["/node-identifier-retry-handler"],
@@ -268,8 +272,13 @@ class GraphMerger extends cdk.NestedStack {
             'GraphMergerMergedCache',
             props
         );
+        // const graphMergerSecurityGroup = new ec2.SecurityGroup(scope, 'Swarm', {
+        //     description: `${props.prefix} GraphMerger security group`,
+        //     vpc: props.vpc,
+        //     allowAllOutbound: false,
+        // });
+        // grpahM
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
-
 
         this.service = new FargateService(this, id, {
             prefix: props.prefix,
@@ -289,20 +298,30 @@ class GraphMerger extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-graph-merger",
+                target: "graph-merger-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             command: ["/graph-merger"],
             // metric_forwarder: props.metricForwarder,
         });
 
+        // this.service.service.cluster.connections.allowToAnyIpv4(
+        //     ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+        // );
+        // probably only needs 9080
         this.service.service.cluster.connections.allowToAnyIpv4(
-            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+            ec2.Port.allTcp()
+        );
+        // probably only needs 9080
+        this.service.retryService.cluster.connections.allowToAnyIpv4(
+            ec2.Port.allTcp()
         );
         props.schemaTable.allowRead2(this.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster.connections);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.cluster);
     }
 }
 
@@ -328,6 +347,11 @@ class AnalyzerDispatch extends cdk.NestedStack {
             this,
             bucket_prefix + '-subgraphs-merged'
         );
+        const analyzer_bucket = s3.Bucket.fromBucketName(
+            this,
+            'analyzers-bucket',
+            bucket_prefix + "-analyzers-bucket"
+        );
         this.bucket = subgraphs_merged.bucket;
         this.topic = subgraphs_merged.topic;
 
@@ -342,7 +366,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
             prefix: props.prefix,
             environment: {
                 RUST_LOG: props.analyzerDispatcherLogLevel,
-                ANALYZERS_BUCKET: props.prefix + "-analyzers-bucket",
+                ANALYZER_BUCKET: bucket_prefix + "-analyzers-bucket",
                 EVENT_CACHE_CLUSTER_ADDRESS: dispatch_event_cache.address,
                 DISPATCHED_ANALYZER_BUCKET: props.writesTo.bucketName,
                 SUBGRAPH_MERGED_BUCKET: subgraphs_merged.bucket.bucketName,
@@ -353,15 +377,17 @@ class AnalyzerDispatch extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
-                target: "grapl-analyzer-dispatcher",
+                target: "analyzer-dispatcher-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
+                file: "Dockerfile.Makefile",
             }),
             command: ["/analyzer-dispatcher"],
             // metric_forwarder: props.metricForwarder,
         });
-
+        analyzer_bucket.grantRead(this.service.service.service.taskDefinition.taskRole);
+        analyzer_bucket.grantRead(this.service.retryService.service.taskDefinition.taskRole);
         this.service.service.cluster.connections.allowToAnyIpv4(
             ec2.Port.tcp(parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort))
         );
@@ -398,33 +424,33 @@ class AnalyzerExecutor extends cdk.NestedStack {
         const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
 
         this.service = new Service(this, id, {
-            prefix: props.prefix,
-            environment: {
-                ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
-                BUCKET_PREFIX: bucket_prefix,
-                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
-                COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
-                COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
-                MESSAGECACHE_ADDR:
+                prefix: props.prefix,
+                environment: {
+                    ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
+                    BUCKET_PREFIX: bucket_prefix,
+                    MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                    COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
+                    COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
+                    MESSAGECACHE_ADDR:
                     message_cache.cluster.attrRedisEndpointAddress,
-                MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
-                HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
-                HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
-                GRAPL_LOG_LEVEL: 'INFO',
-                GRPC_ENABLE_FORK_SUPPORT: '1',
+                    MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
+                    HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
+                    HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
+                    GRAPL_LOG_LEVEL: props.analyzerExecutorLogLevel,
+                    GRPC_ENABLE_FORK_SUPPORT: '1',
+                },
+                vpc: props.vpc,
+                reads_from: dispatched_analyzer.bucket,
+                writes_to: props.writesTo,
+                subscribes_to: dispatched_analyzer.topic,
+                opt: {
+                    runtime: lambda.Runtime.PYTHON_3_7,
+                    py_entrypoint: "lambda_function.lambda_handler"
+                },
+                version: props.version,
+                watchful: props.watchful,
+                metric_forwarder: props.metricForwarder,
             },
-            vpc: props.vpc,
-            reads_from: dispatched_analyzer.bucket,
-            writes_to: props.writesTo,
-            subscribes_to: dispatched_analyzer.topic,
-            opt: {
-                runtime: lambda.Runtime.PYTHON_3_7,
-                py_entrypoint: "lambda_function.lambda_handler"
-            },
-            version: props.version,
-            watchful: props.watchful,
-            metric_forwarder: props.metricForwarder,
-        },
         );
         const service = this.service;
 
@@ -774,6 +800,7 @@ export class GraplCdkStack extends cdk.Stack {
     prefix: string;
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
+    ux_router: UxRouter;
     model_plugin_deployer: ModelPluginDeployer;
     edgeApiGateway: apigateway.RestApi;
 
@@ -969,7 +996,7 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'EngagementEdge',
             {
-                ...graplProps, 
+                ...graplProps,
                 engagement_notebook: engagement_notebook,
                 edgeApi,
             },
@@ -978,10 +1005,19 @@ export class GraplCdkStack extends cdk.Stack {
         const ux_bucket = new s3.Bucket(this, 'EdgeBucket', {
             bucketName:
                 graplProps.prefix.toLowerCase() + '-engagement-ux-bucket',
-            publicReadAccess: true,
+            publicReadAccess: false,
             websiteIndexDocument: 'index.html',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
+
+        this.ux_router = new UxRouter(
+            this,
+            'UxRouter',
+            {
+                ...graplProps,
+                edgeApi,
+            },
+        );
 
         this.graphql_endpoint = new GraphQLEndpoint(
             this,
@@ -998,7 +1034,9 @@ export class GraplCdkStack extends cdk.Stack {
                 ...this.graphql_endpoint.apis,
                 ...this.engagement_edge.apis,
                 ...this.model_plugin_deployer.apis,
+                ...this.ux_router.apis,
             ];
+
 
             watchful.watchApiGateway(
                 'EdgeApiGatewayIntegration',
@@ -1006,6 +1044,7 @@ export class GraplCdkStack extends cdk.Stack {
                 {
                     serverErrorThreshold: 1, // any 5xx alerts
                     cacheGraph: true,
+                    watchedOperations,
                 }
             );
         }

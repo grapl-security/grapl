@@ -74,8 +74,8 @@ pub async fn run_graph_generator<
 
     let queue_name = queue_url.split("/").last()
         .unwrap_or_else(|| panic!("invalid queue_url: {}", &queue_url));
-    grapl_config::wait_for_sqs(SqsClient::from_env(), queue_name.clone()).await
-        .unwrap_or_else(|e| panic!("never found queue: {} {}", queue_name, &queue_url));
+    // grapl_config::wait_for_sqs(SqsClient::from_env(), queue_name.clone()).await
+    //    .unwrap_or_else(|e| panic!("never found queue: {} {}", queue_name, &queue_url));
 
     sqs_executor::process_loop(
         queue_url,

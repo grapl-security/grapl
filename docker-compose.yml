@@ -59,6 +59,18 @@ services:
     logging:
       driver: none
 
+
+  sqs:
+    image: localstack/localstack:0.11.5
+    environment:
+      - SERVICES=apigateway:4567
+      - HOSTNAME_EXTERNAL=localgrapl
+      - IMAGE_NAME=localstack/localstack:0.11.5
+    ports:
+      - "4567:4567"
+    logging:
+      driver: none
+
   secretsmanager:
     image: localstack/localstack:0.11.5
     environment:
@@ -151,6 +163,14 @@ services:
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
       - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-retry-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
+      - "DEST_BUCKET_NAME=local-grapl-unid-subgraphs-generated-bucket"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -216,6 +236,7 @@ services:
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
       - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
+      - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       - "DEST_BUCKET_NAME=local-grapl-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"

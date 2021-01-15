@@ -159,7 +159,7 @@ export class EngagementNotebook extends cdk.NestedStack {
         });
     }
 
-    getNotebookArn(): string { 
+    getNotebookArn(): string {
         // there's no better way to get an ARN from a Cfn (low-level Cloudformation) type object.
         if (!this.notebookInstance.notebookInstanceName) {
             throw new Error("gotta have a notebook name");
@@ -187,7 +187,7 @@ interface EngagementUxProps extends cdk.StackProps {
     edgeApi: apigateway.RestApi;
 }
 
-const packageDir = path.join(__dirname, '../edge_ux_package/');
+const packageDir = path.join(__dirname, '../edge_ux_post_replace/');
 export class EngagementUx extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props: EngagementUxProps) {
         super(scope, id, props);

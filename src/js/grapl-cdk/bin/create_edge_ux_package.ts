@@ -68,27 +68,40 @@ function getEdgeApiUrl(): string {
 }
 
 function createEdgeUxPackage(apiUrl: string) {
-    const srcDir = path.join(__dirname, '../edge_ux/');
-    const packageDir = path.join(__dirname, '../edge_ux_package/');
+    const srcDir = path.join(__dirname, '../edge_ux_pre_replace/');
+    const packageDir = path.join(__dirname, '../edge_ux_post_replace/');
 
     if (!fs.existsSync(packageDir)) {
         fs.mkdirSync(packageDir);
     }
-
+    console.log("Replacing with /prod/");
+    // TODO: Use base
+    // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
     const replaceMap = new Map();
     replaceMap.set(
-        `http://"+window.location.hostname+":8900/`,
-        apiUrl+'auth/'
+        `script src="/`,
+        `script src="/prod/`,
     );
     replaceMap.set(
-        `http://"+window.location.hostname+":5000/`,
-        apiUrl
+        `link href="/`,
+        `link href="/prod/`,
     );
     replaceMap.set(
-        `http://"+window.location.hostname+":8123/`,
-        apiUrl+'modelPluginDeployer/'
+        `"static/`,
+        `"prod/static/`,
     );
-
+    replaceMap.set(
+        `"/static/`,
+        `"/prod/static/`,
+    );
+    replaceMap.set(
+        `"url(/static/`,
+        `"url(/prod/static/`,
+    );
+    replaceMap.set(
+        `"index.html`,
+        `"prod/index.html`,
+    );
     dir.readFiles(
         srcDir,
         function (
@@ -101,21 +114,22 @@ function createEdgeUxPackage(apiUrl: string) {
 
             const targetDir = path
                 .dirname(filename)
-                .replace('edge_ux', 'edge_ux_package');
+                .replace(srcDir, packageDir);
 
             if (!fs.existsSync(targetDir)) {
                 fs.mkdirSync(targetDir, { recursive: true });
             }
 
             const newPath = filename.replace(
-                'edge_ux',
-                'edge_ux_package'
+                srcDir,
+                packageDir
             );
 
             replaceInFile(filename, replaceMap, newPath);
             next();
         },
         function (err: any, files: any) {
+            console.warn(err);
             if (err) throw err;
         }
     );

@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::future::Future;
 use std::io::Stdout;
 use std::panic::AssertUnwindSafe;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
 use futures_util::FutureExt;
 
@@ -196,7 +196,7 @@ async fn process_message<
         .as_ref()
         .expect("missing receipt_handle")
         .to_owned();
-
+    // Maintain an invisibility timeout for the message until we're done
     let msg_handle = keep_alive(
         sqs_client.clone(),
         receipt_handle.clone(),
@@ -341,17 +341,6 @@ async fn process_message<
     }
 }
 
-#[tracing::instrument(skip(
-    cache,
-    queue_url,
-    dead_letter_queue_url,
-    sqs_client,
-    event_handler,
-    s3_payload_retriever,
-    s3_emitter,
-    serializer,
-    metric_reporter,
-))]
 async fn _process_loop<
     CacheT,
     SInit,
@@ -447,13 +436,6 @@ async fn _process_loop<
             tokio::time::delay_for(std::time::Duration::from_millis(250)).await;
             continue;
         }
-        // We can't parallelize this because of the shared mutable state
-        // of the retriever, emitter, and serializer
-
-        // We could just preallocate multiple of each - like 10 of each,
-        // and then just pick one of them at a time.
-
-        // let mut tasks = Vec::with_capacity(message_batch.len());
         let combos = message_batch
             .into_iter()
             .zip(&mut *event_handler)
@@ -484,8 +466,13 @@ async fn _process_loop<
             process_futs.push(p);
         }
 
-        let (_r, ms) = futures::future::join_all(process_futs).timed().await;
-        metric_reporter.histogram("sqs_executor.all_processing.ms", ms as f64, &[]);
+        let all_processing = tokio::time::timeout(Duration::from_secs(30 * 15), futures::future::join_all(process_futs).timed());
+        match all_processing.await {
+            Ok((_r, ms)) => {
+                metric_reporter.histogram("sqs_executor.all_processing.ms", ms as f64, &[]);
+            }
+            Err(e) => error!("Timed out when processing messages: {:?}", e),
+        };
     }
 }
 
@@ -547,10 +534,6 @@ pub async fn process_loop<
         Error = SerializerErrorT,
     >,
 {
-    let queue_name = queue_url.split("/").last()
-        .unwrap_or_else(|| panic!("invalid queue_url: {}", &queue_url));
-    wait_for_sqs(sqs_client.clone(), queue_name.clone()).await;
-
     loop {
         tracing::trace!("Outer process loop");
         let f = _process_loop(

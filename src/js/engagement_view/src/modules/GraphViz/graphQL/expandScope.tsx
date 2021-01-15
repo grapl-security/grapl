@@ -48,7 +48,7 @@ export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & 
     
     console.log("in retreive graph calling graphql edge", graphql_edge);
 
-    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
+    const res = await fetch(`/prod/graphQlEndpoint/graphql`,
         {
             method: 'post',
             body: JSON.stringify({ query }),
@@ -164,4 +164,3 @@ export const expandScope = (lensName: string) => {
 
     return query;
 }
-

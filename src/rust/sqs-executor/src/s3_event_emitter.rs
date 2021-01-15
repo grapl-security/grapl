@@ -127,7 +127,7 @@ where
             let s3 = self.s3.clone();
             let mut metric_reporter = self.metric_reporter.clone();
             let put_object = async move {
-                tracing::debug!("uploading event to: {} {}", output_bucket, key);
+                tracing::info!("uploading event to: {} {}", output_bucket, key);
                 let (res, ms) = s3
                     .put_object(PutObjectRequest {
                         body: Some(event.into()),
@@ -255,6 +255,7 @@ where
     type Error = S3NotificationError;
     async fn event_notification(&self, bucket: String, key: String) -> Result<(), Self::Error> {
         if !self.enabled {
+            tracing::debug!("event notifications are disabled");
             return Ok(())
         }
         tracing::debug!(
@@ -263,6 +264,7 @@ where
             bucket,
             key
         );
+
         send_s3_notification(
             self.sqs_client.clone(),
             self.dest_queue_url.clone(),

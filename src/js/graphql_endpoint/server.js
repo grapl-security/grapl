@@ -6,9 +6,6 @@ const cors = require('cors');
 const app = express();
 const awsServerlessExpress = require('aws-serverless-express')
 const {validateJwt} = require('./modules/jwt.js');
-
-console.log('server.js entrypoint')
-
 const PORT = process.env.PORT || 5000;
 const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;  // get this from environment
 
@@ -57,11 +54,6 @@ const middleware = [cors(corsDelegate), validateJwt];
 
 app.options('*', cors(corsDelegate));
 
-// app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP({
-//     schema: schema,
-//     graphiql: IS_LOCAL
-// }));
-
 
 app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP(async (request, response, graphQLParams) => {
         console.debug({request: request, response: response, graphQLParams: graphQLParams});
@@ -73,11 +65,7 @@ app.use('/graphQlEndpoint/graphql', middleware, graphqlHTTP(async (request, resp
 );
 
 
-
-
-
 app.use(function(req, res){
-    console.warn(req);
     console.warn(req.path);
     res.sendStatus(404);
 });

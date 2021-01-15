@@ -7,7 +7,7 @@ use std::io::Stdout;
 use std::iter::FromIterator;
 
 use std::sync::{Arc, Mutex};
-use std::time::SystemTime;
+use std::time::{SystemTime, Duration};
 use std::time::UNIX_EPOCH;
 
 use async_trait::async_trait;
@@ -99,9 +99,9 @@ async fn node_key_to_uid(
     let mut vars = HashMap::new();
     vars.insert("$a".to_string(), node_key.to_string());
 
-    let query_res = txn
-        .query_with_vars(QUERY, vars)
-        .await
+    let query_res = tokio::time::timeout(Duration::from_secs(3),txn
+        .query_with_vars(QUERY, vars))
+        .await?
         .map_err(AnyhowFailure::into_failure)?;
 
     // todo: is there a way to differentiate this query metric from others?
@@ -169,20 +169,23 @@ async fn upsert_node<CacheT>(
             let mut mu = dgraph_tonic::Mutation::new();
             mu.commit_now = true;
             mu.set_set_json(&set_json);
-
+            tracing::debug!(
+                node_key=?node_key,
+                "Performing upsert"
+            );
             let mut txn = dg.new_mutated_txn();
-            let upsert_res = match txn.upsert(query, mu).await {
+            let upsert_res = match tokio::time::timeout(Duration::from_secs(10), txn.upsert(query, mu)).await? {
                 Ok(res) => res,
                 Err(e) => {
-                    txn.discard().await.map_err(AnyhowFailure::into_failure)?;
+                    tokio::time::timeout(Duration::from_secs(10), txn.discard()).await?.map_err(AnyhowFailure::into_failure)?;
                     return Err(e.into_failure().into());
-                }
+                },
             };
 
             metric_reporter
                 .mutation(&upsert_res, &[])
                 .unwrap_or_else(|e| error!("mutation metric failed: {}", e));
-            txn.commit().await.map_err(AnyhowFailure::into_failure)?;
+            tokio::time::timeout(Duration::from_secs(3), txn.commit()).await?.map_err(AnyhowFailure::into_failure)?;
 
             info!(
                 "Upsert res for {}, set_json: {} upsert_res: {:?}",
@@ -300,9 +303,9 @@ async fn upsert_edge<CacheT>(
 
     let mu = generate_edge_insert(&to, &from, &edge_name);
     let mut txn = mg_client.new_mutated_txn();
-    let mut_res = txn
-        .mutate_and_commit_now(mu)
-        .await
+    let mut_res = tokio::time::timeout(Duration::from_secs(10), txn
+        .mutate_and_commit_now(mu))
+        .await?
         .map_err(AnyhowFailure::into_failure)?;
     metric_reporter
         .mutation(&mut_res, &[])
@@ -335,10 +338,15 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let destination_bucket = grapl_config::dest_bucket();
     let cache = &mut event_caches(&env).await;
 
-    // todo: the intiializer should give a cache to each service
+    // todo: the intitializer should give a cache to each service
     let graph_merger = &mut make_ten(async {
+        let mg_alphas = grapl_config::mg_alphas();
+        tracing::debug!(
+            mg_alphas=?&mg_alphas,
+            "Connecting to mg_alphas"
+        );
         GraphMerger::new(
-            grapl_config::mg_alphas(),
+            mg_alphas,
             MetricReporter::new(&env.service_name),
             cache[0].clone(),
         )
@@ -452,12 +460,16 @@ where
         }
 
         let mut upsert_count = 0;
+        let mut failed_count = 0;
         for (node_key, upsert) in upserts.into_iter() {
-            upsert_count += 1;
             let new_uid = match upsert {
-                Ok(new_uid) => new_uid,
+                Ok(new_uid) => {
+                    upsert_count += 1;
+                    new_uid
+                },
                 Err(e) => {
-                    error!("upser_error: {}", e);
+                    failed_count += 1;
+                    error!("upsert_error: {}", e);
                     upsert_res = Some(e);
                     continue;
                 }
@@ -473,7 +485,7 @@ where
             ))));
         }
 
-        info!("Upserted: {} nodes", upsert_count);
+        info!("Upserted: {} nodes, {} failures", upsert_count, failed_count);
 
         info!("Inserting edges {}", subgraph.edges.len());
         let dynamodb = DynamoDbClient::from_env();
@@ -644,9 +656,10 @@ async fn get_r_edge(
         ..Default::default()
     };
 
-    let item = client
-        .get_item(query)
+    let item = tokio::time::timeout(Duration::from_secs(2),client
+        .get_item(query))
         .await
+        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .item;
     match item {

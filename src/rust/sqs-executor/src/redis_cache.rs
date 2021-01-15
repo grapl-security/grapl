@@ -77,7 +77,7 @@ impl RedisCache {
 
         let identity = hex::encode(&identity_bytes);
         //
-        let mut client = self.connection_pool.get().await;
+        let mut client = tokio::time::timeout(Duration::from_secs(1), self.connection_pool.get()).await?;
 
         let res = tokio::time::timeout(Duration::from_millis(200), client.exists(&identity)).await;
 
@@ -118,7 +118,7 @@ impl RedisCache {
         }
         let identity = hex::encode(identity);
 
-        let mut client = self.connection_pool.get().await;
+        let mut client = tokio::time::timeout(Duration::from_secs(1), self.connection_pool.get()).await?;
 
         tokio::time::timeout(
             Duration::from_millis(500),

@@ -1,0 +1,150 @@
+version: "3.8"
+
+services:
+
+
+  #
+  # Rust
+  #
+
+  grapl-rust-zips:
+    image: grapl/rust-zip:${TAG:-latest}
+    build:
+      context: src/rust
+      dockerfile: Dockerfile.Makefile
+      target: zips
+      args:
+        - SCCACHE_LOCATION=${SCCACHE_LOCATION:-container}
+        - SCCACHE_BUCKET=${SCCACHE_BUCKET}
+        - PROFILE=${PROFILE:-debug}
+    volumes:
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment:
+      - TAG=${TAG:-latest}
+
+
+
+  #
+  # Python services
+  #
+
+  # grapl-analyzer-deployer:
+  #   image: grapl/grapl-analyzer-deployer-zip:${TAG:-latest}
+
+  grapl-analyzer-executor-zip:
+    image: grapl/grapl-analyzer-executor-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: analyzer-executor-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip analyzer-executor-${TAG}.zip
+
+  grapl-dgraph-ttl-zip:
+    image: grapl/grapl-dgraph-ttl-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: dgraph-ttl-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip dgraph-ttl-${TAG}.zip
+
+  grapl-engagement-creator-zip:
+    image: grapl/grapl-engagement-creator-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: engagement-creator-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip engagement-creator-${TAG}.zip
+
+  grapl-engagement-edge-zip:
+    image: grapl/grapl-engagement-edge-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: engagement-edge-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip engagement-edge-${TAG}.zip
+
+  grapl-ux-router-zip:
+    image: grapl/grapl-ux-router-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: ux-router-zip
+    volumes:
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment:
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip ux-router-${TAG}.zip
+
+  grapl-model-plugin-deployer-zip:
+    image: grapl/grapl-model-plugin-deployer-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: model-plugin-deployer-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip model-plugin-deployer-${TAG}.zip
+
+  grapl-swarm-lifecycle-event-handler-zip:
+    image: grapl/grapl-swarm-lifecycle-event-handler-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: swarm-lifecycle-event-handler-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip swarm-lifecycle-event-handler-${TAG}.zip
+
+  #
+  # JS/web services
+  #
+
+  grapl-graphql-endpoint-zip:
+    image: grapl/grapl-graphql-endpoint-zip:${TAG:-latest}
+    build:
+      context: src/js/graphql_endpoint
+      dockerfile: Dockerfile.Makefile
+      target: graphql-endpoint-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip graphql-endpoint-${TAG}.zip
