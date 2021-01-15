@@ -32,6 +32,17 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     return upload_osquery_logs
 
 
+def setup_env(bucket_prefix: str):
+    if bucket_prefix == "local-grapl":
+        os.putenv("S3_ENDPOINT", "http://localhost:9000")
+        os.putenv("S3_ACCESS_KEY_ID", "minioadmin")
+        os.putenv("S3_ACCESS_KEY_SECRET", "minioadmin")
+
+        os.putenv("SQS_ENDPOINT", "http://localhost:9234")
+        os.putenv("SQS_ACCESS_KEY_ID", "dummy_cred_aws_access_key_id")
+        os.putenv("SQS_ACCESS_KEY_ID", "dummy_cred_aws_access_key_id")
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Send osquery logs to Grapl")
     parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
@@ -43,7 +54,6 @@ def parse_args():
     )
     parser.add_argument("--delay", dest="delay", default=0, type=int)
     parser.add_argument("--batch-size", dest="batch_size", default=100, type=int)
-    parser.add_argument("--use-links", dest="use_links", default=False, type=bool)
     return parser.parse_args()
 
 
@@ -51,12 +61,12 @@ if __name__ == "__main__":
     args = parse_args()
     if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
-    else:
-        upload_fn = hack_PATH_to_include_grapl_tests_common()
-        upload_fn(
-            args.bucket_prefix,
-            args.logfile,
-            delay=args.delay,
-            batch_size=args.batch_size,
-            use_links=args.use_links,
-        )
+
+    setup_env(args.bucket_prefix)
+    upload_fn = hack_PATH_to_include_grapl_tests_common()
+    upload_fn(
+        args.bucket_prefix,
+        args.logfile,
+        delay=args.delay,
+        batch_size=args.batch_size,
+    )
