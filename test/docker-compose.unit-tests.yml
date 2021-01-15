@@ -9,14 +9,13 @@ services:
   #
 
   grapl-rust-test:
-    image: grapl/rust-base:${TAG:-latest}
+    image: grapl/rust-test-unit:${TAG:-latest}
     build:
       context: ${PWD}/src/rust
       dockerfile: Dockerfile.Makefile
-      target: build
+      target: build-test-unit
       args:
-        - SCCACHE_LOCATION=${SCCACHE_LOCATION:-container}
-        - SCCACHE_BUCKET=${SCCACHE_BUCKET}
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
         - PROFILE=debug
     command: cargo test
 

@@ -9,9 +9,9 @@ services:
     build:
       context: ${PWD}/src/rust
       dockerfile: Dockerfile.Makefile
-      target: build
+      target: build-test-integration
       args:
-        - SCCACHE_LOCATION=${SCCACHE_LOCATION:-container}
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
         - PROFILE=debug
     command: bash -c "
