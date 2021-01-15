@@ -1,1 +1,3 @@
-1.49.0
+[toolchain]
+channel = "1.49.0"
+components = [ "rustfmt" ]
