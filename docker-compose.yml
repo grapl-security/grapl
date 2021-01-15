@@ -78,6 +78,11 @@ services:
     command: server /data
     ports:
       - "9000:9000"
+    environment:
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      # Explicitly _dont_ specify MINIO_REGION_NAME - it breaks things for some reason.
+      # Default is us-east-1 anyway
     networks:
       default:
         aliases:
@@ -297,6 +302,12 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -465,6 +476,7 @@ services:
       - s3
       - sqs
       - dynamodb
+      - grapl-engagement-view
 
 networks:
   default:

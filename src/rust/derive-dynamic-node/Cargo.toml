@@ -14,17 +14,16 @@ proc-macro = true
 
 [dependencies]
 grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
-grapl-config = {path="../grapl-config", version="*"}
 
-syn = "0.15.39"
-quote = "0.6.13"
-proc-macro2 = "0.4.30"
+syn = "1"
+quote = "1"
+proc-macro2 = "1"
 
-serde = "1.0.110"
-serde_json = "1.0.53"
-serde_derive = "1.0.110"
-log = "0.4.*"
+serde = "1"
+serde_json = "1"
+serde_derive = "1"
+log = "0.4"
 
 [dependencies.uuid]
-version = "0.7.4"
+version = "0.8"
 features = ["v4"]
