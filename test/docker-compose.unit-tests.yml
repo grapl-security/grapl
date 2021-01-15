@@ -17,8 +17,7 @@ services:
       args:
         - SCCACHE_LOCATION=${SCCACHE_LOCATION:-container}
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
-        - PROFILE=${PROFILE:-debug}
-    user: grapl
+        - PROFILE=debug
     command: cargo test
 
   #

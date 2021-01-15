@@ -5,7 +5,7 @@ version: "3.8"
 services:
 
   grapl-rust-node-identifier-integration-tests:
-    image: grapl/rust-base:${TAG:-latest}
+    image: grapl/grapl-node-identifier-test:${TAG:-latest}
     build:
       context: ${PWD}/src/rust
       dockerfile: Dockerfile.Makefile
@@ -13,7 +13,7 @@ services:
       args:
         - SCCACHE_LOCATION=${SCCACHE_LOCATION:-container}
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
-        - PROFILE=${PROFILE:-debug}
+        - PROFILE=debug
     command: bash -c "
       wait-for-it grapl-provision:8126 --timeout=180 &&
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"
@@ -97,7 +97,6 @@ services:
     command: --browser chrome --headless # enctrypoint is: cypress run
     volumes: 
       - .:/test
-
 
 networks:
   default:
