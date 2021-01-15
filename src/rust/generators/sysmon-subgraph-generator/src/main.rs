@@ -14,12 +14,10 @@ use log::*;
 use crate::generator::SysmonSubgraphGenerator;
 use crate::metrics::SysmonSubgraphGeneratorMetrics;
 use crate::serialization::ZstdDecoder;
-use chrono::Utc;
 use grapl_config::*;
 use grapl_observe::metric_reporter::MetricReporter;
-use sqs_lambda::event_handler::Completion;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 use std::io::Stdout;
 use std::time::Duration;
 

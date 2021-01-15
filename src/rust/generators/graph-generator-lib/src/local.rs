@@ -16,7 +16,7 @@ use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
 use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 use std::io::Stdout;
 use std::time::Duration;
 

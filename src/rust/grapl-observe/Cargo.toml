@@ -8,10 +8,10 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.11"
-lazy_static = "1.2.0"
-log = "0.4.*"
-regex = "1.1.0"
-thiserror = "1.0.20"
-dgraph-tonic = "0.8.4"
-stopwatch = "0.0.7"
+chrono = "0.4"
+lazy_static = "1"
+log = "0.4"
+regex = "1"
+thiserror = "1"
+dgraph-tonic = "0.8"
+stopwatch = "0"
