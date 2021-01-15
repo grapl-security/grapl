@@ -29,6 +29,7 @@ from grapl_analyzerlib.node_types import (
 )
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schema import Schema
+from grapl_common.env_helpers import S3ClientFactory
 
 sys.path.append("/tmp/")
 
@@ -154,18 +155,6 @@ def provision_master_graph(
 ) -> None:
     mg_schema_str = format_schemas(schemas)
     set_schema(master_graph_client, mg_schema_str)
-
-
-def get_s3_client() -> Any:
-    if IS_LOCAL:
-        return boto3.client(
-            "s3",
-            endpoint_url="http://s3:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-        )
-    else:
-        return boto3.client("s3")
 
 
 def get_dynamodb_client() -> Any:
@@ -500,7 +489,8 @@ def webhook():
         file_contents = b64decode(path.content).decode()
         plugin_files[path.path] = file_contents
 
-    upload_plugins_resp = upload_plugins(get_s3_client(), plugin_files)
+    s3 = S3ClientFactory(boto3).from_env()
+    upload_plugins_resp = upload_plugins(s3, plugin_files)
     if upload_plugins_resp:
         return upload_plugins_resp
     return respond(None, {})

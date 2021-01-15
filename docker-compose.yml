@@ -451,6 +451,8 @@ services:
       BUCKET_PREFIX: "local-grapl"
       <<: *log-level
       <<: *mg-alphas
+      <<: *sqs-endpoint
+      <<: *s3-endpoint
     tty: true
     links:
       - s3:minio
@@ -508,6 +510,8 @@ services:
       <<: *mg-alphas
       <<: *log-level
       UX_BUCKET_URL: "localhost"
+      <<: *s3-endpoint
+      <<: *sqs-endpoint
     tty: true
     links:
       - s3:minio

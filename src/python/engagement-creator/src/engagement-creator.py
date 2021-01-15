@@ -29,6 +29,7 @@ from grapl_analyzerlib.nodes.lens import LensView
 from grapl_analyzerlib.prelude import BaseView, RiskView
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.viewable import Viewable
+from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -187,21 +188,6 @@ def upsert(
     return view_type.from_dict(node_props, client)
 
 
-def get_s3_client() -> S3ServiceResource:
-    if IS_LOCAL:
-        return cast(
-            S3ServiceResource,
-            boto3.resource(
-                "s3",
-                endpoint_url="http://s3:9000",
-                aws_access_key_id="minioadmin",
-                aws_secret_access_key="minioadmin",
-            ),
-        )
-    else:
-        return cast(S3ServiceResource, boto3.resource("s3"))
-
-
 def nodes_to_attach_risk_to(
     nodes: Sequence[BaseView],
     risky_node_keys: Optional[Sequence[str]],
@@ -222,7 +208,7 @@ def create_metrics_client() -> EngagementCreatorMetrics:
 
 def lambda_handler(s3_event: S3Event, context: Any) -> None:
     mg_client = MasterGraphClient()
-    s3 = get_s3_client()
+    s3 = S3ResourceFactory(boto3).from_env()
     metrics = create_metrics_client()
 
     for event in s3_event["Records"]:
@@ -333,13 +319,7 @@ def _process_one_event(
 
 def main() -> None:
     LOGGER.info("Starting engagement-creator")
-    sqs: SQSClient = boto3.client(
-        "sqs",
-        region_name="us-east-1",
-        endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
-    )
+    sqs = SQSClientFactory(boto3).from_env()
 
     alive = False
     while not alive:

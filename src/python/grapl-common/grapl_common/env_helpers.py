@@ -9,6 +9,7 @@ from typing_extensions import Protocol
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client, S3ServiceResource
     from mypy_boto3_sqs import SQSClient
+    from mypy_boto3_dynamodb import DynamoDBServiceResource
 
 T = TypeVar("T", covariant=True)
 
@@ -129,4 +130,19 @@ class S3ResourceFactory(FromEnv["S3ServiceResource"]):
 
     def from_env(self) -> S3ServiceResource:
         client: S3ServiceResource = _client_get(self.client_create_fn, _S3Params)
+        return client
+
+_DynamoDBParams = ClientGetParams(
+    boto3_client_name="dynamodb",
+    endpoint_url_key="DYNAMODB_ENDPOINT",
+    access_key_id_key="DYNAMODB_ACCESS_KEY_ID",
+    access_key_secret_key="DYNAMODB_ACCESS_KEY_SECRET",
+)
+
+class DynamoDBResourceFactory(FromEnv["DynamoDBServiceResource"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.resource
+
+    def from_env(self) -> DynamoDBServiceResource:
+        client: DynamoDBServiceResource = _client_get(self.client_create_fn, _DynamoDBParams)
         return client
