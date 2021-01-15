@@ -151,7 +151,7 @@ def upload_logs(
             str(epoch - (epoch % (24 * 60 * 60)))
             + f"/{generator_options.key_infix}/"
             + str(epoch)
-            + rand_str(3)
+            + rand_str(6)
         )
         s3.put_object(Body=chunk_body, Bucket=bucket, Key=key)
 

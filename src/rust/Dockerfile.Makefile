@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         musl-tools \
         wait-for-it \
         wget \
+        zip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN adduser \
@@ -118,6 +119,31 @@ RUN --mount=type=cache,uid=19999,gid=19999,target=/home/grapl/.cargo/registry \
 
 # create stage alias for easy reference
 FROM build-sccache-${SCCACHE_LOCATION} AS build
+
+# zips
+FROM build AS zips
+
+ENV TAG=latest
+
+SHELL ["/bin/bash", "-c"]
+
+RUN mkdir /home/grapl/zips; \
+    grapl-zip() { \
+      TMPDIR=$(mktemp -d); \
+      cd $TMPDIR; \
+      cp "/home/grapl/target/${TARGET}/${PROFILE}/$1" bootstrap && \
+      zip -q -9 -dg /home/grapl/zips/${f}.zip bootstrap; \
+    }; \
+    for f in analyzer-dispatcher \
+			       metric-forwarder; \
+    do \
+        grapl-zip "$f" & \
+    done; \
+    wait
+
+CMD for f in $(ls /home/grapl/zips | sed -e 's/.zip$//g'); do \
+      cp -r /home/grapl/zips/${f}.zip ./${f}-${TAG}.zip; \
+    done
 
 #
 # images for running services

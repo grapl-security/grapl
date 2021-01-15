@@ -272,11 +272,13 @@ class GraphMerger extends cdk.NestedStack {
             'GraphMergerMergedCache',
             props
         );
+        // const graphMergerSecurityGroup = new ec2.SecurityGroup(scope, 'Swarm', {
+        //     description: `${props.prefix} GraphMerger security group`,
+        //     vpc: props.vpc,
+        //     allowAllOutbound: false,
+        // });
+        // grpahM
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
-
-        const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
-            vpc: props.vpc,
-        });
 
         this.service = new FargateService(this, id, {
             prefix: props.prefix,
@@ -306,15 +308,11 @@ class GraphMerger extends cdk.NestedStack {
             // metric_forwarder: props.metricForwarder,
         });
 
-        this.service.service.cluster.connections.allowToAnyIpv4(
-            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
-        );
+        // this.service.service.cluster.connections.allowToAnyIpv4(
+        //     ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+        // );
         // probably only needs 9080
         this.service.service.cluster.connections.allowToAnyIpv4(
-            ec2.Port.allTcp()
-        );
-        // probably only needs 9080
-        this.service.retryService.cluster.connections.allowToAnyIpv4(
             ec2.Port.allTcp()
         );
         // probably only needs 9080
@@ -349,6 +347,11 @@ class AnalyzerDispatch extends cdk.NestedStack {
             this,
             bucket_prefix + '-subgraphs-merged'
         );
+        const analyzer_bucket = s3.Bucket.fromBucketName(
+            this,
+            'analyzers-bucket',
+            bucket_prefix + "-analyzers-bucket"
+        );
         this.bucket = subgraphs_merged.bucket;
         this.topic = subgraphs_merged.topic;
 
@@ -363,7 +366,7 @@ class AnalyzerDispatch extends cdk.NestedStack {
             prefix: props.prefix,
             environment: {
                 RUST_LOG: props.analyzerDispatcherLogLevel,
-                ANALYZERS_BUCKET: props.prefix + "-analyzers-bucket",
+                ANALYZER_BUCKET: bucket_prefix + "-analyzers-bucket",
                 EVENT_CACHE_CLUSTER_ADDRESS: dispatch_event_cache.address,
                 DISPATCHED_ANALYZER_BUCKET: props.writesTo.bucketName,
                 SUBGRAPH_MERGED_BUCKET: subgraphs_merged.bucket.bucketName,
@@ -383,7 +386,8 @@ class AnalyzerDispatch extends cdk.NestedStack {
             command: ["/analyzer-dispatcher"],
             // metric_forwarder: props.metricForwarder,
         });
-
+        analyzer_bucket.grantRead(this.service.service.service.taskDefinition.taskRole);
+        analyzer_bucket.grantRead(this.service.retryService.service.taskDefinition.taskRole);
         this.service.service.cluster.connections.allowToAnyIpv4(
             ec2.Port.tcp(parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort))
         );
