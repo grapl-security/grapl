@@ -20,6 +20,7 @@ import pydgraph  # type: ignore
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
+from grapl_common.env_helpers import S3ClientFactory
 
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
@@ -29,7 +30,6 @@ from grapl_analyzerlib.node_types import (
 )
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schema import Schema
-from grapl_common.env_helpers import S3ClientFactory
 
 sys.path.append("/tmp/")
 
