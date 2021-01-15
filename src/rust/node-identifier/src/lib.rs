@@ -1,3 +1,5 @@
+#![allow(unused_must_use)]
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -26,7 +28,6 @@ use rusoto_core::{HttpClient, Region};
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
 use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use sha2::Digest;
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
@@ -42,6 +43,7 @@ use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnec
 use grapl_observe::metric_reporter::MetricReporter;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
+use sha2::Digest;
 use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
 use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
 use sqs_lambda::event_decoder::PayloadDecoder;
@@ -202,10 +204,10 @@ where
                 let protocol = &ip_port.protocol;
 
                 let mut node_key_hasher = sha2::Sha256::default();
-                node_key_hasher.input(port.to_string().as_bytes());
-                node_key_hasher.input(protocol.as_bytes());
+                node_key_hasher.update(port.to_string().as_bytes());
+                node_key_hasher.update(protocol.as_bytes());
 
-                let node_key = hex::encode(node_key_hasher.result());
+                let node_key = hex::encode(node_key_hasher.finalize());
 
                 ip_port.set_node_key(node_key);
 
@@ -1209,7 +1211,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
                         },
                         object: S3Object {
                             key: Some(key),
-                            size: 0,
+                            size: None,
                             url_decoded_key: None,
                             version_id: None,
                             e_tag: None,

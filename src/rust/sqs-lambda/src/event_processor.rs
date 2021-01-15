@@ -5,14 +5,13 @@ use crate::completion_handler::CompletionHandler;
 use crate::consumer::Consumer;
 use crate::event_handler::{EventHandler, OutputEvent};
 use crate::event_retriever::PayloadRetriever;
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 
 use aktors::actor::Actor;
 use async_trait::async_trait;
 
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_observe::timers::time_fut_ms;
-use serde::export::Formatter;
 use std::io::Stdout;
 use tracing::instrument;
 

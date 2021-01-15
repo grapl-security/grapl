@@ -1,3 +1,5 @@
+#![allow(unused_must_use)]
+
 extern crate futures;
 extern crate rusoto_s3;
 extern crate rusoto_sqs;
@@ -271,7 +273,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         },
                         object: S3Object {
                             key: Some(key),
-                            size: 0,
+                            size: None,
                             url_decoded_key: None,
                             version_id: None,
                             e_tag: None,

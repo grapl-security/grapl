@@ -1,5 +1,4 @@
-#![type_length_limit = "1214269"]
-// Our types are simply too powerful
+#![allow(unused_must_use)]
 
 use grapl_observe::metric_reporter::MetricReporter;
 use std::collections::HashSet;
@@ -433,7 +432,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
                         },
                         object: S3Object {
                             key: Some(key),
-                            size: 0,
+                            size: None,
                             url_decoded_key: None,
                             version_id: None,
                             e_tag: None,
