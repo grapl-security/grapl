@@ -51,6 +51,10 @@ services:
 
   typecheck-e2e-tests:
     image: grapl/grapl-e2e-tests-build:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: grapl-e2e-tests-build
     command: |
       /bin/bash -c "
         source venv/bin/activate &&
