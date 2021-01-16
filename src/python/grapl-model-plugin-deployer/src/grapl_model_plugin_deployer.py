@@ -529,9 +529,7 @@ def deploy():
 
 def get_plugin_list(s3: BaseClient):
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
-
     list_response = s3.list_objects_v2(Bucket=plugin_bucket)
-
     if not list_response.get("Contents"):
         return []
 

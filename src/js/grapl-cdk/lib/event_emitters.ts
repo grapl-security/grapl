@@ -5,13 +5,14 @@ import * as s3n from '@aws-cdk/aws-s3-notifications';
 
 import { RemovalPolicy } from '@aws-cdk/core';
 import { BlockPublicAccess, BucketEncryption } from '@aws-cdk/aws-s3';
+import { GraplS3Bucket } from './grapl_s3_bucket';
 
 export class EventEmitter {
-    readonly bucket: s3.Bucket;
+    readonly bucket: GraplS3Bucket;
     readonly topic: sns.Topic;
 
     constructor(scope: cdk.Construct, eventName: string) {
-        this.bucket = new s3.Bucket(scope, eventName + '-bucket', {
+        this.bucket = new GraplS3Bucket(scope, eventName + '-bucket', {
             bucketName: eventName + '-bucket',
             removalPolicy: RemovalPolicy.DESTROY,
             encryption: BucketEncryption.KMS_MANAGED,

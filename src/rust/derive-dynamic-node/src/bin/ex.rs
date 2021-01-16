@@ -26,6 +26,7 @@ struct InstanceDetails {
     launch_time: u64,
 }
 
+#[allow(dead_code)]
 #[derive(DynamicNode, GraplStaticId)]
 pub struct AwsEc2Instance {
     #[grapl(static_id)]

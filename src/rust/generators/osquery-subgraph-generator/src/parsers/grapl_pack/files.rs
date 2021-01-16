@@ -1,13 +1,12 @@
+#![allow(non_camel_case_types)]
+
 use super::from_str;
 use crate::parsers::{OSQueryResponse, PartiallyDeserializedOSQueryLog};
 use grapl_graph_descriptions::file::FileState;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_graph_descriptions::node::NodeT;
-use grapl_graph_descriptions::process::ProcessState;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
-use std::fmt::Display;
 use std::str::FromStr;
 
 /// See https://osquery.io/schema/4.5.0/#processes

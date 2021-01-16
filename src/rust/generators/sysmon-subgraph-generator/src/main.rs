@@ -2,10 +2,28 @@
 
 use log::*;
 
+<<<<<<< HEAD
 use rusoto_sqs::SqsClient;
 
 use grapl_config::*;
 use grapl_observe::metric_reporter::MetricReporter;
+=======
+use crate::generator::SysmonSubgraphGenerator;
+use crate::metrics::SysmonSubgraphGeneratorMetrics;
+use crate::serialization::ZstdDecoder;
+use grapl_config::*;
+use grapl_observe::metric_reporter::MetricReporter;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use std::io::Stdout;
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let env = grapl_config::init_grapl_env!();
+
+    let metrics = SysmonSubgraphGeneratorMetrics::new(&env.service_name);
+>>>>>>> staging
 
 use sqs_executor::event_retriever::S3PayloadRetriever;
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate::generator::GenericSubgraphGenerator;
 use crate::models::GenericEvent;
 use grapl_service::decoder::ZstdJsonDecoder;

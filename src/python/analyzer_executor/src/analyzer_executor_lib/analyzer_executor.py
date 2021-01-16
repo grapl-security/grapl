@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import hashlib
 import inspect
@@ -12,10 +14,11 @@ from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
+from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
 from grapl_analyzerlib.analyzer import Analyzer
@@ -25,6 +28,11 @@ from grapl_analyzerlib.nodes.base import BaseView
 from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client, S3ServiceResource
+    from mypy_boto3_sqs import SQSClient
+
 
 # Set up logger (this is for the whole file, including static methods)
 LOGGER = logging.getLogger(__name__)
@@ -189,10 +197,12 @@ class AnalyzerExecutor:
 
         client = GraphClient()
 
-        s3 = get_s3_client(self.is_local)
+        s3 = S3ResourceFactory(boto3).from_env()
 
         load_plugins(
-            os.environ["BUCKET_PREFIX"], s3, os.path.abspath(MODEL_PLUGINS_DIR)
+            os.environ["BUCKET_PREFIX"],
+            s3.meta.client,
+            os.path.abspath(MODEL_PLUGINS_DIR),
         )
 
         for event in events["Records"]:
@@ -364,15 +374,15 @@ class AnalyzerExecutor:
             raise
 
 
-def parse_s3_event(s3, event) -> str:
+def parse_s3_event(s3: S3ServiceResource, event) -> str:
     bucket = event["s3"]["bucket"]["name"]
     key = event["s3"]["object"]["key"]
     return download_s3_file(s3, bucket, key)
 
 
-def download_s3_file(s3, bucket: str, key: str) -> str:
+def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
     obj = s3.Object(bucket, key)
-    return obj.get()["Body"].read()
+    return obj.get()["Body"].read().decode("utf-8")
 
 
 def is_analyzer(analyzer_name, analyzer_cls):
@@ -398,7 +408,7 @@ def chunker(seq, size):
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def emit_event(s3, event: ExecutionHit, is_local: bool) -> None:
+def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     event_s = json.dumps(
@@ -417,16 +427,10 @@ def emit_event(s3, event: ExecutionHit, is_local: bool) -> None:
     obj = s3.Object(
         f"{os.environ['BUCKET_PREFIX']}-analyzer-matched-subgraphs-bucket", key
     )
-    obj.put(Body=event_s)
+    obj.put(Body=event_s.encode("utf-8"))
 
     if is_local:
-        sqs = boto3.client(
-            "sqs",
-            region_name="us-east-1",
-            endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
+        sqs = SQSClientFactory(boto3).from_env()
         send_s3_event(
             sqs,
             "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
@@ -476,7 +480,7 @@ def into_sqs_message(bucket: str, key: str) -> str:
 
 
 def send_s3_event(
-    sqs_client: Any,
+    sqs_client: SQSClient,
     queue_url: str,
     output_bucket: str,
     output_path: str,
@@ -488,16 +492,3 @@ def send_s3_event(
             key=output_path,
         ),
     )
-
-
-def get_s3_client(is_local: bool):
-    if is_local:
-        return boto3.resource(
-            "s3",
-            endpoint_url="http://s3:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-        )
-
-    else:
-        return boto3.resource("s3")

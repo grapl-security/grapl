@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 #![type_length_limit = "1214269"]
 
 // Our types are simply too powerful
 pub mod dispatch_event;
+=======
+#![allow(unused_must_use)]
+>>>>>>> staging
 
 use std::sync::Arc;
 
@@ -206,10 +210,67 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
         cache,
         sqs_client.clone(),
         analyzer_dispatcher,
+<<<<<<< HEAD
         s3_payload_retriever,
         s3_emitter,
         serializer,
         MetricReporter::new(&env.service_name),
+=======
+        NopCache {},
+        MetricReporter::<Stdout>::new("analyzer-dispatcher"),
+        |_, event_result| {
+            dbg!(event_result);
+        },
+        move |bucket, key| async move {
+            let output_event = S3Event {
+                records: vec![S3EventRecord {
+                    event_version: None,
+                    event_source: None,
+                    aws_region: Some("us-east-1".to_owned()),
+                    event_time: chrono::Utc::now(),
+                    event_name: None,
+                    principal_id: S3UserIdentity { principal_id: None },
+                    request_parameters: S3RequestParameters {
+                        source_ip_address: None,
+                    },
+                    response_elements: Default::default(),
+                    s3: S3Entity {
+                        schema_version: None,
+                        configuration_id: None,
+                        bucket: S3Bucket {
+                            name: Some(bucket),
+                            owner_identity: S3UserIdentity { principal_id: None },
+                            arn: None,
+                        },
+                        object: S3Object {
+                            key: Some(key),
+                            size: None,
+                            url_decoded_key: None,
+                            version_id: None,
+                            e_tag: None,
+                            sequencer: None,
+                        },
+                    },
+                }],
+            };
+
+            let sqs_client = init_sqs_client();
+
+            // publish to SQS
+            sqs_client
+                .send_message(SendMessageRequest {
+                    message_body: serde_json::to_string(&output_event)
+                        .expect("failed to encode s3 event"),
+                    queue_url: std::env::var("ANALYZER_EXECUTOR_QUEUE_URL")
+                        .expect("ANALYZER_EXECUTOR_QUEUE_URL"),
+                    ..Default::default()
+                })
+                .await?;
+
+            Ok(())
+        },
+        options_builder.build(),
+>>>>>>> staging
     )
     .await;
 

@@ -37,32 +37,33 @@ export class AnalyzerExecutor extends cdk.NestedStack {
         const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
 
         this.service = new Service(this, id, {
-            prefix: props.prefix,
-            environment: {
-                ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
-                BUCKET_PREFIX: bucket_prefix,
-                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
-                COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
-                COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
-                MESSAGECACHE_ADDR: message_cache.cluster.attrRedisEndpointAddress,
-                MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
-                HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
-                HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
-                GRAPL_LOG_LEVEL: 'INFO',
-                GRPC_ENABLE_FORK_SUPPORT: '1',
+                prefix: props.prefix,
+                environment: {
+                    ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
+                    BUCKET_PREFIX: bucket_prefix,
+                    MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                    COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
+                    COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
+                    MESSAGECACHE_ADDR:
+                    message_cache.cluster.attrRedisEndpointAddress,
+                    MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
+                    HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
+                    HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
+                    GRAPL_LOG_LEVEL: props.analyzerExecutorLogLevel,
+                    GRPC_ENABLE_FORK_SUPPORT: '1',
+                },
+                vpc: props.vpc,
+                reads_from: dispatched_analyzer.bucket,
+                writes_to: props.writesTo,
+                subscribes_to: dispatched_analyzer.topic,
+                opt: {
+                    runtime: lambda.Runtime.PYTHON_3_7,
+                    py_entrypoint: "lambda_function.lambda_handler"
+                },
+                version: props.version,
+                watchful: props.watchful,
+                metric_forwarder: props.metricForwarder,
             },
-            vpc: props.vpc,
-            reads_from: dispatched_analyzer.bucket,
-            writes_to: props.writesTo,
-            subscribes_to: dispatched_analyzer.topic,
-            opt: {
-                runtime: lambda.Runtime.PYTHON_3_7,
-                py_entrypoint: "lambda_function.lambda_handler"
-            },
-            version: props.version,
-            watchful: props.watchful,
-            metric_forwarder: props.metricForwarder,
-        }
         );
         const service = this.service;
 

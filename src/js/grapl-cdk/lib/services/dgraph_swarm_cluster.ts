@@ -3,10 +3,10 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as path from 'path';
-import { Swarm } from '../swarm';
-import { Watchful } from 'cdk-watchful';
+import {Swarm} from '../swarm';
+import {Watchful} from 'cdk-watchful';
 
-export interface DGraphSwarmClusterProps {
+interface DGraphSwarmClusterProps {
     prefix: string;
     version: string;
     vpc: ec2.IVpc;
@@ -60,7 +60,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         // grant read access to the swarm instances
         dgraphConfigBucket.grantRead(this.dgraphSwarmCluster.swarmInstanceRole);
 
-        const dgraphDir = path.join(__dirname, '../../dgraph/');
+        const dgraphDir = path.join(__dirname, '../dgraph/');
         new s3deploy.BucketDeployment(this, "dgraphConfigDeployment", {
             sources: [s3deploy.Source.asset(dgraphDir)],
             destinationBucket: dgraphConfigBucket,

@@ -1,12 +1,15 @@
-#![type_length_limit = "1232619"]
-
 mod generator;
 mod models;
 mod tests;
 
+<<<<<<< HEAD
 use grapl_service::decoder::ZstdJsonDecoder;
 use grapl_service::serialization::SubgraphSerializer;
 use sqs_executor::cache::{Cache, NopCache};
+=======
+use sqs_lambda::cache::NopCache;
+
+>>>>>>> staging
 use tracing::*;
 
 use grapl_config::{event_cache, event_caches};

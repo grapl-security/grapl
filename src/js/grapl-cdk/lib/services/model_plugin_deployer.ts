@@ -6,6 +6,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 import { WatchedOperation } from 'cdk-watchful';
 import { GraplServiceProps } from '../grapl-cdk-stack';
 import { SchemaDb } from '../schemadb';
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
@@ -54,12 +55,12 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
+                GRAPL_LOG_LEVEL: props.defaultLogLevel,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 BUCKET_PREFIX: props.prefix,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
-                GRAPL_LOG_LEVEL: 'DEBUG',
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
@@ -93,8 +94,8 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         this.apis = [];
         for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
             for (const resourcePath of ['/gitWebhook', '/deploy', '/listModelPlugins', 'deleteModelPlugin', '/{proxy+}']) {
-                this.apis.push({ httpMethod, resourcePath });
-                this.apis.push({ httpMethod, resourcePath: '/modelPluginDeployer' + resourcePath });
+                this.apis.push({httpMethod, resourcePath});
+                this.apis.push({httpMethod, resourcePath: '/modelPluginDeployer' + resourcePath});
             }
         }
     }

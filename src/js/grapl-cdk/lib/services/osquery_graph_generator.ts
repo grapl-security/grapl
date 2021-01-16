@@ -30,9 +30,9 @@ export class OSQueryGraphGenerator extends cdk.NestedStack {
         const service = new Service(this, id, {
             prefix: props.prefix,
             environment: {
+                RUST_LOG: props.osquerySubgraphGeneratorLogLevel,
                 BUCKET_PREFIX: bucket_prefix,
-                EVENT_CACHE_ADDR: event_cache.cluster.attrRedisEndpointAddress,
-                EVENT_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
+                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
             },
             vpc: props.vpc,
             reads_from: osquery_log.bucket,

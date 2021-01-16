@@ -28,14 +28,14 @@ export class SchemaDb extends cdk.Construct {
         });
     }
 
-    allowRead(service: Service) {
-        this.schema_table.grantReadData(service.event_handler);
-        this.schema_table.grantReadData(service.event_retry_handler);
-    }
-
-    allowRead2(service: FargateService) {
-        this.schema_table.grantReadData(service.service.taskDefinition.taskRole);
-        this.schema_table.grantReadData(service.retryService.taskDefinition.taskRole);
+    allowRead(service: Service|FargateService) {
+        if (service instanceof FargateService) {
+            this.schema_table.grantReadData(service.service.taskDefinition.taskRole);
+            this.schema_table.grantReadData(service.retryService.taskDefinition.taskRole);
+        } else {
+            this.schema_table.grantReadData(service.event_handler);
+            this.schema_table.grantReadData(service.event_retry_handler);
+        }
     }
 
     allowReadWrite(service: Service) {

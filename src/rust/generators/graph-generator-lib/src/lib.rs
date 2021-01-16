@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 pub use grapl_config;
 pub use grapl_graph_descriptions::graph_description::*;
 pub use grapl_observe::metric_reporter::MetricReporter;
@@ -16,6 +17,11 @@ use std::fmt::Debug;
 use sqs_executor::errors::CheckedError;
 use grapl_service::serialization::SubgraphSerializer;
 use sqs_executor::redis_cache::RedisCache;
+=======
+#![allow(unused_must_use)]
+
+use std::io::Stdout;
+>>>>>>> staging
 
 pub async fn run_graph_generator<
     InputEventT,
@@ -40,8 +46,18 @@ pub async fn run_graph_generator<
 {
     let destination_bucket = grapl_config::dest_bucket();
 
+<<<<<<< HEAD
     let sqs_client = SqsClient::from_env();
     let s3_client = S3Client::from_env();
+=======
+use grapl_config as config;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_observe::metric_reporter::MetricReporter;
+use sqs_lambda::event_decoder::PayloadDecoder;
+use sqs_lambda::event_handler::EventHandler;
+use sqs_lambda::sqs_completion_handler::CompletionPolicy;
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+>>>>>>> staging
 
     let cache = &mut event_caches(&env).await;
 
