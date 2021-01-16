@@ -32,7 +32,6 @@ __pycache__/
 *$py.class
 
 target/
-.cargo
 
 # C extensions
 *.so
