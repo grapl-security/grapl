@@ -1,0 +1,105 @@
+version: "3.8"
+
+# environment variable PWD is assumed to be grapl root directory
+
+services:
+
+  #
+  # Python services
+  #
+
+  typecheck-grapl-common:
+    image: grapl/grapl-grapl-common-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: grapl-common-test
+    command: |
+      /bin/bash -c "
+        source venv/bin/activate &&
+        cd grapl-common &&
+        pip install '.[typecheck]' &&
+        mypy .
+        "
+  
+  typecheck-grapl-tests-common:
+    image: grapl/grapl-tests-common-python-build:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: grapl-tests-common-build
+    command: |
+      /bin/bash -c "
+        source venv/bin/activate &&
+        cd grapl-tests-common &&
+        pip install '.[typecheck]' &&
+        mypy .
+        "
+  
+  typecheck-engagement-creator:
+    image: grapl/grapl-engagement-creator-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: engagement-creator-test
+    command: |
+      /bin/bash -c "
+        source venv/bin/activate &&
+        cd engagement-creator &&
+        mypy .
+        "
+
+  typecheck-e2e-tests:
+    image: grapl/grapl-e2e-tests-build:${TAG:-latest}
+    command: |
+      /bin/bash -c "
+        source venv/bin/activate &&
+        pip install mypy &&
+        mypy -p grapl_e2e_tests
+        "
+
+  # typecheck-analyzer-deployer:
+  #   image: grapl/grapl-analyzer-deployer-test:${TAG:-latest}
+
+  typecheck-model-plugin-deployer:
+    image: grapl/grapl-model-plugin-deployer-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: model-plugin-deployer-test
+    command: |
+      /bin/bash -c "
+        source venv/bin/activate &&
+        touch venv/lib/python3.7/site-packages/chalice/py.typed &&
+        cd model-plugin-deployer &&
+        pip install mypy &&
+        mypy .
+        "
+
+  typecheck-engagement-edge:
+    image: grapl/grapl-engagement-edge-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: engagement-edge-test
+    command: |
+      /bin/bash -c "
+        source venv/bin/activate &&
+        touch venv/lib/python3.7/site-packages/chalice/py.typed &&
+        cd engagement_edge &&
+        mypy .
+        "
+
+  typecheck-grapl-analyzerlib:
+    image: grapl/grapl-analyzerlib-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: grapl-analyzerlib-test
+    command: |
+      /bin/bash -c "
+        source venv/bin/activate &&
+        cd grapl_analyzerlib &&
+        pip install '.[typecheck]' &&
+        pytype --config ./pytype.cfg .
+        "

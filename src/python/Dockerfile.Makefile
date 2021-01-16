@@ -33,8 +33,6 @@ RUN python3 -mvenv venv && \
     pip install --upgrade pip && \
     pip install wheel grpcio chalice hypothesis pytest pytest-xdist
 
-# CMD :
-
 #
 # base deploy
 #
@@ -63,8 +61,6 @@ RUN python3 -mvenv venv && \
     source venv/bin/activate && \
     pip install --upgrade pip
 
-# CMD :
-
 #
 # test deps
 #
@@ -74,6 +70,8 @@ FROM grapl-python-build AS python-test-deps
 COPY --chown=grapl python/python_test_deps python_test_deps
 
 RUN python_test_deps/download_requirements.sh
+
+
 
 #
 # graph-descriptions
@@ -494,3 +492,35 @@ FROM grapl-python-build AS grapl-provision
 
 COPY --chown=grapl python/grapl_provision grapl_local_provision
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+
+#
+# grapl-tests-common-build
+#
+FROM grapl-python-build AS grapl-tests-common-build
+
+COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+COPY --from=python-test-deps /home/grapl/python_test_deps python_test_deps
+
+RUN python_test_deps/install_requirements.sh
+
+COPY --chown=grapl python/grapl-tests-common grapl-tests-common
+RUN source venv/bin/activate && \
+    cd grapl-tests-common && \
+    pip install . && \
+    python setup.py sdist bdist_wheel
+
+
+#
+# E2E tests
+#
+FROM grapl-tests-common-build AS grapl-e2e-tests-build
+
+COPY --chown=grapl python/grapl_e2e_tests grapl_e2e_tests
+
+# Allow user `grapl` to write to the mount point
+USER root
+RUN mkdir /mnt/dynamodb_dump && chown grapl /mnt/dynamodb_dump
+USER grapl
+
+RUN source venv/bin/activate && \
+    pip install zstd

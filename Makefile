@@ -67,9 +67,17 @@ build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.unit-tests.yml \
 		$(JS_UNIT_TEST)
 
+.PHONY: build-test-typecheck
+build-test-typecheck:
+	docker buildx bake -f ./test/docker-compose.typecheck-tests.yml
+
 .PHONY: build-test-integration
 build-test-integration:
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.Makefile.yml -f ./test/docker-compose.integration-tests.yml
+
+.PHONY: build-test-e2e
+build-test-e2e:
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.Makefile.yml -f ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-local
 build-local: ## build services for local Grapl
@@ -101,11 +109,24 @@ test-unit-python: build-test-unit-python ## build and run unit tests - Python
 test-unit-js: build-test-unit-js ## build and run unit tests - JavaScript
 	$(RUN_UNIT_TEST) $(JS_UNIT_TEST)
 
+.PHONY: test-typecheck
+test-typecheck: build-test-typecheck ## build and run typecheck tests
+	test/docker-compose-with-error.sh -f ./test/docker-compose.typecheck-tests.yml
+
 .PHONY: test-integration
 test-integration: build-test-integration ## build and run integration tests
 	docker-compose -f docker-compose.Makefile.yml up --force-recreate -d
 	# save exit code to allow for `make down` in event of test failure
 	test/docker-compose-with-error.sh -f ./test/docker-compose.integration-tests.yml; \
+	EXIT_CODE=$$?; \
+	$(MAKE) down; \
+	exit $$EXIT_CODE
+
+.PHONY: test-e2e
+test-e2e: build-test-e2e ## build and run e2e tests
+	docker-compose -f docker-compose.Makefile.yml up --force-recreate -d
+	# save exit code to allow for `make down` in event of test failure
+	test/docker-compose-with-error.sh -f ./test/docker-compose.e2e-tests.yml; \
 	EXIT_CODE=$$?; \
 	$(MAKE) down; \
 	exit $$EXIT_CODE

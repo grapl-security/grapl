@@ -1,0 +1,41 @@
+version: "3.8"
+
+# environment variable PWD is assumed to be grapl root directory
+
+services:
+
+  grapl-e2e-tests:
+    image: grapl/grapl-e2e-tests-build:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile.Makefile
+      target: grapl-e2e-tests-build
+    command: |
+      bash -c "
+        wait-for-it grapl-provision:8126 --timeout=60 &&
+        source venv/bin/activate && 
+        cd grapl_e2e_tests && 
+        python3 ./main.py"
+    volumes: 
+      - dynamodb_dump:/mnt/dynamodb_dump
+      - ${PWD}/etc:/home/grapl/etc:ro
+    environment:
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - BUCKET_PREFIX=local-grapl
+      - IS_LOCAL=True
+      - MG_ALPHAS=grapl-master-graph-db:9080
+      - DEBUG_SERVICES=${DEBUG_SERVICES}
+      - DUMP_ARTIFACTS=${DUMP_ARTIFACTS:-False}
+      - SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324
+      - SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id
+      - SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key
+      - S3_ENDPOINT=http://s3:9000
+      - S3_ACCESS_KEY_ID=minioadmin
+      - S3_ACCESS_KEY_SECRET=minioadmin
+
+volumes:
+  dynamodb_dump:
+networks:
+  default:
+    external:
+      name: grapl-network
