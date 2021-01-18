@@ -218,3 +218,4 @@ See [Provisioning
 Grapl](https://grapl.readthedocs.io/en/latest/setup/aws.html#provisioning-grapl)
 for instructions to provision the database and start using your Grapl
 deployment.
+Please see our ReadTheDocs "AWS Setup" instructions at https://grapl.readthedocs.io
