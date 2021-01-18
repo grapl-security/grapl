@@ -12,6 +12,6 @@ rustflags = [
     "--deny=dead_code",
     "--deny=non_snake_case",
     "--allow=unused_imports",
-    "--allow=unused_mut",
+    "--deny=unused_mut",
     "--allow=unused_variables"
 ]
