@@ -1,11 +1,11 @@
 use std::future::Future;
-use stopwatch::Stopwatch;
 use std::io::Stdout;
+use stopwatch::Stopwatch;
 
+use crate::metric_reporter::{MetricReporter, TagPair};
 use pin_project::pin_project;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use crate::metric_reporter::{MetricReporter, TagPair};
 
 pub fn time_it<F, R>(f: F) -> (R, std::time::Duration)
 where
@@ -85,9 +85,14 @@ where
 }
 
 pub trait HistogramFutExt<'a>: Future + 'a {
-    fn histogram(self, msg: impl Into<String>, tags: &'a [TagPair<'a>], m: &'a mut MetricReporter<Stdout>) -> HistoGramFut<'a, Self>
-        where
-            Self: Sized,
+    fn histogram(
+        self,
+        msg: impl Into<String>,
+        tags: &'a [TagPair<'a>],
+        m: &'a mut MetricReporter<Stdout>,
+    ) -> HistoGramFut<'a, Self>
+    where
+        Self: Sized,
     {
         HistoGramFut::new(self, msg, tags, m)
     }
@@ -95,22 +100,33 @@ pub trait HistogramFutExt<'a>: Future + 'a {
 
 #[pin_project]
 #[must_use = "futures do nothing unless you `.await` or poll them"]
-pub struct HistoGramFut<'a, Fut>(#[pin] Fut, Stopwatch, String, &'a [TagPair<'a>], &'a mut MetricReporter<Stdout>);
+pub struct HistoGramFut<'a, Fut>(
+    #[pin] Fut,
+    Stopwatch,
+    String,
+    &'a [TagPair<'a>],
+    &'a mut MetricReporter<Stdout>,
+);
 
 impl<'a, T> HistogramFutExt<'a> for T where T: Future + 'a {}
 
 impl<'a, Fut> HistoGramFut<'a, Fut>
-    where
-        Fut: Future,
+where
+    Fut: Future,
 {
-    pub(super) fn new(future: Fut, msg: impl Into<String>, tags: &'a [TagPair<'a>], m: &'a mut MetricReporter<Stdout>) -> Self {
+    pub(super) fn new(
+        future: Fut,
+        msg: impl Into<String>,
+        tags: &'a [TagPair<'a>],
+        m: &'a mut MetricReporter<Stdout>,
+    ) -> Self {
         HistoGramFut(future, Stopwatch::new(), msg.into(), tags, m)
     }
 }
 
 impl<'a, Fut> Future for HistoGramFut<'a, Fut>
-    where
-        Fut: Future,
+where
+    Fut: Future,
 {
     type Output = Fut::Output;
 
@@ -128,7 +144,7 @@ impl<'a, Fut> Future for HistoGramFut<'a, Fut>
                 let metric_reporter: &mut &mut MetricReporter<_> = _self.4;
                 let _ = metric_reporter.histogram(msg, ms, tags);
                 Poll::Ready(result)
-            },
+            }
             Poll::Pending => Poll::Pending,
         }
     }

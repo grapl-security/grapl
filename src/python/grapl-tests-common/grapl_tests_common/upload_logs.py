@@ -117,34 +117,9 @@ def upload_logs(
 
     # Ugly hack to cheaply disable batching
     batch_size = batch_size if batch_size is not None else maxsize
-
-<<<<<<< HEAD
-    sqs = None
-    local_sqs_endpoint_url = "http://sqs:9324" if use_links else "http://localhost:9324"
-    # local-grapl prefix is reserved for running Grapl locally
-    if prefix == "local-grapl":
-        s3 = boto3.client(
-            "s3",
-            endpoint_url="http://s3:9000" if use_links else "http://localhost:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-            region_name="us-east-1",
-        )
-        sqs = boto3.client(
-            "sqs",
-            endpoint_url=local_sqs_endpoint_url,
-            region_name="us-east-1",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
-
-    else:
-        s3 = boto3.client("s3")
-=======
     requires_manual_eventing = prefix == "local-grapl"
     s3 = s3_client or S3ClientFactory(boto3).from_env()
     sqs = sqs_client or SQSClientFactory(boto3).from_env()
->>>>>>> staging
 
     with open(logfile, "rb") as b:
         body = b.readlines()

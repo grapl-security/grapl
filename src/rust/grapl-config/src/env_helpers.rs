@@ -22,7 +22,6 @@ pub trait FromEnv<S> {
     fn from_env() -> S;
 }
 
-
 impl From<&ServiceEnv> for S3ToSqsEventNotifier<SqsClient> {
     fn from(env: &ServiceEnv) -> Self {
         // todo: When local we should return a different event notifier

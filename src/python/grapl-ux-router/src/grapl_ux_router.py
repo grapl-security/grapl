@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3.service_resource import (
         Bucket,
     )
+
     pass
 
 
@@ -36,25 +37,26 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-CONTENT_ENCODING = 'gzip'
+CONTENT_ENCODING = "gzip"
 
 # Must never hold more than 15 values
 MEDIA_TYPE_MAP = {
-    'json': 'application/json',
-    'ico': 'image/x-icon',
-    'png': 'image/png',
-    'html': 'text/html',
-    'txt': 'text/plain',
-    'css': 'text/css',
-    'js': 'text/javascript',
-    'chunk.js': 'text/javascript',
-    'chunk.css': 'text/css',
-    'map': 'application/json',
-    '': 'application/octet-stream'
+    "json": "application/json",
+    "ico": "image/x-icon",
+    "png": "image/png",
+    "html": "text/html",
+    "txt": "text/plain",
+    "css": "text/css",
+    "js": "text/javascript",
+    "chunk.js": "text/javascript",
+    "chunk.css": "text/css",
+    "map": "application/json",
+    "": "application/octet-stream",
 }
 
 if IS_LOCAL:
     assert len(MEDIA_TYPE_MAP) < 15
+
 
 class LazyUxBucket:
     def __init__(self) -> None:
@@ -80,13 +82,13 @@ class LazyUxBucket:
 
         # todo: We could just compress right here instead of allocating this intermediary
         # Or we could compress the files in s3?
-        return obj.get()['Body'].read()
+        return obj.get()["Body"].read()
 
     def _retrieve_bucket(self) -> Bucket:
         if IS_LOCAL:
             return self._retrieve_bucket_local()
         else:
-            s3 = boto3.resource('s3')
+            s3 = boto3.resource("s3")
             return s3.Bucket(UX_BUCKET_NAME)
 
     def _retrieve_bucket_local(self) -> Bucket:
@@ -150,7 +152,9 @@ def respond(
         override = app.current_request.headers.get("origin", "")
         headers = {"Access-Control-Allow-Origin": override, **headers}
 
-    compressed_body = web_compress.compress({"error": err} if err else json.dumps({"success": res}))
+    compressed_body = web_compress.compress(
+        {"error": err} if err else json.dumps({"success": res})
+    )
 
     return Response(
         body=compressed_body,
@@ -192,7 +196,7 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
 
 
 def not_found() -> Response:
-    body = json.dumps({'Error': "Not Found"}).encode('utf8')
+    body = json.dumps({"Error": "Not Found"}).encode("utf8")
     return Response(
         status_code=404,
         body=web_compress.compress(body),
@@ -202,7 +206,7 @@ def not_found() -> Response:
             "Access-Control-Allow-Methods": "GET,OPTIONS",
             "X-Requested-With": "*",
             "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
-        }
+        },
     )
 
 
@@ -213,7 +217,7 @@ def get_media_type(resource_name: str) -> str:
         media_type = MEDIA_TYPE_MAP.get(name)
         if media_type:
             return media_type
-    return 'application/octet-stream'
+    return "application/octet-stream"
 
 
 def _route_to_resource(resource_name: str) -> Response:
@@ -221,7 +225,9 @@ def _route_to_resource(resource_name: str) -> Response:
     if not resource:
         return not_found()
     content_type = get_media_type(resource_name)
-    LOGGER.debug(f'setting content-type:  content_type: {content_type} resource_name: {resource_name}')
+    LOGGER.debug(
+        f"setting content-type:  content_type: {content_type} resource_name: {resource_name}"
+    )
     return Response(
         body=web_compress.compress(resource),
         status_code=200,
@@ -245,13 +251,14 @@ def prod_nop_route() -> Response:
         return respond(None, {})
 
     path = app.current_request.context["path"]
-    if path == '/prod/':
-        return _route_to_resource('index.html')
-    elif path.startswith('/prod/'):
-        resource_name = path.split('/prod/')[1]
+    if path == "/prod/":
+        return _route_to_resource("index.html")
+    elif path.startswith("/prod/"):
+        resource_name = path.split("/prod/")[1]
         return _route_to_resource(resource_name)
     else:
         return _route_to_resource(path)
+
 
 @app.route("/{proxy+}", methods=["OPTIONS", "GET"])
 def nop_route() -> Response:
@@ -260,10 +267,10 @@ def nop_route() -> Response:
         return respond(None, {})
 
     path = app.current_request.context["path"]
-    if path == '/prod/':
-        return _route_to_resource('index.html')
-    elif path.startswith('/prod/'):
-        resource_name = path.split('/prod/')[1]
+    if path == "/prod/":
+        return _route_to_resource("index.html")
+    elif path.startswith("/prod/"):
+        resource_name = path.split("/prod/")[1]
         return _route_to_resource(resource_name)
     else:
         return _route_to_resource(path)
@@ -274,10 +281,11 @@ def root_nop_route() -> Response:
     LOGGER.info(f'root_nop_route {app.current_request.context["path"]}')
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
-    return _route_to_resource('index.html')
+    return _route_to_resource("index.html")
 
 
 if IS_LOCAL:
+
     @app.route("/static/js/{proxy+}", methods=["OPTIONS", "GET"])
     def static_js_resource_root_nop_route() -> Response:
         LOGGER.info(f'static_js_resource {app.current_request.context["path"]}')
@@ -291,7 +299,6 @@ if IS_LOCAL:
         if app.current_request.method == "OPTIONS":
             return respond(None, {})
         return _route_to_resource(app.current_request.context["path"])
-
 
     @app.route("/static/media/{proxy+}", methods=["OPTIONS", "GET"])
     def static_media_resource_root_nop_route() -> Response:

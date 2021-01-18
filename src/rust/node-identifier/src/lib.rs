@@ -1,5 +1,7 @@
 #![allow(unused_must_use)]
 
+use sha2::Digest;
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::convert::TryFrom;
@@ -19,12 +21,7 @@ use prost::Message;
 
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
-<<<<<<< HEAD
-use rusoto_sqs::SqsClient;
-use sha2::Digest;
-=======
 use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
->>>>>>> staging
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
@@ -42,7 +39,6 @@ use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnec
 use grapl_observe::metric_reporter::MetricReporter;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
-<<<<<<< HEAD
 use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
 
 use sqs_executor::errors::{CheckedError, Recoverable};
@@ -56,18 +52,6 @@ use sqs_executor::{make_ten, time_based_key_fn};
 use grapl_service::decoder::ZstdProtoDecoder;
 use grapl_service::serialization::SubgraphSerializer;
 use sqs_executor::event_status::EventStatus;
-=======
-use sha2::Digest;
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
->>>>>>> staging
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -795,7 +779,7 @@ where
 pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
     let (env, _guard) = grapl_config::init_grapl_env!();
     let source_queue_url = grapl_config::source_queue_url();
-    println!("handler_init: {:?}", env);
+
     tracing::info!(
         source_queue_url=?source_queue_url,
         env=?env,
@@ -913,138 +897,3 @@ impl Cache for HashCache {
         Ok(())
     }
 }
-<<<<<<< HEAD
-=======
-
-pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let cache = HashCache::default();
-
-    info!("region");
-    let region = Region::Custom {
-        name: "dynamo".to_string(),
-        endpoint: "http://dynamo:8222".to_string(),
-    };
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("dynamo");
-    let dynamo = init_dynamodb_client();
-    info!("dyn_session_db");
-    let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-    info!("dyn_mapping_db");
-    let dyn_mapping_db = DynamicMappingDb::new(init_dynamodb_client());
-    info!("asset_identifier");
-    let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-    info!("dyn_node_identifier");
-    let dyn_node_identifier = DynamicNodeIdentifier::new(
-        asset_identifier,
-        dyn_session_db,
-        dyn_mapping_db,
-        should_default,
-    );
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("asset_identifier");
-    let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("node_identifier");
-    let node_identifier = NodeIdentifier::new(
-        asset_id_db,
-        dyn_node_identifier,
-        asset_identifier,
-        dynamo.clone(),
-        should_default,
-        cache.clone(),
-        region.clone(),
-    );
-
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-
-    let queue_name = source_queue_url.split("/").last().unwrap();
-    grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
-    grapl_config::wait_for_s3(init_s3_client()).await?;
-
-    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
-    options_builder.with_minimal_buffer_completion_policy();
-
-    local_sqs_service_with_options(
-        source_queue_url,
-        "local-grapl-subgraphs-generated-bucket",
-        Context {
-            deadline: Utc::now().timestamp_millis() + 10_000,
-            ..Default::default()
-        },
-        |_| init_s3_client(),
-        init_s3_client(),
-        init_sqs_client(),
-        ZstdProtoDecoder::default(),
-        SubgraphSerializer {
-            proto: Vec::with_capacity(1024),
-        },
-        node_identifier,
-        cache.clone(),
-        MetricReporter::<Stdout>::new("node-identifier"),
-        |_, event_result| {
-            dbg!(event_result);
-        },
-        move |bucket, key| async move {
-            let output_event = S3Event {
-                records: vec![S3EventRecord {
-                    event_version: None,
-                    event_source: None,
-                    aws_region: Some("us-east-1".to_owned()),
-                    event_time: chrono::Utc::now(),
-                    event_name: None,
-                    principal_id: S3UserIdentity { principal_id: None },
-                    request_parameters: S3RequestParameters {
-                        source_ip_address: None,
-                    },
-                    response_elements: Default::default(),
-                    s3: S3Entity {
-                        schema_version: None,
-                        configuration_id: None,
-                        bucket: S3Bucket {
-                            name: Some(bucket),
-                            owner_identity: S3UserIdentity { principal_id: None },
-                            arn: None,
-                        },
-                        object: S3Object {
-                            key: Some(key),
-                            size: None,
-                            url_decoded_key: None,
-                            version_id: None,
-                            e_tag: None,
-                            sequencer: None,
-                        },
-                    },
-                }],
-            };
-
-            let sqs_client = init_sqs_client();
-
-            // publish to SQS
-            sqs_client
-                .send_message(SendMessageRequest {
-                    message_body: serde_json::to_string(&output_event)
-                        .expect("failed to encode s3 event"),
-                    queue_url: std::env::var("GRAPH_MERGER_QUEUE_URL")
-                        .expect("GRAPH_MERGER_QUEUE_URL"),
-                    ..Default::default()
-                })
-                .await?;
-
-            Ok(())
-        },
-        options_builder.build(),
-    )
-    .await;
-    Ok(())
-}
->>>>>>> staging

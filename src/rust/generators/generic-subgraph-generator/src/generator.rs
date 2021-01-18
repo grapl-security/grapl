@@ -3,16 +3,11 @@ use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 
 use crate::models::GenericEvent;
-<<<<<<< HEAD
 use grapl_graph_descriptions::node::NodeT;
 use sqs_executor::cache::{Cache, CacheResponse, Cacheable};
 use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use sqs_executor::event_status::EventStatus;
-=======
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
->>>>>>> staging
 use std::convert::TryFrom;
 use tracing::*;
 
@@ -80,7 +75,8 @@ where
         &mut self,
         events: Vec<GenericEvent>,
         completed: &mut CompletedEvents,
-    ) -> Result<Graph, Result<(Graph, GenericSubgraphGeneratorError), GenericSubgraphGeneratorError>> {
+    ) -> Result<Graph, Result<(Graph, GenericSubgraphGeneratorError), GenericSubgraphGeneratorError>>
+    {
         let mut final_subgraph = Graph::new(0);
         let mut failed: Option<eyre::Report> = None;
 
@@ -106,8 +102,13 @@ where
         }
 
         match failed {
-            Some(e) if final_subgraph.is_empty() => Err(Err(GenericSubgraphGeneratorError::Unexpected(e.to_string()))),
-            Some(e) => Err(Ok((final_subgraph, GenericSubgraphGeneratorError::Unexpected(e.to_string())))),
+            Some(e) if final_subgraph.is_empty() => Err(Err(
+                GenericSubgraphGeneratorError::Unexpected(e.to_string()),
+            )),
+            Some(e) => Err(Ok((
+                final_subgraph,
+                GenericSubgraphGeneratorError::Unexpected(e.to_string()),
+            ))),
             None => Ok(final_subgraph),
         }
     }

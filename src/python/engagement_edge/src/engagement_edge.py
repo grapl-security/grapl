@@ -105,7 +105,7 @@ def respond(
     err: Optional[str],
     res: Optional[Res] = None,
     headers: Optional[Dict[str, Any]] = None,
-    status_code:int=500,
+    status_code: int = 500,
 ) -> Response:
     if not headers:
         headers = {}
@@ -283,7 +283,7 @@ def login_route() -> Response:
 
 @no_auth("/checkLogin")
 def check_login() -> Response:
-    LOGGER.debug(f'/checkLogin {app.current_request}')
+    LOGGER.debug(f"/checkLogin {app.current_request}")
     request = app.current_request
 
     if check_jwt(request.headers):
@@ -299,6 +299,7 @@ def get_notebook() -> Response:
     client = create_sagemaker_client(is_local=IS_LOCAL)
     url = client.get_presigned_url(notebook_name)
     return respond(err=None, res={"notebook_url": url})
+
 
 @app.route("/prod/auth/{proxy+}", methods=["OPTIONS", "POST", "GET"])
 def prod_nop_route() -> Response:

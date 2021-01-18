@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
-use darkredis::{ConnectionPool, MSetBuilder};
 use darkredis::Error as RedisError;
+use darkredis::{ConnectionPool, MSetBuilder};
 
 use tracing::warn;
 
@@ -13,7 +13,6 @@ use grapl_observe::metric_reporter::{tag, MetricReporter};
 use grapl_observe::timers::TimedFutureExt;
 use std::io::Stdout;
 use tokio::time::Elapsed;
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum RedisCacheError {
@@ -56,7 +55,7 @@ impl RedisCache {
             connection_pool,
             address,
             metric_reporter,
-            lru_cache: Arc::new(Mutex::new(lru_cache::LruCache::new(100_000)))
+            lru_cache: Arc::new(Mutex::new(lru_cache::LruCache::new(100_000))),
         })
     }
 }
@@ -77,17 +76,15 @@ impl RedisCache {
 
         let identity = hex::encode(&identity_bytes);
         //
-        let mut client = tokio::time::timeout(Duration::from_secs(1), self.connection_pool.get()).await?;
+        let mut client =
+            tokio::time::timeout(Duration::from_secs(1), self.connection_pool.get()).await?;
 
         let res = tokio::time::timeout(Duration::from_millis(200), client.exists(&identity)).await;
 
         let res = match res {
             Ok(res) => res,
             Err(e) => {
-                warn!(
-                    errors=e.to_string().as_str(),
-                    "Cache lookup failed with"
-                );
+                warn!(errors = e.to_string().as_str(), "Cache lookup failed with");
                 return Ok(CacheResponse::Miss);
             }
         };
@@ -97,10 +94,10 @@ impl RedisCache {
                 let mut lru_cache = self.lru_cache.lock().unwrap();
                 lru_cache.insert(identity_bytes, ());
                 Ok(CacheResponse::Hit)
-            },
+            }
             Ok(false) => Ok(CacheResponse::Miss),
             Err(e) => {
-                warn!(error=e.to_string().as_str(), "Cache lookup failed with");
+                warn!(error = e.to_string().as_str(), "Cache lookup failed with");
                 Ok(CacheResponse::Miss)
             }
         }
@@ -118,7 +115,8 @@ impl RedisCache {
         }
         let identity = hex::encode(identity);
 
-        let mut client = tokio::time::timeout(Duration::from_secs(1), self.connection_pool.get()).await?;
+        let mut client =
+            tokio::time::timeout(Duration::from_secs(1), self.connection_pool.get()).await?;
 
         tokio::time::timeout(
             Duration::from_millis(500),
@@ -132,20 +130,22 @@ impl RedisCache {
     #[tracing::instrument(skip(self, identities))]
     async fn _store_all(&mut self, identities: Vec<Vec<u8>>) -> Result<(), RedisCacheError> {
         if identities.is_empty() {
-            return Ok(())
+            return Ok(());
         }
         let mut identities_to_check = Vec::with_capacity(identities.len());
         {
             let mut lru_cache = self.lru_cache.lock().unwrap();
             for identity_bytes in identities.into_iter() {
                 if lru_cache.contains_key(&identity_bytes) {
-                    continue
+                    continue;
                 }
                 lru_cache.insert(identity_bytes.clone(), ());
                 identities_to_check.push(identity_bytes);
             }
         }
-        if identities_to_check.is_empty() {return Ok(())}
+        if identities_to_check.is_empty() {
+            return Ok(());
+        }
         let identities = identities_to_check;
 
         let client_pool = self.connection_pool.clone();
@@ -154,7 +154,6 @@ impl RedisCache {
         tokio::time::timeout(
             Duration::from_millis(300),
             tokio::spawn(async move {
-
                 let mut builder = MSetBuilder::new();
                 for identity in identities.iter() {
                     builder = builder.set(identity, b"1");
@@ -167,8 +166,8 @@ impl RedisCache {
                         if elapsed >= Duration::from_millis(300) {
                             let elapsed_ms = elapsed.as_millis() as u64;
                             error!(
-                                error=e.to_string().as_str(),
-                                elapsed_ms=elapsed_ms,
+                                error = e.to_string().as_str(),
+                                elapsed_ms = elapsed_ms,
                                 "redis mset failed outside of ttl"
                             );
                             Ok(())
@@ -180,15 +179,14 @@ impl RedisCache {
                 }
             }),
         )
-            .await???;
-
+        .await???;
 
         Ok(())
     }
 }
 
-use tracing::error;
 use std::sync::{Arc, Mutex};
+use tracing::error;
 
 #[async_trait]
 impl Cache for RedisCache {
@@ -223,7 +221,7 @@ impl Cache for RedisCache {
                         "redis_cache.get.count",
                         1f64,
                         0.10,
-                        &[tag("success", true), tag("hit", true)]
+                        &[tag("success", true), tag("hit", true)],
                     )
                     .unwrap_or_else(|e| error!("failed to report redis_cache.get.count: {:?}", e));
             }
@@ -248,7 +246,7 @@ impl Cache for RedisCache {
         let span = tracing::span!(
             tracing::Level::DEBUG,
             "redis_cache.store",
-            address=self.address.as_str(),
+            address = self.address.as_str(),
         );
 
         let _enter = span.enter();
@@ -268,8 +266,8 @@ impl Cache for RedisCache {
         let span = tracing::span!(
             tracing::Level::TRACE,
             "redis_cache.store_all",
-            address=self.address.as_str(),
-            identities_len=identities.len(),
+            address = self.address.as_str(),
+            identities_len = identities.len(),
         );
         let _enter = span.enter();
         let (res, ms) = self._store_all(identities).timed().await;

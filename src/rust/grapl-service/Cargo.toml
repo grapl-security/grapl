@@ -10,8 +10,8 @@ edition = "2018"
 sqs-executor = { path = "../sqs-executor" }
 grapl-graph-descriptions = { path = "../graph-descriptions" }
 grapl-config = { path = "../grapl-config" }
-zstd = "0.5.1"
-prost = "0.6.*"
+zstd = "0.6"
+prost = "0.7"
 tracing = "0.1.22"
 thiserror = "1.0.23"
 serde = "1.0.118"

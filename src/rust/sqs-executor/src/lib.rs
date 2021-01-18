@@ -5,16 +5,13 @@ use std::fmt::Debug;
 use std::future::Future;
 use std::io::Stdout;
 use std::panic::AssertUnwindSafe;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use futures_util::FutureExt;
 
 use rusoto_s3::S3;
-use rusoto_sqs::{Sqs, ListQueuesRequest, ListQueuesError};
-use rusoto_sqs::{
-    DeleteMessageError, DeleteMessageRequest, Message as SqsMessage, ReceiveMessageError,
-    ReceiveMessageRequest, SendMessageError as InnerSendMessageError, SendMessageRequest,
-};
+use rusoto_sqs::Message as SqsMessage;
+use rusoto_sqs::{ListQueuesError, ListQueuesRequest, Sqs};
 
 use tracing::debug;
 use tracing::{error, info, warn};
@@ -42,9 +39,9 @@ pub mod event_decoder;
 pub mod event_emitter;
 pub mod event_handler;
 use crate::sqs_timeout_manager::keep_alive;
+use darkredis::MSetBuilder;
 pub use retriever::event_retriever;
 pub use retriever::s3_event_retriever;
-use darkredis::MSetBuilder;
 use rusoto_core::RusotoError;
 
 pub mod event_status;
@@ -83,17 +80,20 @@ where
     let mut to_cache = Vec::with_capacity(completed.len());
 
     for (identity, status) in completed.identities.drain(..) {
-            match status {
-                EventStatus::Success | EventStatus::Failure => {
-                    to_cache.push(identity);
-                }
-                _ => (),
+        match status {
+            EventStatus::Success | EventStatus::Failure => {
+                to_cache.push(identity);
             }
+            _ => (),
+        }
     }
 
-    cache.store_all(to_cache).await
-        .unwrap_or_else(|e| error!(error=e.to_string().as_str(), "Failed to store_all in cache"));
-
+    cache.store_all(to_cache).await.unwrap_or_else(|e| {
+        error!(
+            error = e.to_string().as_str(),
+            "Failed to store_all in cache"
+        )
+    });
 }
 
 #[tracing::instrument(skip(
@@ -167,16 +167,13 @@ async fn process_message<
     let inner_loop_span = tracing::span!(
         tracing::Level::INFO,
         "inner_loop_span",
-        message_id=message_id,
+        message_id = message_id,
     );
     let _enter = inner_loop_span.enter();
 
-    if let Ok(CacheResponse::Hit) = cache
-        .get(message_id.as_bytes().to_owned())
-        .await
-    {
+    if let Ok(CacheResponse::Hit) = cache.get(message_id.as_bytes().to_owned()).await {
         info!(
-            message_id=message_id,
+            message_id = message_id,
             "Message has already been processed",
         );
         rusoto_helpers::delete_message(
@@ -184,13 +181,11 @@ async fn process_message<
             queue_url.to_owned(),
             next_message.receipt_handle.expect("missing receipt_handle"),
             metric_reporter,
-        ).await;
+        )
+        .await;
         return;
     }
-    info!(
-        message_id=message_id,
-        "Retrieving payload from",
-    );
+    info!(message_id = message_id, "Retrieving payload from",);
     let receipt_handle = next_message
         .receipt_handle
         .as_ref()
@@ -219,9 +214,9 @@ async fn process_message<
         }
         Err(e) => {
             error!(
-                queue_url=queue_url.as_str(),
-                message_id=message_id,
-                error=e.to_string().as_str(),
+                queue_url = queue_url.as_str(),
+                message_id = message_id,
+                error = e.to_string().as_str(),
                 "Failed to retrieve payload with"
             );
             if let Recoverable::Persistent = e.error_type() {
@@ -399,7 +394,7 @@ async fn _process_loop<
         let span = tracing::span!(
             tracing::Level::DEBUG,
             "inner_process_loop",
-            queue_url=queue_url.as_str(),
+            queue_url = queue_url.as_str(),
         );
         let _enter = span.enter();
         let message_batch = rusoto_helpers::get_message(
@@ -416,8 +411,8 @@ async fn _process_loop<
             }
             Err(e) => {
                 error!(
-                    queue_url=queue_url.as_str(),
-                    error=e.to_string().as_str(),
+                    queue_url = queue_url.as_str(),
+                    error = e.to_string().as_str(),
                     "Failed to get_message from queue"
                 );
                 tokio::time::delay_for(std::time::Duration::from_millis(i * 250)).await;
@@ -427,10 +422,7 @@ async fn _process_loop<
         };
         let message_batch_len = message_batch.len();
 
-        info!(
-            message_batch_len=message_batch_len,
-            "Received messages"
-        );
+        info!(message_batch_len = message_batch_len, "Received messages");
 
         if message_batch.is_empty() {
             tokio::time::delay_for(std::time::Duration::from_millis(250)).await;
@@ -466,7 +458,10 @@ async fn _process_loop<
             process_futs.push(p);
         }
 
-        let all_processing = tokio::time::timeout(Duration::from_secs(30 * 15), futures::future::join_all(process_futs).timed());
+        let all_processing = tokio::time::timeout(
+            Duration::from_secs(30 * 15),
+            futures::future::join_all(process_futs).timed(),
+        );
         match all_processing.await {
             Ok((_r, ms)) => {
                 metric_reporter.histogram("sqs_executor.all_processing.ms", ms as f64, &[]);
@@ -552,13 +547,13 @@ pub async fn process_loop<
         if let Err(e) = f.catch_unwind().await {
             if let Some(e) = e.downcast_ref::<Box<dyn std::error::Error + 'static>>() {
                 error!(
-                    queue_url=queue_url.as_str(),
-                    error=e.to_string().as_str(),
+                    queue_url = queue_url.as_str(),
+                    error = e.to_string().as_str(),
                     "Processing loop panicked"
                 );
             } else if let Some(e) = e.downcast_ref::<Box<dyn std::fmt::Debug>>() {
                 error!(
-                    error=format!("{:?}", e).as_str(),
+                    error = format!("{:?}", e).as_str(),
                     "Processing loop panicked"
                 );
             } else {
@@ -570,10 +565,10 @@ pub async fn process_loop<
 }
 
 async fn wait_loop<F, T, E>(max_tries: u32, f: impl Fn() -> F) -> Result<T, E>
-    where
-        F: std::future::Future<Output = Result<T, E>>,
-        T: Send + Sync + 'static,
-        E: std::error::Error + Send + Sync + 'static,
+where
+    F: std::future::Future<Output = Result<T, E>>,
+    T: Send + Sync + 'static,
+    E: std::error::Error + Send + Sync + 'static,
 {
     let mut errs = None;
     for _ in 0..max_tries {
@@ -608,14 +603,14 @@ pub async fn wait_for_sqs(
 ) -> Result<(), WaitForSqsError> {
     let queue_name_prefix = queue_name_prefix.into();
     wait_loop(150, || async {
-        let list_res = sqs_client.list_queues(ListQueuesRequest {
+        let list_res = sqs_client
+            .list_queues(ListQueuesRequest {
                 max_results: None,
                 next_token: None,
                 queue_name_prefix: Some(queue_name_prefix.clone()),
             })
             .await;
-        match list_res
-        {
+        match list_res {
             Err(e) => {
                 debug!("Waiting for sqs to become available: {:?}", e);
                 Err(WaitForSqsError::ListQueuesError(e))
@@ -623,18 +618,17 @@ pub async fn wait_for_sqs(
             Ok(res) => {
                 if let Some(res) = res.queue_urls {
                     if res.is_empty() {
-                        return Err(WaitForSqsError::EmptyList)
+                        return Err(WaitForSqsError::EmptyList);
                     }
                 }
                 Ok(())
-            },
+            }
         }
     })
-        .await?;
+    .await?;
 
     Ok(())
 }
-
 
 pub fn time_based_key_fn(_event: &[u8]) -> String {
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {

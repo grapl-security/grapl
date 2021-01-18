@@ -6,9 +6,9 @@ use grapl_service::decoder::ZstdJsonDecoder;
 use grapl_service::serialization::SubgraphSerializer;
 use sqs_executor::cache::NopCache;
 use sqs_executor::event_decoder::PayloadDecoder;
+use sqs_executor::event_handler::CompletedEvents;
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, Result};
-use sqs_executor::event_handler::CompletedEvents;
 
 #[tokio::test]
 /// Tests if generic event serialization is working as expected.
@@ -47,21 +47,16 @@ async fn test_log_event_deserialization() {
 
     let mut completed_events = CompletedEvents::default();
 
-    let result =
-        generator.convert_events_to_subgraph(generic_events, &mut completed_events).await;
+    let result = generator
+        .convert_events_to_subgraph(generic_events, &mut completed_events)
+        .await;
 
     match result {
         Err(e) => {
-            panic!(
-                "An error occurred during subgraph generation. Err: {}",
-                e
-            );
+            panic!("An error occurred during subgraph generation. Err: {}", e);
         }
         Err(Err(e)) => {
-            panic!(
-                "An error occurred during subgraph generation. Err: {}",
-                e
-            );
+            panic!("An error occurred during subgraph generation. Err: {}", e);
         }
         Ok(_) => (),
     }

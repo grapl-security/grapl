@@ -4,15 +4,10 @@ use crate::metrics::OSQuerySubgraphGeneratorMetrics;
 use crate::parsers::PartiallyDeserializedOSQueryLog;
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
-<<<<<<< HEAD
 use sqs_executor::cache::{Cache, CacheResponse};
 use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 use std::borrow::Cow;
-=======
-use sqs_lambda::cache::Cache;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
->>>>>>> staging
 use std::convert::TryFrom;
 
 #[derive(Clone)]
@@ -79,7 +74,6 @@ where
 
         let mut errors: Vec<failure::Error> =
             errors.into_iter().filter_map(|item| item.err()).collect();
-
 
         if errors.is_empty() {
             Ok(final_subgraph)

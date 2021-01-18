@@ -17,6 +17,7 @@ use grapl_observe::metric_reporter::{tag, HistogramUnit, MetricReporter};
 use grapl_observe::timers::{time_it, TimedFutureExt};
 use rusoto_core::RusotoError;
 use std::collections::HashMap;
+use tokio::io::{AsyncReadExt};
 use tokio::time::Elapsed;
 
 pub struct S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>

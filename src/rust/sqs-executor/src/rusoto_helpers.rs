@@ -14,11 +14,10 @@ use crate::errors::{CheckedError, Recoverable};
 use grapl_observe::metric_reporter::{tag, MetricReporter};
 use grapl_observe::timers::{time_fut_ms, TimedFutureExt};
 use std::io::Stdout;
-use tracing::{debug, error, warn, Instrument};
 use tap::prelude::TapFallible;
+use tracing::{debug, error, warn, Instrument};
 
 impl CheckedError for InnerDeleteMessageError {
-
     fn error_type(&self) -> Recoverable {
         match self {
             Self::InvalidIdFormat(_) => Recoverable::Persistent,
@@ -85,27 +84,33 @@ where
         .map(|m| m.messages.unwrap_or_else(|| vec![]));
 
     if let Ok(ref msgs) = messages {
-        metric_reporter.histogram(
-            "sqs_executor.receive_message",
-            ms as f64,
-            &[tag("success", true), tag("empty_receive", msgs.is_empty())][..])
-            .unwrap_or_else(|e| error!(
-                error=e.to_string().as_str(),
-                metric_name="sqs_executor.receive_message",
-                "Failed to report histogram metric",
-            ));
-
+        metric_reporter
+            .histogram(
+                "sqs_executor.receive_message",
+                ms as f64,
+                &[tag("success", true), tag("empty_receive", msgs.is_empty())][..],
+            )
+            .unwrap_or_else(|e| {
+                error!(
+                    error = e.to_string().as_str(),
+                    metric_name = "sqs_executor.receive_message",
+                    "Failed to report histogram metric",
+                )
+            });
     } else {
-        metric_reporter.histogram(
-            "sqs_executor.receive_message",
-            ms as f64,
-            &[tag("success", false)]
-        )
-            .unwrap_or_else(|e| error!(
-                error=e.to_string().as_str(),
-                metric_name="sqs_executor.receive_message",
-                "Failed to report histogram metric",
-            ));
+        metric_reporter
+            .histogram(
+                "sqs_executor.receive_message",
+                ms as f64,
+                &[tag("success", false)],
+            )
+            .unwrap_or_else(|e| {
+                error!(
+                    error = e.to_string().as_str(),
+                    metric_name = "sqs_executor.receive_message",
+                    "Failed to report histogram metric",
+                )
+            });
     };
 
     Ok(messages?)
@@ -160,28 +165,36 @@ where
 
             match res {
                 (Ok(Ok(_)), ms) => {
-                    metric_reporter.histogram(
-                        "sqs_executor.send_message.ms",
-                        ms as f64,
-                        &[tag("success", true)],
-                    ).unwrap_or_else(|e| error!(
-                        error=e.to_string().as_str(),
-                        metric_name="sqs_executor.send_message",
-                        "Failed to report histogram metric",
-                    ));
+                    metric_reporter
+                        .histogram(
+                            "sqs_executor.send_message.ms",
+                            ms as f64,
+                            &[tag("success", true)],
+                        )
+                        .unwrap_or_else(|e| {
+                            error!(
+                                error = e.to_string().as_str(),
+                                metric_name = "sqs_executor.send_message",
+                                "Failed to report histogram metric",
+                            )
+                        });
                     debug!("Send message: {}", queue_url.clone());
                     return Ok(());
                 }
                 (Ok(Err(e)), ms) => {
-                    metric_reporter.histogram(
-                        "sqs_executor.send_message.ms",
-                        ms as f64,
-                        &[tag("success", false)],
-                    ).unwrap_or_else(|e| error!(
-                        error=e.to_string().as_str(),
-                        metric_name="sqs_executor.send_message",
-                        "Failed to report histogram metric",
-                    ));
+                    metric_reporter
+                        .histogram(
+                            "sqs_executor.send_message.ms",
+                            ms as f64,
+                            &[tag("success", false)],
+                        )
+                        .unwrap_or_else(|e| {
+                            error!(
+                                error = e.to_string().as_str(),
+                                metric_name = "sqs_executor.send_message",
+                                "Failed to report histogram metric",
+                            )
+                        });
 
                     if let Recoverable::Persistent = e.error_type() {
                         return Err(SendMessageError::from(e));
@@ -191,15 +204,19 @@ where
                     }
                 }
                 (Err(e), ms) => {
-                    metric_reporter.histogram(
-                        "sqs_executor.send_message.ms",
-                        ms as f64,
-                        &[tag("success", false)],
-                    ).unwrap_or_else(|e| error!(
-                        error=e.to_string().as_str(),
-                        metric_name="sqs_executor.send_message",
-                        "Failed to report histogram metric with timeout",
-                    ));
+                    metric_reporter
+                        .histogram(
+                            "sqs_executor.send_message.ms",
+                            ms as f64,
+                            &[tag("success", false)],
+                        )
+                        .unwrap_or_else(|e| {
+                            error!(
+                                error = e.to_string().as_str(),
+                                metric_name = "sqs_executor.send_message",
+                                "Failed to report histogram metric with timeout",
+                            )
+                        });
 
                     last_err = Some(SendMessageError::from(e));
                     tokio::time::delay_for(std::time::Duration::from_millis(10 * i)).await;
@@ -290,8 +307,8 @@ where
     SqsT: Sqs + Clone + Send + Sync + 'static,
 {
     debug!(
-        publish_to_queue=publish_to_queue.as_str(),
-        delete_from_queue=delete_from_queue.as_str(),
+        publish_to_queue = publish_to_queue.as_str(),
+        delete_from_queue = delete_from_queue.as_str(),
         "Moving message to deadletter queue"
     );
     let message = serde_json::to_string(&message);

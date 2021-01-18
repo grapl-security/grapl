@@ -30,7 +30,9 @@ pub struct ServiceEnv {
     pub is_local: bool,
 }
 
-pub fn _init_grapl_env(service_name: &str) -> (ServiceEnv, tracing_appender::non_blocking::WorkerGuard) {
+pub fn _init_grapl_env(
+    service_name: &str,
+) -> (ServiceEnv, tracing_appender::non_blocking::WorkerGuard) {
     let env = ServiceEnv {
         service_name: service_name.to_string(),
         is_local: is_local(),

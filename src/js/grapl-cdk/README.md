@@ -43,7 +43,7 @@ The script will download all the release artifacts to the `zips/` directory.
 To execute a local Grapl build, run the following in Grapl's root:
 
 ```bash
-TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
+TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release docker-compose build
 ```
 
 Then extract the deployment artifacts from the build containers with

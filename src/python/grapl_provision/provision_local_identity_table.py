@@ -159,7 +159,9 @@ def try_create_loop(table_name):
                 if i >= 5:
                     LOGGER.warn(f"failed to provision dynamodb table: {table_name} {e}")
                 else:
-                    LOGGER.debug(f"failed to provision dynamodb table: {table_name} {e}")
+                    LOGGER.debug(
+                        f"failed to provision dynamodb table: {table_name} {e}"
+                    )
                 time.sleep(2)
         except Exception as e:
             if i >= 5:

@@ -4,7 +4,7 @@ use crate::tests::utils;
 use grapl_service::decoder::ZstdJsonDecoder;
 use regex::internal::Input;
 use sqs_executor::cache::NopCache;
-use sqs_executor::event_handler::{EventHandler, CompletedEvents};
+use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 
 #[tokio::test]
 async fn test_subgraph_generation_process_create() {

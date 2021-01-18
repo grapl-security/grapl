@@ -1,42 +1,20 @@
 #![type_length_limit = "1334469"]
 
 use log::*;
-
-<<<<<<< HEAD
+use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 
+use graph_generator_lib::run_graph_generator;
+use grapl_config::env_helpers::FromEnv;
 use grapl_config::*;
-use grapl_observe::metric_reporter::MetricReporter;
-=======
-use crate::generator::SysmonSubgraphGenerator;
-use crate::metrics::SysmonSubgraphGeneratorMetrics;
-use crate::serialization::ZstdDecoder;
-use grapl_config::*;
-use grapl_observe::metric_reporter::MetricReporter;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use std::io::Stdout;
-use std::time::Duration;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
-
-    let metrics = SysmonSubgraphGeneratorMetrics::new(&env.service_name);
->>>>>>> staging
-
 use sqs_executor::event_retriever::S3PayloadRetriever;
-
 use sqs_executor::s3_event_emitter::S3EventEmitter;
+use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use sqs_executor::{make_ten, time_based_key_fn};
 
 use crate::generator::SysmonSubgraphGenerator;
 use crate::metrics::SysmonSubgraphGeneratorMetrics;
 use crate::serialization::{SubgraphSerializer, ZstdDecoder};
-use grapl_config::env_helpers::FromEnv;
-use rusoto_s3::S3Client;
-use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
-use graph_generator_lib::run_graph_generator;
 
 mod generator;
 mod metrics;
@@ -50,12 +28,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting sysmon-subgraph-generator");
     run_graph_generator(
         env,
-        move |cache| SysmonSubgraphGenerator::new(
-            cache,
-            SysmonSubgraphGeneratorMetrics::new(&service_name),
-        ),
+        move |cache| {
+            SysmonSubgraphGenerator::new(cache, SysmonSubgraphGeneratorMetrics::new(&service_name))
+        },
         ZstdDecoder::default(),
-    ).await;
+    )
+    .await;
 
     Ok(())
 }

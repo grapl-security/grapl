@@ -8,7 +8,6 @@ edition = "2018"
 grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
 grapl-observe = {path="../grapl-observe", version="*"}
-<<<<<<< HEAD
 grapl-service = { path="../grapl-service" }
 anyhow = "1.0.*"
 failure = "0.1.*"
@@ -20,17 +19,6 @@ log = "0.4.*"
 dgraph-tonic = { version = "0.8", features = ["dgraph-1-1"] }
 grpc = "0.6.1"
 sqs-executor = { path = "../sqs-executor/" }
-=======
-anyhow = "1"
-failure = "0.1"
-serde = "1"
-serde_json = "1"
-serde_derive = "1"
-log = "0.4"
-
-dgraph-tonic = { version = "0.8", features = ["dgraph-1-1"] }
-sqs-lambda = { path = "../sqs-lambda" }
->>>>>>> staging
 
 rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
@@ -38,12 +26,7 @@ rusoto_sqs = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_dynamodb = { version="0.45", default_features = false, features=["rustls"] }
 rusoto_credential = "0.45"
 
-<<<<<<< HEAD
 aws_lambda_events = "0.2.0"
-=======
-lambda_runtime = "0.2"
-aws_lambda_events = "0.4"
->>>>>>> staging
 
 stopwatch = "0"
 sha2 = "0"
@@ -53,21 +36,6 @@ prost = "0.7"
 base64 = "0"
 rand = "0"
 
-<<<<<<< HEAD
-futures = "0.3.*"
-async-trait = "0.1.30"
-uuid = "0.8.1"
-tokio-compat = "0.1.*"
-tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
-chrono = "0.4.11"
-rusoto_credential = "0.45.0"
-rusoto_dynamodb = {version="0.45.0", default_features = false, features=["rustls"]}
-serde_dynamodb = {version="0.6", default_features = false, features=["rustls"]}
-thiserror = "1.0.23"
-lru-cache = "0.1.2"
-tracing = "0.1.22"
-tracing-futures = "0.2.4"
-=======
 futures = "0.3"
 async-trait = "0.1"
 uuid = "0"
@@ -75,4 +43,8 @@ tokio-compat = "0"
 tokio = { version = "0.2", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 chrono = "0.4"
 serde_dynamodb = { version="0.6", default_features = false, features=["rustls"] }
->>>>>>> staging
+lru-cache = "0.1.2"
+tracing = "0.1.22"
+thiserror = "1.0.23"
+lambda_runtime = "0.2.1"
+tracing-futures = "0.2.4"

@@ -4,13 +4,12 @@ use rusoto_sqs::{ChangeMessageVisibilityRequest, Sqs};
 
 use std::time::Duration;
 
-use tokio::stream::StreamExt;
+use stopwatch::Stopwatch;
 use tokio::sync::mpsc::{channel as mpsc_channel, Receiver as MpscReceiver, Sender as MpscSender};
 use tokio::sync::oneshot::{
     channel as one_shot, Receiver as OneShotReceiver, Sender as OneShotSender,
 };
 use tracing_futures::Instrument;
-use stopwatch::Stopwatch;
 
 struct SqsTimeoutManager<S>
 where
@@ -37,9 +36,7 @@ where
             mut receiver,
             s,
         } = self;
-        tracing::info!(
-            "Starting keep_alive for message"
-        );
+        tracing::info!("Starting keep_alive for message");
 
         let mut sw = Stopwatch::start_new();
 
@@ -48,7 +45,8 @@ where
         let max_iter = 10;
         for i in 1..=max_iter {
             let timeout_fut = async {
-                tokio::time::delay_for(Duration::from_secs(((visibility_timeout * i) as u64) - 10)).await
+                tokio::time::delay_for(Duration::from_secs(((visibility_timeout * i) as u64) - 10))
+                    .await
             };
             let future_2 = async { receiver.recv().await };
             pin_mut!(timeout_fut);
@@ -66,10 +64,10 @@ where
                     match res {
                         Ok(()) => {
                             tracing::debug!(
-                                iteration=i,
-                                message_id=message_id.as_str(),
-                                receipt_handle=receipt_handle.as_str(),
-                                time_taken=sw.elapsed_ms(),
+                                iteration = i,
+                                message_id = message_id.as_str(),
+                                receipt_handle = receipt_handle.as_str(),
+                                time_taken = sw.elapsed_ms(),
                                 "Successfully changed message visibility"
                             );
                         }
@@ -86,43 +84,43 @@ where
                         }
                         Err(e) => {
                             tracing::warn!(
-                                error=e.to_string().as_str(),
-                                iteration=i,
-                                message_id=message_id.as_str(),
-                                receipt_handle=receipt_handle.as_str(),
-                                time_taken=sw.elapsed_ms(),
+                                error = e.to_string().as_str(),
+                                iteration = i,
+                                message_id = message_id.as_str(),
+                                receipt_handle = receipt_handle.as_str(),
+                                time_taken = sw.elapsed_ms(),
                                 "Failed to change message visibility, but it's probably fine"
                             );
-                            return
+                            return;
                         }
                     };
                 }
                 Either::Right(_) => {
                     tracing::debug!(
-                        iteration=i,
-                        message_id=message_id.as_str(),
-                        receipt_handle=receipt_handle.as_str(),
-                        time_taken=sw.elapsed_ms(),
+                        iteration = i,
+                        message_id = message_id.as_str(),
+                        receipt_handle = receipt_handle.as_str(),
+                        time_taken = sw.elapsed_ms(),
                         "Message no longer needs to be kept alive"
                     );
-                    return
-                },
+                    return;
+                }
             };
 
             tracing::debug!(
-                iteration=i,
-                message_id=message_id.as_str(),
-                receipt_handle=receipt_handle.as_str(),
-                time_taken=sw.elapsed_ms(),
+                iteration = i,
+                message_id = message_id.as_str(),
+                receipt_handle = receipt_handle.as_str(),
+                time_taken = sw.elapsed_ms(),
                 "message-visibility-loop",
             );
         }
 
         tracing::warn!(
-            iteration=max_iter,
-            message_id=message_id.as_str(),
-            receipt_handle=receipt_handle.as_str(),
-            time_taken=sw.elapsed_ms(),
+            iteration = max_iter,
+            message_id = message_id.as_str(),
+            receipt_handle = receipt_handle.as_str(),
+            time_taken = sw.elapsed_ms(),
             "message still has not processed"
         );
     }
@@ -149,7 +147,9 @@ impl Sender {
 impl Drop for Sender {
     fn drop(&mut self) {
         if let Some(sender) = self.sender.take() {
-            let _ = sender.send(()).map_err(|()| tracing::error!("Attempting to drop queue sender, but channel was closed."));
+            let _ = sender.send(()).map_err(|()| {
+                tracing::error!("Attempting to drop queue sender, but channel was closed.")
+            });
         }
     }
 }
@@ -172,9 +172,9 @@ where
     let span = tracing::span!(
         tracing::Level::INFO,
         "keep_alive",
-        receipt_handle=receipt_handle.as_str(),
-        message_id=message_id.as_str(),
-        queue_url=queue_url.as_str(),
+        receipt_handle = receipt_handle.as_str(),
+        message_id = message_id.as_str(),
+        queue_url = queue_url.as_str(),
     );
     let _enter = span.enter();
     let start_f = async move {
@@ -187,12 +187,14 @@ where
             s,
         };
         manager.start().await;
-    }.in_current_span();
+    }
+    .in_current_span();
     tokio::task::spawn(start_f);
 
     let route_f = async move {
         route_oneshot(os_rx, mpsc_tx).await;
-    }.in_current_span();
+    }
+    .in_current_span();
     tokio::task::spawn(route_f);
 
     Sender {

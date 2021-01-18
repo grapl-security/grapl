@@ -5,6 +5,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use rusoto_s3::{GetObjectError, GetObjectRequest, S3};
 use rusoto_sqs::Message as SqsMessage;
+use tokio::io::{AsyncReadExt};
 
 use tokio::prelude::*;
 use tracing::{debug, error, info};

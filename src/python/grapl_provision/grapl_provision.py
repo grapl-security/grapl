@@ -212,6 +212,7 @@ def provision_mg(mclient) -> None:
         except Exception as e:
             LOGGER.warn(f"storing schema: {schema} {table} {e}")
 
+
 BUCKET_PREFIX = "local-grapl"
 
 services = (
@@ -241,12 +242,12 @@ buckets = (
 
 class SqsQueue(object):
     def __init__(
-            self,
-            sqs: Any,
-            q: Any,
-            queue_name: str,
-            queue_arn: str,
-            queue_url: str,
+        self,
+        sqs: Any,
+        q: Any,
+        queue_name: str,
+        queue_arn: str,
+        queue_url: str,
     ):
         self.sqs = sqs
         self.q = q
@@ -255,7 +256,9 @@ class SqsQueue(object):
         self.queue_url = queue_url
 
     @staticmethod
-    def create_queue(sqs, queue_name: str, attributes: Optional[Dict[str, str]]=None) -> 'SqsQueue':
+    def create_queue(
+        sqs, queue_name: str, attributes: Optional[Dict[str, str]] = None
+    ) -> "SqsQueue":
         attributes = attributes or {}
         q = sqs.create_queue(
             QueueName=queue_name,
@@ -266,10 +269,19 @@ class SqsQueue(object):
             QueueUrl=queue_url, AttributeNames=["QueueArn"]
         )["Attributes"]["QueueArn"]
         return SqsQueue(
-            sqs, q, queue_name, queue_arn, queue_url,
+            sqs,
+            q,
+            queue_name,
+            queue_arn,
+            queue_url,
         )
 
-    def attach_deadletter_queue(self, dl_queue: 'SqsQueue', max_receives: int = 10, attributes: Optional[Dict[str, str]]=None):
+    def attach_deadletter_queue(
+        self,
+        dl_queue: "SqsQueue",
+        max_receives: int = 10,
+        attributes: Optional[Dict[str, str]] = None,
+    ):
         attributes = attributes or {}
         dl_redrive_policy = {
             "deadLetterTargetArn": dl_queue.queue_arn,

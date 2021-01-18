@@ -6,7 +6,6 @@ use aws_lambda_events::event::s3::{
     S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
 };
 
-use futures_util::TryFutureExt;
 use grapl_observe::metric_reporter::{tag, MetricReporter};
 use grapl_observe::timers::TimedFutureExt;
 use rusoto_core::RusotoError;
@@ -199,7 +198,7 @@ pub trait OnEventEmit {
 #[derive(thiserror::Error, Debug)]
 pub enum NopEventEmitterError {
     #[error("Never")]
-    Never
+    Never,
 }
 
 pub struct S3ToSqsEventNotifier<S>
@@ -256,7 +255,7 @@ where
     async fn event_notification(&self, bucket: String, key: String) -> Result<(), Self::Error> {
         if !self.enabled {
             tracing::debug!("event notifications are disabled");
-            return Ok(())
+            return Ok(());
         }
         tracing::debug!(
             "event_notification: {} {}/{}",
