@@ -1,3 +1,5 @@
+#![cfg(feature = "integration")]
+
 use grapl_graph_descriptions::graph_description::host::*;
 use node_identifier::assetdb::AssetIdDb;
 use node_identifier::init_dynamodb_client;
@@ -8,7 +10,6 @@ use tokio::runtime::Runtime;
 // When attributing 'H' at c_timestamp 'Y', where 'Y' > 'X'
 // Then we should retrieve asset id 'A'
 #[test]
-#[cfg(feature = "integration")]
 fn map_hostname_to_asset_id() {
     let mut runtime = Runtime::new().unwrap();
     let region = Region::Custom {
