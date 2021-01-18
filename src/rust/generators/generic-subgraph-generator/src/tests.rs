@@ -43,7 +43,8 @@ async fn test_log_event_deserialization() {
         .decode(raw_test_data)
         .expect("Failed to deserialize events.");
 
-    let (subgraph, identities, failed) = generator.convert_events_to_subgraph(generic_events).await;
+    let (_subgraph, _identities, failed) =
+        generator.convert_events_to_subgraph(generic_events).await;
 
     if let Some(report) = failed {
         panic!(
