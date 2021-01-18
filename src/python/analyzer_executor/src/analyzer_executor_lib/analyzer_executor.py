@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
+from analyzer_executor_lib.s3_types import SQSMessageBody
 from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
@@ -83,7 +84,7 @@ class AnalyzerExecutor:
         self.metric_reporter = metric_reporter
 
     @classmethod
-    def singleton(cls):
+    def singleton(cls) -> AnalyzerExecutor:
         if not cls._singleton:
             LOGGER.debug("initializing AnalyzerExecutor singleton")
             is_local = bool(
@@ -99,10 +100,11 @@ class AnalyzerExecutor:
 
             # Set up message cache
             messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
-            messagecache_port = os.getenv("MESSAGECACHE_PORT")
-            if messagecache_port:
+            messagecache_port: Optional[int] = None
+            messagecache_port_str = os.getenv("MESSAGECACHE_PORT")
+            if messagecache_port_str:
                 try:
-                    messagecache_port = int(messagecache_port)
+                    messagecache_port = int(messagecache_port_str)
                 except (TypeError, ValueError) as ex:
                     LOGGER.error(
                         f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
@@ -126,13 +128,14 @@ class AnalyzerExecutor:
 
             # Set up hit cache
             hitcache_addr = os.getenv("HITCACHE_ADDR")
-            hitcache_port = os.getenv("HITCACHE_PORT")
-            if hitcache_port:
+            hitcache_port: Optional[int] = None
+            hitcache_port_str = os.getenv("HITCACHE_PORT")
+            if hitcache_port_str:
                 try:
-                    hitcache_port = int(hitcache_port)
+                    hitcache_port = int(hitcache_port_str)
                 except (TypeError, ValueError) as ex:
                     LOGGER.error(
-                        f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
+                        f"can't connect to redis, HITCACHE_PORT couldn't cast to int"
                     )
                     raise ex
 
@@ -191,7 +194,7 @@ class AnalyzerExecutor:
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.hit_cache.set(event_hash, "1")
 
-    def lambda_handler_fn(self, events: Any, context: Any) -> None:
+    def lambda_handler_fn(self, events: SQSMessageBody, context: Any) -> None:
         # Parse sns message
         self.logger.debug(f"handling events: {events} context: {context}")
 
@@ -206,8 +209,6 @@ class AnalyzerExecutor:
         )
 
         for event in events["Records"]:
-            if not self.is_local:
-                event = json.loads(event["body"])["Records"][0]
             data = parse_s3_event(s3, event)
 
             message = json.loads(data)
@@ -428,14 +429,13 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
     )
     obj.put(Body=event_s.encode("utf-8"))
 
-    if is_local:
-        sqs = SQSClientFactory(boto3).from_env()
-        send_s3_event(
-            sqs,
-            "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
-            "local-grapl-analyzer-matched-subgraphs-bucket",
-            key,
-        )
+    sqs = SQSClientFactory(boto3).from_env()
+    send_s3_event(
+        sqs,
+        "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
+        "local-grapl-analyzer-matched-subgraphs-bucket",
+        key,
+    )
 
 
 ### LOCAL HANDLER

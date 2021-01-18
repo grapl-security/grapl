@@ -5,56 +5,18 @@ import traceback
 import boto3  # type: ignore
 import botocore.exceptions  # type: ignore
 from analyzer_executor_lib.analyzer_executor import LOGGER, AnalyzerExecutor
+from analyzer_executor_lib.event_retriever import s3_event_retrieve
+from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.env_helpers import SQSClientFactory
 
 ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()
 
-while True:
-    try:
-        sqs = SQSClientFactory(boto3).from_env()
+wait_for_vsc_debugger(service="analyzer_executor")
 
-        alive = False
-        while not alive:
-            try:
-                if "QueueUrls" not in sqs.list_queues(
-                    QueueNamePrefix="grapl-analyzer-executor-queue"
-                ):
-                    LOGGER.info(
-                        "Waiting for grapl-analyzer-executor-queue to be created"
-                    )
-                    time.sleep(2)
-                    continue
-            except (
-                botocore.exceptions.BotoCoreError,
-                botocore.exceptions.ClientError,
-                botocore.parsers.ResponseParserError,
-            ):
-                LOGGER.info("Waiting for SQS to become available")
-                time.sleep(2)
-                continue
-            alive = True
 
-        res = sqs.receive_message(
-            QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
-            WaitTimeSeconds=3,
-            MaxNumberOfMessages=10,
-        )
+def main():
+    for sqs_message_body in s3_event_retrieve():
+        ANALYZER_EXECUTOR.lambda_handler_fn(sqs_message_body, {})
 
-        messages = res.get("Messages", [])
-        if not messages:
-            LOGGER.warning("queue was empty")
 
-        s3_events = [
-            (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
-        ]
-        for s3_event, receipt_handle in s3_events:
-            ANALYZER_EXECUTOR.lambda_handler_fn(s3_event, {})
-
-            sqs.delete_message(
-                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
-                ReceiptHandle=receipt_handle,
-            )
-
-    except Exception as e:
-        LOGGER.error(traceback.format_exc())
-        time.sleep(2)
+main()
