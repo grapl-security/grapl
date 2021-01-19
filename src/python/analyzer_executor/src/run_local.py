@@ -1,18 +1,11 @@
-import json
 import os
-import time
-import traceback
 
-import boto3  # type: ignore
-import botocore.exceptions  # type: ignore
-from analyzer_executor_lib.analyzer_executor import LOGGER, AnalyzerExecutor
 from analyzer_executor_lib.event_retriever import EventRetriever
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
-from grapl_common.env_helpers import SQSClientFactory
-
-ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()
 
 wait_for_vsc_debugger(service="analyzer_executor")
+
+ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()
 
 
 def main():
