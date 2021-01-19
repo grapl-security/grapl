@@ -8,7 +8,6 @@ extern crate tokio;
 
 use std::error::Error;
 use std::io::{Cursor, Stdout};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use prost::Message;
 use rusoto_s3::S3Client;
@@ -191,17 +190,6 @@ fn init_s3_client() -> S3Client {
         name: "locals3".to_string(),
         endpoint: "http://localhost:4572".to_string(),
     })
-}
-
-fn time_based_key_fn(_event: &[u8]) -> String {
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
 #[tokio::main]
