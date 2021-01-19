@@ -6,6 +6,16 @@ set -euo pipefail
 # CI.
 #
 
+# By setting this environment variable (as opposed to using the `+toolchain`
+# syntax in the `cargo` command), we can automatically install the given
+# toolchain if it doesn't already exist on the system. It'll take a while to
+# download the first time, but thereafter, it will be quick!
+#
+# Note that you will need your Rustup profile set to something higher
+# than "minimal" (e.g., "default"), since `rustup` isn't included in
+# "minimal".
+export RUSTUP_TOOLCHAIN="nightly-2021-01-20"
+
 if [ ! -t 0 ]; then
     # If standard input is open, we assume we're running in the
     # context of an editor integration that is passing the contents of
