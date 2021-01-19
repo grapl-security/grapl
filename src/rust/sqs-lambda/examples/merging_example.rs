@@ -87,10 +87,12 @@ where
 pub struct Subgraph {}
 
 impl Subgraph {
+    #[allow(dead_code)] // Ultimately need an implementation for this example
     fn merge(&mut self, _other: &Self) {
         unimplemented!()
     }
 
+    #[allow(dead_code)] // Ultimately need an implementation for this example
     fn into_bytes(self) -> Vec<u8> {
         unimplemented!()
     }
@@ -108,12 +110,12 @@ impl CompletionEventSerializer for SubgraphSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let mut subgraph = Subgraph {};
-        for sg in completed_events {
-            subgraph.merge(sg);
+        let mut _subgraph = Subgraph {};
+        for _sg in completed_events {
+            // subgraph.merge(sg);
         }
 
-        //        subgraph.into_bytes()
+        // subgraph.into_bytes()
         Ok(vec![])
     }
 }
