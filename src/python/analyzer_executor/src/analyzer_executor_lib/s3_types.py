@@ -32,7 +32,7 @@ class S3PutRecordDict(TypedDict):
     eventName: str
     eventSource: str
     eventTime: str
-    s3: S3ObjectDict
+    s3: S3DescriptorDict
 
 
 class SQSMessageBody(TypedDict):

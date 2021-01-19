@@ -16,13 +16,19 @@ wait_for_vsc_debugger(service="analyzer_executor")
 
 
 def main():
-    # TODO make sure this is also specified in the cdk
+    """
+    This will eventually become the basis of the Python equivalent of `process_loop()`.
+    Some TODOs:
+    - make sure SOURCE_QUEUE_URL is also specified in CDK
+    - add
+      RETRY_QUEUE_URL
+      DEAD_LETTER_QUEUE_URL
+      DEST_QUEUE_URL
+    - pull the manual eventing out of `lambda_handler_fn` and into an EventEmitter
+    """
     queue_url = os.environ["SOURCE_QUEUE_URL"]
-    # RETRY_QUEUE_URL
-    # DEAD_LETTER_QUEUE_URL
-    # DEST_QUEUE_URL
     retriever = EventRetriever(queue_url=queue_url)
-    for sqs_message_body in s3_event_retrieve():
+    for sqs_message_body in retriever.retrieve():
         ANALYZER_EXECUTOR.lambda_handler_fn(sqs_message_body, {})
 
 

@@ -39,12 +39,8 @@ def _ensure_alive(sqs: SQSClient) -> None:
 class EventRetriever:
     def __init__(self, queue_url: str):
         self.queue_url = queue_url
-        """
-        self.retry_queue_url = os.environ[retry_queue_envkey]
-        self.dead_letter_queue_url = os.environ[dead_letter_queue_envkey]
-        """
 
-    def retrieve() -> Iterator[SQSMessageBody]:
+    def retrieve(self) -> Iterator[SQSMessageBody]:
         """
         Yield batches of S3Put records from SQS.
         """
@@ -70,7 +66,7 @@ class EventRetriever:
                     yield body
 
                     sqs.delete_message(
-                        QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
+                        QueueUrl=self.queue_url,
                         ReceiptHandle=receipt_handle,
                     )
 
