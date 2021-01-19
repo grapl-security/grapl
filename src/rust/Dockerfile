@@ -100,7 +100,8 @@ COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
 # vendor all the deps
 RUN mkdir -p /home/grapl/.cargo
-RUN cargo vendor --versioned-dirs --locked > /home/grapl/.cargo/config
+COPY --chown=grapl .cargo/config.toml .cargo/config.toml
+RUN cargo vendor --versioned-dirs --locked >> /home/grapl/.cargo/config.toml
 # debug build of all the deps
 RUN cargo build --target=x86_64-unknown-linux-musl
 
