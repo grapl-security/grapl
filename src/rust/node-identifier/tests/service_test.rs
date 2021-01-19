@@ -17,14 +17,14 @@ async fn init_local_node_identifier(
     let region = DynamoDbClient::from_env();
 
     info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
 
     info!("dynamo");
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
     info!("dyn_session_db");
     let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
     info!("dyn_mapping_db");
-    let dyn_mapping_db = DynamicMappingDb::new(init_dynamodb_client());
+    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::from_env());
     info!("asset_identifier");
     let asset_identifier = AssetIdentifier::new(asset_id_db);
 
@@ -37,13 +37,13 @@ async fn init_local_node_identifier(
     );
 
     info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
 
     info!("asset_identifier");
     let asset_identifier = AssetIdentifier::new(asset_id_db);
 
     info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
 
     info!("node_identifier");
 

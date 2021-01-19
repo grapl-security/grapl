@@ -14,12 +14,13 @@ use sqs_executor::{make_ten, time_based_key_fn};
 
 use crate::generator::SysmonSubgraphGenerator;
 use crate::metrics::SysmonSubgraphGeneratorMetrics;
-use crate::serialization::{SubgraphSerializer, ZstdDecoder};
+
+pub use grapl_service::decoder::{ZstdDecoder, ZstdDecoderError};
+pub use grapl_service::serialization::{SubgraphSerializer, SubgraphSerializerError};
 
 mod generator;
 mod metrics;
 mod models;
-mod serialization;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -27,3 +27,6 @@ cdk-output.json
 
 # Doesn't appear to exist anymore
 index.js
+
+# Just logs when yarn fails
+yarn-error.log

@@ -43,7 +43,7 @@ build: build-all ## alias for `build-aws`
 .PHONY: build-all
 build-all: ## build all targets (incl. local, test, zip)
 	$(DOCKER_BUILDX_BAKE) \
-		 -f docker-compose.Makefile.yml \
+		 -f docker-compose.yml \
 		 -f ./test/docker-compose.unit-tests.yml \
 		 -f ./test/docker-compose.integration-tests.yml \
 		 -f docker-compose.zips.yml

@@ -22,7 +22,7 @@ async fn test_generic_event_deserialization() {
     let events: Vec<GenericEvent> = match serde_json::from_str(&raw_test_string) {
         Ok(events) => events,
         Err(e) => panic!(
-            "Failed to deserialize event into GenericEvent.\nError: {}",
+            "Failed to deserialize event into GenericEvent.\nError: {:?}",
             e
         ),
     };
@@ -53,10 +53,10 @@ async fn test_log_event_deserialization() {
 
     match result {
         Err(e) => {
-            panic!("An error occurred during subgraph generation. Err: {}", e);
+            panic!("An error occurred during subgraph generation. Err: {:?}", e);
         }
         Err(Err(e)) => {
-            panic!("An error occurred during subgraph generation. Err: {}", e);
+            panic!("An error occurred during subgraph generation. Err: {:?}", e);
         }
         Ok(_) => (),
     }

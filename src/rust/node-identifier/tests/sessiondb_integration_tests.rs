@@ -1,6 +1,7 @@
+use grapl_config::env_helpers::FromEnv;
+use rusoto_dynamodb::DynamoDbClient;
 use std::time::Duration;
 
-use node_identifier::init_dynamodb_client;
 use node_identifier::sessiondb::SessionDb;
 use node_identifier::sessions::{Session, UnidSession};
 use quickcheck_macros::quickcheck;
@@ -70,7 +71,7 @@ fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) 
 fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_on_empty_timeline";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -99,7 +100,7 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
 fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_update_existing_non_canon_create";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -146,7 +147,7 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
 fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -193,7 +194,7 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
 #[cfg(feature = "integration")]
 fn canon_create_on_timeline_with_surrounding_canon_sessions() {
     let table_name = "process_history_canon_create_on_timeline_with_surrounding_canon_sessions";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -208,7 +209,7 @@ fn canon_create_on_timeline_with_surrounding_canon_sessions() {
 fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -235,7 +236,7 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
 fn noncanon_create_on_empty_timeline_without_default() {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -259,7 +260,7 @@ fn noncanon_create_on_empty_timeline_without_default() {
 #[cfg(feature = "integration")]
 fn canon_create_on_timeline_with_existing_session_within_skew() {
     let table_name = "process_history_canon_create_on_timeline_with_existing_session_within_skew";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -271,7 +272,7 @@ fn canon_create_on_timeline_with_existing_session_within_skew() {
 fn update_end_time(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_update_end_time";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 

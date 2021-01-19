@@ -1,6 +1,9 @@
 use grapl_graph_descriptions::graph_description::host::*;
 use node_identifier::assetdb::AssetIdDb;
-use node_identifier::init_dynamodb_client;
+
+use grapl_config::env_helpers::FromEnv;
+use rusoto_dynamodb::DynamoDbClient;
+
 use rusoto_core::Region;
 use tokio::runtime::Runtime;
 
@@ -16,7 +19,7 @@ fn map_hostname_to_asset_id() {
         name: "us-east-9".to_owned(),
     };
 
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
 
     runtime
         .block_on(asset_id_db.create_mapping(
