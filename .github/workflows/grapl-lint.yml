@@ -8,7 +8,7 @@ on:
       - master
 
 jobs:
-  rust-lint:
+  rust-format:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,6 +18,16 @@ jobs:
         run: |
           cd src/rust
           cargo fmt -- --check
+
+  rust-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/rust
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Clippy
+        run: bin/run-clippy.sh
 
   python-lint:
     runs-on: ubuntu-latest
