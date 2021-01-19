@@ -73,8 +73,6 @@ where
                 Err(e) => {
                     warn!("Failed to deserialize event: {}, {}", e, event);
 
-                    // If `e` is Persistent we should cache that
-                    // identities.add_identity(event, Success::F);
                     last_failure = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(
                         format!("Failed: {}", e),
                     )));

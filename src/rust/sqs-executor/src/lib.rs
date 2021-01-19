@@ -237,8 +237,6 @@ async fn process_message<
     // todo: We can lift this
     let mut completed = CompletedEvents::default();
 
-    // completed.clear();
-
     let processing_result = async {
         let (processing_result, ms) = event_handler
             .handle_event(events, &mut completed)
