@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 import traceback
 from typing import TYPE_CHECKING, Any, Iterator, List, Tuple
@@ -35,36 +36,44 @@ def _ensure_alive(sqs: SQSClient) -> None:
         return
 
 
-def s3_event_retrieve() -> Iterator[SQSMessageBody]:
-    """
-    Yield batches of S3Put records from SQS.
-    """
-    while True:
-        try:
-            sqs = SQSClientFactory(boto3).from_env()
-            _ensure_alive(sqs)
+class EventRetriever:
+    def __init__(self, queue_url: str):
+        self.queue_url = queue_url
+        """
+        self.retry_queue_url = os.environ[retry_queue_envkey]
+        self.dead_letter_queue_url = os.environ[dead_letter_queue_envkey]
+        """
 
-            res = sqs.receive_message(
-                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
-                WaitTimeSeconds=3,
-                MaxNumberOfMessages=10,
-            )
+    def retrieve() -> Iterator[SQSMessageBody]:
+        """
+        Yield batches of S3Put records from SQS.
+        """
+        while True:
+            try:
+                sqs = SQSClientFactory(boto3).from_env()
+                _ensure_alive(sqs)
 
-            messages = res.get("Messages", [])
-            if not messages:
-                LOGGER.warning("queue was empty")
-
-            s3_events: List[Tuple[SQSMessageBody, Any]] = [
-                (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
-            ]
-            for body, receipt_handle in s3_events:
-                yield body
-
-                sqs.delete_message(
-                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
-                    ReceiptHandle=receipt_handle,
+                res = sqs.receive_message(
+                    QueueUrl=self.queue_url,
+                    WaitTimeSeconds=3,
+                    MaxNumberOfMessages=10,
                 )
 
-        except Exception as e:
-            LOGGER.error(traceback.format_exc())
-            time.sleep(2)
+                messages = res.get("Messages", [])
+                if not messages:
+                    LOGGER.warning("queue was empty")
+
+                s3_events: List[Tuple[SQSMessageBody, Any]] = [
+                    (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
+                ]
+                for body, receipt_handle in s3_events:
+                    yield body
+
+                    sqs.delete_message(
+                        QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
+                        ReceiptHandle=receipt_handle,
+                    )
+
+            except Exception as e:
+                LOGGER.error(traceback.format_exc())
+                time.sleep(2)

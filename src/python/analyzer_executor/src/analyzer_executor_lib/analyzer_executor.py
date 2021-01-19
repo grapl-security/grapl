@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
-from analyzer_executor_lib.s3_types import SQSMessageBody
+from analyzer_executor_lib.s3_types import S3PutRecordDict, SQSMessageBody
 from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
@@ -374,7 +374,7 @@ class AnalyzerExecutor:
             raise
 
 
-def parse_s3_event(s3: S3ServiceResource, event) -> str:
+def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
     bucket = event["s3"]["bucket"]["name"]
     key = event["s3"]["object"]["key"]
     return download_s3_file(s3, bucket, key)
