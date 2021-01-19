@@ -149,7 +149,6 @@ where
             Ok(dispatch_events)
         }
 
-        // identities.into_iter().for_each(|identity| completed.add_identity(identity));
     }
 }
 
@@ -166,9 +165,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     info!("Output events to: {}", destination_bucket);
 
     let cache = &mut make_ten(async {
-        NopCache {}
-        // RedisCache::new(cache_address.to_owned(), MetricReporter::<Stdout>::new(&env.service_name)).await
-        //     .expect("Could not create redis client")
+        NopCache {}  // the AnalyzerDispatcher is not idempotent :(
     })
     .await;
 
