@@ -10,14 +10,19 @@ on:
 jobs:
   rust-format:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: src/rust
     steps:
       - uses: actions/checkout@v2
-
-      - name: Check rust formatting
+      - name: Run rustfmt
+        # Github Workflow runners appear to already have rustup, but
+        # using a minimal profile, which runs afoul of the
+        # RUSTUP_TOOLCHAIN variable in rust-rustfmt.sh, because
+        # `rustfmt` isn't included in the minimal profile :(
         run: |
-          cd src/rust
-          cargo fmt -- --check
+          rustup set profile default
+          bin/run-rustfmt.sh
 
   rust-lint:
     runs-on: ubuntu-latest
