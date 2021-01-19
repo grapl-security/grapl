@@ -204,20 +204,6 @@ fn time_based_key_fn(_event: &[u8]) -> String {
     format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
-// #[tokio::main]
-// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//     simple_logger::init().unwrap();
-//     let service: MyService<_, SqsLambdaError<()>> = MyService::new(NopCache {});
-//
-//     local_service(
-//         "input-dir",
-//         "output-dir",
-//         SubgraphSerializer {},
-//         ZstdJsonDecoder { buffer: vec![] },
-//         service,
-//     ).await
-// }
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let filter = EnvFilter::from_default_env();
