@@ -8,8 +8,6 @@ use std::io::{Cursor, Stdout};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
 
 use async_trait::async_trait;
 use aws_lambda_events::event::s3::{
@@ -798,18 +796,6 @@ where
         let buf = Bytes::from(decompressed);
         Ok(E::decode(buf)?)
     }
-}
-
-fn time_based_key_fn(_event: &[u8]) -> String {
-    info!("event length {}", _event.len());
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
