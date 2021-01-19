@@ -21,13 +21,13 @@ split into 3 separate parts, one for each language:
  - Python -- All the Python code and dependencies
  - JS -- All the Javascript and Typescript
 
-To actually orchestrate builds we use a combination of docker,
-docker-compose, and make.
-[docker-compose](https://docs.docker.com/compose/). Make allows us to
+To actually orchestrate builds we use
+[dobi](https://dnephin.github.io/dobi/config.html). Dobi allows us to
 define tasks such as building the source code, running unit and
 integration tests, and cleaning up build containers (e.g. in order to
-re-build afresh). After installing docker you can see these
-tasks by running `make help` in the root of the Grapl source tree:
+re-build afresh). After [installing
+dobi](https://dnephin.github.io/dobi/install.html) you can see these
+tasks by running `dobi list` in the root of the Grapl source tree:
 
 ```
 jgrillo@penguin:~/src/grapl$ dobi list
