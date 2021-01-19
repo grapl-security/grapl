@@ -45,8 +45,6 @@ pub async fn run_graph_generator<
         PayloadDecoder<InputEventT, DecoderError = DecoderErrorT> + Send + Sync + Clone + 'static,
     DecoderErrorT: CheckedError + Send + 'static,
 {
-    let destination_bucket = grapl_config::dest_bucket();
-
     let sqs_client = SqsClient::from_env();
     let s3_client = S3Client::from_env();
     let cache = &mut event_caches(&env).await;

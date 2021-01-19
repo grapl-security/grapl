@@ -35,7 +35,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sqs_client = SqsClient::from_env();
 
-    let destination_bucket = grapl_config::dest_bucket();
     let cache = &mut event_caches(&env).await;
 
     let metrics = OSQuerySubgraphGeneratorMetrics::new(&env.service_name);

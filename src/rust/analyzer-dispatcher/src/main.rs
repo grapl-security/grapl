@@ -161,8 +161,6 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let s3_client = S3Client::from_env();
     let source_queue_url = grapl_config::source_queue_url();
     debug!("Queue Url: {}", source_queue_url);
-    let destination_bucket = grapl_config::dest_bucket();
-    info!("Output events to: {}", destination_bucket);
 
     let cache = &mut make_ten(async {
         NopCache {}  // the AnalyzerDispatcher is not idempotent :(

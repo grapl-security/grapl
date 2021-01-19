@@ -16,13 +16,3 @@ impl<T, E> From<&PartialResult<T, E>> for EventStatus {
         }
     }
 }
-
-impl EventStatus {
-    fn to_str(&self) -> &'static str {
-        match self {
-            EventStatus::Success => "success",
-            EventStatus::Partial => "partial",
-            EventStatus::Failure => "failure",
-        }
-    }
-}
