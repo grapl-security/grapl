@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Despite the path, this is *not* tied just to Local Grapl, and can also be used on true S3 buckets.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 from typing import Callable
@@ -22,12 +23,15 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     while grapl_repo_root.name != "grapl":
         grapl_repo_root = grapl_repo_root.parent
 
-    grapl_tests_common_path = grapl_repo_root.joinpath(
-        "src/python/grapl-tests-common/grapl_tests_common"
-    )
+    for additional_path in (
+        "src/python/grapl-tests-common",
+        "src/python/grapl-common",
+    ):
+        additional_fullpath = grapl_repo_root.joinpath(additional_path)
+        # Look at the inserted lib before system-installed one
+        sys.path.insert(0, str(additional_fullpath))
 
-    sys.path.append(str(grapl_tests_common_path))
-    from upload_logs import upload_osquery_logs
+    from grapl_tests_common.upload_logs import upload_osquery_logs
 
     return upload_osquery_logs
 
