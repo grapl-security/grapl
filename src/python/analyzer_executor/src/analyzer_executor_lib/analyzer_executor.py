@@ -429,13 +429,15 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
     )
     obj.put(Body=event_s.encode("utf-8"))
 
-    sqs = SQSClientFactory(boto3).from_env()
-    send_s3_event(
-        sqs,
-        "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
-        "local-grapl-analyzer-matched-subgraphs-bucket",
-        key,
-    )
+    if is_local:
+        # Local = manual eventing
+        sqs = SQSClientFactory(boto3).from_env()
+        send_s3_event(
+            sqs,
+            "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
+            "local-grapl-analyzer-matched-subgraphs-bucket",
+            key,
+        )
 
 
 ### LOCAL HANDLER
