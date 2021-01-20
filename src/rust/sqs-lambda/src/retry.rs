@@ -1,7 +1,9 @@
 use std::time::Duration;
 
-use futures_retry::{ErrorHandler, RetryPolicy};
-use rand::{Rng, SeedableRng};
+use futures_retry::{ErrorHandler,
+                    RetryPolicy};
+use rand::{Rng,
+           SeedableRng};
 use rand_xorshift::XorShiftRng;
 use rusoto_core::RusotoError;
 

@@ -1,49 +1,74 @@
 #![allow(unused_must_use)]
 
-use std::collections::{HashMap, HashSet};
-use std::fmt::Debug;
-use std::io::{Cursor, Stdout};
-use std::iter::FromIterator;
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use std::time::UNIX_EPOCH;
-use std::time::{Duration, SystemTime};
+use std::{collections::{HashMap,
+                        HashSet},
+          fmt::Debug,
+          io::{Cursor,
+               Stdout},
+          iter::FromIterator,
+          str::FromStr,
+          sync::{Arc,
+                 Mutex},
+          time::{Duration,
+                 SystemTime,
+                 UNIX_EPOCH}};
 
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use aws_lambda_events::event::sqs::SqsEvent;
+use aws_lambda_events::event::{s3::{S3Bucket,
+                                    S3Entity,
+                                    S3Event,
+                                    S3EventRecord,
+                                    S3Object,
+                                    S3RequestParameters,
+                                    S3UserIdentity},
+                               sqs::SqsEvent};
 use chrono::Utc;
-use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
-use failure::{bail, Error};
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use log::{debug, error, info, warn};
+use dgraph_tonic::{Client as DgraphClient,
+                   Mutate,
+                   Query};
+use failure::{bail,
+              Error};
+use grapl_graph_descriptions::{graph_description::{GeneratedSubgraphs,
+                                                   Graph,
+                                                   Node},
+                               node::NodeT};
+use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
+                    metric_reporter::MetricReporter};
+use lambda_runtime::{error::HandlerError,
+                     lambda,
+                     Context};
+use log::{debug,
+          error,
+          info,
+          warn};
 use prost::Message;
-use rusoto_core::{HttpClient, Region};
-use rusoto_dynamodb::AttributeValue;
-use rusoto_dynamodb::DynamoDbClient;
-use rusoto_dynamodb::{DynamoDb, GetItemInput};
+use rusoto_core::{HttpClient,
+                  Region};
+use rusoto_dynamodb::{AttributeValue,
+                      DynamoDb,
+                      DynamoDbClient,
+                      GetItemInput};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-
-use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
-use grapl_graph_descriptions::node::NodeT;
-use grapl_observe::dgraph_reporter::DgraphMetricReporter;
-use grapl_observe::metric_reporter::MetricReporter;
+use rusoto_sqs::{SendMessageRequest,
+                 Sqs,
+                 SqsClient};
+use serde::{Deserialize,
+            Serialize};
+use serde_json::{json,
+                 Value};
+use sqs_lambda::{cache::{Cache,
+                         CacheResponse,
+                         Cacheable},
+                 completion_event_serializer::CompletionEventSerializer,
+                 event_decoder::PayloadDecoder,
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent},
+                 local_sqs_service::local_sqs_service_with_options,
+                 local_sqs_service_options::LocalSqsServiceOptionsBuilder,
+                 redis_cache::RedisCache,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({

@@ -1,16 +1,21 @@
-use crate::cloudwatch_logs_parse::Stat;
-use crate::error::MetricForwarderError;
+use std::collections::BTreeMap;
+
 use async_trait::async_trait;
 use futures::future;
-use log::info;
-use log::warn;
+use log::{info,
+          warn};
 use rayon::prelude::*;
-use rusoto_cloudwatch::PutMetricDataError;
-use rusoto_cloudwatch::{CloudWatch, Dimension, MetricDatum, PutMetricDataInput};
+use rusoto_cloudwatch::{CloudWatch,
+                        Dimension,
+                        MetricDatum,
+                        PutMetricDataError,
+                        PutMetricDataInput};
 use rusoto_core::RusotoError;
-use statsd_parser;
-use statsd_parser::Metric;
-use std::collections::BTreeMap;
+use statsd_parser::{self,
+                    Metric};
+
+use crate::{cloudwatch_logs_parse::Stat,
+            error::MetricForwarderError};
 
 pub mod cw_units {
     // strings accepted by CloudWatch MetricDatum.unit

@@ -7,19 +7,24 @@ mod cloudwatch_send;
 mod deser_logs_data;
 mod error;
 
-use aws_lambda_events::event::cloudwatch_logs::CloudwatchLogsEvent;
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use log::info;
+use std::sync::{Arc,
+                Mutex};
 
-use crate::accumulate_metrics::accumulate_metric_data;
-use crate::cloudwatch_logs_parse::parse_logs;
-use crate::cloudwatch_send::statsd_as_cloudwatch_metric_bulk;
-use crate::cloudwatch_send::{filter_invalid_stats, get_namespace, put_metric_data};
-use crate::error::{to_handler_error, MetricForwarderError};
+use aws_lambda_events::event::cloudwatch_logs::CloudwatchLogsEvent;
+use lambda_runtime::{error::HandlerError,
+                     lambda,
+                     Context};
+use log::info;
 use rusoto_cloudwatch::CloudWatchClient;
-use std::sync::{Arc, Mutex};
+
+use crate::{accumulate_metrics::accumulate_metric_data,
+            cloudwatch_logs_parse::parse_logs,
+            cloudwatch_send::{filter_invalid_stats,
+                              get_namespace,
+                              put_metric_data,
+                              statsd_as_cloudwatch_metric_bulk},
+            error::{to_handler_error,
+                    MetricForwarderError}};
 
 fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), HandlerError> {
     /**

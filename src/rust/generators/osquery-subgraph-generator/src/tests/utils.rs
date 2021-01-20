@@ -1,7 +1,8 @@
-use crate::parsers::PartiallyDeserializedOSQueryLog;
-use crate::serialization::OSQueryLogDecoder;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use tokio::fs;
+
+use crate::{parsers::PartiallyDeserializedOSQueryLog,
+            serialization::OSQueryLogDecoder};
 
 pub(crate) async fn read_osquery_test_data(
     path: &str,

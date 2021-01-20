@@ -2,15 +2,14 @@
 
 use std::io::Stdout;
 
-use log::*;
-
 use grapl_config as config;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::metric_reporter::MetricReporter;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::EventHandler;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use log::*;
+use sqs_lambda::{event_decoder::PayloadDecoder,
+                 event_handler::EventHandler,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
 
 mod aws;
 mod local;
