@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::fmt::Debug;
 
-use std::ops::Deref;
+
 
 use std::sync::{Arc, Mutex};
 
@@ -19,8 +19,8 @@ use lambda_runtime::error::HandlerError;
 use log::*;
 
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
-use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
+
+use rusoto_sqs::{SqsClient};
 
 use assetdb::{AssetIdDb, AssetIdentifier};
 use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};

@@ -97,7 +97,7 @@ where
     async fn handle_event(
         &mut self,
         subgraphs: Self::InputEvent,
-        completed: &mut CompletedEvents,
+        _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let bucket = std::env::var("ANALYZER_BUCKET").expect("ANALYZER_BUCKET");
 
@@ -158,7 +158,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     info!("Handling event");
 
     let sqs_client = SqsClient::from_env();
-    let s3_client = S3Client::from_env();
+    let _s3_client = S3Client::from_env();
     let source_queue_url = grapl_config::source_queue_url();
     debug!("Queue Url: {}", source_queue_url);
 

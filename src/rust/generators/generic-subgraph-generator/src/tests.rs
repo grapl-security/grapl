@@ -3,7 +3,7 @@
 use crate::generator::GenericSubgraphGenerator;
 use crate::models::GenericEvent;
 use grapl_service::decoder::ZstdJsonDecoder;
-use grapl_service::serialization::SubgraphSerializer;
+
 use sqs_executor::cache::NopCache;
 use sqs_executor::event_decoder::PayloadDecoder;
 use sqs_executor::event_handler::CompletedEvents;

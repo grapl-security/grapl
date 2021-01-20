@@ -14,8 +14,8 @@ use crate::errors::{CheckedError, Recoverable};
 use grapl_observe::metric_reporter::{tag, MetricReporter};
 use grapl_observe::timers::{time_fut_ms, TimedFutureExt};
 use std::io::Stdout;
-use tap::prelude::TapFallible;
-use tracing::{debug, error, warn, Instrument};
+
+use tracing::{debug, error, Instrument};
 
 impl CheckedError for InnerDeleteMessageError {
     fn error_type(&self) -> Recoverable {

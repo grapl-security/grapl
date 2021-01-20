@@ -14,7 +14,7 @@ use rusoto_sqs::Message as SqsMessage;
 use rusoto_sqs::{ListQueuesError, ListQueuesRequest, Sqs};
 
 use tracing::debug;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
@@ -39,7 +39,7 @@ pub mod event_decoder;
 pub mod event_emitter;
 pub mod event_handler;
 use crate::sqs_timeout_manager::keep_alive;
-use darkredis::MSetBuilder;
+
 pub use retriever::event_retriever;
 pub use retriever::s3_event_retriever;
 use rusoto_core::RusotoError;

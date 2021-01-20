@@ -12,13 +12,13 @@ use grapl_observe::dgraph_reporter::DgraphMetricReporter;
 use grapl_observe::metric_reporter::{tag, MetricReporter};
 use grapl_service::decoder::ZstdProtoDecoder;
 use grapl_service::serialization::SubgraphSerializer;
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use log::{debug, error, info, warn};
+
+
+
+use log::{error, info, warn};
 use lru_cache::LruCache;
 use prost::Message;
-use rusoto_core::{HttpClient, Region};
+
 use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_dynamodb::{DynamoDb, GetItemInput};
@@ -35,7 +35,7 @@ use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Stdout;
-use std::iter::FromIterator;
+
 use std::sync::{Arc, Mutex};
 use std::time::UNIX_EPOCH;
 use std::time::{Duration, SystemTime};
@@ -216,7 +216,7 @@ impl Default for UidCache {
 
 impl UidCache {
     fn is_empty(&self) -> bool {
-        let mut self_cache = self.cache.lock().unwrap();
+        let self_cache = self.cache.lock().unwrap();
         self_cache.is_empty()
     }
     fn get(&self, node_key: &str) -> Option<String> {
@@ -287,7 +287,7 @@ where
     };
 
     let mu = generate_edge_insert(&to, &from, &edge_name);
-    let mut txn = mg_client.new_mutated_txn();
+    let txn = mg_client.new_mutated_txn();
     let mut_res = tokio::time::timeout(Duration::from_secs(10), txn.mutate_and_commit_now(mu))
         .await?
         .map_err(AnyhowFailure::into_failure)?;
@@ -317,7 +317,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting graph-merger");
 
     let sqs_client = SqsClient::from_env();
-    let s3_client = S3Client::from_env();
+    let _s3_client = S3Client::from_env();
 
     let cache = &mut event_caches(&env).await;
 

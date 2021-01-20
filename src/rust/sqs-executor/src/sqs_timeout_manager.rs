@@ -38,7 +38,7 @@ where
         } = self;
         tracing::info!("Starting keep_alive for message");
 
-        let mut sw = Stopwatch::start_new();
+        let sw = Stopwatch::start_new();
 
         // Sleep for N - 10 seconds, set timeout to 2N
         let message_id = &message_id;

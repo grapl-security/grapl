@@ -13,13 +13,13 @@ use sqs_executor::event_decoder::PayloadDecoder;
 use sqs_executor::event_handler::EventHandler;
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::redis_cache::RedisCache;
-use sqs_executor::s3_event_emitter::S3EventEmitter;
+
 use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use sqs_executor::{make_ten, time_based_key_fn};
 use std::fmt::Debug;
 use tracing::info;
 
-use std::io::Stdout;
+
 
 pub async fn run_graph_generator<
     InputEventT,
@@ -46,7 +46,7 @@ pub async fn run_graph_generator<
     DecoderErrorT: CheckedError + Send + 'static,
 {
     let sqs_client = SqsClient::from_env();
-    let s3_client = S3Client::from_env();
+    let _s3_client = S3Client::from_env();
     let cache = &mut event_caches(&env).await;
 
     let sysmon_subgraph_generator =

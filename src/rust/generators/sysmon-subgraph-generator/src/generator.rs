@@ -92,7 +92,7 @@ where
 
             let graph = match Graph::try_from(event.clone()) {
                 Ok(subgraph) => subgraph,
-                Err(SysmonGeneratorError::UnsupportedEventType(s)) => continue,
+                Err(SysmonGeneratorError::UnsupportedEventType(_s)) => continue,
                 Err(e) => {
                     error!("Graph::try_from failed with: {:?}", e);
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure

@@ -1,7 +1,7 @@
 use crate::generator::OSQuerySubgraphGenerator;
 use crate::metrics::OSQuerySubgraphGeneratorMetrics;
 use crate::tests::utils;
-use grapl_service::decoder::ZstdJsonDecoder;
+
 use regex::internal::Input;
 use sqs_executor::cache::NopCache;
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};

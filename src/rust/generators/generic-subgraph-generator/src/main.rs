@@ -4,11 +4,11 @@ mod tests;
 
 use grapl_service::decoder::ZstdJsonDecoder;
 use grapl_service::serialization::SubgraphSerializer;
-use sqs_executor::cache::{Cache, NopCache};
+use sqs_executor::cache::{NopCache};
 use tracing::*;
 
-use grapl_config::{event_cache, event_caches};
-use sqs_executor::event_decoder::PayloadDecoder;
+use grapl_config::{event_caches};
+
 
 use crate::generator::GenericSubgraphGenerator;
 
@@ -21,9 +21,9 @@ use rusoto_sqs::SqsClient;
 use sqs_executor::event_retriever::S3PayloadRetriever;
 use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
 use sqs_executor::{make_ten, time_based_key_fn};
-use std::io::Stdout;
+
 use std::str::FromStr;
-use std::time::Duration;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

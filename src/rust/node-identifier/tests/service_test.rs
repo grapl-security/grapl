@@ -5,7 +5,7 @@ use node_identifier::assetdb::{AssetIdDb, AssetIdentifier};
 use node_identifier::dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
 use node_identifier::sessiondb::SessionDb;
 use node_identifier::{HashCache, NodeIdentifier};
-use rusoto_core::Region;
+
 use rusoto_dynamodb::DynamoDbClient;
 
 async fn init_local_node_identifier(
@@ -14,7 +14,7 @@ async fn init_local_node_identifier(
     let cache = HashCache::default();
 
     info!("region");
-    let region = DynamoDbClient::from_env();
+    let _region = DynamoDbClient::from_env();
 
     info!("asset_id_db");
     let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
