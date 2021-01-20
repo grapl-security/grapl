@@ -139,10 +139,17 @@ test-e2e: build-test-e2e ## build and run e2e tests
 	$(MAKE) down; \
 	exit $$EXIT_CODE
 
-.PHONY: lint
-lint: ## Run lint checks
+.PHONY: lint-rust
+lint-rust: ## Run Rust lint checks
 	cd src/rust; cargo fmt -- --check
+
+.PHONY: lint-python
+lint-python: ## Run Python lint checks
 	./etc/ci_scripts/py_lint.sh --check-only
+
+.PHONY: lint
+lint: lint-rust lint-python ## Run all lint checks
+
 
 #
 # else
