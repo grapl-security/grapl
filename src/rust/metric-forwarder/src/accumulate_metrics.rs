@@ -182,10 +182,7 @@ mod tests {
                 assert_eq!(to_count_map(only_one_datum), expected);
                 Ok(())
             }
-            invalid => Err(format!(
-                "Expected exactly 1 metric, but got {:?}",
-                invalid
-            )),
+            invalid => Err(format!("Expected exactly 1 metric, but got {:?}", invalid)),
         }
     }
 
@@ -210,10 +207,7 @@ mod tests {
                 assert_eq!(datum_1.metric_name, METRIC_NAME_2);
                 Ok(())
             }
-            invalid => Err(format!(
-                "Expected exactly 2 metrics, but got {:?}",
-                invalid
-            )),
+            invalid => Err(format!("Expected exactly 2 metrics, but got {:?}", invalid)),
         }
     }
 
@@ -250,10 +244,7 @@ mod tests {
                 assert_eq!(datum_1.timestamp, TS_3.to_string().into());
                 Ok(())
             }
-            invalid => Err(format!(
-                "Expected exactly 2 metrics, but got {:?}",
-                invalid
-            )),
+            invalid => Err(format!("Expected exactly 2 metrics, but got {:?}", invalid)),
         }
     }
 
@@ -284,10 +275,7 @@ mod tests {
                 assert_eq!(to_count_map(datum_millis), expected_for_millis);
                 Ok(())
             }
-            invalid => Err(format!(
-                "Expected exactly 2 metrics, but got {:?}",
-                invalid
-            )),
+            invalid => Err(format!("Expected exactly 2 metrics, but got {:?}", invalid)),
         }
     }
 
@@ -334,10 +322,7 @@ mod tests {
                 );
                 Ok(())
             }
-            invalid => Err(format!(
-                "Expected exactly 2 metrics, but got {:?}",
-                invalid
-            )),
+            invalid => Err(format!("Expected exactly 2 metrics, but got {:?}", invalid)),
         }
     }
 }
