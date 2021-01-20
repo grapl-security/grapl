@@ -48,4 +48,4 @@ from grapl_analyzerlib.grapl_client import (
     LocalMasterGraphClient,
 )
 
-from grapl_analyzerlib.plugin_retriever import load_plugins, load_plugins_local
+from grapl_analyzerlib.plugin_retriever import load_plugins

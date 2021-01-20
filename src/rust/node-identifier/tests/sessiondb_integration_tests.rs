@@ -1,3 +1,5 @@
+#![cfg(feature = "integration")]
+
 use std::time::Duration;
 
 use node_identifier::init_dynamodb_client;
@@ -66,7 +68,6 @@ fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) 
 // When a canonical creation event comes in
 // Then the newly created session should be in the timeline
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_on_empty_timeline";
@@ -95,7 +96,6 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
 //      where 'Y' < 'X'
 // Then the session should be updated to have 'Y' as its canonical create time
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_update_existing_non_canon_create";
@@ -142,7 +142,6 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
 //      where 'Y' < 'X'
 // Then the session should be updated to have 'Y' as its noncanonical create time
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
@@ -190,7 +189,6 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
 //      where 'X' < 'Z' < 'Y'
 // Then the new session should be created
 #[test]
-#[cfg(feature = "integration")]
 fn canon_create_on_timeline_with_surrounding_canon_sessions() {
     let table_name = "process_history_canon_create_on_timeline_with_surrounding_canon_sessions";
     let dynamo = init_dynamodb_client();
@@ -204,7 +202,6 @@ fn canon_create_on_timeline_with_surrounding_canon_sessions() {
 // When a noncanon create event comes in and 'should_default' is true
 // Then Create the new noncanon session
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
@@ -231,7 +228,6 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
 // When a noncanon create event comes in and 'should_default' is false
 // Then return an error
 #[test]
-#[cfg(feature = "integration")]
 fn noncanon_create_on_empty_timeline_without_default() {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
@@ -256,7 +252,6 @@ fn noncanon_create_on_empty_timeline_without_default() {
 // When a canon create event comes in with a create time within ~100ms of X
 // Then we should make the session create time canonical
 #[test]
-#[cfg(feature = "integration")]
 fn canon_create_on_timeline_with_existing_session_within_skew() {
     let table_name = "process_history_canon_create_on_timeline_with_existing_session_within_skew";
     let dynamo = init_dynamodb_client();
@@ -267,7 +262,6 @@ fn canon_create_on_timeline_with_existing_session_within_skew() {
 }
 
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn update_end_time(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_update_end_time";

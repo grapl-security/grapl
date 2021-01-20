@@ -5,18 +5,13 @@ import traceback
 import boto3  # type: ignore
 import botocore.exceptions  # type: ignore
 from analyzer_executor_lib.analyzer_executor import LOGGER, AnalyzerExecutor
+from grapl_common.env_helpers import SQSClientFactory
 
 ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()
 
 while True:
     try:
-        sqs = boto3.client(
-            "sqs",
-            region_name="us-east-1",
-            endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
+        sqs = SQSClientFactory(boto3).from_env()
 
         alive = False
         while not alive:

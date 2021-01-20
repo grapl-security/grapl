@@ -8,7 +8,6 @@ extern crate tokio;
 
 use std::error::Error;
 use std::io::{Cursor, Stdout};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use prost::Message;
 use rusoto_s3::S3Client;
@@ -88,10 +87,12 @@ where
 pub struct Subgraph {}
 
 impl Subgraph {
+    #[allow(dead_code)] // Ultimately need an implementation for this example
     fn merge(&mut self, _other: &Self) {
         unimplemented!()
     }
 
+    #[allow(dead_code)] // Ultimately need an implementation for this example
     fn into_bytes(self) -> Vec<u8> {
         unimplemented!()
     }
@@ -109,12 +110,12 @@ impl CompletionEventSerializer for SubgraphSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let mut subgraph = Subgraph {};
-        for sg in completed_events {
-            subgraph.merge(sg);
+        let mut _subgraph = Subgraph {};
+        for _sg in completed_events {
+            // subgraph.merge(sg);
         }
 
-        //        subgraph.into_bytes()
+        // subgraph.into_bytes()
         Ok(vec![])
     }
 }
@@ -192,31 +193,6 @@ fn init_s3_client() -> S3Client {
         endpoint: "http://localhost:4572".to_string(),
     })
 }
-
-fn time_based_key_fn(_event: &[u8]) -> String {
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
-}
-
-// #[tokio::main]
-// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//     simple_logger::init().unwrap();
-//     let service: MyService<_, SqsLambdaError<()>> = MyService::new(NopCache {});
-//
-//     local_service(
-//         "input-dir",
-//         "output-dir",
-//         SubgraphSerializer {},
-//         ZstdJsonDecoder { buffer: vec![] },
-//         service,
-//     ).await
-// }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -19,10 +19,6 @@ class GraphClient(DgraphClient):
             *(DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
         )
 
-    @classmethod
-    def from_host_port(cls, host: str, port: int) -> "GraphClient":
-        return cls(*(DgraphClientStub(f"{host}:{port}"),))
-
     @contextmanager
     def txn_context(self, read_only: bool = False) -> Iterator[Txn]:
         """
