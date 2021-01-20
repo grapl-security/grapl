@@ -14,7 +14,6 @@ services:
       context: ${PWD}/src/rust
       target: build-test-unit
       args:
-        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER:-}
         - PROFILE=debug
     command: cargo test
 

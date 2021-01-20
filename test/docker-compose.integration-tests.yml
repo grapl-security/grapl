@@ -10,7 +10,6 @@ services:
       context: ${PWD}/src/rust
       target: build-test-integration
       args:
-        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER:-}
         - SCCACHE_BUCKET=${SCCACHE_BUCKET}
         - PROFILE=debug
     command: bash -c "

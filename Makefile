@@ -8,8 +8,8 @@ PROFILE ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
 DOCKER_BUILDX_BAKE_OPTS ?=
-ifneq ($(SCCACHE_AWS_CREDENTIALS_PATH),)
-DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=aws,src="$(SCCACHE_AWS_CREDENTIALS_PATH)"
+ifneq ($(GRAPL_RUST_ENV),)
+DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV)"
 endif
 export
 

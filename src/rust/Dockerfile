@@ -1,14 +1,11 @@
 FROM rust:1-slim-buster AS base
 
 ARG PROFILE=debug
-ARG GRAPL_RUSTC_WRAPPER
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wait-for-it \
         wget \
     && rm -rf /var/lib/apt/lists/*
-
-ENV RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
 
 SHELL ["/bin/bash", "-c"]
 
@@ -34,8 +31,8 @@ FROM base AS build
 WORKDIR /grapl
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
-    --mount=type=secret,id=aws,dst=/grapl/awscreds \
-    source /grapl/awscreds; \
+    --mount=type=secret,id=rust_env,dst=/grapl/env \
+    source /grapl/env; \
     case "${PROFILE}" in \
       debug) \
         cargo build ;; \
@@ -53,16 +50,16 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 FROM build AS build-test-unit
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
-    --mount=type=secret,id=aws,dst=/grapl/awscreds \
-    source /grapl/awscreds; \
+    --mount=type=secret,id=rust_env,dst=/grapl/env \
+    source /grapl/env; \
     cargo test --no-run
 
 
 FROM build AS build-test-integration
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
-    --mount=type=secret,id=aws,dst=/grapl/awscreds \
-    source /grapl/awscreds; \
+    --mount=type=secret,id=rust_env,dst=/grapl/env \
+    source /grapl/env; \
     cargo test --manifest-path node-identifier/Cargo.toml --features integration --no-run
 
 
