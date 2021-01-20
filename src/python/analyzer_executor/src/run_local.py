@@ -1,5 +1,6 @@
 import os
 
+from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
 from analyzer_executor_lib.event_retriever import EventRetriever
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 
