@@ -15,14 +15,14 @@ jobs:
         working-directory: src/rust
     steps:
       - uses: actions/checkout@v2
-      - name: Run rustfmt
+      - name: Check Rust code formatting
         # Github Workflow runners appear to already have rustup, but
         # using a minimal profile, which runs afoul of the
-        # RUSTUP_TOOLCHAIN variable in rust-rustfmt.sh, because
-        # `rustfmt` isn't included in the minimal profile :(
+        # RUSTUP_TOOLCHAIN variable in bin/format, because `rustfmt`
+        # isn't included in the minimal profile :(
         run: |
           rustup set profile default
-          bin/run-rustfmt.sh --check
+          bin/format --check
 
   rust-lint:
     runs-on: ubuntu-latest
