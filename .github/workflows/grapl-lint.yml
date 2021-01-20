@@ -26,8 +26,8 @@ jobs:
         working-directory: src/rust
     steps:
       - uses: actions/checkout@v2
-      - name: Run Clippy
-        run: bin/run-clippy.sh
+      - name: Lint Rust Code
+        run: bin/lint
 
   python-lint:
     runs-on: ubuntu-latest
