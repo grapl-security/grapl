@@ -14,7 +14,7 @@ from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
@@ -210,7 +210,7 @@ class AnalyzerExecutor:
 
         for event in events["Records"]:
             if not self.is_local:
-                event = json.loads(event["body"])["Records"][0]
+                event = json.loads(event["body"])["Records"][0]  # type: ignore
             data = parse_s3_event(s3, event)
 
             message = json.loads(data)
@@ -240,42 +240,54 @@ class AnalyzerExecutor:
             )
 
             p.start()
-            t = 0
 
-            while True:
-                p_res = rx.poll(timeout=5)
-                if not p_res:
-                    t += 1
-                    LOGGER.info(
-                        f"Polled {analyzer_name} for {t * 5} seconds without result"
-                    )
-                    continue
-                result: Optional[Any] = rx.recv()
-
-                if isinstance(result, ExecutionComplete):
-                    self.logger.info("execution complete")
-                    break
-
-                # emit any hits to an S3 bucket
-                if isinstance(result, ExecutionHit):
-                    self.logger.info(
-                        f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
-                    )
-                    with self.metric_reporter.histogram_ctx(
-                        "analyzer-executor.emit_event.ms",
-                        (TagPair("analyzer_name", result.analyzer_name),),
-                    ):
-                        emit_event(s3, result, self.is_local)
-                    self.update_msg_cache(
-                        analyzer, result.root_node_key, message["key"]
-                    )
-                    self.update_hit_cache(analyzer_name, result.root_node_key)
-
-                assert not isinstance(
-                    result, ExecutionFailed
-                ), f"Analyzer {analyzer_name} failed."
+            for exec_hit in self.poll_process(rx=rx, analyzer_name=analyzer_name):
+                with self.metric_reporter.histogram_ctx(
+                    "analyzer-executor.emit_event.ms",
+                    (TagPair("analyzer_name", exec_hit.analyzer_name),),
+                ):
+                    emit_event(s3, exec_hit, self.is_local)
+                self.update_msg_cache(analyzer, exec_hit.root_node_key, message["key"])
+                self.update_hit_cache(analyzer_name, exec_hit.root_node_key)
 
             p.join()
+
+    def poll_process(
+        self,
+        rx: Connection,
+        analyzer_name: str,
+    ) -> Iterator[ExecutionHit]:
+        """
+        Keep polling the spawned Process, and yield any ExecutionHits.
+        (This will probably disappear if Analyzers move to Docker images.)
+        """
+        t = 0
+
+        while True:
+            p_res = rx.poll(timeout=5)
+            if not p_res:
+                t += 1
+                LOGGER.info(
+                    f"Analyzer {analyzer_name} polled for for {t * 5} seconds without result"
+                )
+                continue
+
+            result: Optional[Any] = rx.recv()
+            if isinstance(result, ExecutionComplete):
+                self.logger.info(f"Analyzer {analyzer_name} execution complete")
+                return
+
+            # emit any hits to an S3 bucket
+            if isinstance(result, ExecutionHit):
+                self.logger.info(
+                    f"Analyzer {analyzer_name} emitting event for:"
+                    f"{result.analyzer_name} {result.root_node_key}"
+                )
+                yield result
+
+            assert not isinstance(
+                result, ExecutionFailed
+            ), f"Analyzer {analyzer_name} failed."
 
     def exec_analyzers(
         self,
