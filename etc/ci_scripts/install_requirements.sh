@@ -1,7 +1,4 @@
 
-wget https://github.com/dnephin/dobi/releases/download/v0.13.0/dobi-linux
-chmod +x dobi-linux
-
 # update docker
 docker --version
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -

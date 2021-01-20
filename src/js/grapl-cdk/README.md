@@ -43,20 +43,21 @@ The script will download all the release artifacts to the `zips/` directory.
 To execute a local Grapl build, run the following in Grapl's root:
 
 ```bash
-TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
-```
-
-Then extract the deployment artifacts from the build containers with
-the following script:
-
-```bash
-VERSION=$GRAPL_VERSION ./extract-grapl-deployment-artifacts.sh
+TAG=$GRAPL_VERSION make zip
 ```
 
 `GRAPL_VERSION` can be any name you want. Just make note of it, we'll
 use it in the next step.
 
-Your build outputs should appear in the `zips/` directory.
+Alternatively, you can set TAG in a file named `.env` in the Grapl root directory. Ex:
+
+```bash
+$ cat .env
+TAG="v0.0.1-example"
+$ make zip
+```
+
+Your build outputs should appear in the `src/js/grapl-cdk/zips/` directory.
 
 ### Configuration
 

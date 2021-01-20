@@ -78,6 +78,11 @@ services:
     command: server /data
     ports:
       - "9000:9000"
+    environment:
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      # Explicitly _dont_ specify MINIO_REGION_NAME - it breaks things for some reason.
+      # Default is us-east-1 anyway
     networks:
       default:
         aliases:
@@ -94,8 +99,14 @@ services:
   # Rust services
   #
 
-  grapl-metric-forwarder:
+  grapl-rust-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
+    build:
+      context: src/rust
+      target: metric-forwarder-deploy
+      args:
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
+        - PROFILE=${PROFILE:-debug}
     tty: false
     environment:
       - "IS_LOCAL=True"
@@ -104,8 +115,14 @@ services:
     extra_hosts:
       - amazonaws:127.0.0.1
 
-  grapl-sysmon-subgraph-generator:
+  grapl-rust-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+    build:
+      context: src/rust
+      target: sysmon-subgraph-generator-deploy
+      args:
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
+        - PROFILE=${PROFILE:-debug}
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -125,8 +142,14 @@ services:
       - sqs
       - grapl-provision
 
-  grapl-osquery-subgraph-generator:
+  grapl-rust-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
+    build:
+      context: src/rust
+      target: osquery-subgraph-generator-deploy
+      args:
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
+        - PROFILE=${PROFILE:-debug}
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -146,8 +169,14 @@ services:
       - sqs
       - grapl-provision
 
-  grapl-node-identifier:
+  grapl-rust-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
+    build:
+      context: src/rust
+      target: node-identifier-deploy
+      args:
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
+        - PROFILE=${PROFILE:-debug}
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -179,8 +208,14 @@ services:
       - sqs
       - grapl-provision
 
-  grapl-node-identifier-retry-handler:
+  grapl-rust-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
+    build:
+      context: src/rust
+      target: node-identifier-retry-handler-deploy
+      args:
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
+        - PROFILE=${PROFILE:-debug}
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -212,8 +247,14 @@ services:
       - sqs
       - grapl-provision
 
-  grapl-graph-merger:
+  grapl-rust-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
+    build:
+      context: src/rust
+      target: graph-merger-deploy
+      args:
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
+        - PROFILE=${PROFILE:-debug}
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -238,8 +279,14 @@ services:
       - grapl-provision
       - grapl-master-graph-db
 
-  grapl-analyzer-dispatcher:
+  grapl-rust-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
+    build:
+      context: src/rust
+      target: analyzer-dispatcher-deploy
+      args:
+        - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
+        - PROFILE=${PROFILE:-debug}
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -284,6 +331,10 @@ services:
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-executor-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
       - "HITCACHE_ADDR=dev-shared-redis"
@@ -297,6 +348,12 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -309,6 +366,10 @@ services:
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: engagement-creator-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
     environment:
       - "IS_LOCAL=True"
@@ -327,9 +388,13 @@ services:
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: engagement-edge-deploy
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:8126 --timeout=45 &&
+        wait-for-it grapl-provision:8126 --timeout=120 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=8900
@@ -352,6 +417,10 @@ services:
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: model-plugin-deployer-deploy
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'
     ports:
       - "8123:8123"
@@ -373,6 +442,10 @@ services:
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: dgraph-ttl-deploy
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8124'
     ports:
       - "8124:8124"
@@ -393,7 +466,9 @@ services:
   #
 
   grapl-engagement-view:
-    image: grapl/grapl-engagement-view:${TAG:-latest}
+    image: syntaqx/serve
+    volumes:
+      - ./src/js/grapl-cdk/edge_ux_pre_replace:/var/www:ro
     command: "serve -dir /var/www"
     environment:
       - PORT=1234
@@ -402,6 +477,10 @@ services:
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+    build: 
+      context: src/js/graphql_endpoint
+      dockerfile: Dockerfile
+      target: graphql-endpoint-deploy
     command: yarn start server
     environment:
       - MG_ALPHAS=master_graph:9080
@@ -416,6 +495,11 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
+    build: 
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-notebook
+    user: grapl
     environment:
       - MG_ALPHAS=master_graph:9080
     links:
@@ -429,6 +513,10 @@ services:
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
+    build: 
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-provision
     command: |
       /bin/bash -c "
         # it doesn't seem to like waiting for sqs
@@ -465,6 +553,7 @@ services:
       - s3
       - sqs
       - dynamodb
+      - grapl-engagement-view
 
 networks:
   default:

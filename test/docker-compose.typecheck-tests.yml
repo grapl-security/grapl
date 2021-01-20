@@ -8,11 +8,24 @@ services:
   # Python services
   #
 
+  typecheck-analyzer-executor:
+    image: grapl/analyzer-executor-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-executor-test
+    command: |
+      /bin/bash -c "
+        source venv/bin/activate &&
+        pip install mypy &&
+        mypy analyzer_executor/**/*.py
+        "
+
   typecheck-grapl-common:
     image: grapl/grapl-grapl-common-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: grapl-common-test
     command: |
       /bin/bash -c "
@@ -26,7 +39,7 @@ services:
     image: grapl/grapl-tests-common-python-build:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: grapl-tests-common-build
     command: |
       /bin/bash -c "
@@ -40,7 +53,7 @@ services:
     image: grapl/grapl-engagement-creator-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: engagement-creator-test
     command: |
       /bin/bash -c "
@@ -53,7 +66,7 @@ services:
     image: grapl/grapl-e2e-tests-build:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: grapl-e2e-tests-build
     command: |
       /bin/bash -c "
@@ -69,7 +82,7 @@ services:
     image: grapl/grapl-model-plugin-deployer-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: model-plugin-deployer-test
     command: |
       /bin/bash -c "
@@ -84,7 +97,7 @@ services:
     image: grapl/grapl-engagement-edge-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: engagement-edge-test
     command: |
       /bin/bash -c "
@@ -98,7 +111,7 @@ services:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: grapl-analyzerlib-test
     command: |
       /bin/bash -c "

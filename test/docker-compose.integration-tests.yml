@@ -8,7 +8,6 @@ services:
     image: grapl/grapl-node-identifier-test:${TAG:-latest}
     build:
       context: ${PWD}/src/rust
-      dockerfile: Dockerfile.Makefile
       target: build-test-integration
       args:
         - GRAPL_RUSTC_WRAPPER=${GRAPL_RUSTC_WRAPPER}
@@ -40,7 +39,7 @@ services:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: grapl-analyzerlib-test
     command: bash -c '
       wait-for-it grapl-provision:8126 --timeout=180 &&
@@ -59,7 +58,7 @@ services:
     image: grapl/grapl-analyzer-executor-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: analyzer-executor-test
     command: bash -c '
       source venv/bin/activate &&
@@ -79,7 +78,7 @@ services:
     image: grapl/grapl-engagement-edge-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: engagement-edge-test
     command: bash -c '
       wait-for-it grapl-engagement-edge:8900 --timeout=180 &&

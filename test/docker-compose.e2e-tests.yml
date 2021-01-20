@@ -8,7 +8,7 @@ services:
     image: grapl/grapl-e2e-tests-build:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: grapl-e2e-tests-build
     command: |
       bash -c "

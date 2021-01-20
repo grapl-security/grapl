@@ -13,7 +13,7 @@ services:
     image: grapl/grapl-analyzer-executor-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: analyzer-executor-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -27,7 +27,7 @@ services:
     image: grapl/grapl-dgraph-ttl-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: dgraph-ttl-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -41,7 +41,7 @@ services:
     image: grapl/grapl-engagement-creator-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: engagement-creator-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -55,7 +55,7 @@ services:
     image: grapl/grapl-engagement-edge-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: engagement-edge-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -69,7 +69,7 @@ services:
     image: grapl/grapl-model-plugin-deployer-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: model-plugin-deployer-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -83,7 +83,7 @@ services:
     image: grapl/grapl-swarm-lifecycle-event-handler-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: swarm-lifecycle-event-handler-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -101,7 +101,7 @@ services:
     image: grapl/grapl-graphql-endpoint-zip:${TAG:-latest}
     build:
       context: src/js/graphql_endpoint
-      dockerfile: Dockerfile.Makefile
+      dockerfile: Dockerfile
       target: graphql-endpoint-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl

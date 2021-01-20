@@ -8,7 +8,6 @@ SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get -y install --no-install-recommends \
         build-essential \
-        musl-dev \
         protobuf-compiler \
         wait-for-it \
         zip \
@@ -444,8 +443,7 @@ CMD :
 #
 
 # build
-# FROM grapl-python-build AS grapl-notebook
-FROM grapl-python-deploy AS grapl-notebook
+FROM grapl-python-build AS grapl-notebook
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 EXPOSE 8888

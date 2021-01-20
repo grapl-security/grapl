@@ -43,7 +43,7 @@ build: build-all ## alias for `build-aws`
 .PHONY: build-all
 build-all: ## build all targets (incl. local, test, zip)
 	$(DOCKER_BUILDX_BAKE) \
-		 -f docker-compose.Makefile.yml \
+		 -f docker-compose.yml \
 		 -f ./test/docker-compose.unit-tests.yml \
 		 -f ./test/docker-compose.integration-tests.yml \
 		 -f docker-compose.zips.yml
@@ -73,15 +73,15 @@ build-test-typecheck:
 
 .PHONY: build-test-integration
 build-test-integration:
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.Makefile.yml -f ./test/docker-compose.integration-tests.yml
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml -f ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
 build-test-e2e:
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.Makefile.yml -f ./test/docker-compose.e2e-tests.yml
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml -f ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-local
 build-local: ## build services for local Grapl
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.Makefile.yml
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml
 
 .PHONY: build-aws
 build-aws: ## build services for Grapl in AWS
@@ -115,7 +115,7 @@ test-typecheck: build-test-typecheck ## build and run typecheck tests
 
 .PHONY: test-integration
 test-integration: build-test-integration ## build and run integration tests
-	docker-compose -f docker-compose.Makefile.yml up --force-recreate -d
+	docker-compose -f docker-compose.yml up --force-recreate -d
 	# save exit code to allow for `make down` in event of test failure
 	test/docker-compose-with-error.sh -f ./test/docker-compose.integration-tests.yml; \
 	EXIT_CODE=$$?; \
@@ -124,7 +124,7 @@ test-integration: build-test-integration ## build and run integration tests
 
 .PHONY: test-e2e
 test-e2e: build-test-e2e ## build and run e2e tests
-	docker-compose -f docker-compose.Makefile.yml up --force-recreate -d
+	docker-compose -f docker-compose.yml up --force-recreate -d
 	# save exit code to allow for `make down` in event of test failure
 	test/docker-compose-with-error.sh -f ./test/docker-compose.e2e-tests.yml; \
 	EXIT_CODE=$$?; \
@@ -143,6 +143,8 @@ lint: ## Run lint checks
 .PHONY: clean
 clean: ## Prune all docker build cache
 	docker builder prune -a -f
+	# Seems the docker service could use restarting every once in a while
+	sudo service docker restart
 
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache
@@ -159,11 +161,11 @@ zip: ## Generate zips for use in AWS
 
 .PHONY: up
 up: build-local ## build local services and docker-compose up
-	docker-compose -f docker-compose.Makefile.yml up
+	docker-compose -f docker-compose.yml up
 
 .PHONY: down
 down: ## docker-compose down
-	docker-compose -f docker-compose.Makefile.yml down
+	docker-compose -f docker-compose.yml down
 
 .PHONY: help
 help: ## print this help
