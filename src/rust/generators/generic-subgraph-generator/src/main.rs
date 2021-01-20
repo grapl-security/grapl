@@ -32,7 +32,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting generic-subgraph-generator");
 
     let sqs_client = SqsClient::from_env();
-    let s3_client = S3Client::from_env();
 
     let cache = &mut event_caches(&env).await;
 

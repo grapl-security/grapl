@@ -17,7 +17,6 @@ use failure::{bail, Error};
 use lambda_runtime::error::HandlerError;
 
 use log::*;
-use prost::Message;
 
 use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_s3::S3Client;
@@ -385,13 +384,6 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
     }
 }
 
-fn remove_dead_nodes(graph: &mut Graph, dead_nodes: &HashSet<impl Deref<Target = str>>) {
-    for dead_node in dead_nodes {
-        graph.nodes.remove(dead_node.deref());
-        graph.edges.remove(dead_node.deref());
-    }
-}
-
 fn remove_dead_edges(graph: &mut Graph) {
     let edges = &mut graph.edges;
     let nodes = &graph.nodes;
@@ -405,72 +397,6 @@ fn remove_dead_edges(graph: &mut Graph) {
 
         *edge_list = EdgeList { edges: live_edges };
     }
-}
-
-fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
-    for (_node_key, edge_list) in graph.edges.iter_mut() {
-        for edge in edge_list.edges.iter_mut() {
-            let from = match unid_id_map.get(&edge.from) {
-                Some(from) => from,
-                None => {
-                    warn!(
-                        "Failed to lookup from node in unid_id_map {}",
-                        &edge.edge_name
-                    );
-                    continue;
-                }
-            };
-
-            let to = match unid_id_map.get(&edge.to) {
-                Some(to) => to,
-                None => {
-                    warn!(
-                        "Failed to lookup to node in unid_id_map {}",
-                        &edge.edge_name
-                    );
-                    continue;
-                }
-            };
-
-            *edge = Edge {
-                from: from.to_owned(),
-                to: to.to_owned(),
-                edge_name: edge.edge_name.clone(),
-            };
-        }
-    }
-}
-
-fn remap_nodes(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
-    let mut nodes = HashMap::with_capacity(graph.nodes.len());
-
-    for (_node_key, node) in graph.nodes.iter_mut() {
-        // DynamicNodes are identified in-place
-        if let Some(_n) = node.as_dynamic_node() {
-            let old_node = nodes.insert(node.clone_node_key(), node.clone());
-            if let Some(ref old_node) = old_node {
-                NodeT::merge(
-                    nodes
-                        .get_mut(node.get_node_key())
-                        .expect("node key not in map"),
-                    old_node,
-                );
-            }
-        } else if let Some(new_key) = unid_id_map.get(node.get_node_key()) {
-            node.set_node_key(new_key.to_owned());
-
-            // We may have actually had nodes with different unid node_keys that map to the
-            // same node_key. Therefor we must merge any nodes when there is a collision.
-            let old_node = nodes.insert(new_key.to_owned(), node.clone());
-            if let Some(ref old_node) = old_node {
-                NodeT::merge(
-                    nodes.get_mut(new_key).expect("New key not in map"),
-                    old_node,
-                );
-            }
-        }
-    }
-    graph.nodes = nodes;
 }
 
 async fn create_asset_id_mappings(
@@ -752,7 +678,8 @@ where
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
 
         if identified_graph.is_empty() {
-            if let Some(e) = attribution_failure {
+            // todo: Use a better error
+            if let Some(_e) = attribution_failure {
                 return Err(Err(NodeIdentifierError::Unexpected));
             }
             return Ok(Graph::new(0));
