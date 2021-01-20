@@ -91,7 +91,9 @@ build-aws: ## build services for Grapl in AWS
 # Test
 #
 
-RUN_UNIT_TEST := test/docker-compose-with-error.sh -f ./test/docker-compose.unit-tests.yml
+RUN_UNIT_TEST := test/docker-compose-with-error.sh \
+	-f ./test/docker-compose.unit-tests.yml \
+	-p grapl-unit_tests
 
 .PHONY: test-unit
 test-unit: build-test-unit ## build and run unit tests
@@ -111,13 +113,17 @@ test-unit-js: build-test-unit-js ## build and run unit tests - JavaScript
 
 .PHONY: test-typecheck
 test-typecheck: build-test-typecheck ## build and run typecheck tests
-	test/docker-compose-with-error.sh -f ./test/docker-compose.typecheck-tests.yml
+	test/docker-compose-with-error.sh \
+		-f ./test/docker-compose.typecheck-tests.yml \
+		-p grapl-typecheck_tests
 
 .PHONY: test-integration
 test-integration: build-test-integration ## build and run integration tests
 	docker-compose -f docker-compose.yml up --force-recreate -d
 	# save exit code to allow for `make down` in event of test failure
-	test/docker-compose-with-error.sh -f ./test/docker-compose.integration-tests.yml; \
+	test/docker-compose-with-error.sh \
+		-f ./test/docker-compose.integration-tests.yml \
+		-p grapl-integration_tests; \
 	EXIT_CODE=$$?; \
 	$(MAKE) down; \
 	exit $$EXIT_CODE
@@ -126,7 +132,9 @@ test-integration: build-test-integration ## build and run integration tests
 test-e2e: build-test-e2e ## build and run e2e tests
 	docker-compose -f docker-compose.yml up --force-recreate -d
 	# save exit code to allow for `make down` in event of test failure
-	test/docker-compose-with-error.sh -f ./test/docker-compose.e2e-tests.yml; \
+	test/docker-compose-with-error.sh \
+		-f ./test/docker-compose.e2e-tests.yml \
+		-p grapl-e2e_tests; \
 	EXIT_CODE=$$?; \
 	$(MAKE) down; \
 	exit $$EXIT_CODE

@@ -121,12 +121,12 @@ jobs:
       - name: Run end-to-end tests
         run: |
           make test-e2e
-       
+
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'
         if: ${{ always() }}
         run: |
-          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration-tests"
+          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration_tests"
            
       - name: 'Upload e2e test artifacts'
         if: ${{ always() }}
