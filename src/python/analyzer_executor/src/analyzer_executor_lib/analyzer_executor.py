@@ -209,6 +209,8 @@ class AnalyzerExecutor:
         )
 
         for event in events["Records"]:
+            if not self.is_local:
+                event = json.loads(event["body"])["Records"][0]
             data = parse_s3_event(s3, event)
 
             message = json.loads(data)

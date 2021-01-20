@@ -30,7 +30,7 @@ def _ensure_alive(sqs: SQSClient) -> None:
             botocore.exceptions.ClientError,
             botocore.parsers.ResponseParserError,
         ):
-            LOGGER.info("Waiting for SQS to become available")
+            LOGGER.debug("Waiting for SQS to become available", exc_info=True)
             time.sleep(2)
             continue
         return
@@ -57,7 +57,7 @@ class EventRetriever:
 
                 messages = res.get("Messages", [])
                 if not messages:
-                    LOGGER.warning("queue was empty")
+                    LOGGER.info("queue was empty")
 
                 s3_events: List[Tuple[SQSMessageBody, Any]] = [
                     (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
