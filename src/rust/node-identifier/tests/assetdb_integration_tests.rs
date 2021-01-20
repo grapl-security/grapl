@@ -3,7 +3,6 @@
 use grapl_graph_descriptions::graph_description::host::*;
 use node_identifier::assetdb::AssetIdDb;
 use node_identifier::init_dynamodb_client;
-use rusoto_core::Region;
 use tokio::runtime::Runtime;
 
 // Given a hostname 'H' to asset id 'A' mapping at c_timestamp 'X'
@@ -12,10 +11,6 @@ use tokio::runtime::Runtime;
 #[test]
 fn map_hostname_to_asset_id() {
     let mut runtime = Runtime::new().unwrap();
-    let region = Region::Custom {
-        endpoint: "http://localhost:8000".to_owned(),
-        name: "us-east-9".to_owned(),
-    };
 
     let asset_id_db = AssetIdDb::new(init_dynamodb_client());
 
