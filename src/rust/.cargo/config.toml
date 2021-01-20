@@ -1,17 +1,4 @@
 [build]
-# These compiler lints are warnings by default, but our codebase
-# currently has a number of violations of each. This causes rather
-# noisy build output, so until we can clean them up, we'll globally
-# allow them here. This ensures consistent behavior across all builds
-# (build, test, check, clippy, etc.), in all environments
-# (workstation, editor integration, CI, etc.).
-#
-# Once they've all been cleaned up, we can replace them all with
-# `--deny=warnings`.
 rustflags = [
-    "--deny=dead_code",
-    "--deny=non_snake_case",
-    "--deny=unused_imports",
-    "--deny=unused_mut",
-    "--deny=unused_variables"
+    "--deny=warnings",
 ]
