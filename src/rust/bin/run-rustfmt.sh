@@ -16,16 +16,66 @@ set -euo pipefail
 # "minimal".
 export RUSTUP_TOOLCHAIN="nightly-2021-01-20"
 
-if [ ! -t 0 ]; then
-    # If standard input is open, we assume we're running in the
-    # context of an editor integration that is passing the contents of
-    # an individual file on standard input and writing formatted code
-    # back to standard output.
-    rustfmt < /dev/stdin
-else
-    # If there is no standard input, then assume we're running in CI
-    # or in the terminal. In that case, just check to see if
-    # everything is formatted properly without actually changing
-    # anything.
-    cargo fmt --all -- --check
+# Default to checking formatting in the absence of any options.
+mode="check"
+
+while (( "$#" )); do
+    case "$1" in
+        -e|--editor)
+            mode="editor"
+            shift
+            ;;
+        -c|--check|--ci)
+            mode="check"
+            shift
+            ;;
+        -u|--update)
+            mode="update"
+            shift
+            ;;
+        -h|--help)
+            mode="help"
+            shift
+    esac
+done
+
+if [ "${mode}" == "help" ]; then
+    cat >&2 <<EOF
+
+    Usage: $0 <OPTIONS>
+
+    Options:
+
+    -c|--check|--ci: Check the formatting of all Rust code. Use this
+    in CI jobs. If no other options are given, this is the default
+    behavior.
+
+    -e|--editor: Run rustfmt on the contents of a file passed on
+    standard input; returns formatted code on standard output. Use
+    this for local editor integrations.
+
+    -h|--help: Print this help message.
+
+    -u|--update: Format all Rust code. Use this after updating the
+    nightly version of Rust used for formatting, updating
+    configuration options, or any other time you just want to make
+    sure all the code is up to date.
+EOF
+    exit
 fi
+
+if [ "${mode}" == "editor" ]; then
+    # Pass the contents of an individual file on standard input and
+    # write formatted code back to standard output.
+    rustfmt < /dev/stdin
+    exit $?
+fi
+
+if [ "${mode}" == "update" ]; then
+    >&2 echo "$0: Updating all Rust code formatting"
+    cargo fmt --all
+    exit $?
+fi
+
+>&2 echo "$0: Checking all Rust code formatting"
+cargo fmt --all -- --check

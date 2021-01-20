@@ -22,7 +22,7 @@ jobs:
         # `rustfmt` isn't included in the minimal profile :(
         run: |
           rustup set profile default
-          bin/run-rustfmt.sh
+          bin/run-rustfmt.sh --check
 
   rust-lint:
     runs-on: ubuntu-latest
