@@ -9,7 +9,7 @@ UID = $(shell id -u)
 GID = $(shell id -g)
 DOCKER_BUILDX_BAKE_OPTS ?=
 ifneq ($(SCCACHE_AWS_CREDENTIALS_PATH),)
-DOCKER_BUILDX_BAKE_OPTS += --set grapl-rust*.secrets=id=aws,src="$(SCCACHE_AWS_CREDENTIALS_PATH)"
+DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=aws,src="$(SCCACHE_AWS_CREDENTIALS_PATH)"
 endif
 export
 
@@ -38,7 +38,7 @@ JS_UNIT_TEST := \
 #
 
 .PHONY: build
-build: build-all ## alias for `build-aws`
+build: build-services ## alias for `services`
 
 .PHONY: build-all
 build-all: ## build all targets (incl. local, test, zip)
@@ -79,8 +79,8 @@ build-test-integration:
 build-test-e2e:
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml -f ./test/docker-compose.e2e-tests.yml
 
-.PHONY: build-local
-build-local: ## build services for local Grapl
+.PHONY: build-services
+build-services: ## build Grapl services
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml
 
 .PHONY: build-aws
@@ -163,12 +163,11 @@ release: ## 'make zip' with cargo --release
 	$(MAKE) PROFILE=release zip
 
 .PHONY: zip
-zip: ## Generate zips for use in AWS
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.zips.yml
+zip: build-aws ## Generate zips for use in AWS
 	docker-compose -f docker-compose.zips.yml up
 
 .PHONY: up
-up: build-local ## build local services and docker-compose up
+up: build-services ## build local services and docker-compose up
 	docker-compose -f docker-compose.yml up
 
 .PHONY: down

@@ -409,7 +409,6 @@ services:
       - "BUCKET_PREFIX=local-grapl"
     depends_on:
       - grapl-provision
-
     tty: true
     links:
       - grapl-master-graph-db:master_graph

@@ -25,12 +25,12 @@ jobs:
 
       - name: Build services
         run: |
-          make PROFILE=release build-local
+          make PROFILE=release build-services
 
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
-      - name: Publish Rust images to DockerHub
+      - name: Publish images to DockerHub
         run: |
           docker-compose push
