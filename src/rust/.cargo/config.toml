@@ -9,7 +9,7 @@
 # Once they've all been cleaned up, we can replace them all with
 # `--deny=warnings`.
 rustflags = [
-    "--allow=dead_code",
+    "--deny=dead_code",
     "--allow=non_snake_case",
     "--allow=unused_imports",
     "--allow=unused_mut",
