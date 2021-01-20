@@ -39,4 +39,4 @@ RUN touch \
   swarm-lifecycle-event-handler-latest.zip \
   sysmon-subgraph-generator-latest.zip
 
-CMD cd /home/grapl/grapl-cdk && npm run test
+WORKDIR /home/grapl/grapl-cdk

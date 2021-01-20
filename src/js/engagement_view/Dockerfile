@@ -20,13 +20,6 @@ FROM engagement-view-deps AS engagement-view-build
 # build sources
 RUN yarn build
 
-#
-# test
-#
-FROM engagement-view-deps AS engagement-view-test
-
-# set default command to run tests
-CMD CI=true yarn test
 
 #
 # deploy

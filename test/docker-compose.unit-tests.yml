@@ -28,6 +28,12 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: graph-descriptions-test
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd graph-descriptions && \
+        py.test -n auto -m "not integration_test"
+        '
 
   grapl-common-test:
     image: grapl/grapl-grapl-common-test:${TAG:-latest}
@@ -35,6 +41,12 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: grapl-common-test
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd grapl-common/tests && \
+        py.test -n auto -m "not integration_test"
+        '
 
   grapl-analyzerlib-test:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
@@ -42,6 +54,12 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: grapl-analyzerlib-test
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd grapl_analyzerlib && \
+        py.test -n auto -m "not integration_test"
+        '
 
   # grapl-analyzer-deployer:
   #   image: grapl/grapl-analyzer-deployer-test:${TAG:-latest}
@@ -52,6 +70,13 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: analyzer-executor-test
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd analyzer_executor && \
+        export PYTHONPATH="$${PYTHONPATH}:$$(pwd)/src" && \
+        py.test -n auto -m "not integration_test"
+        '
 
   grapl-engagement-creator-test:
     image: grapl/grapl-engagement-creator-test:${TAG:-latest}
@@ -59,6 +84,12 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: engagement-creator-test
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd engagement-creator && \
+        py.test -n auto -m "not integration_test"
+        '
 
   grapl-engagement-edge-test:
     image: grapl/grapl-engagement-edge-test:${TAG:-latest}
@@ -66,6 +97,12 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: engagement-edge-test
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd engagement_edge && \
+        py.test -n auto -m "not integration_test"
+        '
 
   grapl-model-plugin-deployer-test:
     image: grapl/grapl-model-plugin-deployer-test:${TAG:-latest}
@@ -73,6 +110,12 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: model-plugin-deployer-test
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd model-plugin-deployer && \
+        py.test -n auto -m "not integration_test"
+        '
 
   grapl-dgraph-ttl-test:
     image: grapl/grapl-dgraph-ttl-test:${TAG:-latest}
@@ -80,6 +123,12 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: dgraph-ttl-test
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd dgraph-ttl && \
+        py.test -n auto -m "not integration_test"
+        '
 
   #
   # JS/web services
@@ -90,13 +139,15 @@ services:
     build: 
       context: ${PWD}/src/js/engagement_view
       dockerfile: Dockerfile
-      target: engagement-view-test
+      target: engagement-view-deps
+    command: sh -c 'CI=true yarn test'
 
   grapl-cdk-test:
     image: grapl/grapl-cdk-test:${TAG:-latest}
     build:
       context: ${PWD}/src/js/grapl-cdk
       target: grapl-cdk-test
+    command: npm run test
 
 
   # grapl-graphql-endpoint:
@@ -110,3 +161,13 @@ services:
       target: grapl-notebook-test
     volumes:
       - ${PWD}/etc:/grapl-etc:ro
+    # While the grapl provision notebook technically has nothing to do with grapl-notebook,
+    # I've arbitrarily decided to make this the generalized "check the quality of ipynbs" image.
+    command: |
+      bash -c ' \
+        source venv/bin/activate && \
+        cd grapl-notebook && \
+        nbqa mypy Demo_Engagement.ipynb && \
+        cd /grapl-etc && \
+        nbqa mypy "Grapl Provision.ipynb"
+        '

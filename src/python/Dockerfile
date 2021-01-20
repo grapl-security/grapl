@@ -93,10 +93,6 @@ FROM graph-descriptions-build AS graph-descriptions-test
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-## Run unit tests
-CMD source venv/bin/activate && \
-    cd graph-descriptions && \
-    py.test -n auto -m "not integration_test"
 
 #
 # grapl-common
@@ -119,10 +115,6 @@ FROM grapl-common-build AS grapl-common-test
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-## Run unit tests
-CMD source venv/bin/activate && \
-    cd grapl-common/tests && \
-    py.test -n auto -m "not integration_test"
 
 #
 # grapl_analyzerlib
@@ -153,10 +145,6 @@ FROM grapl-analyzerlib-build AS grapl-analyzerlib-test
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-## Run unit tests
-CMD source venv/bin/activate && \
-    cd grapl_analyzerlib && \
-    py.test -n auto -m "not integration_test"
 
 #
 # analyzer-executor
@@ -200,11 +188,6 @@ ENV IS_RETRY=False
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-## Run unit tests
-CMD source venv/bin/activate && \
-    cd analyzer_executor && \
-    export PYTHONPATH="${PYTHONPATH}:$(pwd)/src" && \
-    py.test -n auto -m "not integration_test"
 
 #
 # engagement-creator
@@ -249,10 +232,6 @@ RUN source venv/bin/activate && \
     cd engagement-creator && \
     pip install .[typecheck]
 
-## Run unit tests
-CMD source venv/bin/activate && \
-    cd engagement-creator && \
-    py.test -n auto -m "not integration_test"
 
 #
 # engagement-edge
@@ -308,9 +287,6 @@ RUN source venv/bin/activate && \
     cd grapl-tests-common && \
     pip install .
 
-CMD source venv/bin/activate && \
-    cd engagement_edge && \
-    py.test -n auto -m "not integration_test"
 
 #
 # dgraph-ttl
@@ -351,9 +327,6 @@ FROM dgraph-ttl-build AS dgraph-ttl-test
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-CMD source venv/bin/activate && \
-    cd dgraph-ttl && \
-    py.test -n auto -m "not integration_test"
 
 #
 # model-plugin-deployer
@@ -399,9 +372,6 @@ FROM model-plugin-deployer-build AS model-plugin-deployer-test
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-CMD source venv/bin/activate && \
-    cd model-plugin-deployer && \
-    py.test -n auto -m "not integration_test"
 
 #
 # swarm-lifecycle-event-handler
@@ -472,14 +442,7 @@ FROM grapl-notebook AS grapl-notebook-test
 RUN source venv/bin/activate && \
     pip install nbqa mypy boto3-stubs[essential]
 
-CMD source venv/bin/activate && \
-    cd grapl-notebook && \
-    nbqa mypy Demo_Engagement.ipynb && \
-    cd /grapl-etc && \
-    nbqa mypy "Grapl Provision.ipynb"
 
-# While the grapl provision notebook technically has nothing to do with grapl-notebook,
-# I've arbitrarily decided to make this the generalized "check the quality of ipynbs" image.
 
 #
 # Local provision
