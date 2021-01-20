@@ -32,6 +32,7 @@ format="${1:-human}"
 cargo clippy \
       --all-targets \
       --message-format="${format}" \
+      --all-features \
       -- \
       --allow clippy::char_lit_as_u8 \
       --allow clippy::clone_double_ref \
