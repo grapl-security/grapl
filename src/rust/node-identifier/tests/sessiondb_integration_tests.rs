@@ -183,21 +183,6 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
     assert_eq!(session_id, "SessionId");
 }
 
-// Given a timeline with two existing sessions, session A and session B
-// where A.create_time = X and B.create_time = Y
-// When a canonical creation event comes in with a creation time of 'Z'
-//      where 'X' < 'Z' < 'Y'
-// Then the new session should be created
-#[test]
-fn canon_create_on_timeline_with_surrounding_canon_sessions() {
-    let table_name = "process_history_canon_create_on_timeline_with_surrounding_canon_sessions";
-    let dynamo = init_dynamodb_client();
-
-    create_or_empty_table(&dynamo, table_name);
-
-    let session_db = SessionDb::new(dynamo, table_name);
-}
-
 // Given an empty timeline
 // When a noncanon create event comes in and 'should_default' is true
 // Then Create the new noncanon session
@@ -245,20 +230,6 @@ fn noncanon_create_on_empty_timeline_without_default() {
 
     let session_id = runtime.block_on(session_db.handle_unid_session(unid, false));
     assert!(session_id.is_err());
-}
-
-// Given a timeline with one session, where the session has a create_time
-//      of X
-// When a canon create event comes in with a create time within ~100ms of X
-// Then we should make the session create time canonical
-#[test]
-fn canon_create_on_timeline_with_existing_session_within_skew() {
-    let table_name = "process_history_canon_create_on_timeline_with_existing_session_within_skew";
-    let dynamo = init_dynamodb_client();
-
-    create_or_empty_table(&dynamo, table_name);
-
-    let session_db = SessionDb::new(dynamo, table_name);
 }
 
 #[quickcheck]
