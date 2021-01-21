@@ -10,7 +10,6 @@ services:
       context: ${PWD}/src/rust
       target: build-test-integration
       args:
-        - SCCACHE_BUCKET=${SCCACHE_BUCKET}
         - PROFILE=debug
     command: bash -c "
       wait-for-it grapl-provision:8126 --timeout=180 &&
