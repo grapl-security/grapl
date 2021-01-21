@@ -41,11 +41,13 @@ JS_UNIT_TEST := \
 build: build-services ## alias for `services`
 
 .PHONY: build-all
-build-all: ## build all targets (incl. local, test, zip)
+build-all: ## build all targets (incl. services, tests, zip)
 	$(DOCKER_BUILDX_BAKE) \
 		 -f docker-compose.yml \
 		 -f ./test/docker-compose.unit-tests.yml \
 		 -f ./test/docker-compose.integration-tests.yml \
+		 -f ./test/docker-compose.e2e-tests.yml \
+		 -f ./test/docker-compose.typecheck-tests.yml \
 		 -f docker-compose.zips.yml
 
 .PHONY: build-test-unit
@@ -84,7 +86,7 @@ build-services: ## build Grapl services
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml
 
 .PHONY: build-aws
-build-aws: ## build services for Grapl in AWS
+build-aws: ## build services for Grapl in AWS (subset of all services)
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.zips.yml
 
 #
@@ -170,11 +172,11 @@ release: ## 'make build-services' with cargo --release
 	$(MAKE) PROFILE=release build-services
 
 .PHONY: zip
-zip: build-aws ## Generate zips for use in AWS
+zip: build-aws ## Generate zips for use in AWS (src/js/grapl-cdk/zips/)
 	docker-compose -f docker-compose.zips.yml up
 
 .PHONY: up
-up: build-services ## build local services and docker-compose up
+up: build-services ## build Grapl services and launch docker-compose up
 	docker-compose -f docker-compose.yml up
 
 .PHONY: down
