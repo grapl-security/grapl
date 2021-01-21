@@ -18,21 +18,6 @@ export COMPOSE_DOCKER_CLI_BUILD=1
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
-PYTHON_UNIT_TESTS := \
-	grapl-graph-descriptions-test \
-	grapl-common-test \
-	grapl-analyzerlib-test \
-	grapl-analyzer-executor-test \
-	grapl-engagement-creator-test \
-	grapl-engagement-edge-test \
-	grapl-model-plugin-deployer-test \
-	grapl-dgraph-ttl-test \
-	grapl-notebook-test
-
-JS_UNIT_TEST := \
-	grapl-engagement-view-test \
-	grapl-cdk-test
-
 #
 # Build
 #
@@ -43,31 +28,36 @@ build: build-services ## alias for `services`
 .PHONY: build-all
 build-all: ## build all targets (incl. services, tests, zip)
 	$(DOCKER_BUILDX_BAKE) \
-		 -f docker-compose.yml \
-		 -f ./test/docker-compose.unit-tests.yml \
-		 -f ./test/docker-compose.integration-tests.yml \
-		 -f ./test/docker-compose.e2e-tests.yml \
-		 -f ./test/docker-compose.typecheck-tests.yml \
-		 -f docker-compose.zips.yml
+		-f docker-compose.yml \
+		-f ./test/docker-compose.unit-tests-rust.yml \
+		-f ./test/docker-compose.unit-tests-python.yml \
+		-f ./test/docker-compose.unit-tests-js.yml \
+		-f ./test/docker-compose.integration-tests.yml \
+		-f ./test/docker-compose.e2e-tests.yml \
+		-f ./test/docker-compose.typecheck-tests.yml \
+		-f docker-compose.zips.yml
 
 .PHONY: build-test-unit
 build-test-unit:
-	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.unit-tests.yml
+	$(DOCKER_BUILDX_BAKE) \
+		-f ./test/docker-compose.unit-tests-rust.yml \
+		-f ./test/docker-compose.unit-tests-python.yml \
+		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-unit-rust
 build-test-unit-rust:
-	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.unit-tests.yml \
-		grapl-rust-test
+	$(DOCKER_BUILDX_BAKE) \
+		-f ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: build-test-unit-python
 build-test-unit-python:
-	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.unit-tests.yml \
-		$(PYTHON_UNIT_TESTS)
+	$(DOCKER_BUILDX_BAKE) \
+		-f ./test/docker-compose.unit-tests-python.yml
 
 .PHONY: build-test-unit-js
 build-test-unit-js:
-	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.unit-tests.yml \
-		$(JS_UNIT_TEST)
+	$(DOCKER_BUILDX_BAKE) \
+		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-typecheck
 build-test-typecheck:
@@ -93,25 +83,31 @@ build-aws: ## build services for Grapl in AWS (subset of all services)
 # Test
 #
 
-RUN_UNIT_TEST := test/docker-compose-with-error.sh \
-	-f ./test/docker-compose.unit-tests.yml \
-	-p grapl-unit_tests
-
 .PHONY: test-unit
 test-unit: build-test-unit ## build and run unit tests
-	$(RUN_UNIT_TEST)
+	test/docker-compose-with-error.sh \
+		-p grapl-test-unit \
+		-f ./test/docker-compose.unit-tests-rust.yml \
+		-f ./test/docker-compose.unit-tests-python.yml \
+		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: test-unit-rust
 test-unit-rust: build-test-unit-rust ## build and run unit tests - Rust
-	$(RUN_UNIT_TEST) grapl-rust-test
+	test/docker-compose-with-error.sh \
+		-p grapl-test-unit-rust \
+		-f ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: test-unit-python
 test-unit-python: build-test-unit-python ## build and run unit tests - Python
-	$(RUN_UNIT_TEST) $(PYTHON_UNIT_TESTS)
+	test/docker-compose-with-error.sh \
+		-p grapl-test-unit-python \
+		-f ./test/docker-compose.unit-tests-python.yml
 
 .PHONY: test-unit-js
 test-unit-js: build-test-unit-js ## build and run unit tests - JavaScript
-	$(RUN_UNIT_TEST) $(JS_UNIT_TEST)
+	test/docker-compose-with-error.sh \
+		-p grapl-test-unit-js \
+		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: test-typecheck
 test-typecheck: build-test-typecheck ## build and run typecheck tests

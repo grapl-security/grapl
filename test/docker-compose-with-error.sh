@@ -7,7 +7,7 @@ usage() { echo "Usage: $0 -f docker-compose.yml" 1>&2; exit 1; }
 while getopts "hf:p:" arg; do
     case $arg in
         f)
-            f=${OPTARG}
+            FILE_ARGS+="-f ${OPTARG} "
             ;;
         p)
             p=${OPTARG}
@@ -18,17 +18,17 @@ while getopts "hf:p:" arg; do
     esac
 done
 
-if [ -z $f ] ; then
+if [ -z "${FILE_ARGS}" ] ; then
     usage
 fi
 
 shift $(($OPTIND - 1))
 SERVICES="$@"
 
-docker-compose -f "$f" -p "$p" up --force-recreate ${SERVICES}
+docker-compose ${FILE_ARGS} --project-name "$p" up --force-recreate ${SERVICES}
 
 # check for container exit codes other than 0
-for test in $(docker-compose -f "$f" -p "$p" ps -q ${SERVICES}); do
+for test in $(docker-compose ${FILE_ARGS} --project-name "$p" ps -q ${SERVICES}); do
     docker inspect -f "{{ .State.ExitCode }}" $test | grep -q ^0;
     if [ $? -ne 0 ]; then 
         exit 1; 

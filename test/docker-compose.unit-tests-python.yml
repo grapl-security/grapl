@@ -4,23 +4,6 @@ version: "3.8"
 
 services:
 
-  #
-  # Rust
-  #
-
-  grapl-rust-test:
-    image: grapl/rust-test-unit:${TAG:-latest}
-    build:
-      context: ${PWD}/src/rust
-      target: build-test-unit
-      args:
-        - PROFILE=debug
-    command: cargo test
-
-  #
-  # Python services
-  #
-
   grapl-graph-descriptions-test:
     image: grapl/grapl-graph-descriptions-test:${TAG:-latest}
     build:
@@ -128,29 +111,6 @@ services:
         cd dgraph-ttl && \
         py.test -n auto -m "not integration_test"
         '
-
-  #
-  # JS/web services
-  #
-
-  grapl-engagement-view-test:
-    image: grapl/grapl-engagement-view-build:${TAG:-latest}
-    build: 
-      context: ${PWD}/src/js/engagement_view
-      dockerfile: Dockerfile
-      target: engagement-view-deps
-    command: sh -c 'CI=true yarn test'
-
-  grapl-cdk-test:
-    image: grapl/grapl-cdk-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src/js/grapl-cdk
-      target: grapl-cdk-test
-    command: npm run test
-
-
-  # grapl-graphql-endpoint:
-  #   image: grapl/grapl-graphql-endpoint-test:${TAG:-latest}
 
   grapl-notebook-test:
     image: grapl/grapl-notebook-test:${TAG:-latest}
