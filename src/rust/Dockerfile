@@ -2,33 +2,33 @@ FROM rust:1-slim-buster AS base
 
 ARG PROFILE=debug
 
+SHELL ["/bin/bash", "-c"]
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wait-for-it \
         wget \
     && rm -rf /var/lib/apt/lists/*
 
-SHELL ["/bin/bash", "-c"]
+WORKDIR /tmp
 
-# Waiting on the following sccache PR to land to better support S3:
-# https://github.com/mozilla/sccache/pull/869
-# RUN cd /tmp && \
-#     wget -q https://github.com/mozilla/sccache/releases/download/0.2.14/sccache-0.2.14-x86_64-unknown-linux-musl.tar.gz && \
-#     tar xvzf sccache-0.2.14-x86_64-unknown-linux-musl.tar.gz && \
-#     mkdir /home/grapl/bin && \
-#     cp sccache-0.2.14-x86_64-unknown-linux-musl/sccache /home/grapl/bin/sccache
+RUN wget -q https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz && \
+    tar xvzf sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz && \
+    chmod +x sccache-v0.2.15-x86_64-unknown-linux-musl/sccache && \
+    cp sccache-v0.2.15-x86_64-unknown-linux-musl/sccache /usr/local/bin/sccache
+
+ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 
 WORKDIR /grapl
 
 # copy sources
 COPY . .
 
-
 #
 # build
 #
+# the `base` target isn't used by the build system, but let's 
+# make `base` and `build` in case it becomes convenient.
 FROM base AS build
-
-WORKDIR /grapl
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
