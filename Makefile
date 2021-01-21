@@ -166,8 +166,8 @@ clean-mount-cache: ## Prune all docker mount cache
 	docker builder prune --filter type=exec.cachemount
 
 .PHONY: release
-release: ## 'make zip' with cargo --release
-	$(MAKE) PROFILE=release zip
+release: ## 'make build-services' with cargo --release
+	$(MAKE) PROFILE=release build-services
 
 .PHONY: zip
 zip: build-aws ## Generate zips for use in AWS
