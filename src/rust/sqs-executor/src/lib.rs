@@ -462,7 +462,8 @@ async fn _process_loop<
         );
         match all_processing.await {
             Ok((_r, ms)) => {
-                metric_reporter.histogram("sqs_executor.all_processing.ms", ms as f64, &[]);
+                metric_reporter.histogram("sqs_executor.all_processing.ms", ms as f64, &[])
+                .unwrap_or_else(|e| error!("failed to report sqs_executor.all_processing.ms: {:?}", e));
             }
             Err(e) => error!("Timed out when processing messages: {:?}", e),
         };

@@ -6,7 +6,6 @@ use std::time::Duration;
 use async_trait::async_trait;
 use failure::{bail, Error};
 use log::{debug, error, info, warn};
-use prost::Message;
 use rusoto_s3::{ListObjectsRequest, S3Client, S3};
 use rusoto_sqs::SqsClient;
 

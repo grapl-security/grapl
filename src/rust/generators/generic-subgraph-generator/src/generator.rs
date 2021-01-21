@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 
 use crate::models::GenericEvent;
-use grapl_graph_descriptions::node::NodeT;
 use sqs_executor::cache::{Cache, CacheResponse};
 use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};

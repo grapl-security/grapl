@@ -17,7 +17,6 @@ use grapl_service::serialization::SubgraphSerializer;
 
 use log::{error, info, warn};
 use lru_cache::LruCache;
-use prost::Message;
 
 use rusoto_dynamodb::AttributeValue;
 use rusoto_dynamodb::DynamoDbClient;
