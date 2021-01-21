@@ -36,8 +36,5 @@ tokio = { version = "0.2", features = ["sync", "rt-core", "macros", "time", "rt-
 tracing = "0.1"
 tracing-futures = "0.2"
 tracing-subscriber = "0.2"
+uuid = { version = "*", features = ["v4"]}
 zstd = "0.6"
-
-[dependencies.uuid]
-version = "*"
-features = ["v4"]
