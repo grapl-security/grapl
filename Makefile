@@ -141,6 +141,9 @@ test-e2e: build-test-e2e ## build and run e2e tests
 	$(MAKE) down; \
 	exit $$EXIT_CODE
 
+.PHONY: test
+test: test-unit test-integration test-e2e test-typecheck # Run all tests
+
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
 	cd src/rust; cargo fmt -- --check
