@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, NewType, Tuple
 
 from typing_extensions import TypedDict
 
@@ -37,3 +37,8 @@ class S3PutRecordDict(TypedDict):
 
 class SQSMessageBody(TypedDict):
     Records: List[S3PutRecordDict]
+
+
+SQSReceiptHandle = NewType("SQSReceiptHandle", str)
+
+MessageWithReceipt = Tuple[SQSMessageBody, SQSReceiptHandle]

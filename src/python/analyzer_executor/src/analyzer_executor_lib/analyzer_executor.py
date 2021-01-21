@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import inspect
@@ -18,6 +19,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
+from analyzer_executor_lib.grapl_logger import get_module_grapl_logger
 from analyzer_executor_lib.s3_types import S3PutRecordDict, SQSMessageBody
 from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
@@ -36,9 +38,7 @@ if TYPE_CHECKING:
 
 
 # Set up logger (this is for the whole file, including static methods)
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "ERROR"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER = get_module_grapl_logger()
 
 # Set up plugins dir for models
 MODEL_PLUGINS_DIR = os.getenv("MODEL_PLUGINS_DIR", "/tmp")
@@ -194,7 +194,7 @@ class AnalyzerExecutor:
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.hit_cache.set(event_hash, "1")
 
-    def lambda_handler_fn(self, events: SQSMessageBody, context: Any) -> None:
+    async def lambda_handler_fn(self, events: SQSMessageBody, context: Any) -> None:
         # Parse sns message
         self.logger.debug(f"handling events: {events} context: {context}")
 
