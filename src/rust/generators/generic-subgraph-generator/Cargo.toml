@@ -5,45 +5,38 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-graph-generator-lib = {path = "../graph-generator-lib/", version="*"}
-grapl-graph-descriptions = { path="../../graph-descriptions", version="*"}
-grapl-config = {path="../../grapl-config", version="*"}
-
-sqs-lambda = { path = "../../sqs-lambda/" }
-grapl-observe = { path = "../../grapl-observe/" }
-serde = "1"
-serde_json = "1"
-serde_derive = "1"
-failure = "0.1"
-prost = "0.7"
-log = "0"
-base16 = "0.1"
-regex = "1"
-lazy_static = "1.2.0"
-
-chrono = "0.4"
-rayon = "1"
-stopwatch = "0"
-
-rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
-rusoto_sqs = { version="0.45.0", default_features = false, features=["rustls"] }
-
-futures = "0.3"
-aws_lambda_events = "0.4"
-simple_logger = "1"
-lambda_runtime = "0.2"
 async-trait = "0.1"
-zstd = "0.6"
-tokio = { version = "0.2", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
-
+aws_lambda_events = "0.4"
+base16 = "0.1"
+chrono = "0.4"
+eyre = "0.6"
+failure = "0.1"
+futures = "0.3"
+graph-generator-lib = {path = "../graph-generator-lib/", version="*"}
+grapl-config = {path="../../grapl-config", version="*"}
+grapl-graph-descriptions = { path="../../graph-descriptions", version="*"}
+grapl-observe = { path = "../../grapl-observe/" }
+lambda_runtime = "0.2"
+lazy_static = "1.2.0"
+log = "0"
+prost = "0.7"
+rayon = "1"
+regex = "1"
+rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
+rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
+rusoto_sqs = { version="0.45.0", default_features = false, features=["rustls"] }
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+simple_logger = "1"
+sqs-lambda = { path = "../../sqs-lambda/" }
+stopwatch = "0"
 tokio-compat = "0.1"
+tokio = { version = "0.2", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 tracing = "0.1"
 tracing-futures = "0.2"
 tracing-subscriber = "0.2"
-eyre = "0.6"
-#openssl-probe = "0.1.2"
-
+zstd = "0.6"
 
 [dependencies.uuid]
 version = "*"
