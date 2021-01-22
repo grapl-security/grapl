@@ -1,11 +1,11 @@
 #!/usr/bin/python3
+import logging
+import os
+import sys
 import time
 
 import boto3
 import botocore
-import logging
-import os
-import sys
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL

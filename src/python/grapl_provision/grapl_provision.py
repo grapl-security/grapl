@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 from hashlib import pbkdf2_hmac, sha256
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 import boto3

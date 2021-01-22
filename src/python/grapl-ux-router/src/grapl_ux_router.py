@@ -3,32 +3,20 @@ from __future__ import annotations
 import gzip as web_compress
 import json
 import logging
-
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
-
-import boto3
 import sys
 import time
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union, cast
+
+import boto3
 from chalice import Chalice, Response
 
 try:
-    from src.lib.env_vars import UX_BUCKET_NAME, GRAPL_LOG_LEVEL, IS_LOCAL
+    from src.lib.env_vars import GRAPL_LOG_LEVEL, IS_LOCAL, UX_BUCKET_NAME
 except:
-    from lib.env_vars import UX_BUCKET_NAME, GRAPL_LOG_LEVEL, IS_LOCAL
+    from lib.env_vars import GRAPL_LOG_LEVEL, IS_LOCAL, UX_BUCKET_NAME
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3.service_resource import (
-        Bucket,
-    )
+    from mypy_boto3_s3.service_resource import Bucket
 
     pass
 
