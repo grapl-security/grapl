@@ -96,18 +96,18 @@ where
     });
 }
 
-#[tracing::instrument(skip(
-    next_message,
-    queue_url,
-    dead_letter_queue_url,
-    cache,
-    sqs_client,
-    event_handler,
-    s3_payload_retriever,
-    s3_emitter,
-    serializer,
-    metric_reporter,
-))]
+//#[tracing::instrument(skip(
+//    next_message,
+//    queue_url,
+//    dead_letter_queue_url,
+//    cache,
+//    sqs_client,
+//    event_handler,
+//    s3_payload_retriever,
+//    s3_emitter,
+//    serializer,
+//    metric_reporter,
+//))]
 async fn process_message<
     CacheT,
     SInit,
@@ -182,7 +182,8 @@ async fn process_message<
             next_message.receipt_handle.expect("missing receipt_handle"),
             metric_reporter,
         )
-        .await;
+        .await
+        .unwrap_or_else(|e| error!("delete_message failed with: {:?}", e));
         return;
     }
     info!(message_id = message_id, "Retrieving payload from",);
@@ -228,7 +229,8 @@ async fn process_message<
                     receipt_handle,
                     metric_reporter.clone(),
                 )
-                .await;
+                .await
+		.unwrap_or_else(|e| error!("move_to_dead_letter failed with: {:?}", e));
             }
             return;
         }
@@ -243,10 +245,11 @@ async fn process_message<
             .timed()
             .await;
         metric_reporter.histogram(
-            "event_handler.handle_event",
+            "event_handler.handle_event.ms",
             ms as f64,
             &[tag("success", processing_result.is_ok())],
-        );
+        )
+        .unwrap_or_else(|e| error!("event_handler.handle_event.ms: {:?}", e));
         processing_result
     }
     .await;
@@ -266,7 +269,8 @@ async fn process_message<
 
             cache
                 .store(next_message.message_id.clone().unwrap().into_bytes())
-                .await;
+                .await
+                .unwrap_or_else(|e| error!("cache store failed with: {:?}", e));
             cache_completed(cache, &mut completed).await;
             // ack the message - we could probably not block on this
 
@@ -277,7 +281,8 @@ async fn process_message<
                 receipt_handle,
                 metric_reporter.clone(),
             )
-            .await;
+            .await
+            .unwrap_or_else(|e| error!("delete_message failed with: {:?}", e));
         }
         Err(Ok((partial, e))) => {
             error!(
@@ -307,7 +312,8 @@ async fn process_message<
                     receipt_handle,
                     metric_reporter.clone(),
                 )
-                .await;
+                .await
+		.unwrap_or_else(|e| error!("move_to_dead_letter failed: {:?}", e));
             }
         }
         Err(Err(e)) => {
@@ -326,7 +332,8 @@ async fn process_message<
                     receipt_handle,
                     metric_reporter.clone(),
                 )
-                .await;
+                .await
+                .unwrap_or_else(|e| error!("move_to_dead_letter failed with: {:?}", e));
             }
             // should we retry? idk
             // otherwise we can just do nothing
@@ -470,15 +477,15 @@ async fn _process_loop<
     }
 }
 
-#[tracing::instrument(skip(
-    cache,
-    sqs_client,
-    event_handler,
-    s3_payload_retriever,
-    s3_emitter,
-    serializer,
-    metric_reporter,
-))]
+//#[tracing::instrument(skip(
+//    cache,
+//    sqs_client,
+//    event_handler,
+//    s3_payload_retriever,
+//    s3_emitter,
+//    serializer,
+//    metric_reporter,
+//))]
 pub async fn process_loop<
     CacheT,
     SInit,

@@ -37,7 +37,7 @@ base64 = "0"
 rand = "0"
 
 futures = "0.3"
-async-trait = "0.1"
+async-trait = "0.1.42"
 uuid = "0"
 tokio-compat = "0"
 tokio = { version = "0.2", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }

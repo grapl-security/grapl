@@ -1,68 +1,29 @@
-import json
-import time
-import traceback
+import os
 
-import boto3  # type: ignore
-import botocore.exceptions  # type: ignore
-from analyzer_executor_lib.analyzer_executor import LOGGER, AnalyzerExecutor
-from grapl_common.env_helpers import SQSClientFactory
+from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
+from analyzer_executor_lib.event_retriever import EventRetriever
+from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
+
+wait_for_vsc_debugger(service="analyzer_executor")
 
 ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()
 
-i = 0
-LOGGER.info("Starting analyzer-executor")
-while True:
-    try:
-        sqs = SQSClientFactory(boto3).from_env()
 
-        alive = False
-        while not alive:
-            try:
-                if "QueueUrls" not in sqs.list_queues(
-                    QueueNamePrefix="grapl-analyzer-executor-queue"
-                ):
-                    LOGGER.info(
-                        "Waiting for grapl-analyzer-executor-queue to be created"
-                    )
-                    time.sleep(2)
-                    continue
-            except (
-                botocore.exceptions.BotoCoreError,
-                botocore.exceptions.ClientError,
-                botocore.parsers.ResponseParserError,
-            ):
-                i += 1
-                if i >= 10:
-                    LOGGER.error(f"Waiting for SQS to become available {i}")
-                else:
-                    LOGGER.warning(f"Waiting for SQS to become available {i}")
-                time.sleep(2)
-                continue
-            alive = True
+def main():
+    """
+    This will eventually become the basis of the Python equivalent of `process_loop()`.
+    Some TODOs:
+    - make sure SOURCE_QUEUE_URL is also specified in CDK
+    - add
+      RETRY_QUEUE_URL
+      DEAD_LETTER_QUEUE_URL
+      DEST_QUEUE_URL
+    - pull the manual eventing out of `lambda_handler_fn` and into an EventEmitter
+    """
+    queue_url = os.environ["SOURCE_QUEUE_URL"]
+    retriever = EventRetriever(queue_url=queue_url)
+    for sqs_message_body in retriever.retrieve():
+        ANALYZER_EXECUTOR.lambda_handler_fn(sqs_message_body, {})
 
-        res = sqs.receive_message(
-            QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
-            WaitTimeSeconds=3,
-            MaxNumberOfMessages=10,
-        )
 
-        messages = res.get("Messages", [])
-        if not messages:
-            LOGGER.warning("queue was empty")
-
-        s3_events = [
-            (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
-        ]
-        for s3_event, receipt_handle in s3_events:
-            ANALYZER_EXECUTOR.lambda_handler_fn(s3_event, {})
-
-            sqs.delete_message(
-                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue",
-                ReceiptHandle=receipt_handle,
-            )
-
-    except Exception as e:
-        LOGGER.error(traceback.format_exc())
-        time.sleep(2)
-
-LOGGER.info("Exiting")
+main()

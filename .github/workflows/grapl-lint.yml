@@ -8,21 +8,31 @@ on:
       - master
 
 jobs:
-  rust-lint:
+  rust-format:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: src/rust
     steps:
       - uses: actions/checkout@v2
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: rustfmt
-
-      - name: Check rust formatting
+      - name: Check Rust code formatting
+        # Github Workflow runners appear to already have rustup, but
+        # using a minimal profile, which runs afoul of the
+        # RUSTUP_TOOLCHAIN variable in bin/format, because `rustfmt`
+        # isn't included in the minimal profile :(
         run: |
-          cd src/rust
-          cargo fmt -- --check
+          rustup set profile default
+          bin/format --check
+
+  rust-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/rust
+    steps:
+      - uses: actions/checkout@v2
+      - name: Lint Rust Code
+        run: bin/lint
 
   python-lint:
     runs-on: ubuntu-latest

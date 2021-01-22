@@ -1,6 +1,3 @@
-use crate::generator::OSQuerySubgraphGenerator;
-use crate::metrics::OSQuerySubgraphGeneratorMetrics;
-use crate::tests::utils;
 
 use regex::internal::Input;
 use sqs_executor::cache::NopCache;

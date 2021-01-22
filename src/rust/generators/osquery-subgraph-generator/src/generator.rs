@@ -1,7 +1,6 @@
-use async_trait::async_trait;
+use std::convert::TryFrom;
 
-use crate::metrics::OSQuerySubgraphGeneratorMetrics;
-use crate::parsers::PartiallyDeserializedOSQueryLog;
+use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
 use sqs_executor::cache::{Cache};
@@ -9,6 +8,8 @@ use sqs_executor::errors::{CheckedError, Recoverable};
 use sqs_executor::event_handler::{CompletedEvents, EventHandler};
 
 use std::convert::TryFrom;
+use crate::{metrics::OSQuerySubgraphGeneratorMetrics,
+            parsers::PartiallyDeserializedOSQueryLog};
 
 #[derive(Clone)]
 pub(crate) struct OSQuerySubgraphGenerator<C>
