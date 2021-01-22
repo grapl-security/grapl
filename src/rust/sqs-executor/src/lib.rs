@@ -182,7 +182,8 @@ async fn process_message<
             next_message.receipt_handle.expect("missing receipt_handle"),
             metric_reporter,
         )
-        .await;
+        .await
+        .unwrap_or_else(|e| error!("delete_message failed with : {:?}", e));
         return;
     }
     info!(message_id = message_id, "Retrieving payload from",);
@@ -228,7 +229,8 @@ async fn process_message<
                     receipt_handle,
                     metric_reporter.clone(),
                 )
-                .await;
+                .await
+		.unwrap_or_else(|e| error!("move_to_dead_letter failed with: {:?}", e));
             }
             return;
         }
@@ -266,7 +268,9 @@ async fn process_message<
 
             cache
                 .store(next_message.message_id.clone().unwrap().into_bytes())
-                .await;
+        	.await
+		.unwrap_or_else(|e| error!("cache.store failed with : {:?}", e));
+
             cache_completed(cache, &mut completed).await;
             // ack the message - we could probably not block on this
 
@@ -277,7 +281,8 @@ async fn process_message<
                 receipt_handle,
                 metric_reporter.clone(),
             )
-            .await;
+            .await
+            .unwrap_or_else(|e| error!("delete_message failed with : {:?}", e));
         }
         Err(Ok((partial, e))) => {
             error!(
@@ -307,7 +312,8 @@ async fn process_message<
                     receipt_handle,
                     metric_reporter.clone(),
                 )
-                .await;
+                .await
+                .unwrap_or_else(|e| error!("move_to_dead_letter failed with : {:?}", e));
             }
         }
         Err(Err(e)) => {
@@ -326,7 +332,8 @@ async fn process_message<
                     receipt_handle,
                     metric_reporter.clone(),
                 )
-                .await;
+                .await
+                .unwrap_or_else(|e| error!("move_to_dead_letter failed with : {:?}", e));
             }
             // should we retry? idk
             // otherwise we can just do nothing
