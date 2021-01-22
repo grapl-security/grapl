@@ -93,7 +93,8 @@ jobs:
 
       - name: Run integration tests
         run: |
-          make test-integration
+          echo "unset RUSTC_WRAPPER" > rust_env.sh
+          GRAPL_RUST_ENV_FILE=rust_env.sh make test-integration
 
 
   # In the future, this should probably be merged back into the integration tests, but
