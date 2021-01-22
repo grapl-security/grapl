@@ -210,12 +210,8 @@ class AnalyzerExecutor:
 
         for event in events["Records"]:
             if not self.is_local:
-<<<<<<< HEAD
                 LOGGER.debug(f'event body: {event["body"]}')
-                event = json.loads(event["body"])["Records"][0]
-=======
                 event = json.loads(event["body"])["Records"][0]  # type: ignore
->>>>>>> staging
             data = parse_s3_event(s3, event)
 
             message = json.loads(data)
