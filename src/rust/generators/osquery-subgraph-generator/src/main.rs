@@ -3,7 +3,7 @@
 mod generator;
 mod metrics;
 mod parsers;
-
+mod serialization;
 mod tests;
 
 use graph_generator_lib::*;
@@ -11,8 +11,7 @@ use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    *};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ZstdJsonDecoder,
-                    serialization::zstd_proto_graph::SubgraphSerializer};
+use grapl_service::serialization::zstd_proto_graph::SubgraphSerializer;
 use log::*;
 use rusoto_sqs::SqsClient;
 use sqs_executor::{event_retriever::S3PayloadRetriever,
@@ -21,7 +20,8 @@ use sqs_executor::{event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
 
 use crate::{generator::OSQuerySubgraphGenerator,
-            metrics::OSQuerySubgraphGeneratorMetrics};
+            metrics::OSQuerySubgraphGeneratorMetrics,
+            serialization::OSQueryLogDecoder};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ZstdJsonDecoder::default(),
+            OSQueryLogDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })

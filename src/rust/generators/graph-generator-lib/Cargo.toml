@@ -11,14 +11,12 @@ grapl-graph-descriptions = { path="../../graph-descriptions", version="0.2.*" }
 sqs-executor = {path="../../sqs-executor"}
 grapl-service = {path="../../grapl-service"}
 
-failure = "0.1"
 grapl-observe = {path = "../../grapl-observe"}
 
 sha2 = "0.9"
 rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_sqs = { version="0.45.0", default_features = false, features=["rustls"] }
-rusoto_sts =  { version="0.45.0", default_features = false, features=["rustls"] }
 grapl-config = { path="../../grapl-config", version="0.0.*" }
 tracing = "0.1.22"
 rusoto_credential = "0.45.0"
@@ -31,7 +29,5 @@ log = "0"
 zstd = "0.6"
 aws_lambda_events = "0.4"
 
-lambda_runtime = "0.2"
 chrono = "0.4"
-tokio-compat = "0.1"
 tokio = "0.2"

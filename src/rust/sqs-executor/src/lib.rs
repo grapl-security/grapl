@@ -249,11 +249,13 @@ async fn process_message<
             .handle_event(events, &mut completed)
             .timed()
             .await;
-        metric_reporter.histogram(
-            "event_handler.handle_event",
-            ms as f64,
-            &[tag("success", processing_result.is_ok())],
-        );
+        metric_reporter
+            .histogram(
+                "event_handler.handle_event",
+                ms as f64,
+                &[tag("success", processing_result.is_ok())],
+            )
+            .unwrap_or_else(|e| error!("event_handler.handle_event failed with: {:?}", e));
         processing_result
     }
     .await;

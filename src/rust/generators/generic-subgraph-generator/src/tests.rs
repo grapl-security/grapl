@@ -53,10 +53,10 @@ async fn test_log_event_deserialization() {
         .await;
 
     match result {
-        Err(e) => {
+        Err(Err(e)) => {
             panic!("An error occurred during subgraph generation. Err: {:?}", e);
         }
-        Err(Err(e)) => {
+        Err(e) => {
             panic!("An error occurred during subgraph generation. Err: {:?}", e);
         }
         Ok(_) => (),
