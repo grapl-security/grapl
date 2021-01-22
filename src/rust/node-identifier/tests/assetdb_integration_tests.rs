@@ -1,10 +1,10 @@
 #![cfg(feature = "integration")]
 
-use grapl_graph_descriptions::graph_description::host::*;
-use node_identifier::{assetdb::AssetIdDb,};
-use tokio::runtime::Runtime;
 use grapl_config::env_helpers::FromEnv;
+use grapl_graph_descriptions::graph_description::host::*;
+use node_identifier::assetdb::AssetIdDb;
 use rusoto_dynamodb::DynamoDbClient;
+use tokio::runtime::Runtime;
 
 // Given a hostname 'H' to asset id 'A' mapping at c_timestamp 'X'
 // When attributing 'H' at c_timestamp 'Y', where 'Y' > 'X'

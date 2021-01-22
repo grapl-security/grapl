@@ -2,13 +2,11 @@
 
 use std::time::Duration;
 
+use grapl_config::env_helpers::FromEnv;
 use node_identifier::{init_dynamodb_client,
                       sessiondb::SessionDb,
                       sessions::{Session,
                                  UnidSession}};
-use grapl_config::env_helpers::FromEnv;
-use rusoto_dynamodb::DynamoDbClient;
-
 use quickcheck_macros::quickcheck;
 use rusoto_core::RusotoError;
 use rusoto_dynamodb::{AttributeDefinition,
@@ -17,6 +15,7 @@ use rusoto_dynamodb::{AttributeDefinition,
                       CreateTableOutput,
                       DeleteTableInput,
                       DynamoDb,
+                      DynamoDbClient,
                       KeySchemaElement,
                       ProvisionedThroughput};
 use tokio::runtime::Runtime;
