@@ -3,8 +3,7 @@
 use std::time::Duration;
 
 use grapl_config::env_helpers::FromEnv;
-use node_identifier::{init_dynamodb_client,
-                      sessiondb::SessionDb,
+use node_identifier::{sessiondb::SessionDb,
                       sessions::{Session,
                                  UnidSession}};
 use quickcheck_macros::quickcheck;
@@ -106,7 +105,7 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
 fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_update_existing_non_canon_create";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -152,7 +151,7 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
 fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -197,7 +196,7 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
 fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -223,7 +222,7 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
 fn noncanon_create_on_empty_timeline_without_default() {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
@@ -243,7 +242,7 @@ fn noncanon_create_on_empty_timeline_without_default() {
 fn update_end_time(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_update_end_time";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
