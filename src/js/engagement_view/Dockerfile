@@ -6,8 +6,8 @@ WORKDIR /grapl
 # install deps as separate steps to leverage build cache
 COPY package.json package.json
 COPY package-lock.json package-lock.json
-COPY yarn.lock yarn.lock
-RUN yarn install
+# COPY yarn.lock yarn.lock
+RUN npm install
 
 # now copy all sources
 COPY . .
@@ -18,7 +18,7 @@ COPY . .
 FROM engagement-view-deps AS engagement-view-build
 
 # build sources
-RUN yarn build
+RUN npm build
 
 
 #
