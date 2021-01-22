@@ -6,6 +6,9 @@ use node_identifier::{init_dynamodb_client,
                       sessiondb::SessionDb,
                       sessions::{Session,
                                  UnidSession}};
+use grapl_config::env_helpers::FromEnv;
+use rusoto_dynamodb::DynamoDbClient;
+
 use quickcheck_macros::quickcheck;
 use rusoto_core::RusotoError;
 use rusoto_dynamodb::{AttributeDefinition,
@@ -76,7 +79,7 @@ fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) 
 fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_on_empty_timeline";
-    let dynamo = init_dynamodb_client();
+    let dynamo = DynamoDbClient::from_env();
 
     create_or_empty_table(&dynamo, table_name);
 
