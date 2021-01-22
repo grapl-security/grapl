@@ -1,5 +1,3 @@
-use std::io::Cursor;
-
 use grapl_graph_descriptions::graph_description::*;
 use prost::EncodeError;
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;

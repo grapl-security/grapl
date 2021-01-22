@@ -3,7 +3,7 @@
 mod generator;
 mod metrics;
 mod parsers;
-
+mod serialization;
 mod tests;
 
 use graph_generator_lib::*;
@@ -21,6 +21,7 @@ use sqs_executor::{event_retriever::S3PayloadRetriever,
 use crate::{generator::OSQuerySubgraphGenerator,
             metrics::OSQuerySubgraphGeneratorMetrics,
             serialization::OSQueryLogDecoder};
+use grapl_service::serialization::SubgraphSerializer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

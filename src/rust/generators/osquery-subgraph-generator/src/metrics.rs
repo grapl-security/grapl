@@ -6,8 +6,6 @@ use grapl_observe::metric_reporter::{common_strs,
                                      TagPair};
 use log::*;
 
-use grapl_observe::metric_reporter::MetricReporter;
-
 #[derive(Clone)]
 pub struct OSQuerySubgraphGeneratorMetrics {
     metric_reporter: MetricReporter<Stdout>,

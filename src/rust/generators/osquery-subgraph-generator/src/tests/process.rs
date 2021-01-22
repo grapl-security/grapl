@@ -1,4 +1,3 @@
-use regex::internal::Input;
 use sqs_executor::{cache::NopCache,
                    event_handler::{CompletedEvents,
                                    EventHandler}};

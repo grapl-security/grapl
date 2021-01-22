@@ -700,7 +700,7 @@ where
     }
 }
 
-pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
+pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
     let (env, _guard) = grapl_config::init_grapl_env!();
     let source_queue_url = grapl_config::source_queue_url();
 

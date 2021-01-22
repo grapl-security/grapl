@@ -1024,6 +1024,8 @@ dependencies = [
  "rusoto_core",
  "rusoto_s3",
  "rusoto_sqs",
+ "serde",
+ "serde_json",
  "simple_logger",
  "sqs-executor",
  "thiserror",

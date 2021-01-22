@@ -2,7 +2,22 @@ use std::io::Cursor;
 
 use log::*;
 use serde::Deserialize;
-use sqs_lambda::event_decoder::PayloadDecoder;
+use sqs_executor::event_decoder::PayloadDecoder;
+use sqs_executor::errors::{CheckedError, Recoverable};
+
+#[derive(Debug, thiserror::Error)]
+pub enum OSQueryLogDecoderError {
+    #[error("ZstdError")]
+    ZstdError(#[from] std::io::Error),
+    #[error("JsonError")]
+    JsonError(#[from] serde_json::Error),
+}
+
+impl CheckedError for OSQueryLogDecoderError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Persistent
+    }
+}
 
 // TODO: MOVE THIS INTO A SHARED LIBRARY FOR REUSE BETWEEN GENERIC SUBGRAPH GENERATOR AND THIS GENERATOR
 #[derive(Debug, Clone, Default)]
@@ -12,7 +27,9 @@ impl<D> PayloadDecoder<Vec<D>> for OSQueryLogDecoder
 where
     for<'a> D: Deserialize<'a>,
 {
-    fn decode(&mut self, body: Vec<u8>) -> Result<Vec<D>, Box<dyn std::error::Error>> {
+    type DecoderError = OSQueryLogDecoderError;
+
+    fn decode(&mut self, body: Vec<u8>) -> Result<Vec<D>, OSQueryLogDecoderError> {
         let mut decompressed = Vec::with_capacity(body.len());
         let mut body = Cursor::new(&body);
 
@@ -41,7 +58,7 @@ where
         }
 
         if let Some(error) = deserialization_errors.pop() {
-            Err(Box::new(error))
+            Err(error.into())
         } else {
             Ok(deserialized_logs)
         }
