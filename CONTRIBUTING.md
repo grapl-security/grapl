@@ -88,6 +88,7 @@ clean                Prune all docker build cache
 clean-mount-cache    Prune all docker mount cache (used by sccache)
 release              'make build-services' with cargo --release
 zip                  Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+deploy               CDK deploy to AWS
 up                   Build Grapl services and launch docker-compose up
 down                 docker-compose down
 help                 Print this help
