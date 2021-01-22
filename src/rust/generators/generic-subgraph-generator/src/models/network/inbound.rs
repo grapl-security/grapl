@@ -1,12 +1,11 @@
-use std::convert::TryFrom;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::process::ProcessState;
+use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
+use serde::{Deserialize, Serialize};
 
-use grapl_graph_descriptions::{graph_description::*,
-                               network_connection::NetworkConnectionState,
-                               node::NodeT,
-                               process::ProcessState,
-                               process_inbound_connection::ProcessInboundConnectionState};
-use serde::{Deserialize,
-            Serialize};
+use grapl_graph_descriptions::network_connection::NetworkConnectionState;
+use grapl_graph_descriptions::node::NodeT;
+use std::convert::TryFrom;
 
 // In an inbound connection "src" is where the connection is coming from
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]

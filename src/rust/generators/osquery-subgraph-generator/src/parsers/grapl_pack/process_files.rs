@@ -1,16 +1,11 @@
-use std::convert::TryFrom;
-
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
-use serde::{Deserialize,
-            Serialize};
-
 use super::from_str;
-use crate::parsers::{OSQueryAction,
-                     OSQueryResponse,
-                     PartiallyDeserializedOSQueryLog};
+use crate::parsers::{OSQueryAction, OSQueryResponse, PartiallyDeserializedOSQueryLog};
+use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process::ProcessState;
+use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 
 /// See https://osquery.io/schema/4.5.0/#processes
 #[derive(Serialize, Deserialize)]

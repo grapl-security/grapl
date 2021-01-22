@@ -1,14 +1,10 @@
 use crate::generator::SysmonGeneratorError;
 use crate::models::{get_image_name, strip_file_zone_identifier, utc_to_epoch};
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
+use grapl_graph_descriptions::file::FileState;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process::ProcessState;
 use sysmon::FileCreateEvent;
-
-use crate::models::{get_image_name,
-                    strip_file_zone_identifier,
-                    utc_to_epoch};
 
 /// Creates a subgrqph describing a `FileCreateEvent`
 ///

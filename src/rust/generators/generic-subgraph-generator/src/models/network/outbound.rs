@@ -1,12 +1,12 @@
-use std::convert::TryFrom;
+use grapl_graph_descriptions::graph_description::*;
+use grapl_graph_descriptions::node::NodeT;
+use grapl_graph_descriptions::process::ProcessState;
+use serde::{Deserialize, Serialize};
 
-use grapl_graph_descriptions::{graph_description::*,
-                               network_connection::NetworkConnectionState,
-                               node::NodeT,
-                               process::ProcessState,
-                               process_outbound_connection::ProcessOutboundConnectionState};
-use serde::{Deserialize,
-            Serialize};
+use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+
+use grapl_graph_descriptions::network_connection::NetworkConnectionState;
+use std::convert::TryFrom;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessOutboundConnectionLog {

@@ -19,9 +19,6 @@ use sqs_executor::{make_ten, time_based_key_fn};
 use std::fmt::Debug;
 use tracing::info;
 
-use grapl_config as config;
-use grapl_graph_descriptions::graph_description::*;
-use grapl_observe::metric_reporter::MetricReporter;
 
 
 pub async fn run_graph_generator<

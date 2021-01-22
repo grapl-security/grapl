@@ -1,4 +1,0 @@
-[build]
-rustflags = [
-    "--deny=warnings",
-]

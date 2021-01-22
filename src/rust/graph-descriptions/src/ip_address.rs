@@ -1,9 +1,8 @@
 use log::warn;
-use serde_json::{json,
-                 Value};
+use serde_json::{json, Value};
 
-use crate::{graph_description::IpAddress,
-            node::NodeT};
+use crate::graph_description::IpAddress;
+use crate::node::NodeT;
 
 impl IpAddress {
     pub fn new(

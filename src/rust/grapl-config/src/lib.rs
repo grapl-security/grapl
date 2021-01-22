@@ -1,4 +1,5 @@
-use std::{str::FromStr,};
+use std::str::FromStr;
+use tracing_subscriber::EnvFilter;
 
 use color_eyre::Help;
 use grapl_observe::metric_reporter::MetricReporter;
@@ -10,7 +11,6 @@ use sqs_executor::redis_cache::RedisCache;
 use std::io::Stdout;
 use std::time::Duration;
 use tracing::debug;
-use tracing_subscriber::EnvFilter;
 
 pub mod env_helpers;
 

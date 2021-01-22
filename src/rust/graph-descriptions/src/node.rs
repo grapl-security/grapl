@@ -1,18 +1,11 @@
 use log::warn;
 use serde_json::Value;
 
-use crate::graph_description::{node::WhichNode,
-                               Asset,
-                               DynamicNode,
-                               File,
-                               IpAddress,
-                               IpConnection,
-                               IpPort,
-                               NetworkConnection,
-                               Node,
-                               Process,
-                               ProcessInboundConnection,
-                               ProcessOutboundConnection};
+use crate::graph_description::node::WhichNode;
+use crate::graph_description::{
+    Asset, DynamicNode, File, IpAddress, IpConnection, IpPort, NetworkConnection, Node, Process,
+    ProcessInboundConnection, ProcessOutboundConnection,
+};
 
 pub trait NodeT {
     fn get_asset_id(&self) -> Option<&str>;

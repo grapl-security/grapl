@@ -1,9 +1,6 @@
 use crate::generator::SysmonGeneratorError;
-use chrono::{DateTime,
-             NaiveDateTime,
-             Utc};
-use failure::{bail,
-              Error};
+use chrono::{DateTime, NaiveDateTime, Utc};
+
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
 use sysmon::Event;

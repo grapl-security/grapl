@@ -1,8 +1,3 @@
-use grapl_graph_descriptions::{graph_description::*,
-                               network_connection::NetworkConnectionState,
-                               node::NodeT,
-                               process::ProcessState,
-                               process_outbound_connection::ProcessOutboundConnectionState};
 use sysmon::NetworkEvent;
 
 use grapl_graph_descriptions::graph_description::*;
@@ -13,6 +8,7 @@ use grapl_graph_descriptions::process::ProcessState;
 
 use crate::generator::SysmonGeneratorError;
 use crate::models::utc_to_epoch;
+use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
 
 /// Creates a subgraph describing an outbound `NetworkEvent`
 ///

@@ -1,16 +1,14 @@
 #![cfg(test)]
 
+use crate::generator::GenericSubgraphGenerator;
+use crate::models::GenericEvent;
 use grapl_service::decoder::ZstdJsonDecoder;
 
 use sqs_executor::cache::NopCache;
 use sqs_executor::event_decoder::PayloadDecoder;
 use sqs_executor::event_handler::CompletedEvents;
-use tokio::{fs::File,
-            io::{AsyncReadExt,
-                 Result}};
-
-use crate::{generator::GenericSubgraphGenerator,
-            models::GenericEvent,};
+use tokio::fs::File;
+use tokio::io::{AsyncReadExt, Result};
 
 #[tokio::test]
 /// Tests if generic event serialization is working as expected.
@@ -47,8 +45,11 @@ async fn test_log_event_deserialization() {
         .decode(raw_test_data)
         .expect("Failed to deserialize events.");
 
-    let (_subgraph, _identities, failed) =
-        generator.convert_events_to_subgraph(generic_events).await;
+    let mut completed_events = CompletedEvents::default();
+
+    let result = generator
+        .convert_events_to_subgraph(generic_events, &mut completed_events)
+        .await;
 
     match result {
         Err(e) => {

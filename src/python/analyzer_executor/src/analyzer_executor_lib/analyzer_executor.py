@@ -14,11 +14,10 @@ from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
-from analyzer_executor_lib.s3_types import S3PutRecordDict, SQSMessageBody
 from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
@@ -84,7 +83,7 @@ class AnalyzerExecutor:
         self.metric_reporter = metric_reporter
 
     @classmethod
-    def singleton(cls) -> AnalyzerExecutor:
+    def singleton(cls):
         if not cls._singleton:
             LOGGER.debug("initializing AnalyzerExecutor singleton")
             is_local = bool(
@@ -100,11 +99,10 @@ class AnalyzerExecutor:
 
             # Set up message cache
             messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
-            messagecache_port: Optional[int] = None
-            messagecache_port_str = os.getenv("MESSAGECACHE_PORT")
-            if messagecache_port_str:
+            messagecache_port = os.getenv("MESSAGECACHE_PORT")
+            if messagecache_port:
                 try:
-                    messagecache_port = int(messagecache_port_str)
+                    messagecache_port = int(messagecache_port)
                 except (TypeError, ValueError) as ex:
                     LOGGER.error(
                         f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
@@ -128,14 +126,13 @@ class AnalyzerExecutor:
 
             # Set up hit cache
             hitcache_addr = os.getenv("HITCACHE_ADDR")
-            hitcache_port: Optional[int] = None
-            hitcache_port_str = os.getenv("HITCACHE_PORT")
-            if hitcache_port_str:
+            hitcache_port = os.getenv("HITCACHE_PORT")
+            if hitcache_port:
                 try:
-                    hitcache_port = int(hitcache_port_str)
+                    hitcache_port = int(hitcache_port)
                 except (TypeError, ValueError) as ex:
                     LOGGER.error(
-                        f"can't connect to redis, HITCACHE_PORT couldn't cast to int"
+                        f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
                     )
                     raise ex
 
@@ -194,7 +191,7 @@ class AnalyzerExecutor:
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.hit_cache.set(event_hash, "1")
 
-    def lambda_handler_fn(self, events: SQSMessageBody, context: Any) -> None:
+    def lambda_handler_fn(self, events: Any, context: Any) -> None:
         # Parse sns message
         self.logger.debug(f"handling events: {events} context: {context}")
 
@@ -241,54 +238,42 @@ class AnalyzerExecutor:
             )
 
             p.start()
+            t = 0
 
-            for exec_hit in self.poll_process(rx=rx, analyzer_name=analyzer_name):
-                with self.metric_reporter.histogram_ctx(
-                    "analyzer-executor.emit_event.ms",
-                    (TagPair("analyzer_name", exec_hit.analyzer_name),),
-                ):
-                    emit_event(s3, exec_hit, self.is_local)
-                self.update_msg_cache(analyzer, exec_hit.root_node_key, message["key"])
-                self.update_hit_cache(analyzer_name, exec_hit.root_node_key)
+            while True:
+                p_res = rx.poll(timeout=5)
+                if not p_res:
+                    t += 1
+                    LOGGER.info(
+                        f"Polled {analyzer_name} for {t * 5} seconds without result"
+                    )
+                    continue
+                result: Optional[Any] = rx.recv()
+
+                if isinstance(result, ExecutionComplete):
+                    self.logger.info("execution complete")
+                    break
+
+                # emit any hits to an S3 bucket
+                if isinstance(result, ExecutionHit):
+                    self.logger.info(
+                        f"emitting event for {analyzer_name} {result.analyzer_name} {result.root_node_key}"
+                    )
+                    with self.metric_reporter.histogram_ctx(
+                        "analyzer-executor.emit_event.ms",
+                        (TagPair("analyzer_name", result.analyzer_name),),
+                    ):
+                        emit_event(s3, result, self.is_local)
+                    self.update_msg_cache(
+                        analyzer, result.root_node_key, message["key"]
+                    )
+                    self.update_hit_cache(analyzer_name, result.root_node_key)
+
+                assert not isinstance(
+                    result, ExecutionFailed
+                ), f"Analyzer {analyzer_name} failed."
 
             p.join()
-
-    def poll_process(
-        self,
-        rx: Connection,
-        analyzer_name: str,
-    ) -> Iterator[ExecutionHit]:
-        """
-        Keep polling the spawned Process, and yield any ExecutionHits.
-        (This will probably disappear if Analyzers move to Docker images.)
-        """
-        t = 0
-
-        while True:
-            p_res = rx.poll(timeout=5)
-            if not p_res:
-                t += 1
-                LOGGER.info(
-                    f"Analyzer {analyzer_name} polled for for {t * 5} seconds without result"
-                )
-                continue
-
-            result: Optional[Any] = rx.recv()
-            if isinstance(result, ExecutionComplete):
-                self.logger.info(f"Analyzer {analyzer_name} execution complete")
-                return
-
-            # emit any hits to an S3 bucket
-            if isinstance(result, ExecutionHit):
-                self.logger.info(
-                    f"Analyzer {analyzer_name} emitting event for:"
-                    f"{result.analyzer_name} {result.root_node_key}"
-                )
-                yield result
-
-            assert not isinstance(
-                result, ExecutionFailed
-            ), f"Analyzer {analyzer_name} failed."
 
     def exec_analyzers(
         self,
@@ -389,7 +374,7 @@ class AnalyzerExecutor:
             raise
 
 
-def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
+def parse_s3_event(s3: S3ServiceResource, event) -> str:
     bucket = event["s3"]["bucket"]["name"]
     key = event["s3"]["object"]["key"]
     return download_s3_file(s3, bucket, key)
@@ -445,7 +430,6 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
     obj.put(Body=event_s.encode("utf-8"))
 
     if is_local:
-        # Local = manual eventing
         sqs = SQSClientFactory(boto3).from_env()
         send_s3_event(
             sqs,

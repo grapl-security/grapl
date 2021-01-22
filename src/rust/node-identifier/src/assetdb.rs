@@ -1,16 +1,13 @@
-use failure::{bail,
-              Error};
-use grapl_graph_descriptions::graph_description::{host::*,
-                                                  node::WhichNode,
-                                                  *};
+use failure::{bail, Error};
 use hmap::hmap;
 use log::info;
-use rusoto_dynamodb::{AttributeValue,
-                      DynamoDb,
-                      PutItemInput,
-                      QueryInput};
-use serde::{Deserialize,
-            Serialize};
+use rusoto_dynamodb::AttributeValue;
+use rusoto_dynamodb::{DynamoDb, PutItemInput, QueryInput};
+use serde::{Deserialize, Serialize};
+
+use grapl_graph_descriptions::graph_description::host::*;
+use grapl_graph_descriptions::graph_description::node::WhichNode;
+use grapl_graph_descriptions::graph_description::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResolvedAssetId {

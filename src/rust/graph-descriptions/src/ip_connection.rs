@@ -1,13 +1,12 @@
 use std::convert::TryFrom;
 
 use log::warn;
-use serde_json::{json,
-                 Value};
+use serde_json::{json, Value};
 use uuid::Uuid;
 
-use crate::{error::Error,
-            graph_description::IpConnection,
-            node::NodeT};
+use crate::error::Error;
+use crate::graph_description::IpConnection;
+use crate::node::NodeT;
 
 pub enum IpConnectionState {
     Created,

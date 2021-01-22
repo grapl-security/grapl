@@ -24,18 +24,6 @@ use sqs_executor::{make_ten, time_based_key_fn};
 
 use std::str::FromStr;
 
-use std::{io::Stdout,
-          time::Duration};
-
-use graph_generator_lib::run_graph_generator;
-use grapl_config::event_cache;
-use grapl_observe::metric_reporter::MetricReporter;
-use sqs_lambda::{cache::NopCache,
-                 sqs_completion_handler::CompletionPolicy,
-                 sqs_consumer::ConsumePolicyBuilder};
-use tracing::*;
-
-use crate::{generator::GenericSubgraphGenerator,};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

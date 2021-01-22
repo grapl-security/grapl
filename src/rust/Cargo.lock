@@ -196,9 +196,9 @@ dependencies = [
 
 [[package]]
 name = "backtrace"
-version = "0.3.56"
+version = "0.3.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d117600f438b1707d4e4ae15d3595657288f8235a0eb593e80ecc98ab34e1bc"
+checksum = "ef5140344c85b01f9bbb4d4b7288a8aa4b3287ccef913a14bcc78a1063623598"
 dependencies = [
  "addr2line",
  "cfg-if 1.0.0",
@@ -1009,25 +1009,31 @@ name = "generic-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.4.0",
+ "aws_lambda_events 0.2.7",
+ "base16",
  "chrono",
- "eyre 0.6.5",
+ "eyre 0.4.3",
  "failure",
  "futures 0.3.12",
- "graph-generator-lib",
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
  "lambda_runtime",
  "lazy_static",
+ "log 0.4.13",
  "prost 0.7.0",
+ "rayon",
  "regex",
  "rusoto_core",
  "rusoto_s3",
  "rusoto_sqs",
+ "serde",
+ "serde_derive",
+ "serde_json",
  "simple_logger",
  "sqs-executor",
+ "stopwatch",
  "thiserror",
  "tokio 0.2.24",
  "tokio-compat",
@@ -1035,7 +1041,6 @@ dependencies = [
  "tracing-futures",
  "tracing-subscriber",
  "uuid 0.8.2",
- "version",
  "zstd",
 ]
 
@@ -2039,9 +2044,9 @@ dependencies = [
 
 [[package]]
 name = "object"
-version = "0.23.0"
+version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9a7ab5d64814df0fe4a4b5ead45ed6c5f181ee3ff04ba344313a6c80446c5d4"
+checksum = "8d3b63360ec3cb337817c2dbd47ab4a0f170d285d8e5a2064600f3def1402397"
 
 [[package]]
 name = "once_cell"
@@ -4424,12 +4429,6 @@ checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 dependencies = [
  "getrandom 0.2.2",
 ]
-
-[[package]]
-name = "version"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a449064fee414fcc201356a3e6c1510f6c8829ed28bb06b91c54ebe208ce065"
 
 [[package]]
 name = "version_check"

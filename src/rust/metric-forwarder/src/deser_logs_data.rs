@@ -1,11 +1,8 @@
-use aws_lambda_events::event::cloudwatch_logs::{CloudwatchLogsData,
-                                                CloudwatchLogsEvent};
-
-use crate::error::{MetricForwarderError,
-                   MetricForwarderError::{DecodeBase64Error,
-                                          GunzipToStringError,
-                                          ParseStringToLogsdataError,
-                                          PoorlyFormattedEventError}};
+use crate::error::MetricForwarderError;
+use crate::error::MetricForwarderError::{
+    DecodeBase64Error, GunzipToStringError, ParseStringToLogsdataError, PoorlyFormattedEventError,
+};
+use aws_lambda_events::event::cloudwatch_logs::{CloudwatchLogsData, CloudwatchLogsEvent};
 
 fn parse_string_to_logsdata(gunzipped: String) -> Result<CloudwatchLogsData, MetricForwarderError> {
     use serde_json::from_str;
@@ -20,9 +17,8 @@ fn base64_decode_raw_log_to_gzip(data: &str) -> Result<Vec<u8>, MetricForwarderE
 }
 
 fn gunzip_to_string(gzipped: Vec<u8>) -> Result<String, MetricForwarderError> {
-    use std::io::Read;
-
     use flate2::read::GzDecoder;
+    use std::io::Read;
 
     let mut raw_data = String::new();
     match GzDecoder::new(gzipped.as_slice()).read_to_string(&mut raw_data) {
