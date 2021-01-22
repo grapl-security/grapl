@@ -1,10 +1,11 @@
 #![allow(dead_code, unused_variables)]
-use std::collections::HashMap;
+use std::{collections::HashMap,
+          convert::TryFrom};
 
 use failure::Error;
 use rusoto_dynamodb::AttributeValue;
-use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
+use serde::{Deserialize,
+            Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UnidSession {

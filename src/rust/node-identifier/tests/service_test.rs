@@ -1,12 +1,13 @@
-use tracing::info;
-
 use grapl_config::env_helpers::FromEnv;
-use node_identifier::assetdb::{AssetIdDb, AssetIdentifier};
-use node_identifier::dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
-use node_identifier::sessiondb::SessionDb;
-use node_identifier::{HashCache, NodeIdentifier};
-
+use node_identifier::{assetdb::{AssetIdDb,
+                                AssetIdentifier},
+                      dynamic_sessiondb::{DynamicMappingDb,
+                                          DynamicNodeIdentifier},
+                      sessiondb::SessionDb,
+                      HashCache,
+                      NodeIdentifier};
 use rusoto_dynamodb::DynamoDbClient;
+use tracing::info;
 
 async fn init_local_node_identifier(
     should_default: bool,

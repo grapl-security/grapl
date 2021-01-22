@@ -1,9 +1,11 @@
-use crate::generator::SysmonGeneratorError;
-use chrono::{DateTime, NaiveDateTime, Utc};
-
+use chrono::{DateTime,
+             NaiveDateTime,
+             Utc};
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
 use sysmon::Event;
+
+use crate::generator::SysmonGeneratorError;
 
 mod file;
 mod network;

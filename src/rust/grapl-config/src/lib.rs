@@ -1,16 +1,18 @@
-use std::str::FromStr;
-use tracing_subscriber::EnvFilter;
+use std::{io::Stdout,
+          str::FromStr,
+          time::Duration};
 
 use color_eyre::Help;
 use grapl_observe::metric_reporter::MetricReporter;
-use rusoto_core::{Region, RusotoError};
+use rusoto_core::{Region,
+                  RusotoError};
 use rusoto_s3::S3;
-use rusoto_sqs::{ListQueuesRequest, Sqs};
-use sqs_executor::make_ten;
-use sqs_executor::redis_cache::RedisCache;
-use std::io::Stdout;
-use std::time::Duration;
+use rusoto_sqs::{ListQueuesRequest,
+                 Sqs};
+use sqs_executor::{make_ten,
+                   redis_cache::RedisCache};
 use tracing::debug;
+use tracing_subscriber::EnvFilter;
 
 pub mod env_helpers;
 

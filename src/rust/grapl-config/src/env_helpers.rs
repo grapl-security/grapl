@@ -1,17 +1,20 @@
-use crate::ServiceEnv;
+use std::{io::Stdout,
+          str::FromStr};
+
 use grapl_observe::metric_reporter::MetricReporter;
 use rusoto_cloudwatch::CloudWatchClient;
-use rusoto_core::{HttpClient, Region};
+use rusoto_core::{HttpClient,
+                  Region};
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use sqs_executor::errors::CheckedError;
+use sqs_executor::{errors::CheckedError,
+                   make_ten,
+                   s3_event_emitter::{OnEventEmit,
+                                      S3EventEmitter,
+                                      S3ToSqsEventNotifier}};
 
-use sqs_executor::make_ten;
-use sqs_executor::s3_event_emitter::{OnEventEmit, S3EventEmitter, S3ToSqsEventNotifier};
-
-use std::io::Stdout;
-use std::str::FromStr;
+use crate::ServiceEnv;
 
 #[async_trait::async_trait]
 pub trait AsyncFrom<T, S> {

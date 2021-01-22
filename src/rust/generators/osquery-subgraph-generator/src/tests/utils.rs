@@ -1,8 +1,9 @@
-use crate::parsers::PartiallyDeserializedOSQueryLog;
+use grapl_service::decoder::{ZstdJsonDecoder,
+                             ZstdJsonDecoderError};
 use sqs_executor::event_decoder::PayloadDecoder;
 use tokio::fs;
 
-use grapl_service::decoder::{ZstdJsonDecoder, ZstdJsonDecoderError};
+use crate::parsers::PartiallyDeserializedOSQueryLog;
 
 #[cfg(test)]
 pub(crate) async fn read_osquery_test_data(

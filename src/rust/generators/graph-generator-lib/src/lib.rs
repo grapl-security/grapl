@@ -1,25 +1,27 @@
 #![allow(unused_must_use)]
 
-use crate::grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
+use std::fmt::Debug;
+
 pub use grapl_config;
-use grapl_config::{event_caches, ServiceEnv};
+use grapl_config::{event_caches,
+                   ServiceEnv};
 pub use grapl_graph_descriptions::graph_description::*;
 pub use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::serialization::SubgraphSerializer;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use sqs_executor::errors::CheckedError;
-use sqs_executor::event_decoder::PayloadDecoder;
-use sqs_executor::event_handler::EventHandler;
-use sqs_executor::event_retriever::S3PayloadRetriever;
-use sqs_executor::redis_cache::RedisCache;
-
-use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
-use sqs_executor::{make_ten, time_based_key_fn};
-use std::fmt::Debug;
+use sqs_executor::{errors::CheckedError,
+                   event_decoder::PayloadDecoder,
+                   event_handler::EventHandler,
+                   event_retriever::S3PayloadRetriever,
+                   make_ten,
+                   redis_cache::RedisCache,
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   time_based_key_fn};
 use tracing::info;
 
-
+use crate::grapl_config::env_helpers::{s3_event_emitters_from_env,
+                                       FromEnv};
 
 pub async fn run_graph_generator<
     InputEventT,

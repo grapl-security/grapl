@@ -1,8 +1,10 @@
-use crate::cache::Cacheable;
-use crate::errors::CheckedError;
-use crate::event_status::EventStatus;
-use async_trait::async_trait;
 use std::fmt::Debug;
+
+use async_trait::async_trait;
+
+use crate::{cache::Cacheable,
+            errors::CheckedError,
+            event_status::EventStatus};
 
 #[derive(Default)]
 pub struct CompletedEvents {

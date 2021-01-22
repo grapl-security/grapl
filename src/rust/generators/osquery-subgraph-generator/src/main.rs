@@ -6,26 +6,22 @@ mod parsers;
 
 mod tests;
 
-use crate::generator::OSQuerySubgraphGenerator;
-use crate::metrics::OSQuerySubgraphGeneratorMetrics;
-
 use graph_generator_lib::*;
-use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
-use grapl_config::*;
+use grapl_config::{env_helpers::{s3_event_emitters_from_env,
+                                 FromEnv},
+                   *};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::decoder::ZstdJsonDecoder;
-use grapl_service::serialization::zstd_proto_graph::SubgraphSerializer;
+use grapl_service::{decoder::ZstdJsonDecoder,
+                    serialization::zstd_proto_graph::SubgraphSerializer};
 use log::*;
-
-
 use rusoto_sqs::SqsClient;
+use sqs_executor::{event_retriever::S3PayloadRetriever,
+                   make_ten,
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   time_based_key_fn};
 
-use sqs_executor::event_retriever::S3PayloadRetriever;
-use sqs_executor::s3_event_emitter::S3ToSqsEventNotifier;
-use sqs_executor::{make_ten, time_based_key_fn};
-
-
-
+use crate::{generator::OSQuerySubgraphGenerator,
+            metrics::OSQuerySubgraphGeneratorMetrics};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

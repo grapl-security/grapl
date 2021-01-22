@@ -1,14 +1,15 @@
 #![cfg(test)]
 
-use crate::generator::GenericSubgraphGenerator;
-use crate::models::GenericEvent;
 use grapl_service::decoder::ZstdJsonDecoder;
+use sqs_executor::{cache::NopCache,
+                   event_decoder::PayloadDecoder,
+                   event_handler::CompletedEvents};
+use tokio::{fs::File,
+            io::{AsyncReadExt,
+                 Result}};
 
-use sqs_executor::cache::NopCache;
-use sqs_executor::event_decoder::PayloadDecoder;
-use sqs_executor::event_handler::CompletedEvents;
-use tokio::fs::File;
-use tokio::io::{AsyncReadExt, Result};
+use crate::{generator::GenericSubgraphGenerator,
+            models::GenericEvent};
 
 #[tokio::test]
 /// Tests if generic event serialization is working as expected.

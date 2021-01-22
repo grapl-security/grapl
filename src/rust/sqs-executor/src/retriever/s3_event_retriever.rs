@@ -1,23 +1,30 @@
-use std::io::{Stdout};
-use std::marker::PhantomData;
-use std::time::Duration;
+use std::{collections::HashMap,
+          io::Stdout,
+          marker::PhantomData,
+          time::Duration};
 
 use async_trait::async_trait;
-use rusoto_s3::{GetObjectError, GetObjectRequest, S3};
-use rusoto_sqs::Message as SqsMessage;
-
-use tracing::{debug, error, info};
-
-use crate::errors::{CheckedError, Recoverable};
-use crate::event_decoder::PayloadDecoder;
-use crate::PayloadRetriever;
 use futures::FutureExt;
-use grapl_observe::metric_reporter::{tag, HistogramUnit, MetricReporter};
-use grapl_observe::timers::{time_it, TimedFutureExt};
+use grapl_observe::{metric_reporter::{tag,
+                                      HistogramUnit,
+                                      MetricReporter},
+                    timers::{time_it,
+                             TimedFutureExt}};
 use rusoto_core::RusotoError;
-use std::collections::HashMap;
-use tokio::io::AsyncReadExt;
-use tokio::time::Elapsed;
+use rusoto_s3::{GetObjectError,
+                GetObjectRequest,
+                S3};
+use rusoto_sqs::Message as SqsMessage;
+use tokio::{io::AsyncReadExt,
+            time::Elapsed};
+use tracing::{debug,
+              error,
+              info};
+
+use crate::{errors::{CheckedError,
+                     Recoverable},
+            event_decoder::PayloadDecoder,
+            PayloadRetriever};
 
 pub struct S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
 where

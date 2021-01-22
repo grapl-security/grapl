@@ -1,36 +1,41 @@
 pub mod retriever;
 
-use std::error::Error;
-use std::fmt::Debug;
-use std::future::Future;
-use std::io::Stdout;
-use std::panic::AssertUnwindSafe;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
-use futures_util::FutureExt;
-
-use rusoto_s3::S3;
-use rusoto_sqs::Message as SqsMessage;
-use rusoto_sqs::{ListQueuesError, ListQueuesRequest, Sqs};
-
-use tracing::debug;
-use tracing::{error, info};
+use std::{error::Error,
+          fmt::Debug,
+          future::Future,
+          io::Stdout,
+          panic::AssertUnwindSafe,
+          time::{Duration,
+                 SystemTime,
+                 UNIX_EPOCH}};
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
 use event_retriever::S3PayloadRetriever;
-use grapl_observe::metric_reporter::{tag, MetricReporter};
-use grapl_observe::timers::TimedFutureExt;
+use futures_util::FutureExt;
+use grapl_observe::{metric_reporter::{tag,
+                                      MetricReporter},
+                    timers::TimedFutureExt};
+use rusoto_s3::S3;
+use rusoto_sqs::{ListQueuesError,
+                 ListQueuesRequest,
+                 Message as SqsMessage,
+                 Sqs};
 use s3_event_emitter::S3EventEmitter;
+use tracing::{debug,
+              error,
+              info};
 
-use crate::cache::{Cache, CacheResponse};
-use crate::completion_event_serializer::CompletionEventSerializer;
-use crate::errors::{CheckedError, Recoverable};
-use crate::event_decoder::PayloadDecoder;
-use crate::event_handler::CompletedEvents;
-use crate::event_retriever::PayloadRetriever;
-use crate::event_status::EventStatus;
-use crate::s3_event_emitter::OnEventEmit;
+use crate::{cache::{Cache,
+                    CacheResponse},
+            completion_event_serializer::CompletionEventSerializer,
+            errors::{CheckedError,
+                     Recoverable},
+            event_decoder::PayloadDecoder,
+            event_handler::CompletedEvents,
+            event_retriever::PayloadRetriever,
+            event_status::EventStatus,
+            s3_event_emitter::OnEventEmit};
 
 pub mod cache;
 pub mod completion_event_serializer;
@@ -38,11 +43,11 @@ pub mod errors;
 pub mod event_decoder;
 pub mod event_emitter;
 pub mod event_handler;
-use crate::sqs_timeout_manager::keep_alive;
-
-pub use retriever::event_retriever;
-pub use retriever::s3_event_retriever;
+pub use retriever::{event_retriever,
+                    s3_event_retriever};
 use rusoto_core::RusotoError;
+
+use crate::sqs_timeout_manager::keep_alive;
 
 pub mod event_status;
 pub mod key_creator;
@@ -462,8 +467,11 @@ async fn _process_loop<
         );
         match all_processing.await {
             Ok((_r, ms)) => {
-                metric_reporter.histogram("sqs_executor.all_processing.ms", ms as f64, &[])
-                .unwrap_or_else(|e| error!("failed to report sqs_executor.all_processing.ms: {:?}", e));
+                metric_reporter
+                    .histogram("sqs_executor.all_processing.ms", ms as f64, &[])
+                    .unwrap_or_else(|e| {
+                        error!("failed to report sqs_executor.all_processing.ms: {:?}", e)
+                    });
             }
             Err(e) => error!("Timed out when processing messages: {:?}", e),
         };
