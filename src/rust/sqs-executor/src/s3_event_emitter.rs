@@ -1,22 +1,32 @@
-use crate::event_emitter::EventEmitter;
-use async_trait::async_trait;
-
-use crate::errors::{CheckedError, Recoverable};
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-
-use grapl_observe::metric_reporter::{tag, MetricReporter};
-use grapl_observe::timers::TimedFutureExt;
-use rusoto_core::RusotoError;
-use rusoto_s3::{PutObjectError, PutObjectRequest, S3};
-use rusoto_sqs::{SendMessageError, SqsClient};
-use rusoto_sqs::{SendMessageRequest, Sqs};
-
 use std::io::Stdout;
+
+use async_trait::async_trait;
+use aws_lambda_events::event::s3::{S3Bucket,
+                                   S3Entity,
+                                   S3Event,
+                                   S3EventRecord,
+                                   S3Object,
+                                   S3RequestParameters,
+                                   S3UserIdentity};
+use grapl_observe::{metric_reporter::{tag,
+                                      MetricReporter},
+                    timers::TimedFutureExt};
+use rusoto_core::RusotoError;
+use rusoto_s3::{PutObjectError,
+                PutObjectRequest,
+                S3};
+use rusoto_sqs::{SendMessageError,
+                 SendMessageRequest,
+                 Sqs,
+                 SqsClient};
 use tap::prelude::TapFallible;
-use tokio::time::{Duration, Elapsed};
+use tokio::time::{Duration,
+                  Elapsed};
 use tracing::error;
+
+use crate::{errors::{CheckedError,
+                     Recoverable},
+            event_emitter::EventEmitter};
 
 #[derive(thiserror::Error, Debug)]
 pub enum S3EventEmitterError<OnEmitError>

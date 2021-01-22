@@ -1,6 +1,8 @@
-use sqs_executor::errors::{CheckedError, Recoverable};
-use sqs_executor::event_decoder::PayloadDecoder;
 use std::io::Cursor;
+
+use sqs_executor::{errors::{CheckedError,
+                            Recoverable},
+                   event_decoder::PayloadDecoder};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ZstdDecoderError {

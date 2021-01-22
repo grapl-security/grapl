@@ -1,16 +1,20 @@
-use crate::metrics::SysmonSubgraphGeneratorMetrics;
-use crate::models::SysmonTryFrom;
-use async_trait::async_trait;
+use std::borrow::Cow;
 
+use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::log_time;
 use log::*;
-use sqs_executor::cache::{Cache, CacheResponse};
-use sqs_executor::errors::{CheckedError, Recoverable};
-use sqs_executor::event_handler::{CompletedEvents, EventHandler};
-use sqs_executor::event_status::EventStatus;
-use std::borrow::Cow;
+use sqs_executor::{cache::{Cache,
+                           CacheResponse},
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_status::EventStatus};
 use sysmon::Event;
+
+use crate::{metrics::SysmonSubgraphGeneratorMetrics,
+            models::SysmonTryFrom};
 
 #[derive(thiserror::Error, Debug)]
 pub enum SysmonGeneratorError {

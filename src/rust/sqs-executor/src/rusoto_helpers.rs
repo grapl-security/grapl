@@ -1,21 +1,27 @@
-use rusoto_core::RusotoError;
-use rusoto_sqs::{
-    DeleteMessageError as InnerDeleteMessageError, DeleteMessageRequest, Message as SqsMessage,
-    ReceiveMessageError as InnerReceiveMessageError, ReceiveMessageRequest, SendMessageRequest,
-    Sqs,
-};
-
-use rusoto_s3::PutObjectError as InnerPutObjectError;
-
-use tokio::task::{JoinError, JoinHandle};
-use tokio::time::Elapsed;
-
-use crate::errors::{CheckedError, Recoverable};
-use grapl_observe::metric_reporter::{tag, MetricReporter};
-use grapl_observe::timers::{time_fut_ms, TimedFutureExt};
 use std::io::Stdout;
 
-use tracing::{debug, error, Instrument};
+use grapl_observe::{metric_reporter::{tag,
+                                      MetricReporter},
+                    timers::{time_fut_ms,
+                             TimedFutureExt}};
+use rusoto_core::RusotoError;
+use rusoto_s3::PutObjectError as InnerPutObjectError;
+use rusoto_sqs::{DeleteMessageError as InnerDeleteMessageError,
+                 DeleteMessageRequest,
+                 Message as SqsMessage,
+                 ReceiveMessageError as InnerReceiveMessageError,
+                 ReceiveMessageRequest,
+                 SendMessageRequest,
+                 Sqs};
+use tokio::{task::{JoinError,
+                   JoinHandle},
+            time::Elapsed};
+use tracing::{debug,
+              error,
+              Instrument};
+
+use crate::errors::{CheckedError,
+                    Recoverable};
 
 impl CheckedError for InnerDeleteMessageError {
     fn error_type(&self) -> Recoverable {
