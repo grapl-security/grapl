@@ -2,30 +2,6 @@ version: "3.8"
 
 services:
 
-
-  #
-  # Rust
-  #
-
-  grapl-rust-zips:
-    image: grapl/rust-zip:${TAG:-latest}
-    build:
-      context: src/rust
-      dockerfile: Dockerfile.Makefile
-      target: zips
-      args:
-        - SCCACHE_LOCATION=${SCCACHE_LOCATION:-container}
-        - SCCACHE_BUCKET=${SCCACHE_BUCKET}
-        - PROFILE=${PROFILE:-debug}
-    volumes:
-      - ./src/js/grapl-cdk/zips:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    environment:
-      - TAG=${TAG:-latest}
-
-
-
   #
   # Python services
   #
@@ -37,7 +13,7 @@ services:
     image: grapl/grapl-analyzer-executor-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: analyzer-executor-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -51,7 +27,7 @@ services:
     image: grapl/grapl-dgraph-ttl-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: dgraph-ttl-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -65,7 +41,7 @@ services:
     image: grapl/grapl-engagement-creator-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: engagement-creator-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -79,7 +55,7 @@ services:
     image: grapl/grapl-engagement-edge-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: engagement-edge-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -89,25 +65,11 @@ services:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip engagement-edge-${TAG}.zip
 
-  grapl-ux-router-zip:
-    image: grapl/grapl-ux-router-zip:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile.Makefile
-      target: ux-router-zip
-    volumes:
-      - ./src/js/grapl-cdk/zips:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    environment:
-      - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip ux-router-${TAG}.zip
-
   grapl-model-plugin-deployer-zip:
     image: grapl/grapl-model-plugin-deployer-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: model-plugin-deployer-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -121,7 +83,7 @@ services:
     image: grapl/grapl-swarm-lifecycle-event-handler-zip:${TAG:-latest}
     build:
       context: src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: swarm-lifecycle-event-handler-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
@@ -139,7 +101,7 @@ services:
     image: grapl/grapl-graphql-endpoint-zip:${TAG:-latest}
     build:
       context: src/js/graphql_endpoint
-      dockerfile: Dockerfile.Makefile
+      dockerfile: Dockerfile
       target: graphql-endpoint-zip
     volumes: 
       - ./src/js/grapl-cdk/zips:/grapl
