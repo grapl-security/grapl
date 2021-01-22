@@ -21,7 +21,8 @@ locally for a nice interactive development experience.
 
 ### Getting started
 
-Our Makefile defines a number of targets for building, testing and running Grapl locally. A listing of helpful targets can be printed with `make help`:
+Our Makefile defines a number of targets for building, testing and running
+Grapl locally. A listing of helpful targets can be printed with `make help`:
 
 ```
 $ make help
@@ -76,18 +77,38 @@ For convenience, the Makefile imports environment variables from a `.env` file.
 The following environment variables can affect the build and test environments:
 
 - `TAG` (default: `latest`) - This is the tag we'll use for all the Docker
-    images. For local builds `latest` is fine. Production builds
-    should have a specific version e.g. `v1.2.3`. Users may want to use a tag that includes version and/or branch information for tracking purposes (ex: `v1.2.3-my_feature`). This value corresponds to the `graplVersion` parameter in the CDK project for deploying to AWS, and is used to name the zip files in the Make `zip` target.
-- `PROFILE` (default: `debug`) - Can either be `debug` or `release`. These roughly 
-    translate to the [Cargo profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) to be used for Rust builds.
-- `GRAPL_RUST_ENV_FILE` - File path to a shell script in to be sources for the Rust builds. This can be used to set and override environment variables, which can be useful for things like settings for [sccache](https://github.com/mozilla/sccache), which is used to for caching. It is passed as a [Docker build secret](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information) so it should be suitable secrets like S3 credentials for use with sccache. 
-- `DOCKER_BUILDX_BAKE_OPTS` - Docker images are built using [docker buildx](https://github.com/docker/buildx). You can pass additional arguments to the `docker buildx build` commands by setting this option (ex: `--progress plain`).
+  images. For local builds `latest` is fine. Production builds should have a
+specific version e.g. `v1.2.3`. Users may want to use a tag that includes
+version and/or branch information for tracking purposes (ex:
+`v1.2.3-my_feature`). This value corresponds to the `graplVersion` parameter in
+the CDK project for deploying to AWS, and is used to name the zip files in the
+Make `zip` target.
+- `PROFILE` (default: `debug`) - Can either be `debug` or `release`. These
+  roughly translate to the [Cargo
+profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) to be used
+for Rust builds.
+- `GRAPL_RUST_ENV_FILE` - File path to a shell script in to be sources for the
+  Rust builds. This can be used to set and override environment variables,
+which can be useful for things like settings for
+[sccache](https://github.com/mozilla/sccache), which is used to for caching. It
+is passed as a [Docker build
+secret](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information)
+so it should be suitable secrets like S3 credentials for use with sccache. 
+- `DOCKER_BUILDX_BAKE_OPTS` - Docker images are built using [docker
+  buildx](https://github.com/docker/buildx). You can pass additional arguments
+to the `docker buildx build` commands by setting this option (ex: `--progress
+plain`).
 
 ### sccache
 
-By default, our builds will use Mozilla's [sccache](https://github.com/mozilla/sccache) to cache builds in a [cache mount type](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#run---mounttypecache). This improves performance for local development experience as Rust sources change. 
+By default, our builds will use Mozilla's
+[sccache](https://github.com/mozilla/sccache) to cache builds in a [cache mount
+type](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#run---mounttypecache).
+This improves performance for local development experience as Rust sources
+change. 
 
-Environment variables used by `sccache` can be supplied via the `GRAPL_RUST_ENV_FILE` environment variable when running Make. 
+Environment variables used by `sccache` can be supplied via the
+`GRAPL_RUST_ENV_FILE` environment variable when running Make. 
 
 Examples:
 
@@ -127,7 +148,14 @@ The Makefile references Docker Compose files for each target that uses Docker (m
 
 ### Building images
 
-We use Dockerfile [multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/) so each service can be built with a single Docker build command. Additionally, we use [docker buildx bake](https://github.com/docker/buildx#buildx-bake-options-target) to build multiple Docker images with a single BuildKit command, which allows us to leverage BuildKit concurrency across all stages. The Docker build arguments for each service and container are defined in various Docker Compose files.
+We use Dockerfile [multi-stage
+builds](https://docs.docker.com/develop/develop-images/multistage-build/) so
+each service can be built with a single Docker build command. Additionally, we
+use [docker buildx
+bake](https://github.com/docker/buildx#buildx-bake-options-target) to build
+multiple Docker images with a single BuildKit command, which allows us to
+leverage BuildKit concurrency across all stages. The Docker build arguments for
+each service and container are defined in various Docker Compose files.
 
 For exmaple, to build Grapl services we have the following Make target:
 
@@ -141,7 +169,9 @@ build-services: ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml
 ```
 
-Within [docker-compose.yml](./docker-compose.yml), we have various services such as the Sysmon generator. The following defines how to build the Docker image.
+Within [docker-compose.yml](./docker-compose.yml), we have various services
+such as the Sysmon generator. The following defines how to build the Docker
+image.
 
 ```yaml
   grapl-rust-sysmon-subgraph-generator:
@@ -154,13 +184,17 @@ Within [docker-compose.yml](./docker-compose.yml), we have various services such
 ...
 ```
 
-Similar can be seen for other Grapl services, as well as Grapl tests, which can be found under the `test` directory.
+Similar can be seen for other Grapl services, as well as Grapl tests, which can
+be found under the `test` directory.
 
 ### Running tests
 
 Most Grapl Dockerfiles have build targets specific for running tests, which 
 
-Docker Compose is used to define the containers for running tests, as well as the how the image for the container should be built. The following is the definition for Rust unit tests ([test/docker-compose.unit-tests-rust.yml](./test/docker-compose.unit-tests-rust.yml)):
+Docker Compose is used to define the containers for running tests, as well as
+the how the image for the container should be built. The following is the
+definition for Rust unit tests
+([test/docker-compose.unit-tests-rust.yml](./test/docker-compose.unit-tests-rust.yml)):
 
 ```yaml
 version: "3.8"
@@ -179,13 +213,20 @@ services:
     command: cargo test
 ```
 
-The `build-test-unit` target is a [Dockerfile](./src/rust/Dockerfile) stage  that will builds dependencies for `cargo test` that wasn't done so in the initial source build, `cargo build`.
+The `build-test-unit` target is a [Dockerfile](./src/rust/Dockerfile) stage
+that will builds dependencies for `cargo test` that wasn't done so in the
+initial source build, `cargo build`.
 
-We're currently using `docker-compose up` to run our tests concurrently. We have a [helper script](./test/docker-compose-with-error.sh) that checks the exit code for each container (test) run. If any test exit code is non-zero, the script will return non-zero as well. This allows us to surface non-zero exit codes to Make.
+We're currently using `docker-compose up` to run our tests concurrently. We
+have a [helper script](./test/docker-compose-with-error.sh) that checks the
+exit code for each container (test) run. If any test exit code is non-zero, the
+script will return non-zero as well. This allows us to surface non-zero exit
+codes to Make.
 
 ## Running your locally-built Grapl images
 
-The `make up` command will build Grapl sources and launch Docker Compose to run the Grapl environment locally.
+The `make up` command will build Grapl sources and launch Docker Compose to run
+the Grapl environment locally.
 
 If you'd like to skip building and run the Grapl environment locally you can run:
 
@@ -196,7 +237,11 @@ TAG=latest docker-compose up
 Note that `TAG` should be set to whatever you used in your `make`
 invocation (see [previous section](#building-the-source)).
 
-Alternatively, you can set tag to of the tags to a particular Grapl release we have posted on our Dockerhub. At the time of this writing there are no releases currently supported for local Grapl, however the `staging` tag is kept up-to-date with the latest `staging` branch on GitHub for development and testing. Example:
+Alternatively, you can set tag to of the tags to a particular Grapl release we
+have posted on our Dockerhub. At the time of this writing there are no releases
+currently supported for local Grapl, however the `staging` tag is kept
+up-to-date with the latest `staging` branch on GitHub for development and
+testing. Example:
 
 ``` bash
 TAG=staging docker-compose up
