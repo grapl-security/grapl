@@ -320,11 +320,6 @@ where
             output_graph.add_node(new_node);
         }
 
-        //
-        //        remap_nodes(&mut output_graph, &unid_id_map);
-        //        remap_edges(&mut output_graph, &unid_id_map);
-        //        remove_dead_edges(&mut output_graph);
-
         if dead_nodes.is_empty() {
             info!("Attributed all dynamic nodes");
             Ok(output_graph)

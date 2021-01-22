@@ -106,8 +106,14 @@ COPY --chown=grapl ./generators/osquery-subgraph-generator/Cargo.toml generators
 COPY --chown=grapl Cargo.lock .
 COPY --chown=grapl Cargo.toml .
 # vendor all the deps
+<<<<<<< HEAD
 #RUN mkdir -p /home/grapl/.cargo
 #RUN cargo vendor --versioned-dirs --locked > /home/grapl/.cargo/config
+=======
+RUN mkdir -p /home/grapl/.cargo
+COPY --chown=grapl .cargo/config.toml .cargo/config.toml
+RUN cargo vendor --versioned-dirs --locked >> /home/grapl/.cargo/config.toml
+>>>>>>> staging
 # debug build of all the deps
 RUN cargo build --target=x86_64-unknown-linux-musl
 

@@ -29,7 +29,6 @@ use grapl_graph_descriptions::{file::FileState,
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::{decoder::ZstdProtoDecoder,
                     serialization::SubgraphSerializer};
-use lambda_runtime::error::HandlerError;
 use log::*;
 use rusoto_dynamodb::{DynamoDb,
                       DynamoDbClient};
@@ -710,7 +709,6 @@ pub async fn handler(should_default: bool) -> Result<(), HandlerError> {
         env=?env,
         "handler_init"
     );
-
     let sqs_client = SqsClient::from_env();
 
     let cache = &mut event_caches(&env).await;
