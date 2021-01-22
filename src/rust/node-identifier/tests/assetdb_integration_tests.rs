@@ -1,8 +1,8 @@
 #![cfg(feature = "integration")]
 
 use grapl_graph_descriptions::graph_description::host::*;
-use node_identifier::assetdb::AssetIdDb;
-use node_identifier::init_dynamodb_client;
+use node_identifier::{assetdb::AssetIdDb,
+                      init_dynamodb_client};
 use tokio::runtime::Runtime;
 
 // Given a hostname 'H' to asset id 'A' mapping at c_timestamp 'X'

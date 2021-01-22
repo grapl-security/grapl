@@ -1,13 +1,18 @@
-use crate::metrics::SysmonSubgraphGeneratorMetrics;
-use crate::models::SysmonTryFrom;
+use std::borrow::Cow;
+
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::log_time;
 use log::*;
-use sqs_lambda::cache::{Cache, CacheResponse};
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use std::borrow::Cow;
+use sqs_lambda::{cache::{Cache,
+                         CacheResponse},
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent}};
 use sysmon::Event;
+
+use crate::{metrics::SysmonSubgraphGeneratorMetrics,
+            models::SysmonTryFrom};
 
 #[derive(Clone)]
 pub(crate) struct SysmonSubgraphGenerator<C>

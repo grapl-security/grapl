@@ -1,8 +1,9 @@
 use std::time::Duration;
 
-use crate::sqs_completion_handler::CompletionPolicy;
-use crate::sqs_consumer::ConsumePolicy;
 use chrono::Utc;
+
+use crate::{sqs_completion_handler::CompletionPolicy,
+            sqs_consumer::ConsumePolicy};
 
 #[derive(Default)]
 pub struct LocalSqsServiceOptionsBuilder {

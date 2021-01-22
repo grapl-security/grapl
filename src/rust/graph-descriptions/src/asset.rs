@@ -1,9 +1,10 @@
-use crate::graph_description::Asset;
-use crate::node::NodeT;
-
 use log::warn;
-use serde_json::{json, Value};
+use serde_json::{json,
+                 Value};
 use uuid::Uuid;
+
+use crate::{graph_description::Asset,
+            node::NodeT};
 
 impl Asset {
     pub fn new(

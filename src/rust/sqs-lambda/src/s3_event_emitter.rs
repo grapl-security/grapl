@@ -1,11 +1,13 @@
-use std::error::Error;
+use std::{error::Error,
+          future::Future};
+
+use async_trait::async_trait;
+use rusoto_core::RusotoError;
+use rusoto_s3::{PutObjectError,
+                PutObjectRequest,
+                S3};
 
 use crate::event_emitter::EventEmitter;
-use async_trait::async_trait;
-
-use rusoto_core::RusotoError;
-use rusoto_s3::{PutObjectError, PutObjectRequest, S3};
-use std::future::Future;
 
 #[derive(Clone)]
 pub struct S3EventEmitter<S, F, OnEmission, EmissionResult>
