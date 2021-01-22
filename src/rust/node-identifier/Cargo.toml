@@ -54,7 +54,6 @@ serde_derive = "1"
 thiserror = "1.0.23"
 hex = "0.4"
 async-trait = "0.1"
-tokio-compat = "0.1"
 tokio = { version = "0.2", features = ["sync", "macros", "time", "rt-threaded"] }
 hmap = "0.1"
 tracing = "0.1"

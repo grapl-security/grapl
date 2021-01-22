@@ -378,24 +378,9 @@ dependencies = [
  "backtrace",
  "color-backtrace",
  "color-spantrace",
- "eyre 0.4.3",
+ "eyre",
  "indenter",
  "once_cell",
- "tracing-error",
-]
-
-[[package]]
-name = "color-eyre"
-version = "0.5.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b29030875fd8376e4a28ef497790d5b4a7843d8d1396bf08ce46f5eec562c5c"
-dependencies = [
- "backtrace",
- "color-spantrace",
- "eyre 0.6.5",
- "indenter",
- "once_cell",
- "owo-colors",
  "tracing-error",
 ]
 
@@ -795,16 +780,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "eyre"
-version = "0.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "221239d1d5ea86bf5d6f91c9d6bc3646ffe471b08ff9b0f91c44f115ac969d2b"
-dependencies = [
- "indenter",
- "once_cell",
-]
-
-[[package]]
 name = "failure"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1012,7 +987,7 @@ dependencies = [
  "aws_lambda_events 0.2.7",
  "base16",
  "chrono",
- "eyre 0.4.3",
+ "eyre",
  "failure",
  "futures 0.3.12",
  "grapl-config",
@@ -1156,8 +1131,8 @@ name = "grapl-config"
 version = "0.0.2"
 dependencies = [
  "async-trait",
- "color-eyre 0.3.4",
- "eyre 0.4.3",
+ "color-eyre",
+ "eyre",
  "grapl-observe",
  "log 0.4.13",
  "rusoto_cloudwatch",
@@ -1529,15 +1504,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "instant"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61124eeebbd69b8190558df225adf7e4caafce0d743919e5d6b19652314ec5ec"
-dependencies = [
- "cfg-if 1.0.0",
-]
-
-[[package]]
 name = "iovec"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1703,15 +1669,6 @@ name = "lock_api"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4da24a77a3d8a6d4862d95f72e6fdb9c09a643ecdb402d754004a557f2bec75"
-dependencies = [
- "scopeguard",
-]
-
-[[package]]
-name = "lock_api"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd96ffd135b2fd7b973ac026d28085defbe8983df057ced3eb4f2130b0831312"
 dependencies = [
  "scopeguard",
 ]
@@ -1948,7 +1905,6 @@ dependencies = [
  "stopwatch",
  "thiserror",
  "tokio 0.2.24",
- "tokio-compat",
  "tracing",
  "uuid 0.8.2",
  "zstd",
@@ -2086,7 +2042,6 @@ dependencies = [
  "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
- "lambda_runtime",
  "log 0.4.13",
  "regex",
  "rusoto_core",
@@ -2097,7 +2052,6 @@ dependencies = [
  "sqs-executor",
  "thiserror",
  "tokio 0.2.24",
- "tokio-compat",
  "tracing",
  "zstd",
 ]
@@ -2114,20 +2068,9 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f842b1982eb6c2fe34036a4fbfb06dd185a3f5c8edfaacdf7d1ea10b07de6252"
 dependencies = [
- "lock_api 0.3.4",
- "parking_lot_core 0.6.2",
+ "lock_api",
+ "parking_lot_core",
  "rustc_version",
-]
-
-[[package]]
-name = "parking_lot"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d7744ac029df22dca6284efe4e898991d28e3085c706c972bcd7da4a27a15eb"
-dependencies = [
- "instant",
- "lock_api 0.4.2",
- "parking_lot_core 0.8.2",
 ]
 
 [[package]]
@@ -2142,20 +2085,6 @@ dependencies = [
  "redox_syscall 0.1.57",
  "rustc_version",
  "smallvec 0.6.14",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ccb628cad4f84851442432c60ad8e1f607e29752d0bf072cbd0baf28aa34272"
-dependencies = [
- "cfg-if 1.0.0",
- "instant",
- "libc",
- "redox_syscall 0.1.57",
- "smallvec 1.6.1",
  "winapi 0.3.9",
 ]
 
@@ -3267,16 +3196,13 @@ dependencies = [
  "async-trait",
  "aws_lambda_events 0.3.1",
  "chrono",
- "color-eyre 0.5.10",
  "darkredis",
- "eyre 0.6.5",
  "futures 0.3.12",
  "futures-util",
  "grapl-observe",
  "hex",
  "lru-cache",
  "num_cpus",
- "parking_lot 0.11.1",
  "prost 0.7.0",
  "rusoto_core",
  "rusoto_s3",
@@ -3290,7 +3216,6 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "uuid 0.8.2",
- "zstd",
 ]
 
 [[package]]
@@ -3475,7 +3400,6 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "aws_lambda_events 0.2.7",
- "base16",
  "chrono",
  "failure",
  "futures 0.3.12",
@@ -3484,7 +3408,6 @@ dependencies = [
  "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
- "lambda_runtime",
  "lazy_static",
  "log 0.4.13",
  "prost 0.6.1",
@@ -3496,13 +3419,11 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "simple_logger",
  "sqs-executor",
  "stopwatch",
  "sysmon",
  "thiserror",
  "tokio 0.2.24",
- "tokio-compat",
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
@@ -3832,7 +3753,7 @@ dependencies = [
  "log 0.4.13",
  "mio",
  "num_cpus",
- "parking_lot 0.9.0",
+ "parking_lot",
  "slab 0.4.2",
  "tokio-executor",
  "tokio-io",

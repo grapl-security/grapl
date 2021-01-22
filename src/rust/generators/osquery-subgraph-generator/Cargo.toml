@@ -25,10 +25,8 @@ rusoto_s3 = {version="0.45.0", default_features = false, features=["rustls"]}
 rusoto_core = {version="0.45.0", default_features = false, features=["rustls"]}
 rusoto_sqs = {version="0.45.0", default_features = false, features=["rustls"]}
 
-lambda_runtime = "0.2.*"
 async-trait = "0.1.31"
 zstd = "0.6"
-tokio-compat = "0.1.*"
 tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "rt-threaded", "fs"] }
 thiserror = "1.0.23"
 tracing = "0.1.22"
