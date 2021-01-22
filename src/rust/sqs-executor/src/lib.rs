@@ -187,9 +187,8 @@ async fn process_message<
             next_message.receipt_handle.expect("missing receipt_handle"),
             metric_reporter,
         )
-        .await.unwrap_or_else(|e| {
-            error!("delete_message failed: {:?}", e)
-        });
+        .await
+        .unwrap_or_else(|e| error!("delete_message failed: {:?}", e));
         return;
     }
     info!(message_id = message_id, "Retrieving payload from",);
@@ -236,9 +235,7 @@ async fn process_message<
                     metric_reporter.clone(),
                 )
                 .await
-                    .unwrap_or_else(|e| {
-                        error!("move_to_dead_letter failed: {:?}", e)
-                    });
+                .unwrap_or_else(|e| error!("move_to_dead_letter failed: {:?}", e));
             }
             return;
         }
@@ -252,13 +249,13 @@ async fn process_message<
             .handle_event(events, &mut completed)
             .timed()
             .await;
-        metric_reporter.histogram(
-            "event_handler.handle_event",
-            ms as f64,
-            &[tag("success", processing_result.is_ok())],
-        ).unwrap_or_else(|e| {
-            error!("failed to report event_handler.handle_event.ms: {:?}", e)
-        });
+        metric_reporter
+            .histogram(
+                "event_handler.handle_event",
+                ms as f64,
+                &[tag("success", processing_result.is_ok())],
+            )
+            .unwrap_or_else(|e| error!("failed to report event_handler.handle_event.ms: {:?}", e));
         processing_result
     }
     .await;
@@ -279,9 +276,7 @@ async fn process_message<
             cache
                 .store(next_message.message_id.clone().unwrap().into_bytes())
                 .await
-                .unwrap_or_else(|e| {
-                    error!("cache.store failed: {:?}", e)
-                });
+                .unwrap_or_else(|e| error!("cache.store failed: {:?}", e));
             cache_completed(cache, &mut completed).await;
             // ack the message - we could probably not block on this
 
@@ -293,9 +288,7 @@ async fn process_message<
                 metric_reporter.clone(),
             )
             .await
-            .unwrap_or_else(|e| {
-                error!("delete_message failed: {:?}", e)
-            });
+            .unwrap_or_else(|e| error!("delete_message failed: {:?}", e));
         }
         Err(Ok((partial, e))) => {
             error!(
@@ -326,9 +319,7 @@ async fn process_message<
                     metric_reporter.clone(),
                 )
                 .await
-                    .unwrap_or_else(|e| {
-                        error!("move_to_dead_letter failed: {:?}", e)
-                    });
+                .unwrap_or_else(|e| error!("move_to_dead_letter failed: {:?}", e));
             }
         }
         Err(Err(e)) => {
@@ -348,9 +339,7 @@ async fn process_message<
                     metric_reporter.clone(),
                 )
                 .await
-                    .unwrap_or_else(|e| {
-                        error!("move_to_dead_letter failed: {:?}", e)
-                    });
+                .unwrap_or_else(|e| error!("move_to_dead_letter failed: {:?}", e));
             }
             // should we retry? idk
             // otherwise we can just do nothing

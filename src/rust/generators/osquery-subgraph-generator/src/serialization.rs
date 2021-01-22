@@ -2,8 +2,9 @@ use std::io::Cursor;
 
 use log::*;
 use serde::Deserialize;
-use sqs_executor::event_decoder::PayloadDecoder;
-use sqs_executor::errors::{CheckedError, Recoverable};
+use sqs_executor::{errors::{CheckedError,
+                            Recoverable},
+                   event_decoder::PayloadDecoder};
 
 #[derive(Debug, thiserror::Error)]
 pub enum OSQueryLogDecoderError {

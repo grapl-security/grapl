@@ -11,6 +11,7 @@ use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    *};
 use grapl_observe::metric_reporter::MetricReporter;
+use grapl_service::serialization::SubgraphSerializer;
 use log::*;
 use rusoto_sqs::SqsClient;
 use sqs_executor::{event_retriever::S3PayloadRetriever,
@@ -21,7 +22,6 @@ use sqs_executor::{event_retriever::S3PayloadRetriever,
 use crate::{generator::OSQuerySubgraphGenerator,
             metrics::OSQuerySubgraphGeneratorMetrics,
             serialization::OSQueryLogDecoder};
-use grapl_service::serialization::SubgraphSerializer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
