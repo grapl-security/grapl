@@ -99,7 +99,7 @@ services:
   # Rust services
   #
 
-  grapl-rust-metric-forwarder:
+  grapl-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
     build:
       context: src/rust
@@ -114,7 +114,7 @@ services:
     extra_hosts:
       - amazonaws:127.0.0.1
 
-  grapl-rust-sysmon-subgraph-generator:
+  grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     build:
       context: src/rust
@@ -140,7 +140,7 @@ services:
       - sqs
       - grapl-provision
 
-  grapl-rust-osquery-subgraph-generator:
+  grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
     build:
       context: src/rust
@@ -166,7 +166,7 @@ services:
       - sqs
       - grapl-provision
 
-  grapl-rust-node-identifier:
+  grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     build:
       context: src/rust
@@ -204,7 +204,7 @@ services:
       - sqs
       - grapl-provision
 
-  grapl-rust-node-identifier-retry-handler:
+  grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     build:
       context: src/rust
@@ -242,7 +242,7 @@ services:
       - sqs
       - grapl-provision
 
-  grapl-rust-graph-merger:
+  grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     build:
       context: src/rust
@@ -273,7 +273,7 @@ services:
       - grapl-provision
       - grapl-master-graph-db
 
-  grapl-rust-analyzer-dispatcher:
+  grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     build:
       context: src/rust
