@@ -72,14 +72,14 @@ export class NodeIdentifier extends cdk.NestedStack {
                 buildArgs: {
                     "release_target": "debug"
                 },
-                file: "Dockerfile.Makefile",
+                file: "Dockerfile",
             }),
             retryServiceImage: ContainerImage.fromAsset('../../../src/rust/', {
                 target: "node-identifier-retry-handler-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
-                file: "Dockerfile.Makefile",
+                file: "Dockerfile",
             }),
             command: ["/node-identifier"],
             retryCommand: ["/node-identifier-retry-handler"],

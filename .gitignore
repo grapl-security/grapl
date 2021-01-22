@@ -4,7 +4,6 @@ src/rust/graph-descriptions/grapl_graph_descriptions
 .DS_Store
 
 # Test outputs
-/test/integration-outputs/**/*
 test/cypress/screenshots
 test/cypress/videos
 
@@ -73,5 +72,4 @@ pip-log.txt
 *.zip
 stale_outputs_checked
 .log/
-.dobi/
 .hypothesis/

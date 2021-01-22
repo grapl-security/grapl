@@ -5,15 +5,12 @@ version: "3.8"
 services:
 
   grapl-rust-node-identifier-integration-tests:
-    image: grapl/rust-base:${TAG:-latest}
+    image: grapl/grapl-node-identifier-test:${TAG:-latest}
     build:
       context: ${PWD}/src/rust
-      dockerfile: Dockerfile.Makefile
-      target: build
+      target: build-test-integration
       args:
-        - SCCACHE_LOCATION=${SCCACHE_LOCATION:-container}
-        - SCCACHE_BUCKET=${SCCACHE_BUCKET}
-        - PROFILE=${PROFILE:-debug}
+        - PROFILE=debug
     command: bash -c "
       wait-for-it grapl-provision:8126 --timeout=180 &&
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"
@@ -40,7 +37,7 @@ services:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: grapl-analyzerlib-test
     command: bash -c '
       wait-for-it grapl-provision:8126 --timeout=180 &&
@@ -59,7 +56,7 @@ services:
     image: grapl/grapl-analyzer-executor-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: analyzer-executor-test
     command: bash -c '
       source venv/bin/activate &&
@@ -79,7 +76,7 @@ services:
     image: grapl/grapl-engagement-edge-test:${TAG:-latest}
     build:
       context: ${PWD}/src
-      dockerfile: ./python/Dockerfile.Makefile
+      dockerfile: ./python/Dockerfile
       target: engagement-edge-test
     command: bash -c '
       wait-for-it grapl-engagement-edge:8900 --timeout=180 &&
@@ -97,7 +94,6 @@ services:
     command: --browser chrome --headless # enctrypoint is: cypress run
     volumes: 
       - .:/test
-
 
 networks:
   default:

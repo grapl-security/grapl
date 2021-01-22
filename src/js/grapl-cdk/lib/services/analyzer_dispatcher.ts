@@ -66,7 +66,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
                 buildArgs: {
                     "release_target": "debug"
                 },
-                file: "Dockerfile.Makefile",
+                file: "Dockerfile",
             }),
             command: ["/analyzer-dispatcher"],
             // metric_forwarder: props.metricForwarder,

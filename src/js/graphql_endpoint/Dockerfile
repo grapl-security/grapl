@@ -1,34 +1,57 @@
-FROM node:12.18-buster-slim AS grapl-graphql-endpoint-deps
-RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends build-essential libffi-dev libssl-dev python3
-RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
+FROM node:12.18-buster-slim AS graphql-endpoint-build
+
+RUN apt-get update && apt-get -y install --no-install-recommends \
+        build-essential \
+        libffi-dev \
+        libssl-dev \
+        python3 \
+        zip
+
+RUN adduser \
+        --disabled-password \
+        --gecos '' \
+        --home /home/grapl \
+        --shell /bin/bash \
+        grapl
+
+USER grapl
 WORKDIR /home/grapl
 RUN mkdir -p lambda
+
+# Install the dependencies separately to leverage Docker cache
 COPY --chown=grapl package.json lambda/package.json
 COPY --chown=grapl package-lock.json lambda/package-lock.json
 RUN cd lambda && npm i
-
-FROM node:12.18-buster-slim AS grapl-graphql-endpoint-build
-RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends zip
-RUN adduser --disabled-password --gecos '' --home /home/grapl --shell /bin/bash grapl
-WORKDIR /home/grapl
-RUN mkdir -p lambda
-COPY --chown=grapl --from=grapl-graphql-endpoint-deps /home/grapl/lambda/node_modules lambda/node_modules/
 RUN rm -rf lambda/node_modules/grpc/build/
-RUN mkdir -p lambda/modules/
-COPY modules lambda/modules
-COPY server.js lambda/server.js
-RUN cd lambda && zip --quiet -9r /home/grapl/lambda.zip .
-RUN mkdir -p dist/graphql-endpoint && cp lambda.zip dist/graphql-endpoint/lambda.zip
 
-# no-op the base image cmd, so it doesn't launch a Node repl
-CMD :
+# Copy graphql sources
+COPY --chown=grapl modules lambda/modules
+COPY --chown=grapl server.js lambda/server.js
 
-FROM node:12.18-buster-slim AS grapl-graphql-endpoint
-RUN apt-get update && apt-get -y upgrade && apt-get install -y --no-install-recommends unzip
-COPY --from=grapl-graphql-endpoint-build /home/grapl/lambda.zip /
-RUN unzip -q lambda.zip
-COPY --from=grapl-graphql-endpoint-deps /home/grapl/lambda/package.json /package.json
-COPY --from=grapl-graphql-endpoint-deps /home/grapl/lambda/package-lock.json /package-lock.json
+# zip
+FROM graphql-endpoint-build AS graphql-endpoint-zip
 
-# no-op the base image cmd, so it doesn't launch a Node repl
-CMD :
+RUN cd lambda && \
+    zip -q9r /home/grapl/lambda.zip ./
+
+# deploy
+FROM node:12.18-buster-slim AS graphql-endpoint-deploy
+
+RUN adduser \
+        --disabled-password \
+        --gecos '' \
+        --home /home/grapl \
+        --shell /bin/bash \
+        grapl
+
+USER grapl
+WORKDIR /home/grapl
+
+COPY --chown=grapl --from=graphql-endpoint-build /home/grapl/lambda lambda
+
+WORKDIR /home/grapl/lambda
+
+COPY --chown=grapl package.json package.json
+COPY --chown=grapl package-lock.json package-lock.json
+
+CMD yarn start server

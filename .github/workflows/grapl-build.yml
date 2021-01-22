@@ -32,7 +32,7 @@ jobs:
 
       - name: Rust unit tests
         run: |
-          SCCACHE_LOCATION=none make test-unit-rust
+          make test-unit-rust
 
   python-unit-tests:
     runs-on: ubuntu-latest
@@ -61,9 +61,9 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Run dobi python-typecheck
+      - name: Run python-typecheck
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux python-typecheck
+          make test-typecheck
 
   js-unit-tests:
     runs-on: ubuntu-latest
@@ -93,10 +93,11 @@ jobs:
 
       - name: Run integration tests
         run: |
-          SCCACHE_LOCATION=none make test-integration
+          echo "unset RUSTC_WRAPPER" > rust_env.sh
+          GRAPL_RUST_ENV_FILE=rust_env.sh make test-integration
 
 
-  # In the future, this should probably be merged back into `dobi integration-tests`, but
+  # In the future, this should probably be merged back into the integration tests, but
   # since it's so timing-dependent I'm going to treat it separately until it stabilizes a bit.
   FLAKY-end-to-end-tests:
     runs-on: ubuntu-latest
@@ -118,24 +119,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Build Grapl
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
-
-      # --no-bind-mount makes dobi screw up with volumes for some reason, and it's not really required here anyway.
       - name: Run end-to-end tests
         run: |
-          GRAPL_RELEASE_TARGET=debug \
-          GRAPL_LOG_LEVEL=DEBUG \
+          GRAPL_LOG_LEVEL=debug \
           DUMP_ARTIFACTS=True \
-          TAG=latest \
-          ./dobi-linux run-e2e-tests
-       
+          make test-e2e
+
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'
         if: ${{ always() }}
         run: |
-          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration-tests"
+          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration_tests"
            
       - name: 'Upload e2e test artifacts'
         if: ${{ always() }}

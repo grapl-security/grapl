@@ -57,7 +57,7 @@ export class GraphMerger extends cdk.NestedStack {
                 buildArgs: {
                     "release_target": "debug"
                 },
-                file: "Dockerfile.Makefile",
+                file: "Dockerfile",
             }),
             command: ["/graph-merger"],
             // metric_forwarder: props.metricForwarder,

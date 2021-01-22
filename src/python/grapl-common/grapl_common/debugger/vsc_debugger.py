@@ -22,7 +22,7 @@ def _install_from_pip(package: str) -> None:
 # TODO: we should probably have some fixed 'services' StrEnum somewhere
 SERVICE_TO_PORT = {
     # As you need to debug more services, add more services here.
-    # Make sure you expose the port in dobi.yaml or docker-compose.yaml.
+    # Make sure you expose the port in the appropriate docker-compose file.
     "grapl_e2e_tests": 8400,
     "analyzer_executor": 8401,
 }
