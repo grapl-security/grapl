@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
@@ -52,7 +53,7 @@ export class GraphMerger extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset('../../../src/rust/', {
+            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../src/rust/'), {
                 target: "graph-merger-deploy",
                 buildArgs: {
                     "release_target": "debug"

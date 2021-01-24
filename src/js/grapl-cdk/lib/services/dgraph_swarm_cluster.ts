@@ -60,7 +60,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         // grant read access to the swarm instances
         dgraphConfigBucket.grantRead(this.dgraphSwarmCluster.swarmInstanceRole);
 
-        const dgraphDir = path.join(__dirname, '../dgraph/');
+        const dgraphDir = path.join(__dirname, '../../dgraph/');
         new s3deploy.BucketDeployment(this, "dgraphConfigDeployment", {
             sources: [s3deploy.Source.asset(dgraphDir)],
             destinationBucket: dgraphConfigBucket,
