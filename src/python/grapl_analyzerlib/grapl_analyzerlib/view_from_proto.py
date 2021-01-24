@@ -6,7 +6,6 @@ from grapl_graph_descriptions.graph_description_pb2 import MergedNode
 
 
 def view_from_proto(graph_client: GraphClient, node: MergedNode) -> BaseView:
-    
     return BaseView(
         node.uid,
         node.node_key,

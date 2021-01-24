@@ -772,6 +772,7 @@ version = "0.1.0"
 dependencies = [
  "derive-dynamic-node",
  "grapl-graph-descriptions",
+ "thiserror",
  "uuid 0.8.2",
 ]
 
@@ -1019,6 +1020,7 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "aws_lambda_events 0.2.7",
+ "endpoint-plugin",
  "eyre 0.4.3",
  "futures 0.3.12",
  "grapl-config",

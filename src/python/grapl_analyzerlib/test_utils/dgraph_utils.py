@@ -34,7 +34,9 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
 
         if new_uid is None:
             new_uid = uids["blank-0"]
-        return str(new_uid)
+        if isinstance(new_uid, str):
+            return int(new_uid, 16)
+        return new_uid
 
 
 def upsert(
@@ -52,7 +54,7 @@ def upsert(
 
 
 def create_edge(
-    client: GraphClient, from_uid: str, edge_name: str, to_uid: str
+    client: GraphClient, from_uid: int, edge_name: str, to_uid: int
 ) -> None:
     if edge_name[0] == "~":
         mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}

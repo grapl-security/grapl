@@ -60,7 +60,7 @@ def compile_protobuf(proto_file, proto_dir, out_dir):
     sys.stdout.write(f"compiling protobuf {proto_file}\n")
     if (
         subprocess.call(
-            [protoc, f"--proto_path={proto_dir}", f"--python_out={out_dir}", f"--mypy_out={out_dir}", proto_file]
+            [protoc, f"--proto_path={proto_dir}", f"--python_out={out_dir}", proto_file]
         )
         != 0
     ):

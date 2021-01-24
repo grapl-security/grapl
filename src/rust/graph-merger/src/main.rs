@@ -242,7 +242,7 @@ impl UidCache {
         }
         cache_res.cloned()
     }
-    fn store(&mut self, node_key: String, uid: String) {
+    fn store(&mut self, node_key: String, uid: inting) {
         let mut self_cache = self.cache.lock().unwrap();
         self_cache.insert(node_key, uid);
     }

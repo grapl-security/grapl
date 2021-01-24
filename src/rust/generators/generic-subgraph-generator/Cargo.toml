@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 grapl-graph-descriptions = { path="../../graph-descriptions", version="*"}
+endpoint-plugin = { path="../../endpoint-plugin", version="*"}
 grapl-config = {path="../../grapl-config", version="*"}
 
 sqs-executor = { path = "../../sqs-executor/" }

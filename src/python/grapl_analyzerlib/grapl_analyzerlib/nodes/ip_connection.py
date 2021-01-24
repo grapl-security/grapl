@@ -200,7 +200,7 @@ class IpConnectionView(EntityView[IPV, IPQ]):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client,
         node_types: Set[str],
