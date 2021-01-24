@@ -21,7 +21,7 @@ use sqs_lambda::{event_decoder::PayloadDecoder,
                  sqs_consumer::{ConsumePolicy,
                                 ConsumePolicyBuilder}};
 
-use crate::serialization::SubgraphSerializer;
+use crate::serialization::GraphDescriptionSerializer;
 
 /// Runs the graph generator on AWS
 ///
@@ -174,7 +174,7 @@ async fn run_async_generator_handler<
         S3Client::new(region.clone()),
         SqsClient::new(region.clone()),
         event_decoder,
-        SubgraphSerializer::new(Vec::with_capacity(1024)),
+        GraphDescriptionSerializer::new(Vec::with_capacity(1024)),
         generator,
         cache,
         metric_reporter,

@@ -97,48 +97,48 @@ pub fn generate_outbound_connection_subgraph(
         .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     // An asset is assigned an IP
-    graph.add_edge("asset_ip", asset.clone_node_key(), src_ip.clone_node_key());
+    graph.add_edge("asset_ip", asset.node_key.clone(), src_ip.node_key.clone());
 
     // A process spawns on an asset
     graph.add_edge(
         "asset_processes",
-        asset.clone_node_key(),
-        process.clone_node_key(),
+        asset.node_key.clone(),
+        process.node_key.clone(),
     );
 
     // A process creates a connection
     graph.add_edge(
         "created_connections",
-        process.clone_node_key(),
-        outbound.clone_node_key(),
+        process.node_key.clone(),
+        outbound.node_key.clone(),
     );
 
     // The connection is over an IP + Port
     graph.add_edge(
         "connected_over",
-        outbound.clone_node_key(),
-        src_port.clone_node_key(),
+        outbound.node_key.clone(),
+        src_port.node_key.clone(),
     );
 
     // The outbound process connection is to a dst ip + port
     graph.add_edge(
         "connected_to",
-        outbound.clone_node_key(),
-        dst_port.clone_node_key(),
+        outbound.node_key.clone(),
+        dst_port.node_key.clone(),
     );
 
     // There is also a connection between the two IP addresses
 
     graph.add_edge(
         "network_connections",
-        src_ip.clone_node_key(),
-        ip_connection.clone_node_key(),
+        src_ip.node_key.clone(),
+        ip_connection.node_key.clone(),
     );
 
     graph.add_edge(
         "network_connections",
-        dst_ip.clone_node_key(),
-        ip_connection.clone_node_key(),
+        dst_ip.node_key.clone(),
+        ip_connection.node_key.clone(),
     );
 
     graph.add_node(asset);

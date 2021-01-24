@@ -74,14 +74,14 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
 
             graph.add_edge(
                 "bin_file",
-                child.clone_node_key(),
-                child_exe.clone_node_key(),
+                child.node_key.clone(),
+                child_exe.node_key.clone(),
             );
 
             graph.add_edge(
                 "files_on_asset",
-                asset.clone_node_key(),
-                child_exe.clone_node_key(),
+                asset.node_key.clone(),
+                child_exe.node_key.clone(),
             );
 
             graph.add_node(child_exe);
@@ -101,14 +101,14 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
 
             graph.add_edge(
                 "children",
-                parent_process.clone_node_key(),
-                child.clone_node_key(),
+                parent_process.node_key.clone(),
+                child.node_key.clone(),
             );
 
             graph.add_edge(
                 "asset_processes",
-                asset.clone_node_key(),
-                parent_process.clone_node_key(),
+                asset.node_key.clone(),
+                parent_process.node_key.clone(),
             );
 
             graph.add_node(parent_process);
@@ -116,8 +116,8 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
 
         graph.add_edge(
             "asset_processes",
-            asset.clone_node_key(),
-            child.clone_node_key(),
+            asset.node_key.clone(),
+            child.node_key.clone(),
         );
 
         graph.add_node(child);

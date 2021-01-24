@@ -3,8 +3,8 @@
 use graph_generator_lib::run_graph_generator;
 pub use grapl_service::{decoder::{ZstdDecoder,
                                   ZstdDecoderError},
-                        serialization::{SubgraphSerializer,
-                                        SubgraphSerializerError}};
+                        serialization::{GraphDescriptionSerializer,
+                                        GraphDescriptionSerializerError}};
 use log::*;
 
 use crate::{generator::SysmonSubgraphGenerator,

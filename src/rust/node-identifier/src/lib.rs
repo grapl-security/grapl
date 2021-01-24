@@ -1,41 +1,30 @@
-#![allow(unused_must_use)]
+// #![allow(unused_must_use)]
 
 use std::{collections::{HashMap,
                         HashSet},
-          convert::TryFrom,
           fmt::Debug,
           sync::{Arc,
                  Mutex}};
 
-use assetdb::{AssetIdDb,
-              AssetIdentifier};
 use async_trait::async_trait;
 use dynamic_sessiondb::{DynamicMappingDb,
-                        DynamicNodeIdentifier};
-use failure::{bail,
-              Error};
+                        NodeDescriptionIdentifier};
+use failure::Error;
 use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::{host::*,
-                                                   node::WhichNode,
-                                                   *},
-                               ip_connection::IpConnectionState,
-                               network_connection::NetworkConnectionState,
-                               node::NodeT,
-                               process_inbound_connection::ProcessInboundConnectionState,
-                               process_outbound_connection::ProcessOutboundConnectionState};
+use grapl_graph_descriptions::graph_description::{GraphDescription,
+                                                  IdentifiedGraph,
+                                                  IdentifiedNode,
+                                                  NodeDescription};
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::{decoder::ZstdProtoDecoder,
-                    serialization::SubgraphSerializer};
+                    serialization::IdentifiedGraphSerializer};
 use log::*;
 use rusoto_dynamodb::{DynamoDb,
                       DynamoDbClient};
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
-use sessions::UnidSession;
-use sha2::Digest;
 use sqs_executor::{cache::{Cache,
                            CacheResponse,
                            Cacheable},
@@ -55,7 +44,6 @@ macro_rules! wait_on {
     }};
 }
 
-pub mod assetdb;
 pub mod dynamic_sessiondb;
 
 pub mod sessiondb;
@@ -67,9 +55,7 @@ where
     D: DynamoDb + Clone + Send + Sync + 'static,
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
-    asset_mapping_db: AssetIdDb<D>,
-    dynamic_identifier: DynamicNodeIdentifier<D>,
-    asset_identifier: AssetIdentifier<D>,
+    dynamic_identifier: NodeDescriptionIdentifier<D>,
     node_id_db: D,
     should_default: bool,
     cache: CacheT,
@@ -81,447 +67,26 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(
-        asset_mapping_db: AssetIdDb<D>,
-        dynamic_identifier: DynamicNodeIdentifier<D>,
-        asset_identifier: AssetIdentifier<D>,
+        dynamic_identifier: NodeDescriptionIdentifier<D>,
         node_id_db: D,
         should_default: bool,
         cache: CacheT,
     ) -> Self {
         Self {
-            asset_mapping_db,
             dynamic_identifier,
-            asset_identifier,
             node_id_db,
             should_default,
             cache,
         }
     }
 
-    async fn attribute_node_key(&self, node: Node) -> Result<Node, Error> {
-        let unid = into_unid_session(&node)?;
-
-        match node.which_node {
-            Some(WhichNode::ProcessNode(mut process_node)) => {
-                info!("Attributing ProcessNode: {}", process_node.process_id);
-                let unid = match unid {
-                    Some(unid) => unid,
-                    None => bail!("Could not identify ProcessNode"),
-                };
-                let session_db = SessionDb::new(
-                    self.node_id_db.clone(),
-                    grapl_config::process_history_table_name(),
-                );
-                let node_key = session_db
-                    .handle_unid_session(unid, self.should_default)
-                    .await?;
-
-                info!("Mapped Process {:?} to {}", process_node, &node_key,);
-                process_node.set_node_key(node_key);
-                Ok(process_node.into())
-            }
-            Some(WhichNode::FileNode(mut file_node)) => {
-                info!("Attributing FileNode");
-                let unid = match unid {
-                    Some(unid) => unid,
-                    None => bail!("Could not identify FileNode"),
-                };
-                let session_db = SessionDb::new(
-                    self.node_id_db.clone(),
-                    grapl_config::file_history_table_name(),
-                );
-                let node_key = session_db
-                    .handle_unid_session(unid, self.should_default)
-                    .await?;
-
-                file_node.set_node_key(node_key);
-                Ok(file_node.into())
-            }
-            Some(WhichNode::ProcessInboundConnectionNode(mut inbound_node)) => {
-                info!("Attributing ProcessInboundConnectionNode");
-                let unid = match unid {
-                    Some(unid) => unid,
-                    None => bail!("Could not identify ProcessInboundConnectionNode"),
-                };
-                let session_db = SessionDb::new(
-                    self.node_id_db.clone(),
-                    grapl_config::inbound_connection_history_table_name(),
-                );
-                let node_key = session_db
-                    .handle_unid_session(unid, self.should_default)
-                    .await?;
-
-                inbound_node.set_node_key(node_key);
-                Ok(inbound_node.into())
-            }
-            Some(WhichNode::ProcessOutboundConnectionNode(mut outbound_node)) => {
-                info!("Attributing ProcessOutboundConnectionNode");
-                let unid = match unid {
-                    Some(unid) => unid,
-                    None => bail!("Could not identify ProcessOutboundConnectionNode"),
-                };
-                let session_db = SessionDb::new(
-                    self.node_id_db.clone(),
-                    grapl_config::outbound_connection_history_table_name(),
-                );
-                let node_key = session_db
-                    .handle_unid_session(unid, self.should_default)
-                    .await?;
-
-                outbound_node.set_node_key(node_key);
-                Ok(outbound_node.into())
-            }
-            Some(WhichNode::AssetNode(mut asset_node)) => {
-                info!("Attributing AssetNode");
-                let asset_id = match asset_node.clone_asset_id() {
-                    Some(asset_id) => asset_id,
-                    None => bail!("AssetNode must have asset_id"),
-                };
-
-                // AssetNodes have a node_key equal to their asset_id
-                asset_node.set_node_key(asset_id);
-                Ok(asset_node.into())
-            }
-            // IpAddress nodes are identified at construction
-            Some(WhichNode::IpAddressNode(mut ip_node)) => {
-                ip_node.set_node_key(ip_node.ip_address.clone());
-                info!("Attributing IpAddressNode");
-                Ok(ip_node.into())
-            }
-            // The identity of an IpPortNode is the hash of its ip, port, and protocol
-            Some(WhichNode::IpPortNode(mut ip_port)) => {
-                info!("Attributing IpPortNode");
-                let port = &ip_port.port;
-                let protocol = &ip_port.protocol;
-
-                let mut node_key_hasher = sha2::Sha256::default();
-                node_key_hasher.update(port.to_string().as_bytes());
-                node_key_hasher.update(protocol.as_bytes());
-
-                let node_key = hex::encode(node_key_hasher.finalize());
-
-                ip_port.set_node_key(node_key);
-
-                Ok(ip_port.into())
-            }
-            Some(WhichNode::NetworkConnectionNode(mut network_connection_node)) => {
-                info!("Attributing NetworkConnectionNode");
-                let unid = match unid {
-                    Some(unid) => unid,
-                    None => bail!("Could not identify NetworkConnectionNode"),
-                };
-                let session_db = SessionDb::new(
-                    self.node_id_db.clone(),
-                    grapl_config::network_connection_history_table_name(),
-                );
-                let node_key = session_db
-                    .handle_unid_session(unid, self.should_default)
-                    .await?;
-
-                network_connection_node.set_node_key(node_key);
-                Ok(network_connection_node.into())
-            }
-            Some(WhichNode::IpConnectionNode(mut ip_connection_node)) => {
-                info!("Attributing IpConnectionNode");
-                let unid = match unid {
-                    Some(unid) => unid,
-                    None => bail!("Could not identify IpConnectionNode"),
-                };
-                let session_db = SessionDb::new(
-                    self.node_id_db.clone(),
-                    grapl_config::ip_connection_history_table_name(),
-                );
-                let node_key = session_db
-                    .handle_unid_session(unid, self.should_default)
-                    .await?;
-
-                ip_connection_node.set_node_key(node_key);
-                Ok(ip_connection_node.into())
-            }
-            Some(WhichNode::DynamicNode(ref dynamic_node)) => {
-                info!("Attributing DynamicNode");
-                let new_node = self
-                    .dynamic_identifier
-                    .attribute_dynamic_node(&dynamic_node)
-                    .await?;
-                Ok(new_node.into())
-            }
-            None => bail!("Unknown Node Variant"),
-        }
-    }
-}
-
-fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
-    match &node.which_node {
-        Some(WhichNode::ProcessNode(node)) => {
-            let (is_creation, timestamp) = match (
-                node.created_timestamp != 0,
-                node.last_seen_timestamp != 0,
-                node.terminated_timestamp != 0,
-            ) {
-                (true, _, _) => (true, node.created_timestamp),
-                (_, _, true) => (false, node.terminated_timestamp),
-                (_, true, _) => (false, node.last_seen_timestamp),
-                _ => bail!("At least one timestamp must be set"),
-            };
-
-            Ok(Some(UnidSession {
-                pseudo_key: format!(
-                    "{}{}",
-                    node.get_asset_id().expect("ProcessNode must have asset_id"),
-                    node.process_id
-                ),
-                timestamp,
-                is_creation,
-            }))
-        }
-        Some(WhichNode::FileNode(node)) => {
-            let (is_creation, timestamp) = match FileState::try_from(node.state)? {
-                FileState::Created => (true, node.created_timestamp),
-                _ => (false, node.last_seen_timestamp),
-            };
-            // TODO: Hash the path
-            let key = &node.file_path;
-
-            Ok(Some(UnidSession {
-                pseudo_key: format!(
-                    "{}{}",
-                    node.get_asset_id().expect("FileNode must have asset_id"),
-                    key
-                ),
-                timestamp,
-                is_creation,
-            }))
-        }
-        Some(WhichNode::ProcessOutboundConnectionNode(node)) => {
-            let (is_creation, timestamp) =
-                match ProcessOutboundConnectionState::try_from(node.state)? {
-                    ProcessOutboundConnectionState::Connected => (true, node.created_timestamp),
-                    _ => (false, node.last_seen_timestamp),
-                };
-
-            Ok(Some(UnidSession {
-                pseudo_key: format!(
-                    "{}{}outbound",
-                    node.get_asset_id()
-                        .expect("ProcessOutboundConnectionNode must have asset_id"),
-                    node.port
-                ),
-                timestamp,
-                is_creation,
-            }))
-        }
-        Some(WhichNode::ProcessInboundConnectionNode(node)) => {
-            let (is_creation, timestamp) =
-                match ProcessInboundConnectionState::try_from(node.state)? {
-                    ProcessInboundConnectionState::Bound => (true, node.created_timestamp),
-                    _ => (false, node.last_seen_timestamp),
-                };
-
-            Ok(Some(UnidSession {
-                pseudo_key: format!(
-                    "{}{}inbound",
-                    node.get_asset_id().expect("Missing asset id"),
-                    node.port
-                ),
-                timestamp,
-                is_creation,
-            }))
-        }
-
-        Some(WhichNode::NetworkConnectionNode(node)) => {
-            let (is_creation, timestamp) = match NetworkConnectionState::try_from(node.state)? {
-                NetworkConnectionState::Created => (true, node.created_timestamp),
-                _ => (false, node.last_seen_timestamp),
-            };
-
-            let pseudo_key = format!(
-                "{}{}{}{}{}network_connection",
-                node.src_port,
-                node.src_ip_address,
-                node.dst_port,
-                node.dst_ip_address,
-                node.protocol,
-            );
-            Ok(Some(UnidSession {
-                pseudo_key,
-                timestamp,
-                is_creation,
-            }))
-        }
-
-        Some(WhichNode::IpConnectionNode(node)) => {
-            let (is_creation, timestamp) = match IpConnectionState::try_from(node.state)? {
-                IpConnectionState::Created => (true, node.created_timestamp),
-                _ => (false, node.last_seen_timestamp),
-            };
-
-            let pseudo_key = format!(
-                "{}{}{}ip_network_connection",
-                node.src_ip_address, node.dst_ip_address, node.protocol,
-            );
-            Ok(Some(UnidSession {
-                pseudo_key,
-                timestamp,
-                is_creation,
-            }))
-        }
-        // IpAddressNode is not a session
-        Some(WhichNode::IpAddressNode(_node)) => Ok(None),
-
-        // AssetNode is not a session
-        Some(WhichNode::AssetNode(_node)) => Ok(None),
-
-        // IpPortNode is not a session
-        Some(WhichNode::IpPortNode(_node)) => Ok(None),
-
-        // DynamicNode's are identified separatealy from others
-        Some(WhichNode::DynamicNode(_node)) => Ok(None),
-        None => bail!("Failed to handle variant of node. Dropping it."),
-    }
-}
-
-fn remove_dead_edges(graph: &mut Graph) {
-    let edges = &mut graph.edges;
-    let nodes = &graph.nodes;
-    for (_node_key, edge_list) in edges.iter_mut() {
-        let live_edges: Vec<_> = edge_list
-            .edges
-            .clone()
-            .into_iter()
-            .filter(|edge| nodes.contains_key(&edge.to) && nodes.contains_key(&edge.from))
-            .collect();
-
-        *edge_list = EdgeList { edges: live_edges };
-    }
-}
-
-async fn create_asset_id_mappings(
-    assetid_db: &AssetIdDb<impl DynamoDb>,
-    unid_graph: &Graph,
-) -> Result<(), Error> {
-    for node in unid_graph.nodes.values() {
-        let ids = match &node.which_node {
-            Some(WhichNode::ProcessNode(ref node)) => {
-                (&node.asset_id, &node.hostname, node.created_timestamp)
-            }
-            Some(WhichNode::FileNode(ref node)) => {
-                (&node.asset_id, &node.hostname, node.created_timestamp)
-            }
-            Some(WhichNode::ProcessOutboundConnectionNode(ref node)) => {
-                (&node.asset_id, &node.hostname, node.created_timestamp)
-            }
-            Some(WhichNode::ProcessInboundConnectionNode(ref node)) => {
-                (&node.asset_id, &node.hostname, node.created_timestamp)
-            }
-            Some(WhichNode::AssetNode(ref node)) => {
-                (&node.asset_id, &node.hostname, node.first_seen_timestamp)
-            }
-            Some(WhichNode::NetworkConnectionNode(ref _node)) => {
-                continue;
-            }
-            Some(WhichNode::IpConnectionNode(ref _node)) => {
-                continue;
-            }
-            Some(WhichNode::IpAddressNode(ref _node)) => {
-                continue;
-            }
-            Some(WhichNode::IpPortNode(ref _node)) => {
-                continue;
-            }
-            Some(WhichNode::DynamicNode(ref _node)) => {
-                continue;
-            }
-            None => bail!("Failed to handle node variant"),
-        };
-
-        match ids {
-            (Some(asset_id), Some(hostname), timestamp) => {
-                info!("Creating asset id {} mapping for: {}", asset_id, hostname);
-                assetid_db
-                    .create_mapping(
-                        &HostId::AssetId(asset_id.clone()),
-                        hostname.clone(),
-                        timestamp,
-                    )
-                    .await?;
-            }
-            _ => continue,
-        };
-    }
-
-    Ok(())
-}
-
-// Takes a Graph, attributes all nodes with an asset id
-// When atribution fails, attribution continues, but the Graph returned will contain
-// only the nodes that were successful
-// Edges will also be fixed up
-async fn attribute_asset_ids(
-    asset_identifier: &AssetIdentifier<impl DynamoDb>,
-    unid_graph: Graph,
-) -> Result<Graph, (Error, Graph)> {
-    info!("Attributing asset ids");
-    let mut dead_nodes = HashSet::new();
-    let mut output_graph = Graph::new(unid_graph.timestamp);
-    output_graph.edges = unid_graph.edges;
-
-    let _node_asset_ids: HashMap<String, String> = HashMap::new();
-    let mut err = None;
-
-    for node in unid_graph.nodes.values() {
-        match &node.which_node {
-            Some(WhichNode::IpAddressNode(n)) => {
-                output_graph.add_node(n.clone());
-                continue;
-            }
-            Some(WhichNode::DynamicNode(n)) => {
-                if !n.requires_asset_identification() {
-                    output_graph.add_node(n.clone());
-                    continue;
-                }
-            }
-            Some(WhichNode::NetworkConnectionNode(n)) => {
-                output_graph.add_node(n.clone());
-                continue;
-            }
-            Some(WhichNode::IpPortNode(n)) => {
-                output_graph.add_node(n.clone());
-                continue;
-            }
-            Some(WhichNode::IpConnectionNode(n)) => {
-                output_graph.add_node(n.clone());
-                continue;
-            }
-            _ => (),
-        }
-
-        let asset_id = asset_identifier.attribute_asset_id(&node).await;
-
-        let asset_id = match asset_id {
-            Ok(asset_id) => asset_id,
-            Err(e) => {
-                warn!("Failed to attribute to asset id: {:?} {}", node, e);
-                err = Some(e);
-                dead_nodes.insert(node.clone_node_key());
-                continue;
-            }
-        };
-
-        let mut node = node.to_owned();
-        node.set_asset_id(asset_id);
-        output_graph.add_node(node);
-    }
-
-    // There shouldn't be any dead nodes in our output_graph anyways
-    remove_dead_edges(&mut output_graph);
-
-    if dead_nodes.is_empty() {
-        info!("Attributed all asset ids");
-        Ok(output_graph)
-    } else {
-        warn!("Attributed asset ids");
-        Err((err.unwrap(), output_graph))
+    // todo: We should be yielding IdentifiedNode's here
+    async fn attribute_node_key(&self, node: &NodeDescription) -> Result<IdentifiedNode, Error> {
+        let new_node = self
+            .dynamic_identifier
+            .attribute_dynamic_node(&node)
+            .await?;
+        Ok(new_node.into())
     }
 }
 
@@ -543,43 +108,23 @@ where
     D: DynamoDb + Clone + Send + Sync + 'static,
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
-    type InputEvent = GeneratedSubgraphs;
-    type OutputEvent = Graph;
+    type InputEvent = GraphDescription;
+    // todo: IdentifiedGraph's should be emitted
+    type OutputEvent = IdentifiedGraph;
     type Error = NodeIdentifierError;
 
     async fn handle_event(
         &mut self,
-        subgraphs: GeneratedSubgraphs,
+        unid_subgraph: GraphDescription,
         completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let mut attribution_failure = None;
 
         info!("Handling raw event");
 
-        if subgraphs.subgraphs.is_empty() {
-            warn!("Received empty unid subgraph");
-            return Ok(Graph::new(0));
-        }
-
-        // Merge all of the subgraphs into one subgraph to avoid
-        // redundant work
-        let unid_subgraph =
-            subgraphs
-                .subgraphs
-                .into_iter()
-                .fold(Graph::new(0), |mut total_graph, subgraph| {
-                    info!(
-                        "Merging subgraph with: {} nodes {} edges",
-                        subgraph.nodes.len(),
-                        subgraph.edges.len()
-                    );
-                    total_graph.merge(&subgraph);
-                    total_graph
-                });
-
         if unid_subgraph.is_empty() {
             warn!("Received empty subgraph");
-            return Ok(Graph::new(0));
+            return Ok(IdentifiedGraph::new());
         }
 
         info!(
@@ -588,31 +133,12 @@ where
             unid_subgraph.edges.len(),
         );
 
-        // Create any implicit asset id mappings
-        if let Err(e) = create_asset_id_mappings(&self.asset_mapping_db, &unid_subgraph).await {
-            error!("Asset mapping creation failed with {}", e);
-            return Err(Err(NodeIdentifierError::Unexpected));
-        }
-
-        // Map all host_ids into asset_ids. This has to happen before node key
-        // identification.
-        // If there is a failure, we'll mark this execute as failed, but continue
-        // with whatever subgraph has succeeded
-
-        let output_subgraph = match attribute_asset_ids(&self.asset_identifier, unid_subgraph).await
-        {
-            Ok(unid_subgraph) => unid_subgraph,
-            Err((e, unid_subgraph)) => {
-                attribution_failure = Some(e);
-                unid_subgraph
-            }
-        };
-
         let mut dead_node_ids = HashSet::new();
         let mut unid_id_map = HashMap::new();
 
+        let output_subgraph = unid_subgraph;
         // new method
-        let mut identified_graph = Graph::new(output_subgraph.timestamp);
+        let mut identified_graph = IdentifiedGraph::new();
         for (old_node_key, old_node) in output_subgraph.nodes.iter() {
             let node = old_node.clone();
 
@@ -625,17 +151,17 @@ where
                 _ => (),
             };
 
-            let node = match self.attribute_node_key(node.clone()).await {
+            let node = match self.attribute_node_key(&node).await {
                 Ok(node) => node,
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
-                    dead_node_ids.insert(node.clone_node_key());
-                    completed.add_identity(node.clone_node_key(), EventStatus::Failure);
+                    dead_node_ids.insert(node.node_key.clone());
+                    completed.add_identity(node.node_key.clone(), EventStatus::Failure);
                     attribution_failure = Some(e);
                     continue;
                 }
             };
-            unid_id_map.insert(old_node_key.to_owned(), node.clone_node_key());
+            unid_id_map.insert(old_node_key.to_owned(), node.node_key.clone());
             identified_graph.add_node(node);
         }
 
@@ -679,7 +205,7 @@ where
             if let Some(_e) = attribution_failure {
                 return Err(Err(NodeIdentifierError::Unexpected));
             }
-            return Ok(Graph::new(0));
+            return Ok(IdentifiedGraph::new());
         }
 
         let identities: Vec<_> = unid_id_map.keys().collect();
@@ -713,7 +239,7 @@ pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Err
 
     let cache = &mut event_caches(&env).await;
 
-    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+    let serializer = &mut make_ten(async { IdentifiedGraphSerializer::default() }).await;
 
     let s3_emitter =
         &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
@@ -728,30 +254,16 @@ pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Err
     })
     .await;
 
-    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
-
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
     let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::from_env());
-    let asset_identifier = AssetIdentifier::new(asset_id_db);
 
-    let dyn_node_identifier = DynamicNodeIdentifier::new(
-        asset_identifier,
-        dyn_session_db,
-        dyn_mapping_db,
-        should_default,
-    );
+    let dyn_node_identifier =
+        NodeDescriptionIdentifier::new(dyn_session_db, dyn_mapping_db, should_default);
 
-    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
-
-    let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
     let node_identifier = &mut make_ten(async {
         NodeIdentifier::new(
-            asset_id_db,
             dyn_node_identifier,
-            asset_identifier,
             dynamo.clone(),
             should_default,
             cache[0].to_owned(),

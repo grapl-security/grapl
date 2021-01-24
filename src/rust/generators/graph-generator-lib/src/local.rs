@@ -27,7 +27,7 @@ use sqs_lambda::{cache::NopCache,
                  sqs_completion_handler::CompletionPolicy,
                  sqs_consumer::ConsumePolicyBuilder};
 
-use crate::serialization::SubgraphSerializer;
+use crate::serialization::GraphDescriptionSerializer;
 
 const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
 
@@ -107,7 +107,7 @@ async fn initialize_local_service<
     // node-identifier will read from events emitted by this bucket to continue processing
     let destination_bucket = "local-grapl-unid-subgraphs-generated-bucket";
 
-    let event_encoder = SubgraphSerializer::new(Vec::with_capacity(1024));
+    let event_encoder = GraphDescriptionSerializer::new(Vec::with_capacity(1024));
 
     let mut options_builder = LocalSqsServiceOptionsBuilder::default();
     options_builder.with_completion_policy(completion_policy);
@@ -117,7 +117,7 @@ async fn initialize_local_service<
      * queue_url - The queue to be reading incoming log events from.
      * destination_bucket - The destination S3 bucket where completed, serialized subgraphs should be written to.
      * service_execution_deadline - defines the maximum length of time this service should spend trying to process the events
-     * event_encoder - An event encoder (SubgraphSerializer) used to serialize the subgraphs created by the provided generator.
+     * event_encoder - An event encoder (GraphDescriptionSerializer) used to serialize the subgraphs created by the provided generator.
      * generator - An EventHandler that takes in log events, parses them, and generates subgraphs based on the logs provided.
      */
     local_sqs_service_with_options(

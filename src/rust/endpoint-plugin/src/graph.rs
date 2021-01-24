@@ -38,7 +38,7 @@ impl Graph {
         N: Into<Node>,
     {
         let node = node.into();
-        let key = node.clone_node_key();
+        let key = node.node_key.clone();
 
         self.nodes.insert(key.to_string(), node);
         self.edges

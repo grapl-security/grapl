@@ -68,8 +68,8 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
 
                 graph.add_edge(
                     "created_files",
-                    process.clone_node_key(),
-                    file.clone_node_key(),
+                    process.node_key.clone(),
+                    file.node_key.clone(),
                 );
 
                 file
@@ -83,8 +83,8 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
 
                 graph.add_edge(
                     "deleted_files",
-                    process.clone_node_key(),
-                    file.clone_node_key(),
+                    process.node_key.clone(),
+                    file.node_key.clone(),
                 );
 
                 file
@@ -98,14 +98,14 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
 
         graph.add_edge(
             "files_on_asset",
-            asset.clone_node_key(),
-            file.clone_node_key(),
+            asset.node_key.clone(),
+            file.node_key.clone(),
         );
 
         graph.add_edge(
             "asset_processes",
-            asset.clone_node_key(),
-            process.clone_node_key(),
+            asset.node_key.clone(),
+            process.node_key.clone(),
         );
 
         graph.add_node(asset);

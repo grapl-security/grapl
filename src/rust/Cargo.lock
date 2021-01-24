@@ -767,6 +767,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
+name = "endpoint-plugin"
+version = "0.1.0"
+dependencies = [
+ "derive-dynamic-node",
+ "grapl-graph-descriptions",
+ "uuid 0.8.2",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1181,6 +1190,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "thiserror",
+ "tracing",
  "uuid 0.8.2",
 ]
 

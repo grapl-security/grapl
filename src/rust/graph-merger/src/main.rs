@@ -19,15 +19,16 @@ use futures::future::FutureExt;
 use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
-use grapl_graph_descriptions::{graph_description::{GeneratedSubgraphs,
-                                                   Graph,
-                                                   Node},
-                               node::NodeT};
+use grapl_graph_descriptions::graph_description::{Edge,
+                                                  IdentifiedGraph,
+                                                  IdentifiedNode,
+                                                  MergedGraph,
+                                                  MergedNode};
 use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
                     metric_reporter::{tag,
                                       MetricReporter}};
 use grapl_service::{decoder::ZstdProtoDecoder,
-                    serialization::SubgraphSerializer};
+                    serialization::MergedGraphSerializer};
 use log::{error,
           info,
           warn};
@@ -36,7 +37,6 @@ use rusoto_dynamodb::{AttributeValue,
                       DynamoDb,
                       DynamoDbClient,
                       GetItemInput};
-use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use serde::{Deserialize,
             Serialize};
@@ -134,7 +134,7 @@ async fn upsert_node<CacheT>(
     cache: &mut CacheT,
     uid_cache: &mut UidCache,
     metric_reporter: &mut MetricReporter<Stdout>,
-    node: Node,
+    node: IdentifiedNode,
 ) -> Result<String, Error>
 where
     CacheT: Cache,
@@ -145,10 +145,10 @@ where
                   p as var(func: eq(node_key, "{}"), first: 1)
                 }}
                 "#,
-        node.get_node_key()
+        &node.node_key
     );
 
-    let node_key = node.clone_node_key();
+    let node_key = node.node_key.clone();
     let mut set_json: serde_json::Value = node.into_json();
     let mut node_types = vec![set_json["dgraph.type"].as_str().unwrap().clone()];
     node_types.extend_from_slice(&["Entity", "Base"]);
@@ -330,7 +330,6 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting graph-merger");
 
     let sqs_client = SqsClient::from_env();
-    let _s3_client = S3Client::from_env();
 
     let cache = &mut event_caches(&env).await;
 
@@ -349,7 +348,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     })
     .await;
 
-    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+    let serializer = &mut make_ten(async { MergedGraphSerializer::default() }).await;
 
     let s3_emitter =
         &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
@@ -400,23 +399,18 @@ impl<CacheT> EventHandler for GraphMerger<CacheT>
 where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
-    type InputEvent = GeneratedSubgraphs;
-    type OutputEvent = Graph;
+    type InputEvent = IdentifiedGraph;
+    type OutputEvent = MergedGraph;
     type Error = GraphMergerError;
 
     async fn handle_event(
         &mut self,
-        generated_subgraphs: GeneratedSubgraphs,
+        subgraph: IdentifiedGraph,
         _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        let mut subgraph = Graph::new(0);
-        for generated_subgraph in generated_subgraphs.subgraphs {
-            subgraph.merge(&generated_subgraph);
-        }
-
         if subgraph.is_empty() {
             warn!("Attempted to merge empty subgraph. Short circuiting.");
-            return Ok(Graph::default());
+            return Ok(MergedGraph::default());
         }
 
         info!(
@@ -425,8 +419,10 @@ where
             subgraph.edges.len(),
         );
 
+        let mut merged_graph = MergedGraph::default();
+
         let mut upsert_res = None;
-        let mut edge_res = None;
+        // let mut edge_res = None;
 
         let node_key_to_uid_map = &mut self.uid_cache;
         let mut upserts = Vec::with_capacity(subgraph.nodes.len());
@@ -434,7 +430,7 @@ where
             match self
                 .cache
                 .get(
-                    subgraph.nodes[node.get_node_key()]
+                    subgraph.nodes[node.node_key.as_str()]
                         .clone()
                         .into_json()
                         .to_string(),
@@ -456,14 +452,14 @@ where
                     &mut self.metric_reporter,
                     node.clone(),
                 )
-                .map(move |u| (node.clone_node_key(), u))
+                .map(move |u| (node.clone(), u))
                 .await,
             )
         }
 
-        let mut upsert_count = 0;
-        let mut failed_count = 0;
-        for (node_key, upsert) in upserts.into_iter() {
+        let mut upsert_count = 0u32;
+        let mut failed_count = 0u32;
+        for (node, upsert) in upserts.into_iter() {
             let new_uid = match upsert {
                 Ok(new_uid) => {
                     upsert_count += 1;
@@ -476,8 +472,12 @@ where
                     continue;
                 }
             };
+            node_key_to_uid_map.store(node.node_key.clone(), new_uid.clone());
 
-            node_key_to_uid_map.store(node_key, new_uid);
+            let new_uid = new_uid.trim_start_matches("0x");
+            let new_uid: u64 = u64::from_str_radix(new_uid, 16).expect("todo: raise parseinterror");
+            let merged_node = MergedNode::from(node, new_uid);
+            merged_graph.add_node(merged_node);
         }
 
         if (upsert_count == 0) && upsert_res.is_some() {
@@ -495,167 +495,177 @@ where
         info!("Inserting edges {}", subgraph.edges.len());
         let dynamodb = DynamoDbClient::from_env();
 
-        let mut edge_mutations: Vec<_> = vec![];
-
-        let flattened_edges: Vec<_> = subgraph
+        let unmerged_edges: Vec<_> = subgraph
             .edges
             .values()
             .map(|e| &e.edges)
             .flatten()
+            .map(|edge| edge.clone())
             .collect();
-        for edge in flattened_edges.into_iter() {
-            match (
-                node_key_to_uid_map.get(&edge.from[..]),
-                node_key_to_uid_map.get(&edge.to[..]),
-            ) {
-                (Some(from), Some(to)) if from == to => {
-                    let err = format!(
-                        "From and To can not be the same uid {} {} {} {} {}",
-                        from,
-                        to,
-                        &edge.from[..],
-                        &edge.to[..],
-                        &edge.edge_name
-                    );
-                    error!("{}", err);
-                    edge_res = Some(err);
-                }
-                (Some(from), Some(to)) => {
-                    info!("Upserting edge: {} {} {}", &from, &to, &edge.edge_name);
-                    edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name));
-                }
-                (Some(from), None) => {
-                    match node_key_to_uid(
-                        &self.mg_client,
-                        &mut self.metric_reporter,
-                        node_key_to_uid_map,
-                        &edge.from[..],
-                    )
-                    .await
-                    {
-                        Ok(Some(to)) => {
-                            edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name))
-                        }
-                        Ok(None) => edge_res = Some("Edge to uid failed".to_string()),
-                        Err(e) => edge_res = Some(e.to_string()),
-                    }
-                }
-                (None, Some(to)) => {
-                    match node_key_to_uid(
-                        &self.mg_client,
-                        &mut self.metric_reporter,
-                        node_key_to_uid_map,
-                        &edge.to[..],
-                    )
-                    .await
-                    {
-                        Ok(Some(from)) => {
-                            edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name))
-                        }
-                        Ok(None) => edge_res = Some("Edge to uid failed".to_string()),
-                        Err(e) => edge_res = Some(e.to_string()),
-                    }
-                }
-                (None, None) => {
-                    let from = match node_key_to_uid(
-                        &self.mg_client,
-                        &mut self.metric_reporter,
-                        node_key_to_uid_map,
-                        &edge.from[..],
-                    )
-                    .await
-                    {
-                        Ok(Some(from)) => from,
-                        Ok(None) => {
-                            edge_res = Some("Edge to uid failed".to_string());
-                            continue;
-                        }
-                        Err(e) => {
-                            edge_res = Some(e.to_string());
-                            continue;
-                        }
-                    };
 
-                    let to = match node_key_to_uid(
-                        &self.mg_client,
-                        &mut self.metric_reporter,
-                        node_key_to_uid_map,
-                        &edge.to[..],
-                    )
-                    .await
-                    {
-                        Ok(Some(to)) => to,
-                        Ok(None) => {
-                            edge_res = Some("Edge to uid failed".to_string());
-                            continue;
-                        }
-                        Err(e) => {
-                            edge_res = Some(e.to_string());
-                            continue;
-                        }
-                    };
+        let merged_edges = upsert_edges(
+            &unmerged_edges[..],
+            &self.mg_client,
+            &mut self.metric_reporter,
+            node_key_to_uid_map,
+            &mut self.cache,
+        )
+        .await
+        .map_err(|e| Err(e))?;
 
-                    edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name));
-                }
-            }
+        let reversed_edges = reverse_edges(&unmerged_edges[..], &dynamodb, &mut self.r_edge_cache)
+            .await
+            .map_err(|e| Err(e))?;
+
+        let merged_reverse_edges = upsert_edges(
+            &reversed_edges[..],
+            &self.mg_client,
+            &mut self.metric_reporter,
+            node_key_to_uid_map,
+            &mut self.cache,
+        )
+        .await
+        .map_err(|e| Err(e))?;
+
+        for edge in merged_edges.into_iter() {
+            merged_graph.add_merged_edge(edge);
+        }
+        for edge in merged_reverse_edges.into_iter() {
+            merged_graph.add_merged_edge(edge);
         }
 
-        let r_edge_cache = &mut self.r_edge_cache;
-
-        let mut mutations = Vec::with_capacity(edge_mutations.len());
-        for (from, to, edge_name) in edge_mutations {
-            let r_edge = match r_edge_cache.get(&edge_name.to_string()) {
-                r_edge @ Some(_) => Ok(r_edge.map(String::from)),
-                None => get_r_edge(&dynamodb, edge_name.clone()).await,
-            };
-
-            match r_edge {
-                Ok(Some(r_edge)) if !r_edge.is_empty() => {
-                    r_edge_cache.insert(edge_name.to_owned(), r_edge.to_string());
-                    mutations.push(
-                        upsert_edge(
-                            &self.mg_client,
-                            &mut self.metric_reporter,
-                            &mut self.cache,
-                            &to,
-                            &from,
-                            &r_edge,
-                        )
-                        .await,
-                    )
-                }
-                Err(e) => {
-                    error!("get_r_edge failed: {:?}", e);
-                    edge_res = Some(e.to_string());
-                }
-                _ => warn!("Missing r_edge for f_edge {}", edge_name),
-            }
-
-            let upsert_res = upsert_edge(
-                &self.mg_client,
-                &mut self.metric_reporter,
-                &mut self.cache,
-                &from,
-                &to,
-                &edge_name,
-            )
-            .await;
-
-            if let Err(e) = upsert_res {
-                error!(
-                    "Failed to upsert edge: {} {} {} {:?}",
-                    &from, &to, &edge_name, e
-                );
-                edge_res = Some(format!("Failed to upsert edge: {:?}", e));
-            }
-        }
-
-        match (upsert_res, edge_res) {
-            (Some(e), _) => Err(Ok((subgraph, GraphMergerError::Unexpected(e.to_string())))),
-            (_, Some(e)) => Err(Ok((subgraph, GraphMergerError::Unexpected(e.to_string())))),
-            (None, None) => Ok(subgraph),
-        }
+        Ok(merged_graph)
     }
+}
+
+async fn reverse_edge(
+    from_node_key: String,
+    to_node_key: String,
+    edge_name: String,
+    dynamodb: &DynamoDbClient,
+    r_edge_cache: &mut HashMap<String, String>,
+) -> Result<Edge, GraphMergerError> {
+    let r_edge = match r_edge_cache.get(&edge_name.to_string()) {
+        Some(r_edge) => r_edge.to_string(),
+        None => match get_r_edge(&dynamodb, edge_name.clone()).await? {
+            Some(r_edge) => r_edge.to_string(),
+            None => {
+                return Err(GraphMergerError::Unexpected(format!(
+                    "No reverse edge for: {}",
+                    &edge_name
+                )))
+            }
+        },
+    };
+
+    if r_edge.is_empty() {
+        return Err(GraphMergerError::Unexpected(format!(
+            "Empty reverse edge for: {}",
+            &edge_name
+        )));
+    }
+
+    Ok(Edge {
+        from: to_node_key,
+        to: from_node_key,
+        edge_name: r_edge.clone(),
+    })
+}
+
+async fn reverse_edges(
+    edges: &[Edge],
+    dynamodb: &DynamoDbClient,
+    cache: &mut HashMap<String, String>,
+) -> Result<Vec<Edge>, GraphMergerError> {
+    let mut reversed_edges = Vec::with_capacity(edges.len());
+    for edge in edges {
+        reversed_edges.push(
+            reverse_edge(
+                edge.from.clone(),
+                edge.to.clone(),
+                edge.edge_name.clone(),
+                dynamodb,
+                cache,
+            )
+            .await?,
+        )
+    }
+
+    Ok(reversed_edges)
+}
+
+async fn get_edge_uids(
+    from_node_key: &str,
+    to_node_key: &str,
+    mg_client: &DgraphClient,
+    metric_reporter: &mut MetricReporter<Stdout>,
+    cache: &mut UidCache,
+) -> Result<(String, String), GraphMergerError> {
+    let from_uid = match node_key_to_uid(&mg_client, metric_reporter, cache, from_node_key)
+        .await
+        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
+    {
+        Some(from_uid) => from_uid,
+        None => {
+            return Err(GraphMergerError::Unexpected(format!(
+                "Could not resolve edge: {:?}",
+                from_node_key
+            )));
+        }
+    };
+
+    let to_uid = match node_key_to_uid(&mg_client, metric_reporter, cache, to_node_key)
+        .await
+        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
+    {
+        Some(to_uid) => to_uid,
+        None => {
+            return Err(GraphMergerError::Unexpected(format!(
+                "Could not resolve edge: {:?}",
+                from_node_key
+            )));
+        }
+    };
+    Ok((from_uid, to_uid))
+}
+
+use grapl_graph_descriptions::graph_description::MergedEdge;
+
+async fn upsert_edges<CacheT>(
+    unmerged_edges: &[Edge],
+    mg_client: &DgraphClient,
+    metric_reporter: &mut MetricReporter<Stdout>,
+    uid_cache: &mut UidCache,
+    cache: &mut CacheT,
+) -> Result<Vec<MergedEdge>, GraphMergerError>
+where
+    CacheT: Cache,
+{
+    let mut edge_mutations = Vec::with_capacity(unmerged_edges.len());
+    for edge in unmerged_edges {
+        let (from_uid, to_uid) =
+            get_edge_uids(&edge.from, &edge.to, mg_client, metric_reporter, uid_cache).await?;
+
+        upsert_edge(
+            mg_client,
+            metric_reporter,
+            cache,
+            &to_uid,
+            &from_uid,
+            &edge.edge_name,
+        )
+        .await
+        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?;
+        edge_mutations.push(MergedEdge {
+            from_node_key: edge.from.clone(),
+            from_uid,
+            to_node_key: edge.to.clone(),
+            to_uid,
+            edge_name: edge.edge_name.clone(),
+        });
+    }
+
+    Ok(edge_mutations)
 }
 
 #[derive(Debug, Serialize, Deserialize)]

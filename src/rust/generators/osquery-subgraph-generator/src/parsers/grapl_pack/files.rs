@@ -94,8 +94,8 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for Graph {
 
         graph.add_edge(
             "files_on_asset",
-            asset.clone_node_key(),
-            subject_file.clone_node_key(),
+            asset.node_key.clone(),
+            subject_file.node_key.clone(),
         );
 
         graph.add_node(asset);

@@ -59,30 +59,30 @@ pub fn generate_process_create_subgraph(
 
     graph.add_edge(
         "process_asset",
-        parent.clone_node_key(),
-        asset.clone_node_key(),
+        parent.node_key.clone(),
+        asset.node_key.clone(),
     );
 
     graph.add_edge(
         "process_asset",
-        child.clone_node_key(),
-        asset.clone_node_key(),
+        child.node_key.clone(),
+        asset.node_key.clone(),
     );
 
     graph.add_edge(
         "bin_file",
-        child.clone_node_key(),
-        child_exe.clone_node_key(),
+        child.node_key.clone(),
+        child_exe.node_key.clone(),
     );
 
     graph.add_edge(
         "files_on_asset",
-        asset.clone_node_key(),
-        child_exe.clone_node_key(),
+        asset.node_key.clone(),
+        child_exe.node_key.clone(),
     );
 
-    graph.add_edge("children", parent.clone_node_key(), child.clone_node_key());
-    graph.add_edge("parent", child.clone_node_key(), parent.clone_node_key());
+    graph.add_edge("children", parent.node_key.clone(), child.node_key.clone());
+    graph.add_edge("parent", child.node_key.clone(), parent.node_key.clone());
 
     graph.add_node(asset);
     graph.add_node(parent);

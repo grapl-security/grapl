@@ -83,47 +83,47 @@ impl TryFrom<ProcessInboundConnectionLog> for Graph {
             .build()?;
 
         // An asset is assigned an IP
-        graph.add_edge("asset_ip", asset.clone_node_key(), dst_ip.clone_node_key());
+        graph.add_edge("asset_ip", asset.node_key.clone(), dst_ip.node_key.clone());
 
         // A process spawns on an asset
         graph.add_edge(
             "asset_processes",
-            asset.clone_node_key(),
-            process.clone_node_key(),
+            asset.node_key.clone(),
+            process.node_key.clone(),
         );
 
         // A process creates a connection
         graph.add_edge(
             "received_connection",
-            process.clone_node_key(),
-            inbound.clone_node_key(),
+            process.node_key.clone(),
+            inbound.node_key.clone(),
         );
 
         // The connection is over an IP + Port
         graph.add_edge(
             "bound_port",
-            inbound.clone_node_key(),
-            src_port.clone_node_key(),
+            inbound.node_key.clone(),
+            src_port.node_key.clone(),
         );
 
         // The connection is to a dst ip + port
         graph.add_edge(
             "connected_to",
-            inbound.clone_node_key(),
-            dst_port.clone_node_key(),
+            inbound.node_key.clone(),
+            dst_port.node_key.clone(),
         );
 
         // There is a network connection between the src and dst ports
         graph.add_edge(
             "outbound_connection_to",
-            src_port.clone_node_key(),
-            network_connection.clone_node_key(),
+            src_port.node_key.clone(),
+            network_connection.node_key.clone(),
         );
 
         graph.add_edge(
             "inbound_connection_to",
-            network_connection.clone_node_key(),
-            dst_port.clone_node_key(),
+            network_connection.node_key.clone(),
+            dst_port.node_key.clone(),
         );
 
         graph.add_node(asset);

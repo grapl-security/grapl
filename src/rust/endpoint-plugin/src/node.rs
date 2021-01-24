@@ -26,7 +26,7 @@ pub trait NodeT {
     fn get_node_key(&self) -> &str;
 
     fn clone_node_key(&self) -> String {
-        self.get_node_key().to_string()
+        self.node_key.as_ref().to_string()
     }
 
     fn set_node_key(&mut self, node_key: impl Into<String>);
@@ -602,22 +602,22 @@ impl NodeT for Node {
         };
 
         match which_node {
-            WhichNode::AssetNode(asset_node) => asset_node.get_node_key(),
-            WhichNode::ProcessNode(process_node) => process_node.get_node_key(),
-            WhichNode::FileNode(file_node) => file_node.get_node_key(),
-            WhichNode::IpAddressNode(ip_address_node) => ip_address_node.get_node_key(),
+            WhichNode::AssetNode(asset_node) => asset_node.node_key.as_ref(),
+            WhichNode::ProcessNode(process_node) => process_node.node_key.as_ref(),
+            WhichNode::FileNode(file_node) => file_node.node_key.as_ref(),
+            WhichNode::IpAddressNode(ip_address_node) => ip_address_node.node_key.as_ref(),
             WhichNode::ProcessOutboundConnectionNode(process_outbound_connection_node) => {
-                process_outbound_connection_node.get_node_key()
+                process_outbound_connection_node.node_key.as_ref()
             }
             WhichNode::ProcessInboundConnectionNode(process_inbound_connection_node) => {
-                process_inbound_connection_node.get_node_key()
+                process_inbound_connection_node.node_key.as_ref()
             }
-            WhichNode::IpPortNode(ip_port_node) => ip_port_node.get_node_key(),
+            WhichNode::IpPortNode(ip_port_node) => ip_port_node.node_key.as_ref(),
             WhichNode::NetworkConnectionNode(network_connection_node) => {
-                network_connection_node.get_node_key()
+                network_connection_node.node_key.as_ref()
             }
-            WhichNode::IpConnectionNode(ip_connection_node) => ip_connection_node.get_node_key(),
-            WhichNode::DynamicNode(dynamic_node) => dynamic_node.get_node_key(),
+            WhichNode::IpConnectionNode(ip_connection_node) => ip_connection_node.node_key.as_ref(),
+            WhichNode::DynamicNode(dynamic_node) => dynamic_node.node_key.as_ref(),
         }
     }
 

@@ -35,8 +35,8 @@ impl TryFrom<ProcessStop> for Graph {
 
         graph.add_edge(
             "asset_processes",
-            asset.clone_node_key(),
-            terminated_process.clone_node_key(),
+            asset.node_key.clone(),
+            terminated_process.node_key.clone(),
         );
 
         graph.add_node(asset);
