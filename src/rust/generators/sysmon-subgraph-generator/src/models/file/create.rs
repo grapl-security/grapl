@@ -1,14 +1,10 @@
-
-
 use endpoint_plugin::{AssetNode,
                       FileNode,
                       IAssetNode,
                       IFileNode,
                       IProcessNode,
-                      ProcessNode,
-                      };
+                      ProcessNode};
 use grapl_graph_descriptions::graph_description::*;
-
 use sysmon::FileCreateEvent;
 
 use crate::{generator::SysmonGeneratorError,

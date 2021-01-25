@@ -12,7 +12,7 @@ StrCmp: Type[Union[Contains, Distance, EndsWith, Eq, Has, Rex, StartsWith]]
 StrOrNot: Type[Union[Not, str]]
 re: module
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 class Contains:
     negated: bool
@@ -26,7 +26,9 @@ class Distance:
     negated: bool
     predicate: str
     value: Any
-    def __init__(self, predicate: str, value: Union[Not, str], distance: int) -> None: ...
+    def __init__(
+        self, predicate: str, value: Union[Not, str], distance: int
+    ) -> None: ...
     def to_filter(self) -> str: ...
 
 class EndsWith:
@@ -95,8 +97,25 @@ class StartsWith:
     def __init__(self, predicate: str, value: Union[Not, str]) -> None: ...
     def to_filter(self) -> str: ...
 
-def _int_cmps(predicate: str, eq: Optional[Union[Not, int]] = ..., gt: Optional[Union[Not, int]] = ..., ge: Optional[Union[Not, int]] = ..., lt: Optional[Union[Not, int]] = ..., le: Optional[Union[Not, int]] = ...) -> List[List[Union[Contains, Distance, EndsWith, Eq, Has, Rex, StartsWith]]]: ...
-def _str_cmps(predicate: str, eq: Optional[Union[Not, str]] = ..., contains = ..., ends_with: Optional[Union[Not, str]] = ..., starts_with: Optional[Union[Not, str]] = ..., regexp = ..., distance_lt: Optional[Tuple[Union[Not, str], int]] = ...) -> List[List[Union[Contains, Distance, EndsWith, Eq, Has, Rex, StartsWith]]]: ...
-def dgraph_prop_type(cmp: Union[Contains, Distance, EndsWith, Eq, Has, Rex, StartsWith]) -> str: ...
+def _int_cmps(
+    predicate: str,
+    eq: Optional[Union[Not, int]] = ...,
+    gt: Optional[Union[Not, int]] = ...,
+    ge: Optional[Union[Not, int]] = ...,
+    lt: Optional[Union[Not, int]] = ...,
+    le: Optional[Union[Not, int]] = ...,
+) -> List[List[Union[Contains, Distance, EndsWith, Eq, Has, Rex, StartsWith]]]: ...
+def _str_cmps(
+    predicate: str,
+    eq: Optional[Union[Not, str]] = ...,
+    contains=...,
+    ends_with: Optional[Union[Not, str]] = ...,
+    starts_with: Optional[Union[Not, str]] = ...,
+    regexp=...,
+    distance_lt: Optional[Tuple[Union[Not, str], int]] = ...,
+) -> List[List[Union[Contains, Distance, EndsWith, Eq, Has, Rex, StartsWith]]]: ...
+def dgraph_prop_type(
+    cmp: Union[Contains, Distance, EndsWith, Eq, Has, Rex, StartsWith]
+) -> str: ...
 def escape_dgraph_regexp(input: str) -> str: ...
 def extract_value(value: Union[Not, int, str]) -> Union[int, str]: ...

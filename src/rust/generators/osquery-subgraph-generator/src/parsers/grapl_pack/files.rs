@@ -1,15 +1,14 @@
 #![allow(non_camel_case_types)]
 
-use std::{convert::TryFrom};
+use std::convert::TryFrom;
 
 use endpoint_plugin::{AssetNode,
                       FileNode,
                       IAssetNode,
-                      IFileNode,};
+                      IFileNode};
 use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
-
 
 use super::from_str;
 use crate::parsers::{OSQueryResponse,

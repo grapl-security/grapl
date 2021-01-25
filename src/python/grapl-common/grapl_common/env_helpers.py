@@ -47,7 +47,8 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     # Notably, when `is_local` is not set, it won't break anything.
     is_local = os.getenv("IS_LOCAL", None)
 
-    print("configs",
+    print(
+        "configs",
         which_service,
         endpoint_url,
         access_key_id,

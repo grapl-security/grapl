@@ -63,7 +63,8 @@ fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::
 
     let mut mutation = dgraph_tonic::Mutation::new();
     mutation.commit_now = true;
-    mutation.set_set_json(&mu)
+    mutation
+        .set_set_json(&mu)
         .unwrap_or_else(|e| error!("Failed to set json: {:#?}", e));
 
     mutation
@@ -201,7 +202,8 @@ where
                 set_json.to_string(),
                 upsert_res,
             );
-            cache.store(cache_key.into_bytes())
+            cache
+                .store(cache_key.into_bytes())
                 .await
                 .unwrap_or_else(|e| error!("Failed to store key in cache: {:#?}", e));
         }
@@ -312,7 +314,9 @@ where
         .mutation(&mut_res, &[])
         .unwrap_or_else(|e| error!("edge mutation metric failed: {}", e));
 
-    cache.store(cache_key.into_bytes()).await
+    cache
+        .store(cache_key.into_bytes())
+        .await
         .unwrap_or_else(|e| error!("Failed to store key in cache: {:#?}", e));
     Ok(())
 }
@@ -391,7 +395,7 @@ pub enum GraphMergerError {
     #[error("UnexpectedError")]
     Unexpected(String),
     #[error("ParseIntError")]
-    ParseIntError(#[from] ParseIntError)
+    ParseIntError(#[from] ParseIntError),
 }
 
 impl CheckedError for GraphMergerError {
@@ -480,8 +484,8 @@ where
             node_key_to_uid_map.store(node.clone_node_key(), new_uid.clone());
 
             let new_uid = new_uid.trim_start_matches("0x");
-            let new_uid: u64 = u64::from_str_radix(new_uid, 16)
-                .map_err(|e| Err(GraphMergerError::from(e)))?;
+            let new_uid: u64 =
+                u64::from_str_radix(new_uid, 16).map_err(|e| Err(GraphMergerError::from(e)))?;
             let merged_node = MergedNode::from(node, new_uid);
             merged_graph.add_node(merged_node);
         }
@@ -635,8 +639,9 @@ async fn get_edge_uids(
     Ok((from_uid, to_uid))
 }
 
-use grapl_graph_descriptions::graph_description::MergedEdge;
 use std::num::ParseIntError;
+
+use grapl_graph_descriptions::graph_description::MergedEdge;
 
 async fn upsert_edges<CacheT>(
     unmerged_edges: &[Edge],

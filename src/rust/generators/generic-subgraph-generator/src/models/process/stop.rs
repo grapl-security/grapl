@@ -3,11 +3,10 @@ use std::convert::TryFrom;
 use endpoint_plugin::{AssetNode,
                       IAssetNode,
                       IProcessNode,
-                      ProcessNode,};
+                      ProcessNode};
 use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
-
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessStop {

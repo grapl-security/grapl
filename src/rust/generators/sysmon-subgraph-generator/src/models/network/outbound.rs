@@ -1,5 +1,3 @@
-
-
 use endpoint_plugin::{AssetNode,
                       IAssetNode,
                       IIpAddressNode,
@@ -15,7 +13,6 @@ use endpoint_plugin::{AssetNode,
                       ProcessNode,
                       ProcessOutboundConnectionNode};
 use grapl_graph_descriptions::graph_description::*;
-
 use sysmon::NetworkEvent;
 
 use crate::{generator::SysmonGeneratorError,

@@ -10,7 +10,6 @@ use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
 
-
 use super::from_str;
 use crate::parsers::{OSQueryResponse,
                      PartiallyDeserializedOSQueryLog};

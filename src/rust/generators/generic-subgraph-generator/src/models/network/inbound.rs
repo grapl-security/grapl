@@ -11,7 +11,7 @@ use endpoint_plugin::{AssetNode,
                       IpPortNode,
                       NetworkConnectionNode,
                       ProcessInboundConnectionNode,
-                      ProcessNode,};
+                      ProcessNode};
 use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
