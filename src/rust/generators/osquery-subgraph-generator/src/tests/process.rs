@@ -1,11 +1,10 @@
-use crate::generator::OSQuerySubgraphGenerator;
-use crate::metrics::OSQuerySubgraphGeneratorMetrics;
-use crate::serialization::OSQueryLogDecoder;
-use crate::tests::utils;
-use regex::internal::Input;
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::event_handler::Completion;
-use sqs_lambda::event_handler::EventHandler;
+use sqs_lambda::{cache::NopCache,
+                 event_handler::{Completion,
+                                 EventHandler}};
+
+use crate::{generator::OSQuerySubgraphGenerator,
+            metrics::OSQuerySubgraphGeneratorMetrics,
+            tests::utils};
 
 #[tokio::test]
 async fn test_subgraph_generation_process_create() {

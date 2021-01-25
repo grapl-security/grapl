@@ -1,24 +1,21 @@
-#![type_length_limit = "1232619"]
-
 mod generator;
 mod models;
 mod serialization;
 mod tests;
 
-use sqs_lambda::cache::{Cache, NopCache};
-
-use tracing::*;
+use std::{io::Stdout,
+          time::Duration};
 
 use graph_generator_lib::run_graph_generator;
 use grapl_config::event_cache;
-
-use crate::generator::GenericSubgraphGenerator;
-use crate::serialization::ZstdJsonDecoder;
 use grapl_observe::metric_reporter::MetricReporter;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use std::io::Stdout;
-use std::time::Duration;
+use sqs_lambda::{cache::NopCache,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
+use tracing::*;
+
+use crate::{generator::GenericSubgraphGenerator,
+            serialization::ZstdJsonDecoder};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

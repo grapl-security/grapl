@@ -1,13 +1,15 @@
-use std::str::FromStr;
-use tracing_subscriber::EnvFilter;
+use std::{str::FromStr,
+          time::Duration};
 
 use color_eyre::Help;
-use rusoto_core::{Region, RusotoError};
+use rusoto_core::{Region,
+                  RusotoError};
 use rusoto_s3::S3;
-use rusoto_sqs::{ListQueuesRequest, Sqs};
+use rusoto_sqs::{ListQueuesRequest,
+                 Sqs};
 use sqs_lambda::redis_cache::RedisCache;
-use std::time::Duration;
 use tracing::debug;
+use tracing_subscriber::EnvFilter;
 
 #[macro_export]
 macro_rules! init_grapl_env {

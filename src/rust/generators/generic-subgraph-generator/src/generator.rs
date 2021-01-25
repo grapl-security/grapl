@@ -1,13 +1,16 @@
-use async_trait::async_trait;
+use std::convert::TryFrom;
 
+use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
+use sqs_lambda::{cache::{Cache,
+                         CacheResponse,
+                         Cacheable},
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent}};
+use tracing::*;
 
 use crate::models::GenericEvent;
-use grapl_graph_descriptions::node::NodeT;
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use std::convert::TryFrom;
-use tracing::*;
 
 /// Supports a generic serialization format for incoming logs. This allows the use of any log source
 /// as long as it is preprocessed to use Grapl's generic serialization format.

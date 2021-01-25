@@ -5,49 +5,33 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+async-trait = "0.1"
+aws_lambda_events = "0.4"
+chrono = "0.4"
+eyre = "0.6"
+failure = "0.1"
+futures = "0.3"
 graph-generator-lib = {path = "../graph-generator-lib/", version="*"}
-grapl-graph-descriptions = { path="../../graph-descriptions", version="*"}
 grapl-config = {path="../../grapl-config", version="*"}
-
-sqs-lambda = { path = "../../sqs-lambda/" }
+grapl-graph-descriptions = { path="../../graph-descriptions", version="*"}
 grapl-observe = { path = "../../grapl-observe/" }
-serde = "1.0.110"
-serde_json = "1.0.53"
-serde_derive = "1.0.110"
-failure = "0.1.*"
-prost = "0.6.*"
-log = "0.4.3"
-base16 = "0.1.1"
-regex = "1.1.0"
+lambda_runtime = "0.2"
 lazy_static = "1.2.0"
-
-
-chrono = "0.4.6"
-
-rayon = "1.0.3"
-stopwatch = "0.0.7"
-
-
-rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
+log = "0"
+prost = "0.7"
+regex = "1"
 rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
+rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
 rusoto_sqs = { version="0.45.0", default_features = false, features=["rustls"] }
-
-futures = "0.3.*"
-aws_lambda_events = "0.2.0"
-simple_logger = "1.6.*"
-lambda_runtime = "0.2.*"
-async-trait = "0.1.22"
-zstd = "0.5.1"
-tokio = { version = "0.2.*", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
-
-tokio-compat = "0.1.*"
-tracing = "0.1.15"
-tracing-futures = "0.2.4"
-tracing-subscriber = "0.2.5"
-eyre = "0.4.3"
-#openssl-probe = "0.1.2"
-
-
-[dependencies.uuid]
-version = "*"
-features = ["v4"]
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+sqs-lambda = { path = "../../sqs-lambda/" }
+stopwatch = "0"
+tokio-compat = "0.1"
+tokio = { version = "0.2", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
+tracing = "0.1"
+tracing-futures = "0.2"
+tracing-subscriber = "0.2"
+uuid = { version = "*", features = ["v4"]}
+zstd = "0.6"

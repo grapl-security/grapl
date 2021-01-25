@@ -1,12 +1,14 @@
+from __future__ import annotations
 import base64
 import logging
 import sys
 import os.path
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from pathlib import Path
 
-import boto3
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource, S3Client
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
@@ -15,26 +17,12 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-def load_plugins(bucket_prefix: str, s3=None, path=None):
-    s3 = s3 or boto3.resource("s3")
-
+def load_plugins(bucket_prefix: str, s3: S3Client, path=None) -> None:
     PluginRetriever(
         plugin_bucket=bucket_prefix + "-model-plugins-bucket",
         plugin_directory="./model_plugins/",
-        s3_client=s3.meta.client,
+        s3_client=s3,
     ).retrieve(overwrite=True, path=path)
-
-
-def load_plugins_local():
-    bucket_prefix = "local-grapl"
-    s3 = boto3.resource(
-        "s3",
-        endpoint_url="http://s3:9000",
-        aws_access_key_id="minioadmin",
-        aws_secret_access_key="minioadmin",
-    )
-
-    load_plugins(bucket_prefix, s3)
 
 
 class PluginRetriever(object):
@@ -42,7 +30,7 @@ class PluginRetriever(object):
         self,
         plugin_bucket: str,
         plugin_directory: str,
-        s3_client,
+        s3_client: S3Client,
     ) -> None:
         self.plugin_bucket = plugin_bucket
         self.s3_client = s3_client

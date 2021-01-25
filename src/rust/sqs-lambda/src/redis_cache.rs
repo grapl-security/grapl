@@ -1,13 +1,13 @@
 use std::time::Duration;
 
-use darkredis::ConnectionPool;
-use darkredis::Error as RedisError;
-
+use async_trait::async_trait;
+use darkredis::{ConnectionPool,
+                Error as RedisError};
 use log::warn;
 
-use async_trait::async_trait;
-
-use crate::cache::{Cache, CacheResponse, Cacheable};
+use crate::cache::{Cache,
+                   CacheResponse,
+                   Cacheable};
 
 pub struct RedisCache {
     address: String,

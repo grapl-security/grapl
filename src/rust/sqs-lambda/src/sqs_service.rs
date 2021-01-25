@@ -1,25 +1,28 @@
-use std::error::Error;
-use std::future::Future;
-use std::io::Stdout;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
-use log::info;
-use rusoto_s3::S3;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
+use std::{error::Error,
+          future::Future,
+          io::Stdout,
+          time::{SystemTime,
+                 UNIX_EPOCH}};
 
 use grapl_observe::metric_reporter::MetricReporter;
+use log::info;
+use rusoto_s3::S3;
+use rusoto_sqs::Sqs;
 
-use crate::cache::Cache;
-use crate::completion_event_serializer::CompletionEventSerializer;
-use crate::event_decoder::PayloadDecoder;
-use crate::event_handler::EventHandler;
-use crate::event_processor::{EventProcessor, EventProcessorActor};
-use crate::event_retriever::S3PayloadRetriever;
-use crate::s3_event_emitter::S3EventEmitter;
-use crate::sqs_completion_handler::{
-    CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor,
-};
-use crate::sqs_consumer::{ConsumePolicy, IntoDeadline, SqsConsumer, SqsConsumerActor};
+use crate::{cache::Cache,
+            completion_event_serializer::CompletionEventSerializer,
+            event_decoder::PayloadDecoder,
+            event_handler::EventHandler,
+            event_processor::{EventProcessor,
+                              EventProcessorActor},
+            event_retriever::S3PayloadRetriever,
+            s3_event_emitter::S3EventEmitter,
+            sqs_completion_handler::{CompletionPolicy,
+                                     SqsCompletionHandler,
+                                     SqsCompletionHandlerActor},
+            sqs_consumer::{ConsumePolicy,
+                           SqsConsumer,
+                           SqsConsumerActor}};
 
 fn time_based_key_fn(_event: &[u8]) -> String {
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {

@@ -1,23 +1,26 @@
-use std::io::Stdout;
-use std::marker::PhantomData;
-use std::time::Duration;
+use std::{convert::TryInto,
+          io::Stdout,
+          marker::PhantomData,
+          time::Duration};
 
 use async_trait::async_trait;
 use chrono::Utc;
+use grapl_observe::{metric_reporter::MetricReporter,
+                    timers::time_fut_ms};
 use lambda_runtime::Context;
-use log::{debug, error};
-use rusoto_sqs::Message as SqsMessage;
-use rusoto_sqs::{ReceiveMessageRequest, Sqs};
-use tokio::sync::mpsc::{channel, Sender};
-use tracing::instrument;
+use log::{debug,
+          error};
+use rusoto_sqs::{Message as SqsMessage,
+                 ReceiveMessageRequest,
+                 Sqs};
+use tokio::sync::mpsc::{channel,
+                        Sender};
+use tracing::{instrument,
+              warn};
 
-use crate::completion_handler::CompletionHandler;
-use crate::consumer::Consumer;
-use crate::event_processor::EventProcessorActor;
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_observe::timers::time_fut_ms;
-use std::convert::TryInto;
-use tracing::warn;
+use crate::{completion_handler::CompletionHandler,
+            consumer::Consumer,
+            event_processor::EventProcessorActor};
 
 #[derive(Debug, Clone, Default)]
 pub struct ConsumePolicyBuilder {
@@ -171,7 +174,7 @@ impl<S: Sqs + Send + Sync + 'static, CH: CompletionHandler + Clone + Send + Sync
             return Ok(vec![]);
         }
         let remaining_time: u64 = remaining_time.try_into()?;
-        let mut visibility_timeout = Duration::from_millis(remaining_time).as_secs() + 1;
+        let visibility_timeout = Duration::from_millis(remaining_time).as_secs() + 1;
 
         let recv = self.sqs_client.receive_message(ReceiveMessageRequest {
             max_number_of_messages: Some(10),

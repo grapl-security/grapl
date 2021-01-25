@@ -1,10 +1,14 @@
-use crate::generator::GenericSubgraphGenerator;
-use crate::models::GenericEvent;
-use crate::serialization::ZstdJsonDecoder;
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use tokio::fs::File;
-use tokio::io::{AsyncReadExt, Result};
+#![cfg(test)]
+
+use sqs_lambda::{cache::NopCache,
+                 event_decoder::PayloadDecoder};
+use tokio::{fs::File,
+            io::{AsyncReadExt,
+                 Result}};
+
+use crate::{generator::GenericSubgraphGenerator,
+            models::GenericEvent,
+            serialization::ZstdJsonDecoder};
 
 #[tokio::test]
 /// Tests if generic event serialization is working as expected.
@@ -41,7 +45,8 @@ async fn test_log_event_deserialization() {
         .decode(raw_test_data)
         .expect("Failed to deserialize events.");
 
-    let (subgraph, identities, failed) = generator.convert_events_to_subgraph(generic_events).await;
+    let (_subgraph, _identities, failed) =
+        generator.convert_events_to_subgraph(generic_events).await;
 
     if let Some(report) = failed {
         panic!(

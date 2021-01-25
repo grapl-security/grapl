@@ -1,4 +1,5 @@
 use std::future::Future;
+
 use stopwatch::Stopwatch;
 
 pub fn time_it<F, R>(f: F) -> (R, std::time::Duration)

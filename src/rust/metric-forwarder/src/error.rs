@@ -1,5 +1,6 @@
-use lambda_runtime::error::HandlerError;
 use std::fmt::Display;
+
+use lambda_runtime::error::HandlerError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq, Clone)]

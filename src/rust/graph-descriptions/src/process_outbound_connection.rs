@@ -1,12 +1,13 @@
 use std::convert::TryFrom;
 
 use log::warn;
-use serde_json::{json, Value};
+use serde_json::{json,
+                 Value};
 use uuid::Uuid;
 
-use crate::error::Error;
-use crate::graph_description::ProcessOutboundConnection;
-use crate::node::NodeT;
+use crate::{error::Error,
+            graph_description::ProcessOutboundConnection,
+            node::NodeT};
 
 pub enum ProcessOutboundConnectionState {
     Connected,

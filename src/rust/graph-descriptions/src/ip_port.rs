@@ -1,8 +1,9 @@
 use log::warn;
-use serde_json::{json, Value};
+use serde_json::{json,
+                 Value};
 
-use crate::graph_description::IpPort;
-use crate::node::NodeT;
+use crate::{graph_description::IpPort,
+            node::NodeT};
 
 impl IpPort {
     pub fn new(ip_address: impl Into<String>, port: u16, protocol: impl Into<String>) -> Self {

@@ -1,14 +1,21 @@
+#![cfg(feature = "integration")]
+
 use std::time::Duration;
 
-use node_identifier::init_dynamodb_client;
-use node_identifier::sessiondb::SessionDb;
-use node_identifier::sessions::{Session, UnidSession};
+use node_identifier::{init_dynamodb_client,
+                      sessiondb::SessionDb,
+                      sessions::{Session,
+                                 UnidSession}};
 use quickcheck_macros::quickcheck;
 use rusoto_core::RusotoError;
-use rusoto_dynamodb::{
-    AttributeDefinition, CreateTableError, CreateTableInput, CreateTableOutput, DeleteTableInput,
-    DynamoDb, KeySchemaElement, ProvisionedThroughput,
-};
+use rusoto_dynamodb::{AttributeDefinition,
+                      CreateTableError,
+                      CreateTableInput,
+                      CreateTableOutput,
+                      DeleteTableInput,
+                      DynamoDb,
+                      KeySchemaElement,
+                      ProvisionedThroughput};
 use tokio::runtime::Runtime;
 
 async fn try_create_table(
@@ -66,7 +73,6 @@ fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) 
 // When a canonical creation event comes in
 // Then the newly created session should be in the timeline
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_on_empty_timeline";
@@ -95,7 +101,6 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
 //      where 'Y' < 'X'
 // Then the session should be updated to have 'Y' as its canonical create time
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_canon_create_update_existing_non_canon_create";
@@ -142,7 +147,6 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
 //      where 'Y' < 'X'
 // Then the session should be updated to have 'Y' as its noncanonical create time
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
@@ -184,27 +188,10 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
     assert_eq!(session_id, "SessionId");
 }
 
-// Given a timeline with two existing sessions, session A and session B
-// where A.create_time = X and B.create_time = Y
-// When a canonical creation event comes in with a creation time of 'Z'
-//      where 'X' < 'Z' < 'Y'
-// Then the new session should be created
-#[test]
-#[cfg(feature = "integration")]
-fn canon_create_on_timeline_with_surrounding_canon_sessions() {
-    let table_name = "process_history_canon_create_on_timeline_with_surrounding_canon_sessions";
-    let dynamo = init_dynamodb_client();
-
-    create_or_empty_table(&dynamo, table_name);
-
-    let session_db = SessionDb::new(dynamo, table_name);
-}
-
 // Given an empty timeline
 // When a noncanon create event comes in and 'should_default' is true
 // Then Create the new noncanon session
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
@@ -231,7 +218,6 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
 // When a noncanon create event comes in and 'should_default' is false
 // Then return an error
 #[test]
-#[cfg(feature = "integration")]
 fn noncanon_create_on_empty_timeline_without_default() {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
@@ -251,23 +237,7 @@ fn noncanon_create_on_empty_timeline_without_default() {
     assert!(session_id.is_err());
 }
 
-// Given a timeline with one session, where the session has a create_time
-//      of X
-// When a canon create event comes in with a create time within ~100ms of X
-// Then we should make the session create time canonical
-#[test]
-#[cfg(feature = "integration")]
-fn canon_create_on_timeline_with_existing_session_within_skew() {
-    let table_name = "process_history_canon_create_on_timeline_with_existing_session_within_skew";
-    let dynamo = init_dynamodb_client();
-
-    create_or_empty_table(&dynamo, table_name);
-
-    let session_db = SessionDb::new(dynamo, table_name);
-}
-
 #[quickcheck]
-#[cfg(feature = "integration")]
 fn update_end_time(asset_id: String, pid: u64) {
     let mut runtime = Runtime::new().unwrap();
     let table_name = "process_history_update_end_time";

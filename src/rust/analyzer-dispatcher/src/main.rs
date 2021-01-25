@@ -1,42 +1,56 @@
-#![type_length_limit = "1214269"]
-// Our types are simply too powerful
+#![allow(unused_must_use)]
 
-use grapl_observe::metric_reporter::MetricReporter;
-use std::collections::HashSet;
-use std::io::{Cursor, Stdout};
-use std::sync::Arc;
-use std::time::Duration;
-
-use aws_lambda_events::event::sqs::SqsEvent;
-use bytes::Bytes;
-use failure::{bail, Error};
-use grapl_graph_descriptions::graph_description::*;
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use log::{debug, error, info, warn};
-use prost::Message;
-use rusoto_core::{HttpClient, Region};
-use rusoto_s3::{ListObjectsRequest, S3Client, S3};
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
+use std::{collections::HashSet,
+          io::{Cursor,
+               Stdout},
+          str::FromStr,
+          sync::Arc,
+          time::Duration};
 
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
+use aws_lambda_events::event::{s3::{S3Bucket,
+                                    S3Entity,
+                                    S3Event,
+                                    S3EventRecord,
+                                    S3Object,
+                                    S3RequestParameters,
+                                    S3UserIdentity},
+                               sqs::SqsEvent};
+use bytes::Bytes;
 use chrono::Utc;
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use std::str::FromStr;
+use failure::{bail,
+              Error};
+use grapl_graph_descriptions::graph_description::*;
+use grapl_observe::metric_reporter::MetricReporter;
+use lambda_runtime::{error::HandlerError,
+                     lambda,
+                     Context};
+use log::{debug,
+          error,
+          info,
+          warn};
+use prost::Message;
+use rusoto_core::{HttpClient,
+                  Region};
+use rusoto_s3::{ListObjectsRequest,
+                S3Client,
+                S3};
+use rusoto_sqs::{SendMessageRequest,
+                 Sqs,
+                 SqsClient};
+use serde::{Deserialize,
+            Serialize};
+use serde_json::json;
+use sqs_lambda::{cache::NopCache,
+                 completion_event_serializer::CompletionEventSerializer,
+                 event_decoder::PayloadDecoder,
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent},
+                 local_sqs_service::local_sqs_service_with_options,
+                 local_sqs_service_options::LocalSqsServiceOptionsBuilder,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
 
 #[derive(Debug)]
 pub struct AnalyzerDispatcher<S>
@@ -433,7 +447,7 @@ async fn local_handler() -> Result<(), Box<dyn std::error::Error>> {
                         },
                         object: S3Object {
                             key: Some(key),
-                            size: 0,
+                            size: None,
                             url_decoded_key: None,
                             version_id: None,
                             e_tag: None,
