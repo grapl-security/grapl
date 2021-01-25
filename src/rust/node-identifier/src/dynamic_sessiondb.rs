@@ -297,7 +297,7 @@ where
 
             info!("Attributed NodeDescription");
 
-            unid_id_map.insert(node.node_key.clone(), new_node.node_key.clone());
+            unid_id_map.insert(node.clone_node_key(), new_node.clone_node_key());
             output_graph.add_node(new_node);
         }
 

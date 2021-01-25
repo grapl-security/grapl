@@ -148,7 +148,7 @@ where
         &node.node_key
     );
 
-    let node_key = node.node_key.clone();
+    let node_key = node.clone_node_key();
     let mut set_json: serde_json::Value = node.into_json();
     let mut node_types = vec![set_json["dgraph.type"].as_str().unwrap().clone()];
     node_types.extend_from_slice(&["Entity", "Base"]);
@@ -242,7 +242,7 @@ impl UidCache {
         }
         cache_res.cloned()
     }
-    fn store(&mut self, node_key: String, uid: inting) {
+    fn store(&mut self, node_key: String, uid: String) {
         let mut self_cache = self.cache.lock().unwrap();
         self_cache.insert(node_key, uid);
     }
@@ -269,7 +269,7 @@ where
         metric_reporter: MetricReporter<Stdout>,
         cache: CacheT,
     ) -> Self {
-        let mg_client = DgraphClient::new(mg_alphas).expect("Failed to create dgraph client.");
+        let mg_client = DgraphClient::new(mg_alphas).expect("Failed to create dgraphclient.");
 
         Self {
             mg_client: Arc::new(mg_client),
@@ -414,7 +414,7 @@ where
         }
 
         info!(
-            "handling new subgraph with {} nodes {} edges",
+            "handling new subgraphwith {} nodes {} edges",
             subgraph.nodes.len(),
             subgraph.edges.len(),
         );
@@ -422,7 +422,6 @@ where
         let mut merged_graph = MergedGraph::default();
 
         let mut upsert_res = None;
-        // let mut edge_res = None;
 
         let node_key_to_uid_map = &mut self.uid_cache;
         let mut upserts = Vec::with_capacity(subgraph.nodes.len());
@@ -472,7 +471,7 @@ where
                     continue;
                 }
             };
-            node_key_to_uid_map.store(node.node_key.clone(), new_uid.clone());
+            node_key_to_uid_map.store(node.clone_node_key(), new_uid.clone());
 
             let new_uid = new_uid.trim_start_matches("0x");
             let new_uid: u64 = u64::from_str_radix(new_uid, 16).expect("todo: raise parseinterror");

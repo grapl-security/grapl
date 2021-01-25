@@ -1,11 +1,14 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
+use grapl_graph_descriptions::{graph_description::*,};
 use serde::{Deserialize,
             Serialize};
+
+use endpoint_plugin::{FileNode, IFileNode};
+use endpoint_plugin::{AssetNode, IAssetNode};
+use endpoint_plugin::{ProcessNode, IProcessNode};
+
+use tracing::*;
 
 use super::from_str;
 use crate::parsers::{OSQueryAction,
@@ -23,89 +26,75 @@ pub(crate) struct OSQueryProcessFileQuery {
 }
 
 impl PartiallyDeserializedOSQueryLog {
-    pub(crate) fn to_graph_from_grapl_process_file(self) -> Result<Graph, failure::Error> {
+    pub(crate) fn to_graph_from_grapl_process_file(self) -> Result<GraphDescription, failure::Error> {
         OSQueryResponse::<OSQueryProcessFileQuery>::try_from(self)
-            .map(|response| Graph::try_from(response))?
+            .map(|response| GraphDescription::try_from(response))?
     }
 }
 
-impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for Graph {
+impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for GraphDescription {
     type Error = failure::Error;
 
     fn try_from(
         process_file_event: OSQueryResponse<OSQueryProcessFileQuery>,
     ) -> Result<Self, Self::Error> {
-        let mut graph = Graph::new(process_file_event.unix_time);
+        let mut graph = GraphDescription::new();
 
-        let asset = AssetBuilder::default()
-            .asset_id(process_file_event.host_identifier.clone())
-            .hostname(process_file_event.host_identifier.clone())
-            .build()
-            .map_err(failure::err_msg)?;
+        let mut asset = AssetNode::new(AssetNode::static_strategy());
+        asset
+            .with_asset_id(process_file_event.host_identifier.clone())
+            .with_hostname(process_file_event.host_identifier.clone());
 
-        let process = ProcessBuilder::default()
-            .asset_id(process_file_event.host_identifier.clone())
-            .hostname(process_file_event.host_identifier.clone())
-            .state(ProcessState::Existing)
-            .last_seen_timestamp(process_file_event.unix_time)
-            .process_id(process_file_event.columns.pid)
-            .build()
-            .map_err(failure::err_msg)?;
+        let mut process = ProcessNode::new(ProcessNode::session_strategy());
+            process.with_asset_id(process_file_event.host_identifier.clone())
+            .with_last_seen_timestamp(process_file_event.unix_time)
+            .with_process_id(process_file_event.columns.pid);
 
-        let mut file_builder = FileBuilder::default();
-        file_builder
-            .asset_id(process_file_event.host_identifier.clone())
-            .file_path(process_file_event.columns.path.clone());
+        let mut file = FileNode::new(FileNode::session_strategy());
+        file
+            .with_asset_id(process_file_event.host_identifier.clone())
+            .with_file_path(process_file_event.columns.path.clone());
 
         // TODO: maybe we should set deleted time and created time for the file here?
-        let file = match process_file_event.action {
+        match process_file_event.action {
             OSQueryAction::ADDED => {
-                let file = file_builder
-                    .state(FileState::Created)
-                    .created_timestamp(process_file_event.unix_time)
-                    .build()
-                    .map_err(failure::err_msg)?;
+                file
+                    .with_created_timestamp(process_file_event.unix_time);
 
                 graph.add_edge(
                     "created_files",
-                    process.node_key.clone(),
-                    file.node_key.clone(),
+                    process.clone_node_key(),
+                    file.clone_node_key(),
                 );
 
-                file
             }
             OSQueryAction::REMOVED => {
-                let file = file_builder
-                    .state(FileState::Deleted)
-                    .deleted_timestamp(process_file_event.unix_time)
-                    .build()
-                    .map_err(failure::err_msg)?;
+                file
+                    .with_deleted_timestamp(process_file_event.unix_time);
 
                 graph.add_edge(
                     "deleted_files",
-                    process.node_key.clone(),
-                    file.node_key.clone(),
+                    process.clone_node_key(),
+                    file.clone_node_key(),
                 );
 
-                file
             }
-            _ => file_builder
-                .state(FileState::Deleted)
-                .last_seen_timestamp(process_file_event.unix_time)
-                .build()
-                .map_err(failure::err_msg)?,
+            _ => {
+                file
+                    .with_last_seen_timestamp(process_file_event.unix_time);
+            },
         };
 
         graph.add_edge(
             "files_on_asset",
-            asset.node_key.clone(),
-            file.node_key.clone(),
+            asset.clone_node_key(),
+            file.clone_node_key(),
         );
 
         graph.add_edge(
             "asset_processes",
-            asset.node_key.clone(),
-            process.node_key.clone(),
+            asset.clone_node_key(),
+            process.clone_node_key(),
         );
 
         graph.add_node(asset);

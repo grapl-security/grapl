@@ -1,11 +1,15 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
-use serde::{Deserialize,
-            Serialize};
+use grapl_graph_descriptions::graph_description::*;
+use serde::{Deserialize, Serialize};
+
+use endpoint_plugin::{AssetNode, IAssetNode};
+use endpoint_plugin::{FileNode, IFileNode};
+use endpoint_plugin::{IIpPortNode, IpPortNode};
+use endpoint_plugin::{IProcessInboundConnectionNode, ProcessInboundConnectionNode};
+use endpoint_plugin::{IProcessOutboundConnectionNode, ProcessOutboundConnectionNode};
+use endpoint_plugin::{IProcessNode, ProcessNode};
+
 use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -19,69 +23,62 @@ pub struct ProcessStart {
     exe: Option<String>,
 }
 
-impl TryFrom<ProcessStart> for Graph {
+impl TryFrom<ProcessStart> for GraphDescription {
     type Error = String;
 
     fn try_from(process_start: ProcessStart) -> Result<Self, Self::Error> {
-        let mut graph = Graph::new(process_start.timestamp);
+        let mut graph = GraphDescription::new();
 
-        let asset = AssetBuilder::default()
-            .asset_id(process_start.hostname.clone())
-            .hostname(process_start.hostname.clone())
-            .build()?;
+        let mut asset = AssetNode::new(AssetNode::static_strategy());
+            asset.with_asset_id(process_start.hostname.clone())
+            .with_hostname(process_start.hostname.clone());
 
-        let parent = ProcessBuilder::default()
-            .hostname(process_start.hostname.clone())
-            .state(ProcessState::Existing)
-            .process_id(process_start.parent_process_id)
-            .last_seen_timestamp(process_start.timestamp)
-            .build()?;
+        let mut parent = ProcessNode::new(ProcessNode::session_strategy());
+            parent.with_asset_id(process_start.hostname.clone())
+            .with_process_id(process_start.parent_process_id)
+            .with_last_seen_timestamp(process_start.timestamp);
 
-        let child = ProcessBuilder::default()
-            .hostname(process_start.hostname.clone())
-            .process_name(process_start.name)
-            .state(ProcessState::Created)
-            .process_id(process_start.process_id)
-            .created_timestamp(process_start.timestamp)
-            .build()?;
+        let mut child = ProcessNode::new(ProcessNode::session_strategy());
+            child.with_asset_id(process_start.hostname.clone())
+            .with_process_name(process_start.name)
+            .with_process_id(process_start.process_id)
+            .with_created_timestamp(process_start.timestamp);
 
         if let Some(exe_path) = process_start.exe {
-            let child_exe = FileBuilder::default()
-                .hostname(process_start.hostname)
-                .state(FileState::Existing)
-                .last_seen_timestamp(process_start.timestamp)
-                .file_path(exe_path)
-                .build()?;
+            let mut child_exe = FileNode::new(FileNode::session_strategy());
+                child_exe.with_asset_id(process_start.hostname)
+                .with_last_seen_timestamp(process_start.timestamp)
+                .with_file_path(exe_path);
 
             graph.add_edge(
                 "bin_file",
-                child.node_key.clone(),
-                child_exe.node_key.clone(),
+                child.clone_node_key(),
+                child_exe.clone_node_key(),
             );
 
             graph.add_edge(
                 "files_on_asset",
-                asset.node_key.clone(),
-                child_exe.node_key.clone(),
+                asset.clone_node_key(),
+                child_exe.clone_node_key(),
             );
 
-            info!("child_exe: {}", child_exe.clone().into_json());
+            info!("child_exe: {:?}", &child_exe);
             graph.add_node(child_exe);
         }
 
         graph.add_edge(
             "asset_processes",
-            asset.node_key.clone(),
-            parent.node_key.clone(),
+            asset.clone_node_key(),
+            parent.clone_node_key(),
         );
 
         graph.add_edge(
             "asset_processes",
-            asset.node_key.clone(),
-            child.node_key.clone(),
+            asset.clone_node_key(),
+            child.clone_node_key(),
         );
 
-        graph.add_edge("children", parent.node_key.clone(), child.node_key.clone());
+        graph.add_edge("children", parent.clone_node_key(), child.clone_node_key());
 
         graph.add_node(asset);
         graph.add_node(parent);

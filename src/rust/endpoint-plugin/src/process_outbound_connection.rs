@@ -1,10 +1,32 @@
-//
-// asset_id: impl Into<Option<String>>,
-// hostname: impl Into<Option<String>>,
-// state: ProcessOutboundConnectionState,
-// port: u16,
-// ip_address: impl Into<String>,
-// protocol: impl Into<String>,
-// created_timestamp: u64,
-// terminated_timestamp: u64,
-// last_seen_timestamp: u64,
+use derive_dynamic_node::{GraplSessionId, NodeDescription};
+use grapl_graph_descriptions::graph_description::*;
+
+#[derive(NodeDescription, GraplSessionId)]
+pub struct ProcessOutboundConnection {
+    #[grapl(pseudo_key, immutable)]
+    asset_id: String,
+    #[grapl(immutable)]
+    hostname: String,
+    #[grapl(immutable)]
+    port: u64,
+    #[grapl(pseudo_key, immutable)]
+    ip_address: String,
+    #[grapl(pseudo_key, immutable)]
+    protocol: String,
+    #[grapl(create_time, immutable)]
+    created_timestamp: u64,
+    #[grapl(terminate_time, immutable)]
+    terminated_timestamp: u64,
+    #[grapl(last_seen_time, increment)]
+    last_seen_timestamp: u64,
+}
+
+impl IProcessOutboundConnectionNode for ProcessOutboundConnectionNode {
+    fn get_mut_dynamic_node(&mut self) -> &mut NodeDescription {
+        &mut self.dynamic_node
+    }
+
+    fn get_dynamic_node(&self) -> &NodeDescription {
+        &self.dynamic_node
+    }
+}

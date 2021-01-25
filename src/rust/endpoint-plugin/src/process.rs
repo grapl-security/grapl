@@ -1,36 +1,34 @@
-use derive_dynamic_node::{GraplSessionId,
-                          NodeDescription};
+use derive_dynamic_node::{GraplSessionId, NodeDescription};
 use grapl_graph_descriptions::graph_description::*;
 
 #[derive(NodeDescription, GraplSessionId)]
 pub struct Process {
-    #[allow(dead_code)]
+    #[grapl(pseudo_key, immutable)]
+    asset_id: String,
+
     #[grapl(pseudo_key, immutable)]
     process_id: u64,
-    #[allow(dead_code)]
+
     #[grapl(immutable)]
-    process_guid: u64,
-    #[allow(dead_code)]
+    process_guid: String,
+
     #[grapl(create_time, immutable)]
     created_timestamp: u64,
-    #[allow(dead_code)]
+
     #[grapl(terminate_time, immutable)]
     terminated_timestamp: u64,
-    #[allow(dead_code)]
+
     #[grapl(last_seen_time, increment)]
     last_seen_timestamp: u64,
-    #[allow(dead_code)]
+
     #[grapl(immutable)]
-    process_name: u64,
-    #[allow(dead_code)]
+    process_name: String,
+
     #[grapl(immutable)]
-    process_command_line: u64,
-    #[allow(dead_code)]
+    process_command_line: String,
+
     #[grapl(immutable)]
-    operating_system: u64,
-    #[allow(dead_code)]
-    #[grapl(immutable)]
-    asset_id: String,
+    operating_system: String,
 }
 
 impl IProcessNode for ProcessNode {

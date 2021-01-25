@@ -155,13 +155,13 @@ where
                 Ok(node) => node,
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
-                    dead_node_ids.insert(node.node_key.clone());
-                    completed.add_identity(node.node_key.clone(), EventStatus::Failure);
+                    dead_node_ids.insert(node.clone_node_key());
+                    completed.add_identity(node.clone_node_key(), EventStatus::Failure);
                     attribution_failure = Some(e);
                     continue;
                 }
             };
-            unid_id_map.insert(old_node_key.to_owned(), node.node_key.clone());
+            unid_id_map.insert(old_node_key.to_owned(), node.clone_node_key());
             identified_graph.add_node(node);
         }
 

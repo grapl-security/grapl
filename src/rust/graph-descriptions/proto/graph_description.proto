@@ -85,12 +85,12 @@ message GraphDescription {
     map <string, EdgeList> edges = 2;
 }
 
-message IdentifiedGraph {
+message IdentifiedGraph{
     map <string, IdentifiedNode> nodes = 1;
     map <string, EdgeList> edges = 2;
 }
 
-message MergedGraph {
+message MergedGraph{
     map <string, MergedNode> nodes = 1;
     map <string, MergedEdgeList> edges = 2;
 }

@@ -13,7 +13,7 @@ pub struct AnalyzerDispatchEvent {
 
 impl AnalyzerDispatchEvent {
     pub fn new(key: String, subgraph: MergedGraph) -> Self {
-        Self { key, subgraph }
+        Self { key, subgraph}
     }
 }
 

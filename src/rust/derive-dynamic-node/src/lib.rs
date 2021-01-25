@@ -75,8 +75,26 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
     let node_trait_name = format!("I{}Node", struct_name);
     let node_trait_name = syn::Ident::new(&node_trait_name, struct_name.span());
 
-    // todo: We shouldn't add a `with_asset_id` unless the node actually has an asset_id property
+    let use_the_dead_code_method_name = format!("__avoid_dead_code_lint{}", struct_name);
+    let use_the_dead_code_method_name = syn::Ident::new(&use_the_dead_code_method_name, struct_name.span());
+
+    let mut avoid_dead_code = quote!();
+    for field in fields {
+        let property_name = field.ident.as_ref().unwrap();
+        let use_it = quote!(let _ = &self . #property_name;);
+        avoid_dead_code.extend(use_it);
+    }
+
     let q = quote!(
+
+        impl #struct_name {
+            #[allow(warnings)]
+            fn #use_the_dead_code_method_name(&self) {
+                unreachable!();
+                #avoid_dead_code
+            }
+        }
+
 
         #[derive(Clone, Debug)]
         pub struct #node_name {
@@ -84,38 +102,24 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
         }
 
         pub trait #node_trait_name {
-            fn get_mut_dynamic_node(&mut self) -> &mut NodeDescription;
-            fn get_dynamic_node(&self) -> &NodeDescription;
+            fn get_mut_dynamic_node(&mut self) -> &mut grapl_graph_descriptions::graph_description::NodeDescription;
+            fn get_dynamic_node(&self) -> &grapl_graph_descriptions::graph_description::NodeDescription;
 
             #methods
         }
 
         impl #node_name {
-            pub fn new(strategy: grapl_graph_descriptions::graph_description::IdStrategy, seen_at: u64) -> Self {
+            pub fn new(strategy: grapl_graph_descriptions::graph_description::IdStrategy) -> Self {
                 let mut properties = std::collections::HashMap::with_capacity(1);
 
-                let dynamic_node = NodeDescription {
-                    asset_id: None,
-                    host_ip: None,
-                    hostname: None,
+                let dynamic_node = grapl_graph_descriptions::graph_description::NodeDescription {
                     node_type: #struct_name_string .to_owned(),
                     id_strategy: vec![strategy],
                     node_key: uuid::Uuid::new_v4().to_string(),
                     properties,
-                    seen_at,
                 };
 
                 Self { dynamic_node }
-            }
-
-            pub fn with_asset_id(&mut self, asset_id: impl Into<Option<String>>) -> &mut Self {
-                let asset_id = asset_id.into();
-                self.dynamic_node.asset_id = asset_id.clone();
-                if let Some(asset_id) = asset_id {
-                    let asset_id = node_property::Property::ImmutableStrProp(asset_id);
-                    self.dynamic_node.properties.insert("asset_id".to_owned(), asset_id.into());
-                }
-                self
             }
 
             pub fn get_node_key(&self) -> &str {
@@ -123,7 +127,7 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
             }
 
             pub fn clone_node_key(&self) -> String {
-                self.dynamic_node.node_key.clone()
+                self.dynamic_node.clone_node_key()
             }
 
             pub fn into_dyn_node(self) -> NodeDescription {
@@ -203,6 +207,10 @@ pub fn derive_grapl_static(input: TokenStream) -> TokenStream {
                     primary_key_requires_asset_id: false,
                 }.into()
             }
+
+            pub fn identity_strategy() -> IdStrategy {
+                return #node_name :: static_strategy()
+            }
         }
     );
 
@@ -264,7 +272,7 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     // Add node name to id
     let q = quote!(
         impl #node_name {
-            pub fn dynamic_strategy() -> IdStrategy {
+            pub fn session_strategy() -> IdStrategy {
                 Session {
                     created_time: #create_time_prop . to_string(),
                     last_seen_time: #last_seen_time_prop . to_string(),
@@ -274,6 +282,10 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
                         #id_fields
                     ],
                 }.into()
+            }
+
+            pub fn identity_strategy() -> IdStrategy {
+                return #node_name :: session_strategy()
             }
         }
     );
@@ -358,34 +370,34 @@ fn resolvable_type_from(
                 /* underlying struct field type    maps to this type   via this method on NodeProperty */
                 ("String", IMMUTABLE) => (
                     parse_quote!(grapl_graph_descriptions::ImmutableStrProp),
-                    parse_quote!(as_immutable_str_prop),
+                    parse_quote!(as_immutable_str),
                 ),
                 ("std::string::String", IMMUTABLE) => (
                     parse_quote!(grapl_graph_descriptions::ImmutableStrProp),
-                    parse_quote!(as_immutable_str_prop),
+                    parse_quote!(as_immutable_str),
                 ),
                 ("u64", IMMUTABLE) => (
                     parse_quote!(grapl_graph_descriptions::ImmutableUintProp),
                     parse_quote!(as_immutable_uint),
                 ),
                 ("u64", INCREMENT) => (
-                    parse_quote!(grapl_graph_descriptions::IncrementOnlyIntProp),
+                    parse_quote!(grapl_graph_descriptions::IncrementOnlyUintProp),
                     parse_quote!(as_increment_only_uint),
                 ),
                 ("u64", DECREMENT) => (
-                    parse_quote!(grapl_graph_descriptions::DecrementOnlyIntProp),
+                    parse_quote!(grapl_graph_descriptions::DecrementOnlyUintProp),
                     parse_quote!(as_decrement_only_uint),
                 ),
                 ("i64", IMMUTABLE) => (
-                    parse_quote!(grapl_graph_descriptions::ImmutableUintProp),
+                    parse_quote!(grapl_graph_descriptions::ImmutableIntProp),
                     parse_quote!(as_immutable_unt),
                 ),
                 ("i64", INCREMENT) => (
-                    parse_quote!(grapl_graph_descriptions::IncrementOnlyUintProp),
+                    parse_quote!(grapl_graph_descriptions::IncrementOnlyIntProp),
                     parse_quote!(as_increment_only_int),
                 ),
                 ("i64", DECREMENT) => (
-                    parse_quote!(grapl_graph_descriptions::DecrementOnlyUintProp),
+                    parse_quote!(grapl_graph_descriptions::DecrementOnlyIntProp),
                     parse_quote!(as_decrement_only_int),
                 ),
                 _ => return None,
@@ -449,14 +461,18 @@ fn property_methods(property_name: &Ident, property_type: &Type, resolution_name
      */
 
     let get_method_implementation = quote!(
-        // fn #get_method_name(&self) -> Option<#return_type> {
-        //     let property_result: Option<&NodeProperty> = self.get_dynamic_node().get_property(#property_name_str);
-        //
-        //     match property_result {
-        //       Some(ref property) => property. #method_ident(),
-        //       None => None,
-        //     }
-        // }
+        fn #get_method_name(&self) -> Option<#return_type> {
+            let property_result: Option<&NodeProperty> = self.get_dynamic_node().get_property(#property_name_str);
+
+            let property_result = match property_result {
+                Some(property_result) => property_result. #method_ident(),
+                None => return None
+            };
+            match property_result {
+              Some(property) => Some(#return_type (property.to_owned())),
+              None => None,
+            }
+        }
     );
     implementation.extend(get_method_implementation);
 

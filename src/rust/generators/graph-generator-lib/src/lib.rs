@@ -37,7 +37,7 @@ pub async fn run_graph_generator<
 ) where
     InputEventT: Send + 'static,
     InitGenerator: Clone + Send + 'static + Fn(RedisCache) -> EventHandlerT,
-    EventHandlerT: EventHandler<InputEvent = InputEventT, OutputEvent = Graph, Error = HandlerErrorT>
+    EventHandlerT: EventHandler<InputEvent = InputEventT, OutputEvent = GraphDescription, Error = HandlerErrorT>
         + Send
         + Sync
         + 'static
@@ -108,7 +108,7 @@ pub async fn run_graph_generator<
 // /// ```
 // pub async fn run_graph_generator<
 //     IE: Send + Sync + Clone + 'static,
-//     EH: EventHandler<InputEvent = IE, OutputEvent = Graph, Error = sqs_lambda::error::Error>
+//     EH: EventHandler<InputEvent = IE, OutputEvent = GraphDescription, Error = sqs_lambda::error::Error>
 //         + Send
 //         + Sync
 //         + Clone

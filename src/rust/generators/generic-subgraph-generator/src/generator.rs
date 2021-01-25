@@ -69,17 +69,17 @@ where
     ///
     /// For each log:
     /// * Try to convert to a GenericEvent
-    /// * Generate subgraph from event
-    /// * Merge into Graph object
+    /// * Generate subgraphfrom event
+    /// * Merge into graph object
     ///
     /// Returns: A Graph, identities processed, and an optional report indicating if any errors occurred during processing
     pub(crate) async fn convert_events_to_subgraph(
         &mut self,
         events: Vec<GenericEvent>,
         completed: &mut CompletedEvents,
-    ) -> Result<Graph, Result<(Graph, GenericSubgraphGeneratorError), GenericSubgraphGeneratorError>>
+    ) -> Result<GraphDescription, Result<(GraphDescription, GenericSubgraphGeneratorError), GenericSubgraphGeneratorError>>
     {
-        let mut final_subgraph = Graph::new(0);
+        let mut final_subgraph = GraphDescription::new();
         let mut failed: Option<eyre::Report> = None;
 
         for event in events {
@@ -90,10 +90,10 @@ where
                 continue;
             }
 
-            let subgraph = match Graph::try_from(event) {
+            let subgraph = match GraphDescription::try_from(event) {
                 Ok(subgraph) => subgraph,
                 Err(e) => {
-                    error!("Failed to generate subgraph with: {}", e);
+                    error!("Failed to generate subgraphwith: {}", e);
                     failed = Some(eyre::Report::msg(e));
                     continue;
                 }
@@ -122,7 +122,7 @@ where
     C: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<GenericEvent>;
-    type OutputEvent = Graph;
+    type OutputEvent = GraphDescription;
     type Error = GenericSubgraphGeneratorError;
 
     #[tracing::instrument(skip(self, events, completed))]

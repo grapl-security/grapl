@@ -1,5 +1,24 @@
 use crate::graph_description::*;
 
+macro_rules ! impl_from_for {
+
+    ($into_t:ty, $field:tt, $from_t:ty) => {
+        impl From<$from_t> for $into_t
+        {
+            fn from(p: $from_t) -> Self {
+                let p = p.to_owned().into();
+                Self {$field: p}
+            }
+        }
+    };
+
+    ($into_t:ty, $field:tt, $head:ty, $($tail:ty),*) => {
+        impl_from_for!($into_t, $field, $head);
+        impl_from_for!($into_t, $field, $($tail),*);
+    };
+}
+
+
 pub mod graph_description {
     include!(concat!(env!("OUT_DIR"), "/graph_description.rs"));
 }
@@ -20,11 +39,12 @@ impl GraphDescription {
         }
     }
 
-    pub fn add_node(&mut self, node: NodeDescription) {
+    pub fn add_node(&mut self, node: impl Into<NodeDescription>) {
+        let node = node.into();
         match self.nodes.get_mut(&node.node_key) {
             Some(n) => n.merge(&node),
             None => {
-                self.nodes.insert(node.node_key.clone(), node);
+                self.nodes.insert(node.clone_node_key(), node);
             }
         };
     }
@@ -72,7 +92,7 @@ impl GraphDescription {
     }
 }
 
-impl IdentifiedGraph {
+impl IdentifiedGraph{
     pub fn new() -> Self {
         Self {
             nodes: Default::default(),
@@ -84,7 +104,7 @@ impl IdentifiedGraph {
         match self.nodes.get_mut(&node.node_key) {
             Some(n) => n.merge(&node),
             None => {
-                self.nodes.insert(node.node_key.clone(), node);
+                self.nodes.insert(node.clone_node_key(), node);
             }
         };
     }
@@ -132,7 +152,7 @@ impl IdentifiedGraph {
     }
 }
 
-impl MergedGraph {
+impl MergedGraph{
     pub fn new() -> Self {
         Self {
             nodes: Default::default(),
@@ -144,7 +164,7 @@ impl MergedGraph {
         match self.nodes.get_mut(&node.node_key) {
             Some(n) => n.merge(&node),
             None => {
-                self.nodes.insert(node.node_key.clone(), node);
+                self.nodes.insert(node.clone_node_key(), node);
             }
         };
     }
@@ -224,6 +244,13 @@ impl NodeDescription {
                 }
             }
         }
+    }
+    pub fn get_node_key(&self) -> &str {
+        self.node_key.as_str()
+    }
+
+    pub fn clone_node_key(&self) -> String {
+        self.node_key.clone()
     }
 }
 
@@ -465,103 +492,29 @@ impl NodeDescription {
 
 use crate::node_property::Property;
 
-pub struct IncrementOnlyIntProp(i64);
+pub struct IncrementOnlyIntProp(pub i64);
 
-pub struct DecrementOnlyIntProp(i64);
+pub struct DecrementOnlyIntProp(pub i64);
 
-pub struct ImmutableIntProp(i64);
+pub struct ImmutableIntProp(pub i64);
 
-pub struct IncrementOnlyUintProp(u64);
+pub struct IncrementOnlyUintProp(pub u64);
 
-pub struct DecrementOnlyUintProp(u64);
+pub struct DecrementOnlyUintProp(pub u64);
 
-pub struct ImmutableUintProp(u64);
+pub struct ImmutableUintProp(pub u64);
 
-pub struct ImmutableStrProp(String);
+pub struct ImmutableStrProp(pub String);
 
-impl From<i64> for IncrementOnlyIntProp {
-    fn from(p: i64) -> Self {
-        IncrementOnlyIntProp(p)
-    }
-}
 
-impl From<i64> for DecrementOnlyIntProp {
-    fn from(p: i64) -> Self {
-        DecrementOnlyIntProp(p)
-    }
-}
+impl_from_for!(ImmutableUintProp, 0, u64, u32, u16, u8, &u64, &u32, &u16, &u8);
+impl_from_for!(IncrementOnlyUintProp, 0, u64, u32, u16, u8, &u64, &u32, &u16, &u8);
+impl_from_for!(DecrementOnlyUintProp, 0, u64, u32, u16, u8, &u64, &u32, &u16, &u8);
+impl_from_for!(ImmutableIntProp, 0, i64, i32, i16, i8, &i64, &i32, &i16, &i8);
+impl_from_for!(IncrementOnlyIntProp, 0, i64, i32, i16, i8, &i64, &i32, &i16, &i8);
+impl_from_for!(DecrementOnlyIntProp, 0, i64, i32, i16, i8, &i64, &i32, &i16, &i8);
+impl_from_for!(ImmutableStrProp, 0, String, &String, &str);
 
-impl From<i64> for ImmutableIntProp {
-    fn from(p: i64) -> Self {
-        ImmutableIntProp(p)
-    }
-}
-
-impl From<u64> for IncrementOnlyUintProp {
-    fn from(p: u64) -> Self {
-        IncrementOnlyUintProp(p)
-    }
-}
-
-impl From<u64> for DecrementOnlyUintProp {
-    fn from(p: u64) -> Self {
-        DecrementOnlyUintProp(p)
-    }
-}
-
-impl From<u64> for ImmutableUintProp {
-    fn from(p: u64) -> Self {
-        ImmutableUintProp(p)
-    }
-}
-
-impl From<String> for ImmutableStrProp {
-    fn from(p: String) -> Self {
-        ImmutableStrProp(p)
-    }
-}
-
-impl From<&i64> for IncrementOnlyIntProp {
-    fn from(p: &i64) -> Self {
-        IncrementOnlyIntProp(*p)
-    }
-}
-
-impl From<&i64> for DecrementOnlyIntProp {
-    fn from(p: &i64) -> Self {
-        DecrementOnlyIntProp(*p)
-    }
-}
-
-impl From<&i64> for ImmutableIntProp {
-    fn from(p: &i64) -> Self {
-        ImmutableIntProp(*p)
-    }
-}
-
-impl From<&u64> for IncrementOnlyUintProp {
-    fn from(p: &u64) -> Self {
-        IncrementOnlyUintProp(*p)
-    }
-}
-
-impl From<&u64> for DecrementOnlyUintProp {
-    fn from(p: &u64) -> Self {
-        DecrementOnlyUintProp(*p)
-    }
-}
-
-impl From<&u64> for ImmutableUintProp {
-    fn from(p: &u64) -> Self {
-        ImmutableUintProp(*p)
-    }
-}
-
-impl From<&str> for ImmutableStrProp {
-    fn from(p: &str) -> Self {
-        ImmutableStrProp(p.to_owned())
-    }
-}
 
 impl From<ImmutableStrProp> for Property {
     fn from(s: ImmutableStrProp) -> Self {
@@ -657,6 +610,14 @@ impl MergedNode {
             }
         }
     }
+
+    pub fn get_node_key(&self) -> &str {
+        self.node_key.as_str()
+    }
+
+    pub fn clone_node_key(&self) -> String {
+        self.node_key.clone()
+    }
 }
 
 impl IdentifiedNode {
@@ -667,5 +628,12 @@ impl IdentifiedNode {
             node_key: self.node_key,
             node_type: self.node_type,
         }
+    }
+    pub fn get_node_key(&self) -> &str {
+        self.node_key.as_str()
+    }
+
+    pub fn clone_node_key(&self) -> String {
+        self.node_key.clone()
     }
 }

@@ -1,12 +1,16 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{graph_description::*,
-                               network_connection::NetworkConnectionState,
-                               node::NodeT,
-                               process::ProcessState,
-                               process_inbound_connection::ProcessInboundConnectionState};
-use serde::{Deserialize,
-            Serialize};
+use grapl_graph_descriptions::graph_description::*;
+use serde::{Deserialize, Serialize};
+
+use endpoint_plugin::{AssetNode, IAssetNode};
+use endpoint_plugin::{FileNode, IFileNode};
+use endpoint_plugin::{IIpAddressNode, IpAddressNode};
+use endpoint_plugin::{IIpPortNode, IpPortNode};
+use endpoint_plugin::{INetworkConnectionNode, NetworkConnectionNode};
+use endpoint_plugin::{IProcessInboundConnectionNode, ProcessInboundConnectionNode};
+use endpoint_plugin::{IProcessNode, ProcessNode};
+use endpoint_plugin::{IProcessOutboundConnectionNode, ProcessOutboundConnectionNode};
 
 // In an inbound connection "src" is where the connection is coming from
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -22,108 +26,107 @@ pub struct ProcessInboundConnectionLog {
     timestamp: u64,
 }
 
-impl TryFrom<ProcessInboundConnectionLog> for Graph {
+impl TryFrom<ProcessInboundConnectionLog> for GraphDescription {
     type Error = String;
 
     fn try_from(conn_log: ProcessInboundConnectionLog) -> Result<Self, Self::Error> {
-        let mut graph = Graph::new(conn_log.timestamp);
+        let mut graph = GraphDescription::new();
 
-        let asset = AssetBuilder::default()
-            .asset_id(conn_log.dst_hostname.clone())
-            .hostname(conn_log.dst_hostname.clone())
-            .build()?;
+        let mut asset = AssetNode::new(AssetNode::static_strategy());
+        asset
+            .with_asset_id(conn_log.dst_hostname.clone())
+            .with_hostname(conn_log.dst_hostname.clone());
 
         // A process creates an outbound connection to dst_port
-        let process = ProcessBuilder::default()
-            .asset_id(conn_log.dst_hostname.clone())
-            .state(ProcessState::Existing)
-            .process_id(conn_log.pid)
-            .last_seen_timestamp(conn_log.timestamp)
-            .build()?;
+        let mut process = ProcessNode::new(ProcessNode::session_strategy());
+        process
+            .with_asset_id(conn_log.dst_hostname.clone())
+            .with_process_id(conn_log.pid)
+            .with_last_seen_timestamp(conn_log.timestamp);
 
-        let inbound = ProcessInboundConnectionBuilder::default()
-            .asset_id(conn_log.dst_hostname.clone())
-            .state(ProcessInboundConnectionState::Existing)
-            .ip_address(conn_log.dst_ip_addr.clone())
-            .protocol(conn_log.protocol.clone())
-            .port(conn_log.dst_port)
-            .created_timestamp(conn_log.timestamp)
-            .build()?;
+        let mut inbound =
+            ProcessInboundConnectionNode::new(ProcessInboundConnectionNode::session_strategy());
+        inbound
+            .with_asset_id(conn_log.dst_hostname.clone())
+            .with_ip_address(conn_log.dst_ip_addr.clone())
+            .with_protocol(conn_log.protocol.clone())
+            .with_port(conn_log.dst_port)
+            .with_created_timestamp(conn_log.timestamp);
 
-        let dst_ip = IpAddressBuilder::default()
-            .ip_address(conn_log.dst_ip_addr.clone())
-            .last_seen_timestamp(conn_log.timestamp)
-            .build()?;
+        let mut dst_ip = IpAddressNode::new(IpAddressNode::static_strategy());
+        dst_ip
+            .with_ip_address(conn_log.dst_ip_addr.clone())
+            .with_last_seen_timestamp(conn_log.timestamp);
 
-        let src_ip = IpAddressBuilder::default()
-            .ip_address(conn_log.src_ip_addr.clone())
-            .last_seen_timestamp(conn_log.timestamp)
-            .build()?;
+        let mut src_ip = IpAddressNode::new(IpAddressNode::static_strategy());
+        src_ip
+            .with_ip_address(conn_log.src_ip_addr.clone())
+            .with_last_seen_timestamp(conn_log.timestamp);
 
-        let src_port = IpPortBuilder::default()
-            .ip_address(conn_log.src_ip_addr.clone())
-            .protocol(conn_log.protocol.clone())
-            .port(conn_log.src_port)
-            .build()?;
+        let mut src_port = IpPortNode::new(IpPortNode::static_strategy());
+        src_port
+            .with_ip_address(conn_log.src_ip_addr.clone())
+            .with_protocol(conn_log.protocol.clone())
+            .with_port(conn_log.src_port);
 
-        let dst_port = IpPortBuilder::default()
-            .ip_address(conn_log.dst_ip_addr.clone())
-            .protocol(conn_log.protocol.clone())
-            .port(conn_log.dst_port)
-            .build()?;
+        let mut dst_port = IpPortNode::new(IpPortNode::static_strategy());
+        dst_port
+            .with_ip_address(conn_log.dst_ip_addr.clone())
+            .with_protocol(conn_log.protocol.clone())
+            .with_port(conn_log.dst_port);
 
-        let network_connection = NetworkConnectionBuilder::default()
-            .state(NetworkConnectionState::Created)
-            .src_ip_address(conn_log.src_ip_addr)
-            .src_port(conn_log.src_port)
-            .dst_ip_address(conn_log.dst_ip_addr)
-            .dst_port(conn_log.dst_port)
-            .protocol(conn_log.protocol)
-            .created_timestamp(conn_log.timestamp)
-            .build()?;
+        let mut network_connection =
+            NetworkConnectionNode::new(NetworkConnectionNode::session_strategy());
+        network_connection
+            .with_src_ip_address(conn_log.src_ip_addr)
+            .with_src_port(conn_log.src_port)
+            .with_dst_ip_address(conn_log.dst_ip_addr)
+            .with_dst_port(conn_log.dst_port)
+            .with_protocol(conn_log.protocol)
+            .with_created_timestamp(conn_log.timestamp);
 
         // An asset is assigned an IP
-        graph.add_edge("asset_ip", asset.node_key.clone(), dst_ip.node_key.clone());
+        graph.add_edge("asset_ip", asset.clone_node_key(), dst_ip.clone_node_key());
 
         // A process spawns on an asset
         graph.add_edge(
             "asset_processes",
-            asset.node_key.clone(),
-            process.node_key.clone(),
+            asset.clone_node_key(),
+            process.clone_node_key(),
         );
 
         // A process creates a connection
         graph.add_edge(
             "received_connection",
-            process.node_key.clone(),
-            inbound.node_key.clone(),
+            process.clone_node_key(),
+            inbound.clone_node_key(),
         );
 
         // The connection is over an IP + Port
         graph.add_edge(
             "bound_port",
-            inbound.node_key.clone(),
-            src_port.node_key.clone(),
+            inbound.clone_node_key(),
+            src_port.clone_node_key(),
         );
 
         // The connection is to a dst ip + port
         graph.add_edge(
             "connected_to",
-            inbound.node_key.clone(),
-            dst_port.node_key.clone(),
+            inbound.clone_node_key(),
+            dst_port.clone_node_key(),
         );
 
         // There is a network connection between the src and dst ports
         graph.add_edge(
             "outbound_connection_to",
-            src_port.node_key.clone(),
-            network_connection.node_key.clone(),
+            src_port.clone_node_key(),
+            network_connection.clone_node_key(),
         );
 
         graph.add_edge(
             "inbound_connection_to",
-            network_connection.node_key.clone(),
-            dst_port.node_key.clone(),
+            network_connection.clone_node_key(),
+            dst_port.clone_node_key(),
         );
 
         graph.add_node(asset);

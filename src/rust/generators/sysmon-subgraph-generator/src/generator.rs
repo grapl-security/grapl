@@ -67,9 +67,9 @@ where
         &mut self,
         events: Vec<Cow<'_, str>>,
         identities: &mut CompletedEvents,
-    ) -> Result<Graph, Result<(Graph, SysmonGeneratorError), SysmonGeneratorError>> {
+    ) -> Result<GraphDescription, Result<(GraphDescription, SysmonGeneratorError), SysmonGeneratorError>> {
         let mut last_failure: Option<SysmonGeneratorError> = None;
-        let mut final_subgraph = Graph::new(0);
+        let mut final_subgraph = GraphDescription::new();
 
         for event in events {
             let event = match Event::from_str(&event) {
@@ -94,11 +94,11 @@ where
                 _ => (),
             };
 
-            let graph = match Graph::try_from(event.clone()) {
+            let graph = match GraphDescription::try_from(event.clone()) {
                 Ok(subgraph) => subgraph,
                 Err(SysmonGeneratorError::UnsupportedEventType(_s)) => continue,
                 Err(e) => {
-                    error!("Graph::try_from failed with: {:?}", e);
+                    error!("GraphDescription::try_from failed with: {:?}", e);
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
                     last_failure = Some(e);
                     continue;
@@ -123,7 +123,7 @@ where
     C: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<u8>;
-    type OutputEvent = Graph;
+    type OutputEvent = GraphDescription;
     type Error = SysmonGeneratorError;
 
     async fn handle_event(

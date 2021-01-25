@@ -5,13 +5,12 @@ use grapl_graph_descriptions::graph_description::*;
 #[derive(NodeDescription, GraplStaticId)]
 pub struct Asset {
     #[grapl(static_id, immutable)]
-    #[allow(dead_code)]
+    asset_id: String,
+    #[grapl(immutable)]
     hostname: String,
-    #[grapl(static_id, immutable)]
-    #[allow(dead_code)]
+    #[grapl(immutable)]
     launch_time: u64,
-    #[grapl(static_id, increment)]
-    #[allow(dead_code)]
+    #[grapl(increment)]
     last_seen_time: u64,
 }
 

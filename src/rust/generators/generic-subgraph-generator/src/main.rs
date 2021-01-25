@@ -1,3 +1,4 @@
+#![allow(warnings)]
 mod generator;
 mod models;
 mod tests;

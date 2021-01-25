@@ -1,11 +1,11 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
-use serde::{Deserialize,
-            Serialize};
+use grapl_graph_descriptions::graph_description::*;
+use serde::{Deserialize, Serialize};
+
+use endpoint_plugin::{AssetNode, IAssetNode};
+use endpoint_plugin::{FileNode, IFileNode};
+use endpoint_plugin::{IProcessNode, ProcessNode};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct FileWrite {
@@ -16,48 +16,43 @@ pub struct FileWrite {
     timestamp: u64,
 }
 
-impl TryFrom<FileWrite> for Graph {
+impl TryFrom<FileWrite> for GraphDescription {
     type Error = String;
 
     fn try_from(file_write: FileWrite) -> Result<Self, Self::Error> {
-        let asset = AssetBuilder::default()
-            .hostname(file_write.hostname.clone())
-            .asset_id(file_write.hostname.clone())
-            .build()?;
+        let mut asset = AssetNode::new(AssetNode::static_strategy());
+            asset.with_hostname(file_write.hostname.clone())
+            .with_asset_id(file_write.hostname.clone());
 
-        let writer = ProcessBuilder::default()
-            .process_name(file_write.writer_process_name.unwrap_or_default())
-            .hostname(file_write.hostname.clone())
-            .state(ProcessState::Existing)
-            .process_id(file_write.writer_pid)
-            .last_seen_timestamp(file_write.timestamp)
-            .build()?;
+        let mut writer = ProcessNode::new(ProcessNode::session_strategy());
+            writer.with_process_name(file_write.writer_process_name.unwrap_or_default())
+            .with_asset_id(file_write.hostname.clone())
+            .with_process_id(file_write.writer_pid)
+            .with_last_seen_timestamp(file_write.timestamp);
 
-        let file = FileBuilder::default()
-            .hostname(file_write.hostname)
-            .state(FileState::Existing)
-            .last_seen_timestamp(file_write.timestamp)
-            .file_path(file_write.path)
-            .build()?;
+        let mut file = FileNode::new(FileNode::session_strategy());
+            file.with_asset_id(file_write.hostname.clone())
+            .with_last_seen_timestamp(file_write.timestamp)
+            .with_file_path(file_write.path);
 
-        let mut graph = Graph::new(file_write.timestamp);
+        let mut graph = GraphDescription::new();
 
         graph.add_edge(
             "wrote_files",
-            writer.node_key.clone(),
-            file.node_key.clone(),
+            writer.clone_node_key(),
+            file.clone_node_key(),
         );
 
         graph.add_edge(
             "asset_processes",
-            asset.node_key.clone(),
-            writer.node_key.clone(),
+            asset.clone_node_key(),
+            writer.clone_node_key(),
         );
 
         graph.add_edge(
             "files_on_asset",
-            asset.node_key.clone(),
-            file.node_key.clone(),
+            asset.clone_node_key(),
+            file.clone_node_key(),
         );
 
         graph.add_node(asset);

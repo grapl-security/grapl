@@ -1,67 +1,67 @@
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
+use std::convert::TryFrom;
+
+use serde::{Deserialize, Serialize};
 use sysmon::FileCreateEvent;
 
-use crate::{generator::SysmonGeneratorError,
-            models::{get_image_name,
-                     strip_file_zone_identifier,
-                     utc_to_epoch}};
+use endpoint_plugin::{AssetNode, IAssetNode};
+use endpoint_plugin::{FileNode, IFileNode};
+use endpoint_plugin::{IIpPortNode, IpPortNode};
+use endpoint_plugin::{IProcessInboundConnectionNode, ProcessInboundConnectionNode};
+use endpoint_plugin::{IProcessNode, ProcessNode};
+use endpoint_plugin::{IProcessOutboundConnectionNode, ProcessOutboundConnectionNode};
+use grapl_graph_descriptions::graph_description::*;
+
+use crate::{
+    generator::SysmonGeneratorError,
+    models::{get_image_name, strip_file_zone_identifier, utc_to_epoch},
+};
 
 /// Creates a subgrqph describing a `FileCreateEvent`
 ///
-/// The subgraph generation for a `FileCreateEvent` includes the following:
+/// The subgraphgeneration for a `FileCreateEvent` includes the following:
 /// * A creator `Process` node - denotes the process that created the file
 /// * A subject `File` node - the file that is created as part of this event
 pub fn generate_file_create_subgraph(
     file_create: &FileCreateEvent,
-) -> Result<Graph, SysmonGeneratorError> {
+) -> Result<GraphDescription, SysmonGeneratorError> {
     let timestamp = utc_to_epoch(&file_create.event_data.creation_utc_time)?;
-    let mut graph = Graph::new(timestamp);
+    let mut graph = GraphDescription::new();
 
-    let asset = AssetBuilder::default()
-        .asset_id(file_create.system.computer.computer.clone())
-        .hostname(file_create.system.computer.computer.clone())
-        .build()
-        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
+    let mut asset = AssetNode::new(AssetNode::static_strategy());
+    asset
+        .with_asset_id(file_create.system.computer.computer.clone())
+        .with_hostname(file_create.system.computer.computer.clone());
 
-    let creator = ProcessBuilder::default()
-        .asset_id(file_create.system.computer.computer.clone())
-        .state(ProcessState::Existing)
-        .process_id(file_create.event_data.process_id)
-        .process_name(get_image_name(&file_create.event_data.image.clone()).unwrap())
-        .last_seen_timestamp(timestamp)
-        //        .created_timestamp(file_create.event_data.process_guid.get_creation_timestamp())
-        .build()
-        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
+    let mut creator = ProcessNode::new(ProcessNode::session_strategy());
+    creator
+        .with_asset_id(file_create.system.computer.computer.clone())
+        .with_process_id(file_create.event_data.process_id)
+        .with_process_name(get_image_name(&file_create.event_data.image.clone()).unwrap())
+        .with_last_seen_timestamp(timestamp);
 
-    let file = FileBuilder::default()
-        .asset_id(file_create.system.computer.computer.clone())
-        .state(FileState::Created)
-        .file_path(strip_file_zone_identifier(
+    let mut file = FileNode::new(FileNode::session_strategy());
+    file.with_asset_id(file_create.system.computer.computer.clone())
+        .with_file_path(strip_file_zone_identifier(
             &file_create.event_data.target_filename,
         ))
-        .created_timestamp(timestamp)
-        .build()
-        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
+        .with_created_timestamp(timestamp);
 
     graph.add_edge(
         "process_asset",
-        creator.node_key.clone(),
-        asset.node_key.clone(),
+        creator.clone_node_key(),
+        asset.clone_node_key(),
     );
 
     graph.add_edge(
         "created_files",
-        creator.node_key.clone(),
-        file.node_key.clone(),
+        creator.clone_node_key(),
+        file.clone_node_key(),
     );
 
     graph.add_edge(
         "files_on_asset",
-        asset.node_key.clone(),
-        file.node_key.clone(),
+        asset.clone_node_key(),
+        file.clone_node_key(),
     );
 
     graph.add_node(asset);

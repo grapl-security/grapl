@@ -1,88 +1,84 @@
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
+use endpoint_plugin::{AssetNode, IAssetNode};
+use endpoint_plugin::{FileNode, IFileNode};
+use endpoint_plugin::{IIpPortNode, IpPortNode};
+use endpoint_plugin::{IProcessInboundConnectionNode, ProcessInboundConnectionNode};
+use endpoint_plugin::{IProcessNode, ProcessNode};
+use endpoint_plugin::{IProcessOutboundConnectionNode, ProcessOutboundConnectionNode};
+use grapl_graph_descriptions::graph_description::*;
+
 use sysmon::ProcessCreateEvent;
 
-use crate::{generator::SysmonGeneratorError,
-            models::{get_image_name,
-                     strip_file_zone_identifier,
-                     utc_to_epoch}};
+use crate::{
+    generator::SysmonGeneratorError,
+    models::{get_image_name, strip_file_zone_identifier, utc_to_epoch},
+};
 
-/// Creates a subgraph describing a `ProcessCreateEvent`.
+/// Creates a graph decribing a `ProcessCreateEvent`.
 ///
-/// Subgraph generation for a `ProcessCreateEvent` includes the following:
+/// Graph generation for a `ProcessCreateEvent` includes the following:
 /// * An `Asset` node - indicating the asset in which the process was created
 /// * A parent `Process` node - indicating the process that created the subject process
 /// * A subject `Process` node - indicating the process created per the `ProcessCreateEvent`
 /// * A process `File` node - indicating the file executed in creating the new process
 pub fn generate_process_create_subgraph(
     process_start: &ProcessCreateEvent,
-) -> Result<Graph, SysmonGeneratorError> {
+) -> Result<GraphDescription, SysmonGeneratorError> {
     let timestamp = utc_to_epoch(&process_start.event_data.utc_time)?;
-    let mut graph = Graph::new(timestamp);
+    let mut graph = GraphDescription::new();
 
-    let asset = AssetBuilder::default()
-        .asset_id(process_start.system.computer.computer.clone())
-        .hostname(process_start.system.computer.computer.clone())
-        .build()
-        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
+    let mut asset = AssetNode::new(AssetNode::static_strategy());
+    asset
+        .with_asset_id(process_start.system.computer.computer.clone())
+        .with_hostname(process_start.system.computer.computer.clone());
 
-    let parent = ProcessBuilder::default()
-        .asset_id(process_start.system.computer.computer.clone())
-        .state(ProcessState::Existing)
-        .process_id(process_start.event_data.parent_process_id)
-        .process_name(get_image_name(&process_start.event_data.parent_image.clone()).unwrap())
-        .process_command_line(&process_start.event_data.parent_command_line.command_line)
-        .last_seen_timestamp(timestamp)
-        //        .created_timestamp(process_start.event_data.parent_process_guid.get_creation_timestamp())
-        .build()
-        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
+    let mut parent = ProcessNode::new(ProcessNode::session_strategy());
+    parent
+        .with_asset_id(process_start.system.computer.computer.clone())
+        .with_process_id(process_start.event_data.parent_process_id)
+        .with_process_name(get_image_name(&process_start.event_data.parent_image.clone()).unwrap())
+        .with_process_command_line(&process_start.event_data.parent_command_line.command_line)
+        .with_last_seen_timestamp(timestamp);
 
-    let child = ProcessBuilder::default()
-        .asset_id(process_start.system.computer.computer.clone())
-        .process_name(get_image_name(&process_start.event_data.image.clone()).unwrap())
-        .process_command_line(&process_start.event_data.command_line.command_line)
-        .state(ProcessState::Created)
-        .process_id(process_start.event_data.process_id)
-        .created_timestamp(timestamp)
-        .build()
-        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
+    let mut child = ProcessNode::new(ProcessNode::session_strategy());
+    child
+        .with_asset_id(process_start.system.computer.computer.clone())
+        .with_process_name(get_image_name(&process_start.event_data.image.clone()).unwrap())
+        .with_process_command_line(&process_start.event_data.command_line.command_line)
+        .with_process_id(process_start.event_data.process_id)
+        .with_created_timestamp(timestamp);
 
-    let child_exe = FileBuilder::default()
-        .asset_id(process_start.system.computer.computer.clone())
-        .state(FileState::Existing)
-        .last_seen_timestamp(timestamp)
-        .file_path(strip_file_zone_identifier(&process_start.event_data.image))
-        .build()
-        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
+    let mut child_exe = FileNode::new(FileNode::session_strategy());
+    child_exe
+        .with_asset_id(process_start.system.computer.computer.clone())
+        .with_last_seen_timestamp(timestamp)
+        .with_file_path(strip_file_zone_identifier(&process_start.event_data.image));
 
     graph.add_edge(
         "process_asset",
-        parent.node_key.clone(),
-        asset.node_key.clone(),
+        parent.clone_node_key(),
+        asset.clone_node_key(),
     );
 
     graph.add_edge(
         "process_asset",
-        child.node_key.clone(),
-        asset.node_key.clone(),
+        child.clone_node_key(),
+        asset.clone_node_key(),
     );
 
     graph.add_edge(
         "bin_file",
-        child.node_key.clone(),
-        child_exe.node_key.clone(),
+        child.clone_node_key(),
+        child_exe.clone_node_key(),
     );
 
     graph.add_edge(
         "files_on_asset",
-        asset.node_key.clone(),
-        child_exe.node_key.clone(),
+        asset.clone_node_key(),
+        child_exe.clone_node_key(),
     );
 
-    graph.add_edge("children", parent.node_key.clone(), child.node_key.clone());
-    graph.add_edge("parent", child.node_key.clone(), parent.node_key.clone());
+    graph.add_edge("children", parent.clone_node_key(), child.clone_node_key());
+    graph.add_edge("parent", child.clone_node_key(), parent.clone_node_key());
 
     graph.add_node(asset);
     graph.add_node(parent);

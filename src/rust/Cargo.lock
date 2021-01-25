@@ -2085,6 +2085,7 @@ name = "osquery-subgraph-generator"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "endpoint-plugin",
  "failure",
  "graph-generator-lib",
  "grapl-config",
@@ -3482,6 +3483,7 @@ dependencies = [
  "aws_lambda_events 0.2.7",
  "base16",
  "chrono",
+ "endpoint-plugin",
  "failure",
  "futures 0.3.12",
  "graph-generator-lib",

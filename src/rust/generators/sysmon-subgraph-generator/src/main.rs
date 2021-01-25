@@ -1,5 +1,5 @@
 #![type_length_limit = "1334469"]
-
+#![allow(warnings)]
 use graph_generator_lib::run_graph_generator;
 pub use grapl_service::{decoder::{ZstdDecoder,
                                   ZstdDecoderError},
