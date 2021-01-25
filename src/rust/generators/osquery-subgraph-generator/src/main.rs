@@ -1,5 +1,4 @@
 #![type_length_limit = "1232619"]
-#![allow(warnings)]
 mod generator;
 mod metrics;
 mod parsers;

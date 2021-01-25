@@ -1,4 +1,3 @@
-#![allow(warnings)]
 #![recursion_limit = "128"]
 extern crate proc_macro;
 
@@ -13,7 +12,6 @@ use syn::{parse_quote,
           Ident,
           Meta,
           NestedMeta,
-          ParenthesizedGenericArguments,
           Type};
 
 const CREATE_TIME: &'static str = "create_time";

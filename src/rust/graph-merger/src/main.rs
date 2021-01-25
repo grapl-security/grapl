@@ -333,7 +333,6 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
 
     let cache = &mut event_caches(&env).await;
 
-    // todo: the intitializer should give a cache to each service
     let graph_merger = &mut make_ten(async {
         let mg_alphas = grapl_config::mg_alphas();
         tracing::debug!(
@@ -386,6 +385,8 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
 pub enum GraphMergerError {
     #[error("UnexpectedError")]
     Unexpected(String),
+    #[error("ParseIntError")]
+    ParseIntError(#[from] ParseIntError)
 }
 
 impl CheckedError for GraphMergerError {
@@ -474,7 +475,8 @@ where
             node_key_to_uid_map.store(node.clone_node_key(), new_uid.clone());
 
             let new_uid = new_uid.trim_start_matches("0x");
-            let new_uid: u64 = u64::from_str_radix(new_uid, 16).expect("todo: raise parseinterror");
+            let new_uid: u64 = u64::from_str_radix(new_uid, 16)
+                .map_err(|e| Err(GraphMergerError::from(e)))?;
             let merged_node = MergedNode::from(node, new_uid);
             merged_graph.add_node(merged_node);
         }
@@ -629,6 +631,7 @@ async fn get_edge_uids(
 }
 
 use grapl_graph_descriptions::graph_description::MergedEdge;
+use std::num::ParseIntError;
 
 async fn upsert_edges<CacheT>(
     unmerged_edges: &[Edge],

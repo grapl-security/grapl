@@ -41,24 +41,3 @@ impl IFileNode for FileNode {
         &self.dynamic_node
     }
 }
-
-//
-// todo: Not ready yet - should create an issue/ RFC instead
-// // A point in time snapshot of file state
-// #[derive(NodeDescription, GraplStaticId)]
-// pub struct FileState {
-//     #[grapl(static_id, immutable)]
-//     snapshot_timestamp: u64,
-//     #[grapl(static_id, immutable)]
-//     file_size: u64,
-//     #[grapl(static_id, immutable)]
-//     file_hard_links: u64,
-//     #[grapl(static_id, immutable)]
-//     md5_hash: String,
-//     #[grapl(static_id, immutable)]
-//     sha1_hash: String,
-//     #[grapl(static_id, immutable)]
-//     sha256_hash: String,
-//     #[grapl(static_id, immutable)]
-//     file_version: String,
-// }
