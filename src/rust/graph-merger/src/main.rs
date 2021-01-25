@@ -1,4 +1,4 @@
-#![allow(unused_must_use)]
+// #![allow(unused_must_use)]
 
 use std::{collections::HashMap,
           fmt::Debug,
@@ -63,7 +63,8 @@ fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::
 
     let mut mutation = dgraph_tonic::Mutation::new();
     mutation.commit_now = true;
-    mutation.set_set_json(&mu);
+    mutation.set_set_json(&mu)
+        .unwrap_or_else(|e| error!("Failed to set json: {:#?}", e));
 
     mutation
 }
@@ -169,7 +170,8 @@ where
 
             let mut mu = dgraph_tonic::Mutation::new();
             mu.commit_now = true;
-            mu.set_set_json(&set_json);
+            mu.set_set_json(&set_json)
+                .unwrap_or_else(|e| error!("Failed to set json (mu): {:#?}", e));
             tracing::debug!(
                 node_key=?node_key,
                 "Performing upsert"
@@ -199,7 +201,9 @@ where
                 set_json.to_string(),
                 upsert_res,
             );
-            cache.store(cache_key.into_bytes());
+            cache.store(cache_key.into_bytes())
+                .await
+                .unwrap_or_else(|e| error!("Failed to store key in cache: {:#?}", e));
         }
         Err(e) => error!("Failed to get upsert from cache: {}", e),
         Ok(CacheResponse::Hit) => {
@@ -308,7 +312,8 @@ where
         .mutation(&mut_res, &[])
         .unwrap_or_else(|e| error!("edge mutation metric failed: {}", e));
 
-    cache.store(cache_key.into_bytes()).await;
+    cache.store(cache_key.into_bytes()).await
+        .unwrap_or_else(|e| error!("Failed to store key in cache: {:#?}", e));
     Ok(())
 }
 
