@@ -1,3 +1,6 @@
+#![allow(unused_must_use)]
+#![allow(unreachable_code)]
+
 pub mod cache;
 pub mod completion_event_serializer;
 pub mod completion_handler;

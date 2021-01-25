@@ -4,6 +4,7 @@ use crate::node::NodeT;
 use log::warn;
 use serde_json::{json, Value};
 use uuid::Uuid;
+use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
 
 impl Asset {
     pub fn new(
@@ -136,5 +137,27 @@ impl NodeT for Asset {
         }
 
         merged
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref("asset_id", MutationPredicateValue::string(&self.asset_id.clone().expect("Missing asset id")));
+        mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("Asset"));
+
+        if self.first_seen_timestamp != 0 {
+            mutation_unit.predicate_ref("first_seen_timestamp", MutationPredicateValue::Number(self.first_seen_timestamp as i64));
+        }
+
+        if self.last_seen_timestamp != 0 {
+            mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
+        }
+
+        if let Some(hostname) = &self.hostname {
+            mutation_unit.predicate_ref("hostname", MutationPredicateValue::string(hostname));
+        }
+
+        if let Some(mac_address) = &self.mac_address {
+            mutation_unit.predicate_ref("mac_address", MutationPredicateValue::string(mac_address));
+        }
     }
 }

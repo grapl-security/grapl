@@ -6,6 +6,13 @@ use crate::graph_description::{
     Asset, DynamicNode, File, IpAddress, IpConnection, IpPort, NetworkConnection, Node, Process,
     ProcessInboundConnection, ProcessOutboundConnection,
 };
+use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue, MutationUID};
+use dgraph_query_lib::queryblock::{QueryBlock, QueryBlockBuilder, QueryBlockType};
+use dgraph_query_lib::condition::{
+    Condition,
+    ConditionValue
+};
+use dgraph_query_lib::predicate::Variable;
 
 pub trait NodeT {
     fn get_asset_id(&self) -> Option<&str>;
@@ -27,6 +34,25 @@ pub trait NodeT {
     fn merge(&mut self, other: &Self) -> bool;
 
     fn merge_into(&mut self, other: Self) -> bool;
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit);
+
+    fn generate_upsert_components(&self) -> (QueryBlock, MutationUnit) {
+        // TODO: dgraph_query_lib needs to generate random variables honestly
+        let uid_variable = Variable::random();
+
+        let mut mutation_unit = MutationUnit::new(MutationUID::variable(&uid_variable.get_name()));
+        self.attach_predicates_to_mutation_unit(&mut mutation_unit);
+
+        let query_block = QueryBlockBuilder::default()
+            .query_type(QueryBlockType::Var)
+            .root_filter(Condition::EQ("node_key".to_string(), ConditionValue::string(self.get_node_key())))
+            .first(1)
+            .variable(uid_variable.get_name())
+            .build().unwrap();
+
+        (query_block, mutation_unit)
+    }
 }
 
 impl From<IpConnection> for Node {
@@ -491,9 +517,7 @@ impl Node {
     pub fn into_json(self) -> Value {
         let which_node = match self.which_node {
             Some(which_node) => which_node,
-            None => {
-                panic!("Failed to determine variant of node");
-            }
+            None => panic!("Failed to determine variant of node")
         };
 
         match which_node {
@@ -841,6 +865,32 @@ impl NodeT for Node {
                     false
                 }
             }
+        }
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        let which_node = match &self.which_node {
+            Some(which_node) => which_node,
+            None => panic!("Failed to determine variant of node")
+        };
+
+        match which_node {
+            WhichNode::AssetNode(asset_node) => asset_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::ProcessNode(process_node) => process_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::FileNode(file_node) => file_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::IpAddressNode(ip_address_node) => ip_address_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::ProcessOutboundConnectionNode(process_outbound_connection_node) => {
+                process_outbound_connection_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
+            WhichNode::ProcessInboundConnectionNode(process_inbound_connection_node) => {
+                process_inbound_connection_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
+            WhichNode::IpPortNode(ip_port_node) => ip_port_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::NetworkConnectionNode(network_connection_node) => {
+                network_connection_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
+            WhichNode::IpConnectionNode(ip_connection_node) => ip_connection_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::DynamicNode(dynamic_node) => dynamic_node.attach_predicates_to_mutation_unit(mutation_unit),
         }
     }
 }

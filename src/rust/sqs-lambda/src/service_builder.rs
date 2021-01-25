@@ -13,7 +13,7 @@ pub struct ServiceBuilder<
     CompletedEventT: Send + Clone + Sync + 'static,
     CompletionHandlerT: CompletionHandler<Message = TriggerT, CompletedEvent = CompletedEventT>,
 {
-    trigger_consumer: ConsumerT,
-    event_processor: EventProcessorActor<TriggerT>,
-    completion_handler: CompletionHandlerT,
+    _trigger_consumer: ConsumerT,
+    _event_processor: EventProcessorActor<TriggerT>,
+    _completion_handler: CompletionHandlerT,
 }

@@ -7,6 +7,7 @@ use uuid::Uuid;
 use crate::error::Error;
 use crate::graph_description::File;
 use crate::node::NodeT;
+use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
 
 #[derive(Debug, Clone)]
 pub enum FileState {
@@ -423,5 +424,81 @@ impl NodeT for File {
         }
 
         merged
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("File"));
+
+        if !self.file_name.is_empty() {
+            mutation_unit.predicate_ref("file_name", MutationPredicateValue::string(&self.file_name));
+        }
+
+        if !self.file_path.is_empty() {
+            mutation_unit.predicate_ref("file_path", MutationPredicateValue::string(&self.file_path));
+        }
+
+        if !self.file_extension.is_empty() {
+            mutation_unit.predicate_ref("file_extension", MutationPredicateValue::string(&self.file_extension));
+        }
+
+        if !self.file_mime_type.is_empty() {
+            mutation_unit.predicate_ref("file_mime_type", MutationPredicateValue::string(&self.file_mime_type));
+        }
+
+        if self.file_size != 0 {
+            mutation_unit.predicate_ref("file_size", MutationPredicateValue::Number(self.file_size as i64));
+        }
+
+        if !self.file_version.is_empty() {
+            mutation_unit.predicate_ref("file_version", MutationPredicateValue::string(&self.file_version));
+        }
+
+        if !self.file_description.is_empty() {
+            mutation_unit.predicate_ref("file_description", MutationPredicateValue::string(&self.file_description));
+        }
+
+        if !self.file_product.is_empty() {
+            mutation_unit.predicate_ref("file_product", MutationPredicateValue::string(&self.file_product));
+        }
+
+        if !self.file_company.is_empty() {
+            mutation_unit.predicate_ref("file_company", MutationPredicateValue::string(&self.file_company));
+        }
+
+        if !self.file_directory.is_empty() {
+            mutation_unit.predicate_ref("file_directory", MutationPredicateValue::string(&self.file_directory));
+        }
+
+        if self.file_inode != 0 {
+            mutation_unit.predicate_ref("file_inode", MutationPredicateValue::Number(self.file_inode as i64));
+        }
+
+        if self.file_hard_links != 0 {
+            mutation_unit.predicate_ref("file_hard_links", MutationPredicateValue::Number(self.file_hard_links as i64));
+        }
+
+        if !self.md5_hash.is_empty() {
+            mutation_unit.predicate_ref("md5_hash", MutationPredicateValue::string(&self.md5_hash));
+        }
+
+        if !self.sha1_hash.is_empty() {
+            mutation_unit.predicate_ref("sha1_hash", MutationPredicateValue::string(&self.sha1_hash));
+        }
+
+        if !self.sha256_hash.is_empty() {
+            mutation_unit.predicate_ref("sha256_hash", MutationPredicateValue::string(&self.sha256_hash));
+        }
+
+        if self.created_timestamp != 0 {
+            mutation_unit.predicate_ref("created_time", MutationPredicateValue::Number(self.created_timestamp as i64));
+        }
+
+        if self.deleted_timestamp != 0 {
+            mutation_unit.predicate_ref("deleted_timestamp", MutationPredicateValue::Number(self.deleted_timestamp as i64));
+        }
+        if self.last_seen_timestamp != 0 {
+            mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
+        }
     }
 }

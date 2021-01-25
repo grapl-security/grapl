@@ -11,7 +11,7 @@ impl<D> PayloadDecoder<Vec<D>> for OSQueryLogDecoder
 where
     for<'a> D: Deserialize<'a>,
 {
-    fn decode(&mut self, mut body: Vec<u8>) -> Result<Vec<D>, Box<dyn std::error::Error>> {
+    fn decode(&mut self, body: Vec<u8>) -> Result<Vec<D>, Box<dyn std::error::Error>> {
         let mut decompressed = Vec::with_capacity(body.len());
         let mut body = Cursor::new(&body);
 

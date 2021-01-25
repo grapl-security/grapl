@@ -1,11 +1,11 @@
 use std::error::Error;
 use std::future::Future;
 use std::io::Stdout;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use log::info;
 use rusoto_s3::S3;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
+use rusoto_sqs::Sqs;
 
 use grapl_observe::metric_reporter::MetricReporter;
 
@@ -19,7 +19,7 @@ use crate::s3_event_emitter::S3EventEmitter;
 use crate::sqs_completion_handler::{
     CompletionPolicy, SqsCompletionHandler, SqsCompletionHandlerActor,
 };
-use crate::sqs_consumer::{ConsumePolicy, IntoDeadline, SqsConsumer, SqsConsumerActor};
+use crate::sqs_consumer::{ConsumePolicy, SqsConsumer, SqsConsumerActor};
 
 fn time_based_key_fn(_event: &[u8]) -> String {
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {

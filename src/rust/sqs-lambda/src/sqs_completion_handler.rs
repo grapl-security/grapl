@@ -241,7 +241,7 @@ where
 
         // todo: Retrying here would be a good idea, panicking is basically shutting this entire system down
         debug!("Emitting events");
-        let (emit_res, ms) = time_fut_ms(self.event_emitter.emit_event(serialized_event)).await;
+        let (_emit_res, _ms) = time_fut_ms(self.event_emitter.emit_event(serialized_event)).await;
         // emit_res.expect("Failed to emit event");
         //
         // self.metric_reporter.histogram("sqs_completion_handler.emit_event.ms", ms as f64, &[])

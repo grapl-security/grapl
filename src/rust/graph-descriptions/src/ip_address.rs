@@ -3,6 +3,7 @@ use serde_json::{json, Value};
 
 use crate::graph_description::IpAddress;
 use crate::node::NodeT;
+use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
 
 impl IpAddress {
     pub fn new(
@@ -85,5 +86,19 @@ impl NodeT for IpAddress {
 
     fn merge_into(&mut self, other: Self) -> bool {
         self.merge(&other)
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref("ip_address", MutationPredicateValue::string(&self.ip_address));
+        mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("IpAddress"));
+
+        if self.first_seen_timestamp != 0 {
+            mutation_unit.predicate_ref("first_seen_timestamp", MutationPredicateValue::Number(self.first_seen_timestamp as i64));
+        }
+
+        if self.last_seen_timestamp != 0 {
+            mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
+        }
     }
 }

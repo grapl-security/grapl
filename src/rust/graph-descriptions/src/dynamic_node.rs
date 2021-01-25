@@ -3,6 +3,7 @@ use serde_json::{json, Value};
 
 use crate::graph_description::{id_strategy, node_property, DynamicNode, IdStrategy, NodeProperty};
 use crate::node::NodeT;
+use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
 
 impl DynamicNode {
     pub fn get_property(&self, name: impl AsRef<str>) -> Option<&NodeProperty> {
@@ -117,5 +118,26 @@ impl NodeT for DynamicNode {
         }
 
         merged
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref("seen_at", MutationPredicateValue::Number(self.seen_at as i64));
+        mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string(&self.node_type));
+
+        if let Some(asset_id) = &self.asset_id {
+            mutation_unit.predicate_ref("asset_id", MutationPredicateValue::string(asset_id));
+        }
+
+        for (key, prop) in &self.properties {
+            let prop = match &prop.property {
+                Some(node_property::Property::Intprop(i)) => MutationPredicateValue::Number(*i as i64),
+                Some(node_property::Property::Uintprop(i)) => MutationPredicateValue::Number(*i as i64),
+                Some(node_property::Property::Strprop(s)) => MutationPredicateValue::string(s),
+                None => panic!("Invalid property on DynamicNode: {}", self.node_key),
+            };
+
+            mutation_unit.predicate_ref(key, prop);
+        }
     }
 }

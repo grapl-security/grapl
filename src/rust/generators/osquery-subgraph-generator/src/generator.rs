@@ -4,9 +4,8 @@ use crate::metrics::OSQuerySubgraphGeneratorMetrics;
 use crate::parsers::PartiallyDeserializedOSQueryLog;
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
-use sqs_lambda::cache::{Cache, CacheResponse};
+use sqs_lambda::cache::Cache;
 use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use std::borrow::Cow;
 use std::convert::TryFrom;
 
 #[derive(Clone)]

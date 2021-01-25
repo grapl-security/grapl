@@ -28,6 +28,7 @@ import { ModelPluginDeployer } from './services/model_plugin_deployer';
 import { NodeIdentifier } from './services/node_identifier';
 import { OSQueryGraphGenerator } from './services/osquery_graph_generator';
 import { SysmonGraphGenerator } from './services/sysmon_graph_generator';
+import { GraplS3Bucket } from './grapl_s3_bucket';
 
 export interface GraplServiceProps {
     prefix: string;
@@ -143,7 +144,7 @@ export class GraplCdkStack extends cdk.Stack {
             metricForwarder: metric_forwarder.service,
         }
 
-        const analyzers_bucket = new s3.Bucket(this, 'AnalyzersBucket', {
+        const analyzers_bucket = new GraplS3Bucket(this, 'AnalyzersBucket', {
             bucketName: bucket_prefix + '-analyzers-bucket',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
             encryption: s3.BucketEncryption.KMS_MANAGED,
@@ -170,7 +171,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         new DGraphTtl(this, 'dgraph-ttl', graplProps);
 
-        const model_plugins_bucket = new s3.Bucket(this, 'ModelPluginsBucket', {
+        const model_plugins_bucket = new GraplS3Bucket(this, 'ModelPluginsBucket', {
             bucketName: bucket_prefix + '-model-plugins-bucket',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
@@ -246,7 +247,7 @@ export class GraplCdkStack extends cdk.Stack {
             },
         );
 
-        const ux_bucket = new s3.Bucket(this, 'EdgeBucket', {
+        const ux_bucket = new GraplS3Bucket(this, 'EdgeBucket', {
             bucketName:
                 graplProps.prefix.toLowerCase() + '-engagement-ux-bucket',
             publicReadAccess: true,

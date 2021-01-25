@@ -3,6 +3,7 @@ use serde_json::{json, Value};
 
 use crate::graph_description::IpPort;
 use crate::node::NodeT;
+use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
 
 impl IpPort {
     pub fn new(ip_address: impl Into<String>, port: u16, protocol: impl Into<String>) -> Self {
@@ -61,5 +62,12 @@ impl NodeT for IpPort {
 
     fn merge_into(&mut self, _other: Self) -> bool {
         false
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("IpPort"));
+        mutation_unit.predicate_ref("protocol", MutationPredicateValue::string(&self.protocol));
+        mutation_unit.predicate_ref("port", MutationPredicateValue::Number(self.port as i64));
     }
 }

@@ -1,3 +1,5 @@
+#![allow(unused_must_use)]
+
 use std::io::Stdout;
 
 use log::*;
@@ -8,7 +10,7 @@ use grapl_observe::metric_reporter::MetricReporter;
 use sqs_lambda::event_decoder::PayloadDecoder;
 use sqs_lambda::event_handler::EventHandler;
 use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
+use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
 
 mod aws;
 mod local;

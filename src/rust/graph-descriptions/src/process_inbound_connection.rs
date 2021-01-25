@@ -7,6 +7,7 @@ use uuid::Uuid;
 use crate::error::Error;
 use crate::graph_description::ProcessInboundConnection;
 use crate::node::NodeT;
+use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
 
 pub enum ProcessInboundConnectionState {
     Bound,
@@ -154,5 +155,24 @@ impl NodeT for ProcessInboundConnection {
 
     fn merge_into(&mut self, other: Self) -> bool {
         self.merge(&other)
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("ProcessInboundConnection"));
+        mutation_unit.predicate_ref("protocol", MutationPredicateValue::string(&self.protocol));
+        mutation_unit.predicate_ref("port", MutationPredicateValue::Number(self.port as i64));
+
+        if self.created_timestamp != 0 {
+            mutation_unit.predicate_ref("created_timestamp", MutationPredicateValue::Number(self.created_timestamp as i64));
+        }
+
+        if self.terminated_timestamp != 0 {
+            mutation_unit.predicate_ref("terminated_timestamp", MutationPredicateValue::Number(self.terminated_timestamp as i64));
+        }
+
+        if self.last_seen_timestamp != 0 {
+            mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
+        }
     }
 }

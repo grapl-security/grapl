@@ -1,8 +1,32 @@
 use std::collections::HashMap;
 
-use crate::graph_description::{Edge, EdgeList, GeneratedSubgraphs, Graph, Node};
-use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
+use crate::graph_description::{
+    Edge,
+    EdgeList,
+    GeneratedSubgraphs,
+    Graph,
+    Node
+};
+use dgraph_tonic::{Client as DgraphClient, Mutate, Mutation as DgraphMutation, MutationResponse};
+use dgraph_query_lib::query::{
+    Query,
+    QueryBuilder
+};
+use dgraph_query_lib::mutation::{
+    Mutation,
+    MutationBuilder
+};
+
+use log::{
+    info,
+    error
+};
+
 use crate::node::NodeT;
+use dgraph_query_lib::upsert::{Upsert, UpsertBlock};
+use futures_retry::{FutureRetry, RetryPolicy};
+use std::time::Duration;
+use std::sync::Arc;
 
 impl Graph {
     pub fn new(timestamp: u64) -> Self {
@@ -75,15 +99,59 @@ impl Graph {
             .push(edge);
     }
 
-    pub async fn perform_upsert(&self, dgraph_client: &DgraphClient) {
-
+    pub async fn perform_upsert(&self, dgraph_client: Arc<DgraphClient>) {
+        self.upsert_nodes(dgraph_client.clone()).await;
     }
 
-    async fn upsert_nodes(&self, dgraph_client: &DgraphClient) {
-        self.nodes.iter()
-            .map(|(node_key, node)| {
+    async fn upsert_nodes(&self, dgraph_client: Arc<DgraphClient>) {
+        let (query_blocks, mutation_units): (Vec<_>, Vec<_>) = self.nodes.iter()
+            .map(|(node_key, node)| node.generate_upsert_components())
+            .unzip();
 
-            })
+        let query = QueryBuilder::default()
+            .query_blocks(query_blocks)
+            .build()
+            .unwrap();
+
+        let mutation = MutationBuilder::default()
+            .set(mutation_units)
+            .build()
+            .unwrap();
+
+        let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
+
+        let response = Self::enforce_transaction(dgraph_client, upsert).await;
+    }
+
+    async fn enforce_transaction(client: Arc<DgraphClient>, upsert: Upsert) -> MutationResponse {
+        let dgraph_mutations: Vec<_> = upsert.mutations.iter()
+            .map(|upsert_block| {
+                let mut dgraph_mutation = DgraphMutation::new();
+
+                if let Some(condition) = &upsert_block.cond {
+                    dgraph_mutation.set_cond(condition);
+                }
+
+                dgraph_mutation.set_set_json(&upsert_block.mutation.set);
+
+                dgraph_mutation
+            }).collect();
+
+        let (response, attempts) = FutureRetry::new(|| {
+            client.new_mutated_txn()
+                .upsert_and_commit_now(upsert.query.clone(), dgraph_mutations.clone())
+        }, Self::handle_upsert_err).await
+            .expect("Surfaced an error despite retry strategy while performing an upsert.");
+
+        info!("Performed upsert after {} attempts", attempts);
+
+        response
+    }
+
+    fn handle_upsert_err(e: anyhow::Error) -> RetryPolicy<anyhow::Error> {
+        error!("Failed to process upsert. Retrying in 3 seconds. Error: {}", e);
+
+        RetryPolicy::WaitRetry(Duration::new(3, 0))
     }
 }
 
