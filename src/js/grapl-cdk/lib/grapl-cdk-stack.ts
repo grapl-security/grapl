@@ -350,8 +350,8 @@ export class GraplCdkStack extends cdk.Stack {
                 sysmon_generator.service,
                 node_identifier.service,
                 graph_merger.service,
+		analyzer_dispatch.service,
                 analyzer_executor.service,
-                analyzer_dispatch.service,
                 engagement_creator.service,
             ]
         });
