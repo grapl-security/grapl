@@ -165,6 +165,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
       - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-retry-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-dead-letter-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
