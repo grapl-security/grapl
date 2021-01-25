@@ -29,10 +29,10 @@ message IdStrategy {
 message NodeProperty {
     oneof property {
         uint64 increment_only_uint_prop = 1;
-        uint64 decrement_only_uint_prop = 3;
-        uint64 immutable_uint_prop = 5;
-        int64 increment_only_int_prop = 2;
-        int64 decrement_only_int_prop = 4;
+        uint64 decrement_only_uint_prop = 2;
+        uint64 immutable_uint_prop = 3;
+        int64 increment_only_int_prop = 4;
+        int64 decrement_only_int_prop = 5;
         int64 immutable_int_prop = 6;
         string immutable_str_prop = 7;
     }
@@ -42,13 +42,13 @@ message NodeDescription {
     map<string, NodeProperty> properties = 1;
     string node_key = 2;
     string node_type = 3;
-    repeated IdStrategy id_strategy = 8;
+    repeated IdStrategy id_strategy = 4;
 }
 
 message IdentifiedNode {
     map<string, NodeProperty> properties = 1;
-    string node_key = 3;
-    string node_type = 4;
+    string node_key = 2;
+    string node_type = 3;
 }
 
 message MergedNode {
