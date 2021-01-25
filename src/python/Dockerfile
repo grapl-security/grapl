@@ -149,6 +149,11 @@ FROM grapl-python-build AS analyzer-executor-build
 COPY --chown=grapl python/analyzer_executor analyzer_executor
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
+# HACK: We actually depend on grapl-common, but code structure makes
+# it difficult to express this.
+COPY --chown=grapl python/grapl-common grapl-common
+RUN /bin/bash -c "source venv/bin/activate && cd grapl-common && pip install ."
+
 RUN source venv/bin/activate && \
     cd analyzer_executor && \
     pip install .
@@ -190,6 +195,11 @@ FROM grapl-python-build AS engagement-creator-build
 
 COPY --chown=grapl python/engagement-creator engagement-creator
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+
+# HACK: We actually depend on grapl-common, but code structure makes
+# it difficult to express this.
+COPY --chown=grapl python/grapl-common grapl-common
+RUN /bin/bash -c "source venv/bin/activate && cd grapl-common && pip install ."
 
 RUN source venv/bin/activate && \
     cd engagement-creator && \
@@ -449,6 +459,11 @@ COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 COPY --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 
 RUN python_test_deps/install_requirements.sh
+
+# HACK: We actually depend on grapl-common, but code structure makes
+# it difficult to express this.
+COPY --chown=python/grapl grapl-common grapl-common
+RUN /bin/bash -c "source venv/bin/activate && cd grapl-common && pip install ."
 
 COPY --chown=grapl python/grapl-tests-common grapl-tests-common
 RUN source venv/bin/activate && \
