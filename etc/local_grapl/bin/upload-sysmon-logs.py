@@ -39,6 +39,7 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
 def setup_env(bucket_prefix: str):
     if bucket_prefix == "local-grapl":
         kvs = [
+            ("AWS_REGION", "us-east-1"),
             ("S3_ENDPOINT", "http://localhost:9000"),
             ("S3_ACCESS_KEY_ID", "minioadmin"),
             ("S3_ACCESS_KEY_SECRET", "minioadmin"),
