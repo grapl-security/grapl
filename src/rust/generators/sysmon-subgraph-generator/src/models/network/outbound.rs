@@ -1,26 +1,21 @@
-use std::convert::TryFrom;
+
 
 use endpoint_plugin::{AssetNode,
-                      FileNode,
                       IAssetNode,
-                      IFileNode,
                       IIpAddressNode,
                       IIpConnectionNode,
                       IIpPortNode,
                       INetworkConnectionNode,
-                      IProcessInboundConnectionNode,
                       IProcessNode,
                       IProcessOutboundConnectionNode,
                       IpAddressNode,
                       IpConnectionNode,
                       IpPortNode,
                       NetworkConnectionNode,
-                      ProcessInboundConnectionNode,
                       ProcessNode,
                       ProcessOutboundConnectionNode};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize,
-            Serialize};
+
 use sysmon::NetworkEvent;
 
 use crate::{generator::SysmonGeneratorError,

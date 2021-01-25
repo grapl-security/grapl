@@ -5,8 +5,7 @@ use std::{convert::TryFrom};
 use endpoint_plugin::{AssetNode,
                       FileNode,
                       IAssetNode,
-                      IFileNode,
-                      IProcessNode};
+                      IFileNode,};
 use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
@@ -65,20 +64,6 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for GraphDescription {
             .with_asset_id(file_event.host_identifier.clone())
             .with_file_path(file_event.columns.target_path.clone())
             .with_last_seen_timestamp(file_event.columns.time);
-
-        // Some file properties are disabled while we transition to the new conflict resolution
-        // system
-        // .with_md5_hash(file_event.columns.md5.clone())
-        // .with_sha1_hash(file_event.columns.sha1.clone());
-        // .with_sha256_hash(file_event.columns.sha256.clone());
-
-        // if let Ok(inode) = u64::from_str(&file_event.columns.inode) {
-        //     subject_file.file_inode(inode);
-        // }
-        //
-        // if let Ok(size) = u64::from_str(&file_event.columns.size) {
-        //     subject_file.file_size(size);
-        // }
 
         /*
            Technically this might not be 100% correct but the moved_to and moved_from events

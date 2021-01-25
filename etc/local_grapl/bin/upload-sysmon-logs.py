@@ -61,5 +61,5 @@ if __name__ == "__main__":
             args.logfile,
             delay=args.delay,
             batch_size=args.batch_size,
-            use_links=args.use_links,
+            #use_links=args.use_links,
         )

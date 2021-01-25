@@ -24,8 +24,6 @@ pub enum SysmonGeneratorError {
     NegativeEventTime(i64),
     #[error("TimeError")]
     TimeError(#[from] chrono::ParseError),
-    #[error("GraphBuilderError")]
-    GraphBuilderError(String),
     #[error("Unsupported event type")]
     UnsupportedEventType(String),
     #[error("Generator failed")]
@@ -38,7 +36,6 @@ impl CheckedError for SysmonGeneratorError {
             Self::DeserializeError(_) => Recoverable::Persistent,
             Self::NegativeEventTime(_) => Recoverable::Persistent,
             Self::TimeError(_) => Recoverable::Persistent,
-            Self::GraphBuilderError(_) => Recoverable::Persistent,
             Self::UnsupportedEventType(_) => Recoverable::Persistent,
             Self::Unexpected => Recoverable::Transient,
         }

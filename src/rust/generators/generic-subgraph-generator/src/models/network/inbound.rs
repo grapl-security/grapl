@@ -1,21 +1,17 @@
 use std::convert::TryFrom;
 
 use endpoint_plugin::{AssetNode,
-                      FileNode,
                       IAssetNode,
-                      IFileNode,
                       IIpAddressNode,
                       IIpPortNode,
                       INetworkConnectionNode,
                       IProcessInboundConnectionNode,
                       IProcessNode,
-                      IProcessOutboundConnectionNode,
                       IpAddressNode,
                       IpPortNode,
                       NetworkConnectionNode,
                       ProcessInboundConnectionNode,
-                      ProcessNode,
-                      ProcessOutboundConnectionNode};
+                      ProcessNode,};
 use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
