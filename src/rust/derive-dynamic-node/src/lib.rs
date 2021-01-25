@@ -76,7 +76,8 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
     let node_trait_name = syn::Ident::new(&node_trait_name, struct_name.span());
 
     let use_the_dead_code_method_name = format!("__avoid_dead_code_lint{}", struct_name);
-    let use_the_dead_code_method_name = syn::Ident::new(&use_the_dead_code_method_name, struct_name.span());
+    let use_the_dead_code_method_name =
+        syn::Ident::new(&use_the_dead_code_method_name, struct_name.span());
 
     let mut avoid_dead_code = quote!();
     for field in fields {

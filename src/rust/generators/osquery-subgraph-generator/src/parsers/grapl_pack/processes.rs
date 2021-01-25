@@ -1,16 +1,19 @@
 use std::convert::TryFrom;
 
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize, Serialize};
-
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{IProcessNode, ProcessNode};
-
+use serde::{Deserialize,
+            Serialize};
 use tracing::*;
 
 use super::from_str;
-use crate::parsers::{OSQueryResponse, PartiallyDeserializedOSQueryLog};
+use crate::parsers::{OSQueryResponse,
+                     PartiallyDeserializedOSQueryLog};
 
 /// See https://osquery.io/schema/4.5.0/#processes
 #[derive(Serialize, Deserialize)]
@@ -86,7 +89,8 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for GraphDescription {
         // https://osquery.io/schema/4.5.1/#process_events
         if process_event.columns.parent >= 0 {
             let mut parent_process = ProcessNode::new(ProcessNode::session_strategy());
-            parent_process.with_asset_id(process_event.host_identifier.clone())
+            parent_process
+                .with_asset_id(process_event.host_identifier.clone())
                 .with_process_id(process_event.columns.parent as u64)
                 .with_last_seen_timestamp(process_start_time);
 

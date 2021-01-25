@@ -18,7 +18,6 @@ macro_rules ! impl_from_for {
     };
 }
 
-
 pub mod graph_description {
     include!(concat!(env!("OUT_DIR"), "/graph_description.rs"));
 }
@@ -92,7 +91,7 @@ impl GraphDescription {
     }
 }
 
-impl IdentifiedGraph{
+impl IdentifiedGraph {
     pub fn new() -> Self {
         Self {
             nodes: Default::default(),
@@ -152,7 +151,7 @@ impl IdentifiedGraph{
     }
 }
 
-impl MergedGraph{
+impl MergedGraph {
     pub fn new() -> Self {
         Self {
             nodes: Default::default(),
@@ -506,15 +505,79 @@ pub struct ImmutableUintProp(pub u64);
 
 pub struct ImmutableStrProp(pub String);
 
-
-impl_from_for!(ImmutableUintProp, 0, u64, u32, u16, u8, &u64, &u32, &u16, &u8);
-impl_from_for!(IncrementOnlyUintProp, 0, u64, u32, u16, u8, &u64, &u32, &u16, &u8);
-impl_from_for!(DecrementOnlyUintProp, 0, u64, u32, u16, u8, &u64, &u32, &u16, &u8);
-impl_from_for!(ImmutableIntProp, 0, i64, i32, i16, i8, &i64, &i32, &i16, &i8);
-impl_from_for!(IncrementOnlyIntProp, 0, i64, i32, i16, i8, &i64, &i32, &i16, &i8);
-impl_from_for!(DecrementOnlyIntProp, 0, i64, i32, i16, i8, &i64, &i32, &i16, &i8);
+impl_from_for!(
+    ImmutableUintProp,
+    0,
+    u64,
+    u32,
+    u16,
+    u8,
+    &u64,
+    &u32,
+    &u16,
+    &u8
+);
+impl_from_for!(
+    IncrementOnlyUintProp,
+    0,
+    u64,
+    u32,
+    u16,
+    u8,
+    &u64,
+    &u32,
+    &u16,
+    &u8
+);
+impl_from_for!(
+    DecrementOnlyUintProp,
+    0,
+    u64,
+    u32,
+    u16,
+    u8,
+    &u64,
+    &u32,
+    &u16,
+    &u8
+);
+impl_from_for!(
+    ImmutableIntProp,
+    0,
+    i64,
+    i32,
+    i16,
+    i8,
+    &i64,
+    &i32,
+    &i16,
+    &i8
+);
+impl_from_for!(
+    IncrementOnlyIntProp,
+    0,
+    i64,
+    i32,
+    i16,
+    i8,
+    &i64,
+    &i32,
+    &i16,
+    &i8
+);
+impl_from_for!(
+    DecrementOnlyIntProp,
+    0,
+    i64,
+    i32,
+    i16,
+    i8,
+    &i64,
+    &i32,
+    &i16,
+    &i8
+);
 impl_from_for!(ImmutableStrProp, 0, String, &String, &str);
-
 
 impl From<ImmutableStrProp> for Property {
     fn from(s: ImmutableStrProp) -> Self {

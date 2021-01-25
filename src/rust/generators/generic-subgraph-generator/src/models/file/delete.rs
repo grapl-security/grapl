@@ -1,11 +1,14 @@
 use std::convert::TryFrom;
 
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize, Serialize};
-
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{IProcessNode, ProcessNode};
+use serde::{Deserialize,
+            Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct FileDelete {
@@ -21,17 +24,19 @@ impl TryFrom<FileDelete> for GraphDescription {
 
     fn try_from(file_delete: FileDelete) -> Result<Self, Self::Error> {
         let mut asset = AssetNode::new(AssetNode::static_strategy());
-            asset.with_hostname(file_delete.hostname.clone())
+        asset
+            .with_hostname(file_delete.hostname.clone())
             .with_asset_id(file_delete.hostname.clone());
 
         let mut deleter = ProcessNode::new(ProcessNode::session_strategy());
-            deleter.with_asset_id(file_delete.hostname.clone())
+        deleter
+            .with_asset_id(file_delete.hostname.clone())
             .with_process_name(file_delete.deleter_process_name.unwrap_or_default())
             .with_process_id(file_delete.deleter_process_id)
             .with_last_seen_timestamp(file_delete.timestamp);
 
         let mut file = FileNode::new(FileNode::session_strategy());
-            file.with_asset_id(file_delete.hostname)
+        file.with_asset_id(file_delete.hostname)
             .with_deleted_timestamp(file_delete.timestamp)
             .with_file_path(file_delete.path);
 

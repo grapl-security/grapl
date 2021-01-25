@@ -1,13 +1,14 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{graph_description::*,};
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
+use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
-
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{ProcessNode, IProcessNode};
-
 use tracing::*;
 
 use super::from_str;
@@ -26,7 +27,9 @@ pub(crate) struct OSQueryProcessFileQuery {
 }
 
 impl PartiallyDeserializedOSQueryLog {
-    pub(crate) fn to_graph_from_grapl_process_file(self) -> Result<GraphDescription, failure::Error> {
+    pub(crate) fn to_graph_from_grapl_process_file(
+        self,
+    ) -> Result<GraphDescription, failure::Error> {
         OSQueryResponse::<OSQueryProcessFileQuery>::try_from(self)
             .map(|response| GraphDescription::try_from(response))?
     }
@@ -46,43 +49,38 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for GraphDescription {
             .with_hostname(process_file_event.host_identifier.clone());
 
         let mut process = ProcessNode::new(ProcessNode::session_strategy());
-            process.with_asset_id(process_file_event.host_identifier.clone())
+        process
+            .with_asset_id(process_file_event.host_identifier.clone())
             .with_last_seen_timestamp(process_file_event.unix_time)
             .with_process_id(process_file_event.columns.pid);
 
         let mut file = FileNode::new(FileNode::session_strategy());
-        file
-            .with_asset_id(process_file_event.host_identifier.clone())
+        file.with_asset_id(process_file_event.host_identifier.clone())
             .with_file_path(process_file_event.columns.path.clone());
 
         // TODO: maybe we should set deleted time and created time for the file here?
         match process_file_event.action {
             OSQueryAction::ADDED => {
-                file
-                    .with_created_timestamp(process_file_event.unix_time);
+                file.with_created_timestamp(process_file_event.unix_time);
 
                 graph.add_edge(
                     "created_files",
                     process.clone_node_key(),
                     file.clone_node_key(),
                 );
-
             }
             OSQueryAction::REMOVED => {
-                file
-                    .with_deleted_timestamp(process_file_event.unix_time);
+                file.with_deleted_timestamp(process_file_event.unix_time);
 
                 graph.add_edge(
                     "deleted_files",
                     process.clone_node_key(),
                     file.clone_node_key(),
                 );
-
             }
             _ => {
-                file
-                    .with_last_seen_timestamp(process_file_event.unix_time);
-            },
+                file.with_last_seen_timestamp(process_file_event.unix_time);
+            }
         };
 
         graph.add_edge(

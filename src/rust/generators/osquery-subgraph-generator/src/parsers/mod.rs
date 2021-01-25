@@ -45,7 +45,7 @@ pub(crate) struct PartiallyDeserializedOSQueryLog {
     other_fields: HashMap<String, Value>,
 }
 
-impl TryFrom<PartiallyDeserializedOSQueryLog> for GraphDescription{
+impl TryFrom<PartiallyDeserializedOSQueryLog> for GraphDescription {
     type Error = failure::Error;
 
     /// Takes a [PartialOSQueryResponse], parses the pack and query name from the name field and

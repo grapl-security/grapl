@@ -37,7 +37,11 @@ pub async fn run_graph_generator<
 ) where
     InputEventT: Send + 'static,
     InitGenerator: Clone + Send + 'static + Fn(RedisCache) -> EventHandlerT,
-    EventHandlerT: EventHandler<InputEvent = InputEventT, OutputEvent = GraphDescription, Error = HandlerErrorT>
+    EventHandlerT: EventHandler<
+            InputEvent = InputEventT,
+            OutputEvent = GraphDescription,
+            Error = HandlerErrorT,
+        >
         + Send
         + Sync
         + 'static

@@ -1,4 +1,5 @@
-use derive_dynamic_node::{GraplSessionId, NodeDescription};
+use derive_dynamic_node::{GraplSessionId,
+                          NodeDescription};
 use grapl_graph_descriptions::graph_description::*;
 
 #[derive(NodeDescription, GraplSessionId)]

@@ -1,15 +1,20 @@
 use std::convert::TryFrom;
 
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IIpPortNode,
+                      IProcessInboundConnectionNode,
+                      IProcessNode,
+                      IProcessOutboundConnectionNode,
+                      IpPortNode,
+                      ProcessInboundConnectionNode,
+                      ProcessNode,
+                      ProcessOutboundConnectionNode};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize, Serialize};
-
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{IIpPortNode, IpPortNode};
-use endpoint_plugin::{IProcessInboundConnectionNode, ProcessInboundConnectionNode};
-use endpoint_plugin::{IProcessOutboundConnectionNode, ProcessOutboundConnectionNode};
-use endpoint_plugin::{IProcessNode, ProcessNode};
-
+use serde::{Deserialize,
+            Serialize};
 use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -30,23 +35,27 @@ impl TryFrom<ProcessStart> for GraphDescription {
         let mut graph = GraphDescription::new();
 
         let mut asset = AssetNode::new(AssetNode::static_strategy());
-            asset.with_asset_id(process_start.hostname.clone())
+        asset
+            .with_asset_id(process_start.hostname.clone())
             .with_hostname(process_start.hostname.clone());
 
         let mut parent = ProcessNode::new(ProcessNode::session_strategy());
-            parent.with_asset_id(process_start.hostname.clone())
+        parent
+            .with_asset_id(process_start.hostname.clone())
             .with_process_id(process_start.parent_process_id)
             .with_last_seen_timestamp(process_start.timestamp);
 
         let mut child = ProcessNode::new(ProcessNode::session_strategy());
-            child.with_asset_id(process_start.hostname.clone())
+        child
+            .with_asset_id(process_start.hostname.clone())
             .with_process_name(process_start.name)
             .with_process_id(process_start.process_id)
             .with_created_timestamp(process_start.timestamp);
 
         if let Some(exe_path) = process_start.exe {
             let mut child_exe = FileNode::new(FileNode::session_strategy());
-                child_exe.with_asset_id(process_start.hostname)
+            child_exe
+                .with_asset_id(process_start.hostname)
                 .with_last_seen_timestamp(process_start.timestamp)
                 .with_file_path(exe_path);
 

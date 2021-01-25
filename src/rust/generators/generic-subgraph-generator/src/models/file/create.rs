@@ -1,13 +1,14 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{graph_description::*,};
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
+use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
-
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{ProcessNode, IProcessNode};
-
 use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
@@ -23,13 +24,14 @@ impl TryFrom<FileCreate> for GraphDescription {
     type Error = String;
 
     fn try_from(file_create: FileCreate) -> Result<Self, Self::Error> {
-
         let mut asset = AssetNode::new(AssetNode::static_strategy());
-        asset.with_hostname(file_create.hostname.clone())
+        asset
+            .with_hostname(file_create.hostname.clone())
             .with_asset_id(file_create.hostname.clone());
 
         let mut creator = ProcessNode::new(ProcessNode::session_strategy());
-        creator.with_asset_id(file_create.hostname.clone())
+        creator
+            .with_asset_id(file_create.hostname.clone())
             .with_process_name(file_create.creator_process_name.unwrap_or_default())
             .with_process_id(file_create.creator_process_id)
             .with_last_seen_timestamp(file_create.timestamp);

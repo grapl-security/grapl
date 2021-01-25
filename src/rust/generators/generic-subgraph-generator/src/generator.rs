@@ -77,8 +77,10 @@ where
         &mut self,
         events: Vec<GenericEvent>,
         completed: &mut CompletedEvents,
-    ) -> Result<GraphDescription, Result<(GraphDescription, GenericSubgraphGeneratorError), GenericSubgraphGeneratorError>>
-    {
+    ) -> Result<
+        GraphDescription,
+        Result<(GraphDescription, GenericSubgraphGeneratorError), GenericSubgraphGeneratorError>,
+    > {
         let mut final_subgraph = GraphDescription::new();
         let mut failed: Option<eyre::Report> = None;
 

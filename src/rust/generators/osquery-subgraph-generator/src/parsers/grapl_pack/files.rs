@@ -1,21 +1,22 @@
 #![allow(non_camel_case_types)]
 
-use std::convert::TryFrom;
+use std::{convert::TryFrom,
+          str::FromStr};
 
-use grapl_graph_descriptions::{graph_description::*,};
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
+use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
-
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{ProcessNode, IProcessNode};
-
 use tracing::*;
 
 use super::from_str;
 use crate::parsers::{OSQueryResponse,
                      PartiallyDeserializedOSQueryLog};
-use std::str::FromStr;
 
 /// See https://osquery.io/schema/4.5.0/#processes
 #[derive(Serialize, Deserialize)]
@@ -50,7 +51,7 @@ impl PartiallyDeserializedOSQueryLog {
     }
 }
 
-impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for GraphDescription{
+impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for GraphDescription {
     type Error = failure::Error;
 
     fn try_from(file_event: OSQueryResponse<OSQueryFileQuery>) -> Result<Self, Self::Error> {
@@ -66,7 +67,6 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for GraphDescription{
             .with_asset_id(file_event.host_identifier.clone())
             .with_file_path(file_event.columns.target_path.clone())
             .with_last_seen_timestamp(file_event.columns.time);
-
 
         // Some file properties are disabled while we transition to the new conflict resolution
         // system
@@ -87,12 +87,13 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for GraphDescription{
            seem like they could easily be represented by using create/deletes.
         */
         match &file_event.columns.action {
-            OSQueryFileAction::CREATED | OSQueryFileAction::MOVED_FROM => subject_file
-                .with_created_timestamp(file_event.columns.time),
-            OSQueryFileAction::DELETED | OSQueryFileAction::MOVED_TO => subject_file
-                .with_deleted_timestamp(file_event.columns.time),
-            _ =>subject_file
-                .with_last_seen_timestamp(file_event.columns.time),
+            OSQueryFileAction::CREATED | OSQueryFileAction::MOVED_FROM => {
+                subject_file.with_created_timestamp(file_event.columns.time)
+            }
+            OSQueryFileAction::DELETED | OSQueryFileAction::MOVED_TO => {
+                subject_file.with_deleted_timestamp(file_event.columns.time)
+            }
+            _ => subject_file.with_last_seen_timestamp(file_event.columns.time),
         };
 
         graph.add_edge(

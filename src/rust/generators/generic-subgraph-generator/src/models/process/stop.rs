@@ -1,15 +1,20 @@
 use std::convert::TryFrom;
 
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IIpPortNode,
+                      IProcessInboundConnectionNode,
+                      IProcessNode,
+                      IProcessOutboundConnectionNode,
+                      IpPortNode,
+                      ProcessInboundConnectionNode,
+                      ProcessNode,
+                      ProcessOutboundConnectionNode};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize, Serialize};
-
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{IIpPortNode, IpPortNode};
-use endpoint_plugin::{IProcessInboundConnectionNode, ProcessInboundConnectionNode};
-use endpoint_plugin::{IProcessNode, ProcessNode};
-use endpoint_plugin::{IProcessOutboundConnectionNode, ProcessOutboundConnectionNode};
-
+use serde::{Deserialize,
+            Serialize};
 use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]

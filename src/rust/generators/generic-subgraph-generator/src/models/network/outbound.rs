@@ -1,16 +1,24 @@
 use std::convert::TryFrom;
 
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IIpAddressNode,
+                      IIpPortNode,
+                      INetworkConnectionNode,
+                      IProcessInboundConnectionNode,
+                      IProcessNode,
+                      IProcessOutboundConnectionNode,
+                      IpAddressNode,
+                      IpPortNode,
+                      NetworkConnectionNode,
+                      ProcessInboundConnectionNode,
+                      ProcessNode,
+                      ProcessOutboundConnectionNode};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize, Serialize};
-
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{IIpAddressNode, IpAddressNode};
-use endpoint_plugin::{IIpPortNode, IpPortNode};
-use endpoint_plugin::{INetworkConnectionNode, NetworkConnectionNode};
-use endpoint_plugin::{IProcessInboundConnectionNode, ProcessInboundConnectionNode};
-use endpoint_plugin::{IProcessNode, ProcessNode};
-use endpoint_plugin::{IProcessOutboundConnectionNode, ProcessOutboundConnectionNode};
+use serde::{Deserialize,
+            Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessOutboundConnectionLog {
@@ -44,11 +52,12 @@ impl TryFrom<ProcessOutboundConnectionLog> for GraphDescription {
 
         let mut outbound =
             ProcessOutboundConnectionNode::new(ProcessOutboundConnectionNode::session_strategy());
-                outbound.with_asset_id(conn_log.src_hostname.clone())
-                .with_ip_address(conn_log.src_ip_addr.clone())
-                .with_protocol(conn_log.protocol.clone())
-                .with_port(conn_log.src_port)
-                .with_created_timestamp(conn_log.timestamp);
+        outbound
+            .with_asset_id(conn_log.src_hostname.clone())
+            .with_ip_address(conn_log.src_ip_addr.clone())
+            .with_protocol(conn_log.protocol.clone())
+            .with_port(conn_log.src_port)
+            .with_created_timestamp(conn_log.timestamp);
 
         let mut src_ip = IpAddressNode::new(IpAddressNode::static_strategy());
         src_ip
@@ -74,12 +83,13 @@ impl TryFrom<ProcessOutboundConnectionLog> for GraphDescription {
 
         let mut network_connection =
             NetworkConnectionNode::new(NetworkConnectionNode::session_strategy());
-                network_connection.with_src_ip_address(conn_log.src_ip_addr)
-                .with_src_port(conn_log.src_port)
-                .with_dst_ip_address(conn_log.dst_ip_addr)
-                .with_dst_port(conn_log.dst_port)
-                .with_protocol(conn_log.protocol)
-                .with_created_timestamp(conn_log.timestamp);
+        network_connection
+            .with_src_ip_address(conn_log.src_ip_addr)
+            .with_src_port(conn_log.src_port)
+            .with_dst_ip_address(conn_log.dst_ip_addr)
+            .with_dst_port(conn_log.dst_port)
+            .with_protocol(conn_log.protocol)
+            .with_created_timestamp(conn_log.timestamp);
 
         // An asset is assigned an IP
         graph.add_edge("asset_ip", asset.clone_node_key(), src_ip.clone_node_key());

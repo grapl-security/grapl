@@ -1,11 +1,14 @@
 use std::convert::TryFrom;
 
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize, Serialize};
-
-use endpoint_plugin::{AssetNode, IAssetNode};
-use endpoint_plugin::{FileNode, IFileNode};
-use endpoint_plugin::{IProcessNode, ProcessNode};
+use serde::{Deserialize,
+            Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct FileRead {
@@ -21,17 +24,19 @@ impl TryFrom<FileRead> for GraphDescription {
 
     fn try_from(file_read: FileRead) -> Result<Self, Self::Error> {
         let mut asset = AssetNode::new(AssetNode::static_strategy());
-            asset.with_hostname(file_read.hostname.clone())
+        asset
+            .with_hostname(file_read.hostname.clone())
             .with_asset_id(file_read.hostname.clone());
 
         let mut deleter = ProcessNode::new(ProcessNode::session_strategy());
-            deleter.with_process_name(file_read.reader_process_name.unwrap_or_default())
+        deleter
+            .with_process_name(file_read.reader_process_name.unwrap_or_default())
             .with_asset_id(file_read.hostname.clone())
             .with_process_id(file_read.reader_process_id)
             .with_last_seen_timestamp(file_read.timestamp);
 
         let mut file = FileNode::new(FileNode::session_strategy());
-            file.with_asset_id(file_read.hostname.clone())
+        file.with_asset_id(file_read.hostname.clone())
             .with_last_seen_timestamp(file_read.timestamp)
             .with_file_path(file_read.path);
 

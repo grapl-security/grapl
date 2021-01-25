@@ -67,7 +67,10 @@ where
         &mut self,
         events: Vec<Cow<'_, str>>,
         identities: &mut CompletedEvents,
-    ) -> Result<GraphDescription, Result<(GraphDescription, SysmonGeneratorError), SysmonGeneratorError>> {
+    ) -> Result<
+        GraphDescription,
+        Result<(GraphDescription, SysmonGeneratorError), SysmonGeneratorError>,
+    > {
         let mut last_failure: Option<SysmonGeneratorError> = None;
         let mut final_subgraph = GraphDescription::new();
 
