@@ -9,7 +9,7 @@ use endpoint_plugin::{AssetNode,
 use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
-use tracing::*;
+
 
 use super::from_str;
 use crate::parsers::{OSQueryAction,
