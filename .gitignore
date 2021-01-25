@@ -2,7 +2,8 @@ src/rust/graph-descriptions/grapl_graph_descriptions
 
 # Mac OS
 .DS_Store
-
+.ninja_log
+.pytype/
 # Test outputs
 test/cypress/screenshots
 test/cypress/videos
