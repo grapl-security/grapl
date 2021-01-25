@@ -303,6 +303,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - AWS_REGION=us-east-1
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
