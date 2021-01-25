@@ -842,6 +842,7 @@ job=run-e2e-tests:
     - "MG_ALPHAS=grapl-master-graph-db:9080"
     - DEBUG_SERVICES={env.DEBUG_SERVICES:}
     - DUMP_ARTIFACTS={env.DUMP_ARTIFACTS:-False}
+    - AWS_REGION=us-east-1
     - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
     - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
     - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
