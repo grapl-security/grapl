@@ -19,9 +19,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
-from analyzer_executor_lib.grapl_logger import get_module_grapl_logger
-from analyzer_executor_lib.s3_types import S3PutRecordDict, SQSMessageBody
+from analyzer_executor_lib.sqs_types import S3PutRecordDict, SQSMessageBody
 from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
 from grapl_analyzerlib.analyzer import Analyzer

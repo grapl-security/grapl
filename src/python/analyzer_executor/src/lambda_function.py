@@ -2,7 +2,7 @@ import asyncio
 from typing import Any
 
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
-from analyzer_executor_lib.s3_types import SQSMessageBody
+from analyzer_executor_lib.sqs_types import SQSMessageBody
 
 
 def lambda_handler(events: SQSMessageBody, context: Any) -> None:

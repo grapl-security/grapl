@@ -4,7 +4,8 @@ import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Coroutine
 
-from analyzer_executor_lib.grapl_logger import get_module_grapl_logger
+from analyzer_executor_lib.sqs_types import SQSMessageId, SQSReceiptHandle
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 if TYPE_CHECKING:
     from mypy_boto3_sqs import SQSClient
@@ -20,9 +21,9 @@ class SqsTimeoutManagerException(Exception):
 class SqsTimeoutManager:
     sqs_client: SQSClient
     queue_url: str
-    receipt_handle: str
+    receipt_handle: SQSReceiptHandle
     # only used for tracing/logging, not super important
-    message_id: str
+    message_id: SQSMessageId
     # the coroutine that we want to schedule and best-effort complete
     coroutine: Coroutine
     # queue's vis timeout
@@ -45,19 +46,21 @@ class SqsTimeoutManager:
 
         for i in range(1, self.num_loops + 1):
             time_to_wait = (self.visibility_timeout * i) - 10
-            LOGGER.info(f"Loop {i} - waiting {time_to_wait}s for task")
+            LOGGER.info(
+                f"SQS MessageID {self.message_id}: Loop {i} - waiting {time_to_wait}s for task"
+            )
             try:
                 await asyncio.wait_for(
                     # shield() prevents task from being canceled by the timeout.
                     asyncio.shield(task),
                     timeout=time_to_wait,
                 )
-                LOGGER.info(f"Task completed")
+                LOGGER.info(f"SQS MessageID {self.message_id}: Task completed")
                 return
             except asyncio.TimeoutError as e:
                 new_visibility = self.visibility_timeout * (i + 1)
                 LOGGER.info(
-                    f"Keep alive timed out, informing SQS to raise visibility to {new_visibility}"
+                    f"SQS MessageID {self.message_id}: still processing, telling SQS to raise visibility to {new_visibility}"
                 )
                 self._change_visibility(new_visibility)
                 # do the SQS message visibility thing
@@ -65,7 +68,7 @@ class SqsTimeoutManager:
         # If we got here, it means the above `return` never happened
         task.cancel()
         raise SqsTimeoutManagerException(
-            f"Couldn't keep message alive: {self.message_id}"
+            f"SQS MessageID {self.message_id}: processing never completed"
         )
 
     def _change_visibility(self, new_visibility: int) -> None:
@@ -76,4 +79,7 @@ class SqsTimeoutManager:
                 VisibilityTimeout=new_visibility,
             )
         except:
-            LOGGER.error("Failed to change message visibility", exc_info=True)
+            LOGGER.error(
+                f"SQS MessageID {self.message_id}: Failed to change message visibility",
+                exc_info=True,
+            )

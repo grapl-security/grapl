@@ -1,6 +1,3 @@
-"""
-Candidate to move to grapl_common
-"""
 import inspect
 import logging
 import os

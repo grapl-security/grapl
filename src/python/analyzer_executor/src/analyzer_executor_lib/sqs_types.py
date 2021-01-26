@@ -1,6 +1,12 @@
-from typing import Dict, List, NewType, Tuple
+from __future__ import annotations
+
+import json
+from typing import TYPE_CHECKING, Any, Dict, List, NewType, Tuple
 
 from typing_extensions import TypedDict
+
+if TYPE_CHECKING:
+    from mypy_boto3_sqs.type_defs import MessageTypeDef
 
 
 class S3BucketDict(TypedDict):
@@ -40,5 +46,15 @@ class SQSMessageBody(TypedDict):
 
 
 SQSReceiptHandle = NewType("SQSReceiptHandle", str)
+SQSMessageId = NewType("SQSMessageId", str)
 
-MessageWithReceipt = Tuple[SQSMessageBody, SQSReceiptHandle]
+
+class SQSMessage:
+    """
+    Apply some more hardened types to MessageTypeDef, and do the json-load on user's behalf.
+    """
+
+    def __init__(self, msg: MessageTypeDef) -> None:
+        self.body: SQSMessageBody = json.loads(msg["Body"])
+        self.receipt_handle = SQSReceiptHandle(msg["ReceiptHandle"])
+        self.message_id = SQSMessageId(msg["MessageId"])
