@@ -6,18 +6,20 @@ mod parsers;
 mod serialization;
 mod tests;
 
-use crate::generator::OSQuerySubgraphGenerator;
-use crate::metrics::OSQuerySubgraphGeneratorMetrics;
-use crate::serialization::OSQueryLogDecoder;
+use std::{io::Stdout,
+          time::Duration};
+
 use graph_generator_lib::*;
 use grapl_config::*;
 use grapl_observe::metric_reporter::MetricReporter;
 use log::*;
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use std::io::Stdout;
-use std::time::Duration;
+use sqs_lambda::{cache::NopCache,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
+
+use crate::{generator::OSQuerySubgraphGenerator,
+            metrics::OSQuerySubgraphGeneratorMetrics,
+            serialization::OSQueryLogDecoder};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

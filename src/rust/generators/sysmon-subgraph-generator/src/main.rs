@@ -5,21 +5,20 @@ mod metrics;
 mod models;
 mod serialization;
 
-use sqs_lambda::cache::NopCache;
+use std::{io::Stdout,
+          time::Duration};
 
 use graph_generator_lib::*;
-
-use log::*;
-
-use crate::generator::SysmonSubgraphGenerator;
-use crate::metrics::SysmonSubgraphGeneratorMetrics;
-use crate::serialization::ZstdDecoder;
 use grapl_config::*;
 use grapl_observe::metric_reporter::MetricReporter;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-use std::io::Stdout;
-use std::time::Duration;
+use log::*;
+use sqs_lambda::{cache::NopCache,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
+
+use crate::{generator::SysmonSubgraphGenerator,
+            metrics::SysmonSubgraphGeneratorMetrics,
+            serialization::ZstdDecoder};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

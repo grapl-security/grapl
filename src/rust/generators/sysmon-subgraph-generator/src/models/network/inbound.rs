@@ -1,11 +1,9 @@
+use grapl_graph_descriptions::{graph_description::*,
+                               network_connection::NetworkConnectionState,
+                               node::NodeT,
+                               process::ProcessState,
+                               process_inbound_connection::ProcessInboundConnectionState};
 use sysmon::NetworkEvent;
-
-use grapl_graph_descriptions::graph_description::*;
-
-use grapl_graph_descriptions::network_connection::NetworkConnectionState;
-use grapl_graph_descriptions::node::NodeT;
-use grapl_graph_descriptions::process::ProcessState;
-use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
 
 use crate::models::utc_to_epoch;
 

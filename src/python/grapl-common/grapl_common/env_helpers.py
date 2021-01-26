@@ -41,7 +41,11 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     endpoint_url = os.getenv(params.endpoint_url_key)
     access_key_id = os.getenv(params.access_key_id_key)
     access_key_secret = os.getenv(params.access_key_secret_key)
-    region = os.getenv("AWS_REGION")
+
+    # AWS_REGION is Fargate-specific, most AWS stuff uses AWS_DEFAULT_REGION.
+    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
+    if not region:
+        raise FromEnvException("Please set AWS_REGION= or AWS_DEFAULT_REGION=")
 
     # Not needed long term, more to help migrate to `env_helpers`.
     # Notably, when `is_local` is not set, it won't break anything.
@@ -60,13 +64,14 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
             endpoint_url=endpoint_url,
             aws_access_key_id=access_key_id,
             aws_secret_access_key=access_key_secret,
-            region_name=region or "us-east-1",
+            region_name=region,
         )
     elif endpoint_url and not any((access_key_id, access_key_secret)):
         # Local or AWS doing cross-region stuff
         return client_create_fn(
             params.boto3_client_name,
             endpoint_url=endpoint_url,
+            region_name=region,
         )
     elif not any((endpoint_url, access_key_id, access_key_secret)):
         # AWS
@@ -74,7 +79,10 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
         assert (
             is_local != True
         ), f"You can't pass in credentials for a prod {which_service} client"
-        return client_create_fn(params.boto3_client_name)
+        return client_create_fn(
+            params.boto3_client_name,
+            region_name=region,
+        )
     else:
         raise FromEnvException(
             f"You specified access key but not endpoint for {params.boto3_client_name}?"

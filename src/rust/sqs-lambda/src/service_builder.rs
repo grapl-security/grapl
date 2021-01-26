@@ -1,6 +1,6 @@
-use crate::completion_handler::CompletionHandler;
-use crate::consumer::Consumer;
-use crate::event_processor::EventProcessorActor;
+use crate::{completion_handler::CompletionHandler,
+            consumer::Consumer,
+            event_processor::EventProcessorActor};
 
 pub struct ServiceBuilder<
     ConsumerT,

@@ -6,30 +6,37 @@ extern crate rusoto_sqs;
 extern crate sqs_lambda;
 extern crate tokio;
 
-use std::error::Error;
-use std::io::{Cursor, Stdout};
-
-use prost::Message;
-use rusoto_s3::S3Client;
-use rusoto_sqs::SqsClient;
-use serde::Deserialize;
+use std::{error::Error,
+          fmt::Debug,
+          io::{Cursor,
+               Stdout}};
 
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
+use aws_lambda_events::event::s3::{S3Bucket,
+                                   S3Entity,
+                                   S3Event,
+                                   S3EventRecord,
+                                   S3Object,
+                                   S3RequestParameters,
+                                   S3UserIdentity};
 use chrono::Utc;
 use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::Context;
-use prost::bytes::Bytes;
+use prost::{bytes::Bytes,
+            Message};
 use rusoto_core::Region;
-use sqs_lambda::cache::{Cache, NopCache};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::error::Error as SqsLambdaError;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service;
-use std::fmt::Debug;
+use rusoto_s3::S3Client;
+use rusoto_sqs::SqsClient;
+use serde::Deserialize;
+use sqs_lambda::{cache::{Cache,
+                         NopCache},
+                 completion_event_serializer::CompletionEventSerializer,
+                 error::Error as SqsLambdaError,
+                 event_decoder::PayloadDecoder,
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent},
+                 local_sqs_service::local_sqs_service};
 use tracing_subscriber::EnvFilter;
 
 struct MyService<C>

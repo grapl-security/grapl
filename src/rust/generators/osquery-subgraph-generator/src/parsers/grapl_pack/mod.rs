@@ -1,6 +1,8 @@
-use serde::{Deserialize, Deserializer};
-use std::fmt::Display;
-use std::str::FromStr;
+use std::{fmt::Display,
+          str::FromStr};
+
+use serde::{Deserialize,
+            Deserializer};
 
 mod files;
 mod process_files;

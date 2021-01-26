@@ -1,19 +1,23 @@
-use tokio::sync::mpsc::{channel, Sender};
-use tracing::{error, info, warn};
-
-use crate::completion_handler::CompletionHandler;
-use crate::consumer::Consumer;
-use crate::event_handler::{EventHandler, OutputEvent};
-use crate::event_retriever::PayloadRetriever;
-use std::fmt::{Debug, Formatter};
+use std::{fmt::{Debug,
+                Formatter},
+          io::Stdout};
 
 use aktors::actor::Actor;
 use async_trait::async_trait;
+use grapl_observe::{metric_reporter::MetricReporter,
+                    timers::time_fut_ms};
+use tokio::sync::mpsc::{channel,
+                        Sender};
+use tracing::{error,
+              info,
+              instrument,
+              warn};
 
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_observe::timers::time_fut_ms;
-use std::io::Stdout;
-use tracing::instrument;
+use crate::{completion_handler::CompletionHandler,
+            consumer::Consumer,
+            event_handler::{EventHandler,
+                            OutputEvent},
+            event_retriever::PayloadRetriever};
 
 #[derive(Copy, Clone, Debug)]
 pub enum ProcessorState {

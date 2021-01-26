@@ -1,55 +1,71 @@
 #![allow(unused_must_use)]
 
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::convert::TryFrom;
-use std::fmt::Debug;
-use std::io::{Cursor, Stdout};
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::{collections::{HashMap,
+                        HashSet},
+          convert::TryFrom,
+          fmt::Debug,
+          io::{Cursor,
+               Stdout},
+          str::FromStr,
+          sync::{Arc,
+                 Mutex},
+          time::Duration};
 
+use assetdb::{AssetIdDb,
+              AssetIdentifier};
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use aws_lambda_events::event::sqs::SqsEvent;
+use aws_lambda_events::event::{s3::{S3Bucket,
+                                    S3Entity,
+                                    S3Event,
+                                    S3EventRecord,
+                                    S3Object,
+                                    S3RequestParameters,
+                                    S3UserIdentity},
+                               sqs::SqsEvent};
 use bytes::Bytes;
 use chrono::Utc;
-use failure::{bail, Error};
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::Context;
+use dynamic_sessiondb::{DynamicMappingDb,
+                        DynamicNodeIdentifier};
+use failure::{bail,
+              Error};
+use grapl_graph_descriptions::{file::FileState,
+                               graph_description::{host::*,
+                                                   node::WhichNode,
+                                                   *},
+                               ip_connection::IpConnectionState,
+                               network_connection::NetworkConnectionState,
+                               node::NodeT,
+                               process_inbound_connection::ProcessInboundConnectionState,
+                               process_outbound_connection::ProcessOutboundConnectionState};
+use grapl_observe::metric_reporter::MetricReporter;
+use lambda_runtime::{error::HandlerError,
+                     Context};
 use log::*;
 use prost::Message;
-use rusoto_core::{HttpClient, Region};
-use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
+use rusoto_core::{HttpClient,
+                  Region};
+use rusoto_dynamodb::{DynamoDb,
+                      DynamoDbClient};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-
-use assetdb::{AssetIdDb, AssetIdentifier};
-use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
-use grapl_graph_descriptions::file::FileState;
-use grapl_graph_descriptions::graph_description::host::*;
-use grapl_graph_descriptions::graph_description::node::WhichNode;
-use grapl_graph_descriptions::graph_description::*;
-use grapl_graph_descriptions::ip_connection::IpConnectionState;
-use grapl_graph_descriptions::network_connection::NetworkConnectionState;
-use grapl_graph_descriptions::node::NodeT;
-use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
-use grapl_observe::metric_reporter::MetricReporter;
+use rusoto_sqs::{SendMessageRequest,
+                 Sqs,
+                 SqsClient};
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 use sha2::Digest;
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
+use sqs_lambda::{cache::{Cache,
+                         CacheResponse,
+                         Cacheable},
+                 completion_event_serializer::CompletionEventSerializer,
+                 event_decoder::PayloadDecoder,
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent},
+                 local_sqs_service::local_sqs_service_with_options,
+                 local_sqs_service_options::LocalSqsServiceOptionsBuilder,
+                 redis_cache::RedisCache,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
 
 macro_rules! wait_on {
     ($x:expr) => {{

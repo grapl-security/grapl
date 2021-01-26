@@ -330,6 +330,7 @@ services:
       target: analyzer-executor-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
+      - DEBUG_SERVICES=${DEBUG_SERVICES}
       - "HITCACHE_ADDR=dev-shared-redis"
       - "HITCACHE_PORT=6379"
       - "MESSAGECACHE_ADDR=dev-shared-redis"
@@ -341,6 +342,7 @@ services:
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
+      - AWS_REGION=us-east-1
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
@@ -356,6 +358,8 @@ services:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
+    ports:
+      - 8401:8401  # VSC Debugger
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}

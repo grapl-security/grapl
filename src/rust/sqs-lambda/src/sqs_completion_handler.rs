@@ -1,23 +1,27 @@
-use std::fmt::Debug;
-use std::time::{Duration, Instant};
+use std::{fmt::Debug,
+          io::Stdout,
+          time::{Duration,
+                 Instant}};
 
-use log::*;
-use rusoto_sqs::Message as SqsMessage;
-use rusoto_sqs::{DeleteMessageBatchRequest, DeleteMessageBatchRequestEntry, Sqs};
-use tokio::sync::mpsc::{channel, Sender};
-
-use crate::cache::Cache;
-use crate::completion_event_serializer::CompletionEventSerializer;
-use crate::event_emitter::EventEmitter;
-use crate::event_handler::{Completion, OutputEvent};
 use aktors::actor::Actor;
 use async_trait::async_trait;
-
-use crate::completion_handler::CompletionHandler;
 use color_eyre::Help;
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_observe::timers::time_fut_ms;
-use std::io::Stdout;
+use grapl_observe::{metric_reporter::MetricReporter,
+                    timers::time_fut_ms};
+use log::*;
+use rusoto_sqs::{DeleteMessageBatchRequest,
+                 DeleteMessageBatchRequestEntry,
+                 Message as SqsMessage,
+                 Sqs};
+use tokio::sync::mpsc::{channel,
+                        Sender};
+
+use crate::{cache::Cache,
+            completion_event_serializer::CompletionEventSerializer,
+            completion_handler::CompletionHandler,
+            event_emitter::EventEmitter,
+            event_handler::{Completion,
+                            OutputEvent}};
 
 #[derive(Debug, Clone)]
 pub struct CompletionPolicy {

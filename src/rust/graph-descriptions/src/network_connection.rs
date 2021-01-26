@@ -1,12 +1,13 @@
-use log::warn;
 use std::convert::TryFrom;
 
-use serde_json::{json, Value};
+use log::warn;
+use serde_json::{json,
+                 Value};
 use uuid::Uuid;
 
-use crate::error::Error;
-use crate::graph_description::NetworkConnection;
-use crate::node::NodeT;
+use crate::{error::Error,
+            graph_description::NetworkConnection,
+            node::NodeT};
 
 pub enum NetworkConnectionState {
     Created,

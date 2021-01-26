@@ -48,6 +48,7 @@
     "@aws-cdk/core": "1.82.0",
     "@types/node-dir": "0.0.33",
     "aws-sdk": "2.784.x",
+    "cdk": "^1.77.0",
     "cdk-watchful": "^0.5.38",
     "node-dir": "0.1.17",
     "node-env-file": "0.1.8",

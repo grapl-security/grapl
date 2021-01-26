@@ -1,11 +1,15 @@
-use chrono::{DateTime, Duration, DurationRound, FixedOffset};
+use std::{collections::{BTreeMap,
+                        HashMap},
+          hash::{Hash,
+                 Hasher}};
 
+use chrono::{DateTime,
+             Duration,
+             DurationRound,
+             FixedOffset};
 use ordered_float::OrderedFloat;
-
-use rusoto_cloudwatch::{Dimension, MetricDatum};
-
-use std::collections::{BTreeMap, HashMap};
-use std::hash::{Hash, Hasher};
+use rusoto_cloudwatch::{Dimension,
+                        MetricDatum};
 
 type CountMap = HashMap<OrderedFloat<f64>, f64>;
 type DatumToCountMap = HashMap<WrappedMetricDatum, CountMap>;
@@ -123,9 +127,10 @@ impl<'a> From<&'a Option<Vec<Dimension>>> for WrappedDimensions<'a> {
 
 #[cfg(test)]
 mod tests {
+    use hmap::hmap;
+
     use super::*;
     use crate::cloudwatch_send::cw_units;
-    use hmap::hmap;
 
     const TS: &str = "2020-01-01T01:23:45.000Z";
     const TS_2: &str = "2020-01-01T01:23:49.000Z"; // same min as TS

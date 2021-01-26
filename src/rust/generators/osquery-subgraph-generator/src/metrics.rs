@@ -1,5 +1,6 @@
-use grapl_observe::metric_reporter::MetricReporter;
 use std::io::Stdout;
+
+use grapl_observe::metric_reporter::MetricReporter;
 
 #[derive(Clone)]
 pub struct OSQuerySubgraphGeneratorMetrics {

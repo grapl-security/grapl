@@ -1,5 +1,6 @@
-use sqs_lambda::event_decoder::PayloadDecoder;
 use std::io::Cursor;
+
+use sqs_lambda::event_decoder::PayloadDecoder;
 
 /// A [PayloadDecoder] used to decompress zstd encoded events sent to an [EventHandler].
 ///

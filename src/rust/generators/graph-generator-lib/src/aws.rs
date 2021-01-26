@@ -1,4 +1,9 @@
-use crate::serialization::SubgraphSerializer;
+use std::{collections::HashSet,
+          io::Stdout,
+          str::FromStr,
+          sync::mpsc::SyncSender,
+          time::Duration};
+
 use aws_lambda_events::event::sqs::SqsEvent;
 use grapl_config as config;
 use grapl_graph_descriptions::graph_description::*;
@@ -8,16 +13,15 @@ use log::*;
 use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use rusoto_sts::{StsAssumeRoleSessionCredentialsProvider, StsClient};
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::EventHandler;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
-use std::collections::HashSet;
-use std::io::Stdout;
-use std::str::FromStr;
-use std::sync::mpsc::SyncSender;
-use std::time::Duration;
+use rusoto_sts::{StsAssumeRoleSessionCredentialsProvider,
+                 StsClient};
+use sqs_lambda::{event_decoder::PayloadDecoder,
+                 event_handler::EventHandler,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::{ConsumePolicy,
+                                ConsumePolicyBuilder}};
+
+use crate::serialization::SubgraphSerializer;
 
 /// Runs the graph generator on AWS
 ///
