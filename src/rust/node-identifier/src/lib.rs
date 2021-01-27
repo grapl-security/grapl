@@ -156,7 +156,7 @@ where
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
                     dead_node_ids.insert(node.clone_node_key());
-                    completed.add_identity(node.clone_node_key(), EventStatus::Failure);
+                    // completed.add_identity(node.clone_node_key(), EventStatus::Failure);
                     attribution_failure = Some(e);
                     continue;
                 }

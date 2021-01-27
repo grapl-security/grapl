@@ -152,7 +152,7 @@ where
 
     let node_key = node.clone_node_key();
     let mut set_json: serde_json::Value = node.into_json();
-    let mut node_types = vec![set_json["dgraph.type"].as_str().unwrap().clone()];
+    let mut node_types = vec![set_json["dgraph.type"].as_str().expect("missing dgraph.type").clone()];
     node_types.extend_from_slice(&["Entity", "Base"]);
     set_json["dgraph.type"] = node_types.into();
 

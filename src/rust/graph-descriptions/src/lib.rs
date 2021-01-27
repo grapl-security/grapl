@@ -263,7 +263,7 @@ impl IdentifiedNode {
         }
 
         json_value["node_key"] = self.node_key.into();
-        json_value["node_type"] = self.node_type.into();
+        json_value["dgraph.type"] = self.node_type.into();
 
         json_value
     }
