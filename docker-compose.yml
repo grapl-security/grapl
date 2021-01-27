@@ -59,18 +59,6 @@ services:
     logging:
       driver: none
 
-
-  sqs:
-    image: localstack/localstack:0.11.5
-    environment:
-      - SERVICES=apigateway:4567
-      - HOSTNAME_EXTERNAL=localgrapl
-      - IMAGE_NAME=localstack/localstack:0.11.5
-    ports:
-      - "4567:4567"
-    logging:
-      driver: none
-
   secretsmanager:
     image: localstack/localstack:0.11.5
     environment:
@@ -177,7 +165,9 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
       - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-retry-queue"
+      - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-dead-letter-queue"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
       - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "DEST_BUCKET_NAME=local-grapl-unid-subgraphs-generated-bucket"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
@@ -206,9 +196,9 @@ services:
       args:
         - PROFILE=${PROFILE:-debug}
     environment:
-
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
+      - "IS_LOCAL=true"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       - "RETRY_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
       - "DEAD_LETTER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
@@ -322,6 +312,7 @@ services:
       - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - MG_ALPHAS=http://master_graph:9080
       - "GRAPL_SCHEMA_TABLE=local-grapl-grapl_schema_table"
+      - "IS_LOCAL=True"
     tty: false
     links:
       - s3:minio
@@ -352,6 +343,8 @@ services:
       - "DEST_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
       - "DEST_BUCKET_NAME=local-grapl-analyzer-dispatched-bucket"
       - "ANALYZER_BUCKET=local-grapl-analyzers-bucket"
+      - "AWS_REGION=us-east-1"
+      - "AWS_DEFAULT_REGION=us-east-1"
       - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
       - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
@@ -362,6 +355,7 @@ services:
       - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
       - RUST_LOG=${RUST_LOG:-ERROR}
+      - "IS_LOCAL=true"
     tty: false
     links:
       - s3:minio
@@ -414,6 +408,14 @@ services:
       - GRPC_ENABLE_FORK_SUPPORT=1
       - MG_ALPHAS=master_graph:9080
       - "IS_RETRY=False"
+      - "AWS_REGION=us-east-1"
+      - "AWS_DEFAULT_REGION=us-east-1"
+      - "SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324"
+      - "SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - "S3_ENDPOINT=http://s3:9000"
+      - "S3_ACCESS_KEY_ID=minioadmin"
+      - "S3_ACCESS_KEY_SECRET=minioadmin"
       - "BUCKET_PREFIX=local-grapl"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
@@ -429,6 +431,37 @@ services:
       - minio:127.0.0.1
     ports:
       - 8401:8401  # VSC Debugger
+
+  grapl-ux-router:
+    image: grapl/grapl-ux-router:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-ux-router-deploy
+    command: |
+      /bin/sh -c '
+        wait-for-it grapl-provision:8126 --timeout=10;
+        . venv/bin/activate &&
+        cd app &&
+        chalice local --no-autoreload --host=0.0.0.0 --port=8901
+      '
+    ports:
+      - "8901:8901"
+    environment:
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=DEBUG
+      - "UX_BUCKET_NAME=local-grapl-engagement-ux-bucket"
+    depends_on:
+      - grapl-provision
+    tty: true
+    links:
+      - s3:minio
+    extra_hosts:
+      - minio:127.0.0.1
+    networks:
+      default:
+        aliases:
+          - ux_router
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
@@ -593,7 +626,6 @@ services:
         wait-for-it s3:9000 &&
         wait-for-it dynamodb:8000 &&
         wait-for-it grapl-master-graph-db:8080 &&
-        wait-for-it grapl-engagement-view:1234 &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
