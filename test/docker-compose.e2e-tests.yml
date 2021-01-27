@@ -33,6 +33,8 @@ services:
       - S3_ENDPOINT=http://s3:9000
       - S3_ACCESS_KEY_ID=minioadmin
       - S3_ACCESS_KEY_SECRET=minioadmin
+    ports:
+      - 8400:8400
 
 volumes:
   dynamodb_dump:
