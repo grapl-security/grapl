@@ -530,15 +530,18 @@ services:
   # JS/web services
   #
 
-  grapl-engagement-view:
-    image: syntaqx/serve
+
+  nginx:
+    image: nginxinc/nginx-unprivileged
+    command: nginx
     volumes:
-      - ./src/js/grapl-cdk/edge_ux_pre_replace:/var/www:ro
-    command: "serve -dir /var/www"
-    environment:
-      - PORT=1234
+      - ./etc/local_grapl/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - 1234:1234
+      - "3128:3128"
+    depends_on:
+      - s3
+      - sqs
+      - grapl-provision
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
