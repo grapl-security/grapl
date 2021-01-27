@@ -134,7 +134,7 @@ test-e2e: build-test-e2e ## Build and run e2e tests
 		-f ./test/docker-compose.e2e-tests.yml \
 		-p grapl-e2e_tests; \
 	EXIT_CODE=$$?; \
-	$(MAKE) down; \
+	$(MAKE) stop; \
 	exit $$EXIT_CODE
 
 .PHONY: test
@@ -183,8 +183,12 @@ up: build-services ## Build Grapl services and launch docker-compose up
 	docker-compose -f docker-compose.yml up
 
 .PHONY: down
-down: ## docker-compose down
+down: ## docker-compose down - both stops and removes the containers
 	docker-compose -f docker-compose.yml down
+
+.PHONY: stop
+down: ## docker-compose stop - stops (but preserves) the containers
+	docker-compose -f docker-compose.yml stop
 
 .PHONY: help
 help: ## Print this help

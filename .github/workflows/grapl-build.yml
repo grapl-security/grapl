@@ -121,7 +121,7 @@ jobs:
 
       - name: Run end-to-end tests
         run: |
-          GRAPL_LOG_LEVEL=debug \
+          GRAPL_LOG_LEVEL=DEBUG \
           DUMP_ARTIFACTS=True \
           make test-e2e
 
