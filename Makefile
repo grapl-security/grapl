@@ -188,11 +188,19 @@ up: build-services ## Build Grapl services and launch docker-compose up
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
-	docker-compose -f docker-compose.yml down
+	docker-compose \
+		-f docker-compose.yml \
+		-f docker-compose.e2e_tests.yml \
+		-f docker-compose.integration_tests.yml \
+		down --remove-orphans
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
-	docker-compose -f docker-compose.yml stop
+	docker-compose \
+		-f docker-compose.yml \
+		-f docker-compose.e2e_tests.yml \
+		-f docker-compose.integration_tests.yml \
+		stop
 
 .PHONY: help
 help: ## Print this help
