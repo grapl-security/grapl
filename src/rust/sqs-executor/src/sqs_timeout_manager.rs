@@ -21,7 +21,7 @@ where
     queue_url: String,
     receipt_handle: String,
     message_id: String,
-    visibility_timeout: i64,
+    visibility_timeout: u64,
     receiver: MpscReceiver<()>,
     s: S,
 }
@@ -48,7 +48,7 @@ where
         let max_iter = 10;
         for i in 1..=max_iter {
             let timeout_fut = async {
-                tokio::time::delay_for(Duration::from_secs(((visibility_timeout * i) as u64) - 10))
+                tokio::time::delay_for(Duration::from_secs(get_next_sleep_for(visibility_timeout, i)))
                     .await
             };
             let future_2 = async { receiver.recv().await };
@@ -60,7 +60,7 @@ where
                         .change_message_visibility(ChangeMessageVisibilityRequest {
                             queue_url: queue_url.clone(),
                             receipt_handle: receipt_handle.clone(),
-                            visibility_timeout: visibility_timeout * i,
+                            visibility_timeout: get_next_timeout(visibility_timeout, i),
                         })
                         .await;
 
@@ -129,6 +129,14 @@ where
     }
 }
 
+fn get_next_sleep_for(initial_timeout: u64, i: u64) -> u64 {
+    (initial_timeout * i) - 10
+}
+
+fn get_next_timeout(initial_timeout: u64, i: u64) -> i64 {
+    (initial_timeout * (i + 1)) as i64
+}
+
 // Provides a wrapper for a OneShot to communicate with an Mpsc. This is a hack
 // to work around async destructors.
 // todo: investigate https://docs.rs/tokio/1.0.1/tokio/sync/mpsc/struct.Sender.html#method.blocking_send
@@ -164,7 +172,7 @@ pub fn keep_alive<S>(
     receipt_handle: String,
     message_id: String,
     queue_url: String,
-    visibility_timeout: i64,
+    visibility_timeout: u64,
 ) -> Sender
 where
     S: Sqs + Send + Sync + 'static,
