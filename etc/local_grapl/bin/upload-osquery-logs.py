@@ -36,6 +36,23 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     return upload_osquery_logs
 
 
+
+def setup_env(bucket_prefix: str):
+    if bucket_prefix == "local-grapl":
+        kvs = [
+            ("AWS_REGION", "us-east-1"),
+            ("S3_ENDPOINT", "http://localhost:9000"),
+            ("S3_ACCESS_KEY_ID", "minioadmin"),
+            ("S3_ACCESS_KEY_SECRET", "minioadmin"),
+            ("SQS_ENDPOINT", "http://localhost:9324"),
+            ("SQS_ACCESS_KEY_ID", "dummy_cred_aws_access_key_id"),
+            ("SQS_ACCESS_KEY_SECRET", "dummy_cred_aws_secret_access_key"),
+        ]
+        for (k, v) in kvs:
+            # fun fact: os.putenv is bad and this is preferred
+            os.environ[k] = v
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Send osquery logs to Grapl")
     parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)

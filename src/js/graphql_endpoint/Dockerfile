@@ -21,7 +21,7 @@ RUN mkdir -p lambda
 # Install the dependencies separately to leverage Docker cache
 COPY --chown=grapl package.json lambda/package.json
 COPY --chown=grapl package-lock.json lambda/package-lock.json
-RUN cd lambda && npm i
+RUN cd lambda && npm install
 RUN rm -rf lambda/node_modules/grpc/build/
 
 # Copy graphql sources

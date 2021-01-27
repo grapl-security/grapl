@@ -121,7 +121,7 @@ jobs:
 
       - name: Run end-to-end tests
         run: |
-          GRAPL_LOG_LEVEL=debug \
+          GRAPL_LOG_LEVEL=DEBUG \
           DUMP_ARTIFACTS=True \
           make test-e2e
 
@@ -129,8 +129,8 @@ jobs:
       - name: 'Collect e2e test artifacts'
         if: ${{ always() }}
         run: |
-          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration_tests"
-           
+          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-e2e_tests"
+          
       - name: 'Upload e2e test artifacts'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
