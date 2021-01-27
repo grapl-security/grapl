@@ -50,7 +50,7 @@ Run the tests with the following. (Again, this example is strictly about the E2E
 
 .. code-block:: bash
 
-    TAG=latest DEBUG_SERVICES=grapl_e2e_tests dobi run-e2e-tests
+    DEBUG_SERVICES=grapl_e2e_tests make test-e2e
 
 You'll see the test start up and output the following:
 
@@ -66,11 +66,11 @@ Enable python debugging for another service
 You can see all of these steps in action in `this pull request <https://github.com/grapl-security/grapl/pull/371/files>`_.
 
 - Add the service name, and an unused port in the 84xx range, to SERVICE_TO_PORT in ``vsc_debugger.py``.
-- Forward that port, for that service, in ``docker-compose.yml`` (or, in rare cases, the ``dobi.yaml``)
+- Forward that port, for that service, in ``docker-compose.yml``
 - Call ``wait_for_vsc_debugger("name_of_service_goes_here")`` in the main entrypoint for the service. 
   (Don't worry, it won't trigger the debugger unless you declare ``DEBUG_SERVICES``.)
 - Add a new ``launch.json`` debug configuration for that port.
-- Finally - run your `dobi` command with ``DEBUG_SERVICES=name_of_service_goes_here``.
+- Finally - run your `make test-e2e` command with ``DEBUG_SERVICES=name_of_service_goes_here``.
 
 
 Rust debugger

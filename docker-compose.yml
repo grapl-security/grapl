@@ -101,6 +101,11 @@ services:
 
   grapl-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
+    build:
+      context: src/rust
+      target: metric-forwarder-deploy
+      args:
+        - PROFILE=${PROFILE:-debug}
     tty: false
     environment:
       - "IS_LOCAL=True"
@@ -111,6 +116,11 @@ services:
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+    build:
+      context: src/rust
+      target: sysmon-subgraph-generator-deploy
+      args:
+        - PROFILE=${PROFILE:-debug}
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -132,6 +142,11 @@ services:
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
+    build:
+      context: src/rust
+      target: osquery-subgraph-generator-deploy
+      args:
+        - PROFILE=${PROFILE:-debug}
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -153,6 +168,11 @@ services:
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
+    build:
+      context: src/rust
+      target: node-identifier-deploy
+      args:
+        - PROFILE=${PROFILE:-debug}
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -186,6 +206,11 @@ services:
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
+    build:
+      context: src/rust
+      target: node-identifier-retry-handler-deploy
+      args:
+        - PROFILE=${PROFILE:-debug}
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -219,6 +244,11 @@ services:
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
+    build:
+      context: src/rust
+      target: graph-merger-deploy
+      args:
+        - PROFILE=${PROFILE:-debug}
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -245,6 +275,11 @@ services:
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
+    build:
+      context: src/rust
+      target: analyzer-dispatcher-deploy
+      args:
+        - PROFILE=${PROFILE:-debug}
     environment:
       - "BUCKET_PREFIX=local-grapl"
       - "IS_LOCAL=True"
@@ -289,6 +324,10 @@ services:
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-executor-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
       - DEBUG_SERVICES=${DEBUG_SERVICES}
@@ -324,6 +363,10 @@ services:
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: engagement-creator-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
     environment:
       - "IS_LOCAL=True"
@@ -342,9 +385,13 @@ services:
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: engagement-edge-deploy
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:8126 --timeout=45 &&
+        wait-for-it grapl-provision:8126 --timeout=120 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=8900
@@ -359,7 +406,6 @@ services:
       - "BUCKET_PREFIX=local-grapl"
     depends_on:
       - grapl-provision
-
     tty: true
     links:
       - grapl-master-graph-db:master_graph
@@ -367,6 +413,10 @@ services:
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: model-plugin-deployer-deploy
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'
     ports:
       - "8123:8123"
@@ -388,6 +438,10 @@ services:
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: dgraph-ttl-deploy
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8124'
     ports:
       - "8124:8124"
@@ -408,7 +462,9 @@ services:
   #
 
   grapl-engagement-view:
-    image: grapl/grapl-engagement-view:${TAG:-latest}
+    image: syntaqx/serve
+    volumes:
+      - ./src/js/grapl-cdk/edge_ux_pre_replace:/var/www:ro
     command: "serve -dir /var/www"
     environment:
       - PORT=1234
@@ -417,6 +473,10 @@ services:
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+    build: 
+      context: src/js/graphql_endpoint
+      dockerfile: Dockerfile
+      target: graphql-endpoint-deploy
     command: yarn start server
     environment:
       - MG_ALPHAS=master_graph:9080
@@ -431,6 +491,11 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
+    build: 
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-notebook
+    user: grapl
     environment:
       - MG_ALPHAS=master_graph:9080
     links:
@@ -444,6 +509,10 @@ services:
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
+    build: 
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-provision
     command: |
       /bin/bash -c "
         # it doesn't seem to like waiting for sqs

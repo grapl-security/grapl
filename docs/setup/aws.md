@@ -26,42 +26,29 @@ git clone https://github.com/grapl-security/grapl.git
 cd grapl/src/js/grapl-cdk/
 ```
 
-## Build or fetch deployment artifacts
-There are two options for obtaining deployment artifacts.
-1. Download pre-built release artifacts from Github.
-2. Execute a Grapl build locally. 
-
-### Option 1: Downloading pre-built release artifacts from Github
-
-Navigate to [our Releases page](https://github.com/grapl-security/grapl/releases) and find
-the git tag associated with the latest release. Then execute:
-```bash
-cd src/js/grapl-cdk 
-# `$VERSION` is the appropriate git release tag (i.e. 'v0.1.2')
-# `$CHANNEL` is the build channel - for the majority of users, 'latest'.
-python3 fetch_zips_by_tag.py --version $VERSION --channel $CHANNEL
-```
-The script will download all the release artifacts to the `grapl-cdk/zips/` directory.
-
-### Option 2: Building your own release artifacts
+## Build deployment artifacts
 
 To execute a local Grapl build, run the following in Grapl's root:
 
-(NOTE: `GRAPL_VERSION` can be any name you want. Just make note of it, we'll
-use it in the next step.)
-
 ```bash
-TAG=$GRAPL_VERSION GRAPL_RELEASE_TARGET=release dobi --no-bind-mount build
+TAG=$GRAPL_VERSION make zip
 ```
 
-Then extract the deployment artifacts from the build containers with
-the following script:
+`GRAPL_VERSION` can be any name you want. Just make note of it, we'll
+use it in the next step.
+
+Alternatively, you can set TAG in a file named `.env` in the Grapl root directory. Ex:
 
 ```bash
-VERSION=$GRAPL_VERSION ./extract-grapl-deployment-artifacts.sh
+$ cat .env
+TAG="v0.0.1-example"
+$ make zip
 ```
 
-Your build outputs should appear in the `zips/` directory.
+Similar can be done for the environment variables corresponding to CDK
+deployment parameters documented in the following section.
+
+Your build outputs should appear in the `src/js/grapl-cdk/zips/` directory.
 
 ## Configure
 There are a few CDK deployment parameters you'll need to configure before you can deploy. 
@@ -117,7 +104,7 @@ variables for setting parameters, but rather set them in
 branch. This should help future maintenance of the deployment.
 
 ## Deploy CDK
-To deploy Grapl with the CDK, execute the following.
+To deploy Grapl with the CDK, execute the following from the `src/js/grapl-cdk` directory.
 
 ```bash
 npm i
