@@ -563,7 +563,6 @@ services:
   # JS/web services
   #
 
-
   nginx:
     image: nginxinc/nginx-unprivileged
     command: nginx

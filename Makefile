@@ -117,24 +117,28 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests
 
 .PHONY: test-integration
 test-integration: build-test-integration ## Build and run integration tests
-	docker-compose -f docker-compose.yml up --force-recreate -d
+	docker-compose -f docker-compose.yml -p "grapl-integration_tests" \
+		up --force-recreate -d 
 	# save exit code to allow for `make down` in event of test failure
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.integration-tests.yml \
-		-p grapl-integration_tests; \
+		-p "grapl-integration_tests"; \
 	EXIT_CODE=$$?; \
 	$(MAKE) down; \
 	exit $$EXIT_CODE
 
 .PHONY: test-e2e
 test-e2e: build-test-e2e ## Build and run e2e tests
-	docker-compose -f docker-compose.yml up --force-recreate -d
+	docker-compose -f docker-compose.yml -p "grapl-e2e_tests" \
+		up --force-recreate -d
 	# save exit code to allow for `make down` in event of test failure
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.e2e-tests.yml \
-		-p grapl-e2e_tests; \
-	EXIT_CODE=$$?; \
-	$(MAKE) down; \
+		-p "grapl-e2e_tests"; \
+	EXIT_CODE=$$?;
+	# Stop the containers, but don't remove them, 
+	# so that `dump-compose-artifacts` can inspect the containers
+	$(MAKE) stop; \
 	exit $$EXIT_CODE
 
 .PHONY: test
@@ -142,7 +146,7 @@ test: test-unit test-integration test-e2e test-typecheck ## Run all tests
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
-	cd src/rust; cargo fmt -- --check
+	cd src/rust; bin/format; bin/lint
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
@@ -158,7 +162,7 @@ lint: lint-rust lint-python ## Run all lint checks
 
 .PHONY: clean
 clean: ## Prune all docker build cache
-	docker builder prune -a -f
+	docker builder prune --all --force
 	# Seems the docker service could use restarting every once in a while
 	sudo service docker restart
 
@@ -174,18 +178,26 @@ release: ## 'make build-services' with cargo --release
 zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
 	docker-compose -f docker-compose.zips.yml up
 
+.PHONY: deploy
+deploy: zip ## CDK deploy to AWS
+	src/js/grapl-cdk/deploy_all.sh
+
 .PHONY: up
 up: build-services ## Build Grapl services and launch docker-compose up
 	docker-compose -f docker-compose.yml up
 
 .PHONY: down
-down: ## docker-compose down
+down: ## docker-compose down - both stops and removes the containers
 	docker-compose -f docker-compose.yml down
 
-.PHONY: restart
-down: ## docker-compose down
-	docker-compose -f docker-compose.Makefile.yml down
+.PHONY: stop
+stop: ## docker-compose stop - stops (but preserves) the containers
+	docker-compose -f docker-compose.yml stop
 
 .PHONY: help
 help: ## Print this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+.PHONY: docker-kill-all
+docker-kill-all:  # Kill all currently running Docker containers
+	docker kill $$(docker ps -aq)
