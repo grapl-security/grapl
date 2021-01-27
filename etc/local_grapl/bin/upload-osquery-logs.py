@@ -36,7 +36,6 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     return upload_osquery_logs
 
 
-
 def setup_env(bucket_prefix: str):
     if bucket_prefix == "local-grapl":
         kvs = [
@@ -64,7 +63,6 @@ def parse_args():
     )
     parser.add_argument("--delay", dest="delay", default=0, type=int)
     parser.add_argument("--batch-size", dest="batch_size", default=100, type=int)
-    parser.add_argument("--use-links", dest="use_links", default=False, type=bool)
     return parser.parse_args()
 
 
@@ -72,12 +70,12 @@ if __name__ == "__main__":
     args = parse_args()
     if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
-    else:
-        upload_fn = hack_PATH_to_include_grapl_tests_common()
-        upload_fn(
-            args.bucket_prefix,
-            args.logfile,
-            delay=args.delay,
-            batch_size=args.batch_size,
-            use_links=args.use_links,
-        )
+
+    setup_env(args.bucket_prefix)
+    upload_fn = hack_PATH_to_include_grapl_tests_common()
+    upload_fn(
+        args.bucket_prefix,
+        args.logfile,
+        delay=args.delay,
+        batch_size=args.batch_size,
+    )
