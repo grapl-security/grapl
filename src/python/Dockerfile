@@ -1,6 +1,5 @@
-#
 # base build
-#
+################################################################################
 
 FROM python:3.7-slim-buster AS grapl-python-build
 
@@ -32,9 +31,8 @@ RUN python3 -mvenv venv && \
     pip install --upgrade pip && \
     pip install wheel grpcio chalice hypothesis pytest pytest-xdist
 
-#
 # base deploy
-#
+################################################################################
 
 FROM python:3.7-slim-buster AS grapl-python-deploy
 
@@ -60,9 +58,8 @@ RUN python3 -mvenv venv && \
     source venv/bin/activate && \
     pip install --upgrade pip
 
-#
 # test deps
-#
+################################################################################
 
 FROM grapl-python-build AS python-test-deps
 
@@ -72,9 +69,8 @@ RUN python_test_deps/download_requirements.sh
 
 
 
-#
 # graph-descriptions
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS graph-descriptions-build
@@ -94,9 +90,8 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 
-#
 # grapl-common
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS grapl-common-build
@@ -116,9 +111,8 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 
-#
 # grapl_analyzerlib
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS grapl-analyzerlib-build
@@ -146,9 +140,8 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 
-#
 # analyzer-executor
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS analyzer-executor-build
@@ -163,11 +156,11 @@ RUN source venv/bin/activate && \
 # zip
 FROM analyzer-executor-build AS analyzer-executor-zip
 
-RUN ORIG_DIR=$(pwd); \
+RUN LAMBDA_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
+    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
     cd ~/analyzer_executor/src && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
+    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS analyzer-executor-deploy
@@ -189,9 +182,8 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 
-#
 # engagement-creator
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS engagement-creator-build
@@ -206,11 +198,11 @@ RUN source venv/bin/activate && \
 # zip
 FROM engagement-creator-build AS engagement-creator-zip
 
-RUN ORIG_DIR=$(pwd); \
+RUN LAMBDA_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages/ && \
-    zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
+    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
     cd ~/engagement-creator/src && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
+    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS engagement-creator-deploy
@@ -233,9 +225,8 @@ RUN source venv/bin/activate && \
     pip install .[typecheck]
 
 
-#
 # engagement-edge
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS engagement-edge-build
@@ -250,11 +241,11 @@ RUN source venv/bin/activate && \
 # zip
 FROM engagement-edge-build AS engagement-edge-zip
 
-RUN ORIG_DIR=$(pwd); \
+RUN LAMBDA_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages/ && \
-    zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
+    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
     cd ~/engagement_edge/src && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
+    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS engagement-edge-deploy
@@ -288,9 +279,8 @@ RUN source venv/bin/activate && \
     pip install .
 
 
-#
 # dgraph-ttl
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS dgraph-ttl-build
@@ -304,11 +294,11 @@ RUN source venv/bin/activate && \
 # zip
 FROM dgraph-ttl-build AS dgraph-ttl-zip
 
-RUN ORIG_DIR=$(pwd); \
+RUN LAMBDA_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
+    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
     cd ~/dgraph-ttl && \
-    zip -g "${ORIG_DIR}/lambda.zip" app.py
+    zip -g "${LAMBDA_DIR}/lambda.zip" app.py
 
 # deploy
 FROM grapl-python-deploy AS dgraph-ttl-deploy
@@ -328,9 +318,8 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 
-#
 # model-plugin-deployer
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS model-plugin-deployer-build
@@ -345,11 +334,11 @@ RUN source venv/bin/activate && \
 # zip
 FROM model-plugin-deployer-build AS model-plugin-deployer-zip
 
-RUN ORIG_DIR=$(pwd); \
+RUN LAMBDA_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
+    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
     cd ~/model-plugin-deployer/src && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
+    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS model-plugin-deployer-deploy
@@ -373,9 +362,8 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 
-#
 # swarm-lifecycle-event-handler
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS swarm-lifecycle-event-handler-build
@@ -388,11 +376,11 @@ RUN source venv/bin/activate && \
 # zip
 FROM swarm-lifecycle-event-handler-build AS swarm-lifecycle-event-handler-zip
 
-RUN ORIG_DIR=$(pwd); \
+RUN LAMBDA_DIR=$(pwd); \
     cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${ORIG_DIR}/lambda.zip" ./ && \
+    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
     cd ~/swarm-lifecycle-event-handler && \
-    find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
+    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS swarm-lifecycle-event-handler-deploy
@@ -408,9 +396,8 @@ RUN python_test_deps/install_requirements.sh
 
 CMD :
 
-#
 # Notebook
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS grapl-notebook
@@ -446,7 +433,7 @@ RUN source venv/bin/activate && \
 
 #
 # Local provision
-#
+################################################################################
 
 # build
 FROM grapl-python-build AS grapl-provision
@@ -454,9 +441,8 @@ FROM grapl-python-build AS grapl-provision
 COPY --chown=grapl python/grapl_provision grapl_local_provision
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
-#
 # grapl-tests-common-build
-#
+################################################################################
 FROM grapl-python-build AS grapl-tests-common-build
 
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
@@ -471,9 +457,8 @@ RUN source venv/bin/activate && \
     python setup.py sdist bdist_wheel
 
 
-#
 # E2E tests
-#
+################################################################################
 FROM grapl-tests-common-build AS grapl-e2e-tests-build
 
 COPY --chown=grapl python/grapl_e2e_tests grapl_e2e_tests

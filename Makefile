@@ -146,7 +146,7 @@ test: test-unit test-integration test-e2e test-typecheck ## Run all tests
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
-	cd src/rust; cargo fmt -- --check
+	cd src/rust; bin/format; bin/lint
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
@@ -162,7 +162,7 @@ lint: lint-rust lint-python ## Run all lint checks
 
 .PHONY: clean
 clean: ## Prune all docker build cache
-	docker builder prune -a -f
+	docker builder prune --all --force
 	# Seems the docker service could use restarting every once in a while
 	sudo service docker restart
 
