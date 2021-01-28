@@ -34,9 +34,10 @@ class TestSqsTimeoutManager(unittest.TestCase):
 class SqsTimeoutManagerFixture:
     def __init__(self) -> None:
         # 22 seconds is not enough for
-        self.state = "started"
+        self.state = "initialized"
 
         async def wait_25_secs() -> None:
+            self.state = "started"
             await asyncio.sleep(25)
             self.state = "completed"
 
