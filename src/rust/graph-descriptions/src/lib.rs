@@ -51,28 +51,26 @@ impl GraphDescription {
     pub fn add_edge(
         &mut self,
         edge_name: impl Into<String>,
-        from: impl Into<String>,
-        to: impl Into<String>,
+        from_node_key : impl Into<String>,
+        to_node_key : impl Into<String>,
     ) {
-        let from = from.into();
-        let to = to.into();
+        let from_node_key  = from_node_key .into();
+        let to_node_key  = to_node_key .into();
         let edge_name = edge_name.into();
         let edge = Edge {
-            from: from.clone(),
-            to,
+            from_node_key: from_node_key .clone(),
+            to_node_key ,
             edge_name,
         };
 
         let edge_list: &mut Vec<Edge> = &mut self
             .edges
-            .entry(from)
+            .entry(from_node_key )
             .or_insert_with(|| EdgeList {
                 edges: Vec::with_capacity(1),
             })
             .edges;
         edge_list.push(edge);
-        edge_list.sort_unstable();
-        edge_list.dedup();
     }
 
     pub fn merge(&mut self, other: &Self) {
@@ -83,6 +81,16 @@ impl GraphDescription {
                     self.nodes.insert(node_key.clone(), other_node.clone());
                 }
             };
+        }
+
+        for edge_list in other.edges.values() {
+            for edge in edge_list.edges.iter() {
+                self.add_edge(
+                    edge.edge_name.clone(),
+                    edge.from_node_key.clone(),
+                    edge.to_node_key.clone(),
+                );
+            }
         }
     }
 
@@ -111,28 +119,26 @@ impl IdentifiedGraph {
     pub fn add_edge(
         &mut self,
         edge_name: impl Into<String>,
-        from: impl Into<String>,
-        to: impl Into<String>,
+        from_node_key : impl Into<String>,
+        to_node_key : impl Into<String>,
     ) {
-        let from = from.into();
-        let to = to.into();
+        let from_node_key  = from_node_key .into();
+        let to_node_key  = to_node_key .into();
         let edge_name = edge_name.into();
         let edge = Edge {
-            from: from.clone(),
-            to,
+            from_node_key : from_node_key .clone(),
+            to_node_key ,
             edge_name,
         };
 
         let edge_list: &mut Vec<Edge> = &mut self
             .edges
-            .entry(from)
+            .entry(from_node_key )
             .or_insert_with(|| EdgeList {
                 edges: Vec::with_capacity(1),
             })
             .edges;
         edge_list.push(edge);
-        edge_list.sort_unstable();
-        edge_list.dedup();
     }
 
     pub fn merge(&mut self, other: &Self) {
@@ -143,6 +149,16 @@ impl IdentifiedGraph {
                     self.nodes.insert(node_key.clone(), other_node.clone());
                 }
             };
+        }
+
+        for edge_list in other.edges.values() {
+            for edge in edge_list.edges.iter() {
+                self.add_edge(
+                    edge.edge_name.clone(),
+                    edge.from_node_key.clone(),
+                    edge.to_node_key.clone(),
+                );
+            }
         }
     }
 
@@ -223,6 +239,19 @@ impl MergedGraph {
                 }
             };
         }
+
+        for edge_list in other.edges.values() {
+            for edge in edge_list.edges.iter() {
+                self.add_edge(
+                    edge.edge_name.clone(),
+                    edge.from_node_key.clone(),
+                    edge.from_uid.clone(),
+                    edge.to_node_key.clone(),
+                    edge.to_uid.clone(),
+                );
+            }
+        }
+
     }
 
     pub fn is_empty(&self) -> bool {

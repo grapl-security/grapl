@@ -127,6 +127,10 @@ where
             return Ok(IdentifiedGraph::new());
         }
 
+        let edges: HashSet<_> = unid_subgraph.edges.values().map(|e| e.edges.iter() ).flatten().map(|e| e.edge_name.as_str())
+            .collect();
+        println!("incoming edges: {:?}", edges);
+
         info!(
             "unid_subgraph: {} nodes {} edges",
             unid_subgraph.nodes.len(),
@@ -142,14 +146,14 @@ where
         for (old_node_key, old_node) in output_subgraph.nodes.iter() {
             let node = old_node.clone();
 
-            match self.cache.get(old_node_key.clone()).await {
-                Ok(CacheResponse::Hit) => {
-                    info!("Got cache hit for old_node_key, skipping node.");
-                    continue;
-                }
-                Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
-                _ => (),
-            };
+            // match self.cache.get(old_node_key.clone()).await {
+            //     Ok(CacheResponse::Hit) => {
+            //         info!("Got cache hit for old_node_key, skipping node.");
+            //         continue;
+            //     }
+            //     Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
+            //     _ => (),
+            // };
 
             let node = match self.attribute_node_key(&node).await {
                 Ok(node) => node,
@@ -166,8 +170,8 @@ where
         }
 
         info!(
-            "PRE: identified_graph.edges.len() {}",
-            identified_graph.edges.len()
+            "PRE: output_subgraph.edges.len() {}",
+            output_subgraph.edges.len()
         );
 
         for (old_key, edge_list) in output_subgraph.edges.iter() {
@@ -176,12 +180,33 @@ where
             };
 
             for edge in &edge_list.edges {
-                let from_key = unid_id_map.get(&edge.from);
-                let to_key = unid_id_map.get(&edge.to);
+                let from_key = unid_id_map.get(&edge.from_node_key );
+                let to_key = unid_id_map.get(&edge.to_node_key );
 
                 let (from_key, to_key) = match (from_key, to_key) {
                     (Some(from_key), Some(to_key)) => (from_key, to_key),
-                    _ => continue,
+                    (Some(from_key), None) => {
+                        tracing::warn!(
+                            message="Could not get node_key mapping for from_key",
+                            from_key=?from_key,
+                        );
+                        continue
+                    },
+                    (None, Some(to_key)) => {
+                        tracing::warn!(
+                            message="Could not get node_key mapping for to_key",
+                            to_key=?to_key,
+                        );
+                        continue
+                    },
+                    (None, None) => {
+                        tracing::warn!(
+                            message="Could not get node_key mapping for from_key and to_key",
+                            from_key=?from_key,
+                            to_key=?to_key,
+                        );
+                        continue
+                    },
                 };
 
                 identified_graph.add_edge(
@@ -226,7 +251,8 @@ where
     }
 }
 
-pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let should_default = true;
     let (env, _guard) = grapl_config::init_grapl_env!();
     let source_queue_url = grapl_config::source_queue_url();
 

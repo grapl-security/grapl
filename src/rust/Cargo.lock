@@ -1146,6 +1146,7 @@ dependencies = [
  "sha2",
  "sqs-executor",
  "stopwatch",
+ "tap",
  "thiserror",
  "tokio 0.2.24",
  "tokio-compat",

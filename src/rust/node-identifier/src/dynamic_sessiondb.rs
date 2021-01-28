@@ -194,7 +194,7 @@ where
         let last_seen_time = node
             .properties
             .get(&strategy.last_seen_time)
-            .and_then(|p| p.as_immutable_uint())
+            .and_then(|p| p.as_increment_only_uint())
             .unwrap_or(0);
 
         let unid = match (created_time != 0, last_seen_time != 0) {
@@ -208,7 +208,11 @@ where
                 timestamp: last_seen_time,
                 is_creation: false,
             },
-            _ => bail!("Terminating sessions not yet supported"),
+            _ => bail!(
+                "Terminating sessions not yet supported: {:?} {:?}",
+                node.properties,
+                &strategy,
+            ),
         };
 
         let session_id = self

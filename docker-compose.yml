@@ -500,6 +500,11 @@ services:
       '
     ports:
       - "8900:8900"
+
+    networks:
+      default:
+        aliases:
+          - grapl_auth
     environment:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
@@ -569,7 +574,7 @@ services:
     volumes:
       - ./etc/local_grapl/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - "3128:3128"
+      - "1234:3128"
     depends_on:
       - s3
       - sqs
@@ -592,6 +597,11 @@ services:
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     ports:
       - 5000:5000
+
+    networks:
+      default:
+        aliases:
+          - graphql_endpoint
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}

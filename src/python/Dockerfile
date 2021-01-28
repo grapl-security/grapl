@@ -453,7 +453,7 @@ RUN source venv/bin/activate && \
 
 # Set up jupyter-notebook stuff
 RUN mkdir -p grapl-notebook/model_plugins
-COPY --chown=grapl python/grapl-notebook/jupyter_notebook_config.py /.jupyter/
+COPY --chown=grapl python/grapl-notebook/jupyter_notebook_config.py /home/grapl/.jupyter/
 COPY --chown=grapl python/grapl-notebook/Demo_Engagement.ipynb grapl-notebook/
 
 ## Run it

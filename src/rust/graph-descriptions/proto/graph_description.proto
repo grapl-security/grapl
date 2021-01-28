@@ -59,8 +59,8 @@ message MergedNode {
 }
 
 message Edge {
-    string from = 1;
-    string to = 2;
+    string from_node_key = 1;
+    string to_node_key  = 2;
     string edgeName = 3;
 }
 

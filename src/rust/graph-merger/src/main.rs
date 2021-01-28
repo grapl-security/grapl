@@ -1,57 +1,43 @@
 // #![allow(unused_must_use)]
 
-use std::{collections::HashMap,
-          fmt::Debug,
-          io::Stdout,
-          sync::{Arc,
-                 Mutex},
-          time::{Duration,
-                 SystemTime,
-                 UNIX_EPOCH}};
+use std::{
+    collections::HashMap,
+    fmt::Debug,
+    io::Stdout,
+    sync::{Arc, Mutex},
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use async_trait::async_trait;
-use dgraph_tonic::{Client as DgraphClient,
-                   Mutate,
-                   Query};
-use failure::{bail,
-              Error};
+use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
+use failure::{bail, Error};
 use futures::future::FutureExt;
-use grapl_config::{env_helpers::{s3_event_emitters_from_env,
-                                 FromEnv},
-                   event_caches};
-use grapl_graph_descriptions::graph_description::{Edge,
-                                                  IdentifiedGraph,
-                                                  IdentifiedNode,
-                                                  MergedGraph,
-                                                  MergedNode};
-use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
-                    metric_reporter::{tag,
-                                      MetricReporter}};
-use grapl_service::{decoder::ZstdProtoDecoder,
-                    serialization::MergedGraphSerializer};
-use log::{error,
-          info,
-          warn};
+use grapl_config::{
+    env_helpers::{s3_event_emitters_from_env, FromEnv},
+    event_caches,
+};
+use grapl_graph_descriptions::graph_description::{
+    Edge, IdentifiedGraph, IdentifiedNode, MergedGraph, MergedNode,
+};
+use grapl_observe::{
+    dgraph_reporter::DgraphMetricReporter,
+    metric_reporter::{tag, MetricReporter},
+};
+use grapl_service::{decoder::ZstdProtoDecoder, serialization::MergedGraphSerializer};
+use log::{error, info, warn};
 use lru_cache::LruCache;
-use rusoto_dynamodb::{AttributeValue,
-                      DynamoDb,
-                      DynamoDbClient,
-                      GetItemInput};
+use rusoto_dynamodb::{AttributeValue, DynamoDb, DynamoDbClient, GetItemInput};
 use rusoto_sqs::SqsClient;
-use serde::{Deserialize,
-            Serialize};
-use serde_json::{json,
-                 Value};
-use sqs_executor::{cache::{Cache,
-                           CacheResponse,
-                           Cacheable},
-                   errors::{CheckedError,
-                            Recoverable},
-                   event_handler::{CompletedEvents,
-                                   EventHandler},
-                   event_retriever::S3PayloadRetriever,
-                   make_ten,
-                   s3_event_emitter::S3ToSqsEventNotifier};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use sqs_executor::{
+    cache::{Cache, CacheResponse, Cacheable},
+    errors::{CheckedError, Recoverable},
+    event_handler::{CompletedEvents, EventHandler},
+    event_retriever::S3PayloadRetriever,
+    make_ten,
+    s3_event_emitter::S3ToSqsEventNotifier,
+};
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
@@ -67,6 +53,7 @@ fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::
         .set_set_json(&mu)
         .unwrap_or_else(|e| error!("Failed to set json: {:#?}", e));
 
+
     mutation
 }
 
@@ -75,7 +62,7 @@ async fn node_key_to_uid(
     metric_reporter: &mut MetricReporter<Stdout>,
     uid_cache: &mut UidCache,
     node_key: &str,
-) -> Result<Option<String>, Error> {
+) -> Result<Option<String>, GraphMergerError> {
     if uid_cache.is_empty() {
         tracing::debug!("uid_cache is empty");
     }
@@ -106,9 +93,9 @@ async fn node_key_to_uid(
     let mut vars = HashMap::new();
     vars.insert("$a".to_string(), node_key.to_string());
 
-    let query_res = tokio::time::timeout(Duration::from_secs(3), txn.query_with_vars(QUERY, vars))
-        .await?
-        .map_err(AnyhowFailure::into_failure)?;
+    let query_res =
+        tokio::time::timeout(Duration::from_secs(3), txn.query_with_vars(QUERY, vars)).await?
+            .map_err(GraphMergerError::QueryWithVarsError)?;
 
     // todo: is there a way to differentiate this query metric from others?
     metric_reporter
@@ -152,7 +139,10 @@ where
 
     let node_key = node.clone_node_key();
     let mut set_json: serde_json::Value = node.into_json();
-    let mut node_types = vec![set_json["dgraph.type"].as_str().expect("missing dgraph.type").clone()];
+    let mut node_types = vec![set_json["dgraph.type"]
+        .as_str()
+        .expect("missing dgraph.type")
+        .clone()];
     node_types.extend_from_slice(&["Entity", "Base"]);
     set_json["dgraph.type"] = node_types.into();
 
@@ -196,12 +186,6 @@ where
                 .await?
                 .map_err(AnyhowFailure::into_failure)?;
 
-            info!(
-                "Upsert res for {}, set_json: {} upsert_res: {:?}",
-                node_key,
-                set_json.to_string(),
-                upsert_res,
-            );
             cache
                 .store(cache_key.into_bytes())
                 .await
@@ -294,7 +278,7 @@ async fn upsert_edge<CacheT>(
     to: &str,
     from: &str,
     edge_name: &str,
-) -> Result<(), failure::Error>
+) -> Result<(), GraphMergerError>
 where
     CacheT: Cache,
 {
@@ -305,11 +289,23 @@ where
         Err(e) => error!("Failed to retrieve from edge_cache: {:?}", e),
     };
 
+    println!("generating edge insert");
     let mu = generate_edge_insert(&to, &from, &edge_name);
+    println!("generated edge insert {:?}", mu);
+    tracing::info!(
+        to=?to,
+        from=?from,
+        edge_name=?edge_name,
+        "generated edge",
+    );
     let txn = mg_client.new_mutated_txn();
     let mut_res = tokio::time::timeout(Duration::from_secs(10), txn.mutate_and_commit_now(mu))
         .await?
-        .map_err(AnyhowFailure::into_failure)?;
+        .map_err(GraphMergerError::MutateAndCommitNowError)?;
+    tracing::info!(
+        message="edge mutation response",
+        response=?mut_res,
+    );
     metric_reporter
         .mutation(&mut_res, &[])
         .unwrap_or_else(|e| error!("edge mutation metric failed: {}", e));
@@ -396,8 +392,17 @@ pub enum GraphMergerError {
     Unexpected(String),
     #[error("ParseIntError")]
     ParseIntError(#[from] ParseIntError),
-}
+    #[error("JsonError")]
+    JsonError(#[from] serde_json::Error),
+    #[error("Timeout")]
+    Timeout(#[from] tokio::time::Elapsed),
+    #[error("QueryWithVarsError")]
+    QueryWithVarsError(anyhow::Error),
+    #[error("MutateAndCommitNowError")]
+    MutateAndCommitNowError(anyhow::Error),
 
+}
+use tap::tap::TapFallible;
 impl CheckedError for GraphMergerError {
     fn error_type(&self) -> Recoverable {
         Recoverable::Transient
@@ -424,10 +429,14 @@ where
         }
 
         info!(
-            "handling new subgraphwith {} nodes {} edges",
+            "handling new subgraph with {} nodes {} edges",
             subgraph.nodes.len(),
             subgraph.edges.len(),
         );
+
+        let edges: HashSet<_> = subgraph.edges.values().map(|e| e.edges.iter() ).flatten().map(|e| e.edge_name.as_str())
+            .collect();
+        println!("incoming edges: {:?}", edges);
 
         let mut merged_graph = MergedGraph::default();
 
@@ -512,7 +521,9 @@ where
             .flatten()
             .map(|edge| edge.clone())
             .collect();
-
+        println!(
+            "upserting edges {:?}", &unmerged_edges,
+        );
         let merged_edges = upsert_edges(
             &unmerged_edges[..],
             &self.mg_client,
@@ -575,9 +586,10 @@ async fn reverse_edge(
         )));
     }
 
+    // from is to, to is from, because reverse edge
     Ok(Edge {
-        from: to_node_key,
-        to: from_node_key,
+        from_node_key: to_node_key,
+        to_node_key: from_node_key,
         edge_name: r_edge.clone(),
     })
 }
@@ -591,8 +603,8 @@ async fn reverse_edges(
     for edge in edges {
         reversed_edges.push(
             reverse_edge(
-                edge.from.clone(),
-                edge.to.clone(),
+                edge.from_node_key.clone(),
+                edge.to_node_key.clone(),
                 edge.edge_name.clone(),
                 dynamodb,
                 cache,
@@ -612,8 +624,7 @@ async fn get_edge_uids(
     cache: &mut UidCache,
 ) -> Result<(String, String), GraphMergerError> {
     let from_uid = match node_key_to_uid(&mg_client, metric_reporter, cache, from_node_key)
-        .await
-        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
+        .await?
     {
         Some(from_uid) => from_uid,
         None => {
@@ -625,8 +636,7 @@ async fn get_edge_uids(
     };
 
     let to_uid = match node_key_to_uid(&mg_client, metric_reporter, cache, to_node_key)
-        .await
-        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
+        .await?
     {
         Some(to_uid) => to_uid,
         None => {
@@ -642,6 +652,7 @@ async fn get_edge_uids(
 use std::num::ParseIntError;
 
 use grapl_graph_descriptions::graph_description::MergedEdge;
+use std::collections::HashSet;
 
 async fn upsert_edges<CacheT>(
     unmerged_edges: &[Edge],
@@ -655,8 +666,15 @@ where
 {
     let mut edge_mutations = Vec::with_capacity(unmerged_edges.len());
     for edge in unmerged_edges {
-        let (from_uid, to_uid) =
-            get_edge_uids(&edge.from, &edge.to, mg_client, metric_reporter, uid_cache).await?;
+        let (from_uid, to_uid) = get_edge_uids(
+            &edge.from_node_key,
+            &edge.to_node_key,
+            mg_client,
+            metric_reporter,
+            uid_cache,
+        )
+        .await
+        .tap_err(|e| error!("Failed to get_edge_uids: {:?}", e))?;
 
         upsert_edge(
             mg_client,
@@ -667,11 +685,11 @@ where
             &edge.edge_name,
         )
         .await
-        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?;
+        .tap_err(|e| error!("Failed to upsert_edge: {:?}", e))?;
         edge_mutations.push(MergedEdge {
-            from_node_key: edge.from.clone(),
+            from_node_key: edge.from_node_key.clone(),
             from_uid,
-            to_node_key: edge.to.clone(),
+            to_node_key: edge.to_node_key.clone(),
             to_uid,
             edge_name: edge.edge_name.clone(),
         });
