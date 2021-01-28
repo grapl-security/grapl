@@ -3,26 +3,37 @@
 # of other services/builds.
 
 FROM node:alpine3.10 AS grapl-cdk-build
-WORKDIR /home/grapl/grapl-cdk
+
 # no-op the base image cmd, so it doesn't launch a Node repl
 CMD :
 RUN apk add bash
 RUN npm install --global aws-cdk
 
 # Grab all dependencies
-COPY ./package.json ./package.json
-COPY ./package-lock.json ./package-lock.json
+WORKDIR /home/grapl
+COPY src/js/grapl-cdk/package.json src/js/grapl-cdk/package.json
+COPY src/js/grapl-cdk/package-lock.json src/js/grapl-cdk/package-lock.json
+WORKDIR /home/grapl/src/js/grapl-cdk
 RUN npm install
 
 # Copy in the rest of the source
-COPY . .
+WORKDIR /home/grapl
+COPY src/js/grapl-cdk src/js/grapl-cdk
 
 # does typechecking, which is nice
+WORKDIR /home/grapl/src/js/grapl-cdk
 RUN npm run build
 
+# test
+######################################################
 FROM grapl-cdk-build AS grapl-cdk-test
+
+# We need the Rust Dockerfile to run the tests
+WORKDIR /home/grapl
+COPY src/rust/Dockerfile src/rust/Dockerfile
+
 # Make fake zip files to appease the CDK tests
-WORKDIR /home/grapl/grapl-cdk/zips
+WORKDIR /home/grapl/src/js/grapl-cdk/zips
 RUN touch \
   analyzer-dispatcher-latest.zip \
   analyzer-executor-latest.zip \
@@ -40,4 +51,4 @@ RUN touch \
   swarm-lifecycle-event-handler-latest.zip \
   sysmon-subgraph-generator-latest.zip
 
-WORKDIR /home/grapl/grapl-cdk
+WORKDIR /home/grapl/src/js/grapl-cdk
