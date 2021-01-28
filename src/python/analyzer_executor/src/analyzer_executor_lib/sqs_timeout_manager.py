@@ -30,6 +30,9 @@ class SqsTimeoutManager:
     visibility_timeout: int = 30
     num_loops: int = 10
 
+    def __post_init__(self) -> None:
+        assert self.visibility_timeout > 10
+
     async def keep_alive(self) -> None:
         """
         you grab a message from SQS
@@ -45,7 +48,7 @@ class SqsTimeoutManager:
         task = asyncio.create_task(self.coroutine)
 
         for i in range(1, self.num_loops + 1):
-            time_to_wait = (self.visibility_timeout * i) - 10
+            time_to_wait = self._get_next_sleep(i)
             LOGGER.info(
                 f"SQS MessageID {self.message_id}: Loop {i} - waiting {time_to_wait}s for task"
             )
@@ -58,7 +61,7 @@ class SqsTimeoutManager:
                 LOGGER.info(f"SQS MessageID {self.message_id}: Task completed")
                 return
             except asyncio.TimeoutError as e:
-                new_visibility = self.visibility_timeout * (i + 1)
+                new_visibility = self._get_next_visibility(i)
                 LOGGER.info(
                     f"SQS MessageID {self.message_id}: still processing, telling SQS to raise visibility to {new_visibility}"
                 )
@@ -70,6 +73,23 @@ class SqsTimeoutManager:
         raise SqsTimeoutManagerException(
             f"SQS MessageID {self.message_id}: processing never completed"
         )
+
+    def _get_next_sleep(self, loop_i: int) -> int:
+        """
+        so with timeout 30:
+        20, then 50, then 80
+        """
+        assert loop_i > 0
+        return (self.visibility_timeout * loop_i) - 10
+
+    def _get_next_visibility(self, loop_i: int) -> int:
+        """
+        so with timeout 30:
+        (the message is, by default 30; and then:)
+        60, then 90, then 120...
+        """
+        assert loop_i > 0
+        return self.visibility_timeout * (loop_i + 1)
 
     def _change_visibility(self, new_visibility: int) -> None:
         try:
