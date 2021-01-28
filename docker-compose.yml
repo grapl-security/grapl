@@ -432,6 +432,37 @@ services:
     ports:
       - 8401:8401  # VSC Debugger
 
+  grapl-ux-router:
+    image: grapl/grapl-ux-router:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-ux-router-deploy
+    command: |
+      /bin/sh -c '
+        wait-for-it grapl-provision:8126 --timeout=10;
+        . venv/bin/activate &&
+        cd app &&
+        chalice local --no-autoreload --host=0.0.0.0 --port=8901
+      '
+    ports:
+      - "8901:8901"
+    environment:
+      - "IS_LOCAL=True"
+      - GRAPL_LOG_LEVEL=DEBUG
+      - "UX_BUCKET_NAME=local-grapl-engagement-ux-bucket"
+    depends_on:
+      - grapl-provision
+    tty: true
+    links:
+      - s3:minio
+    extra_hosts:
+      - minio:127.0.0.1
+    networks:
+      default:
+        aliases:
+          - ux_router
+
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
     build:
@@ -532,15 +563,17 @@ services:
   # JS/web services
   #
 
-  grapl-engagement-view:
-    image: syntaqx/serve
+  nginx:
+    image: nginxinc/nginx-unprivileged
+    command: nginx
     volumes:
-      - ./src/js/grapl-cdk/edge_ux_pre_replace:/var/www:ro
-    command: "serve -dir /var/www"
-    environment:
-      - PORT=1234
+      - ./etc/local_grapl/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - 1234:1234
+      - "3128:3128"
+    depends_on:
+      - s3
+      - sqs
+      - grapl-provision
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
@@ -592,7 +625,6 @@ services:
         wait-for-it s3:9000 &&
         wait-for-it dynamodb:8000 &&
         wait-for-it grapl-master-graph-db:8080 &&
-        wait-for-it grapl-engagement-view:1234 &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&

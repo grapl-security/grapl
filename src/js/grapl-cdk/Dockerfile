@@ -16,7 +16,6 @@ RUN npm install
 
 # Copy in the rest of the source
 COPY . .
-COPY ../../rust .
 
 # does typechecking, which is nice
 RUN npm run build

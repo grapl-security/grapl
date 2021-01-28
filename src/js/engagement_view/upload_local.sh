@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ./build/ || return
+cd ./build/ || exit
 
 export AWS_ACCESS_KEY_ID=minioadmin
 export AWS_SECRET_ACCESS_KEY=minioadmin

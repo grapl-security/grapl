@@ -45,6 +45,7 @@ clean                Prune all docker build cache
 clean-mount-cache    Prune all docker mount cache (used by sccache)
 release              'make build-services' with cargo --release
 zip                  Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+deploy               CDK deploy to AWS
 up                   Build Grapl services and launch docker-compose up
 down                 docker-compose down
 help                 Print this help
@@ -98,6 +99,13 @@ so it should be suitable secrets like S3 credentials for use with sccache.
   buildx](https://github.com/docker/buildx). You can pass additional arguments
 to the `docker buildx build` commands by setting this option (ex: `--progress
 plain`).
+
+#### CDK deployment parameters
+
+Arguments to the CDK deployment parameters can be supplied via environment
+variables documented in [docs/setup/aws.md](./docs/setup/aws.md#configure). By
+using `make deploy` to execute a CDK deploy, the environment variables can be
+read from a `.env` in the root of the Grapl respository.
 
 ### sccache
 
