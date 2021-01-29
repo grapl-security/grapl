@@ -62,7 +62,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../src/rust/'), {
+            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
                 target: "analyzer-dispatcher-deploy",
                 buildArgs: {
                     "release_target": "debug"

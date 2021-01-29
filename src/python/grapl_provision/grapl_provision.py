@@ -35,11 +35,9 @@ from grapl_analyzerlib.prelude import (
 )
 from grapl_analyzerlib.schema import Schema
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER.setLevel(GRAPL_LOG_LEVEL)
 
 
 def create_secret(secretsmanager):

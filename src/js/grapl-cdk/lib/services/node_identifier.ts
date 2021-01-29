@@ -68,14 +68,14 @@ export class NodeIdentifier extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../src/rust/'), {
+            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
                 target: "node-identifier-deploy",
                 buildArgs: {
                     "release_target": "debug"
                 },
                 file: "Dockerfile",
             }),
-            retryServiceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../src/rust/'), {
+            retryServiceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
                 target: "node-identifier-retry-handler-deploy",
                 buildArgs: {
                     "release_target": "debug"

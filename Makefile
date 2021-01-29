@@ -15,6 +15,14 @@ export
 
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
+export EVERY_COMPOSE_FILE=-f docker-compose.yml \
+	-f ./test/docker-compose.unit-tests-rust.yml \
+	-f ./test/docker-compose.unit-tests-python.yml \
+	-f ./test/docker-compose.unit-tests-js.yml \
+	-f ./test/docker-compose.integration-tests.yml \
+	-f ./test/docker-compose.e2e-tests.yml \
+	-f ./test/docker-compose.typecheck-tests.yml \
+	-f docker-compose.zips.yml
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
@@ -27,15 +35,7 @@ build: build-services ## Alias for `services` (default)
 
 .PHONY: build-all
 build-all: ## Build all targets (incl. services, tests, zip)
-	$(DOCKER_BUILDX_BAKE) \
-		-f docker-compose.yml \
-		-f ./test/docker-compose.unit-tests-rust.yml \
-		-f ./test/docker-compose.unit-tests-python.yml \
-		-f ./test/docker-compose.unit-tests-js.yml \
-		-f ./test/docker-compose.integration-tests.yml \
-		-f ./test/docker-compose.e2e-tests.yml \
-		-f ./test/docker-compose.typecheck-tests.yml \
-		-f docker-compose.zips.yml
+	$(DOCKER_BUILDX_BAKE) $(EVERY_COMPOSE_FILE)
 
 .PHONY: build-test-unit
 build-test-unit:
@@ -124,7 +124,9 @@ test-integration: build-test-integration ## Build and run integration tests
 		-f ./test/docker-compose.integration-tests.yml \
 		-p "grapl-integration_tests"; \
 	EXIT_CODE=$$?; \
-	$(MAKE) down; \
+	# Stop the containers, but don't remove them, \
+	# so that `dump-compose-artifacts` can inspect the containers \
+	$(MAKE) stop; \
 	exit $$EXIT_CODE
 
 .PHONY: test-e2e
@@ -135,9 +137,9 @@ test-e2e: build-test-e2e ## Build and run e2e tests
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.e2e-tests.yml \
 		-p "grapl-e2e_tests"; \
-	EXIT_CODE=$$?;
-	# Stop the containers, but don't remove them, 
-	# so that `dump-compose-artifacts` can inspect the containers
+	EXIT_CODE=$$?; \
+	# Stop the containers, but don't remove them, \
+	# so that `dump-compose-artifacts` can inspect the containers \
 	$(MAKE) stop; \
 	exit $$EXIT_CODE
 
@@ -188,11 +190,11 @@ up: build-services ## Build Grapl services and launch docker-compose up
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
-	docker-compose -f docker-compose.yml down
+	docker-compose $(EVERY_COMPOSE_FILE) down --remove-orphans
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
-	docker-compose -f docker-compose.yml stop
+	docker-compose $(EVERY_COMPOSE_FILE) stop
 
 .PHONY: help
 help: ## Print this help
