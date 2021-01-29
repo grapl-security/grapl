@@ -124,7 +124,9 @@ test-integration: build-test-integration ## Build and run integration tests
 		-f ./test/docker-compose.integration-tests.yml \
 		-p "grapl-integration_tests"; \
 	EXIT_CODE=$$?; \
-	$(MAKE) down; \
+	# Stop the containers, but don't remove them, \
+	# so that `dump-compose-artifacts` can inspect the containers \
+	$(MAKE) stop; \
 	exit $$EXIT_CODE
 
 .PHONY: test-e2e
@@ -135,9 +137,9 @@ test-e2e: build-test-e2e ## Build and run e2e tests
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.e2e-tests.yml \
 		-p "grapl-e2e_tests"; \
-	EXIT_CODE=$$?;
-	# Stop the containers, but don't remove them, 
-	# so that `dump-compose-artifacts` can inspect the containers
+	EXIT_CODE=$$?; \
+	# Stop the containers, but don't remove them, \
+	# so that `dump-compose-artifacts` can inspect the containers \
 	$(MAKE) stop; \
 	exit $$EXIT_CODE
 
