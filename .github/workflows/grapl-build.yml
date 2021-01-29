@@ -83,6 +83,10 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: [3.7]
+
     steps:
       - uses: actions/checkout@v2
 
@@ -95,6 +99,22 @@ jobs:
         run: |
           echo "unset RUSTC_WRAPPER" > rust_env.sh
           GRAPL_RUST_ENV_FILE=rust_env.sh make test-integration
+      
+      # NOTE: This requires >= py37
+      # Unlike the e2e tests, we don't dump the database contents; strictly logs.
+      - name: 'Collect integration test artifacts'
+        if: ${{ always() }}
+        run: |
+          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration_tests"
+           
+      - name: 'Upload integration test artifacts'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration-test-artifacts
+          # this path is specified in dump_artifacts.py
+          path: /tmp/dumped_artifacts/
+          retention-days: 28
 
 
   # In the future, this should probably be merged back into the integration tests, but
