@@ -1,17 +1,14 @@
 #!/usr/bin/python3
 import logging
 import os
-import sys
 import time
 
 import boto3
 import botocore
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER.setLevel(GRAPL_LOG_LEVEL)
 
 table_names = [
     "local-grapl-process_history_table",
@@ -168,7 +165,6 @@ def try_create_loop(table_name):
                 LOGGER.warn(f"failed to provision dynamodb table: {table_name} {e}")
             else:
                 LOGGER.debug(f"failed to provision dynamodb table: {table_name} {e}")
-
             time.sleep(2)
 
 
@@ -176,7 +172,7 @@ for table_name in table_names:
     try:
         try_create_loop(table_name)
     except Exception as e:
-        print(table_name, e)
+        LOGGER.error(table_name, e)
         raise e
 
-print("Provisioned DynamoDB")
+LOGGER.info("Provisioned DynamoDB")
