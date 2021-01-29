@@ -103,7 +103,7 @@ jobs:
       - name: Run integration tests
         run: |
           echo "unset RUSTC_WRAPPER" > rust_env.sh
-          GRAPL_RUST_ENV_FILE=rust_env.sh make test-integration
+          GRAPL_RUST_ENV_FILE=rust_env.sh GRAPL_LOG_LEVEL=DEBUG make test-integration
       
       # NOTE: This requires >= py37
       # Unlike the e2e tests, we don't dump the database contents; strictly logs.
