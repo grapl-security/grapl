@@ -210,7 +210,7 @@ class AnalyzerExecutor:
 
         for event in events["Records"]:
             if not self.is_local:
-                LOGGER.debug(f'event body: {event["body"]}')
+                LOGGER.debug(f'event body: {event["body"]}')  # type: ignore
                 event = json.loads(event["body"])["Records"][0]  # type: ignore
             data = parse_s3_event(s3, event)
 
