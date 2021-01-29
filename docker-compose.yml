@@ -569,7 +569,7 @@ services:
     volumes:
       - ./etc/local_grapl/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - "3128:3128"
+      - "1234:3128"
     depends_on:
       - s3
       - sqs
