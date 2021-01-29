@@ -20,4 +20,4 @@ FROM engagement-view-deps AS engagement-view-build
 RUN yarn build
 
 # no-op the base image cmd, so it doesn't launch a Node repl
-CMD upload_local.sh
+CMD :
