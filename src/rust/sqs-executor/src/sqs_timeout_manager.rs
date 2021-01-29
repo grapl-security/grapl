@@ -48,8 +48,11 @@ where
         let max_iter = 10;
         for i in 1..=max_iter {
             let timeout_fut = async {
-                tokio::time::delay_for(Duration::from_secs(get_next_sleep_for(visibility_timeout, i)))
-                    .await
+                tokio::time::delay_for(Duration::from_secs(get_next_sleep_for(
+                    visibility_timeout,
+                    i,
+                )))
+                .await
             };
             let future_2 = async { receiver.recv().await };
             pin_mut!(timeout_fut);
