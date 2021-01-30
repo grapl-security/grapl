@@ -500,6 +500,11 @@ services:
       '
     ports:
       - "8900:8900"
+
+    networks:
+      default:
+        aliases:
+          - grapl_auth
     environment:
       - "IS_LOCAL=True"
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
@@ -593,6 +598,11 @@ services:
     ports:
       - 5000:5000
 
+    networks:
+      default:
+        aliases:
+          - graphql_endpoint
+
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
     build: 
@@ -619,22 +629,20 @@ services:
       target: grapl-provision
     command: |
       /bin/bash -c "
-        export TIMEOUT=35 &&
         # it doesn't seem to like waiting for sqs
         # wait-for-it sqs:9324 &&
-        wait-for-it s3:9000 --timeout=$$TIMEOUT &&
-        wait-for-it dynamodb:8000 --timeout=$$TIMEOUT &&
-        wait-for-it grapl-master-graph-db:8080 --timeout=$$TIMEOUT &&
-        wait-for-it grapl-engagement-view:1234 --timeout=$$TIMEOUT &&
-        wait-for-it secretsmanager:4584 --timeout=$$TIMEOUT &&
-        . venv/bin/activate && 
+        wait-for-it secretsmanager:4584 &&
+        wait-for-it s3:9000 &&
+        wait-for-it dynamodb:8000 &&
+        wait-for-it grapl-master-graph-db:8080 &&
+        . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
         # Host a server on this port, so that tests can wait-for-it
         python -m http.server 8126
       "
     environment:
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
       - MG_ALPHAS=master_graph:9080
     tty: true
     ports:
@@ -658,3 +666,4 @@ services:
 networks:
   default:
     name: grapl-network
+
