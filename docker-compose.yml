@@ -590,11 +590,8 @@ services:
       target: engagement-view-local-deploy
     command: |
       /bin/bash -c "
-        echo "!!Checking?" &&
         wait-for-it grapl-provision:8126 --timeout=120 &&
-        echo "Uploading?" &&
         ./upload_local.sh &&
-        echo "Uploaded!" &&
         python -m http.server 8127  # wait-for-it
       "
     links:
