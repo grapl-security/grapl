@@ -91,9 +91,13 @@ services:
   engagement-view-integration-tests:
     image: cypress/included:5.6.0
     working_dir: /test
-    command: --browser chrome --headless # entrypoint is: cypress run
+    #command: --browser chrome --headless # entrypoint is: cypress run
+    entrypoint: sh
     volumes: 
       - .:/test
+    depends_on:
+      - grapl-engagement-view-uploader
+      - nginx
 
 networks:
   default:
