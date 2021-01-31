@@ -290,7 +290,7 @@ where
     };
 
     println!("generating edge insert");
-    let mu = generate_edge_insert(&to, &from, &edge_name);
+    let mu = generate_edge_insert(&from, &to, &edge_name);
     println!("generated edge insert {:?}", mu);
     tracing::info!(
         to=?to,

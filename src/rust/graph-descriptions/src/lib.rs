@@ -22,13 +22,13 @@ pub mod graph_description {
     include!(concat!(env!("OUT_DIR"), "/graph_description.rs"));
 }
 
-use node_property::Property::{DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
-                              DecrementOnlyUintProp as ProtoDecrementOnlyUintProp,
-                              ImmutableIntProp as ProtoImmutableIntProp,
-                              ImmutableStrProp as ProtoImmutableStrProp,
-                              ImmutableUintProp as ProtoImmutableUintProp,
-                              IncrementOnlyIntProp as ProtoIncrementOnlyIntProp,
-                              IncrementOnlyUintProp as ProtoIncrementOnlyUintProp};
+use node_property::Property::{
+    DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
+    DecrementOnlyUintProp as ProtoDecrementOnlyUintProp, ImmutableIntProp as ProtoImmutableIntProp,
+    ImmutableStrProp as ProtoImmutableStrProp, ImmutableUintProp as ProtoImmutableUintProp,
+    IncrementOnlyIntProp as ProtoIncrementOnlyIntProp,
+    IncrementOnlyUintProp as ProtoIncrementOnlyUintProp,
+};
 
 impl GraphDescription {
     pub fn new() -> Self {
@@ -51,21 +51,21 @@ impl GraphDescription {
     pub fn add_edge(
         &mut self,
         edge_name: impl Into<String>,
-        from_node_key : impl Into<String>,
-        to_node_key : impl Into<String>,
+        from_node_key: impl Into<String>,
+        to_node_key: impl Into<String>,
     ) {
-        let from_node_key  = from_node_key .into();
-        let to_node_key  = to_node_key .into();
+        let from_node_key = from_node_key.into();
+        let to_node_key = to_node_key.into();
         let edge_name = edge_name.into();
         let edge = Edge {
-            from_node_key: from_node_key .clone(),
-            to_node_key ,
+            from_node_key: from_node_key.clone(),
+            to_node_key,
             edge_name,
         };
 
         let edge_list: &mut Vec<Edge> = &mut self
             .edges
-            .entry(from_node_key )
+            .entry(from_node_key)
             .or_insert_with(|| EdgeList {
                 edges: Vec::with_capacity(1),
             })
@@ -119,21 +119,21 @@ impl IdentifiedGraph {
     pub fn add_edge(
         &mut self,
         edge_name: impl Into<String>,
-        from_node_key : impl Into<String>,
-        to_node_key : impl Into<String>,
+        from_node_key: impl Into<String>,
+        to_node_key: impl Into<String>,
     ) {
-        let from_node_key  = from_node_key .into();
-        let to_node_key  = to_node_key .into();
+        let from_node_key = from_node_key.into();
+        let to_node_key = to_node_key.into();
         let edge_name = edge_name.into();
         let edge = Edge {
-            from_node_key : from_node_key .clone(),
-            to_node_key ,
+            from_node_key: from_node_key.clone(),
+            to_node_key,
             edge_name,
         };
 
         let edge_list: &mut Vec<Edge> = &mut self
             .edges
-            .entry(from_node_key )
+            .entry(from_node_key)
             .or_insert_with(|| EdgeList {
                 edges: Vec::with_capacity(1),
             })
@@ -226,8 +226,6 @@ impl MergedGraph {
             })
             .edges;
         edge_list.push(edge);
-        edge_list.sort_unstable();
-        edge_list.dedup();
     }
 
     pub fn merge(&mut self, other: &Self) {
@@ -251,7 +249,6 @@ impl MergedGraph {
                 );
             }
         }
-
     }
 
     pub fn is_empty(&self) -> bool {
