@@ -1,9 +1,8 @@
-use log::info;
-
-use serde_derive::Deserialize;
-
-use derive_dynamic_node::{DynamicNode, GraplStaticId};
+use derive_dynamic_node::{DynamicNode,
+                          GraplStaticId};
 use grapl_graph_descriptions::graph_description::*;
+use log::info;
+use serde_derive::Deserialize;
 
 fn read_log() -> &'static [u8] {
     unimplemented!()
@@ -25,6 +24,7 @@ struct InstanceDetails {
     launch_time: u64,
 }
 
+#[allow(dead_code)]
 #[derive(DynamicNode, GraplStaticId)]
 pub struct AwsEc2Instance {
     #[grapl(static_id)]

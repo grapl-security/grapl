@@ -1,11 +1,13 @@
 #![type_length_limit = "1195029"]
 
-use log::{error, info};
 use std::time::Duration;
 
-use node_identifier::{handler, init_dynamodb_client, local_handler};
-
 use lambda_runtime::lambda;
+use log::{error,
+          info};
+use node_identifier::{handler,
+                      init_dynamodb_client,
+                      local_handler};
 use rusoto_core::RusotoError;
 use rusoto_dynamodb::DynamoDb;
 use tokio::runtime::Runtime;

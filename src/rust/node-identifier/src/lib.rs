@@ -1,53 +1,71 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::convert::TryFrom;
-use std::fmt::Debug;
-use std::io::Cursor;
-use std::ops::Deref;
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
+#![allow(unused_must_use)]
 
+use std::{collections::{HashMap,
+                        HashSet},
+          convert::TryFrom,
+          fmt::Debug,
+          io::{Cursor,
+               Stdout},
+          str::FromStr,
+          sync::{Arc,
+                 Mutex},
+          time::Duration};
+
+use assetdb::{AssetIdDb,
+              AssetIdentifier};
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use aws_lambda_events::event::sqs::SqsEvent;
+use aws_lambda_events::event::{s3::{S3Bucket,
+                                    S3Entity,
+                                    S3Event,
+                                    S3EventRecord,
+                                    S3Object,
+                                    S3RequestParameters,
+                                    S3UserIdentity},
+                               sqs::SqsEvent};
 use bytes::Bytes;
 use chrono::Utc;
-use failure::{bail, Error};
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::Context;
+use dynamic_sessiondb::{DynamicMappingDb,
+                        DynamicNodeIdentifier};
+use failure::{bail,
+              Error};
+use grapl_graph_descriptions::{file::FileState,
+                               graph_description::{host::*,
+                                                   node::WhichNode,
+                                                   *},
+                               ip_connection::IpConnectionState,
+                               network_connection::NetworkConnectionState,
+                               node::NodeT,
+                               process_inbound_connection::ProcessInboundConnectionState,
+                               process_outbound_connection::ProcessOutboundConnectionState};
+use grapl_observe::metric_reporter::MetricReporter;
+use lambda_runtime::{error::HandlerError,
+                     Context};
 use log::*;
 use prost::Message;
-use rusoto_core::{HttpClient, Region};
-use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
+use rusoto_core::{HttpClient,
+                  Region};
+use rusoto_dynamodb::{DynamoDb,
+                      DynamoDbClient};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use sha2::Digest;
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::redis_cache::RedisCache;
-
-use assetdb::{AssetIdDb, AssetIdentifier};
-use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
-use grapl_graph_descriptions::file::FileState;
-use grapl_graph_descriptions::graph_description::host::*;
-use grapl_graph_descriptions::graph_description::node::WhichNode;
-use grapl_graph_descriptions::graph_description::*;
-use grapl_graph_descriptions::ip_connection::IpConnectionState;
-use grapl_graph_descriptions::network_connection::NetworkConnectionState;
-use grapl_graph_descriptions::node::NodeT;
-use grapl_graph_descriptions::process_inbound_connection::ProcessInboundConnectionState;
-use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use rusoto_sqs::{SendMessageRequest,
+                 Sqs,
+                 SqsClient};
 use sessiondb::SessionDb;
 use sessions::UnidSession;
+use sha2::Digest;
+use sqs_lambda::{cache::{Cache,
+                         CacheResponse,
+                         Cacheable},
+                 completion_event_serializer::CompletionEventSerializer,
+                 event_decoder::PayloadDecoder,
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent},
+                 local_sqs_service::local_sqs_service_with_options,
+                 local_sqs_service_options::LocalSqsServiceOptionsBuilder,
+                 redis_cache::RedisCache,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -63,7 +81,7 @@ pub mod sessiondb;
 pub mod sessions;
 
 #[derive(Clone)]
-struct NodeIdentifier<D, CacheT>
+pub struct NodeIdentifier<D, CacheT>
 where
     D: DynamoDb + Clone + Send + Sync + 'static,
     CacheT: Cache + Clone + Send + Sync + 'static,
@@ -199,10 +217,10 @@ where
                 let protocol = &ip_port.protocol;
 
                 let mut node_key_hasher = sha2::Sha256::default();
-                node_key_hasher.input(port.to_string().as_bytes());
-                node_key_hasher.input(protocol.as_bytes());
+                node_key_hasher.update(port.to_string().as_bytes());
+                node_key_hasher.update(protocol.as_bytes());
 
-                let node_key = hex::encode(node_key_hasher.result());
+                let node_key = hex::encode(node_key_hasher.finalize());
 
                 ip_port.set_node_key(node_key);
 
@@ -385,13 +403,6 @@ fn into_unid_session(node: &Node) -> Result<Option<UnidSession>, Error> {
     }
 }
 
-fn remove_dead_nodes(graph: &mut Graph, dead_nodes: &HashSet<impl Deref<Target = str>>) {
-    for dead_node in dead_nodes {
-        graph.nodes.remove(dead_node.deref());
-        graph.edges.remove(dead_node.deref());
-    }
-}
-
 fn remove_dead_edges(graph: &mut Graph) {
     let edges = &mut graph.edges;
     let nodes = &graph.nodes;
@@ -405,72 +416,6 @@ fn remove_dead_edges(graph: &mut Graph) {
 
         *edge_list = EdgeList { edges: live_edges };
     }
-}
-
-fn remap_edges(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
-    for (_node_key, edge_list) in graph.edges.iter_mut() {
-        for edge in edge_list.edges.iter_mut() {
-            let from = match unid_id_map.get(&edge.from) {
-                Some(from) => from,
-                None => {
-                    warn!(
-                        "Failed to lookup from node in unid_id_map {}",
-                        &edge.edge_name
-                    );
-                    continue;
-                }
-            };
-
-            let to = match unid_id_map.get(&edge.to) {
-                Some(to) => to,
-                None => {
-                    warn!(
-                        "Failed to lookup to node in unid_id_map {}",
-                        &edge.edge_name
-                    );
-                    continue;
-                }
-            };
-
-            *edge = Edge {
-                from: from.to_owned(),
-                to: to.to_owned(),
-                edge_name: edge.edge_name.clone(),
-            };
-        }
-    }
-}
-
-fn remap_nodes(graph: &mut Graph, unid_id_map: &HashMap<String, String>) {
-    let mut nodes = HashMap::with_capacity(graph.nodes.len());
-
-    for (_node_key, node) in graph.nodes.iter_mut() {
-        // DynamicNodes are identified in-place
-        if let Some(_n) = node.as_dynamic_node() {
-            let old_node = nodes.insert(node.clone_node_key(), node.clone());
-            if let Some(ref old_node) = old_node {
-                NodeT::merge(
-                    nodes
-                        .get_mut(node.get_node_key())
-                        .expect("node key not in map"),
-                    old_node,
-                );
-            }
-        } else if let Some(new_key) = unid_id_map.get(node.get_node_key()) {
-            node.set_node_key(new_key.to_owned());
-
-            // We may have actually had nodes with different unid node_keys that map to the
-            // same node_key. Therefor we must merge any nodes when there is a collision.
-            let old_node = nodes.insert(new_key.to_owned(), node.clone());
-            if let Some(ref old_node) = old_node {
-                NodeT::merge(
-                    nodes.get_mut(new_key).expect("New key not in map"),
-                    old_node,
-                );
-            }
-        }
-    }
-    graph.nodes = nodes;
 }
 
 async fn create_asset_id_mappings(
@@ -869,18 +814,6 @@ where
     }
 }
 
-fn time_based_key_fn(_event: &[u8]) -> String {
-    info!("event length {}", _event.len());
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
-}
-
 fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
     rusoto_sqs::Message {
         attributes: Some(event.attributes),
@@ -963,12 +896,16 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
             );
 
             let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
+            let completion_policy = ConsumePolicyBuilder::default()
+                .with_max_empty_receives(1)
+                .with_stop_at(Duration::from_secs(10));
 
             sqs_lambda::sqs_service::sqs_service(
                 source_queue_url,
                 initial_messages,
                 bucket,
-                ctx,
+                completion_policy.build(ctx),
+                CompletionPolicy::new(10, Duration::from_secs(2)),
                 |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
                 S3Client::new(region.clone()),
                 SqsClient::new(region.clone()),
@@ -978,6 +915,7 @@ fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), H
                 },
                 node_identifier,
                 cache.clone(),
+                MetricReporter::<Stdout>::new("node-identifier"),
                 move |_self_actor, result: Result<String, String>| match result {
                     Ok(worked) => {
                         info!(
@@ -1074,7 +1012,7 @@ pub fn init_dynamodb_client() -> DynamoDbClient {
 }
 
 #[derive(Clone, Default)]
-struct HashCache {
+pub struct HashCache {
     cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
 }
 
@@ -1174,6 +1112,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
         },
         node_identifier,
         cache.clone(),
+        MetricReporter::<Stdout>::new("node-identifier"),
         |_, event_result| {
             dbg!(event_result);
         },
@@ -1200,7 +1139,7 @@ pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::erro
                         },
                         object: S3Object {
                             key: Some(key),
-                            size: 0,
+                            size: None,
                             url_decoded_key: None,
                             version_id: None,
                             e_tag: None,

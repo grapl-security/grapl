@@ -298,4 +298,4 @@ IpAddressQuery = IpAddressQuery.extend_self(IpConnectionExtendsIpAddressQuery)
 IpAddressView = IpAddressView.extend_self(IpConnectionExtendsIpAddressView)
 
 if TYPE_CHECKING:
-    from grapl_analyzerlib.nodes import ProcessQuery
+    from grapl_analyzerlib.nodes.process import ProcessQuery

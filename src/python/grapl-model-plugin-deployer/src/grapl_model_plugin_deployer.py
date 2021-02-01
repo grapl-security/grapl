@@ -1,6 +1,3 @@
-from grapl_analyzerlib.schema import Schema
-
-print("init")
 import base64
 import hmac
 import inspect
@@ -31,6 +28,7 @@ from grapl_analyzerlib.node_types import (
     PropType,
 )
 from grapl_analyzerlib.prelude import *
+from grapl_analyzerlib.schema import Schema
 
 sys.path.append("/tmp/")
 
@@ -61,7 +59,7 @@ if IS_LOCAL:
                 region_name="us-east-1",
                 aws_access_key_id="dummy_cred_aws_access_key_id",
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
+                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
             )
 
             JWT_SECRET = secretsmanager.get_secret_value(
@@ -365,8 +363,9 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
     return None
 
 
+BUCKET_PREFIX = os.environ["BUCKET_PREFIX"]
 origin_re = re.compile(
-    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3.[\w-]+.amazonaws.com',
+    f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
     re.IGNORECASE,
 )
 
@@ -391,8 +390,9 @@ def respond(
         allow_origin = req_origin
     else:
         LOGGER.info("Origin did not match")
-        # allow_origin = override or ORIGIN
-        allow_origin = req_origin
+        return Response(
+            body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
+        )
 
     status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
 
@@ -555,9 +555,7 @@ def deploy():
 
 def get_plugin_list(s3: BaseClient):
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
-
     list_response = s3.list_objects_v2(Bucket=plugin_bucket)
-
     if not list_response.get("Contents"):
         return []
 
@@ -615,25 +613,25 @@ def delete_model_plugin():
     return respond(None, {"Success": "Deleted plugins"})
 
 
-@app.route("/{proxy+}", methods=["OPTIONS", "POST"])
+@app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
     LOGGER.info("routing: " + app.current_request.context["path"])
 
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
+
     try:
         path = app.current_request.context["path"]
-        if path == "/prod/gitWebhook":
+        if path == "/prod/modelPluginDeployer/gitWebhook":
             return webhook()
-        if path == "/prod/deploy":
+        if path == "/prod/modelPluginDeployer/deploy":
             return deploy()
-        if path == "/prod/listModelPlugins":
+        if path == "/prod/modelPluginDeployer/listModelPlugins":
             return list_model_plugins()
-        if path == "/prod/deleteModelPlugin":
+        if path == "/prod/modelPluginDeployer/deleteModelPlugin":
             return delete_model_plugin()
 
         return respond("InvalidPath")
     except Exception:
         LOGGER.error(traceback.format_exc())
         return respond("Route Server Error")
-
-
-from grapl_analyzerlib.prelude import *

@@ -1,8 +1,14 @@
 #!/usr/bin/python3
+import logging
+import os
 import time
 
 import boto3
 import botocore
+
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(GRAPL_LOG_LEVEL)
 
 table_names = [
     "local-grapl-process_history_table",
@@ -147,10 +153,10 @@ def try_create_loop(table_name):
             if "ResourceInUseException" in e.__class__.__name__:
                 break
             else:
-                print(table_name, e)
+                LOGGER.debug(table_name, e)
                 time.sleep(2)
         except Exception as e:
-            print(table_name, e)
+            LOGGER.error(table_name, e)
             time.sleep(2)
 
 
@@ -158,7 +164,7 @@ for table_name in table_names:
     try:
         try_create_loop(table_name)
     except Exception as e:
-        print(table_name, e)
+        LOGGER.error(table_name, e)
         raise e
 
-print("Provisioned DynamoDB")
+LOGGER.info("Provisioned DynamoDB")

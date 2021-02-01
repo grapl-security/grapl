@@ -5,11 +5,10 @@ on:
     types: [released, prereleased]
 
 jobs:
-  unit-tests:
+  rust-unit-tests:
     runs-on: ubuntu-latest
 
     steps:
-
       - uses: actions/checkout@v2
 
       - name: Prepare Github Actions CI
@@ -17,15 +16,44 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Run unit tests
+      - name: Rust unit tests
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount unit-tests
+          make test-unit-rust
+
+  python-unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Prepare Github Actions CI
+        run: |
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
+
+      - name: Python unit tests
+        run: |
+          make test-unit-python
+
+  js-unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Prepare Github Actions CI
+        run: |
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
+
+      - name: JS unit tests
+        run: |
+          make test-unit-js
 
   integration-tests:
     runs-on: ubuntu-latest
 
     steps:
-
       - uses: actions/checkout@v2
 
       - name: Prepare Github Actions CI
@@ -35,7 +63,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          GRAPL_RELEASE_TARGET=release TAG=grapl-test ./dobi-linux --no-bind-mount integration-tests
+          make test-integration
 
   check-pypi:
     runs-on: ubuntu-latest
@@ -104,132 +132,11 @@ jobs:
           fi
           deactivate
 
-  release-rust-services:
+  release-services:
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, check-pypi]
+    needs: [rust-unit-tests, python-unit-tests, js-unit-tests, integration-tests, check-pypi]
 
     steps:
-
-      - uses: actions/checkout@v2
-
-      - name: Prepare Github Actions CI
-        run: |
-          ./etc/ci_scripts/clean_gh_actions_space.sh
-          ./etc/ci_scripts/install_requirements.sh
-      
-      - name: Determine release channel
-        run: |
-          BRANCH=${{ github.event.release.target_commitish }}
-          if [[ "$BRANCH" == "master" ]]; then
-              CHANNEL="latest"
-          else
-              CHANNEL="beta"
-          fi
-          echo "::set-env name=CHANNEL::$CHANNEL"
-
-      - name: Export tag
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
-        run: |
-          echo "::set-env name=TAG::$VERSION-$CHANNEL"
-
-      - name: Build Rust services
-        run: |
-          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount rust
-
-      - name: Extract artifacts from Rust build
-        id: extract-rust-artifacts
-        run: |
-          ./etc/build_scripts/extract_rust_artifacts.sh
-
-      - name: Log in to Docker registry
-        run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
-
-      - name: Publish Rust images to DockerHub
-        run: |
-          ./etc/build_scripts/push_rust_to_docker.sh
-
-      - name: Clean up dist
-        run: |
-          rm -rf dist
-
-      - name: Upload sysmon-subgraph-generator to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-rust-artifacts.outputs.sysmon-subgraph-generator }}
-          asset_name: ${{ steps.extract-rust-artifacts.outputs.sysmon-subgraph-generator }}
-          asset_content_type: application/zip
-
-      - name: Upload generic-subgraph-generator to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-rust-artifacts.outputs.generic-subgraph-generator }}
-          asset_name: ${{ steps.extract-rust-artifacts.outputs.generic-subgraph-generator }}
-          asset_content_type: application/zip
-
-      - name: Upload node-identifier to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-rust-artifacts.outputs.node-identifier }}
-          asset_name: ${{ steps.extract-rust-artifacts.outputs.node-identifier }}
-          asset_content_type: application/zip
-
-      - name: Upload node-identifier-retry-handler to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-rust-artifacts.outputs.node-identifier-retry-handler }}
-          asset_name: ${{ steps.extract-rust-artifacts.outputs.node-identifier-retry-handler }}
-          asset_content_type: application/zip
-
-      - name: Upload graph-merger to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-rust-artifacts.outputs.graph-merger }}
-          asset_name: ${{ steps.extract-rust-artifacts.outputs.graph-merger }}
-          asset_content_type: application/zip
-
-      - name: Upload analyzer-dispatcher to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-rust-artifacts.outputs.analyzer-dispatcher }}
-          asset_name: ${{ steps.extract-rust-artifacts.outputs.analyzer-dispatcher }}
-          asset_content_type: application/zip
-
-      - name: Upload metric-forwarder to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-rust-artifacts.outputs.metric-forwarder }}
-          asset_name: ${{ steps.extract-rust-artifacts.outputs.metric-forwarder }}
-          asset_content_type: application/zip
-
-  release-python-services:
-    runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, check-pypi]
-
-    steps:
-
       - uses: actions/checkout@v2
 
       - name: Prepare Github Actions CI
@@ -245,258 +152,22 @@ jobs:
           else
               CHANNEL="beta"
           fi
-          echo "::set-env name=CHANNEL::$CHANNEL"
+          echo "CHANNEL=$CHANNEL" >> $GITHUB_ENV
 
       - name: Export tag
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          echo "::set-env name=TAG::$VERSION-$CHANNEL"
-
-      - name: Build Python services
-        run: |
-          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount python
-
-      - name: Log in to Docker registry
-        run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
-        
-      - name: Publish Python images to DockerHub
-        run: |
-          ./etc/build_scripts/push_py_to_docker.sh
-
-      - name: Extract Python artifacts from build
-        id: extract-python-artifacts
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
-        run: |
-          cp dist/analyzer-executor/lambda.zip analyzer-executor-$TAG.zip
-          echo "::set-output name=analyzer-executor::analyzer-executor-$TAG.zip"
-
-          cp dist/engagement-creator/lambda.zip engagement-creator-$TAG.zip
-          echo "::set-output name=engagement-creator::engagement-creator-$TAG.zip"
-
-          cp dist/engagement-edge/lambda.zip engagement-edge-$TAG.zip
-          echo "::set-output name=engagement-edge::engagement-edge-$TAG.zip"
-
-          cp dist/model-plugin-deployer/lambda.zip model-plugin-deployer-$TAG.zip
-          echo "::set-output name=model-plugin-deployer::model-plugin-deployer-$TAG.zip"
-
-          cp dist/dgraph-ttl/lambda.zip dgraph-ttl-$TAG.zip
-          echo "::set-output name=dgraph-ttl::dgraph-ttl-$TAG.zip"
-
-      - name: Upload analyzer-executor to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-python-artifacts.outputs.analyzer-executor }}
-          asset_name: ${{ steps.extract-python-artifacts.outputs.analyzer-executor }}
-          asset_content_type: application/zip
-
-      - name: Upload engagement-creator to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-python-artifacts.outputs.engagement-creator }}
-          asset_name: ${{ steps.extract-python-artifacts.outputs.engagement-creator }}
-          asset_content_type: application/zip
-
-      - name: Upload engagement-edge to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-python-artifacts.outputs.engagement-edge }}
-          asset_name: ${{ steps.extract-python-artifacts.outputs.engagement-edge }}
-          asset_content_type: application/zip
-
-      - name: Upload model-plugin-deployer to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-python-artifacts.outputs.model-plugin-deployer }}
-          asset_name: ${{ steps.extract-python-artifacts.outputs.model-plugin-deployer }}
-
-          asset_content_type: application/zip
-
-      - name: Upload dgraph-ttl to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-python-artifacts.outputs.dgraph-ttl }}
-          asset_name: ${{ steps.extract-python-artifacts.outputs.dgraph-ttl }}
-          asset_content_type: application/zip
-
-      - name: Clean up dist
-        run: |
-          rm -rf dist
-
-      - name: Prepare graph-descriptions dist
-        run: |
-          docker create -ti --name graph-descriptions grapl/grapl-graph-descriptions-python-build:latest
-          docker cp graph-descriptions:/home/grapl/graph-descriptions/dist .
-          docker rm -f graph-descriptions
-
-      - name: Upload graph-descriptions to Test PyPI
-        if: env.CHANNEL == 'beta'
-        uses: pypa/gh-action-pypi-publish@v1.1.0
-        with:
-          user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-
-      - name: Upload graph-descriptions to PyPI
-        if: env.CHANNEL == 'latest'
-        uses: pypa/gh-action-pypi-publish@v1.1.0
-        with:
-          user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
-
-      - name: Clean up graph-descriptions dist
-        run: |
-          rm -rf dist
-
-      - name: Prepare grapl_analyzerlib dist
-        run: |
-          docker create -ti --name grapl-analyzerlib grapl/grapl-analyzerlib-python-build:latest
-          docker cp grapl-analyzerlib:/home/grapl/grapl_analyzerlib/dist .
-          docker rm -f grapl-analyzerlib
-
-      - name: Upload grapl_analyzerlib to Test PyPI
-        if: env.CHANNEL == 'beta'
-        uses: pypa/gh-action-pypi-publish@v1.1.0
-        with:
-          user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-
-      - name: Upload grapl_analzyerlib to PyPI
-        if: env.CHANNEL == 'latest'
-        uses: pypa/gh-action-pypi-publish@v1.1.0
-        with:
-          user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
-
-      - name: Clean up grapl_analyzerlib dist
-        run: |
-          rm -rf dist
-      
-
-      - name: Prepare grapl-common dist
-        run: |
-          docker create -ti --name grapl-common grapl/grapl-common-python-build:latest
-          docker cp grapl-common:/home/grapl/grapl_common/dist .
-          docker rm -f grapl-common
-
-      - name: Upload grapl-common to Test PyPI
-        if: env.CHANNEL == 'beta'
-        uses: pypa/gh-action-pypi-publish@v1.1.0
-        with:
-          user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-
-      - name: Upload grapl-common to PyPI
-        if: env.CHANNEL == 'latest'
-        uses: pypa/gh-action-pypi-publish@v1.1.0
-        with:
-          user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
-
-      - name: Clean up grapl-common dist
-        run: |
-          rm -rf dist
-
-      - name: Prepare grapl-tests-common dist
-        run: |
-          docker create -ti --name grapl-tests-common grapl/grapl-tests-common-python-build:latest
-          docker cp grapl-tests-common:/home/grapl/grapl-tests-common/dist .
-          docker rm -f grapl-tests-common
-
-      - name: Upload grapl-tests-common to Test PyPI
-        if: env.CHANNEL == 'beta'
-        uses: pypa/gh-action-pypi-publish@v1.1.0
-        with:
-          user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_TEST_PYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-
-      - name: Upload grapl-tests-common to PyPI
-        if: env.CHANNEL == 'latest'
-        uses: pypa/gh-action-pypi-publish@v1.1.0
-        with:
-          user: __token__
-          password: ${{ secrets.GRAPL_ANALYZERLIB_PYPI_TOKEN }}
-
-      - name: Clean up grapl-tests-common dist
-        run: |
-          rm -rf dist
-
-
-
-  release-js-services:
-    runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, check-pypi]
-
-    steps:
-
-      - uses: actions/checkout@v2
-
-      - name: Prepare Github Actions CI
-        run: |
-          ./etc/ci_scripts/clean_gh_actions_space.sh
-          ./etc/ci_scripts/install_requirements.sh
-
-      - name: Determine release channel
-        run: |
-          BRANCH=${{ github.event.release.target_commitish }}
-          if [[ "$BRANCH" == "master" ]]; then
-              CHANNEL="latest"
-          else
-              CHANNEL="beta"
-          fi
-          echo "::set-env name=CHANNEL::$CHANNEL"
-
-      - name: Export tag
-        env:
-          VERSION: ${{ github.event.release.tag_name }}
-        run: |
-          echo "::set-env name=TAG::$VERSION-$CHANNEL"
-
-      - name: Build JS services
-        run: |
-          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount js
+          echo "TAG=$VERSION-$CHANNEL" >> $GITHUB_ENV
 
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
-      - name: Publish JS images to DockerHub
+      - name: Build services
         run: |
-          docker push grapl/grapl-engagement-view:$TAG
-          docker push grapl/grapl-graphql-endpoint:$TAG
+          make PROFILE=release build-services
 
-      - name: Extract JS artifacts from build
-        id: extract-js-artifacts
+      - name: Publish images to DockerHub
         run: |
-          cp dist/graphql-endpoint/lambda.zip graphql-endpoint-$TAG.zip
-          echo "::set-output name=graphql-endpoint::graphql-endpoint-$TAG.zip"
-
-      - name: Upload graphql-endpoint to Github
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.extract-js-artifacts.outputs.graphql-endpoint }}
-          asset_name: ${{ steps.extract-js-artifacts.outputs.graphql-endpoint }}
-          asset_content_type: application/zip
+          docker-compose push

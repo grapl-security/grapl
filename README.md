@@ -45,7 +45,7 @@ invite)](https://join.slack.com/t/grapl-dfir/shared_invite/zt-armk3shf-nuY19fQQu
 
 If you’re familiar with log sources like Sysmon, one of the best
 features is that processes are given identities. Grapl applies the
-same concept but for any supported log type, taking psuedo identifiers
+same concept but for any supported log type, taking pseudo identifiers
 such as process ids and discerning canonical identities.
 
 Grapl then combines this identity concept with its graph approach,
@@ -70,7 +70,7 @@ deployed to Grapl’s S3 bucket, that are orchestrated to execute upon
 changes to grapl’s Master Graph.
 
 Rather than analyzers attempting to determine a binary "Good" or "Bad"
-value for attack behaviors Grapl leverges a concept of Risk, and then
+value for attack behaviors Grapl leverages a concept of Risk, and then
 automatically correlates risks to surface the riskiest parts of your
 environment.
 

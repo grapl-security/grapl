@@ -1,22 +1,30 @@
-use crate::cloudwatch_logs_parse::Stat;
-use crate::error::MetricForwarderError;
-use async_trait::async_trait;
-use futures::future;
-use log::info;
-use log::warn;
-use rayon::prelude::*;
-use rusoto_cloudwatch::PutMetricDataError;
-use rusoto_cloudwatch::{CloudWatch, Dimension, MetricDatum, PutMetricDataInput};
-use rusoto_core::RusotoError;
-use statsd_parser;
-use statsd_parser::Metric;
 use std::collections::BTreeMap;
 
-pub mod units {
+use async_trait::async_trait;
+use futures::future;
+use log::{info,
+          warn};
+use rayon::prelude::*;
+use rusoto_cloudwatch::{CloudWatch,
+                        Dimension,
+                        MetricDatum,
+                        PutMetricDataError,
+                        PutMetricDataInput};
+use rusoto_core::RusotoError;
+use statsd_parser::{self,
+                    Metric};
+
+use crate::{cloudwatch_logs_parse::Stat,
+            error::MetricForwarderError};
+
+pub mod cw_units {
     // strings accepted by CloudWatch MetricDatum.unit
     pub const COUNT: &'static str = "Count";
     pub const MILLIS: &'static str = "Milliseconds";
+    pub const MICROS: &'static str = "Microseconds";
+    pub const SECONDS: &'static str = "Seconds";
 }
+const RESERVED_UNIT_TAG: &'static str = "_unit";
 
 type PutResult = Result<(), RusotoError<PutMetricDataError>>;
 
@@ -140,24 +148,65 @@ impl From<&BTreeMap<String, String>> for Dimensions {
     }
 }
 
+impl Dimensions {
+    fn find_dimension(&self, dimension_name: &str) -> Option<Dimension> {
+        let found = self.0.iter().find(|ref d| d.name == dimension_name);
+        return found.map(Dimension::clone);
+    }
+
+    fn remove_dimension(&mut self, dimension: &Dimension) {
+        self.0.retain(|d| d != dimension)
+    }
+}
+
+fn override_unit_from_dims(mut unit: &'static str, dims: &mut Dimensions) -> &'static str {
+    // https://github.com/grapl-security/issue-tracker/issues/132
+    // Read the optional `_unit` dimension and use it to override the default
+    // assumption of milliseconds.
+    // Remove the _unit dimension from dimensions.
+
+    let units_dimension_option = dims.find_dimension(RESERVED_UNIT_TAG);
+    if let Some(units_dimension) = units_dimension_option {
+        // Right now, we only specify `_unit` for histograms.
+        assert_eq!(unit, cw_units::MILLIS);
+
+        unit = match &units_dimension.value[..] {
+            "millis" => cw_units::MILLIS,
+            "micros" => cw_units::MICROS,
+            "seconds" => cw_units::SECONDS,
+            _ => {
+                warn!("Unexpected unit: {}", units_dimension.value);
+                unit
+            }
+        };
+        dims.remove_dimension(&units_dimension);
+    }
+    unit
+}
+
 fn statsd_as_cloudwatch_metric(stat: Stat) -> MetricDatum {
-    let (unit, value, _sample_rate) = match stat.msg.metric {
+    let (mut unit, value, _sample_rate) = match stat.msg.metric {
         // Yes, gauge and counter are - for our purposes - basically both Count
-        Metric::Gauge(g) => (units::COUNT, g.value, g.sample_rate),
-        Metric::Counter(c) => (units::COUNT, c.value, c.sample_rate),
-        Metric::Histogram(h) => (units::MILLIS, h.value, h.sample_rate),
+        Metric::Gauge(g) => (cw_units::COUNT, g.value, g.sample_rate),
+        Metric::Counter(c) => (cw_units::COUNT, c.value, c.sample_rate),
+        Metric::Histogram(h) => (cw_units::MILLIS, h.value, h.sample_rate),
         _ => panic!("How the heck did you get an unsupported metric type in here?"),
     };
-    let Dimensions(dims) = stat
+
+    let mut dims: Dimensions = stat
         .msg
         .tags
         .as_ref()
         .map(|tags| tags.into())
         .unwrap_or_default();
+
+    unit = override_unit_from_dims(unit, &mut dims);
+
+    let Dimensions(dims_vec) = dims;
     // AWS doesn't like sending it an empty list
-    let dims_option = match dims.is_empty() {
+    let dims_option = match dims_vec.is_empty() {
         true => None,
-        false => Some(dims),
+        false => Some(dims_vec),
     };
 
     let datum = MetricDatum {
@@ -207,7 +256,7 @@ mod tests {
         assert_eq!(&datum.metric_name, &name);
         assert_eq!(&datum.timestamp.expect(""), &ts);
         assert_eq!(datum.value.expect(""), 12.3);
-        assert_eq!(datum.unit.expect(""), units::COUNT);
+        assert_eq!(datum.unit.expect(""), cw_units::COUNT);
         assert_eq!(datum.dimensions, None);
     }
 
@@ -228,6 +277,24 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn test_convert_one_stat_with_unit_tags_into_datum() {
+        // Test the behavior specified in https://github.com/grapl-security/issue-tracker/issues/132
+        let stat = some_histogram_stat_with_unit_tag();
+        let datum: MetricDatum = stat.into();
+        assert_eq!(
+            &datum.dimensions.expect(""),
+            &vec![
+                Dimension {
+                    name: "tag1".into(),
+                    value: "val1".into()
+                },
+                // Resulting vec has no "_unit"
+            ]
+        );
+        assert_eq!(&datum.unit.expect(""), &cw_units::MICROS);
     }
 
     pub struct MockCloudwatchClient {
@@ -283,6 +350,24 @@ mod tests {
             msg: statsd_parser::Message {
                 name: "msg".into(),
                 metric: statsd_parser::Metric::Counter(statsd_parser::Counter {
+                    value: 123.45,
+                    sample_rate: None,
+                }),
+                tags: tags.into(),
+            },
+            service_name: SERVICE_NAME.into(),
+        }
+    }
+
+    fn some_histogram_stat_with_unit_tag() -> Stat {
+        let mut tags = BTreeMap::<String, String>::new();
+        tags.insert("tag1".into(), "val1".into());
+        tags.insert(RESERVED_UNIT_TAG.into(), "micros".into());
+        Stat {
+            timestamp: "ts".into(),
+            msg: statsd_parser::Message {
+                name: "msg".into(),
+                metric: statsd_parser::Metric::Histogram(statsd_parser::Histogram {
                     value: 123.45,
                     sample_rate: None,
                 }),

@@ -1,0 +1,101 @@
+version: "3.8"
+
+# environment variable PWD is assumed to be grapl root directory
+
+services:
+
+  grapl-rust-node-identifier-integration-tests:
+    image: grapl/grapl-node-identifier-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src/rust
+      target: build-test-integration
+      args:
+        - PROFILE=debug
+    command: bash -c "
+      wait-for-it grapl-provision:8126 --timeout=180 &&
+      cargo test --manifest-path node-identifier/Cargo.toml --features integration"
+    environment:
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - RUST_LOG=INFO
+      - RUST_BACKTRACE=1
+      - BUCKET_PREFIX=local-grapl
+      - IS_LOCAL=True
+      - MG_ALPHAS=grapl-master-graph-db:9080
+      - SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue
+      - GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue
+      - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
+      - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
+      - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
+      - FILE_HISTORY_TABLE=local-grapl-file_history_table
+      - INBOUND_CONNECTION_HISTORY_TABLE=local-grapl-inbound_connection_history_table
+      - OUTBOUND_CONNECTION_HISTORY_TABLE=local-grapl-outbound_connection_history_table
+      - NETWORK_CONNECTION_HISTORY_TABLE=local-grapl-network_connection_history_table
+      - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
+      - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
+
+  grapl-analyzerlib-integration-tests:
+    image: grapl/grapl-analyzerlib-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: grapl-analyzerlib-test
+    command: bash -c '
+      wait-for-it grapl-provision:8126 --timeout=180 &&
+      source venv/bin/activate &&
+      cd grapl_analyzerlib &&
+      py.test -n auto -m "integration_test"'
+    environment:
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - BUCKET_PREFIX=local-grapl
+      - IS_LOCAL=True
+      - MG_ALPHAS=grapl-master-graph-db:9080
+
+  # grapl-analyzer-deployer-integration-tests:
+
+  analyzer-executor-integration-tests:
+    image: grapl/grapl-analyzer-executor-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-executor-test
+    command: bash -c '
+      source venv/bin/activate &&
+      cd analyzer_executor &&
+      export PYTHONPATH="$${PYTHONPATH}:$$(pwd)/src" &&
+      py.test -n auto -m "integration_test"'
+    environment:
+      - HITCACHE_ADDR=dev-shared-redis
+      - HITCACHE_PORT=6379
+      - MESSAGECACHE_ADDR=dev-shared-redis
+      - MESSAGECACHE_PORT=6379
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - IS_LOCAL=True
+      - IS_RETRY=False
+
+  engagement-edge-integration-tests:
+    image: grapl/grapl-engagement-edge-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: engagement-edge-test
+    command: bash -c '
+      wait-for-it grapl-engagement-edge:8900 --timeout=180 &&
+      source venv/bin/activate &&
+      cd engagement_edge &&
+      py.test -n auto -m "integration_test"'
+    environment:
+      - IS_LOCAL=True
+      - BUCKET_PREFIX=local-grapl
+      - UX_BUCKET_URL="ux_bucket_url"
+
+  engagement-view-integration-tests:
+    image: cypress/included:5.6.0
+    working_dir: /test
+    command: --browser chrome --headless # entrypoint is: cypress run
+    volumes: 
+      - .:/test
+
+networks:
+  default:
+    external:
+      name: grapl-network

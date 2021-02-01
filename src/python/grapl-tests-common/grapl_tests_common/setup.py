@@ -1,13 +1,16 @@
+from __future__ import annotations
+
 import logging
 import subprocess
 import sys
 from os import environ
 from sys import stdout
-from typing import Any, NamedTuple, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Sequence
 
 import boto3  # type: ignore
 import pytest
 import requests
+from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
 from grapl_tests_common.sleep import verbose_sleep
 from grapl_tests_common.types import (
@@ -17,6 +20,10 @@ from grapl_tests_common.types import (
 )
 from grapl_tests_common.upload_test_data import UploadTestData
 from grapl_tests_common.wait import WaitForS3Bucket, WaitForSqsQueue, wait_for
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client
+    from mypy_boto3_sqs import SQSClient
 
 BUCKET_PREFIX = environ["BUCKET_PREFIX"]
 assert BUCKET_PREFIX == "local-grapl"
@@ -43,32 +50,22 @@ def _upload_analyzers(
 
 
 def _upload_test_data(
-    s3_client: S3ServiceResource, test_data: Sequence[UploadTestData]
+    s3_client: S3ServiceResource,
+    sqs_client: SQSClient,
+    test_data: Sequence[UploadTestData],
 ) -> None:
     logging.info(f"Uploading test data...")
 
     for datum in test_data:
-        datum.upload(s3_client)
+        datum.upload(s3_client, sqs_client)
 
 
-def _create_s3_client() -> S3ServiceResource:
-    return boto3.client(
-        "s3",
-        endpoint_url="http://s3:9000",
-        aws_access_key_id="minioadmin",
-        aws_secret_access_key="minioadmin",
-    )
+def _create_s3_client() -> S3Client:
+    return S3ClientFactory(boto3).from_env()
 
 
-def _create_sqs_client() -> SqsServiceResource:
-    # mostly cribbed from upload-sysmon-logs
-    return boto3.client(
-        "sqs",
-        endpoint_url="http://sqs:9324",
-        region_name="us-east-1",
-        aws_access_key_id="minioadmin",
-        aws_secret_access_key="minioadmin",
-    )
+def _create_sqs_client() -> SQSClient:
+    return SQSClientFactory(boto3).from_env()
 
 
 def setup(
@@ -91,7 +88,7 @@ def setup(
     )
 
     _upload_analyzers(s3_client, analyzers)
-    _upload_test_data(s3_client, test_data)
+    _upload_test_data(s3_client, sqs_client, test_data)
     # You may want to sleep(30) to let the pipeline do its thing, but setup won't force it.
 
 
@@ -101,8 +98,8 @@ def _after_tests() -> None:
     """
 
     # Issue a command to dgraph to export the whole database.
-    # This is then stored on a volume, `compose_artifacts`.
-    # The contents of the volume are made available to Github Actions via `dump_compose_artifacts.py`.
+    # This is then stored on a volume, `dgraph_export` (defined in docker-compose.yml)
+    # The contents of the volume are made available to Github Actions via `dump_artifacts.py`.
     if DUMP_ARTIFACTS:
         logging.info("Executing post-test database dumps")
         export_request = requests.get("http://grapl-master-graph-db:8080/admin/export")
@@ -113,9 +110,9 @@ def _after_tests() -> None:
 def exec_pytest() -> None:
     result = pytest.main(
         [
-            "-s",  # disable stdout capture
+            "-s",
         ]
-    )
+    )  # disable stdout capture
     _after_tests()
 
     sys.exit(result)

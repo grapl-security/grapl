@@ -63,6 +63,23 @@ class EngagementCreatorMetrics:
     def time_to_process_event(self) -> ContextManager:
         return self.metric_reporter.histogram_ctx(metric_name="time_to_process_event")
 
+    def risk_node(self, analyzer_name: str) -> None:
+        # A generic "hey, there's a new risky node" metric that we can globally alarm on.
+        # Has no dimensions. (See the top of `alarms.ts` to learn why!)
+        self.metric_reporter.counter(
+            metric_name=f"risk_node",
+            value=1,
+        )
+        # A more-specific, per-analyzer metric, in case you wanted to define your own alarms
+        # about just "suspicious svc host", for example.
+        self.metric_reporter.counter(
+            metric_name=f"risk_node_for_analyzer",
+            value=1,
+            tags=[
+                TagPair("analyzer_name", analyzer_name),
+            ],
+        )
+
 
 def parse_s3_event(s3: S3ServiceResource, event: Any) -> bytes:
     # Retrieve body of sns message
@@ -109,7 +126,6 @@ def recalculate_score(lens: LensView) -> int:
         for risk in node_risks:
             risk_score = risk.get_risk_score()
             analyzer_name = risk.get_analyzer_name()
-            print(node.node_key, analyzer_name, risk_score)
             risks_by_analyzer[analyzer_name] = risk_score
             key_to_analyzers[node.node_key].add(analyzer_name)
 
@@ -212,7 +228,7 @@ def lambda_handler(s3_event: S3Event, context: Any) -> None:
     for event in s3_event["Records"]:
         with metrics.time_to_process_event():
             try:
-                _process_one_event(event, s3, mg_client)
+                _process_one_event(event, s3, mg_client, metrics)
             except:
                 metrics.event_processed(status="failure")
                 raise
@@ -224,6 +240,7 @@ def _process_one_event(
     event: Any,
     s3: S3ServiceResource,
     mg_client: GraphClient,
+    metrics: EngagementCreatorMetrics,
 ) -> None:
     if not IS_LOCAL:
         event = json.loads(event["body"])["Records"][0]
@@ -293,6 +310,10 @@ def _process_one_event(
     for node in risky_nodes:
         create_edge(mg_client, node.uid, "risks", risk.uid)
         create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
+
+        # Or perhaps we should just emit per-risk instead of per-risky-node?
+        # (this alarming path is definitely a candidate for changing later)
+        metrics.risk_node(analyzer_name=analyzer_name)
 
     for edge_list in edges.values():
         for edge in edge_list:

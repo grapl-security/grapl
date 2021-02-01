@@ -8,7 +8,7 @@ on:
     - staging
 
 jobs:
-  release-rust-services:
+  release-services:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,80 +21,16 @@ jobs:
 
       - name: Export tag
         run: |
-          echo "::set-env name=TAG::staging"
+          echo "TAG=staging" >> $GITHUB_ENV
 
-      - name: Build Rust services
+      - name: Build services
         run: |
-          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount rust
+          make PROFILE=release build-services
 
       - name: Log in to Docker registry
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
 
-      - name: Publish Rust images to DockerHub
+      - name: Publish images to DockerHub
         run: |
-          ./etc/build_scripts/push_rust_to_docker.sh
-
-      - name: Clean up dist
-        run: |
-          rm -rf dist
-
-  release-python-services:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Prepare Github Actions CI
-        run: |
-          ./etc/ci_scripts/clean_gh_actions_space.sh
-          ./etc/ci_scripts/install_requirements.sh
-
-      - name: Export tag
-        run: |
-          echo "::set-env name=TAG::staging"
-
-      - name: Build Python services
-        run: |
-          GRAPL_RELEASE_TARGET=release TAG="$TAG" ./dobi-linux --no-bind-mount python
-
-      - name: Log in to Docker registry
-        run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
-
-      - name: Publish Python images to DockerHub
-        run: |
-          ./etc/build_scripts/push_py_to_docker.sh
-
-      - name: Clean up dist
-        run: |
-          rm -rf dist
-
-
-  release-js-services:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Prepare Github Actions CI
-        run: |
-          ./etc/ci_scripts/clean_gh_actions_space.sh
-          ./etc/ci_scripts/install_requirements.sh
-    
-      - name: Export tag
-        run: |
-          echo "::set-env name=TAG::staging"
-
-      - name: Build JS services
-        run: |
-          GRAPL_RELEASE_TARGET=release ./dobi-linux --no-bind-mount js
-
-      - name: Log in to Docker registry
-        run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username grapl --password-stdin
-
-      - name: Publish JS images to DockerHub
-        run: |
-          docker push grapl/grapl-engagement-view:$TAG
-          docker push grapl/grapl-graphql-endpoint:$TAG
+          docker-compose push
