@@ -15,6 +15,7 @@ services:
       wait-for-it grapl-provision:8126 --timeout=180 &&
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"
     environment:
+      - AWS_REGION=us-east-1
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - RUST_LOG=INFO
       - RUST_BACKTRACE=1
@@ -32,6 +33,9 @@ services:
       - NETWORK_CONNECTION_HISTORY_TABLE=local-grapl-network_connection_history_table
       - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
       - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
+      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
+      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
 
   grapl-analyzerlib-integration-tests:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
@@ -88,15 +92,13 @@ services:
       - BUCKET_PREFIX=local-grapl
       - UX_BUCKET_URL="ux_bucket_url"
 
-  engagement-view-integration-tests:
-    image: cypress/included:5.6.0
-    working_dir: /test
-    command: --browser chrome --headless # entrypoint is: cypress run
-    volumes: 
-      - .:/test
-    depends_on:
-      - grapl-engagement-view-uploader
-      - nginx
+  # Resurrect asap: https://github.com/grapl-security/issue-tracker/issues/231
+  # engagement-view-integration-tests:
+    # image: cypress/included:5.6.0
+    # working_dir: /test
+    # command: --browser chrome --headless # entrypoint is: cypress run
+    # volumes: 
+      # - .:/test
 
 networks:
   default:
