@@ -35,11 +35,9 @@ from grapl_analyzerlib.prelude import (
 )
 from grapl_analyzerlib.schema import Schema
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER.setLevel(GRAPL_LOG_LEVEL)
 
 
 def create_secret(secretsmanager):
@@ -166,7 +164,7 @@ def store_schema(table, schema: "Schema"):
 
         table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
-        print(f"stored edge mapping: {f_edge} {r_edge}")
+        LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
 
 
 def provision_mg(mclient) -> None:
@@ -280,6 +278,7 @@ def bucket_provision_loop() -> None:
                 endpoint_url="http://s3:9000",
                 aws_access_key_id="minioadmin",
                 aws_secret_access_key="minioadmin",
+                region_name="us-east-1",
             )
         except Exception as e:
             if i > 10:
@@ -397,6 +396,7 @@ if __name__ == "__main__":
     sqs_t.start()
     s3_t.start()
 
+    LOGGER.info("Starting to provision master graph")
     for i in range(0, 150):
         try:
             if not mg_succ:
@@ -405,12 +405,13 @@ if __name__ == "__main__":
                     local_dg_provision_client,
                 )
                 mg_succ = True
-                print("Provisioned mastergraph")
+                LOGGER.info("Provisioned master graph")
                 break
         except Exception as e:
             if i > 10:
                 LOGGER.error("mg provision failed with: ", e)
 
+    LOGGER.info("Starting to provision Secrets Manager")
     for i in range(0, 150):
         try:
             client = boto3.client(
@@ -421,6 +422,7 @@ if __name__ == "__main__":
                 aws_secret_access_key="dummy_cred_aws_secret_access_key",
             )
             create_secret(client)
+            LOGGER.info("Done provisioning Secrets Manager")
             break
         except botocore.exceptions.ClientError as e:
             if "ResourceExistsException" in e.__class__.__name__:
@@ -432,16 +434,20 @@ if __name__ == "__main__":
                 LOGGER.error(e)
             time.sleep(1)
 
+    LOGGER.info("Starting to provision Grapl user")
     for i in range(0, 150):
         try:
             create_user("grapluser", "graplpassword")
+            LOGGER.info("Done provisioning Grapl user")
             break
         except Exception as e:
             if i >= 50:
                 LOGGER.error(e)
             time.sleep(1)
 
+    LOGGER.info("Ensuring S3/SQS completed...")
     sqs_t.join(timeout=300)
     s3_t.join(timeout=300)
+    LOGGER.info("S3/SQS completed")
 
-    print("Completed provisioning")
+    LOGGER.info("Completed provisioning")

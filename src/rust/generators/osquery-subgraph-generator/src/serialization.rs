@@ -1,7 +1,8 @@
+use std::io::Cursor;
+
 use log::*;
 use serde::Deserialize;
 use sqs_lambda::event_decoder::PayloadDecoder;
-use std::io::Cursor;
 
 // TODO: MOVE THIS INTO A SHARED LIBRARY FOR REUSE BETWEEN GENERIC SUBGRAPH GENERATOR AND THIS GENERATOR
 #[derive(Debug, Clone, Default)]
@@ -11,7 +12,7 @@ impl<D> PayloadDecoder<Vec<D>> for OSQueryLogDecoder
 where
     for<'a> D: Deserialize<'a>,
 {
-    fn decode(&mut self, mut body: Vec<u8>) -> Result<Vec<D>, Box<dyn std::error::Error>> {
+    fn decode(&mut self, body: Vec<u8>) -> Result<Vec<D>, Box<dyn std::error::Error>> {
         let mut decompressed = Vec::with_capacity(body.len());
         let mut body = Cursor::new(&body);
 

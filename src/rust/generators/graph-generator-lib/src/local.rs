@@ -1,24 +1,33 @@
-use crate::serialization::SubgraphSerializer;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
+use std::{io::Stdout,
+          time::Duration};
+
+use aws_lambda_events::event::s3::{S3Bucket,
+                                   S3Entity,
+                                   S3Event,
+                                   S3EventRecord,
+                                   S3Object,
+                                   S3RequestParameters,
+                                   S3UserIdentity};
 use chrono::Utc;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::Context;
 use log::*;
-use rusoto_core::{HttpClient, Region};
+use rusoto_core::{HttpClient,
+                  Region};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::EventHandler;
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::{ConsumePolicy, ConsumePolicyBuilder};
-use std::io::Stdout;
-use std::time::Duration;
+use rusoto_sqs::{SendMessageRequest,
+                 Sqs,
+                 SqsClient};
+use sqs_lambda::{cache::NopCache,
+                 event_decoder::PayloadDecoder,
+                 event_handler::EventHandler,
+                 local_sqs_service::local_sqs_service_with_options,
+                 local_sqs_service_options::LocalSqsServiceOptionsBuilder,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::ConsumePolicyBuilder};
+
+use crate::serialization::SubgraphSerializer;
 
 const DEADLINE_LENGTH: i64 = 10_000; // 10,000 ms = 10 seconds
 

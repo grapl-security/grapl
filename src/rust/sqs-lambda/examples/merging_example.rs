@@ -1,34 +1,42 @@
+#![allow(unused_must_use)]
+
 extern crate futures;
 extern crate rusoto_s3;
 extern crate rusoto_sqs;
 extern crate sqs_lambda;
 extern crate tokio;
 
-use std::error::Error;
-use std::io::{Cursor, Stdout};
-use std::time::{SystemTime, UNIX_EPOCH};
-
-use prost::Message;
-use rusoto_s3::S3Client;
-use rusoto_sqs::SqsClient;
-use serde::Deserialize;
+use std::{error::Error,
+          fmt::Debug,
+          io::{Cursor,
+               Stdout}};
 
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
+use aws_lambda_events::event::s3::{S3Bucket,
+                                   S3Entity,
+                                   S3Event,
+                                   S3EventRecord,
+                                   S3Object,
+                                   S3RequestParameters,
+                                   S3UserIdentity};
 use chrono::Utc;
 use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::Context;
-use prost::bytes::Bytes;
+use prost::{bytes::Bytes,
+            Message};
 use rusoto_core::Region;
-use sqs_lambda::cache::{Cache, NopCache};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::error::Error as SqsLambdaError;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service;
-use std::fmt::Debug;
+use rusoto_s3::S3Client;
+use rusoto_sqs::SqsClient;
+use serde::Deserialize;
+use sqs_lambda::{cache::{Cache,
+                         NopCache},
+                 completion_event_serializer::CompletionEventSerializer,
+                 error::Error as SqsLambdaError,
+                 event_decoder::PayloadDecoder,
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent},
+                 local_sqs_service::local_sqs_service};
 use tracing_subscriber::EnvFilter;
 
 struct MyService<C>
@@ -86,10 +94,12 @@ where
 pub struct Subgraph {}
 
 impl Subgraph {
+    #[allow(dead_code)] // Ultimately need an implementation for this example
     fn merge(&mut self, _other: &Self) {
         unimplemented!()
     }
 
+    #[allow(dead_code)] // Ultimately need an implementation for this example
     fn into_bytes(self) -> Vec<u8> {
         unimplemented!()
     }
@@ -107,12 +117,12 @@ impl CompletionEventSerializer for SubgraphSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let mut subgraph = Subgraph {};
-        for sg in completed_events {
-            subgraph.merge(sg);
+        let mut _subgraph = Subgraph {};
+        for _sg in completed_events {
+            // subgraph.merge(sg);
         }
 
-        //        subgraph.into_bytes()
+        // subgraph.into_bytes()
         Ok(vec![])
     }
 }
@@ -191,31 +201,6 @@ fn init_s3_client() -> S3Client {
     })
 }
 
-fn time_based_key_fn(_event: &[u8]) -> String {
-    let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-        Ok(n) => n.as_millis(),
-        Err(_) => panic!("SystemTime before UNIX EPOCH!"),
-    };
-
-    let cur_day = cur_ms - (cur_ms % 86400);
-
-    format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
-}
-
-// #[tokio::main]
-// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//     simple_logger::init().unwrap();
-//     let service: MyService<_, SqsLambdaError<()>> = MyService::new(NopCache {});
-//
-//     local_service(
-//         "input-dir",
-//         "output-dir",
-//         SubgraphSerializer {},
-//         ZstdJsonDecoder { buffer: vec![] },
-//         service,
-//     ).await
-// }
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let filter = EnvFilter::from_default_env();
@@ -271,7 +256,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         },
                         object: S3Object {
                             key: Some(key),
-                            size: 0,
+                            size: None,
                             url_decoded_key: None,
                             version_id: None,
                             e_tag: None,

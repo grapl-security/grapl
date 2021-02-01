@@ -4,7 +4,8 @@ src/rust/graph-descriptions/grapl_graph_descriptions
 .DS_Store
 
 # Test outputs
-/test/integration-outputs/**/*
+test/cypress/screenshots
+test/cypress/videos
 
 lambda/
 __pycache__/
@@ -32,7 +33,6 @@ __pycache__/
 *$py.class
 
 target/
-.cargo
 
 # C extensions
 *.so
@@ -71,5 +71,4 @@ pip-log.txt
 *.zip
 stale_outputs_checked
 .log/
-.dobi/
 .hypothesis/

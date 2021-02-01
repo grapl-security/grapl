@@ -1,19 +1,21 @@
-use std::error::Error;
-use std::io::{Read, Stdout};
-use std::marker::PhantomData;
-use std::time::Duration;
-
-use rusoto_s3::{GetObjectRequest, S3};
-use rusoto_sqs::Message as SqsMessage;
-use tokio::prelude::*;
-use tracing::{debug, error, info};
+use std::{collections::HashMap,
+          error::Error,
+          io::Stdout,
+          marker::PhantomData,
+          time::Duration};
 
 use async_trait::async_trait;
+use grapl_observe::{metric_reporter::MetricReporter,
+                    timers::time_fut_ms};
+use rusoto_s3::{GetObjectRequest,
+                S3};
+use rusoto_sqs::Message as SqsMessage;
+use tokio::io::AsyncReadExt;
+use tracing::{debug,
+              error,
+              info};
 
 use crate::event_decoder::PayloadDecoder;
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_observe::timers::time_fut_ms;
-use std::collections::HashMap;
 
 #[async_trait]
 pub trait PayloadRetriever<T> {

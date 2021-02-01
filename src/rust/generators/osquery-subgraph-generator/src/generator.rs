@@ -1,13 +1,15 @@
-use async_trait::async_trait;
+use std::convert::TryFrom;
 
-use crate::metrics::OSQuerySubgraphGeneratorMetrics;
-use crate::parsers::PartiallyDeserializedOSQueryLog;
+use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
-use sqs_lambda::cache::{Cache, CacheResponse};
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use std::borrow::Cow;
-use std::convert::TryFrom;
+use sqs_lambda::{cache::Cache,
+                 event_handler::{Completion,
+                                 EventHandler,
+                                 OutputEvent}};
+
+use crate::{metrics::OSQuerySubgraphGeneratorMetrics,
+            parsers::PartiallyDeserializedOSQueryLog};
 
 #[derive(Clone)]
 pub(crate) struct OSQuerySubgraphGenerator<C>

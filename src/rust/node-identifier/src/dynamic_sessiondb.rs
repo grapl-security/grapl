@@ -1,18 +1,24 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap,
+                       HashSet};
 
-use failure::{bail, Error};
-use log::{info, warn};
-use rusoto_dynamodb::{AttributeValue, DynamoDb, GetItemInput, PutItemInput};
-use serde::{Deserialize, Serialize};
+use failure::{bail,
+              Error};
+use grapl_graph_descriptions::{graph_description::{id_strategy,
+                                                   Session as SessionStrategy,
+                                                   *},
+                               node::NodeT};
+use log::{info,
+          warn};
+use rusoto_dynamodb::{AttributeValue,
+                      DynamoDb,
+                      GetItemInput,
+                      PutItemInput};
+use serde::{Deserialize,
+            Serialize};
 
-use grapl_graph_descriptions::graph_description::id_strategy;
-use grapl_graph_descriptions::graph_description::Session as SessionStrategy;
-use grapl_graph_descriptions::graph_description::*;
-use grapl_graph_descriptions::node::NodeT;
-
-use crate::assetdb::AssetIdentifier;
-use crate::sessiondb::SessionDb;
-use crate::sessions::UnidSession;
+use crate::{assetdb::AssetIdentifier,
+            sessiondb::SessionDb,
+            sessions::UnidSession};
 
 #[derive(Debug, Clone)]
 pub struct DynamicMappingDb<D>
@@ -313,11 +319,6 @@ where
             unid_id_map.insert(node.clone_node_key(), new_node.clone_node_key());
             output_graph.add_node(new_node);
         }
-
-        //
-        //        remap_nodes(&mut output_graph, &unid_id_map);
-        //        remap_edges(&mut output_graph, &unid_id_map);
-        //        remove_dead_edges(&mut output_graph);
 
         if dead_nodes.is_empty() {
             info!("Attributed all dynamic nodes");

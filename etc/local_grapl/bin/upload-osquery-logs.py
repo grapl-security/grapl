@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Despite the path, this is *not* tied just to Local Grapl, and can also be used on true S3 buckets.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 from typing import Callable
@@ -22,14 +23,33 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     while grapl_repo_root.name != "grapl":
         grapl_repo_root = grapl_repo_root.parent
 
-    grapl_tests_common_path = grapl_repo_root.joinpath(
-        "src/python/grapl-tests-common/grapl_tests_common"
-    )
+    for additional_path in (
+        "src/python/grapl-tests-common",
+        "src/python/grapl-common",
+    ):
+        additional_fullpath = grapl_repo_root.joinpath(additional_path)
+        # Look at the inserted lib before system-installed one
+        sys.path.insert(0, str(additional_fullpath))
 
-    sys.path.append(str(grapl_tests_common_path))
-    from upload_logs import upload_osquery_logs
+    from grapl_tests_common.upload_logs import upload_osquery_logs
 
     return upload_osquery_logs
+
+
+def setup_env(bucket_prefix: str):
+    if bucket_prefix == "local-grapl":
+        kvs = [
+            ("AWS_REGION", "us-east-1"),
+            ("S3_ENDPOINT", "http://localhost:9000"),
+            ("S3_ACCESS_KEY_ID", "minioadmin"),
+            ("S3_ACCESS_KEY_SECRET", "minioadmin"),
+            ("SQS_ENDPOINT", "http://localhost:9324"),
+            ("SQS_ACCESS_KEY_ID", "dummy_cred_aws_access_key_id"),
+            ("SQS_ACCESS_KEY_SECRET", "dummy_cred_aws_secret_access_key"),
+        ]
+        for (k, v) in kvs:
+            # fun fact: os.putenv is bad and this is preferred
+            os.environ[k] = v
 
 
 def parse_args():
@@ -43,7 +63,6 @@ def parse_args():
     )
     parser.add_argument("--delay", dest="delay", default=0, type=int)
     parser.add_argument("--batch-size", dest="batch_size", default=100, type=int)
-    parser.add_argument("--use-links", dest="use_links", default=False, type=bool)
     return parser.parse_args()
 
 
@@ -51,12 +70,12 @@ if __name__ == "__main__":
     args = parse_args()
     if args.bucket_prefix is None:
         raise Exception("Provide bucket prefix as first argument")
-    else:
-        upload_fn = hack_PATH_to_include_grapl_tests_common()
-        upload_fn(
-            args.bucket_prefix,
-            args.logfile,
-            delay=args.delay,
-            batch_size=args.batch_size,
-            use_links=args.use_links,
-        )
+
+    setup_env(args.bucket_prefix)
+    upload_fn = hack_PATH_to_include_grapl_tests_common()
+    upload_fn(
+        args.bucket_prefix,
+        args.logfile,
+        delay=args.delay,
+        batch_size=args.batch_size,
+    )
