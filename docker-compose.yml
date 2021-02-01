@@ -440,7 +440,7 @@ services:
       target: grapl-ux-router-deploy
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:8126 --timeout=10;
+        wait-for-it grapl-engagement-view-uploader:8127 --timeout=180 &&
         . venv/bin/activate &&
         cd app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=8901
@@ -452,7 +452,7 @@ services:
       - GRAPL_LOG_LEVEL=DEBUG
       - "UX_BUCKET_NAME=local-grapl-engagement-ux-bucket"
     depends_on:
-      - grapl-provision
+      - grapl-engagement-view-uploader
     tty: true
     links:
       - s3:minio
@@ -579,7 +579,26 @@ services:
       - s3
       - sqs
       - grapl-provision
-
+      - grapl-graphql-endpoint
+      - grapl-ux-router
+  
+  grapl-engagement-view-uploader:
+    image: grapl/grapl-engagement-view:${TAG:-latest}
+    build: 
+      context: src/js/engagement_view
+      dockerfile: Dockerfile
+      target: engagement-view-local-deploy
+    command: |
+      /bin/bash -c "
+        wait-for-it grapl-provision:8126 --timeout=120 &&
+        ./upload_local.sh &&
+        python -m http.server 8127  # wait-for-it
+      "
+    links:
+      - s3:minio
+    depends_on: 
+      - grapl-provision
+  
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     build: 
@@ -629,12 +648,13 @@ services:
       target: grapl-provision
     command: |
       /bin/bash -c "
+        export TIMEOUT=35 &&
         # it doesn't seem to like waiting for sqs
         # wait-for-it sqs:9324 &&
-        wait-for-it secretsmanager:4584 &&
-        wait-for-it s3:9000 &&
-        wait-for-it dynamodb:8000 &&
-        wait-for-it grapl-master-graph-db:8080 &&
+        wait-for-it s3:9000 --timeout=$$TIMEOUT &&
+        wait-for-it dynamodb:8000 --timeout=$$TIMEOUT &&
+        wait-for-it grapl-master-graph-db:8080 --timeout=$$TIMEOUT &&
+        wait-for-it secretsmanager:4584 --timeout=$$TIMEOUT &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
@@ -642,7 +662,7 @@ services:
         python -m http.server 8126
       "
     environment:
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - MG_ALPHAS=master_graph:9080
     tty: true
     ports:
@@ -658,10 +678,11 @@ services:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
     depends_on:
+      - dynamodb
       - grapl-master-graph-db
       - s3
+      - secretsmanager
       - sqs
-      - dynamodb
 
 networks:
   default:
