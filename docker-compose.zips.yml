@@ -110,3 +110,17 @@ services:
     environment: 
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip graphql-endpoint-${TAG}.zip
+
+  grapl-ux-router-zip:
+    image: grapl/grapl-ux-router-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: ux-router-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip ux-router-${TAG}.zip
