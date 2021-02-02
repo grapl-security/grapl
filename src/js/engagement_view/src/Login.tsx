@@ -3,7 +3,6 @@ import * as Yup from "yup";
 import {Field, Form, Formik} from "formik";
 import './LogIn.css';
 import {LoginProps} from '../src/modules/GraphViz/CustomTypes';
-import {getAuthEdge} from './modules/GraphViz/engagement_edge/getApiURLs';
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 
 const useStyles = makeStyles(
@@ -17,8 +16,6 @@ const useStyles = makeStyles(
       }
   )
 );
-
-const engagement_edge = getAuthEdge();
 
 const validationSchema = Yup.object().shape({
   userName: Yup.string().required("Username Required"),

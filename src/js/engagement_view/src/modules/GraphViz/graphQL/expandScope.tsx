@@ -1,8 +1,5 @@
 import {BaseNode, LensScopeResponse} from '../../GraphViz/CustomTypes'
 import {mapGraph} from "../graph/graph_traverse";
-import {getGraphQlEdge} from '../engagement_edge/getApiURLs';
-
-const graphql_edge = getGraphQlEdge();
 
 const builtins = new Set([
     'Process',
@@ -46,8 +43,6 @@ const unpackPluginNodes = (nodes: BaseNode[]) => {
 export const retrieveGraph = async (lens: string): Promise<(LensScopeResponse & BaseNode)> => {
     const query = expandScope(lens);
     
-    console.log("in retreive graph calling graphql edge", graphql_edge);
-
     const res = await fetch(`/prod/graphQlEndpoint/graphql`,
         {
             method: 'post',
