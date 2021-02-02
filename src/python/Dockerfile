@@ -58,7 +58,6 @@ RUN python3 -mvenv venv && \
     source venv/bin/activate && \
     pip install --upgrade pip
 
-
 # test deps
 ################################################################################
 
@@ -67,6 +66,7 @@ FROM grapl-python-build AS python-test-deps
 COPY --chown=grapl python/python_test_deps python_test_deps
 
 RUN python_test_deps/download_requirements.sh
+
 
 
 # graph-descriptions
@@ -111,7 +111,6 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 
-
 # grapl_analyzerlib
 ################################################################################
 
@@ -139,7 +138,6 @@ FROM grapl-analyzerlib-build AS grapl-analyzerlib-test
 ## Install test requirements
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
-
 
 
 # analyzer-executor
@@ -186,7 +184,6 @@ RUN python_test_deps/install_requirements.sh
 
 # engagement-creator
 ################################################################################
-
 
 # build
 FROM grapl-python-build AS engagement-creator-build
@@ -436,7 +433,6 @@ RUN python_test_deps/install_requirements.sh
 
 CMD :
 
-
 # Notebook
 ################################################################################
 
@@ -471,6 +467,8 @@ RUN source venv/bin/activate && \
     pip install nbqa mypy boto3-stubs[essential]
 
 
+
+#
 # Local provision
 ################################################################################
 
@@ -479,7 +477,6 @@ FROM grapl-python-build AS grapl-provision
 
 COPY --chown=grapl python/grapl_provision grapl_local_provision
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-
 
 # grapl-tests-common-build
 ################################################################################

@@ -17,7 +17,7 @@ export interface AnalyzerDispatchProps extends GraplServiceProps {
 }
 
 export class AnalyzerDispatch extends cdk.NestedStack {
-    readonly bucket: s3.Bucket;
+    readonly bucket: GraplS3Bucket;
     readonly topic: sns.Topic;
     readonly service: FargateService;
 

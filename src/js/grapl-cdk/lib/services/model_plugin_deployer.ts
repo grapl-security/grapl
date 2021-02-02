@@ -26,7 +26,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
 
         const serviceName = props.prefix + '-ModelPluginDeployer';
 
-        const ux_bucket = s3.Bucket.fromBucketName(
+        const ux_bucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
@@ -94,8 +94,8 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         this.apis = [];
         for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
             for (const resourcePath of ['/gitWebhook', '/deploy', '/listModelPlugins', 'deleteModelPlugin', '/{proxy+}']) {
-                this.apis.push({httpMethod, resourcePath});
-                this.apis.push({httpMethod, resourcePath: '/modelPluginDeployer' + resourcePath});
+                this.apis.push({ httpMethod, resourcePath });
+                this.apis.push({ httpMethod, resourcePath: '/modelPluginDeployer' + resourcePath });
             }
         }
     }

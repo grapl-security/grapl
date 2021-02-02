@@ -3,19 +3,20 @@ import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
-import {HistoryDb} from '../historydb';
-import {EventEmitter} from '../event_emitters';
-import {RedisCluster} from '../redis';
-import {GraplServiceProps} from '../grapl-cdk-stack';
-import {ContainerImage} from "@aws-cdk/aws-ecs";
-import {FargateService} from "../fargate_service";
+import { HistoryDb } from '../historydb';
+import { EventEmitter } from '../event_emitters';
+import { RedisCluster } from '../redis';
+import { GraplServiceProps } from '../grapl-cdk-stack';
+import { ContainerImage } from "@aws-cdk/aws-ecs";
+import { FargateService } from "../fargate_service";
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface NodeIdentifierProps extends GraplServiceProps {
     writesTo: s3.IBucket;
 }
 
 export class NodeIdentifier extends cdk.NestedStack {
-    readonly bucket: s3.Bucket;
+    readonly bucket: GraplS3Bucket;
     readonly topic: sns.Topic;
     readonly service: FargateService;
 

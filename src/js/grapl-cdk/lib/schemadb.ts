@@ -4,7 +4,7 @@ import * as iam from '@aws-cdk/aws-iam';
 
 import { Service } from './service';
 import { RemovalPolicy } from '@aws-cdk/core';
-import {FargateService} from "./fargate_service";
+import { FargateService } from "./fargate_service";
 
 export interface SchemaDbProps {
     table_name: string;

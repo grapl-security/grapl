@@ -2,12 +2,13 @@ import * as path from 'path';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
-import {EventEmitter} from '../event_emitters';
-import {RedisCluster} from '../redis';
-import {GraplServiceProps} from '../grapl-cdk-stack';
-import {SchemaDb} from '../schemadb';
-import {ContainerImage} from "@aws-cdk/aws-ecs";
-import {FargateService} from "../fargate_service";
+import { EventEmitter } from '../event_emitters';
+import { RedisCluster } from '../redis';
+import { GraplServiceProps } from '../grapl-cdk-stack';
+import { SchemaDb } from '../schemadb';
+import { ContainerImage } from "@aws-cdk/aws-ecs";
+import { FargateService } from "../fargate_service";
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -15,8 +16,8 @@ export interface GraphMergerProps extends GraplServiceProps {
 }
 
 export class GraphMerger extends cdk.NestedStack {
-    readonly bucket: s3.Bucket;
-    readonly service: FargateService
+    readonly bucket: GraplS3Bucket;
+    readonly service: FargateService;
 
     constructor(scope: cdk.Construct, id: string, props: GraphMergerProps) {
         super(scope, id);

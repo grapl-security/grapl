@@ -5,8 +5,8 @@ import * as s3 from '@aws-cdk/aws-s3';
 import { EventEmitter } from '../event_emitters';
 import { RedisCluster } from '../redis';
 import { GraplServiceProps } from '../grapl-cdk-stack';
-import {FargateService} from "../fargate_service";
-import {ContainerImage} from "@aws-cdk/aws-ecs";
+import { FargateService } from "../fargate_service";
+import { ContainerImage } from "@aws-cdk/aws-ecs";
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
