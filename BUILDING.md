@@ -84,7 +84,7 @@ version and/or branch information for tracking purposes (ex:
 `v1.2.3-my_feature`). This value corresponds to the `graplVersion` parameter in
 the CDK project for deploying to AWS, and is used to name the zip files in the
 Make `zip` target.
-- `PROFILE` (default: `debug`) - Can either be `debug` or `release`. These
+- `CARGO_PROFILE` (default: `debug`) - Can either be `debug` or `release`. These
   roughly translate to the [Cargo
 profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) to be used
 for Rust builds.
@@ -188,7 +188,7 @@ image.
       context: src/rust
       target: sysmon-subgraph-generator-deploy
       args:
-        - PROFILE=${PROFILE:-debug}
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
 ...
 ```
 
@@ -217,7 +217,7 @@ services:
       context: ${PWD}/src/rust
       target: build-test-unit
       args:
-        - PROFILE=debug
+        - CARGO_PROFILE=debug
     command: cargo test
 ```
 
