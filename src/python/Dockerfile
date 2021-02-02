@@ -7,7 +7,6 @@ SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get -y install --no-install-recommends \
         build-essential \
-        ca-certificates \
         protobuf-compiler \
         wait-for-it \
         zip \
