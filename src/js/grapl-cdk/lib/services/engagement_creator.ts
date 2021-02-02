@@ -2,17 +2,17 @@ import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as sns from '@aws-cdk/aws-sns';
-import * as s3 from '@aws-cdk/aws-s3';
-import {Service} from '../service';
-import {EventEmitter} from '../event_emitters';
-import {GraplServiceProps} from '../grapl-cdk-stack';
+import { Service } from '../service';
+import { EventEmitter } from '../event_emitters';
+import { GraplServiceProps } from '../grapl-cdk-stack';
+import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface EngagementCreatorProps extends GraplServiceProps {
     publishesTo: sns.ITopic;
 }
 
 export class EngagementCreator extends cdk.NestedStack {
-    readonly bucket: s3.Bucket;
+    readonly bucket: GraplS3Bucket;
     readonly service: Service;
 
     constructor(

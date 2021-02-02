@@ -2,10 +2,12 @@
 
 set -e  # Quit upon any failure
 
-if [ -z ${PROFILE} ]; then
+#####
+# Set `AWS_PROFILE=` for multi-profile support
+if [ -z ${AWS_PROFILE} ]; then
     PROFILE_FLAG=""
 else 
-    PROFILE_FLAG="--profile=$PROFILE"
+    PROFILE_FLAG="--profile=$AWS_PROFILE"
 fi
 
 ##########

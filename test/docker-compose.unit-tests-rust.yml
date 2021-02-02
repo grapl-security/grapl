@@ -10,5 +10,5 @@ services:
       context: ${PWD}/src/rust
       target: build-test-unit
       args:
-        - PROFILE=debug
+        - CARGO_PROFILE=debug
     command: cargo test

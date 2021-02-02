@@ -17,7 +17,7 @@ export interface AnalyzerDispatchProps extends GraplServiceProps {
 }
 
 export class AnalyzerDispatch extends cdk.NestedStack {
-    readonly bucket: s3.Bucket;
+    readonly bucket: GraplS3Bucket;
     readonly topic: sns.Topic;
     readonly service: FargateService;
 
@@ -65,7 +65,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
             serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
                 target: "analyzer-dispatcher-deploy",
                 buildArgs: {
-                    "release_target": "debug"
+                    "CARGO_PROFILE": "debug"
                 },
                 file: "Dockerfile",
             }),

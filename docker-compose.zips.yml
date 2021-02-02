@@ -3,6 +3,25 @@ version: "3.8"
 services:
 
   #
+  # Rust
+  #
+
+  grapl-rust-zips:
+    image: grapl/rust-zip:${TAG:-latest}
+    build:
+      context: src/rust
+      target: zip
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+    volumes:
+      - ./src/js/grapl-cdk/zips:/tmp/zips
+    user: ${UID}:${GID}
+    working_dir: /grapl/zips
+    environment:
+      - TAG=${TAG:-latest}
+    command: sh -c 'cp /grapl/zips/metric-forwarder.zip /tmp/zips/metric-forwarder-${TAG:-latest}.zip'
+
+  #
   # Python services
   #
 
@@ -21,7 +40,7 @@ services:
     working_dir: /grapl
     environment: 
       - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip analyzer-executor-${TAG}.zip
+    command: cp /home/grapl/lambda.zip analyzer-executor-${TAG:-latest}.zip
 
   grapl-dgraph-ttl-zip:
     image: grapl/grapl-dgraph-ttl-zip:${TAG:-latest}
@@ -35,7 +54,7 @@ services:
     working_dir: /grapl
     environment: 
       - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip dgraph-ttl-${TAG}.zip
+    command: cp /home/grapl/lambda.zip dgraph-ttl-${TAG:-latest}.zip
 
   grapl-engagement-creator-zip:
     image: grapl/grapl-engagement-creator-zip:${TAG:-latest}
@@ -49,7 +68,7 @@ services:
     working_dir: /grapl
     environment: 
       - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip engagement-creator-${TAG}.zip
+    command: cp /home/grapl/lambda.zip engagement-creator-${TAG:-latest}.zip
 
   grapl-engagement-edge-zip:
     image: grapl/grapl-engagement-edge-zip:${TAG:-latest}
@@ -63,7 +82,7 @@ services:
     working_dir: /grapl
     environment: 
       - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip engagement-edge-${TAG}.zip
+    command: cp /home/grapl/lambda.zip engagement-edge-${TAG:-latest}.zip
 
   grapl-model-plugin-deployer-zip:
     image: grapl/grapl-model-plugin-deployer-zip:${TAG:-latest}
@@ -77,7 +96,7 @@ services:
     working_dir: /grapl
     environment: 
       - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip model-plugin-deployer-${TAG}.zip
+    command: cp /home/grapl/lambda.zip model-plugin-deployer-${TAG:-latest}.zip
 
   grapl-swarm-lifecycle-event-handler-zip:
     image: grapl/grapl-swarm-lifecycle-event-handler-zip:${TAG:-latest}
@@ -91,7 +110,7 @@ services:
     working_dir: /grapl
     environment: 
       - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip swarm-lifecycle-event-handler-${TAG}.zip
+    command: cp /home/grapl/lambda.zip swarm-lifecycle-event-handler-${TAG:-latest}.zip
 
   #
   # JS/web services
@@ -109,4 +128,18 @@ services:
     working_dir: /grapl
     environment: 
       - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip graphql-endpoint-${TAG}.zip
+    command: cp /home/grapl/lambda.zip graphql-endpoint-${TAG:-latest}.zip
+
+  grapl-ux-router-zip:
+    image: grapl/grapl-ux-router-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: ux-router-zip
+    volumes: 
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment: 
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip ux-router-${TAG:-latest}.zip

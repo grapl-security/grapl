@@ -1,12 +1,15 @@
 FROM rust:1-slim-buster AS base
 
-ARG PROFILE=debug
+ARG CARGO_PROFILE=debug
 
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wait-for-it \
+        ca-certificates \
+        netbase \
         wget \
+        zip \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
@@ -33,15 +36,32 @@ FROM base AS build
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
-    case "${PROFILE}" in \
+    case "${CARGO_PROFILE}" in \
       debug) \
         cargo build ;; \
       release) \
         cargo build --release ;; \
       *) \
-        echo "ERROR: Unknown profile: ${PROFILE}"; \
+        echo "ERROR: Unknown profile: ${CARGO_PROFILE}"; \
         exit 1 ;; \
     esac
+
+
+#
+# zip
+#
+FROM build AS zip
+
+RUN mkdir -p /grapl/zips; \
+    grapl-zip() { \
+      TMPDIR="$(mktemp -d)"; \
+      cd "$TMPDIR"; \
+      cp "/grapl/target/${TARGET}/${CARGO_PROFILE}/${1}" bootstrap && \
+      zip --quiet -9 "/grapl/zips/${1}.zip" bootstrap; \
+    }; \
+    grapl-zip metric-forwarder
+
+
 
 
 #
@@ -68,54 +88,54 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 #
 FROM debian:buster-slim AS rust-dist
 
-ARG PROFILE=debug
+ARG CARGO_PROFILE=debug
 
 USER nobody
 
 # analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
 
-COPY --from=build "/grapl/target/${PROFILE}/analyzer-dispatcher" /
+COPY --from=build "/grapl/target/${CARGO_PROFILE}/analyzer-dispatcher" /
 CMD ["/analyzer-dispatcher"]
 
 # generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
-COPY --from=build "/grapl/target/${PROFILE}/generic-subgraph-generator" /
+COPY --from=build "/grapl/target/${CARGO_PROFILE}/generic-subgraph-generator" /
 CMD ["/generic-subgraph-generator"]
 
 # graph-merger
 FROM rust-dist AS graph-merger-deploy
 
-COPY --from=build "/grapl/target/${PROFILE}/graph-merger" /
+COPY --from=build "/grapl/target/${CARGO_PROFILE}/graph-merger" /
 CMD ["/graph-merger"]
 
 # metric-forwarder
 FROM rust-dist AS metric-forwarder-deploy
 
-COPY --from=build "/grapl/target/${PROFILE}/metric-forwarder" /
+COPY --from=build "/grapl/target/${CARGO_PROFILE}/metric-forwarder" /
 CMD ["/metric-forwarder"]
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 
-COPY --from=build "/grapl/target/${PROFILE}/node-identifier" /
+COPY --from=build "/grapl/target/${CARGO_PROFILE}/node-identifier" /
 CMD ["/node-identifier"]
 
 # node-identifier-retry-handler
 FROM rust-dist AS node-identifier-retry-handler-deploy
 
-COPY --from=build "/grapl/target/${PROFILE}/node-identifier-retry-handler" /
+COPY --from=build "/grapl/target/${CARGO_PROFILE}/node-identifier-retry-handler" /
 CMD ["/node-identifier-retry-handler"]
 
 # sysmon-subgraph-generator
 FROM rust-dist AS sysmon-subgraph-generator-deploy
 
-COPY --from=build "/grapl/target/${PROFILE}/sysmon-subgraph-generator" /
+COPY --from=build "/grapl/target/${CARGO_PROFILE}/sysmon-subgraph-generator" /
 CMD ["/sysmon-subgraph-generator"]
 
 # osquery-subgraph-generator
 FROM rust-dist AS osquery-subgraph-generator-deploy
 
-COPY --from=build "/grapl/target/${PROFILE}/osquery-subgraph-generator" /
+COPY --from=build "/grapl/target/${CARGO_PROFILE}/osquery-subgraph-generator" /
 CMD ["/osquery-subgraph-generator"]

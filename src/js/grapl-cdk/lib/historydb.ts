@@ -4,7 +4,7 @@ import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import { GraplServiceProps } from './grapl-cdk-stack';
 import { Service } from './service';
 import { RemovalPolicy } from '@aws-cdk/core';
-import {FargateService} from "./fargate_service";
+import { FargateService } from "./fargate_service";
 
 function create_table(scope: cdk.Construct, name: string) {
     return new dynamodb.Table(scope, name, {
