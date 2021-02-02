@@ -209,9 +209,6 @@ class AnalyzerExecutor:
         )
 
         for event in events["Records"]:
-            if not self.is_local:
-                LOGGER.debug(f'event body: {event["body"]}')  # type: ignore
-                event = json.loads(event["body"])["Records"][0]  # type: ignore
             data = parse_s3_event(s3, event)
 
             message = json.loads(data)
@@ -444,6 +441,7 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
     )
     obj.put(Body=event_s.encode("utf-8"))
 
+    # TODO fargate: always emit manual events
     if is_local:
         # Local = manual eventing
         sqs = SQSClientFactory(boto3).from_env()
