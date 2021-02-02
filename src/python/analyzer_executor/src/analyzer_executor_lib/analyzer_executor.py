@@ -387,8 +387,12 @@ class AnalyzerExecutor:
 
 
 def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
-    bucket = event["s3"]["bucket"]["name"]
-    key = event["s3"]["object"]["key"]
+    try:
+        bucket = event["s3"]["bucket"]["name"]
+        key = event["s3"]["object"]["key"]
+    except KeyError:
+        LOGGER.error("Could not parse s3 event: {}", exc_info=True)
+        raise
     return download_s3_file(s3, bucket, key)
 
 
