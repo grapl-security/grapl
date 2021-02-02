@@ -65,7 +65,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
             serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
                 target: "analyzer-dispatcher-deploy",
                 buildArgs: {
-                    "release_target": "debug"
+                    "CARGO_PROFILE": "debug"
                 },
                 file: "Dockerfile",
             }),

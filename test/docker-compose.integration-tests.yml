@@ -10,7 +10,7 @@ services:
       context: ${PWD}/src/rust
       target: build-test-integration
       args:
-        - PROFILE=debug
+        - CARGO_PROFILE=debug
     command: bash -c "
       wait-for-it grapl-provision:8126 --timeout=180 &&
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"

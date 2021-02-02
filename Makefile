@@ -4,7 +4,7 @@
 
 -include .env
 TAG ?= latest
-PROFILE ?= debug
+CARGO_PROFILE ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
 DOCKER_BUILDX_BAKE_OPTS ?=
@@ -174,7 +174,7 @@ clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 
 .PHONY: release
 release: ## 'make build-services' with cargo --release
-	$(MAKE) PROFILE=release build-services
+	$(MAKE) CARGO_PROFILE=release build-services
 
 .PHONY: zip
 zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)

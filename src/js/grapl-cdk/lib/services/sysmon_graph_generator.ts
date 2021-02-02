@@ -46,7 +46,7 @@ export class SysmonGraphGenerator extends cdk.NestedStack {
             serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
                 target: "sysmon-subgraph-generator-deploy",
                 buildArgs: {
-                    "release_target": "debug"
+                    "CARGO_PROFILE": "debug"
                 },
                 file: "Dockerfile",
             }),

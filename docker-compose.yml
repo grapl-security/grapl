@@ -107,7 +107,7 @@ services:
       context: src/rust
       target: metric-forwarder-deploy
       args:
-        - PROFILE=${PROFILE:-debug}
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     tty: false
     environment:
       - "IS_LOCAL=True"
@@ -122,7 +122,7 @@ services:
       context: src/rust
       target: sysmon-subgraph-generator-deploy
       args:
-        - PROFILE=${PROFILE:-debug}
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     tty: false
     environment:
       - RUST_LOG=${RUST_LOG:-ERROR}
@@ -157,7 +157,7 @@ services:
       context: src/rust
       target: osquery-subgraph-generator-deploy
       args:
-        - PROFILE=${PROFILE:-debug}
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     tty: false
     environment:
       - "BUCKET_PREFIX=local-grapl"
@@ -194,7 +194,7 @@ services:
       context: src/rust
       target: node-identifier-deploy
       args:
-        - PROFILE=${PROFILE:-debug}
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
@@ -243,7 +243,7 @@ services:
       context: src/rust
       target: node-identifier-retry-handler-deploy
       args:
-        - PROFILE=${PROFILE:-debug}
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "IS_LOCAL=True"
@@ -292,7 +292,7 @@ services:
       context: src/rust
       target: graph-merger-deploy
       args:
-        - PROFILE=${PROFILE:-debug}
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       - RUST_LOG=${RUST_LOG:-ERROR}
       - "EVENT_CACHE_CLUSTER_ADDRESS=dev-shared-redis:6379"
@@ -334,7 +334,7 @@ services:
       context: src/rust
       target: analyzer-dispatcher-deploy
       args:
-        - PROFILE=${PROFILE:-debug}
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       - "ANALYZERS_BUCKET=local-grapl-analyzers-bucket"
       - "SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"

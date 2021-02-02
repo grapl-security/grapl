@@ -263,7 +263,7 @@ export class GraplCdkStack extends cdk.Stack {
             ...enableMetricsProps,
         });
 
-        new OSQueryGraphGenerator(this, 'osquery-subgraph-generator', {
+        const osquery_generator = new OSQueryGraphGenerator(this, 'osquery-subgraph-generator', {
             writesTo: node_identifier.bucket,
             ...graplProps,
             ...enableMetricsProps,
@@ -348,6 +348,7 @@ export class GraplCdkStack extends cdk.Stack {
                 // Order here is important - the idea is that this dashboard will help Grapl operators
                 // quickly determine which service in the pipeline is failing.
                 sysmon_generator.service,
+                osquery_generator.service,
                 node_identifier.service,
                 graph_merger.service,
                 analyzer_executor.service,
