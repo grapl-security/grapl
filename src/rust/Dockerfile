@@ -6,8 +6,6 @@ SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wait-for-it \
-        ca-certificates \
-        netbase \
         wget \
         zip \
     && rm -rf /var/lib/apt/lists/*
@@ -89,6 +87,11 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 FROM debian:buster-slim AS rust-dist
 
 ARG CARGO_PROFILE=debug
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        netbase \
+    && rm -rf /var/lib/apt/lists/*
 
 USER nobody
 
