@@ -1,6 +1,5 @@
 import os
 import subprocess
-import sys
 import urllib.request
 
 
@@ -12,11 +11,8 @@ def _get_private_ip() -> str:
     )
 
 
-def _init_docker_swarm(private_ip: str) -> str:
-    """Initialize the docker swarm manager. Returns the join token
-    necessary to attach workers to the swarm.
-
-    """
+def _init_docker_swarm(private_ip: str) -> None:
+    """Initialize the docker swarm manager."""
     subprocess.run(
         ["docker", "swarm", "init", "--advertise-addr", private_ip],
         check=True,
@@ -31,7 +27,8 @@ def _init_docker_swarm(private_ip: str) -> str:
 
 
 def main() -> None:
-    sys.stdout.write(_init_docker_swarm(private_ip=_get_private_ip()))
+    # initialize the docker swarm cluster
+    _init_docker_swarm(private_ip=_get_private_ip())
 
 
 if __name__ == "__main__":
