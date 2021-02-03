@@ -1,6 +1,6 @@
 FROM node:alpine3.10 AS engagement-view-deps
 
-RUN apk add bash
+RUN apk add bash yarn
 WORKDIR /grapl
 
 # install deps as separate steps to leverage build cache
