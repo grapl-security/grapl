@@ -117,7 +117,6 @@ def upload_logs(
 
     # Ugly hack to cheaply disable batching
     batch_size = batch_size if batch_size is not None else maxsize
-
     requires_manual_eventing = prefix == "local-grapl"
     s3 = s3_client or S3ClientFactory(boto3).from_env()
     sqs = sqs_client or SQSClientFactory(boto3).from_env()
@@ -131,7 +130,9 @@ def upload_logs(
 
     bucket = f"{prefix}-{generator_options.bucket_suffix}"
 
+    chunk_count = 0
     for chunk in chunker(body, batch_size):
+        chunk_count += 1
         chunk_body = generator_options.encode_chunk(chunk)
         epoch = int(time.time())
 
@@ -139,7 +140,7 @@ def upload_logs(
             str(epoch - (epoch % (24 * 60 * 60)))
             + f"/{generator_options.key_infix}/"
             + str(epoch)
-            + rand_str(3)
+            + rand_str(6)
         )
         s3.put_object(Body=chunk_body, Bucket=bucket, Key=key)
 
@@ -153,7 +154,7 @@ def upload_logs(
 
         time.sleep(delay)
 
-    print(f"Completed uploading at {time.ctime()}")
+    print(f"Completed uploading {chunk_count} chunks at {time.ctime()}")
 
 
 def upload_sysmon_logs(

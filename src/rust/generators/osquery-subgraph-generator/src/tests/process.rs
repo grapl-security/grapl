@@ -1,6 +1,6 @@
-use sqs_lambda::{cache::NopCache,
-                 event_handler::{Completion,
-                                 EventHandler}};
+use sqs_executor::{cache::NopCache,
+                   event_handler::{CompletedEvents,
+                                   EventHandler}};
 
 use crate::{generator::OSQuerySubgraphGenerator,
             metrics::OSQuerySubgraphGeneratorMetrics,
@@ -15,13 +15,14 @@ async fn test_subgraph_generation_process_create() {
         .await
         .expect("Failed to parse process_create.zstd logs into OSQueryLogs.");
 
-    let output_event = generator.handle_event(logs).await;
+    let mut completion = CompletedEvents::default();
+    let output_event = generator.handle_event(logs, &mut completion).await;
 
-    match &output_event.completed_event {
-        Completion::Total(subgraph) => {
+    match &output_event {
+        Ok(subgraph) => {
             assert!(!subgraph.is_empty(), "Generated subgraph was empty.")
         }
-        Completion::Partial((subgraph, e)) => {
+        Err(Ok((subgraph, e))) => {
             assert!(
                 !subgraph.is_empty(),
                 "Generated subgraph was empty and errors were generated"
@@ -31,7 +32,7 @@ async fn test_subgraph_generation_process_create() {
                 e
             );
         }
-        Completion::Error(e) => panic!(
+        Err(Err(e)) => panic!(
             "OSQuery subgraph generator failed to generate subgraph with error: {}",
             e
         ),

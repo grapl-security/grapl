@@ -421,22 +421,4 @@ mod tests {
             _ => Err(()),
         }
     }
-
-    // I had to use a 'prod test' to figure out why a line wasn't being parsed correctly.
-    // I'll leave it here in case that ever needs to happen again in the future.
-    /*
-    use rusoto_core::region::Region;
-    use rusoto_cloudwatch::CloudWatchClient;
-    #[tokio::test]
-    async fn test_put_metric_data_prod() -> Result<(), MetricForwarderError> {
-        let input = "MONITORING|sysmon_subgraph_generator|2020-09-21T23:16:47.868Z|sysmon-generator-completion:1|g|#status:success";
-        let as_stat = crate::cloudwatch_logs_parse::parse_log(input)?;
-        let cw_client = CloudWatchClient::new(Region::UsWest2);
-        let data = vec![as_stat.into()];
-        println!("{:?}", &data);
-        let result = put_metric_data(&cw_client, &data, SERVICE_NAME).await;
-        assert_eq!(result, Ok(()));
-        Ok(())
-    }
-    */
 }

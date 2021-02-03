@@ -1,37 +1,58 @@
 import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
+import * as events from '@aws-cdk/aws-events';
+import * as iam from '@aws-cdk/aws-iam';
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
+import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
+import * as targets from '@aws-cdk/aws-events-targets';
 
-import { Service } from './service';
-import { UserAuthDb } from './userauthdb';
-import { EngagementNotebook } from './engagement';
-import { EngagementEdge } from './engagement';
-import { GraphQLEndpoint } from './graphql';
-import { OperationalAlarms, SecurityAlarms } from './alarms';
+import * as path from 'path';
 
-import { Watchful } from 'cdk-watchful';
-import { SchemaDb } from './schemadb';
-import { PipelineDashboard } from './pipeline_dashboard';
+import {Service} from './service';
+import {FargateService} from './fargate_service';
+import {UserAuthDb} from './userauthdb';
+import {HistoryDb} from './historydb';
+import {EventEmitter} from './event_emitters';
+import {RedisCluster} from './redis';
+import {EngagementNotebook} from './engagement';
+import {EngagementEdge} from './engagement';
+import {GraphQLEndpoint} from './graphql';
+import {Swarm} from './swarm';
+import {OperationalAlarms, SecurityAlarms} from './alarms';
 
-import { AnalyzerDispatch } from './services/analyzer_dispatcher';
-import { AnalyzerExecutor } from './services/analyzer_executor';
-import { DGraphSwarmCluster } from './services/dgraph_swarm_cluster';
-import { DGraphTtl } from './services/dgraph_ttl';
-import { EngagementCreator } from './services/engagement_creator';
-import { GraphMerger } from './services/graph_merger';
-import { MetricForwarder } from './services/metric_forwarder';
-import { ModelPluginDeployer } from './services/model_plugin_deployer';
-import { NodeIdentifier } from './services/node_identifier';
-import { OSQueryGraphGenerator } from './services/osquery_graph_generator';
-import { SysmonGraphGenerator } from './services/sysmon_graph_generator';
-import { GraplS3Bucket } from './grapl_s3_bucket';
+import {Watchful, WatchedOperation} from 'cdk-watchful';
+import {SchemaDb} from './schemadb';
+import {PipelineDashboard} from './pipeline_dashboard';
+import {ContainerImage} from "@aws-cdk/aws-ecs";
+import {UxRouter} from "./ux_router";
+import {GraplS3Bucket} from "./grapl_s3_bucket";
+import {DGraphSwarmCluster} from "./services/dgraph_swarm_cluster";
+import {ModelPluginDeployer} from "./services/model_plugin_deployer";
+import {MetricForwarder} from "./services/metric_forwarder";
+import {EngagementCreator} from "./services/engagement_creator";
+import {DGraphTtl} from "./services/dgraph_ttl";
+import {AnalyzerExecutor} from "./services/analyzer_executor";
+import {AnalyzerDispatch} from "./services/analyzer_dispatcher";
+import {GraphMerger} from "./services/graph_merger";
+import {NodeIdentifier} from "./services/node_identifier";
+import {SysmonGraphGenerator} from "./services/sysmon_graph_generator";
+import {OSQueryGraphGenerator} from "./services/osquery_graph_generator";
 
 export interface GraplServiceProps {
     prefix: string;
+    defaultLogLevel: string;
+    sysmonSubgraphGeneratorLogLevel: string;
+    osquerySubgraphGeneratorLogLevel: string;
+    nodeIdentifierLogLevel: string;
+    graphMergerLogLevel: string;
+    analyzerDispatcherLogLevel: string;
+    analyzerExecutorLogLevel: string;
+    engagementCreatorLogLevel: string;
     version: string;
     jwtSecret: secretsmanager.Secret;
     vpc: ec2.IVpc;
@@ -43,6 +64,14 @@ export interface GraplServiceProps {
 
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
+    defaultLogLevel: string;
+    sysmonSubgraphGeneratorLogLevel: string;
+    osquerySubgraphGeneratorLogLevel: string;
+    nodeIdentifierLogLevel: string;
+    graphMergerLogLevel: string;
+    analyzerDispatcherLogLevel: string;
+    analyzerExecutorLogLevel: string;
+    engagementCreatorLogLevel: string;
     version: string;
     dgraphInstanceType: ec2.InstanceType;
     watchfulEmail?: string;
@@ -54,6 +83,7 @@ export class GraplCdkStack extends cdk.Stack {
     prefix: string;
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
+    ux_router: UxRouter;
     model_plugin_deployer: ModelPluginDeployer;
     edgeApiGateway: apigateway.RestApi;
 
@@ -63,7 +93,7 @@ export class GraplCdkStack extends cdk.Stack {
         this.prefix = props.stackName;
         const bucket_prefix = this.prefix.toLowerCase();
 
-        const edgeApi = new apigateway.RestApi(this, 'EdgeApiGateway', { });
+        const edgeApi = new apigateway.RestApi(this, 'EdgeApiGateway', {});
         edgeApi.addUsagePlan('EdgeApiGatewayUsagePlan', {
             quota: {
                 limit: 1_000_000,
@@ -124,6 +154,14 @@ export class GraplCdkStack extends cdk.Stack {
 
         const graplProps: GraplServiceProps = {
             prefix: this.prefix,
+            sysmonSubgraphGeneratorLogLevel: props.sysmonSubgraphGeneratorLogLevel,
+            defaultLogLevel: props.defaultLogLevel,
+            osquerySubgraphGeneratorLogLevel: props.osquerySubgraphGeneratorLogLevel,
+            nodeIdentifierLogLevel: props.nodeIdentifierLogLevel,
+            graphMergerLogLevel: props.graphMergerLogLevel,
+            analyzerDispatcherLogLevel: props.analyzerDispatcherLogLevel,
+            analyzerExecutorLogLevel: props.analyzerExecutorLogLevel,
+            engagementCreatorLogLevel: props.engagementCreatorLogLevel,
             version: props.version,
             jwtSecret: jwtSecret,
             vpc: grapl_vpc,
@@ -225,7 +263,7 @@ export class GraplCdkStack extends cdk.Stack {
             ...enableMetricsProps,
         });
 
-        new OSQueryGraphGenerator(this, 'osquery-subgraph-generator', {
+        const osquery_generator = new OSQueryGraphGenerator(this, 'osquery-subgraph-generator', {
             writesTo: node_identifier.bucket,
             ...graplProps,
             ...enableMetricsProps,
@@ -241,7 +279,7 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'EngagementEdge',
             {
-                ...graplProps, 
+                ...graplProps,
                 engagement_notebook: engagement_notebook,
                 edgeApi,
             },
@@ -250,10 +288,19 @@ export class GraplCdkStack extends cdk.Stack {
         const ux_bucket = new GraplS3Bucket(this, 'EdgeBucket', {
             bucketName:
                 graplProps.prefix.toLowerCase() + '-engagement-ux-bucket',
-            publicReadAccess: true,
+            publicReadAccess: false,
             websiteIndexDocument: 'index.html',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
+
+        this.ux_router = new UxRouter(
+            this,
+            'UxRouter',
+            {
+                ...graplProps,
+                edgeApi,
+            },
+        );
 
         this.graphql_endpoint = new GraphQLEndpoint(
             this,
@@ -270,7 +317,9 @@ export class GraplCdkStack extends cdk.Stack {
                 ...this.graphql_endpoint.apis,
                 ...this.engagement_edge.apis,
                 ...this.model_plugin_deployer.apis,
+                ...this.ux_router.apis,
             ];
+
 
             watchful.watchApiGateway(
                 'EdgeApiGatewayIntegration',
@@ -278,6 +327,7 @@ export class GraplCdkStack extends cdk.Stack {
                 {
                     serverErrorThreshold: 1, // any 5xx alerts
                     cacheGraph: true,
+                    watchedOperations,
                 }
             );
         }
@@ -298,6 +348,7 @@ export class GraplCdkStack extends cdk.Stack {
                 // Order here is important - the idea is that this dashboard will help Grapl operators
                 // quickly determine which service in the pipeline is failing.
                 sysmon_generator.service,
+                osquery_generator.service,
                 node_identifier.service,
                 graph_merger.service,
                 analyzer_dispatch.service,

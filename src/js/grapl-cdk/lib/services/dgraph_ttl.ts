@@ -34,9 +34,9 @@ export class DGraphTtl extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
+                GRAPL_LOG_LEVEL: props.defaultLogLevel,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
-                GRAPL_DGRAPH_TTL_S: '2678400',
-                GRAPL_LOG_LEVEL: 'INFO',
+                GRAPL_DGRAPH_TTL_S: '2678400', // 60 * 60 * 24 * 31 == 1 month
                 GRAPL_TTL_DELETE_BATCH_SIZE: '1000',
             },
             timeout: cdk.Duration.seconds(600),

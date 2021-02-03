@@ -7,6 +7,7 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wait-for-it \
         wget \
+        zip \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
@@ -45,6 +46,23 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 
 
 #
+# zip
+#
+FROM build AS zip
+
+RUN mkdir -p /grapl/zips; \
+    grapl-zip() { \
+      TMPDIR="$(mktemp -d)"; \
+      cd "$TMPDIR"; \
+      cp "/grapl/target/${TARGET}/${CARGO_PROFILE}/${1}" bootstrap && \
+      zip --quiet -9 "/grapl/zips/${1}.zip" bootstrap; \
+    }; \
+    grapl-zip metric-forwarder
+
+
+
+
+#
 # build test stages
 #
 FROM build AS build-test-unit
@@ -69,6 +87,11 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 FROM debian:buster-slim AS rust-dist
 
 ARG CARGO_PROFILE=debug
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        netbase \
+    && rm -rf /var/lib/apt/lists/*
 
 USER nobody
 

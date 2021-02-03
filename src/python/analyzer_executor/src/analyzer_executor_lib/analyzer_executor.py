@@ -211,6 +211,7 @@ class AnalyzerExecutor:
         for event in events["Records"]:
             if not self.is_local:
                 event = json.loads(event["body"])["Records"][0]  # type: ignore
+
             data = parse_s3_event(s3, event)
 
             message = json.loads(data)
@@ -389,8 +390,12 @@ class AnalyzerExecutor:
 
 
 def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
-    bucket = event["s3"]["bucket"]["name"]
-    key = event["s3"]["object"]["key"]
+    try:
+        bucket = event["s3"]["bucket"]["name"]
+        key = event["s3"]["object"]["key"]
+    except KeyError:
+        LOGGER.error("Could not parse s3 event: {}", exc_info=True)
+        raise
     return download_s3_file(s3, bucket, key)
 
 
@@ -443,6 +448,7 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
     )
     obj.put(Body=event_s.encode("utf-8"))
 
+    # TODO fargate: always emit manual events
     if is_local:
         # Local = manual eventing
         sqs = SQSClientFactory(boto3).from_env()

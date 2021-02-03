@@ -18,7 +18,7 @@ class TestEngagementEdgeChalice(unittest.TestCase):
                     "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com"
                 },
             )
-            assert result.status_code == 400
+            assert result.status_code == 403
             assert result.json_body == {"error": "Must log in"}
 
 

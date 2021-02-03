@@ -90,7 +90,6 @@ where
         host_id: &HostId,
         ts: u64,
     ) -> Result<Option<String>, Error> {
-        //        info!("Finding last mapping before");
         let (table_key, pseudo_key) = match host_id {
             HostId::AssetId(asset_id) => return Ok(Some(asset_id.to_owned())),
             HostId::Hostname(hostname) => ("hostname", hostname.as_str()),

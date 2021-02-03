@@ -131,7 +131,7 @@ table_defs = {
 
 dynamodb = boto3.client(
     "dynamodb",
-    region_name="us-west-2",
+    region_name="us-east-1",
     endpoint_url="http://dynamodb:8000",
     aws_access_key_id="dummy_cred_aws_access_key_id",
     aws_secret_access_key="dummy_cred_aws_secret_access_key",
@@ -153,10 +153,18 @@ def try_create_loop(table_name):
             if "ResourceInUseException" in e.__class__.__name__:
                 break
             else:
-                LOGGER.debug(table_name, e)
+                if i >= 5:
+                    LOGGER.warn(f"failed to provision dynamodb table: {table_name} {e}")
+                else:
+                    LOGGER.debug(
+                        f"failed to provision dynamodb table: {table_name} {e}"
+                    )
                 time.sleep(2)
         except Exception as e:
-            LOGGER.error(table_name, e)
+            if i >= 5:
+                LOGGER.warn(f"failed to provision dynamodb table: {table_name} {e}")
+            else:
+                LOGGER.debug(f"failed to provision dynamodb table: {table_name} {e}")
             time.sleep(2)
 
 

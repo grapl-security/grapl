@@ -1,11 +1,11 @@
 use chrono::{DateTime,
              NaiveDateTime,
              Utc};
-use failure::{bail,
-              Error};
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
 use sysmon::Event;
+
+use crate::generator::SysmonGeneratorError;
 
 mod file;
 mod network;
@@ -21,8 +21,17 @@ pub(crate) trait SysmonTryFrom<T>: Sized {
     fn try_from(instance: T) -> Result<Self, Self::Error>;
 }
 
+fn get_event_type(event: Event) -> String {
+    match event {
+        Event::ProcessCreate(event) => event.system.event_id.event_id.to_string(),
+        Event::FileCreate(event) => event.system.event_id.event_id.to_string(),
+        Event::InboundNetwork(event) => event.system.event_id.event_id.to_string(),
+        Event::OutboundNetwork(event) => event.system.event_id.event_id.to_string(),
+    }
+}
+
 impl SysmonTryFrom<Event> for Graph {
-    type Error = failure::Error;
+    type Error = SysmonGeneratorError;
 
     fn try_from(instance: Event) -> Result<Self, Self::Error> {
         match instance {
@@ -75,7 +84,9 @@ impl SysmonTryFrom<Event> for Graph {
 
                 warn!("{}", message);
 
-                Err(failure::err_msg(message))
+                Err(SysmonGeneratorError::UnsupportedEventType(get_event_type(
+                    unsupported_event,
+                )))
             }
         }
     }
@@ -111,14 +122,14 @@ fn get_image_name(image_path: &str) -> Option<String> {
 /// Converts a Sysmon UTC string to UNIX Epoch time
 ///
 /// If the provided string is not parseable as a UTC timestamp, an error is returned.
-pub fn utc_to_epoch(utc: &str) -> Result<u64, Error> {
+pub fn utc_to_epoch(utc: &str) -> Result<u64, SysmonGeneratorError> {
     let dt = NaiveDateTime::parse_from_str(utc, "%Y-%m-%d %H:%M:%S%.3f")?;
 
     let dt: DateTime<Utc> = DateTime::from_utc(dt, Utc);
     let ts = dt.timestamp_millis();
 
     if ts < 0 {
-        bail!("Timestamp is negative")
+        return Err(SysmonGeneratorError::NegativeEventTime(ts));
     }
 
     if ts < 1_000_000_000_000 {

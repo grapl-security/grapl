@@ -2,15 +2,28 @@ use std::convert::TryFrom;
 
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
-use sqs_lambda::{cache::{Cache,
-                         CacheResponse,
-                         Cacheable},
-                 event_handler::{Completion,
-                                 EventHandler,
-                                 OutputEvent}};
+use sqs_executor::{cache::{Cache,
+                           CacheResponse},
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_status::EventStatus};
 use tracing::*;
 
 use crate::models::GenericEvent;
+
+#[derive(thiserror::Error, Debug)]
+pub enum GenericSubgraphGeneratorError {
+    #[error("Unexpected")]
+    Unexpected(String),
+}
+
+impl CheckedError for GenericSubgraphGeneratorError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Transient
+    }
+}
 
 /// Supports a generic serialization format for incoming logs. This allows the use of any log source
 /// as long as it is preprocessed to use Grapl's generic serialization format.
@@ -63,10 +76,11 @@ where
     pub(crate) async fn convert_events_to_subgraph(
         &mut self,
         events: Vec<GenericEvent>,
-    ) -> (Graph, Vec<impl Cacheable>, Option<eyre::Report>) {
+        completed: &mut CompletedEvents,
+    ) -> Result<Graph, Result<(Graph, GenericSubgraphGeneratorError), GenericSubgraphGeneratorError>>
+    {
         let mut final_subgraph = Graph::new(0);
         let mut failed: Option<eyre::Report> = None;
-        let mut identities = Vec::with_capacity(events.len());
 
         for event in events {
             let identity = event.clone();
@@ -85,11 +99,20 @@ where
                 }
             };
 
-            identities.push(identity);
+            completed.add_identity(identity, EventStatus::Success);
             final_subgraph.merge(&subgraph);
         }
 
-        (final_subgraph, identities, failed)
+        match failed {
+            Some(e) if final_subgraph.is_empty() => Err(Err(
+                GenericSubgraphGeneratorError::Unexpected(e.to_string()),
+            )),
+            Some(e) => Err(Ok((
+                final_subgraph,
+                GenericSubgraphGeneratorError::Unexpected(e.to_string()),
+            ))),
+            None => Ok(final_subgraph),
+        }
     }
 }
 
@@ -100,30 +123,14 @@ where
 {
     type InputEvent = Vec<GenericEvent>;
     type OutputEvent = Graph;
-    type Error = sqs_lambda::error::Error;
+    type Error = GenericSubgraphGeneratorError;
 
-    #[tracing::instrument(skip(self, events))]
+    #[tracing::instrument(skip(self, events, completed))]
     async fn handle_event(
         &mut self,
         events: Vec<GenericEvent>,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
-        let (subgraph, processed_identities, error_report) =
-            self.convert_events_to_subgraph(events).await;
-
-        // if an error occurred while converting generic events to a subgraph, we should record it
-        let mut completed_event = if let Some(event_error) = error_report {
-            OutputEvent::new(Completion::Partial((
-                subgraph,
-                sqs_lambda::error::Error::ProcessingError(event_error.to_string()),
-            )))
-        } else {
-            OutputEvent::new(Completion::Total(subgraph))
-        };
-
-        processed_identities
-            .into_iter()
-            .for_each(|identity| completed_event.add_identity(identity));
-
-        completed_event
+        completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
+        self.convert_events_to_subgraph(events, completed).await
     }
 }

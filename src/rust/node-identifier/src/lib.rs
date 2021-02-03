@@ -4,30 +4,19 @@ use std::{collections::{HashMap,
                         HashSet},
           convert::TryFrom,
           fmt::Debug,
-          io::{Cursor,
-               Stdout},
-          str::FromStr,
           sync::{Arc,
-                 Mutex},
-          time::Duration};
+                 Mutex}};
 
 use assetdb::{AssetIdDb,
               AssetIdentifier};
 use async_trait::async_trait;
-use aws_lambda_events::event::{s3::{S3Bucket,
-                                    S3Entity,
-                                    S3Event,
-                                    S3EventRecord,
-                                    S3Object,
-                                    S3RequestParameters,
-                                    S3UserIdentity},
-                               sqs::SqsEvent};
-use bytes::Bytes;
-use chrono::Utc;
 use dynamic_sessiondb::{DynamicMappingDb,
                         DynamicNodeIdentifier};
 use failure::{bail,
               Error};
+use grapl_config::{env_helpers::{s3_event_emitters_from_env,
+                                 FromEnv},
+                   event_caches};
 use grapl_graph_descriptions::{file::FileState,
                                graph_description::{host::*,
                                                    node::WhichNode,
@@ -38,38 +27,30 @@ use grapl_graph_descriptions::{file::FileState,
                                process_inbound_connection::ProcessInboundConnectionState,
                                process_outbound_connection::ProcessOutboundConnectionState};
 use grapl_observe::metric_reporter::MetricReporter;
-use lambda_runtime::{error::HandlerError,
-                     Context};
+use grapl_service::{decoder::ZstdProtoDecoder,
+                    serialization::SubgraphSerializer};
 use log::*;
-use prost::Message;
-use rusoto_core::{HttpClient,
-                  Region};
 use rusoto_dynamodb::{DynamoDb,
                       DynamoDbClient};
-use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest,
-                 Sqs,
-                 SqsClient};
+use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 use sha2::Digest;
-use sqs_lambda::{cache::{Cache,
-                         CacheResponse,
-                         Cacheable},
-                 completion_event_serializer::CompletionEventSerializer,
-                 event_decoder::PayloadDecoder,
-                 event_handler::{Completion,
-                                 EventHandler,
-                                 OutputEvent},
-                 local_sqs_service::local_sqs_service_with_options,
-                 local_sqs_service_options::LocalSqsServiceOptionsBuilder,
-                 redis_cache::RedisCache,
-                 sqs_completion_handler::CompletionPolicy,
-                 sqs_consumer::ConsumePolicyBuilder};
+use sqs_executor::{cache::{Cache,
+                           CacheResponse,
+                           Cacheable},
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_retriever::S3PayloadRetriever,
+                   event_status::EventStatus,
+                   make_ten,
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   time_based_key_fn};
 
 macro_rules! wait_on {
     ($x:expr) => {{
-        //            let rt = tokio::runtime::current_thread::Runtime::new()?;
         $x.await
     }};
 }
@@ -92,7 +73,6 @@ where
     node_id_db: D,
     should_default: bool,
     cache: CacheT,
-    region: Region,
 }
 
 impl<D, CacheT> NodeIdentifier<D, CacheT>
@@ -107,7 +87,6 @@ where
         node_id_db: D,
         should_default: bool,
         cache: CacheT,
-        region: Region,
     ) -> Self {
         Self {
             asset_mapping_db,
@@ -116,7 +95,6 @@ where
             node_id_db,
             should_default,
             cache,
-            region,
         }
     }
 
@@ -547,6 +525,18 @@ async fn attribute_asset_ids(
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum NodeIdentifierError {
+    #[error("Unexpected error")]
+    Unexpected,
+}
+
+impl CheckedError for NodeIdentifierError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Transient
+    }
+}
+
 #[async_trait]
 impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
 where
@@ -554,23 +544,21 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
-    type OutputEvent = GeneratedSubgraphs;
-    type Error = sqs_lambda::error::Error;
+    type OutputEvent = Graph;
+    type Error = NodeIdentifierError;
 
     async fn handle_event(
         &mut self,
         subgraphs: GeneratedSubgraphs,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
-        warn!("node-identifier.handle_event");
-        let _region = self.region.clone();
-
+        completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let mut attribution_failure = None;
 
         info!("Handling raw event");
 
         if subgraphs.subgraphs.is_empty() {
             warn!("Received empty unid subgraph");
-            return OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![])));
+            return Ok(Graph::new(0));
         }
 
         // Merge all of the subgraphs into one subgraph to avoid
@@ -591,7 +579,7 @@ where
 
         if unid_subgraph.is_empty() {
             warn!("Received empty subgraph");
-            return OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![])));
+            return Ok(Graph::new(0));
         }
 
         info!(
@@ -603,9 +591,7 @@ where
         // Create any implicit asset id mappings
         if let Err(e) = create_asset_id_mappings(&self.asset_mapping_db, &unid_subgraph).await {
             error!("Asset mapping creation failed with {}", e);
-            return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(e.to_string()),
-            ));
+            return Err(Err(NodeIdentifierError::Unexpected));
         }
 
         // Map all host_ids into asset_ids. This has to happen before node key
@@ -644,6 +630,7 @@ where
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
                     dead_node_ids.insert(node.clone_node_key());
+                    completed.add_identity(node.clone_node_key(), EventStatus::Failure);
                     attribution_failure = Some(e);
                     continue;
                 }
@@ -688,327 +675,106 @@ where
         let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
 
         if identified_graph.is_empty() {
-            return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(
-                    "All nodes failed to identify".to_string(),
-                ),
-            ));
+            // todo: Use a better error
+            if let Some(_e) = attribution_failure {
+                return Err(Err(NodeIdentifierError::Unexpected));
+            }
+            return Ok(Graph::new(0));
         }
 
-        let identities: Vec<_> = unid_id_map.keys().cloned().collect();
-
-        let mut completed = if !dead_node_ids.is_empty() || attribution_failure.is_some() {
-            info!("Partial Success, identified {} nodes", identities.len());
-            OutputEvent::new(Completion::Partial((
-                GeneratedSubgraphs::new(vec![identified_graph]),
-                sqs_lambda::error::Error::ProcessingError(attribution_failure.unwrap().to_string()),
-            )))
-        } else {
-            info!("Identified all nodes");
-            OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![
-                identified_graph,
-            ])))
-        };
+        let identities: Vec<_> = unid_id_map.keys().collect();
 
         identities
-            .into_iter()
-            .for_each(|identity| completed.add_identity(identity));
+            .iter()
+            .for_each(|identity| completed.add_identity(identity.clone(), EventStatus::Success));
 
-        completed
-    }
-}
-
-pub fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    _handler(event, ctx, false)
-}
-
-pub fn retry_handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    _handler(event, ctx, true)
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct SubgraphSerializer {
-    proto: Vec<u8>,
-}
-
-impl CompletionEventSerializer for SubgraphSerializer {
-    type CompletedEvent = GeneratedSubgraphs;
-    type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error;
-
-    fn serialize_completed_events(
-        &mut self,
-        completed_events: &[Self::CompletedEvent],
-    ) -> Result<Vec<Self::Output>, Self::Error> {
-        if completed_events.is_empty() {
-            warn!("No events to serialize");
-            return Ok(Vec::new());
+        if !dead_node_ids.is_empty() || attribution_failure.is_some() {
+            info!("Partial Success, identified {} nodes", identities.len());
+            Err(Ok(
+                (identified_graph, NodeIdentifierError::Unexpected), // todo: Use a real error here
+            ))
+        } else {
+            info!("Identified all nodes");
+            Ok(identified_graph)
         }
-        let mut subgraph = Graph::new(0);
-
-        let mut pre_nodes = 0;
-        let mut pre_edges = 0;
-        for completed_event in completed_events {
-            for sg in completed_event.subgraphs.iter() {
-                pre_nodes += sg.nodes.len();
-                pre_edges += sg.edges.len();
-                subgraph.merge(sg);
-            }
-        }
-
-        if subgraph.is_empty() {
-            warn!(
-                concat!(
-                    "Output subgraph is empty. Serializing to empty vector.",
-                    "pre_nodes: {} pre_edges: {}"
-                ),
-                pre_nodes, pre_edges,
-            );
-            return Ok(vec![]);
-        }
-
-        info!(
-            "Serializing {} nodes {} edges. Down from {} nodes {} edges.",
-            subgraph.nodes.len(),
-            subgraph.edges.len(),
-            pre_nodes,
-            pre_edges,
-        );
-
-        let subgraphs = GeneratedSubgraphs {
-            subgraphs: vec![subgraph],
-        };
-
-        self.proto.clear();
-
-        prost::Message::encode(&subgraphs, &mut self.proto)
-            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
-
-        let mut compressed = Vec::with_capacity(self.proto.len());
-        let mut proto = Cursor::new(&self.proto);
-        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
-        Ok(vec![compressed])
     }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct ZstdProtoDecoder;
+pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let (env, _guard) = grapl_config::init_grapl_env!();
+    let source_queue_url = grapl_config::source_queue_url();
 
-impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-where
-    E: Message + Default,
-{
-    fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-    where
-        E: Message + Default,
-    {
-        let mut decompressed = Vec::new();
+    tracing::info!(
+        source_queue_url=?source_queue_url,
+        env=?env,
+        "handler_init"
+    );
+    let sqs_client = SqsClient::from_env();
 
-        let mut body = Cursor::new(&body);
+    let cache = &mut event_caches(&env).await;
 
-        zstd::stream::copy_decode(&mut body, &mut decompressed)?;
+    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
 
-        let buf = Bytes::from(decompressed);
-        Ok(E::decode(buf)?)
-    }
-}
-
-fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
-    rusoto_sqs::Message {
-        attributes: Some(event.attributes),
-        body: event.body,
-        md5_of_body: event.md5_of_body,
-        md5_of_message_attributes: event.md5_of_message_attributes,
-        message_attributes: None,
-        message_id: event.message_id,
-        receipt_handle: event.receipt_handle,
-    }
-}
-
-fn _handler(event: SqsEvent, ctx: Context, should_default: bool) -> Result<(), HandlerError> {
-    info!("Handling event");
-
-    let mut initial_events: HashSet<String> = event
-        .records
-        .iter()
-        .map(|event| event.message_id.clone().unwrap())
-        .collect();
-
-    info!("Initial Events {:?}", initial_events);
-
-    let (tx, rx) = std::sync::mpsc::sync_channel(10);
-
-    let completed_tx = tx.clone();
-
-    std::thread::spawn(move || {
-        tokio_compat::run_std(async move {
-            let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-            debug!("Queue Url: {}", source_queue_url);
-            let bucket_prefix = std::env::var("BUCKET_PREFIX").expect("BUCKET_PREFIX");
-            let cache_address = {
-                let retry_identity_cache_addr =
-                    std::env::var("RETRY_IDENTITY_CACHE_ADDR").expect("RETRY_IDENTITY_CACHE_ADDR");
-                let retry_identity_cache_port =
-                    std::env::var("RETRY_IDENTITY_CACHE_PORT").expect("RETRY_IDENTITY_CACHE_PORT");
-
-                format!(
-                    "{}:{}",
-                    retry_identity_cache_addr, retry_identity_cache_port,
-                )
-            };
-
-            let bucket = bucket_prefix + "-subgraphs-generated-bucket";
-            info!("Output events to: {}", bucket);
-            let region = grapl_config::region();
-            let cache = RedisCache::new(cache_address.to_owned())
-                .await
-                .expect("Could not create redis client");
-
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-
-            let dynamo = DynamoDbClient::new(region.clone());
-            let dyn_session_db =
-                SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-            let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::new(region.clone()));
-            let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-            let dyn_node_identifier = DynamicNodeIdentifier::new(
-                asset_identifier,
-                dyn_session_db,
-                dyn_mapping_db,
-                should_default,
-            );
-
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-
-            let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-            let asset_id_db = AssetIdDb::new(DynamoDbClient::new(region.clone()));
-            let node_identifier = NodeIdentifier::new(
-                asset_id_db,
-                dyn_node_identifier,
-                asset_identifier,
-                dynamo.clone(),
-                should_default,
-                cache.clone(),
-                region.clone(),
-            );
-
-            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
-            let completion_policy = ConsumePolicyBuilder::default()
-                .with_max_empty_receives(1)
-                .with_stop_at(Duration::from_secs(10));
-
-            sqs_lambda::sqs_service::sqs_service(
-                source_queue_url,
-                initial_messages,
-                bucket,
-                completion_policy.build(ctx),
-                CompletionPolicy::new(10, Duration::from_secs(2)),
-                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-                S3Client::new(region.clone()),
-                SqsClient::new(region.clone()),
-                ZstdProtoDecoder::default(),
-                SubgraphSerializer {
-                    proto: Vec::with_capacity(1024),
-                },
-                node_identifier,
-                cache.clone(),
-                MetricReporter::<Stdout>::new("node-identifier"),
-                move |_self_actor, result: Result<String, String>| match result {
-                    Ok(worked) => {
-                        info!(
-                            "Handled an event, which was successfully deleted: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                    Err(worked) => {
-                        info!(
-                            "Handled an initial_event, though we failed to delete it: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                },
-                move |_, _| async move { Ok(()) },
-            )
+    let s3_emitter =
+        &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
             .await;
 
-            completed_tx.clone().send("Completed".to_owned()).unwrap();
-        })
-    });
+    let s3_payload_retriever = &mut make_ten(async {
+        S3PayloadRetriever::new(
+            |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
+            ZstdProtoDecoder::default(),
+            MetricReporter::new(&env.service_name),
+        )
+    })
+    .await;
 
-    info!("Checking acks");
-    for r in &rx {
-        info!("Acking event: {}", &r);
-        initial_events.remove(&r);
-        if r == "Completed" {
-            // If we're done go ahead and try to clear out any remaining
-            while let Ok(r) = rx.recv_timeout(Duration::from_millis(100)) {
-                initial_events.remove(&r);
-            }
-            break;
-        }
-    }
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
 
-    info!("Completed execution");
+    let dynamo = DynamoDbClient::from_env();
+    let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
+    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::from_env());
+    let asset_identifier = AssetIdentifier::new(asset_id_db);
 
-    if initial_events.is_empty() {
-        info!("Successfully acked all initial events");
-        Ok(())
-    } else {
-        Err(lambda_runtime::error::HandlerError::from(
-            "Failed to ack all initial events",
-        ))
-    }
-}
+    let dyn_node_identifier = DynamicNodeIdentifier::new(
+        asset_identifier,
+        dyn_session_db,
+        dyn_mapping_db,
+        should_default,
+    );
 
-pub fn init_sqs_client() -> SqsClient {
-    info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
 
-    SqsClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_sqs".to_owned(),
-            "dummy_sqs".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-east-1".to_string(),
-            endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        },
+    let asset_identifier = AssetIdentifier::new(asset_id_db);
+
+    let asset_id_db = AssetIdDb::new(DynamoDbClient::from_env());
+    let node_identifier = &mut make_ten(async {
+        NodeIdentifier::new(
+            asset_id_db,
+            dyn_node_identifier,
+            asset_identifier,
+            dynamo.clone(),
+            should_default,
+            cache[0].to_owned(),
+        )
+    })
+    .await;
+
+    info!("Starting process_loop");
+    sqs_executor::process_loop(
+        grapl_config::source_queue_url(),
+        std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
+        cache,
+        sqs_client.clone(),
+        node_identifier,
+        s3_payload_retriever,
+        s3_emitter,
+        serializer,
+        MetricReporter::new(&env.service_name),
     )
-}
+    .await;
 
-pub fn init_s3_client() -> S3Client {
-    info!("Connecting to local http://s3:9000");
-    S3Client::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "minioadmin".to_owned(),
-            "minioadmin".to_owned(),
-        ),
-        Region::Custom {
-            name: "locals3".to_string(),
-            endpoint: "http://s3:9000".to_string(),
-        },
-    )
-}
-
-pub fn init_dynamodb_client() -> DynamoDbClient {
-    info!("Connecting to local http://dynamodb:8000");
-    DynamoDbClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_cred_aws_access_key_id".to_owned(),
-            "dummy_cred_aws_secret_access_key".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-west-2".to_string(),
-            endpoint: "http://dynamodb:8000".to_string(),
-        },
-    )
+    info!("Exiting");
+    Ok(())
 }
 
 #[derive(Clone, Default)]
@@ -1016,12 +782,26 @@ pub struct HashCache {
     cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum HashCacheError {
+    #[error("Unreachable error")]
+    Unreachable,
+}
+
+impl CheckedError for HashCacheError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Persistent
+    }
+}
+
 #[async_trait]
-impl sqs_lambda::cache::Cache for HashCache {
+impl Cache for HashCache {
+    type CacheErrorT = HashCacheError;
+
     async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
-    ) -> Result<CacheResponse, sqs_lambda::error::Error> {
+    ) -> Result<CacheResponse, HashCacheError> {
         let self_cache = self.cache.lock().unwrap();
 
         let id = cacheable.identity();
@@ -1031,141 +811,9 @@ impl sqs_lambda::cache::Cache for HashCache {
             Ok(CacheResponse::Miss)
         }
     }
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), sqs_lambda::error::Error> {
+    async fn store(&mut self, identity: Vec<u8>) -> Result<(), HashCacheError> {
         let mut self_cache = self.cache.lock().unwrap();
         self_cache.insert(identity);
         Ok(())
     }
-}
-
-pub async fn local_handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let cache = HashCache::default();
-
-    info!("region");
-    let region = Region::Custom {
-        name: "dynamo".to_string(),
-        endpoint: "http://dynamo:8222".to_string(),
-    };
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("dynamo");
-    let dynamo = init_dynamodb_client();
-    info!("dyn_session_db");
-    let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-    info!("dyn_mapping_db");
-    let dyn_mapping_db = DynamicMappingDb::new(init_dynamodb_client());
-    info!("asset_identifier");
-    let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-    info!("dyn_node_identifier");
-    let dyn_node_identifier = DynamicNodeIdentifier::new(
-        asset_identifier,
-        dyn_session_db,
-        dyn_mapping_db,
-        should_default,
-    );
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("asset_identifier");
-    let asset_identifier = AssetIdentifier::new(asset_id_db);
-
-    info!("asset_id_db");
-    let asset_id_db = AssetIdDb::new(init_dynamodb_client());
-
-    info!("node_identifier");
-    let node_identifier = NodeIdentifier::new(
-        asset_id_db,
-        dyn_node_identifier,
-        asset_identifier,
-        dynamo.clone(),
-        should_default,
-        cache.clone(),
-        region.clone(),
-    );
-
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-
-    let queue_name = source_queue_url.split("/").last().unwrap();
-    grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
-    grapl_config::wait_for_s3(init_s3_client()).await?;
-
-    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
-    options_builder.with_minimal_buffer_completion_policy();
-
-    local_sqs_service_with_options(
-        source_queue_url,
-        "local-grapl-subgraphs-generated-bucket",
-        Context {
-            deadline: Utc::now().timestamp_millis() + 10_000,
-            ..Default::default()
-        },
-        |_| init_s3_client(),
-        init_s3_client(),
-        init_sqs_client(),
-        ZstdProtoDecoder::default(),
-        SubgraphSerializer {
-            proto: Vec::with_capacity(1024),
-        },
-        node_identifier,
-        cache.clone(),
-        MetricReporter::<Stdout>::new("node-identifier"),
-        |_, event_result| {
-            dbg!(event_result);
-        },
-        move |bucket, key| async move {
-            let output_event = S3Event {
-                records: vec![S3EventRecord {
-                    event_version: None,
-                    event_source: None,
-                    aws_region: Some("us-east-1".to_owned()),
-                    event_time: chrono::Utc::now(),
-                    event_name: None,
-                    principal_id: S3UserIdentity { principal_id: None },
-                    request_parameters: S3RequestParameters {
-                        source_ip_address: None,
-                    },
-                    response_elements: Default::default(),
-                    s3: S3Entity {
-                        schema_version: None,
-                        configuration_id: None,
-                        bucket: S3Bucket {
-                            name: Some(bucket),
-                            owner_identity: S3UserIdentity { principal_id: None },
-                            arn: None,
-                        },
-                        object: S3Object {
-                            key: Some(key),
-                            size: None,
-                            url_decoded_key: None,
-                            version_id: None,
-                            e_tag: None,
-                            sequencer: None,
-                        },
-                    },
-                }],
-            };
-
-            let sqs_client = init_sqs_client();
-
-            // publish to SQS
-            sqs_client
-                .send_message(SendMessageRequest {
-                    message_body: serde_json::to_string(&output_event)
-                        .expect("failed to encode s3 event"),
-                    queue_url: std::env::var("GRAPH_MERGER_QUEUE_URL")
-                        .expect("GRAPH_MERGER_QUEUE_URL"),
-                    ..Default::default()
-                })
-                .await?;
-
-            Ok(())
-        },
-        options_builder.build(),
-    )
-    .await;
-    Ok(())
 }
