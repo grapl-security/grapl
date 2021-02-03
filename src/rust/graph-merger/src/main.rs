@@ -690,7 +690,9 @@ where
         completed
          */
 
-        unimplemented!()
+        //unimplemented!()
+
+        OutputEvent::new(Completion::Error(sqs_lambda::error::Error::ProcessingError("PLACEHOLDER".to_string())))
     }
 }
 

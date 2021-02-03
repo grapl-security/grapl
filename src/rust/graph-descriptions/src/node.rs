@@ -12,7 +12,7 @@ use dgraph_query_lib::condition::{
     Condition,
     ConditionValue
 };
-use dgraph_query_lib::predicate::Variable;
+use dgraph_query_lib::predicate::{Variable, Predicate, Field};
 
 pub trait NodeT {
     fn get_asset_id(&self) -> Option<&str>;
@@ -47,8 +47,10 @@ pub trait NodeT {
         let query_block = QueryBlockBuilder::default()
             .query_type(QueryBlockType::Var)
             .root_filter(Condition::EQ("node_key".to_string(), ConditionValue::string(self.get_node_key())))
+            .predicates(vec![
+                Predicate::ScalarVariable(uid_variable.get_name(), Field::new("uid"))
+            ])
             .first(1)
-            .variable(uid_variable.get_name())
             .build().unwrap();
 
         (query_block, mutation_unit)

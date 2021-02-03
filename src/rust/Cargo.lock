@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "dgraph_query_lib"
 version = "0.1.0"
-source = "git+ssh://git@github.com/d0nutptr/dgraph_query_lib.git?branch=main#62e885f1df88781f4f0a1825f8987e9f00b8bb57"
+source = "git+https://github.com/d0nutptr/dgraph_query_lib?branch=main#62e885f1df88781f4f0a1825f8987e9f00b8bb57"
 dependencies = [
  "derive_builder",
  "itertools 0.9.0",
@@ -1132,6 +1132,7 @@ dependencies = [
  "prost-build 0.7.0",
  "prost-derive 0.7.0",
  "prost-types 0.7.0",
+ "rand 0.8.2",
  "serde",
  "serde_derive",
  "serde_json",

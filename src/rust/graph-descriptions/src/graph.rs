@@ -12,10 +12,7 @@ use dgraph_query_lib::query::{
     Query,
     QueryBuilder
 };
-use dgraph_query_lib::mutation::{
-    Mutation,
-    MutationBuilder
-};
+use dgraph_query_lib::mutation::{Mutation, MutationBuilder, MutationUID, MutationUnit, MutationPredicateValue};
 
 use log::{
     info,
@@ -27,6 +24,13 @@ use dgraph_query_lib::upsert::{Upsert, UpsertBlock};
 use futures_retry::{FutureRetry, RetryPolicy};
 use std::time::Duration;
 use std::sync::Arc;
+use dgraph_query_lib::predicate::{Predicate, Field};
+use dgraph_query_lib::condition::{Condition, ConditionValue};
+use dgraph_query_lib::queryblock::{
+    QueryBlockType,
+    QueryBlockBuilder,
+    QueryBlock
+};
 
 impl Graph {
     pub fn new(timestamp: u64) -> Self {
@@ -101,11 +105,12 @@ impl Graph {
 
     pub async fn perform_upsert(&self, dgraph_client: Arc<DgraphClient>) {
         self.upsert_nodes(dgraph_client.clone()).await;
+        self.upsert_edges(dgraph_client).await;
     }
 
     async fn upsert_nodes(&self, dgraph_client: Arc<DgraphClient>) {
         let (query_blocks, mutation_units): (Vec<_>, Vec<_>) = self.nodes.iter()
-            .map(|(node_key, node)| node.generate_upsert_components())
+            .map(|(_, node)| node.generate_upsert_components())
             .unzip();
 
         let query = QueryBuilder::default()
@@ -120,7 +125,61 @@ impl Graph {
 
         let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
 
-        let response = Self::enforce_transaction(dgraph_client, upsert).await;
+        Self::enforce_transaction(dgraph_client, upsert).await;
+    }
+
+    async fn upsert_edges(&self, dgraph_client: Arc<DgraphClient>) {
+        let mut node_key_to_variable_map = HashMap::<String, String>::new();
+
+        let mut mutation_units = vec![];
+
+        // for some reason this was much harder to correctly express in a nested iterator with map
+        // because of the reference to `node_key_to_variable_map`, it inferred the closures as FnMut
+        // and made it difficult to use the hashmap for whatever reason
+        for (_, EdgeList { edges }) in &self.edges {
+            for Edge { from, to, edge_name } in edges {
+                let from_key_variable = node_key_to_variable_map.entry(from.clone())
+                    .or_insert(format!("nk_{}", rand::random::<u128>()))
+                    .clone();
+
+                let to_key_variable = node_key_to_variable_map.entry(to.clone())
+                    .or_insert(format!("nk_{}", rand::random::<u128>()))
+                    .clone();
+
+                let mutation_unit = MutationUnit::new(MutationUID::variable(&from_key_variable))
+                    .predicate(edge_name, MutationPredicateValue::Edge(MutationUID::variable(&to_key_variable)));
+
+                mutation_units.push(mutation_unit);
+            }
+        }
+
+        let mut query_blocks = vec![];
+
+        // now that all of the node keys have been used, we should generate the queries to grab them
+        // and store the associated node uids in the variables we generated previously
+        for (node_key, variable) in &node_key_to_variable_map {
+            let query_block = QueryBlockBuilder::default()
+                .query_type(QueryBlockType::Var)
+                .root_filter(Condition::EQ(format!("node_key"), ConditionValue::string(node_key)))
+                .predicates(vec![
+                    Predicate::ScalarVariable(variable.to_string(), Field::new("uid"))
+                ])
+                .build().unwrap();
+
+            query_blocks.push(query_block);
+        }
+
+        let query = QueryBuilder::default()
+            .query_blocks(query_blocks)
+            .build().unwrap();
+
+        let mutation = MutationBuilder::default()
+            .set(mutation_units)
+            .build().unwrap();
+
+        let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
+        
+        Self::enforce_transaction(dgraph_client, upsert).await;
     }
 
     async fn enforce_transaction(client: Arc<DgraphClient>, upsert: Upsert) -> MutationResponse {

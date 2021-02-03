@@ -21,10 +21,11 @@ derive_builder = "0.9"
 dgraph-tonic = "0.8"
 
 log = "0.4"
-dgraph_query_lib = { git = "ssh://git@github.com/d0nutptr/dgraph_query_lib.git", branch = "main" }
+dgraph_query_lib = { git = "https://github.com/d0nutptr/dgraph_query_lib", branch = "main" }
 
 futures-retry = "0.5"
 anyhow = "*"
+rand = "0.8"
 
 [dependencies.uuid]
 version = "0.8"
