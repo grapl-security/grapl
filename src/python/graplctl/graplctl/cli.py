@@ -23,7 +23,9 @@ SESSION = boto3.Session(profile_name=os.getenv("AWS_PROFILE", "default"))
 
 EC2: EC2ServiceResource = SESSION.resource("ec2", region_name=os.getenv("AWS_REGION"))
 SSM: SSMClient = SESSION.client("ssm")
-CLOUDWATCH: CloudWatchClient = SESSION.client("cloudwatch", region_name=os.getenv("AWS_REGION"))
+CLOUDWATCH: CloudWatchClient = SESSION.client(
+    "cloudwatch", region_name=os.getenv("AWS_REGION")
+)
 SNS: SNSClient = SESSION.client("sns", region_name=os.getenv("AWS_REGION"))
 ROUTE53: Route53Client = SESSION.client("route53", region_name=os.getenv("AWS_REGION"))
 
