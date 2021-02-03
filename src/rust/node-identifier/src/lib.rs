@@ -127,7 +127,12 @@ where
             return Ok(IdentifiedGraph::new());
         }
 
-        let edges: HashSet<_> = unid_subgraph.edges.values().map(|e| e.edges.iter() ).flatten().map(|e| e.edge_name.as_str())
+        let edges: HashSet<_> = unid_subgraph
+            .edges
+            .values()
+            .map(|e| e.edges.iter())
+            .flatten()
+            .map(|e| e.edge_name.as_str())
             .collect();
         println!("incoming edges: {:?}", edges);
 
@@ -180,8 +185,8 @@ where
             };
 
             for edge in &edge_list.edges {
-                let from_key = unid_id_map.get(&edge.from_node_key );
-                let to_key = unid_id_map.get(&edge.to_node_key );
+                let from_key = unid_id_map.get(&edge.from_node_key);
+                let to_key = unid_id_map.get(&edge.to_node_key);
 
                 let (from_key, to_key) = match (from_key, to_key) {
                     (Some(from_key), Some(to_key)) => (from_key, to_key),
@@ -190,23 +195,23 @@ where
                             message="Could not get node_key mapping for from_key",
                             from_key=?from_key,
                         );
-                        continue
-                    },
+                        continue;
+                    }
                     (None, Some(to_key)) => {
                         tracing::warn!(
                             message="Could not get node_key mapping for to_key",
                             to_key=?to_key,
                         );
-                        continue
-                    },
+                        continue;
+                    }
                     (None, None) => {
                         tracing::warn!(
                             message="Could not get node_key mapping for from_key and to_key",
                             from_key=?from_key,
                             to_key=?to_key,
                         );
-                        continue
-                    },
+                        continue;
+                    }
                 };
 
                 identified_graph.add_edge(

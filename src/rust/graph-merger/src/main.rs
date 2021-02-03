@@ -1,43 +1,57 @@
 // #![allow(unused_must_use)]
 
-use std::{
-    collections::HashMap,
-    fmt::Debug,
-    io::Stdout,
-    sync::{Arc, Mutex},
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use std::{collections::HashMap,
+          fmt::Debug,
+          io::Stdout,
+          sync::{Arc,
+                 Mutex},
+          time::{Duration,
+                 SystemTime,
+                 UNIX_EPOCH}};
 
 use async_trait::async_trait;
-use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
-use failure::{bail, Error};
+use dgraph_tonic::{Client as DgraphClient,
+                   Mutate,
+                   Query};
+use failure::{bail,
+              Error};
 use futures::future::FutureExt;
-use grapl_config::{
-    env_helpers::{s3_event_emitters_from_env, FromEnv},
-    event_caches,
-};
-use grapl_graph_descriptions::graph_description::{
-    Edge, IdentifiedGraph, IdentifiedNode, MergedGraph, MergedNode,
-};
-use grapl_observe::{
-    dgraph_reporter::DgraphMetricReporter,
-    metric_reporter::{tag, MetricReporter},
-};
-use grapl_service::{decoder::ZstdProtoDecoder, serialization::MergedGraphSerializer};
-use log::{error, info, warn};
+use grapl_config::{env_helpers::{s3_event_emitters_from_env,
+                                 FromEnv},
+                   event_caches};
+use grapl_graph_descriptions::graph_description::{Edge,
+                                                  IdentifiedGraph,
+                                                  IdentifiedNode,
+                                                  MergedGraph,
+                                                  MergedNode};
+use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
+                    metric_reporter::{tag,
+                                      MetricReporter}};
+use grapl_service::{decoder::ZstdProtoDecoder,
+                    serialization::MergedGraphSerializer};
+use log::{error,
+          info,
+          warn};
 use lru_cache::LruCache;
-use rusoto_dynamodb::{AttributeValue, DynamoDb, DynamoDbClient, GetItemInput};
+use rusoto_dynamodb::{AttributeValue,
+                      DynamoDb,
+                      DynamoDbClient,
+                      GetItemInput};
 use rusoto_sqs::SqsClient;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use sqs_executor::{
-    cache::{Cache, CacheResponse, Cacheable},
-    errors::{CheckedError, Recoverable},
-    event_handler::{CompletedEvents, EventHandler},
-    event_retriever::S3PayloadRetriever,
-    make_ten,
-    s3_event_emitter::S3ToSqsEventNotifier,
-};
+use serde::{Deserialize,
+            Serialize};
+use serde_json::{json,
+                 Value};
+use sqs_executor::{cache::{Cache,
+                           CacheResponse,
+                           Cacheable},
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_retriever::S3PayloadRetriever,
+                   make_ten,
+                   s3_event_emitter::S3ToSqsEventNotifier};
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
@@ -52,7 +66,6 @@ fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::
     mutation
         .set_set_json(&mu)
         .unwrap_or_else(|e| error!("Failed to set json: {:#?}", e));
-
 
     mutation
 }
@@ -93,9 +106,9 @@ async fn node_key_to_uid(
     let mut vars = HashMap::new();
     vars.insert("$a".to_string(), node_key.to_string());
 
-    let query_res =
-        tokio::time::timeout(Duration::from_secs(3), txn.query_with_vars(QUERY, vars)).await?
-            .map_err(GraphMergerError::QueryWithVarsError)?;
+    let query_res = tokio::time::timeout(Duration::from_secs(3), txn.query_with_vars(QUERY, vars))
+        .await?
+        .map_err(GraphMergerError::QueryWithVarsError)?;
 
     // todo: is there a way to differentiate this query metric from others?
     metric_reporter
@@ -400,7 +413,6 @@ pub enum GraphMergerError {
     QueryWithVarsError(anyhow::Error),
     #[error("MutateAndCommitNowError")]
     MutateAndCommitNowError(anyhow::Error),
-
 }
 use tap::tap::TapFallible;
 impl CheckedError for GraphMergerError {
@@ -434,7 +446,12 @@ where
             subgraph.edges.len(),
         );
 
-        let edges: HashSet<_> = subgraph.edges.values().map(|e| e.edges.iter() ).flatten().map(|e| e.edge_name.as_str())
+        let edges: HashSet<_> = subgraph
+            .edges
+            .values()
+            .map(|e| e.edges.iter())
+            .flatten()
+            .map(|e| e.edge_name.as_str())
             .collect();
         println!("incoming edges: {:?}", edges);
 
@@ -521,9 +538,7 @@ where
             .flatten()
             .map(|edge| edge.clone())
             .collect();
-        println!(
-            "upserting edges {:?}", &unmerged_edges,
-        );
+        println!("upserting edges {:?}", &unmerged_edges,);
         let merged_edges = upsert_edges(
             &unmerged_edges[..],
             &self.mg_client,
@@ -623,9 +638,7 @@ async fn get_edge_uids(
     metric_reporter: &mut MetricReporter<Stdout>,
     cache: &mut UidCache,
 ) -> Result<(String, String), GraphMergerError> {
-    let from_uid = match node_key_to_uid(&mg_client, metric_reporter, cache, from_node_key)
-        .await?
-    {
+    let from_uid = match node_key_to_uid(&mg_client, metric_reporter, cache, from_node_key).await? {
         Some(from_uid) => from_uid,
         None => {
             return Err(GraphMergerError::Unexpected(format!(
@@ -635,9 +648,7 @@ async fn get_edge_uids(
         }
     };
 
-    let to_uid = match node_key_to_uid(&mg_client, metric_reporter, cache, to_node_key)
-        .await?
-    {
+    let to_uid = match node_key_to_uid(&mg_client, metric_reporter, cache, to_node_key).await? {
         Some(to_uid) => to_uid,
         None => {
             return Err(GraphMergerError::Unexpected(format!(
@@ -649,10 +660,10 @@ async fn get_edge_uids(
     Ok((from_uid, to_uid))
 }
 
-use std::num::ParseIntError;
+use std::{collections::HashSet,
+          num::ParseIntError};
 
 use grapl_graph_descriptions::graph_description::MergedEdge;
-use std::collections::HashSet;
 
 async fn upsert_edges<CacheT>(
     unmerged_edges: &[Edge],

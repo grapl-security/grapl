@@ -1,7 +1,26 @@
 use crate::graph_description::*;
+use crate::node_property::Property;
+
+macro_rules! impl_as {
+    ($base_t:ty, $as_ident:ident, $r:pat, $p:ident, $to_t:ty, $variant:path) => {
+        impl $base_t {
+            pub fn $as_ident(&self) -> Option<$to_t> {
+                match self.property {
+                    Some($variant($r)) => Some($p),
+                    _ => None,
+                }
+            }
+        }
+    };
+    ($base_t:ty, $as_ident:ident, &$to_t:ty, $variant:path) => {
+        impl_as! {$base_t, $as_ident, ref p, p, &$to_t, $variant}
+    };
+    ($base_t:ty, $as_ident:ident, $to_t:ty, $variant:path) => {
+        impl_as! {$base_t, $as_ident,     p, p, $to_t, $variant}
+    };
+}
 
 macro_rules ! impl_from_for {
-
     ($into_t:ty, $field:tt, $from_t:ty) => {
         impl From<$from_t> for $into_t
         {
@@ -22,7 +41,7 @@ pub mod graph_description {
     include!(concat!(env!("OUT_DIR"), "/graph_description.rs"));
 }
 
-use node_property::Property::{
+pub use node_property::Property::{
     DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
     DecrementOnlyUintProp as ProtoDecrementOnlyUintProp, ImmutableIntProp as ProtoImmutableIntProp,
     ImmutableStrProp as ProtoImmutableStrProp, ImmutableUintProp as ProtoImmutableUintProp,
@@ -418,74 +437,13 @@ impl std::string::ToString for NodeProperty {
     }
 }
 
-impl NodeProperty {
-    pub fn as_increment_only_uint(&self) -> Option<u64> {
-        if let Some(node_property::Property::IncrementOnlyUintProp(increment_only_uint_prop)) =
-            self.property
-        {
-            Some(increment_only_uint_prop)
-        } else {
-            None
-        }
-    }
-
-    pub fn as_immutable_uint(&self) -> Option<u64> {
-        if let Some(node_property::Property::ImmutableUintProp(immutable_uint_prop)) = self.property
-        {
-            Some(immutable_uint_prop)
-        } else {
-            None
-        }
-    }
-
-    pub fn as_decrement_only_uint(&self) -> Option<u64> {
-        if let Some(node_property::Property::DecrementOnlyUintProp(decrement_only_uint_prop)) =
-            self.property
-        {
-            Some(decrement_only_uint_prop)
-        } else {
-            None
-        }
-    }
-
-    pub fn as_decrement_only_int(&self) -> Option<i64> {
-        if let Some(node_property::Property::DecrementOnlyIntProp(decrement_only_int_prop)) =
-            self.property
-        {
-            Some(decrement_only_int_prop)
-        } else {
-            None
-        }
-    }
-
-    pub fn as_increment_only_int(&self) -> Option<i64> {
-        if let Some(node_property::Property::IncrementOnlyIntProp(increment_only_int_prop)) =
-            self.property
-        {
-            Some(increment_only_int_prop)
-        } else {
-            None
-        }
-    }
-
-    pub fn as_immutable_int(&self) -> Option<i64> {
-        if let Some(node_property::Property::ImmutableIntProp(immutable_int_prop)) = self.property {
-            Some(immutable_int_prop)
-        } else {
-            None
-        }
-    }
-
-    pub fn as_immutable_str(&self) -> Option<&str> {
-        if let Some(node_property::Property::ImmutableStrProp(ref immutable_str_prop)) =
-            self.property
-        {
-            Some(immutable_str_prop)
-        } else {
-            None
-        }
-    }
-}
+impl_as! {NodeProperty, as_increment_only_uint, u64, node_property::Property::IncrementOnlyUintProp}
+impl_as! {NodeProperty, as_immutable_uint, u64, node_property::Property::ImmutableUintProp}
+impl_as! {NodeProperty, as_decrement_only_uint, u64, node_property::Property::DecrementOnlyUintProp}
+impl_as! {NodeProperty, as_decrement_only_int, i64, node_property::Property::DecrementOnlyIntProp}
+impl_as! {NodeProperty, as_increment_only_int, i64, node_property::Property::IncrementOnlyIntProp}
+impl_as! {NodeProperty, as_immutable_int, i64, node_property::Property::ImmutableIntProp}
+impl_as! {NodeProperty, as_immutable_str, &str, node_property::Property::ImmutableStrProp }
 
 impl Property {
     pub fn into_json(self) -> serde_json::Value {
@@ -514,8 +472,6 @@ impl NodeDescription {
         self.node_key = key;
     }
 }
-
-use crate::node_property::Property;
 
 pub struct IncrementOnlyIntProp(pub i64);
 
@@ -606,50 +562,43 @@ impl_from_for!(
 impl_from_for!(ImmutableStrProp, 0, String, &String, &str);
 
 impl From<ImmutableStrProp> for Property {
-    fn from(s: ImmutableStrProp) -> Self {
-        let ImmutableStrProp(s) = s;
+    fn from(ImmutableStrProp(s): ImmutableStrProp) -> Self {
         Property::ImmutableStrProp(s)
     }
 }
 
 impl From<IncrementOnlyIntProp> for Property {
-    fn from(p: IncrementOnlyIntProp) -> Self {
-        let IncrementOnlyIntProp(p) = p;
+    fn from(IncrementOnlyIntProp(p): IncrementOnlyIntProp) -> Self {
         Self::IncrementOnlyIntProp(p)
     }
 }
 
 impl From<DecrementOnlyIntProp> for Property {
-    fn from(p: DecrementOnlyIntProp) -> Self {
-        let DecrementOnlyIntProp(p) = p;
+    fn from(DecrementOnlyIntProp(p): DecrementOnlyIntProp) -> Self {
         Self::DecrementOnlyIntProp(p)
     }
 }
 
 impl From<ImmutableIntProp> for Property {
-    fn from(p: ImmutableIntProp) -> Self {
-        let ImmutableIntProp(p) = p;
+    fn from(ImmutableIntProp(p): ImmutableIntProp) -> Self {
         Self::ImmutableIntProp(p)
     }
 }
 
 impl From<IncrementOnlyUintProp> for Property {
-    fn from(p: IncrementOnlyUintProp) -> Self {
-        let IncrementOnlyUintProp(p) = p;
+    fn from(IncrementOnlyUintProp(p): IncrementOnlyUintProp) -> Self {
         Self::IncrementOnlyUintProp(p)
     }
 }
 
 impl From<DecrementOnlyUintProp> for Property {
-    fn from(p: DecrementOnlyUintProp) -> Self {
-        let DecrementOnlyUintProp(p) = p;
+    fn from(DecrementOnlyUintProp(p): DecrementOnlyUintProp) -> Self {
         Self::DecrementOnlyUintProp(p)
     }
 }
 
 impl From<ImmutableUintProp> for Property {
-    fn from(p: ImmutableUintProp) -> Self {
-        let ImmutableUintProp(p) = p;
+    fn from(ImmutableUintProp(p): ImmutableUintProp) -> Self {
         Self::ImmutableUintProp(p)
     }
 }
