@@ -351,8 +351,8 @@ export class GraplCdkStack extends cdk.Stack {
                 osquery_generator.service,
                 node_identifier.service,
                 graph_merger.service,
-                analyzer_executor.service,
                 analyzer_dispatch.service,
+                analyzer_executor.service,
                 engagement_creator.service,
             ]
         });
