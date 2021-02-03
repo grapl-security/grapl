@@ -1,6 +1,6 @@
 import GraphDisplay from "./GraphViz";
-import React, {useEffect} from "react";
-import EngagementViewContent from './EngagementViewContent'
+import React, { useEffect } from "react";
+import EngagementViewContent from "./EngagementViewContent";
 import clsx from "clsx";
 import Drawer from "@material-ui/core/Drawer";
 import AppBar from "@material-ui/core/AppBar";
@@ -8,31 +8,35 @@ import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
-import KeyboardArrowLeftIcon from '@material-ui/icons/KeyboardArrowLeft';
+import KeyboardArrowLeftIcon from "@material-ui/icons/KeyboardArrowLeft";
 import Button from "@material-ui/core/Button";
 import { Node } from "../modules/GraphViz/CustomTypes";
-import Home from '@material-ui/icons/Home';
-import { Link } from 'react-router-dom';
-import { checkLogin } from '../Login';
-import LoginNotification from "./reusableComponents/Notifications";
+import Home from "@material-ui/icons/Home";
+import { Link } from "react-router-dom";
+import { checkLogin } from "../services/loginService";
+import { LoginNotification } from "./reusableComponents";
 import { useStyles } from "./makeStyles/GraphVizStyles";
 
 type EngagementViewProps = {
-  setLens: (lens: string) => void,
-  curLens: string,
-  curNode: Node | null
-}
+  setLens: (lens: string) => void;
+  curLens: string;
+  curNode: Node | null;
+};
 
 const defaultEngagementUxState = (): EngagementUxState => {
   return {
     curLens: "",
     curNode: null,
     loggedIn: true,
-    renderedOnce: false
-  }
-}
+    renderedOnce: false,
+  };
+};
 
-export default function EngagementView({setLens, curLens, curNode}: EngagementViewProps) {
+export default function EngagementView({
+  setLens,
+  curLens,
+  curNode,
+}: EngagementViewProps) {
   const classes = useStyles();
 
   const [open, setOpen] = React.useState(true);
@@ -50,10 +54,7 @@ export default function EngagementView({setLens, curLens, curNode}: EngagementVi
       {/* <CssBaseline /> */}
       <AppBar
         position="fixed"
-        className={
-          clsx(classes.appBar,
-          { [classes.appBarShift]: open})
-        }
+        className={clsx(classes.appBar, { [classes.appBarShift]: open })}
       >
         <Toolbar>
           <IconButton
@@ -68,13 +69,12 @@ export default function EngagementView({setLens, curLens, curNode}: EngagementVi
           </IconButton>
 
           <div className={classes.headerContent}>
-            <Typography 
-              variant="h5" 
-              noWrap
-            >
+            <Typography variant="h5" noWrap>
               <b className={classes.header}> GRAPL </b>
             </Typography>
-                <Link to = "/" className = {classes.link}> <Home/> </Link>
+            <Link to="/" className={classes.link}>
+              <Home />
+            </Link>
           </div>
         </Toolbar>
       </AppBar>
@@ -85,34 +85,31 @@ export default function EngagementView({setLens, curLens, curNode}: EngagementVi
         anchor="left"
         open={open}
         classes={{
-          paper: classes.drawerPaper
+          paper: classes.drawerPaper,
         }}
       >
         <div className={classes.drawerHeader}>
-          <Button onClick={handleDrawerClose}><KeyboardArrowLeftIcon className={classes.close}/></Button>
+          <Button onClick={handleDrawerClose}>
+            <KeyboardArrowLeftIcon className={classes.close} />
+          </Button>
         </div>
 
         <Divider />
 
-        <EngagementViewContent 
-          setLens={setLens} 
-          curNode={curNode}
-        />
-
+        <EngagementViewContent setLens={setLens} curNode={curNode} />
       </Drawer>
 
       <main
         className={clsx(classes.content, {
-          [classes.contentShift]: open
+          [classes.contentShift]: open,
         })}
       >
-      
-      <div className={ classes.drawerHeader } />
+        <div className={classes.drawerHeader} />
 
-      <h3 className={ classes.lensName }>
-        {/* selected lens name */}
-        {curLens || ""} 
-      </h3>
+        <h3 className={classes.lensName}>
+          {/* selected lens name */}
+          {curLens || ""}
+        </h3>
 
         <Typography paragraph></Typography>
       </main>
@@ -121,68 +118,66 @@ export default function EngagementView({setLens, curLens, curNode}: EngagementVi
 }
 
 type EngagementUxState = {
-  curLens: string, 
-  curNode: Node | null,
-  loggedIn: boolean,
-  renderedOnce: boolean,
-}
+  curLens: string;
+  curNode: Node | null;
+  loggedIn: boolean;
+  renderedOnce: boolean;
+};
 
 export const EngagementUx = () => {
-    const classes = useStyles();
-    const [state, setState] = React.useState(defaultEngagementUxState());
+  const classes = useStyles();
+  const [state, setState] = React.useState(defaultEngagementUxState());
 
-    useEffect(
-      () => {
-        if (state.renderedOnce) {
-          return;
+  useEffect(() => {
+    if (state.renderedOnce) {
+      return;
+    }
+    const interval = setInterval(async () => {
+      await checkLogin().then((loggedIn) => {
+        if (!loggedIn) {
+          console.warn("Logged out");
         }
-        const interval = setInterval(async () => {
-          await checkLogin()
-          .then((loggedIn) => {
-              if (!loggedIn) {
-                  console.warn("Logged out")
-              }
-              setState({
-                  ...state,
-                  loggedIn: loggedIn || false,
-                  renderedOnce: true,
-              });
-          });
-        }, 2000);
-        return () => { clearInterval(interval) }
-      }, 
-    [state, setState]);
+        setState({
+          ...state,
+          loggedIn: loggedIn || false,
+          renderedOnce: true,
+        });
+      });
+    }, 2000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [state, setState]);
 
-  const loggedIn = state.loggedIn; 
-  
-    return (
-        <>
-            <EngagementView 
-                setLens={
-                    (lens: string) => setState({
-                        ...state,
-                        curLens: lens,
-                    })
-                }
-                curLens={state.curLens}
-                curNode={state.curNode}
-            />
-        <>
-          <div className = {classes.loggedIn}>
-            {!loggedIn ? <LoginNotification /> : ""}
-          </div>
+  const loggedIn = state.loggedIn;
 
-          <GraphDisplay 
-              lensName={state.curLens} 
-              setCurNode={
-                (node: Node) => {
-                  setState({
-                      ...state,
-                      curNode: node,
-                  })
-              }}
-          />
-        </>
+  return (
+    <>
+      <EngagementView
+        setLens={(lens: string) =>
+          setState({
+            ...state,
+            curLens: lens,
+          })
+        }
+        curLens={state.curLens}
+        curNode={state.curNode}
+      />
+      <>
+        <div className={classes.loggedIn}>
+          {!loggedIn ? <LoginNotification /> : ""}
+        </div>
+
+        <GraphDisplay
+          lensName={state.curLens}
+          setCurNode={(node: Node) => {
+            setState({
+              ...state,
+              curNode: node,
+            });
+          }}
+        />
       </>
-    )
-}
+    </>
+  );
+};

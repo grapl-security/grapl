@@ -1,5 +1,6 @@
-use std::io::Write;
-use std::io::{stdout, Stdout};
+use std::io::{stdout,
+              Stdout,
+              Write};
 
 pub struct WriterWrapper<W>
 where

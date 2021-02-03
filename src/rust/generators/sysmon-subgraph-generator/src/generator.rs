@@ -1,14 +1,49 @@
-use crate::metrics::SysmonSubgraphGeneratorMetrics;
-use crate::models::SysmonTryFrom;
+use std::borrow::Cow;
+
 use async_trait::async_trait;
-use failure::bail;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::log_time;
 use log::*;
-use sqs_lambda::cache::{Cache, CacheResponse};
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use std::borrow::Cow;
+use sqs_executor::{cache::{Cache,
+                           CacheResponse},
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_status::EventStatus};
 use sysmon::Event;
+
+use crate::{metrics::SysmonSubgraphGeneratorMetrics,
+            models::SysmonTryFrom};
+
+#[derive(thiserror::Error, Debug)]
+pub enum SysmonGeneratorError {
+    #[error("DeserializeError")]
+    DeserializeError(failure::Error),
+    #[error("NegativeEventTime")]
+    NegativeEventTime(i64),
+    #[error("TimeError")]
+    TimeError(#[from] chrono::ParseError),
+    #[error("GraphBuilderError")]
+    GraphBuilderError(String),
+    #[error("Unsupported event type")]
+    UnsupportedEventType(String),
+    #[error("Generator failed")]
+    Unexpected,
+}
+
+impl CheckedError for SysmonGeneratorError {
+    fn error_type(&self) -> Recoverable {
+        match self {
+            Self::DeserializeError(_) => Recoverable::Persistent,
+            Self::NegativeEventTime(_) => Recoverable::Persistent,
+            Self::TimeError(_) => Recoverable::Persistent,
+            Self::GraphBuilderError(_) => Recoverable::Persistent,
+            Self::UnsupportedEventType(_) => Recoverable::Persistent,
+            Self::Unexpected => Recoverable::Transient,
+        }
+    }
+}
 
 #[derive(Clone)]
 pub(crate) struct SysmonSubgraphGenerator<C>
@@ -31,9 +66,9 @@ where
     async fn process_events(
         &mut self,
         events: Vec<Cow<'_, str>>,
-    ) -> (Graph, Vec<Event>, Option<failure::Error>) {
-        let mut last_failure: Option<failure::Error> = None;
-        let mut identities = Vec::with_capacity(events.len());
+        identities: &mut CompletedEvents,
+    ) -> Result<Graph, Result<(Graph, SysmonGeneratorError), SysmonGeneratorError>> {
+        let mut last_failure: Option<SysmonGeneratorError> = None;
         let mut final_subgraph = Graph::new(0);
 
         for event in events {
@@ -42,7 +77,9 @@ where
                 Err(e) => {
                     warn!("Failed to deserialize event: {}, {}", e, event);
 
-                    last_failure = Some(failure::err_msg(format!("Failed: {}", e)));
+                    last_failure = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(
+                        format!("Failed: {}", e),
+                    )));
 
                     continue;
                 }
@@ -59,19 +96,24 @@ where
 
             let graph = match Graph::try_from(event.clone()) {
                 Ok(subgraph) => subgraph,
+                Err(SysmonGeneratorError::UnsupportedEventType(_s)) => continue,
                 Err(e) => {
+                    error!("Graph::try_from failed with: {:?}", e);
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
                     last_failure = Some(e);
                     continue;
                 }
             };
 
-            identities.push(event);
-
             final_subgraph.merge(&graph);
+            identities.add_identity(event, EventStatus::Success);
         }
 
-        (final_subgraph, identities, last_failure)
+        match (last_failure, identities.identities.is_empty()) {
+            (Some(last_failure), true) => Err(Err(last_failure)),
+            (Some(last_failure), false) => Err(Ok((final_subgraph, last_failure))),
+            (None, _) => Ok(final_subgraph),
+        }
     }
 }
 
@@ -82,12 +124,13 @@ where
 {
     type InputEvent = Vec<u8>;
     type OutputEvent = Graph;
-    type Error = sqs_lambda::error::Error;
+    type Error = SysmonGeneratorError;
 
     async fn handle_event(
         &mut self,
         events: Vec<u8>,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
+        completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         info!("Handling raw event");
 
         /*
@@ -118,23 +161,11 @@ where
 
         info!("Handling {} events", events.len());
 
-        let (final_subgraph, identities, last_failure) = self.process_events(events).await;
+        let final_subgraph = self.process_events(events, completed).await;
 
-        info!("Completed mapping {} subgraphs", identities.len());
-        self.metrics.report_handle_event_success(&last_failure);
+        info!("Completed mapping {} subgraphs", completed.len());
+        self.metrics.report_handle_event_success(&final_subgraph);
 
-        let mut completed = match last_failure {
-            Some(e) => OutputEvent::new(Completion::Partial((
-                final_subgraph,
-                sqs_lambda::error::Error::ProcessingError(e.to_string()),
-            ))),
-            None => OutputEvent::new(Completion::Total(final_subgraph)),
-        };
-
-        identities
-            .into_iter()
-            .for_each(|identity| completed.add_identity(identity));
-
-        completed
+        final_subgraph
     }
 }

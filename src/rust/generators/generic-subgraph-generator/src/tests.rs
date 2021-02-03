@@ -1,10 +1,15 @@
-use crate::generator::GenericSubgraphGenerator;
-use crate::models::GenericEvent;
-use crate::serialization::ZstdJsonDecoder;
-use sqs_lambda::cache::NopCache;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use tokio::fs::File;
-use tokio::io::{AsyncReadExt, Result};
+#![cfg(test)]
+
+use grapl_service::decoder::ZstdJsonDecoder;
+use sqs_executor::{cache::NopCache,
+                   event_decoder::PayloadDecoder,
+                   event_handler::CompletedEvents};
+use tokio::{fs::File,
+            io::{AsyncReadExt,
+                 Result}};
+
+use crate::{generator::GenericSubgraphGenerator,
+            models::GenericEvent};
 
 #[tokio::test]
 /// Tests if generic event serialization is working as expected.
@@ -18,7 +23,7 @@ async fn test_generic_event_deserialization() {
     let events: Vec<GenericEvent> = match serde_json::from_str(&raw_test_string) {
         Ok(events) => events,
         Err(e) => panic!(
-            "Failed to deserialize event into GenericEvent.\nError: {}",
+            "Failed to deserialize event into GenericEvent.\nError: {:?}",
             e
         ),
     };
@@ -41,13 +46,20 @@ async fn test_log_event_deserialization() {
         .decode(raw_test_data)
         .expect("Failed to deserialize events.");
 
-    let (subgraph, identities, failed) = generator.convert_events_to_subgraph(generic_events).await;
+    let mut completed_events = CompletedEvents::default();
 
-    if let Some(report) = failed {
-        panic!(
-            "An error occurred during subgraph generation. Err: {}",
-            report
-        );
+    let result = generator
+        .convert_events_to_subgraph(generic_events, &mut completed_events)
+        .await;
+
+    match result {
+        Err(Err(e)) => {
+            panic!("An error occurred during subgraph generation. Err: {:?}", e);
+        }
+        Err(e) => {
+            panic!("An error occurred during subgraph generation. Err: {:?}", e);
+        }
+        Ok(_) => (),
     }
 }
 

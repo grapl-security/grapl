@@ -1,3 +1,5 @@
+const GRAPL_ENGAGEMENT_VIEW = "http://nginx:1234/";
+
 describe('basic test', () => {
   it('passes', () => {
     expect(true).to.equal(true)
@@ -7,13 +9,13 @@ describe('basic test', () => {
 describe('application loads', () => {
   it('visits the front page', () => {
     // set cypress.json's baseUrl: to this
-    cy.visit('http://grapl-engagement-view:1234')
+    cy.visit(GRAPL_ENGAGEMENT_VIEW)
   })
 })
 
 describe('authentication', () => {
   it('allows the user to log in with a valid username and password', () => {
-    cy.visit('http://grapl-engagement-view:1234')
+    cy.visit(GRAPL_ENGAGEMENT_VIEW)
 
     // assert no login cookie
 
@@ -37,7 +39,7 @@ describe('authentication', () => {
 
   /*
   it('does not allow the user to log in with an invalid username or password', () => {
-    cy.visit('http://grapl-engagement-view:1234')
+    cy.visit(GRAPL_ENGAGEMENT_VIEW)
 
     // click 'LOGIN' button
     var login_button = cy.contains(/login/i)

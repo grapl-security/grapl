@@ -14,6 +14,7 @@ import { GraplServiceProps } from './grapl-cdk-stack';
 import * as path from 'path';
 import {WatchedOperation} from "cdk-watchful";
 import { SchemaDb } from './schemadb';
+import { GraplS3Bucket } from './grapl_s3_bucket';
 
 
 function getEdgeGatewayId(
@@ -51,7 +52,7 @@ export class EngagementEdge extends cdk.NestedStack {
     constructor(scope: cdk.Construct, id: string, props: EngagementEdgeProps) {
         super(scope, id);
 
-        const ux_bucket = s3.Bucket.fromBucketName(
+        const ux_bucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
@@ -159,7 +160,7 @@ export class EngagementNotebook extends cdk.NestedStack {
         });
     }
 
-    getNotebookArn(): string { 
+    getNotebookArn(): string {
         // there's no better way to get an ARN from a Cfn (low-level Cloudformation) type object.
         if (!this.notebookInstance.notebookInstanceName) {
             throw new Error("gotta have a notebook name");
@@ -187,12 +188,12 @@ interface EngagementUxProps extends cdk.StackProps {
     edgeApi: apigateway.RestApi;
 }
 
-const packageDir = path.join(__dirname, '../edge_ux_package/');
+const packageDir = path.join(__dirname, '../edge_ux_post_replace/');
 export class EngagementUx extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props: EngagementUxProps) {
         super(scope, id, props);
 
-        const edgeBucket = s3.Bucket.fromBucketName(
+        const edgeBucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'

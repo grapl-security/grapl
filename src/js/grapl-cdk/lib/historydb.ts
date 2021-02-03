@@ -4,6 +4,7 @@ import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import { GraplServiceProps } from './grapl-cdk-stack';
 import { Service } from './service';
 import { RemovalPolicy } from '@aws-cdk/core';
+import { FargateService } from "./fargate_service";
 
 function create_table(scope: cdk.Construct, name: string) {
     return new dynamodb.Table(scope, name, {
@@ -91,6 +92,23 @@ export class HistoryDb extends cdk.Construct {
                 removalPolicy: RemovalPolicy.DESTROY,
             }
         );
+    }
+
+    allowReadWrite2(service: FargateService) {
+        const tables = [
+            this.proc_history,
+            this.file_history,
+            this.outbound_connection_history,
+            this.inbound_connection_history,
+            this.network_connection_history,
+            this.ip_connection_history,
+            this.asset_history,
+            this.static_mapping_table,
+            this.dynamic_session_table,
+        ];
+        for (const table of tables) {
+            table.grantReadWriteData(service.service.taskDefinition.taskRole);
+        }
     }
 
     allowReadWrite(service: Service) {

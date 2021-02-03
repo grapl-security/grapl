@@ -8,6 +8,7 @@ export class RedisCluster extends cdk.Construct {
     readonly securityGroup: ec2.SecurityGroup;
     readonly connections: ec2.Connections;
     readonly cluster: elasticache.CfnCacheCluster;
+    readonly address: string;
 
     constructor(scope: cdk.Construct, id: string, props: GraplServiceProps) {
         super(scope, id);
@@ -46,6 +47,8 @@ export class RedisCluster extends cdk.Construct {
             cacheSubnetGroupName: subnetGroup.cacheSubnetGroupName,
             vpcSecurityGroupIds: [this.securityGroup.securityGroupId],
         });
+
+        this.address = `${this.cluster.attrRedisEndpointAddress}:${this.cluster.attrRedisEndpointPort}`;
 
         this.cluster.addDependsOn(subnetGroup);
     }

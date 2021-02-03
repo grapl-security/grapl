@@ -11,7 +11,6 @@ import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
 import { Lens } from "../modules/GraphViz/CustomTypes";
-import { getGraphQlEdge } from "../modules/GraphViz/engagement_edge/getApiURLs";
 
 import TablePagination from '@material-ui/core/TablePagination';
 import { ClassNameMap } from '@material-ui/styles/withStyles';
@@ -164,10 +163,8 @@ function ToggleLensTable( {setLens}: ToggleLensTableProps ) {
     )
 }
 
-const graphql_edge = getGraphQlEdge();
 
 const getLenses = async (first: number, offset: number) => {
-    // console.log('fetching graph from', graphql_edge);
 
     const query = `
         {
@@ -181,9 +178,7 @@ const getLenses = async (first: number, offset: number) => {
         }
     `;
 
-    console.log("calling graphql_edge: " + graphql_edge + "with query: " + query);
-    
-    const res = await fetch(`${graphql_edge}graphQlEndpoint/graphql`,
+    const res = await fetch(`/prod/graphQlEndpoint/graphql`,
         {
             method: 'post',
             body: JSON.stringify({ query: query }),
@@ -256,4 +251,3 @@ export default function EngagementViewContent({setLens, curNode}: EngagementView
         </>
     );
 }
-
