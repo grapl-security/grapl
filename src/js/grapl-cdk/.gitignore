@@ -21,6 +21,8 @@ cdk.out
 cdk-output.json
 
 # do not ignore our UX
+!edge_ux/**/*.js
+.deploy_test_env
 !edge_ux_pre_replace/**/*.js
 
 # Doesn't appear to exist anymore

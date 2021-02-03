@@ -1,50 +1,57 @@
-#![allow(unused_must_use)]
+#![allow(unused)]
+#![allow(dead_code)]
 
-use std::collections::{HashMap, HashSet};
-use std::fmt::Debug;
-use std::io::{Cursor, Stdout};
-use std::iter::FromIterator;
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use std::time::UNIX_EPOCH;
-use std::time::{Duration, SystemTime};
+use std::{collections::HashMap,
+          fmt::Debug,
+          io::Stdout,
+          sync::{Arc,
+                 Mutex},
+          time::{Duration,
+                 SystemTime,
+                 UNIX_EPOCH}};
 
 use async_trait::async_trait;
-use aws_lambda_events::event::s3::{
-    S3Bucket, S3Entity, S3Event, S3EventRecord, S3Object, S3RequestParameters, S3UserIdentity,
-};
-use aws_lambda_events::event::sqs::SqsEvent;
-use chrono::Utc;
-use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
-use failure::{bail, Error};
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use log::{debug, error, info, warn};
-use prost::Message;
-use rusoto_core::{HttpClient, Region};
-use rusoto_dynamodb::AttributeValue;
-use rusoto_dynamodb::DynamoDbClient;
-use rusoto_dynamodb::{DynamoDb, GetItemInput};
+use dgraph_tonic::{Client as DgraphClient,
+                   Mutate,
+                   Query};
+use failure::{bail,
+              Error};
+use grapl_config::{env_helpers::{s3_event_emitters_from_env,
+                                 FromEnv},
+                   event_caches};
+use grapl_graph_descriptions::{graph_description::{GeneratedSubgraphs,
+                                                   Graph,
+                                                   Node},
+                               node::NodeT};
+use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
+                    metric_reporter::{tag,
+                                      MetricReporter}};
+use grapl_service::{decoder::ZstdProtoDecoder,
+                    serialization::SubgraphSerializer};
+use log::{error,
+          info,
+          warn};
+use lru_cache::LruCache;
+use rusoto_dynamodb::{AttributeValue,
+                      DynamoDb,
+                      DynamoDbClient,
+                      GetItemInput};
 use rusoto_s3::S3Client;
-use rusoto_sqs::{SendMessageRequest, Sqs, SqsClient};
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use sqs_lambda::cache::{Cache, CacheResponse, Cacheable};
-use sqs_lambda::completion_event_serializer::CompletionEventSerializer;
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use sqs_lambda::local_sqs_service::local_sqs_service_with_options;
-use sqs_lambda::local_sqs_service_options::LocalSqsServiceOptionsBuilder;
-use sqs_lambda::redis_cache::RedisCache;
-use sqs_lambda::sqs_completion_handler::CompletionPolicy;
-use sqs_lambda::sqs_consumer::ConsumePolicyBuilder;
-
-use grapl_graph_descriptions::graph_description::{GeneratedSubgraphs, Graph, Node};
-use grapl_graph_descriptions::node::NodeT;
-use grapl_observe::dgraph_reporter::DgraphMetricReporter;
-use grapl_observe::metric_reporter::MetricReporter;
-
+use rusoto_sqs::SqsClient;
+use serde::{Deserialize,
+            Serialize};
+use sqs_executor::{cache::{Cache,
+                           CacheResponse,
+                           Cacheable},
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_retriever::S3PayloadRetriever,
+                   make_ten,
+                   s3_event_emitter::S3ToSqsEventNotifier};
+use serde_json::Value;
+/*
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
         "uid": from,
@@ -58,13 +65,30 @@ fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::
     mutation.set_set_json(&mu);
 
     mutation
-}
+}*/
 
 async fn node_key_to_uid(
     dg: &DgraphClient,
     metric_reporter: &mut MetricReporter<Stdout>,
+    uid_cache: &mut UidCache,
     node_key: &str,
 ) -> Result<Option<String>, Error> {
+    if uid_cache.is_empty() {
+        tracing::debug!("uid_cache is empty");
+    }
+    if let Some(uid) = uid_cache.get(node_key) {
+        let _ =
+            metric_reporter.counter("node_key_to_uid.cache.count", 1.0, 0.1, &[tag("hit", true)]);
+        return Ok(Some(uid));
+    } else {
+        let _ = metric_reporter.counter(
+            "node_key_to_uid.cache.count",
+            1.0,
+            0.1,
+            &[tag("hit", false)],
+        );
+    }
+
     let mut txn = dg.new_read_only_txn();
 
     const QUERY: &str = r"
@@ -79,9 +103,8 @@ async fn node_key_to_uid(
     let mut vars = HashMap::new();
     vars.insert("$a".to_string(), node_key.to_string());
 
-    let query_res = txn
-        .query_with_vars(QUERY, vars)
-        .await
+    let query_res = tokio::time::timeout(Duration::from_secs(3), txn.query_with_vars(QUERY, vars))
+        .await?
         .map_err(AnyhowFailure::into_failure)?;
 
     // todo: is there a way to differentiate this query metric from others?
@@ -97,15 +120,24 @@ async fn node_key_to_uid(
         .and_then(|uid| uid.get("uid"))
         .and_then(|uid| uid.as_str())
         .map(String::from);
-
-    Ok(uid)
+    if let Some(uid) = uid {
+        uid_cache.store(node_key.to_string(), uid.to_owned());
+        Ok(Some(uid))
+    } else {
+        Ok(None)
+    }
 }
 
-async fn upsert_node(
+async fn upsert_node<CacheT>(
     dg: &DgraphClient,
+    cache: &mut CacheT,
+    uid_cache: &mut UidCache,
     metric_reporter: &mut MetricReporter<Stdout>,
     node: Node,
-) -> Result<String, Error> {
+) -> Result<String, Error>
+where
+    CacheT: Cache,
+{
     let query = format!(
         r#"
                 {{
@@ -122,59 +154,97 @@ async fn upsert_node(
     set_json["dgraph.type"] = node_types.into();
 
     set_json["uid"] = "uid(p)".into();
-    set_json["last_index_time"] = (SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Something is very wrong with the system clock")
-        .as_millis() as u64)
-        .into();
+    let cache_key = serde_json::to_string(&set_json).expect("mutation was invalid json");
 
-    let mut mu = dgraph_tonic::Mutation::new();
-    mu.commit_now = true;
-    mu.set_set_json(&set_json);
+    match cache.get(cache_key.clone()).await {
+        Ok(CacheResponse::Miss) => {
+            let _ =
+                metric_reporter.counter("upsert_node.cache.count", 1.0, 0.5, &[tag("hit", false)]);
+            set_json["last_index_time"] = (SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Something is very wrong with the system clock")
+                .as_millis() as u64)
+                .into();
 
-    let mut txn = dg.new_mutated_txn();
-    let upsert_res = match txn.upsert(query, mu).await {
-        Ok(res) => res,
-        Err(e) => {
-            txn.discard().await.map_err(AnyhowFailure::into_failure)?;
-            return Err(e.into_failure().into());
+            let mut mu = dgraph_tonic::Mutation::new();
+            mu.commit_now = true;
+            mu.set_set_json(&set_json);
+            tracing::debug!(
+                node_key=?node_key,
+                "Performing upsert"
+            );
+            let mut txn = dg.new_mutated_txn();
+            let upsert_res =
+                match tokio::time::timeout(Duration::from_secs(10), txn.upsert(query, mu)).await? {
+                    Ok(res) => res,
+                    Err(e) => {
+                        tokio::time::timeout(Duration::from_secs(10), txn.discard())
+                            .await?
+                            .map_err(AnyhowFailure::into_failure)?;
+                        return Err(e.into_failure().into());
+                    }
+                };
+
+            metric_reporter
+                .mutation(&upsert_res, &[])
+                .unwrap_or_else(|e| error!("mutation metric failed: {}", e));
+            tokio::time::timeout(Duration::from_secs(3), txn.commit())
+                .await?
+                .map_err(AnyhowFailure::into_failure)?;
+
+            info!(
+                "Upsert res for {}, set_json: {} upsert_res: {:?}",
+                node_key,
+                set_json.to_string(),
+                upsert_res,
+            );
+            cache.store(cache_key.into_bytes());
         }
-    };
+        Err(e) => error!("Failed to get upsert from cache: {}", e),
+        Ok(CacheResponse::Hit) => {
+            let _ =
+                metric_reporter.counter("upsert_node.cache.count", 1.0, 0.1, &[tag("hit", true)]);
+        }
+    }
 
-    metric_reporter
-        .mutation(&upsert_res, &[])
-        .unwrap_or_else(|e| error!("mutation metric failed: {}", e));
-    txn.commit().await.map_err(AnyhowFailure::into_failure)?;
-
-    info!(
-        "Upsert res for {}, set_json: {} upsert_res: {:?}",
-        node_key,
-        set_json.to_string(),
-        upsert_res,
-    );
-
-    match node_key_to_uid(dg, metric_reporter, &node_key).await? {
+    match node_key_to_uid(dg, metric_reporter, uid_cache, &node_key).await? {
         Some(uid) => Ok(uid),
         None => bail!("Could not retrieve uid after upsert for {}", &node_key),
     }
 }
 
-fn _chunk<T, U>(data: U, count: usize) -> Vec<U>
-where
-    U: IntoIterator<Item = T>,
-    U: FromIterator<T>,
-    <U as IntoIterator>::IntoIter: ExactSizeIterator,
-{
-    let mut iter = data.into_iter();
-    let iter = iter.by_ref();
+#[derive(Debug, Clone)]
+struct UidCache {
+    cache: Arc<Mutex<LruCache<String, String>>>,
+}
 
-    let chunk_len = (iter.len() / count) as usize + 1;
-
-    let mut chunks = Vec::new();
-    for _ in 0..count {
-        chunks.push(iter.take(chunk_len).collect())
+impl Default for UidCache {
+    fn default() -> Self {
+        Self {
+            cache: Arc::new(Mutex::new(LruCache::new(100_000))),
+        }
     }
-    chunks
+}
+
+impl UidCache {
+    fn is_empty(&self) -> bool {
+        let self_cache = self.cache.lock().unwrap();
+        self_cache.is_empty()
+    }
+    fn get(&self, node_key: &str) -> Option<String> {
+        let mut self_cache = self.cache.lock().unwrap();
+        let cache_res = self_cache.get_mut(node_key);
+        if cache_res.is_some() {
+            tracing::debug!("Cache hit");
+        } else {
+            tracing::debug!("Cache miss")
+        }
+        cache_res.cloned()
+    }
+    fn store(&mut self, node_key: String, uid: String) {
+        let mut self_cache = self.cache.lock().unwrap();
+        self_cache.insert(node_key, uid);
+    }
 }
 
 #[derive(Clone)]
@@ -184,7 +254,9 @@ where
 {
     mg_client: Arc<DgraphClient>,
     metric_reporter: MetricReporter<Stdout>,
+    r_edge_cache: HashMap<String, String>,
     cache: CacheT,
+    uid_cache: UidCache,
 }
 
 impl<CacheT> GraphMerger<CacheT>
@@ -201,113 +273,46 @@ where
         Self {
             mg_client: Arc::new(mg_client),
             metric_reporter,
+            r_edge_cache: HashMap::with_capacity(100),
+            uid_cache: UidCache::default(),
             cache,
         }
     }
 }
 
-async fn upsert_edge(
+/*
+async fn upsert_edge<CacheT>(
     mg_client: &DgraphClient,
     metric_reporter: &mut MetricReporter<Stdout>,
-    mu: dgraph_tonic::Mutation,
-) -> Result<(), failure::Error> {
+    cache: &mut CacheT,
+    to: &str,
+    from: &str,
+    edge_name: &str,
+) -> Result<(), failure::Error>
+where
+    CacheT: Cache,
+{
+    let cache_key = format!("{}{}{}", &to, &from, &edge_name);
+    match cache.get(cache_key.as_bytes().to_owned()).await {
+        Ok(CacheResponse::Hit) => return Ok(()),
+        Ok(CacheResponse::Miss) => (),
+        Err(e) => error!("Failed to retrieve from edge_cache: {:?}", e),
+    };
+
+    let mu = generate_edge_insert(&to, &from, &edge_name);
     let txn = mg_client.new_mutated_txn();
-    let mut_res = txn
-        .mutate_and_commit_now(mu)
-        .await
+    let mut_res = tokio::time::timeout(Duration::from_secs(10), txn.mutate_and_commit_now(mu))
+        .await?
         .map_err(AnyhowFailure::into_failure)?;
     metric_reporter
         .mutation(&mut_res, &[])
         .unwrap_or_else(|e| error!("edge mutation metric failed: {}", e));
 
+    cache.store(cache_key.into_bytes()).await;
     Ok(())
-}
+}*/
 
-#[derive(Debug, Clone, Default)]
-pub struct ZstdProtoDecoder;
-
-impl<E> PayloadDecoder<E> for ZstdProtoDecoder
-where
-    E: Message + Default,
-{
-    fn decode(&mut self, body: Vec<u8>) -> Result<E, Box<dyn std::error::Error>>
-    where
-        E: Message + Default,
-    {
-        let mut decompressed = Vec::new();
-
-        let mut body = Cursor::new(&body);
-
-        zstd::stream::copy_decode(&mut body, &mut decompressed)?;
-
-        Ok(E::decode(Cursor::new(decompressed))?)
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct SubgraphSerializer {
-    proto: Vec<u8>,
-}
-
-impl CompletionEventSerializer for SubgraphSerializer {
-    type CompletedEvent = GeneratedSubgraphs;
-    type Output = Vec<u8>;
-    type Error = sqs_lambda::error::Error;
-
-    fn serialize_completed_events(
-        &mut self,
-        completed_events: &[Self::CompletedEvent],
-    ) -> Result<Vec<Self::Output>, Self::Error> {
-        let mut subgraph = Graph::new(0);
-
-        let mut pre_nodes = 0;
-        let mut pre_edges = 0;
-        for completed_event in completed_events {
-            for sg in completed_event.subgraphs.iter() {
-                pre_nodes += sg.nodes.len();
-                pre_edges += sg.edges.len();
-                subgraph.merge(sg);
-            }
-        }
-
-        if subgraph.is_empty() {
-            warn!(
-                concat!(
-                    "Output subgraph is empty. Serializing to empty vector.",
-                    "pre_nodes: {} pre_edges: {}"
-                ),
-                pre_nodes, pre_edges,
-            );
-            return Ok(vec![]);
-        }
-
-        info!(
-            "Serializing {} nodes {} edges. Down from {} nodes {} edges.",
-            subgraph.nodes.len(),
-            subgraph.edges.len(),
-            pre_nodes,
-            pre_edges,
-        );
-
-        let subgraphs = GeneratedSubgraphs {
-            subgraphs: vec![subgraph],
-        };
-
-        self.proto.clear();
-
-        prost::Message::encode(&subgraphs, &mut self.proto)
-            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
-
-        let mut compressed = Vec::with_capacity(self.proto.len());
-        let mut proto = Cursor::new(&self.proto);
-        zstd::stream::copy_encode(&mut proto, &mut compressed, 4)
-            .map_err(|e| sqs_lambda::error::Error::EncodeError(e.to_string()))?;
-
-        Ok(vec![compressed])
-    }
-}
-
-fn _time_based_key_fn(_event: &[u8]) -> String {
+fn time_based_key_fn(_event: &[u8]) -> String {
     info!("event length {}", _event.len());
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(n) => n.as_millis(),
@@ -319,127 +324,74 @@ fn _time_based_key_fn(_event: &[u8]) -> String {
     format!("{}/{}-{}", cur_day, cur_ms, uuid::Uuid::new_v4())
 }
 
-fn map_sqs_message(event: aws_lambda_events::event::sqs::SqsMessage) -> rusoto_sqs::Message {
-    rusoto_sqs::Message {
-        attributes: Some(event.attributes),
-        body: event.body,
-        md5_of_body: event.md5_of_body,
-        md5_of_message_attributes: event.md5_of_message_attributes,
-        message_attributes: None,
-        message_id: event.message_id,
-        receipt_handle: event.receipt_handle,
-    }
+#[tracing::instrument]
+async fn handler() -> Result<(), Box<dyn std::error::Error>> {
+    let (env, _guard) = grapl_config::init_grapl_env!();
+    info!("Starting graph-merger");
+
+    let sqs_client = SqsClient::from_env();
+    let _s3_client = S3Client::from_env();
+
+    let cache = &mut event_caches(&env).await;
+
+    // todo: the intitializer should give a cache to each service
+    let graph_merger = &mut make_ten(async {
+        let mg_alphas = grapl_config::mg_alphas();
+        tracing::debug!(
+            mg_alphas=?&mg_alphas,
+            "Connecting to mg_alphas"
+        );
+        GraphMerger::new(
+            mg_alphas,
+            MetricReporter::new(&env.service_name),
+            cache[0].clone(),
+        )
+    })
+    .await;
+
+    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+
+    let s3_emitter =
+        &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
+            .await;
+
+    let s3_payload_retriever = &mut make_ten(async {
+        S3PayloadRetriever::new(
+            |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
+            ZstdProtoDecoder::default(),
+            MetricReporter::new(&env.service_name),
+        )
+    })
+    .await;
+
+    info!("Starting process_loop");
+    sqs_executor::process_loop(
+        grapl_config::source_queue_url(),
+        grapl_config::dead_letter_queue_url(),
+        cache,
+        sqs_client.clone(),
+        graph_merger,
+        s3_payload_retriever,
+        s3_emitter,
+        serializer,
+        MetricReporter::new(&env.service_name),
+    )
+    .await;
+
+    info!("Exiting");
+
+    Ok(())
 }
 
-fn handler(event: SqsEvent, ctx: Context) -> Result<(), HandlerError> {
-    info!("Handling event");
+#[derive(thiserror::Error, Debug)]
+pub enum GraphMergerError {
+    #[error("UnexpectedError")]
+    Unexpected(String),
+}
 
-    let mut initial_events: HashSet<String> = event
-        .records
-        .iter()
-        .map(|event| event.message_id.clone().unwrap())
-        .collect();
-
-    info!("Initial Events {:?}", initial_events);
-
-    let (tx, rx) = std::sync::mpsc::sync_channel(10);
-    let completed_tx = tx.clone();
-
-    std::thread::spawn(move || {
-        tokio_compat::run_std(async move {
-            let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-            debug!("Queue Url: {}", source_queue_url);
-            let cache_address = {
-                let retry_identity_cache_addr =
-                    std::env::var("MERGED_CACHE_ADDR").expect("MERGED_CACHE_ADDR");
-                let retry_identity_cache_port =
-                    std::env::var("MERGED_CACHE_PORT").expect("MERGED_CACHE_PORT");
-
-                format!(
-                    "{}:{}",
-                    retry_identity_cache_addr, retry_identity_cache_port,
-                )
-            };
-
-            let bucket = std::env::var("SUBGRAPH_MERGED_BUCKET").expect("SUBGRAPH_MERGED_BUCKET");
-            info!("Output events to: {}", bucket);
-            let region = grapl_config::region();
-
-            let cache = RedisCache::new(cache_address.to_owned())
-                .await
-                .expect("Could not create redis client");
-
-            let metric_reporter = MetricReporter::<Stdout>::new("graph-merger");
-            let graph_merger =
-                GraphMerger::new(grapl_config::mg_alphas(), metric_reporter, cache.clone());
-
-            let initial_messages: Vec<_> = event.records.into_iter().map(map_sqs_message).collect();
-
-            let completion_policy = ConsumePolicyBuilder::default()
-                .with_max_empty_receives(1)
-                .with_stop_at(Duration::from_secs(10));
-
-            sqs_lambda::sqs_service::sqs_service(
-                source_queue_url,
-                initial_messages,
-                bucket,
-                completion_policy.build(ctx),
-                CompletionPolicy::new(10, Duration::from_secs(2)),
-                |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-                S3Client::new(region.clone()),
-                SqsClient::new(region.clone()),
-                ZstdProtoDecoder::default(),
-                SubgraphSerializer {
-                    proto: Vec::with_capacity(1024),
-                },
-                graph_merger,
-                cache.clone(),
-                MetricReporter::<Stdout>::new("graph-merger"),
-                move |_self_actor, result: Result<String, String>| match result {
-                    Ok(worked) => {
-                        info!(
-                            "Handled an event, which was successfully deleted: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                    Err(worked) => {
-                        info!(
-                            "Handled an initial_event, though we failed to delete it: {}",
-                            &worked
-                        );
-                        tx.send(worked).unwrap();
-                    }
-                },
-                move |_, _| async move { Ok(()) },
-            )
-            .await;
-            completed_tx.clone().send("Completed".to_owned()).unwrap();
-        });
-    });
-
-    info!("Checking acks");
-    for r in &rx {
-        info!("Acking event: {}", &r);
-        initial_events.remove(&r);
-        if r == "Completed" {
-            // If we're done go ahead and try to clear out any remaining
-            while let Ok(r) = rx.try_recv() {
-                initial_events.remove(&r);
-            }
-            break;
-        }
-    }
-
-    info!("Completed execution");
-
-    if initial_events.is_empty() {
-        info!("Successfully acked all initial events");
-        Ok(())
-    } else {
-        Err(lambda_runtime::error::HandlerError::from(
-            "Failed to ack all initial events",
-        ))
+impl CheckedError for GraphMergerError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Transient
     }
 }
 
@@ -449,13 +401,14 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GeneratedSubgraphs;
-    type OutputEvent = GeneratedSubgraphs;
-    type Error = sqs_lambda::error::Error;
+    type OutputEvent = Graph;
+    type Error = GraphMergerError;
 
     async fn handle_event(
         &mut self,
         generated_subgraphs: GeneratedSubgraphs,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
+        _completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let mut subgraph = Graph::new(0);
         for generated_subgraph in generated_subgraphs.subgraphs {
             subgraph.merge(&generated_subgraph);
@@ -463,7 +416,7 @@ where
 
         if subgraph.is_empty() {
             warn!("Attempted to merge empty subgraph. Short circuiting.");
-            return OutputEvent::new(Completion::Total(GeneratedSubgraphs { subgraphs: vec![] }));
+            return Ok(Graph::default());
         }
 
         //let mut identities = Vec::with_capacity(subgraph.nodes.len() + subgraph.edges.len());
@@ -478,7 +431,6 @@ where
         //let mut edge_res = None;
 
         //let mut node_key_to_uid_map = HashMap::new();
-        use futures::future::FutureExt;
         //let mut upserts = Vec::with_capacity(subgraph.nodes.len());
 
         subgraph.perform_upsert(self.mg_client.clone()).await;
@@ -502,43 +454,47 @@ where
                 _ => (),
             };
             upserts.push(
-                upsert_node(&self.mg_client, &mut self.metric_reporter, node.clone())
-                    .map(move |u| (node.clone_node_key(), u))
-                    .await,
+                upsert_node(
+                    &self.mg_client,
+                    &mut self.cache,
+                    node_key_to_uid_map,
+                    &mut self.metric_reporter,
+                    node.clone(),
+                )
+                .map(move |u| (node.clone_node_key(), u))
+                .await,
             )
         }*/
 /*
         for (node_key, upsert) in upserts.into_iter() {
             let new_uid = match upsert {
                 Ok(new_uid) => {
-                    let identity = subgraph.nodes[&node_key].clone().into_json().to_string();
-                    identities.push(identity);
+                    upsert_count += 1;
                     new_uid
                 }
                 Err(e) => {
-                    error!("{}", e);
+                    failed_count += 1;
+                    error!("upsert_error: {}", e);
                     upsert_res = Some(e);
                     continue;
                 }
             };
 
-            node_key_to_uid_map.insert(node_key, new_uid);
+            node_key_to_uid_map.store(node_key, new_uid);
         }
 
-        if node_key_to_uid_map.is_empty() && upsert_res.is_some() {
-            return OutputEvent::new(Completion::Error(
-                sqs_lambda::error::Error::ProcessingError(format!(
-                    "All nodes failed to upsert {:?}",
-                    upsert_res
-                )),
-            ));
+        if (upsert_count == 0) && upsert_res.is_some() {
+            return Err(Err(GraphMergerError::Unexpected(format!(
+                "All nodes failed to upsert {:?}",
+                upsert_res
+            ))));
         }
 
         info!("Upserted: {} nodes", node_key_to_uid_map.len());
 */
         /*
         info!("Inserting edges {}", subgraph.edges.len());
-        let dynamodb = init_dynamodb_client();
+        let dynamodb = DynamoDbClient::from_env();
 
         let mut edge_mutations: Vec<_> = vec![];
 
@@ -573,6 +529,7 @@ where
                     match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
+                        node_key_to_uid_map,
                         &edge.from[..],
                     )
                     .await
@@ -585,8 +542,13 @@ where
                     }
                 }
                 (None, Some(to)) => {
-                    match node_key_to_uid(&self.mg_client, &mut self.metric_reporter, &edge.to[..])
-                        .await
+                    match node_key_to_uid(
+                        &self.mg_client,
+                        &mut self.metric_reporter,
+                        node_key_to_uid_map,
+                        &edge.to[..],
+                    )
+                    .await
                     {
                         Ok(Some(from)) => {
                             edge_mutations.push((from.to_owned(), to.to_owned(), &edge.edge_name))
@@ -599,6 +561,7 @@ where
                     let from = match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
+                        node_key_to_uid_map,
                         &edge.from[..],
                     )
                     .await
@@ -617,6 +580,7 @@ where
                     let to = match node_key_to_uid(
                         &self.mg_client,
                         &mut self.metric_reporter,
+                        node_key_to_uid_map,
                         &edge.to[..],
                     )
                     .await
@@ -637,7 +601,7 @@ where
             }
         }
 
-        let mut r_edge_cache: HashMap<String, String> = HashMap::with_capacity(2);
+        let r_edge_cache = &mut self.r_edge_cache;
 
         let mut mutations = Vec::with_capacity(edge_mutations.len());
         for (from, to, edge_name) in edge_mutations {
@@ -649,9 +613,17 @@ where
             match r_edge {
                 Ok(Some(r_edge)) if !r_edge.is_empty() => {
                     r_edge_cache.insert(edge_name.to_owned(), r_edge.to_string());
-                    let mu = generate_edge_insert(&to, &from, &r_edge);
-                    mutations
-                        .push(upsert_edge(&self.mg_client, &mut self.metric_reporter, mu).await)
+                    mutations.push(
+                        upsert_edge(
+                            &self.mg_client,
+                            &mut self.metric_reporter,
+                            &mut self.cache,
+                            &to,
+                            &from,
+                            &r_edge,
+                        )
+                        .await,
+                    )
                 }
                 Err(e) => {
                     error!("get_r_edge failed: {:?}", e);
@@ -660,26 +632,22 @@ where
                 _ => warn!("Missing r_edge for f_edge {}", edge_name),
             }
 
-            let mu = generate_edge_insert(&from, &to, &edge_name);
-            mutations.push(upsert_edge(&self.mg_client, &mut self.metric_reporter, mu).await);
-        }
+            let upsert_res = upsert_edge(
+                &self.mg_client,
+                &mut self.metric_reporter,
+                &mut self.cache,
+                &from,
+                &to,
+                &edge_name,
+            )
+            .await;
 
-        if let Some(e) = mutations.iter().find(|e| e.is_err()) {
-            error!("Failed to upsert edge: {:?}", e);
-            edge_res = Some(format!("Failed to upsert edge: {:?}", e));
-        }
-
-        let mut completed = match (upsert_res, edge_res) {
-            (Some(e), _) => OutputEvent::new(Completion::Partial((
-                GeneratedSubgraphs::new(vec![subgraph]),
-                sqs_lambda::error::Error::ProcessingError(e.to_string()),
-            ))),
-            (_, Some(e)) => OutputEvent::new(Completion::Partial((
-                GeneratedSubgraphs::new(vec![subgraph]),
-                sqs_lambda::error::Error::ProcessingError(e.to_string()),
-            ))),
-            (None, None) => {
-                OutputEvent::new(Completion::Total(GeneratedSubgraphs::new(vec![subgraph])))
+            if let Err(e) = upsert_res {
+                error!(
+                    "Failed to upsert edge: {} {} {} {:?}",
+                    &from, &to, &edge_name, e
+                );
+                edge_res = Some(format!("Failed to upsert edge: {:?}", e));
             }
         };
 
@@ -692,28 +660,7 @@ where
 
         //unimplemented!()
 
-        OutputEvent::new(Completion::Error(sqs_lambda::error::Error::ProcessingError("PLACEHOLDER".to_string())))
-    }
-}
-
-pub fn init_dynamodb_client() -> DynamoDbClient {
-    if grapl_config::is_local() {
-        info!("Connecting to local DynamoDB http://dynamodb:8000");
-        DynamoDbClient::new_with(
-            HttpClient::new().expect("failed to create request dispatcher"),
-            rusoto_credential::StaticProvider::new_minimal(
-                "dummy_cred_aws_access_key_id".to_owned(),
-                "dummy_cred_aws_secret_access_key".to_owned(),
-            ),
-            Region::Custom {
-                name: "us-west-2".to_string(),
-                endpoint: "http://dynamodb:8000".to_string(),
-            },
-        )
-    } else {
-        info!("Connecting to DynamoDB");
-        let region = grapl_config::region();
-        DynamoDbClient::new(region.clone())
+        Err(Err(GraphMergerError::Unexpected("PLACEHOLDER".to_string())))
     }
 }
 
@@ -725,7 +672,7 @@ struct EdgeMapping {
 async fn get_r_edge(
     client: &DynamoDbClient,
     f_edge: String,
-) -> Result<Option<String>, sqs_lambda::error::Error> {
+) -> Result<Option<String>, GraphMergerError> {
     let mut key = HashMap::new();
 
     key.insert(
@@ -743,15 +690,15 @@ async fn get_r_edge(
         ..Default::default()
     };
 
-    let item = client
-        .get_item(query)
+    let item = tokio::time::timeout(Duration::from_secs(2), client.get_item(query))
         .await
-        .map_err(|e| sqs_lambda::error::Error::ProcessingError(e.to_string()))?
+        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
+        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .item;
     match item {
         Some(item) => {
             let mapping: EdgeMapping = serde_dynamodb::from_hashmap(item.clone())
-                .map_err(|e| sqs_lambda::error::Error::ProcessingError(e.to_string()))?;
+                .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?;
             Ok(Some(mapping.r_edge))
         }
         None => {
@@ -761,48 +708,32 @@ async fn get_r_edge(
     }
 }
 
-fn init_sqs_client() -> SqsClient {
-    info!("Connecting to local us-east-1 http://sqs.us-east-1.amazonaws.com:9324");
-
-    SqsClient::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "dummy_sqs".to_owned(),
-            "dummy_sqs".to_owned(),
-        ),
-        Region::Custom {
-            name: "us-east-1".to_string(),
-            endpoint: "http://sqs.us-east-1.amazonaws.com:9324".to_string(),
-        },
-    )
-}
-
-fn init_s3_client() -> S3Client {
-    info!("Connecting to local http://s3:9000");
-    S3Client::new_with(
-        HttpClient::new().expect("failed to create request dispatcher"),
-        rusoto_credential::StaticProvider::new_minimal(
-            "minioadmin".to_owned(),
-            "minioadmin".to_owned(),
-        ),
-        Region::Custom {
-            name: "locals3".to_string(),
-            endpoint: "http://s3:9000".to_string(),
-        },
-    )
-}
-
 #[derive(Clone, Default)]
 struct HashCache {
     cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum HashCacheError {
+    // standin until the never type (`!`) is stable
+    #[error("HashCacheError.Unreachable")]
+    Unreachable,
+}
+
+impl CheckedError for HashCacheError {
+    fn error_type(&self) -> Recoverable {
+        panic!("HashCacheError should be unreachable")
+    }
+}
+
 #[async_trait]
-impl sqs_lambda::cache::Cache for HashCache {
+impl sqs_executor::cache::Cache for HashCache {
+    type CacheErrorT = HashCacheError;
+
     async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
-    ) -> Result<CacheResponse, sqs_lambda::error::Error> {
+    ) -> Result<CacheResponse, Self::CacheErrorT> {
         let self_cache = self.cache.lock().unwrap();
 
         let id = cacheable.identity();
@@ -812,125 +743,16 @@ impl sqs_lambda::cache::Cache for HashCache {
             Ok(CacheResponse::Miss)
         }
     }
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), sqs_lambda::error::Error> {
+    async fn store(&mut self, identity: Vec<u8>) -> Result<(), Self::CacheErrorT> {
         let mut self_cache = self.cache.lock().unwrap();
         self_cache.insert(identity);
         Ok(())
     }
 }
 
-async fn inner_main() -> Result<(), Box<dyn std::error::Error>> {
-    let cache = HashCache::default();
-    let metric_reporter = MetricReporter::<Stdout>::new("graph-merger");
-    let graph_merger = GraphMerger::new(grapl_config::mg_alphas(), metric_reporter, cache.clone());
-    let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-
-    let queue_name = source_queue_url.split("/").last().unwrap();
-    grapl_config::wait_for_sqs(init_sqs_client(), queue_name).await?;
-    grapl_config::wait_for_s3(init_s3_client()).await?;
-
-    let mut options_builder = LocalSqsServiceOptionsBuilder::default();
-    options_builder.with_minimal_buffer_completion_policy();
-
-    local_sqs_service_with_options(
-        source_queue_url,
-        "local-grapl-subgraphs-merged-bucket",
-        Context {
-            deadline: Utc::now().timestamp_millis() + 10_000,
-            ..Default::default()
-        },
-        |_| init_s3_client(),
-        init_s3_client(),
-        init_sqs_client(),
-        ZstdProtoDecoder::default(),
-        SubgraphSerializer {
-            proto: Vec::with_capacity(1024),
-        },
-        graph_merger,
-        cache.clone(),
-        MetricReporter::<Stdout>::new("graph-merger"),
-        |_, event_result| {
-            dbg!(event_result);
-        },
-        move |bucket, key| async move {
-            let output_event = S3Event {
-                records: vec![S3EventRecord {
-                    event_version: None,
-                    event_source: None,
-                    aws_region: Some("us-east-1".to_owned()),
-                    event_time: chrono::Utc::now(),
-                    event_name: None,
-                    principal_id: S3UserIdentity { principal_id: None },
-                    request_parameters: S3RequestParameters {
-                        source_ip_address: None,
-                    },
-                    response_elements: Default::default(),
-                    s3: S3Entity {
-                        schema_version: None,
-                        configuration_id: None,
-                        bucket: S3Bucket {
-                            name: Some(bucket),
-                            owner_identity: S3UserIdentity { principal_id: None },
-                            arn: None,
-                        },
-                        object: S3Object {
-                            key: Some(key),
-                            size: None,
-                            url_decoded_key: None,
-                            version_id: None,
-                            e_tag: None,
-                            sequencer: None,
-                        },
-                    },
-                }],
-            };
-
-            let sqs_client = init_sqs_client();
-
-            // publish to SQS
-            sqs_client
-                .send_message(SendMessageRequest {
-                    message_body: serde_json::to_string(&output_event)
-                        .expect("failed to encode s3 event"),
-                    queue_url: std::env::var("ANALYZER_DISPATCHER_QUEUE_URL")
-                        .expect("ANALYZER_DISPATCHER_QUEUE_URL"),
-                    ..Default::default()
-                })
-                .await?;
-
-            Ok(())
-        },
-        options_builder.build(),
-    )
-    .await;
-
-    Ok(())
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
-
-    if env.is_local {
-        info!("Running locally");
-        let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
-
-        grapl_config::wait_for_sqs(
-            init_sqs_client(),
-            source_queue_url.split("/").last().unwrap(),
-        )
-        .await?;
-        grapl_config::wait_for_s3(init_s3_client()).await?;
-        loop {
-            if let Err(e) = inner_main().await {
-                error!("inner_main: {}", e);
-            };
-        }
-    } else {
-        info!("Running in AWS");
-        lambda!(handler);
-    }
-
+    handler().await?;
     Ok(())
 }
 

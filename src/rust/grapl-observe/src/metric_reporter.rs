@@ -1,10 +1,16 @@
-use crate::metric_error::MetricError;
-use crate::statsd_formatter;
-use crate::statsd_formatter::{statsd_format, MetricType};
-use crate::writer_wrapper::WriterWrapper;
-use chrono::{DateTime, SecondsFormat, Utc};
-use std::fmt::Write;
-use std::io::{stdout, Stdout};
+use std::{fmt::Write,
+          io::{stdout,
+               Stdout}};
+
+use chrono::{DateTime,
+             SecondsFormat,
+             Utc};
+
+use crate::{metric_error::MetricError,
+            statsd_formatter,
+            statsd_formatter::{statsd_format,
+                               MetricType},
+            writer_wrapper::WriterWrapper};
 
 pub mod common_strs {
     pub const STATUS: &'static str = "status";
@@ -36,6 +42,17 @@ pub struct MetricReporter<W: std::io::Write> {
     service_name: String,
 }
 
+impl MetricReporter<Stdout> {
+    pub fn new(service_name: &str) -> Self {
+        MetricReporter {
+            service_name: service_name.to_string(),
+            buffer: String::new(),
+            out: WriterWrapper::new(stdout()),
+            utc_now: Utc::now,
+        }
+    }
+}
+
 /**
 some followup TODOs:
     - add tags to the public functions (not needed right now)
@@ -45,15 +62,6 @@ impl<W> MetricReporter<W>
 where
     W: std::io::Write,
 {
-    pub fn new(service_name: &str) -> MetricReporter<Stdout> {
-        MetricReporter {
-            service_name: service_name.to_string(),
-            buffer: String::new(),
-            out: WriterWrapper::new(stdout()),
-            utc_now: Utc::now,
-        }
-    }
-
     fn write_metric(
         &mut self,
         metric_name: &str,
@@ -86,13 +94,23 @@ where
         dt.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
 
-    pub fn counter(
+    pub fn counter_notags(
         &mut self,
         metric_name: &str,
         value: f64,
         sample_rate: impl Into<Option<f64>>,
     ) -> Result<(), MetricError> {
         self.write_metric(metric_name, value, MetricType::Counter, sample_rate, &[])
+    }
+
+    pub fn counter(
+        &mut self,
+        metric_name: &str,
+        value: f64,
+        sample_rate: impl Into<Option<f64>>,
+        tags: &[TagPair],
+    ) -> Result<(), MetricError> {
+        self.write_metric(metric_name, value, MetricType::Counter, sample_rate, tags)
     }
 
     /**
@@ -180,6 +198,44 @@ impl Clone for MetricReporter<Stdout> {
     }
 }
 
+pub trait ValidTag<'a> {
+    fn into_tag_str(self) -> &'a str;
+}
+
+impl<'a> ValidTag<'a> for &'a str {
+    fn into_tag_str(self) -> &'a str {
+        self
+    }
+}
+
+impl<'a> ValidTag<'a> for bool {
+    fn into_tag_str(self) -> &'a str {
+        if self {
+            "true"
+        } else {
+            "false"
+        }
+    }
+}
+
+impl<'a, T, U> From<(T, U)> for TagPair<'a>
+where
+    T: ValidTag<'a>,
+    U: ValidTag<'a>,
+{
+    fn from((k, v): (T, U)) -> Self {
+        Self(k.into_tag_str(), v.into_tag_str())
+    }
+}
+
+pub fn tag<'a, T, U>(t: T, u: U) -> TagPair<'a>
+where
+    T: ValidTag<'a>,
+    U: ValidTag<'a>,
+{
+    TagPair::from((t, u))
+}
+
 #[derive(Clone)]
 pub struct TagPair<'a>(pub &'a str, pub &'a str);
 
@@ -215,8 +271,8 @@ mod tests {
             service_name: SERVICE_NAME.to_string(),
         };
         reporter.histogram("metric_name", 123.45f64, &[])?;
-        reporter.counter("metric_name", 123.45f64, None)?;
-        reporter.counter("metric_name", 123.45f64, 0.75)?;
+        reporter.counter_notags("metric_name", 123.45f64, None)?;
+        reporter.counter_notags("metric_name", 123.45f64, 0.75)?;
         reporter.gauge("metric_name", 123.45f64, &[TagPair("key", "value")])?;
         let vec = reporter.out.release();
 

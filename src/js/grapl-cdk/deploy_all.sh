@@ -2,10 +2,12 @@
 
 set -e  # Quit upon any failure
 
-if [ -z ${PROFILE} ]; then
+#####
+# Set `AWS_PROFILE=` for multi-profile support
+if [ -z ${AWS_PROFILE} ]; then
     PROFILE_FLAG=""
 else 
-    PROFILE_FLAG="--profile=$PROFILE"
+    PROFILE_FLAG="--profile=$AWS_PROFILE"
 fi
 
 ##########
@@ -23,6 +25,9 @@ cdk deploy \
     --outputs-file=./cdk-output.json \
     Grapl
 rm -rf "${EDGE_UX_ARTIFACT_DIR}"
+
+mkdir -p "${EDGE_UX_ARTIFACT_DIR}"
+
 npm run create_edge_ux_package
 cdk deploy \
     --require-approval=never \

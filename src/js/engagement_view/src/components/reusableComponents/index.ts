@@ -1,4 +1,4 @@
-import GraplHeader from "./graplHeader/GraplHeader";
-import LoginNotification from "./notifications/Notifications";
+import GraplHeader from "./GraplHeader";
+import LoginNotification from "./Notifications";
 
 export { GraplHeader, LoginNotification };

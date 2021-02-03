@@ -1,5 +1,6 @@
 use log::warn;
-use serde_json::{json, Value};
+use serde_json::{json,
+                 Value};
 
 use crate::graph_description::IpPort;
 use crate::node::NodeT;

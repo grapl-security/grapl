@@ -1,9 +1,11 @@
-use grapl_graph_descriptions::file::FileState;
-use grapl_graph_descriptions::graph_description::*;
-use grapl_graph_descriptions::node::NodeT;
-use grapl_graph_descriptions::process::ProcessState;
-use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
+
+use grapl_graph_descriptions::{file::FileState,
+                               graph_description::*,
+                               node::NodeT,
+                               process::ProcessState};
+use serde::{Deserialize,
+            Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct FileWrite {

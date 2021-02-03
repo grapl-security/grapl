@@ -1,13 +1,12 @@
+use grapl_graph_descriptions::{graph_description::*,
+                               network_connection::NetworkConnectionState,
+                               node::NodeT,
+                               process::ProcessState,
+                               process_outbound_connection::ProcessOutboundConnectionState};
 use sysmon::NetworkEvent;
 
-use grapl_graph_descriptions::graph_description::*;
-
-use grapl_graph_descriptions::network_connection::NetworkConnectionState;
-use grapl_graph_descriptions::node::NodeT;
-use grapl_graph_descriptions::process::ProcessState;
-
-use crate::models::utc_to_epoch;
-use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnectionState;
+use crate::{generator::SysmonGeneratorError,
+            models::utc_to_epoch};
 
 /// Creates a subgraph describing an outbound `NetworkEvent`
 ///
@@ -19,7 +18,7 @@ use grapl_graph_descriptions::process_outbound_connection::ProcessOutboundConnec
 /// * IP connection and Network connection nodes
 pub fn generate_outbound_connection_subgraph(
     conn_log: &NetworkEvent,
-) -> Result<Graph, failure::Error> {
+) -> Result<Graph, SysmonGeneratorError> {
     let timestamp = utc_to_epoch(&conn_log.event_data.utc_time)?;
 
     let mut graph = Graph::new(timestamp);
@@ -28,7 +27,7 @@ pub fn generate_outbound_connection_subgraph(
         .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     // A process creates an outbound connection to dst_port
     let process = ProcessBuilder::default()
@@ -38,7 +37,7 @@ pub fn generate_outbound_connection_subgraph(
         .process_id(conn_log.event_data.process_id)
         .last_seen_timestamp(timestamp)
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let outbound = ProcessOutboundConnectionBuilder::default()
         .asset_id(conn_log.system.computer.computer.clone())
@@ -49,33 +48,33 @@ pub fn generate_outbound_connection_subgraph(
         .port(conn_log.event_data.source_port)
         .created_timestamp(timestamp)
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let src_ip = IpAddressBuilder::default()
         .ip_address(conn_log.event_data.source_ip.clone())
         .last_seen_timestamp(timestamp)
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let dst_ip = IpAddressBuilder::default()
         .ip_address(conn_log.event_data.destination_ip.clone())
         .last_seen_timestamp(timestamp)
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let src_port = IpPortBuilder::default()
         .ip_address(conn_log.event_data.source_ip.clone())
         .port(conn_log.event_data.source_port)
         .protocol(conn_log.event_data.protocol.clone())
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let dst_port = IpPortBuilder::default()
         .ip_address(conn_log.event_data.destination_ip.clone())
         .port(conn_log.event_data.destination_port)
         .protocol(conn_log.event_data.protocol.clone())
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let network_connection = NetworkConnectionBuilder::default()
         .state(NetworkConnectionState::Created)
@@ -86,7 +85,7 @@ pub fn generate_outbound_connection_subgraph(
         .protocol(conn_log.event_data.protocol.clone())
         .created_timestamp(timestamp)
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     let ip_connection = IpConnectionBuilder::default()
         .state(NetworkConnectionState::Created)
@@ -95,7 +94,7 @@ pub fn generate_outbound_connection_subgraph(
         .protocol(conn_log.event_data.protocol.clone())
         .created_timestamp(timestamp)
         .build()
-        .map_err(|err| failure::err_msg(err))?;
+        .map_err(|err| SysmonGeneratorError::GraphBuilderError(err))?;
 
     // An asset is assigned an IP
     graph.add_edge("asset_ip", asset.clone_node_key(), src_ip.clone_node_key());

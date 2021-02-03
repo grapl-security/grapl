@@ -9,10 +9,9 @@ use crate::graph_description::{
 };
 use dgraph_tonic::{Client as DgraphClient, Mutate, Mutation as DgraphMutation, MutationResponse};
 use dgraph_query_lib::query::{
-    Query,
     QueryBuilder
 };
-use dgraph_query_lib::mutation::{Mutation, MutationBuilder, MutationUID, MutationUnit, MutationPredicateValue};
+use dgraph_query_lib::mutation::{MutationBuilder, MutationUID, MutationUnit, MutationPredicateValue};
 
 use log::{
     info,
@@ -29,7 +28,6 @@ use dgraph_query_lib::condition::{Condition, ConditionValue};
 use dgraph_query_lib::queryblock::{
     QueryBlockType,
     QueryBlockBuilder,
-    QueryBlock
 };
 
 impl Graph {
@@ -191,7 +189,8 @@ impl Graph {
                     dgraph_mutation.set_cond(condition);
                 }
 
-                dgraph_mutation.set_set_json(&upsert_block.mutation.set);
+                dgraph_mutation.set_set_json(&upsert_block.mutation.set)
+                    .unwrap_or_else(|e| error!("Failed to set json for mutation: {}", e));
 
                 dgraph_mutation
             }).collect();

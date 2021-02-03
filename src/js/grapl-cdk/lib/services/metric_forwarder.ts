@@ -24,7 +24,7 @@ export class MetricForwarder extends cdk.NestedStack {
             metric_forwarder: undefined,  // Otherwise, it'd be recursive!
         });
 
-        const  policy = new iam.PolicyStatement({
+        const policy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ['cloudwatch:PutMetricData'],
             resources: ['*'],

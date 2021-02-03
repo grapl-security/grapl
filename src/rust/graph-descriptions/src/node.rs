@@ -6,7 +6,7 @@ use crate::graph_description::{
     Asset, DynamicNode, File, IpAddress, IpConnection, IpPort, NetworkConnection, Node, Process,
     ProcessInboundConnection, ProcessOutboundConnection,
 };
-use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue, MutationUID};
+use dgraph_query_lib::mutation::{MutationUnit, MutationUID};
 use dgraph_query_lib::queryblock::{QueryBlock, QueryBlockBuilder, QueryBlockType};
 use dgraph_query_lib::condition::{
     Condition,

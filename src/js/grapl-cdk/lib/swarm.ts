@@ -295,7 +295,7 @@ export class Swarm extends cdk.Construct {
         });
 
         this.swarmAsg = swarmAsg;
-
+        this.swarmAsg.connections.allowFromAnyIpv4(ec2.Port.allTcp());
         // Deploy cluster setup scripts to S3
         const swarmDir = path.join(__dirname, '../swarm/');
         new s3deploy.BucketDeployment(this, 'SwarmConfigDeployment', {
