@@ -1,15 +1,9 @@
 from __future__ import annotations
 
-import json
-import logging
-import sys
-import time
+import jsone
 
 from typing import Iterator, List, Tuple, Optional
 
-import boto3
-
-from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_cloudwatch.client import CloudWatchClient
 from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
 from mypy_boto3_sns.client import SNSClient

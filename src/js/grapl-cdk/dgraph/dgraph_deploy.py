@@ -1,14 +1,14 @@
 import subprocess
 import sys
 
-from typing import Tuple
+from typing import Tuple, Iterator
 
 
 def _deploy_dgraph(
     prefix: str,
     manager_hostname: str,
     worker_hostnames: Tuple[str, str],
-) -> None:
+) -> Iterator[str]:
     """Deploy DGraph on a docker swarm cluster"""
     commands = [
         ["sudo", "su", "ec2-user"],
@@ -34,6 +34,8 @@ def _deploy_dgraph(
         ],
         ["docker", "stack", "deploy", "-c", "docker-compose-dgraph.yml", "dgraph"],
     ]
+    for command in commands:
+        yield subprocess.run(command, check=True, capture_output=True).stdout.decode("utf-8")
 
 
 def main(
@@ -41,7 +43,8 @@ def main(
     manager_hostname: str,
     worker_hostnames: Tuple[str, str],
 ) -> None:
-    _deploy_dgraph(prefix, manager_hostname, worker_hostnames)
+    for result in _deploy_dgraph(prefix, manager_hostname, worker_hostnames):
+        sys.stdout.write(result)
 
 
 if __name__ == "__main__":

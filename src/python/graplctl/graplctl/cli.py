@@ -1,4 +1,5 @@
 import dataclasses
+import os
 import uuid
 
 from typing import List
@@ -18,11 +19,13 @@ from . import __version__
 from . import dgraph_ops
 from . import docker_swarm_ops
 
-EC2: EC2ServiceResource = boto3.resource("ec2")
-SSM: SSMClient = boto3.client("ssm")
-CLOUDWATCH: CloudWatchClient = boto3.client("cloudwatch")
-SNS: SNSClient = boto3.client("sns")
-ROUTE53: Route53Client = boto3.client("route53")
+SESSION = boto3.Session(profile_name=os.getenv("AWS_PROFILE", "default"))
+
+EC2: EC2ServiceResource = SESSION.resource("ec2", region_name=os.getenv("AWS_REGION"))
+SSM: SSMClient = SESSION.client("ssm")
+CLOUDWATCH: CloudWatchClient = SESSION.client("cloudwatch", region_name=os.getenv("AWS_REGION"))
+SNS: SNSClient = SESSION.client("sns", region_name=os.getenv("AWS_REGION"))
+ROUTE53: Route53Client = SESSION.client("route53", region_name=os.getenv("AWS_REGION"))
 
 #
 # main entrypoint for grapctl

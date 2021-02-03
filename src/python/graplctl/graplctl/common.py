@@ -1,14 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
-import json
-import logging
-import sys
 import time
 
-from typing import Iterator, List, NamedTuple, Optional
-
-import boto3
+from typing import List
 
 import mypy_boto3_ec2.service_resource as ec2_resources
 from mypy_boto3_ssm.client import SSMClient

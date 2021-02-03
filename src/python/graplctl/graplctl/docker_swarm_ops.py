@@ -6,15 +6,9 @@ import logging
 import os
 import sys
 
-from typing import Dict, Iterator, List, NamedTuple, Optional, Set
-
-import boto3
-from botocore.exceptions import ClientError
+from typing import Iterator, List, Optional, Set
 
 from mypy_boto3_ec2 import EC2ServiceResource
-from mypy_boto3_cloudwatch.client import CloudWatchClient
-from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
-from mypy_boto3_sns.client import SNSClient
 from mypy_boto3_ssm import SSMClient
 
 from . import common
