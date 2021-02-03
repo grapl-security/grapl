@@ -27,6 +27,7 @@ import { OperationalAlarms, SecurityAlarms } from './alarms';
 import { Watchful, WatchedOperation } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
 import { PipelineDashboard } from './pipeline_dashboard';
+import { Tags } from '@aws-cdk/core';
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -506,7 +507,6 @@ interface DGraphSwarmClusterProps {
     prefix: string;
     version: string;
     vpc: ec2.IVpc;
-    instanceType: ec2.InstanceType;
     watchful?: Watchful;
 }
 
@@ -544,7 +544,6 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
                 ec2.Port.tcp(9082),
                 ec2.Port.tcp(9083)
             ],
-            instanceType: props.instanceType,
             watchful: props.watchful,
         });
 
@@ -738,7 +737,6 @@ export interface GraplServiceProps {
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
     version: string;
-    dgraphInstanceType: ec2.InstanceType;
     watchfulEmail?: string;
     operationalAlarmsEmail: string;
     securityAlarmsEmail: string;
@@ -777,6 +775,7 @@ export class GraplCdkStack extends cdk.Stack {
             enableDnsHostnames: true,
             enableDnsSupport: true,
         });
+        Tags.of(grapl_vpc).add("name", `${this.prefix.toLowerCase()}-grapl-vpc`);
 
         const jwtSecret = new secretsmanager.Secret(this, 'EdgeJwtSecret', {
             description:
@@ -811,7 +810,6 @@ export class GraplCdkStack extends cdk.Stack {
                 prefix: this.prefix,
                 vpc: grapl_vpc,
                 version: props.version,
-                instanceType: props.dgraphInstanceType,
                 watchful: watchful,
             }
         );
@@ -935,7 +933,7 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'EngagementEdge',
             {
-                ...graplProps, 
+                ...graplProps,
                 engagement_notebook: engagement_notebook,
                 edgeApi,
             },
