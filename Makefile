@@ -198,6 +198,10 @@ down: ## docker-compose down - both stops and removes the containers
 stop: ## docker-compose stop - stops (but preserves) the containers
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
+.PHONY: e2e-logs
+e2e-logs: ## All docker-compose logs
+	docker-compose $(EVERY_COMPOSE_FILE) -p grapl-e2e_tests logs -f
+
 .PHONY: help
 help: ## Print this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
