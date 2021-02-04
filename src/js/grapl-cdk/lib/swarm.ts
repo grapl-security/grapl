@@ -142,6 +142,12 @@ export class Swarm extends cdk.Construct {
             sources: [s3deploy.Source.asset(swarmDir)],
             destinationBucket: swarmConfigBucket,
         });
+
+        // InstanceProfile for swarm instances
+        new iam.CfnInstanceProfile(this, 'SwarmInstanceProfile', {
+            roles: [swarmInstanceRole.roleName],
+            instanceProfileName: `${props.prefix.toLowerCase()}-swarm-instance-profile`
+        });
     }
 
     public allowConnectionsFrom(

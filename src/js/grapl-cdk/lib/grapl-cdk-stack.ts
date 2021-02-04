@@ -6,6 +6,8 @@ import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 
+import { Tags } from '@aws-cdk/core';
+
 import {Service} from './service';
 import {UserAuthDb} from './userauthdb';
 import {EngagementNotebook} from './engagement';
