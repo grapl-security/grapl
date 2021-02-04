@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import base64
+import itertools
 import json
 import logging
 import os
 import sys
+import time
 
 from typing import Iterator, List, Optional, Set
 
@@ -40,13 +42,11 @@ REGION_TO_AMI_ID = {
 
 
 def swarm_security_group_id(
-    ec2: EC2ServiceResource, grapl_prefix: str, grapl_region: str
+    ec2: EC2ServiceResource, prefix: str, grapl_region: str
 ) -> str:
     """Return the security group ID for the swarm security group"""
     result = ec2.security_groups.filter(
-        Filters=[
-            {"Name": "group-name", "Values": [f"{grapl_prefix.lower()}-grapl-swarm"]}
-        ]
+        Filters=[{"Name": "group-name", "Values": [f"{prefix.lower()}-grapl-swarm"]}]
     )
     return list(result)[0].group_id
 
@@ -56,33 +56,22 @@ def swarm_vpc_id(ec2: EC2ServiceResource, swarm_security_group_id: str) -> str:
     return ec2.SecurityGroup(swarm_security_group_id).vpc_id
 
 
-def swarm_subnet_ids(
-    ec2: EC2ServiceResource, swarm_vpc_id: str, swarm_id: str
+def subnet_ids(
+    ec2: EC2ServiceResource, swarm_vpc_id: str, prefix: str
 ) -> Iterator[str]:
-    """Yields the subnet IDs for the swarm cluster"""
+    """Yields the subnet IDs for the grapl deployment"""
     for subnet in ec2.Vpc(swarm_vpc_id).subnets.filter(
-        Filters=[{"Name": "tag:grapl-swarm-id", "Values": [swarm_id]}]
+        Filters=[
+            {"Name": "tag:aws-cdk:subnet-type", "Values": ["Private"]},
+            {"Name": "tag:name", "Values": [f"{prefix.lower()}-grapl-vpc"]},
+        ]
     ):
         yield subnet.subnet_id
 
 
-def create_subnet(ec2: EC2ServiceResource, swarm_vpc_id: str, swarm_id: str) -> str:
-    """Create a subnet for a swarm cluster. Returns the subnet ID"""
-    subnet = ec2.create_subnet(
-        CidrBlock="10.0.0.0/24",
-        VpcId=swarm_vpc_id,
-        TagSpecifications=[
-            {
-                "ResourceType": "subnet",
-                "Tags": [{"Key": "grapl-swarm-id", "Value": swarm_id}],
-            }
-        ],
-    )
-    return subnet.subnet_id
-
-
 def create_instances(
     ec2: EC2ServiceResource,
+    ssm: SSMClient,
     prefix: str,
     region: str,
     version: str,
@@ -92,34 +81,77 @@ def create_instances(
     count: int,
     instance_type: str,
     security_group_id: str,
-    subnet_id: str,
+    subnet_ids: Set[str],
 ) -> List[Ec2Instance]:
     """Spin up EC2 instances. Returns a list of the instances."""
-    instances = ec2.create_instances(
-        ImageId=ami_id,
-        MaxCount=count,
-        MinCount=count,
-        TagSpecifications=[
-            {
-                "ResourceType": "instance",
-                "Tags": [
-                    t.into_boto_tag_specification()
-                    for t in [
-                        Tag(key="grapl-deployment-name", value=f"{prefix.lower()}"),
-                        Tag(key="grapl-version", value=f"{version.lower()}"),
-                        Tag(key="grapl-region", value=f"{region.lower()}"),
-                        Tag(
-                            key="grapl-swarm-role",
-                            value="swarm-manager" if swarm_manager else "swarm-worker",
-                        ),
-                        Tag(key="grapl-swarm-id", value=swarm_id),
-                    ]
-                ],
-            }
-        ],
-        SecurityGroupIds=[security_group_id],
-        SubnetId=subnet_id,
-    )
+    counts = {subnet_id: 0 for subnet_id in subnet_ids}
+    ids_cycle = itertools.cycle(subnet_ids)
+    for _ in range(count):
+        subnet_id = next(ids_cycle)
+        counts[subnet_id] += 1  # distribute instances across subnets
+
+    instances = []
+    for subnet_id in subnet_ids:
+        if counts[subnet_id] > 0:
+            instances.extend(
+                ec2.create_instances(
+                    ImageId=ami_id,
+                    MaxCount=counts[subnet_id],
+                    MinCount=counts[subnet_id],
+                    TagSpecifications=[
+                        {
+                            "ResourceType": "instance",
+                            "Tags": [
+                                t.into_boto_tag_specification()
+                                for t in [
+                                    Tag(
+                                        key="grapl-deployment-name",
+                                        value=f"{prefix.lower()}",
+                                    ),
+                                    Tag(
+                                        key="grapl-version", value=f"{version.lower()}"
+                                    ),
+                                    Tag(key="grapl-region", value=f"{region.lower()}"),
+                                    Tag(
+                                        key="grapl-swarm-role",
+                                        value="swarm-manager"
+                                        if swarm_manager
+                                        else "swarm-worker",
+                                    ),
+                                    Tag(key="grapl-swarm-id", value=swarm_id),
+                                ]
+                            ],
+                        }
+                    ],
+                    SecurityGroupIds=[security_group_id],
+                    SubnetId=subnet_id,
+                    IamInstanceProfile=
+            )
+
+    for instance in instances:
+        LOGGER.info(f'waiting for instance {instance.instance_id} to report "running"')
+        while instance.state["Name"].lower() != "running":
+            time.sleep(2)
+            instance.load()
+        LOGGER.info(f'instance {instance.instance_id} is "running"')
+
+    for instance in instances:
+        LOGGER.info(
+            f'waiting for instance {instance.instance_id} to report SSM PingStatus "Online"'
+        )
+        while 1:
+            instance_information = ssm.describe_instance_information(
+                Filters=[{"Key": "InstanceIds", "Values": [instance.instance_id]}]
+            )["InstanceInformationList"]
+            if (
+                len(instance_information) < 1
+                or instance_information[0]["PingStatus"] != "Online"
+            ):
+                time.sleep(2)
+            elif instance_information[0]["PingStatus"] == "Online":
+                break
+        LOGGER.info(f'instance {instance.instance_id} is "Online"')
+
     return [Ec2Instance.from_boto_instance(instance) for instance in instances]
 
 
