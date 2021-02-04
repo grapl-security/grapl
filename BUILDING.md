@@ -41,7 +41,7 @@ test                 Run all tests
 lint-rust            Run Rust lint checks
 lint-python          Run Python lint checks
 lint                 Run all lint checks
-clean                Prune all docker build cache
+clean                Prune all docker build cache and remove Grapl containers and images
 clean-mount-cache    Prune all docker mount cache (used by sccache)
 release              'make build-services' with cargo --release
 zip                  Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)

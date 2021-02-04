@@ -163,10 +163,12 @@ lint: lint-rust lint-python ## Run all lint checks
 #
 
 .PHONY: clean
-clean: ## Prune all docker build cache
+clean: ## Prune all docker build cache and remove Grapl containers and images
 	docker builder prune --all --force
-	# Seems the docker service could use restarting every once in a while
-	sudo service docker restart
+	# Remove all Grapl containers - continue on error (no containers found)
+	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
+	# Remove all Grapl images = continue on error (no images found)
+	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
 
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)
