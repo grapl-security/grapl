@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import json
-import os
 import time
 import traceback
-from typing import TYPE_CHECKING, Any, Iterator, List, Tuple
+from typing import TYPE_CHECKING, Iterator
 
 import boto3  # type: ignore
 import botocore.exceptions  # type: ignore
-from analyzer_executor_lib.analyzer_executor import LOGGER, AnalyzerExecutor
-from analyzer_executor_lib.s3_types import SQSMessageBody
+from analyzer_executor_lib.sqs_types import SQSMessage
 from grapl_common.env_helpers import SQSClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 if TYPE_CHECKING:
     from mypy_boto3_sqs import SQSClient
+
+LOGGER = get_module_grapl_logger()
 
 
 def _ensure_alive(sqs: SQSClient) -> None:
@@ -37,10 +37,13 @@ def _ensure_alive(sqs: SQSClient) -> None:
 
 
 class EventRetriever:
-    def __init__(self, queue_url: str):
+    def __init__(
+        self,
+        queue_url: str,
+    ) -> None:
         self.queue_url = queue_url
 
-    def retrieve(self) -> Iterator[SQSMessageBody]:
+    def retrieve(self) -> Iterator[SQSMessage]:
         """
         Yield batches of S3Put records from SQS.
         """
@@ -59,15 +62,13 @@ class EventRetriever:
                 if not messages:
                     LOGGER.info("queue was empty")
 
-                s3_events: List[Tuple[SQSMessageBody, Any]] = [
-                    (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
-                ]
-                for body, receipt_handle in s3_events:
-                    yield body
+                s3_events = [SQSMessage(msg) for msg in messages]
+                for sqs_message in s3_events:
+                    yield sqs_message
 
                     sqs.delete_message(
                         QueueUrl=self.queue_url,
-                        ReceiptHandle=receipt_handle,
+                        ReceiptHandle=sqs_message.receipt_handle,
                     )
 
             except Exception as e:
