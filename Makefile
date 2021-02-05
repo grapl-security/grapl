@@ -117,31 +117,23 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests
 
 .PHONY: test-integration
 test-integration: build-test-integration ## Build and run integration tests
-	docker-compose -f docker-compose.yml -p "grapl-integration_tests" \
-		up --force-recreate -d 
-	# save exit code to allow for `make down` in event of test failure
+	docker-compose \
+		--file docker-compose.yml \
+		--project-name "grapl-integration_tests" \
+		up --force-recreate -d
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.integration-tests.yml \
-		-p "grapl-integration_tests"; \
-	EXIT_CODE=$$?; \
-	# Stop the containers, but don't remove them, \
-	# so that `dump-compose-artifacts` can inspect the containers \
-	$(MAKE) stop; \
-	exit $$EXIT_CODE
+		-p "grapl-integration_tests"
 
 .PHONY: test-e2e
 test-e2e: build-test-e2e ## Build and run e2e tests
-	docker-compose -f docker-compose.yml -p "grapl-e2e_tests" \
+	docker-compose \
+		--file docker-compose.yml \
+		--project-name "grapl-e2e_tests" \
 		up --force-recreate -d
-	# save exit code to allow for `make down` in event of test failure
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.e2e-tests.yml \
-		-p "grapl-e2e_tests"; \
-	EXIT_CODE=$$?; \
-	# Stop the containers, but don't remove them, \
-	# so that `dump-compose-artifacts` can inspect the containers \
-	$(MAKE) stop; \
-	exit $$EXIT_CODE
+		-p "grapl-e2e_tests"
 
 .PHONY: test
 test: test-unit test-integration test-e2e test-typecheck ## Run all tests
