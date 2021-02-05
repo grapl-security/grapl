@@ -1,6 +1,11 @@
 #!/bin/bash
 
 set -e
+trap compose_stop EXIT
+
+compose_stop() {
+    docker-compose --project-name "$p" stop
+}
 
 usage() { 
     echo 'Usage: $0 -p <project-name> -f docker-compose1.yml [SERVICES]' 1>&2
@@ -39,9 +44,15 @@ SERVICES="$@"
 docker-compose ${FILE_ARGS} --project-name "$p" up --force-recreate ${SERVICES}
 
 # check for container exit codes other than 0
+EXIT_CODE=0
 for test in $(docker-compose ${FILE_ARGS} --project-name "$p" ps -q ${SERVICES}); do
     docker inspect -f "{{ .State.ExitCode }}" $test | grep -q ^0;
     if [ $? -ne 0 ]; then 
-        exit 1; 
+        EXIT_CODE=$?;
+        break
     fi
 done
+
+compose_stop
+
+exit $EXIT_CODE

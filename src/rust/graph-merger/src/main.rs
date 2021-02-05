@@ -337,6 +337,17 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     // todo: the intitializer should give a cache to each service
     let graph_merger = &mut make_ten(async {
         let mg_alphas = grapl_config::mg_alphas();
+        // Shoehorn `http://` in, if the user understandably forgot to do so
+        let mg_alphas = mg_alphas
+            .into_iter()
+            .map(|mg_alpha| {
+                if mg_alpha.contains("http://") {
+                    mg_alpha
+                } else {
+                    format!("http://{}", mg_alpha)
+                }
+            })
+            .collect();
         tracing::debug!(
             mg_alphas=?&mg_alphas,
             "Connecting to mg_alphas"

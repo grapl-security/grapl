@@ -117,31 +117,23 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests
 
 .PHONY: test-integration
 test-integration: build-test-integration ## Build and run integration tests
-	docker-compose -f docker-compose.yml -p "grapl-integration_tests" \
-		up --force-recreate -d 
-	# save exit code to allow for `make down` in event of test failure
+	docker-compose \
+		--file docker-compose.yml \
+		--project-name "grapl-integration_tests" \
+		up --force-recreate -d
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.integration-tests.yml \
-		-p "grapl-integration_tests"; \
-	EXIT_CODE=$$?; \
-	# Stop the containers, but don't remove them, \
-	# so that `dump-compose-artifacts` can inspect the containers \
-	$(MAKE) stop; \
-	exit $$EXIT_CODE
+		-p "grapl-integration_tests"
 
 .PHONY: test-e2e
 test-e2e: build-test-e2e ## Build and run e2e tests
-	docker-compose -f docker-compose.yml -p "grapl-e2e_tests" \
+	docker-compose \
+		--file docker-compose.yml \
+		--project-name "grapl-e2e_tests" \
 		up --force-recreate -d
-	# save exit code to allow for `make down` in event of test failure
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.e2e-tests.yml \
-		-p "grapl-e2e_tests"; \
-	EXIT_CODE=$$?; \
-	# Stop the containers, but don't remove them, \
-	# so that `dump-compose-artifacts` can inspect the containers \
-	$(MAKE) stop; \
-	exit $$EXIT_CODE
+		-p "grapl-e2e_tests"
 
 .PHONY: test
 test: test-unit test-integration test-e2e test-typecheck ## Run all tests
@@ -163,10 +155,12 @@ lint: lint-rust lint-python ## Run all lint checks
 #
 
 .PHONY: clean
-clean: ## Prune all docker build cache
+clean: ## Prune all docker build cache and remove Grapl containers and images
 	docker builder prune --all --force
-	# Seems the docker service could use restarting every once in a while
-	sudo service docker restart
+	# Remove all Grapl containers - continue on error (no containers found)
+	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
+	# Remove all Grapl images = continue on error (no images found)
+	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
 
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)
@@ -195,6 +189,10 @@ down: ## docker-compose down - both stops and removes the containers
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
 	docker-compose $(EVERY_COMPOSE_FILE) stop
+
+.PHONY: e2e-logs
+e2e-logs: ## All docker-compose logs
+	docker-compose $(EVERY_COMPOSE_FILE) -p grapl-e2e_tests logs -f
 
 .PHONY: help
 help: ## Print this help
