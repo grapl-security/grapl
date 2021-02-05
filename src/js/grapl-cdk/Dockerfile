@@ -43,12 +43,11 @@ RUN touch \
   engagement-ux-latest.zip \
   graph-merger-latest.zip \
   graphql-endpoint-latest.zip \
-  metric-forwarder-latest.zip \ 
+  metric-forwarder-latest.zip \
   model-plugin-deployer-latest.zip \
   node-identifier-latest.zip \
   node-identifier-retry-handler-latest.zip \
   osquery-subgraph-generator-latest.zip \
-  swarm-lifecycle-event-handler-latest.zip \
   sysmon-subgraph-generator-latest.zip \
   ux-router-latest.zip
 
