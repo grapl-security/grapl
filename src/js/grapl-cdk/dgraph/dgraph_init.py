@@ -39,13 +39,13 @@ def _init_dgraph() -> Iterator[str]:
         ["amazon-cloudwatch-agent-ctl", "-m", "ec2", "-a", "start"],
     ]
     for command in commands:
-        result = subprocess.run(command, check=True, capture_stdout=True)
+        result = subprocess.run(command, check=True, capture_output=True)
         yield result.stdout.decode("utf-8")
 
 
 def main() -> None:
     # run all the command to initialize the instance
-    for result in _init_instance():
+    for result in _init_dgraph():
         sys.stdout.write(result)
 
 

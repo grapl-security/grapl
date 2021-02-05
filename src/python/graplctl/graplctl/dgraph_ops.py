@@ -17,7 +17,7 @@ from mypy_boto3_route53 import Route53Client
 
 from . import common
 
-get_command_result = common.get_command_result
+get_command_results = common.get_command_results
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
 
@@ -235,12 +235,12 @@ def insert_dns_ip(
 def init_dgraph(
     ssm: SSMClient,
     prefix: str,
-    manager_instance: Ec2Instance,
     instances: List[Ec2Instance],
 ) -> None:
     """configure the docker swarm cluster instances for dgraph"""
+    instance_ids = [instance.instance_id for instance in instances]
     command = ssm.send_command(
-        InstanceIds=[instance.instance_id for instance in instances],
+        InstanceIds=instance_ids,
         DocumentName="AWS-RunRemoteScript",
         Parameters={
             "sourceType": ["S3"],
@@ -255,7 +255,8 @@ def init_dgraph(
         },
     )
     command_id = command["Command"]["CommandId"]
-    get_command_result(ssm, command_id, manager_instance.instance_id)
+    for instance_id, result in get_command_results(ssm, command_id, instance_ids):
+        LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
 
 
 def deploy_dgraph(
@@ -283,4 +284,7 @@ def deploy_dgraph(
         },
     )
     command_id = command["Command"]["CommandId"]
-    get_command_result(ssm, command_id, manager_instance.instance_id)
+    instance_id, result = next(
+        get_command_results(ssm, command_id, [manager_instance.instance_id])
+    )
+    LOGGER.info(f"command {command_id} instance {instance_id}: {result}")

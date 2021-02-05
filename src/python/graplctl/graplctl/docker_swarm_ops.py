@@ -15,7 +15,7 @@ from mypy_boto3_ssm import SSMClient
 
 from . import common
 
-get_command_result = common.get_command_result
+get_command_results = common.get_command_results
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
 
@@ -127,6 +127,9 @@ def create_instances(
                     IamInstanceProfile={
                         "Name": f"{prefix.lower()}-swarm-instance-profile"
                     },
+                    UserData=base64.b64encode(
+                        b"#!/bin/bash\nsleep 30\nyum install -y python3\n"
+                    ).decode("utf-8"),
                 )
             )
 
@@ -206,8 +209,9 @@ def swarm_ids(
 
 def init_instances(ssm: SSMClient, prefix: str, instances: List[Ec2Instance]) -> None:
     """Initialize the EC2 instances"""
+    instance_ids = [instance.instance_id for instance in instances]
     command = ssm.send_command(
-        InstanceIds=[instance.instance_id for instance in instances],
+        InstanceIds=instance_ids,
         DocumentName="AWS-RunRemoteScript",
         Parameters={
             "sourceType": ["S3"],
@@ -218,11 +222,12 @@ def init_instances(ssm: SSMClient, prefix: str, instances: List[Ec2Instance]) ->
                     }
                 )
             ],
-            "commandLine": ["python3 instance_init.py"],
+            "commandLine": ["sleep 60 && /usr/bin/python3 instance_init.py"],
         },
     )
     command_id = command["Command"]["CommandId"]
-    get_command_result(ssm, command_id, manager_id)
+    for instance_id, result in get_command_results(ssm, command_id, instance_ids):
+        LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
 
 
 def init_docker_swarm(
@@ -248,7 +253,10 @@ def init_docker_swarm(
         },
     )
     command_id = command["Command"]["CommandId"]
-    get_command_result(ssm, command_id, manager_instance.instance_id)
+    instance_id, result = next(
+        get_command_results(ssm, command_id, [manager_instance.instance_id])
+    )
+    LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
     LOGGER.info(f"configured instance {manager_instance.instance_id} as swarm manager")
 
     ec2.create_tags(
@@ -281,7 +289,7 @@ def extract_join_token(
     )
     command_id = command["Command"]["CommandId"]
     LOGGER.info(f"extracted join token from instance {manager_instance.instance_id}")
-    return get_command_result(ssm, command_id, manager_instance.instance_id)
+    return next(get_command_results(ssm, command_id, [manager_instance.instance_id]))[1]
 
 
 def join_swarm_nodes(
@@ -294,8 +302,9 @@ def join_swarm_nodes(
     manager_ip: str,
 ) -> None:
     """Join nodes to the swarm cluster"""
+    instance_ids = [instance.instance_id for instance in instances]
     command = ssm.send_command(
-        InstanceIds=[instance.instance_id for instance in instances],
+        InstanceIds=instance_ids,
         DocumentName="AWS-RunRemoteScript",
         Parameters={
             "sourceType": ["S3"],
@@ -310,12 +319,12 @@ def join_swarm_nodes(
         },
     )
     command_id = command["Command"]["CommandId"]
-    for instance in instances:
-        get_command_result(ssm, command_id, instance.instance_id)
-        LOGGER.info(f"joined instance {instance.instance_id} to docker swarm cluster")
+    for instance_id, result in get_command_results(ssm, command_id, instance_ids):
+        LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
+    LOGGER.info(f"joined instances {','.join(instance_ids)} to docker swarm cluster")
 
     ec2.create_tags(
-        Resources=[instance.instance_id for instance in instances],
+        Resources=instance_ids,
         Tags=[
             {
                 "Key": "grapl-swarm-role",
@@ -364,4 +373,6 @@ def exec_(
         },
     )
     ssm_command_id = ssm_command["Command"]["CommandId"]
-    return get_command_result(ssm, ssm_command_id, manager_instance.instance_id)
+    return next(
+        get_command_results(ssm, ssm_command_id, [manager_instance.instance_id])
+    )[1]

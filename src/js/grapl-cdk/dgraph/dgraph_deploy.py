@@ -35,7 +35,8 @@ def _deploy_dgraph(
         ["docker", "stack", "deploy", "-c", "docker-compose-dgraph.yml", "dgraph"],
     ]
     for command in commands:
-        yield subprocess.run(command, check=True, capture_output=True).stdout.decode("utf-8")
+        result = subprocess.run(command, check=True, capture_output=True)
+        yield result.stdout.decode("utf-8")
 
 
 def main(

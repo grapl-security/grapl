@@ -20,12 +20,11 @@ def _init_instance() -> Iterator[str]:
         ["systemctl", "start", "docker.service"],
     ]
     for command in commands:
-        result = subprocess.run(command, check=True, capture_stdout=True)
+        result = subprocess.run(command, check=True, capture_output=True)
         yield result.stdout.decode("utf-8")
 
 
 def main() -> None:
-    # run all the command to initialize the instance
     for result in _init_instance():
         sys.stdout.write(result)
 

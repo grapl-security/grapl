@@ -1,12 +1,25 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
+import os
+import sys
 import time
 
-from typing import List
+from typing import Dict, Iterator, List, Tuple
 
 import mypy_boto3_ec2.service_resource as ec2_resources
 from mypy_boto3_ssm.client import SSMClient
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+IN_PROGRESS_STATUSES = {
+    "Pending",
+    "InProgress",
+    "Delayed",
+}
 
 
 @dataclasses.dataclass
@@ -39,9 +52,12 @@ class Ec2Instance:
         )
 
 
-def get_command_result(ssm: SSMClient, command_id: str, instance_id: str) -> str:
+def get_command_results(
+    ssm: SSMClient, command_id: str, instance_ids: List[str]
+) -> Iterator[Tuple[str, str]]:
     """Poll until the command result is available for the given
-    command_id. Returns the command result.
+    command_id. Yields the tuple (instance_id, result) from each
+    instance.
 
     """
     while 1:
@@ -52,13 +68,19 @@ def get_command_result(ssm: SSMClient, command_id: str, instance_id: str) -> str
         else:
             break
 
-    invocation = ssm.get_command_invocation(
-        CommandId=command_id,
-        InstanceId=instance_id,
-        PluginName="runShellScript",
-    )
+    for instance_id in instance_ids:
+        invocation = ssm.get_command_invocation(
+            CommandId=command_id,
+            InstanceId=instance_id,
+            PluginName="runShellScript",
+        )
 
-    if invocation["Status"] == "Success":
-        return invocation["StandardOutputContent"].strip()
-    else:
-        raise Exception(f"SSM Command failed with Status: \"{invocation['Status']}\"")
+        if invocation["Status"] == "Success":
+            yield instance_id, invocation["StandardOutputContent"].strip()
+        else:
+            LOGGER.error(
+                f"command {command_id} instance {instance_id}: {invocation['StandardErrorContent']}"
+            )
+            raise Exception(
+                f"ssm command {command_id} failed on instance {instance_id} with Status: \"{invocation['Status']}\""
+            )
