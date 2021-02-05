@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import json
+import logging
+import os
+import sys
 
 from typing import Iterator, List, Tuple, Optional
+
+from botocore.client import ClientError
 
 from mypy_boto3_cloudwatch.client import CloudWatchClient
 from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
 from mypy_boto3_sns.client import SNSClient
+from mypy_boto3_ssm import SSMClient
 from mypy_boto3_route53 import Route53Client
 
 from . import common
@@ -14,6 +20,10 @@ from . import common
 get_command_result = common.get_command_result
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 CW_NAMESPACE = "CWAgent"
 CW_DISK_USAGE_METRIC_NAME = "disk_used_percent"

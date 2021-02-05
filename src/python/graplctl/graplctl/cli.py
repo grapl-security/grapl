@@ -5,9 +5,7 @@ import uuid
 from typing import List
 
 from mypy_boto3_ec2 import EC2ServiceResource
-import mypy_boto3_ec2.service_resource as ec2_resources
 from mypy_boto3_cloudwatch.client import CloudWatchClient
-from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
 from mypy_boto3_sns.client import SNSClient
 from mypy_boto3_ssm import SSMClient
 from mypy_boto3_route53 import Route53Client
@@ -122,7 +120,7 @@ def create(
     security_group_id = docker_swarm_ops.swarm_security_group_id(
         ec2=EC2,
         prefix=graplctl_state.grapl_prefix,
-        grapl_region=graplctl_state.grapl_region
+        grapl_region=graplctl_state.grapl_region,
     )
     vpc_id = docker_swarm_ops.swarm_vpc_id(
         ec2=EC2, swarm_security_group_id=security_group_id
@@ -146,15 +144,13 @@ def create(
         swarm_manager=True,
         swarm_id=swarm_id,
         ami_id=ami_id,
-        count=1,
+        count=num_managers,
         instance_type=instance_type,
         security_group_id=security_group_id,
         subnet_ids=subnet_ids,
     )
     manager_instance_ids_str = ",".join(w.instance_id for w in manager_instances)
-    click.echo(
-        f"created manager instances {manager_instance_ids_str} in vpc {vpc_id}"
-    )
+    click.echo(f"created manager instances {manager_instance_ids_str} in vpc {vpc_id}")
 
     click.echo(f"initializing manager instances {manager_instance_ids_str}")
     docker_swarm_ops.init_instances(
@@ -171,7 +167,7 @@ def create(
     docker_swarm_ops.init_docker_swarm(
         ec2=EC2,
         ssm=SSM,
-        prefix=prefix,
+        prefix=graplctl_state.grapl_prefix,
         manager_instance=manager_instance,
     )
     click.echo(
@@ -199,6 +195,7 @@ def create(
             f"joining docker swarm manager instances {remaining_manager_instance_ids_str}"
         )
         docker_swarm_ops.join_swarm_nodes(
+            ec2=EC2,
             ssm=SSM,
             prefix=graplctl_state.grapl_prefix,
             instances=manager_instances[1:],
@@ -226,9 +223,7 @@ def create(
         subnet_ids=subnet_ids,
     )
     worker_instance_ids_str = ",".join(w.instance_id for w in worker_instances)
-    click.echo(
-        f"created worker instances {worker_instance_ids_str} in vpc {vpc_id}"
-    )
+    click.echo(f"created worker instances {worker_instance_ids_str} in vpc {vpc_id}")
 
     click.echo(f"initializing worker instances {worker_instance_ids_str}")
     docker_swarm_ops.init_instances(
@@ -253,6 +248,7 @@ def create(
 
     click.echo(f"joining docker swarm worker instances {worker_instance_ids_str}")
     docker_swarm_ops.join_swarm_nodes(
+        ec2=EC2,
         ssm=SSM,
         prefix=graplctl_state.grapl_prefix,
         instances=worker_instances,
@@ -267,7 +263,10 @@ def create(
 @click.pass_obj
 def ls(graplctl_state: GraplctlState):
     for swarm_id in docker_swarm_ops.swarm_ids(
-        ec2=EC2, prefix=graplctl_state.grapl_prefix, region=graplctl_state.grapl_region
+        ec2=EC2,
+        prefix=graplctl_state.grapl_prefix,
+        region=graplctl_state.grapl_region,
+        version=graplctl_state.grapl_version,
     ):
         click.echo(swarm_id)
 
@@ -311,7 +310,7 @@ def destroy(graplctl_state: GraplctlState, swarm_id: str):
         region=graplctl_state.grapl_region,
         swarm_id=swarm_id,
     ):
-        EC2.Instance(instance.instance_id).terminate()
+        EC2.Instance(instance.instance_id).terminate(InstanceIds=[instance.instance_id])
         click.echo(f"terminated instance {instance.instance_id}")
 
 
@@ -327,7 +326,15 @@ def destroy(graplctl_state: GraplctlState, swarm_id: str):
 @click.pass_obj
 def exec_(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
     click.echo(
-        docker_swarm_ops.exec_(ec2=EC2, ssm=SSM, swarm_id=swarm_id, command=command)
+        docker_swarm_ops.exec_(
+            ec2=EC2,
+            ssm=SSM,
+            prefix=graplctl_state.grapl_prefix,
+            region=graplctl_state.grapl_region,
+            version=graplctl_state.grapl_version,
+            swarm_id=swarm_id,
+            command=command,
+        )
     )
 
 
@@ -376,10 +383,12 @@ def scale(
     vpc_id = docker_swarm_ops.swarm_vpc_id(
         ec2=EC2, swarm_security_group_id=security_group_id
     )
-    subnet_ids = docker_swarm_ops.subnet_ids(
-        ec2=EC2,
-        swarm_vpc_id=vpc_id,
-        prefix=graplctl_state.grapl_prefix,
+    subnet_ids = set(
+        docker_swarm_ops.subnet_ids(
+            ec2=EC2,
+            swarm_vpc_id=vpc_id,
+            prefix=graplctl_state.grapl_prefix,
+        )
     )
     manager_instance = next(
         docker_swarm_ops.swarm_instances(
@@ -398,7 +407,7 @@ def scale(
             ec2=EC2,
             ssm=SSM,
             prefix=graplctl_state.grapl_prefix,
-            region=graplct_state.grapl_region,
+            region=graplctl_state.grapl_region,
             version=graplctl_state.grapl_version,
             swarm_manager=True,
             swarm_id=swarm_id,
@@ -406,7 +415,7 @@ def scale(
             count=num_managers,
             instance_type=instance_type,
             security_group_id=security_group_id,
-            subnet_id=subnet_ids,
+            subnet_ids=subnet_ids,
         )
         manager_instance_ids_str = ",".join(i.instance_id for i in manager_instances)
         click.echo(
@@ -451,7 +460,7 @@ def scale(
             ec2=EC2,
             ssm=SSM,
             prefix=graplctl_state.grapl_prefix,
-            region=graplct_state.grapl_region,
+            region=graplctl_state.grapl_region,
             version=graplctl_state.grapl_version,
             swarm_manager=False,
             swarm_id=swarm_id,
@@ -459,7 +468,7 @@ def scale(
             count=num_managers,
             instance_type=instance_type,
             security_group_id=security_group_id,
-            subnet_id=subnet_id,
+            subnet_ids=subnet_ids,
         )
         worker_instance_ids_str = ",".join(i.instance_id for i in worker_instances)
         click.echo(
@@ -489,6 +498,7 @@ def scale(
 
         click.echo(f"joining docker swarm worker instances {worker_instance_ids_str}")
         docker_swarm_ops.join_swarm_nodes(
+            ec2=EC2,
             ssm=SSM,
             prefix=graplctl_state.grapl_prefix,
             instances=worker_instances,
@@ -532,10 +542,10 @@ def deploy(graplctl_state: GraplctlState, swarm_id: str):
 
     click.echo(f"configuring instances in swarm {swarm_id} for dgraph")
     dgraph_ops.init_dgraph(
-        ec2=EC2,
         ssm=SSM,
         prefix=graplctl_state.grapl_prefix,
         manager_instance=manager_instance,
+        instances=[],
     )
     click.echo(f"configured instances in swarm {swarm_id} for dgraph")
 
@@ -557,7 +567,19 @@ def deploy(graplctl_state: GraplctlState, swarm_id: str):
 
     click.echo(f"deploying dgraph in swarm {swarm_id}")
     dgraph_ops.deploy_dgraph(
-        ssm=SSM, prefix=graplctl_state.grapl_prefix, swarm_id=swarm_id
+        ssm=SSM,
+        prefix=graplctl_state.grapl_prefix,
+        manager_instance=manager_instance,
+        worker_instances=tuple(
+            docker_swarm_ops.swarm_instances(
+                ec2=EC2,
+                prefix=graplctl_state.grapl_prefix,
+                version=graplctl_state.grapl_version,
+                region=graplctl_state.grapl_region,
+                swarm_id=swarm_id,
+                swarm_manager=False,
+            )
+        ),
     )
     click.echo(f"deployed dgraph in swarm {swarm_id}")
 
@@ -573,7 +595,7 @@ def deploy(graplctl_state: GraplctlState, swarm_id: str):
         swarm_id=swarm_id,
     ):
         dgraph_ops.insert_dns_ip(
-            route53=ROUTE_53,
+            route53=ROUTE53,
             dns_name=f"{graplctl_state.grapl_prefix.lower()}.dgraph.grapl",
             ip_address=instance.private_ip_address,
             hosted_zone_id=hosted_zone_id,

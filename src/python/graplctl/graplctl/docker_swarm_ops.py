@@ -96,6 +96,7 @@ def create_instances(
             instances.extend(
                 ec2.create_instances(
                     ImageId=ami_id,
+                    InstanceType=instance_type,
                     MaxCount=counts[subnet_id],
                     MinCount=counts[subnet_id],
                     TagSpecifications=[
@@ -125,7 +126,10 @@ def create_instances(
                     ],
                     SecurityGroupIds=[security_group_id],
                     SubnetId=subnet_id,
-                    IamInstanceProfile=
+                    IamInstanceProfile={
+                        "Name": f"{prefix.lower()}-swarm-instance-profile"
+                    },
+                )
             )
 
     for instance in instances:
@@ -283,6 +287,7 @@ def extract_join_token(
 
 
 def join_swarm_nodes(
+    ec2: EC2ServiceResource,
     ssm: SSMClient,
     prefix: str,
     instances: List[Ec2Instance],
@@ -323,15 +328,21 @@ def join_swarm_nodes(
 
 
 def exec_(
-    ec2: EC2ServiceResource, ssm: SSMClient, swarm_id: str, command: List[str]
+    ec2: EC2ServiceResource,
+    ssm: SSMClient,
+    prefix: str,
+    version: str,
+    region: str,
+    swarm_id: str,
+    command: List[str],
 ) -> str:
     """Execute the given command on the swarm manager. Returns the result."""
     manager_instance = next(
         swarm_instances(
             ec2=ec2,
-            prefix=graplctl_state.grapl_prefix,
-            version=graplctl_state.grapl_version,
-            region=graplctl_state.grapl_region,
+            prefix=prefix,
+            version=version,
+            region=region,
             swarm_id=swarm_id,
             swarm_manager=True,
         )
