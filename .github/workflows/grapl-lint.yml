@@ -8,6 +8,31 @@ on:
       - master
 
 jobs:
+  proto-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Lint Protobuf Definitions
+        run: |
+          etc/install_buf.sh
+          ./buf lint
+
+  proto-breaking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check Protobufs for Backwards-Incompatible Changes
+        # We use the full URL instead of just ".git" here because we
+        # just shallow-clone in Github Actions, so we aren't going to
+        # have the staging branch locally.
+        #
+        # NB: This branch will have to change when
+        # https://github.com/grapl-security/issue-tracker/issues/224
+        # is addressed
+        run: |
+          etc/install_buf.sh
+          ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=staging"
+
   rust-format:
     runs-on: ubuntu-latest
     defaults:
@@ -52,7 +77,7 @@ jobs:
       - name: Run etc/ci/scripts/py_lint.sh --check-only
         run: |
           ./etc/ci_scripts/py_lint.sh --check-only
-      
+
       - name: How to fix lint failure
         if: ${{ failure() }}
         run: echo "Run etc/ci_scripts/py_lint.sh without the flag. That's it!"
@@ -79,7 +104,7 @@ jobs:
           python3 -mvenv venv && . venv/bin/activate
           pip install pypi-simple
           deactivate
-      
+
       - name: Export CHECK_PYPI_VERSION_ARGS as "true" if channel is not latest
         # passing 'true' to check_pypi means "check test.pypi.org"
         run: |

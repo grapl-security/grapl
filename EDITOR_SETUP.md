@@ -19,6 +19,8 @@ covered here, please feel free to submit a
 
 [Link][vsc]
 
+## Rust Configuration
+
 For Rust, the [Rust Analyzer Plugin][ra_vsc] is recommended.
 
 Of particular note are the `checkOnSave` and `rustfmt` override
@@ -52,9 +54,23 @@ Add the following to your workspace settings:
     }
 ```
 
-Python and TypeScript configurations to come later!
+## Protobuf Configuration
+
+We use [buf][buf] to lint our Protobuf definitions. The tool can be
+downloaded from [the Github Releases page][buf_release], or by using
+the [etc/install_buf.sh](./etc/install_buf.sh) script in this
+repository.
+
+The tool itself is configured via [buf.yaml](./buf.yaml).
+
+As long as the binary is present in your `$PATH`, the [buf Visual Studio
+Code plugin][buf_vsc] will automatically lint your Protobuf files
+according to our configuration.
 
 [vsc]: https://code.visualstudio.com/
 [ra_vsc]: https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer
 [clippy]: https://github.com/rust-lang/rust-clippy
 [rustfmt]: https://github.com/rust-lang/rustfmt
+[buf]: https://buf.build
+[buf_release]: https://github.com/bufbuild/buf/releases
+[buf_vsc]: https://marketplace.visualstudio.com/items?itemName=bufbuild.vscode-buf
