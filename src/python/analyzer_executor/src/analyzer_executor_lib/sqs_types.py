@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, NewType, Tuple
+from typing import TYPE_CHECKING, Dict, List, NewType
 
 from typing_extensions import TypedDict
 

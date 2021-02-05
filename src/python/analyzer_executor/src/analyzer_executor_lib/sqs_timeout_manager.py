@@ -98,7 +98,7 @@ class SqsTimeoutManager:
                 ReceiptHandle=self.receipt_handle,
                 VisibilityTimeout=new_visibility,
             )
-        except:
+        except Exception:
             LOGGER.error(
                 f"SQS MessageID {self.message_id}: Failed to change message visibility",
                 exc_info=True,

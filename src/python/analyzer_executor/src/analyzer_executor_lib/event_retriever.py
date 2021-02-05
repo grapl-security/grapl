@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import json
 import time
 import traceback
-from typing import TYPE_CHECKING, Iterator, List, cast
+from typing import TYPE_CHECKING, Iterator
 
 import boto3  # type: ignore
 import botocore.exceptions  # type: ignore
