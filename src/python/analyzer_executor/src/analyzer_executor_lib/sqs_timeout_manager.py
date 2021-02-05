@@ -92,13 +92,17 @@ class SqsTimeoutManager:
         return self.visibility_timeout * (loop_i + 1)
 
     def _change_visibility(self, new_visibility: int) -> None:
+        """
+        Worth noting: the message's elapsed timeout resets when you change message visibility;
+        it is as if you'd just popped it off of SQS at 0 seconds.
+        """
         try:
             self.sqs_client.change_message_visibility(
                 QueueUrl=self.queue_url,
                 ReceiptHandle=self.receipt_handle,
                 VisibilityTimeout=new_visibility,
             )
-        except Exception:
+        except:
             LOGGER.error(
                 f"SQS MessageID {self.message_id}: Failed to change message visibility",
                 exc_info=True,
