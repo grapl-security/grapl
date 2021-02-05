@@ -27,6 +27,8 @@ futures-retry = "0.5"
 anyhow = "*"
 rand = "0.8"
 
+futures = "0.3"
+
 [dependencies.uuid]
 version = "0.8"
 features = ["v4"]

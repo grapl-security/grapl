@@ -14,21 +14,19 @@ use dgraph_query_lib::query::{
 use dgraph_query_lib::mutation::{MutationBuilder, MutationUID, MutationUnit, MutationPredicateValue};
 
 use log::{
-    info,
-    error
+    error,
+    info
 };
 
 use crate::node::NodeT;
 use dgraph_query_lib::upsert::{Upsert, UpsertBlock};
-use futures_retry::{FutureRetry, RetryPolicy};
-use std::time::Duration;
 use std::sync::Arc;
 use dgraph_query_lib::predicate::{Predicate, Field};
 use dgraph_query_lib::condition::{Condition, ConditionValue};
-use dgraph_query_lib::queryblock::{
-    QueryBlockType,
-    QueryBlockBuilder,
-};
+use dgraph_query_lib::queryblock::{QueryBlockType, QueryBlockBuilder, QueryBlock};
+use futures::StreamExt;
+use futures_retry::{FutureRetry, RetryPolicy};
+use std::time::Duration;
 
 impl Graph {
     pub fn new(timestamp: u64) -> Self {
@@ -107,77 +105,93 @@ impl Graph {
     }
 
     async fn upsert_nodes(&self, dgraph_client: Arc<DgraphClient>) {
-        let (query_blocks, mutation_units): (Vec<_>, Vec<_>) = self.nodes.iter()
+        let upsert_components: Vec<(QueryBlock, MutationUnit)> = self.nodes.iter()
             .map(|(_, node)| node.generate_upsert_components())
-            .unzip();
+            .collect();
 
-        let query = QueryBuilder::default()
-            .query_blocks(query_blocks)
-            .build()
-            .unwrap();
+        let _: Vec<MutationResponse> = futures::stream::iter(chunk_vec(upsert_components, 64))
+            .map(|upsert_chunk| {
+                let (query_blocks, mutation_units): (Vec<_>, Vec<_>) = upsert_chunk.into_iter().unzip();
 
-        let mutation = MutationBuilder::default()
-            .set(mutation_units)
-            .build()
-            .unwrap();
+                let query = QueryBuilder::default()
+                    .query_blocks(query_blocks)
+                    .build()
+                    .unwrap();
 
-        let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
+                let mutation = MutationBuilder::default()
+                    .set(mutation_units)
+                    .build()
+                    .unwrap();
 
-        Self::enforce_transaction(dgraph_client, upsert).await;
+                let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
+
+                Self::enforce_transaction(dgraph_client.clone(), upsert)
+            })
+            .buffer_unordered(16)
+            .collect::<Vec<_>>()
+            .await;
     }
 
     async fn upsert_edges(&self, dgraph_client: Arc<DgraphClient>) {
-        let mut node_key_to_variable_map = HashMap::<String, String>::new();
-
-        let mut mutation_units = vec![];
+        let mut all_edges: Vec<(String, String, String)> = vec![];
 
         // for some reason this was much harder to correctly express in a nested iterator with map
         // because of the reference to `node_key_to_variable_map`, it inferred the closures as FnMut
         // and made it difficult to use the hashmap for whatever reason
         for (_, EdgeList { edges }) in &self.edges {
             for Edge { from, to, edge_name } in edges {
-                let from_key_variable = node_key_to_variable_map.entry(from.clone())
-                    .or_insert(format!("nk_{}", rand::random::<u128>()))
-                    .clone();
-
-                let to_key_variable = node_key_to_variable_map.entry(to.clone())
-                    .or_insert(format!("nk_{}", rand::random::<u128>()))
-                    .clone();
-
-                let mutation_unit = MutationUnit::new(MutationUID::variable(&from_key_variable))
-                    .predicate(edge_name, MutationPredicateValue::Edge(MutationUID::variable(&to_key_variable)));
-
-                mutation_units.push(mutation_unit);
+                all_edges.push((from.clone(), to.clone(), edge_name.clone()));
             }
         }
 
-        let mut query_blocks = vec![];
+        for items in all_edges.chunks(100) {
+            let mut node_key_to_variable_map = HashMap::<String, String>::new();
+            let mut mutation_units = vec![];
 
-        // now that all of the node keys have been used, we should generate the queries to grab them
-        // and store the associated node uids in the variables we generated previously
-        for (node_key, variable) in &node_key_to_variable_map {
-            let query_block = QueryBlockBuilder::default()
-                .query_type(QueryBlockType::Var)
-                .root_filter(Condition::EQ(format!("node_key"), ConditionValue::string(node_key)))
-                .predicates(vec![
-                    Predicate::ScalarVariable(variable.to_string(), Field::new("uid"))
-                ])
+            for (from, to, edge_name) in items {
+                let from_key_variable = node_key_to_variable_map.entry(from.clone())
+                .or_insert(format!("nk_{}", rand::random::<u128>()))
+                .clone();
+
+                let to_key_variable = node_key_to_variable_map.entry(to.clone())
+                .or_insert(format!("nk_{}", rand::random::<u128>()))
+                .clone();
+
+                let mutation_unit = MutationUnit::new(MutationUID::variable(&from_key_variable))
+                .predicate(edge_name, MutationPredicateValue::Edges(vec![MutationUID::variable(&to_key_variable)]));
+
+                mutation_units.push(mutation_unit);
+            }
+
+            let mut query_blocks = vec![];
+
+            // now that all of the node keys have been used, we should generate the queries to grab them
+            // and store the associated node uids in the variables we generated previously
+            for (node_key, variable) in &node_key_to_variable_map {
+                let query_block = QueryBlockBuilder::default()
+                    .query_type(QueryBlockType::Var)
+                    .root_filter(Condition::EQ(format!("node_key"), ConditionValue::string(node_key)))
+                    .predicates(vec![
+                        Predicate::ScalarVariable(variable.to_string(), Field::new("uid"))
+                    ])
+                    .build().unwrap();
+
+                query_blocks.push(query_block);
+            }
+
+            let query = QueryBuilder::default()
+                .query_blocks(query_blocks)
                 .build().unwrap();
 
-            query_blocks.push(query_block);
+            let mutation = MutationBuilder::default()
+                .set(mutation_units)
+                .build().unwrap();
+
+            let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
+
+            error!("UPSERTING EDGES");
+            Self::enforce_transaction(dgraph_client.clone(), upsert).await;
         }
-
-        let query = QueryBuilder::default()
-            .query_blocks(query_blocks)
-            .build().unwrap();
-
-        let mutation = MutationBuilder::default()
-            .set(mutation_units)
-            .build().unwrap();
-
-        let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
-        
-        Self::enforce_transaction(dgraph_client, upsert).await;
     }
 
     async fn enforce_transaction(client: Arc<DgraphClient>, upsert: Upsert) -> MutationResponse {
@@ -209,8 +223,18 @@ impl Graph {
     fn handle_upsert_err(e: anyhow::Error) -> RetryPolicy<anyhow::Error> {
         error!("Failed to process upsert. Retrying in 3 seconds. Error: {}", e);
 
-        RetryPolicy::WaitRetry(Duration::new(3, 0))
+        RetryPolicy::WaitRetry(Duration::new(5, 0))
     }
+}
+
+fn chunk_vec<T>(mut input: Vec<T>, size: usize) -> Vec<Vec<T>> {
+    let mut output = Vec::with_capacity(input.len() / size);
+
+    while !input.is_empty() {
+        output.push(input.drain(0 .. std::cmp::min(size, input.len())).collect());
+    }
+
+    output
 }
 
 impl GeneratedSubgraphs {
