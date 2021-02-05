@@ -35,14 +35,22 @@ class SqsTimeoutManager:
 
     async def keep_alive(self) -> None:
         """
-        you grab a message from SQS
-        which has, say, a visibility timeout of 30s
-        and at 20s you wanna tell SQS
+        (Visibility timeout means, "if you haven't finished processing a message by then,
+        SQS will put it back on the queue")
+
+        You grab a message from SQS
+        which has, by default, a visibility timeout of 30s
+
+        at 20s you wanna tell SQS
             "yo chill out I'm definitely still working on this message.
             don't resurrect it in the queue yet.
             let's set a new visibility timeout: 60"
-        and at 50s you wanna tell SQS "[...same...]
+
+        SQS starts counting from 0 again, up to 60...
+        but at 50s you wanna tell SQS "chill out!
             let's set a new visibility timeout: 90"
+
+        rinse repeat
         """
         # Schedule the coroutine once
         task = asyncio.create_task(self.coroutine)
