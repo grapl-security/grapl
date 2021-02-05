@@ -136,7 +136,8 @@ services:
   grapl-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: metric-forwarder-deploy
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
@@ -150,7 +151,8 @@ services:
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: sysmon-subgraph-generator-deploy
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
@@ -181,7 +183,8 @@ services:
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: osquery-subgraph-generator-deploy
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
@@ -213,7 +216,8 @@ services:
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: node-identifier-deploy
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
@@ -248,7 +252,8 @@ services:
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: node-identifier-retry-handler-deploy
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
@@ -283,7 +288,8 @@ services:
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: graph-merger-deploy
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
@@ -319,7 +325,8 @@ services:
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: analyzer-dispatcher-deploy
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}

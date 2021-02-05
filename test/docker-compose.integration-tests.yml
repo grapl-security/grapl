@@ -7,7 +7,8 @@ services:
   grapl-rust-node-identifier-integration-tests:
     image: grapl/grapl-node-identifier-test:${TAG:-latest}
     build:
-      context: ${PWD}/src/rust
+      context: ${PWD}/src
+      dockerfile: rust/Dockerfile
       target: build-test-integration
       args:
         - CARGO_PROFILE=debug

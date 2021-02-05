@@ -114,7 +114,7 @@ services:
 
   grapl-notebook-test:
     image: grapl/grapl-notebook-test:${TAG:-latest}
-    build: 
+    build:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: grapl-notebook-test

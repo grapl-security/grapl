@@ -75,12 +75,13 @@ RUN python_test_deps/download_requirements.sh
 # build
 FROM grapl-python-build AS graplinc-grapl-api-build
 
+COPY --chown=grapl proto proto
 COPY --chown=grapl python/graplinc-grapl-api python/graplinc-grapl-api
 
 RUN source venv/bin/activate && \
     cd python/graplinc-grapl-api && \
-    pip install . && \
-    python setup.py sdist bdist_wheel
+    python setup.py sdist bdist_wheel && \
+    pip install dist/*.whl
 
 # test
 FROM graplinc-grapl-api-build AS graplinc-grapl-api-test
@@ -121,7 +122,7 @@ COPY --chown=grapl python/grapl_analyzerlib grapl_analyzerlib
 COPY --chown=grapl --from=graplinc-grapl-api-build /home/grapl/venv venv
 COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
 
-# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`, 
+# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
 # but the pip install is cleaner.
 RUN source venv/bin/activate && \
     cd grapl-common && \
