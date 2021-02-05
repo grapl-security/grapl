@@ -41,9 +41,7 @@ REGION_TO_AMI_ID = {
 }
 
 
-def swarm_security_group_id(
-    ec2: EC2ServiceResource, prefix: str, grapl_region: str
-) -> str:
+def swarm_security_group_id(ec2: EC2ServiceResource, prefix: str) -> str:
     """Return the security group ID for the swarm security group"""
     result = ec2.security_groups.filter(
         Filters=[{"Name": "group-name", "Values": [f"{prefix.lower()}-grapl-swarm"]}]

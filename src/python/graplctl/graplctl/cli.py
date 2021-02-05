@@ -120,7 +120,6 @@ def create(
     security_group_id = docker_swarm_ops.swarm_security_group_id(
         ec2=EC2,
         prefix=graplctl_state.grapl_prefix,
-        grapl_region=graplctl_state.grapl_region,
     )
     vpc_id = docker_swarm_ops.swarm_vpc_id(
         ec2=EC2, swarm_security_group_id=security_group_id
@@ -378,7 +377,6 @@ def scale(
     security_group_id = docker_swarm_ops.swarm_security_group_id(
         ec2=EC2,
         prefix=graplctl_state.grapl_prefix,
-        grapl_region=graplctl_state.grapl_region,
     )
     vpc_id = docker_swarm_ops.swarm_vpc_id(
         ec2=EC2, swarm_security_group_id=security_group_id
@@ -402,7 +400,7 @@ def scale(
     )
 
     if num_managers > 0:
-        click.echo(f"creating manager instances in subnet {subnet_id}")
+        click.echo(f"creating manager instances in vpc {vpc_id}")
         manager_instances = docker_swarm_ops.create_instances(
             ec2=EC2,
             ssm=SSM,
@@ -419,7 +417,7 @@ def scale(
         )
         manager_instance_ids_str = ",".join(i.instance_id for i in manager_instances)
         click.echo(
-            f"created manager instances {manager_instance_ids_str} in subnet {subnet_id}"
+            f"created manager instances {manager_instance_ids_str} in vpc {vpc_id}"
         )
 
         click.echo(f"initializing manager instances {manager_instance_ids_str}")
@@ -445,6 +443,7 @@ def scale(
 
         click.echo(f"joining docker swarm manager instances {manager_instance_ids_str}")
         docker_swarm_ops.join_swarm_nodes(
+            ec2=EC2,
             ssm=SSM,
             prefix=graplctl_state.grapl_prefix,
             instances=manager_instances,
@@ -455,7 +454,7 @@ def scale(
         click.echo(f"joined docker swarm manager instances {manager_instance_ids_str}")
 
     if num_workers > 0:
-        click.echo(f"creating worker instances in subnet {subnet_id}")
+        click.echo(f"creating worker instances in vpc {vpc_id}")
         worker_instances = docker_swarm_ops.create_instances(
             ec2=EC2,
             ssm=SSM,
@@ -472,7 +471,7 @@ def scale(
         )
         worker_instance_ids_str = ",".join(i.instance_id for i in worker_instances)
         click.echo(
-            f"created worker instances {worker_instance_ids_str} in subnet {subnet_id}"
+            f"created worker instances {worker_instance_ids_str} in vpc {vpc_id}"
         )
 
         click.echo(f"initializing worker instances {worker_instance_ids_str}")
