@@ -1199,6 +1199,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "grapl-prelude"
+version = "0.3.1"
+dependencies = [
+ "derive-dynamic-node",
+ "graph-generator-lib",
+ "grapl-config",
+ "grapl-graph-descriptions",
+]
+
+[[package]]
 name = "grapl-service"
 version = "0.1.0"
 dependencies = [
