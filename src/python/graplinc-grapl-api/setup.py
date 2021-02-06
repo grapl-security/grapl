@@ -22,7 +22,7 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 
 # The source root of all the protobuf definitions. This is where we will look to
 # resolve all protobuf imports.
-PROTO_PATH = os.path.join(HERE, "proto")
+PROTO_PATH = os.path.join(HERE, "../../proto")
 
 # Only compile our protobufs within the graplinc package hierarchy. Currently
 # there are some Google packages vendored in, and we don't need to compile them,

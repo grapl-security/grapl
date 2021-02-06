@@ -69,21 +69,21 @@ RUN python_test_deps/download_requirements.sh
 
 
 
-# graph-descriptions
+# graplinc-grapl-api
 ################################################################################
 
 # build
-FROM grapl-python-build AS graph-descriptions-build
+FROM grapl-python-build AS graplinc-grapl-api-build
 
-COPY --chown=grapl rust/graph-descriptions graph-descriptions
+COPY --chown=grapl python/graplinc-grapl-api python/graplinc-grapl-api
 
 RUN source venv/bin/activate && \
-    cd graph-descriptions && \
+    cd python/graplinc-grapl-api && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
 # test
-FROM graph-descriptions-build AS graph-descriptions-test
+FROM graplinc-grapl-api-build AS graplinc-grapl-api-test
 
 ## Install test requirements
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
@@ -118,7 +118,7 @@ RUN python_test_deps/install_requirements.sh
 FROM grapl-python-build AS grapl-analyzerlib-build
 
 COPY --chown=grapl python/grapl_analyzerlib grapl_analyzerlib
-COPY --chown=grapl --from=graph-descriptions-build /home/grapl/venv venv
+COPY --chown=grapl --from=graplinc-grapl-api-build /home/grapl/venv venv
 COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
 
 # Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`, 

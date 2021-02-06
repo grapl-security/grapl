@@ -418,8 +418,8 @@ fn main() {
 
     config
         .compile_protos(
-            &["proto/graplinc/grapl/api/graph/v1beta1/types.proto"],
-            &["proto/"],
+            &["../../proto/graplinc/grapl/api/graph/v1beta1/types.proto"],
+            &["../../proto/"],
         )
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
 }
