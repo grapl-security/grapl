@@ -29,17 +29,17 @@ CW_NAMESPACE = "CWAgent"
 CW_DISK_USAGE_METRIC_NAME = "disk_used_percent"
 
 
-def _seems_like_the_desired_arn(prefix: str, arn: str) -> bool:
+def _seems_like_the_desired_arn(deployment_name: str, arn: str) -> bool:
     # see CDK class OperationalAlarms
-    # note: the prefix should *not* be lower-ized
-    return f"{prefix}-operational-alarms-sink" in arn
+    # note: the deployment_name should *not* be lower-ized
+    return f"{deployment_name}-operational-alarms-sink" in arn
 
 
-def _find_operational_alarms_arn(sns: SNSClient, prefix: str) -> str:
+def _find_operational_alarms_arn(sns: SNSClient, deployment_name: str) -> str:
     topics_raw = sns.list_topics()
     all_topic_arns = [d["TopicArn"] for d in topics_raw["Topics"]]
     arn = next(
-        (arn for arn in all_topic_arns if _seems_like_the_desired_arn(prefix, arn)),
+        (arn for arn in all_topic_arns if _seems_like_the_desired_arn(deployment_name, arn)),
         None,
     )
     if not arn:
@@ -98,10 +98,10 @@ def create_disk_usage_alarms(
     cloudwatch: CloudWatchClient,
     sns: SNSClient,
     instance_id: str,
-    prefix: str,
+    deployment_name: str,
 ) -> None:
     """Create disk usage alarms for the / and /dgraph partitions"""
-    ops_alarm_action = _find_operational_alarms_arn(sns, prefix)
+    ops_alarm_action = _find_operational_alarms_arn(sns, deployment_name)
     root_metric = _find_metric_for_instance(cloudwatch, instance_id, path="/")
     cloudwatch.put_metric_alarm(
         AlarmActions=[ops_alarm_action],
@@ -234,7 +234,7 @@ def insert_dns_ip(
 
 def init_dgraph(
     ssm: SSMClient,
-    prefix: str,
+    deployment_name: str,
     instances: List[Ec2Instance],
 ) -> None:
     """configure the docker swarm cluster instances for dgraph"""
@@ -247,11 +247,11 @@ def init_dgraph(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-dgraph-config-bucket/dgraph_init.py"
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-dgraph-config-bucket/dgraph_init.py"
                     }
                 )
             ],
-            "commandLine": ["python3 dgraph_init.py"],
+            "commandLine": ["/usr/bin/python3 dgraph_init.py"],
         },
     )
     command_id = command["Command"]["CommandId"]
@@ -261,7 +261,7 @@ def init_dgraph(
 
 def deploy_dgraph(
     ssm: SSMClient,
-    prefix: str,
+    deployment_name: str,
     manager_instance: Ec2Instance,
     worker_instances: Tuple[Ec2Instance, Ec2Instance],
 ) -> None:
@@ -274,12 +274,12 @@ def deploy_dgraph(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-dgraph-config-bucket/dgraph_deploy.py"
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-dgraph-config-bucket/dgraph_deploy.py"
                     }
                 )
             ],
             "commandLine": [
-                f"python3 dgraph_deploy.py {prefix.lower()} {manager_instance.private_dns_name} {worker_instances[0].private_dns_name} {worker_instances[1].private_dns_name}"
+                f"/usr/bin/python3 dgraph_deploy.py {deployment_name.lower()} {manager_instance.private_dns_name} {worker_instances[0].private_dns_name} {worker_instances[1].private_dns_name}"
             ],
         },
     )

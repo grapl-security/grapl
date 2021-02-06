@@ -41,10 +41,10 @@ REGION_TO_AMI_ID = {
 }
 
 
-def swarm_security_group_id(ec2: EC2ServiceResource, prefix: str) -> str:
+def swarm_security_group_id(ec2: EC2ServiceResource, deployment_name: str) -> str:
     """Return the security group ID for the swarm security group"""
     result = ec2.security_groups.filter(
-        Filters=[{"Name": "group-name", "Values": [f"{prefix.lower()}-grapl-swarm"]}]
+        Filters=[{"Name": "group-name", "Values": [f"{deployment_name.lower()}-grapl-swarm"]}]
     )
     return list(result)[0].group_id
 
@@ -55,13 +55,13 @@ def swarm_vpc_id(ec2: EC2ServiceResource, swarm_security_group_id: str) -> str:
 
 
 def subnet_ids(
-    ec2: EC2ServiceResource, swarm_vpc_id: str, prefix: str
+    ec2: EC2ServiceResource, swarm_vpc_id: str, deployment_name: str
 ) -> Iterator[str]:
     """Yields the subnet IDs for the grapl deployment"""
     for subnet in ec2.Vpc(swarm_vpc_id).subnets.filter(
         Filters=[
             {"Name": "tag:aws-cdk:subnet-type", "Values": ["Private"]},
-            {"Name": "tag:name", "Values": [f"{prefix.lower()}-grapl-vpc"]},
+            {"Name": "tag:name", "Values": [f"{deployment_name.lower()}-grapl-vpc"]},
         ]
     ):
         yield subnet.subnet_id
@@ -70,7 +70,7 @@ def subnet_ids(
 def create_instances(
     ec2: EC2ServiceResource,
     ssm: SSMClient,
-    prefix: str,
+    deployment_name: str,
     region: str,
     version: str,
     swarm_manager: bool,
@@ -105,7 +105,7 @@ def create_instances(
                                 for t in [
                                     Tag(
                                         key="grapl-deployment-name",
-                                        value=f"{prefix.lower()}",
+                                        value=f"{deployment_name.lower()}",
                                     ),
                                     Tag(
                                         key="grapl-version", value=f"{version.lower()}"
@@ -125,7 +125,7 @@ def create_instances(
                     SecurityGroupIds=[security_group_id],
                     SubnetId=subnet_id,
                     IamInstanceProfile={
-                        "Name": f"{prefix.lower()}-swarm-instance-profile"
+                        "Name": f"{deployment_name.lower()}-swarm-instance-profile"
                     },
                     UserData=base64.b64encode(
                         b"#!/bin/bash\nsleep 30\nyum install -y python3\n"
@@ -162,7 +162,7 @@ def create_instances(
 
 def swarm_instances(
     ec2: EC2ServiceResource,
-    prefix: Optional[str] = None,
+    deployment_name: Optional[str] = None,
     version: Optional[str] = None,
     region: Optional[str] = None,
     swarm_id: Optional[str] = None,
@@ -170,8 +170,8 @@ def swarm_instances(
 ) -> Iterator[Ec2Instance]:
     """Yields all the swarm instances in this grapl deployment"""
     tags = []
-    if prefix is not None:
-        tags.append(Tag(key="grapl-deployment-name", value=prefix))
+    if deployment_name is not None:
+        tags.append(Tag(key="grapl-deployment-name", value=deployment_name))
     if version is not None:
         tags.append(Tag(key="grapl-version", value=version))
     if region is not None:
@@ -194,12 +194,12 @@ def swarm_instances(
 
 
 def swarm_ids(
-    ec2: EC2ServiceResource, prefix: str, version: str, region: str
+    ec2: EC2ServiceResource, deployment_name: str, version: str, region: str
 ) -> Set[str]:
     """Returns the unique swarm IDs in this grapl deployment."""
     ids = set()
     for instance in swarm_instances(
-        ec2=ec2, prefix=prefix, version=version, region=region, swarm_manager=True
+        ec2=ec2, deployment_name=deployment_name, version=version, region=region, swarm_manager=True
     ):
         for tag in instance.tags:
             if tag.key == "grapl-swarm-id":
@@ -207,7 +207,7 @@ def swarm_ids(
     return ids
 
 
-def init_instances(ssm: SSMClient, prefix: str, instances: List[Ec2Instance]) -> None:
+def init_instances(ssm: SSMClient, deployment_name: str, instances: List[Ec2Instance]) -> None:
     """Initialize the EC2 instances"""
     instance_ids = [instance.instance_id for instance in instances]
     command = ssm.send_command(
@@ -218,7 +218,7 @@ def init_instances(ssm: SSMClient, prefix: str, instances: List[Ec2Instance]) ->
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/instance_init.py"
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/instance_init.py"
                     }
                 )
             ],
@@ -233,7 +233,7 @@ def init_instances(ssm: SSMClient, prefix: str, instances: List[Ec2Instance]) ->
 def init_docker_swarm(
     ec2: EC2ServiceResource,
     ssm: SSMClient,
-    prefix: str,
+    deployment_name: str,
     manager_instance: Ec2Instance,
 ) -> None:
     """Initialize the docker swarm cluster"""
@@ -245,11 +245,11 @@ def init_docker_swarm(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/swarm_init.py"
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/swarm_init.py"
                     }
                 )
             ],
-            "commandLine": ["python3 swarm_init.py"],
+            "commandLine": ["/usr/bin/python3 swarm_init.py"],
         },
     )
     command_id = command["Command"]["CommandId"]
@@ -267,7 +267,7 @@ def init_docker_swarm(
 
 def extract_join_token(
     ssm: SSMClient,
-    prefix: str,
+    deployment_name: str,
     manager_instance: Ec2Instance,
     manager=False,
 ) -> str:
@@ -280,11 +280,11 @@ def extract_join_token(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/swarm_token.py"
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/swarm_token.py"
                     }
                 )
             ],
-            "commandLine": [f"python3 swarm_token.py {str(manager).lower()}"],
+            "commandLine": [f"/usr/bin/python3 swarm_token.py {str(manager).lower()}"],
         },
     )
     command_id = command["Command"]["CommandId"]
@@ -295,7 +295,7 @@ def extract_join_token(
 def join_swarm_nodes(
     ec2: EC2ServiceResource,
     ssm: SSMClient,
-    prefix: str,
+    deployment_name: str,
     instances: List[Ec2Instance],
     join_token: str,
     manager: bool,
@@ -311,11 +311,11 @@ def join_swarm_nodes(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/swarm_join.py"
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/swarm_join.py"
                     }
                 )
             ],
-            "commandLine": [f"python3 swarm_join.py {join_token} {manager_ip}"],
+            "commandLine": [f"/usr/bin/python3 swarm_join.py {join_token} {manager_ip}"],
         },
     )
     command_id = command["Command"]["CommandId"]
@@ -337,7 +337,7 @@ def join_swarm_nodes(
 def exec_(
     ec2: EC2ServiceResource,
     ssm: SSMClient,
-    prefix: str,
+    deployment_name: str,
     version: str,
     region: str,
     swarm_id: str,
@@ -347,7 +347,7 @@ def exec_(
     manager_instance = next(
         swarm_instances(
             ec2=ec2,
-            prefix=prefix,
+            deployment_name=deployment_name,
             version=version,
             region=region,
             swarm_id=swarm_id,
@@ -365,11 +365,11 @@ def exec_(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{prefix.lower()}-swarm-config-bucket/swarm_exec.py"
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/swarm_exec.py"
                     }
                 )
             ],
-            "commandLine": [f"python3 swarm_exec.py {encoded_command}"],
+            "commandLine": [f"/usr/bin/python3 swarm_exec.py {encoded_command}"],
         },
     )
     ssm_command_id = ssm_command["Command"]["CommandId"]
