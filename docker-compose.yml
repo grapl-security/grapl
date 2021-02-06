@@ -12,15 +12,17 @@ x-common-variables:
   aws-region: &aws-region
     AWS_REGION: "us-east-1"
     AWS_DEFAULT_REGION: "us-east-1"  # boto3 prefers this one
-  sqs-endpoint: &sqs-endpoint
+  aws-endpoints: &aws-endpoints
+    # merge these into your `environment` if: 
+    # - you're using `grapl_common.env_helpers` (py)
+    # - you're using `grapl-config/env_helpers` (rust)
+    <<: *aws-region
     SQS_ENDPOINT: "http://sqs.us-east-1.amazonaws.com:9324"
     SQS_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
     SQS_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
-  s3-endpoint: &s3-endpoint
     S3_ENDPOINT: "http://s3:9000"
     S3_ACCESS_KEY_ID: "minioadmin"
     S3_ACCESS_KEY_SECRET: "minioadmin"
-  dynamodb-endpoint: &dynamodb-endpoint
     DYNAMODB_ENDPOINT: "http://dynamodb:8000"
     DYNAMODB_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
     DYNAMODB_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
@@ -164,8 +166,7 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-dead-letter-queue"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
-      <<: *sqs-endpoint
-      <<: *s3-endpoint
+      <<: *aws-endpoints
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -196,8 +197,7 @@ services:
       EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
-      <<: *sqs-endpoint
-      <<: *s3-endpoint
+      <<: *aws-endpoints
     links:
       - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
@@ -226,9 +226,7 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       DEST_BUCKET_NAME: "local-grapl-subgraphs-generated-bucket"
-      <<: *sqs-endpoint
-      <<: *s3-endpoint
-      <<: *dynamodb-endpoint
+      <<: *aws-endpoints
       <<: *dynamodb-mapping-tables
     tty: false
     links:
@@ -261,9 +259,7 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       DEST_BUCKET_NAME: "local-grapl-subgraphs-generated-bucket"
-      <<: *sqs-endpoint
-      <<: *s3-endpoint
-      <<: *dynamodb-endpoint
+      <<: *aws-endpoints
       <<: *dynamodb-mapping-tables
     tty: false
     links:
@@ -295,9 +291,7 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-dead-letter-queue"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       DEST_BUCKET_NAME: "local-grapl-subgraphs-merged-bucket"
-      <<: *sqs-endpoint
-      <<: *s3-endpoint
-      <<: *dynamodb-endpoint
+      <<: *aws-endpoints
       <<: *mg-alphas
       GRAPL_SCHEMA_TABLE: "local-grapl-grapl_schema_table"
       IS_LOCAL: "True"
@@ -331,10 +325,7 @@ services:
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
       DEST_BUCKET_NAME: "local-grapl-analyzer-dispatched-bucket"
       ANALYZER_BUCKET: "local-grapl-analyzers-bucket"
-      <<: *aws-region
-      <<: *sqs-endpoint
-      <<: *s3-endpoint
-      <<: *dynamodb-endpoint
+      <<: *aws-endpoints
       <<: *log-level
       IS_LOCAL: "true"
     tty: false
@@ -390,9 +381,7 @@ services:
       GRPC_ENABLE_FORK_SUPPORT: "1"
       <<: *mg-alphas
       IS_RETRY: "False"
-      <<: *aws-region
-      <<: *sqs-endpoint
-      <<: *s3-endpoint
+      <<: *aws-endpoints
       BUCKET_PREFIX: "local-grapl"
       SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-retry-queue"
@@ -451,8 +440,7 @@ services:
       BUCKET_PREFIX: "local-grapl"
       <<: *log-level
       <<: *mg-alphas
-      <<: *sqs-endpoint
-      <<: *s3-endpoint
+      <<: *aws-endpoints
     tty: true
     links:
       - s3:minio
@@ -489,6 +477,7 @@ services:
       UX_BUCKET_URL: "localhost:3000"
       USER_AUTH_TABLE: "local-grapl-user_auth_table"
       BUCKET_PREFIX: "local-grapl"
+      <<: *aws-endpoints
     depends_on:
       - grapl-provision
     tty: true
@@ -510,8 +499,7 @@ services:
       <<: *mg-alphas
       <<: *log-level
       UX_BUCKET_URL: "localhost"
-      <<: *s3-endpoint
-      <<: *sqs-endpoint
+      <<: *aws-endpoints
     tty: true
     links:
       - s3:minio
@@ -644,6 +632,7 @@ services:
     environment:
       GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
       <<: *mg-alphas
+      <<: *aws-endpoints
     tty: true
     ports:
       - 8126:8126

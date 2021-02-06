@@ -1,7 +1,5 @@
 import json
-import logging
 import os
-import sys
 import threading
 import time
 from hashlib import pbkdf2_hmac, sha256
@@ -11,6 +9,12 @@ from uuid import uuid4
 import boto3
 import botocore
 import pydgraph
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    S3ClientFactory,
+    SQSClientFactory,
+)
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.node_types import (
@@ -35,9 +39,7 @@ from grapl_analyzerlib.prelude import (
 )
 from grapl_analyzerlib.schema import Schema
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(GRAPL_LOG_LEVEL)
+LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
 
 def create_secret(secretsmanager):
@@ -195,14 +197,7 @@ def provision_mg(mclient) -> None:
 
     provision_master_graph(mclient, schemas)
 
-    dynamodb = boto3.resource(
-        "dynamodb",
-        region_name="us-east-1",
-        endpoint_url="http://dynamodb:8000",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
-    )
-
+    dynamodb = DynamoDBResourceFactory(boto3).from_env()
     table = dynamodb.Table("local-grapl-grapl_schema_table")
     for schema in schemas:
         try:
@@ -322,13 +317,7 @@ def bucket_provision_loop() -> None:
     s3 = None
     for i in range(0, 150):
         try:
-            s3 = s3 or boto3.client(
-                "s3",
-                endpoint_url="http://s3:9000",
-                aws_access_key_id="minioadmin",
-                aws_secret_access_key="minioadmin",
-                region_name="us-east-1",
-            )
+            s3 = S3ClientFactory(boto3).from_env()
         except Exception as e:
             if i > 10:
                 LOGGER.debug("failed to connect to sqs or s3", e)
@@ -391,13 +380,7 @@ def sqs_provision_loop() -> None:
     sqs = None
     for i in range(0, 150):
         try:
-            sqs = sqs or boto3.client(
-                "sqs",
-                region_name="us-east-1",
-                endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-            )
+            sqs = SQSClientFactory(boto3).from_env()
         except Exception as e:
             if i > 50:
                 LOGGER.error("failed to connect to sqs or s3", e)
@@ -418,6 +401,7 @@ def sqs_provision_loop() -> None:
                         LOGGER.error(e)
                     time.sleep(1)
         if not sqs_succ:
+            LOGGER.info("Done with `sqs_provision_loop`")
             return
 
     raise Exception("Failed to provision sqs")

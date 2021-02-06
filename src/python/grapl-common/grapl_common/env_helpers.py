@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, NamedTuple, TypeVar
 from typing_extensions import Protocol
 
 if TYPE_CHECKING:
-    from mypy_boto3_dynamodb import DynamoDBServiceResource
+    from mypy_boto3_dynamodb import DynamoDBClient, DynamoDBServiceResource
     from mypy_boto3_s3 import S3Client, S3ServiceResource
     from mypy_boto3_sqs import SQSClient
 
@@ -149,4 +149,13 @@ class DynamoDBResourceFactory(FromEnv["DynamoDBServiceResource"]):
         client: DynamoDBServiceResource = _client_get(
             self.client_create_fn, _DynamoDBParams
         )
+        return client
+
+
+class DynamoDBClientFactory(FromEnv["DynamoDBClient"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.client
+
+    def from_env(self) -> DynamoDBClient:
+        client: DynamoDBClient = _client_get(self.client_create_fn, _DynamoDBParams)
         return client

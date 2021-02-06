@@ -25,6 +25,7 @@ from typing import (
 import boto3
 import jwt
 from chalice import Chalice, CORSConfig, Response
+from grapl_common.env_helpers import DynamoDBResourceFactory
 from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
 from src.lib.sagemaker import create_sagemaker_client
 
@@ -154,16 +155,7 @@ def hash_password(cleartext: bytes, salt: Salt) -> str:
 
 def user_auth_table() -> Table:
     global DYNAMO
-    if IS_LOCAL:
-        DYNAMO = DYNAMO or boto3.resource(
-            "dynamodb",
-            region_name="us-east-1",
-            endpoint_url="http://dynamodb:8000",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
-    else:
-        DYNAMO = DYNAMO or boto3.resource("dynamodb")
+    DYNAMO = DYNAMO or DynamoDBResourceFactory(boto3).from_env()
 
     return DYNAMO.Table(os.environ["USER_AUTH_TABLE"])
 
