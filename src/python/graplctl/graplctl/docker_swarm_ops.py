@@ -44,7 +44,9 @@ REGION_TO_AMI_ID = {
 def swarm_security_group_id(ec2: EC2ServiceResource, deployment_name: str) -> str:
     """Return the security group ID for the swarm security group"""
     result = ec2.security_groups.filter(
-        Filters=[{"Name": "group-name", "Values": [f"{deployment_name.lower()}-grapl-swarm"]}]
+        Filters=[
+            {"Name": "group-name", "Values": [f"{deployment_name.lower()}-grapl-swarm"]}
+        ]
     )
     return list(result)[0].group_id
 
@@ -199,7 +201,11 @@ def swarm_ids(
     """Returns the unique swarm IDs in this grapl deployment."""
     ids = set()
     for instance in swarm_instances(
-        ec2=ec2, deployment_name=deployment_name, version=version, region=region, swarm_manager=True
+        ec2=ec2,
+        deployment_name=deployment_name,
+        version=version,
+        region=region,
+        swarm_manager=True,
     ):
         for tag in instance.tags:
             if tag.key == "grapl-swarm-id":
@@ -207,7 +213,9 @@ def swarm_ids(
     return ids
 
 
-def init_instances(ssm: SSMClient, deployment_name: str, instances: List[Ec2Instance]) -> None:
+def init_instances(
+    ssm: SSMClient, deployment_name: str, instances: List[Ec2Instance]
+) -> None:
     """Initialize the EC2 instances"""
     instance_ids = [instance.instance_id for instance in instances]
     command = ssm.send_command(
@@ -315,7 +323,9 @@ def join_swarm_nodes(
                     }
                 )
             ],
-            "commandLine": [f"/usr/bin/python3 swarm_join.py {join_token} {manager_ip}"],
+            "commandLine": [
+                f"/usr/bin/python3 swarm_join.py {join_token} {manager_ip}"
+            ],
         },
     )
     command_id = command["Command"]["CommandId"]

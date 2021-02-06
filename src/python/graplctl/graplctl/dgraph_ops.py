@@ -39,7 +39,11 @@ def _find_operational_alarms_arn(sns: SNSClient, deployment_name: str) -> str:
     topics_raw = sns.list_topics()
     all_topic_arns = [d["TopicArn"] for d in topics_raw["Topics"]]
     arn = next(
-        (arn for arn in all_topic_arns if _seems_like_the_desired_arn(deployment_name, arn)),
+        (
+            arn
+            for arn in all_topic_arns
+            if _seems_like_the_desired_arn(deployment_name, arn)
+        ),
         None,
     )
     if not arn:

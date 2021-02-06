@@ -67,7 +67,10 @@ class GraplctlState:
 )
 @click.pass_context
 def main(
-    ctx: click.Context, grapl_region: str, grapl_deployment_name: str, grapl_version: str
+    ctx: click.Context,
+    grapl_region: str,
+    grapl_deployment_name: str,
+    grapl_version: str,
 ) -> None:
     ctx.obj = GraplctlState(grapl_region, grapl_deployment_name, grapl_version)
 
@@ -134,7 +137,9 @@ def create_swarm(
     click.echo(f"retrieving subnet IDs in vpc {vpc_id}")
     subnet_ids = set(
         docker_swarm_ops.subnet_ids(
-            ec2=EC2, swarm_vpc_id=vpc_id, deployment_name=graplctl_state.grapl_deployment_name
+            ec2=EC2,
+            swarm_vpc_id=vpc_id,
+            deployment_name=graplctl_state.grapl_deployment_name,
         )
     )
     click.echo(f"retrieved subnet IDs in vpc {vpc_id}")
