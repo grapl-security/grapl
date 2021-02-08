@@ -5,6 +5,11 @@ backend_packages = [
   "pants.backend.python",
   "pants.backend.python.lint.isort",
   "pants.backend.python.lint.black",
+  "grapl_setup_py"
+]
+
+pythonpath = [
+  "%(buildroot)s/pants-plugins"
 ]
 
 # Given how our code is currently structured, with package and test
@@ -17,6 +22,7 @@ backend_packages = [
 [source]
 root_patterns = [
   "/3rdparty",
+  "/pants-plugins",
   "/src/proto",
   "/src/python/analyzer-deployer",
   "/src/python/analyzer_executor/src",
