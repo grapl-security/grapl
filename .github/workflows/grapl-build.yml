@@ -8,17 +8,6 @@ on:
       - master
 
 jobs:
-  cargo-audit:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Cargo Audit
-        run: |
-          docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
-          docker run -t grapl/grapl-cargo-audit:latest cargo audit
-
   rust-unit-tests:
     runs-on: ubuntu-latest
 
