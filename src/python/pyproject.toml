@@ -1,3 +1,10 @@
+# NOTE: This configuration file is ONLY for Black and
+# isort. Additionally, its usage is deprecated in favor of the
+# pyproject.toml file at the repository root. Any configuration
+# changes should instead be made in *that* file.
+#
+# This file will be deleted soon.
+
 # pyproject as specified by PEP 518
 
 [tool.black]

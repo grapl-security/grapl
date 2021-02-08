@@ -2,7 +2,9 @@
 pants_version = "2.2.0"
 backend_packages = [
   "pants.backend.codegen.protobuf.python",
-  "pants.backend.python"
+  "pants.backend.python",
+  "pants.backend.python.lint.isort",
+  "pants.backend.python.lint.black",
 ]
 
 # Given how our code is currently structured, with package and test
@@ -48,4 +50,16 @@ inits = true
 
 [python-protobuf]
 runtime_dependencies = ["3rdparty/python:protobuf"]
-# mypy_plugin = true # TODO: we'll probably want this at some point (https://www.pantsbuild.org/docs/protobuf)
+
+[black]
+config = "pyproject.toml"
+version = "black==20.8b1"
+
+[isort]
+config = "pyproject.toml"
+# This option is required to ensure the `skip_globs` configuration is
+# honored for how Pants calls isort. If we ever get to the point where
+# we can remove `skip_globs` from the `tool.isort` entry in
+# `pyproject.toml`, then we can remove this argument as well.
+args = [ "--filter-files" ]
+version = "isort==5.6.4"
