@@ -4,3 +4,4 @@ pyjwt
 grapl_analyzerlib
 chalice
 pygithub
+grapl-common

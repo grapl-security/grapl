@@ -5,10 +5,10 @@ import time
 
 import boto3
 import botocore
+from grapl_common.env_helpers import DynamoDBClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(GRAPL_LOG_LEVEL)
+LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
 table_names = [
     "local-grapl-process_history_table",
@@ -129,13 +129,7 @@ table_defs = {
     },
 }
 
-dynamodb = boto3.client(
-    "dynamodb",
-    region_name="us-east-1",
-    endpoint_url="http://dynamodb:8000",
-    aws_access_key_id="dummy_cred_aws_access_key_id",
-    aws_secret_access_key="dummy_cred_aws_secret_access_key",
-)
+dynamodb = DynamoDBClientFactory(boto3).from_env()
 
 
 def try_create_loop(table_name):
