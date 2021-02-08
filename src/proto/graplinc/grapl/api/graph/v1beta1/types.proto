@@ -197,6 +197,7 @@ message DynamicNode {
 message Edge {
     string from = 1;
     string to = 2;
+    // buf:lint:ignore FIELD_LOWER_SNAKE_CASE
     string edgeName = 3;
 }
 
