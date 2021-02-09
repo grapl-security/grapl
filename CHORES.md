@@ -2,7 +2,7 @@ Chores
 ======
 
 Here are instructions for various chores we should do periodically, as well as
-background for _why_ we do them. 
+background for _why_ we do them.
 
 These are manual tasks now, but would be ideal candidates for future automation.
 
@@ -56,7 +56,7 @@ Also see [below](#update-rust-formatting-for-the-entire-codebase), as well!
 After [updating the version of nightly Rust that `rustfmt`
 uses](#update-unstable-rust-for-formatting), or modifying any of the [`rustfmt`
 configuration options we use][rustfmt_toml], we will need to update the code
-pick up any changes. 
+pick up any changes.
 
 To do this, run the following command and commit the results in the same PR as
 the nightly / configuration changes:
@@ -73,3 +73,16 @@ non-trivial formatting change.)
 [history]: https://rust-lang.github.io/rustup-components-history/x86_64-unknown-linux-gnu.html
 [options]: https://rust-lang.github.io/rustfmt/
 [rustfmt_toml]: .src/rust/.rustfmt.toml
+
+# Python Chores
+
+These chores pertain to our Python codebase.
+
+## Update graplctl's Docker Swarm region-to-AMI mapping
+
+We maintain a static mapping called `REGION_TO_AMI_ID` in
+[docker_swarm_ops.py](./src/python/graplctl/grapctl/docker_swarm_ops.py)
+between AWS Region and Amazon Machine Image (AMI) IDs for the Docker
+Swarm clusters managed via `graplctl`. This mapping should be updated
+periodically as new AMIs become available. Instructions for updating
+the mapping are provided in a source code comment.
