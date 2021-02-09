@@ -27,13 +27,13 @@ jobs:
       # can remove this configuration. See
       # https://github.com/grapl-security/issue-tracker/issues/224
       - uses: actions/checkout@v2
-        if: ${{ github.event_name == "schedule" }}
+        if: ${{ github.event_name == 'schedule' }}
         with:
           ref: staging
 
       # If we're not scheduled, then just run on whatever branch we should be running on
       - uses: actions/checkout@v2
-        if: ${{ github.event_name != "schedule" }}
+        if: ${{ github.event_name != 'schedule' }}
 
       - uses: actions-rs/audit-check@v1
         with:
