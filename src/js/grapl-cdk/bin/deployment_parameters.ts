@@ -3,16 +3,16 @@ module HardcodedDeploymentParameters {
     export const deployName = undefined;
 
     // defaults to 'latest'
-    export const graplVersion = 'jgrillo-test';
+    export const graplVersion = undefined;
 
     // (optional) ex: ops@example.com
-    export const watchfulEmail = 'jgrillo@graplsecurity.com';
-    export const operationalAlarmsEmail = 'jgrillo@graplsecurity.com';
-    export const securityAlarmsEmail = 'jgrillo@graplsecurity.com';
+    export const watchfulEmail = undefined;
+    export const operationalAlarmsEmail = undefined;
+    export const securityAlarmsEmail = undefined;
 
     // AWS region for this Grapl deployment
 
-    export const region = 'us-east-1';
+    export const region = undefined;
 
     // (optional) The log level for services, ex: debug
     export const defaultLogLevel = undefined;
