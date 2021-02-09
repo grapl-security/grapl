@@ -134,15 +134,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run end-to-end tests
-        uses: nick-invision/retry@v2
-        with:
-          max_attempts: 3
-          retry_on: error
-          timeout_minutes: 30  # and usually much less
-          command: |
-            GRAPL_LOG_LEVEL=DEBUG \
-            DUMP_ARTIFACTS=True \
-            make test-e2e
+        run: |
+          # A cheap, low-tech retry. If any of them ever exits 0, it short circuits.
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e
+   
 
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'
