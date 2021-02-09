@@ -1,13 +1,12 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
-import { ContainerImage } from "@aws-cdk/aws-ecs";
+import { Service } from '../service';
 import { EventEmitter } from '../event_emitters';
-import { FargateService } from '../fargate_service';
-import { GraplServiceProps } from '../grapl-cdk-stack';
-import { PYTHON_DIR } from '../dockerfile_paths';
 import { RedisCluster } from '../redis';
+import { GraplServiceProps } from '../grapl-cdk-stack';
 
 export interface AnalyzerExecutorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -17,7 +16,7 @@ export interface AnalyzerExecutorProps extends GraplServiceProps {
 
 export class AnalyzerExecutor extends cdk.NestedStack {
     readonly bucket: s3.IBucket;
-    readonly service: FargateService;
+    readonly service: Service;
 
     constructor(
         scope: cdk.Construct,
@@ -37,7 +36,7 @@ export class AnalyzerExecutor extends cdk.NestedStack {
         const hit_cache = new RedisCluster(this, 'ExecutorHitCache', props);
         const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
 
-        this.service = new FargateService(this, id, {
+        this.service = new Service(this, id, {
                 prefix: props.prefix,
                 environment: {
                     ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
@@ -46,7 +45,7 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                     COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
                     COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
                     MESSAGECACHE_ADDR:
-                      message_cache.cluster.attrRedisEndpointAddress,
+                    message_cache.cluster.attrRedisEndpointAddress,
                     MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
                     HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
                     HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
@@ -54,36 +53,46 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                     GRPC_ENABLE_FORK_SUPPORT: '1',
                 },
                 vpc: props.vpc,
-                eventEmitter: dispatched_analyzer,
-                writesTo: props.writesTo,
+                reads_from: dispatched_analyzer.bucket,
+                writes_to: props.writesTo,
+                subscribes_to: dispatched_analyzer.topic,
+                opt: {
+                    runtime: lambda.Runtime.PYTHON_3_7,
+                    py_entrypoint: "lambda_function.lambda_handler"
+                },
                 version: props.version,
                 watchful: props.watchful,
-                serviceImage: ContainerImage.fromAsset(PYTHON_DIR, {
-                    target: "analyzer-executor-deploy",
-                    file: "Dockerfile",
-                }),
-                // TODO
-                //metric_forwarder: props.metricForwarder,
+                metric_forwarder: props.metricForwarder,
             },
         );
         const service = this.service;
 
-        props.dgraphSwarmCluster.allowConnectionsFrom(service.service.cluster);
-        props.dgraphSwarmCluster.allowConnectionsFrom(service.retryService.cluster);
+        props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
 
         // We need the List capability to find each of the analyzers
-        service.readsFromBucket(props.readsAnalyzersFrom, true)
-        service.readsFromBucket(props.modelPluginsBucket, true);
+        props.readsAnalyzersFrom.grantRead(service.event_handler);
+        props.readsAnalyzersFrom.grantRead(service.event_retry_handler);
+
+        service.readsFrom(props.modelPluginsBucket, true);
 
         // Need to be able to GetObject in order to HEAD, can be replaced with
         // a cache later, but safe so long as there is no LIST
-        service.readsFromBucket(props.writesTo, false);
+        const policy = new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['s3:GetObject'],
+            resources: [props.writesTo.bucketArn + '/*'],
+        });
 
-        for (const conn of service.connections()) {
-            conn.allowToAnyIpv4(
-                ec2.Port.allTraffic(),
-                'Allow outbound to S3'
-            );
-        }
+        service.event_handler.addToRolePolicy(policy);
+        service.event_retry_handler.addToRolePolicy(policy);
+
+        service.event_handler.connections.allowToAnyIpv4(
+            ec2.Port.allTraffic(),
+            'Allow outbound to S3'
+        );
+        service.event_retry_handler.connections.allowToAnyIpv4(
+            ec2.Port.allTraffic(),
+            'Allow outbound to S3'
+        );
     }
 }
