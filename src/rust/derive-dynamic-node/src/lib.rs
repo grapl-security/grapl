@@ -5,7 +5,12 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TS2;
 use quote::quote;
-use syn::{parse_quote, Data, Field, Fields, Ident, Type};
+use syn::{parse_quote,
+          Data,
+          Field,
+          Fields,
+          Ident,
+          Type};
 
 fn name_and_ty(field: &Field) -> (&Ident, &Type) {
     (field.ident.as_ref().unwrap(), &field.ty)

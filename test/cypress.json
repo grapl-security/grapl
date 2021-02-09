@@ -1,0 +1,4 @@
+{
+    "baseUrl": "http://nginx:1234",
+    "pageLoadTimeout": 180000
+}

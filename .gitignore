@@ -1,7 +1,12 @@
-src/js/grapl-cdk/edge_ux_package/*
 src/rust/graph-descriptions/grapl_graph_descriptions
 
-grapl-cdk/cdk.out/
+# Mac OS
+.DS_Store
+
+# Test outputs
+test/cypress/screenshots
+test/cypress/videos
+
 lambda/
 __pycache__/
 *.pyc
@@ -19,8 +24,6 @@ venv/
 
 log2/
 
-src/js/grapl-cdk/index.js
-
 word-macro-analyzer/*/
 bootstrap
 
@@ -30,7 +33,6 @@ __pycache__/
 *$py.class
 
 target/
-.cargo
 
 # C extensions
 *.so
@@ -69,5 +71,4 @@ pip-log.txt
 *.zip
 stale_outputs_checked
 .log/
-.dobi/
 .hypothesis/

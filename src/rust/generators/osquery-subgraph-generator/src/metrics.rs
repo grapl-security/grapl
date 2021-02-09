@@ -1,7 +1,10 @@
-use failure::Error;
-use grapl_observe::metric_reporter::{common_strs, MetricReporter, TagPair};
-use log::*;
 use std::io::Stdout;
+
+use failure::Error;
+use grapl_observe::metric_reporter::{common_strs,
+                                     MetricReporter,
+                                     TagPair};
+use log::*;
 
 #[derive(Clone)]
 pub struct OSQuerySubgraphGeneratorMetrics {
@@ -17,7 +20,7 @@ impl OSQuerySubgraphGeneratorMetrics {
 }
 
 impl OSQuerySubgraphGeneratorMetrics {
-    pub fn report_handle_event_success(&mut self, failed: &Option<Error>) {
+    pub fn report_handle_event_success(&mut self, failed: &Option<&Error>) {
         let reported_status = if let Some(_) = failed {
             common_strs::FAIL
         } else {

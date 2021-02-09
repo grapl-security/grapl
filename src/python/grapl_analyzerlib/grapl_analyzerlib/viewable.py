@@ -22,20 +22,16 @@ from typing import (
 if TYPE_CHECKING:
     from grapl_analyzerlib.queryable import Queryable
 
-import typing_extensions
-
 from grapl_analyzerlib.extendable import Extendable
+from grapl_analyzerlib.grapl_client import GraphClient
 
-IS_LOCAL: typing_extensions.Final[bool] = bool(os.environ.get("IS_LOCAL", False))
+IS_LOCAL: bool = bool(os.environ.get("IS_LOCAL", False))
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-LOGGER.info("Initializing Chalice server")
-
-GraphClient = Any  # todo
 
 V = TypeVar("V", bound="Viewable")
 Q = TypeVar("Q", bound="Queryable")

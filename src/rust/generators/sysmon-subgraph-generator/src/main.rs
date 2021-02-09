@@ -1,37 +1,32 @@
 #![type_length_limit = "1334469"]
 
+use graph_generator_lib::run_graph_generator;
+pub use grapl_service::{decoder::{ZstdDecoder,
+                                  ZstdDecoderError},
+                        serialization::{SubgraphSerializer,
+                                        SubgraphSerializerError}};
+use log::*;
+
+use crate::{generator::SysmonSubgraphGenerator,
+            metrics::SysmonSubgraphGeneratorMetrics};
+
 mod generator;
 mod metrics;
 mod models;
-mod serialization;
-
-use sqs_lambda::cache::NopCache;
-
-use graph_generator_lib::*;
-
-use log::*;
-
-use crate::generator::SysmonSubgraphGenerator;
-use crate::metrics::SysmonSubgraphGeneratorMetrics;
-use crate::serialization::ZstdDecoder;
-use grapl_config::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
+    let (env, _guard) = grapl_config::init_grapl_env!();
+    let service_name = env.service_name.clone();
     info!("Starting sysmon-subgraph-generator");
-
-    let metrics = SysmonSubgraphGeneratorMetrics::new(&env.service_name);
-
-    if grapl_config::is_local() {
-        let generator = SysmonSubgraphGenerator::new(NopCache {}, metrics);
-
-        run_graph_generator(generator, ZstdDecoder::default()).await;
-    } else {
-        let generator = SysmonSubgraphGenerator::new(event_cache().await, metrics);
-
-        run_graph_generator(generator, ZstdDecoder::default()).await;
-    }
+    run_graph_generator(
+        env,
+        move |cache| {
+            SysmonSubgraphGenerator::new(cache, SysmonSubgraphGeneratorMetrics::new(&service_name))
+        },
+        ZstdDecoder::default(),
+    )
+    .await;
 
     Ok(())
 }

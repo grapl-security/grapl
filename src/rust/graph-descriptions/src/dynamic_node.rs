@@ -1,8 +1,13 @@
 use log::warn;
-use serde_json::{json, Value};
+use serde_json::{json,
+                 Value};
 
-use crate::graph_description::{id_strategy, node_property, DynamicNode, IdStrategy, NodeProperty};
-use crate::node::NodeT;
+use crate::{graph_description::{id_strategy,
+                                node_property,
+                                DynamicNode,
+                                IdStrategy,
+                                NodeProperty},
+            node::NodeT};
 
 impl DynamicNode {
     pub fn get_property(&self, name: impl AsRef<str>) -> Option<&NodeProperty> {

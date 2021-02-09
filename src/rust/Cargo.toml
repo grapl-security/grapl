@@ -5,6 +5,7 @@ members = [
     "./derive-dynamic-node",
     "./graph-descriptions",
     "./graph-merger",
+    "./grapl",
     "./grapl-config",
     "./grapl-observe",
     "./metric-forwarder",
@@ -13,4 +14,6 @@ members = [
     "./generators/generic-subgraph-generator",
     "./generators/osquery-subgraph-generator",
     "./generators/sysmon-subgraph-generator",
+    "./sqs-executor",
+    "./grapl-service",
 ]

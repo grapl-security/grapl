@@ -14,12 +14,13 @@ from mypy_boto3_sqs.client import SQSClient
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
 
-def into_sqs_message(bucket: str, key: str) -> str:
+def into_sqs_message(bucket: str, key: str, region: str) -> str:
     return json.dumps(
         {
             "Records": [
                 {
                     "eventTime": datetime.utcnow().isoformat(),
+                    "awsRegion": region,
                     "principalId": {
                         "principalId": None,
                     },
@@ -62,6 +63,7 @@ def send_s3_event(
         MessageBody=into_sqs_message(
             bucket=output_bucket,
             key=output_path,
+            region=sqs_client.meta.region_name,
         ),
     )
 
@@ -100,7 +102,8 @@ def get_s3_client() -> S3Client:
 
 def main(bucket_prefix: str) -> None:
     s3, sqs = get_s3_client(), get_sqs_client()
-    queue_url = sqs.get_queue_url(QueueName="grapl-graph-merger-queue")["QueueUrl"]
+    queue_name = bucket_prefix + "-graph-merger-queue"
+    queue_url = sqs.get_queue_url(QueueName=queue_name)["QueueUrl"]
 
     bucket = bucket_prefix + "-subgraphs-generated-bucket"
     for key in list_objects(s3, bucket):

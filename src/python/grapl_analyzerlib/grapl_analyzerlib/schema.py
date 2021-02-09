@@ -15,7 +15,6 @@ LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-LOGGER.info("Initializing Chalice server")
 
 V = TypeVar("V", bound="Viewable")
 

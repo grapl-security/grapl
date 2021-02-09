@@ -1,6 +1,7 @@
+use std::io::Cursor;
+
 use serde::Deserialize;
 use sqs_lambda::event_decoder::PayloadDecoder;
-use std::io::Cursor;
 
 #[derive(Debug, Clone, Default)]
 pub struct ZstdJsonDecoder;

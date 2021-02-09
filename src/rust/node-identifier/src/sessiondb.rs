@@ -1,14 +1,22 @@
 use std::convert::TryFrom;
 
-use failure::{bail, Error};
+use failure::{bail,
+              Error};
 use hmap::hmap;
-use log::{info, warn};
+use log::{info,
+          warn};
 use rusoto_core::RusotoError;
-use rusoto_dynamodb::{
-    AttributeValue, AttributeValueUpdate, Delete, DeleteItemInput, DynamoDb, Put, PutItemInput,
-    QueryInput, TransactWriteItem, TransactWriteItemsInput, UpdateItemInput,
-};
-
+use rusoto_dynamodb::{AttributeValue,
+                      AttributeValueUpdate,
+                      Delete,
+                      DeleteItemInput,
+                      DynamoDb,
+                      Put,
+                      PutItemInput,
+                      QueryInput,
+                      TransactWriteItem,
+                      TransactWriteItemsInput,
+                      UpdateItemInput};
 use uuid::Uuid;
 
 use crate::sessions::*;
@@ -328,9 +336,11 @@ where
                 return Ok(session.session_id);
             }
 
-            warn!(
+            tracing::debug!(
                 "UNID: {} - {} - {}",
-                unid.pseudo_key, unid.timestamp, unid.pseudo_key
+                unid.pseudo_key,
+                unid.timestamp,
+                unid.pseudo_key
             );
 
             // If the timestamps are the same, we've found the session_id

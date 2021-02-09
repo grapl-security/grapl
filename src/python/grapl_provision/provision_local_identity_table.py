@@ -2,6 +2,10 @@
 import time
 import boto3
 import botocore
+from grapl_common.env_helpers import DynamoDBClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
+
+LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
 table_names = [
     "local-grapl-process_history_table",
@@ -133,13 +137,7 @@ table_defs = {
     },
 }
 
-dynamodb = boto3.client(
-    "dynamodb",
-    region_name="us-west-2",
-    endpoint_url="http://dynamodb:8000",
-    aws_access_key_id="dummy_cred_aws_access_key_id",
-    aws_secret_access_key="dummy_cred_aws_secret_access_key",
-)
+dynamodb = DynamoDBClientFactory(boto3).from_env()
 
 
 def try_create_loop(table_name):
@@ -157,10 +155,18 @@ def try_create_loop(table_name):
             if "ResourceInUseException" in e.__class__.__name__:
                 break
             else:
-                print(table_name, e)
+                if i >= 5:
+                    LOGGER.warn(f"failed to provision dynamodb table: {table_name} {e}")
+                else:
+                    LOGGER.debug(
+                        f"failed to provision dynamodb table: {table_name} {e}"
+                    )
                 time.sleep(2)
         except Exception as e:
-            print(table_name, e)
+            if i >= 5:
+                LOGGER.warn(f"failed to provision dynamodb table: {table_name} {e}")
+            else:
+                LOGGER.debug(f"failed to provision dynamodb table: {table_name} {e}")
             time.sleep(2)
 
 
@@ -168,6 +174,7 @@ for table_name in table_names:
     try:
         try_create_loop(table_name)
     except Exception as e:
-        print(table_name, e)
+        LOGGER.error(table_name, e)
+        raise e
 
-print("Provisioned DynamoDB")
+LOGGER.info("Provisioned DynamoDB")

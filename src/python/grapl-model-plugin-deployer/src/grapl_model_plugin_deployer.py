@@ -2,9 +2,7 @@ import base64
 import hmac
 import inspect
 import json
-import logging
 import os
-import re
 import sys
 import threading
 import traceback
@@ -12,7 +10,7 @@ from base64 import b64decode
 from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Dict, List, Optional, TypeVar, Union
 
 import boto3  # type: ignore
 import jwt
@@ -20,6 +18,8 @@ import pydgraph  # type: ignore
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
+from grapl_common.env_helpers import DynamoDBResourceFactory, S3ClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
@@ -36,12 +36,7 @@ T = TypeVar("T")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-LOGGER.info("Initializing Chalice server")
+LOGGER = get_module_grapl_logger(default_log_level="ERROR")
 
 try:
     directory = Path("/tmp/model_plugins/")
@@ -80,11 +75,6 @@ else:
         SecretId=JWT_SECRET_ID,
     )["SecretString"]
 
-ORIGIN = os.environ["UX_BUCKET_URL"].lower()
-
-ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
-
-LOGGER.debug("Origin: %s", ORIGIN)
 app = Chalice(app_name="model-plugin-deployer")
 
 
@@ -161,31 +151,6 @@ def provision_master_graph(
     set_schema(master_graph_client, mg_schema_str)
 
 
-def get_s3_client() -> Any:
-    if IS_LOCAL:
-        return boto3.client(
-            "s3",
-            endpoint_url="http://s3:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-        )
-    else:
-        return boto3.client("s3")
-
-
-def get_dynamodb_client() -> Any:
-    if IS_LOCAL:
-        return boto3.resource(
-            "dynamodb",
-            endpoint_url="http://dynamodb:8000",
-            region_name="us-west-2",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
-    else:
-        return boto3.resource("dynamodb")
-
-
 def git_walker(repo, directory, f):
     f(directory)
     for path in into_list(repo.get_contents(directory.path)):
@@ -226,7 +191,7 @@ def provision_schemas(master_graph_client, raw_schemas):
         schema.init_reverse()
 
     LOGGER.info("Merge the schemas with what exists in the graph")
-    dynamodb = get_dynamodb_client()
+    dynamodb = DynamoDBResourceFactory(boto3).from_env()
     for schema in schemas:
         store_schema(dynamodb, schema)
 
@@ -364,45 +329,25 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
 
 
 BUCKET_PREFIX = os.environ["BUCKET_PREFIX"]
-origin_re = re.compile(
-    f"https://{re.escape(BUCKET_PREFIX)}-engagement-ux-bucket[.]s3([.][a-z]{{2}}-[a-z]{{1,9}}-\\d)?[.]amazonaws[.]com/?",
-    re.IGNORECASE,
-)
 
 
 def respond(
     err, res=None, headers=None, status_code: Optional[HTTPStatus] = None
 ) -> Response:
-    req_origin = app.current_request.headers.get("origin", "")
-
-    LOGGER.info(f"responding to origin: {req_origin}")
     if not headers:
         headers = {}
 
     if IS_LOCAL:
-        override = req_origin
-        LOGGER.info(f"overriding origin with {override}")
-    else:
-        override = ORIGIN_OVERRIDE
-
-    if origin_re.match(req_origin):
-        LOGGER.info("Origin matched")
-        allow_origin = req_origin
-    else:
-        LOGGER.info("Origin did not match")
-        return Response(
-            body={"error": "Mismatched origin."}, status_code=HTTPStatus.BAD_REQUEST
-        )
-
+        override = app.current_request.headers.get("origin", "")
+        headers = {"Access-Control-Allow-Origin": override, **headers}
     status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=status_code.value,
         headers={
-            "Access-Control-Allow-Origin": allow_origin,
-            "Access-Control-Allow-Credentials": "true",
             "Content-Type": "application/json",
+            "Access-Control-Allow-Credentials": "true",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             "X-Requested-With": "*",
             "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
@@ -525,7 +470,8 @@ def webhook():
         file_contents = b64decode(path.content).decode()
         plugin_files[path.path] = file_contents
 
-    upload_plugins_resp = upload_plugins(get_s3_client(), plugin_files)
+    s3 = S3ClientFactory(boto3).from_env()
+    upload_plugins_resp = upload_plugins(s3, plugin_files)
     if upload_plugins_resp:
         return upload_plugins_resp
     return respond(None, {})
@@ -555,9 +501,7 @@ def deploy():
 
 def get_plugin_list(s3: BaseClient):
     plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
-
     list_response = s3.list_objects_v2(Bucket=plugin_bucket)
-
     if not list_response.get("Contents"):
         return []
 

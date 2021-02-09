@@ -63,7 +63,7 @@ services:
         awslogs-create-group: "true"
         awslogs-group: ${AWS_LOGS_GROUP}
         awslogs-stream: "zero"
-    command: dgraph zero --my=zero:5080 --replicas 3
+    command: dgraph zero --my=zero:5080 --replicas 1
     depends_on:
       - envoy
 

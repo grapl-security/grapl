@@ -16,8 +16,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 def _name_of_all_containers(compose_project: str) -> List[str]:
     """
-    compose_project meaning the `project: <thing>` in the `compose=` section
-    of your dobi.yaml
+    compose_project meaning the name of the docker-compose project.
     """
     run_result = subprocess.run(
         [
@@ -69,7 +68,7 @@ def dump_all_logs(compose_project: str) -> None:
 
 def dump_volume(compose_project: Optional[str], volume_name: str) -> None:
     # Make a temporary container with the volume mounted
-    # dobi adds a prefix on everything in the docker-compose.
+    # docker-compose prefixes volume names with the compose project name.
     prefix = f"{compose_project}_" if compose_project else ""
     cmd = f"docker run -d --volume {prefix}{volume_name}:/{volume_name} alpine true"
     container_id = (
@@ -92,7 +91,7 @@ def parse_args() -> Any:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Dump all Docker logs for a given Dobi Compose"
+        description="Dump all Docker logs for a given docker-compose project"
     )
     parser.add_argument("--compose-project", dest="compose_project", required=True)
     return parser.parse_args()

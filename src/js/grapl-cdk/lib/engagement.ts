@@ -11,10 +11,10 @@ import * as aws from 'aws-sdk';
 
 import { GraplServiceProps } from './grapl-cdk-stack';
 
-import * as fs from 'fs';
 import * as path from 'path';
-import * as dir from 'node-dir';
 import {WatchedOperation} from "cdk-watchful";
+import { SchemaDb } from './schemadb';
+import { GraplS3Bucket } from './grapl_s3_bucket';
 
 
 function getEdgeGatewayId(
@@ -38,42 +38,6 @@ function getEdgeGatewayId(
     });
 }
 
-function replaceInFile(
-    toModify: string,
-    replaceMap: Map<string, string>,
-    outputFile: string
-) {
-    return fs.readFile(toModify, { encoding: 'utf8' }, (err, data) => {
-        if (err) {
-            return console.log(err);
-        }
-
-        let replaced = data;
-        for (const [toReplace, replaceWith] of replaceMap.entries()) {
-            replaced = replaced.split(toReplace).join(replaceWith);
-        }
-
-        if (outputFile) {
-            fs.writeFile(
-                outputFile,
-                replaced,
-                { encoding: 'utf8' },
-                (err: any) => {
-                    if (err) return console.log(err);
-                }
-            );
-        } else {
-            fs.writeFile(
-                toModify,
-                replaced,
-                { encoding: 'utf8' },
-                (err: any) => {
-                    if (err) return console.log(err);
-                }
-            );
-        }
-    });
-}
 
 export interface EngagementEdgeProps extends GraplServiceProps {
     engagement_notebook: EngagementNotebook,
@@ -88,7 +52,7 @@ export class EngagementEdge extends cdk.NestedStack {
     constructor(scope: cdk.Construct, id: string, props: EngagementEdgeProps) {
         super(scope, id);
 
-        const ux_bucket = s3.Bucket.fromBucketName(
+        const ux_bucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
@@ -151,6 +115,7 @@ export class EngagementEdge extends cdk.NestedStack {
 
 export interface EngagementNotebookProps extends GraplServiceProps {
     model_plugins_bucket: s3.IBucket;
+    schema_db: SchemaDb;
 }
 
 export class EngagementNotebook extends cdk.NestedStack {
@@ -183,6 +148,7 @@ export class EngagementNotebook extends cdk.NestedStack {
 
         props.userAuthTable.allowReadWriteFromRole(role);
         props.model_plugins_bucket.grantRead(role);
+        props.schema_db.allowReadWriteFromRole(role);
 
         this.notebookInstance = new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
             notebookInstanceName: props.prefix + '-Notebook',
@@ -194,7 +160,7 @@ export class EngagementNotebook extends cdk.NestedStack {
         });
     }
 
-    getNotebookArn(): string { 
+    getNotebookArn(): string {
         // there's no better way to get an ARN from a Cfn (low-level Cloudformation) type object.
         if (!this.notebookInstance.notebookInstanceName) {
             throw new Error("gotta have a notebook name");
@@ -222,76 +188,20 @@ interface EngagementUxProps extends cdk.StackProps {
     edgeApi: apigateway.RestApi;
 }
 
+const packageDir = path.join(__dirname, '../edge_ux_post_replace/');
 export class EngagementUx extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props: EngagementUxProps) {
         super(scope, id, props);
 
-        const edgeBucket = s3.Bucket.fromBucketName(
+        const edgeBucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
             props.prefix.toLowerCase() + '-engagement-ux-bucket'
         );
-        getEdgeGatewayId(props.edgeApi.restApiName, (edgeApiId) => {
-            const srcDir = path.join(__dirname, '../edge_ux/');
-            const packageDir = path.join(__dirname, '../edge_ux_package/');
 
-            if (!fs.existsSync(packageDir)) {
-                fs.mkdirSync(packageDir);
-            }
-
-            const apiUrl = `https://${edgeApiId}.execute-api.${aws.config.region}.amazonaws.com/prod/`;
-
-            const replaceMap = new Map();
-            replaceMap.set(
-                `http://"+window.location.hostname+":8900/`,
-                apiUrl+'auth/'
-            );
-            replaceMap.set(
-                `http://"+window.location.hostname+":5000/`,
-                apiUrl
-            );
-            replaceMap.set(
-                `http://"+window.location.hostname+":8123/`,
-                apiUrl+'modelPluginDeployer/'
-            );
-
-            dir.readFiles(
-                srcDir,
-                function (
-                    err: any,
-                    content: any,
-                    filename: string,
-                    next: any
-                ) {
-                    if (err) throw err;
-
-                    const targetDir = path
-                        .dirname(filename)
-                        .replace('edge_ux', 'edge_ux_package');
-
-                    if (!fs.existsSync(targetDir)) {
-                        fs.mkdirSync(targetDir, { recursive: true });
-                    }
-
-                    const newPath = filename.replace(
-                        'edge_ux',
-                        'edge_ux_package'
-                    );
-
-                    replaceInFile(filename, replaceMap, newPath);
-                    next();
-                },
-                function (err: any, files: any) {
-                    if (err) throw err;
-                }
-            );
-
-            new s3deploy.BucketDeployment(this, 'UxDeployment', {
-                sources: [s3deploy.Source.asset(packageDir)],
-                destinationBucket: edgeBucket,
-            });
-
+        new s3deploy.BucketDeployment(this, 'UxDeployment', {
+            sources: [s3deploy.Source.asset(packageDir)],
+            destinationBucket: edgeBucket,
         });
-
     }
 }

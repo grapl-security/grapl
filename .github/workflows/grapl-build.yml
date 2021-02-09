@@ -8,17 +8,6 @@ on:
       - master
 
 jobs:
-  cargo-audit:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Cargo Audit
-        run: |
-          docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
-          docker run -t grapl/grapl-cargo-audit:latest cargo audit
-
   rust-unit-tests:
     runs-on: ubuntu-latest
 
@@ -30,13 +19,9 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Build Rust services
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust
-
       - name: Rust unit tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount rust-unit-tests
+          make test-unit-rust
 
   python-unit-tests:
     runs-on: ubuntu-latest
@@ -49,28 +34,10 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Build Python services
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python
-
       - name: Python unit tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount python-unit-tests
+          make test-unit-python
 
-  cdk-tests:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Prepare Github Actions CI
-        run: |
-          ./etc/ci_scripts/clean_gh_actions_space.sh
-          ./etc/ci_scripts/install_requirements.sh
-
-      - name: Run dobi grapl-cdk-test
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux grapl-cdk-test
 
   python-typecheck:
     runs-on: ubuntu-latest
@@ -83,9 +50,9 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Run dobi python-typecheck
+      - name: Run python-typecheck
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux python-typecheck
+          make test-typecheck
 
   js-unit-tests:
     runs-on: ubuntu-latest
@@ -98,16 +65,16 @@ jobs:
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
-      - name: Build JS services
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js
-
       - name: JS unit tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount js-unit-tests
+          make test-unit-js
 
   integration-tests:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.7]
 
     steps:
       - uses: actions/checkout@v2
@@ -116,17 +83,35 @@ jobs:
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
-
-      - name: Build Grapl
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Run integration tests
         run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount integration-tests
+          echo "unset RUSTC_WRAPPER" > rust_env.sh
+          GRAPL_RUST_ENV_FILE=rust_env.sh GRAPL_LOG_LEVEL=DEBUG make test-integration
+      
+      # NOTE: This requires >= py37
+      # Unlike the e2e tests, we don't dump the database contents; strictly logs.
+      - name: 'Collect integration test artifacts'
+        if: ${{ always() }}
+        run: |
+          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration_tests"
+           
+      - name: 'Upload integration test artifacts'
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: integration-test-artifacts
+          # this path is specified in dump_artifacts.py
+          path: /tmp/dumped_artifacts/
+          retention-days: 28
 
 
-  # In the future, this should probably be merged back into `dobi integration-tests`, but
+  # In the future, this should probably be merged back into the integration tests, but
   # since it's so timing-dependent I'm going to treat it separately until it stabilizes a bit.
   FLAKY-end-to-end-tests:
     runs-on: ubuntu-latest
@@ -148,24 +133,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Build Grapl
-        run: |
-          GRAPL_RELEASE_TARGET=debug TAG=latest ./dobi-linux --no-bind-mount build
-
-      # --no-bind-mount makes dobi screw up with volumes for some reason, and it's not really required here anyway.
       - name: Run end-to-end tests
         run: |
-          GRAPL_RELEASE_TARGET=debug \
-          GRAPL_LOG_LEVEL=DEBUG \
-          DUMP_ARTIFACTS=True \
-          TAG=latest \
-          ./dobi-linux run-e2e-tests
-       
+          # A cheap, low-tech retry. If any of them ever exits 0, it short circuits.
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e
+   
+
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'
         if: ${{ always() }}
         run: |
-          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration-tests"
+          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-e2e_tests"
            
       - name: 'Upload e2e test artifacts'
         if: ${{ always() }}

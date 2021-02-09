@@ -55,40 +55,43 @@ Grapl is organized as a monorepo with the following structure:
       └──{ rust services …
 ```
 
-We use [docker-compose](https://docs.docker.com/compose/) and
-[dobi](https://dnephin.github.io/dobi/) for local development. To
-execute a Grapl debug build, execute the following command in the
-project root:
+We use [GNU Make](https://www.gnu.org/software/make/),
+[Docker](https://docs.docker.com/) (version 20.10 or later) and
+[docker-compose](https://docs.docker.com/compose/) for local development. To
+execute a Grapl debug build, execute the following command in the project root:
 
 ``` bash
-TAG=latest GRAPL_RELEASE_TARGET=debug dobi --no-bind-mount build
+make build
 ```
 
-Note that the `GRAPL_RELEASE_TARGET=debug` is redundant, but it's
-shown here because if you want to execute a release build you can use
-`GRAPL_RELEASE_TARGET=release`.
-
-You can see all the `dobi` tasks available by running `dobi list` in
+You can see all the Make targets available by running `make help` in
 Grapl root. For example:
 
-``` bash
-(venv) jgrillo@penguin:~/src/grapl$ dobi list
-Resources:
-  build                Build artifacts and images for all services
-  clean-build          Delete all the build images
-  clean-js-build       Delete the js build images
-  clean-python-build   Delete the python build images
-  clean-rust-build     Delete the rust build image
-  integration-tests    Run all the integration tests
-  js                   Build artifacts and images for js services
-  js-unit-tests        Run the js unit tests
-  python               Build artifacts and images for python services
-  python-integration-tests Run the python integration tests
-  python-unit-tests    Run the python unit tests
-  rust                 Build artifacts and images for rust services
-  rust-integration-tests Run the rust integration tests
-  rust-unit-tests      Run the rust unit tests
-  unit-tests           Run all the unit tests
+```
+$ make help
+build                Alias for `services` (default)
+build-all            Build all targets (incl. services, tests, zip)
+build-services       Build Grapl services
+build-aws            Build services for Grapl in AWS (subset of all services)
+test-unit            Build and run unit tests
+test-unit-rust       Build and run unit tests - Rust only
+test-unit-python     Build and run unit tests - Python only
+test-unit-js         Build and run unit tests - JavaScript only
+test-typecheck       Build and run typecheck tests
+test-integration     Build and run integration tests
+test-e2e             Build and run e2e tests
+test                 Run all tests
+lint-rust            Run Rust lint checks
+lint-python          Run Python lint checks
+lint                 Run all lint checks
+clean                Prune all docker build cache and remove Grapl containers and images
+clean-mount-cache    Prune all docker mount cache (used by sccache)
+release              'make build-services' with cargo --release
+zip                  Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+deploy               CDK deploy to AWS
+up                   Build Grapl services and launch docker-compose up
+down                 docker-compose down
+help                 Print this help
 ```
 
 See [BUILDING.md](BUILDING.md) for a more in-depth description of
@@ -100,6 +103,8 @@ project root (after building):
 ``` bash
 TAG=latest docker-compose up
 ```
+
+Alerternatively, you can use `make up` to rebuild the sources and launch `docker-compoes up`.
 
 Note that the `TAG=latest` is redundant, it's shown here because if
 you specified a different tag in your build step above you would want

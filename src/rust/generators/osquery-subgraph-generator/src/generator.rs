@@ -1,13 +1,16 @@
-use async_trait::async_trait;
+use std::convert::TryFrom;
 
-use crate::metrics::OSQuerySubgraphGeneratorMetrics;
-use crate::parsers::PartiallyDeserializedOSQueryLog;
+use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 use log::*;
-use sqs_lambda::cache::{Cache, CacheResponse};
-use sqs_lambda::event_handler::{Completion, EventHandler, OutputEvent};
-use std::borrow::Cow;
-use std::convert::TryFrom;
+use sqs_executor::{cache::Cache,
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler}};
+
+use crate::{metrics::OSQuerySubgraphGeneratorMetrics,
+            parsers::PartiallyDeserializedOSQueryLog};
 
 #[derive(Clone)]
 pub(crate) struct OSQuerySubgraphGenerator<C>
@@ -27,6 +30,18 @@ where
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum OSQuerySubgraphGeneratorError {
+    #[error("Unexpected")]
+    Unexpected(failure::Error),
+}
+
+impl CheckedError for OSQuerySubgraphGeneratorError {
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Transient
+    }
+}
+
 #[async_trait]
 impl<C> EventHandler for OSQuerySubgraphGenerator<C>
 where
@@ -34,12 +49,13 @@ where
 {
     type InputEvent = Vec<PartiallyDeserializedOSQueryLog>;
     type OutputEvent = Graph;
-    type Error = sqs_lambda::error::Error;
+    type Error = OSQuerySubgraphGeneratorError;
 
     async fn handle_event(
         &mut self,
         input: Self::InputEvent,
-    ) -> OutputEvent<Self::OutputEvent, Self::Error> {
+        _completed: &mut CompletedEvents,
+    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         info!("Processing {} incoming OSQuery log events.", input.len());
 
         let (subgraphs, errors): (Vec<_>, Vec<_>) = input
@@ -47,6 +63,9 @@ where
             .map(|log| Graph::try_from(log))
             .partition(|result| result.is_ok());
 
+        for res in errors.iter().map(|e| e.as_ref().err()) {
+            self.metrics.report_handle_event_success(&res);
+        }
         let final_subgraph = subgraphs
             .into_iter()
             .filter_map(|subgraph| subgraph.ok())
@@ -55,18 +74,19 @@ where
                 current_graph
             });
 
-        let mut errors: Vec<failure::Error> =
+        let errors: Vec<failure::Error> =
             errors.into_iter().filter_map(|item| item.err()).collect();
 
         if errors.is_empty() {
-            OutputEvent::new(Completion::Total(final_subgraph))
+            Ok(final_subgraph)
         } else {
-            let sqs_lambda_error = errors
-                .pop()
-                .map(|err| sqs_lambda::error::Error::ProcessingError(err.to_string()))
+            let sqs_executor_error = errors
+                .into_iter()
+                .map(|err| OSQuerySubgraphGeneratorError::Unexpected(err))
+                .next()
                 .unwrap();
 
-            OutputEvent::new(Completion::Partial((final_subgraph, sqs_lambda_error)))
+            Err(Ok((final_subgraph, sqs_executor_error)))
         }
     }
 }

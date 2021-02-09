@@ -38,8 +38,17 @@ describe('Standard GraplCdkStack', () => {
   const stack = new GraplCdk.GraplCdkStack(app, 'MyTestStack', {
     stackName: STACK_NAME,
     version: 'latest',
-    dgraphInstanceType: new ec2.InstanceType('t3a.medium'),
     env: ENV,
+    operationalAlarmsEmail: "fake@fake.domain",
+    securityAlarmsEmail: "fake@fake.domain",
+    defaultLogLevel: "DEBUG",
+    sysmonSubgraphGeneratorLogLevel: "DEBUG",
+    osquerySubgraphGeneratorLogLevel: "DEBUG",
+    nodeIdentifierLogLevel: "DEBUG",
+    graphMergerLogLevel: "DEBUG",
+    analyzerDispatcherLogLevel: "DEBUG",
+    analyzerExecutorLogLevel: "DEBUG",
+    engagementCreatorLogLevel: "DEBUG",
   });
 
   const allConstructs = new CollectAllConstructs();

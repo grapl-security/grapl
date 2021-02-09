@@ -1,20 +1,27 @@
-use crate::serialization::SubgraphSerializer;
+use std::{collections::HashSet,
+          io::Stdout,
+          str::FromStr,
+          sync::mpsc::SyncSender,
+          time::Duration};
+
 use aws_lambda_events::event::sqs::SqsEvent;
 use grapl_config as config;
 use grapl_graph_descriptions::graph_description::*;
+use grapl_observe::metric_reporter::MetricReporter;
 use lambda_runtime::error::HandlerError;
-use lambda_runtime::Context;
 use log::*;
 use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use rusoto_sts::{StsAssumeRoleSessionCredentialsProvider, StsClient};
-use sqs_lambda::event_decoder::PayloadDecoder;
-use sqs_lambda::event_handler::EventHandler;
-use std::collections::HashSet;
-use std::str::FromStr;
-use std::sync::mpsc::SyncSender;
-use std::time::Duration;
+use rusoto_sts::{StsAssumeRoleSessionCredentialsProvider,
+                 StsClient};
+use sqs_lambda::{event_decoder::PayloadDecoder,
+                 event_handler::EventHandler,
+                 sqs_completion_handler::CompletionPolicy,
+                 sqs_consumer::{ConsumePolicy,
+                                ConsumePolicyBuilder}};
+
+use crate::serialization::SubgraphSerializer;
 
 /// Runs the graph generator on AWS
 ///
@@ -31,9 +38,20 @@ pub(crate) fn run_graph_generator_aws<
 >(
     generator: EH,
     event_decoder: ED,
+    consume_policy: ConsumePolicyBuilder,
+    completion_policy: CompletionPolicy,
+    metric_reporter: MetricReporter<Stdout>,
 ) {
     lambda_runtime::lambda!(|event, context| {
-        lambda_handler(event, context, generator.clone(), event_decoder.clone())
+        let consume_policy = consume_policy.clone();
+        lambda_handler(
+            event,
+            consume_policy.build(context),
+            completion_policy.clone(),
+            generator.clone(),
+            event_decoder.clone(),
+            metric_reporter.clone(),
+        )
     })
 }
 
@@ -47,9 +65,11 @@ fn lambda_handler<
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     event: SqsEvent,
-    ctx: Context,
+    consume_policy: ConsumePolicy,
+    completion_policy: CompletionPolicy,
     generator: EH,
     event_decoder: ED,
+    metric_reporter: MetricReporter<Stdout>,
 ) -> Result<(), HandlerError> {
     info!("Handling event");
 
@@ -69,10 +89,12 @@ fn lambda_handler<
         // tokio_compat::run_std if we want to invoke a new async task
         tokio_compat::run_std(run_async_generator_handler(
             event,
-            ctx,
+            consume_policy,
+            completion_policy,
             generator,
             event_decoder,
             tx,
+            metric_reporter,
         ));
     });
 
@@ -119,10 +141,12 @@ async fn run_async_generator_handler<
     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
 >(
     event: SqsEvent,
-    ctx: Context,
+    consume_policy: ConsumePolicy,
+    completion_policy: CompletionPolicy,
     generator: EH,
     event_decoder: ED,
     tx: SyncSender<String>,
+    metric_reporter: MetricReporter<Stdout>,
 ) {
     let source_queue_url = std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL");
 
@@ -144,7 +168,8 @@ async fn run_async_generator_handler<
         source_queue_url,
         initial_messages,
         destination_bucket,
-        ctx,
+        consume_policy,
+        completion_policy,
         |region_str| init_production_s3_client(region_str),
         S3Client::new(region.clone()),
         SqsClient::new(region.clone()),
@@ -152,6 +177,7 @@ async fn run_async_generator_handler<
         SubgraphSerializer::new(Vec::with_capacity(1024)),
         generator,
         cache,
+        metric_reporter,
         move |_, result: Result<String, String>| report_sqs_service_result(result, &sqs_tx),
         move |bucket, key| async move {
             info!("Emitted event to {} {}", bucket, key);
