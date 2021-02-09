@@ -5,3 +5,4 @@ venv
 .vscode
 .github
 .git
+src/js/grapl-cdk/cdk.out

@@ -1,4 +1,3 @@
-import * as path from 'path';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
@@ -10,6 +9,7 @@ import { GraplServiceProps } from '../grapl-cdk-stack';
 import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { FargateService } from "../fargate_service";
 import { GraplS3Bucket } from '../grapl_s3_bucket';
+import { RUST_DIR } from '../dockerfile_paths';
 
 export interface NodeIdentifierProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -69,14 +69,14 @@ export class NodeIdentifier extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
+            serviceImage: ContainerImage.fromAsset(RUST_DIR, {
                 target: "node-identifier-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
                 file: "Dockerfile",
             }),
-            retryServiceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
+            retryServiceImage: ContainerImage.fromAsset(RUST_DIR, {
                 target: "node-identifier-retry-handler-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
@@ -88,9 +88,11 @@ export class NodeIdentifier extends cdk.NestedStack {
             // metric_forwarder: props.metricForwarder,
         });
 
-        this.service.service.cluster.connections.allowToAnyIpv4(
-            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
-        );
+        for (const conn of this.service.connections()) {
+            conn.allowToAnyIpv4(
+                ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+            );
+        }
 
         history_db.allowReadWrite2(this.service);
     }
