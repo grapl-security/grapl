@@ -1145,6 +1145,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "grapl"
+version = "0.3.1"
+dependencies = [
+ "derive-dynamic-node",
+ "graph-generator-lib",
+ "grapl-config",
+ "grapl-graph-descriptions",
+]
+
+[[package]]
 name = "grapl-config"
 version = "0.0.2"
 dependencies = [
