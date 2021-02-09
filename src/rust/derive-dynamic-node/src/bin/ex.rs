@@ -1,4 +1,5 @@
 use derive_dynamic_node::{DynamicNode,
+                          GraplSessionId,
                           GraplStaticId};
 use grapl_graph_descriptions::graph_description::*;
 use log::info;
@@ -6,6 +7,18 @@ use serde_derive::Deserialize;
 
 fn read_log() -> &'static [u8] {
     unimplemented!()
+}
+
+#[derive(DynamicNode, GraplSessionId)]
+pub struct SpecialProcess {
+    #[grapl(create_time)]
+    pub create_time: u64,
+    #[grapl(last_seen_time)]
+    pub seen_at: u64,
+    #[grapl(terminate_time)]
+    pub terminate_time: u64,
+    #[grapl(pseudo_key)]
+    pub process_id: u64,
 }
 
 #[derive(Clone, Debug, Deserialize)]

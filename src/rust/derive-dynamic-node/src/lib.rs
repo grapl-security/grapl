@@ -5,18 +5,25 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TS2;
 use quote::quote;
 use syn::{parse_quote,
+          Attribute,
           Data,
           Field,
           Fields,
           Ident,
+          Meta,
+          NestedMeta,
           Type};
+
+const CREATE_TIME: &'static str = "create_time";
+const LAST_SEEN_TIME: &'static str = "last_seen_time";
+const TERMINATE_TIME: &'static str = "terminate_time";
 
 fn name_and_ty(field: &Field) -> (&Ident, &Type) {
     (field.ident.as_ref().unwrap(), &field.ty)
 }
 
 #[proc_macro_derive(DynamicNode)]
-pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
+pub fn derive_node_description(input: TokenStream) -> TokenStream {
     let input: syn::DeriveInput = syn::parse_macro_input!(input as syn::DeriveInput);
 
     let input_struct = match input.data {
@@ -145,7 +152,7 @@ pub fn derive_dynamic_node(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(GraplStaticId, attributes(grapl))]
-pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
+pub fn derive_static_node(input: TokenStream) -> TokenStream {
     let input: syn::DeriveInput = syn::parse_macro_input!(input as syn::DeriveInput);
 
     let input_struct = match input.data {
@@ -286,6 +293,116 @@ fn property_methods(property_name: &Ident, property_type: &Type) -> TS2 {
     implementation.extend(get_method_implementation);
 
     implementation
+}
+
+#[proc_macro_derive(GraplSessionId, attributes(grapl))]
+pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
+    let input: syn::DeriveInput = syn::parse_macro_input!(input as syn::DeriveInput);
+
+    let input_struct = match input.data {
+        Data::Struct(input_struct) => input_struct,
+        _ => panic!("Only available for struct"),
+    };
+
+    let fields = match input_struct.fields {
+        Fields::Named(fields) => fields.named,
+        _ => panic!("Requires named fields"),
+    };
+
+    let mut create_time_prop: Option<String> = None;
+    let mut last_seen_time_prop: Option<String> = None;
+    let mut terminate_time_prop: Option<String> = None;
+
+    for field in fields.iter() {
+        set_timestamp_from_meta(field, CREATE_TIME, &mut create_time_prop);
+        set_timestamp_from_meta(field, LAST_SEEN_TIME, &mut last_seen_time_prop);
+        set_timestamp_from_meta(field, TERMINATE_TIME, &mut terminate_time_prop);
+    }
+
+    let mut id_fields = quote!();
+    for field in fields {
+        for attr in &field.attrs {
+            on_grapl_attrs(attr, |meta_attr| {
+                if meta_attr == "pseudo_key" {
+                    let f = field
+                        .ident
+                        .as_ref()
+                        .expect("field is missing an identifier")
+                        .to_string();
+                    id_fields.extend(quote!(#f .to_string(), ));
+                }
+            });
+        }
+    }
+
+    let struct_name = &input.ident;
+    let create_time_prop =
+        create_time_prop.expect("missing property with attribute: create_time_prop");
+    let last_seen_time_prop =
+        last_seen_time_prop.expect("missing property with attribute: last_seen_time_prop");
+    let terminate_time_prop =
+        terminate_time_prop.expect("missing property with attribute: terminated_time_prop");
+
+    let node_name_str = format!("{}Node", struct_name);
+    let node_name = syn::Ident::new(&node_name_str, struct_name.span());
+    // Add node name to id
+    let q = quote!(
+        impl #node_name {
+            pub fn session_strategy() -> IdStrategy {
+                Session {
+                    created_time: #create_time_prop . to_string(),
+                    last_seen_time: #last_seen_time_prop . to_string(),
+                    terminated_time: #terminate_time_prop . to_string(),
+                    primary_key_requires_asset_id: false,
+                    primary_key_properties: vec![
+                        #id_fields
+                    ],
+                }.into()
+            }
+
+            pub fn identity_strategy() -> IdStrategy {
+                return #node_name :: session_strategy()
+            }
+        }
+    );
+
+    q.into()
+}
+
+fn on_grapl_attrs(attr: &Attribute, mut on: impl FnMut(&str)) {
+    if attr.path.segments.is_empty() {
+        return;
+    }
+
+    let id = &attr.path.segments[0].ident;
+    if id.to_string() != "grapl" {
+        return;
+    }
+
+    let parsed_attr_meta = attr.parse_meta().expect("malformed args");
+
+    if let Meta::List(attrs) = parsed_attr_meta {
+        for arg in attrs.nested {
+            if let NestedMeta::Meta(Meta::Path(arg)) = arg {
+                let attr_ident = arg.segments[0].ident.to_string();
+
+                (on)(attr_ident.as_str());
+            }
+        }
+    }
+}
+
+fn set_timestamp_from_meta(field: &Field, prop_name: &str, time_prop: &mut Option<String>) {
+    for attr in &field.attrs {
+        on_grapl_attrs(&attr, |meta_attr| {
+            if meta_attr == prop_name {
+                if time_prop.is_some() {
+                    panic!("Can not set {} property more than once", prop_name);
+                }
+                *time_prop = Some(field.ident.clone().unwrap().to_string());
+            }
+        });
+    }
 }
 
 #[cfg(test)]
