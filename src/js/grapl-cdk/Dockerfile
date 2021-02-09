@@ -36,10 +36,13 @@ COPY src/python/Dockerfile src/python/Dockerfile
 # Make fake zip files to appease the CDK tests
 WORKDIR /home/grapl/src/js/grapl-cdk/zips
 RUN touch \
+  analyzer-dispatcher-latest.zip \
+  analyzer-executor-latest.zip \
   dgraph-ttl-latest.zip \
   engagement-creator-latest.zip \
   engagement-edge-latest.zip \
   engagement-ux-latest.zip \
+  graph-merger-latest.zip \
   graphql-endpoint-latest.zip \
   metric-forwarder-latest.zip \
   model-plugin-deployer-latest.zip \
