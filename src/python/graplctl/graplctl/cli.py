@@ -2,22 +2,17 @@ import dataclasses
 import os
 import time
 import uuid
-
 from typing import Callable, Dict, Iterator, List, Optional
-
-from mypy_boto3_ec2 import EC2ServiceResource
-from mypy_boto3_cloudwatch.client import CloudWatchClient
-from mypy_boto3_sns.client import SNSClient
-from mypy_boto3_ssm import SSMClient
-from mypy_boto3_route53 import Route53Client
 
 import boto3
 import click
+from mypy_boto3_cloudwatch.client import CloudWatchClient
+from mypy_boto3_ec2 import EC2ServiceResource
+from mypy_boto3_route53 import Route53Client
+from mypy_boto3_sns.client import SNSClient
+from mypy_boto3_ssm import SSMClient
 
-from . import __version__
-from . import dgraph_ops
-from . import docker_swarm_ops
-from . import common
+from . import __version__, common, dgraph_ops, docker_swarm_ops
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
@@ -569,7 +564,9 @@ def scale(
             f"extracted docker swarm worker join token from manager {manager_instance.instance_id}"
         )
 
-        click.echo(f"joining docker swarm worker instances {','.join(i.instance_id for i in worker_instances)}")
+        click.echo(
+            f"joining docker swarm worker instances {','.join(i.instance_id for i in worker_instances)}"
+        )
         docker_swarm_ops.join_swarm_nodes(
             ec2=EC2,
             ssm=SSM,
@@ -579,7 +576,9 @@ def scale(
             manager=False,
             manager_ip=manager_instance.private_ip_address,
         )
-        click.echo(f"joined docker swarm worker instances {','.join(i.instance_id for i in worker_instances)}")
+        click.echo(
+            f"joined docker swarm worker instances {','.join(i.instance_id for i in worker_instances)}"
+        )
 
 
 #

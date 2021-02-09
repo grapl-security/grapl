@@ -5,7 +5,6 @@ import logging
 import os
 import sys
 import time
-
 from typing import Dict, Iterator, List, Tuple
 
 import mypy_boto3_ec2.service_resource as ec2_resources
