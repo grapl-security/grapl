@@ -11,6 +11,7 @@ import * as ecs_patterns from "@aws-cdk/aws-ecs-patterns";
 import {ContainerImage} from "@aws-cdk/aws-ecs";
 import {Watchful} from "cdk-watchful";
 import {EventEmitter} from "./event_emitters";
+import { IConnectable } from '@aws-cdk/aws-ec2';
 
 export class Queues {
     readonly queue: sqs.Queue;
@@ -41,7 +42,8 @@ export class Queues {
 export interface FargateServiceProps {
     prefix: string;
     version: string;
-    eventEmitter: EventEmitter;
+    // We read events from this
+    eventEmitter: EventEmitter; 
     serviceImage: ContainerImage;
     retryServiceImage?: ContainerImage | undefined;
     vpc: ec2.IVpc;
@@ -52,6 +54,7 @@ export interface FargateServiceProps {
     command?: string[] | undefined;
     retryCommand?: string[] | undefined;
     watchful?: Watchful | undefined;
+    // TODO: Reintroduce metric_forwarder
 }
 
 export class FargateService {
@@ -129,10 +132,10 @@ export class FargateService {
             });
 
         for (const q of [this.queues.queue, this.queues.retryQueue, this.queues.deadLetterQueue]) {
-            q.grantConsumeMessages(this.service.taskDefinition.taskRole);
-            q.grantConsumeMessages(this.retryService.taskDefinition.taskRole);
-            q.grantSendMessages(this.service.taskDefinition.taskRole);
-            q.grantSendMessages(this.retryService.taskDefinition.taskRole);
+            for (const taskRole of this.taskRoles()) {
+                q.grantConsumeMessages(taskRole);
+                q.grantSendMessages(taskRole);
+            }
         }
 
         if (readsFrom) {
@@ -174,7 +177,9 @@ export class FargateService {
     }
 
     writesToBucket(publishes_to: s3.IBucket) {
-        publishes_to.grantWrite(this.service.service.taskDefinition.taskRole);
+        for (const taskRole of this.taskRoles()) {
+            publishes_to.grantWrite(taskRole);
+        }
     }
 
     addSubscription(scope: cdk.Construct, topic: sns.ITopic) {
@@ -191,5 +196,19 @@ export class FargateService {
             protocol: config.protocol,
             rawMessageDelivery: true,
         });
+    }
+
+    connections(): ec2.Connections[] {
+        return [
+            this.service.service.cluster.connections,
+            this.retryService.service.cluster.connections,
+        ]
+    }
+
+    taskRoles(): iam.IRole[] {
+        return [
+            this.service.service.taskDefinition.taskRole,
+            this.retryService.service.taskDefinition.taskRole,
+        ]
     }
 }
