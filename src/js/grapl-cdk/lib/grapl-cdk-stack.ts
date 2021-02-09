@@ -1,34 +1,23 @@
 import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
-import * as events from '@aws-cdk/aws-events';
-import * as iam from '@aws-cdk/aws-iam';
-import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
-import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
-import * as targets from '@aws-cdk/aws-events-targets';
 
-import * as path from 'path';
+import { Tags } from '@aws-cdk/core';
 
 import {Service} from './service';
-import {FargateService} from './fargate_service';
 import {UserAuthDb} from './userauthdb';
-import {HistoryDb} from './historydb';
-import {EventEmitter} from './event_emitters';
-import {RedisCluster} from './redis';
 import {EngagementNotebook} from './engagement';
 import {EngagementEdge} from './engagement';
 import {GraphQLEndpoint} from './graphql';
-import {Swarm} from './swarm';
 import {OperationalAlarms, SecurityAlarms} from './alarms';
 
-import {Watchful, WatchedOperation} from 'cdk-watchful';
+import {Watchful} from 'cdk-watchful';
 import {SchemaDb} from './schemadb';
 import {PipelineDashboard} from './pipeline_dashboard';
-import {ContainerImage} from "@aws-cdk/aws-ecs";
 import {UxRouter} from "./ux_router";
 import {GraplS3Bucket} from "./grapl_s3_bucket";
 import {DGraphSwarmCluster} from "./services/dgraph_swarm_cluster";
@@ -73,7 +62,6 @@ export interface GraplStackProps extends cdk.StackProps {
     analyzerExecutorLogLevel: string;
     engagementCreatorLogLevel: string;
     version: string;
-    dgraphInstanceType: ec2.InstanceType;
     watchfulEmail?: string;
     operationalAlarmsEmail: string;
     securityAlarmsEmail: string;
@@ -113,6 +101,7 @@ export class GraplCdkStack extends cdk.Stack {
             enableDnsHostnames: true,
             enableDnsSupport: true,
         });
+        Tags.of(grapl_vpc).add("name", `${this.prefix.toLowerCase()}-grapl-vpc`);
 
         const jwtSecret = new secretsmanager.Secret(this, 'EdgeJwtSecret', {
             description:
@@ -147,7 +136,6 @@ export class GraplCdkStack extends cdk.Stack {
                 prefix: this.prefix,
                 vpc: grapl_vpc,
                 version: props.version,
-                instanceType: props.dgraphInstanceType,
                 watchful: watchful,
             }
         );

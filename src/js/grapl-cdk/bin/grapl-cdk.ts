@@ -22,7 +22,6 @@ const grapl = new GraplCdkStack(app, 'Grapl', {
     watchfulEmail: DeploymentParameters.watchfulEmail,
     operationalAlarmsEmail: DeploymentParameters.operationalAlarmsEmail,
     securityAlarmsEmail: DeploymentParameters.securityAlarmsEmail,
-    dgraphInstanceType: DeploymentParameters.dgraphInstanceType,
     tags: { 'grapl deployment': DeploymentParameters.stackName },
     description: 'Grapl base deployment',
     env: { 'region': DeploymentParameters.region },
