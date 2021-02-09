@@ -11,7 +11,7 @@ def _init_instance() -> Iterator[str]:
     """
     commands = [
         # install CWAgent and docker
-        ["yum", "install", "-y", "docker", "amazon-cloudwatch-agent", "python3"],
+        ["yum", "install", "-y", "docker", "amazon-cloudwatch-agent"],
         # add ec2-user to the docker group
         ["usermod", "-a", "-G", "docker", "ec2-user"],
         # start all the daemons

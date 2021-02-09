@@ -5,10 +5,11 @@ import itertools
 import json
 import logging
 import os
+import shlex
 import sys
 import time
 
-from typing import Iterator, List, Optional, Set
+from typing import Dict, Iterator, List, Optional, Set
 
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ssm import SSMClient
@@ -342,6 +343,65 @@ def join_swarm_nodes(
             }
         ],
     )
+
+
+def restart_daemons(
+    ssm: SSMClient, deployment_name: str, instances: List[Ec2Instance]
+) -> None:
+    """Restart the cloudwatch agent and docker daemon"""
+    instance_ids = [instance.instance_id for instance in instances]
+    command = ssm.send_command(
+        InstanceIds=instance_ids,
+        DocumentName="AWS-RunRemoteScript",
+        Parameters={
+            "sourceType": ["S3"],
+            "sourceInfo": [
+                json.dumps(
+                    {
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/restart_daemons.py"
+                    }
+                )
+            ],
+            "commandLine": ["/usr/bin/python3 restart_daemons.py"],
+        },
+    )
+    command_id = command["Command"]["CommandId"]
+    for instance_id, result in get_command_results(ssm, command_id, instance_ids):
+        LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
+    LOGGER.info(
+        f"restarted cloudwatch agent and docker daemon on instances {','.join(instance_ids)}"
+    )
+
+
+def configure_docker_daemon(
+    ssm: SSMClient,
+    deployment_name: str,
+    instances: List[Ec2Instance],
+    config: Dict,
+) -> None:
+    """Write the given daemon configuration to /etc/docker/daemon.json"""
+    instance_ids = [instance.instance_id for instance in instances]
+    command = ssm.send_command(
+        InstanceIds=instance_ids,
+        DocumentName="AWS-RunRemoteScript",
+        Parameters={
+            "sourceType": ["S3"],
+            "sourceInfo": [
+                json.dumps(
+                    {
+                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/configure_docker_daemon.py"
+                    }
+                )
+            ],
+            "commandLine": [
+                f"/usr/bin/python3 configure_docker_daemon.py {shlex.quote(json.dumps(config, separators=(',', ':')))}"
+            ],
+        },
+    )
+    command_id = command["Command"]["CommandId"]
+    for instance_id, result in get_command_results(ssm, command_id, instance_ids):
+        LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
+    LOGGER.info(f"configured docker daemon on instances {','.join(instance_ids)}")
 
 
 def exec_(

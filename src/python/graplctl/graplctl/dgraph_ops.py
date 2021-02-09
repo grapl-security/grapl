@@ -74,18 +74,9 @@ def _find_metric_for_instance(
                 "Name": "InstanceId",
                 "Value": instance_id,
             },
-            {
-                "Name": "AutoScalingGroupName",
-            },
-            {
-                "Name": "ImageId",
-            },
-            {
-                "Name": "InstanceType",
-            },
-            {
-                "Name": "device",
-            },
+            {"Name": "ImageId"},
+            {"Name": "InstanceType"},
+            {"Name": "device"},
             {"Name": "fstype"},
         ],
     )
@@ -93,7 +84,7 @@ def _find_metric_for_instance(
     if len(metrics) != 1:
         raise Exception(
             f"Tried querying for disk metrics in path {path} on {instance_id} - expected 1, got {metrics}\n"
-            "(Try waiting ~5m after provisioning an Autoscaling Group for the expected metric to show up.)"
+            "(Try waiting ~5m after provisioning an instance for the expected metric to show up.)"
         )
     return metrics[0]
 
@@ -255,7 +246,7 @@ def init_dgraph(
                     }
                 )
             ],
-            "commandLine": ["/usr/bin/python3 dgraph_init.py"],
+            "commandLine": [f"/usr/bin/python3 dgraph_init.py {deployment_name}"],
         },
     )
     command_id = command["Command"]["CommandId"]
