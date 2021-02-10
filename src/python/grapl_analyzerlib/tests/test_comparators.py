@@ -43,13 +43,13 @@ class TestComparators(unittest.TestCase):
             predicate=PREDICATE,
             value=VALUE,
         )
-        assert comparator.to_filter() == 'eq(pred, "value")'
+        assert comparator.to_filter() == "eq(pred, value)"
 
         comparator = Eq(
             predicate=PREDICATE,
             value=Not(VALUE),
         )
-        assert comparator.to_filter() == '(NOT eq(pred, "value"))'
+        assert comparator.to_filter() == "(NOT eq(pred, value))"
 
     def test_eq__dgraph_type(self) -> None:
         comparator = Eq(
