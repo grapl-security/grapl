@@ -56,13 +56,9 @@ class Eq(object):
         if self.predicate == "dgraph.type":
             filter_str = f"type({self.value})"
         else:
-            value = self.value
-            # Strings are quoted, except in the case of a `uid`
-            if isinstance(value, str) and self.predicate != "uid":
-                value = f'"{value}"'
             filter_str = "eq({}, {})".format(
                 self.predicate,
-                value,
+                self.value,
             )
 
         if self.negated:
