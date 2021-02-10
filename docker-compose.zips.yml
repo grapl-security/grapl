@@ -9,7 +9,8 @@ services:
   grapl-rust-zips:
     image: grapl/rust-zip:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: zip
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
