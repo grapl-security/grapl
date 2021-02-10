@@ -69,6 +69,17 @@ jobs:
         run: |
           make test-unit-js
 
+  build-zips:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare Github Actions CI
+        run: |
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
+      - name: Build AWS Lambda ZIP files
+        run: make zip
+
   integration-tests:
     runs-on: ubuntu-latest
 
