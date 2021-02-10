@@ -48,5 +48,3 @@ wheels/
 *.vscode
 .idea/
 *.iml
-
-.log/
