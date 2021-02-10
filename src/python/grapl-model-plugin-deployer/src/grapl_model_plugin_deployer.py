@@ -18,9 +18,6 @@ import pydgraph  # type: ignore
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
-from grapl_common.env_helpers import DynamoDBResourceFactory, S3ClientFactory
-from grapl_common.grapl_logger import get_module_grapl_logger
-
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
     EdgeT,
@@ -29,6 +26,8 @@ from grapl_analyzerlib.node_types import (
 )
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schema import Schema
+from grapl_common.env_helpers import DynamoDBResourceFactory, S3ClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 sys.path.append("/tmp/")
 
