@@ -74,6 +74,7 @@ build-test-e2e:
 .PHONY: build-services
 build-services: ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml
+	docker builder prune -f
 
 .PHONY: build-aws
 build-aws: ## Build services for Grapl in AWS (subset of all services)

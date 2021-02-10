@@ -51,6 +51,7 @@ use sqs_executor::{cache::{Cache,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier};
 use serde_json::Value;
+use grapl_graph_descriptions::graph_description::EdgeList;
 /*
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({
@@ -438,6 +439,29 @@ where
             subgraph.edges.len(),
         );
 
+        /*
+        1. cache check for nodes - remove hits
+            1. for each node
+                1. grab each predicate with a value that isn't null
+                2. check if any predicate names DON'T hit cache
+                3. if so, continue with node upsert
+                4. else, remove node
+        2. cache check for edges - remove hits
+            1. for each node_key
+                1. for
+        3. fetch r_edges and insert them into the subgraph
+        4. perform upsert
+        5. gang gang
+         */
+
+
+        subgraph.edges.iter_mut()
+            .map(|(_, EdgeList { edges })| {
+                edges
+            })
+            .flatten()
+            .map(|(from, to, edge_name)|)
+
         //let mut upsert_res = None;
         //let mut edge_res = None;
 
@@ -671,7 +695,7 @@ where
 
         //unimplemented!()
 
-        Err(Err(GraphMergerError::Unexpected("PLACEHOLDER".to_string())))
+        Ok(subgraph)
     }
 }
 

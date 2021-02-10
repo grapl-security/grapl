@@ -37,18 +37,19 @@ x-common-variables:
   mg-alphas: &mg-alphas
     MG_ALPHAS: "master_graph:9080"
   log-level: &log-level
-    RUST_LOG: "${RUST_LOG:-ERROR}"
-    GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
+    foo: bar
+  #RUST_LOG: "${RUST_LOG:-ERROR}"
+  #GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
 
 services:
 
-  #
+        #
   # Infrastructure dependencies
   #
 
   grapl-master-graph-db:
     tty: false
-    image: dgraph/standalone:v20.07.1
+    image: dgraph/standalone:master
     ports:
       - "5080:5080"  # zero - used for `dgraph live` importing-data command in `integration_tests.rst`
       - "8000:8000"  # ratel
@@ -77,11 +78,12 @@ services:
       driver: none
 
   sqs:
-    image: localstack/localstack:0.11.5
+    image: localstack/localstack:0.12.6
     environment:
+      - EDGE_PORT=9324
       - SERVICES=sqs:9324
       - HOSTNAME_EXTERNAL=sqs.us-east-1.amazonaws.com
-      - IMAGE_NAME=localstack/localstack:0.11.5
+      - IMAGE_NAME=localstack/localstack:0.12.6
     ports:
       - "9324:9324"
     networks:
@@ -92,12 +94,13 @@ services:
       driver: none
 
   secretsmanager:
-    image: localstack/localstack:0.11.5
+    image: localstack/localstack:0.12.6
     environment:
+      - EDGE_PORT=4584
       - PORT_WEB_UI=8099
       - SERVICES=secretsmanager:4584
       - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
-      - IMAGE_NAME=localstack/localstack:0.11.5
+      - IMAGE_NAME=localstack/localstack:0.12.6
 
     ports:
       - "4584:4584"
