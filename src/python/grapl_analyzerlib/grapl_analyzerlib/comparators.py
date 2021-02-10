@@ -49,13 +49,20 @@ class Eq(object):
         self.value = extract_value(value)
         self.negated: bool = isinstance(value, Not)
 
+        if self.predicate == "uid":
+            self.value = hex(self.value)
+
     def to_filter(self) -> str:
         if self.predicate == "dgraph.type":
             filter_str = f"type({self.value})"
         else:
+            value = self.value
+            # Strings are quoted, except in the case of a `uid`
+            if isinstance(value, str) and self.predicate != "uid":
+                value = f'"{value}"'
             filter_str = "eq({}, {})".format(
                 self.predicate,
-                self.value,
+                value,
             )
 
         if self.negated:
@@ -215,7 +222,10 @@ def dgraph_prop_type(cmp: Cmp) -> str:
     if isinstance(cmp, Has):
         return "string"
     if isinstance(cmp, Eq):
-        return "string"
+        if isinstance(cmp.value, str):
+            return "string"
+        else:
+            return "int"
     if isinstance(cmp, Contains):
         return "string"
     if isinstance(cmp, StartsWith):

@@ -43,7 +43,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
     queryable: Type[Q] = None  # pytype: disable=not-supported-yet
 
     def __init__(
-        self, uid: str, node_key: str, graph_client: GraphClient, **kwargs
+        self, uid: int, node_key: str, graph_client: GraphClient, **kwargs
     ) -> None:
         self.uid = uid
         self.node_key = node_key

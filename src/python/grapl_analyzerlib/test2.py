@@ -38,7 +38,7 @@ class AuidView(DynamicNodeView):
         self,
         dgraph_client: DgraphClient,
         node_key: str,
-        uid: str,
+        uid: int,
         node_type: str,
         auid: Optional[int] = None,
     ):
@@ -157,7 +157,7 @@ class AuidAssumptionView(DynamicNodeView):
         self,
         dgraph_client: DgraphClient,
         node_key: str,
-        uid: str,
+        uid: int,
         node_type: str,
         assumed_timestamp: Optional[int] = None,
         assuming_process_id: Optional[int] = None,

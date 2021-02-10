@@ -22,7 +22,7 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-def delete_edge(txn: Txn, from_uid: str, edge_name: str, to_uid: str) -> None:
+def delete_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: str) -> None:
     if edge_name[0] == "~":
         mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
 
@@ -36,7 +36,7 @@ def delete_edge(txn: Txn, from_uid: str, edge_name: str, to_uid: str) -> None:
         txn.discard()
 
 
-def create_edge(txn: Txn, from_uid: str, edge_name: str, to_uid: str) -> None:
+def create_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: str) -> None:
     if edge_name[0] == "~":
         mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
 
@@ -106,7 +106,7 @@ def response_into_matrix(res, nodes, edges):
 
 class EngagementTransaction(Txn):
     def __init__(
-        self, copying_client, eg_uid: str, read_only=False, best_effort=False
+        self, copying_client, eg_uid: int, read_only=False, best_effort=False
     ) -> None:
         super().__init__(copying_client, read_only=read_only, best_effort=best_effort)
         self.eg_uid = eg_uid
@@ -137,7 +137,7 @@ class EngagementTransaction(Txn):
 
 
 class EngagementClient(object):
-    def __init__(self, eg_uid: str, gclient: GraphClient):
+    def __init__(self, eg_uid: int, gclient: GraphClient):
         self.gclient = gclient
         self.eg_uid = eg_uid
 

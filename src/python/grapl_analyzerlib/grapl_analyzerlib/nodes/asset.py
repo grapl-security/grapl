@@ -142,7 +142,7 @@ class AssetView(EntityView[AV, AQ]):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],
