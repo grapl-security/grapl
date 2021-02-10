@@ -9,10 +9,11 @@ test/cypress/videos
 .env
 venv/
 
-# Byte-compiled / optimized / DLL files
+# Python misc
 __pycache__/
 *.py[cod]
 *$py.class
+.mypy_cache
 
 # Rust outputs
 target/
@@ -21,24 +22,8 @@ target/
 node_modules/
 
 # Distribution / packaging
-.Python
-env/
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-# lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.mypy_cache
 *.zip
 
 # IDE files
