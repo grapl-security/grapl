@@ -11,7 +11,6 @@ import * as ecs_patterns from "@aws-cdk/aws-ecs-patterns";
 import {ContainerImage} from "@aws-cdk/aws-ecs";
 import {Watchful} from "cdk-watchful";
 import {EventEmitter} from "./event_emitters";
-import { IConnectable } from '@aws-cdk/aws-ec2';
 
 export class Queues {
     readonly queue: sqs.Queue;
