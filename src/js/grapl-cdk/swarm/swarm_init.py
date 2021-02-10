@@ -13,10 +13,7 @@ def _get_private_ip() -> str:
 
 
 def _init_docker_swarm(private_ip: str) -> str:
-    """Initialize the docker swarm manager. Returns the join token
-    necessary to attach workers to the swarm.
-
-    """
+    """Initialize the docker swarm manager."""
     subprocess.run(
         ["docker", "swarm", "init", "--advertise-addr", private_ip],
         check=True,

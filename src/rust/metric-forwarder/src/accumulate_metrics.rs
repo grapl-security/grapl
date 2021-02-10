@@ -182,7 +182,7 @@ mod tests {
                 assert_eq!(to_count_map(only_one_datum), expected);
                 Ok(())
             }
-            _ => Err(">1 metric".to_string()),
+            invalid => panic!("Expected exactly 1 metric, but got {:?}", invalid),
         }
     }
 
@@ -207,7 +207,7 @@ mod tests {
                 assert_eq!(datum_1.metric_name, METRIC_NAME_2);
                 Ok(())
             }
-            _ => Err("must be exactly 2 metrics".to_string()),
+            invalid => panic!("Expected exactly 2 metrics, but got {:?}", invalid),
         }
     }
 
@@ -244,7 +244,7 @@ mod tests {
                 assert_eq!(datum_1.timestamp, TS_3.to_string().into());
                 Ok(())
             }
-            _ => Err("must be exactly 2 metrics".to_string()),
+            invalid => panic!("Expected exactly 2 metrics, but got {:?}", invalid),
         }
     }
 
@@ -275,7 +275,7 @@ mod tests {
                 assert_eq!(to_count_map(datum_millis), expected_for_millis);
                 Ok(())
             }
-            _ => Err("must be exactly 2 metrics".to_string()),
+            invalid => panic!("Expected exactly 2 metrics, but got {:?}", invalid),
         }
     }
 
@@ -301,7 +301,11 @@ mod tests {
             let value: f64 = datum.counts.as_ref().unwrap()[0];
             OrderedFloat(value)
         });
+
         match &output[..] {
+            // So we're expecting this to be [
+            //   Metrics with diff dimensions(count=2),
+            //   Metrics with default dimensions(count=3) ]
             [datum_diff_dimensions, datum_default_dimensions] => {
                 let expected_diff_dims = hmap! {
                     OrderedFloat(1.0f64) => 2f64
@@ -318,7 +322,7 @@ mod tests {
                 );
                 Ok(())
             }
-            _ => Err("must be exactly 2 metrics".to_string()),
+            invalid => panic!("Expected exactly 2 metrics, but got {:?}", invalid),
         }
     }
 }

@@ -20,7 +20,7 @@ async fn test_subgraph_generation_process_create() {
 
     match &output_event {
         Ok(subgraph) => {
-            assert!(!subgraph.is_empty(), "Generated subgraphwas empty.")
+            assert!(!subgraph.is_empty(), "Generated subgraph was empty.")
         }
         Err(Ok((subgraph, e))) => {
             assert!(

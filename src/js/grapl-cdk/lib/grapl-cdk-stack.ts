@@ -6,9 +6,12 @@ import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 
+import { Tags } from '@aws-cdk/core';
+
 import {Service} from './service';
 import {UserAuthDb} from './userauthdb';
-import {EngagementEdge, EngagementNotebook} from './engagement';
+import {EngagementNotebook} from './engagement';
+import {EngagementEdge} from './engagement';
 import {GraphQLEndpoint} from './graphql';
 import {OperationalAlarms, SecurityAlarms} from './alarms';
 
@@ -59,7 +62,6 @@ export interface GraplStackProps extends cdk.StackProps {
     analyzerExecutorLogLevel: string;
     engagementCreatorLogLevel: string;
     version: string;
-    dgraphInstanceType: ec2.InstanceType;
     watchfulEmail?: string;
     operationalAlarmsEmail: string;
     securityAlarmsEmail: string;
@@ -99,6 +101,7 @@ export class GraplCdkStack extends cdk.Stack {
             enableDnsHostnames: true,
             enableDnsSupport: true,
         });
+        Tags.of(grapl_vpc).add("name", `${this.prefix.toLowerCase()}-grapl-vpc`);
 
         const jwtSecret = new secretsmanager.Secret(this, 'EdgeJwtSecret', {
             description:
@@ -133,7 +136,6 @@ export class GraplCdkStack extends cdk.Stack {
                 prefix: this.prefix,
                 vpc: grapl_vpc,
                 version: props.version,
-                instanceType: props.dgraphInstanceType,
                 watchful: watchful,
             }
         );

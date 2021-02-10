@@ -4,7 +4,6 @@ import base64
 import hashlib
 import inspect
 import json
-import logging
 import os
 import sys
 import traceback
@@ -18,8 +17,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
-from analyzer_executor_lib.s3_types import S3PutRecordDict, SQSMessageBody
+from analyzer_executor_lib.sqs_types import S3PutRecordDict, SQSMessageBody
 from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
 from grapl_analyzerlib.analyzer import Analyzer
@@ -36,9 +36,7 @@ if TYPE_CHECKING:
 
 
 # Set up logger (this is for the whole file, including static methods)
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "ERROR"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER = get_module_grapl_logger()
 
 # Set up plugins dir for models
 MODEL_PLUGINS_DIR = os.getenv("MODEL_PLUGINS_DIR", "/tmp")
@@ -194,7 +192,7 @@ class AnalyzerExecutor:
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.hit_cache.set(event_hash, "1")
 
-    def lambda_handler_fn(self, events: SQSMessageBody, context: Any) -> None:
+    async def lambda_handler_fn(self, events: SQSMessageBody, context: Any) -> None:
         # Parse sns message
         self.logger.debug(f"handling events: {events} context: {context}")
 
@@ -209,6 +207,9 @@ class AnalyzerExecutor:
         )
 
         for event in events["Records"]:
+            if not self.is_local:
+                event = json.loads(event["body"])["Records"][0]  # type: ignore
+
             data = parse_s3_event(s3, event)
 
             message = json.loads(data)
@@ -370,7 +371,6 @@ class AnalyzerExecutor:
                         sender.send(ExecutionFailed())
                         raise
 
-                # exec_analyzer(nodes, sender)
                 pool.apply_async(exec_analyzer, args=(nodes, sender))
 
             pool.close()
@@ -387,8 +387,12 @@ class AnalyzerExecutor:
 
 
 def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
-    bucket = event["s3"]["bucket"]["name"]
-    key = event["s3"]["object"]["key"]
+    try:
+        bucket = event["s3"]["bucket"]["name"]
+        key = event["s3"]["object"]["key"]
+    except KeyError:
+        LOGGER.error("Could not parse s3 event: {}", exc_info=True)
+        raise
     return download_s3_file(s3, bucket, key)
 
 

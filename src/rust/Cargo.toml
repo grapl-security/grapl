@@ -6,6 +6,7 @@ members = [
     "./endpoint-plugin",
     "./graph-descriptions",
     "./graph-merger",
+    "./grapl",
     "./grapl-config",
     "./grapl-observe",
     "./metric-forwarder",

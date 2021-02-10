@@ -1,5 +1,4 @@
 import { PluginPayload } from "../plugins/uploadPluginTypes";
-import {getModelPluginEdge} from "../../GraphViz/engagement_edge/getApiURLs"
 
 export const getPluginList = async () => {
     const res = await fetch(`/prod/modelPluginDeployer/listModelPlugins`,

@@ -8,17 +8,6 @@ on:
       - master
 
 jobs:
-  cargo-audit:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Cargo Audit
-        run: |
-          docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
-          docker run -t grapl/grapl-cargo-audit:latest cargo audit
-
   rust-unit-tests:
     runs-on: ubuntu-latest
 
@@ -146,9 +135,11 @@ jobs:
 
       - name: Run end-to-end tests
         run: |
-          GRAPL_LOG_LEVEL=DEBUG \
-          DUMP_ARTIFACTS=True \
-          make test-e2e
+          # A cheap, low-tech retry. If any of them ever exits 0, it short circuits.
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e
+   
 
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'

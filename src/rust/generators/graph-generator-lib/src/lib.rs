@@ -57,6 +57,7 @@ pub async fn run_graph_generator<
 
     let sysmon_subgraph_generator =
         &mut make_ten(async { (init_generator)(cache[0].clone()) }).await;
+
     let serializer = &mut make_ten(async { GraphDescriptionSerializer::default() }).await;
 
     let s3_emitter =

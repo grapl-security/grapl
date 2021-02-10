@@ -41,7 +41,7 @@ test                 Run all tests
 lint-rust            Run Rust lint checks
 lint-python          Run Python lint checks
 lint                 Run all lint checks
-clean                Prune all docker build cache
+clean                Prune all docker build cache and remove Grapl containers and images
 clean-mount-cache    Prune all docker mount cache (used by sccache)
 release              'make build-services' with cargo --release
 zip                  Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
@@ -269,14 +269,17 @@ three workflow definitions:
   - [grapl-build.yml](./.github/workflows/grapl-build.yml) -- This
     workflow also runs on every PR and every PR update. It runs all
     build and test targets, and performs some additional
-    analysis on the codebase (e.g. [LGTM](https://lgtm.com/) checks
-    and [cargo-audit](https://github.com/RustSec/cargo-audit)).
+    analysis on the codebase (e.g. [LGTM](https://lgtm.com/) checks).
   - [grapl-release.yml](./github/workflows/grapl-release.yml) -- This
     workflow runs every time we cut a [Github
     Release](https://github.com/grapl-security/grapl/releases). It
     builds all the release artifacts, runs all the tests, publishes
     all the Grapl images to Dockerhub so folks can run local Grapl
     easily and publishes Python libraries to PyPI.
+  - [cargo-audit.yml](./github/workflows/cargo-audit.yml) -- Runs [cargo
+    audit](https://github.com/RustSec/cargo-audit) to check our Rust
+    dependencies for security vulnerabilities on every PR when Rust dependencies
+    are changed. Also periodically runs over _all_ Rust dependencies unconditionally.
 
 ## A philosophical note
 

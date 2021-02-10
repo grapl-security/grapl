@@ -121,7 +121,7 @@ COPY --chown=grapl python/grapl_analyzerlib grapl_analyzerlib
 COPY --chown=grapl --from=graph-descriptions-build /home/grapl/venv venv
 COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
 
-# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`, 
+# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
 # but the pip install is cleaner.
 RUN source venv/bin/activate && \
     cd grapl-common && \
@@ -398,40 +398,6 @@ FROM model-plugin-deployer-build AS model-plugin-deployer-test
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-
-# swarm-lifecycle-event-handler
-################################################################################
-
-# build
-FROM grapl-python-build AS swarm-lifecycle-event-handler-build
-
-COPY --chown=grapl python/swarm-lifecycle-event-handler swarm-lifecycle-event-handler
-
-RUN source venv/bin/activate && \
-    pip install -r swarm-lifecycle-event-handler/requirements.txt
-
-# zip
-FROM swarm-lifecycle-event-handler-build AS swarm-lifecycle-event-handler-zip
-
-RUN LAMBDA_DIR=$(pwd); \
-    cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
-    cd ~/swarm-lifecycle-event-handler && \
-    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
-
-# deploy
-FROM grapl-python-deploy AS swarm-lifecycle-event-handler-deploy
-
-# placeholder for now
-
-# test
-FROM python-test-deps AS swarm-lifecycle-event-handler-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-CMD :
 
 # Notebook
 ################################################################################

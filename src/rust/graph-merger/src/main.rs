@@ -176,6 +176,7 @@ where
             mu.commit_now = true;
             mu.set_set_json(&set_json)
                 .unwrap_or_else(|e| error!("Failed to set json (mu): {:#?}", e));
+
             tracing::debug!(
                 node_key=?node_key,
                 "Performing upsert"
@@ -198,7 +199,6 @@ where
             tokio::time::timeout(Duration::from_secs(3), txn.commit())
                 .await?
                 .map_err(AnyhowFailure::into_failure)?;
-
             cache
                 .store(cache_key.into_bytes())
                 .await
@@ -302,9 +302,7 @@ where
         Err(e) => error!("Failed to retrieve from edge_cache: {:?}", e),
     };
 
-    println!("generating edge insert");
     let mu = generate_edge_insert(&from, &to, &edge_name);
-    println!("generated edge insert {:?}", mu);
     tracing::info!(
         to=?to,
         from=?from,
@@ -319,6 +317,7 @@ where
         message="edge mutation response",
         response=?mut_res,
     );
+
     metric_reporter
         .mutation(&mut_res, &[])
         .unwrap_or_else(|e| error!("edge mutation metric failed: {}", e));
@@ -327,6 +326,7 @@ where
         .store(cache_key.into_bytes())
         .await
         .unwrap_or_else(|e| error!("Failed to store key in cache: {:#?}", e));
+
     Ok(())
 }
 
@@ -530,7 +530,6 @@ where
 
         info!("Inserting edges {}", subgraph.edges.len());
         let dynamodb = DynamoDbClient::from_env();
-
         let unmerged_edges: Vec<_> = subgraph
             .edges
             .values()
@@ -538,6 +537,7 @@ where
             .flatten()
             .map(|edge| edge.clone())
             .collect();
+
         println!("upserting edges {:?}", &unmerged_edges,);
         let merged_edges = upsert_edges(
             &unmerged_edges[..],

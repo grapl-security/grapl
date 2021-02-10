@@ -1,11 +1,13 @@
 FROM node:alpine3.10 AS engagement-view-deps
 
-RUN apk add bash
+RUN apk add bash yarn
 WORKDIR /grapl
 
 # install deps as separate steps to leverage build cache
 COPY package.json package.json
 COPY yarn.lock yarn.lock
+COPY .yarnrc.yml .yarnrc.yml
+COPY .yarn/releases .yarn/releases
 RUN yarn install
 
 # now copy all sources

@@ -102,6 +102,8 @@ function createEdgeUxPackage(apiUrl: string) {
         `"index.html`,
         `"prod/index.html`,
     );
+    replaceMap.set('prod/prod/', 'prod/')
+
     dir.readFiles(
         srcDir,
         function (
