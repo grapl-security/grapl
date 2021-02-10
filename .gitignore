@@ -7,9 +7,6 @@ src/rust/graph-descriptions/grapl_graph_descriptions
 test/cypress/screenshots
 test/cypress/videos
 
-.mypy_cache/
-
-
 node_modules/
 .idea/
 *.iml
@@ -43,10 +40,11 @@ wheels/
 .installed.cfg
 *.egg
 .mypy_cache
+*.zip
 
 *.code-workspace
 *.vscode
-*.zip
+
 
 .log/
 .hypothesis/
