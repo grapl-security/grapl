@@ -8,11 +8,10 @@ test/cypress/screenshots
 test/cypress/videos
 
 lambda/
-__pycache__/
-*.pyc
+
 .mypy_cache/
 
-target/
+
 node_modules/
 .idea/
 *.iml
