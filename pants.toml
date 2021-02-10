@@ -1,0 +1,51 @@
+[GLOBAL]
+pants_version = "2.2.0"
+backend_packages = [
+  "pants.backend.codegen.protobuf.python",
+  "pants.backend.python"
+]
+
+# Given how our code is currently structured, with package and test
+# code for every project in their own directory, I believe we have to
+# list each of those top-level containing directories here in order
+# for all the resolution to work out correctly.
+#
+# The '/' roots these at the same directory this `pants.toml` file is
+# in.
+[source]
+root_patterns = [
+  "/3rdparty",
+  "/src/proto",
+  "/src/python/analyzer-deployer",
+  "/src/python/analyzer_executor/src",
+  "/src/python/analyzer_executor/src/analyzer_executor_lib",
+  "/src/python/analyzer_executor/tests",
+  "/src/python/engagement-creator/src",
+  "/src/python/engagement-creator/tests",
+  "/src/python/engagement_edge/src",
+  "/src/python/engagement_edge/tests",
+  "/src/python/grapl_analyzerlib",
+  "/src/python/grapl-common",
+  "/src/python/grapl-dgraph-ttl",
+  "/src/python/grapl_e2e_tests",
+  "/src/python/graplinc",
+  "/src/python/grapl-model-plugin-deployer/src",
+  "/src/python/grapl-model-plugin-deployer/tests",
+  "/src/python/grapl_provision",
+  "/src/python/grapl-tests-common",
+  "/src/python/grapl-ux-router/src"
+]
+
+[python-setup]
+# Use this as a lockfile; speeds up installation of dependencies
+# To update it, run build-support/generate_constraints.sh
+requirement_constraints = "3rdparty/python/constraints.txt"
+
+# We have at least one __init__.py file that has code in it.
+# See https://www.pantsbuild.org/docs/python-backend
+[python-infer]
+inits = true
+
+[python-protobuf]
+runtime_dependencies = ["3rdparty/python:protobuf"]
+# mypy_plugin = true # TODO: we'll probably want this at some point (https://www.pantsbuild.org/docs/protobuf)
