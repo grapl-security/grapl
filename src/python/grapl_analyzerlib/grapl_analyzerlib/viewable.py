@@ -53,7 +53,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         for key, value in kwargs.items():
             self.set_predicate(key, value)
 
-    def _get_uid(self) -> str:
+    def _get_uid(self) -> int:
         return self.uid
 
     def set_predicate(

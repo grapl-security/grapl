@@ -49,9 +49,6 @@ class Eq(object):
         self.value = extract_value(value)
         self.negated: bool = isinstance(value, Not)
 
-        if self.predicate == "uid":
-            self.value = hex(self.value)
-
     def to_filter(self) -> str:
         if self.predicate == "dgraph.type":
             filter_str = f"type({self.value})"
