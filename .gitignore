@@ -26,9 +26,6 @@ __pycache__/
 
 target/
 
-# C extensions
-*.so
-
 # Distribution / packaging
 .Python
 env/
