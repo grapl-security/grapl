@@ -7,19 +7,20 @@ src/rust/graph-descriptions/grapl_graph_descriptions
 test/cypress/screenshots
 test/cypress/videos
 
-node_modules/
-.idea/
-*.iml
+# Environments
 .env
 venv/
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
+# Rust outputs
 target/
+
+# Node packages
+node_modules/
 
 # Distribution / packaging
 .Python
@@ -42,9 +43,11 @@ wheels/
 .mypy_cache
 *.zip
 
+# IDE files
 *.code-workspace
 *.vscode
-
+.idea/
+*.iml
 
 .log/
 .hypothesis/
