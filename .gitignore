@@ -19,9 +19,7 @@ node_modules/
 .env
 venv/
 
-log2/
 
-word-macro-analyzer/*/
 bootstrap
 
 # Byte-compiled / optimized / DLL files
@@ -66,6 +64,6 @@ pip-log.txt
 *.code-workspace
 *.vscode
 *.zip
-stale_outputs_checked
+
 .log/
 .hypothesis/
