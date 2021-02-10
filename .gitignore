@@ -7,8 +7,6 @@ src/rust/graph-descriptions/grapl_graph_descriptions
 test/cypress/screenshots
 test/cypress/videos
 
-lambda/
-
 .mypy_cache/
 
 
