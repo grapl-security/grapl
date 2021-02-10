@@ -8,7 +8,7 @@ import { GraplServiceProps } from '../grapl-cdk-stack';
 import { GraplS3Bucket } from '../grapl_s3_bucket';
 import {FargateService} from "../fargate_service";
 import {ContainerImage} from "@aws-cdk/aws-ecs";
-import { RUST_DIR } from '../dockerfile_paths';
+import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
 
 export interface AnalyzerDispatchProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -61,12 +61,12 @@ export class AnalyzerDispatch extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(RUST_DIR, {
+            serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "analyzer-dispatcher-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
             command: ["/analyzer-dispatcher"],
             // metric_forwarder: props.metricForwarder,

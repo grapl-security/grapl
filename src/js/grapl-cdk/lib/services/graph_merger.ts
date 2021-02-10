@@ -8,7 +8,7 @@ import { SchemaDb } from '../schemadb';
 import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { FargateService } from "../fargate_service";
 import { GraplS3Bucket } from '../grapl_s3_bucket';
-import { RUST_DIR } from '../dockerfile_paths';
+import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -54,12 +54,12 @@ export class GraphMerger extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(RUST_DIR, {
+            serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "graph-merger-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
             command: ["/graph-merger"],
             // metric_forwarder: props.metricForwarder,

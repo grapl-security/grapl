@@ -31,7 +31,6 @@ FROM grapl-cdk-build AS grapl-cdk-test
 # We need the Rust Dockerfile to run the tests
 WORKDIR /home/grapl
 COPY src/rust/Dockerfile src/rust/Dockerfile
-COPY src/python/Dockerfile src/python/Dockerfile
 
 # Make fake zip files to appease the CDK tests
 WORKDIR /home/grapl/src/js/grapl-cdk/zips
@@ -50,7 +49,6 @@ RUN touch \
   node-identifier-retry-handler-latest.zip \
   osquery-subgraph-generator-latest.zip \
   sysmon-subgraph-generator-latest.zip \
-  swarm-lifecycle-event-handler-latest.zip \
   ux-router-latest.zip
 
 WORKDIR /home/grapl/src/js/grapl-cdk

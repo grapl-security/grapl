@@ -6,7 +6,7 @@ import { RedisCluster } from '../redis';
 import { GraplServiceProps } from '../grapl-cdk-stack';
 import { FargateService } from "../fargate_service";
 import { ContainerImage } from "@aws-cdk/aws-ecs";
-import { RUST_DIR } from '../dockerfile_paths';
+import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
 
 interface OSQueryGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -43,12 +43,12 @@ export class OSQueryGraphGenerator extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(RUST_DIR, {
+            serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "osquery-subgraph-generator-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
             command: ["/osquery-subgraph-generator"],
             //metric_forwarder: props.metricForwarder,

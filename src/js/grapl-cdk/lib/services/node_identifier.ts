@@ -9,7 +9,7 @@ import { GraplServiceProps } from '../grapl-cdk-stack';
 import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { FargateService } from "../fargate_service";
 import { GraplS3Bucket } from '../grapl_s3_bucket';
-import { RUST_DIR } from '../dockerfile_paths';
+import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
 
 export interface NodeIdentifierProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -69,19 +69,19 @@ export class NodeIdentifier extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(RUST_DIR, {
+            serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "node-identifier-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
-            retryServiceImage: ContainerImage.fromAsset(RUST_DIR, {
+            retryServiceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "node-identifier-retry-handler-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
             command: ["/node-identifier"],
             retryCommand: ["/node-identifier-retry-handler"],

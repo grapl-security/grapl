@@ -7,9 +7,9 @@ function ensureExists(dir: string) {
     }
 }
 
-export const PYTHON_DIR = path.join(__dirname, '../../../../src/python/');
-export const RUST_DIR = path.join(__dirname, '../../../../src/rust/');
+// Akin to the build context in `docker-compose` files
+export const SRC_DIR = path.join(__dirname, '../../../../src/');
+ensureExists(SRC_DIR);
 
-for (const dir of [PYTHON_DIR, RUST_DIR]) {
-   ensureExists(dir);
-}
+export const RUST_DOCKERFILE = "rust/Dockerfile";
+export const PYTHON_DOCKERFILE = "python/Dockerfile";
