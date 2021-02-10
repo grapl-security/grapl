@@ -7,7 +7,7 @@ from typing import (
 
 from pydgraph import DgraphClient
 
-from grapl_graph_descriptions.graph_description_pb2 import EdgeList, Graph
+from graplinc.grapl.api.graph.v1beta1.types_pb2 import EdgeList, Graph
 
 
 class SubgraphView(object):
