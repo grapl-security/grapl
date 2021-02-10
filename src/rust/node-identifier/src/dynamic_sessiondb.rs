@@ -200,17 +200,9 @@ where
         let primary_key = self
             .primary_session_key(&mut attributed_node, strategy)
             .await?;
-        let created_time = node
-            .properties
-            .get(&strategy.created_time)
-            .and_then(NodeProperty::as_uint_prop)
-            .unwrap_or(0);
 
-        let last_seen_time = node
-            .properties
-            .get(&strategy.last_seen_time)
-            .and_then(NodeProperty::as_uint_prop)
-            .unwrap_or(0);
+        let created_time = strategy.created_time;
+        let last_seen_time = strategy.last_seen_time;
 
         let unid = match (created_time != 0, last_seen_time != 0) {
             (true, _) => UnidSession {

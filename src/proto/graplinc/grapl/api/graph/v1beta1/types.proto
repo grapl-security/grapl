@@ -9,9 +9,9 @@ message Session {
     // Such as the pid + assetid
     repeated string primary_key_properties = 1;
     bool primary_key_requires_asset_id = 2;
-    string created_time = 3;
-    string last_seen_time = 4;
-    string terminated_time = 5;
+    uint64 created_time = 3;
+    uint64 last_seen_time = 4;
+    uint64 terminated_time = 5;
 }
 
 message Static {
