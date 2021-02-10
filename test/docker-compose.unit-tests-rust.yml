@@ -7,7 +7,8 @@ services:
   grapl-rust-test:
     image: grapl/rust-test-unit:${TAG:-latest}
     build:
-      context: ${PWD}/src/rust
+      context: ${PWD}/src
+      dockerfile: ./rust/Dockerfile
       target: build-test-unit
       args:
         - CARGO_PROFILE=debug

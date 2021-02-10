@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/wrappers.proto";
 
-package graph_description;
+package graplinc.grapl.api.graph.v1beta1;
 
 // Identity ypes
 message Session {
@@ -25,7 +25,6 @@ message IdStrategy {
         Static static = 2;
     }
 }
-
 
 // Used to identify the system for a given node
 // for example, 'a process executed on cobrien-mbp'
@@ -198,6 +197,7 @@ message DynamicNode {
 message Edge {
     string from = 1;
     string to = 2;
+    // buf:lint:ignore FIELD_LOWER_SNAKE_CASE
     string edgeName = 3;
 }
 
