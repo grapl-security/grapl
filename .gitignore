@@ -20,8 +20,6 @@ node_modules/
 venv/
 
 
-bootstrap
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
