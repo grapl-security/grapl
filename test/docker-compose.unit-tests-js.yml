@@ -15,8 +15,8 @@ services:
   grapl-cdk-test:
     image: grapl/grapl-cdk-test:${TAG:-latest}
     build:
-      context: ${PWD}
-      dockerfile: src/js/grapl-cdk/Dockerfile
+      context: ${PWD}/src
+      dockerfile: js/grapl-cdk/Dockerfile
       target: grapl-cdk-test
     command: npm run test
 
