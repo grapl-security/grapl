@@ -67,11 +67,13 @@ export class GraphMerger extends cdk.NestedStack {
         });
 
         // probably only needs 9080
-        for (const conn of this.service.connections()) {
-            conn.allowToAnyIpv4(
-                ec2.Port.allTcp()
-            );
-        }
+        this.service.service.cluster.connections.allowToAnyIpv4(
+            ec2.Port.allTcp()
+        );
+        // probably only needs 9080
+        this.service.retryService.cluster.connections.allowToAnyIpv4(
+            ec2.Port.allTcp()
+        );
         props.schemaTable.allowRead(this.service);
         props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster);
         props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.cluster);

@@ -131,10 +131,10 @@ export class FargateService {
             });
 
         for (const q of [this.queues.queue, this.queues.retryQueue, this.queues.deadLetterQueue]) {
-            for (const taskRole of this.taskRoles()) {
-                q.grantConsumeMessages(taskRole);
-                q.grantSendMessages(taskRole);
-            }
+            q.grantConsumeMessages(this.service.taskDefinition.taskRole);
+            q.grantConsumeMessages(this.retryService.taskDefinition.taskRole);
+            q.grantSendMessages(this.service.taskDefinition.taskRole);
+            q.grantSendMessages(this.retryService.taskDefinition.taskRole);
         }
 
         if (readsFrom) {
@@ -176,9 +176,7 @@ export class FargateService {
     }
 
     writesToBucket(publishes_to: s3.IBucket) {
-        for (const taskRole of this.taskRoles()) {
-            publishes_to.grantWrite(taskRole);
-        }
+        publishes_to.grantWrite(this.service.service.taskDefinition.taskRole);
     }
 
     addSubscription(scope: cdk.Construct, topic: sns.ITopic) {
@@ -195,19 +193,5 @@ export class FargateService {
             protocol: config.protocol,
             rawMessageDelivery: true,
         });
-    }
-
-    connections(): ec2.Connections[] {
-        return [
-            this.service.service.cluster.connections,
-            this.retryService.service.cluster.connections,
-        ]
-    }
-
-    taskRoles(): iam.IRole[] {
-        return [
-            this.service.service.taskDefinition.taskRole,
-            this.retryService.service.taskDefinition.taskRole,
-        ]
     }
 }
