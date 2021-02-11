@@ -103,6 +103,13 @@ test-unit-python: build-test-unit-python ## Build and run unit tests - Python on
 		-p grapl-test-unit-python \
 		-f ./test/docker-compose.unit-tests-python.yml
 
+.PHONY: test-unit-python-pants
+
+# Long term, it would be nice to organize the tests with Pants
+# tags, rather than pytest tags
+test-unit-python-pants: ## Run Python unit tests under Pants
+	./pants --tag="-needs_work" test :: --pytest-args="-m 'not integration_test'"
+
 .PHONY: test-unit-js
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh \

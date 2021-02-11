@@ -10,5 +10,6 @@ protobuf>=3.12.1
 pydgraph
 pyjwt
 requests
+redis
 typing_extensions
 zstd

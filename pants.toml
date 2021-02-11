@@ -20,16 +20,16 @@ root_patterns = [
   "/src/proto",
   "/src/python/analyzer-deployer",
   "/src/python/analyzer_executor/src",
-  "/src/python/analyzer_executor/src/analyzer_executor_lib",
   "/src/python/analyzer_executor/tests",
   "/src/python/engagement-creator/src",
   "/src/python/engagement-creator/tests",
-  "/src/python/engagement_edge/src",
+  "/src/python/engagement_edge",
   "/src/python/engagement_edge/tests",
   "/src/python/grapl_analyzerlib",
   "/src/python/grapl-common",
   "/src/python/grapl-dgraph-ttl",
   "/src/python/grapl_e2e_tests",
+  "/src/python/graplctl",
   "/src/python/graplinc",
   "/src/python/grapl-model-plugin-deployer/src",
   "/src/python/grapl-model-plugin-deployer/tests",
@@ -42,6 +42,7 @@ root_patterns = [
 # Use this as a lockfile; speeds up installation of dependencies
 # To update it, run build-support/generate_constraints.sh
 requirement_constraints = "3rdparty/python/constraints.txt"
+interpreter_constraints = ["CPython==3.7.*"]
 
 # We have at least one __init__.py file that has code in it.
 # See https://www.pantsbuild.org/docs/python-backend
@@ -63,3 +64,18 @@ config = "pyproject.toml"
 # `pyproject.toml`, then we can remove this argument as well.
 args = [ "--filter-files" ]
 version = "isort==5.6.4"
+
+[pytest]
+pytest_plugins = [
+  "pytest-custom_exit_code"
+]
+# This comes from the pytest-custom_exit_code plugin, and is
+# specifically for running tests with Pytest filtering, like:
+#
+#   -m 'not integration_test'
+#
+# Because of how Pants runs tests, we can get failures for test files
+# that only contain integration tests. Longer term, we should think of
+# other ways to divide tests into classes (unit, integration, etc.) so
+# we can target things better with Pants tags.
+args = [ "--suppress-no-test-exit-code" ]
