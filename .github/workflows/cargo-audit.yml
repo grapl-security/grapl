@@ -19,6 +19,9 @@ on:
 jobs:
   cargo-audit:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/rust
     steps:
       # Scheduled actions operate on the default branch. In order to use
       # "staging", we have to specify it like this.
@@ -35,6 +38,9 @@ jobs:
       - uses: actions/checkout@v2
         if: ${{ github.event_name != 'schedule' }}
 
-      - uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # TODO: Once actions-rs/audit-check can run in an arbitrary subdirectory,
+      # let's use it instead; it has better output.
+      - name: Run cargo audit
+        run: |
+          cargo install cargo-audit
+          cargo audit

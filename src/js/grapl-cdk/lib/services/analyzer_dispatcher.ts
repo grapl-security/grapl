@@ -1,15 +1,14 @@
-import * as path from 'path';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
-import { Service } from '../service';
 import { EventEmitter } from '../event_emitters';
 import { RedisCluster } from '../redis';
 import { GraplServiceProps } from '../grapl-cdk-stack';
 import { GraplS3Bucket } from '../grapl_s3_bucket';
 import {FargateService} from "../fargate_service";
 import {ContainerImage} from "@aws-cdk/aws-ecs";
+import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
 
 export interface AnalyzerDispatchProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -28,6 +27,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
     ) {
         super(scope, id);
 
+        const service_name = "analyzer-dispatcher";
         const bucket_prefix = props.prefix.toLowerCase();
         const subgraphs_merged = new EventEmitter(
             this,
@@ -48,7 +48,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
         );
         dispatch_event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new FargateService(this, id, {
+        this.service = new FargateService(this, service_name, {
             prefix: props.prefix,
             environment: {
                 RUST_LOG: props.analyzerDispatcherLogLevel,
@@ -62,21 +62,23 @@ export class AnalyzerDispatch extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
+            serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "analyzer-dispatcher-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
             command: ["/analyzer-dispatcher"],
             // metric_forwarder: props.metricForwarder,
         });
-        analyzer_bucket.grantRead(this.service.service.service.taskDefinition.taskRole);
-        analyzer_bucket.grantRead(this.service.retryService.service.taskDefinition.taskRole);
-        this.service.service.cluster.connections.allowToAnyIpv4(
-            ec2.Port.tcp(parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort))
-        );
-
+        for (const taskRole of this.service.taskRoles()) {
+            analyzer_bucket.grantRead(taskRole);
+        }
+        for (const conn of this.service.connections()) {
+            conn.allowToAnyIpv4(
+                ec2.Port.tcp(parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort))
+            );
+        }
     }
 }
