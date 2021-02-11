@@ -11,13 +11,26 @@ use grapl_observe::{metric_reporter::{tag,
                     timers::TimedFutureExt};
 use grapl_utils::future_ext::GraplFutureExt;
 use tokio::time::Elapsed;
-use tracing::warn;
 
 use crate::{cache::{Cache,
                     CacheResponse,
                     Cacheable},
             errors::{CheckedError,
                      Recoverable}};
+use lazy_static::lazy_static;
+
+
+lazy_static! {
+    /// Timeout for requests to Redis
+    static ref REDIS_REQUEST_TIMEOUT: Duration = Duration::from_millis(300);
+    /// Expiration value for set Redis keys (after 30 minutes, the key is unset)
+    static ref REDIS_SET_EXPIRATION: Duration = Duration::from_secs(30 * 60); // 30 minutes
+}
+
+/// Value we set in Redis to represent a "set" key
+const REDIS_SET_VALUE: &[u8; 1] = b"1";
+/// Value we set in LRU cache to represent a "set" key
+const LRU_SET_VALUE: () = ();
 
 #[derive(thiserror::Error, Debug)]
 pub enum RedisCacheError {
@@ -71,51 +84,8 @@ impl RedisCache {
     where
         CA: Cacheable + Send + Sync + 'static,
     {
-        let identity_bytes = cacheable.identity();
-        let identity = hex::encode(&identity_bytes);
-
-        if self
-            .lru_cache
-            .lock()
-            .unwrap()
-            .get(&identity_bytes)
-            .is_some()
-        {
-            return Ok(CacheResponse::Hit);
-        }
-
-        //
-        let mut client = self
-            .connection_pool
-            .get()
-            .timeout(Duration::from_secs(1))
-            .await?;
-
-        let res = client
-            .exists(&identity)
-            .timeout(Duration::from_millis(200))
-            .await;
-
-        let res = match res {
-            Ok(res) => res,
-            Err(e) => {
-                warn!(errors = e.to_string().as_str(), "Cache lookup failed with");
-                return Ok(CacheResponse::Miss);
-            }
-        };
-
-        match res {
-            Ok(true) => {
-                self.lru_cache.lock().unwrap().put(identity_bytes, ());
-
-                Ok(CacheResponse::Hit)
-            }
-            Ok(false) => Ok(CacheResponse::Miss),
-            Err(e) => {
-                warn!(error = e.to_string().as_str(), "Cache lookup failed with");
-                Ok(CacheResponse::Miss)
-            }
-        }
+        self._get_all(vec![cacheable]).await
+            .map(|mut results| results.pop().unwrap_or(CacheResponse::Miss))
     }
 
     async fn _get_all<CA>(
@@ -145,7 +115,7 @@ impl RedisCache {
         // if the LRU cache satisfied all our needs, we should return early
         let are_all_keys_handled = cacheable_responses
             .iter()
-            .fold(true, |acc, (_, response)| acc && response.is_some());
+            .all(|(_, response)| response.is_some());
 
         if are_all_keys_handled {
             return Ok(cacheable_responses
@@ -170,7 +140,7 @@ impl RedisCache {
 
             client
                 .mget(&unknown_cacheables)
-                .timeout(Duration::from_millis(300))
+                .timeout(REDIS_REQUEST_TIMEOUT.clone())
                 .await??
                 .into_iter()
                 .map(|mget_response: Option<_>| match mget_response {
@@ -192,6 +162,10 @@ impl RedisCache {
             })
             .collect();
 
+        if !unknown_cacheable_responses.is_empty() {
+            error!("Redis returned more cache responses than expected.");
+        }
+
         Ok(complete_cacheable_responses)
     }
 
@@ -203,7 +177,7 @@ impl RedisCache {
             .lru_cache
             .lock()
             .unwrap()
-            .put(identity.clone(), ())
+            .put(identity.clone(), LRU_SET_VALUE)
             .is_some()
         {
             return Ok(());
@@ -214,12 +188,11 @@ impl RedisCache {
         let mut client = self
             .connection_pool
             .get()
-            .timeout(Duration::from_secs(1))
-            .await?;
+            .await;
 
         client
-            .set_and_expire_seconds(&identity, b"1", 30 * 60)
-            .timeout(Duration::from_millis(500))
+            .set_and_expire_seconds(&identity, REDIS_SET_VALUE, (*REDIS_SET_EXPIRATION).as_secs() as u32)
+            .timeout(REDIS_REQUEST_TIMEOUT.clone())
             .await??;
 
         Ok(())
@@ -239,7 +212,7 @@ impl RedisCache {
             //      2. if key is new (is_none()), collect into a Vec
             identities
                 .into_iter()
-                .filter(|identity| lru_cache.put(identity.clone(), ()).is_none())
+                .filter(|identity| lru_cache.put(identity.clone(), LRU_SET_VALUE).is_none())
                 .collect()
         };
 
@@ -255,7 +228,7 @@ impl RedisCache {
             let mut mset_builder = MSetBuilder::new();
 
             for identity in &identities_to_check {
-                mset_builder = mset_builder.set(identity, b"1");
+                mset_builder = mset_builder.set(identity, REDIS_SET_VALUE);
             }
 
             match client.mset(mset_builder).await {
@@ -263,7 +236,7 @@ impl RedisCache {
                 Err(e) => {
                     let elapsed = task_start.elapsed();
 
-                    if elapsed >= Duration::from_millis(300) {
+                    if elapsed >= *REDIS_REQUEST_TIMEOUT {
                         let elapsed_ms = elapsed.as_millis() as u64;
                         error!(
                             error = e.to_string().as_str(),
@@ -277,8 +250,14 @@ impl RedisCache {
                 }
             }
         })
-        .timeout(Duration::from_millis(300))
+        .timeout(REDIS_REQUEST_TIMEOUT.clone())
         .await???;
+        /*
+            Three question marks for the following reasons:
+            1. Result from timeout
+            2. Result from JoinHandle (from tokio::spawn)
+            3. Result from `async { ... }` region (we return Ok(()) or Err(..))
+         */
 
         Ok(())
     }

@@ -3303,6 +3303,7 @@ dependencies = [
  "grapl-observe",
  "grapl_utils",
  "hex",
+ "lazy_static",
  "lru",
  "num_cpus",
  "parking_lot 0.11.1",
