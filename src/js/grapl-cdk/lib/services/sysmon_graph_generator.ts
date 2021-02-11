@@ -22,6 +22,7 @@ export class SysmonGraphGenerator extends cdk.NestedStack {
     ) {
         super(parent, id);
 
+        const service_name = "sysmon-generator";
         const bucket_prefix = props.prefix.toLowerCase();
         const sysmon_log = new EventEmitter(
             this,
@@ -31,7 +32,7 @@ export class SysmonGraphGenerator extends cdk.NestedStack {
         const event_cache = new RedisCluster(this, 'SysmonEventCache', props);
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new FargateService(this, id, {
+        this.service = new FargateService(this, service_name, {
             prefix: props.prefix,
             environment: {
                 RUST_LOG: props.sysmonSubgraphGeneratorLogLevel,
