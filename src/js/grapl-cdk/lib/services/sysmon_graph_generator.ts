@@ -55,10 +55,8 @@ export class SysmonGraphGenerator extends cdk.NestedStack {
             // metric_forwarder: props.metricForwarder,
         });
 
-        for (const conn of this.service.connections()) {
-            conn.allowToAnyIpv4(
-                ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
-            );
-        }
+        this.service.service.cluster.connections.allowToAnyIpv4(
+            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+        );
     }
 }
