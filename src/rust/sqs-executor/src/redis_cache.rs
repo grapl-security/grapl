@@ -10,6 +10,7 @@ use grapl_observe::{metric_reporter::{tag,
                                       MetricReporter},
                     timers::TimedFutureExt};
 use grapl_utils::future_ext::GraplFutureExt;
+use lazy_static::lazy_static;
 use tokio::time::Elapsed;
 
 use crate::{cache::{Cache,
@@ -17,8 +18,6 @@ use crate::{cache::{Cache,
                     Cacheable},
             errors::{CheckedError,
                      Recoverable}};
-use lazy_static::lazy_static;
-
 
 lazy_static! {
     /// Timeout for requests to Redis
@@ -84,7 +83,8 @@ impl RedisCache {
     where
         CA: Cacheable + Send + Sync + 'static,
     {
-        self._get_all(vec![cacheable]).await
+        self._get_all(vec![cacheable])
+            .await
             .map(|mut results| results.pop().unwrap_or(CacheResponse::Miss))
     }
 
@@ -185,13 +185,14 @@ impl RedisCache {
 
         let identity = hex::encode(identity);
 
-        let mut client = self
-            .connection_pool
-            .get()
-            .await;
+        let mut client = self.connection_pool.get().await;
 
         client
-            .set_and_expire_seconds(&identity, REDIS_SET_VALUE, (*REDIS_SET_EXPIRATION).as_secs() as u32)
+            .set_and_expire_seconds(
+                &identity,
+                REDIS_SET_VALUE,
+                (*REDIS_SET_EXPIRATION).as_secs() as u32,
+            )
             .timeout(REDIS_REQUEST_TIMEOUT.clone())
             .await??;
 
@@ -253,11 +254,11 @@ impl RedisCache {
         .timeout(REDIS_REQUEST_TIMEOUT.clone())
         .await???;
         /*
-            Three question marks for the following reasons:
-            1. Result from timeout
-            2. Result from JoinHandle (from tokio::spawn)
-            3. Result from `async { ... }` region (we return Ok(()) or Err(..))
-         */
+           Three question marks for the following reasons:
+           1. Result from timeout
+           2. Result from JoinHandle (from tokio::spawn)
+           3. Result from `async { ... }` region (we return Ok(()) or Err(..))
+        */
 
         Ok(())
     }
