@@ -42,6 +42,7 @@ root_patterns = [
 # Use this as a lockfile; speeds up installation of dependencies
 # To update it, run build-support/generate_constraints.sh
 requirement_constraints = "3rdparty/python/constraints.txt"
+interpreter_constraints = ["CPython==3.7.*"]
 
 # We have at least one __init__.py file that has code in it.
 # See https://www.pantsbuild.org/docs/python-backend
