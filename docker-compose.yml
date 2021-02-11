@@ -560,8 +560,8 @@ services:
   grapl-engagement-view-uploader:
     image: grapl/grapl-engagement-view:${TAG:-latest}
     build: 
-      context: src/js/engagement_view
-      dockerfile: Dockerfile
+      context: src
+      dockerfile: js/engagement_view/Dockerfile
       target: engagement-view-local-deploy
     command: |
       /bin/bash -c "
@@ -577,8 +577,8 @@ services:
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     build: 
-      context: src/js/graphql_endpoint
-      dockerfile: Dockerfile
+      context: src
+      dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint-deploy
     command: yarn start server
     environment:
