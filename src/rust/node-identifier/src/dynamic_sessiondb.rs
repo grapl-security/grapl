@@ -1,24 +1,15 @@
-use std::collections::{HashMap,
-                       HashSet};
+use std::collections::{HashMap, HashSet};
 
-use failure::{bail,
-              Error};
-use grapl_graph_descriptions::{graph_description::{id_strategy,
-                                                   Session as SessionStrategy,
-                                                   *},
-                               node::NodeT};
-use log::{info,
-          warn};
-use rusoto_dynamodb::{AttributeValue,
-                      DynamoDb,
-                      GetItemInput,
-                      PutItemInput};
-use serde::{Deserialize,
-            Serialize};
+use failure::{bail, Error};
+use grapl_graph_descriptions::{
+    graph_description::{id_strategy, Session as SessionStrategy, *},
+    node::NodeT,
+};
+use log::{info, warn};
+use rusoto_dynamodb::{AttributeValue, DynamoDb, GetItemInput, PutItemInput};
+use serde::{Deserialize, Serialize};
 
-use crate::{assetdb::AssetIdentifier,
-            sessiondb::SessionDb,
-            sessions::UnidSession};
+use crate::{assetdb::AssetIdentifier, sessiondb::SessionDb, sessions::UnidSession};
 
 #[derive(Debug, Clone)]
 pub struct DynamicMappingDb<D>

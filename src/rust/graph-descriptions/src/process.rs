@@ -1,13 +1,10 @@
 use std::convert::TryFrom;
 
 use log::warn;
-use serde_json::{json,
-                 Value};
+use serde_json::{json, Value};
 use uuid::Uuid;
 
-use crate::{error::Error,
-            graph_description::Process,
-            node::NodeT};
+use crate::{error::Error, graph_description::Process, node::NodeT};
 
 #[derive(Debug, Clone)]
 pub enum ProcessState {

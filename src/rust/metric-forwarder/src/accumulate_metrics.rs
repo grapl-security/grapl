@@ -1,15 +1,11 @@
-use std::{collections::{BTreeMap,
-                        HashMap},
-          hash::{Hash,
-                 Hasher}};
+use std::{
+    collections::{BTreeMap, HashMap},
+    hash::{Hash, Hasher},
+};
 
-use chrono::{DateTime,
-             Duration,
-             DurationRound,
-             FixedOffset};
+use chrono::{DateTime, Duration, DurationRound, FixedOffset};
 use ordered_float::OrderedFloat;
-use rusoto_cloudwatch::{Dimension,
-                        MetricDatum};
+use rusoto_cloudwatch::{Dimension, MetricDatum};
 
 type CountMap = HashMap<OrderedFloat<f64>, f64>;
 type DatumToCountMap = HashMap<WrappedMetricDatum, CountMap>;

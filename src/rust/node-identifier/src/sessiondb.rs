@@ -1,22 +1,13 @@
 use std::convert::TryFrom;
 
-use failure::{bail,
-              Error};
+use failure::{bail, Error};
 use hmap::hmap;
-use log::{info,
-          warn};
+use log::{info, warn};
 use rusoto_core::RusotoError;
-use rusoto_dynamodb::{AttributeValue,
-                      AttributeValueUpdate,
-                      Delete,
-                      DeleteItemInput,
-                      DynamoDb,
-                      Put,
-                      PutItemInput,
-                      QueryInput,
-                      TransactWriteItem,
-                      TransactWriteItemsInput,
-                      UpdateItemInput};
+use rusoto_dynamodb::{
+    AttributeValue, AttributeValueUpdate, Delete, DeleteItemInput, DynamoDb, Put, PutItemInput,
+    QueryInput, TransactWriteItem, TransactWriteItemsInput, UpdateItemInput,
+};
 use uuid::Uuid;
 
 use crate::sessions::*;

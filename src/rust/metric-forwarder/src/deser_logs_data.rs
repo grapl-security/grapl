@@ -1,11 +1,12 @@
-use aws_lambda_events::event::cloudwatch_logs::{CloudwatchLogsData,
-                                                CloudwatchLogsEvent};
+use aws_lambda_events::event::cloudwatch_logs::{CloudwatchLogsData, CloudwatchLogsEvent};
 
-use crate::error::{MetricForwarderError,
-                   MetricForwarderError::{DecodeBase64Error,
-                                          GunzipToStringError,
-                                          ParseStringToLogsdataError,
-                                          PoorlyFormattedEventError}};
+use crate::error::{
+    MetricForwarderError,
+    MetricForwarderError::{
+        DecodeBase64Error, GunzipToStringError, ParseStringToLogsdataError,
+        PoorlyFormattedEventError,
+    },
+};
 
 fn parse_string_to_logsdata(gunzipped: String) -> Result<CloudwatchLogsData, MetricForwarderError> {
     use serde_json::from_str;

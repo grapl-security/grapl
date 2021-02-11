@@ -1,9 +1,10 @@
 use sqs_executor::event_decoder::PayloadDecoder;
 use tokio::fs;
 
-use crate::{parsers::PartiallyDeserializedOSQueryLog,
-            serialization::{OSQueryLogDecoder,
-                            OSQueryLogDecoderError}};
+use crate::{
+    parsers::PartiallyDeserializedOSQueryLog,
+    serialization::{OSQueryLogDecoder, OSQueryLogDecoderError},
+};
 
 #[cfg(test)]
 pub(crate) async fn read_osquery_test_data(

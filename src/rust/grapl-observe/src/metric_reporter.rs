@@ -1,16 +1,16 @@
-use std::{fmt::Write,
-          io::{stdout,
-               Stdout}};
+use std::{
+    fmt::Write,
+    io::{stdout, Stdout},
+};
 
-use chrono::{DateTime,
-             SecondsFormat,
-             Utc};
+use chrono::{DateTime, SecondsFormat, Utc};
 
-use crate::{metric_error::MetricError,
-            statsd_formatter,
-            statsd_formatter::{statsd_format,
-                               MetricType},
-            writer_wrapper::WriterWrapper};
+use crate::{
+    metric_error::MetricError,
+    statsd_formatter,
+    statsd_formatter::{statsd_format, MetricType},
+    writer_wrapper::WriterWrapper,
+};
 
 pub mod common_strs {
     pub const STATUS: &'static str = "status";

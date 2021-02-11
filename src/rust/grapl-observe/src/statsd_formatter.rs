@@ -3,10 +3,13 @@ use std::fmt::Write;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::{metric_error::{MetricError,
-                           MetricError::{MetricInvalidCharacterError,
-                                         MetricInvalidSampleRateError}},
-            metric_reporter::TagPair};
+use crate::{
+    metric_error::{
+        MetricError,
+        MetricError::{MetricInvalidCharacterError, MetricInvalidSampleRateError},
+    },
+    metric_reporter::TagPair,
+};
 
 lazy_static! {
     static ref INVALID_CHARS: Regex = Regex::new("[|#,=:]").unwrap();
@@ -96,11 +99,10 @@ pub fn statsd_format(
 
 #[cfg(test)]
 mod tests {
-    use crate::{metric_error::MetricError,
-                statsd_formatter::{reject_invalid_chars,
-                                   statsd_format,
-                                   MetricType,
-                                   TagPair}};
+    use crate::{
+        metric_error::MetricError,
+        statsd_formatter::{reject_invalid_chars, statsd_format, MetricType, TagPair},
+    };
 
     const INVALID_STRS: [&str; 5] = [
         "some|metric",

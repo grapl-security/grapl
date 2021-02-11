@@ -1,11 +1,11 @@
-use std::{collections::hash_map::DefaultHasher,
-          hash::{Hash,
-                 Hasher}};
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+};
 
 use async_trait::async_trait;
 
-use crate::errors::{CheckedError,
-                    Recoverable};
+use crate::errors::{CheckedError, Recoverable};
 
 pub trait Cacheable {
     fn identity(&self) -> Vec<u8>;
@@ -32,10 +32,25 @@ pub enum CacheResponse {
 #[async_trait]
 pub trait Cache: Clone {
     type CacheErrorT: CheckedError + Send + Sync + 'static;
+
     async fn get<CA: Cacheable + Send + Sync + 'static>(
         &mut self,
         cacheable: CA,
     ) -> Result<CacheResponse, Self::CacheErrorT>;
+
+    async fn get_all<CA: Cacheable + Send + Sync + 'static>(
+        &mut self,
+        cacheables: Vec<CA>,
+    ) -> Result<Vec<CacheResponse>, Self::CacheErrorT> {
+        let mut results = Vec::with_capacity(cacheables.len());
+
+        for cacheable in cacheables {
+            results.push(self.get(cacheable).await?);
+        }
+
+        Ok(results)
+    }
+
     async fn store(&mut self, identity: Vec<u8>) -> Result<(), Self::CacheErrorT>;
 
     async fn store_all(&mut self, identities: Vec<Vec<u8>>) -> Result<(), Self::CacheErrorT> {
@@ -72,6 +87,7 @@ impl Cache for NopCache {
         tracing::debug!("nopcache.get operation");
         Ok(CacheResponse::Miss)
     }
+
     async fn store(&mut self, _identity: Vec<u8>) -> Result<(), Self::CacheErrorT> {
         tracing::debug!("nopcache.store operation");
         Ok(())

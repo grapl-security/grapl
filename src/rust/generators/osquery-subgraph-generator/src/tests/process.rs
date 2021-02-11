@@ -1,10 +1,11 @@
-use sqs_executor::{cache::NopCache,
-                   event_handler::{CompletedEvents,
-                                   EventHandler}};
+use sqs_executor::{
+    cache::NopCache,
+    event_handler::{CompletedEvents, EventHandler},
+};
 
-use crate::{generator::OSQuerySubgraphGenerator,
-            metrics::OSQuerySubgraphGeneratorMetrics,
-            tests::utils};
+use crate::{
+    generator::OSQuerySubgraphGenerator, metrics::OSQuerySubgraphGeneratorMetrics, tests::utils,
+};
 
 #[tokio::test]
 async fn test_subgraph_generation_process_create() {

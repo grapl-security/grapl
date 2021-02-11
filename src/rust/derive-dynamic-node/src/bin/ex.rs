@@ -1,5 +1,4 @@
-use derive_dynamic_node::{DynamicNode,
-                          GraplStaticId};
+use derive_dynamic_node::{DynamicNode, GraplStaticId};
 use grapl_graph_descriptions::graph_description::*;
 use log::info;
 use serde_derive::Deserialize;
