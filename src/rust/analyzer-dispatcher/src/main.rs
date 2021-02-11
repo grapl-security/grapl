@@ -1,27 +1,36 @@
 #![allow(unused_must_use)]
 
-use std::{sync::Arc, time::Duration};
+use std::{sync::Arc,
+          time::Duration};
 
 use async_trait::async_trait;
-use failure::{bail, Error};
-use grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
+use failure::{bail,
+              Error};
+use grapl_config::env_helpers::{s3_event_emitters_from_env,
+                                FromEnv};
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::decoder::ZstdProtoDecoder;
-use log::{debug, error, info, warn};
-use rusoto_s3::{ListObjectsRequest, S3Client, S3};
+use log::{debug,
+          error,
+          info,
+          warn};
+use rusoto_s3::{ListObjectsRequest,
+                S3Client,
+                S3};
 use rusoto_sqs::SqsClient;
-use sqs_executor::{
-    cache::NopCache,
-    errors::{CheckedError, Recoverable},
-    event_handler::{CompletedEvents, EventHandler},
-    event_retriever::S3PayloadRetriever,
-    make_ten,
-    s3_event_emitter::S3ToSqsEventNotifier,
-    time_based_key_fn,
-};
+use sqs_executor::{cache::NopCache,
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_retriever::S3PayloadRetriever,
+                   make_ten,
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   time_based_key_fn};
 
-use crate::dispatch_event::{AnalyzerDispatchEvent, AnalyzerDispatchSerializer};
+use crate::dispatch_event::{AnalyzerDispatchEvent,
+                            AnalyzerDispatchSerializer};
 
 pub mod dispatch_event;
 

@@ -1,10 +1,10 @@
 use std::io::Cursor;
 
-use prost::{DecodeError, Message};
-use sqs_executor::{
-    errors::{CheckedError, Recoverable},
-    event_decoder::PayloadDecoder,
-};
+use prost::{DecodeError,
+            Message};
+use sqs_executor::{errors::{CheckedError,
+                            Recoverable},
+                   event_decoder::PayloadDecoder};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ZstdProtoDecoderError {

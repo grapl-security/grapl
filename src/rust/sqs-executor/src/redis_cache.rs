@@ -1,22 +1,23 @@
-use std::{
-    io::Stdout,
-    time::{Duration, Instant},
-};
+use std::{io::Stdout,
+          time::{Duration,
+                 Instant}};
 
 use async_trait::async_trait;
-use darkredis::{ConnectionPool, Error as RedisError, MSetBuilder};
-use grapl_observe::{
-    metric_reporter::{tag, MetricReporter},
-    timers::TimedFutureExt,
-};
+use darkredis::{ConnectionPool,
+                Error as RedisError,
+                MSetBuilder};
+use grapl_observe::{metric_reporter::{tag,
+                                      MetricReporter},
+                    timers::TimedFutureExt};
 use grapl_utils::future_ext::GraplFutureExt;
 use tokio::time::Elapsed;
 use tracing::warn;
 
-use crate::{
-    cache::{Cache, CacheResponse, Cacheable},
-    errors::{CheckedError, Recoverable},
-};
+use crate::{cache::{Cache,
+                    CacheResponse,
+                    Cacheable},
+            errors::{CheckedError,
+                     Recoverable}};
 
 #[derive(thiserror::Error, Debug)]
 pub enum RedisCacheError {
@@ -283,9 +284,10 @@ impl RedisCache {
     }
 }
 
+use std::sync::{Arc,
+                Mutex};
+
 use prost::alloc::collections::VecDeque;
-use std::sync::Arc;
-use std::sync::Mutex;
 use tracing::error;
 
 #[async_trait]

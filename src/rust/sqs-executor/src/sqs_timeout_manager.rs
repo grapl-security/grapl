@@ -1,15 +1,17 @@
 use std::time::Duration;
 
-use futures::{
-    future::{self, Either},
-    pin_mut,
-};
-use rusoto_sqs::{ChangeMessageVisibilityRequest, Sqs};
+use futures::{future::{self,
+                       Either},
+              pin_mut};
+use rusoto_sqs::{ChangeMessageVisibilityRequest,
+                 Sqs};
 use stopwatch::Stopwatch;
-use tokio::sync::{
-    mpsc::{channel as mpsc_channel, Receiver as MpscReceiver, Sender as MpscSender},
-    oneshot::{channel as one_shot, Receiver as OneShotReceiver, Sender as OneShotSender},
-};
+use tokio::sync::{mpsc::{channel as mpsc_channel,
+                         Receiver as MpscReceiver,
+                         Sender as MpscSender},
+                  oneshot::{channel as one_shot,
+                            Receiver as OneShotReceiver,
+                            Sender as OneShotSender}};
 use tracing_futures::Instrument;
 
 struct SqsTimeoutManager<S>

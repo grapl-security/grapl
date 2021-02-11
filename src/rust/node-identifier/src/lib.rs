@@ -1,47 +1,53 @@
 #![allow(unused_must_use)]
 
-use std::{
-    collections::{HashMap, HashSet},
-    convert::TryFrom,
-    fmt::Debug,
-    sync::{Arc, Mutex},
-};
+use std::{collections::{HashMap,
+                        HashSet},
+          convert::TryFrom,
+          fmt::Debug,
+          sync::{Arc,
+                 Mutex}};
 
-use assetdb::{AssetIdDb, AssetIdentifier};
+use assetdb::{AssetIdDb,
+              AssetIdentifier};
 use async_trait::async_trait;
-use dynamic_sessiondb::{DynamicMappingDb, DynamicNodeIdentifier};
-use failure::{bail, Error};
-use grapl_config::{
-    env_helpers::{s3_event_emitters_from_env, FromEnv},
-    event_caches,
-};
-use grapl_graph_descriptions::{
-    file::FileState,
-    graph_description::{host::*, node::WhichNode, *},
-    ip_connection::IpConnectionState,
-    network_connection::NetworkConnectionState,
-    node::NodeT,
-    process_inbound_connection::ProcessInboundConnectionState,
-    process_outbound_connection::ProcessOutboundConnectionState,
-};
+use dynamic_sessiondb::{DynamicMappingDb,
+                        DynamicNodeIdentifier};
+use failure::{bail,
+              Error};
+use grapl_config::{env_helpers::{s3_event_emitters_from_env,
+                                 FromEnv},
+                   event_caches};
+use grapl_graph_descriptions::{file::FileState,
+                               graph_description::{host::*,
+                                                   node::WhichNode,
+                                                   *},
+                               ip_connection::IpConnectionState,
+                               network_connection::NetworkConnectionState,
+                               node::NodeT,
+                               process_inbound_connection::ProcessInboundConnectionState,
+                               process_outbound_connection::ProcessOutboundConnectionState};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ZstdProtoDecoder, serialization::SubgraphSerializer};
+use grapl_service::{decoder::ZstdProtoDecoder,
+                    serialization::SubgraphSerializer};
 use log::*;
-use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
+use rusoto_dynamodb::{DynamoDb,
+                      DynamoDbClient};
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
 use sessions::UnidSession;
 use sha2::Digest;
-use sqs_executor::{
-    cache::{Cache, CacheResponse, Cacheable},
-    errors::{CheckedError, Recoverable},
-    event_handler::{CompletedEvents, EventHandler},
-    event_retriever::S3PayloadRetriever,
-    event_status::EventStatus,
-    make_ten,
-    s3_event_emitter::S3ToSqsEventNotifier,
-    time_based_key_fn,
-};
+use sqs_executor::{cache::{Cache,
+                           CacheResponse,
+                           Cacheable},
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_retriever::S3PayloadRetriever,
+                   event_status::EventStatus,
+                   make_ten,
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   time_based_key_fn};
 
 macro_rules! wait_on {
     ($x:expr) => {{

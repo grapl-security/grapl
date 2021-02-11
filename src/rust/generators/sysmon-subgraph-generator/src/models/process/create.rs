@@ -1,12 +1,13 @@
-use grapl_graph_descriptions::{
-    file::FileState, graph_description::*, node::NodeT, process::ProcessState,
-};
+use grapl_graph_descriptions::{file::FileState,
+                               graph_description::*,
+                               node::NodeT,
+                               process::ProcessState};
 use sysmon::ProcessCreateEvent;
 
-use crate::{
-    generator::SysmonGeneratorError,
-    models::{get_image_name, strip_file_zone_identifier, utc_to_epoch},
-};
+use crate::{generator::SysmonGeneratorError,
+            models::{get_image_name,
+                     strip_file_zone_identifier,
+                     utc_to_epoch}};
 
 /// Creates a subgraph describing a `ProcessCreateEvent`.
 ///

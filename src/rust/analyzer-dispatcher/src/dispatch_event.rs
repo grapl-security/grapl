@@ -1,6 +1,7 @@
 use grapl_graph_descriptions::graph_description::*;
 use prost::Message;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize,
+            Serialize};
 use serde_json::json;
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;
 

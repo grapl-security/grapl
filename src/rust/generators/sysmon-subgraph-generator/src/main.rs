@@ -1,13 +1,14 @@
 #![type_length_limit = "1334469"]
 
 use graph_generator_lib::run_graph_generator;
-pub use grapl_service::{
-    decoder::{ZstdDecoder, ZstdDecoderError},
-    serialization::{SubgraphSerializer, SubgraphSerializerError},
-};
+pub use grapl_service::{decoder::{ZstdDecoder,
+                                  ZstdDecoderError},
+                        serialization::{SubgraphSerializer,
+                                        SubgraphSerializerError}};
 use log::*;
 
-use crate::{generator::SysmonSubgraphGenerator, metrics::SysmonSubgraphGeneratorMetrics};
+use crate::{generator::SysmonSubgraphGenerator,
+            metrics::SysmonSubgraphGeneratorMetrics};
 
 mod generator;
 mod metrics;

@@ -1,45 +1,57 @@
 #![allow(unused_must_use)]
 
-use std::{
-    collections::HashMap,
-    fmt::Debug,
-    io::Stdout,
-    sync::{Arc, Mutex},
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use std::{collections::HashMap,
+          fmt::Debug,
+          io::Stdout,
+          sync::{Arc,
+                 Mutex},
+          time::{Duration,
+                 SystemTime,
+                 UNIX_EPOCH}};
 
 use async_trait::async_trait;
-use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
-use failure::{bail, Error};
+use dgraph_tonic::{Client as DgraphClient,
+                   Mutate,
+                   Query};
+use failure::{bail,
+              Error};
 use futures::future::FutureExt;
-use grapl_config::{
-    env_helpers::{s3_event_emitters_from_env, FromEnv},
-    event_caches,
-};
-use grapl_graph_descriptions::{
-    graph_description::{GeneratedSubgraphs, Graph, Node},
-    node::NodeT,
-};
-use grapl_observe::{
-    dgraph_reporter::DgraphMetricReporter,
-    metric_reporter::{tag, MetricReporter},
-};
-use grapl_service::{decoder::ZstdProtoDecoder, serialization::SubgraphSerializer};
-use log::{error, info, warn};
+use grapl_config::{env_helpers::{s3_event_emitters_from_env,
+                                 FromEnv},
+                   event_caches};
+use grapl_graph_descriptions::{graph_description::{GeneratedSubgraphs,
+                                                   Graph,
+                                                   Node},
+                               node::NodeT};
+use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
+                    metric_reporter::{tag,
+                                      MetricReporter}};
+use grapl_service::{decoder::ZstdProtoDecoder,
+                    serialization::SubgraphSerializer};
+use log::{error,
+          info,
+          warn};
 use lru_cache::LruCache;
-use rusoto_dynamodb::{AttributeValue, DynamoDb, DynamoDbClient, GetItemInput};
+use rusoto_dynamodb::{AttributeValue,
+                      DynamoDb,
+                      DynamoDbClient,
+                      GetItemInput};
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use sqs_executor::{
-    cache::{Cache, CacheResponse, Cacheable},
-    errors::{CheckedError, Recoverable},
-    event_handler::{CompletedEvents, EventHandler},
-    event_retriever::S3PayloadRetriever,
-    make_ten,
-    s3_event_emitter::S3ToSqsEventNotifier,
-};
+use serde::{Deserialize,
+            Serialize};
+use serde_json::{json,
+                 Value};
+use sqs_executor::{cache::{Cache,
+                           CacheResponse,
+                           Cacheable},
+                   errors::{CheckedError,
+                            Recoverable},
+                   event_handler::{CompletedEvents,
+                                   EventHandler},
+                   event_retriever::S3PayloadRetriever,
+                   make_ten,
+                   s3_event_emitter::S3ToSqsEventNotifier};
 
 fn generate_edge_insert(from: &str, to: &str, edge_name: &str) -> dgraph_tonic::Mutation {
     let mu = json!({

@@ -3,20 +3,25 @@
 use std::fmt::Debug;
 
 pub use grapl_config;
-use grapl_config::{event_caches, ServiceEnv};
+use grapl_config::{event_caches,
+                   ServiceEnv};
 pub use grapl_graph_descriptions::graph_description::*;
 pub use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::serialization::SubgraphSerializer;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use sqs_executor::{
-    errors::CheckedError, event_decoder::PayloadDecoder, event_handler::EventHandler,
-    event_retriever::S3PayloadRetriever, make_ten, redis_cache::RedisCache,
-    s3_event_emitter::S3ToSqsEventNotifier, time_based_key_fn,
-};
+use sqs_executor::{errors::CheckedError,
+                   event_decoder::PayloadDecoder,
+                   event_handler::EventHandler,
+                   event_retriever::S3PayloadRetriever,
+                   make_ten,
+                   redis_cache::RedisCache,
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   time_based_key_fn};
 use tracing::info;
 
-use crate::grapl_config::env_helpers::{s3_event_emitters_from_env, FromEnv};
+use crate::grapl_config::env_helpers::{s3_event_emitters_from_env,
+                                       FromEnv};
 
 pub async fn run_graph_generator<
     InputEventT,

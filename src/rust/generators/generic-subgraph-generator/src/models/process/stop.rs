@@ -1,7 +1,10 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{graph_description::*, node::NodeT, process::ProcessState};
-use serde::{Deserialize, Serialize};
+use grapl_graph_descriptions::{graph_description::*,
+                               node::NodeT,
+                               process::ProcessState};
+use serde::{Deserialize,
+            Serialize};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessStop {

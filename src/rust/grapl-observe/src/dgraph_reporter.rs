@@ -1,9 +1,8 @@
 use std::time::Duration;
 
-use crate::{
-    metric_error::MetricError,
-    metric_reporter::{MetricReporter, TagPair},
-};
+use crate::{metric_error::MetricError,
+            metric_reporter::{MetricReporter,
+                              TagPair}};
 
 pub trait DgraphMetricReporter<T: std::io::Write> {
     fn mutation(

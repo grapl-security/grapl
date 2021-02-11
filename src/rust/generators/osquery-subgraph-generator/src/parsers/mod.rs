@@ -1,8 +1,11 @@
-use std::{collections::HashMap, convert::TryFrom};
+use std::{collections::HashMap,
+          convert::TryFrom};
 
 use grapl_graph_descriptions::graph_description::*;
 use regex::Regex;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned,
+            Deserialize,
+            Serialize};
 use serde_json::Value;
 
 mod grapl_pack;

@@ -1,12 +1,17 @@
 #![allow(non_camel_case_types)]
 
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::TryFrom,
+          str::FromStr};
 
-use grapl_graph_descriptions::{file::FileState, graph_description::*, node::NodeT};
-use serde::{Deserialize, Serialize};
+use grapl_graph_descriptions::{file::FileState,
+                               graph_description::*,
+                               node::NodeT};
+use serde::{Deserialize,
+            Serialize};
 
 use super::from_str;
-use crate::parsers::{OSQueryResponse, PartiallyDeserializedOSQueryLog};
+use crate::parsers::{OSQueryResponse,
+                     PartiallyDeserializedOSQueryLog};
 
 /// See https://osquery.io/schema/4.5.0/#processes
 #[derive(Serialize, Deserialize)]

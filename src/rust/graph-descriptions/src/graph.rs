@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
-use crate::{
-    graph_description::{Edge, EdgeList, GeneratedSubgraphs, Graph, Node},
-    node::NodeT,
-};
+use crate::{graph_description::{Edge,
+                                EdgeList,
+                                GeneratedSubgraphs,
+                                Graph,
+                                Node},
+            node::NodeT};
 
 impl Graph {
     pub fn new(timestamp: u64) -> Self {

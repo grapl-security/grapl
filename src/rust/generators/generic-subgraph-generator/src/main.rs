@@ -4,19 +4,20 @@ mod tests;
 
 use std::str::FromStr;
 
-use grapl_config::{
-    env_helpers::{s3_event_emitters_from_env, FromEnv},
-    event_caches,
-};
+use grapl_config::{env_helpers::{s3_event_emitters_from_env,
+                                 FromEnv},
+                   event_caches};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ZstdJsonDecoder, serialization::SubgraphSerializer};
+use grapl_service::{decoder::ZstdJsonDecoder,
+                    serialization::SubgraphSerializer};
 use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use sqs_executor::{
-    cache::NopCache, event_retriever::S3PayloadRetriever, make_ten,
-    s3_event_emitter::S3ToSqsEventNotifier, time_based_key_fn,
-};
+use sqs_executor::{cache::NopCache,
+                   event_retriever::S3PayloadRetriever,
+                   make_ten,
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   time_based_key_fn};
 use tracing::*;
 
 use crate::generator::GenericSubgraphGenerator;
