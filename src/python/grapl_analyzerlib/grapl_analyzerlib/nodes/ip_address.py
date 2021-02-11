@@ -149,7 +149,7 @@ class IpAddressView(EntityView[IPV, IPQ]):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],
@@ -204,7 +204,7 @@ class IpAddressExtendsIpConnectionView(IpConnectionView):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],

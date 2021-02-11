@@ -121,7 +121,7 @@ def delete_edges(client: GraphClient, edges: Iterator[Tuple[str, str, str]]) -> 
 
 
 def create_edge_obj(
-    src_uid: str, predicate: str, dest_uid: str
+    src_uid: int, predicate: str, dest_uid: int
 ) -> Dict[str, Union[Dict, str]]:
     if predicate.startswith("~"):  # this is a reverse edge
         return {"uid": dest_uid, predicate.lstrip("~"): {"uid": src_uid}}

@@ -105,7 +105,7 @@ def view_from_proto(graph_client: GraphClient, node) -> BaseView:
 # Proto nodes don't contain a uid so we have to fetch them. It may make sense to store these uids
 # alongside the proto in the future. This makes constructing from proto relatively expensive.
 @retry()
-def get_uid(client: GraphClient, node_key: str) -> str:
+def get_uid(client: GraphClient, node_key: str) -> int:
     with client.txn_context(read_only=True) as txn:
         query = """
             query res($a: string)
@@ -120,8 +120,8 @@ def get_uid(client: GraphClient, node_key: str) -> str:
 
         if isinstance(res["res"], list):
             if res["res"]:
-                return str(res["res"][0]["uid"])
+                return int(res["res"][0]["uid"], 16)
             else:
                 raise Exception(f"get_uid failed for node_key: {node_key} {res}")
         else:
-            return str(res["res"]["uid"])
+            return int(res["res"]["uid"], 16)

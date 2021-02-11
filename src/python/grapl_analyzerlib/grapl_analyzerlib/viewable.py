@@ -43,7 +43,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
     queryable: Type[Q] = None  # pytype: disable=not-supported-yet
 
     def __init__(
-        self, uid: str, node_key: str, graph_client: GraphClient, **kwargs
+        self, uid: int, node_key: str, graph_client: GraphClient, **kwargs
     ) -> None:
         self.uid = uid
         self.node_key = node_key
@@ -53,7 +53,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
         for key, value in kwargs.items():
             self.set_predicate(key, value)
 
-    def _get_uid(self) -> str:
+    def _get_uid(self) -> int:
         return self.uid
 
     def set_predicate(

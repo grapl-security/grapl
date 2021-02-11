@@ -215,7 +215,10 @@ def dgraph_prop_type(cmp: Cmp) -> str:
     if isinstance(cmp, Has):
         return "string"
     if isinstance(cmp, Eq):
-        return "string"
+        if isinstance(cmp.value, str):
+            return "string"
+        else:
+            return "int"
     if isinstance(cmp, Contains):
         return "string"
     if isinstance(cmp, StartsWith):
