@@ -73,19 +73,6 @@ services:
         py.test -n auto -m "not integration_test"
         '
 
-  grapl-engagement-edge-test:
-    image: grapl/grapl-engagement-edge-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: engagement-edge-test
-    command: |
-      bash -c ' \
-        source venv/bin/activate && \
-        cd engagement_edge && \
-        py.test -n auto -m "not integration_test"
-        '
-
   grapl-model-plugin-deployer-test:
     image: grapl/grapl-model-plugin-deployer-test:${TAG:-latest}
     build:
