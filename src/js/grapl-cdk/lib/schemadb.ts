@@ -30,8 +30,9 @@ export class SchemaDb extends cdk.Construct {
 
     allowRead(service: Service|FargateService) {
         if (service instanceof FargateService) {
-            this.schema_table.grantReadData(service.service.taskDefinition.taskRole);
-            this.schema_table.grantReadData(service.retryService.taskDefinition.taskRole);
+            for (const taskRole of service.taskRoles()) {
+                this.schema_table.grantReadData(taskRole);
+            }
         } else {
             this.schema_table.grantReadData(service.event_handler);
             this.schema_table.grantReadData(service.event_retry_handler);

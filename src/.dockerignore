@@ -1,0 +1,9 @@
+# node modules found in any project
+**/node_modules
+
+rust/target
+
+js/grapl-cdk/zips
+js/grapl-cdk/cdk.out
+
+js/engagement_view/build
