@@ -1,4 +1,3 @@
-import * as path from 'path';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
@@ -7,6 +6,7 @@ import { RedisCluster } from '../redis';
 import { GraplServiceProps } from '../grapl-cdk-stack';
 import { FargateService } from "../fargate_service";
 import { ContainerImage } from "@aws-cdk/aws-ecs";
+import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
 
 interface SysmonGraphGeneratorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -43,19 +43,21 @@ export class SysmonGraphGenerator extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
+            serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "sysmon-subgraph-generator-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
             command: ["/sysmon-subgraph-generator"],
             // metric_forwarder: props.metricForwarder,
         });
 
-        this.service.service.cluster.connections.allowToAnyIpv4(
-            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
-        );
+        for (const conn of this.service.connections()) {
+            conn.allowToAnyIpv4(
+                ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+            );
+        }
     }
 }
