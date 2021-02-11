@@ -8,6 +8,9 @@ from src.engagement_edge import JWT_SECRET, app
 # gross hack because engagement edge is pseudo singleton
 JWT_SECRET.secret = "hey im a fake secret"
 
+# TODO: These tests will fail at the pytest collection stage if
+# BUCKET_PREFIX isn't in the environment because of how env_vars.py is
+# currently written
 
 @pytest.mark.integration_test
 class TestEngagementEdgeClient(unittest.TestCase):

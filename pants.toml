@@ -63,3 +63,18 @@ config = "pyproject.toml"
 # `pyproject.toml`, then we can remove this argument as well.
 args = [ "--filter-files" ]
 version = "isort==5.6.4"
+
+[pytest]
+pytest_plugins = [
+  "pytest-custom_exit_code"
+]
+# This comes from the pytest-custom_exit_code plugin, and is
+# specifically for running tests with Pytest filtering, like:
+#
+#   -m 'not integration_test'
+#
+# Because of how Pants runs tests, we can get failures for test files
+# that only contain integration tests. Longer term, we should think of
+# other ways to divide tests into classes (unit, integration, etc.) so
+# we can target things better with Pants tags.
+args = [ "--suppress-no-test-exit-code" ]
