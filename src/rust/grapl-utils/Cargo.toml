@@ -1,5 +1,5 @@
 [package]
-name = "grapl_utils"
+name = "grapl-utils"
 version = "0.1.0"
 authors = ["Nathanial Lattimer <nlattimer@graplsecurity.com>"]
 edition = "2018"

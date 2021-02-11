@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 grapl-observe = { path = "../grapl-observe" }
-grapl_utils = { path = "../grapl_utils" }
+grapl-utils = { path = "../grapl-utils" }
 
 rusoto_core = {version = "0.45", default_features = false, features=["rustls"]}
 rusoto_s3 = {version = "0.45", default_features = false, features=["rustls"]}
