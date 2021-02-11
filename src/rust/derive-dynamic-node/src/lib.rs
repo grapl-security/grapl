@@ -4,8 +4,16 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TS2;
 use quote::quote;
-use syn::{parse_quote, Attribute, Data, Field, Fields, Ident, Meta, NestedMeta, Type};
-use syn::spanned::Spanned;
+use syn::{parse_quote,
+          spanned::Spanned,
+          Attribute,
+          Data,
+          Field,
+          Fields,
+          Ident,
+          Meta,
+          NestedMeta,
+          Type};
 
 const CREATE_TIME: &'static str = "created_time";
 const LAST_SEEN_TIME: &'static str = "last_seen_time";
@@ -29,13 +37,14 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
         _ => panic!("Requires named fields"),
     };
 
-    let methods = fields
-        .iter()
-        .map(|field| property_methods(field))
-        .fold(quote!(), |mut acc, method| {
-            acc.extend(method);
-            acc
-        });
+    let methods =
+        fields
+            .iter()
+            .map(|field| property_methods(field))
+            .fold(quote!(), |mut acc, method| {
+                acc.extend(method);
+                acc
+            });
 
     let struct_name = &input.ident;
     let struct_name_string = input.ident.to_string();
@@ -216,9 +225,13 @@ fn identity_prop_setter(field: &Field, property_name: &Ident) -> TS2 {
             last_seen_time_prop |= meta_attr == LAST_SEEN_TIME;
             terminated_time_prop |= meta_attr == TERMINATE_TIME;
         });
-        if [&created_time_prop, &last_seen_time_prop, &terminated_time_prop]
-            .iter()
-            .any(|b| **b)
+        if [
+            &created_time_prop,
+            &last_seen_time_prop,
+            &terminated_time_prop,
+        ]
+        .iter()
+        .any(|b| **b)
         {
             break;
         }
@@ -226,8 +239,8 @@ fn identity_prop_setter(field: &Field, property_name: &Ident) -> TS2 {
 
     let ident = match (created_time_prop, last_seen_time_prop, terminated_time_prop) {
         (true, _, _) => syn::Ident::new(&CREATE_TIME, field.span()),
-        (_, true ,_) => syn::Ident::new(&LAST_SEEN_TIME, field.span()),
-        (_,_ ,true) => syn::Ident::new(&TERMINATE_TIME, field.span()),
+        (_, true, _) => syn::Ident::new(&LAST_SEEN_TIME, field.span()),
+        (_, _, true) => syn::Ident::new(&TERMINATE_TIME, field.span()),
         _ => return quote!(),
     };
     quote!(
