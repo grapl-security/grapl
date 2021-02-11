@@ -7,6 +7,7 @@ members = [
     "./graph-merger",
     "./grapl",
     "./grapl-config",
+    "./grapl-utils",
     "./grapl-observe",
     "./metric-forwarder",
     "./node-identifier",
