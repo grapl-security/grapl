@@ -3,13 +3,14 @@ from typing import List, Optional
 
 import boto3
 from chalice import Chalice
-from mypy_boto3 import dynamodb, sqs
+from mypy_boto3_dynamodb import DynamoDBServiceResource
+from mypy_boto3_sqs import SQSServiceResource
 
 app = Chalice(app_name="analyzer-deployer")
 
 
 def _create_queue(queue_name: str):
-    client: sqs.SQSServiceResource = boto3.resource("sqs")
+    client: SQSServiceResource = boto3.resource("sqs")
     client.create_queue(QueueName=queue_name)
     pass
 
@@ -68,7 +69,7 @@ class CreateAnalyzerResponse:
 
 
 def _create_analyzer(
-    dynamodb_client: dynamodb.DynamoDBServiceResource,
+    dynamodb_client: DynamoDBServiceResource,
 ) -> CreateAnalyzerResponse:
     analyzer = Analyzer()  # type: ignore
     analyzers_table = dynamodb_client.Table("Analyzers")
