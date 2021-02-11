@@ -6,11 +6,10 @@ from time import sleep
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 
 import botocore  # type: ignore
-from typing_extensions import Protocol
-
 from grapl_analyzerlib.grapl_client import MasterGraphClient
 from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
 from grapl_analyzerlib.retry import retry
+from typing_extensions import Protocol
 
 
 class WaitForResource(Protocol):

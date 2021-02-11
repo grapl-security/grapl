@@ -31,3 +31,13 @@ dist/
 *.vscode
 .idea/
 *.iml
+
+# Pants-related artifacts
+# https://www.pantsbuild.org/docs/gitignore
+########################################################################
+/.pants.d/
+/dist/
+/.pids
+/.pants.workdir.file_lock*
+# See build-support/generate_constraints.sh
+/build-support/.constraints-venv
