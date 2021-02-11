@@ -12,6 +12,7 @@ JWT_SECRET.secret = "hey im a fake secret"
 # BUCKET_PREFIX isn't in the environment because of how env_vars.py is
 # currently written
 
+
 @pytest.mark.integration_test
 class TestEngagementEdgeClient(unittest.TestCase):
     def test_get_notebook_link(self) -> None:
