@@ -64,31 +64,6 @@ jobs:
 
   python-lint:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: [3.7]
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Run etc/ci/scripts/py_lint.sh --check-only
-        run: |
-          ./etc/ci_scripts/py_lint.sh --check-only
-
-      - name: How to fix lint failure
-        if: ${{ failure() }}
-        run: echo "Run etc/ci_scripts/py_lint.sh without the flag. That's it!"
-
-  # Run the new Pants-managed linting alongside the old while we transition.
-  # Eventually, this will be the only Python linting step.
-  python-pants-lint:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7]
@@ -108,7 +83,7 @@ jobs:
             ~/.cache/pants/named_caches
             ~/.cache/pants/lmdb_store
       - name: Lint
-        run: "./pants lint ::"
+        run: make lint-python
 
   check-pypi:
     runs-on: ubuntu-latest
