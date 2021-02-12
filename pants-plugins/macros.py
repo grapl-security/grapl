@@ -9,3 +9,15 @@ def grapl_python_distribution(**kwargs):
         kwargs["setup_py_commands"] = [ "sdist", "bdist_wheel" ]
 
     python_distribution(**kwargs)
+
+
+def py_typed(**kwargs):
+    """ Creates a `resources` target for the `py.typed` file in this directory.
+    """
+    if "name" not in kwargs:
+        kwargs["name"] = "py_typed"
+
+    if "sources" not in kwargs:
+        kwargs["sources"] = [ "py.typed" ]
+
+    resources(**kwargs)
