@@ -12,6 +12,10 @@ pythonpath = [
   "%(buildroot)s/pants-plugins"
 ]
 
+build_file_prelude_globs = [
+  "pants-plugins/macros.py",
+]
+
 # Given how our code is currently structured, with package and test
 # code for every project in their own directory, I believe we have to
 # list each of those top-level containing directories here in order
