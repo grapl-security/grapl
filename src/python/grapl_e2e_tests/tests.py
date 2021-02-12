@@ -1,14 +1,15 @@
 import logging
 from unittest import TestCase
 
-from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
-
+import pytest
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_analyzerlib.retry import retry
+from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
 
+@pytest.mark.integration_test
 class TestEndToEnd(TestCase):
     def test_expected_data_in_dgraph(self) -> None:
         # There is some unidentified, nondeterministic failure with e2e.

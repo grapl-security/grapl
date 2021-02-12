@@ -4,16 +4,16 @@ version: "3.8"
 
 services:
 
-  grapl-graph-descriptions-test:
-    image: grapl/grapl-graph-descriptions-test:${TAG:-latest}
+  graplinc-grapl-api-test:
+    image: grapl/graplinc-grapl-api-test:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
-      target: graph-descriptions-test
+      target: graplinc-grapl-api-test
     command: |
       bash -c ' \
         source venv/bin/activate && \
-        cd graph-descriptions && \
+        cd python/graplinc-grapl-api && \
         py.test -n auto -m "not integration_test"
         '
 
@@ -79,19 +79,6 @@ services:
       bash -c ' \
         source venv/bin/activate && \
         cd engagement-creator && \
-        py.test -n auto -m "not integration_test"
-        '
-
-  grapl-engagement-edge-test:
-    image: grapl/grapl-engagement-edge-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: engagement-edge-test
-    command: |
-      bash -c ' \
-        source venv/bin/activate && \
-        cd engagement_edge && \
         py.test -n auto -m "not integration_test"
         '
 

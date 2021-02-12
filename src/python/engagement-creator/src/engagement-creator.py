@@ -19,17 +19,16 @@ from typing import (
 
 import boto3
 import botocore.exceptions  # type: ignore
-from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
-from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from mypy_boto3_s3 import S3ServiceResource
-from mypy_boto3_sqs import SQSClient
-from typing_extensions import Final, Literal
-
 from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.nodes.lens import LensView
 from grapl_analyzerlib.prelude import BaseView, RiskView
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.viewable import Viewable
+from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
+from mypy_boto3_s3 import S3ServiceResource
+from mypy_boto3_sqs import SQSClient
+from typing_extensions import Final, Literal
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -100,7 +99,7 @@ def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
 
 
 def create_edge(
-    client: GraphClient, from_uid: str, edge_name: str, to_uid: str
+    client: GraphClient, from_uid: int, edge_name: str, to_uid: int
 ) -> None:
     if edge_name[0] == "~":
         mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}

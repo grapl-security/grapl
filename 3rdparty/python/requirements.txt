@@ -1,0 +1,15 @@
+# Any Python dependencies used by our code should be declared here.
+boto3
+chalice
+hypothesis
+mypy_boto3_dynamodb
+mypy_boto3_s3
+mypy_boto3_sagemaker
+mypy_boto3_sqs
+protobuf>=3.12.1
+pydgraph
+pyjwt
+requests
+redis
+typing_extensions
+zstd

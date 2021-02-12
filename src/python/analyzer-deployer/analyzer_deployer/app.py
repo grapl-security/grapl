@@ -20,6 +20,9 @@ from typing_extensions import Literal
 
 import botocore
 import boto3
+from chalice import Chalice
+from mypy_boto3_dynamodb import DynamoDBServiceResource
+from mypy_boto3_sqs import SQSServiceResource
 
 from mypy_boto3 import dynamodb, s3, sqs
 
