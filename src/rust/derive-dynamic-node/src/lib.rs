@@ -459,11 +459,3 @@ fn set_timestamp_from_meta(field: &Field, prop_name: &str, time_prop: &mut Optio
         });
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
