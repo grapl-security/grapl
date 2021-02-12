@@ -7,8 +7,4 @@ python_library(
     ]
 )
 
-# TODO: Consider a plugin macro for this?
-resources(
-    name = "typehints",
-    sources = ["py.typed"]
-)
+py_typed()
