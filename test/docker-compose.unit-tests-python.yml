@@ -43,7 +43,7 @@ services:
         py.test -n auto -m "not integration_test"
         '
 
-  grapl-analyzer-deployer-test:
+  analyzer-deployer-test:
     image: grapl/analyzer-deployer-test:${TAG:-latest}
     build:
       context: ${PWD}/src
