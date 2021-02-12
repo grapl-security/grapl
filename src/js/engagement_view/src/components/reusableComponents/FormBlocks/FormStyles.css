@@ -1,0 +1,25 @@
+.inputContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-size: 0.8em;
+  color: #bdbdbd;
+  margin-bottom: 0.3em;
+}
+
+.formField {
+  border: 1px solid #949494;
+  padding: 0.25em;
+  border-radius: 0.25em;
+  background-color: #222428;
+  color: white;
+}
+
+.error {
+  margin-top: 4px;
+  color: red;
+  font-weight: 100;
+  font-size: 0.75em;
+}
