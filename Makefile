@@ -167,6 +167,9 @@ format-python: ## Reformat all Python code
 .PHONY: format
 format: format-rust format-python ## Reformat all code
 
+.PHONY: package-python-libs
+package-python-libs: ## Create Python distributions for public libraries
+	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
 
 #
 # else
