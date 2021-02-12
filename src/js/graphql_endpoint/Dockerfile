@@ -19,14 +19,14 @@ WORKDIR /home/grapl
 RUN mkdir -p lambda
 
 # Install the dependencies separately to leverage Docker cache
-COPY --chown=grapl package.json lambda/package.json
-COPY --chown=grapl package-lock.json lambda/package-lock.json
+COPY --chown=grapl js/graphql_endpoint/package.json lambda/package.json
+COPY --chown=grapl js/graphql_endpoint/package-lock.json lambda/package-lock.json
 RUN cd lambda && npm install
 RUN rm -rf lambda/node_modules/grpc/build/
 
 # Copy graphql sources
-COPY --chown=grapl modules lambda/modules
-COPY --chown=grapl server.js lambda/server.js
+COPY --chown=grapl js/graphql_endpoint/modules lambda/modules
+COPY --chown=grapl js/graphql_endpoint/server.js lambda/server.js
 
 # zip
 FROM graphql-endpoint-build AS graphql-endpoint-zip
@@ -51,7 +51,7 @@ COPY --chown=grapl --from=graphql-endpoint-build /home/grapl/lambda lambda
 
 WORKDIR /home/grapl/lambda
 
-COPY --chown=grapl package.json package.json
-COPY --chown=grapl package-lock.json package-lock.json
+COPY --chown=grapl js/graphql_endpoint/package.json package.json
+COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
 
 CMD yarn start server

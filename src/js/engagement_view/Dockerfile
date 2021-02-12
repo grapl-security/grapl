@@ -4,14 +4,14 @@ RUN apk add bash yarn
 WORKDIR /grapl
 
 # install deps as separate steps to leverage build cache
-COPY package.json package.json
-COPY yarn.lock yarn.lock
-COPY .yarnrc.yml .yarnrc.yml
-COPY .yarn/releases .yarn/releases
+COPY js/engagement_view/package.json package.json
+COPY js/engagement_view/yarn.lock yarn.lock
+COPY js/engagement_view/.yarnrc.yml .yarnrc.yml
+COPY js/engagement_view/.yarn/releases .yarn/releases
 RUN yarn install
 
 # now copy all sources
-COPY . .
+COPY js/engagement_view .
 
 # create production build
 ################################################################################

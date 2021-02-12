@@ -11,14 +11,14 @@ RUN npm install --global aws-cdk
 
 # Grab all dependencies
 WORKDIR /home/grapl
-COPY src/js/grapl-cdk/package.json src/js/grapl-cdk/package.json
-COPY src/js/grapl-cdk/package-lock.json src/js/grapl-cdk/package-lock.json
+COPY js/grapl-cdk/package.json src/js/grapl-cdk/package.json
+COPY js/grapl-cdk/package-lock.json src/js/grapl-cdk/package-lock.json
 WORKDIR /home/grapl/src/js/grapl-cdk
 RUN npm install
 
 # Copy in the rest of the source
 WORKDIR /home/grapl
-COPY src/js/grapl-cdk src/js/grapl-cdk
+COPY js/grapl-cdk src/js/grapl-cdk
 
 # does typechecking, which is nice
 WORKDIR /home/grapl/src/js/grapl-cdk
@@ -30,7 +30,7 @@ FROM grapl-cdk-build AS grapl-cdk-test
 
 # We need the Rust Dockerfile to run the tests
 WORKDIR /home/grapl
-COPY src/rust/Dockerfile src/rust/Dockerfile
+COPY rust/Dockerfile src/rust/Dockerfile
 
 # Make fake zip files to appease the CDK tests
 WORKDIR /home/grapl/src/js/grapl-cdk/zips
