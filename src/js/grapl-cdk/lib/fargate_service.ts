@@ -93,7 +93,7 @@ export class FargateService {
             scope,
             `${this.serviceName}-service`, {
             cluster,
-            serviceName: this.serviceName,
+            serviceName: `${this.serviceName}-handler`,
             family: `${this.serviceName}-task`,
             command: props.command,
             enableLogging: true,
@@ -113,7 +113,7 @@ export class FargateService {
 
         this.retryService = new ecs_patterns.QueueProcessingFargateService(
             scope,
-            `${this.serviceName}RetryService`, {
+            `${this.serviceName}-retry-service`, {
                 cluster,
                 serviceName: `${this.serviceName}-retry-handler`,
                 family: `${this.serviceName}-retry-task`,
