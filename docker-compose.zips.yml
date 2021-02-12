@@ -25,8 +25,19 @@ services:
   # Python services
   #
 
-  # grapl-analyzer-deployer:
-  #   image: grapl/grapl-analyzer-deployer-zip:${TAG:-latest}
+  analyzer-deployer-zip:
+    image: grapl/analyzer-deployer-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-deployer-zip
+    volumes:
+      - ./src/js/grapl-cdk/zips:/grapl
+    user: ${UID}:${GID}
+    working_dir: /grapl
+    environment:
+      - TAG=${TAG:-latest}
+    command: cp /home/grapl/lambda.zip analyzer-deployer-${TAG:-latest}.zip
 
   grapl-analyzer-executor-zip:
     image: grapl/grapl-analyzer-executor-zip:${TAG:-latest}

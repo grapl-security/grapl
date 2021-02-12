@@ -54,7 +54,23 @@ services:
       - IS_LOCAL=True
       - MG_ALPHAS=grapl-master-graph-db:9080
 
-  # grapl-analyzer-deployer-integration-tests:
+  analyzer-deployer-integration-tests:
+    image: grapl/analyzer-deployer-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-deployer-test
+    command: /bin/sh -c '
+      wait-for-it grapl-provision:8126 --timeout=180 &&
+      source venv/bin/activate &&
+      cd analyzer_deployer &&
+      py.test -n auto -m "integration_test"'
+    environment:
+      - "IS_LOCAL=True"
+      - "ANALYZERS_TABLE=local-grapl-analyzers_table"
+      - GRPC_ENABLE_FORK_SUPPORT=1
+      - "BUCKET_PREFIX=local-grapl"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
 
   analyzer-executor-integration-tests:
     image: grapl/grapl-analyzer-executor-test:${TAG:-latest}
@@ -97,7 +113,7 @@ services:
     # image: cypress/included:5.6.0
     # working_dir: /test
     # command: --browser chrome --headless # entrypoint is: cypress run
-    # volumes: 
+    # volumes:
       # - .:/test
 
 networks:

@@ -278,6 +278,42 @@ RUN source venv/bin/activate && \
     cd grapl-tests-common && \
     pip install .
 
+# analyzer-deployer
+################################################################################
+
+# build
+FROM grapl-python-build AS analyzer-deployer-build
+USER grapl
+WORKDIR /home/grapl
+COPY --chown=grapl . ./analyzer-deployer
+COPY --from=grapl/grapl-python-build /home/grapl/venv venv
+RUN /bin/bash -c "source venv/bin/activate && pip install -r analyzer-deployer/requirements.txt && python -m mypy_boto3"
+
+# zip
+FROM analyzer-deployer-build AS analyzer-deployer-zip
+USER grapl
+WORKDIR /home/grapl
+RUN cd venv/lib/python3.7/site-packages && \
+    zip --quiet -9r ../../../../lambda.zip . && \
+    cd analyzer-deployer/analyzer_deployer && \
+    zip -g ../../lambda.zip app.py
+
+#deploy
+FROM grapl-python-deploy AS analyzer-deployer-deploy
+USER grapl
+WORKDIR /home/grapl
+COPY --from=analyzer-deployer-build /home/grapl/venv venv
+COPY --from=analyzer-deployer-build /home/grapl/analyzer-deployer app
+CMD source venv/bin/activate && \
+    cd app && \
+    chalice local --no-autoreload --host=0.0.0.0 --port=8125
+
+# test
+FROM analyzer-deployer-build as analyzer-deployer-test
+USER grapl
+WORKDIR /home/grapl
+COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
+RUN python_test_deps/install_requirements.sh
 
 # grapl-ux-router
 ################################################################################

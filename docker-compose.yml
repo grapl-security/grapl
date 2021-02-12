@@ -347,6 +347,10 @@ services:
 
   analyzer-deployer:
     image: grapl/analyzer-deployer:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-deployer-deploy
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8125'
     environment:
       - "IS_LOCAL=True"
