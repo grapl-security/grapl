@@ -9,13 +9,6 @@ from uuid import uuid4
 import boto3
 import botocore
 import pydgraph
-from grapl_common.env_helpers import (
-    DynamoDBResourceFactory,
-    S3ClientFactory,
-    SQSClientFactory,
-)
-from grapl_common.grapl_logger import get_module_grapl_logger
-
 from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
@@ -38,6 +31,12 @@ from grapl_analyzerlib.prelude import (
     RiskSchema,
 )
 from grapl_analyzerlib.schema import Schema
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    S3ClientFactory,
+    SQSClientFactory,
+)
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 LOGGER = get_module_grapl_logger(default_log_level="INFO")
 

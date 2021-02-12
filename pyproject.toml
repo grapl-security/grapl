@@ -1,0 +1,12 @@
+[tool.black]
+include = '\.pyi?$'
+exclude = '''
+(
+  (\w*_pb2\w*.py.*)
+)
+'''
+
+[tool.isort]
+profile = "black"
+# grapl_analyzerlib's import ordering is very very touchy
+skip_glob = ["src/python/grapl_analyzerlib/**"]

@@ -72,13 +72,10 @@ export class AnalyzerDispatch extends cdk.NestedStack {
             command: ["/analyzer-dispatcher"],
             // metric_forwarder: props.metricForwarder,
         });
-        for (const taskRole of this.service.taskRoles()) {
-            analyzer_bucket.grantRead(taskRole);
-        }
-        for (const conn of this.service.connections()) {
-            conn.allowToAnyIpv4(
-                ec2.Port.tcp(parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort))
-            );
-        }
+        analyzer_bucket.grantRead(this.service.service.service.taskDefinition.taskRole);
+        analyzer_bucket.grantRead(this.service.retryService.service.taskDefinition.taskRole);
+        this.service.service.cluster.connections.allowToAnyIpv4(
+            ec2.Port.tcp(parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort))
+        );
     }
 }

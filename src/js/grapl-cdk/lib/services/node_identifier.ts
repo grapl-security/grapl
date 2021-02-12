@@ -41,7 +41,7 @@ export class NodeIdentifier extends cdk.NestedStack {
         );
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new FargateService(this, id, {
+        this.service = new FargateService(this, service_name, {
             prefix: props.prefix,
             environment: {
                 RUST_LOG: props.nodeIdentifierLogLevel,
@@ -89,11 +89,9 @@ export class NodeIdentifier extends cdk.NestedStack {
             // metric_forwarder: props.metricForwarder,
         });
 
-        for (const conn of this.service.connections()) {
-            conn.allowToAnyIpv4(
-                ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
-            );
-        }
+        this.service.service.cluster.connections.allowToAnyIpv4(
+            ec2.Port.tcp(parseInt(event_cache.cluster.attrRedisEndpointPort))
+        );
 
         history_db.allowReadWrite2(this.service);
     }

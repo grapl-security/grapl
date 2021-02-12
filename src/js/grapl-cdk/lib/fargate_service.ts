@@ -64,8 +64,9 @@ export class FargateService {
 
     constructor(scope: cdk.Construct, serviceName: string, props: FargateServiceProps) {
         this.serviceName = `${props.prefix}-${serviceName}`;
-        const cluster = new ecs.Cluster(scope, `${this.serviceName}Cluster`, {
+        const cluster = new ecs.Cluster(scope, `${this.serviceName}-cluster`, {
             vpc: props.vpc,
+            clusterName: `${this.serviceName}-cluster`,
         });
         const readsFrom = props.eventEmitter.bucket;
         const subscribesTo = props.eventEmitter.topic;
@@ -90,8 +91,10 @@ export class FargateService {
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
             scope,
-            `${props.prefix}-${serviceName}Service`, {
+            `${this.serviceName}-service`, {
             cluster,
+            serviceName: `${this.serviceName}-handler`,
+            family: `${this.serviceName}-task`,
             command: props.command,
             enableLogging: true,
             environment: {
@@ -103,7 +106,6 @@ export class FargateService {
             },
             image: props.serviceImage,
             queue: queues.queue,
-            serviceName,
             cpu: 256,
             memoryLimitMiB: 512,
             desiredTaskCount: 1,
@@ -111,8 +113,10 @@ export class FargateService {
 
         this.retryService = new ecs_patterns.QueueProcessingFargateService(
             scope,
-            `${props.prefix}-${serviceName}RetryService`, {
+            `${this.serviceName}-retry-service`, {
                 cluster,
+                serviceName: `${this.serviceName}-retry-handler`,
+                family: `${this.serviceName}-retry-task`,
                 command: props.retryCommand || props.command,
                 enableLogging: true,
                 environment: {
@@ -124,17 +128,16 @@ export class FargateService {
                 },
                 image: props.retryServiceImage || props.serviceImage,
                 queue: queues.retryQueue,
-                serviceName: serviceName+"-retry-handler",
                 cpu: 256,
                 memoryLimitMiB: 512,
                 desiredTaskCount: 1,
             });
 
         for (const q of [this.queues.queue, this.queues.retryQueue, this.queues.deadLetterQueue]) {
-            for (const taskRole of this.taskRoles()) {
-                q.grantConsumeMessages(taskRole);
-                q.grantSendMessages(taskRole);
-            }
+            q.grantConsumeMessages(this.service.taskDefinition.taskRole);
+            q.grantConsumeMessages(this.retryService.taskDefinition.taskRole);
+            q.grantSendMessages(this.service.taskDefinition.taskRole);
+            q.grantSendMessages(this.retryService.taskDefinition.taskRole);
         }
 
         if (readsFrom) {
@@ -176,9 +179,7 @@ export class FargateService {
     }
 
     writesToBucket(publishes_to: s3.IBucket) {
-        for (const taskRole of this.taskRoles()) {
-            publishes_to.grantWrite(taskRole);
-        }
+        publishes_to.grantWrite(this.service.service.taskDefinition.taskRole);
     }
 
     addSubscription(scope: cdk.Construct, topic: sns.ITopic) {
@@ -195,19 +196,5 @@ export class FargateService {
             protocol: config.protocol,
             rawMessageDelivery: true,
         });
-    }
-
-    connections(): ec2.Connections[] {
-        return [
-            this.service.service.cluster.connections,
-            this.retryService.service.cluster.connections,
-        ]
-    }
-
-    taskRoles(): iam.IRole[] {
-        return [
-            this.service.service.taskDefinition.taskRole,
-            this.retryService.service.taskDefinition.taskRole,
-        ]
     }
 }

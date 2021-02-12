@@ -107,9 +107,7 @@ export class HistoryDb extends cdk.Construct {
             this.dynamic_session_table,
         ];
         for (const table of tables) {
-            for (const taskRole of service.taskRoles()) {
-                table.grantReadWriteData(taskRole);
-            }
+            table.grantReadWriteData(service.service.taskDefinition.taskRole);	
         }
     }
 
