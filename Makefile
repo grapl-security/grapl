@@ -13,8 +13,6 @@ DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FIL
 endif
 export
 
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
 export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 	-f ./test/docker-compose.unit-tests-rust.yml \
 	-f ./test/docker-compose.unit-tests-python.yml \
