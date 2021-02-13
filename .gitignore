@@ -31,6 +31,9 @@ dist/
 *.vscode
 .idea/
 *.iml
+/tags
+/tags.lock
+/tags.temp
 
 # Pants-related artifacts
 # https://www.pantsbuild.org/docs/gitignore
