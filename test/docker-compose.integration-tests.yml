@@ -93,13 +93,17 @@ services:
       - BUCKET_PREFIX=local-grapl
       - UX_BUCKET_URL="ux_bucket_url"
 
-  # Resurrect asap: https://github.com/grapl-security/issue-tracker/issues/231
-  # engagement-view-integration-tests:
-    # image: cypress/included:5.6.0
-    # working_dir: /test
-    # command: --browser chrome --headless # entrypoint is: cypress run
-    # volumes: 
-      # - .:/test
+  cypress-integration-tests:
+    image: grapl/grapl-cypress:${TAG:-latest}
+    build:
+      context: ${PWD}/test
+      dockerfile: ./Dockerfile
+      target: grapl-cypress
+    command: |
+      /bin/bash -c "
+        wait-for-it grapl-provision:8126 --timeout=120 &&
+        cypress run --browser chrome --headless
+      "
 
 networks:
   default:
