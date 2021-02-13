@@ -670,7 +670,6 @@ services:
         wait-for-it --timeout=30 s3:9000 &&
         wait-for-it --timeout=30 dynamodb:8000 &&
         wait-for-it --timeout=30 master_graph:8080 &&
-        wait-for-it --timeout=30 grapl-engagement-view:1234 &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&

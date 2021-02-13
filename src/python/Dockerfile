@@ -288,7 +288,7 @@ USER grapl
 WORKDIR /home/grapl
 COPY --chown=grapl python/analyzer-deployer ./analyzer-deployer
 COPY --from=grapl-python-build /home/grapl/venv venv
-RUN /bin/bash -c "source venv/bin/activate && pip install -r analyzer-deployer/requirements.txt && python -m mypy_boto3"
+RUN /bin/bash -c "source venv/bin/activate && pip install -r analyzer-deployer/requirements.txt"
 
 # zip
 FROM analyzer-deployer-build AS analyzer-deployer-zip

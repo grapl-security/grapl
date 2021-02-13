@@ -4,7 +4,6 @@ import json
 import unittest
 import uuid
 
-import boto3
 import botocore
 import pytest
 
@@ -12,7 +11,7 @@ import hypothesis.strategies as st
 
 from hypothesis import given
 from chalice.test import Client, HTTPResponse
-from mypy_boto3 import dynamodb
+import mypy_boto3_dynamodb as dynamodb
 
 from analyzer_deployer.app import (
     ANALYZERS_BUCKET,
@@ -26,6 +25,9 @@ from analyzer_deployer.app import (
     CreateAnalyzerResponse,
     ListAnalyzersResponse,
     ListAnalyzerDeploymentsResponse,
+    PortConfig,
+    TableConfig,
+    SecretConfig,
 )
 from chalice.test import Client
 from hypothesis import given
