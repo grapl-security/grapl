@@ -100,10 +100,13 @@ services:
       - SERVICES=secretsmanager:4584
       - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
       - IMAGE_NAME=localstack/localstack:0.11.5
-
     ports:
       - "4584:4584"
       - "8099:8099"
+    networks:
+      default:
+        aliases:
+          - secretsmanager.us-east-1.amazonaws.com
     # logging:
     #   driver: none
 
@@ -454,7 +457,6 @@ services:
     tty: true
     links:
       - grapl-master-graph-db:master_graph
-      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -473,7 +475,6 @@ services:
       <<: *aws-endpoints
     tty: true
     links:
-      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
       - grapl-master-graph-db:master_graph
 
   grapl-dgraph-ttl:
@@ -542,7 +543,6 @@ services:
       JWT_SECRET_ID: "JWT_SECRET_ID"
     links:
       - grapl-master-graph-db:master_graph
-      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     ports:
       - 5000:5000
 
@@ -599,7 +599,6 @@ services:
       - 8126:8126
     links:
       - grapl-master-graph-db:master_graph
-      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     depends_on:
       - dynamodb
       - grapl-master-graph-db
