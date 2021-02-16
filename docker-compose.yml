@@ -37,7 +37,7 @@ x-common-variables:
     IP_CONNECTION_HISTORY_TABLE: local-grapl-ip_connection_history_table
     ASSET_ID_MAPPINGS: local-grapl-asset_id_mappings
   mg-alphas: &mg-alphas
-    MG_ALPHAS: "grapl-master-graph-db.grapl.dev:9080"
+    MG_ALPHAS: "dgraph.grapl.dev:9080"
   log-level: &log-level
     RUST_LOG: "${RUST_LOG:-ERROR}"
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
@@ -48,7 +48,7 @@ services:
   # Infrastructure dependencies
   #
 
-  grapl-master-graph-db:
+  dgraph:
     tty: false
     image: dgraph/standalone:v20.07.1
     ports:
@@ -66,7 +66,7 @@ services:
     networks:
       default:
         aliases:
-          - grapl-master-graph-db.grapl.dev
+          - dgraph.grapl.dev
 
   # dev uses 1 big redis instance, prod has 1:1 redis per grapl
   # service... maybe transitory, this will eventually match prod
@@ -295,7 +295,7 @@ services:
       - s3
       - sqs
       - grapl-provision
-      - grapl-master-graph-db
+      - dgraph
       - redis
 
   grapl-analyzer-dispatcher:
@@ -408,7 +408,7 @@ services:
       <<: *aws-endpoints
     tty: true
     depends_on:
-      - grapl-master-graph-db
+      - dgraph
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
@@ -557,7 +557,7 @@ services:
         # wait-for-it sqs:9324 &&
         wait-for-it s3:9000 --timeout=$$TIMEOUT &&
         wait-for-it dynamodb:8000 --timeout=$$TIMEOUT &&
-        wait-for-it grapl-master-graph-db:8080 --timeout=$$TIMEOUT &&
+        wait-for-it dgraph:8080 --timeout=$$TIMEOUT &&
         wait-for-it secretsmanager:4584 --timeout=$$TIMEOUT &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
@@ -574,7 +574,7 @@ services:
       - 8126:8126
     depends_on:
       - dynamodb
-      - grapl-master-graph-db
+      - dgraph
       - s3
       - secretsmanager
       - sqs

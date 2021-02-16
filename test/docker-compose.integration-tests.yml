@@ -22,7 +22,7 @@ services:
       - RUST_BACKTRACE=1
       - BUCKET_PREFIX=local-grapl
       - IS_LOCAL=True
-      - MG_ALPHAS=grapl-master-graph-db:9080
+      - MG_ALPHAS=dgraph.grapl.dev:9080
       - SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue
       - GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue
       - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
@@ -53,7 +53,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - BUCKET_PREFIX=local-grapl
       - IS_LOCAL=True
-      - MG_ALPHAS=grapl-master-graph-db:9080
+      - MG_ALPHAS=dgraph.grapl.dev:9080
 
   # grapl-analyzer-deployer-integration-tests:
 

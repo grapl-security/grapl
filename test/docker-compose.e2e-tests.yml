@@ -23,7 +23,7 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - BUCKET_PREFIX=local-grapl
       - IS_LOCAL=True
-      - MG_ALPHAS=grapl-master-graph-db:9080
+      - MG_ALPHAS=dgraph.grapl.dev:9080
       - DEBUG_SERVICES=${DEBUG_SERVICES}
       - DUMP_ARTIFACTS=${DUMP_ARTIFACTS:-False}
       - AWS_REGION=us-east-1
