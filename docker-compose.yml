@@ -20,7 +20,7 @@ x-common-variables:
     SQS_ENDPOINT: "http://sqs.us-east-1.amazonaws.com:9324"
     SQS_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
     SQS_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
-    S3_ENDPOINT: "http://s3:9000"
+    S3_ENDPOINT: "http://s3.us-east-1.amazonaws.com:9000"
     S3_ACCESS_KEY_ID: "minioadmin"
     S3_ACCESS_KEY_SECRET: "minioadmin"
     DYNAMODB_ENDPOINT: "http://dynamodb.us-east-1.amazonaws.com:8000"
@@ -119,7 +119,8 @@ services:
     networks:
       default:
         aliases:
-          - minio
+          - s3.us-east-1.amazonaws.com
+          - s3.amazonaws.com
     logging:
       driver: none
 
@@ -174,12 +175,10 @@ services:
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
       <<: *aws-endpoints
     links:
-      - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -206,12 +205,10 @@ services:
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
       <<: *aws-endpoints
     links:
-      - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -238,12 +235,10 @@ services:
       <<: *dynamodb-mapping-tables
     tty: false
     links:
-      - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
       - s3
       - dynamodb
@@ -271,12 +266,10 @@ services:
       <<: *dynamodb-mapping-tables
     tty: false
     links:
-      - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
       - s3
       - dynamodb
@@ -305,13 +298,11 @@ services:
       IS_LOCAL: "True"
     tty: false
     links:
-      - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -339,12 +330,10 @@ services:
       IS_LOCAL: "true"
     tty: false
     links:
-      - s3:minio
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -364,13 +353,11 @@ services:
   #     - "BUCKET_PREFIX=local-grapl"
   #     - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
   #   links:
-  #     - s3:minio
   #     - sqs:sqs.us-east-1.amazonaws.com
   #   tty: true
   #   extra_hosts:
   #     - sqs:127.0.0.1
   #     - amazonaws:127.0.0.1
-  #     - minio:127.0.0.1
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
@@ -395,12 +382,10 @@ services:
       SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-retry-queue"
     links:
-      - s3:minio
       - grapl-master-graph-db:master_graph
     tty: true
     extra_hosts:
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     ports:
       - 8401:8401  # VSC Debugger
 
@@ -426,10 +411,6 @@ services:
     depends_on:
       - grapl-engagement-view-uploader
     tty: true
-    links:
-      - s3:minio
-    extra_hosts:
-      - minio:127.0.0.1
     networks:
       default:
         aliases:
@@ -450,11 +431,9 @@ services:
       <<: *aws-endpoints
     tty: true
     links:
-      - s3:minio
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
@@ -507,12 +486,10 @@ services:
       <<: *aws-endpoints
     tty: true
     links:
-      - s3:minio
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -565,8 +542,6 @@ services:
         ./upload_local.sh &&
         python -m http.server 8127  # wait-for-it
       "
-    links:
-      - s3:minio
     depends_on:
       - grapl-provision
 
@@ -641,11 +616,9 @@ services:
       - 8126:8126
     links:
       - grapl-master-graph-db:master_graph
-      - s3:minio
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
     extra_hosts:
       - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
       - dynamodb
       - grapl-master-graph-db
