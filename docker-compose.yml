@@ -36,11 +36,12 @@ x-common-variables:
     NETWORK_CONNECTION_HISTORY_TABLE: local-grapl-network_connection_history_table
     IP_CONNECTION_HISTORY_TABLE: local-grapl-ip_connection_history_table
     ASSET_ID_MAPPINGS: local-grapl-asset_id_mappings
-  mg-alphas: &mg-alphas
-    MG_ALPHAS: "dgraph.grapl.dev:9080"
   log-level: &log-level
     RUST_LOG: "${RUST_LOG:-ERROR}"
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
+
+  dgraph-env: &dgraph-env
+    MG_ALPHAS: "dgraph.grapl.dev:9080"
 
 services:
 
@@ -287,7 +288,7 @@ services:
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       DEST_BUCKET_NAME: "local-grapl-subgraphs-merged-bucket"
       <<: *aws-endpoints
-      <<: *mg-alphas
+      <<: *dgraph-env
       GRAPL_SCHEMA_TABLE: "local-grapl-grapl_schema_table"
       IS_LOCAL: "True"
     tty: false
@@ -354,7 +355,7 @@ services:
       MESSAGECACHE_PORT: "6379"
       IS_LOCAL: "True"
       GRPC_ENABLE_FORK_SUPPORT: "1"
-      <<: *mg-alphas
+      <<: *dgraph-env
       IS_RETRY: "False"
       <<: *aws-endpoints
       BUCKET_PREFIX: "local-grapl"
@@ -365,6 +366,7 @@ services:
       - 8401:8401  # VSC Debugger
     depends_on:
       - redis
+      - dgraph
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
@@ -404,7 +406,7 @@ services:
       IS_LOCAL: "True"
       BUCKET_PREFIX: "local-grapl"
       <<: *log-level
-      <<: *mg-alphas
+      <<: *dgraph-env
       <<: *aws-endpoints
     tty: true
     depends_on:
@@ -452,11 +454,13 @@ services:
       - "8123:8123"
     environment:
       IS_LOCAL: "True"
-      <<: *mg-alphas
+      <<: *dgraph-env
       <<: *log-level
       UX_BUCKET_URL: "localhost"
       <<: *aws-endpoints
     tty: true
+    depends_on:
+      - dgraph
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -470,10 +474,12 @@ services:
     environment:
       IS_LOCAL: "True"
       <<: *log-level
-      <<: *mg-alphas
+      <<: *dgraph-env
       GRAPL_DGRAPH_TTL_S: "${GRAPL_DGRAPH_TTL_S:-31536000}"
       GRAPL_TTL_DELETE_BATCH_SIZE: "${GRAPL_TTL_DELETE_BATCH_SIZE:-10}"
     tty: true
+    depends_on:
+      - dgraph
 
   #
   # JS/web services
@@ -516,10 +522,12 @@ services:
       target: graphql-endpoint-deploy
     command: yarn start server
     environment:
-      <<: *mg-alphas
+      <<: *dgraph-env
       IS_LOCAL: "True"
       PORT: "5000"
       JWT_SECRET_ID: "JWT_SECRET_ID"
+    depends_on:
+      - dgraph
     ports:
       - 5000:5000
 
@@ -536,7 +544,9 @@ services:
       target: grapl-notebook
     user: grapl
     environment:
-      <<: *mg-alphas
+      <<: *dgraph-env
+    depends_on:
+      - dgraph
     ports:
       - 8888:8888
 
@@ -567,7 +577,7 @@ services:
       "
     environment:
       GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
-      <<: *mg-alphas
+      <<: *dgraph-env
       <<: *aws-endpoints
     tty: true
     ports:
