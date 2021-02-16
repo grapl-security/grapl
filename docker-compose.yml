@@ -179,10 +179,6 @@ services:
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
       <<: *aws-endpoints
-    links:
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -208,10 +204,6 @@ services:
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
       <<: *aws-endpoints
-    links:
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -237,10 +229,6 @@ services:
       <<: *aws-endpoints
       <<: *dynamodb-mapping-tables
     tty: false
-    links:
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
     depends_on:
       - s3
       - dynamodb
@@ -267,10 +255,6 @@ services:
       <<: *aws-endpoints
       <<: *dynamodb-mapping-tables
     tty: false
-    links:
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
     depends_on:
       - s3
       - dynamodb
@@ -298,10 +282,6 @@ services:
       GRAPL_SCHEMA_TABLE: "local-grapl-grapl_schema_table"
       IS_LOCAL: "True"
     tty: false
-    links:
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -328,10 +308,6 @@ services:
       <<: *log-level
       IS_LOCAL: "true"
     tty: false
-    links:
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -350,11 +326,7 @@ services:
   #     - GRPC_ENABLE_FORK_SUPPORT=1
   #     - "BUCKET_PREFIX=local-grapl"
   #     - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-  #   links:
-  #     - sqs:sqs.us-east-1.amazonaws.com
   #   tty: true
-  #   extra_hosts:
-  #     - sqs:127.0.0.1
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
