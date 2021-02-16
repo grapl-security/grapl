@@ -152,8 +152,6 @@ services:
     environment:
       IS_LOCAL: "True"
       <<: *log-level
-    extra_hosts:
-      - amazonaws:127.0.0.1
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
@@ -178,7 +176,6 @@ services:
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -208,7 +205,6 @@ services:
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -238,7 +234,6 @@ services:
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
     depends_on:
       - s3
       - dynamodb
@@ -269,7 +264,6 @@ services:
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
     depends_on:
       - s3
       - dynamodb
@@ -302,7 +296,6 @@ services:
       - grapl-master-graph-db:master_graph
     extra_hosts:
       - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -333,7 +326,6 @@ services:
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
     depends_on:
       - s3
       - sqs
@@ -357,7 +349,6 @@ services:
   #   tty: true
   #   extra_hosts:
   #     - sqs:127.0.0.1
-  #     - amazonaws:127.0.0.1
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
@@ -384,8 +375,6 @@ services:
     links:
       - grapl-master-graph-db:master_graph
     tty: true
-    extra_hosts:
-      - amazonaws:127.0.0.1
     ports:
       - 8401:8401  # VSC Debugger
 
@@ -432,8 +421,6 @@ services:
     tty: true
     links:
       - grapl-master-graph-db:master_graph
-    extra_hosts:
-      - amazonaws:127.0.0.1
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
@@ -488,8 +475,6 @@ services:
     links:
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
       - grapl-master-graph-db:master_graph
-    extra_hosts:
-      - amazonaws:127.0.0.1
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -509,8 +494,6 @@ services:
     tty: true
     links:
       - grapl-master-graph-db:master_graph
-    extra_hosts:
-      - amazonaws:127.0.0.1
 
   #
   # JS/web services
@@ -617,8 +600,6 @@ services:
     links:
       - grapl-master-graph-db:master_graph
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
-    extra_hosts:
-      - amazonaws:127.0.0.1
     depends_on:
       - dynamodb
       - grapl-master-graph-db
