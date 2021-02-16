@@ -23,7 +23,7 @@ x-common-variables:
     S3_ENDPOINT: "http://s3:9000"
     S3_ACCESS_KEY_ID: "minioadmin"
     S3_ACCESS_KEY_SECRET: "minioadmin"
-    DYNAMODB_ENDPOINT: "http://dynamodb:8000"
+    DYNAMODB_ENDPOINT: "http://dynamodb.us-east-1.amazonaws.com:8000"
     DYNAMODB_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
     DYNAMODB_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
   dynamodb-mapping-tables: &dynamodb-mapping-tables
@@ -130,6 +130,10 @@ services:
       - REGION="us-east-1"
     logging:
       driver: none
+    networks:
+      default:
+        aliases:
+          - dynamodb.us-east-1.amazonaws.com
 
   #
   # Rust services
@@ -235,7 +239,6 @@ services:
     tty: false
     links:
       - s3:minio
-      - dynamodb:dynamodb
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
@@ -269,7 +272,6 @@ services:
     tty: false
     links:
       - s3:minio
-      - dynamodb:dynamodb
       - sqs:sqs.us-east-1.amazonaws.com
     extra_hosts:
       - sqs:127.0.0.1
@@ -641,7 +643,6 @@ services:
       - grapl-master-graph-db:master_graph
       - s3:minio
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
-      - dynamodb:dynamodb
     extra_hosts:
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
