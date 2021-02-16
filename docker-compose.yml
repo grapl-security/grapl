@@ -13,7 +13,7 @@ x-common-variables:
     AWS_REGION: "us-east-1"
     AWS_DEFAULT_REGION: "us-east-1"  # boto3 prefers this one
   aws-endpoints: &aws-endpoints
-    # merge these into your `environment` if: 
+    # merge these into your `environment` if:
     # - you're using `grapl_common.env_helpers` (py)
     # - you're using `grapl-config/env_helpers` (rust)
     <<: *aws-region
@@ -556,10 +556,10 @@ services:
       - grapl-provision
       - grapl-graphql-endpoint
       - grapl-ux-router
-  
+
   grapl-engagement-view-uploader:
     image: grapl/grapl-engagement-view:${TAG:-latest}
-    build: 
+    build:
       context: src
       dockerfile: js/engagement_view/Dockerfile
       target: engagement-view-local-deploy
@@ -571,12 +571,12 @@ services:
       "
     links:
       - s3:minio
-    depends_on: 
+    depends_on:
       - grapl-provision
-  
+
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    build: 
+    build:
       context: src
       dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint-deploy
@@ -599,7 +599,7 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
-    build: 
+    build:
       context: src
       dockerfile: ./python/Dockerfile
       target: grapl-notebook
@@ -617,7 +617,7 @@ services:
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
-    build: 
+    build:
       context: src
       dockerfile: ./python/Dockerfile
       target: grapl-provision
@@ -663,4 +663,3 @@ services:
 networks:
   default:
     name: grapl-network
-
