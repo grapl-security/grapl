@@ -107,5 +107,4 @@ services:
 
 networks:
   default:
-    external:
-      name: grapl-network
+    name: grapl-network

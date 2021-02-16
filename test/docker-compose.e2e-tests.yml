@@ -40,5 +40,4 @@ volumes:
   dynamodb_dump:
 networks:
   default:
-    external:
-      name: grapl-network
+    name: grapl-network
