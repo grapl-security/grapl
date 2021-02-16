@@ -394,11 +394,9 @@ services:
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-retry-queue"
     links:
       - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
       - grapl-master-graph-db:master_graph
     tty: true
     extra_hosts:
-      - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
     ports:
@@ -451,10 +449,8 @@ services:
     tty: true
     links:
       - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
       - grapl-master-graph-db:master_graph
     extra_hosts:
-      - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
 
@@ -510,11 +506,9 @@ services:
     tty: true
     links:
       - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
       - grapl-master-graph-db:master_graph
     extra_hosts:
-      - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
 
@@ -646,11 +640,9 @@ services:
     links:
       - grapl-master-graph-db:master_graph
       - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
       - secretsmanager:secretsmanager.us-east-1.amazonaws.com
       - dynamodb:dynamodb
     extra_hosts:
-      - sqs:127.0.0.1
       - amazonaws:127.0.0.1
       - minio:127.0.0.1
     depends_on:
