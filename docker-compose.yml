@@ -68,8 +68,9 @@ services:
         aliases:
           - grapl-master-graph-db.grapl.dev
 
-  # dev uses 1 big redis instance, prod has 1:1 redis per grapl service
-  dev-shared-redis:  # maybe transitory, this will eventually match prod
+  # dev uses 1 big redis instance, prod has 1:1 redis per grapl
+  # service... maybe transitory, this will eventually match prod
+  redis:
     image: redis:latest
     command: |
       sh -c "
@@ -81,6 +82,10 @@ services:
       - "6379:6379" # redis default
     logging:
       driver: none
+    networks:
+      default:
+        aliases:
+          - redis.grapl.dev
 
   sqs:
     image: localstack/localstack:0.11.5
@@ -171,7 +176,7 @@ services:
     tty: false
     environment:
       <<: *log-level
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
+      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
       IS_LOCAL: "True"
       SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-queue"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-retry-queue"
@@ -183,6 +188,7 @@ services:
       - s3
       - sqs
       - grapl-provision
+      - redis
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -200,7 +206,7 @@ services:
       SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-retry-queue"
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-dead-letter-queue"
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
+      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
       <<: *aws-endpoints
@@ -208,6 +214,7 @@ services:
       - s3
       - sqs
       - grapl-provision
+      - redis
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -219,7 +226,7 @@ services:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       <<: *log-level
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
+      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
       IS_LOCAL: "true"
       SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
@@ -234,6 +241,7 @@ services:
       - dynamodb
       - sqs
       - grapl-provision
+      - redis
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -246,7 +254,7 @@ services:
     environment:
       <<: *log-level
       IS_LOCAL: "True"
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
+      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
       SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
@@ -260,6 +268,7 @@ services:
       - dynamodb
       - sqs
       - grapl-provision
+      - redis
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -271,7 +280,7 @@ services:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       <<: *log-level
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
+      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
       SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-retry-queue"
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-dead-letter-queue"
@@ -287,6 +296,7 @@ services:
       - sqs
       - grapl-provision
       - grapl-master-graph-db
+      - redis
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -338,9 +348,9 @@ services:
     environment:
       <<: *log-level
       DEBUG_SERVICES: "${DEBUG_SERVICES}"
-      HITCACHE_ADDR: "dev-shared-redis"
+      HITCACHE_ADDR: "redis.grapl.dev"
       HITCACHE_PORT: "6379"
-      MESSAGECACHE_ADDR: "dev-shared-redis"
+      MESSAGECACHE_ADDR: "redis.grapl.dev"
       MESSAGECACHE_PORT: "6379"
       IS_LOCAL: "True"
       GRPC_ENABLE_FORK_SUPPORT: "1"
@@ -353,6 +363,8 @@ services:
     tty: true
     ports:
       - 8401:8401  # VSC Debugger
+    depends_on:
+      - redis
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
