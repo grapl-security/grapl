@@ -410,7 +410,7 @@ services:
     networks:
       default:
         aliases:
-          - ux_router
+          - ux-router.grapl.dev
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
@@ -451,7 +451,7 @@ services:
     networks:
       default:
         aliases:
-          - grapl_auth
+          - auth.grapl.dev
     environment:
       <<: *aws-region
       BUCKET_PREFIX: "local-grapl"
@@ -489,6 +489,10 @@ services:
       - dynamodb
       - s3
       - secretsmanager
+    networks:
+      default:
+        aliases:
+          - model-plugin-deployer.grapl.dev
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -521,9 +525,8 @@ services:
     ports:
       - "1234:3128"
     depends_on:
-      - s3
-      - sqs
-      - grapl-provision
+      - grapl-engagement-edge
+      - grapl-model-plugin-deployer
       - grapl-graphql-endpoint
       - grapl-ux-router
 
@@ -561,7 +564,7 @@ services:
     networks:
       default:
         aliases:
-          - graphql_endpoint
+          - graphql.grapl.dev
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
