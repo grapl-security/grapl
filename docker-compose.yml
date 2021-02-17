@@ -13,7 +13,7 @@ x-common-variables:
     AWS_DEFAULT_REGION: "us-east-1"  # boto3 prefers this one
     AWS_REGION: "us-east-1"
   dgraph-env: &dgraph-env
-    MG_ALPHAS: "dgraph.grapl.dev:9080"
+    MG_ALPHAS: "dgraph.grapl.test:9080"
   dynamodb-env: &dynamodb-env
     DYNAMODB_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
     DYNAMODB_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
@@ -64,7 +64,7 @@ services:
     networks:
       default:
         aliases:
-          - dgraph.grapl.dev
+          - dgraph.grapl.test
 
   # dev uses 1 big redis instance, prod has 1:1 redis per grapl
   # service... maybe transitory, this will eventually match prod
@@ -83,7 +83,7 @@ services:
     networks:
       default:
         aliases:
-          - redis.grapl.dev
+          - redis.grapl.test
 
   sqs:
     image: localstack/localstack:0.11.5
@@ -177,7 +177,7 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
-      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
+      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.test:6379"
       IS_LOCAL: "True"
       <<: *log-level
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-retry-queue"
@@ -205,7 +205,7 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
-      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
+      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.test:6379"
       IS_LOCAL: "True"
       <<: *log-level
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-retry-queue"
@@ -233,7 +233,7 @@ services:
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
-      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
+      EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.test:6379"
       IS_LOCAL: "true"
       <<: *log-level
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
@@ -365,12 +365,12 @@ services:
       DEBUG_SERVICES: "${DEBUG_SERVICES}"
       <<: *dgraph-env
       GRPC_ENABLE_FORK_SUPPORT: "1"
-      HITCACHE_ADDR: "redis.grapl.dev"
+      HITCACHE_ADDR: "redis.grapl.test"
       HITCACHE_PORT: "6379"
       IS_LOCAL: "True"
       IS_RETRY: "False"
       <<: *log-level
-      MESSAGECACHE_ADDR: "redis.grapl.dev"
+      MESSAGECACHE_ADDR: "redis.grapl.test"
       MESSAGECACHE_PORT: "6379"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-retry-queue"
       <<: *s3-env
@@ -410,7 +410,7 @@ services:
     networks:
       default:
         aliases:
-          - ux-router.grapl.dev
+          - ux-router.grapl.test
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
@@ -451,7 +451,7 @@ services:
     networks:
       default:
         aliases:
-          - auth.grapl.dev
+          - auth.grapl.test
     environment:
       <<: *aws-region
       BUCKET_PREFIX: "local-grapl"
@@ -492,7 +492,7 @@ services:
     networks:
       default:
         aliases:
-          - model-plugin-deployer.grapl.dev
+          - model-plugin-deployer.grapl.test
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -564,7 +564,7 @@ services:
     networks:
       default:
         aliases:
-          - graphql.grapl.dev
+          - graphql.grapl.test
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
