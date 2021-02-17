@@ -45,9 +45,9 @@ x-common-variables:
 
 services:
 
-  #
-  # Infrastructure dependencies
-  #
+  ########################################################################
+  # Cloud Infrastructure Dependencies
+  ########################################################################
 
   dgraph:
     tty: false
@@ -149,9 +149,9 @@ services:
         aliases:
           - dynamodb.us-east-1.amazonaws.com
 
-  #
-  # Rust services
-  #
+  ########################################################################
+  # Rust Services
+  ########################################################################
 
   grapl-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
@@ -323,9 +323,9 @@ services:
       - s3
       - sqs
 
-  #
-  # Python services
-  #
+  ########################################################################
+  # Python Services
+  ########################################################################
 
   # Removed per https://grapl-internal.slack.com/archives/C017PLQ8TCZ/p1601574470186700
   # Add it back once Analyzer Deployer is ready for prime time!
@@ -481,9 +481,9 @@ services:
     depends_on:
       - dgraph
 
-  #
-  # JS/web services
-  #
+  ########################################################################
+  # Web Services
+  ########################################################################
 
   nginx:
     image: nginxinc/nginx-unprivileged
@@ -550,9 +550,9 @@ services:
     ports:
       - 8888:8888
 
-  #
-  # Utility services
-  #
+  ########################################################################
+  # Utility Services
+  ########################################################################
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
