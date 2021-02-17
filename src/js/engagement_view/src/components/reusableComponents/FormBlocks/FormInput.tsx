@@ -18,6 +18,7 @@ const FormInput: React.FC<FormInputProps> = ({
   inputType = "text",
   marginBottom,
 }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [field, meta, helpers] = useField(name);
 
   return (
