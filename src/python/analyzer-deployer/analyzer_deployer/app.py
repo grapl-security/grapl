@@ -42,7 +42,7 @@ app = Chalice(app_name="analyzer-deployer")
 ANALYZER_PARTITION = "analyzer"
 ANALYZER_DEPLOYMENT_PARTITION = "analyzer_deployment"
 
-DYNAMODB_CLIENT: dynamodb.DynamoDBServiceResource = (
+DYNAMODB: dynamodb.DynamoDBServiceResource = (
     boto3.resource(
         "dynamodb",
         region_name="us-west-2",
@@ -363,7 +363,7 @@ def _s3_key(analyzer_id: str, analyzer_version: int) -> str:
 
 
 def _analyzers_table() -> dynamodb.ServiceResource.Table:
-    return DYNAMODB_CLIENT.Table(ANALYZERS_TABLE)
+    return DYNAMODB.Table(ANALYZERS_TABLE)
 
 
 #

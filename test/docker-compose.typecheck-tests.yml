@@ -81,12 +81,15 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: analyzer-deployer-build
-    command: /bin/sh -c '
+    command: /bin/bash -c '
       source venv/bin/activate &&
-      cd analyzer_deployer &&
+      cd analyzer-deployer &&
       pip install mypy &&
       mypy .
       '
+    environment:
+      - "IS_LOCAL=True"
+      - "ANALYZERS_TABLE=local-grapl-analyzers_table"
 
   typecheck-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer-test:${TAG:-latest}

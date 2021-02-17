@@ -35,6 +35,7 @@ dist/
 /tags
 /tags.lock
 /tags.temp
+.log
 
 # Pants-related artifacts
 # https://www.pantsbuild.org/docs/gitignore

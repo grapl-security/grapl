@@ -49,11 +49,14 @@ services:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
       target: analyzer-deployer-test
-    command: /bin/sh -c '
+    command: /bin/bash -c '
       source venv/bin/activate &&
-      cd analyzer_deployer &&
+      cd analyzer-deployer &&
       py.test -n auto -m "not integration_test"
       '
+    environment:
+      - "IS_LOCAL=True"
+      - "ANALYZERS_TABLE=local-grapl-analyzers_table"
 
   grapl-analyzer-executor-test:
     image: grapl/grapl-analyzer-executor-test:${TAG:-latest}

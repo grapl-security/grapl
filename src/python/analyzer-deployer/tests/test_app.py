@@ -16,7 +16,7 @@ import mypy_boto3_dynamodb as dynamodb
 from analyzer_deployer.app import (
     ANALYZERS_BUCKET,
     ANALYZERS_TABLE,
-    DYNAMODB_CLIENT,
+    DYNAMODB,
     app,
     Analyzer,
     AnalyzerConfig,
@@ -50,15 +50,15 @@ def _random_analyzers_table() -> str:
 def _analyzers_table(table_name) -> dynamodb.ServiceResource.Table:
     table = None
     try:
-        DYNAMODB_CLIENT.create_table(
+        DYNAMODB.create_table(
             TableName=table_name,
             BillingMode="PAY_PER_REQUEST",
             AttributeDefinitions=ATTRIBUTE_DEFINITIONS,
             KeySchema=KEY_SCHEMA,
         )
-        table = DYNAMODB_CLIENT.Table(table_name)
+        table = DYNAMODB.Table(table_name)
     except botocore.exceptions.ClientError:  # probably the table already exists
-        table = DYNAMODB_CLIENT.Table(table_name)
+        table = DYNAMODB.Table(table_name)
 
     return table
 
@@ -82,7 +82,7 @@ def _monkeypatch_analyzers_table(table_name):
 class TestAnalyzersTableSchemaDrift(unittest.TestCase):
     @pytest.mark.integration_test
     def test_analyzers_table_schema_drift(self):
-        analyzers_table: dynamodb.ServiceResource.Table = DYNAMODB_CLIENT.Table(
+        analyzers_table: dynamodb.ServiceResource.Table = DYNAMODB.Table(
             ANALYZERS_TABLE
         )
         self.assertListEqual(analyzers_table.key_schema, KEY_SCHEMA)
@@ -446,9 +446,9 @@ class TestApp(unittest.TestCase):
             analyzer_versions = sorted(
                 i
                 for i in [
-                    deploy_analyzer_response_1.analyzer_version,
-                    deploy_analyzer_response_2.analyzer_version,
-                    deploy_analyzer_response_3.analyzer_version,
+                    deploy_response_1.analyzer_version,
+                    deploy_response_2.analyzer_version,
+                    deploy_response_3.analyzer_version,
                 ]
             )
 
