@@ -86,7 +86,7 @@ export class NodeIdentifier extends cdk.NestedStack {
             }),
             command: ["/node-identifier"],
             retryCommand: ["/node-identifier-retry-handler"],
-            // metric_forwarder: props.metricForwarder,
+            metric_forwarder: props.metricForwarder,
         });
 
         this.service.service.cluster.connections.allowToAnyIpv4(

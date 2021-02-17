@@ -63,7 +63,7 @@ export class GraphMerger extends cdk.NestedStack {
                 file: RUST_DOCKERFILE,
             }),
             command: ["/graph-merger"],
-            // metric_forwarder: props.metricForwarder,
+            metric_forwarder: props.metricForwarder,
         });
 
         // probably only needs 9080

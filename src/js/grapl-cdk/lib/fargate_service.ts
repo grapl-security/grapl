@@ -5,6 +5,7 @@ import * as sns from '@aws-cdk/aws-sns';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 
 import * as logs from "@aws-cdk/aws-logs";
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
 import * as sqs from "@aws-cdk/aws-sqs";
@@ -12,7 +13,8 @@ import * as ecs_patterns from "@aws-cdk/aws-ecs-patterns";
 import {ContainerImage, AwsLogDriver} from "@aws-cdk/aws-ecs";
 import {Watchful} from "cdk-watchful";
 import {EventEmitter} from "./event_emitters";
-import { QueueProcessingFargateService } from '@aws-cdk/aws-ecs-patterns';
+import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
+import { Service } from "./service";
 
 export class Queues {
     readonly queue: sqs.Queue;
@@ -55,7 +57,7 @@ export interface FargateServiceProps {
     command?: string[] | undefined;
     retryCommand?: string[] | undefined;
     watchful?: Watchful | undefined;
-    // TODO: Reintroduce metric_forwarder
+    metric_forwarder?: Service;
 }
 
 interface DeafultAndRetry<T> {
@@ -178,6 +180,11 @@ export class FargateService {
         if (subscribesTo) {
             this.addSubscription(scope, subscribesTo);
         }
+
+        if (props.metric_forwarder) {
+            const forwarder_lambda = props.metric_forwarder.event_handler;
+            this.forwardMetricsLogs(forwarder_lambda);
+        }
     }
 
     readsFromBucket(bucket: s3.IBucket, with_list?: Boolean) {
@@ -223,5 +230,23 @@ export class FargateService {
             protocol: config.protocol,
             rawMessageDelivery: true,
         });
+    }
+
+    forwardMetricsLogs(toLambdaFn: lambda.IFunction) {
+        this.logGroups.default.addSubscriptionFilter(
+            `send_metrics_to_lambda_${this.serviceName}`,
+            {
+                destination: new LambdaDestination(toLambdaFn),
+                filterPattern: logs.FilterPattern.literal("MONITORING"),
+            }
+        );
+        this.logGroups.retry.addSubscriptionFilter(
+            `send_metrics_to_lambda_${this.serviceName}_retry`,
+            {
+                destination: new LambdaDestination(toLambdaFn),
+                filterPattern: logs.FilterPattern.literal("MONITORING"),
+            }
+        );
+        
     }
 }

@@ -52,7 +52,7 @@ export class OSQueryGraphGenerator extends cdk.NestedStack {
                 file: RUST_DOCKERFILE,
             }),
             command: ["/osquery-subgraph-generator"],
-            //metric_forwarder: props.metricForwarder,
+            metric_forwarder: props.metricForwarder,
         });
 
         this.service.service.cluster.connections.allowToAnyIpv4(
