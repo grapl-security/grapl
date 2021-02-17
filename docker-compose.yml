@@ -12,20 +12,6 @@ x-common-variables:
   aws-region: &aws-region
     AWS_REGION: "us-east-1"
     AWS_DEFAULT_REGION: "us-east-1"  # boto3 prefers this one
-  aws-endpoints: &aws-endpoints
-    # merge these into your `environment` if:
-    # - you're using `grapl_common.env_helpers` (py)
-    # - you're using `grapl-config/env_helpers` (rust)
-    <<: *aws-region
-    SQS_ENDPOINT: "http://sqs.us-east-1.amazonaws.com:9324"
-    SQS_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
-    SQS_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
-    S3_ENDPOINT: "http://s3.us-east-1.amazonaws.com:9000"
-    S3_ACCESS_KEY_ID: "minioadmin"
-    S3_ACCESS_KEY_SECRET: "minioadmin"
-    DYNAMODB_ENDPOINT: "http://dynamodb.us-east-1.amazonaws.com:8000"
-    DYNAMODB_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
-    DYNAMODB_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
   dynamodb-mapping-tables: &dynamodb-mapping-tables
     STATIC_MAPPING_TABLE: local-grapl-static_mapping_table
     DYNAMIC_SESSION_TABLE: local-grapl-dynamic_session_table
@@ -39,7 +25,18 @@ x-common-variables:
   log-level: &log-level
     RUST_LOG: "${RUST_LOG:-ERROR}"
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
-
+  sqs-env: &sqs-env
+    SQS_ENDPOINT: "http://sqs.us-east-1.amazonaws.com:9324"
+    SQS_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
+    SQS_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
+  s3-env: &s3-env
+    S3_ENDPOINT: "http://s3.us-east-1.amazonaws.com:9000"
+    S3_ACCESS_KEY_ID: "minioadmin"
+    S3_ACCESS_KEY_SECRET: "minioadmin"
+  dynamodb-env: &dynamodb-env
+    DYNAMODB_ENDPOINT: "http://dynamodb.us-east-1.amazonaws.com:8000"
+    DYNAMODB_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
+    DYNAMODB_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
   dgraph-env: &dgraph-env
     MG_ALPHAS: "dgraph.grapl.dev:9080"
 
@@ -184,7 +181,9 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-dead-letter-queue"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *sqs-env
     depends_on:
       - s3
       - sqs
@@ -210,7 +209,9 @@ services:
       EVENT_CACHE_CLUSTER_ADDRESS: "redis.grapl.dev:6379"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
       DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *sqs-env
     depends_on:
       - s3
       - sqs
@@ -234,7 +235,10 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       DEST_BUCKET_NAME: "local-grapl-subgraphs-generated-bucket"
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *sqs-env
+      <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
     tty: false
     depends_on:
@@ -261,7 +265,10 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
       DEST_BUCKET_NAME: "local-grapl-subgraphs-generated-bucket"
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *sqs-env
+      <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
     tty: false
     depends_on:
@@ -287,7 +294,10 @@ services:
       DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-dead-letter-queue"
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
       DEST_BUCKET_NAME: "local-grapl-subgraphs-merged-bucket"
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *sqs-env
+      <<: *dynamodb-env
       <<: *dgraph-env
       GRAPL_SCHEMA_TABLE: "local-grapl-grapl_schema_table"
       IS_LOCAL: "True"
@@ -295,6 +305,7 @@ services:
     depends_on:
       - s3
       - sqs
+      - dynamodb
       - grapl-provision
       - dgraph
       - redis
@@ -315,7 +326,9 @@ services:
       DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
       DEST_BUCKET_NAME: "local-grapl-analyzer-dispatched-bucket"
       ANALYZER_BUCKET: "local-grapl-analyzers-bucket"
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *sqs-env
       <<: *log-level
       IS_LOCAL: "true"
     tty: false
@@ -357,8 +370,10 @@ services:
       GRPC_ENABLE_FORK_SUPPORT: "1"
       <<: *dgraph-env
       IS_RETRY: "False"
-      <<: *aws-endpoints
       BUCKET_PREFIX: "local-grapl"
+      <<: *aws-region
+      <<: *sqs-env
+      <<: *s3-env
       SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
       RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-retry-queue"
     tty: true
@@ -366,6 +381,8 @@ services:
       - 8401:8401  # VSC Debugger
     depends_on:
       - redis
+      - sqs
+      - s3
       - dgraph
 
   grapl-ux-router:
@@ -407,10 +424,14 @@ services:
       BUCKET_PREFIX: "local-grapl"
       <<: *log-level
       <<: *dgraph-env
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *sqs-env
     tty: true
     depends_on:
       - dgraph
+      - s3
+      - sqs
 
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
@@ -438,9 +459,12 @@ services:
       UX_BUCKET_URL: "localhost:3000"
       USER_AUTH_TABLE: "local-grapl-user_auth_table"
       BUCKET_PREFIX: "local-grapl"
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *dynamodb-env
     depends_on:
       - grapl-provision
+      - dynamodb
+      - secretsmanager
     tty: true
 
   grapl-model-plugin-deployer:
@@ -457,10 +481,15 @@ services:
       <<: *dgraph-env
       <<: *log-level
       UX_BUCKET_URL: "localhost"
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *dynamodb-env
     tty: true
     depends_on:
       - dgraph
+      - s3
+      - dynamodb
+      - secretsmanager
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -578,7 +607,10 @@ services:
     environment:
       GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
       <<: *dgraph-env
-      <<: *aws-endpoints
+      <<: *aws-region
+      <<: *s3-env
+      <<: *sqs-env
+      <<: *dynamodb-env
     tty: true
     ports:
       - 8126:8126
