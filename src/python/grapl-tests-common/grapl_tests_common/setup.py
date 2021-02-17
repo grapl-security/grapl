@@ -102,7 +102,7 @@ def _after_tests() -> None:
     # The contents of the volume are made available to Github Actions via `dump_artifacts.py`.
     if DUMP_ARTIFACTS:
         logging.info("Executing post-test database dumps")
-        export_request = requests.get("http://grapl-master-graph-db:8080/admin/export")
+        export_request = requests.get("http://graphdb:8080/admin/export")
         assert export_request.json()["code"] == "Success"
         dump_dynamodb()
 

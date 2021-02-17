@@ -43,8 +43,20 @@ services:
         py.test -n auto -m "not integration_test"
         '
 
-  # grapl-analyzer-deployer:
-  #   image: grapl/grapl-analyzer-deployer-test:${TAG:-latest}
+  analyzer-deployer-test:
+    image: grapl/analyzer-deployer-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-deployer-test
+    command: /bin/bash -c '
+      source venv/bin/activate &&
+      cd analyzer-deployer &&
+      py.test -n auto -m "not integration_test"
+      '
+    environment:
+      - "IS_LOCAL=True"
+      - "ANALYZERS_TABLE=local-grapl-analyzers_table"
 
   grapl-analyzer-executor-test:
     image: grapl/grapl-analyzer-executor-test:${TAG:-latest}

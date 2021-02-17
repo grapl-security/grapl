@@ -7,7 +7,7 @@ compose_stop() {
     docker-compose --project-name "$p" stop
 }
 
-usage() { 
+usage() {
     echo 'Usage: $0 -p <project-name> -f docker-compose1.yml [SERVICES]' 1>&2
     echo
     echo 'This script calls into `docker-compose up` with the supplied arguments' 1>&2
@@ -47,7 +47,7 @@ docker-compose ${FILE_ARGS} --project-name "$p" up --force-recreate ${SERVICES}
 EXIT_CODE=0
 for test in $(docker-compose ${FILE_ARGS} --project-name "$p" ps -q ${SERVICES}); do
     docker inspect -f "{{ .State.ExitCode }}" $test | grep -q ^0;
-    if [ $? -ne 0 ]; then 
+    if [ $? -ne 0 ]; then
         EXIT_CODE=$?;
         break
     fi

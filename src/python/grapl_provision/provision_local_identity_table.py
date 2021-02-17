@@ -1,8 +1,5 @@
 #!/usr/bin/python3
-import logging
-import os
 import time
-
 import boto3
 import botocore
 from grapl_common.env_helpers import DynamoDBClientFactory
@@ -21,6 +18,7 @@ table_names = [
     "local-grapl-dynamic_session_table",
     "local-grapl-static_mapping_table",
     "local-grapl-user_auth_table",
+    "local-grapl-analyzers_table",
     "local-grapl-grapl_schema_table",
 ]
 
@@ -117,6 +115,16 @@ table_defs = {
         ],
         "attribute_definitions": [
             {"AttributeName": "username", "AttributeType": "S"},
+        ],
+    },
+    "local-grapl-analyzers_table": {
+        "key_schema": [
+            {"KeyType": "HASH", "AttributeName": "partition_key"},
+            {"KeyType": "RANGE", "AttributeName": "sort_key"},
+        ],
+        "attribute_definitions": [
+            {"AttributeName": "partition_key", "AttributeType": "S"},
+            {"AttributeName": "sort_key", "AttributeType": "S"},
         ],
     },
     "local-grapl-grapl_schema_table": {
