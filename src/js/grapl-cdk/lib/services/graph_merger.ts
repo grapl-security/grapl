@@ -75,7 +75,7 @@ export class GraphMerger extends cdk.NestedStack {
             ec2.Port.allTcp()
         );
         props.schemaTable.allowRead(this.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.cluster);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.service);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.service);
     }
 }

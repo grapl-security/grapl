@@ -13,8 +13,6 @@ DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FIL
 endif
 export
 
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
 export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 	-f ./test/docker-compose.unit-tests-rust.yml \
 	-f ./test/docker-compose.unit-tests-python.yml \
@@ -167,6 +165,9 @@ format-python: ## Reformat all Python code
 .PHONY: format
 format: format-rust format-python ## Reformat all code
 
+.PHONY: package-python-libs
+package-python-libs: ## Create Python distributions for public libraries
+	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
 
 #
 # else

@@ -58,7 +58,7 @@ function getEdgeApiUrl(): string {
      */
     const outputFile = path.join(__dirname, '../cdk-output.json');
     const outputFileContents = JSON.parse(fs.readFileSync(outputFile, 'utf8'));
-    // This looks like { DEPLOYMENT_NAME: { SOME_KEY: apiUrl } }
+    // This looks like { GRAPL_DEPLOYMENT_NAME: { SOME_KEY: apiUrl } }
     const entryForDeployment = outputFileContents[DeploymentParameters.stackName];
     if (entryForDeployment === undefined) {
         throw new Error(`Couldn't find an entry in cdk-output.json for ${DeploymentParameters.stackName}`);

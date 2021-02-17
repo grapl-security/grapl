@@ -63,7 +63,7 @@ Each of these can be found in `bin/deployment_parameters.ts`:
     Note: This name must be globally (AWS) unique, as names for AWS S3
     buckets will be dervied from this.
 
-    env: `GRAPL_CDK_DEPLOYMENT_NAME`
+    env: `GRAPL_DEPLOYMENT_NAME`
 
 2. `graplVersion`
 
@@ -150,13 +150,13 @@ You can send some test data up to the service by going to the root of the grapl 
 cd $GRAPL_ROOT
 
 # whatever deployment name you defined above
-export DEPLOYMENT_NAME="Grapl-MYDEPLOYMENT"
+export GRAPL_DEPLOYMENT_NAME="Grapl-MYDEPLOYMENT"
 
 # upload analyzers
-BUCKET_PREFIX=$DEPLOYMENT_NAME etc/aws/upload_analyzer_prod.sh
+BUCKET_PREFIX=$GRAPL_DEPLOYMENT_NAME etc/aws/upload_analyzer_prod.sh
 # upload logs
 python3 etc/local_grapl/bin/upload-sysmon-logs.py \
-  --bucket_prefix $DEPLOYMENT_NAME \
+  --bucket_prefix $GRAPL_DEPLOYMENT_NAME \
   --logfile etc/sample_data/eventlog.xml 
 ```
 
