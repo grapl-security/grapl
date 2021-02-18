@@ -125,20 +125,8 @@ pub fn mg_alphas() -> Vec<String> {
     return std::env::var("MG_ALPHAS")
         .expect("MG_ALPHAS")
         .split(',')
-        .map(str::to_string)
+        .map(|mg| format!("http://{}", mg))
         .collect();
-}
-
-pub fn parse_host_port(mg_alpha: String) -> (String, u16) {
-    let mut splat = mg_alpha.split(":");
-    let host = splat.next().expect("missing host").to_owned();
-    let port_str = splat.next();
-    let port = port_str
-        .expect("missing port")
-        .parse()
-        .expect(&format!("invalid port: \"{:?}\"", port_str));
-
-    (host, port)
 }
 
 pub async fn wait_for_s3(s3_client: impl S3) -> color_eyre::Result<()> {
