@@ -236,6 +236,10 @@ zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
 deploy: zip ## CDK deploy to AWS
 	src/js/grapl-cdk/deploy_all.sh
 
+.PHONY: push
+push: ## Push Grapl containers to Docker Hub
+	docker-compose --file=docker-compose.build.yml push
+
 .PHONY: up
 up: build-services ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV) \
