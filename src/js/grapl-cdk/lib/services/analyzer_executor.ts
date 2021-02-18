@@ -6,7 +6,7 @@ import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { EventEmitter } from '../event_emitters';
 import { FargateService } from '../fargate_service';
 import { GraplServiceProps } from '../grapl-cdk-stack';
-import { PYTHON_DIR } from '../dockerfile_paths';
+import { SRC_DIR, PYTHON_DOCKERFILE } from '../dockerfile_paths';
 import { RedisCluster } from '../redis';
 
 export interface AnalyzerExecutorProps extends GraplServiceProps {
@@ -16,7 +16,7 @@ export interface AnalyzerExecutorProps extends GraplServiceProps {
 }
 
 export class AnalyzerExecutor extends cdk.NestedStack {
-    readonly bucket: s3.IBucket;
+    readonly sourceBucket: s3.IBucket;
     readonly service: FargateService;
 
     constructor(
@@ -31,7 +31,7 @@ export class AnalyzerExecutor extends cdk.NestedStack {
             this,
             bucket_prefix + '-dispatched-analyzer'
         );
-        this.bucket = dispatched_analyzer.bucket;
+        this.sourceBucket = dispatched_analyzer.bucket;
 
         const count_cache = new RedisCluster(this, 'ExecutorCountCache', props);
         const hit_cache = new RedisCluster(this, 'ExecutorHitCache', props);
@@ -58,18 +58,22 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                 writesTo: props.writesTo,
                 version: props.version,
                 watchful: props.watchful,
-                serviceImage: ContainerImage.fromAsset(PYTHON_DIR, {
+                serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                     target: "analyzer-executor-deploy",
-                    file: "Dockerfile",
+                    file: PYTHON_DOCKERFILE,
                 }),
-                // TODO
-                //metric_forwarder: props.metricForwarder,
+                metric_forwarder: props.metricForwarder,
+                command: [
+                    "/bin/sh",
+                    "-c",
+                    ". venv/bin/activate && python3 analyzer_executor/src/run.py"
+                ],
             },
         );
         const service = this.service;
 
-        props.dgraphSwarmCluster.allowConnectionsFrom(service.service.cluster);
-        props.dgraphSwarmCluster.allowConnectionsFrom(service.retryService.cluster);
+        props.dgraphSwarmCluster.allowConnectionsFrom(service.service.service);
+        props.dgraphSwarmCluster.allowConnectionsFrom(service.retryService.service);
 
         // We need the List capability to find each of the analyzers
         service.readsFromBucket(props.readsAnalyzersFrom, true)
@@ -79,7 +83,8 @@ export class AnalyzerExecutor extends cdk.NestedStack {
         // a cache later, but safe so long as there is no LIST
         service.readsFromBucket(props.writesTo, false);
 
-        for (const conn of service.connections()) {
+        for (const s of [service.service, service.retryService]) {
+            const conn = s.service.connections;
             conn.allowToAnyIpv4(
                 ec2.Port.allTraffic(),
                 'Allow outbound to S3'

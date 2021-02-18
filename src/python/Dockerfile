@@ -170,7 +170,8 @@ COPY --chown=grapl --from=analyzer-executor-build /home/grapl/venv venv
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/analyzer_executor analyzer_executor
 
 CMD source venv/bin/activate && \
-    python3 analyzer_executor/src/analyzer-executor.py
+    python3 analyzer_executor/src/run.py
+    #python3 analyzer_executor/src/analyzer-executor.py
 
 # test
 FROM analyzer-executor-build AS analyzer-executor-test

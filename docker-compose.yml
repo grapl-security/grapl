@@ -297,7 +297,7 @@ services:
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
+    command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run.py'
     environment:
       <<: *aws-region
       BUCKET_PREFIX: ${BUCKET_PREFIX}
