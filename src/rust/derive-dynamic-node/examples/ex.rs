@@ -1,4 +1,4 @@
-use derive_dynamic_node::{DynamicNode,
+use derive_dynamic_node::{GraplNode,
                           GraplSessionId,
                           GraplStaticId};
 use grapl_graph_descriptions::graph_description::*;
@@ -9,7 +9,7 @@ fn read_log() -> &'static [u8] {
     unimplemented!()
 }
 
-#[derive(DynamicNode, GraplSessionId)]
+#[derive(GraplNode, GraplSessionId)]
 pub struct SpecialProcess {
     #[grapl(created_time)]
     pub create_time: u64,
@@ -38,7 +38,7 @@ struct InstanceDetails {
 }
 
 #[allow(dead_code)]
-#[derive(DynamicNode, GraplStaticId)]
+#[derive(GraplNode, GraplStaticId)]
 pub struct AwsEc2Instance {
     #[grapl(static_id)]
     arn: String,

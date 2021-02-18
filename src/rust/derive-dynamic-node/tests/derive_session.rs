@@ -1,7 +1,7 @@
-use derive_dynamic_node::{DynamicNode, GraplSessionId};
+use derive_dynamic_node::{GraplNode, GraplSessionId};
 use grapl_graph_descriptions::graph_description::*;
 
-#[derive(DynamicNode, GraplSessionId)]
+#[derive(GraplNode, GraplSessionId)]
 pub struct SpecialProcess {
     #[grapl(created_time)]
     pub create_time: u64,

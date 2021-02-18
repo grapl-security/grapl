@@ -15,16 +15,16 @@ use syn::{parse_quote,
           NestedMeta,
           Type};
 
-const CREATE_TIME: &'static str = "created_time";
+const CREATED_TIME: &'static str = "created_time";
 const LAST_SEEN_TIME: &'static str = "last_seen_time";
-const TERMINATE_TIME: &'static str = "terminated_time";
+const TERMINATED_TIME: &'static str = "terminated_time";
 
 fn name_and_ty(field: &Field) -> (&Ident, &Type) {
     (field.ident.as_ref().unwrap(), &field.ty)
 }
 
-#[proc_macro_derive(DynamicNode)]
-pub fn derive_node_description(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(GraplNode)]
+pub fn derive_grapl_node(input: TokenStream) -> TokenStream {
     let input: syn::DeriveInput = syn::parse_macro_input!(input as syn::DeriveInput);
 
     let input_struct = match input.data {
@@ -153,7 +153,7 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(GraplStaticId, attributes(grapl))]
-pub fn derive_static_node(input: TokenStream) -> TokenStream {
+pub fn derive_static_node_identity(input: TokenStream) -> TokenStream {
     let input: syn::DeriveInput = syn::parse_macro_input!(input as syn::DeriveInput);
 
     let input_struct = match input.data {
@@ -221,9 +221,9 @@ fn identity_prop_setter(field: &Field, property_name: &Ident) -> TS2 {
 
     for attr in field.attrs.iter() {
         on_grapl_attrs(attr, |meta_attr| {
-            created_time_prop |= meta_attr == CREATE_TIME;
+            created_time_prop |= meta_attr == CREATED_TIME;
             last_seen_time_prop |= meta_attr == LAST_SEEN_TIME;
-            terminated_time_prop |= meta_attr == TERMINATE_TIME;
+            terminated_time_prop |= meta_attr == TERMINATED_TIME;
         });
         if [
             &created_time_prop,
@@ -238,9 +238,9 @@ fn identity_prop_setter(field: &Field, property_name: &Ident) -> TS2 {
     }
 
     let ident = match (created_time_prop, last_seen_time_prop, terminated_time_prop) {
-        (true, _, _) => syn::Ident::new(&CREATE_TIME, field.span()),
+        (true, _, _) => syn::Ident::new(&CREATED_TIME, field.span()),
         (_, true, _) => syn::Ident::new(&LAST_SEEN_TIME, field.span()),
-        (_, _, true) => syn::Ident::new(&TERMINATE_TIME, field.span()),
+        (_, _, true) => syn::Ident::new(&TERMINATED_TIME, field.span()),
         _ => return quote!(),
     };
     quote!(
@@ -364,9 +364,9 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     let mut terminated_time_prop: Option<String> = None;
 
     for field in fields.iter() {
-        set_timestamp_from_meta(field, CREATE_TIME, &mut created_time_prop);
+        set_timestamp_from_meta(field, CREATED_TIME, &mut created_time_prop);
         set_timestamp_from_meta(field, LAST_SEEN_TIME, &mut last_seen_time_prop);
-        set_timestamp_from_meta(field, TERMINATE_TIME, &mut terminated_time_prop);
+        set_timestamp_from_meta(field, TERMINATED_TIME, &mut terminated_time_prop);
     }
 
     if created_time_prop.is_none() {
