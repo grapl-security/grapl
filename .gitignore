@@ -47,3 +47,4 @@ dist/
 /.pants.workdir.file_lock*
 # See build-support/generate_constraints.sh
 /build-support/.constraints-venv
+.yarn/
