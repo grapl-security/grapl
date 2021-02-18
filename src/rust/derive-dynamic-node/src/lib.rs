@@ -369,17 +369,17 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
         set_timestamp_from_meta(field, TERMINATED_TIME, &mut terminated_time_prop);
     }
 
-    if created_time_prop.is_none() {
-        panic!("Must set created_time for at least one field");
+    match (created_time_prop, last_seen_time_prop, terminated_time_prop) {
+        (Some(_), Some(_), Some(_)) => (),
+        (None, None, None) => panic!("Missing {} and {} and {}", CREATED_TIME, LAST_SEEN_TIME, TERMINATED_TIME),
+        (None, None, _) => panic!("Missing {} and {}", CREATED_TIME, LAST_SEEN_TIME),
+        (None, _, None) => panic!("Missing {} and {}", CREATED_TIME, TERMINATED_TIME),
+        (_, None, None) => panic!("Missing {} and {}", LAST_SEEN_TIME, TERMINATED_TIME),
+        (None, _, _) => panic!("Missing {}", CREATED_TIME),
+        (_, None, _) => panic!("Missing {}", LAST_SEEN_TIME),
+        (_, _, None) => panic!("Missing {}", TERMINATED_TIME),
     }
 
-    if last_seen_time_prop.is_none() {
-        panic!("Must set last_seen_time for at least one field");
-    }
-
-    if terminated_time_prop.is_none() {
-        panic!("Must set terminated_time for at least one field");
-    }
     let mut id_fields = quote!();
     for field in fields {
         for attr in &field.attrs {
