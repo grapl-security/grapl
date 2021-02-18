@@ -516,11 +516,19 @@ services:
 
   nginx:
     image: nginxinc/nginx-unprivileged
-    command: nginx
     volumes:
-      - ./etc/local_grapl/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
     ports:
       - "1234:3128"
+    environment:
+      - GRAPL_AUTH_HOST
+      - GRAPL_AUTH_PORT
+      - GRAPL_GRAPHQL_HOST
+      - GRAPL_GRAPHQL_PORT
+      - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
+      - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
+      - GRAPL_UX_ROUTER_HOST
+      - GRAPL_UX_ROUTER_PORT
     depends_on:
       - grapl-engagement-edge
       - grapl-model-plugin-deployer
