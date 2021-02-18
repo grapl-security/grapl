@@ -6,6 +6,7 @@ test/cypress/screenshots
 test/cypress/videos
 
 # Environments
+.env
 venv/
 
 # Python misc
