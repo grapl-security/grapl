@@ -13,28 +13,28 @@ services:
       args:
         - CARGO_PROFILE=debug
     command: bash -c "
-      wait-for-it grapl-provision:8126 --timeout=180 &&
+      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"
     environment:
-      - AWS_REGION=us-east-1
+      - AWS_REGION
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - RUST_LOG=INFO
       - RUST_BACKTRACE=1
-      - BUCKET_PREFIX=local-grapl
+      - BUCKET_PREFIX
       - IS_LOCAL=True
-      - MG_ALPHAS=dgraph.grapl.dev:9080
-      - SOURCE_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue
-      - GRAPH_MERGER_QUEUE_URL=http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue
-      - STATIC_MAPPING_TABLE=local-grapl-static_mapping_table
-      - DYNAMIC_SESSION_TABLE=local-grapl-dynamic_session_table
-      - PROCESS_HISTORY_TABLE=local-grapl-process_history_table
-      - FILE_HISTORY_TABLE=local-grapl-file_history_table
-      - INBOUND_CONNECTION_HISTORY_TABLE=local-grapl-inbound_connection_history_table
-      - OUTBOUND_CONNECTION_HISTORY_TABLE=local-grapl-outbound_connection_history_table
-      - NETWORK_CONNECTION_HISTORY_TABLE=local-grapl-network_connection_history_table
-      - IP_CONNECTION_HISTORY_TABLE=local-grapl-ip_connection_history_table
-      - ASSET_ID_MAPPINGS=local-grapl-asset_id_mappings
-      - "DYNAMODB_ENDPOINT=http://dynamodb:8000"
+      - MG_ALPHAS
+      - SOURCE_QUEUE_URL=${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue
+      - GRAPH_MERGER_QUEUE_URL=${SQS_ENDPOINT}/queue/grapl-graph-merger-queue
+      - STATIC_MAPPING_TABLE=${BUCKET_PREFIX}-static_mapping_table
+      - DYNAMIC_SESSION_TABLE=${BUCKET_PREFIX}-dynamic_session_table
+      - PROCESS_HISTORY_TABLE=${BUCKET_PREFIX}-process_history_table
+      - FILE_HISTORY_TABLE=${BUCKET_PREFIX}-file_history_table
+      - INBOUND_CONNECTION_HISTORY_TABLE=${BUCKET_PREFIX}-inbound_connection_history_table
+      - OUTBOUND_CONNECTION_HISTORY_TABLE=${BUCKET_PREFIX}-outbound_connection_history_table
+      - NETWORK_CONNECTION_HISTORY_TABLE=${BUCKET_PREFIX}-network_connection_history_table
+      - IP_CONNECTION_HISTORY_TABLE=${BUCKET_PREFIX}-ip_connection_history_table
+      - ASSET_ID_MAPPINGS=${BUCKET_PREFIX}-asset_id_mappings
+      - DYNAMODB_ENDPOINT
       - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
 
@@ -45,15 +45,15 @@ services:
       dockerfile: ./python/Dockerfile
       target: grapl-analyzerlib-test
     command: bash -c '
-      wait-for-it grapl-provision:8126 --timeout=180 &&
+      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
       source venv/bin/activate &&
       cd grapl_analyzerlib &&
       py.test -n auto -m "integration_test"'
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
-      - BUCKET_PREFIX=local-grapl
+      - BUCKET_PREFIX
       - IS_LOCAL=True
-      - MG_ALPHAS=dgraph.grapl.dev:9080
+      - MG_ALPHAS
 
   # grapl-analyzer-deployer-integration-tests:
 
@@ -69,10 +69,10 @@ services:
       export PYTHONPATH="$${PYTHONPATH}:$$(pwd)/src" &&
       py.test -n auto -m "integration_test"'
     environment:
-      - HITCACHE_ADDR=dev-shared-redis
-      - HITCACHE_PORT=6379
-      - MESSAGECACHE_ADDR=dev-shared-redis
-      - MESSAGECACHE_PORT=6379
+      - HITCACHE_ADDR=${REDIS_HOST}
+      - HITCACHE_PORT=${REDIS_PORT}
+      - MESSAGECACHE_ADDR=${REDIS_HOST}
+      - MESSAGECACHE_PORT=${REDIS_PORT}
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - IS_LOCAL=True
       - IS_RETRY=False
@@ -84,13 +84,13 @@ services:
       dockerfile: ./python/Dockerfile
       target: engagement-edge-test
     command: bash -c '
-      wait-for-it grapl-engagement-edge:8900 --timeout=180 &&
+      wait-for-it ${GRAPL_AUTH_HOST}:${GRAPL_AUTH_PORT} --timeout=180 &&
       source venv/bin/activate &&
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'
     environment:
       - IS_LOCAL=True
-      - BUCKET_PREFIX=local-grapl
+      - BUCKET_PREFIX
       - UX_BUCKET_URL="ux_bucket_url"
 
   cypress-integration-tests:
@@ -101,7 +101,7 @@ services:
       target: grapl-cypress
     command: |
       /bin/bash -c "
-        wait-for-it grapl-provision:8126 --timeout=120 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
         cypress run --browser chrome --headless
       "
 
