@@ -1,8 +1,10 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
-import * as s3deploy from '@aws-cdk/aws-s3-deployment';
+import * as ecs from '@aws-cdk/aws-ecs';
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as path from 'path';
-import { Swarm } from '../swarm';
+import * as s3deploy from '@aws-cdk/aws-s3-deployment';
+import { Swarm, SwarmConnectable } from '../swarm';
 import { Watchful } from 'cdk-watchful';
 import { GraplS3Bucket } from '../grapl_s3_bucket';
 
@@ -69,7 +71,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         return this.dgraphSwarmCluster.clusterHostPort();
     }
 
-    public allowConnectionsFrom(other: ec2.IConnectable): void {
+    public allowConnectionsFrom(other: SwarmConnectable): void {
         this.dgraphSwarmCluster.allowConnectionsFrom(other, ec2.Port.tcp(9080));
     }
 }
