@@ -1,3 +1,4 @@
+import DEV_API_EDGES from '../constants';
 import {apiFetchWithBody} from '../fetch';
 
 export const getLenses = async (first: number, offset: number) => {
@@ -16,7 +17,7 @@ export const getLenses = async (first: number, offset: number) => {
     const graphQLQuery = JSON.stringify({ query: gqlQuery })
     
     const response = 
-        await apiFetchWithBody(`prod/graphQlEndpoint/graphql`, "POST", graphQLQuery)
+        await apiFetchWithBody(`${DEV_API_EDGES.graphQL}/graphql`, "POST", graphQLQuery)
             .then(res => res)
             .then(res => {
                 if (res.errors) {
