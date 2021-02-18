@@ -95,19 +95,18 @@ build-test-typecheck:
 	docker buildx bake -f ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration:
+build-test-integration: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml -f ./test/docker-compose.integration-tests.yml
+	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
-build-test-e2e:
+build-test-e2e: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml -f ./test/docker-compose.e2e-tests.yml
+	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-services
 build-services: ## Build Grapl services
-	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.build.yml
 
 .PHONY: build-aws
 build-aws: ## Build services for Grapl in AWS (subset of all services)
