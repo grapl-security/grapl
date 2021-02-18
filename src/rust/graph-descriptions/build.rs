@@ -5,8 +5,14 @@ fn main() {
         ".",
         "#[derive(Eq, serde_derive::Serialize, serde_derive::Deserialize)]",
     );
-    config.type_attribute(".graplinc.grapl.api.graph.v1beta1.MergedEdge", "#[derive(Ord, PartialOrd)]");
-    config.type_attribute(".graplinc.grapl.api.graph.v1beta1.Edge", "#[derive(Ord, PartialOrd)]");
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.MergedEdge",
+        "#[derive(Ord, PartialOrd)]",
+    );
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.Edge",
+        "#[derive(Ord, PartialOrd)]",
+    );
 
     config.type_attribute(
         ".graplinc.grapl.api.graph.v1beta1.Asset",

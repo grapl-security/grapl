@@ -1,5 +1,5 @@
-pub use crate::graph_description::*;
-pub use crate::node_property::Property;
+pub use crate::{graph_description::*,
+                node_property::Property};
 
 // A helper macro to generate `as_*` methods for the NodeProperty wrapper type, and its internall
 // enumeration
@@ -55,13 +55,13 @@ pub mod graph_description {
     ));
 }
 
-pub use node_property::Property::{
-    DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUintProp as ProtoDecrementOnlyUintProp, ImmutableIntProp as ProtoImmutableIntProp,
-    ImmutableStrProp as ProtoImmutableStrProp, ImmutableUintProp as ProtoImmutableUintProp,
-    IncrementOnlyIntProp as ProtoIncrementOnlyIntProp,
-    IncrementOnlyUintProp as ProtoIncrementOnlyUintProp,
-};
+pub use node_property::Property::{DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
+                                  DecrementOnlyUintProp as ProtoDecrementOnlyUintProp,
+                                  ImmutableIntProp as ProtoImmutableIntProp,
+                                  ImmutableStrProp as ProtoImmutableStrProp,
+                                  ImmutableUintProp as ProtoImmutableUintProp,
+                                  IncrementOnlyIntProp as ProtoIncrementOnlyIntProp,
+                                  IncrementOnlyUintProp as ProtoIncrementOnlyUintProp};
 
 impl GraphDescription {
     pub fn new() -> Self {
