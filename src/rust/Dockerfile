@@ -24,7 +24,10 @@ ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 WORKDIR /grapl
 
 # copy sources
-COPY . .
+COPY proto proto
+COPY rust rust
+
+WORKDIR /grapl/rust
 
 
 # build
@@ -57,7 +60,7 @@ RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
       TMPDIR="$(mktemp -d)"; \
       cd "$TMPDIR"; \
-      cp "/grapl/target/${TARGET}/${CARGO_PROFILE}/${1}" bootstrap && \
+      cp "/grapl/rust/target/${TARGET}/${CARGO_PROFILE}/${1}" bootstrap && \
       zip --quiet -9 "/grapl/zips/${1}.zip" bootstrap; \
     }; \
     grapl-zip metric-forwarder
@@ -97,47 +100,47 @@ USER nobody
 # analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
 
-COPY --from=build "/grapl/target/${CARGO_PROFILE}/analyzer-dispatcher" /
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/analyzer-dispatcher" /
 CMD ["/analyzer-dispatcher"]
 
 # generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
-COPY --from=build "/grapl/target/${CARGO_PROFILE}/generic-subgraph-generator" /
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/generic-subgraph-generator" /
 CMD ["/generic-subgraph-generator"]
 
 # graph-merger
 FROM rust-dist AS graph-merger-deploy
 
-COPY --from=build "/grapl/target/${CARGO_PROFILE}/graph-merger" /
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/graph-merger" /
 CMD ["/graph-merger"]
 
 # metric-forwarder
 FROM rust-dist AS metric-forwarder-deploy
 
-COPY --from=build "/grapl/target/${CARGO_PROFILE}/metric-forwarder" /
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/metric-forwarder" /
 CMD ["/metric-forwarder"]
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 
-COPY --from=build "/grapl/target/${CARGO_PROFILE}/node-identifier" /
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/node-identifier" /
 CMD ["/node-identifier"]
 
 # node-identifier-retry-handler
 FROM rust-dist AS node-identifier-retry-handler-deploy
 
-COPY --from=build "/grapl/target/${CARGO_PROFILE}/node-identifier-retry-handler" /
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/node-identifier-retry-handler" /
 CMD ["/node-identifier-retry-handler"]
 
 # sysmon-subgraph-generator
 FROM rust-dist AS sysmon-subgraph-generator-deploy
 
-COPY --from=build "/grapl/target/${CARGO_PROFILE}/sysmon-subgraph-generator" /
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/sysmon-subgraph-generator" /
 CMD ["/sysmon-subgraph-generator"]
 
 # osquery-subgraph-generator
 FROM rust-dist AS osquery-subgraph-generator-deploy
 
-COPY --from=build "/grapl/target/${CARGO_PROFILE}/osquery-subgraph-generator" /
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/osquery-subgraph-generator" /
 CMD ["/osquery-subgraph-generator"]

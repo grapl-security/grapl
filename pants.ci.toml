@@ -1,0 +1,15 @@
+# Overrides to be used only in CI environments.
+#
+# Enable using:
+#
+#     export PANTS_CONFIG_FILES="['pants.toml','pants.ci.toml']"
+#
+# This will overlay any values from this file onto those from the
+# regular `pants.toml` file.
+#
+# (It also appears that specifying just `pants.ci.toml` will also
+# work, taking `pants.toml` to be the always-present base by
+# convention, but being explicit never hurt.)
+[GLOBAL]
+dynamic_ui = false
+colors = true

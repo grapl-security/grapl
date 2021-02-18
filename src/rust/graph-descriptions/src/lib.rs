@@ -47,7 +47,12 @@ macro_rules ! impl_from_for {
 }
 
 pub mod graph_description {
-    include!(concat!(env!("OUT_DIR"), "/graph_description.rs"));
+    // TODO: Restructure the Rust modules to better reflect the new
+    // Protobuf structure
+    include!(concat!(
+        env!("OUT_DIR"),
+        "/graplinc.grapl.api.graph.v1beta1.rs"
+    ));
 }
 
 pub use node_property::Property::{

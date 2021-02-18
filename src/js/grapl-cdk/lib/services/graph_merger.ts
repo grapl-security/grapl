@@ -1,4 +1,3 @@
-import * as path from 'path';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
@@ -9,6 +8,7 @@ import { SchemaDb } from '../schemadb';
 import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { FargateService } from "../fargate_service";
 import { GraplS3Bucket } from '../grapl_s3_bucket';
+import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -22,6 +22,7 @@ export class GraphMerger extends cdk.NestedStack {
     constructor(scope: cdk.Construct, id: string, props: GraphMergerProps) {
         super(scope, id);
 
+        const service_name = "graph-merger";
         const bucket_prefix = props.prefix.toLowerCase();
         const subgraphs_generated = new EventEmitter(
             this,
@@ -37,7 +38,7 @@ export class GraphMerger extends cdk.NestedStack {
 
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new FargateService(this, id, {
+        this.service = new FargateService(this, service_name, {
             prefix: props.prefix,
             environment: {
                 EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
@@ -54,15 +55,15 @@ export class GraphMerger extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
+            serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "graph-merger-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
             command: ["/graph-merger"],
-            // metric_forwarder: props.metricForwarder,
+            metric_forwarder: props.metricForwarder,
         });
 
         // probably only needs 9080
@@ -74,7 +75,7 @@ export class GraphMerger extends cdk.NestedStack {
             ec2.Port.allTcp()
         );
         props.schemaTable.allowRead(this.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.cluster);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.service);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.service);
     }
 }

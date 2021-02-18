@@ -13,8 +13,6 @@ DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FIL
 endif
 export
 
-export DOCKER_BUILDKIT=1
-export COMPOSE_DOCKER_CLI_BUILD=1
 export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 	-f ./test/docker-compose.unit-tests-rust.yml \
 	-f ./test/docker-compose.unit-tests-python.yml \
@@ -103,6 +101,13 @@ test-unit-python: build-test-unit-python ## Build and run unit tests - Python on
 		-p grapl-test-unit-python \
 		-f ./test/docker-compose.unit-tests-python.yml
 
+.PHONY: test-unit-python-pants
+
+# Long term, it would be nice to organize the tests with Pants
+# tags, rather than pytest tags
+test-unit-python-pants: ## Run Python unit tests under Pants
+	./pants --tag="-needs_work" test :: --pytest-args="-m 'not integration_test'"
+
 .PHONY: test-unit-js
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh \
@@ -140,15 +145,29 @@ test: test-unit test-integration test-e2e test-typecheck ## Run all tests
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
-	cd src/rust; bin/format; bin/lint
+	cd src/rust; bin/format --check; bin/lint
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
-	./etc/ci_scripts/py_lint.sh --check-only
+	./pants lint ::
 
 .PHONY: lint
 lint: lint-rust lint-python ## Run all lint checks
 
+.PHONY: format-rust
+format-rust: ## Reformat all Rust code
+	cd src/rust; bin/format --update
+
+.PHONY: format-python
+format-python: ## Reformat all Python code
+	./pants fmt ::
+
+.PHONY: format
+format: format-rust format-python ## Reformat all code
+
+.PHONY: package-python-libs
+package-python-libs: ## Create Python distributions for public libraries
+	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
 
 #
 # else

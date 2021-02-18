@@ -9,7 +9,8 @@ services:
   grapl-rust-zips:
     image: grapl/rust-zip:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: zip
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
@@ -105,8 +106,8 @@ services:
   grapl-graphql-endpoint-zip:
     image: grapl/grapl-graphql-endpoint-zip:${TAG:-latest}
     build:
-      context: src/js/graphql_endpoint
-      dockerfile: Dockerfile
+      context: src
+      dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint-zip
     volumes:
       - ./src/js/grapl-cdk/zips:/grapl

@@ -2,7 +2,7 @@ from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.prelude import (
     BaseView,
 )
-from grapl_graph_descriptions.graph_description_pb2 import MergedNode
+from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedNode
 
 
 def view_from_proto(graph_client: GraphClient, node: MergedNode) -> BaseView:

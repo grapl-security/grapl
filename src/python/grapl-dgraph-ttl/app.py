@@ -4,7 +4,6 @@ import os
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 from chalice import Chalice
-
 from grapl_analyzerlib.grapl_client import (
     GraphClient,
     LocalMasterGraphClient,
