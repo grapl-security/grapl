@@ -1,4 +1,4 @@
-import apiFetch from "./fetch";
+import {apiFetch} from "./fetch";
 
 export const checkLogin = async (): Promise<boolean | null> => {
   try {

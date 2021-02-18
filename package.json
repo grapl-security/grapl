@@ -1,7 +1,0 @@
-{
-    "private": true,
-    "workspaces": [
-        "src/js/engagement_view",
-        "src/js/grapl-cdk"
-    ]
-}

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import Button from "@material-ui/core/Button";
 import { useAsync } from "react-async-hook";
-import { checkLogin } from "services/login/checkLoginService";
+import { checkLogin } from "../../services/login/checkLoginService";
 import { Link } from "react-router-dom";
 import { dasboardStyles } from "./styles";
 import  GraplHeader  from "../reusableComponents/graplHeader/GraplHeader";
 import  LoginNotification from "../reusableComponents/notifications/Notifications";
-import { getNotebookUrl } from "services/sagemakerNotebook/notebookService";
+import { getNotebookUrl } from "../../services/sagemakerNotebook/notebookService";
 
 const useStyles = dasboardStyles;
 
