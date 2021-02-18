@@ -1,39 +1,32 @@
 FROM node:alpine3.10 AS engagement-view-deps
 
-RUN apk add bash yarn
+RUN apk add bash
 WORKDIR /grapl
 
 # install deps as separate steps to leverage build cache
-COPY js/engagement_view/package.json package.json
-COPY js/engagement_view/yarn.lock yarn.lock
-COPY js/engagement_view/.yarnrc.yml .yarnrc.yml
-COPY js/engagement_view/.yarn/releases .yarn/releases
+COPY package.json package.json
+COPY package-lock.json package-lock.json
+COPY yarn.lock yarn.lock
 RUN yarn install
 
 # now copy all sources
-COPY js/engagement_view .
+COPY . .
 
+#
 # create production build
-################################################################################
+#
 FROM engagement-view-deps AS engagement-view-build
 
 # build sources
 RUN yarn build
 
+
+#
+# deploy
+#
+FROM syntaqx/serve AS grapl-engagement-view
+
+COPY --from=engagement-view-build /grapl/build/ /var/www
+
 # no-op the base image cmd, so it doesn't launch a Node repl
 CMD :
-
-# create an image that we can deploy from locally
-################################################################################
-# py chosen because it has `apt` for wait-for-it, and we need pip to install awscli
-FROM python:3.7-slim-buster AS engagement-view-local-deploy
-
-SHELL ["/bin/bash", "-c"]
-
-RUN apt-get update && apt-get -y install --no-install-recommends \
-        wait-for-it
-
-RUN python3 -m pip install awscli
-
-COPY --from=engagement-view-build /grapl /grapl
-WORKDIR /grapl

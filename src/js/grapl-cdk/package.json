@@ -1,9 +1,7 @@
 {
   "name": "grapl-cdk",
   "version": "0.1.0",
-  "bin": {
-    "grapl-cdk": "bin/grapl-cdk.js"
-  },
+  "bin": "bin/grapl-cdk.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
