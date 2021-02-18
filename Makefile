@@ -157,6 +157,7 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests
 		-p grapl-typecheck_tests
 
 .PHONY: test-integration
+test-integration: export COMPOSE_IGNORE_ORPHANS=1
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose \
@@ -168,6 +169,7 @@ test-integration: build-test-integration ## Build and run integration tests
 		-p "grapl-integration_tests"
 
 .PHONY: test-e2e
+test-e2e: export COMPOSE_IGNORE_ORPHANS=1
 test-e2e: build-test-e2e ## Build and run e2e tests
 	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose \
