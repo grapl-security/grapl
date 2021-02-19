@@ -231,6 +231,7 @@ export class GraplCdkStack extends cdk.Stack {
                 writesTo: analyzer_executor.bucket,
                 readsFrom: analyzers_bucket,
                 ...graplProps,
+                ...enableMetricsProps,
             }
         );
 
@@ -238,11 +239,13 @@ export class GraplCdkStack extends cdk.Stack {
             writesTo: analyzer_dispatch.bucket,
             schemaTable: schema_table,
             ...graplProps,
+            ...enableMetricsProps,
         });
 
         const node_identifier = new NodeIdentifier(this, 'node-identifier', {
             writesTo: graph_merger.bucket,
             ...graplProps,
+            ...enableMetricsProps,
         });
 
         const sysmon_generator = new SysmonGraphGenerator(this, 'sysmon-subgraph-generator', {

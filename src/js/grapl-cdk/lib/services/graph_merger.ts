@@ -63,7 +63,7 @@ export class GraphMerger extends cdk.NestedStack {
                 file: RUST_DOCKERFILE,
             }),
             command: ["/graph-merger"],
-            // metric_forwarder: props.metricForwarder,
+            metric_forwarder: props.metricForwarder,
         });
 
         // probably only needs 9080
@@ -75,7 +75,7 @@ export class GraphMerger extends cdk.NestedStack {
             ec2.Port.allTcp()
         );
         props.schemaTable.allowRead(this.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.cluster);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.cluster);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.service);
+        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.service);
     }
 }

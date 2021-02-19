@@ -4,7 +4,7 @@ set -e
 trap compose_stop EXIT
 
 compose_stop() {
-    docker-compose --project-name "$p" stop
+    docker-compose ${FILE_ARGS} --project-name "$p" stop
 }
 
 usage() { 

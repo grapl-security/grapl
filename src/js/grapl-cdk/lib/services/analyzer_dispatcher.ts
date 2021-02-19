@@ -70,7 +70,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
                 file: RUST_DOCKERFILE,
             }),
             command: ["/analyzer-dispatcher"],
-            // metric_forwarder: props.metricForwarder,
+            metric_forwarder: props.metricForwarder,
         });
         analyzer_bucket.grantRead(this.service.service.service.taskDefinition.taskRole);
         analyzer_bucket.grantRead(this.service.retryService.service.taskDefinition.taskRole);

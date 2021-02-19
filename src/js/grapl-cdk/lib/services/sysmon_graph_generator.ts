@@ -52,7 +52,7 @@ export class SysmonGraphGenerator extends cdk.NestedStack {
                 file: RUST_DOCKERFILE,
             }),
             command: ["/sysmon-subgraph-generator"],
-            // metric_forwarder: props.metricForwarder,
+            metric_forwarder: props.metricForwarder,
         });
 
         this.service.service.cluster.connections.allowToAnyIpv4(

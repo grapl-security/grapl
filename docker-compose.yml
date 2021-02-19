@@ -10,53 +10,48 @@ volumes:
 
 x-common-variables:
   aws-region: &aws-region
-    AWS_REGION: "us-east-1"
-    AWS_DEFAULT_REGION: "us-east-1"  # boto3 prefers this one
-  aws-endpoints: &aws-endpoints
-    # merge these into your `environment` if: 
-    # - you're using `grapl_common.env_helpers` (py)
-    # - you're using `grapl-config/env_helpers` (rust)
-    <<: *aws-region
-    SQS_ENDPOINT: "http://sqs.us-east-1.amazonaws.com:9324"
-    SQS_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
-    SQS_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
-    S3_ENDPOINT: "http://s3:9000"
-    S3_ACCESS_KEY_ID: "minioadmin"
-    S3_ACCESS_KEY_SECRET: "minioadmin"
-    DYNAMODB_ENDPOINT: "http://dynamodb:8000"
+    AWS_DEFAULT_REGION: ${AWS_REGION}  # boto3 prefers this one
+    AWS_REGION: ${AWS_REGION}
+  dgraph-env: &dgraph-env
+    MG_ALPHAS: ${MG_ALPHAS}
+  dynamodb-env: &dynamodb-env
     DYNAMODB_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
     DYNAMODB_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
+    DYNAMODB_ENDPOINT: ${DYNAMODB_ENDPOINT}
+  # TODO: Ensure these are matched with what's in provision_local_identity_table.py
   dynamodb-mapping-tables: &dynamodb-mapping-tables
-    STATIC_MAPPING_TABLE: local-grapl-static_mapping_table
-    DYNAMIC_SESSION_TABLE: local-grapl-dynamic_session_table
-    PROCESS_HISTORY_TABLE: local-grapl-process_history_table
-    FILE_HISTORY_TABLE: local-grapl-file_history_table
-    INBOUND_CONNECTION_HISTORY_TABLE: local-grapl-inbound_connection_history_table
-    OUTBOUND_CONNECTION_HISTORY_TABLE: local-grapl-outbound_connection_history_table
-    NETWORK_CONNECTION_HISTORY_TABLE: local-grapl-network_connection_history_table
-    IP_CONNECTION_HISTORY_TABLE: local-grapl-ip_connection_history_table
-    ASSET_ID_MAPPINGS: local-grapl-asset_id_mappings
-  mg-alphas: &mg-alphas
-    MG_ALPHAS: "master_graph:9080"
+    ASSET_ID_MAPPINGS: ${BUCKET_PREFIX}-asset_id_mappings
+    DYNAMIC_SESSION_TABLE: ${BUCKET_PREFIX}-dynamic_session_table
+    FILE_HISTORY_TABLE: ${BUCKET_PREFIX}-file_history_table
+    INBOUND_CONNECTION_HISTORY_TABLE: ${BUCKET_PREFIX}-inbound_connection_history_table
+    IP_CONNECTION_HISTORY_TABLE: ${BUCKET_PREFIX}-ip_connection_history_table
+    NETWORK_CONNECTION_HISTORY_TABLE: ${BUCKET_PREFIX}-network_connection_history_table
+    OUTBOUND_CONNECTION_HISTORY_TABLE: ${BUCKET_PREFIX}-outbound_connection_history_table
+    PROCESS_HISTORY_TABLE: ${BUCKET_PREFIX}-process_history_table
+    STATIC_MAPPING_TABLE: ${BUCKET_PREFIX}-static_mapping_table
   log-level: &log-level
-    foo: bar
-  #RUST_LOG: "${RUST_LOG:-ERROR}"
-  #GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
+    GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
+    RUST_LOG: "${RUST_LOG:-ERROR}"
+  s3-env: &s3-env
+    S3_ACCESS_KEY_ID: "minioadmin"
+    S3_ACCESS_KEY_SECRET: "minioadmin"
+    S3_ENDPOINT: ${S3_ENDPOINT}
+  sqs-env: &sqs-env
+    SQS_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
+    SQS_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
+    SQS_ENDPOINT: ${SQS_ENDPOINT}
 
 services:
 
-        #
-  # Infrastructure dependencies
-  #
+  ########################################################################
+  # Cloud Infrastructure Dependencies
+  ########################################################################
 
-  grapl-master-graph-db:
+  dgraph:
     tty: false
-    image: dgraph/standalone:master
+    image: dgraph/standalone:v20.07.1
     ports:
-      - "5080:5080"  # zero - used for `dgraph live` importing-data command in `integration_tests.rst`
-      - "8000:8000"  # ratel
-      - "8080:8080"  # alpha http
-      - "9080:9080"  # alpha grpc
+      - ${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
     logging:
       driver: none
     volumes:
@@ -64,9 +59,14 @@ services:
         source: dgraph_export
         # Hitting :8080/admin/export will force an export to be written to this directory.
         target: /dgraph/export
+    networks:
+      default:
+        aliases:
+          - ${DGRAPH_HOST}
 
-  # dev uses 1 big redis instance, prod has 1:1 redis per grapl service
-  dev-shared-redis:  # maybe transitory, this will eventually match prod
+  # dev uses 1 big redis instance, prod has 1:1 redis per grapl
+  # service... maybe transitory, this will eventually match prod
+  redis:
     image: redis:latest
     command: |
       sh -c "
@@ -74,69 +74,72 @@ services:
         # to disable persistence
         rm -f /data/dump.rdb && redis-server
       "
-    ports:
-      - "6379:6379" # redis default
     logging:
       driver: none
-
-  sqs:
-    image: localstack/localstack:0.12.6
-    environment:
-      - EDGE_PORT=9324
-      - SERVICES=sqs:9324
-      - HOSTNAME_EXTERNAL=sqs.us-east-1.amazonaws.com
-      - IMAGE_NAME=localstack/localstack:0.12.6
-    ports:
-      - "9324:9324"
     networks:
       default:
         aliases:
-          - sqs.us-east-1.amazonaws.com
+          - ${REDIS_HOST}
+
+  sqs:
+    image: localstack/localstack:0.11.5
+    environment:
+      - HOSTNAME_EXTERNAL=${SQS_HOST}
+      - IMAGE_NAME=localstack/localstack:0.11.5
+      - SERVICES=sqs:${SQS_PORT}
+    networks:
+      default:
+        aliases:
+          - ${SQS_HOST}
     logging:
       driver: none
 
   secretsmanager:
-    image: localstack/localstack:0.12.6
+    image: localstack/localstack:0.11.5
     environment:
-      - EDGE_PORT=4584
-      - PORT_WEB_UI=8099
-      - SERVICES=secretsmanager:4584
-      - HOSTNAME_EXTERNAL=secretsmanager.us-east-1.amazonaws.com
-      - IMAGE_NAME=localstack/localstack:0.12.6
-
+      - HOSTNAME_EXTERNAL=${SECRETSMANAGER_HOST}
+      - IMAGE_NAME=localstack/localstack:0.11.5
+      - PORT_WEB_UI=${SECRETSMANAGER_WEB_UI_PORT}
+      - SERVICES=secretsmanager:${SECRETSMANAGER_PORT}
     ports:
-      - "4584:4584"
-      - "8099:8099"
-    # logging:
-    #   driver: none
+      - ${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}
+    networks:
+      default:
+        aliases:
+          - ${SECRETSMANAGER_HOST}
+    logging:
+      driver: none
 
   s3:
     image: minio/minio
     command: server /data
     environment:
       - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_REGION_NAME=${AWS_REGION}
       - MINIO_SECRET_KEY=minioadmin
-      - MINIO_REGION_NAME=us-east-1
     ports:
-      - "9000:9000"
+      - ${S3_PORT}:${S3_PORT}
     networks:
       default:
         aliases:
-          - minio
+          - ${S3_HOST}
     logging:
       driver: none
 
   dynamodb:
     image: amazon/dynamodb-local
     environment:
-      - AWS_REGION="us-east-1"
-      - REGION="us-east-1"
+      - REGION=${AWS_REGION}
     logging:
       driver: none
+    networks:
+      default:
+        aliases:
+          - ${DYNAMODB_HOST}
 
-  #
-  # Rust services
-  #
+  ########################################################################
+  # Rust Services
+  ########################################################################
 
   grapl-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
@@ -150,8 +153,6 @@ services:
     environment:
       IS_LOCAL: "True"
       <<: *log-level
-    extra_hosts:
-      - amazonaws:127.0.0.1
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
@@ -163,26 +164,22 @@ services:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     tty: false
     environment:
-      <<: *log-level
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
+      <<: *aws-region
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-sysmon-graph-generator-dead-letter-queue"
+      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-unid-subgraphs-generated-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
-      SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-queue"
-      RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/000000000000/grapl-sysmon-graph-generator-retry-queue"
-      DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-sysmon-graph-generator-dead-letter-queue"
-      DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
-      DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
-      <<: *aws-endpoints
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
+      <<: *log-level
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/grapl-sysmon-graph-generator-retry-queue"
+      <<: *s3-env
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/grapl-sysmon-graph-generator-queue"
+      <<: *sqs-env
     depends_on:
+      - grapl-provision
+      - redis
       - s3
       - sqs
-      - grapl-provision
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -194,27 +191,23 @@ services:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     tty: false
     environment:
-      <<: *log-level
-      BUCKET_PREFIX: "local-grapl"
+      <<: *aws-region
+      BUCKET_PREFIX: ${BUCKET_PREFIX}
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-dead-letter-queue"
+      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-unid-subgraphs-generated-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
-      SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-queue"
-      RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-retry-queue"
-      DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-osquery-graph-generator-dead-letter-queue"
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
-      DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
-      DEST_BUCKET_NAME: "local-grapl-unid-subgraphs-generated-bucket"
-      <<: *aws-endpoints
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
+      <<: *log-level
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-retry-queue"
+      <<: *s3-env
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-queue"
+      <<: *sqs-env
     depends_on:
+      - grapl-provision
+      - redis
       - s3
       - sqs
-      - grapl-provision
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -225,30 +218,26 @@ services:
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
-      <<: *log-level
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
-      IS_LOCAL: "true"
-      SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-queue"
-      RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
-      DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
-      DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
-      DEST_BUCKET_NAME: "local-grapl-subgraphs-generated-bucket"
-      <<: *aws-endpoints
+      <<: *aws-region
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-subgraphs-generated-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
+      EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
+      IS_LOCAL: "true"
+      <<: *log-level
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
+      <<: *s3-env
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      <<: *sqs-env
     tty: false
-    links:
-      - s3:minio
-      - dynamodb:dynamodb
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
-      - s3
       - dynamodb
-      - sqs
       - grapl-provision
+      - redis
+      - s3
+      - sqs
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -259,30 +248,26 @@ services:
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
-      <<: *log-level
-      IS_LOCAL: "True"
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
-      SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-retry-queue"
-      RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
-      DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-node-identifier-dead-letter-queue"
-      DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
-      DEST_BUCKET_NAME: "local-grapl-subgraphs-generated-bucket"
-      <<: *aws-endpoints
+      <<: *aws-region
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-subgraphs-generated-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
+      EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
+      IS_LOCAL: "True"
+      <<: *log-level
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      <<: *s3-env
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
+      <<: *sqs-env
     tty: false
-    links:
-      - s3:minio
-      - dynamodb:dynamodb
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
-      - s3
       - dynamodb
-      - sqs
       - grapl-provision
+      - redis
+      - s3
+      - sqs
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -293,31 +278,28 @@ services:
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
-      <<: *log-level
-      EVENT_CACHE_CLUSTER_ADDRESS: "dev-shared-redis:6379"
-      SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-queue"
-      RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-retry-queue"
-      DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-graph-merger-dead-letter-queue"
-      DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
-      DEST_BUCKET_NAME: "local-grapl-subgraphs-merged-bucket"
-      <<: *aws-endpoints
-      <<: *mg-alphas
-      GRAPL_SCHEMA_TABLE: "local-grapl-grapl_schema_table"
+      <<: *aws-region
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-dead-letter-queue"
+      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-subgraphs-merged-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
+      <<: *dgraph-env
+      <<: *dynamodb-env
+      EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
+      GRAPL_SCHEMA_TABLE: "${BUCKET_PREFIX}-grapl_schema_table"
       IS_LOCAL: "True"
+      <<: *log-level
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
+      <<: *s3-env
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      <<: *sqs-env
     tty: false
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-master-graph-db:master_graph
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
+      - dgraph
+      - dynamodb
+      - grapl-provision
+      - redis
       - s3
       - sqs
-      - grapl-provision
-      - grapl-master-graph-db
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -328,50 +310,26 @@ services:
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
-      ANALYZERS_BUCKET: "local-grapl-analyzers-bucket"
-      SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-queue"
-      RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-retry-queue"
-      DEAD_LETTER_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-dispatcher-dead-letter-queue"
-      DEST_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
-      DEST_BUCKET_NAME: "local-grapl-analyzer-dispatched-bucket"
-      ANALYZER_BUCKET: "local-grapl-analyzers-bucket"
-      <<: *aws-endpoints
-      <<: *log-level
+      ANALYZER_BUCKET: "${BUCKET_PREFIX}-analyzers-bucket"
+      ANALYZERS_BUCKET: "${BUCKET_PREFIX}-analyzers-bucket"
+      <<: *aws-region
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-dead-letter-queue"
+      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-analyzer-dispatched-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-queue"
       IS_LOCAL: "true"
+      <<: *log-level
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-retry-queue"
+      <<: *s3-env
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
+      <<: *sqs-env
     tty: false
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
       - s3
       - sqs
 
-  #
-  # Python services
-  #
-
-  # Removed per https://grapl-internal.slack.com/archives/C017PLQ8TCZ/p1601574470186700
-  # Add it back once Analyzer Deployer is ready for prime time!
-  # analyzer-deployer:
-  #   image: grapl/analyzer-deployer:${TAG:-latest}
-  #   command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8125'
-  #   environment:
-  #     - "IS_LOCAL=True"
-  #     - GRPC_ENABLE_FORK_SUPPORT=1
-  #     - "BUCKET_PREFIX=local-grapl"
-  #     - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-ERROR}
-  #   links:
-  #     - s3:minio
-  #     - sqs:sqs.us-east-1.amazonaws.com
-  #   tty: true
-  #   extra_hosts:
-  #     - sqs:127.0.0.1
-  #     - amazonaws:127.0.0.1
-  #     - minio:127.0.0.1
+  ########################################################################
+  # Python Services
+  ########################################################################
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
@@ -381,31 +339,30 @@ services:
       target: analyzer-executor-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
-      <<: *log-level
+      <<: *aws-region
+      BUCKET_PREFIX: ${BUCKET_PREFIX}
       DEBUG_SERVICES: "${DEBUG_SERVICES}"
-      HITCACHE_ADDR: "dev-shared-redis"
-      HITCACHE_PORT: "6379"
-      MESSAGECACHE_ADDR: "dev-shared-redis"
-      MESSAGECACHE_PORT: "6379"
-      IS_LOCAL: "True"
+      <<: *dgraph-env
       GRPC_ENABLE_FORK_SUPPORT: "1"
-      <<: *mg-alphas
+      HITCACHE_ADDR: "${REDIS_HOST}"
+      HITCACHE_PORT: "${REDIS_PORT}"
+      IS_LOCAL: "True"
       IS_RETRY: "False"
-      <<: *aws-endpoints
-      BUCKET_PREFIX: "local-grapl"
-      SOURCE_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-queue"
-      RETRY_QUEUE_URL: "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-analyzer-executor-retry-queue"
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-master-graph-db:master_graph
+      <<: *log-level
+      MESSAGECACHE_ADDR: "${REDIS_HOST}"
+      MESSAGECACHE_PORT: "${REDIS_PORT}"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-retry-queue"
+      <<: *s3-env
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-queue"
+      <<: *sqs-env
     tty: true
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     ports:
-      - 8401:8401  # VSC Debugger
+      - ${VSC_DEBUGGER}:${VSC_DEBUGGER}
+    depends_on:
+      - dgraph
+      - redis
+      - s3
+      - sqs
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
@@ -415,28 +372,23 @@ services:
       target: grapl-ux-router-deploy
     command: |
       /bin/sh -c '
-        wait-for-it grapl-engagement-view-uploader:8127 --timeout=180 &&
+        wait-for-it grapl-engagement-view-uploader:${WAIT_PORT} --timeout=180 &&
         . venv/bin/activate &&
         cd app &&
-        chalice local --no-autoreload --host=0.0.0.0 --port=8901
+        chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_UX_ROUTER_PORT}
       '
-    ports:
-      - "8901:8901"
     environment:
-      IS_LOCAL: "True"
       GRAPL_LOG_LEVEL: "DEBUG"
-      UX_BUCKET_NAME: "local-grapl-engagement-ux-bucket"
+      # TODO: Once we remove IS_LOCAL, this service will need to depend on s3 and be configured appropriately
+      IS_LOCAL: "True"
+      UX_BUCKET_NAME: "${BUCKET_PREFIX}-engagement-ux-bucket"
     depends_on:
       - grapl-engagement-view-uploader
     tty: true
-    links:
-      - s3:minio
-    extra_hosts:
-      - minio:127.0.0.1
     networks:
       default:
         aliases:
-          - ux_router
+          - ${GRAPL_UX_ROUTER_HOST}
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
@@ -446,21 +398,20 @@ services:
       target: engagement-creator-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
     environment:
+      <<: *aws-region
+      BUCKET_PREFIX: ${BUCKET_PREFIX}
+      <<: *dgraph-env
       IS_LOCAL: "True"
-      BUCKET_PREFIX: "local-grapl"
       <<: *log-level
-      <<: *mg-alphas
-      <<: *aws-endpoints
+      <<: *s3-env
+      <<: *sqs-env
     tty: true
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-      - grapl-master-graph-db:master_graph
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
+    depends_on:
+      - dgraph
+      - s3
+      - sqs
 
+  # TODO: really, this service should be grapl-auth
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
     build:
@@ -469,31 +420,28 @@ services:
       target: engagement-edge-deploy
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:8126 --timeout=120 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
-        chalice local --no-autoreload --host=0.0.0.0 --port=8900
+        chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
       '
-    ports:
-      - "8900:8900"
-
     networks:
       default:
         aliases:
-          - grapl_auth
+          - ${GRAPL_AUTH_HOST}
     environment:
+      <<: *aws-region
+      BUCKET_PREFIX: ${BUCKET_PREFIX}
+      <<: *dynamodb-env
       IS_LOCAL: "True"
       <<: *log-level
-      UX_BUCKET_URL: "localhost:3000"
-      USER_AUTH_TABLE: "local-grapl-user_auth_table"
-      BUCKET_PREFIX: "local-grapl"
-      <<: *aws-endpoints
+      USER_AUTH_TABLE: "${BUCKET_PREFIX}-user_auth_table"
+      UX_BUCKET_URL: "localhost:3000" # TODO: Port??
     depends_on:
+      - dynamodb
       - grapl-provision
+      - secretsmanager
     tty: true
-    links:
-      - grapl-master-graph-db:master_graph
-      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -501,25 +449,33 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: model-plugin-deployer-deploy
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8123'
-    ports:
-      - "8123:8123"
+    command: |
+      /bin/sh -c '
+        . venv/bin/activate &&
+        cd /home/grapl/app &&
+        chalice local \
+          --no-autoreload \
+          --host=0.0.0.0 \
+          --port=${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
+      '
     environment:
+      <<: *aws-region
+      <<: *dgraph-env
+      <<: *dynamodb-env
       IS_LOCAL: "True"
-      <<: *mg-alphas
       <<: *log-level
+      <<: *s3-env
       UX_BUCKET_URL: "localhost"
-      <<: *aws-endpoints
     tty: true
-    links:
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
-      - grapl-master-graph-db:master_graph
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
+    depends_on:
+      - dgraph
+      - dynamodb
+      - s3
+      - secretsmanager
+    networks:
+      default:
+        aliases:
+          - ${GRAPL_MODEL_PLUGIN_DEPLOYER_HOST}
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -527,138 +483,131 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: dgraph-ttl-deploy
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=8124'
-    ports:
-      - "8124:8124"
+    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_DGRAPH_TTL_PORT}'
     environment:
-      IS_LOCAL: "True"
-      <<: *log-level
-      <<: *mg-alphas
+      <<: *dgraph-env
       GRAPL_DGRAPH_TTL_S: "${GRAPL_DGRAPH_TTL_S:-31536000}"
       GRAPL_TTL_DELETE_BATCH_SIZE: "${GRAPL_TTL_DELETE_BATCH_SIZE:-10}"
+      IS_LOCAL: "True"
+      <<: *log-level
     tty: true
-    links:
-      - grapl-master-graph-db:master_graph
-    extra_hosts:
-      - amazonaws:127.0.0.1
+    depends_on:
+      - dgraph
 
-  #
-  # JS/web services
-  #
+  ########################################################################
+  # Web Services
+  ########################################################################
 
   nginx:
     image: nginxinc/nginx-unprivileged
-    command: nginx
     volumes:
-      - ./etc/local_grapl/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
     ports:
       - "1234:3128"
+    environment:
+      - GRAPL_AUTH_HOST
+      - GRAPL_AUTH_PORT
+      - GRAPL_GRAPHQL_HOST
+      - GRAPL_GRAPHQL_PORT
+      - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
+      - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
+      - GRAPL_UX_ROUTER_HOST
+      - GRAPL_UX_ROUTER_PORT
     depends_on:
-      - s3
-      - sqs
-      - grapl-provision
+      - grapl-engagement-edge
+      - grapl-model-plugin-deployer
       - grapl-graphql-endpoint
       - grapl-ux-router
-  
+    networks:
+      default:
+        aliases:
+          - ${GRAPL_API_HOST}
+
   grapl-engagement-view-uploader:
     image: grapl/grapl-engagement-view:${TAG:-latest}
-    build: 
+    build:
       context: src
       dockerfile: js/engagement_view/Dockerfile
       target: engagement-view-local-deploy
     command: |
       /bin/bash -c "
-        wait-for-it grapl-provision:8126 --timeout=120 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
         ./upload_local.sh &&
-        python -m http.server 8127  # wait-for-it
+        python -m http.server ${WAIT_PORT}  # wait-for-it
       "
-    links:
-      - s3:minio
-    depends_on: 
+    depends_on:
       - grapl-provision
-  
+
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    build: 
+    build:
       context: src
       dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint-deploy
     command: yarn start server
     environment:
-      <<: *mg-alphas
+      <<: *dgraph-env
       IS_LOCAL: "True"
-      PORT: "5000"
       JWT_SECRET_ID: "JWT_SECRET_ID"
-    links:
-      - grapl-master-graph-db:master_graph
-      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
+      PORT: ${GRAPL_GRAPHQL_PORT}
+    depends_on:
+      - dgraph
     ports:
-      - 5000:5000
-
+      - ${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
     networks:
       default:
         aliases:
-          - graphql_endpoint
+          - ${GRAPL_GRAPHQL_HOST}
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
-    build: 
+    build:
       context: src
       dockerfile: ./python/Dockerfile
       target: grapl-notebook
     user: grapl
     environment:
-      <<: *mg-alphas
-    links:
-      - grapl-master-graph-db:master_graph
+      <<: *dgraph-env
+    depends_on:
+      - dgraph
     ports:
-      - 8888:8888
+      - ${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}
 
-  #
-  # Utility services
-  #
+  ########################################################################
+  # Utility Services
+  ########################################################################
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
-    build: 
+    build:
       context: src
       dockerfile: ./python/Dockerfile
       target: grapl-provision
     command: |
       /bin/bash -c "
         export TIMEOUT=35 &&
-        # it doesn't seem to like waiting for sqs
-        # wait-for-it sqs:9324 &&
-        wait-for-it s3:9000 --timeout=$$TIMEOUT &&
-        wait-for-it dynamodb:8000 --timeout=$$TIMEOUT &&
-        wait-for-it grapl-master-graph-db:8080 --timeout=$$TIMEOUT &&
-        wait-for-it secretsmanager:4584 --timeout=$$TIMEOUT &&
+        wait-for-it ${SQS_HOST}:${SQS_PORT} --timeout=$$TIMEOUT &&
+        wait-for-it ${S3_HOST}:${S3_PORT} --timeout=$$TIMEOUT &&
+        wait-for-it ${DYNAMODB_HOST}:${DYNAMODB_PORT} --timeout=$$TIMEOUT &&
+        wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
+        wait-for-it ${SECRETSMANAGER_HOST}:${SECRETSMANAGER_PORT} --timeout=$$TIMEOUT &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
         # Host a server on this port, so that tests can wait-for-it
-        python -m http.server 8126
+        python -m http.server ${WAIT_PORT}
       "
     environment:
+      <<: *aws-region
+      <<: *dgraph-env
+      <<: *dynamodb-env
       GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
-      <<: *mg-alphas
-      <<: *aws-endpoints
+      <<: *s3-env
+      <<: *sqs-env
     tty: true
-    ports:
-      - 8126:8126
-    links:
-      - grapl-master-graph-db:master_graph
-      - s3:minio
-      - sqs:sqs.us-east-1.amazonaws.com
-      - secretsmanager:secretsmanager.us-east-1.amazonaws.com
-      - dynamodb:dynamodb
-    extra_hosts:
-      - sqs:127.0.0.1
-      - amazonaws:127.0.0.1
-      - minio:127.0.0.1
     depends_on:
+      - dgraph
       - dynamodb
-      - grapl-master-graph-db
       - s3
       - secretsmanager
       - sqs
@@ -666,4 +615,3 @@ services:
 networks:
   default:
     name: grapl-network
-

@@ -4,13 +4,17 @@ import * as iam from '@aws-cdk/aws-iam';
 import * as sns from '@aws-cdk/aws-sns';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 
+import * as logs from "@aws-cdk/aws-logs";
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
 import * as sqs from "@aws-cdk/aws-sqs";
 import * as ecs_patterns from "@aws-cdk/aws-ecs-patterns";
-import {ContainerImage} from "@aws-cdk/aws-ecs";
+import {ContainerImage, AwsLogDriver} from "@aws-cdk/aws-ecs";
 import {Watchful} from "cdk-watchful";
 import {EventEmitter} from "./event_emitters";
+import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
+import { Service } from "./service";
 
 export class Queues {
     readonly queue: sqs.Queue;
@@ -53,7 +57,12 @@ export interface FargateServiceProps {
     command?: string[] | undefined;
     retryCommand?: string[] | undefined;
     watchful?: Watchful | undefined;
-    // TODO: Reintroduce metric_forwarder
+    metric_forwarder?: Service;
+}
+
+interface DeafultAndRetry<T> {
+    readonly default: T
+    readonly retry: T
 }
 
 export class FargateService {
@@ -61,6 +70,7 @@ export class FargateService {
     readonly serviceName: string;
     readonly service: ecs_patterns.QueueProcessingFargateService;
     readonly retryService: ecs_patterns.QueueProcessingFargateService;
+    readonly logGroups: DeafultAndRetry<logs.LogGroup>;
 
     constructor(scope: cdk.Construct, serviceName: string, props: FargateServiceProps) {
         this.serviceName = `${props.prefix}-${serviceName}`;
@@ -88,28 +98,42 @@ export class FargateService {
             optionalEnv["DEST_BUCKET_NAME"] = props.writesTo.bucketName;
         }
 
+        this.logGroups = {
+            default: new logs.LogGroup(scope, "default", {
+                logGroupName: `grapl/${this.serviceName}/default`
+            }),
+            retry: new logs.LogGroup(scope, "retry", {
+                logGroupName: `grapl/${this.serviceName}/retry`
+            }),
+        }
+
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
             scope,
             `${this.serviceName}-service`, {
-            cluster,
-            serviceName: `${this.serviceName}-handler`,
-            family: `${this.serviceName}-task`,
-            command: props.command,
-            enableLogging: true,
-            environment: {
-                "QUEUE_URL": this.queues.queue.queueUrl,
-                "SOURCE_QUEUE_URL": this.queues.queue.queueUrl,
-                ...optionalEnv,
-                ...defaultEnv,
-                ...props.environment
-            },
-            image: props.serviceImage,
-            queue: queues.queue,
-            cpu: 256,
-            memoryLimitMiB: 512,
-            desiredTaskCount: 1,
-        });
+                cluster,
+                serviceName: `${this.serviceName}-handler`,
+                family: `${this.serviceName}-task`,
+                command: props.command,
+                enableLogging: true,
+                environment: {
+                    "QUEUE_URL": this.queues.queue.queueUrl,
+                    "SOURCE_QUEUE_URL": this.queues.queue.queueUrl,
+                    ...optionalEnv,
+                    ...defaultEnv,
+                    ...props.environment
+                },
+                image: props.serviceImage,
+                queue: queues.queue,
+                cpu: 256,
+                memoryLimitMiB: 512,
+                desiredTaskCount: 1,
+                logDriver: new AwsLogDriver({
+                    streamPrefix: "logs",
+                    logGroup: this.logGroups.default,
+                }),
+            }
+        );
 
         this.retryService = new ecs_patterns.QueueProcessingFargateService(
             scope,
@@ -131,8 +155,13 @@ export class FargateService {
                 cpu: 256,
                 memoryLimitMiB: 512,
                 desiredTaskCount: 1,
-            });
-
+                logDriver: new AwsLogDriver({
+                    streamPrefix: "logs",
+                    logGroup: this.logGroups.retry,
+                }),
+            }
+        );
+        
         for (const q of [this.queues.queue, this.queues.retryQueue, this.queues.deadLetterQueue]) {
             q.grantConsumeMessages(this.service.taskDefinition.taskRole);
             q.grantConsumeMessages(this.retryService.taskDefinition.taskRole);
@@ -150,6 +179,11 @@ export class FargateService {
 
         if (subscribesTo) {
             this.addSubscription(scope, subscribesTo);
+        }
+
+        if (props.metric_forwarder) {
+            const forwarder_lambda = props.metric_forwarder.event_handler;
+            this.forwardMetricsLogs(forwarder_lambda);
         }
     }
 
@@ -196,5 +230,23 @@ export class FargateService {
             protocol: config.protocol,
             rawMessageDelivery: true,
         });
+    }
+
+    forwardMetricsLogs(toLambdaFn: lambda.IFunction) {
+        this.logGroups.default.addSubscriptionFilter(
+            `send_metrics_to_lambda_${this.serviceName}`,
+            {
+                destination: new LambdaDestination(toLambdaFn),
+                filterPattern: logs.FilterPattern.literal("MONITORING"),
+            }
+        );
+        this.logGroups.retry.addSubscriptionFilter(
+            `send_metrics_to_lambda_${this.serviceName}_retry`,
+            {
+                destination: new LambdaDestination(toLambdaFn),
+                filterPattern: logs.FilterPattern.literal("MONITORING"),
+            }
+        );
+        
     }
 }
