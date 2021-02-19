@@ -1234,7 +1234,7 @@ dependencies = [
 name = "grapl-utils"
 version = "0.1.0"
 dependencies = [
- "tokio 0.2.24",
+ "tokio 0.2.25",
 ]
 
 [[package]]
