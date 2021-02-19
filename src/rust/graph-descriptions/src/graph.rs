@@ -23,8 +23,8 @@ use futures_retry::{FutureRetry,
                     RetryPolicy};
 use grapl_utils::iter_ext::GraplIterExt;
 use log::{error,
-          warn,
-          info};
+          info,
+          warn};
 
 use crate::{graph_description::{Edge,
                                 EdgeList,
@@ -130,29 +130,31 @@ impl Graph {
             .map(|(_, node)| node.generate_upsert_components())
             .collect();
 
-        let _: Vec<MutationResponse> =
-            futures::stream::iter(node_upserts.into_iter().chunks_owned(DGRAPH_UPSERT_CHUNK_SIZE))
-                .map(|upsert_chunk| {
-                    let (query_blocks, mutation_units): (Vec<_>, Vec<_>) =
-                        upsert_chunk.into_iter().unzip();
+        let _: Vec<MutationResponse> = futures::stream::iter(
+            node_upserts
+                .into_iter()
+                .chunks_owned(DGRAPH_UPSERT_CHUNK_SIZE),
+        )
+        .map(|upsert_chunk| {
+            let (query_blocks, mutation_units): (Vec<_>, Vec<_>) = upsert_chunk.into_iter().unzip();
 
-                    let query = QueryBuilder::default()
-                        .query_blocks(query_blocks)
-                        .build()
-                        .unwrap();
+            let query = QueryBuilder::default()
+                .query_blocks(query_blocks)
+                .build()
+                .unwrap();
 
-                    let mutation = MutationBuilder::default()
-                        .set(mutation_units)
-                        .build()
-                        .unwrap();
+            let mutation = MutationBuilder::default()
+                .set(mutation_units)
+                .build()
+                .unwrap();
 
-                    let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
+            let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
 
-                    Self::enforce_transaction(dgraph_client.clone(), upsert)
-                })
-                .buffer_unordered(DGRAPH_CONCURRENCY_UPSERTS)
-                .collect::<Vec<_>>()
-                .await;
+            Self::enforce_transaction(dgraph_client.clone(), upsert)
+        })
+        .buffer_unordered(DGRAPH_CONCURRENCY_UPSERTS)
+        .collect::<Vec<_>>()
+        .await;
     }
 
     async fn upsert_edges(&self, dgraph_client: Arc<DgraphClient>) {
