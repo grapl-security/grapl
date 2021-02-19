@@ -345,11 +345,11 @@ def respond(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=status_code.value,
         headers={
-            "Content-Type": "application/json",
             "Access-Control-Allow-Credentials": "true",
+            "Content-Type": "application/json",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             "X-Requested-With": "*",
-            "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
+            "Access-Control-Allow-Headers": ":authority, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
             **headers,
         },
     )

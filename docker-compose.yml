@@ -51,10 +51,7 @@ services:
     tty: false
     image: dgraph/standalone:v20.07.1
     ports:
-      - ${DGRAPH_ZERO_GRPC_PRIVATE_PORT}
-      - ${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
-      - ${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
-      - ${DGRAPH_ALPHA_GRPC_EXTERNAL_PUBLIC_PORT}
+      - ${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
     logging:
       driver: none
     volumes:
@@ -77,8 +74,6 @@ services:
         # to disable persistence
         rm -f /data/dump.rdb && redis-server
       "
-    ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
     logging:
       driver: none
     networks:
@@ -92,8 +87,6 @@ services:
       - HOSTNAME_EXTERNAL=${SQS_HOST}
       - IMAGE_NAME=localstack/localstack:0.11.5
       - SERVICES=sqs:${SQS_PORT}
-    ports:
-      - "${SQS_PORT}:${SQS_PORT}"
     networks:
       default:
         aliases:
@@ -109,8 +102,7 @@ services:
       - PORT_WEB_UI=${SECRETSMANAGER_WEB_UI_PORT}
       - SERVICES=secretsmanager:${SECRETSMANAGER_PORT}
     ports:
-      - "${SECRETSMANAGER_PORT}:${SECRETSMANAGER_PORT}"
-      - "${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}"
+      - ${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}
     networks:
       default:
         aliases:
@@ -126,7 +118,7 @@ services:
       - MINIO_REGION_NAME=${AWS_REGION}
       - MINIO_SECRET_KEY=minioadmin
     ports:
-      - "${S3_PORT}:${S3_PORT}"
+      - ${S3_PORT}:${S3_PORT}
     networks:
       default:
         aliases:
@@ -151,12 +143,6 @@ services:
 
   grapl-metric-forwarder:
     image: grapl/grapl-metric-forwarder:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: metric-forwarder-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     tty: false
     environment:
       IS_LOCAL: "True"
@@ -164,12 +150,6 @@ services:
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: sysmon-subgraph-generator-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     tty: false
     environment:
       <<: *aws-region
@@ -191,12 +171,6 @@ services:
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: osquery-subgraph-generator-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     tty: false
     environment:
       <<: *aws-region
@@ -219,12 +193,6 @@ services:
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: node-identifier-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
@@ -249,12 +217,6 @@ services:
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: node-identifier-retry-handler-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
@@ -279,12 +241,6 @@ services:
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: graph-merger-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-dead-letter-queue"
@@ -311,12 +267,6 @@ services:
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: analyzer-dispatcher-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
     environment:
       ANALYZER_BUCKET: "${BUCKET_PREFIX}-analyzers-bucket"
       ANALYZERS_BUCKET: "${BUCKET_PREFIX}-analyzers-bucket"
@@ -341,10 +291,6 @@ services:
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: analyzer-executor-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
       <<: *aws-region
@@ -365,7 +311,7 @@ services:
       <<: *sqs-env
     tty: true
     ports:
-      - "${VSC_DEBUGGER}:${VSC_DEBUGGER}"
+      - ${VSC_DEBUGGER}:${VSC_DEBUGGER}
     depends_on:
       - dgraph
       - redis
@@ -374,10 +320,6 @@ services:
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: grapl-ux-router-deploy
     command: |
       /bin/sh -c '
         wait-for-it grapl-engagement-view-uploader:${WAIT_PORT} --timeout=180 &&
@@ -385,8 +327,6 @@ services:
         cd app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_UX_ROUTER_PORT}
       '
-    ports:
-      - "${GRAPL_UX_ROUTER_PORT}:${GRAPL_UX_ROUTER_PORT}"
     environment:
       GRAPL_LOG_LEVEL: "DEBUG"
       # TODO: Once we remove IS_LOCAL, this service will need to depend on s3 and be configured appropriately
@@ -402,10 +342,6 @@ services:
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: engagement-creator-deploy
     command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
     environment:
       <<: *aws-region
@@ -424,10 +360,6 @@ services:
   # TODO: really, this service should be grapl-auth
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: engagement-edge-deploy
     command: |
       /bin/sh -c '
         wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
@@ -435,8 +367,6 @@ services:
         cd /home/grapl/app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
       '
-    ports:
-      - "${GRAPL_AUTH_PORT}:${GRAPL_AUTH_PORT}"
     networks:
       default:
         aliases:
@@ -457,10 +387,6 @@ services:
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: model-plugin-deployer-deploy
     command: |
       /bin/sh -c '
         . venv/bin/activate &&
@@ -470,8 +396,6 @@ services:
           --host=0.0.0.0 \
           --port=${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
       '
-    ports:
-      - "${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}"
     environment:
       <<: *aws-region
       <<: *dgraph-env
@@ -493,13 +417,7 @@ services:
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: dgraph-ttl-deploy
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_DGRAPH_TTL_PORT}'
-    ports:
-      - "${GRAPL_DGRAPH_TTL_PORT}:${GRAPL_DGRAPH_TTL_PORT}"
     environment:
       <<: *dgraph-env
       GRAPL_DGRAPH_TTL_S: "${GRAPL_DGRAPH_TTL_S:-31536000}"
@@ -541,10 +459,6 @@ services:
 
   grapl-engagement-view-uploader:
     image: grapl/grapl-engagement-view:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: js/engagement_view/Dockerfile
-      target: engagement-view-local-deploy
     command: |
       /bin/bash -c "
         wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
@@ -556,10 +470,6 @@ services:
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: js/graphql_endpoint/Dockerfile
-      target: graphql-endpoint-deploy
     command: yarn start server
     environment:
       <<: *dgraph-env
@@ -569,7 +479,7 @@ services:
     depends_on:
       - dgraph
     ports:
-      - "${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}"
+      - ${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
     networks:
       default:
         aliases:
@@ -577,17 +487,13 @@ services:
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: grapl-notebook
     user: grapl
     environment:
       <<: *dgraph-env
     depends_on:
       - dgraph
     ports:
-      - "${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}"
+      - ${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}
 
   ########################################################################
   # Utility Services
@@ -595,10 +501,6 @@ services:
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: grapl-provision
     command: |
       /bin/bash -c "
         export TIMEOUT=35 &&
