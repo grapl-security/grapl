@@ -68,10 +68,7 @@ services:
     tty: false
     image: dgraph/standalone:v20.07.1
     ports:
-      - ${DGRAPH_ZERO_GRPC_PRIVATE_PORT}
-      - ${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
-      - ${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
-      - ${DGRAPH_ALPHA_GRPC_EXTERNAL_PUBLIC_PORT}
+      - ${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
     logging:
       driver: none
     volumes:
@@ -94,8 +91,6 @@ services:
         # to disable persistence
         rm -f /data/dump.rdb && redis-server
       "
-    ports:
-      - ${REDIS_PORT}
     logging:
       driver: none
     networks:
@@ -129,8 +124,6 @@ services:
       - HOSTNAME_EXTERNAL=${SQS_HOST}
       - IMAGE_NAME=localstack/localstack:0.11.5
       - SERVICES=sqs:${SQS_PORT}
-    ports:
-      - ${SQS_PORT}
     networks:
       default:
         aliases:
@@ -146,8 +139,7 @@ services:
       - PORT_WEB_UI=${SECRETSMANAGER_WEB_UI_PORT}
       - SERVICES=secretsmanager:${SECRETSMANAGER_PORT}
     ports:
-      - ${SECRETSMANAGER_PORT}
-      - ${SECRETSMANAGER_WEB_UI_PORT}
+      - ${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}
     networks:
       default:
         aliases:
@@ -163,7 +155,7 @@ services:
       - MINIO_REGION_NAME=${AWS_REGION}
       - MINIO_SECRET_KEY=minioadmin
     ports:
-      - ${S3_PORT}
+      - ${S3_PORT}:${S3_PORT}
     networks:
       default:
         aliases:
@@ -402,7 +394,7 @@ services:
       <<: *sqs-env
     tty: true
     ports:
-      - ${VSC_DEBUGGER}
+      - ${VSC_DEBUGGER}:${VSC_DEBUGGER}
     depends_on:
       - dgraph
       - redis
@@ -422,8 +414,6 @@ services:
         cd app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_UX_ROUTER_PORT}
       '
-    ports:
-      - ${GRAPL_UX_ROUTER_PORT}
     environment:
       GRAPL_LOG_LEVEL: "DEBUG"
       # TODO: Once we remove IS_LOCAL, this service will need to depend on s3 and be configured appropriately
@@ -472,8 +462,6 @@ services:
         cd /home/grapl/app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
       '
-    ports:
-      - ${GRAPL_AUTH_PORT}
     networks:
       default:
         aliases:
@@ -507,8 +495,6 @@ services:
           --host=0.0.0.0 \
           --port=${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
       '
-    ports:
-      - ${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
     environment:
       <<: *aws-region
       <<: *dgraph-env
@@ -535,8 +521,6 @@ services:
       dockerfile: ./python/Dockerfile
       target: dgraph-ttl-deploy
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_DGRAPH_TTL_PORT}'
-    ports:
-      - ${GRAPL_DGRAPH_TTL_PORT}
     environment:
       <<: *dgraph-env
       GRAPL_DGRAPH_TTL_S: "${GRAPL_DGRAPH_TTL_S:-31536000}"
@@ -606,7 +590,7 @@ services:
     depends_on:
       - dgraph
     ports:
-      - ${GRAPL_GRAPHQL_PORT}
+      - ${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
     networks:
       default:
         aliases:
@@ -624,7 +608,7 @@ services:
     depends_on:
       - dgraph
     ports:
-      - ${GRAPL_NOTEBOOK_PORT}
+      - ${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}
 
   ########################################################################
   # Utility Services
