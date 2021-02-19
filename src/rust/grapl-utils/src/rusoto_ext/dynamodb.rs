@@ -24,8 +24,6 @@ pub trait GraplDynamoDbClientExt: DynamoDb {
         guarantees that all of the items will be requested within DynamoDb's rules on number of items requested and
         size of response. This works across table_names as well, therefore 75 items from one table and 50 from another
         will still be requested within DynamoDb's rules and remain compliant.
-
-        Note: return_consumed_capacity
     */
     async fn batch_get_item_reliably(
         &self,
