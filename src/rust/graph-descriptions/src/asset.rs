@@ -1,8 +1,6 @@
 use dgraph_query_lib::mutation::{MutationPredicateValue,
                                  MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 use uuid::Uuid;
 
 use crate::{graph_description::Asset,
@@ -31,33 +29,6 @@ impl Asset {
             first_seen_timestamp,
             last_seen_timestamp,
         }
-    }
-
-    pub fn into_json(self) -> Value {
-        let asset_id = self.asset_id.as_ref().unwrap();
-        let mut j = json!({
-            "node_key": self.node_key,
-            "asset_id": asset_id,
-            "dgraph.type": "Asset",
-        });
-
-        if self.first_seen_timestamp != 0 {
-            j["first_seen_timestamp"] = self.first_seen_timestamp.into();
-        }
-
-        if self.last_seen_timestamp != 0 {
-            j["last_seen_timestamp"] = self.last_seen_timestamp.into();
-        }
-
-        if let Some(hostname) = self.hostname {
-            j["hostname"] = Value::from(hostname.clone());
-        }
-
-        if let Some(mac_address) = self.mac_address {
-            j["mac_address"] = Value::from(mac_address.clone());
-        }
-
-        j
     }
 }
 

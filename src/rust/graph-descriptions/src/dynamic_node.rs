@@ -1,8 +1,6 @@
 use dgraph_query_lib::mutation::{MutationPredicateValue,
                                  MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 
 use crate::{graph_description::{id_strategy,
                                 node_property,
@@ -22,31 +20,6 @@ impl DynamicNode {
 
     pub fn set_key(&mut self, key: String) {
         self.node_key = key;
-    }
-
-    pub fn into_json(self) -> Value {
-        let mut j = json!({
-            "node_key": self.node_key,
-            "dgraph.type": self.node_type,
-            "seen_at": self.seen_at,
-        });
-
-        if let Some(asset_id) = self.asset_id {
-            j["asset_id"] = asset_id.into();
-        }
-
-        for (key, prop) in self.properties {
-            let prop = match prop.property {
-                Some(node_property::Property::Intprop(i)) => Value::from(i),
-                Some(node_property::Property::Uintprop(i)) => Value::from(i),
-                Some(node_property::Property::Strprop(s)) => Value::from(s),
-                None => panic!("Invalid property on DynamicNode: {}", self.node_key),
-            };
-
-            j[key] = prop;
-        }
-
-        j
     }
 
     pub fn get_id_strategies(&self) -> &[IdStrategy] {

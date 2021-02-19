@@ -3,8 +3,6 @@ use std::convert::TryFrom;
 use dgraph_query_lib::mutation::{MutationPredicateValue,
                                  MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 use uuid::Uuid;
 
 use crate::{error::Error,
@@ -74,27 +72,6 @@ impl ProcessInboundConnection {
             port: port as u32,
             state: state.into(),
         }
-    }
-
-    pub fn into_json(self) -> Value {
-        let mut j = json!({
-            "node_key": self.node_key,
-            "dgraph.type": "ProcessInboundConnection",
-            "protocol": self.protocol,
-            "port": self.port,
-        });
-
-        if self.created_timestamp != 0 {
-            j["created_timestamp"] = self.created_timestamp.into();
-        }
-        if self.terminated_timestamp != 0 {
-            j["terminated_timestamp"] = self.terminated_timestamp.into();
-        }
-        if self.last_seen_timestamp != 0 {
-            j["last_seen_timestamp"] = self.last_seen_timestamp.into();
-        }
-
-        j
     }
 }
 

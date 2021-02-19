@@ -1,8 +1,6 @@
 use dgraph_query_lib::mutation::{MutationPredicateValue,
                                  MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 
 use crate::{graph_description::IpAddress,
             node::NodeT};
@@ -21,24 +19,6 @@ impl IpAddress {
             first_seen_timestamp,
             last_seen_timestamp,
         }
-    }
-
-    pub fn into_json(self) -> Value {
-        let mut j = json!({
-            "node_key": self.node_key,
-            "dgraph.type": "IpAddress",
-            "ip_address": self.ip_address,
-        });
-
-        if self.first_seen_timestamp != 0 {
-            j["first_seen_timestamp"] = self.first_seen_timestamp.into();
-        }
-
-        if self.last_seen_timestamp != 0 {
-            j["last_seen_timestamp"] = self.last_seen_timestamp.into();
-        }
-
-        j
     }
 }
 

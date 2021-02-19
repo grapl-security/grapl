@@ -23,6 +23,7 @@ use futures_retry::{FutureRetry,
                     RetryPolicy};
 use grapl_utils::iter_ext::GraplIterExt;
 use log::{error,
+          warn,
           info};
 
 use crate::{graph_description::{Edge,
@@ -31,6 +32,10 @@ use crate::{graph_description::{Edge,
                                 Graph,
                                 Node},
             node::NodeT};
+
+const DGRAPH_CONCURRENCY_UPSERTS: usize = 8;
+// DGraph Live Loader uses a size of 1,000 elements and they claim this has relatively good performance
+const DGRAPH_UPSERT_CHUNK_SIZE: usize = 1024;
 
 impl Graph {
     pub fn new(timestamp: u64) -> Self {
@@ -126,7 +131,7 @@ impl Graph {
             .collect();
 
         let _: Vec<MutationResponse> =
-            futures::stream::iter(node_upserts.into_iter().chunks_owned(1024))
+            futures::stream::iter(node_upserts.into_iter().chunks_owned(DGRAPH_UPSERT_CHUNK_SIZE))
                 .map(|upsert_chunk| {
                     let (query_blocks, mutation_units): (Vec<_>, Vec<_>) =
                         upsert_chunk.into_iter().unzip();
@@ -145,7 +150,7 @@ impl Graph {
 
                     Self::enforce_transaction(dgraph_client.clone(), upsert)
                 })
-                .buffer_unordered(16)
+                .buffer_unordered(DGRAPH_CONCURRENCY_UPSERTS)
                 .collect::<Vec<_>>()
                 .await;
     }
@@ -164,7 +169,7 @@ impl Graph {
             )
             .collect();
 
-        futures::stream::iter(all_edges.into_iter().chunks_owned(1024))
+        futures::stream::iter(all_edges.into_iter().chunks_owned(DGRAPH_UPSERT_CHUNK_SIZE))
             .map(|items| {
                 let mut node_key_to_variable_map = HashMap::<String, String>::new();
                 let mut mutation_units = vec![];
@@ -225,11 +230,9 @@ impl Graph {
 
                 let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
 
-                error!("UPSERTING EDGES");
-
                 Self::enforce_transaction(dgraph_client.clone(), upsert)
             })
-            .buffer_unordered(8)
+            .buffer_unordered(DGRAPH_CONCURRENCY_UPSERTS)
             .collect::<Vec<_>>()
             .await;
     }
@@ -270,8 +273,10 @@ impl Graph {
     }
 
     fn handle_upsert_err(e: anyhow::Error) -> RetryPolicy<anyhow::Error> {
-        error!(
-            "Failed to process upsert. Retrying immediately. Error: {}",
+        // it's expected that this will fire occasionally so we'll just warn.
+        // it's okay if this does fire as retrying is typically the correct solution (transaction conflict)
+        warn!(
+            "Failed to process upsert. Retrying immediately. Error that occurred: {}",
             e
         );
         RetryPolicy::Repeat

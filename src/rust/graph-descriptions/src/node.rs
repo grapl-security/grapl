@@ -9,7 +9,6 @@ use dgraph_query_lib::{condition::{Condition,
                                     QueryBlockBuilder,
                                     QueryBlockType}};
 use log::warn;
-use serde_json::Value;
 
 use crate::graph_description::{node::WhichNode,
                                Asset,
@@ -529,32 +528,6 @@ impl Node {
             Some(dynamic_node)
         } else {
             None
-        }
-    }
-
-    pub fn into_json(self) -> Value {
-        let which_node = match self.which_node {
-            Some(which_node) => which_node,
-            None => panic!("Failed to determine variant of node"),
-        };
-
-        match which_node {
-            WhichNode::AssetNode(asset_node) => asset_node.into_json(),
-            WhichNode::ProcessNode(process_node) => process_node.into_json(),
-            WhichNode::FileNode(file_node) => file_node.into_json(),
-            WhichNode::IpAddressNode(ip_address_node) => ip_address_node.into_json(),
-            WhichNode::ProcessOutboundConnectionNode(process_outbound_connection_node) => {
-                process_outbound_connection_node.into_json()
-            }
-            WhichNode::ProcessInboundConnectionNode(process_inbound_connection_node) => {
-                process_inbound_connection_node.into_json()
-            }
-            WhichNode::IpPortNode(ip_port_node) => ip_port_node.into_json(),
-            WhichNode::NetworkConnectionNode(network_connection_node) => {
-                network_connection_node.into_json()
-            }
-            WhichNode::IpConnectionNode(ip_connection_node) => ip_connection_node.into_json(),
-            WhichNode::DynamicNode(dynamic_node) => dynamic_node.into_json(),
         }
     }
 }

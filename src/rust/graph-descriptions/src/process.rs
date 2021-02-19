@@ -3,8 +3,6 @@ use std::convert::TryFrom;
 use dgraph_query_lib::mutation::{MutationPredicateValue,
                                  MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 use uuid::Uuid;
 
 use crate::{error::Error,
@@ -82,43 +80,6 @@ impl Process {
         }
 
         pd
-    }
-
-    pub fn into_json(&self) -> Value {
-        let mut j = json!({
-            "node_key": self.node_key,
-            "process_id": self.process_id,
-            "dgraph.type": "Process"
-        });
-
-        if !self.process_name.is_empty() {
-            j["process_name"] = Value::from(self.process_name.as_str());
-        }
-
-        if !self.operating_system.is_empty() {
-            j["operating_system"] = Value::from(self.operating_system.as_str());
-        }
-
-        if !self.process_command_line.is_empty() {
-            j["process_command_line"] = Value::from(self.process_command_line.as_str());
-        }
-
-        if !self.process_guid.is_empty() {
-            j["process_guid"] = Value::from(self.process_guid.as_str());
-        }
-
-        if self.created_timestamp != 0 {
-            j["created_timestamp"] = self.created_timestamp.into()
-        }
-
-        if self.terminated_timestamp != 0 {
-            j["terminated_timestamp"] = self.terminated_timestamp.into()
-        }
-        if self.last_seen_timestamp != 0 {
-            j["last_seen_timestamp"] = self.last_seen_timestamp.into()
-        }
-
-        j
     }
 }
 

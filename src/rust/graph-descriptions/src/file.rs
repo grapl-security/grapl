@@ -3,8 +3,6 @@ use std::convert::TryFrom;
 use dgraph_query_lib::mutation::{MutationPredicateValue,
                                  MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 use uuid::Uuid;
 
 use crate::{error::Error,
@@ -102,86 +100,6 @@ impl File {
         }
 
         fd
-    }
-
-    pub fn into_json(self) -> Value {
-        let mut j = json!({
-            "node_key": self.node_key,
-            "dgraph.type": "File"
-        });
-
-        if !self.file_name.is_empty() {
-            j["file_name"] = Value::from(self.file_name);
-        }
-
-        if !self.file_path.is_empty() {
-            j["file_path"] = Value::from(self.file_path);
-        }
-
-        if !self.file_extension.is_empty() {
-            j["file_extension"] = Value::from(self.file_extension);
-        }
-
-        if !self.file_mime_type.is_empty() {
-            j["file_mime_type"] = Value::from(self.file_mime_type);
-        }
-
-        if self.file_size != 0 {
-            j["file_size"] = Value::from(self.file_size);
-        }
-
-        if !self.file_version.is_empty() {
-            j["file_version"] = Value::from(self.file_version);
-        }
-
-        if !self.file_description.is_empty() {
-            j["file_description"] = Value::from(self.file_description);
-        }
-
-        if !self.file_product.is_empty() {
-            j["file_product"] = Value::from(self.file_product);
-        }
-
-        if !self.file_company.is_empty() {
-            j["file_company"] = Value::from(self.file_company);
-        }
-
-        if !self.file_directory.is_empty() {
-            j["file_directory"] = Value::from(self.file_directory);
-        }
-
-        if self.file_inode != 0 {
-            j["file_inode"] = Value::from(self.file_inode);
-        }
-
-        if self.file_hard_links != 0 {
-            j["file_hard_links"] = Value::from(self.file_hard_links);
-        }
-
-        if !self.md5_hash.is_empty() {
-            j["md5_hash"] = Value::from(self.md5_hash);
-        }
-
-        if !self.sha1_hash.is_empty() {
-            j["sha1_hash"] = Value::from(self.sha1_hash);
-        }
-
-        if !self.sha256_hash.is_empty() {
-            j["sha256_hash"] = Value::from(self.sha256_hash);
-        }
-
-        if self.created_timestamp != 0 {
-            j["created_time"] = self.created_timestamp.into()
-        }
-
-        if self.deleted_timestamp != 0 {
-            j["deleted_timestamp"] = self.deleted_timestamp.into()
-        }
-        if self.last_seen_timestamp != 0 {
-            j["last_seen_timestamp"] = self.last_seen_timestamp.into()
-        }
-
-        j
     }
 
     pub fn timestamp(&self) -> u64 {

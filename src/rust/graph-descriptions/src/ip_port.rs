@@ -1,8 +1,6 @@
 use dgraph_query_lib::mutation::{MutationPredicateValue,
                                  MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 
 use crate::{graph_description::IpPort,
             node::NodeT};
@@ -18,15 +16,6 @@ impl IpPort {
             port: port as u32,
             protocol,
         }
-    }
-
-    pub fn into_json(self) -> Value {
-        json!({
-            "node_key": self.node_key,
-            "dgraph.type": "IpPort",
-            "port": self.port,
-            "protocol": self.protocol,
-        })
     }
 }
 
