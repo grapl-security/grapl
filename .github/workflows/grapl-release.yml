@@ -170,4 +170,4 @@ jobs:
 
       - name: Publish images to DockerHub
         run: |
-          docker-compose push
+          make push
