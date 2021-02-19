@@ -63,11 +63,6 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                     file: PYTHON_DOCKERFILE,
                 }),
                 metric_forwarder: props.metricForwarder,
-                command: [
-                    "/bin/sh",
-                    "-c",
-                    ". venv/bin/activate && python3 analyzer_executor/src/run.py"
-                ],
             },
         );
         const service = this.service;

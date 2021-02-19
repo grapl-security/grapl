@@ -1,7 +1,5 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
-import * as ecs from '@aws-cdk/aws-ecs';
-import * as lambda from '@aws-cdk/aws-lambda';
 import * as path from 'path';
 import * as s3deploy from '@aws-cdk/aws-s3-deployment';
 import { Swarm, SwarmConnectable } from '../swarm';
