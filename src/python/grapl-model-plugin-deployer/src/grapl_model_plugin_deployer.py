@@ -562,6 +562,29 @@ def delete_model_plugin():
     return respond(None, {"Success": "Deleted plugins"})
 
 
+@app.route("/prod/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
+def prod_nop_route():
+    LOGGER.info("routing: " + app.current_request.context["path"])
+
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
+
+    try:
+        path = app.current_request.context["path"]
+        if path == "/prod/modelPluginDeployer/gitWebhook":
+            return webhook()
+        if path == "/prod/modelPluginDeployer/deploy":
+            return deploy()
+        if path == "/prod/modelPluginDeployer/listModelPlugins":
+            return list_model_plugins()
+        if path == "/prod/modelPluginDeployer/deleteModelPlugin":
+            return delete_model_plugin()
+
+        return respond("InvalidPath")
+    except Exception:
+        LOGGER.error(traceback.format_exc())
+        return respond("Route Server Error")
+
 @app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
     LOGGER.info("routing: " + app.current_request.context["path"])
