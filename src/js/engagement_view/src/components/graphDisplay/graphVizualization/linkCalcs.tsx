@@ -5,7 +5,6 @@ import { riskOutline } from "./nodeColoring";
 const findNode = (id: number, nodes: VizNode[]) => {
 	for (const node of nodes || []) {
 		if (node.id === id) {
-			console.log("node", node)
 			return node;
 		}
 	}

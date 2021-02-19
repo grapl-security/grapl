@@ -78,7 +78,7 @@ services:
         rm -f /data/dump.rdb && redis-server
       "
     ports:
-      - ${REDIS_PORT}
+      - "${REDIS_PORT}:${REDIS_PORT}"
     logging:
       driver: none
     networks:
@@ -93,7 +93,7 @@ services:
       - IMAGE_NAME=localstack/localstack:0.11.5
       - SERVICES=sqs:${SQS_PORT}
     ports:
-      - ${SQS_PORT}
+      - "${SQS_PORT}:${SQS_PORT}"
     networks:
       default:
         aliases:
@@ -109,8 +109,8 @@ services:
       - PORT_WEB_UI=${SECRETSMANAGER_WEB_UI_PORT}
       - SERVICES=secretsmanager:${SECRETSMANAGER_PORT}
     ports:
-      - ${SECRETSMANAGER_PORT}
-      - ${SECRETSMANAGER_WEB_UI_PORT}
+      - "${SECRETSMANAGER_PORT}:${SECRETSMANAGER_PORT}"
+      - "${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}"
     networks:
       default:
         aliases:
@@ -126,7 +126,7 @@ services:
       - MINIO_REGION_NAME=${AWS_REGION}
       - MINIO_SECRET_KEY=minioadmin
     ports:
-      - ${S3_PORT}
+      - "${S3_PORT}:${S3_PORT}"
     networks:
       default:
         aliases:
@@ -365,7 +365,7 @@ services:
       <<: *sqs-env
     tty: true
     ports:
-      - ${VSC_DEBUGGER}
+      - "${VSC_DEBUGGER}:${VSC_DEBUGGER}"
     depends_on:
       - dgraph
       - redis
@@ -386,7 +386,7 @@ services:
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_UX_ROUTER_PORT}
       '
     ports:
-      - ${GRAPL_UX_ROUTER_PORT}
+      - "${GRAPL_UX_ROUTER_PORT}:${GRAPL_UX_ROUTER_PORT}"
     environment:
       GRAPL_LOG_LEVEL: "DEBUG"
       # TODO: Once we remove IS_LOCAL, this service will need to depend on s3 and be configured appropriately
@@ -436,7 +436,7 @@ services:
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
       '
     ports:
-      - ${GRAPL_AUTH_PORT}
+      - "${GRAPL_AUTH_PORT}:${GRAPL_AUTH_PORT}"
     networks:
       default:
         aliases:
@@ -471,7 +471,7 @@ services:
           --port=${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
       '
     ports:
-      - ${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
+      - "${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}"
     environment:
       <<: *aws-region
       <<: *dgraph-env
@@ -499,7 +499,7 @@ services:
       target: dgraph-ttl-deploy
     command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_DGRAPH_TTL_PORT}'
     ports:
-      - ${GRAPL_DGRAPH_TTL_PORT}
+      - "${GRAPL_DGRAPH_TTL_PORT}:${GRAPL_DGRAPH_TTL_PORT}"
     environment:
       <<: *dgraph-env
       GRAPL_DGRAPH_TTL_S: "${GRAPL_DGRAPH_TTL_S:-31536000}"
@@ -569,7 +569,7 @@ services:
     depends_on:
       - dgraph
     ports:
-      - ${GRAPL_GRAPHQL_PORT}
+      - "${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}"
     networks:
       default:
         aliases:
@@ -587,7 +587,7 @@ services:
     depends_on:
       - dgraph
     ports:
-      - ${GRAPL_NOTEBOOK_PORT}
+      - "${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}"
 
   ########################################################################
   # Utility Services
