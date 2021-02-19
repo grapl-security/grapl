@@ -51,6 +51,7 @@ MERGED_PREDICATES_TOPIC = os.environ["MERGED_PREDICATES_TOPIC"]
 MERGED_PREDICATES_RETRY_TOPIC = os.environ["MERGED_PREDICATES_RETRY_TOPIC"]
 MERGED_PREDICATES_FAILED_TOPIC = os.environ["MERGED_PREDICATES_FAILED_TOPIC"]
 
+
 def create_secret(secretsmanager):
     secretsmanager.create_secret(
         Name="JWT_SECRET_ID",
