@@ -9,6 +9,9 @@ from uuid import uuid4
 import boto3
 import botocore
 import pydgraph
+
+from confluent_kafka.admin import AdminClient, NewTopic
+
 from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
@@ -40,6 +43,13 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 
 LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
+KAFKA_BROKER_0_HOST = os.environ["KAFKA_BROKER_0_HOST"]
+IDENTIFIED_PREDICATES_TOPIC = os.environ["IDENTIFIED_PREDICATES_TOPIC"]
+IDENTIFIED_PREDICATES_RETRY_TOPIC = os.environ["IDENTIFIED_PREDICATES_RETRY_TOPIC"]
+IDENTIFIED_PREDICATES_FAILED_TOPIC = os.environ["IDENTIFIED_PREDICATES_FAILED_TOPIC"]
+MERGED_PREDICATES_TOPIC = os.environ["MERGED_PREDICATES_TOPIC"]
+MERGED_PREDICATES_RETRY_TOPIC = os.environ["MERGED_PREDICATES_RETRY_TOPIC"]
+MERGED_PREDICATES_FAILED_TOPIC = os.environ["MERGED_PREDICATES_FAILED_TOPIC"]
 
 def create_secret(secretsmanager):
     secretsmanager.create_secret(
@@ -406,6 +416,25 @@ def sqs_provision_loop() -> None:
     raise Exception("Failed to provision sqs")
 
 
+def create_kafka_topics():
+    admin_client = AdminClient({"bootstrap.servers": f"{KAFKA_BROKER_0_HOST}"})
+    topics = [
+        NewTopic(topic, num_partitions=3, replication_factor=1)
+        for topic in (
+            f"{IDENTIFIED_PREDICATES_TOPIC}",
+            f"{IDENTIFIED_PREDICATES_RETRY_TOPIC}",
+            f"{IDENTIFIED_PREDICATES_FAILED_TOPIC}",
+            f"{MERGED_PREDICATES_TOPIC}",
+            f"{MERGED_PREDICATES_RETRY_TOPIC}",
+            f"{MERGED_PREDICATES_FAILED_TOPIC}",
+        )
+    ]
+    results = admin_client.create_topics(topics)
+    for topic, future in results.items():
+        future.result()  # result is None, will raise Exception upon failure
+        LOGGER.info(f"Created Kafka topic {topic}")
+
+
 if __name__ == "__main__":
     time.sleep(5)
     local_dg_provision_client = MasterGraphClient()
@@ -477,6 +506,10 @@ if __name__ == "__main__":
             if i >= 50:
                 LOGGER.error(e)
             time.sleep(1)
+
+    LOGGER.info("Creating Kafka topics")
+    create_kafka_topics()
+    LOGGER.info("Created Kafka topics")
 
     LOGGER.info("Ensuring S3/SQS completed...")
     sqs_t.join(timeout=300)
