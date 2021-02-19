@@ -442,8 +442,13 @@ RUN source venv/bin/activate && \
 # build
 FROM grapl-python-build AS grapl-provision
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 COPY --chown=grapl python/grapl_provision grapl_local_provision
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+
+RUN source venv/bin/activate && \
+    pip install confluent-kafka==1.6.0
 
 # grapl-tests-common-build
 ################################################################################
