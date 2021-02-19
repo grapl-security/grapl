@@ -19,7 +19,9 @@ use failure::{bail,
 use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
-use grapl_graph_descriptions::{graph_description::{GeneratedSubgraphs,
+use grapl_graph_descriptions::{graph_description::{Edge,
+                                                   EdgeList,
+                                                   GeneratedSubgraphs,
                                                    Graph,
                                                    Node},
                                node::NodeT};
@@ -28,14 +30,23 @@ use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
                                       MetricReporter}};
 use grapl_service::{decoder::ZstdProtoDecoder,
                     serialization::SubgraphSerializer};
+use grapl_utils::{future_ext::GraplFutureExt,
+                  rusoto_ext::dynamodb::GraplDynamoDbClientExt};
+use lazy_static::lazy_static;
 use log::{error,
           info,
           warn};
-use rusoto_dynamodb::{AttributeValue, DynamoDb, DynamoDbClient, GetItemInput, BatchGetItemInput, KeysAndAttributes};
+use rusoto_dynamodb::{AttributeValue,
+                      BatchGetItemInput,
+                      DynamoDb,
+                      DynamoDbClient,
+                      GetItemInput,
+                      KeysAndAttributes};
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use serde::{Deserialize,
             Serialize};
+use serde_json::Value;
 use sqs_executor::{cache::{Cache,
                            CacheResponse,
                            Cacheable},
@@ -46,14 +57,6 @@ use sqs_executor::{cache::{Cache,
                    event_retriever::S3PayloadRetriever,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier};
-use serde_json::Value;
-use grapl_graph_descriptions::graph_description::{
-    Edge,
-    EdgeList
-};
-use grapl_utils::future_ext::GraplFutureExt;
-use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
-use lazy_static::lazy_static;
 
 lazy_static! {
     /// timeout for dynamodb queries
@@ -249,68 +252,94 @@ where
             // map nodes
             // [[1, 2, 3], [6, 7, 8, 9]]
 
-            let predicate_cache_identities: Vec<_> = subgraph.nodes
+            let predicate_cache_identities: Vec<_> = subgraph
+                .nodes
                 .iter()
                 .flat_map(|(_, node)| node.get_cache_identities_for_predicates())
                 .collect();
 
-            let mut cache_results: Vec<CacheResponse> = match self.cache.get_all(predicate_cache_identities.clone()).await {
-                Ok(results) => results,
-                Err(e) => {
-                    error!("Error occurred when checking for cached predicates in redis. {}", e);
-                    (0 .. predicate_cache_identities.len()).map(|_| CacheResponse::Miss).collect()
-                }
-            };
+            let mut cache_results: Vec<CacheResponse> =
+                match self.cache.get_all(predicate_cache_identities.clone()).await {
+                    Ok(results) => results,
+                    Err(e) => {
+                        error!(
+                            "Error occurred when checking for cached predicates in redis. {}",
+                            e
+                        );
+                        (0..predicate_cache_identities.len())
+                            .map(|_| CacheResponse::Miss)
+                            .collect()
+                    }
+                };
 
-            subgraph.nodes
+            subgraph
+                .nodes
                 .into_iter()
                 .map(|(_, node)| node)
                 .filter(|node| {
                     let num_of_predicates = node.get_cache_identities_for_predicates().len();
 
                     /*
-                       if any of the cache responses are misses, the `.all(...)` should return false.
-                       we negate this condition since we only want to *keep* nodes that have cache misses (as they need to be written)
-                     */
-                    !cache_results.drain(0 .. std::cmp::min(num_of_predicates, cache_results.len()))
-                        .all(|cache_result| {
-                            match cache_result {
-                                CacheResponse::Hit => true,
-                                CacheResponse::Miss => false
-                            }
+                      if any of the cache responses are misses, the `.all(...)` should return false.
+                      we negate this condition since we only want to *keep* nodes that have cache misses (as they need to be written)
+                    */
+                    !cache_results
+                        .drain(0..std::cmp::min(num_of_predicates, cache_results.len()))
+                        .all(|cache_result| match cache_result {
+                            CacheResponse::Hit => true,
+                            CacheResponse::Miss => false,
                         })
-                }).collect()
+                })
+                .collect()
         };
 
         let uncached_edges: Vec<Edge> = {
-            let all_edges: Vec<_> = subgraph.edges
+            let all_edges: Vec<_> = subgraph
+                .edges
                 .into_iter()
                 .flat_map(|(_, EdgeList { edges })| edges)
                 .collect();
 
-            let cacheable_edges: Vec<_> = all_edges.iter()
-                .map(|Edge { from, to, edge_name }| format!("{}:{}:{}", from, edge_name, to))
+            let cacheable_edges: Vec<_> = all_edges
+                .iter()
+                .map(
+                    |Edge {
+                         from,
+                         to,
+                         edge_name,
+                     }| format!("{}:{}:{}", from, edge_name, to),
+                )
                 .collect();
 
-            let cache_results: Vec<CacheResponse> = match self.cache.get_all(cacheable_edges.clone()).await {
-                Ok(result) => result,
-                Err(e) => {
-                    error!("Error occurred when checking for cached edges in redis. {}", e);
-                    // return an expected number of cache-misses
-                    (0 .. all_edges.len()).map(|_| CacheResponse::Miss).collect()
-                }
-            };
+            let cache_results: Vec<CacheResponse> =
+                match self.cache.get_all(cacheable_edges.clone()).await {
+                    Ok(result) => result,
+                    Err(e) => {
+                        error!(
+                            "Error occurred when checking for cached edges in redis. {}",
+                            e
+                        );
+                        // return an expected number of cache-misses
+                        (0..all_edges.len()).map(|_| CacheResponse::Miss).collect()
+                    }
+                };
 
             // mark everything as cached (since we'll be processing it
-            self.cache.store_all(cacheable_edges.into_iter().map(|item| item.as_bytes().to_vec()).collect()).await;
+            self.cache
+                .store_all(
+                    cacheable_edges
+                        .into_iter()
+                        .map(|item| item.as_bytes().to_vec())
+                        .collect(),
+                )
+                .await;
 
-            all_edges.into_iter()
+            all_edges
+                .into_iter()
                 .zip(cache_results)
-                .filter(|(_, cache_result)| {
-                    match cache_result {
-                        CacheResponse::Miss => true,
-                        CacheResponse::Hit => false
-                    }
+                .filter(|(_, cache_result)| match cache_result {
+                    CacheResponse::Miss => true,
+                    CacheResponse::Hit => false,
                 })
                 .map(|(edge, _)| edge)
                 .collect()
@@ -320,38 +349,65 @@ where
             let dynamodb = DynamoDbClient::from_env();
             let r_edge_cache = &mut self.r_edge_cache;
 
-            let f_edge_to_r_edge_target: HashMap<String, Option<String>> = uncached_edges.iter()
-                .map(|Edge { from, to, edge_name }| (edge_name.to_string(), r_edge_cache.get(edge_name).map(String::from)))
+            let f_edge_to_r_edge_target: HashMap<String, Option<String>> = uncached_edges
+                .iter()
+                .map(
+                    |Edge {
+                         from,
+                         to,
+                         edge_name,
+                     }| {
+                        (
+                            edge_name.to_string(),
+                            r_edge_cache.get(edge_name).map(String::from),
+                        )
+                    },
+                )
                 .collect();
 
-            let unknown_r_edges: Vec<_> = f_edge_to_r_edge_target.iter()
+            let unknown_r_edges: Vec<_> = f_edge_to_r_edge_target
+                .iter()
                 .filter(|(f_edge, r_edge)| r_edge.is_none())
                 .map(|(f_edge, _)| f_edge.to_string())
                 .collect();
 
             if !unknown_r_edges.is_empty() {
-                let found_r_edges: HashMap<String, String> = get_r_edges_from_dynamodb(&dynamodb, unknown_r_edges.clone())
-                    .await
-                    .map_err(|err| Err(err))?
-                    .into_iter()
-                    .filter_map(|(key, answer)| {
-                        if answer.is_none() {
-                            error!("Failed to fetch r_edge for f_edge {}", key);
-                        }
+                let found_r_edges: HashMap<String, String> =
+                    get_r_edges_from_dynamodb(&dynamodb, unknown_r_edges.clone())
+                        .await
+                        .map_err(|err| Err(err))?
+                        .into_iter()
+                        .filter_map(|(key, answer)| {
+                            if answer.is_none() {
+                                error!("Failed to fetch r_edge for f_edge {}", key);
+                            }
 
-                        answer.map(|value| (key, value))
-                    }).collect();
+                            answer.map(|value| (key, value))
+                        })
+                        .collect();
 
                 r_edge_cache.extend(found_r_edges);
             }
 
             // fetch the r_edge_name and convert it into an Edge that points backwards along this edge_name
-            uncached_edges.iter()
-                .filter_map(|Edge { from, to, edge_name }| {
-                    r_edge_cache.get(edge_name)
-                        .map(String::from)
-                        .map(|r_edge_name| Edge { from: to.clone(), to: from.clone(), edge_name: r_edge_name })
-                })
+            uncached_edges
+                .iter()
+                .filter_map(
+                    |Edge {
+                         from,
+                         to,
+                         edge_name,
+                     }| {
+                        r_edge_cache
+                            .get(edge_name)
+                            .map(String::from)
+                            .map(|r_edge_name| Edge {
+                                from: to.clone(),
+                                to: from.clone(),
+                                edge_name: r_edge_name,
+                            })
+                    },
+                )
                 .collect()
         };
 
@@ -361,11 +417,18 @@ where
             uncached_subgraph.add_node_without_edges(node);
         }
 
-        for Edge { from, to, edge_name} in uncached_edges.into_iter().chain(r_edges) {
+        for Edge {
+            from,
+            to,
+            edge_name,
+        } in uncached_edges.into_iter().chain(r_edges)
+        {
             uncached_subgraph.add_edge(edge_name, from, to);
         }
 
-        uncached_subgraph.perform_upsert(self.mg_client.clone()).await;
+        uncached_subgraph
+            .perform_upsert(self.mg_client.clone())
+            .await;
 
         Ok(uncached_subgraph)
     }
@@ -377,19 +440,27 @@ struct EdgeMapping {
 }
 
 /// Returns a HashMap of f_edge -> Optional r_edge entries from dynamodb
-async fn get_r_edges_from_dynamodb(client: &DynamoDbClient, f_edges: Vec<String>) -> Result<HashMap<String, Option<String>>, GraphMergerError> {
+async fn get_r_edges_from_dynamodb(
+    client: &DynamoDbClient,
+    f_edges: Vec<String>,
+) -> Result<HashMap<String, Option<String>>, GraphMergerError> {
     let schema_table_name = std::env::var("GRAPL_SCHEMA_TABLE").expect("GRAPL_SCHEMA_TABLE");
 
-    let keys: Vec<HashMap<String, AttributeValue>> = f_edges.iter()
+    let keys: Vec<HashMap<String, AttributeValue>> = f_edges
+        .iter()
         .map(|f_edge| {
             let mut key_map = HashMap::new();
-            key_map.insert("f_edge".to_string(), AttributeValue {
-                s: Some(f_edge.to_string()),
-                ..Default::default()
-            });
+            key_map.insert(
+                "f_edge".to_string(),
+                AttributeValue {
+                    s: Some(f_edge.to_string()),
+                    ..Default::default()
+                },
+            );
 
             key_map
-        }).collect();
+        })
+        .collect();
 
     let keys_and_attributes = KeysAndAttributes {
         consistent_read: Some(true),
@@ -402,43 +473,56 @@ async fn get_r_edges_from_dynamodb(client: &DynamoDbClient, f_edges: Vec<String>
 
     let query = BatchGetItemInput {
         request_items,
-        return_consumed_capacity: None
+        return_consumed_capacity: None,
     };
 
     /*
-        1. Map timeout error
-        2. Map Rusoto error
-        3. Grab responses (HashMap<String, Vec<HashMap<String, AttributeValue>>>) (or return error)
-        4. Pull the entire set of responses out for the schema table (Vec<HashMap<String, AttributeValue>>) (or return error)
-     */
-    let schema_table_response: Vec<HashMap<String, AttributeValue>> = client.batch_get_item_reliably(query).timeout(*DYNAMODB_QUERY_TIMEOUT)
+       1. Map timeout error
+       2. Map Rusoto error
+       3. Grab responses (HashMap<String, Vec<HashMap<String, AttributeValue>>>) (or return error)
+       4. Pull the entire set of responses out for the schema table (Vec<HashMap<String, AttributeValue>>) (or return error)
+    */
+    let schema_table_response: Vec<HashMap<String, AttributeValue>> = client
+        .batch_get_item_reliably(query)
+        .timeout(*DYNAMODB_QUERY_TIMEOUT)
         .await
         .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .responses
-        .ok_or(GraphMergerError::Unexpected(format!("Failed to fetch results from dynamodb")))?
+        .ok_or(GraphMergerError::Unexpected(format!(
+            "Failed to fetch results from dynamodb"
+        )))?
         .remove(&schema_table_name)
-        .ok_or(GraphMergerError::Unexpected(format!("Missing data from expected table in dynamodb")))?;
+        .ok_or(GraphMergerError::Unexpected(format!(
+            "Missing data from expected table in dynamodb"
+        )))?;
 
     /*
-        1. Remove entries without f_edge and r_edge
-        2. Grab both f_edge and r_edge properties as strings (`.s`)
-        3. If both are present, return; otherwise error and filter entry out
-     */
-    Ok(schema_table_response.into_iter()
+       1. Remove entries without f_edge and r_edge
+       2. Grab both f_edge and r_edge properties as strings (`.s`)
+       3. If both are present, return; otherwise error and filter entry out
+    */
+    Ok(schema_table_response
+        .into_iter()
         .filter(|hashmap| hashmap.contains_key("f_edge") && hashmap.contains_key("r_edge"))
         .filter_map(|hashmap| {
-            match (hashmap.get("f_edge").map(|item| item.s.clone()), hashmap.get("r_edge").map(|item| item.s.clone())) {
+            match (
+                hashmap.get("f_edge").map(|item| item.s.clone()),
+                hashmap.get("r_edge").map(|item| item.s.clone()),
+            ) {
                 (Some(Some(f_edge)), Some(r_edge)) => Some((f_edge, r_edge)),
                 (Some(Some(f_edge)), _) => {
                     error!("Missing r_edge for f_edge ({}) in dynamodb schema.", f_edge);
                     None
-                },
+                }
                 (None, Some(Some(r_edge))) => {
-                    error!("Failed to associate retrieved r_edge ({}) with an f_edge", r_edge);
+                    error!(
+                        "Failed to associate retrieved r_edge ({}) with an f_edge",
+                        r_edge
+                    );
                     None
                 }
-                _ => None
+                _ => None,
             }
         })
         .collect())

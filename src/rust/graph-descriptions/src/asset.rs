@@ -1,8 +1,9 @@
+use dgraph_query_lib::mutation::{MutationPredicateValue,
+                                 MutationUnit};
 use log::warn;
 use serde_json::{json,
                  Value};
 use uuid::Uuid;
-use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
 
 use crate::{graph_description::Asset,
             node::NodeT};
@@ -142,15 +143,24 @@ impl NodeT for Asset {
 
     fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
         mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
-        mutation_unit.predicate_ref("asset_id", MutationPredicateValue::string(&self.asset_id.clone().expect("Missing asset id")));
+        mutation_unit.predicate_ref(
+            "asset_id",
+            MutationPredicateValue::string(&self.asset_id.clone().expect("Missing asset id")),
+        );
         mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("Asset"));
 
         if self.first_seen_timestamp != 0 {
-            mutation_unit.predicate_ref("first_seen_timestamp", MutationPredicateValue::Number(self.first_seen_timestamp as i64));
+            mutation_unit.predicate_ref(
+                "first_seen_timestamp",
+                MutationPredicateValue::Number(self.first_seen_timestamp as i64),
+            );
         }
 
         if self.last_seen_timestamp != 0 {
-            mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
+            mutation_unit.predicate_ref(
+                "last_seen_timestamp",
+                MutationPredicateValue::Number(self.last_seen_timestamp as i64),
+            );
         }
 
         if let Some(hostname) = &self.hostname {
@@ -166,21 +176,44 @@ impl NodeT for Asset {
         let mut predicate_cache_identities = Vec::new();
 
         if self.first_seen_timestamp != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "first_seen_timestamp", self.first_seen_timestamp));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "first_seen_timestamp",
+                self.first_seen_timestamp
+            ));
         }
 
         if self.last_seen_timestamp != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "last_seen_timestamp", self.last_seen_timestamp));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "last_seen_timestamp",
+                self.last_seen_timestamp
+            ));
         }
 
         if let Some(hostname) = &self.hostname {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "hostname", hostname));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "hostname",
+                hostname
+            ));
         }
 
         if let Some(mac_address) = &self.mac_address {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "mac_address", mac_address));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "mac_address",
+                mac_address
+            ));
         }
 
-        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+        predicate_cache_identities
+            .into_iter()
+            .map(|item| item.as_bytes().to_vec())
+            .collect()
     }
 }

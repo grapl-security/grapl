@@ -1,32 +1,36 @@
-use std::collections::HashMap;
+use std::{collections::HashMap,
+          sync::Arc};
 
-use crate::graph_description::{
-    Edge,
-    EdgeList,
-    GeneratedSubgraphs,
-    Graph,
-    Node
-};
-use dgraph_tonic::{Client as DgraphClient, Mutate, Mutation as DgraphMutation, MutationResponse};
-use dgraph_query_lib::query::{
-    QueryBuilder
-};
-use dgraph_query_lib::mutation::{MutationBuilder, MutationUID, MutationUnit, MutationPredicateValue};
-
-use log::{
-    error,
-    info
-};
-
-use crate::node::NodeT;
-use dgraph_query_lib::upsert::{Upsert, UpsertBlock};
-use std::sync::Arc;
-use dgraph_query_lib::predicate::{Predicate, Field};
-use dgraph_query_lib::condition::{Condition, ConditionValue};
-use dgraph_query_lib::queryblock::{QueryBlockType, QueryBlockBuilder};
+use dgraph_query_lib::{condition::{Condition,
+                                   ConditionValue},
+                       mutation::{MutationBuilder,
+                                  MutationPredicateValue,
+                                  MutationUID,
+                                  MutationUnit},
+                       predicate::{Field,
+                                   Predicate},
+                       query::QueryBuilder,
+                       queryblock::{QueryBlockBuilder,
+                                    QueryBlockType},
+                       upsert::{Upsert,
+                                UpsertBlock}};
+use dgraph_tonic::{Client as DgraphClient,
+                   Mutate,
+                   Mutation as DgraphMutation,
+                   MutationResponse};
 use futures::StreamExt;
-use futures_retry::{FutureRetry, RetryPolicy};
+use futures_retry::{FutureRetry,
+                    RetryPolicy};
 use grapl_utils::iter_ext::GraplIterExt;
+use log::{error,
+          info};
+
+use crate::{graph_description::{Edge,
+                                EdgeList,
+                                GeneratedSubgraphs,
+                                Graph,
+                                Node},
+            node::NodeT};
 
 impl Graph {
     pub fn new(timestamp: u64) -> Self {
@@ -56,7 +60,7 @@ impl Graph {
 
     pub fn add_node_without_edges<N>(&mut self, node: N)
     where
-        N: Into<Node>
+        N: Into<Node>,
     {
         let node = node.into();
         let key = node.clone_node_key();
@@ -115,37 +119,49 @@ impl Graph {
     }
 
     async fn upsert_nodes(&self, dgraph_client: Arc<DgraphClient>) {
-        let node_upserts: Vec<_> = self.nodes.iter()
+        let node_upserts: Vec<_> = self
+            .nodes
+            .iter()
             .map(|(_, node)| node.generate_upsert_components())
             .collect();
 
-        let _: Vec<MutationResponse> = futures::stream::iter(node_upserts.into_iter().chunks_owned(1024))
-            .map(|upsert_chunk| {
-                let (query_blocks, mutation_units): (Vec<_>, Vec<_>) = upsert_chunk.into_iter().unzip();
+        let _: Vec<MutationResponse> =
+            futures::stream::iter(node_upserts.into_iter().chunks_owned(1024))
+                .map(|upsert_chunk| {
+                    let (query_blocks, mutation_units): (Vec<_>, Vec<_>) =
+                        upsert_chunk.into_iter().unzip();
 
-                let query = QueryBuilder::default()
-                    .query_blocks(query_blocks)
-                    .build()
-                    .unwrap();
+                    let query = QueryBuilder::default()
+                        .query_blocks(query_blocks)
+                        .build()
+                        .unwrap();
 
-                let mutation = MutationBuilder::default()
-                    .set(mutation_units)
-                    .build()
-                    .unwrap();
+                    let mutation = MutationBuilder::default()
+                        .set(mutation_units)
+                        .build()
+                        .unwrap();
 
-                let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
+                    let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
 
-                Self::enforce_transaction(dgraph_client.clone(), upsert)
-            })
-            .buffer_unordered(16)
-            .collect::<Vec<_>>()
-            .await;
+                    Self::enforce_transaction(dgraph_client.clone(), upsert)
+                })
+                .buffer_unordered(16)
+                .collect::<Vec<_>>()
+                .await;
     }
 
     async fn upsert_edges(&self, dgraph_client: Arc<DgraphClient>) {
-        let all_edges: Vec<_> = self.edges.iter()
+        let all_edges: Vec<_> = self
+            .edges
+            .iter()
             .flat_map(|(_, EdgeList { edges })| edges)
-            .map(|Edge { from, to, edge_name }| (from.clone(), to.clone(), edge_name.clone()))
+            .map(
+                |Edge {
+                     from,
+                     to,
+                     edge_name,
+                 }| (from.clone(), to.clone(), edge_name.clone()),
+            )
             .collect();
 
         futures::stream::iter(all_edges.into_iter().chunks_owned(1024))
@@ -154,16 +170,23 @@ impl Graph {
                 let mut mutation_units = vec![];
 
                 for (from, to, edge_name) in items {
-                    let from_key_variable = node_key_to_variable_map.entry(from.clone())
+                    let from_key_variable = node_key_to_variable_map
+                        .entry(from.clone())
                         .or_insert(format!("nk_{}", rand::random::<u128>()))
                         .clone();
 
-                    let to_key_variable = node_key_to_variable_map.entry(to.clone())
+                    let to_key_variable = node_key_to_variable_map
+                        .entry(to.clone())
                         .or_insert(format!("nk_{}", rand::random::<u128>()))
                         .clone();
 
-                    let mutation_unit = MutationUnit::new(MutationUID::variable(&from_key_variable))
-                        .predicate(&edge_name, MutationPredicateValue::Edges(vec![MutationUID::variable(&to_key_variable)]));
+                    let mutation_unit =
+                        MutationUnit::new(MutationUID::variable(&from_key_variable)).predicate(
+                            &edge_name,
+                            MutationPredicateValue::Edges(vec![MutationUID::variable(
+                                &to_key_variable,
+                            )]),
+                        );
 
                     mutation_units.push(mutation_unit);
                 }
@@ -175,23 +198,30 @@ impl Graph {
                 for (node_key, variable) in &node_key_to_variable_map {
                     let query_block = QueryBlockBuilder::default()
                         .query_type(QueryBlockType::Var)
-                        .root_filter(Condition::EQ(format!("node_key"), ConditionValue::string(node_key)))
-                        .predicates(vec![
-                            Predicate::ScalarVariable(variable.to_string(), Field::new("uid"))
-                        ])
+                        .root_filter(Condition::EQ(
+                            format!("node_key"),
+                            ConditionValue::string(node_key),
+                        ))
+                        .predicates(vec![Predicate::ScalarVariable(
+                            variable.to_string(),
+                            Field::new("uid"),
+                        )])
                         .first(1)
-                        .build().unwrap();
+                        .build()
+                        .unwrap();
 
                     query_blocks.push(query_block);
                 }
 
                 let query = QueryBuilder::default()
                     .query_blocks(query_blocks)
-                    .build().unwrap();
+                    .build()
+                    .unwrap();
 
                 let mutation = MutationBuilder::default()
                     .set(mutation_units)
-                    .build().unwrap();
+                    .build()
+                    .unwrap();
 
                 let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
 
@@ -205,7 +235,9 @@ impl Graph {
     }
 
     async fn enforce_transaction(client: Arc<DgraphClient>, upsert: Upsert) -> MutationResponse {
-        let dgraph_mutations: Vec<_> = upsert.mutations.iter()
+        let dgraph_mutations: Vec<_> = upsert
+            .mutations
+            .iter()
             .map(|upsert_block| {
                 let mut dgraph_mutation = DgraphMutation::new();
 
@@ -213,17 +245,24 @@ impl Graph {
                     dgraph_mutation.set_cond(condition);
                 }
 
-                dgraph_mutation.set_set_json(&upsert_block.mutation.set)
+                dgraph_mutation
+                    .set_set_json(&upsert_block.mutation.set)
                     .unwrap_or_else(|e| error!("Failed to set json for mutation: {}", e));
 
                 dgraph_mutation
-            }).collect();
+            })
+            .collect();
 
-        let (response, attempts) = FutureRetry::new(|| {
-            client.new_mutated_txn()
-                .upsert_and_commit_now(upsert.query.clone(), dgraph_mutations.clone())
-        }, Self::handle_upsert_err).await
-            .expect("Surfaced an error despite retry strategy while performing an upsert.");
+        let (response, attempts) = FutureRetry::new(
+            || {
+                client
+                    .new_mutated_txn()
+                    .upsert_and_commit_now(upsert.query.clone(), dgraph_mutations.clone())
+            },
+            Self::handle_upsert_err,
+        )
+        .await
+        .expect("Surfaced an error despite retry strategy while performing an upsert.");
 
         info!("Performed upsert after {} attempts", attempts);
 
@@ -231,7 +270,10 @@ impl Graph {
     }
 
     fn handle_upsert_err(e: anyhow::Error) -> RetryPolicy<anyhow::Error> {
-        error!("Failed to process upsert. Retrying immediately. Error: {}", e);
+        error!(
+            "Failed to process upsert. Retrying immediately. Error: {}",
+            e
+        );
         RetryPolicy::Repeat
     }
 }

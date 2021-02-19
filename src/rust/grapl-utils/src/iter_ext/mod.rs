@@ -4,8 +4,8 @@ pub trait GraplIterExt: Iterator {
     /// While the length of the individual Vec's are guaranteed to be equal or less-than `chunk_size`
     /// the capacity is not; adding to a Vec may trigger an allocation.
     fn chunks_owned(self, chunk_size: usize) -> ChunkedIterator<Self>
-        where
-            Self: Sized + Iterator
+    where
+        Self: Sized + Iterator,
     {
         ChunkedIterator::new(self, chunk_size)
     }
@@ -13,15 +13,15 @@ pub trait GraplIterExt: Iterator {
 
 pub struct ChunkedIterator<I>
 where
-    I: Iterator + Sized
+    I: Iterator + Sized,
 {
     inner: I,
-    chunk_size: usize
+    chunk_size: usize,
 }
 
 impl<I> ChunkedIterator<I>
 where
-    I: Iterator + Sized
+    I: Iterator + Sized,
 {
     pub fn new(inner: I, chunk_size: usize) -> Self {
         Self { inner, chunk_size }
@@ -30,7 +30,7 @@ where
 
 impl<I> Iterator for ChunkedIterator<I>
 where
-    I: Iterator
+    I: Iterator,
 {
     type Item = Vec<I::Item>;
 
@@ -52,7 +52,7 @@ where
                 }
 
                 Some(next_chunk)
-            },
+            }
         }
     }
 }

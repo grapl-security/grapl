@@ -1,14 +1,15 @@
 use std::convert::TryFrom;
 
+use dgraph_query_lib::mutation::{MutationPredicateValue,
+                                 MutationUnit};
 use log::warn;
 use serde_json::{json,
                  Value};
 use uuid::Uuid;
 
-use crate::error::Error;
-use crate::graph_description::Process;
-use crate::node::NodeT;
-use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
+use crate::{error::Error,
+            graph_description::Process,
+            node::NodeT};
 
 #[derive(Debug, Clone)]
 pub enum ProcessState {
@@ -234,70 +235,137 @@ impl NodeT for Process {
 
     fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
         mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
-        mutation_unit.predicate_ref("process_id", MutationPredicateValue::Number(self.process_id as i64));
+        mutation_unit.predicate_ref(
+            "process_id",
+            MutationPredicateValue::Number(self.process_id as i64),
+        );
         mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("Process"));
 
         if !self.process_name.is_empty() {
-            mutation_unit.predicate_ref("process_name", MutationPredicateValue::string(&self.process_name));
+            mutation_unit.predicate_ref(
+                "process_name",
+                MutationPredicateValue::string(&self.process_name),
+            );
         }
 
         if !self.operating_system.is_empty() {
-            mutation_unit.predicate_ref("operating_system", MutationPredicateValue::string(&self.operating_system));
+            mutation_unit.predicate_ref(
+                "operating_system",
+                MutationPredicateValue::string(&self.operating_system),
+            );
         }
 
         if !self.process_command_line.is_empty() {
-            mutation_unit.predicate_ref("process_command_line", MutationPredicateValue::string(&self.process_command_line));
+            mutation_unit.predicate_ref(
+                "process_command_line",
+                MutationPredicateValue::string(&self.process_command_line),
+            );
         }
 
         if !self.process_guid.is_empty() {
-            mutation_unit.predicate_ref("process_guid", MutationPredicateValue::string(&self.process_guid));
+            mutation_unit.predicate_ref(
+                "process_guid",
+                MutationPredicateValue::string(&self.process_guid),
+            );
         }
 
         if self.created_timestamp != 0 {
-            mutation_unit.predicate_ref("created_timestamp", MutationPredicateValue::Number(self.created_timestamp as i64));
+            mutation_unit.predicate_ref(
+                "created_timestamp",
+                MutationPredicateValue::Number(self.created_timestamp as i64),
+            );
         }
 
         if self.terminated_timestamp != 0 {
-            mutation_unit.predicate_ref("terminated_timestamp", MutationPredicateValue::Number(self.terminated_timestamp as i64));
+            mutation_unit.predicate_ref(
+                "terminated_timestamp",
+                MutationPredicateValue::Number(self.terminated_timestamp as i64),
+            );
         }
         if self.last_seen_timestamp != 0 {
-            mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
+            mutation_unit.predicate_ref(
+                "last_seen_timestamp",
+                MutationPredicateValue::Number(self.last_seen_timestamp as i64),
+            );
         }
     }
 
     fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
         let mut predicate_cache_identities = Vec::new();
 
-        predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "process_id", self.process_id));
+        predicate_cache_identities.push(format!(
+            "{}:{}:{}",
+            self.get_node_key(),
+            "process_id",
+            self.process_id
+        ));
 
         if !self.process_name.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "process_name", self.process_name));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "process_name",
+                self.process_name
+            ));
         }
 
         if !self.operating_system.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "operating_system", self.operating_system));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "operating_system",
+                self.operating_system
+            ));
         }
 
         if !self.process_command_line.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "process_command_line", self.process_command_line));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "process_command_line",
+                self.process_command_line
+            ));
         }
 
         if !self.process_guid.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "process_guid", self.process_guid));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "process_guid",
+                self.process_guid
+            ));
         }
 
         if self.created_timestamp != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "created_timestamp", self.created_timestamp));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "created_timestamp",
+                self.created_timestamp
+            ));
         }
 
         if self.terminated_timestamp != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "terminated_timestamp", self.terminated_timestamp));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "terminated_timestamp",
+                self.terminated_timestamp
+            ));
         }
 
         if self.last_seen_timestamp != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "last_seen_timestamp", self.last_seen_timestamp));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "last_seen_timestamp",
+                self.last_seen_timestamp
+            ));
         }
 
-        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+        predicate_cache_identities
+            .into_iter()
+            .map(|item| item.as_bytes().to_vec())
+            .collect()
     }
 }

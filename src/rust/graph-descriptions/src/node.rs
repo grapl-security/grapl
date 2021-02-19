@@ -1,18 +1,28 @@
+use dgraph_query_lib::{condition::{Condition,
+                                   ConditionValue},
+                       mutation::{MutationUID,
+                                  MutationUnit},
+                       predicate::{Field,
+                                   Predicate,
+                                   Variable},
+                       queryblock::{QueryBlock,
+                                    QueryBlockBuilder,
+                                    QueryBlockType}};
 use log::warn;
 use serde_json::Value;
 
-use crate::graph_description::node::WhichNode;
-use crate::graph_description::{
-    Asset, DynamicNode, File, IpAddress, IpConnection, IpPort, NetworkConnection, Node, Process,
-    ProcessInboundConnection, ProcessOutboundConnection,
-};
-use dgraph_query_lib::mutation::{MutationUnit, MutationUID};
-use dgraph_query_lib::queryblock::{QueryBlock, QueryBlockBuilder, QueryBlockType};
-use dgraph_query_lib::condition::{
-    Condition,
-    ConditionValue
-};
-use dgraph_query_lib::predicate::{Variable, Predicate, Field};
+use crate::graph_description::{node::WhichNode,
+                               Asset,
+                               DynamicNode,
+                               File,
+                               IpAddress,
+                               IpConnection,
+                               IpPort,
+                               NetworkConnection,
+                               Node,
+                               Process,
+                               ProcessInboundConnection,
+                               ProcessOutboundConnection};
 
 pub trait NodeT {
     fn get_asset_id(&self) -> Option<&str>;
@@ -47,12 +57,17 @@ pub trait NodeT {
 
         let query_block = QueryBlockBuilder::default()
             .query_type(QueryBlockType::Var)
-            .root_filter(Condition::EQ("node_key".to_string(), ConditionValue::string(self.get_node_key())))
-            .predicates(vec![
-                Predicate::ScalarVariable(uid_variable.get_name(), Field::new("uid"))
-            ])
+            .root_filter(Condition::EQ(
+                "node_key".to_string(),
+                ConditionValue::string(self.get_node_key()),
+            ))
+            .predicates(vec![Predicate::ScalarVariable(
+                uid_variable.get_name(),
+                Field::new("uid"),
+            )])
             .first(1)
-            .build().unwrap();
+            .build()
+            .unwrap();
 
         (query_block, mutation_unit)
     }
@@ -520,7 +535,7 @@ impl Node {
     pub fn into_json(self) -> Value {
         let which_node = match self.which_node {
             Some(which_node) => which_node,
-            None => panic!("Failed to determine variant of node")
+            None => panic!("Failed to determine variant of node"),
         };
 
         match which_node {
@@ -874,52 +889,76 @@ impl NodeT for Node {
     fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
         let which_node = match &self.which_node {
             Some(which_node) => which_node,
-            None => panic!("Failed to determine variant of node")
+            None => panic!("Failed to determine variant of node"),
         };
 
         match which_node {
-            WhichNode::AssetNode(asset_node) => asset_node.attach_predicates_to_mutation_unit(mutation_unit),
-            WhichNode::ProcessNode(process_node) => process_node.attach_predicates_to_mutation_unit(mutation_unit),
-            WhichNode::FileNode(file_node) => file_node.attach_predicates_to_mutation_unit(mutation_unit),
-            WhichNode::IpAddressNode(ip_address_node) => ip_address_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::AssetNode(asset_node) => {
+                asset_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
+            WhichNode::ProcessNode(process_node) => {
+                process_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
+            WhichNode::FileNode(file_node) => {
+                file_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
+            WhichNode::IpAddressNode(ip_address_node) => {
+                ip_address_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
             WhichNode::ProcessOutboundConnectionNode(process_outbound_connection_node) => {
                 process_outbound_connection_node.attach_predicates_to_mutation_unit(mutation_unit)
             }
             WhichNode::ProcessInboundConnectionNode(process_inbound_connection_node) => {
                 process_inbound_connection_node.attach_predicates_to_mutation_unit(mutation_unit)
             }
-            WhichNode::IpPortNode(ip_port_node) => ip_port_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::IpPortNode(ip_port_node) => {
+                ip_port_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
             WhichNode::NetworkConnectionNode(network_connection_node) => {
                 network_connection_node.attach_predicates_to_mutation_unit(mutation_unit)
             }
-            WhichNode::IpConnectionNode(ip_connection_node) => ip_connection_node.attach_predicates_to_mutation_unit(mutation_unit),
-            WhichNode::DynamicNode(dynamic_node) => dynamic_node.attach_predicates_to_mutation_unit(mutation_unit),
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                ip_connection_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
+            WhichNode::DynamicNode(dynamic_node) => {
+                dynamic_node.attach_predicates_to_mutation_unit(mutation_unit)
+            }
         }
     }
 
     fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
         let which_node = match &self.which_node {
             Some(which_node) => which_node,
-            None => panic!("Failed to determine variant of node")
+            None => panic!("Failed to determine variant of node"),
         };
 
         match which_node {
             WhichNode::AssetNode(asset_node) => asset_node.get_cache_identities_for_predicates(),
-            WhichNode::ProcessNode(process_node) => process_node.get_cache_identities_for_predicates(),
+            WhichNode::ProcessNode(process_node) => {
+                process_node.get_cache_identities_for_predicates()
+            }
             WhichNode::FileNode(file_node) => file_node.get_cache_identities_for_predicates(),
-            WhichNode::IpAddressNode(ip_address_node) => ip_address_node.get_cache_identities_for_predicates(),
+            WhichNode::IpAddressNode(ip_address_node) => {
+                ip_address_node.get_cache_identities_for_predicates()
+            }
             WhichNode::ProcessOutboundConnectionNode(process_outbound_connection_node) => {
                 process_outbound_connection_node.get_cache_identities_for_predicates()
             }
             WhichNode::ProcessInboundConnectionNode(process_inbound_connection_node) => {
                 process_inbound_connection_node.get_cache_identities_for_predicates()
             }
-            WhichNode::IpPortNode(ip_port_node) => ip_port_node.get_cache_identities_for_predicates(),
+            WhichNode::IpPortNode(ip_port_node) => {
+                ip_port_node.get_cache_identities_for_predicates()
+            }
             WhichNode::NetworkConnectionNode(network_connection_node) => {
                 network_connection_node.get_cache_identities_for_predicates()
             }
-            WhichNode::IpConnectionNode(ip_connection_node) => ip_connection_node.get_cache_identities_for_predicates(),
-            WhichNode::DynamicNode(dynamic_node) => dynamic_node.get_cache_identities_for_predicates(),
+            WhichNode::IpConnectionNode(ip_connection_node) => {
+                ip_connection_node.get_cache_identities_for_predicates()
+            }
+            WhichNode::DynamicNode(dynamic_node) => {
+                dynamic_node.get_cache_identities_for_predicates()
+            }
         }
     }
 }

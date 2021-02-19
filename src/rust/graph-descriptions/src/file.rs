@@ -1,14 +1,15 @@
 use std::convert::TryFrom;
 
+use dgraph_query_lib::mutation::{MutationPredicateValue,
+                                 MutationUnit};
 use log::warn;
 use serde_json::{json,
                  Value};
 use uuid::Uuid;
 
-use crate::error::Error;
-use crate::graph_description::File;
-use crate::node::NodeT;
-use dgraph_query_lib::mutation::{MutationUnit, MutationPredicateValue};
+use crate::{error::Error,
+            graph_description::File,
+            node::NodeT};
 
 #[derive(Debug, Clone)]
 pub enum FileState {
@@ -432,51 +433,83 @@ impl NodeT for File {
         mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("File"));
 
         if !self.file_name.is_empty() {
-            mutation_unit.predicate_ref("file_name", MutationPredicateValue::string(&self.file_name));
+            mutation_unit
+                .predicate_ref("file_name", MutationPredicateValue::string(&self.file_name));
         }
 
         if !self.file_path.is_empty() {
-            mutation_unit.predicate_ref("file_path", MutationPredicateValue::string(&self.file_path));
+            mutation_unit
+                .predicate_ref("file_path", MutationPredicateValue::string(&self.file_path));
         }
 
         if !self.file_extension.is_empty() {
-            mutation_unit.predicate_ref("file_extension", MutationPredicateValue::string(&self.file_extension));
+            mutation_unit.predicate_ref(
+                "file_extension",
+                MutationPredicateValue::string(&self.file_extension),
+            );
         }
 
         if !self.file_mime_type.is_empty() {
-            mutation_unit.predicate_ref("file_mime_type", MutationPredicateValue::string(&self.file_mime_type));
+            mutation_unit.predicate_ref(
+                "file_mime_type",
+                MutationPredicateValue::string(&self.file_mime_type),
+            );
         }
 
         if self.file_size != 0 {
-            mutation_unit.predicate_ref("file_size", MutationPredicateValue::Number(self.file_size as i64));
+            mutation_unit.predicate_ref(
+                "file_size",
+                MutationPredicateValue::Number(self.file_size as i64),
+            );
         }
 
         if !self.file_version.is_empty() {
-            mutation_unit.predicate_ref("file_version", MutationPredicateValue::string(&self.file_version));
+            mutation_unit.predicate_ref(
+                "file_version",
+                MutationPredicateValue::string(&self.file_version),
+            );
         }
 
         if !self.file_description.is_empty() {
-            mutation_unit.predicate_ref("file_description", MutationPredicateValue::string(&self.file_description));
+            mutation_unit.predicate_ref(
+                "file_description",
+                MutationPredicateValue::string(&self.file_description),
+            );
         }
 
         if !self.file_product.is_empty() {
-            mutation_unit.predicate_ref("file_product", MutationPredicateValue::string(&self.file_product));
+            mutation_unit.predicate_ref(
+                "file_product",
+                MutationPredicateValue::string(&self.file_product),
+            );
         }
 
         if !self.file_company.is_empty() {
-            mutation_unit.predicate_ref("file_company", MutationPredicateValue::string(&self.file_company));
+            mutation_unit.predicate_ref(
+                "file_company",
+                MutationPredicateValue::string(&self.file_company),
+            );
         }
 
         if !self.file_directory.is_empty() {
-            mutation_unit.predicate_ref("file_directory", MutationPredicateValue::string(&self.file_directory));
+            mutation_unit.predicate_ref(
+                "file_directory",
+                MutationPredicateValue::string(&self.file_directory),
+            );
         }
 
         if self.file_inode != 0 {
-            mutation_unit.predicate_ref("file_inode", MutationPredicateValue::Number(self.file_inode as i64));
+            mutation_unit.predicate_ref(
+                "file_inode",
+                MutationPredicateValue::Number(self.file_inode as i64),
+            );
         }
 
         if self.file_hard_links != 0 {
-            mutation_unit.predicate_ref("file_hard_links", MutationPredicateValue::Number(self.file_hard_links as i64));
+            mutation_unit.predicate_ref(
+                "file_hard_links",
+                MutationPredicateValue::Number(self.file_hard_links as i64),
+            );
         }
 
         if !self.md5_hash.is_empty() {
@@ -484,22 +517,35 @@ impl NodeT for File {
         }
 
         if !self.sha1_hash.is_empty() {
-            mutation_unit.predicate_ref("sha1_hash", MutationPredicateValue::string(&self.sha1_hash));
+            mutation_unit
+                .predicate_ref("sha1_hash", MutationPredicateValue::string(&self.sha1_hash));
         }
 
         if !self.sha256_hash.is_empty() {
-            mutation_unit.predicate_ref("sha256_hash", MutationPredicateValue::string(&self.sha256_hash));
+            mutation_unit.predicate_ref(
+                "sha256_hash",
+                MutationPredicateValue::string(&self.sha256_hash),
+            );
         }
 
         if self.created_timestamp != 0 {
-            mutation_unit.predicate_ref("created_time", MutationPredicateValue::Number(self.created_timestamp as i64));
+            mutation_unit.predicate_ref(
+                "created_time",
+                MutationPredicateValue::Number(self.created_timestamp as i64),
+            );
         }
 
         if self.deleted_timestamp != 0 {
-            mutation_unit.predicate_ref("deleted_timestamp", MutationPredicateValue::Number(self.deleted_timestamp as i64));
+            mutation_unit.predicate_ref(
+                "deleted_timestamp",
+                MutationPredicateValue::Number(self.deleted_timestamp as i64),
+            );
         }
         if self.last_seen_timestamp != 0 {
-            mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
+            mutation_unit.predicate_ref(
+                "last_seen_timestamp",
+                MutationPredicateValue::Number(self.last_seen_timestamp as i64),
+            );
         }
     }
 
@@ -507,76 +553,169 @@ impl NodeT for File {
         let mut predicate_cache_identities = Vec::new();
 
         if !self.file_name.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_name", self.file_name));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_name",
+                self.file_name
+            ));
         }
 
         if !self.file_path.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_path", self.file_path));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_path",
+                self.file_path
+            ));
         }
 
         if !self.file_extension.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_extension", self.file_extension));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_extension",
+                self.file_extension
+            ));
         }
 
         if !self.file_mime_type.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_mime_type", self.file_mime_type));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_mime_type",
+                self.file_mime_type
+            ));
         }
 
         if self.file_size != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_size", self.file_size));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_size",
+                self.file_size
+            ));
         }
 
         if !self.file_version.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_version", self.file_version));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_version",
+                self.file_version
+            ));
         }
 
         if !self.file_description.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_description", self.file_description));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_description",
+                self.file_description
+            ));
         }
 
         if !self.file_product.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_product", self.file_product));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_product",
+                self.file_product
+            ));
         }
 
         if !self.file_company.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_company", self.file_company));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_company",
+                self.file_company
+            ));
         }
 
         if !self.file_directory.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_directory", self.file_directory));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_directory",
+                self.file_directory
+            ));
         }
 
         if self.file_inode != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_inode", self.file_inode));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_inode",
+                self.file_inode
+            ));
         }
 
         if self.file_hard_links != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_hard_links", self.file_hard_links));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "file_hard_links",
+                self.file_hard_links
+            ));
         }
 
         if !self.md5_hash.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "md5_hash", self.md5_hash));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "md5_hash",
+                self.md5_hash
+            ));
         }
 
         if !self.sha1_hash.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "sha1_hash", self.sha1_hash));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "sha1_hash",
+                self.sha1_hash
+            ));
         }
 
         if !self.sha256_hash.is_empty() {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "sha256_hash", self.sha256_hash));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "sha256_hash",
+                self.sha256_hash
+            ));
         }
 
         if self.created_timestamp != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "created_timestamp", self.created_timestamp));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "created_timestamp",
+                self.created_timestamp
+            ));
         }
 
         if self.deleted_timestamp != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "deleted_timestamp", self.deleted_timestamp));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "deleted_timestamp",
+                self.deleted_timestamp
+            ));
         }
         if self.last_seen_timestamp != 0 {
-            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "last_seen_timestamp", self.last_seen_timestamp));
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "last_seen_timestamp",
+                self.last_seen_timestamp
+            ));
         }
 
-        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+        predicate_cache_identities
+            .into_iter()
+            .map(|item| item.as_bytes().to_vec())
+            .collect()
     }
 }
