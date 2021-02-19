@@ -371,7 +371,10 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
 
     match (created_time_prop, last_seen_time_prop, terminated_time_prop) {
         (Some(_), Some(_), Some(_)) => (),
-        (None, None, None) => panic!("Missing {} and {} and {}", CREATED_TIME, LAST_SEEN_TIME, TERMINATED_TIME),
+        (None, None, None) => panic!(
+            "Missing {} and {} and {}",
+            CREATED_TIME, LAST_SEEN_TIME, TERMINATED_TIME
+        ),
         (None, None, _) => panic!("Missing {} and {}", CREATED_TIME, LAST_SEEN_TIME),
         (None, _, None) => panic!("Missing {} and {}", CREATED_TIME, TERMINATED_TIME),
         (_, None, None) => panic!("Missing {} and {}", LAST_SEEN_TIME, TERMINATED_TIME),
