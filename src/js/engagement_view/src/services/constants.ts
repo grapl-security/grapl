@@ -1,7 +1,7 @@
 const DEV_API_EDGES = {
-    auth: "prod/auth/",
-    graphQL: "prod/graphQlEndpoint/",
-    modelPluginEdge: "prod/modelPluginDeployer/",
+    auth: "auth",
+    graphQL: "graphQlEndpoint",
+    modelPluginEdge: "modelPluginDeployer",
 };
 
 export default DEV_API_EDGES;
