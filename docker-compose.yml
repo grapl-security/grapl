@@ -10,7 +10,7 @@ volumes:
 
 x-common-variables:
   aws-region: &aws-region
-    AWS_DEFAULT_REGION: ${AWS_REGION}  # boto3 prefers this one
+    AWS_DEFAULT_REGION: ${AWS_REGION} # boto3 prefers this one
     AWS_REGION: ${AWS_REGION}
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
@@ -42,7 +42,6 @@ x-common-variables:
     SQS_ENDPOINT: ${SQS_ENDPOINT}
 
 services:
-
   ########################################################################
   # Cloud Infrastructure Dependencies
   ########################################################################
