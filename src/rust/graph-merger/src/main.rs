@@ -260,7 +260,7 @@ where
 
             let mut cache_results: Vec<CacheResponse> =
                 match self.cache.get_all(predicate_cache_identities.clone()).await {
-                    Ok(results) => results,
+                    Ok(results) => results.into_iter().map(|(_, response)| response).collect(),
                     Err(e) => {
                         error!(
                             "Error occurred when checking for cached predicates in redis. {}",
@@ -313,7 +313,7 @@ where
 
             let cache_results: Vec<CacheResponse> =
                 match self.cache.get_all(cacheable_edges.clone()).await {
-                    Ok(result) => result,
+                    Ok(result) => result.into_iter().map(|(_, response)| response).collect(),
                     Err(e) => {
                         error!(
                             "Error occurred when checking for cached edges in redis. {}",
