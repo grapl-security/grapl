@@ -75,6 +75,10 @@ else:
     )["SecretString"]
 
 app = Chalice(app_name="model-plugin-deployer")
+try:
+    app.debug = bool(os.environ.get("CHALICE_DEBUG", False))
+except Exception as e:
+    LOGGER.warn(e)
 
 
 def into_list(t: Union[T, List[T]]) -> List[T]:
@@ -346,10 +350,10 @@ def respond(
         status_code=status_code.value,
         headers={
             "Access-Control-Allow-Credentials": "true",
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-            "X-Requested-With": "*",
             "Access-Control-Allow-Headers": ":authority, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
+            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Content-Type": "application/json",
+            "X-Requested-With": "*",
             **headers,
         },
     )
@@ -370,7 +374,7 @@ def requires_auth(path):
                 return respond("Must log in", status_code=HTTPStatus.UNAUTHORIZED)
             try:
                 return route_fn()
-            except Exception as e:
+            except Exception:
                 LOGGER.error(traceback.format_exc())
                 return respond("Unexpected Error")
 
