@@ -47,3 +47,6 @@ dist/
 # See build-support/generate_constraints.sh
 /build-support/.constraints-venv
 .yarn/
+
+### PERSONAL SCRIPTS
+upload_localhost.sh
