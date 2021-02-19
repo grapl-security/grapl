@@ -87,6 +87,8 @@ services:
       - HOSTNAME_EXTERNAL=${SQS_HOST}
       - IMAGE_NAME=localstack/localstack:0.11.5
       - SERVICES=sqs:${SQS_PORT}
+    ports:
+      - ${SQS_PORT}:${SQS_PORT}
     networks:
       default:
         aliases:

@@ -131,7 +131,7 @@ impl NodeT for DynamicNode {
     }
 
     fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
-        let mut predicate_cache_identities = Vec::new();
+        let mut predicate_cache_identities = Vec::with_capacity(self.properties.len());
 
         for (key, prop) in &self.properties {
             let prop_value = match prop.property {
@@ -151,7 +151,7 @@ impl NodeT for DynamicNode {
 
         predicate_cache_identities
             .into_iter()
-            .map(|item| item.as_bytes().to_vec())
+            .map(|item| item.into_bytes())
             .collect()
     }
 }

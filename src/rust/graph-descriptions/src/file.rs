@@ -633,7 +633,7 @@ impl NodeT for File {
 
         predicate_cache_identities
             .into_iter()
-            .map(|item| item.as_bytes().to_vec())
+            .map(|item| item.into_bytes())
             .collect()
     }
 }
