@@ -564,7 +564,7 @@ def delete_model_plugin():
 
 @app.route("/prod/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
 def prod_nop_route():
-    LOGGER.info("routing: " + app.current_request.context["path"])
+    LOGGER.info("prod_nop_route: " + app.current_request.context["path"])
 
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
@@ -587,7 +587,7 @@ def prod_nop_route():
 
 @app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    LOGGER.info("routing: " + app.current_request.context["path"])
+    LOGGER.info("nop_route: " + app.current_request.context["path"])
 
     if app.current_request.method == "OPTIONS":
         return respond(None, {})

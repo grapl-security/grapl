@@ -295,7 +295,7 @@ def get_notebook() -> Response:
 
 @app.route("/prod/auth/{proxy+}", methods=["OPTIONS", "POST", "GET"])
 def prod_nop_route() -> Response:
-    LOGGER.debug(f'nop_route {app.current_request.context["path"]}')
+    LOGGER.debug(f'prod_nop_route {app.current_request.context["path"]}')
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
 
