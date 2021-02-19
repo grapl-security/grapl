@@ -3,16 +3,16 @@ set -eu
 
 ANALYZER_UPLOAD_SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 LOCAL_GRAPL_DIR=$ANALYZER_UPLOAD_SCRIPT_PATH/../
-export AWS_ACCESS_KEY_ID=minioadmin 
-export AWS_SECRET_ACCESS_KEY=minioadmin 
+export AWS_ACCESS_KEY_ID="${S3_ACCESS_KEY_ID}"
+export AWS_SECRET_ACCESS_KEY="${S3_ACCESS_KEY_SECRET}"
 export BUCKET_PREFIX="local-grapl"
 
 aws s3 cp \
     $LOCAL_GRAPL_DIR/suspicious_svchost/main.py \
     s3://${BUCKET_PREFIX}-analyzers-bucket/analyzers/suspicious_svchost/main.py \
-    --endpoint-url=http://localhost:9000 --region=us-east-1
+    --endpoint-url="${S3_ENDPOINT}" --region="${AWS_REGION}"
 
 aws s3 cp \
     $LOCAL_GRAPL_DIR/unique_cmd_parent/main.py \
     s3://${BUCKET_PREFIX}-analyzers-bucket/analyzers/unique_cmd_parent/main.py \
-    --endpoint-url=http://localhost:9000 --region=us-east-1
+    --endpoint-url="${S3_ENDPOINT}" --region="${AWS_REGION}"

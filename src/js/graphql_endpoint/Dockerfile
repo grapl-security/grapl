@@ -5,6 +5,7 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
         libffi-dev \
         libssl-dev \
         python3 \
+        wait-for-it \
         zip
 
 RUN adduser \
@@ -34,8 +35,12 @@ FROM graphql-endpoint-build AS graphql-endpoint-zip
 RUN cd lambda && \
     zip -q9r /home/grapl/lambda.zip ./
 
-# deploy
+# deploy... this is only used in Local Grapl at the moment
 FROM node:12.18-buster-slim AS graphql-endpoint-deploy
+
+# Only really needed for Local Grapl
+RUN apt-get update && apt-get -y install --no-install-recommends \
+    wait-for-it
 
 RUN adduser \
         --disabled-password \

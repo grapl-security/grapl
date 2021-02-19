@@ -50,10 +50,10 @@ if IS_LOCAL:
         try:
             secretsmanager = boto3.client(
                 "secretsmanager",
-                region_name="us-east-1",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
+                region_name=os.environ["AWS_REGION"],
+                aws_access_key_id=os.environ["SECRETSMANAGER_ACCESS_KEY_ID"],
+                aws_secret_access_key=os.environ["SECRETSMANAGER_ACCESS_KEY_SECRET"],
+                endpoint_url=os.environ["SECRETSMANAGER_ENDPOINT"],
             )
 
             JWT_SECRET = secretsmanager.get_secret_value(

@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip as web_compress
 import json
 import logging
+import os
 import sys
 import time
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union, cast
@@ -87,9 +88,9 @@ class LazyUxBucket:
             try:
                 s3 = boto3.resource(
                     "s3",
-                    endpoint_url="http://s3:9000",
-                    aws_access_key_id="minioadmin",
-                    aws_secret_access_key="minioadmin",
+                    endpoint_url=os.environ["S3_ENDPOINT"],
+                    aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
+                    aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"],
                 )
 
                 bucket = s3.Bucket(UX_BUCKET_NAME)

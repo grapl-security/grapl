@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from pprint import pformat as pretty_format
 from typing import TYPE_CHECKING, Any, Optional
@@ -16,10 +17,10 @@ DOCKER_VOLUME = Path("/mnt/dynamodb_dump")
 def dump_dynamodb() -> None:
     dynamodb: DynamoDBServiceResource = boto3.resource(
         "dynamodb",
-        region_name="us-east-1",
-        endpoint_url="http://dynamodb:8000",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+        region_name=os.environ["AWS_REGION"],
+        endpoint_url=os.environ["DYNAMODB_ENDPOINT"],
+        aws_access_key_id=os.environ["DYNAMODB_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["DYNAMODB_ACCESS_KEY_SECRET"],
     )
     logging.info("Dumping DynamoDB")
 

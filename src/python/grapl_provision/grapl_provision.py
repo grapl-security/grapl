@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import threading
 import time
 from hashlib import pbkdf2_hmac, sha256
@@ -351,10 +352,10 @@ def create_user(username, cleartext):
     assert cleartext
     dynamodb = boto3.resource(
         "dynamodb",
-        region_name="us-east-1",
-        endpoint_url="http://dynamodb:8000",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
+        region_name=os.environ["AWS_REGION"],
+        endpoint_url=os.environ["DYNAMODB_ENDPOINT"],
+        aws_access_key_id=os.environ["DYNAMODB_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["DYNAMODB_ACCESS_KEY_SECRET"],
     )
     table = dynamodb.Table("local-grapl-user_auth_table")
 
@@ -406,7 +407,33 @@ def sqs_provision_loop() -> None:
     raise Exception("Failed to provision sqs")
 
 
+def validate_environment():
+    """Ensures that the required environment variables are present in the environment.
+
+    Other code actually reads the variables later.
+    """
+    required = [
+        "AWS_REGION",
+        "DYNAMODB_ACCESS_KEY_ID",
+        "DYNAMODB_ACCESS_KEY_SECRET",
+        "DYNAMODB_ENDPOINT",
+        "SECRETSMANAGER_ACCESS_KEY_ID",
+        "SECRETSMANAGER_ACCESS_KEY_SECRET",
+        "SECRETSMANAGER_ENDPOINT",
+    ]
+
+    missing = [var for var in required if var not in os.environ]
+
+    if missing:
+        print(
+            f"The following environment variables are required, but are not present: {missing}"
+        )
+        sys.exit(1)
+
+
 if __name__ == "__main__":
+    validate_environment()
+
     time.sleep(5)
     graph_client = GraphClient()
 
@@ -449,10 +476,10 @@ if __name__ == "__main__":
         try:
             client = boto3.client(
                 service_name="secretsmanager",
-                region_name="us-east-1",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
+                region_name=os.environ["AWS_REGION"],
+                endpoint_url=os.environ["SECRETSMANAGER_ENDPOINT"],
+                aws_access_key_id=os.environ["SECRETSMANAGER_ACCESS_KEY_ID"],
+                aws_secret_access_key=os.environ["SECRETSMANAGER_ACCESS_KEY_SECRET"],
             )
             create_secret(client)
             LOGGER.info("Done provisioning Secrets Manager")

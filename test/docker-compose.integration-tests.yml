@@ -35,8 +35,8 @@ services:
       - IP_CONNECTION_HISTORY_TABLE=${BUCKET_PREFIX}-ip_connection_history_table
       - ASSET_ID_MAPPINGS=${BUCKET_PREFIX}-asset_id_mappings
       - DYNAMODB_ENDPOINT
-      - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
-      - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
+      - DYNAMODB_ACCESS_KEY_ID
+      - DYNAMODB_ACCESS_KEY_SECRET
 
   grapl-analyzerlib-integration-tests:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
