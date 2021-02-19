@@ -23,9 +23,10 @@ use dgraph_query_lib::upsert::{Upsert, UpsertBlock};
 use std::sync::Arc;
 use dgraph_query_lib::predicate::{Predicate, Field};
 use dgraph_query_lib::condition::{Condition, ConditionValue};
-use dgraph_query_lib::queryblock::{QueryBlockType, QueryBlockBuilder, QueryBlock};
-use futures::{StreamExt, TryFutureExt};
+use dgraph_query_lib::queryblock::{QueryBlockType, QueryBlockBuilder};
+use futures::StreamExt;
 use futures_retry::{FutureRetry, RetryPolicy};
+use grapl_utils::iter_ext::GraplIterExt;
 
 impl Graph {
     pub fn new(timestamp: u64) -> Self {
@@ -51,6 +52,16 @@ impl Graph {
                 })
                 .or_insert_with(|| other_node.clone());
         }
+    }
+
+    pub fn add_node_without_edges<N>(&mut self, node: N)
+    where
+        N: Into<Node>
+    {
+        let node = node.into();
+        let key = node.clone_node_key();
+
+        self.nodes.insert(key.to_string(), node);
     }
 
     pub fn add_node<N>(&mut self, node: N)
@@ -104,11 +115,11 @@ impl Graph {
     }
 
     async fn upsert_nodes(&self, dgraph_client: Arc<DgraphClient>) {
-        let upsert_components: Vec<(QueryBlock, MutationUnit)> = self.nodes.iter()
+        let node_upserts: Vec<_> = self.nodes.iter()
             .map(|(_, node)| node.generate_upsert_components())
             .collect();
 
-        let _: Vec<MutationResponse> = futures::stream::iter(chunk_vec(upsert_components, 256))
+        let _: Vec<MutationResponse> = futures::stream::iter(node_upserts.into_iter().chunks_owned(1024))
             .map(|upsert_chunk| {
                 let (query_blocks, mutation_units): (Vec<_>, Vec<_>) = upsert_chunk.into_iter().unzip();
 
@@ -124,7 +135,7 @@ impl Graph {
 
                 let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
 
-                Self::enforce_transaction(dgraph_client.clone(), upsert, Some(format!("This is a node upsert.")))
+                Self::enforce_transaction(dgraph_client.clone(), upsert)
             })
             .buffer_unordered(16)
             .collect::<Vec<_>>()
@@ -132,20 +143,13 @@ impl Graph {
     }
 
     async fn upsert_edges(&self, dgraph_client: Arc<DgraphClient>) {
-        let mut all_edges: Vec<(String, String, String)> = vec![];
+        let all_edges: Vec<_> = self.edges.iter()
+            .flat_map(|(_, EdgeList { edges })| edges)
+            .map(|Edge { from, to, edge_name }| (from.clone(), to.clone(), edge_name.clone()))
+            .collect();
 
-        // for some reason this was much harder to correctly express in a nested iterator with map
-        // because of the reference to `node_key_to_variable_map`, it inferred the closures as FnMut
-        // and made it difficult to use the hashmap for whatever reason
-        for (_, EdgeList { edg  es }) in &self.edges {
-            for Edge { from, to, edge_name } in edges {
-                all_edges.push((from.clone(), to.clone(), edge_name.clone()));
-            }
-        }
-
-        futures::stream::iter(chunk_vec(all_edges, 2048))
+        futures::stream::iter(all_edges.into_iter().chunks_owned(1024))
             .map(|items| {
-                let msg = format!("");
                 let mut node_key_to_variable_map = HashMap::<String, String>::new();
                 let mut mutation_units = vec![];
 
@@ -160,8 +164,6 @@ impl Graph {
 
                     let mutation_unit = MutationUnit::new(MutationUID::variable(&from_key_variable))
                         .predicate(&edge_name, MutationPredicateValue::Edges(vec![MutationUID::variable(&to_key_variable)]));
-
-                    //msg += &format!("{}-({})->{};;", from, edge_name, to);
 
                     mutation_units.push(mutation_unit);
                 }
@@ -194,14 +196,15 @@ impl Graph {
                 let upsert = Upsert::new(query).upsert_block(UpsertBlock::new(mutation));
 
                 error!("UPSERTING EDGES");
-                Self::enforce_transaction(dgraph_client.clone(), upsert, Some(format!("THIS IS AN EDGE UPSERT: {}",  msg)))
+
+                Self::enforce_transaction(dgraph_client.clone(), upsert)
             })
-            .buffer_unordered(10)
+            .buffer_unordered(8)
             .collect::<Vec<_>>()
             .await;
     }
 
-    async fn enforce_transaction(client: Arc<DgraphClient>, upsert: Upsert, msg: Option<String>) -> MutationResponse {
+    async fn enforce_transaction(client: Arc<DgraphClient>, upsert: Upsert) -> MutationResponse {
         let dgraph_mutations: Vec<_> = upsert.mutations.iter()
             .map(|upsert_block| {
                 let mut dgraph_mutation = DgraphMutation::new();
@@ -216,12 +219,9 @@ impl Graph {
                 dgraph_mutation
             }).collect();
 
-        let upsert_session = format!("UPSERT_SESSION_{}", rand::random::<u128>());
-
         let (response, attempts) = FutureRetry::new(|| {
             client.new_mutated_txn()
                 .upsert_and_commit_now(upsert.query.clone(), dgraph_mutations.clone())
-                .map_err(|_| anyhow::Error::msg(format!("[{}] - {}", upsert_session, msg.clone().unwrap())))
         }, Self::handle_upsert_err).await
             .expect("Surfaced an error despite retry strategy while performing an upsert.");
 
@@ -234,16 +234,6 @@ impl Graph {
         error!("Failed to process upsert. Retrying immediately. Error: {}", e);
         RetryPolicy::Repeat
     }
-}
-
-fn chunk_vec<T>(mut input: Vec<T>, size: usize) -> Vec<Vec<T>> {
-    let mut output = Vec::with_capacity(input.len() / size);
-
-    while !input.is_empty() {
-        output.push(input.drain(0 .. std::cmp::min(size, input.len())).collect());
-    }
-
-    output
 }
 
 impl GeneratedSubgraphs {

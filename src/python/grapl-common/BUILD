@@ -1,0 +1,13 @@
+grapl_python_distribution(
+    dependencies = [
+        "./grapl_common",
+        "./grapl_common:py_typed",
+        "./grapl_common/debugger",
+        "./grapl_common/metrics"
+    ],
+    provides = setup_py(
+        name = "grapl-common",
+        version = "0.0.5", # TODO: remove VERSION file? Or read from it?
+        description = "Shared code between Grapl components"
+    ),
+)

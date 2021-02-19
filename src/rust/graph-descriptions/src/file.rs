@@ -502,4 +502,81 @@ impl NodeT for File {
             mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
         }
     }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::new();
+
+        if !self.file_name.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_name", self.file_name));
+        }
+
+        if !self.file_path.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_path", self.file_path));
+        }
+
+        if !self.file_extension.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_extension", self.file_extension));
+        }
+
+        if !self.file_mime_type.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_mime_type", self.file_mime_type));
+        }
+
+        if self.file_size != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_size", self.file_size));
+        }
+
+        if !self.file_version.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_version", self.file_version));
+        }
+
+        if !self.file_description.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_description", self.file_description));
+        }
+
+        if !self.file_product.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_product", self.file_product));
+        }
+
+        if !self.file_company.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_company", self.file_company));
+        }
+
+        if !self.file_directory.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_directory", self.file_directory));
+        }
+
+        if self.file_inode != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_inode", self.file_inode));
+        }
+
+        if self.file_hard_links != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "file_hard_links", self.file_hard_links));
+        }
+
+        if !self.md5_hash.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "md5_hash", self.md5_hash));
+        }
+
+        if !self.sha1_hash.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "sha1_hash", self.sha1_hash));
+        }
+
+        if !self.sha256_hash.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "sha256_hash", self.sha256_hash));
+        }
+
+        if self.created_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "created_timestamp", self.created_timestamp));
+        }
+
+        if self.deleted_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "deleted_timestamp", self.deleted_timestamp));
+        }
+        if self.last_seen_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "last_seen_timestamp", self.last_seen_timestamp));
+        }
+
+        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+    }
 }

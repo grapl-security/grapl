@@ -1,4 +1,3 @@
-import * as path from 'path';
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as s3 from '@aws-cdk/aws-s3';
@@ -10,6 +9,7 @@ import { GraplServiceProps } from '../grapl-cdk-stack';
 import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { FargateService } from "../fargate_service";
 import { GraplS3Bucket } from '../grapl_s3_bucket';
+import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
 
 export interface NodeIdentifierProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -25,6 +25,7 @@ export class NodeIdentifier extends cdk.NestedStack {
 
         const history_db = new HistoryDb(this, 'HistoryDB', props);
 
+        const service_name = "node-identifier";
         const bucket_prefix = props.prefix.toLowerCase();
         const unid_subgraphs = new EventEmitter(
             this,
@@ -40,7 +41,7 @@ export class NodeIdentifier extends cdk.NestedStack {
         );
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
-        this.service = new FargateService(this, id, {
+        this.service = new FargateService(this, service_name, {
             prefix: props.prefix,
             environment: {
                 RUST_LOG: props.nodeIdentifierLogLevel,
@@ -69,19 +70,19 @@ export class NodeIdentifier extends cdk.NestedStack {
             writesTo: props.writesTo,
             version: props.version,
             watchful: props.watchful,
-            serviceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
+            serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "node-identifier-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
-            retryServiceImage: ContainerImage.fromAsset(path.join(__dirname, '../../../../../src/rust/'), {
+            retryServiceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "node-identifier-retry-handler-deploy",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
-                file: "Dockerfile",
+                file: RUST_DOCKERFILE,
             }),
             command: ["/node-identifier"],
             retryCommand: ["/node-identifier-retry-handler"],

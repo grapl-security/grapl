@@ -28,6 +28,7 @@ anyhow = "*"
 rand = "0.8"
 
 futures = "0.3"
+grapl-utils = { path = "../grapl-utils" }
 
 [dependencies.uuid]
 version = "0.8"

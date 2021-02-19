@@ -140,4 +140,21 @@ impl NodeT for DynamicNode {
             mutation_unit.predicate_ref(key, prop);
         }
     }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::new();
+
+        for (key, prop) in &self.properties {
+            let prop_value = match prop.property {
+                Some(node_property::Property::Intprop(i)) => format!("{}", i),
+                Some(node_property::Property::Uintprop(i)) => format!("{}", i),
+                Some(node_property::Property::Strprop(ref s)) => s.clone(),
+                None => panic!("Invalid property on DynamicNode: {}", self.node_key),
+            };
+
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), key, prop_value));
+        }
+
+        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+    }
 }

@@ -10,7 +10,6 @@ export interface DGraphSwarmClusterProps {
     prefix: string;
     version: string;
     vpc: ec2.IVpc;
-    instanceType: ec2.InstanceType;
     watchful?: Watchful;
 }
 
@@ -48,7 +47,6 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
                 ec2.Port.tcp(9082),
                 ec2.Port.tcp(9083)
             ],
-            instanceType: props.instanceType,
             watchful: props.watchful,
         });
 

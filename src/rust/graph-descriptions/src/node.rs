@@ -37,8 +37,9 @@ pub trait NodeT {
 
     fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit);
 
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>>;
+
     fn generate_upsert_components(&self) -> (QueryBlock, MutationUnit) {
-        // TODO: dgraph_query_lib needs to generate random variables honestly
         let uid_variable = Variable::random();
 
         let mut mutation_unit = MutationUnit::new(MutationUID::variable(&uid_variable.get_name()));
@@ -893,6 +894,32 @@ impl NodeT for Node {
             }
             WhichNode::IpConnectionNode(ip_connection_node) => ip_connection_node.attach_predicates_to_mutation_unit(mutation_unit),
             WhichNode::DynamicNode(dynamic_node) => dynamic_node.attach_predicates_to_mutation_unit(mutation_unit),
+        }
+    }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let which_node = match &self.which_node {
+            Some(which_node) => which_node,
+            None => panic!("Failed to determine variant of node")
+        };
+
+        match which_node {
+            WhichNode::AssetNode(asset_node) => asset_node.get_cache_identities_for_predicates(),
+            WhichNode::ProcessNode(process_node) => process_node.get_cache_identities_for_predicates(),
+            WhichNode::FileNode(file_node) => file_node.get_cache_identities_for_predicates(),
+            WhichNode::IpAddressNode(ip_address_node) => ip_address_node.get_cache_identities_for_predicates(),
+            WhichNode::ProcessOutboundConnectionNode(process_outbound_connection_node) => {
+                process_outbound_connection_node.get_cache_identities_for_predicates()
+            }
+            WhichNode::ProcessInboundConnectionNode(process_inbound_connection_node) => {
+                process_inbound_connection_node.get_cache_identities_for_predicates()
+            }
+            WhichNode::IpPortNode(ip_port_node) => ip_port_node.get_cache_identities_for_predicates(),
+            WhichNode::NetworkConnectionNode(network_connection_node) => {
+                network_connection_node.get_cache_identities_for_predicates()
+            }
+            WhichNode::IpConnectionNode(ip_connection_node) => ip_connection_node.get_cache_identities_for_predicates(),
+            WhichNode::DynamicNode(dynamic_node) => dynamic_node.get_cache_identities_for_predicates(),
         }
     }
 }

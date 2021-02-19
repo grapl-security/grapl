@@ -19,16 +19,16 @@ from typing import (
 
 import boto3
 import botocore.exceptions  # type: ignore
-from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from mypy_boto3_s3 import S3ServiceResource
-from mypy_boto3_sqs import SQSClient
-from typing_extensions import Final, Literal
-
 from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.nodes.lens import LensView
 from grapl_analyzerlib.prelude import BaseView, RiskView
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.viewable import Viewable
+from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
+from mypy_boto3_s3 import S3ServiceResource
+from mypy_boto3_sqs import SQSClient
+from typing_extensions import Final, Literal
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -99,7 +99,7 @@ def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
 
 
 def create_edge(
-    client: GraphClient, from_uid: str, edge_name: str, to_uid: str
+    client: GraphClient, from_uid: int, edge_name: str, to_uid: int
 ) -> None:
     if edge_name[0] == "~":
         mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
@@ -187,21 +187,6 @@ def upsert(
     return view_type.from_dict(node_props, client)
 
 
-def get_s3_client() -> S3ServiceResource:
-    if IS_LOCAL:
-        return cast(
-            S3ServiceResource,
-            boto3.resource(
-                "s3",
-                endpoint_url="http://s3:9000",
-                aws_access_key_id="minioadmin",
-                aws_secret_access_key="minioadmin",
-            ),
-        )
-    else:
-        return cast(S3ServiceResource, boto3.resource("s3"))
-
-
 def nodes_to_attach_risk_to(
     nodes: Sequence[BaseView],
     risky_node_keys: Optional[Sequence[str]],
@@ -222,7 +207,7 @@ def create_metrics_client() -> EngagementCreatorMetrics:
 
 def lambda_handler(s3_event: S3Event, context: Any) -> None:
     mg_client = MasterGraphClient()
-    s3 = get_s3_client()
+    s3 = S3ResourceFactory(boto3).from_env()
     metrics = create_metrics_client()
 
     for event in s3_event["Records"]:
@@ -333,13 +318,7 @@ def _process_one_event(
 
 def main() -> None:
     LOGGER.info("Starting engagement-creator")
-    sqs: SQSClient = boto3.client(
-        "sqs",
-        region_name="us-east-1",
-        endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
-    )
+    sqs = SQSClientFactory(boto3).from_env()
 
     alive = False
     while not alive:

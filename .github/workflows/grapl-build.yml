@@ -8,17 +8,6 @@ on:
       - master
 
 jobs:
-  cargo-audit:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Cargo Audit
-        run: |
-          docker build -f .github/etc/cargo-audit/Dockerfile -t grapl/grapl-cargo-audit:latest src/rust
-          docker run -t grapl/grapl-cargo-audit:latest cargo audit
-
   rust-unit-tests:
     runs-on: ubuntu-latest
 
@@ -49,6 +38,28 @@ jobs:
         run: |
           make test-unit-python
 
+  python-unit-tests-pants:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Pants Cache
+        uses: actions/cache@v2
+        with:
+          # We'll set up a new cache when our lock-file changes
+          key: pants-${{ matrix.python-version }}-${{ hashFiles('3rdparty/python/constraints.txt') }}
+          path: |
+            ~/.cache/pants/setup
+            ~/.cache/pants/named_caches
+            ~/.cache/pants/lmdb_store
+      - name: Python unit tests
+        run: make test-unit-python-pants
 
   python-typecheck:
     runs-on: ubuntu-latest
@@ -79,6 +90,17 @@ jobs:
       - name: JS unit tests
         run: |
           make test-unit-js
+
+  build-zips:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare Github Actions CI
+        run: |
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
+      - name: Build AWS Lambda ZIP files
+        run: make zip
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -146,9 +168,11 @@ jobs:
 
       - name: Run end-to-end tests
         run: |
-          GRAPL_LOG_LEVEL=DEBUG \
-          DUMP_ARTIFACTS=True \
-          make test-e2e
+          # A cheap, low-tech retry. If any of them ever exits 0, it short circuits.
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e
+   
 
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'

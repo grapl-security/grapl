@@ -161,4 +161,26 @@ impl NodeT for Asset {
             mutation_unit.predicate_ref("mac_address", MutationPredicateValue::string(mac_address));
         }
     }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::new();
+
+        if self.first_seen_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "first_seen_timestamp", self.first_seen_timestamp));
+        }
+
+        if self.last_seen_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "last_seen_timestamp", self.last_seen_timestamp));
+        }
+
+        if let Some(hostname) = &self.hostname {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "hostname", hostname));
+        }
+
+        if let Some(mac_address) = &self.mac_address {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "mac_address", mac_address));
+        }
+
+        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+    }
 }

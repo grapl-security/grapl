@@ -264,4 +264,40 @@ impl NodeT for Process {
             mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
         }
     }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::new();
+
+        predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "process_id", self.process_id));
+
+        if !self.process_name.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "process_name", self.process_name));
+        }
+
+        if !self.operating_system.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "operating_system", self.operating_system));
+        }
+
+        if !self.process_command_line.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "process_command_line", self.process_command_line));
+        }
+
+        if !self.process_guid.is_empty() {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "process_guid", self.process_guid));
+        }
+
+        if self.created_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "created_timestamp", self.created_timestamp));
+        }
+
+        if self.terminated_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "terminated_timestamp", self.terminated_timestamp));
+        }
+
+        if self.last_seen_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "last_seen_timestamp", self.last_seen_timestamp));
+        }
+
+        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+    }
 }

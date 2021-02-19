@@ -7,7 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-grapl-observe = {path = "../grapl-observe"}
+grapl-observe = { path = "../grapl-observe" }
+grapl-utils = { path = "../grapl-utils" }
 
 rusoto_core = {version = "0.45", default_features = false, features=["rustls"]}
 rusoto_s3 = {version = "0.45", default_features = false, features=["rustls"]}
@@ -27,6 +28,7 @@ tracing = "0.1.22"
 tracing-futures = "0.2.4"
 futures-util = "0.3.8"
 uuid = {version = "0.8.1", features=["v4"]}
+lazy_static = "1.4"
 futures = "0.3.8"
 darkredis = "0.7.0"
 num_cpus = "1.13.0"
@@ -36,4 +38,4 @@ chrono = "0.4.19"
 aws_lambda_events = "0.3.1"
 parking_lot = "0.11.1"
 stopwatch = "0.0.7"
-lru-cache = "0.1.2"
+lru = "0.6"

@@ -9,7 +9,8 @@ services:
   grapl-rust-zips:
     image: grapl/rust-zip:${TAG:-latest}
     build:
-      context: src/rust
+      context: src
+      dockerfile: rust/Dockerfile
       target: zip
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
@@ -34,11 +35,11 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: analyzer-executor-zip
-    volumes: 
+    volumes:
       - ./src/js/grapl-cdk/zips:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
-    environment: 
+    environment:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip analyzer-executor-${TAG:-latest}.zip
 
@@ -48,11 +49,11 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: dgraph-ttl-zip
-    volumes: 
+    volumes:
       - ./src/js/grapl-cdk/zips:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
-    environment: 
+    environment:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip dgraph-ttl-${TAG:-latest}.zip
 
@@ -62,11 +63,11 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: engagement-creator-zip
-    volumes: 
+    volumes:
       - ./src/js/grapl-cdk/zips:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
-    environment: 
+    environment:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip engagement-creator-${TAG:-latest}.zip
 
@@ -76,11 +77,11 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: engagement-edge-zip
-    volumes: 
+    volumes:
       - ./src/js/grapl-cdk/zips:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
-    environment: 
+    environment:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip engagement-edge-${TAG:-latest}.zip
 
@@ -90,27 +91,13 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: model-plugin-deployer-zip
-    volumes: 
+    volumes:
       - ./src/js/grapl-cdk/zips:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
-    environment: 
+    environment:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip model-plugin-deployer-${TAG:-latest}.zip
-
-  grapl-swarm-lifecycle-event-handler-zip:
-    image: grapl/grapl-swarm-lifecycle-event-handler-zip:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: swarm-lifecycle-event-handler-zip
-    volumes: 
-      - ./src/js/grapl-cdk/zips:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    environment: 
-      - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip swarm-lifecycle-event-handler-${TAG:-latest}.zip
 
   #
   # JS/web services
@@ -119,14 +106,14 @@ services:
   grapl-graphql-endpoint-zip:
     image: grapl/grapl-graphql-endpoint-zip:${TAG:-latest}
     build:
-      context: src/js/graphql_endpoint
-      dockerfile: Dockerfile
+      context: src
+      dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint-zip
-    volumes: 
+    volumes:
       - ./src/js/grapl-cdk/zips:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
-    environment: 
+    environment:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip graphql-endpoint-${TAG:-latest}.zip
 
@@ -136,10 +123,10 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: ux-router-zip
-    volumes: 
+    volumes:
       - ./src/js/grapl-cdk/zips:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
-    environment: 
+    environment:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip ux-router-${TAG:-latest}.zip

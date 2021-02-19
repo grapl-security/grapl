@@ -102,4 +102,20 @@ impl NodeT for IpAddress {
             mutation_unit.predicate_ref("last_seen_timestamp", MutationPredicateValue::Number(self.last_seen_timestamp as i64));
         }
     }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::new();
+
+        predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "ip_address", self.ip_address));
+
+        if self.first_seen_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "first_seen_timestamp", self.first_seen_timestamp));
+        }
+
+        if self.last_seen_timestamp != 0 {
+            predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "last_seen_timestamp", self.last_seen_timestamp));
+        }
+
+        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+    }
 }

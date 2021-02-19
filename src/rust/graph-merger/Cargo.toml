@@ -5,10 +5,12 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
+grapl-graph-descriptions = { path="../graph-descriptions"}
 grapl-config = {path="../grapl-config", version="*"}
 grapl-observe = {path="../grapl-observe", version="*"}
 grapl-service = { path="../grapl-service" }
+grapl-utils = { path = "../grapl-utils" }
+lazy_static = "1.4.0"
 anyhow = "1.0.*"
 failure = "0.1.*"
 serde = "1.0.110"
@@ -43,7 +45,6 @@ tokio-compat = "0"
 tokio = { version = "0.2", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }
 chrono = "0.4"
 serde_dynamodb = { version="0.6", default_features = false, features=["rustls"] }
-lru-cache = "0.1.2"
 tracing = "0.1.22"
 thiserror = "1.0.23"
 lambda_runtime = "0.2.1"

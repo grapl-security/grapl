@@ -1,0 +1,46 @@
+name: Cargo Audit
+
+on:
+  schedule:
+    # Every Sunday at 00:00 UTC
+    - cron: "0 0 * * SUN"
+  # In case we want to manually run the audit
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - staging
+      - master
+    paths:
+      # Only audit dependencies on PRs when we actually change dependencies.
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+
+jobs:
+  cargo-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/rust
+    steps:
+      # Scheduled actions operate on the default branch. In order to use
+      # "staging", we have to specify it like this.
+      #
+      # Once we switch over to using the master branch for all development, we
+      # can remove this configuration. See
+      # https://github.com/grapl-security/issue-tracker/issues/224
+      - uses: actions/checkout@v2
+        if: ${{ github.event_name == 'schedule' }}
+        with:
+          ref: staging
+
+      # If we're not scheduled, then just run on whatever branch we should be running on
+      - uses: actions/checkout@v2
+        if: ${{ github.event_name != 'schedule' }}
+
+      # TODO: Once actions-rs/audit-check can run in an arbitrary subdirectory,
+      # let's use it instead; it has better output.
+      - name: Run cargo audit
+        run: |
+          cargo install cargo-audit
+          cargo audit

@@ -71,4 +71,13 @@ impl NodeT for IpPort {
         mutation_unit.predicate_ref("protocol", MutationPredicateValue::string(&self.protocol));
         mutation_unit.predicate_ref("port", MutationPredicateValue::Number(self.port as i64));
     }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::new();
+
+        predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "port", self.port));
+        predicate_cache_identities.push(format!("{}:{}:{}", self.get_node_key(), "protocol", self.protocol));
+
+        predicate_cache_identities.into_iter().map(|item| item.as_bytes().to_vec()).collect()
+    }
 }

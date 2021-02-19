@@ -2,9 +2,7 @@ import base64
 import hmac
 import inspect
 import json
-import logging
 import os
-import re
 import sys
 import threading
 import traceback
@@ -12,7 +10,7 @@ from base64 import b64decode
 from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Dict, List, Optional, TypeVar, Union
 
 import boto3  # type: ignore
 import jwt
@@ -20,7 +18,6 @@ import pydgraph  # type: ignore
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
-
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
     EdgeT,
@@ -29,6 +26,8 @@ from grapl_analyzerlib.node_types import (
 )
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schema import Schema
+from grapl_common.env_helpers import DynamoDBResourceFactory, S3ClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 sys.path.append("/tmp/")
 
@@ -36,12 +35,7 @@ T = TypeVar("T")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-LOGGER.info("Initializing Chalice server")
+LOGGER = get_module_grapl_logger(default_log_level="ERROR")
 
 try:
     directory = Path("/tmp/model_plugins/")
@@ -156,31 +150,6 @@ def provision_master_graph(
     set_schema(master_graph_client, mg_schema_str)
 
 
-def get_s3_client() -> Any:
-    if IS_LOCAL:
-        return boto3.client(
-            "s3",
-            endpoint_url="http://s3:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-        )
-    else:
-        return boto3.client("s3")
-
-
-def get_dynamodb_client() -> Any:
-    if IS_LOCAL:
-        return boto3.resource(
-            "dynamodb",
-            endpoint_url="http://dynamodb:8000",
-            region_name="us-east-1",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
-    else:
-        return boto3.resource("dynamodb")
-
-
 def git_walker(repo, directory, f):
     f(directory)
     for path in into_list(repo.get_contents(directory.path)):
@@ -221,7 +190,7 @@ def provision_schemas(master_graph_client, raw_schemas):
         schema.init_reverse()
 
     LOGGER.info("Merge the schemas with what exists in the graph")
-    dynamodb = get_dynamodb_client()
+    dynamodb = DynamoDBResourceFactory(boto3).from_env()
     for schema in schemas:
         store_schema(dynamodb, schema)
 
@@ -500,7 +469,8 @@ def webhook():
         file_contents = b64decode(path.content).decode()
         plugin_files[path.path] = file_contents
 
-    upload_plugins_resp = upload_plugins(get_s3_client(), plugin_files)
+    s3 = S3ClientFactory(boto3).from_env()
+    upload_plugins_resp = upload_plugins(s3, plugin_files)
     if upload_plugins_resp:
         return upload_plugins_resp
     return respond(None, {})

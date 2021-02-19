@@ -1,5 +1,3 @@
-import * as ec2 from '@aws-cdk/aws-ec2';
-
 module HardcodedDeploymentParameters {
     // ex: 'Grapl-my-deployment'
     export const deployName = undefined;
@@ -12,10 +10,8 @@ module HardcodedDeploymentParameters {
     export const operationalAlarmsEmail = undefined;
     export const securityAlarmsEmail = undefined;
 
-    // AWS EC2 instance type for DGraph nodes
-    export const dgraphInstanceType = undefined;
-
     // AWS region for this Grapl deployment
+
     export const region = undefined;
 
     // (optional) The log level for services, ex: debug
@@ -61,13 +57,6 @@ export module DeploymentParameters {
         throw new Error('Error: Missing security alarms email. Set via bin/deployment_parameters.ts, or environment variable GRAPL_CDK_SECURITY_ALARMS_EMAIL.');
     }
     export const securityAlarmsEmail = _securityAlarmsEmail;
-
-    const dgraphInstanceTypeName = process.env.GRAPL_DGRAPH_INSTANCE_TYPE
-        || HardcodedDeploymentParameters.dgraphInstanceType
-    if (!dgraphInstanceTypeName) {
-        throw new Error('Error: Missing Grapl DGraph instance type. Set via bin/deployment_parameters.ts or environment variable GRAPL_DGRAPH_INSTANCE_TYPE.');
-    }
-    export const dgraphInstanceType = new ec2.InstanceType(dgraphInstanceTypeName);
 
     export const region = process.env.GRAPL_REGION
         || HardcodedDeploymentParameters.region

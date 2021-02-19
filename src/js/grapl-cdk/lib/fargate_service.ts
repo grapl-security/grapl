@@ -41,7 +41,8 @@ export class Queues {
 export interface FargateServiceProps {
     prefix: string;
     version: string;
-    eventEmitter: EventEmitter;
+    // We read events from this
+    eventEmitter: EventEmitter; 
     serviceImage: ContainerImage;
     retryServiceImage?: ContainerImage | undefined;
     vpc: ec2.IVpc;
@@ -52,6 +53,7 @@ export interface FargateServiceProps {
     command?: string[] | undefined;
     retryCommand?: string[] | undefined;
     watchful?: Watchful | undefined;
+    // TODO: Reintroduce metric_forwarder
 }
 
 export class FargateService {
@@ -62,8 +64,9 @@ export class FargateService {
 
     constructor(scope: cdk.Construct, serviceName: string, props: FargateServiceProps) {
         this.serviceName = `${props.prefix}-${serviceName}`;
-        const cluster = new ecs.Cluster(scope, `${this.serviceName}Cluster`, {
+        const cluster = new ecs.Cluster(scope, `${this.serviceName}-cluster`, {
             vpc: props.vpc,
+            clusterName: `${this.serviceName}-cluster`,
         });
         const readsFrom = props.eventEmitter.bucket;
         const subscribesTo = props.eventEmitter.topic;
@@ -88,8 +91,10 @@ export class FargateService {
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
             scope,
-            `${props.prefix}-${serviceName}Service`, {
+            `${this.serviceName}-service`, {
             cluster,
+            serviceName: `${this.serviceName}-handler`,
+            family: `${this.serviceName}-task`,
             command: props.command,
             enableLogging: true,
             environment: {
@@ -101,7 +106,6 @@ export class FargateService {
             },
             image: props.serviceImage,
             queue: queues.queue,
-            serviceName,
             cpu: 256,
             memoryLimitMiB: 512,
             desiredTaskCount: 1,
@@ -109,8 +113,10 @@ export class FargateService {
 
         this.retryService = new ecs_patterns.QueueProcessingFargateService(
             scope,
-            `${props.prefix}-${serviceName}RetryService`, {
+            `${this.serviceName}-retry-service`, {
                 cluster,
+                serviceName: `${this.serviceName}-retry-handler`,
+                family: `${this.serviceName}-retry-task`,
                 command: props.retryCommand || props.command,
                 enableLogging: true,
                 environment: {
@@ -122,7 +128,6 @@ export class FargateService {
                 },
                 image: props.retryServiceImage || props.serviceImage,
                 queue: queues.retryQueue,
-                serviceName: serviceName+"-retry-handler",
                 cpu: 256,
                 memoryLimitMiB: 512,
                 desiredTaskCount: 1,
