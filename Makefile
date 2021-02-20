@@ -24,6 +24,39 @@ export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
+# Our `docker-compose.yml` file declares the setup of a "local Grapl"
+# environment, which can be used to locally exercise a Grapl system,
+# either manually or through automated integration and end-to-end
+# ("e2e") tests. Because this environment requires a large amount of
+# configuration data, which must also be shared between several
+# different files (including, but not limited to, the aforementioned
+# testing environments), this information has been extracted into an
+# environment file for reuse.
+#
+# Currently, however, `docker buildx` recognizes `.env` files, but NOT
+# `--env-file` options, like `docker-compose` does. This means that it
+# is rather tricky to share environment variables across both tools in
+# a general and explicit way, while also preserving the ability for
+# users to use an `.env` file in the repo root for individual
+# customizations.
+#
+# To try and balance these concerns of compatibility, explicitness,
+# and flexibility, we'll use this snippet to establish an environment
+# for subsequent commands in a Makefile target to run in. Any `docker
+# buildx` or `docker-compose` calls that require this particular
+# environment should place this in front of it.
+#
+# e.g., $(WITH_LOCAL_GRAPL_ENV) docker-compose -f docker-compose.yml up
+#
+# Currently, any command that directly uses or depends on the
+# `docker-compose.yml` file should use this. (Recall that each line of
+# a recipe runs in its own subshell, to keep that in mind if you have
+# multiple commands that need this environment.)
+#
+# The user's original calling environment will not polluted in any
+# way.
+WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
+
 #
 # Build
 #
@@ -33,7 +66,7 @@ build: build-services ## Alias for `services` (default)
 
 .PHONY: build-all
 build-all: ## Build all targets (incl. services, tests, zip)
-	$(DOCKER_BUILDX_BAKE) $(EVERY_COMPOSE_FILE)
+	$(WITH_LOCAL_GRAPL_ENV) $(DOCKER_BUILDX_BAKE) $(EVERY_COMPOSE_FILE)
 
 .PHONY: build-test-unit
 build-test-unit:
@@ -62,16 +95,18 @@ build-test-typecheck:
 	docker buildx bake -f ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration:
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml -f ./test/docker-compose.integration-tests.yml
+build-test-integration: build-services
+	$(WITH_LOCAL_GRAPL_ENV) \
+	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
-build-test-e2e:
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml -f ./test/docker-compose.e2e-tests.yml
+build-test-e2e: build-services
+	$(WITH_LOCAL_GRAPL_ENV) \
+	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-services
 build-services: ## Build Grapl services
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.build.yml
 
 .PHONY: build-aws
 build-aws: ## Build services for Grapl in AWS (subset of all services)
@@ -121,21 +156,25 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests
 		-p grapl-typecheck_tests
 
 .PHONY: test-integration
+test-integration: export COMPOSE_IGNORE_ORPHANS=1
 test-integration: build-test-integration ## Build and run integration tests
+	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose \
 		--file docker-compose.yml \
 		--project-name "grapl-integration_tests" \
-		up --force-recreate -d
+		up --force-recreate -d && \
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.integration-tests.yml \
 		-p "grapl-integration_tests"
 
 .PHONY: test-e2e
+test-e2e: export COMPOSE_IGNORE_ORPHANS=1
 test-e2e: build-test-e2e ## Build and run e2e tests
+	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose \
 		--file docker-compose.yml \
 		--project-name "grapl-e2e_tests" \
-		up --force-recreate -d
+		up --force-recreate -d && \
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.e2e-tests.yml \
 		-p "grapl-e2e_tests"
@@ -197,20 +236,28 @@ zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
 deploy: zip ## CDK deploy to AWS
 	src/js/grapl-cdk/deploy_all.sh
 
+.PHONY: push
+push: ## Push Grapl containers to Docker Hub
+	docker-compose --file=docker-compose.build.yml push
+
 .PHONY: up
 up: build-services ## Build Grapl services and launch docker-compose up
+	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose -f docker-compose.yml up
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
+	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose $(EVERY_COMPOSE_FILE) down --remove-orphans
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
+	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
+	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose $(EVERY_COMPOSE_FILE) -p grapl-e2e_tests logs -f
 
 .PHONY: help

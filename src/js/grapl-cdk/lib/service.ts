@@ -78,7 +78,8 @@ export class Service {
         const runtime =
             opt && opt.runtime
                 ? opt.runtime
-                : new lambda.Runtime('provided', undefined, {
+                // amazon linux - comes with glibc etc
+                : new lambda.Runtime('provided.al2', lambda.RuntimeFamily.OTHER, {
                       supportsInlineCode: true,
                   });
 

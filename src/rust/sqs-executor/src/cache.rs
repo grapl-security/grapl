@@ -23,7 +23,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Eq, PartialEq, Clone)]
 pub enum CacheResponse {
     Hit,
     Miss,
@@ -33,19 +33,19 @@ pub enum CacheResponse {
 pub trait Cache: Clone {
     type CacheErrorT: CheckedError + Send + Sync + 'static;
 
-    async fn get<CA: Cacheable + Send + Sync + 'static>(
+    async fn get<CA: Cacheable + Send + Sync + Clone + 'static>(
         &mut self,
         cacheable: CA,
     ) -> Result<CacheResponse, Self::CacheErrorT>;
 
-    async fn get_all<CA: Cacheable + Send + Sync + 'static>(
+    async fn get_all<CA: Cacheable + Send + Sync + Clone + 'static>(
         &mut self,
         cacheables: Vec<CA>,
-    ) -> Result<Vec<CacheResponse>, Self::CacheErrorT> {
+    ) -> Result<Vec<(CA, CacheResponse)>, Self::CacheErrorT> {
         let mut results = Vec::with_capacity(cacheables.len());
 
         for cacheable in cacheables {
-            results.push(self.get(cacheable).await?);
+            results.push((cacheable.clone(), self.get(cacheable).await?));
         }
 
         Ok(results)
@@ -80,7 +80,7 @@ pub struct NopCache {}
 impl Cache for NopCache {
     type CacheErrorT = NopCacheError;
 
-    async fn get<CA: Cacheable + Send + Sync + 'static>(
+    async fn get<CA: Cacheable + Send + Sync + Clone + 'static>(
         &mut self,
         _cacheable: CA,
     ) -> Result<CacheResponse, Self::CacheErrorT> {

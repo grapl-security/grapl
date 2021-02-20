@@ -12,27 +12,28 @@ services:
       target: grapl-e2e-tests-build
     command: |
       bash -c "
-        wait-for-it grapl-provision:8126 --timeout=60 &&
-        source venv/bin/activate && 
-        cd grapl_e2e_tests && 
-        python3 ./main.py"
-    volumes: 
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=60 &&
+        source venv/bin/activate &&
+        cd grapl_e2e_tests &&
+        python3 ./main.py
+      "
+    volumes:
       - dynamodb_dump:/mnt/dynamodb_dump
       - ${PWD}/etc:/home/grapl/etc:ro
     environment:
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
-      - BUCKET_PREFIX=local-grapl
-      - IS_LOCAL=True
-      - MG_ALPHAS=grapl-master-graph-db:9080
+      - AWS_REGION
+      - BUCKET_PREFIX
       - DEBUG_SERVICES=${DEBUG_SERVICES}
       - DUMP_ARTIFACTS=${DUMP_ARTIFACTS:-False}
-      - AWS_REGION=us-east-1
-      - SQS_ENDPOINT=http://sqs.us-east-1.amazonaws.com:9324
-      - SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id
-      - SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key
-      - S3_ENDPOINT=http://s3:9000
+      - GRAPL_LOG_LEVEL
+      - IS_LOCAL=True
+      - MG_ALPHAS
       - S3_ACCESS_KEY_ID=minioadmin
       - S3_ACCESS_KEY_SECRET=minioadmin
+      - S3_ENDPOINT
+      - SQS_ACCESS_KEY_ID=dummy_cred_aws_access_key_id
+      - SQS_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key
+      - SQS_ENDPOINT
     ports:
       - 8400:8400
 
@@ -40,5 +41,4 @@ volumes:
   dynamodb_dump:
 networks:
   default:
-    external:
-      name: grapl-network
+    name: grapl-network
