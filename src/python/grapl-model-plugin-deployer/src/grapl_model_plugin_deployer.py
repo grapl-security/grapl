@@ -35,7 +35,7 @@ T = TypeVar("T")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
-LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
+LOGGER = get_module_grapl_logger(default_log_level="ERROR")
 
 try:
     directory = Path("/tmp/model_plugins/")
