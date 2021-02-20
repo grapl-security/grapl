@@ -35,7 +35,7 @@ T = TypeVar("T")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
-LOGGER = get_module_grapl_logger(default_log_level="ERROR")
+LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
 
 try:
     directory = Path("/tmp/model_plugins/")
@@ -75,7 +75,7 @@ else:
     )["SecretString"]
 
 app = Chalice(app_name="model-plugin-deployer")
-
+app.debug = True
 
 def into_list(t: Union[T, List[T]]) -> List[T]:
     if isinstance(t, list):
@@ -513,6 +513,7 @@ def get_plugin_list(s3: BaseClient):
 
 
 @requires_auth("/listModelPlugins")
+@requires_auth("/{proxy+}/listModelPlugins")
 def list_model_plugins():
     LOGGER.info("/listModelPlugins")
     try:
@@ -558,7 +559,7 @@ def delete_model_plugin():
     return respond(None, {"Success": "Deleted plugins"})
 
 
-@app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
+@app.route("/prod/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "PUT", "POST"])
 def nop_route():
     LOGGER.info("routing: " + app.current_request.context["path"])
 
@@ -580,3 +581,32 @@ def nop_route():
     except Exception:
         LOGGER.error(traceback.format_exc())
         return respond("Route Server Error")
+
+
+@app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "GET", "POST"])
+def nop_route():
+    LOGGER.info("routing: " + app.current_request.context["path"])
+
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
+
+    path = app.current_request.context["path"]
+    path_to_handler = {
+        "/prod/modelPluginDeployer/deploy": deploy,
+        "/prod/modelPluginDeployer/listModelPlugins": list_model_plugins,
+        "/prod/modelPluginDeployer/deleteModelPlugin": delete_model_plugin,
+        "/modelPluginDeployer/deploy": deploy,
+        "/modelPluginDeployer/listModelPlugins": list_model_plugins,
+        "/modelPluginDeployer/deleteModelPlugin": delete_model_plugin,
+    }
+    handler = path_to_handler.get(path, None)
+    if handler:
+        return handler()
+
+    return respond(err=f"Invalid path: {path}", status_code=404)
+
+
+@app.route("/{proxy+}", methods=["OPTIONS", "GET", "POST"])
+def nop_route():
+    LOGGER.info("routing: " + app.current_request.context["path"])
+    return respond(None, {"res": "OK"})
