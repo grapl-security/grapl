@@ -540,7 +540,7 @@ def prod_nop_route():
     if handler:
         return handler()
 
-    return respond(err=f"Invalid path: {path}", status_code=404)
+    return respond(err=f"Invalid path: {path}", status_code=HTTPStatus.NOT_FOUND)
 
 
 @app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "GET", "POST"])
@@ -563,4 +563,4 @@ def nop_route():
     if handler:
         return handler()
 
-    return respond(err=f"Invalid path: {path}", status_code=404)
+    return respond(err=f"Invalid path: {path}", status_code=HTTPStatus.NOT_FOUND)
