@@ -435,47 +435,6 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
     return None
 
 
-@no_auth("/gitWebhook")
-def webhook():
-    shared_secret = os.environ["GITHUB_SHARED_SECRET"]
-    access_token = os.environ["GITHUB_ACCESS_TOKEN"]
-
-    signature = app.current_request.headers["X-Hub-Signature"]
-
-    assert verify_payload(
-        app.current_request.body.encode("utf8"), shared_secret.encode(), signature
-    )
-
-    repo_name = app.current_request.json_body["repository"]["full_name"]
-    if body["ref"] != "refs/heads/master":
-        return
-
-    g = Github(access_token)
-
-    repo = g.get_repo(repo_name)
-
-    plugin_folders = repo.get_contents("model_plugins")
-    # Upload every single file and folder, within 'plugins', to Grapl
-
-    plugin_paths = []
-    for plugin_folder in plugin_folders:
-        git_walker(repo, plugin_folder, lambda file: plugin_paths.append(file))
-
-    plugin_files = {}
-    for path in plugin_paths:
-        if not path.content:
-            continue
-
-        file_contents = b64decode(path.content).decode()
-        plugin_files[path.path] = file_contents
-
-    s3 = S3ClientFactory(boto3).from_env()
-    upload_plugins_resp = upload_plugins(s3, plugin_files)
-    if upload_plugins_resp:
-        return upload_plugins_resp
-    return respond(None, {})
-
-
 # We expect a body of:
 """
 "plugins": {
@@ -487,11 +446,12 @@ def webhook():
 @requires_auth("/deploy")
 def deploy():
     LOGGER.info("/deploy")
+    s3 = S3ClientFactory(boto3).from_env()
     request = app.current_request
     plugins = request.json_body.get("plugins", {})
 
     LOGGER.info(f"Deploying {request.json_body['plugins'].keys()}")
-    upload_plugins_resp = upload_plugins(get_s3_client(), plugins)
+    upload_plugins_resp = upload_plugins(s3, plugins)
     if upload_plugins_resp:
         return upload_plugins_resp
     LOGGER.info("uploaded plugins")
@@ -516,8 +476,9 @@ def get_plugin_list(s3: BaseClient):
 @requires_auth("/{proxy+}/listModelPlugins")
 def list_model_plugins():
     LOGGER.info("/listModelPlugins")
+    s3 = S3ClientFactory(boto3).from_env()
     try:
-        plugin_names = get_plugin_list(get_s3_client())
+        plugin_names = get_plugin_list(s3)
     except Exception as e:
         LOGGER.error("failed with %s", traceback.format_exc())
         return respond({"Failed": "Failed"})
@@ -560,27 +521,26 @@ def delete_model_plugin():
 
 
 @app.route("/prod/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "PUT", "POST"])
-def nop_route():
-    LOGGER.info("routing: " + app.current_request.context["path"])
+def prod_nop_route():
+    LOGGER.info("prod_nop_route: " + app.current_request.context["path"])
 
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
 
-    try:
-        path = app.current_request.context["path"]
-        if path == "/prod/modelPluginDeployer/gitWebhook":
-            return webhook()
-        if path == "/prod/modelPluginDeployer/deploy":
-            return deploy()
-        if path == "/prod/modelPluginDeployer/listModelPlugins":
-            return list_model_plugins()
-        if path == "/prod/modelPluginDeployer/deleteModelPlugin":
-            return delete_model_plugin()
+    path = app.current_request.context["path"]
+    path_to_handler = {
+        "/prod/modelPluginDeployer/deploy": deploy,
+        "/prod/modelPluginDeployer/listModelPlugins": list_model_plugins,
+        "/prod/modelPluginDeployer/deleteModelPlugin": delete_model_plugin,
+        "/modelPluginDeployer/deploy": deploy,
+        "/modelPluginDeployer/listModelPlugins": list_model_plugins,
+        "/modelPluginDeployer/deleteModelPlugin": delete_model_plugin,
+    }
+    handler = path_to_handler.get(path, None)
+    if handler:
+        return handler()
 
-        return respond("InvalidPath")
-    except Exception:
-        LOGGER.error(traceback.format_exc())
-        return respond("Route Server Error")
+    return respond(err=f"Invalid path: {path}", status_code=404)
 
 
 @app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "GET", "POST"])
@@ -604,9 +564,3 @@ def nop_route():
         return handler()
 
     return respond(err=f"Invalid path: {path}", status_code=404)
-
-
-@app.route("/{proxy+}", methods=["OPTIONS", "GET", "POST"])
-def nop_route():
-    LOGGER.info("routing: " + app.current_request.context["path"])
-    return respond(None, {"res": "OK"})
