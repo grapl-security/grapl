@@ -11,11 +11,11 @@ server {
   listen 3128;
 
   location /auth/ {
-    proxy_pass http://${GRAPL_AUTH_HOST}:${GRAPL_AUTH_HOST}$uri;
+    proxy_pass http://${GRAPL_AUTH_HOST}:${GRAPL_AUTH_PORT}$uri;
   }
 
   location /prod/auth/ {
-    proxy_pass http://${GRAPL_AUTH_HOST}:${GRAPL_AUTH_HOST}$uri;
+    proxy_pass http://${GRAPL_AUTH_HOST}:${GRAPL_AUTH_PORT}$uri;
   }
 
   location /graphQlEndpoint/ {
