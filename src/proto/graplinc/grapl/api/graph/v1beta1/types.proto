@@ -59,58 +59,90 @@ message NodeProperty {
     }
 }
 
+// A 'NodeDescription' is not a canonical, identified node. It describes, based on some data, a node
+// that may or may not yet exist. For example, if we parse a log we may have information about a Process,
+// - we don't know which Process in the graph that is, but we have information about it; we can describe it.
 message NodeDescription {
+    // The predicates for a given node, as they existed at that time
     map<string, NodeProperty> properties = 1;
+    // The node_key, though at this point it may not be a canonical identity
     string node_key = 2;
+    // The type of the node, as a string
     string node_type = 3;
+    // The strategy to use for identifying this node. While we currently can store multiple strategies,
+    // currently only strategy one is supported.
     repeated IdStrategy id_strategy = 4;
 }
 
+// Identified nodes are similar to a 'NodeDescription', except that their node_key is
+// canonical.
 message IdentifiedNode {
     map<string, NodeProperty> properties = 1;
     string node_key = 2;
     string node_type = 3;
 }
 
+// A MergedNode represents a node that has already been merged into Grapl.
 message MergedNode {
     map<string, NodeProperty> properties = 1;
+    // The 'uid' represents the DGraph node uid
     uint64 uid = 2;
     string node_key = 3;
     string node_type = 4;
 }
 
+// Represents a directed edge between two nodes. The node_key's may be canonical, or they may not be,
+// depending on the pipeline stage
 message Edge {
+    // The node_key associated with the 'source' of the edge
     string from_node_key = 1;
+    // The node_key associated with the 'destination' of the edge
     string to_node_key  = 2;
+    // The name of the edge
     string edgeName = 3;
 }
 
+// Represents a directed edge between two nodes, where both nodes, and this edge, exist in the graph.
 message MergedEdge {
+    // The uid associated with the 'source' of the edge
     string from_uid = 1;
+    // The node_key associated with the 'source' of the edge
     string from_node_key = 2;
+    // The uid associated with the 'destination' of the edge
     string to_uid = 3;
+    // The node_key associated with the 'destination' of the edge
     string to_node_key = 4;
+    // The name of the edge
     string edgeName = 5;
 }
 
+// Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
 message EdgeList {
     repeated Edge edges = 1;
 }
 
+// Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
+// Every edge in the MergedEdgeList has been merged into the graph store.
 message MergedEdgeList {
     repeated MergedEdge edges = 1;
 }
 
+// GraphDescription represents a graph of nodes that may or may not exist yet in the graph store.
+// These nodes may or may not have canonical identities.
 message GraphDescription {
     map <string, NodeDescription> nodes = 1;
     map <string, EdgeList> edges = 2;
 }
 
+// GraphDescription represents a graph of nodes that may or may not exist yet in the graph store.
+// These nodes have canonical identities.
 message IdentifiedGraph{
     map <string, IdentifiedNode> nodes = 1;
     map <string, EdgeList> edges = 2;
 }
 
+// GraphDescription represents a graph of nodes that exist in the graph store. These nodes
+// have canonical identities.
 message MergedGraph{
     map <string, MergedNode> nodes = 1;
     map <string, MergedEdgeList> edges = 2;
