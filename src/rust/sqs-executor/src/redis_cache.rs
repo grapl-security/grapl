@@ -81,19 +81,22 @@ impl RedisCache {
     #[tracing::instrument(skip(self, cacheable))]
     async fn _get<CA>(&mut self, cacheable: CA) -> Result<CacheResponse, RedisCacheError>
     where
-        CA: Cacheable + Send + Sync + 'static,
+        CA: Cacheable + Send + Sync + Clone + 'static,
     {
-        self._get_all(vec![cacheable])
-            .await
-            .map(|mut results| results.pop().unwrap_or(CacheResponse::Miss))
+        self._get_all(vec![cacheable]).await.map(|mut results| {
+            results
+                .pop()
+                .map(|(_, response)| response)
+                .unwrap_or(CacheResponse::Miss)
+        })
     }
 
     async fn _get_all<CA>(
         &mut self,
         cacheables: Vec<CA>,
-    ) -> Result<Vec<CacheResponse>, RedisCacheError>
+    ) -> Result<Vec<(CA, CacheResponse)>, RedisCacheError>
     where
-        CA: Cacheable + Send + Sync + 'static,
+        CA: Cacheable + Send + Sync + Clone + 'static,
     {
         let cacheable_responses: Vec<(CA, Option<CacheResponse>)> = {
             let mut lru_cache = self.lru_cache.lock().unwrap();
@@ -120,7 +123,7 @@ impl RedisCache {
         if are_all_keys_handled {
             return Ok(cacheable_responses
                 .into_iter()
-                .filter_map(|(_, response)| response)
+                .filter_map(|(cacheable, response)| response.map(|response| (cacheable, response)))
                 .collect());
         }
 
@@ -153,12 +156,16 @@ impl RedisCache {
         // convert original cacheable_responses into a complete set of CacheResponses
         let complete_cacheable_responses: Vec<_> = cacheable_responses
             .into_iter()
-            .map(|(_, response)| match response {
-                Some(cache_response) => cache_response,
-                None => unknown_cacheable_responses.pop_front().unwrap_or_else(|| {
-                    error!("Missing cacheable response from redis fetch.");
-                    CacheResponse::Miss
-                }),
+            .map(|(cacheable, response)| {
+                let actual_response = match response {
+                    Some(cache_response) => cache_response,
+                    None => unknown_cacheable_responses.pop_front().unwrap_or_else(|| {
+                        error!("Missing cacheable response from redis fetch.");
+                        CacheResponse::Miss
+                    }),
+                };
+
+                (cacheable, actual_response)
             })
             .collect();
 
@@ -277,7 +284,7 @@ impl Cache for RedisCache {
     #[tracing::instrument(skip(self, cacheable))]
     async fn get<CA>(&mut self, cacheable: CA) -> Result<CacheResponse, Self::CacheErrorT>
     where
-        CA: Cacheable + Send + Sync + 'static,
+        CA: Cacheable + Send + Sync + Clone + 'static,
     {
         let span = tracing::span!(
             tracing::Level::TRACE,
@@ -327,9 +334,9 @@ impl Cache for RedisCache {
     async fn get_all<CA>(
         &mut self,
         cacheables: Vec<CA>,
-    ) -> Result<Vec<CacheResponse>, Self::CacheErrorT>
+    ) -> Result<Vec<(CA, CacheResponse)>, Self::CacheErrorT>
     where
-        CA: Cacheable + Send + Sync + 'static,
+        CA: Cacheable + Send + Sync + Clone + 'static,
     {
         let span = tracing::span!(
             tracing::Level::TRACE,
