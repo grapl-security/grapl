@@ -77,6 +77,7 @@ else:
 app = Chalice(app_name="model-plugin-deployer")
 app.debug = True
 
+
 def into_list(t: Union[T, List[T]]) -> List[T]:
     if isinstance(t, list):
         return t
