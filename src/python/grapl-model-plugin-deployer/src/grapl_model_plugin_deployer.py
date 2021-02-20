@@ -75,7 +75,6 @@ else:
     )["SecretString"]
 
 app = Chalice(app_name="model-plugin-deployer")
-app.debug = True
 
 
 def into_list(t: Union[T, List[T]]) -> List[T]:
