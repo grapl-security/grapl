@@ -10,6 +10,7 @@ import boto3
 import botocore
 import pydgraph
 from confluent_kafka.admin import AdminClient, NewTopic
+from confluent_kafka.error import KafkaException, KafkaError
 from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
@@ -430,7 +431,14 @@ def create_kafka_topics():
     ]
     results = admin_client.create_topics(topics)
     for topic, future in results.items():
-        future.result()  # result is None, will raise Exception upon failure
+        try:
+            future.result()  # result is None, will raise Exception upon failure
+        except KafkaException as e:
+            if e.args[0].code() == KafkaError.TOPIC_ALREADY_EXISTS:
+                LOGGER.warn(f"Kafka topic {topic} already exists")
+                continue
+            else:
+                raise e
         LOGGER.info(f"Created Kafka topic {topic}")
 
 

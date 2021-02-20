@@ -273,6 +273,8 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
       <<: *sqs-env
+      IDENTIFIED_PREDICATES_TOPIC: ${IDENTIFIED_PREDICATES_TOPIC}
+      MERGED_PREDICATES_TOPIC: ${MERGED_PREDICATES_TOPIC}
     tty: false
     depends_on:
       - dynamodb
@@ -280,6 +282,8 @@ services:
       - redis
       - s3
       - sqs
+      - zookeeper-0
+      - kafka-broker-0
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -303,6 +307,10 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
       <<: *sqs-env
+      IDENTIFIED_PREDICATES_RETRY_TOPIC: ${IDENTIFIED_PREDICATES_RETRY_TOPIC}
+      IDENTIFIED_PREDICATES_FAILED_TOPIC: ${IDENTIFIED_PREDICATES_FAILED_TOPIC}
+      MERGED_PREDICATES_RETRY_TOPIC: ${MERGED_PREDICATES_RETRY_TOPIC}
+      MERGED_PREDICATES_FAILED_TOPIC: ${MERGED_PREDICATES_FAILED_TOPIC}
     tty: false
     depends_on:
       - dynamodb
@@ -310,6 +318,8 @@ services:
       - redis
       - s3
       - sqs
+      - zookeeper-0
+      - kafka-broker-0
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -334,6 +344,7 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
       <<: *sqs-env
+      <<: *merged-predicates-topics-env
     tty: false
     depends_on:
       - dgraph
@@ -342,6 +353,8 @@ services:
       - redis
       - s3
       - sqs
+      - zookeeper-0
+      - kafka-broker-0
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
