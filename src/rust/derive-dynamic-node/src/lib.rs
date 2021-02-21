@@ -389,7 +389,7 @@ fn resolvable_type_from(
                 ),
                 ("i64", IMMUTABLE) => (
                     parse_quote!(grapl_graph_descriptions::ImmutableIntProp),
-                    parse_quote!(as_immutable_unt),
+                    parse_quote!(as_immutable_int),
                 ),
                 ("i64", INCREMENT) => (
                     parse_quote!(grapl_graph_descriptions::IncrementOnlyIntProp),
