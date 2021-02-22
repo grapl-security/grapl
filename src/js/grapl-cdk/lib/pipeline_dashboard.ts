@@ -72,7 +72,8 @@ function fargateQueueWidget(
                 ...ORANGE_GRAPH,
                 label: "Retry",
             }),
-            service.queues.deadLetterQueue.metricNumberOfMessagesReceived({
+            // I'm using visible here since nobody is consuming from it.
+            service.queues.deadLetterQueue.metricApproximateNumberOfMessagesVisible({
                 ...RED_GRAPH,
                 label: "Dead"
             }),
