@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import asyncio
 import unittest
 from dataclasses import dataclass
@@ -47,14 +48,18 @@ class TestSqsTimeoutManager(unittest.TestCase):
 
         _quiet_never_awaited_error(f)
 
+
 def _quiet_never_awaited_error(f: SqsTimeoutManagerFixture) -> None:
     """
     Some tests that consume SqsTimeoutManagerFixture never await. That's OK.
     Solves "coroutine was never awaited"
     """
+
     async def cancel_it() -> None:
         asyncio.create_task(f.timeout_manager.coroutine).cancel()
+
     asyncio.run(cancel_it())
+
 
 class SqsTimeoutManagerFixture:
     def __init__(self) -> None:
