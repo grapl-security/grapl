@@ -20,9 +20,7 @@ def _ensure_alive(sqs: SQSClient, queue_url: str) -> None:
     queue_name = queue_url.split("/")[-1]
     while True:
         try:
-            if "QueueUrls" not in sqs.list_queues(
-                QueueNamePrefix=queue_name
-            ):
+            if "QueueUrls" not in sqs.list_queues(QueueNamePrefix=queue_name):
                 LOGGER.info("Waiting for grapl-analyzer-executor-queue to be created")
                 time.sleep(5)
                 continue

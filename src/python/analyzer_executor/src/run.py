@@ -33,9 +33,7 @@ async def main():
     sqs_client = SQSClientFactory(boto3).from_env()
     for sqs_message in retriever.retrieve():
         # We'd feed this coroutine into the timeout manager.
-        message_handle_coroutine = ANALYZER_EXECUTOR.handle_events(
-            sqs_message.body, {}
-        )
+        message_handle_coroutine = ANALYZER_EXECUTOR.handle_events(sqs_message.body, {})
         # While we're waiting for that future to complete, keep telling SQS
         # "hey, we're working on it" so it doesn't become visible on the
         # input queue again.
