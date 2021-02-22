@@ -72,18 +72,12 @@ build-all: ## Build all targets (incl. services, tests, zip)
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
 		-f ./test/docker-compose.unit-tests-rust.yml \
-		-f ./test/docker-compose.unit-tests-python.yml \
 		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-unit-rust
 build-test-unit-rust:
 	$(DOCKER_BUILDX_BAKE) \
 		-f ./test/docker-compose.unit-tests-rust.yml
-
-.PHONY: build-test-unit-python
-build-test-unit-python:
-	$(DOCKER_BUILDX_BAKE) \
-		-f ./test/docker-compose.unit-tests-python.yml
 
 .PHONY: build-test-unit-js
 build-test-unit-js:
@@ -117,11 +111,10 @@ build-aws: ## Build services for Grapl in AWS (subset of all services)
 #
 
 .PHONY: test-unit
-test-unit: build-test-unit ## Build and run unit tests
+test-unit: build-test-unit test-unit-python ## Build and run unit tests
 	test/docker-compose-with-error.sh \
 		-p grapl-test-unit \
 		-f ./test/docker-compose.unit-tests-rust.yml \
-		-f ./test/docker-compose.unit-tests-python.yml \
 		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: test-unit-rust
@@ -131,16 +124,9 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 		-f ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: test-unit-python
-test-unit-python: build-test-unit-python ## Build and run unit tests - Python only
-	test/docker-compose-with-error.sh \
-		-p grapl-test-unit-python \
-		-f ./test/docker-compose.unit-tests-python.yml
-
-.PHONY: test-unit-python-pants
-
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
-test-unit-python-pants: ## Run Python unit tests under Pants
+test-unit-python: ## Run Python unit tests under Pants
 	./pants --tag="-needs_work" test :: --pytest-args="-m 'not integration_test'"
 
 .PHONY: test-unit-js
