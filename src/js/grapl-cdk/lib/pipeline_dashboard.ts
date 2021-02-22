@@ -8,7 +8,7 @@ import * as sqs from '@aws-cdk/aws-sqs';
 const GREEN_GRAPH = { color: cloudwatch.Color.GREEN };
 const ORANGE_GRAPH = { color: cloudwatch.Color.ORANGE };
 const RED_GRAPH = { color: cloudwatch.Color.RED };
-const BLUE_GRAPH = { color: cloudwatch.Color.RED };
+const BLUE_GRAPH = { color: cloudwatch.Color.BLUE };
 
 // 24-width grid
 const FULL_WIDTH = { width: 24 }; 
