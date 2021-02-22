@@ -78,6 +78,8 @@ export class AnalyzerExecutor extends cdk.NestedStack {
         // a cache later, but safe so long as there is no LIST
         service.readsFromBucket(props.writesTo, false);
 
+        service.grantListQueues();
+
         for (const s of [service.service, service.retryService]) {
             const conn = s.service.connections;
             conn.allowToAnyIpv4(
