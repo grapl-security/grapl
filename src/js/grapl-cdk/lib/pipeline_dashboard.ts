@@ -8,6 +8,7 @@ import * as sqs from '@aws-cdk/aws-sqs';
 const GREEN_GRAPH = { color: cloudwatch.Color.GREEN };
 const ORANGE_GRAPH = { color: cloudwatch.Color.ORANGE };
 const RED_GRAPH = { color: cloudwatch.Color.RED };
+const BLUE_GRAPH = { color: cloudwatch.Color.RED };
 
 // 24-width grid
 const FULL_WIDTH = { width: 24 }; 
@@ -24,7 +25,7 @@ function lambdaInvocationsWidget(
     return new cloudwatch.GraphWidget({
         title: `Invoke ${service.serviceName}${titleSuffix}`,
         left: [
-            handler.metricInvocations(ORANGE_GRAPH),
+            handler.metricInvocations(BLUE_GRAPH),
             handler.metricErrors(RED_GRAPH),
         ],
         liveData: true,
@@ -114,7 +115,7 @@ export class PipelineDashboard extends cdk.Construct {
         }
         
         dashboard.addWidgets(new cloudwatch.TextWidget({
-            markdown: "Fargate service health",
+            markdown: "# Fargate service health",
             ...FULL_WIDTH,
         }));
 
