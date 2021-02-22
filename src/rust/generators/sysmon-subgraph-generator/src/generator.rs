@@ -68,7 +68,7 @@ where
         events: Vec<Cow<'_, str>>,
         identities: &mut CompletedEvents,
     ) -> Result<Graph, Result<(Graph, SysmonGeneratorError), SysmonGeneratorError>> {
-        let mut last_failure: Option<SysmonGeneratorError> = None;
+        let mut last_error: Option<SysmonGeneratorError> = None;
         let mut final_subgraph = Graph::new(0);
 
         for event in events {
@@ -77,7 +77,7 @@ where
                 Err(e) => {
                     warn!("Failed to deserialize event: {}, {}", e, event);
 
-                    last_failure = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(
+                    last_error = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(
                         format!("Failed: {}", e),
                     )));
 
@@ -97,10 +97,22 @@ where
             let graph = match Graph::try_from(event.clone()) {
                 Ok(subgraph) => subgraph,
                 Err(SysmonGeneratorError::UnsupportedEventType(_s)) => continue,
-                Err(e) => {
-                    error!("Graph::try_from failed with: {:?}", e);
+                Err(new_error) => {
+                    error!("Graph::try_from failed with: {:?}", new_error);
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
-                    last_failure = Some(e);
+                    match last_error {
+                        // Save the last error, but do not overwrite a transient error with a persistent error.
+                        // The awkwardness of this is being tracked in: https://github.com/grapl-security/issue-tracker/issues/269
+                        Some(ref mut e) => {
+                            if e.is_transient() {
+                                last_error = Some(new_error);
+                            }
+                        }
+                        None => {
+                            last_error = Some(new_error);
+                        }
+                    }
+
                     continue;
                 }
             };
@@ -109,7 +121,7 @@ where
             identities.add_identity(event, EventStatus::Success);
         }
 
-        match (last_failure, identities.identities.is_empty()) {
+        match (last_error, identities.identities.is_empty()) {
             (Some(last_failure), true) => Err(Err(last_failure)),
             (Some(last_failure), false) => Err(Ok((final_subgraph, last_failure))),
             (None, _) => Ok(final_subgraph),
