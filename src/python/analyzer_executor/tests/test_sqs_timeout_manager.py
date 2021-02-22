@@ -1,3 +1,4 @@
+from __future__ import annotations
 import asyncio
 import unittest
 from dataclasses import dataclass
@@ -10,7 +11,6 @@ from analyzer_executor_lib.sqs_timeout_manager import (
     SqsTimeoutManagerException,
 )
 from analyzer_executor_lib.sqs_types import SQSMessageId, SQSReceiptHandle
-from grapl_common.grapl_logger import get_module_grapl_logger
 
 
 class TestSqsTimeoutManager(unittest.TestCase):
@@ -45,6 +45,16 @@ class TestSqsTimeoutManager(unittest.TestCase):
         # at which point, we promote again, to 90
         assert f.timeout_manager._get_next_visibility(2) == 90
 
+        _quiet_never_awaited_error(f)
+
+def _quiet_never_awaited_error(f: SqsTimeoutManagerFixture) -> None:
+    """
+    Some tests that consume SqsTimeoutManagerFixture never await. That's OK.
+    Solves "coroutine was never awaited"
+    """
+    async def cancel_it() -> None:
+        asyncio.create_task(f.timeout_manager.coroutine).cancel()
+    asyncio.run(cancel_it())
 
 class SqsTimeoutManagerFixture:
     def __init__(self) -> None:
