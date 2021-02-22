@@ -26,16 +26,14 @@ async def main():
       RETRY_QUEUE_URL
       DEAD_LETTER_QUEUE_URL
       DEST_QUEUE_URL
-    - pull the manual eventing out of `lambda_handler_fn` and into an EventEmitter
+    - pull the manual eventing out of `handle_events` and into an EventEmitter (maybe?)
     """
     queue_url = os.environ["SOURCE_QUEUE_URL"]
     retriever = EventRetriever(queue_url=queue_url)
     sqs_client = SQSClientFactory(boto3).from_env()
     for sqs_message in retriever.retrieve():
         # We'd feed this coroutine into the timeout manager.
-        message_handle_coroutine = ANALYZER_EXECUTOR.lambda_handler_fn(
-            sqs_message.body, {}
-        )
+        message_handle_coroutine = ANALYZER_EXECUTOR.handle_events(sqs_message.body, {})
         # While we're waiting for that future to complete, keep telling SQS
         # "hey, we're working on it" so it doesn't become visible on the
         # input queue again.

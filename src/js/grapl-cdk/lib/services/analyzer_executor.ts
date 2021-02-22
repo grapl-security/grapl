@@ -1,12 +1,13 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
-import * as lambda from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
-import { Service } from '../service';
+import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { EventEmitter } from '../event_emitters';
-import { RedisCluster } from '../redis';
+import { FargateService } from '../fargate_service';
 import { GraplServiceProps } from '../grapl-cdk-stack';
+import { SRC_DIR, PYTHON_DOCKERFILE } from '../dockerfile_paths';
+import { RedisCluster } from '../redis';
 
 export interface AnalyzerExecutorProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -15,8 +16,8 @@ export interface AnalyzerExecutorProps extends GraplServiceProps {
 }
 
 export class AnalyzerExecutor extends cdk.NestedStack {
-    readonly bucket: s3.IBucket;
-    readonly service: Service;
+    readonly sourceBucket: s3.IBucket;
+    readonly service: FargateService;
 
     constructor(
         scope: cdk.Construct,
@@ -30,13 +31,13 @@ export class AnalyzerExecutor extends cdk.NestedStack {
             this,
             bucket_prefix + '-dispatched-analyzer'
         );
-        this.bucket = dispatched_analyzer.bucket;
+        this.sourceBucket = dispatched_analyzer.bucket;
 
         const count_cache = new RedisCluster(this, 'ExecutorCountCache', props);
         const hit_cache = new RedisCluster(this, 'ExecutorHitCache', props);
         const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
 
-        this.service = new Service(this, id, {
+        this.service = new FargateService(this, id, {
                 prefix: props.prefix,
                 environment: {
                     ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
@@ -45,7 +46,7 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                     COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
                     COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
                     MESSAGECACHE_ADDR:
-                    message_cache.cluster.attrRedisEndpointAddress,
+                      message_cache.cluster.attrRedisEndpointAddress,
                     MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
                     HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
                     HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
@@ -53,46 +54,38 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                     GRPC_ENABLE_FORK_SUPPORT: '1',
                 },
                 vpc: props.vpc,
-                reads_from: dispatched_analyzer.bucket,
-                writes_to: props.writesTo,
-                subscribes_to: dispatched_analyzer.topic,
-                opt: {
-                    runtime: lambda.Runtime.PYTHON_3_7,
-                    py_entrypoint: "lambda_function.lambda_handler"
-                },
+                eventEmitter: dispatched_analyzer,
+                writesTo: props.writesTo,
                 version: props.version,
                 watchful: props.watchful,
+                serviceImage: ContainerImage.fromAsset(SRC_DIR, {
+                    target: "analyzer-executor-deploy",
+                    file: PYTHON_DOCKERFILE,
+                }),
                 metric_forwarder: props.metricForwarder,
             },
         );
         const service = this.service;
 
-        props.dgraphSwarmCluster.allowConnectionsFrom(service.event_handler);
+        props.dgraphSwarmCluster.allowConnectionsFrom(service.service.service);
+        props.dgraphSwarmCluster.allowConnectionsFrom(service.retryService.service);
 
         // We need the List capability to find each of the analyzers
-        props.readsAnalyzersFrom.grantRead(service.event_handler);
-        props.readsAnalyzersFrom.grantRead(service.event_retry_handler);
-
-        service.readsFrom(props.modelPluginsBucket, true);
+        service.readsFromBucket(props.readsAnalyzersFrom, true)
+        service.readsFromBucket(props.modelPluginsBucket, true);
 
         // Need to be able to GetObject in order to HEAD, can be replaced with
         // a cache later, but safe so long as there is no LIST
-        const policy = new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: ['s3:GetObject'],
-            resources: [props.writesTo.bucketArn + '/*'],
-        });
+        service.readsFromBucket(props.writesTo, false);
 
-        service.event_handler.addToRolePolicy(policy);
-        service.event_retry_handler.addToRolePolicy(policy);
+        service.grantListQueues();
 
-        service.event_handler.connections.allowToAnyIpv4(
-            ec2.Port.allTraffic(),
-            'Allow outbound to S3'
-        );
-        service.event_retry_handler.connections.allowToAnyIpv4(
-            ec2.Port.allTraffic(),
-            'Allow outbound to S3'
-        );
+        for (const s of [service.service, service.retryService]) {
+            const conn = s.service.connections;
+            conn.allowToAnyIpv4(
+                ec2.Port.allTraffic(),
+                'Allow outbound to S3'
+            );
+        }
     }
 }
