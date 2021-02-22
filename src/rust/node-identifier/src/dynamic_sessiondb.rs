@@ -132,17 +132,7 @@ where
         let mut primary_key = String::with_capacity(32);
 
         if strategy.primary_key_requires_asset_id {
-            let asset_id = match node.get_asset_id() {
-                Some(asset_id) => asset_id.to_owned(),
-                None => {
-                    self.asset_identifier
-                        .attribute_asset_id(&node.clone().into())
-                        .await?
-                }
-            };
-
-            primary_key.push_str(&asset_id);
-            node.set_asset_id(asset_id);
+            panic!("asset_id resolution is currently not supported")
         }
 
         for prop_name in &strategy.primary_key_properties {
@@ -211,15 +201,18 @@ where
             .primary_session_key(&mut attributed_node, strategy)
             .await?;
 
-        let unid = match (strategy.created_time != 0, strategy.last_seen_time != 0) {
+        let created_time = strategy.created_time;
+        let last_seen_time = strategy.last_seen_time;
+
+        let unid = match (created_time != 0, last_seen_time != 0) {
             (true, _) => UnidSession {
                 pseudo_key: primary_key,
-                timestamp: strategy.created_time,
+                timestamp: created_time,
                 is_creation: true,
             },
             (_, true) => UnidSession {
                 pseudo_key: primary_key,
-                timestamp: strategy.last_seen_time,
+                timestamp: last_seen_time,
                 is_creation: false,
             },
             _ => bail!("Terminating sessions not yet supported"),
