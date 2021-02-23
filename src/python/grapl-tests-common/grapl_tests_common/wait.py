@@ -88,7 +88,7 @@ class WaitForNoException(WaitForResource):
 
 
 class WaitForQuery(WaitForResource):
-    def __init__(self, query: BaseQuery, graph_client: Any = None) -> None:
+    def __init__(self, query: BaseQuery, graph_client: GraphClient = None) -> None:
         self.query = query
         self.graph_client = graph_client or GraphClient()
 
