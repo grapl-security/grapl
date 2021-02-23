@@ -5,8 +5,7 @@ from typing import (
     MutableMapping,
 )
 
-from pydgraph import DgraphClient
-
+from grapl_analyzerlib.grapl_client import GraphClient
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import EdgeList, Graph
 
 
@@ -18,15 +17,14 @@ class SubgraphView(object):
         self.edges = edges
 
     @staticmethod
-    def from_proto(dgraph_client: DgraphClient, s: bytes) -> SubgraphView:
+    def from_proto(graph_client: GraphClient, s: bytes) -> SubgraphView:
         from grapl_analyzerlib.view_from_proto import view_from_proto
 
         subgraph = Graph()
         subgraph.ParseFromString(s)
 
         nodes = {
-            k: view_from_proto(dgraph_client, node)
-            for k, node in subgraph.nodes.items()
+            k: view_from_proto(graph_client, node) for k, node in subgraph.nodes.items()
         }
         return SubgraphView(nodes, subgraph.edges)
 

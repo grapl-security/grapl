@@ -3,19 +3,18 @@ from typing import Any, Type
 from grapl_analyzerlib.analyzer import Analyzer, OneOrMany, A
 from grapl_analyzerlib.counters import ParentChildCounter
 from grapl_analyzerlib.execution import ExecutionHit
-from grapl_analyzerlib.prelude import AssetQuery, ProcessQuery, ProcessView, Not
-from pydgraph import DgraphClient
+from grapl_analyzerlib.prelude import AssetQuery, ProcessQuery, ProcessView, Not, GraphClient
 
 
 class RareParentOfCmd(Analyzer):
-    def __init__(self, dgraph_client: DgraphClient, counter: ParentChildCounter):
-        super(RareParentOfCmd, self).__init__(dgraph_client)
+    def __init__(self, graph_client: GraphClient, counter: ParentChildCounter):
+        super(RareParentOfCmd, self).__init__(graph_client)
         self.counter = counter
 
     @classmethod
-    def build(cls: Type[A], dgraph_client: DgraphClient) -> A:
-        counter = ParentChildCounter(dgraph_client)
-        return RareParentOfCmd(dgraph_client, counter)
+    def build(cls: Type[A], graph_client: GraphClient) -> A:
+        counter = ParentChildCounter(graph_client)
+        return RareParentOfCmd(graph_client, counter)
 
     def get_queries(self) -> OneOrMany[ProcessQuery]:
         # TODO: We should be checking binary paths for these to ensure we handle impersonation

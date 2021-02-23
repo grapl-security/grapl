@@ -44,8 +44,6 @@ from grapl_analyzerlib.comparators import Not
 from grapl_analyzerlib.execution import ExecutionHit
 from grapl_analyzerlib.grapl_client import (
     GraphClient,
-    MasterGraphClient,
-    LocalMasterGraphClient,
 )
 
 from grapl_analyzerlib.plugin_retriever import load_plugins

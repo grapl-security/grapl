@@ -13,15 +13,14 @@ from hypothesis import given
 
 import pytest
 
-from pydgraph import DgraphClient
-from grapl_analyzerlib.grapl_client import MasterGraphClient, GraphClient
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.file import FileQuery, FileView
 from grapl_analyzerlib.viewable import Viewable
 from test_utils.dgraph_utils import upsert, create_edge
 
 
 def get_or_create_file_node(
-    local_client: DgraphClient,
+    graph_client: GraphClient,
     node_key,
     file_path: Optional[str] = None,
     file_extension: Optional[str] = None,
@@ -62,7 +61,7 @@ def get_or_create_file_node(
 
     file = {k: v for (k, v) in file.items() if v is not None}
 
-    return cast(FileView, upsert(local_client, "File", FileView, node_key, file))
+    return cast(FileView, upsert(graph_client, "File", FileView, node_key, file))
 
 
 file_gen = {
@@ -88,23 +87,6 @@ file_gen = {
 
 @pytest.mark.integration_test
 class TestFileQuery(unittest.TestCase):
-    #
-    # @classmethod
-    # def setUpClass(cls):
-    #     local_client = DgraphClient(DgraphClientStub('localhost:9080'))
-    #
-    #     # drop_all(local_client)
-    #     # time.sleep(3)
-    #     # provision()
-    #     # provision()
-
-    # @classmethod
-    # def tearDownClass(cls):
-    #     local_client = DgraphClient(DgraphClientStub('localhost:9080'))
-    #
-    #     drop_all(local_client)
-    #     provision()
-
     @hypothesis.settings(deadline=None)
     @given(**file_gen)
     def test_single_file_contains_key(
@@ -126,14 +108,14 @@ class TestFileQuery(unittest.TestCase):
         md5_hash,
         sha1_hash,
         sha256_hash,
-    ):
+    ) -> None:
         node_key = "test_single_file_contains_key" + str(node_key)
         signed = "true" if signed else "false"
 
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         get_or_create_file_node(
-            local_client,
+            graph_client,
             node_key,
             file_path=file_path,
             file_extension=file_extension,
@@ -153,7 +135,7 @@ class TestFileQuery(unittest.TestCase):
             sha256_hash=sha256_hash,
         )
 
-        queried_proc = FileQuery().query_first(local_client, contains_node_key=node_key)
+        queried_proc = FileQuery().query_first(graph_client, contains_node_key=node_key)
 
         assert node_key == queried_proc.node_key
 
@@ -198,10 +180,10 @@ class TestFileQuery(unittest.TestCase):
     ):
         node_key = "test_single_file_view_parity_eq" + str(node_key)
         signed = "true" if signed else "false"
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         get_or_create_file_node(
-            local_client,
+            graph_client,
             node_key,
             file_path=file_path,
             file_extension=file_extension,
@@ -240,7 +222,7 @@ class TestFileQuery(unittest.TestCase):
             .with_md5_hash(eq=md5_hash)
             .with_sha1_hash(eq=sha1_hash)
             .with_sha256_hash(eq=sha256_hash)
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert node_key == queried_file.node_key

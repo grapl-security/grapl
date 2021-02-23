@@ -1,10 +1,9 @@
 import enum
 from typing import Optional, Any
 
-from pydgraph import DgraphClient
-
 from grapl_analyzerlib.queryable import Queryable, gen_query_parameterized
 from grapl_analyzerlib.prelude import ProcessQuery
+from grapl_analyzerlib.grapl_client import GraphClient
 
 
 class OrderedEnum(enum.Enum):
@@ -36,8 +35,8 @@ class Seen(OrderedEnum):
 
 
 class SubgraphCounter(object):
-    def __init__(self, dgraph_client: DgraphClient, cache: Any = None) -> None:
-        self.dgraph_client = dgraph_client
+    def __init__(self, graph_client: GraphClient, cache: Any = None) -> None:
+        self.graph_client = graph_client
         self.cache = cache
 
     def get_count_for(self, query: Queryable, max_count: int = 4) -> int:
@@ -45,14 +44,14 @@ class SubgraphCounter(object):
         Generic caching for a subgraph query
         """
 
-        count = query.get_count(self.dgraph_client, first=max_count)
+        count = query.get_count(self.graph_client, first=max_count)
 
         return int(count)
 
 
 class ParentChildCounter(object):
-    def __init__(self, dgraph_client: DgraphClient, cache: Any = None) -> None:
-        self.dgraph_client = dgraph_client
+    def __init__(self, graph_client: GraphClient, cache: Any = None) -> None:
+        self.graph_client = graph_client
         self.cache = cache
 
     def get_count_for(
@@ -85,7 +84,7 @@ class ParentChildCounter(object):
             .with_children(ProcessQuery().with_process_name(eq=child_process_name))
         )  # type: ProcessQuery
 
-        count = query.get_count(self.dgraph_client)
+        count = query.get_count(self.graph_client)
 
         if self.cache:
             if not cached_count:
@@ -97,8 +96,8 @@ class ParentChildCounter(object):
 
 
 class GrandParentGrandChildCounter(object):
-    def __init__(self, dgraph_client: DgraphClient, cache: Any = None) -> None:
-        self.dgraph_client = dgraph_client
+    def __init__(self, graph_client: GraphClient, cache: Any = None) -> None:
+        self.graph_client = graph_client
         self.cache = cache
 
     def get_count_for(
@@ -137,7 +136,7 @@ class GrandParentGrandChildCounter(object):
             )
         )  # type: ProcessQuery
 
-        count = query.get_count(self.dgraph_client)
+        count = query.get_count(self.graph_client)
 
         if self.cache:
             if not cached_count:
