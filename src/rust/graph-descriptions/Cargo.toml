@@ -24,6 +24,8 @@ serde_derive = "1"
 serde_json = "1"
 thiserror = "1"
 tracing = "0.1.22"
+tokio = { version = "0.2.*", features = ["macros"] }
+tracing-subscriber = "*"
 
 [dependencies.uuid]
 version = "0.8"
@@ -31,3 +33,7 @@ features = ["v4"]
 
 [build-dependencies]
 prost-build = "0.7"
+
+
+[features]
+integration = []
