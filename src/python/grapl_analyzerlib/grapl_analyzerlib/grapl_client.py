@@ -32,9 +32,4 @@ class GraphClient(DgraphClient):
             yield txn
         finally:
             txn.discard()
-
-
-# These two classes were previously different, but now are unified by the MG_ALPHAS env variable.
-# Consider them deprecated, and prefer GraphClient().
-MasterGraphClient = GraphClient
-LocalMasterGraphClient = GraphClient
+            

@@ -9,7 +9,7 @@ from uuid import uuid4
 import boto3
 import botocore
 import pydgraph
-from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
     EdgeT,
@@ -408,13 +408,13 @@ def sqs_provision_loop() -> None:
 
 if __name__ == "__main__":
     time.sleep(5)
-    local_dg_provision_client = MasterGraphClient()
+    graph_client = GraphClient()
 
     LOGGER.debug("Provisioning graph database")
 
     for i in range(0, 150):
         try:
-            drop_all(local_dg_provision_client)
+            drop_all(graph_client)
             break
         except Exception as e:
             time.sleep(2)

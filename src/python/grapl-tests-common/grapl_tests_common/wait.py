@@ -6,7 +6,7 @@ from time import sleep
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 
 import botocore  # type: ignore
-from grapl_analyzerlib.grapl_client import MasterGraphClient
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
 from grapl_analyzerlib.retry import retry
 from typing_extensions import Protocol
@@ -88,13 +88,13 @@ class WaitForNoException(WaitForResource):
 
 
 class WaitForQuery(WaitForResource):
-    def __init__(self, query: BaseQuery, dgraph_client: Any = None) -> None:
+    def __init__(self, query: BaseQuery, graph_client: Any = None) -> None:
         self.query = query
-        self.dgraph_client = dgraph_client or MasterGraphClient()
+        self.graph_client = graph_client or GraphClient()
 
     @retry()
     def acquire(self) -> Optional[BaseView]:
-        result = self.query.query_first(self.dgraph_client)
+        result = self.query.query_first(self.graph_client)
         return result
 
     def __str__(self) -> str:
