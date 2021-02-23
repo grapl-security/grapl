@@ -9,7 +9,6 @@ use endpoint_plugin::{AssetNode,
 use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
-use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessStart {
@@ -64,7 +63,6 @@ impl TryFrom<ProcessStart> for GraphDescription {
                 asset.clone_node_key(),
                 child_exe.clone_node_key(),
             );
-
             info!("child_exe: {:?}", &child_exe);
             graph.add_node(child_exe);
         }

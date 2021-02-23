@@ -1,4 +1,4 @@
 [build]
 rustflags = [
-    "--deny=warnings",
+    "--deny=warnings", "-C", "link-arg=-fuse-ld=gold",
 ]
