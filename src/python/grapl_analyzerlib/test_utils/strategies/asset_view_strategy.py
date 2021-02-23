@@ -2,8 +2,8 @@ import unittest
 from typing import NewType, Dict, cast
 
 import hypothesis.strategies as st
-from pydgraph import DgraphClient
 
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.asset import AssetView
 from grapl_analyzerlib.node_types import PropType
 from test_utils.dgraph_utils import node_key_for_test, upsert
@@ -18,9 +18,9 @@ def asset_props() -> st.SearchStrategy[AssetProps]:
 
 
 def get_or_create_asset(
-    test: unittest.TestCase, local_client: DgraphClient, node_props: AssetProps
+    test: unittest.TestCase, graph_client: GraphClient, node_props: AssetProps
 ) -> AssetView:
     node_key = node_key_for_test(test, str(node_props["node_key"]))
     return cast(
-        AssetView, upsert(local_client, "Asset", AssetView, node_key, node_props)
+        AssetView, upsert(graph_client, "Asset", AssetView, node_key, node_props)
     )

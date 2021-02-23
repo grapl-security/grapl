@@ -55,12 +55,12 @@ Let's query for some processes with the name "svchost".
     from grapl_analyzerlib.prelude import *
 
     # Create a client to talk to Grapl
-    mclient = MasterGraphClient()
+    gclient = GraphClient()
 
     svchosts = (
         ProcessQuery()
         .with_process_name(eq="svchost.exe")
-        .query(mclient)  # Execute the query
+        .query(gclient)  # Execute the query
     )  # type: List[ProcessView]
 
 
