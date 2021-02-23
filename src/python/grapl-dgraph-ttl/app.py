@@ -4,9 +4,7 @@ import os
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 from chalice import Chalice
-from grapl_analyzerlib.grapl_client import (
-    GraphClient,
-)
+from grapl_analyzerlib.grapl_client import GraphClient
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 GRAPL_DGRAPH_TTL_S = int(os.environ.get("GRAPL_DGRAPH_TTL_S", "-1"))

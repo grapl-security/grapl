@@ -15,7 +15,6 @@ export
 
 export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 	-f ./test/docker-compose.unit-tests-rust.yml \
-	-f ./test/docker-compose.unit-tests-python.yml \
 	-f ./test/docker-compose.unit-tests-js.yml \
 	-f ./test/docker-compose.integration-tests.yml \
 	-f ./test/docker-compose.e2e-tests.yml \

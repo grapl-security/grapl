@@ -6,7 +6,6 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 from hypothesis import given
-from pydgraph import DgraphClient
 
 from grapl_analyzerlib.prelude import *
 from test_utils.dgraph_utils import upsert, create_edge
@@ -40,7 +39,7 @@ def assert_equal_identity(a: Viewable, b: Viewable) -> None:
 
 
 def get_or_create_process_node_deprecated(
-    graph_client: DgraphClient,
+    graph_client: GraphClient,
     node_key: str,
     # properties
     process_id: str,

@@ -24,8 +24,7 @@ class SubgraphView(object):
         subgraph.ParseFromString(s)
 
         nodes = {
-            k: view_from_proto(graph_client, node)
-            for k, node in subgraph.nodes.items()
+            k: view_from_proto(graph_client, node) for k, node in subgraph.nodes.items()
         }
         return SubgraphView(nodes, subgraph.edges)
 

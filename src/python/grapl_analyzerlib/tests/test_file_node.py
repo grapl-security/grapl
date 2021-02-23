@@ -13,7 +13,6 @@ from hypothesis import given
 
 import pytest
 
-from pydgraph import DgraphClient
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.file import FileQuery, FileView
 from grapl_analyzerlib.viewable import Viewable
@@ -88,23 +87,6 @@ file_gen = {
 
 @pytest.mark.integration_test
 class TestFileQuery(unittest.TestCase):
-    #
-    # @classmethod
-    # def setUpClass(cls):
-    #     local_client = DgraphClient(DgraphClientStub('localhost:9080'))
-    #
-    #     # drop_all(local_client)
-    #     # time.sleep(3)
-    #     # provision()
-    #     # provision()
-
-    # @classmethod
-    # def tearDownClass(cls):
-    #     local_client = DgraphClient(DgraphClientStub('localhost:9080'))
-    #
-    #     drop_all(local_client)
-    #     provision()
-
     @hypothesis.settings(deadline=None)
     @given(**file_gen)
     def test_single_file_contains_key(

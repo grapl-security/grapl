@@ -32,4 +32,3 @@ class GraphClient(DgraphClient):
             yield txn
         finally:
             txn.discard()
-            

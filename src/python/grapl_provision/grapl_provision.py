@@ -435,7 +435,7 @@ if __name__ == "__main__":
             if not mg_succ:
                 time.sleep(1)
                 provision_mg(
-                    local_dg_provision_client,
+                    graph_client,
                 )
                 mg_succ = True
                 LOGGER.info("Provisioned master graph")
