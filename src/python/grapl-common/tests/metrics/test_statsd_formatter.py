@@ -27,9 +27,7 @@ class TestData:
 class TestStatsdFormatter(unittest.TestCase):
     def test_basic_counter(self) -> None:
         result = statsd_format(
-            metric_name=TestData.METRIC_NAME,
-            value=TestData.VALUE,
-            typ="c",
+            metric_name=TestData.METRIC_NAME, value=TestData.VALUE, typ="c",
         )
         assert result == "some_metric:2.0|c"
 
@@ -65,9 +63,7 @@ class TestStatsdFormatter(unittest.TestCase):
         for invalid_metric_name in TestData.INVALID_STRS:
             with pytest.raises(ValueError):
                 statsd_format(
-                    metric_name=invalid_metric_name,
-                    value=TestData.VALUE,
-                    typ="c",
+                    metric_name=invalid_metric_name, value=TestData.VALUE, typ="c",
                 )
 
     def test_invalid_tag_keys_and_values(self) -> None:

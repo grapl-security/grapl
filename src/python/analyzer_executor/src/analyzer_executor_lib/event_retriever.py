@@ -36,10 +36,7 @@ def _ensure_alive(sqs: SQSClient, queue_url: str) -> None:
 
 
 class EventRetriever:
-    def __init__(
-        self,
-        queue_url: str,
-    ) -> None:
+    def __init__(self, queue_url: str,) -> None:
         self.queue_url = queue_url
 
     def retrieve(self) -> Iterator[SQSMessage]:
@@ -52,9 +49,7 @@ class EventRetriever:
                 _ensure_alive(sqs, self.queue_url)
 
                 res = sqs.receive_message(
-                    QueueUrl=self.queue_url,
-                    WaitTimeSeconds=3,
-                    MaxNumberOfMessages=10,
+                    QueueUrl=self.queue_url, WaitTimeSeconds=3, MaxNumberOfMessages=10,
                 )
 
                 messages = res.get("Messages", [])

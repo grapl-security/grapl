@@ -69,8 +69,7 @@ def _create_sqs_client() -> SQSClient:
 
 
 def setup(
-    analyzers: Sequence[AnalyzerUpload],
-    test_data: Sequence[UploadTestData],
+    analyzers: Sequence[AnalyzerUpload], test_data: Sequence[UploadTestData],
 ) -> None:
     verbose_sleep(10, "awaiting local aws")
 
@@ -108,11 +107,7 @@ def _after_tests() -> None:
 
 
 def exec_pytest() -> None:
-    result = pytest.main(
-        [
-            "-s",
-        ]
-    )  # disable stdout capture
+    result = pytest.main(["-s",])  # disable stdout capture
     _after_tests()
 
     sys.exit(result)

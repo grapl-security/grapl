@@ -13,55 +13,31 @@ VALUE: str = "value"
 
 class TestComparators(unittest.TestCase):
     def test_distance(self) -> None:
-        comparator = Distance(
-            predicate=PREDICATE,
-            value=VALUE,
-            distance=3,
-        )
+        comparator = Distance(predicate=PREDICATE, value=VALUE, distance=3,)
         assert comparator.to_filter() == "distance(pred, value, 3)"
 
-        comparator = Distance(
-            predicate=PREDICATE,
-            value=Not(VALUE),
-            distance=3,
-        )
+        comparator = Distance(predicate=PREDICATE, value=Not(VALUE), distance=3,)
         assert comparator.to_filter() == "NOT distance(pred, value, 3)"
 
     def test_has(self) -> None:
-        comparator = Has(
-            predicate=PREDICATE,
-        )
+        comparator = Has(predicate=PREDICATE,)
         assert comparator.to_filter() == "has(pred)"
 
-        comparator = Has(
-            predicate=Not(PREDICATE),
-        )
+        comparator = Has(predicate=Not(PREDICATE),)
         assert comparator.to_filter() == "(NOT has(pred) )"
 
     def test_eq__non_dgraph_type(self) -> None:
-        comparator = Eq(
-            predicate=PREDICATE,
-            value=VALUE,
-        )
+        comparator = Eq(predicate=PREDICATE, value=VALUE,)
         assert comparator.to_filter() == "eq(pred, value)"
 
-        comparator = Eq(
-            predicate=PREDICATE,
-            value=Not(VALUE),
-        )
+        comparator = Eq(predicate=PREDICATE, value=Not(VALUE),)
         assert comparator.to_filter() == "(NOT eq(pred, value))"
 
     def test_eq__dgraph_type(self) -> None:
-        comparator = Eq(
-            predicate="dgraph.type",
-            value=VALUE,
-        )
+        comparator = Eq(predicate="dgraph.type", value=VALUE,)
         assert comparator.to_filter() == "type(value)"
 
-        comparator = Eq(
-            predicate="dgraph.type",
-            value=Not(VALUE),
-        )
+        comparator = Eq(predicate="dgraph.type", value=Not(VALUE),)
         assert comparator.to_filter() == "(NOT type(value))"
 
     @pytest.mark.skip("TODO")

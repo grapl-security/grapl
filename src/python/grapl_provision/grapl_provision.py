@@ -43,8 +43,7 @@ LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
 def create_secret(secretsmanager):
     secretsmanager.create_secret(
-        Name="JWT_SECRET_ID",
-        SecretString=str(uuid4()),
+        Name="JWT_SECRET_ID", SecretString=str(uuid4()),
     )
 
 
@@ -234,12 +233,7 @@ buckets = (
 
 class SqsQueue(object):
     def __init__(
-        self,
-        sqs: Any,
-        q: Any,
-        queue_name: str,
-        queue_arn: str,
-        queue_url: str,
+        self, sqs: Any, q: Any, queue_name: str, queue_arn: str, queue_url: str,
     ):
         self.sqs = sqs
         self.q = q
@@ -260,13 +254,7 @@ class SqsQueue(object):
         queue_arn = sqs.get_queue_attributes(
             QueueUrl=queue_url, AttributeNames=["QueueArn"]
         )["Attributes"]["QueueArn"]
-        return SqsQueue(
-            sqs,
-            q,
-            queue_name,
-            queue_arn,
-            queue_url,
-        )
+        return SqsQueue(sqs, q, queue_name, queue_arn, queue_url,)
 
     def attach_deadletter_queue(
         self,
@@ -434,9 +422,7 @@ if __name__ == "__main__":
         try:
             if not mg_succ:
                 time.sleep(1)
-                provision_mg(
-                    local_dg_provision_client,
-                )
+                provision_mg(local_dg_provision_client,)
                 mg_succ = True
                 LOGGER.info("Provisioned master graph")
                 break

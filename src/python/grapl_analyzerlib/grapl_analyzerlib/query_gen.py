@@ -345,10 +345,7 @@ def gen_coalescing_query(
 ) -> Tuple[str, str]:
 
     __merged_filters, merged_query_block = into_query_block(
-        q,
-        var_alloc,
-        should_filter=True,
-        should_alias=False,
+        q, var_alloc, should_filter=True, should_alias=False,
     )
 
     cs_bindings = ", ".join(bindings)
@@ -391,12 +388,7 @@ def gen_query_parameterized(
             var_name = binding
 
         var_query, var_block = into_var_query(
-            node,
-            var_name,
-            vars_alloc,
-            func=func,
-            binding=binding,
-            root_node=q,
+            node, var_name, vars_alloc, func=func, binding=binding, root_node=q,
         )
 
         var_queries.append(var_query)
@@ -406,10 +398,7 @@ def gen_query_parameterized(
     merged = type(q)()
     zip_graph(q, merged)
     __merged_filters, merged_query_block = into_query_block(
-        merged,
-        VarAllocator(),
-        should_filter=False,
-        should_alias=False,
+        merged, VarAllocator(), should_filter=False, should_alias=False,
     )
 
     vars_list = into_vars_list(vars_alloc)
@@ -434,10 +423,7 @@ def gen_query_parameterized(
 
 
 def gen_query(
-    q: "Queryable",
-    query_name: str,
-    first: Optional[int] = None,
-    count=False,
+    q: "Queryable", query_name: str, first: Optional[int] = None, count=False,
 ) -> Tuple[VarAllocator, str]:
     if not first:
         first = 1
@@ -453,10 +439,7 @@ def gen_query(
         merged = type(q)()
         zip_graph(q, merged)
         __merged_filters, merged_query_block = into_query_block(
-            merged,
-            VarAllocator(),
-            should_filter=False,
-            should_alias=False,
+            merged, VarAllocator(), should_filter=False, should_alias=False,
         )
 
     vars_list = into_vars_list(vars_alloc)

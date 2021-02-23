@@ -274,10 +274,7 @@ def init_docker_swarm(
 
 
 def extract_join_token(
-    ssm: SSMClient,
-    deployment_name: str,
-    manager_instance: Ec2Instance,
-    manager=False,
+    ssm: SSMClient, deployment_name: str, manager_instance: Ec2Instance, manager=False,
 ) -> str:
     """Returns the join token for the swarm cluster"""
     command = ssm.send_command(
@@ -373,10 +370,7 @@ def restart_daemons(
 
 
 def configure_docker_daemon(
-    ssm: SSMClient,
-    deployment_name: str,
-    instances: List[Ec2Instance],
-    config: Dict,
+    ssm: SSMClient, deployment_name: str, instances: List[Ec2Instance], config: Dict,
 ) -> None:
     """Write the given daemon configuration to /etc/docker/daemon.json"""
     instance_ids = [instance.instance_id for instance in instances]
