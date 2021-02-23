@@ -50,7 +50,10 @@ services:
     tty: false
     image: dgraph/standalone:v20.07.1
     ports:
+      # required to access the RATEL interface for dgraph
       - ${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
+      # required for RATEL interface to operate properly
+      - ${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
     logging:
       driver: none
     volumes:
@@ -86,6 +89,9 @@ services:
       - HOSTNAME_EXTERNAL=${SQS_HOST}
       - IMAGE_NAME=localstack/localstack:0.11.5
       - SERVICES=sqs:${SQS_PORT}
+    ports:
+      # Used to insert data in local grapl via upload-*.py
+      - ${SQS_PORT}:${SQS_PORT}
     networks:
       default:
         aliases:
@@ -290,7 +296,6 @@ services:
 
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python3 analyzer_executor/src/run_local.py'
     environment:
       <<: *aws-region
       BUCKET_PREFIX: ${BUCKET_PREFIX}
