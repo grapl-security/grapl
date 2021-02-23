@@ -26,12 +26,7 @@ setup(
     description="Grapl edge service for managing engagements",
     packages=find_packages(),
     install_requires=REQUIREMENTS,
-    extras_require={
-        "typecheck": [
-            "mypy",
-            "boto3-stubs[dynamodb,sagemaker]",
-        ]
-    },
+    extras_require={"typecheck": ["mypy", "boto3-stubs[dynamodb,sagemaker]",]},
     setup_requires=("wheel",),
     zip_safe=False,
 )

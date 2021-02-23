@@ -345,11 +345,11 @@ def respond(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=status_code.value,
         headers={
-            "Content-Type": "application/json",
             "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Headers": ":authority, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Content-Type": "application/json",
             "X-Requested-With": "*",
-            "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
             **headers,
         },
     )
@@ -370,7 +370,7 @@ def requires_auth(path):
                 return respond("Must log in", status_code=HTTPStatus.UNAUTHORIZED)
             try:
                 return route_fn()
-            except Exception as e:
+            except Exception:
                 LOGGER.error(traceback.format_exc())
                 return respond("Unexpected Error")
 
@@ -527,25 +527,26 @@ def prod_nop_route():
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
 
-    path = app.current_request.context["path"]
-    path_to_handler = {
-        "/prod/modelPluginDeployer/deploy": deploy,
-        "/prod/modelPluginDeployer/listModelPlugins": list_model_plugins,
-        "/prod/modelPluginDeployer/deleteModelPlugin": delete_model_plugin,
-        "/modelPluginDeployer/deploy": deploy,
-        "/modelPluginDeployer/listModelPlugins": list_model_plugins,
-        "/modelPluginDeployer/deleteModelPlugin": delete_model_plugin,
-    }
-    handler = path_to_handler.get(path, None)
-    if handler:
-        return handler()
+    try:
+        path = app.current_request.context["path"]
+        if path == "/prod/modelPluginDeployer/gitWebhook":
+            return webhook()
+        if path == "/prod/modelPluginDeployer/deploy":
+            return deploy()
+        if path == "/prod/modelPluginDeployer/listModelPlugins":
+            return list_model_plugins()
+        if path == "/prod/modelPluginDeployer/deleteModelPlugin":
+            return delete_model_plugin()
 
-    return respond(err=f"Invalid path: {path}", status_code=HTTPStatus.NOT_FOUND)
+        return respond("InvalidPath")
+    except Exception:
+        LOGGER.error(traceback.format_exc())
+        return respond("Route Server Error")
 
 
-@app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "GET", "POST"])
+@app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
 def nop_route():
-    LOGGER.info("routing: " + app.current_request.context["path"])
+    LOGGER.info("nop_route: " + app.current_request.context["path"])
 
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
