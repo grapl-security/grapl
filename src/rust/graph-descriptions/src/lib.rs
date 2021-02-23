@@ -1,3 +1,4 @@
+// #![allow(unused_imports, unused_mut)]
 #![allow(warnings)]
 pub use crate::{graph_description::*, node_property::Property};
 pub use node_property::Property::{
@@ -243,8 +244,8 @@ impl IdentifiedGraph {
             }
 
             let combined_query = format!(r"
-            query() {{
-                {}
+            {{
+                    {}
             }}
             ", combined_query);
 
@@ -254,6 +255,9 @@ impl IdentifiedGraph {
         .collect::<Vec<_>>()
         .await;
 
+        tracing::debug!(message="RESPONSES", responses=?responses);
+        // panic!("RESPONSES {:?}", responses);
+
         for response in responses {
             let query_responses: serde_json::Value = match serde_json::from_slice(&response.json) {
                 Ok(response) => response,
@@ -262,6 +266,7 @@ impl IdentifiedGraph {
                     continue
                 }
             };
+            tracing::debug!(message="RESPONSE!!!", responses=?query_responses);
 
             let query_responses = query_responses.as_object()
                 .expect("Invalid response");
@@ -278,7 +283,7 @@ impl IdentifiedGraph {
                         .expect("node_key")
                         .as_str()
                         .expect("node_key");
-                    println!("{}  {}", uid, node_key);
+                    tracing::debug!(message="UID_NODE_KEY ", uid=?uid, node_key=?node_key);
                 }
             }
 
@@ -339,7 +344,7 @@ impl IdentifiedGraph {
             "Failed to process upsert. Retrying immediately. Error that occurred: {}",
             e
         );
-        RetryPolicy::Repeat
+        RetryPolicy::ForwardError(e)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -847,10 +852,13 @@ pub mod test {
 
         let mut identified_graph = IdentifiedGraph::new();
         let mut merged_graph = MergedGraph::new();
-        let dgraph_client = DgraphClient::new(vec!["localhost:9080"]).expect("Failed to create dgraph client.");
+        let dgraph_client = DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client.");
         let dgraph_client = std::sync::Arc::new(dgraph_client);
         let mut properties = HashMap::new();
-
+        properties.insert(
+          "process_name".to_string(),
+            ProtoImmutableStrProp("foobar".to_string()).into(),
+        );
         let n = IdentifiedNode {
             node_key: "example-node-key".to_string(),
             node_type: "Process".to_string(),
