@@ -50,7 +50,9 @@ def _find_operational_alarms_arn(sns: SNSClient, deployment_name: str) -> str:
 
 
 def _find_metric_for_instance(
-    cloudwatch: CloudWatchClient, instance_id: str, path: str,
+    cloudwatch: CloudWatchClient,
+    instance_id: str,
+    path: str,
 ) -> MetricTypeDef:
     """
     To define a Cloudwatch Alarm, one must specify *all* the dimensions complete with values.
@@ -62,8 +64,14 @@ def _find_metric_for_instance(
         Namespace=CW_NAMESPACE,
         MetricName=CW_DISK_USAGE_METRIC_NAME,
         Dimensions=[
-            {"Name": "path", "Value": path,},
-            {"Name": "InstanceId", "Value": instance_id,},
+            {
+                "Name": "path",
+                "Value": path,
+            },
+            {
+                "Name": "InstanceId",
+                "Value": instance_id,
+            },
             {"Name": "ImageId"},
             {"Name": "InstanceType"},
             {"Name": "device"},
@@ -131,7 +139,8 @@ def _dns_ip_addresses(
     hosted_zone_id: str,
 ) -> Iterator[str]:
     for rrset in route53.list_resource_record_sets(
-        HostedZoneId=hosted_zone_id, StartRecordName=dns_name,
+        HostedZoneId=hosted_zone_id,
+        StartRecordName=dns_name,
     )["ResourceRecordSets"]:
         if rrset["Type"] == "A":
             for rrecord in rrset["ResourceRecords"]:
@@ -141,7 +150,10 @@ def _dns_ip_addresses(
 
 
 def remove_dns_ip(
-    route53: Route53Client, dns_name: str, ip_address: str, hosted_zone_id: str,
+    route53: Route53Client,
+    dns_name: str,
+    ip_address: str,
+    hosted_zone_id: str,
 ) -> None:
     ip_addresses = [
         ip
@@ -168,7 +180,10 @@ def remove_dns_ip(
         comment = f"Removed {ip_address} from {dns_name} DNS A Record"
         route53.change_resource_record_sets(
             HostedZoneId=hosted_zone_id,
-            ChangeBatch={"Changes": [change], "Comment": comment,},
+            ChangeBatch={
+                "Changes": [change],
+                "Comment": comment,
+            },
         )
         LOGGER.info(comment)
     except ClientError as e:
@@ -179,7 +194,10 @@ def remove_dns_ip(
 
 
 def insert_dns_ip(
-    route53: Route53Client, dns_name: str, ip_address: str, hosted_zone_id: str,
+    route53: Route53Client,
+    dns_name: str,
+    ip_address: str,
+    hosted_zone_id: str,
 ) -> None:
     comment = f"Inserted {ip_address} into {dns_name} DNS A Record"
     route53.change_resource_record_sets(
@@ -208,7 +226,9 @@ def insert_dns_ip(
 
 
 def init_dgraph(
-    ssm: SSMClient, deployment_name: str, instances: List[Ec2Instance],
+    ssm: SSMClient,
+    deployment_name: str,
+    instances: List[Ec2Instance],
 ) -> None:
     """configure the docker swarm cluster instances for dgraph"""
     instance_ids = [instance.instance_id for instance in instances]

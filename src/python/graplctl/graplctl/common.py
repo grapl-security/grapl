@@ -73,7 +73,9 @@ def get_command_results(
 
     for instance_id in instance_ids:
         invocation = ssm.get_command_invocation(
-            CommandId=command_id, InstanceId=instance_id, PluginName="runShellScript",
+            CommandId=command_id,
+            InstanceId=instance_id,
+            PluginName="runShellScript",
         )
 
         if invocation["Status"] == "Success":

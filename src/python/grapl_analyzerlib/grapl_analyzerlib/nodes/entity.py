@@ -20,7 +20,10 @@ def default_entity_edges():
 
     return {
         "in_scope": (
-            (EdgeT(EntitySchema, LensSchema, EdgeRelationship.ManyToMany), "scope",)
+            (
+                EdgeT(EntitySchema, LensSchema, EdgeRelationship.ManyToMany),
+                "scope",
+            )
         ),
         "risks": (
             (
@@ -40,7 +43,10 @@ class EntitySchema(BaseSchema):
     ):
         super(EntitySchema, self).__init__(
             properties={**(properties or {})},
-            edges={**default_entity_edges(), **(edges or {}),},
+            edges={
+                **default_entity_edges(),
+                **(edges or {}),
+            },
             view=(view or EntityView),
         )
 

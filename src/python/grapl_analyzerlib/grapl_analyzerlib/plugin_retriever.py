@@ -27,7 +27,10 @@ def load_plugins(bucket_prefix: str, s3: S3Client, path=None) -> None:
 
 class PluginRetriever(object):
     def __init__(
-        self, plugin_bucket: str, plugin_directory: str, s3_client: S3Client,
+        self,
+        plugin_bucket: str,
+        plugin_directory: str,
+        s3_client: S3Client,
     ) -> None:
         self.plugin_bucket = plugin_bucket
         self.s3_client = s3_client
@@ -38,9 +41,9 @@ class PluginRetriever(object):
         LOGGER.info(f'Writing out plugins to: {os.path.join(path, "model_plugins")}')
 
         # list plugin files
-        plugin_objects = self.s3_client.list_objects(Bucket=self.plugin_bucket,).get(
-            "Contents", []
-        )
+        plugin_objects = self.s3_client.list_objects(
+            Bucket=self.plugin_bucket,
+        ).get("Contents", [])
 
         # Download each one to the /plugins/ directory
         for plugin_object in plugin_objects:

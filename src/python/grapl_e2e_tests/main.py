@@ -23,9 +23,14 @@ def main() -> None:
         ),
     )
 
-    test_data = (UploadSysmonLogsTestData("/home/grapl/etc/sample_data/eventlog.xml",),)
+    test_data = (
+        UploadSysmonLogsTestData(
+            "/home/grapl/etc/sample_data/eventlog.xml",
+        ),
+    )
     grapl_tests_common.setup.setup(
-        analyzers=analyzers, test_data=test_data,
+        analyzers=analyzers,
+        test_data=test_data,
     )
 
     grapl_tests_common.setup.exec_pytest()

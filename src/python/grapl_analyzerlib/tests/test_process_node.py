@@ -96,10 +96,13 @@ class TestProcessQuery(unittest.TestCase):
 
     @hypothesis.settings(deadline=None)
     @given(
-        asset_props=asset_props(), process_props=process_props(),
+        asset_props=asset_props(),
+        process_props=process_props(),
     )
     def test_single_process_connected_to_asset_node(
-        self, asset_props: AssetProps, process_props: ProcessProps,
+        self,
+        asset_props: AssetProps,
+        process_props: ProcessProps,
     ):
         graph_client = GraphClient()
 
@@ -107,7 +110,10 @@ class TestProcessQuery(unittest.TestCase):
         created_proc = get_or_create_process(self, graph_client, process_props)
 
         create_edge(
-            graph_client, created_asset.uid, "asset_processes", created_proc.uid,
+            graph_client,
+            created_asset.uid,
+            "asset_processes",
+            created_proc.uid,
         )
         create_edge(graph_client, created_proc.uid, "process_asset", created_asset.uid)
         # Setup complete, do some queries
@@ -130,7 +136,11 @@ class TestProcessQuery(unittest.TestCase):
     def test_process_query_view_parity(self, process_props: ProcessProps):
         graph_client = GraphClient()
 
-        created_proc = get_or_create_process(self, graph_client, process_props,)
+        created_proc = get_or_create_process(
+            self,
+            graph_client,
+            process_props,
+        )
 
         queried_proc = (
             ProcessQuery()
@@ -334,7 +344,10 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            graph_client, parent_process_view.uid, "children", child_process_view.uid,
+            graph_client,
+            parent_process_view.uid,
+            "children",
+            child_process_view.uid,
         )
 
         queried_process = (
@@ -400,7 +413,10 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            graph_client, parent_process_view.uid, "bin_file", bin_file_view.uid,
+            graph_client,
+            parent_process_view.uid,
+            "bin_file",
+            bin_file_view.uid,
         )
 
         queried_process = (
@@ -575,7 +591,10 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            graph_client, parent_process_view.uid, "read_files", read_file_view.uid,
+            graph_client,
+            parent_process_view.uid,
+            "read_files",
+            read_file_view.uid,
         )
 
         queried_process = (
@@ -637,7 +656,10 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            graph_client, parent_process_view.uid, "wrote_files", wrote_file_view.uid,
+            graph_client,
+            parent_process_view.uid,
+            "wrote_files",
+            wrote_file_view.uid,
         )
 
         queried_process = (

@@ -103,7 +103,8 @@ def _create_swarm(
 ):
     ami_id = docker_swarm_ops.REGION_TO_AMI_ID[graplctl_state.grapl_region.lower()]
     security_group_id = docker_swarm_ops.swarm_security_group_id(
-        ec2=EC2, deployment_name=graplctl_state.grapl_deployment_name,
+        ec2=EC2,
+        deployment_name=graplctl_state.grapl_deployment_name,
     )
     vpc_id = docker_swarm_ops.swarm_vpc_id(
         ec2=EC2, swarm_security_group_id=security_group_id
@@ -169,7 +170,9 @@ def _create_swarm(
     if extra_init is not None:
         click.echo(f"performing extra initialization on instances {instance_ids_str}")
         extra_init(
-            SSM, graplctl_state.grapl_deployment_name, all_instances,
+            SSM,
+            graplctl_state.grapl_deployment_name,
+            all_instances,
         )
         click.echo(f"performed extra initialization on instances {instance_ids_str}")
 
@@ -265,7 +268,8 @@ def _create_swarm(
 
 
 @swarm.command(
-    help="start EC2 instances and join them as a docker swarm cluster", name="create",
+    help="start EC2 instances and join them as a docker swarm cluster",
+    name="create",
 )
 @click.option(
     "-m",
@@ -435,7 +439,8 @@ def scale(
         )
 
     security_group_id = docker_swarm_ops.swarm_security_group_id(
-        ec2=EC2, deployment_name=graplctl_state.grapl_deployment_name,
+        ec2=EC2,
+        deployment_name=graplctl_state.grapl_deployment_name,
     )
     vpc_id = docker_swarm_ops.swarm_vpc_id(
         ec2=EC2, swarm_security_group_id=security_group_id
@@ -587,7 +592,8 @@ def dgraph():
 
 
 @dgraph.command(
-    help="spin up a swarm cluster and deploy dgraph on it", name="create",
+    help="spin up a swarm cluster and deploy dgraph on it",
+    name="create",
 )
 @click.option(
     "-t",

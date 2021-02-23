@@ -102,7 +102,9 @@ class WaitForQuery(WaitForResource):
 
 
 def wait_for(
-    resources: Sequence[WaitForResource], timeout_secs: int = 30, sleep_secs: int = 5,
+    resources: Sequence[WaitForResource],
+    timeout_secs: int = 30,
+    sleep_secs: int = 5,
 ) -> Mapping[WaitForResource, Any]:
     __tracebackhide__ = True  # hide this helper function's traceback from pytest
     completed: Dict[WaitForResource, Any] = {}

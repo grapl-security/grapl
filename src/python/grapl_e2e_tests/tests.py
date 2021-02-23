@@ -29,6 +29,9 @@ class TestEndToEnd(TestCase):
 
             # The correct answer for this is 4.
             # We are temp 'allowing' 3 because it means the pipeline is, _mostly_, working.
-            return length in (3, 4,)
+            return length in (
+                3,
+                4,
+            )
 
         wait_for_one(WaitForCondition(condition), timeout_secs=240)
