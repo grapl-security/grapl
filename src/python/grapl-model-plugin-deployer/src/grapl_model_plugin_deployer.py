@@ -74,7 +74,9 @@ else:
         SecretId=JWT_SECRET_ID,
     )["SecretString"]
 
-app = Chalice(app_name="model-plugin-deployer") 
+app = Chalice(app_name="model-plugin-deployer")
+
+
 def into_list(t: Union[T, List[T]]) -> List[T]:
     if isinstance(t, list):
         return t
