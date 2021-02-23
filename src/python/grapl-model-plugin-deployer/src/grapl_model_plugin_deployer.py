@@ -74,13 +74,7 @@ else:
         SecretId=JWT_SECRET_ID,
     )["SecretString"]
 
-app = Chalice(app_name="model-plugin-deployer")
-try:
-    app.debug = bool(os.environ.get("CHALICE_DEBUG", False))
-except Exception as e:
-    LOGGER.warn(e)
-
-
+app = Chalice(app_name="model-plugin-deployer") 
 def into_list(t: Union[T, List[T]]) -> List[T]:
     if isinstance(t, list):
         return t

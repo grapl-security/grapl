@@ -42,10 +42,9 @@ function NodeTable({ node }: NodeTableProps) {
 		"fy",
 	]);
 
-
-    mapEdgeProps(node as any, (edgeName: any, _neighbor: any) => {
-        hidden.add(edgeName)
-    });
+	mapEdgeProps(node as any, (edgeName: any, _neighbor: any) => {
+		hidden.add(edgeName);
+	});
 
 	const displayNode = {} as OtherNodeProperties;
 
@@ -55,7 +54,11 @@ function NodeTable({ node }: NodeTableProps) {
 		if (!hidden.has(propName)) {
 			if (prop) {
 				if (propName.includes("_time")) {
-					displayNode[propName] = new Date(prop).toLocaleString();
+					try {
+						displayNode[propName] = new Date(prop).toLocaleString();
+					} catch (e) {
+						displayNode[propName] = prop;
+					}
 				} else {
 					displayNode[propName] = prop;
 				}
