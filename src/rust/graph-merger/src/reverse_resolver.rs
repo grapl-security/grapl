@@ -1,4 +1,4 @@
-use crate::GraphMergerError;
+use crate::service::GraphMergerError;
 use grapl_graph_descriptions::Edge;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_utils::future_ext::GraplFutureExt;

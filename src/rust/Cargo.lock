@@ -1196,6 +1196,7 @@ dependencies = [
  "tokio-compat",
  "tracing",
  "tracing-futures",
+ "tracing-subscriber",
  "uuid 0.8.2",
  "zstd",
 ]

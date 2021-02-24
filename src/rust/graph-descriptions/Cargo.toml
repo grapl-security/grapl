@@ -34,7 +34,3 @@ features = ["v4"]
 
 [build-dependencies]
 prost-build = "0.7"
-
-
-[features]
-integration = []
