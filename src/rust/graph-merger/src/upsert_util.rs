@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{graph_description::*, node_property::Property};
+use grapl_graph_descriptions::{graph_description::*, node_property::Property};
 use node_property::Property::{
     DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
     DecrementOnlyUintProp as ProtoDecrementOnlyUintProp, ImmutableIntProp as ProtoImmutableIntProp,
@@ -122,10 +122,8 @@ pub(crate) fn node_creation_quads(
         node_key=escaped_node_key,
     );
 
-    // If the node exists, do nothing
+    // If the node exists, do nothing, otherwise create it with its type
     let mut mu_1 = dgraph_tonic::Mutation::new();
-
-    // condition if the node does not exist
     let mut mu_1_n_quads = format!(
         concat!(
         r#"_:{creation_var_name} <node_key> {node_key} ."#,
@@ -180,7 +178,7 @@ pub(crate) fn gen_node_property_upsert_quads(
     // condition if the node does not exist
     let mut mu_1_n_quads = format!(
         concat!(
-            r#"_:node_{node_query_name} <{prop_name}> {prop_value} ."#,
+        r#"_:node_{node_query_name} <{prop_name}> {prop_value} ."#,
         ),
         node_query_name=node_query_name,
         prop_name = prop_name,

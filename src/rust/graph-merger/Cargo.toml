@@ -37,6 +37,7 @@ zstd = "0.6"
 prost = "0.7"
 base64 = "0"
 rand = "0"
+dgraph_query_lib = { git = "https://github.com/d0nutptr/dgraph_query_lib", branch = "main" }
 
 futures = "0.3"
 async-trait = "0.1"
@@ -50,3 +51,5 @@ thiserror = "1.0.23"
 lambda_runtime = "0.2.1"
 tracing-futures = "0.2.4"
 tap = "1.0.0"
+lru = "0.6.5"
+futures-retry = "0.6.0"

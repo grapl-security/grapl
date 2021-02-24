@@ -63,7 +63,6 @@ impl TryFrom<ProcessStart> for GraphDescription {
                 asset.clone_node_key(),
                 child_exe.clone_node_key(),
             );
-            info!("child_exe: {:?}", &child_exe);
             graph.add_node(child_exe);
         }
 

@@ -40,8 +40,6 @@ impl TryFrom<FileCreate> for GraphDescription {
             .with_created_timestamp(file_create.timestamp)
             .with_file_path(file_create.path);
 
-        info!("file {:?}", &file);
-
         let mut graph = GraphDescription::new();
 
         graph.add_edge(

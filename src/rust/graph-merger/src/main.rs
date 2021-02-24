@@ -1,5 +1,8 @@
 #![allow(unused)]
 #![allow(dead_code)]
+pub mod upserter;
+pub mod upsert_util;
+pub mod reverse_resolver;
 
 use std::{collections::HashMap,
           fmt::Debug,
@@ -9,6 +12,7 @@ use std::{collections::HashMap,
           time::{Duration,
                  SystemTime,
                  UNIX_EPOCH}};
+use crate::reverse_resolver::{get_r_edges_from_dynamodb, ReverseEdgeResolver};
 
 use async_trait::async_trait;
 use dgraph_tonic::{Client as DgraphClient,
@@ -59,17 +63,13 @@ use sqs_executor::{cache::{Cache,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier};
 
-lazy_static! {
-    /// timeout for dynamodb queries
-    static ref DYNAMODB_QUERY_TIMEOUT: Duration = Duration::from_secs(3);
-}
-
 #[derive(Clone)]
 struct GraphMerger<CacheT>
     where
         CacheT: Cache + Clone + Send + Sync + 'static,
 {
     mg_client: Arc<DgraphClient>,
+    reverse_edge_resolver: ReverseEdgeResolver,
     metric_reporter: MetricReporter<Stdout>,
     r_edge_cache: HashMap<String, String>,
     cache: CacheT,
@@ -81,6 +81,7 @@ impl<CacheT> GraphMerger<CacheT>
 {
     pub fn new(
         mg_alphas: Vec<String>,
+        reverse_edge_resolver: ReverseEdgeResolver,
         metric_reporter: MetricReporter<Stdout>,
         cache: CacheT,
     ) -> Self {
@@ -88,6 +89,7 @@ impl<CacheT> GraphMerger<CacheT>
 
         Self {
             mg_client: Arc::new(mg_client),
+            reverse_edge_resolver,
             metric_reporter,
             r_edge_cache: HashMap::with_capacity(256),
             cache,
@@ -113,7 +115,6 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting graph-merger");
 
     let sqs_client = SqsClient::from_env();
-    let _s3_client = S3Client::from_env();
 
     let cache = &mut event_caches(&env).await;
 
@@ -135,8 +136,13 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
             mg_alphas=?&mg_alphas,
             "Connecting to mg_alphas"
         );
+        let dynamo = DynamoDbClient::from_env();
+        let reverse_edge_resolver = ReverseEdgeResolver::new(
+            dynamo, MetricReporter::new(&env.service_name), 1000,
+        );
         GraphMerger::new(
             mg_alphas,
+            reverse_edge_resolver,
             MetricReporter::new(&env.service_name),
             cache[0].clone(),
         )
@@ -275,14 +281,13 @@ impl<CacheT> EventHandler for GraphMerger<CacheT>
                     let num_of_predicates = node.get_cache_identities_for_predicates().len();
 
                     /*
-                      if any of the cache responses are misses, the `.all(...)` should return false.
-                      we negate this condition since we only want to *keep* nodes that have cache misses (as they need to be written)
+                     Retain nodes where there are any cache misses
                     */
-                    !cache_results
-                        .drain(0..std::cmp::min(num_of_predicates, cache_results.len()))
-                        .all(|cache_result| match cache_result {
-                            CacheResponse::Hit => true,
-                            CacheResponse::Miss => false,
+                    cache_results
+                        .iter()
+                        .any(|cache_result| match cache_result {
+                            CacheResponse::Hit => false,
+                            CacheResponse::Miss => true,
                         })
                 })
                 .collect()
@@ -319,16 +324,6 @@ impl<CacheT> EventHandler for GraphMerger<CacheT>
                     }
                 };
 
-            // mark everything as cached (since we'll be processing it
-            self.cache
-                .store_all(
-                    cacheable_edges
-                        .into_iter()
-                        .map(|item| item.as_bytes().to_vec())
-                        .collect(),
-                )
-                .await;
-
             all_edges
                 .into_iter()
                 .zip(cache_results)
@@ -340,71 +335,8 @@ impl<CacheT> EventHandler for GraphMerger<CacheT>
                 .collect()
         };
 
-        let r_edges: Vec<Edge> = {
-            let dynamodb = DynamoDbClient::from_env();
-            let r_edge_cache = &mut self.r_edge_cache;
-
-            let f_edge_to_r_edge_target: HashMap<String, Option<String>> = uncached_edges
-                .iter()
-                .map(
-                    |Edge {
-                         from_node_key,
-                         to_node_key,
-                         edge_name,
-                     }| {
-                        (
-                            edge_name.to_string(),
-                            r_edge_cache.get(edge_name).map(String::from),
-                        )
-                    },
-                )
-                .collect();
-
-            let unknown_r_edges: Vec<_> = f_edge_to_r_edge_target
-                .iter()
-                .filter(|(f_edge, r_edge)| r_edge.is_none())
-                .map(|(f_edge, _)| f_edge.to_string())
-                .collect();
-
-            if !unknown_r_edges.is_empty() {
-                let found_r_edges: HashMap<String, String> =
-                    get_r_edges_from_dynamodb(&dynamodb, unknown_r_edges.clone())
-                        .await
-                        .map_err(|err| Err(err))?
-                        .into_iter()
-                        .filter_map(|(key, answer)| {
-                            if answer.is_none() {
-                                error!("Failed to fetch r_edge for f_edge {}", key);
-                            }
-
-                            answer.map(|value| (key, value))
-                        })
-                        .collect();
-
-                r_edge_cache.extend(found_r_edges);
-            }
-
-            // fetch the r_edge_name and convert it into an Edge that points backwards along this edge_name
-            uncached_edges
-                .iter()
-                .filter_map(
-                    |Edge {
-                         from_node_key,
-                         to_node_key,
-                         edge_name,
-                     }| {
-                        r_edge_cache
-                            .get(edge_name)
-                            .map(String::from)
-                            .map(|r_edge_name| Edge {
-                                from_node_key: to_node_key.clone(),
-                                to_node_key: from_node_key.clone(),
-                                edge_name: r_edge_name,
-                            })
-                    },
-                )
-                .collect()
-        };
+        let uncached_edges = self.reverse_edge_resolver.resolve_reverse_edges(uncached_edges).await
+            .map_err(Err)?;
 
         let mut merged_graph = MergedGraph::new();
         let mut uncached_subgraph = IdentifiedGraph::new();
@@ -413,116 +345,14 @@ impl<CacheT> EventHandler for GraphMerger<CacheT>
             uncached_subgraph.add_node(node);
         }
 
-        for Edge {
-            from_node_key,
-            to_node_key,
-            edge_name,
-        } in uncached_edges.into_iter().chain(r_edges)
-        {
-            uncached_subgraph.add_edge(edge_name, from_node_key, to_node_key);
-        }
-
-        uncached_subgraph
-            .perform_upsert_into(self.mg_client.clone(), &mut merged_graph)
+        upserter::GraphMergeHelper{}
+            .upsert_into(self.mg_client.clone(), &uncached_subgraph, &mut merged_graph)
             .await;
 
         Ok(merged_graph)
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct EdgeMapping {
-    r_edge: String,
-}
-
-/// Returns a HashMap of f_edge -> Optional r_edge entries from dynamodb
-async fn get_r_edges_from_dynamodb(
-    client: &DynamoDbClient,
-    f_edges: Vec<String>,
-) -> Result<HashMap<String, Option<String>>, GraphMergerError> {
-    let schema_table_name = std::env::var("GRAPL_SCHEMA_TABLE").expect("GRAPL_SCHEMA_TABLE");
-
-    let keys: Vec<HashMap<String, AttributeValue>> = f_edges
-        .iter()
-        .map(|f_edge| {
-            let mut key_map = HashMap::new();
-            key_map.insert(
-                "f_edge".to_string(),
-                AttributeValue {
-                    s: Some(f_edge.to_string()),
-                    ..Default::default()
-                },
-            );
-
-            key_map
-        })
-        .collect();
-
-    let keys_and_attributes = KeysAndAttributes {
-        consistent_read: Some(true),
-        keys,
-        ..Default::default()
-    };
-
-    let mut request_items = HashMap::new();
-    request_items.insert(schema_table_name.clone(), keys_and_attributes);
-
-    let query = BatchGetItemInput {
-        request_items,
-        return_consumed_capacity: None,
-    };
-
-    /*
-       1. Map timeout error
-       2. Map Rusoto error
-       3. Grab responses (HashMap<String, Vec<HashMap<String, AttributeValue>>>) (or return error)
-       4. Pull the entire set of responses out for the schema table (Vec<HashMap<String, AttributeValue>>) (or return error)
-    */
-    let schema_table_response: Vec<HashMap<String, AttributeValue>> = client
-        .batch_get_item_reliably(query)
-        .timeout(*DYNAMODB_QUERY_TIMEOUT)
-        .await
-        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
-        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
-        .responses
-        .ok_or(GraphMergerError::Unexpected(format!(
-            "Failed to fetch results from dynamodb"
-        )))?
-        .remove(&schema_table_name)
-        .ok_or(GraphMergerError::Unexpected(format!(
-            "Missing data from expected table in dynamodb"
-        )))?;
-
-    /*
-       1. Remove entries without f_edge and r_edge
-       2. Grab both f_edge and r_edge properties as strings (`.s`)
-       3. If both are present, return; otherwise error and filter entry out
-    */
-    Ok(schema_table_response
-        .into_iter()
-        .filter(|hashmap| hashmap.contains_key("f_edge") && hashmap.contains_key("r_edge"))
-        .filter_map(|hashmap| {
-            match (
-                hashmap.get("f_edge").map(|item| item.s.clone()),
-                hashmap.get("r_edge").map(|item| item.s.clone()),
-            ) {
-                (Some(Some(f_edge)), Some(r_edge)) => Some((f_edge, r_edge)),
-                (Some(Some(f_edge)), _) => {
-                    error!("Missing r_edge for f_edge ({}) in dynamodb schema.", f_edge);
-                    None
-                }
-                (None, Some(Some(r_edge))) => {
-                    error!(
-                        "Failed to associate retrieved r_edge ({}) with an f_edge",
-                        r_edge
-                    );
-                    None
-                }
-                _ => None,
-            }
-        })
-        .collect())
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

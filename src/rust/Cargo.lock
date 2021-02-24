@@ -998,6 +998,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "futures-retry"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fde5a672a61f96552aa5ed9fd9c81c3fbdae4be9b1e205d6eaf17c83705adc0f"
+dependencies = [
+ "futures 0.3.12",
+ "pin-project-lite 0.2.4",
+ "tokio 1.2.0",
+]
+
+[[package]]
 name = "futures-sink"
 version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1151,8 +1162,10 @@ dependencies = [
  "base64 0.13.0",
  "chrono",
  "dgraph-tonic",
+ "dgraph_query_lib",
  "failure",
  "futures 0.3.12",
+ "futures-retry 0.6.0",
  "grapl-config",
  "grapl-graph-descriptions",
  "grapl-observe",
@@ -1162,6 +1175,7 @@ dependencies = [
  "lambda_runtime",
  "lazy_static",
  "log 0.4.14",
+ "lru",
  "prost 0.7.0",
  "rand 0.8.3",
  "rusoto_core",
@@ -1228,7 +1242,7 @@ dependencies = [
  "dgraph-tonic",
  "dgraph_query_lib",
  "futures 0.3.12",
- "futures-retry",
+ "futures-retry 0.5.0",
  "grapl-utils",
  "hex",
  "log 0.4.14",
@@ -3774,6 +3788,16 @@ dependencies = [
  "slab 0.4.2",
  "tokio-macros",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "tokio"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8190d04c665ea9e6b6a0dc45523ade572c088d2e6566244c1122671dbf4ae3a"
+dependencies = [
+ "autocfg 1.0.1",
+ "pin-project-lite 0.2.4",
 ]
 
 [[package]]
