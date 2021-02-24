@@ -22,6 +22,10 @@ target/
 # Node packages
 node_modules/
 
+# Yarn packages
+src/js/engagement_view/.yarn/install-state.gz
+
+
 # Distribution / packaging
 build/
 dist/
@@ -47,6 +51,7 @@ dist/
 # See build-support/generate_constraints.sh
 /build-support/.constraints-venv
 .yarn/
+
 
 ### PERSONAL SCRIPTS
 upload_localhost.sh
