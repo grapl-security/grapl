@@ -45,8 +45,10 @@ describe("login test", () => {
 	});
 });
 
-describe("checks for valid cookies", () => {
-	it("checks for valid cookies", () => {
-		cy.getCookie("grapl_jwt");
-	});
-});
+
+describe("checks that cookie was set after login", () => {
+  it("retrieves grapl_jwt", () => {
+    cy.getCookie('grapl_jwt');
+  });
+})
+
