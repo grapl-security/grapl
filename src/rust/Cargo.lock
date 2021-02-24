@@ -1230,6 +1230,7 @@ dependencies = [
  "futures 0.3.12",
  "futures-retry",
  "grapl-utils",
+ "hex",
  "log 0.4.14",
  "prost 0.7.0",
  "prost-build 0.7.0",

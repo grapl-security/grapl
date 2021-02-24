@@ -77,9 +77,9 @@ pub(crate) fn build_upserts(
     inner_queries.push('\n');
     for (prop_name, prop) in properties.iter() {
         if &prop_name == &"node_key" {continue}
-        println!("creating upsert for {}", prop_name);
+
         let prop_value = escape_prop(prop);
-        let (next_query, muts) = gen_upsert_quads(
+        let (next_query, muts) = gen_node_property_upsert_quads(
             query_param,
             &creation_var_name,
             &node_key,
@@ -146,7 +146,7 @@ pub(crate) fn node_creation_quads(
 
 }
 
-pub(crate) fn gen_upsert_quads(
+pub(crate) fn gen_node_property_upsert_quads(
     query_param: u128,
     creation_var_name: &str,
     node_key: &Escaped,

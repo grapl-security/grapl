@@ -1,6 +1,21 @@
 // #![allow(unused_imports, unused_mut)]
 #![allow(warnings)]
 pub use crate::{graph_description::*, node_property::Property};
+use dgraph_query_lib::mutation::{Mutation};
+use dgraph_query_lib::{condition::{Condition,
+                                   ConditionValue},
+                       mutation::{MutationBuilder,
+                                  MutationPredicateValue,
+                                  MutationUID,
+                                  MutationUnit},
+                       predicate::{Field,
+                                   Predicate},
+                       query::QueryBuilder,
+                       queryblock::{QueryBlockBuilder,
+                                    QueryBlockType},
+                       upsert::{Upsert,
+                                UpsertBlock}};
+
 pub use node_property::Property::{
     DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
     DecrementOnlyUintProp as ProtoDecrementOnlyUintProp, ImmutableIntProp as ProtoImmutableIntProp,
@@ -213,20 +228,17 @@ impl IdentifiedGraph {
         dgraph_client: Arc<DgraphClient>,
         merged_graph: &mut MergedGraph,
     ) {
-        self.upsert_nodes(dgraph_client.clone(), merged_graph).await;
-        self.upsert_edges(dgraph_client).await;
+        let node_key_map_to_uid = self.upsert_nodes(dgraph_client.clone(), merged_graph).await;
+        self.upsert_edges(dgraph_client, node_key_map_to_uid).await;
     }
 
-    async fn upsert_nodes(&self, dgraph_client: Arc<DgraphClient>, merged_graph: &mut MergedGraph) {
-        let unique_id = 0;
+    async fn upsert_nodes(&self, dgraph_client: Arc<DgraphClient>, merged_graph: &mut MergedGraph) -> HashMap<String, u64> {
+        // let unique_id = uuid::Uuid::new_v4().as_u128();
+
         let mut node_upserts = Vec::with_capacity(self.nodes.len());
-        for node in self.nodes.values() {
-            let (query, upserts) = upsert::build_upserts(
-                unique_id,
-                &node.node_key,
-                &node.node_type,
-                &node.properties,
-            );
+        for (unique_id, node) in self.nodes.values().enumerate() {
+            let (query, upserts) =
+                upsert::build_upserts(unique_id as u128, &node.node_key, &node.node_type, &node.properties);
             node_upserts.push((query, upserts));
         }
 
@@ -235,7 +247,7 @@ impl IdentifiedGraph {
                 .into_iter()
                 .chunks_owned(DGRAPH_UPSERT_CHUNK_SIZE),
         )
-        .map(|upsert_chunk| {
+        .map(move |upsert_chunk| {
             let mut combined_query = String::new();
             let mut all_mutations = Vec::new();
             for (query_block, mutations) in upsert_chunk.iter() {
@@ -243,94 +255,146 @@ impl IdentifiedGraph {
                 all_mutations.extend_from_slice(mutations);
             }
 
-            let combined_query = format!(r"
+            let combined_query = format!(
+                r"
             {{
                     {}
             }}
-            ", combined_query);
+            ",
+                combined_query
+            );
 
-            Self::enforce_transaction(dgraph_client.clone(), combined_query, all_mutations)
+            let dgraph_client = dgraph_client.clone();
+            Self::enforce_transaction(move || {
+                let mut txn = dgraph_client.new_mutated_txn();
+                txn.upsert_and_commit_now(combined_query.clone(), all_mutations.clone())
+            })
         })
         .buffer_unordered(DGRAPH_CONCURRENCY_UPSERTS)
         .collect::<Vec<_>>()
         .await;
 
-        tracing::debug!(message="RESPONSES", responses=?responses);
-        // panic!("RESPONSES {:?}", responses);
-
-        for response in responses {
+        let mut node_key_map_to_uid = HashMap::new();
+        for response in responses.iter() {
             let query_responses: serde_json::Value = match serde_json::from_slice(&response.json) {
                 Ok(response) => response,
                 Err(e) => {
                     tracing::error!(message="Failed to parse JSON response for upsert", error=?e);
-                    continue
+                    continue;
                 }
             };
-            tracing::debug!(message="RESPONSE!!!", responses=?query_responses);
-
-            let query_responses = query_responses.as_object()
-                .expect("Invalid response");
-
-            for query_response in query_responses.values() {
-                let query_response = query_response.as_array()
-                    .expect("Invalid response");
-                for query_response in query_response {
-                    let uid = query_response.get("uid")
-                        .expect("uid")
-                        .as_str()
-                        .expect("uid");
-                    let node_key = query_response.get("node_key")
-                        .expect("node_key")
-                        .as_str()
-                        .expect("node_key");
-                    tracing::debug!(message="UID_NODE_KEY ", uid=?uid, node_key=?node_key);
-                }
-            }
-
+            extract_node_key_map_uid(&query_responses, &mut node_key_map_to_uid);
         }
+
+        for (node_key, node) in self.nodes.iter() {
+            let node_key: &str = node_key;
+            let IdentifiedNode {
+                node_key,
+                node_type,
+                properties,
+            } = node.to_owned();
+
+            let uid = match node_key_map_to_uid.get(&node_key) {
+                Some(uid) => *uid,
+                None => {
+                    tracing::warn!(
+                        message="Failed to retrieve uid associated with node_key",
+                        node_key=?node_key,
+                    );
+                    continue;
+                }
+            };
+
+            merged_graph.add_node(MergedNode {
+                uid,
+                node_key,
+                node_type,
+                properties,
+            });
+        }
+        node_key_map_to_uid
     }
 
-    async fn upsert_edges(&self, dgraph_client: Arc<DgraphClient>) {
-        // let all_edges: Vec<_> = self
-        //     .edges
-        //     .iter()
-        //     .flat_map(|(_, EdgeList { edges })| edges)
-        //     .map(
-        //         |Edge {
-        //              from_node_key,
-        //              to_node_key,
-        //              edge_name,
-        //          }| {
-        //             (
-        //                 from_node_key.clone(),
-        //                 to_node_key.clone(),
-        //                 edge_name.clone(),
-        //             )
-        //         },
-        //     )
-        //     .collect();
-        //
-        // futures::stream::iter(all_edges.into_iter().chunks_owned(DGRAPH_UPSERT_CHUNK_SIZE))
-        //     .map(|items| {
-        //
-        //         Self::enforce_transaction(dgraph_client.clone(), upsert)
-        //     })
-        //     .buffer_unordered(DGRAPH_CONCURRENCY_UPSERTS)
-        //     .collect::<Vec<_>>()
-        //     .await;
+    async fn upsert_edges(
+        &self,
+        dgraph_client: Arc<DgraphClient>,
+        node_key_to_uid: HashMap<String, u64>,
+    ) {
+        let all_edges: Vec<_> = self
+            .edges
+            .iter()
+            .flat_map(|(_, EdgeList { edges })| edges)
+            .map(
+                |Edge {
+                     from_node_key,
+                     to_node_key,
+                     edge_name,
+                 }| {
+                    (
+                        from_node_key.clone(),
+                        to_node_key.clone(),
+                        edge_name.clone(),
+                    )
+                },
+            )
+            .collect();
+
+        futures::stream::iter(all_edges.into_iter().chunks_owned(DGRAPH_UPSERT_CHUNK_SIZE))
+            .map(|items| {
+                let mut mutation_units = vec![];
+
+                for (from_node_key, to_node_key, edge_name) in items.iter() {
+                    let from_uid = node_key_to_uid.get(from_node_key);
+                    let to_uid = node_key_to_uid.get(to_node_key);
+                    let (from_uid, to_uid) = match (from_uid, to_uid) {
+                        (Some(from_uid), Some(to_uid)) => (*from_uid, *to_uid),
+                        (a, b) => {
+                            tracing::error!(
+                                message="Missing mapping from node_key to uid",
+                                from_uid=?from_uid,
+                                to_uid=?to_uid,
+                                from_node_key=?from_node_key,
+                                to_node_key=?to_node_key,
+                            );
+                            continue;
+                        }
+                    };
+
+                    let (from_uid, to_uid) = (format!("{:#01x}", from_uid), format!("{:#01x}", from_uid));
+                    let mutation_unit = MutationUnit::new(MutationUID::uid(&from_uid)).predicate(
+                        &edge_name,
+                        MutationPredicateValue::Edges(vec![MutationUID::uid(&to_uid)]),
+                    );
+                    mutation_units.push(mutation_unit);
+                }
+                let mutation = MutationBuilder::default()
+                    .set(mutation_units)
+                    .build()
+                    .unwrap();
+                let dgraph_client = dgraph_client.clone();
+                Self::enforce_transaction(move || {
+                    let mut dgraph_mutation = dgraph_tonic::Mutation::new();
+                    dgraph_mutation
+                        .set_set_json(&mutation.set)
+                        .unwrap_or_else(|e| error!("Failed to set json for mutation: {}", e));
+
+                    let mut txn = dgraph_client.new_mutated_txn();
+                    txn.mutate_and_commit_now( dgraph_mutation.clone())
+                })
+            })
+            .buffer_unordered(DGRAPH_CONCURRENCY_UPSERTS)
+            .collect::<Vec<_>>()
+            .await;
     }
 
-    async fn enforce_transaction(client: Arc<DgraphClient>, q: String, mutations: Vec<dgraph_tonic::Mutation>) -> dgraph_tonic::Response {
-        let (response, attempts) = FutureRetry::new(
-            || {
-                let client = client.clone();
-                let mut txn = client.new_mutated_txn();
-                txn.upsert_and_commit_now(q.clone(), mutations.clone())
-            },
-            Self::handle_upsert_err,
-        )
-        .await
-        .expect("Surfaced an error despite retry strategy while performing an upsert.");
+    async fn enforce_transaction<Factory, Txn>(f: Factory) -> dgraph_tonic::Response
+    where
+        Factory: FnMut() -> Txn + 'static + Unpin,
+        Txn: std::future::Future<Output = Result<dgraph_tonic::Response, anyhow::Error>>,
+    {
+        let (response, attempts) = FutureRetry::new(f, Self::handle_upsert_err)
+            .await
+            .expect("Surfaced an error despite retry strategy while performing an upsert.");
 
         info!("Performed upsert after {} attempts", attempts);
 
@@ -352,22 +416,39 @@ impl IdentifiedGraph {
     }
 }
 
+fn extract_node_key_map_uid<'a>(
+    dgraph_response: &'a serde_json::Value,
+    node_key_map_to_uid: &mut HashMap<String, u64>,
+) {
+    let query_responses = dgraph_response.as_object().expect("Invalid response");
+
+    for query_response in query_responses.values() {
+        let query_response = query_response.as_array().expect("Invalid response");
+        for query_response in query_response {
+            let uid = query_response
+                .get("uid")
+                .expect("uid")
+                .as_str()
+                .expect("uid");
+            let node_key = query_response
+                .get("node_key")
+                .expect("node_key")
+                .as_str()
+                .expect("node_key");
+
+            // dgraph uids are hex encoded as '0x1b'
+            let uid = u64::from_str_radix(&uid[2..], 16).expect("uid is not valid hex");
+            node_key_map_to_uid.insert(node_key.to_owned(), uid);
+        }
+    }
+}
+
 impl MergedGraph {
     pub fn new() -> Self {
         Self {
             nodes: Default::default(),
             edges: Default::default(),
         }
-    }
-
-    pub fn add_node_without_edges<N>(&mut self, node: N)
-    where
-        N: Into<MergedNode>,
-    {
-        let node = node.into();
-        let key = node.clone_node_key();
-
-        self.nodes.insert(key.to_string(), node);
     }
 
     pub fn add_node(&mut self, node: MergedNode) {
@@ -501,6 +582,25 @@ impl IdentifiedNode {
                 }
             }
         }
+    }
+
+    pub fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::with_capacity(self.properties.len());
+
+        for (key, prop) in &self.properties {
+            let prop_value = prop
+                .property
+                .as_ref()
+                .map(Property::to_string)
+                .unwrap_or_else(|| panic!("Invalid property on DynamicNode: {}", self.node_key));
+
+            predicate_cache_identities.push(format!("{}:{}:{}", &self.node_key, key, prop_value));
+        }
+
+        predicate_cache_identities
+            .into_iter()
+            .map(|item| item.into_bytes())
+            .collect()
     }
 }
 
@@ -837,10 +937,11 @@ impl_as! {NodeProperty, as_increment_only_int, i64, node_property::Property::Inc
 impl_as! {NodeProperty, as_immutable_int, i64, node_property::Property::ImmutableIntProp}
 impl_as! {NodeProperty, as_immutable_str, &str, node_property::Property::ImmutableStrProp }
 
-
 #[cfg(feature = "integration")]
 pub mod test {
     use super::*;
+    use dgraph_tonic::Query;
+    use dgraph_query_lib::ToQueryString;
 
     #[tokio::test]
     async fn test_upsert() -> Result<(), Box<dyn std::error::Error>> {
@@ -852,25 +953,85 @@ pub mod test {
 
         let mut identified_graph = IdentifiedGraph::new();
         let mut merged_graph = MergedGraph::new();
-        let dgraph_client = DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client.");
+        let dgraph_client =
+            DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client.");
         let dgraph_client = std::sync::Arc::new(dgraph_client);
         let mut properties = HashMap::new();
         properties.insert(
-          "process_name".to_string(),
+            "process_name".to_string(),
             ProtoImmutableStrProp("foobar".to_string()).into(),
         );
-        let n = IdentifiedNode {
+        let n0 = IdentifiedNode {
             node_key: "example-node-key".to_string(),
             node_type: "Process".to_string(),
             properties,
         };
 
-        identified_graph.add_node(n);
+        let mut properties = HashMap::new();
+        properties.insert(
+            "process_name".to_string(),
+            ProtoImmutableStrProp("foobar".to_string()).into(),
+        );
 
-        let d = identified_graph.upsert_nodes(dgraph_client, &mut merged_graph).await;
+        let n1 = IdentifiedNode {
+            node_key: "someother-node-key".to_string(),
+            node_type: "Process".to_string(),
+            properties,
+        };
 
-        dbg!(&d);
+        identified_graph.add_node(n0);
+        identified_graph.add_node(n1);
+
+        identified_graph.add_edge(
+            "edge_name".to_string(),
+            "example-node-key".to_string(),
+            "someother-node-key".to_string(),
+        );
+
+        identified_graph
+            .perform_upsert_into(dgraph_client.clone(), &mut merged_graph)
+            .await;
+
+        let response_0 = query_for_node_key(dgraph_client.clone(),"example-node-key").await;
+        let response_1 = query_for_node_key(dgraph_client.clone(),"someother-node-key").await;
+        assert_eq!(response_0.len(), 1);
+        assert_eq!(response_1.len(), 1);
+        let node_0 = response_0.into_iter().next().unwrap().1;
+        let node_1 = response_1.into_iter().next().unwrap().1;
+
+        let node_0 = node_0.into_iter().next().expect("Empty uid array");
+        let node_1 = node_1.into_iter().next().expect("Empty uid array");
+
+        let node_0 = node_0["uid"].to_owned();
+        let node_1 = node_1["uid"].to_owned();
+
+        // println!("{}", response);
 
         Ok(())
+    }
+
+    async fn query_for_node_key(dgraph_client: Arc<DgraphClient>, node_key: &str) -> HashMap<String, Vec<HashMap<String, String>>> {
+        let query_block = QueryBlockBuilder::default()
+            .query_type(QueryBlockType::query())
+            .root_filter(Condition::EQ(
+                format!("node_key"),
+                ConditionValue::string(node_key),
+            ))
+            .predicates(vec![Predicate::Field(
+                Field::new("uid"),
+            )])
+            .first(2)
+            .build()
+            .unwrap();
+
+        let query = QueryBuilder::default()
+            .query_blocks(vec![query_block])
+            .build()
+            .unwrap();
+
+        let mut txn = dgraph_client.new_read_only_txn();
+        let response = txn.query(query.to_query_string()).await.expect("query failed");
+
+        serde_json::from_slice(&response.json).expect("response failed to parse")
     }
 }

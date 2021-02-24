@@ -406,10 +406,11 @@ impl<CacheT> EventHandler for GraphMerger<CacheT>
                 .collect()
         };
 
+        let mut merged_graph = MergedGraph::new();
         let mut uncached_subgraph = IdentifiedGraph::new();
 
         for node in uncached_nodes {
-            uncached_subgraph.add_node_without_edges(node);
+            uncached_subgraph.add_node(node);
         }
 
         for Edge {
@@ -422,10 +423,10 @@ impl<CacheT> EventHandler for GraphMerger<CacheT>
         }
 
         uncached_subgraph
-            .perform_upsert(self.mg_client.clone())
+            .perform_upsert_into(self.mg_client.clone(), &mut merged_graph)
             .await;
 
-        Ok(uncached_subgraph)
+        Ok(merged_graph)
     }
 }
 
