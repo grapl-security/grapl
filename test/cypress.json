@@ -1,5 +1,5 @@
 {
-    "baseUrl": "http://api.grapl.test:1234",
+    "baseUrl": "http://api.grapl.test:3128",
     "pageLoadTimeout": 180000, 
     "chromeWebSecurity": false
 }
