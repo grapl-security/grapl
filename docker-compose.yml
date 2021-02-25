@@ -83,38 +83,10 @@ services:
         aliases:
           - ${REDIS_HOST}
 
-  sqs:
-    image: localstack/localstack:0.11.5
-    environment:
-      - HOSTNAME_EXTERNAL=${SQS_HOST}
-      - IMAGE_NAME=localstack/localstack:0.11.5
-      - SERVICES=sqs:${SQS_PORT}
-    ports:
-      # Used to insert data in local grapl via upload-*.py
-      - 127.0.0.1:${SQS_PORT}:${SQS_PORT}
-    networks:
-      default:
-        aliases:
-          - ${SQS_HOST}
-    logging:
-      driver: none
-
-  secretsmanager:
-    image: localstack/localstack:0.11.5
-    environment:
-      - HOSTNAME_EXTERNAL=${SECRETSMANAGER_HOST}
-      - IMAGE_NAME=localstack/localstack:0.11.5
-      - PORT_WEB_UI=${SECRETSMANAGER_WEB_UI_PORT}
-      - SERVICES=secretsmanager:${SECRETSMANAGER_PORT}
-    ports:
-      - 127.0.0.1:${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}
-    networks:
-      default:
-        aliases:
-          - ${SECRETSMANAGER_HOST}
-    logging:
-      driver: none
-
+  # While localstack does offer S3 capabilities, it's not actually
+  # MinIO, which is a very full-featured and faithful S3 clone. We
+  # have noticed test failures when we use localstack's s3, so we will
+  # continue to use MinIO.
   s3:
     image: minio/minio
     command: server /data
@@ -129,16 +101,23 @@ services:
         aliases:
           - ${S3_HOST}
 
-  dynamodb:
-    image: amazon/dynamodb-local
+  localstack:
+    image: localstack/localstack:0.11.5
+    ports:
+      - 127.0.0.1:${SQS_PORT}:${SQS_PORT}
     environment:
-      - REGION=${AWS_REGION}
-    logging:
-      driver: none
+      - IMAGE_NAME=localstack/localstack:0.11.5
+      - SERVICES=dynamodb:${DYNAMODB_PORT},sqs:${SQS_PORT},secretsmanager:${SECRETSMANAGER_PORT}
+      - DEBUG=${DEBUG- }
+      - DATA_DIR=${DATA_DIR- }
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
     networks:
       default:
         aliases:
           - ${DYNAMODB_HOST}
+          - ${SECRETSMANAGER_HOST}
+          - ${SQS_HOST}
 
   ########################################################################
   # Rust Services
@@ -168,9 +147,9 @@ services:
       <<: *sqs-env
     depends_on:
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -190,9 +169,9 @@ services:
       <<: *sqs-env
     depends_on:
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -212,11 +191,10 @@ services:
       <<: *sqs-env
     tty: false
     depends_on:
-      - dynamodb
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -236,11 +214,10 @@ services:
       <<: *sqs-env
     tty: false
     depends_on:
-      - dynamodb
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -262,11 +239,10 @@ services:
     tty: false
     depends_on:
       - dgraph
-      - dynamodb
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -285,8 +261,8 @@ services:
       <<: *sqs-env
     tty: false
     depends_on:
+      - localstack
       - s3
-      - sqs
 
   ########################################################################
   # Python Services
@@ -316,9 +292,9 @@ services:
       - 127.0.0.1:${VSC_DEBUGGER}:${VSC_DEBUGGER}
     depends_on:
       - dgraph
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
@@ -331,7 +307,6 @@ services:
       '
     environment:
       GRAPL_LOG_LEVEL: "DEBUG"
-      # TODO: Once we remove IS_LOCAL, this service will need to depend on s3 and be configured appropriately
       IS_LOCAL: "True"
       UX_BUCKET_NAME: "${BUCKET_PREFIX}-engagement-ux-bucket"
       <<: *aws-region
@@ -358,8 +333,8 @@ services:
     tty: true
     depends_on:
       - dgraph
+      - localstack
       - s3
-      - sqs
 
   # TODO: really, this service should be grapl-auth
   grapl-engagement-edge:
@@ -385,9 +360,8 @@ services:
       USER_AUTH_TABLE: "${BUCKET_PREFIX}-user_auth_table"
       UX_BUCKET_URL: "localhost:3000" # TODO: Port??
     depends_on:
-      - dynamodb
       - grapl-provision
-      - secretsmanager
+      - localstack
     tty: true
 
   grapl-model-plugin-deployer:
@@ -414,9 +388,8 @@ services:
     tty: true
     depends_on:
       - dgraph
-      - dynamodb
+      - localstack
       - s3
-      - secretsmanager
     networks:
       default:
         aliases:
@@ -494,7 +467,7 @@ services:
     depends_on:
       - dgraph
       - grapl-provision
-      - secretsmanager
+      - localstack
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
     networks:
@@ -526,6 +499,9 @@ services:
         wait-for-it ${DYNAMODB_HOST}:${DYNAMODB_PORT} --timeout=$$TIMEOUT &&
         wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
         wait-for-it ${SECRETSMANAGER_HOST}:${SECRETSMANAGER_PORT} --timeout=$$TIMEOUT &&
+        # Give all the localstack services time to come up and be ready
+        # TODO: replace with some kind of loop on the health endpoint
+        sleep 10 &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
@@ -543,10 +519,8 @@ services:
     tty: true
     depends_on:
       - dgraph
-      - dynamodb
+      - localstack
       - s3
-      - secretsmanager
-      - sqs
 
 networks:
   default:
