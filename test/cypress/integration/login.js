@@ -30,7 +30,7 @@ describe("login test", () => {
 			url: `http://localhost:1234/auth/login`,
 			method: "POST",
 			credentials: "include",
-			hearders: new Headers({
+			headers: new Headers({
 				"Content-Type": "application/json",
 			}),
 			body: JSON.stringify({
@@ -45,10 +45,8 @@ describe("login test", () => {
 	});
 });
 
-
 describe("checks that cookie was set after login", () => {
-  it("retrieves grapl_jwt", () => {
-    cy.getCookie('grapl_jwt');
-  });
-})
-
+	it("retrieves grapl_jwt", () => {
+		cy.getCookie("grapl_jwt");
+	});
+});
