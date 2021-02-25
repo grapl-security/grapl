@@ -1,16 +1,22 @@
 print(">> Please wait for 'pip done!' before moving to the next cell.")
-!python -m pip install --upgrade -q pip
-!pip install typing-extensions
-!pip install pydgraph
-#!pip install grapl_analyzerlib
-!pip install --index-url https://test.pypi.org/simple/ grapl_analyzerlib
+# !python -m pip install --upgrade -q pip
+# !pip install typing-extensions
+# !pip install pydgraph
+# !pip install grapl_analyzerlib
+# !pip install --index-url https://test.pypi.org/simple/ grapl_analyzerlib
 print(">> pip done!")
+
 from __future__ import annotations
 import json
 from typing import *
 
 import pydgraph  # type: ignore
-from grapl_analyzerlib.node_types import EdgeRelationship, PropPrimitive, PropType, EdgeT
+from grapl_analyzerlib.node_types import (
+    EdgeRelationship,
+    PropPrimitive,
+    PropType,
+    EdgeT,
+)
 from grapl_analyzerlib.nodes.base import BaseSchema
 from grapl_analyzerlib.prelude import *
 from pydgraph import DgraphClient, DgraphClientStub
@@ -24,6 +30,8 @@ print(">> Okay, done setting up imports")
 deployment_name = ""  # Fill this in!
 
 assert deployment_name, "Please insert your deployment name here."
+
+
 def set_schema(client, schema) -> None:
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
@@ -55,6 +63,7 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str) -> Any:
         txn.discard()
 
     return res
+
 
 def meta_into_edge(schema, predicate_meta) -> EdgeT:
     if predicate_meta.get("list"):
@@ -143,10 +152,12 @@ def provision_master_graph(
     mg_schema_str = format_schemas(schemas)
     set_schema(master_graph_client, mg_schema_str)
 
+
 print(">> Okay, done setting up helper functions")
 mclient = DgraphClient(DgraphClientStub(deployment_name.lower() + ".dgraph.grapl:9080"))
 dynamodb: DynamoDBServiceResource = boto3.resource("dynamodb")
 # drop_all(mclient)
+
 
 def provision_mg(mclient: DgraphClient, dynamodb: DynamoDBServiceResource) -> None:
     # drop_all(mclient)
