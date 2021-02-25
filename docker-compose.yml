@@ -51,9 +51,9 @@ services:
     image: dgraph/standalone:v20.07.1
     ports:
       # required to access the RATEL interface for dgraph
-      - ${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
+      - 127.0.0.1:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
       # required for RATEL interface to operate properly
-      - ${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
+      - 127.0.0.1:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
     logging:
       driver: none
     volumes:
@@ -91,7 +91,7 @@ services:
       - SERVICES=sqs:${SQS_PORT}
     ports:
       # Used to insert data in local grapl via upload-*.py
-      - ${SQS_PORT}:${SQS_PORT}
+      - 127.0.0.1:${SQS_PORT}:${SQS_PORT}
     networks:
       default:
         aliases:
@@ -107,7 +107,7 @@ services:
       - PORT_WEB_UI=${SECRETSMANAGER_WEB_UI_PORT}
       - SERVICES=secretsmanager:${SECRETSMANAGER_PORT}
     ports:
-      - ${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}
+      - 127.0.0.1:${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}
     networks:
       default:
         aliases:
@@ -123,7 +123,7 @@ services:
       - MINIO_REGION_NAME=${AWS_REGION}
       - MINIO_SECRET_KEY=minioadmin
     ports:
-      - ${S3_PORT}:${S3_PORT}
+      - 127.0.0.1:${S3_PORT}:${S3_PORT}
     networks:
       default:
         aliases:
@@ -315,7 +315,7 @@ services:
       <<: *sqs-env
     tty: true
     ports:
-      - ${VSC_DEBUGGER}:${VSC_DEBUGGER}
+      - 127.0.0.1:${VSC_DEBUGGER}:${VSC_DEBUGGER}
     depends_on:
       - dgraph
       - redis
@@ -441,7 +441,7 @@ services:
     volumes:
       - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
     ports:
-      - "1234:3128"
+      - "127.0.0.1:1234:3128"
     environment:
       - GRAPL_AUTH_HOST
       - GRAPL_AUTH_PORT
@@ -483,7 +483,7 @@ services:
     depends_on:
       - dgraph
     ports:
-      - ${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
+      - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
     networks:
       default:
         aliases:
@@ -497,7 +497,7 @@ services:
     depends_on:
       - dgraph
     ports:
-      - ${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}
+      - 127.0.0.1:${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}
 
   ########################################################################
   # Utility Services
