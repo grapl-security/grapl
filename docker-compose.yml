@@ -441,7 +441,7 @@ services:
     volumes:
       - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
     ports:
-      - "1234:3128"
+      - "1234:1234"
     environment:
       - GRAPL_AUTH_HOST
       - GRAPL_AUTH_PORT
