@@ -1,5 +1,5 @@
 import dataclasses
-import os
+import pathlib
 import time
 import uuid
 from typing import Callable, Dict, Iterator, List, Optional
@@ -12,12 +12,10 @@ from mypy_boto3_route53 import Route53Client
 from mypy_boto3_sns.client import SNSClient
 from mypy_boto3_ssm import SSMClient
 
-from . import __version__, common, dgraph_ops, docker_swarm_ops
+from . import __version__, common, aws_cdk_ops, dgraph_ops, docker_swarm_ops
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
-
-SESSION = boto3.Session(profile_name=os.getenv("AWS_PROFILE", "default"))
 
 
 def _ticker(n: int) -> Iterator[None]:
@@ -36,6 +34,7 @@ class GraplctlState:
     grapl_region: str
     grapl_deployment_name: str
     grapl_version: str
+    aws_profile: str
     ec2: EC2ServiceResource
     ssm: SSMClient
     cloudwatch: CloudWatchClient
@@ -69,23 +68,124 @@ class GraplctlState:
     help="grapl version [$GRAPL_VERSION]",
     required=True,
 )
+@click.option(
+    "-p",
+    "--aws-profile",
+    type=click.STRING,
+    envvar="AWS_PROFILE",
+    help="aws auth profile [$AWS_PROFILE]",
+    default="default",
+)
 @click.pass_context
 def main(
     ctx: click.Context,
     grapl_region: str,
     grapl_deployment_name: str,
     grapl_version: str,
+    aws_profile: str,
 ) -> None:
+    session = boto3.Session(profile_name=aws_profile)
     ctx.obj = GraplctlState(
         grapl_region,
         grapl_deployment_name,
         grapl_version,
-        ec2=SESSION.resource("ec2", region_name=grapl_region),
-        ssm=SESSION.client("ssm", region_name=grapl_region),
-        cloudwatch=SESSION.client("cloudwatch", region_name=grapl_region),
-        sns=SESSION.client("sns", region_name=grapl_region),
-        route53=SESSION.client("route53", region_name=grapl_region),
+        aws_profile,
+        ec2=session.resource("ec2", region_name=grapl_region),
+        ssm=session.client("ssm", region_name=grapl_region),
+        cloudwatch=session.client("cloudwatch", region_name=grapl_region),
+        sns=session.client("sns", region_name=grapl_region),
+        route53=session.client("route53", region_name=grapl_region),
     )
+
+
+#
+# aws deployment & provisioning commands
+#
+
+
+@main.group(help="commands for managing grapl aws resources", name="aws")
+def aws():
+    pass
+
+
+@aws.command(help="deploy grapl to aws", name="deploy")
+@click.option(
+    "-a", "--all", is_flag=True, required=True, help="all services and resources"
+)
+@click.option(
+    "-t",
+    "--dgraph-instance-type",
+    type=click.Choice(choices=("i3.large", "i3.xlarge", "i3.2xlarge")),
+    help="ec2 instance type for dgraph swarm nodes",
+    required=True,
+)
+@click.argument(
+    "grapl_root",
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    required=True,
+)
+@click.pass_obj
+def aws_deploy(
+    graplctl_state: GraplctlState, all: bool, dgraph_instance_type: str, grapl_root: str
+):
+    assert all  # TODO: when
+    click.echo("deploying grapl cdk stacks to aws")
+    aws_cdk_ops.deploy_grapl(
+        grapl_root=pathlib.Path(grapl_root).absolute(),
+        aws_profile=graplctl_state.aws_profile,
+        stdout=click.get_binary_stream("stdout"),
+        stderr=click.get_binary_stream("stderr"),
+    )
+    click.echo("deployed grapl cdk stacks to aws")
+
+    click.echo("creating dgraph cluster in aws")
+    _create_dgraph(graplctl_state=graplctl_state, instance_type=dgraph_instance_type)
+    click.echo("created dgraph cluster in aws")
+
+
+@aws.command(help="tear down grapl in aws", name="destroy")
+@click.option(
+    "-a", "--all", is_flag=True, required=True, help="all services and resources"
+)
+@click.argument(
+    "grapl_root",
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    required=True,
+)
+@click.pass_obj
+def aws_destroy(graplctl_state: GraplctlState, all: bool, grapl_root: str):
+    click.echo("destroying all grapl aws resources")
+
+    for swarm_id in docker_swarm_ops.swarm_ids(
+        ec2=graplctl_state.ec2,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        version=graplctl_state.grapl_version,
+        region=graplctl_state.grapl_region,
+    ):
+        click.echo(f"removing swarm dns records for swarm {swarm_id}")
+        _remove_dgraph_dns(graplctl_state=graplctl_state, swarm_id=swarm_id)
+        click.echo(f"removed swarm dns records for swarm {swarm_id}")
+
+        click.echo(f"destroying swarm cluster {swarm_id}")
+        _destroy_swarm(graplctl_state=graplctl_state, swarm_id=swarm_id)
+        click.echo(f"destroyed swarm cluster {swarm_id}")
+
+    click.echo("destroying grapl cdk aws stacks")
+    aws_cdk_ops.destroy_grapl(
+        grapl_root=pathlib.Path(grapl_root).absolute(),
+        aws_profile=graplctl_state.aws_profile,
+        stdout=click.get_binary_stream("stdout"),
+        stderr=click.get_binary_stream("stderr"),
+    )
+    click.echo("destroyed grapl cdk aws stacks")
+
+    click.echo("destroyed all grapl aws resources")
+
+
+@aws.command(help="provision the grapl deployment", name="provision")
+@click.pass_obj
+def aws_provision(graplctl_state: GraplctlState):
+    pass  # FIXME
 
 
 #
@@ -93,7 +193,7 @@ def main(
 #
 
 
-@main.group(help="commands for operating docker swarm clusters")
+@main.group(help="commands for operating docker swarm clusters", name="swarm")
 def swarm():
     pass
 
@@ -116,7 +216,7 @@ def _create_swarm(
         ec2=graplctl_state.ec2, swarm_security_group_id=security_group_id
     )
 
-    click.echo(f"retrieving subnet IDs in vpc {vpc_id}")
+    click.echo(f"retrieving subnet ids in vpc {vpc_id}")
     subnet_ids = set(
         docker_swarm_ops.subnet_ids(
             ec2=graplctl_state.ec2,
@@ -124,7 +224,7 @@ def _create_swarm(
             deployment_name=graplctl_state.grapl_deployment_name,
         )
     )
-    click.echo(f"retrieved subnet IDs in vpc {vpc_id}")
+    click.echo(f"retrieved subnet ids in vpc {vpc_id}")
 
     click.echo(f"creating manager instances in vpc {vpc_id}")
     manager_instances = docker_swarm_ops.create_instances(
@@ -274,7 +374,7 @@ def _create_swarm(
 
 
 @swarm.command(
-    help="start EC2 instances and join them as a docker swarm cluster",
+    help="start ec2 instances and join them as a docker swarm cluster",
     name="create",
 )
 @click.option(
@@ -302,11 +402,11 @@ def _create_swarm(
     "-i",
     "--swarm-id",
     type=click.STRING,
-    help="unique ID for this swarm cluster (random default)",
+    help="unique id for this swarm cluster (random default)",
     default=str(uuid.uuid4()),
 )
 @click.pass_obj
-def create_swarm(
+def swarm_create(
     graplctl_state: GraplctlState,
     num_managers: int,
     num_workers: int,
@@ -322,9 +422,9 @@ def create_swarm(
     )
 
 
-@swarm.command(help="list swarm IDs for each of the swarm clusters")
+@swarm.command(help="list swarm ids for each of the swarm clusters", name="ls")
 @click.pass_obj
-def ls(graplctl_state: GraplctlState):
+def swarm_ls(graplctl_state: GraplctlState):
     for swarm_id in docker_swarm_ops.swarm_ids(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,
@@ -334,16 +434,16 @@ def ls(graplctl_state: GraplctlState):
         click.echo(swarm_id)
 
 
-@swarm.command(help="get instance IDs for a docker swarm's managers")
+@swarm.command(help="get instance ids for a docker swarm's managers", name="managers")
 @click.option(
     "-i",
     "--swarm-id",
     type=click.STRING,
-    help="unique ID of the swarm cluster",
+    help="unique id of the swarm cluster",
     required=True,
 )
 @click.pass_obj
-def managers(graplctl_state: GraplctlState, swarm_id: str):
+def swarm_managers(graplctl_state: GraplctlState, swarm_id: str):
     for manager_instance in docker_swarm_ops.swarm_instances(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,
@@ -355,17 +455,7 @@ def managers(graplctl_state: GraplctlState, swarm_id: str):
         click.echo(manager_instance.instance_id)
 
 
-@swarm.command(help="terminate a docker swarm cluster's instances")
-@click.option(
-    "-i",
-    "--swarm-id",
-    type=click.STRING,
-    help="unique ID of the swarm cluster",
-    required=True,
-)
-@click.confirmation_option(prompt="are you sure you want to destroy the swarm cluster?")
-@click.pass_obj
-def destroy(graplctl_state: GraplctlState, swarm_id: str):
+def _destroy_swarm(graplctl_state: GraplctlState, swarm_id: str):
     for instance in docker_swarm_ops.swarm_instances(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,
@@ -373,21 +463,39 @@ def destroy(graplctl_state: GraplctlState, swarm_id: str):
         region=graplctl_state.grapl_region,
         swarm_id=swarm_id,
     ):
-        EC2.Instance(instance.instance_id).terminate(InstanceIds=[instance.instance_id])
+        graplctl_state.ec2.Instance(instance.instance_id).terminate(
+            InstanceIds=[instance.instance_id]
+        )
         click.echo(f"terminated instance {instance.instance_id}")
 
 
-@swarm.command(name="exec", help="execute a command on a swarm manager")
+@swarm.command(help="terminate a docker swarm cluster's instances", name="destroy")
 @click.option(
     "-i",
     "--swarm-id",
     type=click.STRING,
-    help="unique ID of the swarm cluster",
+    help="unique id of the swarm cluster",
+    required=True,
+)
+@click.confirmation_option(prompt="are you sure you want to destroy the swarm cluster?")
+@click.pass_obj
+def swarm_destroy(graplctl_state: GraplctlState, swarm_id: str):
+    click.echo(f"destroying swarm {swarm_id}")
+    _destroy_swarm(graplctl_state=graplctl_state, swarm_id=swarm_id)
+    click.echo(f"destroyed swarm {swarm_id}")
+
+
+@swarm.command(help="execute a command on a swarm manager", name="exec")
+@click.option(
+    "-i",
+    "--swarm-id",
+    type=click.STRING,
+    help="unique id of the swarm cluster",
     required=True,
 )
 @click.argument("command", nargs=-1, type=click.STRING)
 @click.pass_obj
-def exec_(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
+def swarm_exec(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
     click.echo(
         docker_swarm_ops.exec_(
             ec2=graplctl_state.ec2,
@@ -401,7 +509,7 @@ def exec_(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
     )
 
 
-@swarm.command(help="scale up a docker swarm cluster")
+@swarm.command(help="scale up a docker swarm cluster", name="scale")
 @click.option(
     "-m",
     "--num-managers",
@@ -427,11 +535,11 @@ def exec_(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
     "-i",
     "--swarm-id",
     type=click.STRING,
-    help="unique ID of the swarm cluster",
+    help="unique id of the swarm cluster",
     required=True,
 )
 @click.pass_obj
-def scale(
+def swarm_scale(
     graplctl_state: GraplctlState,
     num_managers: int,
     num_workers: int,
@@ -592,24 +700,12 @@ def scale(
 #
 
 
-@main.group(help="commands for operating dgraph")
+@main.group(help="commands for operating dgraph", name="dgraph")
 def dgraph():
     pass
 
 
-@dgraph.command(
-    help="spin up a swarm cluster and deploy dgraph on it",
-    name="create",
-)
-@click.option(
-    "-t",
-    "--instance-type",
-    type=click.Choice(choices=("i3.large", "i3.xlarge", "i3.2xlarge")),
-    help="EC2 instance type for swarm nodes",
-    required=True,
-)
-@click.pass_obj
-def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
+def _create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> None:
     swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
     click.echo(f"creating swarm {swarm_id}")
     _create_swarm(
@@ -672,7 +768,7 @@ def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
     )
     click.echo(f"deployed dgraph in swarm {swarm_id}")
 
-    click.echo(f"updating DNS A records for dgraph in swarm {swarm_id}")
+    click.echo(f"updating dns A records for dgraph in swarm {swarm_id}")
     hosted_zone_id = graplctl_state.route53.list_hosted_zones_by_name(
         DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
     )["HostedZones"][0]["Id"]
@@ -689,22 +785,28 @@ def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
             ip_address=instance.private_ip_address,
             hosted_zone_id=hosted_zone_id,
         )
-    click.echo(f"updated DNS A records for dgraph in swarm {swarm_id}")
+    click.echo(f"updated dns A records for dgraph in swarm {swarm_id}")
 
 
-@dgraph.command(help="remove DGraph DNS records")
+@dgraph.command(
+    help="spin up a swarm cluster and deploy dgraph on it",
+    name="create",
+)
 @click.option(
-    "-i",
-    "--swarm-id",
-    type=click.STRING,
-    help="unique ID of the swarm cluster",
+    "-t",
+    "--instance-type",
+    type=click.Choice(choices=("i3.large", "i3.xlarge", "i3.2xlarge")),
+    help="EC2 instance type for swarm nodes",
     required=True,
 )
-@click.confirmation_option(
-    prompt="are you sure you want to remove the DGraph DNS records?"
-)
 @click.pass_obj
-def remove_dns(graplctl_state: GraplctlState, swarm_id: str):
+def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
+    click.echo(f"creating dgraph cluster of {instance_type} instances")
+    _create_dgraph(graplctl_state=graplctl_state, instance_type=instance_type)
+    click.echo(f"created dgraph cluster of {instance_type} instances")
+
+
+def _remove_dgraph_dns(graplctl_state: GraplctlState, swarm_id: str):
     hosted_zone_id = graplctl_state.route53.list_hosted_zones_by_name(
         DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
     )["HostedZones"][0]["Id"]
@@ -715,11 +817,33 @@ def remove_dns(graplctl_state: GraplctlState, swarm_id: str):
         region=graplctl_state.grapl_region,
         swarm_id=swarm_id,
     ):
-        click.echo(f"removing DNS records for swarm {swarm_id}")
+        click.echo(
+            f"removing dns records for instance {instance.instance_id} swarm {swarm_id}"
+        )
         dgraph_ops.remove_dns_ip(
             route53=graplctl_state.route53,
             dns_name=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl",
             ip_address=instance.private_ip_address,
             hosted_zone_id=hosted_zone_id,
         )
-        click.echo(f"removed DNS records for swarm {swarm_id}")
+        click.echo(
+            f"removed dns records for instance {instance.instance_id} swarm {swarm_id}"
+        )
+
+
+@dgraph.command(help="remove dgraph dns records", name="remove-dns")
+@click.option(
+    "-i",
+    "--swarm-id",
+    type=click.STRING,
+    help="unique id of the swarm cluster",
+    required=True,
+)
+@click.confirmation_option(
+    prompt="are you sure you want to remove the dgraph dns records?"
+)
+@click.pass_obj
+def dgraph_remove_dns(graplctl_state: GraplctlState, swarm_id: str):
+    click.echo(f"removing dgraph dns records for swarm {swarm_id}")
+    _remove_dgraph_dns(graplctl_state=graplctl_state, swarm_id=swarm_id)
+    click.echo(f"removed dgraph dns records for swarm {swarm_id}")
