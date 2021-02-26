@@ -144,10 +144,7 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests
 test-integration: export COMPOSE_IGNORE_ORPHANS=1
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV) \
-	docker-compose \
-		--file docker-compose.yml \
-		--project-name "grapl-integration_tests" \
-		up --force-recreate -d && \
+	$(MAKE) up-detach PROJECT_NAME="grapl-integration_tests" && \
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.integration-tests.yml \
 		-p "grapl-integration_tests"
@@ -156,10 +153,7 @@ test-integration: build-test-integration ## Build and run integration tests
 test-e2e: export COMPOSE_IGNORE_ORPHANS=1
 test-e2e: build-test-e2e ## Build and run e2e tests
 	$(WITH_LOCAL_GRAPL_ENV) \
-	docker-compose \
-		--file docker-compose.yml \
-		--project-name "grapl-e2e_tests" \
-		up --force-recreate -d && \
+	$(MAKE) up-detach PROJECT_NAME="grapl-e2e_tests" && \
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.e2e-tests.yml \
 		-p "grapl-e2e_tests"
@@ -229,6 +223,16 @@ push: ## Push Grapl containers to Docker Hub
 up: build-services ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose -f docker-compose.yml up
+
+.PHONY: up-detach
+up-detach: build-services ## Docker-compose up + detach and return control to tty
+	# Primarily used for bringing up an environment for integration testing.
+	# Usage: `make up-detach PROJECT_NAME=asdf`
+	$(WITH_LOCAL_GRAPL_ENV) \
+	docker-compose \
+		-p $(PROJECT_NAME) \
+		-f docker-compose.yml \
+		up --detach --force-recreate
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
