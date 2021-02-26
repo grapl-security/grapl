@@ -2,11 +2,13 @@ use std::collections::HashMap;
 
 use grapl_graph_descriptions::{graph_description::*, node_property::Property};
 use node_property::Property::{
-    DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUintProp as ProtoDecrementOnlyUintProp, ImmutableIntProp as ProtoImmutableIntProp,
-    ImmutableStrProp as ProtoImmutableStrProp, ImmutableUintProp as ProtoImmutableUintProp,
-    IncrementOnlyIntProp as ProtoIncrementOnlyIntProp,
-    IncrementOnlyUintProp as ProtoIncrementOnlyUintProp,
+    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+    ImmutableInt as ProtoImmutableIntProp,
+    ImmutableStr as ProtoImmutableStrProp,
+    ImmutableUint as ProtoImmutableUintProp,
+    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
 };
 
 pub struct Escaped(String);
@@ -54,7 +56,7 @@ fn escape_prop(node_property: &NodeProperty) -> Escaped {
         Some(ProtoIncrementOnlyUintProp(i)) => escape_quote(&i.to_string()),
         Some(ProtoDecrementOnlyUintProp(i)) => escape_quote(&i.to_string()),
         Some(ProtoImmutableUintProp(i)) => escape_quote(&i.to_string()),
-        Some(ProtoImmutableStrProp(s)) => escape_quote(s),
+        Some(ProtoImmutableStrProp(s)) => escape_quote(s.as_inner()),
         None => panic!("todo")
     }
 }

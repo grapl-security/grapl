@@ -22,11 +22,13 @@ use std::sync::Arc;
 // use grapl_graph_descriptions::IdentifiedNode;
 
 pub use node_property::Property::{
-    DecrementOnlyIntProp as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUintProp as ProtoDecrementOnlyUintProp, ImmutableIntProp as ProtoImmutableIntProp,
-    ImmutableStrProp as ProtoImmutableStrProp, ImmutableUintProp as ProtoImmutableUintProp,
-    IncrementOnlyIntProp as ProtoIncrementOnlyIntProp,
-    IncrementOnlyUintProp as ProtoIncrementOnlyUintProp,
+    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+    ImmutableInt as ProtoImmutableIntProp,
+    ImmutableStr as ProtoImmutableStrProp,
+    ImmutableUint as ProtoImmutableUintProp,
+    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
 };
 
 use dgraph_tonic::{Client as DgraphClient, Mutate, Mutation as DgraphMutation, MutationResponse};
@@ -283,8 +285,8 @@ impl futures_retry::ErrorHandler<anyhow::Error> for UpsertErrorHandler {
             attempt=?attempt,
         );
         match attempt {
-            0..=2 => RetryPolicy::Repeat,
-            t @ 2..=20 => RetryPolicy::WaitRetry(std::time::Duration::from_millis(10 * t as u64)),
+            0..=5 => RetryPolicy::Repeat,
+            t @ 5..=20 => RetryPolicy::WaitRetry(std::time::Duration::from_millis(10 * t as u64)),
             21..=u64::MAX => RetryPolicy::ForwardError(e),
         }
     }

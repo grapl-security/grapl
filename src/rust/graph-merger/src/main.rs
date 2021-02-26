@@ -146,13 +146,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     handler().await?;
     Ok(())
 }
-
-trait AnyhowFailure {
-    fn into_failure(self) -> Error;
-}
-
-impl AnyhowFailure for anyhow::Error {
-    fn into_failure(self) -> Error {
-        failure::Error::from_boxed_compat(From::from(self))
-    }
-}

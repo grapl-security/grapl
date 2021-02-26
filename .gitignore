@@ -48,3 +48,7 @@ dist/
 # See build-support/generate_constraints.sh
 /build-support/.constraints-venv
 .yarn/
+
+# Generated when profiling rust code
+*.profdata
+*.profraw

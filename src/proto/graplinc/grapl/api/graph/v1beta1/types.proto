@@ -34,6 +34,36 @@ message IdStrategy {
     }
 }
 
+
+
+message IncrementOnlyUintProp {
+    uint64 prop = 1;
+}
+
+message ImmutableUintProp {
+    uint64 prop = 1;
+}
+
+message DecrementOnlyUintProp {
+    uint64 prop = 1;
+}
+
+message DecrementOnlyIntProp {
+    int64 prop = 1;
+}
+
+message IncrementOnlyIntProp {
+    int64 prop = 1;
+}
+
+message ImmutableIntProp {
+    int64 prop = 1;
+}
+
+message ImmutableStrProp {
+    string prop = 1;
+}
+
 // NodeProperty not only denotes what primitive type the value should be treated as - such as u64, i64, string,
 // but also the behavior of property merges. Because Grapl can not expect any kind of strict ordering of events
 // within or across datasources every property has to define a merge function to resolve conflicts.
@@ -43,19 +73,19 @@ message IdStrategy {
 message NodeProperty {
     oneof property {
         // `increment_only_uint_prop` is an unsigned 64bit integer. On merge the larger value is stored.
-        uint64 increment_only_uint_prop = 1;
+        IncrementOnlyUintProp increment_only_uint = 1;
         // `decrement_only_uint_prop` is an unsigned 64bit integer. On merge the smaller value is stored.
-        uint64 decrement_only_uint_prop = 2;
+        DecrementOnlyUintProp decrement_only_uint = 2;
         // `immutable_uint_prop` is an unsigned 64bit integer. On merge the old value is preserved.
-        uint64 immutable_uint_prop = 3;
+        ImmutableUintProp immutable_uint = 3;
         // `increment_only_int_prop` is a signed 64bit integer. On merge the larger value is stored.
-        int64 increment_only_int_prop = 4;
+        IncrementOnlyIntProp increment_only_int = 4;
         // `decrement_only_int_prop` is a signed 64bit integer. On merge the smaller value is stored.
-        int64 decrement_only_int_prop = 5;
+        DecrementOnlyIntProp decrement_only_int = 5;
         // `immutable_int_prop` is a signed 64bit integer. On merge the old value is preserved.
-        int64 immutable_int_prop = 6;
+        ImmutableIntProp immutable_int = 6;
         // `immutable_int_prop` is a utf8 encoded string. On merge the old value is preserved.
-        string immutable_str_prop = 7;
+        ImmutableStrProp immutable_str = 7;
     }
 }
 

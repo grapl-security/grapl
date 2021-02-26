@@ -60,10 +60,12 @@ impl ReverseEdgeResolver {
                 cache.put(f_edge.edge_name.clone(), r_edge_name.clone());
                 cache.put(r_edge_name.clone(), f_edge.edge_name.clone());
                 reversed.push(reverse_edge(&f_edge, r_edge_name.to_owned()));
+                reversed.push(f_edge);
             }
         }
         reversed.sort_unstable();
         reversed.dedup();
+
         Ok(reversed)
     }
 

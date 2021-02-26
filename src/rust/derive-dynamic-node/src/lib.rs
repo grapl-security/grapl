@@ -1,3 +1,4 @@
+#![allow(warnings)]
 #![recursion_limit = "128"]
 extern crate proc_macro;
 
@@ -463,13 +464,9 @@ fn property_methods(property_name: &Ident, property_type: &Type, resolution_name
         fn #get_method_name(&self) -> Option<#return_type> {
             let property_result: Option<&NodeProperty> = self.get_dynamic_node().get_property(#property_name_str);
 
-            let property_result = match property_result {
-                Some(property_result) => property_result. #method_ident(),
-                None => return None
-            };
             match property_result {
-              Some(property) => Some(#return_type (property.to_owned())),
-              None => None,
+                Some(property_result) => property_result. #method_ident().map(|p| p.to_owned()),
+                None => return None
             }
         }
     );

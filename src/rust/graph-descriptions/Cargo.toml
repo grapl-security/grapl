@@ -34,3 +34,12 @@ features = ["v4"]
 
 [build-dependencies]
 prost-build = "0.7"
+
+[dev-dependencies]
+test-env-log = "0.2.5"
+quickcheck = "1.0.3"
+quickcheck_macros = { version="1" }
+
+[features]
+default = []
+extra_assertions = []

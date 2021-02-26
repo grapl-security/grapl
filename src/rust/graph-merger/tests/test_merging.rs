@@ -93,13 +93,14 @@ pub mod test {
     }
 
     fn init_test_env() {
+
+        let subscriber = ::tracing_subscriber::FmtSubscriber::builder()
+            .with_env_filter(::tracing_subscriber::EnvFilter::from_default_env())
+            .finish();
+        let _ = ::tracing::subscriber::set_global_default(subscriber);
+
         static START: Once = Once::new();
         START.call_once(|| {
-            let filter = tracing_subscriber::EnvFilter::from_default_env();
-            tracing_subscriber::fmt()
-                .with_env_filter(filter)
-                .with_writer(std::io::stdout)
-                .init();
             let schema = Schema::new()
                 .add_definition(
                     SchemaDefinition::new("ExampleNode")
@@ -306,5 +307,30 @@ pub mod test {
         let m = m.into_iter().next().unwrap().1;
         debug_assert_eq!(m.len(), 1);
         Ok(())
+    }
+
+
+    #[tokio::test(threaded_scheduler)]
+    async fn test_upsert_multifield() -> Result<(), Box<dyn std::error::Error>> {
+
+        init_test_env();
+
+        let dgraph_client =
+            DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client.");
+        let dgraph_client = std::sync::Arc::new(dgraph_client);
+
+        let node_key = "test_upsert_multifield-example-node-key";
+        let mut properties = HashMap::new();
+        properties.insert(
+            "example_name".to_string(),
+            ProtoImmutableStrProp("foobar".to_string()).into(),
+        );
+        let n0 = IdentifiedNode {
+            node_key: node_key.to_string(),
+            node_type: "ExampleNode".to_string(),
+            properties,
+        };
+
+
     }
 }

@@ -190,11 +190,13 @@ where
             .properties
             .get(&strategy.created_time)
             .and_then(|p| p.as_immutable_uint())
+            .map(|p| p.as_inner())
             .unwrap_or(0);
         let last_seen_time = node
             .properties
             .get(&strategy.last_seen_time)
             .and_then(|p| p.as_increment_only_uint())
+            .map(|p| p.as_inner())
             .unwrap_or(0);
 
         let unid = match (created_time != 0, last_seen_time != 0) {
