@@ -126,9 +126,7 @@ services:
     networks:
       default:
         aliases:
-          - ${DYNAMODB_HOST}
-          - ${SECRETSMANAGER_HOST}
-          - ${SQS_HOST}
+          - ${LOCALSTACK_HOST}
 
   ########################################################################
   # Rust Services
@@ -505,11 +503,9 @@ services:
     command: |
       /bin/bash -c "
         export TIMEOUT=35 &&
-        wait-for-it ${SQS_HOST}:${SQS_PORT_INTERNAL} --timeout=$$TIMEOUT &&
         wait-for-it ${S3_HOST}:${S3_PORT_INTERNAL} --timeout=$$TIMEOUT &&
-        wait-for-it ${DYNAMODB_HOST}:${DYNAMODB_PORT} --timeout=$$TIMEOUT &&
         wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
-        wait-for-it ${SECRETSMANAGER_HOST}:${SECRETSMANAGER_PORT} --timeout=$$TIMEOUT &&
+        wait-for-it ${LOCALSTACK_HOST}:${LOCALSTACK_PORT} --timeout=$$TIMEOUT &&
         # Give all the localstack services time to come up and be ready
         # TODO: replace with some kind of loop on the health endpoint
         sleep 10 &&
