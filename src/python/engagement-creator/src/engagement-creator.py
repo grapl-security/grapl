@@ -19,7 +19,7 @@ from typing import (
 
 import boto3
 import botocore.exceptions  # type: ignore
-from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.lens import LensView
 from grapl_analyzerlib.prelude import BaseView, RiskView
 from grapl_analyzerlib.queryable import Queryable
@@ -206,14 +206,14 @@ def create_metrics_client() -> EngagementCreatorMetrics:
 
 
 def lambda_handler(s3_event: S3Event, context: Any) -> None:
-    mg_client = MasterGraphClient()
+    graph_client = GraphClient()
     s3 = S3ResourceFactory(boto3).from_env()
     metrics = create_metrics_client()
 
     for event in s3_event["Records"]:
         with metrics.time_to_process_event():
             try:
-                _process_one_event(event, s3, mg_client, metrics)
+                _process_one_event(event, s3, graph_client, metrics)
             except:
                 metrics.event_processed(status="failure")
                 raise

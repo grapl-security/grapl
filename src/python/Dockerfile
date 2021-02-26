@@ -154,15 +154,6 @@ RUN source venv/bin/activate && \
     cd analyzer_executor && \
     pip install .
 
-# zip
-FROM analyzer-executor-build AS analyzer-executor-zip
-
-RUN LAMBDA_DIR=$(pwd); \
-    cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
-    cd ~/analyzer_executor/src && \
-    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
-
 # deploy
 FROM grapl-python-deploy AS analyzer-executor-deploy
 
@@ -170,7 +161,7 @@ COPY --chown=grapl --from=analyzer-executor-build /home/grapl/venv venv
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/analyzer_executor analyzer_executor
 
 CMD source venv/bin/activate && \
-    python3 analyzer_executor/src/analyzer-executor.py
+    python3 analyzer_executor/src/run.py
 
 # test
 FROM analyzer-executor-build AS analyzer-executor-test
