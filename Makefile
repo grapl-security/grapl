@@ -232,7 +232,7 @@ up-detach: build-services ## Docker-compose up + detach and return control to tt
 	docker-compose \
 		-p $(PROJECT_NAME) \
 		-f docker-compose.yml \
-		up --detach
+		up --detach --force-recreate
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
