@@ -102,7 +102,7 @@ services:
           - ${S3_HOST}
 
   localstack:
-    image: localstack/localstack:0.11.5
+    image: localstack/localstack:0.12.6
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc. We'll also re-expose it
@@ -116,7 +116,7 @@ services:
       # at this point.
       - 127.0.0.1:${SQS_PORT_EXTERNAL}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:0.11.5
+      - IMAGE_NAME=localstack/localstack:0.12.6
       - EDGE_PORT=${LOCALSTACK_PORT}
       - SERVICES=dynamodb,sqs,secretsmanager
       - DEBUG=${DEBUG- }
