@@ -407,7 +407,11 @@ impl Property {
             (p, op) => {
                 // Currently we don't guarantee that randomly generated nodes will have consistent
                 // property types when they share a property name
-                extra_assert!(debug_assert!(false, "Invalid property merge: {:?} {:?}", p, op));
+                extra_assert!(debug_assert!(
+                    false,
+                    "Invalid property merge: {:?} {:?}",
+                    p, op
+                ));
                 tracing::warn!("Invalid property merge: {:?} {:?}", p, op);
             }
         }
@@ -466,7 +470,7 @@ impl ImmutableUintProp {
     }
     pub fn merge_property(&mut self, other_prop: &Self) {
         tracing::trace!(message="ImmutableUintProp merge", self_prop=?self, other_prop=?other_prop);
-        extra_assert!{debug_assert_eq!(*self, *other_prop)}
+        extra_assert! {debug_assert_eq!(*self, *other_prop)}
     }
 }
 impl DecrementOnlyUintProp {
@@ -749,7 +753,6 @@ impl_from_for_unit!(
 );
 impl_from_for_unit!(ImmutableStrProp, prop, String, &String, &str);
 
-
 impl From<ImmutableUintProp> for Property {
     fn from(p: ImmutableUintProp) -> Self {
         Self::ImmutableUint(p)
@@ -837,47 +840,62 @@ impl NodeProperty {
     }
 }
 
-
 #[cfg(test)]
 pub mod test {
     use super::*;
     use quickcheck_macros::quickcheck;
-    use quickcheck::{Arbitrary, Gen};
     use std::hash::Hasher;
+
+    #[cfg(not(feature = "fuzzing"))]
+    use quickcheck::{Arbitrary, Gen};
 
     impl Arbitrary for IncrementOnlyIntProp {
         fn arbitrary(g: &mut Gen) -> Self {
-            Self {prop: i64::arbitrary(g)}
+            Self {
+                prop: i64::arbitrary(g),
+            }
         }
     }
     impl Arbitrary for DecrementOnlyIntProp {
         fn arbitrary(g: &mut Gen) -> Self {
-            Self {prop: i64::arbitrary(g)}
+            Self {
+                prop: i64::arbitrary(g),
+            }
         }
     }
     impl Arbitrary for ImmutableIntProp {
         fn arbitrary(g: &mut Gen) -> Self {
-            Self {prop: i64::arbitrary(g)}
+            Self {
+                prop: i64::arbitrary(g),
+            }
         }
     }
     impl Arbitrary for IncrementOnlyUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
-            Self {prop: u64::arbitrary(g)}
+            Self {
+                prop: u64::arbitrary(g),
+            }
         }
     }
     impl Arbitrary for DecrementOnlyUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
-            Self {prop: u64::arbitrary(g)}
+            Self {
+                prop: u64::arbitrary(g),
+            }
         }
     }
     impl Arbitrary for ImmutableUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
-            Self {prop: u64::arbitrary(g)}
+            Self {
+                prop: u64::arbitrary(g),
+            }
         }
     }
     impl Arbitrary for ImmutableStrProp {
         fn arbitrary(g: &mut Gen) -> Self {
-            Self {prop: String::arbitrary(g)}
+            Self {
+                prop: String::arbitrary(g),
+            }
         }
     }
 
@@ -899,7 +917,7 @@ pub mod test {
     impl Arbitrary for NodeProperty {
         fn arbitrary(g: &mut Gen) -> Self {
             NodeProperty {
-                property: Some(Property::arbitrary(g))
+                property: Some(Property::arbitrary(g)),
             }
         }
     }
@@ -927,7 +945,9 @@ pub mod test {
             Property::DecrementOnlyInt(DecrementOnlyIntProp::arbitrary(g)),
             Property::IncrementOnlyUint(IncrementOnlyUintProp::arbitrary(g)),
             Property::DecrementOnlyUint(DecrementOnlyUintProp::arbitrary(g)),
-            Property::ImmutableInt(ImmutableIntProp::from(hash(&[node_key, property_name]) as i64)),
+            Property::ImmutableInt(ImmutableIntProp::from(
+                hash(&[node_key, property_name]) as i64
+            )),
             Property::ImmutableUint(ImmutableUintProp::from(hash(&[node_key, property_name]))),
             Property::ImmutableStr(ImmutableStrProp::from(s)),
         ];
@@ -945,9 +965,7 @@ pub mod test {
             ];
             let node_key = g.choose(node_keys).unwrap().clone();
 
-            let node_types= &[
-                "Process", "File", "IpAddress",
-            ];
+            let node_types = &["Process", "File", "IpAddress"];
             let node_type = choice(&node_key, node_types);
             let mut properties = HashMap::new();
             let property_names: Vec<String> = Vec::arbitrary(g);
@@ -1001,7 +1019,7 @@ pub mod test {
         x.merge_property(&y);
         assert_eq!(x, original);
     }
-    
+
     #[quickcheck]
     fn test_merge_uint_max(mut x: IncrementOnlyUintProp, y: IncrementOnlyUintProp) {
         init_test_env();
@@ -1015,26 +1033,26 @@ pub mod test {
         x.merge_property(&y);
         assert_eq!(x, std::cmp::max(x, y));
     }
-    
+
     #[quickcheck]
     fn test_merge_uint_min(mut x: DecrementOnlyUintProp, y: DecrementOnlyUintProp) {
         init_test_env();
         x.merge_property(&y);
         assert_eq!(x, std::cmp::min(x, y));
     }
-    
+
     #[quickcheck]
     fn test_merge_int_min(mut x: DecrementOnlyIntProp, y: DecrementOnlyIntProp) {
         init_test_env();
         x.merge_property(&y);
         assert_eq!(x, std::cmp::min(x, y));
     }
-    
+
     #[quickcheck]
     fn test_merge_incr_uint_commutative(mut properties: Vec<IncrementOnlyUintProp>) {
         init_test_env();
         if properties.is_empty() {
-            return
+            return;
         }
         properties.sort_unstable();
         let max_value = properties.iter().max().unwrap().to_owned();
@@ -1055,7 +1073,7 @@ pub mod test {
     #[quickcheck]
     fn test_merge_identified_node(mut node_0: IdentifiedNode, node_1: IdentifiedNode) {
         if node_0.node_key != node_1.node_key {
-            return
+            return;
         }
         let original = node_0.clone();
         node_0.merge(&node_1);

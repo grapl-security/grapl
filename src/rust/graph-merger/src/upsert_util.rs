@@ -81,6 +81,7 @@ pub(crate) fn build_upserts(
     inner_queries.push('\n');
     for (predicate_param, (prop_name, prop) )in properties.iter().enumerate() {
         if &prop_name == &"node_key" {continue}
+        if &prop_name == &"dgraph.type" {continue}
         tracing::debug!(
             message="generating upsert quads for predicate",
             predicate_name=?prop_name,
@@ -153,42 +154,41 @@ pub(crate) fn gen_node_property_upsert_quads(
     prop_name: &str,
     prop_value: &Escaped,
 ) -> (String, [dgraph_tonic::Mutation; 2]) {
-    let mut node_query_name = format!("pred_query_{}_{}_{}", prop_name, query_param, predicate_param);
+    // let mut node_query_name = format!("pred_query_{}_{}_{}", prop_name, query_param, predicate_param);
     let mut mu_0 = dgraph_tonic::Mutation::new();
 
     let mut inner_query = format!(
         r#"
-            {node_query_name} as var(func: uid({creation_var_name}), first: 1)
+            var(func: uid({creation_var_name}), first: 1)
     "#,
-        node_query_name=node_query_name,
         creation_var_name=creation_var_name,
     );
 
     // If the node exists, set the predicate. Currently 'last write wins'.
     let mut mu_0_n_quads = format!(
-        r#"uid({node_query_name}) <{prop_name}> {prop_value} ."#,
-        node_query_name=node_query_name,
+        r#"uid({creation_var_name}) <{prop_name}> {prop_value} ."#,
+        creation_var_name=creation_var_name,
         prop_name = prop_name,
         prop_value = prop_value,
     );
 
     mu_0.set_set_nquads(mu_0_n_quads);
-    mu_0.set_cond(format!("@if(eq(len({node_query_name}), 1))", node_query_name=node_query_name));
+    mu_0.set_cond(format!("@if(eq(len({creation_var_name}), 1))", creation_var_name=creation_var_name));
 
     let mut mu_1 = dgraph_tonic::Mutation::new();
 
     // condition if the node does not exist
     let mut mu_1_n_quads = format!(
         concat!(
-        r#"_:node_{node_query_name} <{prop_name}> {prop_value} ."#,
+        r#"_:{creation_var_name} <{prop_name}> {prop_value} ."#,
         ),
-        node_query_name=node_query_name,
+        creation_var_name=creation_var_name,
         prop_name = prop_name,
         prop_value = prop_value,
     );
 
     mu_1.set_set_nquads(mu_1_n_quads);
-    mu_1.set_cond(format!("@if(eq(len({node_query_name}), 0))", node_query_name=node_query_name));
+    mu_1.set_cond(format!("@if(eq(len({creation_var_name}), 0))", creation_var_name=creation_var_name));
 
     (inner_query, [mu_0, mu_1])
 }

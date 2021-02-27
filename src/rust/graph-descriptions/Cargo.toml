@@ -27,6 +27,7 @@ tracing = "0.1.22"
 tokio = { version = "0.2.*", features = ["macros"] }
 tracing-subscriber = "*"
 hex = "0.4.2"
+arbitrary = { version="1" }
 
 [dependencies.uuid]
 version = "0.8"

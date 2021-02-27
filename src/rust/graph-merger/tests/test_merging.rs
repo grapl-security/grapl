@@ -158,7 +158,7 @@ pub mod test {
         let mut properties = HashMap::new();
         properties.insert(
             "example_name".to_string(),
-            ProtoImmutableStrProp("foobar".to_string()).into(),
+            ImmutableStrProp{prop: "foobar".to_string()}.into(),
         );
         let n0 = IdentifiedNode {
             node_key: "example-node-key".to_string(),
@@ -169,7 +169,7 @@ pub mod test {
         let mut properties = HashMap::new();
         properties.insert(
             "example_name".to_string(),
-            ProtoImmutableStrProp("baz".to_string()).into(),
+            ImmutableStrProp{prop: "baz".to_string()}.into(),
         );
 
         let n1 = IdentifiedNode {
@@ -247,7 +247,7 @@ pub mod test {
         let mut properties = HashMap::new();
         properties.insert(
             "example_name".to_string(),
-            ProtoImmutableStrProp("foobar".to_string()).into(),
+            ImmutableStrProp{prop: "foobar".to_string()}.into(),
         );
         let n0 = IdentifiedNode {
             node_key: node_key.to_string(),
@@ -312,7 +312,6 @@ pub mod test {
 
     #[tokio::test(threaded_scheduler)]
     async fn test_upsert_multifield() -> Result<(), Box<dyn std::error::Error>> {
-
         init_test_env();
 
         let dgraph_client =
@@ -323,14 +322,54 @@ pub mod test {
         let mut properties = HashMap::new();
         properties.insert(
             "example_name".to_string(),
-            ProtoImmutableStrProp("foobar".to_string()).into(),
+            ImmutableStrProp{prop: "test_upsert_multifield".to_string()}.into(),
         );
         let n0 = IdentifiedNode {
             node_key: node_key.to_string(),
             node_type: "ExampleNode".to_string(),
             properties,
         };
+        let mut identified_graph = IdentifiedGraph::new();
+        identified_graph.add_node(n0);
+        let mut merged_graph = MergedGraph::new();
 
+        GraphMergeHelper{}
+            .upsert_into(dgraph_client.clone(), &identified_graph, &mut merged_graph)
+            .await;
+
+        // If we query for multiple nodes by node_key we should only ever receive one
+        let query_block = QueryBlockBuilder::default()
+            .query_type(QueryBlockType::query())
+            .root_filter(Condition::EQ(
+                format!("node_key"),
+                ConditionValue::string(node_key),
+            ))
+            .predicates(vec![Predicate::Field(Field::new("uid")), Predicate::Field(Field::new("example_name"))])
+            // .first(2)
+            .build()
+            .unwrap();
+
+        let query = QueryBuilder::default()
+            .query_blocks(vec![query_block])
+            .build()
+            .unwrap();
+
+        let mut txn = dgraph_client.new_read_only_txn();
+        let response = txn
+            .query(query.to_query_string())
+            .await
+            .expect("query failed");
+
+        let m: HashMap<String, Vec<HashMap<String, String>>> =
+            serde_json::from_slice(&response.json).expect("response failed to parse");
+        let mut m = m.into_iter().next().unwrap().1;
+        debug_assert_eq!(m.len(), 1);
+        let mut m = m.remove(0);
+        let uid = m.remove("uid").expect("uid");
+        let example_name = m.remove("example_name").expect("example_name");
+        assert!(m.is_empty());
+        assert_eq!(example_name, "test_upsert_multifield");
+        Ok(())
 
     }
 }
