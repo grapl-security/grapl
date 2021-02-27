@@ -15,7 +15,6 @@ export
 
 export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 	-f ./test/docker-compose.unit-tests-rust.yml \
-	-f ./test/docker-compose.unit-tests-python.yml \
 	-f ./test/docker-compose.unit-tests-js.yml \
 	-f ./test/docker-compose.integration-tests.yml \
 	-f ./test/docker-compose.e2e-tests.yml \
@@ -72,18 +71,12 @@ build-all: ## Build all targets (incl. services, tests, zip)
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
 		-f ./test/docker-compose.unit-tests-rust.yml \
-		-f ./test/docker-compose.unit-tests-python.yml \
 		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-unit-rust
 build-test-unit-rust:
 	$(DOCKER_BUILDX_BAKE) \
 		-f ./test/docker-compose.unit-tests-rust.yml
-
-.PHONY: build-test-unit-python
-build-test-unit-python:
-	$(DOCKER_BUILDX_BAKE) \
-		-f ./test/docker-compose.unit-tests-python.yml
 
 .PHONY: build-test-unit-js
 build-test-unit-js:
@@ -117,11 +110,10 @@ build-aws: ## Build services for Grapl in AWS (subset of all services)
 #
 
 .PHONY: test-unit
-test-unit: build-test-unit ## Build and run unit tests
+test-unit: build-test-unit test-unit-python ## Build and run unit tests
 	test/docker-compose-with-error.sh \
 		-p grapl-test-unit \
 		-f ./test/docker-compose.unit-tests-rust.yml \
-		-f ./test/docker-compose.unit-tests-python.yml \
 		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: test-unit-rust
@@ -131,16 +123,9 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 		-f ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: test-unit-python
-test-unit-python: build-test-unit-python ## Build and run unit tests - Python only
-	test/docker-compose-with-error.sh \
-		-p grapl-test-unit-python \
-		-f ./test/docker-compose.unit-tests-python.yml
-
-.PHONY: test-unit-python-pants
-
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
-test-unit-python-pants: ## Run Python unit tests under Pants
+test-unit-python: ## Run Python unit tests under Pants
 	./pants --tag="-needs_work" test :: --pytest-args="-m 'not integration_test'"
 
 .PHONY: test-unit-js
@@ -159,10 +144,7 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests
 test-integration: export COMPOSE_IGNORE_ORPHANS=1
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV) \
-	docker-compose \
-		--file docker-compose.yml \
-		--project-name "grapl-integration_tests" \
-		up --force-recreate -d && \
+	$(MAKE) up-detach PROJECT_NAME="grapl-integration_tests" && \
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.integration-tests.yml \
 		-p "grapl-integration_tests"
@@ -171,10 +153,7 @@ test-integration: build-test-integration ## Build and run integration tests
 test-e2e: export COMPOSE_IGNORE_ORPHANS=1
 test-e2e: build-test-e2e ## Build and run e2e tests
 	$(WITH_LOCAL_GRAPL_ENV) \
-	docker-compose \
-		--file docker-compose.yml \
-		--project-name "grapl-e2e_tests" \
-		up --force-recreate -d && \
+	$(MAKE) up-detach PROJECT_NAME="grapl-e2e_tests" && \
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.e2e-tests.yml \
 		-p "grapl-e2e_tests"
@@ -244,6 +223,16 @@ push: ## Push Grapl containers to Docker Hub
 up: build-services ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV) \
 	docker-compose -f docker-compose.yml up
+
+.PHONY: up-detach
+up-detach: build-services ## Docker-compose up + detach and return control to tty
+	# Primarily used for bringing up an environment for integration testing.
+	# Usage: `make up-detach PROJECT_NAME=asdf`
+	$(WITH_LOCAL_GRAPL_ENV) \
+	docker-compose \
+		-p $(PROJECT_NAME) \
+		-f docker-compose.yml \
+		up --detach --force-recreate
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers

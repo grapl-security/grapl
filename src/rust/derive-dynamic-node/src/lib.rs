@@ -1,4 +1,3 @@
-#![allow(warnings)]
 #![recursion_limit = "128"]
 extern crate proc_macro;
 
@@ -6,6 +5,7 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TS2;
 use quote::quote;
 use syn::{parse_quote,
+          spanned::Spanned,
           Attribute,
           Data,
           Field,
@@ -14,6 +14,7 @@ use syn::{parse_quote,
           Meta,
           NestedMeta,
           Type};
+
 
 const CREATE_TIME: &'static str = "create_time";
 const LAST_SEEN_TIME: &'static str = "last_seen_time";
@@ -58,8 +59,7 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
 
     let methods = fields
         .iter()
-        .map(name_and_ty)
-        .map(|(name, ty, resolution)| property_methods(name, ty, resolution))
+        .map(|field| property_methods(field))
         .fold(quote!(), |mut acc, method| {
             acc.extend(method);
             acc
@@ -156,8 +156,6 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
 
     q.into()
 }
-
-// fn get_static_identifiers()
 
 #[proc_macro_derive(GraplStaticId, attributes(grapl))]
 pub fn derive_grapl_static(input: TokenStream) -> TokenStream {
@@ -260,12 +258,9 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     }
 
     let struct_name = &input.ident;
-    let create_time_prop =
-        create_time_prop.expect("missing property with attribute: create_time_prop");
-    let last_seen_time_prop =
-        last_seen_time_prop.expect("missing property with attribute: last_seen_time_prop");
-    let terminate_time_prop =
-        terminate_time_prop.expect("missing property with attribute: terminated_time_prop");
+    create_time_prop.expect("missing property with attribute: create_time");
+    last_seen_time_prop.expect("missing property with attribute: last_seen_time");
+    terminate_time_prop.expect("missing property with attribute: terminated_time");
 
     let node_name_str = format!("{}Node", struct_name);
     let node_name = syn::Ident::new(&node_name_str, struct_name.span());
@@ -274,9 +269,9 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
         impl #node_name {
             pub fn session_strategy() -> IdStrategy {
                 Session {
-                    created_time: #create_time_prop . to_string(),
-                    last_seen_time: #last_seen_time_prop . to_string(),
-                    terminated_time: #terminate_time_prop . to_string(),
+                    create_time: 0 ,
+                    last_seen_time: 0 ,
+                    terminate_time: 0 ,
                     primary_key_requires_asset_id: false,
                     primary_key_properties: vec![
                         #id_fields
@@ -292,6 +287,7 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
 
     q.into()
 }
+
 
 fn on_grapl_attrs(attr: &Attribute, mut on: impl FnMut(&str)) {
     if attr.path.segments.is_empty() {
@@ -338,18 +334,6 @@ fn assert_meta_attr_combo(field: &Field, meta_attr_match_a: &str, meta_attr_matc
     }
 }
 
-fn set_timestamp_from_meta(field: &Field, prop_name: &str, time_prop: &mut Option<String>) {
-    for attr in &field.attrs {
-        on_grapl_attrs(&attr, |meta_attr| {
-            if meta_attr == prop_name {
-                if time_prop.is_some() {
-                    panic!("Can not set {} property more than once", prop_name);
-                }
-                *time_prop = Some(field.ident.clone().unwrap().to_string());
-            }
-        });
-    }
-}
 
 fn resolvable_type_from(
     property_type: &Type,
@@ -413,7 +397,51 @@ fn resolvable_type_from(
     Some((return_type, method_ident))
 }
 
-fn property_methods(property_name: &Ident, property_type: &Type, resolution_name: String) -> TS2 {
+
+fn identity_prop_setter(field: &Field, property_name: &Ident) -> TS2 {
+    let mut created_time_prop = false;
+    let mut last_seen_time_prop = false;
+    let mut terminated_time_prop = false;
+
+    for attr in field.attrs.iter() {
+        on_grapl_attrs(attr, |meta_attr| {
+            created_time_prop |= meta_attr == CREATE_TIME;
+            last_seen_time_prop |= meta_attr == LAST_SEEN_TIME;
+            terminated_time_prop |= meta_attr == TERMINATE_TIME;
+        });
+        if [
+            &created_time_prop,
+            &last_seen_time_prop,
+            &terminated_time_prop,
+        ]
+        .iter()
+        .any(|b| **b)
+        {
+            break;
+        }
+    }
+
+    let ident = match (created_time_prop, last_seen_time_prop, terminated_time_prop) {
+        (true, _, _) => syn::Ident::new(&CREATE_TIME, field.span()),
+        (_, true, _) => syn::Ident::new(&LAST_SEEN_TIME, field.span()),
+        (_, _, true) => syn::Ident::new(&TERMINATE_TIME, field.span()),
+        _ => return quote!(),
+    };
+    quote!(
+        let mut self_strategy = mut_self.id_strategy[0].strategy.as_mut().unwrap();
+        match self_strategy {
+            grapl_graph_descriptions::graph_description::id_strategy::Strategy::Session(
+                grapl_graph_descriptions::graph_description::Session{ref mut #ident, ..}
+            ) => {
+                * #ident = #property_name.as_inner();
+            }
+            s => panic!("Can not set timestamps on non-Session strategy {:?}", s)
+        }
+    )
+}
+
+fn property_methods(field: &Field) -> TS2 {
+    let (property_name, property_type, resolution_name) = name_and_ty(field);
     let get_method_name = format!("get_{}", property_name);
     let get_method_name = syn::Ident::new(&get_method_name, property_name.span());
 
@@ -422,6 +450,9 @@ fn property_methods(property_name: &Ident, property_type: &Type, resolution_name
 
     let property_name_str = format!("{}", property_name);
 
+    let inner_property_name = syn::Ident::new(&format!("__{}", property_name), property_name.span());
+
+    let set_identity_prop = identity_prop_setter(field, &inner_property_name);
     let mut implementation: TS2 = quote!();
 
     let (return_type, method_ident) = match resolvable_type_from(&property_type, &resolution_name) {
@@ -431,12 +462,16 @@ fn property_methods(property_name: &Ident, property_type: &Type, resolution_name
 
     let with_method_implementation = quote!(
         fn #with_method_name(&mut self, #property_name: impl Into<#return_type>) -> &mut Self {
-            let #property_name = #property_name .into();
-            self.get_mut_dynamic_node()
-            .properties.insert(
+            let #inner_property_name = #property_name .into();
+            let mut_self = self.get_mut_dynamic_node();
+
+            mut_self.properties.insert(
                 #property_name_str .to_string(),
-                #property_name .into(),
+                #inner_property_name .into(),
             );
+
+            #set_identity_prop
+
             self
         }
     );
@@ -475,10 +510,15 @@ fn property_methods(property_name: &Ident, property_type: &Type, resolution_name
     implementation
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+fn set_timestamp_from_meta(field: &Field, prop_name: &str, time_prop: &mut Option<String>) {
+    for attr in &field.attrs {
+        on_grapl_attrs(&attr, |meta_attr| {
+            if meta_attr == prop_name {
+                if time_prop.is_some() {
+                    panic!("Can not set {} property more than once", prop_name);
+                }
+                *time_prop = Some(field.ident.clone().unwrap().to_string());
+            }
+        });
     }
 }

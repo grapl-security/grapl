@@ -1,5 +1,6 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
+import * as ecs from '@aws-cdk/aws-ecs';
 import * as iam from '@aws-cdk/aws-iam';
 import * as route53 from '@aws-cdk/aws-route53';
 import * as s3deploy from '@aws-cdk/aws-s3-deployment';
@@ -34,6 +35,9 @@ export interface SwarmProps {
     // listener lambda.
     readonly watchful?: Watchful;
 }
+
+// Don't pass Clusters to allowConnectionsFrom
+export type SwarmConnectable = Exclude<ec2.IConnectable, ecs.Cluster>;
 
 export class Swarm extends cdk.Construct {
     private readonly swarmHostedZone: route53.PrivateHostedZone;
@@ -151,7 +155,7 @@ export class Swarm extends cdk.Construct {
     }
 
     public allowConnectionsFrom(
-        other: ec2.IConnectable,
+        other: SwarmConnectable,
         portRange: ec2.Port
     ): void {
         this.swarmSecurityGroup.connections.allowFrom(other, portRange);

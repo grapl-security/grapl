@@ -23,6 +23,10 @@ target/
 # Node packages
 node_modules/
 
+# Yarn packages
+src/js/engagement_view/.yarn/install-state.gz
+
+
 # Distribution / packaging
 build/
 dist/
@@ -52,3 +56,6 @@ dist/
 # Generated when profiling rust code
 *.profdata
 *.profraw
+
+### PERSONAL SCRIPTS
+upload_localhost.sh

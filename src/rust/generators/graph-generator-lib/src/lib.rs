@@ -55,7 +55,7 @@ pub async fn run_graph_generator<
     let _s3_client = S3Client::from_env();
     let cache = &mut event_caches(&env).await;
 
-    let sysmon_subgraph_generator =
+    let subgraph_generator =
         &mut make_ten(async { (init_generator)(cache[0].clone()) }).await;
 
     let serializer = &mut make_ten(async { GraphDescriptionSerializer::default() }).await;
@@ -84,7 +84,7 @@ pub async fn run_graph_generator<
         std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
         cache,
         sqs_client.clone(),
-        sysmon_subgraph_generator,
+        subgraph_generator,
         s3_payload_retriever,
         s3_emitter,
         serializer,
@@ -92,58 +92,3 @@ pub async fn run_graph_generator<
     )
     .await;
 }
-//
-// /// Graph generator implementations should invoke this function to begin processing new log events.
-// ///
-// /// ```rust,ignore
-// /// #[tokio::main]
-// /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-// ///     use sqs_lambda::cache::NopCache;
-// ///     use graph_generator_lib::run_graph_generator;
-// ///
-// ///     grapl_config::init_grapl_env!();
-// ///
-// ///     run_graph_generator(
-// ///         MyNewGenerator::new(),
-// ///         MyDecoder::default()
-// ///     ).await;
-// ///
-// ///     Ok(())
-// /// }
-// /// ```
-// pub async fn run_graph_generator<
-//     IE: Send + Sync + Clone + 'static,
-//     EH: EventHandler<InputEvent = IE, OutputEvent = GraphDescription, Error = sqs_lambda::error::Error>
-//         + Send
-//         + Sync
-//         + Clone
-//         + 'static,
-//     ED: PayloadDecoder<IE> + Send + Sync + Clone + 'static,
-// >(
-//     generator: EH,
-//     event_decoder: ED,
-//     consume_policy: ConsumePolicyBuilder,
-//     completion_policy: CompletionPolicy,
-//     metric_reporter: MetricReporter<Stdout>,
-// ) {
-//     info!("IS_LOCAL={:?}", config::is_local());
-//
-//     if config::is_local() {
-//         local::run_graph_generator_local(
-//             generator,
-//             event_decoder,
-//             consume_policy,
-//             completion_policy,
-//             metric_reporter,
-//         )
-//         .await;
-//     } else {
-//         aws::run_graph_generator_aws(
-//             generator,
-//             event_decoder,
-//             consume_policy,
-//             completion_policy,
-//             metric_reporter,
-//         );
-//     }
-// }

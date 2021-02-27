@@ -1,4 +1,3 @@
-#![allow(warnings)]
 #[cfg(feature = "integration")]
 pub mod test {
     use dgraph_tonic::Client as DgraphClient;

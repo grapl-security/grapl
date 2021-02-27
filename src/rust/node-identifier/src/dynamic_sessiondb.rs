@@ -127,7 +127,7 @@ where
         let mut primary_key = String::with_capacity(32);
 
         if strategy.primary_key_requires_asset_id {
-            panic!("pre-resolution of asset_id is not supported currently")
+            panic!("asset_id resolution is currently not supported")
         }
 
         for prop_name in &strategy.primary_key_properties {
@@ -186,18 +186,8 @@ where
             .primary_session_key(&mut attributed_node, strategy)
             .await?;
 
-        let created_time = node
-            .properties
-            .get(&strategy.created_time)
-            .and_then(|p| p.as_immutable_uint())
-            .map(|p| p.as_inner())
-            .unwrap_or(0);
-        let last_seen_time = node
-            .properties
-            .get(&strategy.last_seen_time)
-            .and_then(|p| p.as_increment_only_uint())
-            .map(|p| p.as_inner())
-            .unwrap_or(0);
+        let created_time = strategy.create_time;
+        let last_seen_time = strategy.last_seen_time;
 
         let unid = match (created_time != 0, last_seen_time != 0) {
             (true, _) => UnidSession {

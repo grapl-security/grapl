@@ -249,4 +249,17 @@ export class FargateService {
         );
         
     }
+
+    grantListQueues() {
+        // Some of our code, locally, tests for SQS availability with a `list_queues` call.
+        // In the interest of unified local and prod code, we can grant this permission.
+        const policy = new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ["sqs:ListQueues"],
+            resources: ["*"],
+        });
+
+        this.service.taskDefinition.addToTaskRolePolicy(policy);
+        this.retryService.taskDefinition.addToTaskRolePolicy(policy);
+    }
 }

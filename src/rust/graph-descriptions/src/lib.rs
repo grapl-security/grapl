@@ -1,5 +1,4 @@
 // #![allow(unused_imports, unused_mut)]
-#![allow(warnings)]
 pub mod graph_description {
     // TODO: Restructure the Rust modules to better reflect the new
     // Protobuf structure
@@ -10,20 +9,13 @@ pub mod graph_description {
 }
 pub use crate::{graph_description::*, node_property::Property};
 
-use dgraph_tonic::Query;
-
 pub use node_property::Property::{
     DecrementOnlyInt as ProtoDecrementOnlyIntProp, DecrementOnlyUint as ProtoDecrementOnlyUintProp,
     ImmutableInt as ProtoImmutableIntProp, ImmutableStr as ProtoImmutableStrProp,
     ImmutableUint as ProtoImmutableUintProp, IncrementOnlyInt as ProtoIncrementOnlyIntProp,
     IncrementOnlyUint as ProtoIncrementOnlyUintProp,
 };
-use std::{collections::HashMap, sync::Arc};
 
-use dgraph_tonic::{Client as DgraphClient, Mutate, Mutation as DgraphMutation, MutationResponse};
-use futures::StreamExt;
-use futures_retry::{FutureRetry, RetryPolicy};
-use grapl_utils::iter_ext::GraplIterExt;
 
 // A helper macro to generate `From` impl boilerplate.
 macro_rules ! impl_from_for_unit {
@@ -358,11 +350,11 @@ impl NodeProperty {
             (Some(p), Some(op)) => {
                 p.merge_property(op);
             }
-            (None, op) => {
+            (None, Some(op)) => {
                 debug_assert!(false, "Unhandled property merge, self is None: {:?}", op);
                 tracing::warn!("Unhandled property merge, self is None: {:?}", op);
             }
-            (p, None) => {
+            (Some(p), None) => {
                 debug_assert!(false, "Unhandled property merge, other is None: {:?}", p);
                 tracing::warn!("Unhandled property merge, other is None: {:?}", p);
             }
@@ -845,6 +837,7 @@ pub mod test {
     use super::*;
     use quickcheck_macros::quickcheck;
     use std::hash::Hasher;
+    use std::collections::HashMap;
 
     #[cfg(not(feature = "fuzzing"))]
     use quickcheck::{Arbitrary, Gen};
@@ -927,7 +920,7 @@ pub mod test {
         for _bytes in bytes {
             hasher.write(_bytes.as_ref());
         }
-        (hasher.finish() as u64)
+        hasher.finish() as u64
     }
 
     fn choice<T: Clone>(bytes: impl AsRef<[u8]>, choices: &[T]) -> T {
@@ -940,7 +933,7 @@ pub mod test {
     fn choose_property(node_key: &str, property_name: &str, g: &mut Gen) -> NodeProperty {
         let s = format!("{}{}", node_key, property_name);
 
-        let mut props = &[
+        let props = &[
             Property::IncrementOnlyInt(IncrementOnlyIntProp::arbitrary(g)),
             Property::DecrementOnlyInt(DecrementOnlyIntProp::arbitrary(g)),
             Property::IncrementOnlyUint(IncrementOnlyUintProp::arbitrary(g)),
@@ -994,7 +987,7 @@ pub mod test {
 
     #[cfg(not(feature = "extra_assertions"))]
     #[quickcheck]
-    fn test_merge_str(mut x: ImmutableStrProp, y: ImmutableStrProp) {
+    fn test_merge_str(x: ImmutableStrProp, y: ImmutableStrProp) {
         init_test_env();
         let original = x;
         let mut x = original.clone();
@@ -1075,7 +1068,7 @@ pub mod test {
         if node_0.node_key != node_1.node_key {
             return;
         }
-        let original = node_0.clone();
+        // let original = node_0.clone();
         node_0.merge(&node_1);
 
         // for (_o_pred_name, o_pred_val) in original.iter() {
