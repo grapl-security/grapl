@@ -35,8 +35,6 @@ rusoto_dynamodb = {version="0.45", default_features = false, features=["rustls"]
 rusoto_credential = "0.45"
 serde_dynamodb = {version="0.6", default_features = false, features=["rustls"]}
 
-lambda_runtime = "0.2"
-
 sha2 = "0.9.2"
 log = "0.4"
 stopwatch = "0"
@@ -59,6 +57,11 @@ tokio = { version = "0.2", features = ["sync", "macros", "time", "rt-threaded"] 
 hmap = "0.1"
 tracing = "0.1"
 chrono = "0.4"
+tracing-subscriber = "0.2.16"
+
+darkredis = "0.7.0"
+lazy_static = "1.4.0"
+grapl-utils = { path = "../grapl-utils" }
 
 [dependencies.uuid]
 version = "0.8"

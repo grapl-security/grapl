@@ -23,6 +23,13 @@ const IMMUTABLE: &'static str = "immutable";
 const INCREMENT: &'static str = "increment";
 const DECREMENT: &'static str = "decrement";
 
+const PSEUDO_KEY: &'static str = "pseudo_key";
+const NEGATION_KEY: &'static str = "negation_key";
+const OPTIONAL_STATIC_ID: &'static str = "optional_static_id";
+const IDENTIFICATION_ONLY: &'static str = "identification_only";
+
+
+
 fn name_and_ty(field: &Field) -> (&Ident, &Type, String) {
     let mut resolution = None;
     for attr in &field.attrs {
@@ -236,22 +243,43 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     for field in fields.iter() {
         assert_meta_attr_combo(field, CREATE_TIME, IMMUTABLE);
         assert_meta_attr_combo(field, TERMINATE_TIME, IMMUTABLE);
+        assert_meta_attr_combo(field, NEGATION_KEY, IMMUTABLE);
+        assert_meta_attr_combo(field, OPTIONAL_STATIC_ID, IMMUTABLE);
+
         set_timestamp_from_meta(field, CREATE_TIME, &mut create_time_prop);
         set_timestamp_from_meta(field, LAST_SEEN_TIME, &mut last_seen_time_prop);
         set_timestamp_from_meta(field, TERMINATE_TIME, &mut terminate_time_prop);
     }
 
     let mut id_fields = quote!();
+    let mut negation_fields = quote!();
+    let mut optional_static_fields = quote!();
+    let mut drop_after_identification = quote!();
     for field in fields {
         for attr in &field.attrs {
             on_grapl_attrs(attr, |meta_attr| {
-                if meta_attr == "pseudo_key" {
-                    let f = field
-                        .ident
-                        .as_ref()
-                        .expect("field is missing an identifier")
-                        .to_string();
-                    id_fields.extend(quote!(#f .to_string(), ));
+                match meta_attr {
+                    PSEUDO_KEY => {
+                        let f = field.ident.as_ref().expect("field is missing an identifier")
+                            .to_string();
+                        id_fields.extend(quote!(#f .to_string(), ));
+                    },
+                    NEGATION_KEY => {
+                        let f = field.ident.as_ref().expect("field is missing an identifier")
+                            .to_string();
+                        negation_fields.extend(quote!(#f .to_string(), ));
+                    },
+                    OPTIONAL_STATIC_ID => {
+                        let f = field.ident.as_ref().expect("field is missing an identifier")
+                            .to_string();
+                        optional_static_fields.extend(quote!(#f .to_string(), ));
+                    }
+                    IDENTIFICATION_ONLY => {
+                        let f = field.ident.as_ref().expect("field is missing an identifier")
+                            .to_string();
+                        drop_after_identification.extend(quote!(#f .to_string(), ));
+                    }
+                    _ => (),
                 }
             });
         }
@@ -269,12 +297,21 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
         impl #node_name {
             pub fn session_strategy() -> IdStrategy {
                 Session {
-                    create_time: 0 ,
-                    last_seen_time: 0 ,
-                    terminate_time: 0 ,
+                    create_time: 0,
+                    last_seen_time: 0,
+                    terminate_time: 0,
                     primary_key_requires_asset_id: false,
                     primary_key_properties: vec![
                         #id_fields
+                    ],
+                    negation_keys: vec![
+                        #negation_fields
+                    ],
+                    optional_static_keys: vec![
+                        #optional_static_fields
+                    ],
+                    drop_after_identification: vec![
+                        #drop_after_identification
                     ],
                 }.into()
             }

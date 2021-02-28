@@ -17,6 +17,9 @@ message Session {
     uint64 create_time = 3;
     uint64 last_seen_time = 4;
     uint64 terminate_time = 5;
+    repeated string negation_keys = 6;
+    repeated string optional_static_keys = 7;
+    repeated string drop_after_identification = 8;
 }
 
 // The Static Identity Strategy is used when a node already has its own way of being uniquely identified.

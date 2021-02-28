@@ -583,6 +583,23 @@ impl std::string::ToString for NodeProperty {
     }
 }
 
+
+impl IdStrategy {
+    pub fn expect_session(&self) -> &Session {
+        match self.strategy {
+            Some(id_strategy::Strategy::Session(ref session)) => session,
+            _ => panic!("Expected session"),
+        }
+    }
+
+    pub fn expect_static(&self) -> &Static {
+        match self.strategy {
+            Some(id_strategy::Strategy::Static(ref st)) => st,
+            _ => panic!("Expected static"),
+        }
+    }
+}
+
 impl NodeDescription {
     pub fn get_property(&self, name: impl AsRef<str>) -> Option<&NodeProperty> {
         self.properties.get(name.as_ref())
@@ -594,6 +611,13 @@ impl NodeDescription {
 
     pub fn set_key(&mut self, key: String) {
         self.node_key = key;
+    }
+
+    pub fn generate_negation_keys(&self) -> std::collections::HashMap<String, String> {
+        // let p = self.
+        let negation_keys = std::collections::HashMap::new();
+
+        negation_keys
     }
 }
 
@@ -780,6 +804,7 @@ impl From<ImmutableStrProp> for Property {
         Self::ImmutableStr(p)
     }
 }
+
 
 impl NodeProperty {
     pub fn as_increment_only_uint(&self) -> Option<IncrementOnlyUintProp> {

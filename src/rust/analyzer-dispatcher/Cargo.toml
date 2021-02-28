@@ -26,7 +26,6 @@ rusoto_core = { version="0.45", default_features = false, features=["rustls"] }
 rusoto_sqs = { version="0.45", default_features = false, features=["rustls"] }
 rusoto_credential = "0.45"
 
-lambda_runtime = "0.2.*"
 async-trait = "0.1.22"
 zstd = "0.6"
 tokio-compat = "0.1.*"

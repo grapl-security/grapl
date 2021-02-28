@@ -1,42 +1,35 @@
-// #![allow(unused_must_use)]
-
-use std::{collections::{HashMap,
-                        HashSet},
-          fmt::Debug,
-          sync::{Arc,
-                 Mutex}};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Debug,
+    sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
-use dynamic_sessiondb::{DynamicMappingDb,
-                        NodeDescriptionIdentifier};
+use dynamic_sessiondb::{DynamicMappingDb, NodeDescriptionIdentifier};
 use failure::Error;
-use grapl_config::{env_helpers::{s3_event_emitters_from_env,
-                                 FromEnv},
-                   event_caches};
-use grapl_graph_descriptions::graph_description::{GraphDescription,
-                                                  IdentifiedGraph,
-                                                  IdentifiedNode,
-                                                  NodeDescription};
+use grapl_config::{
+    env_helpers::{s3_event_emitters_from_env, FromEnv},
+    event_caches,
+};
+use grapl_graph_descriptions::graph_description::{
+    GraphDescription, IdentifiedGraph, IdentifiedNode, NodeDescription, id_strategy,
+};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ZstdProtoDecoder,
-                    serialization::IdentifiedGraphSerializer};
+use grapl_service::{decoder::ZstdProtoDecoder, serialization::IdentifiedGraphSerializer};
 use log::*;
-use rusoto_dynamodb::{DynamoDb,
-                      DynamoDbClient};
+use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
-use sqs_executor::{cache::{Cache,
-                           CacheResponse,
-                           Cacheable},
-                   errors::{CheckedError,
-                            Recoverable},
-                   event_handler::{CompletedEvents,
-                                   EventHandler},
-                   event_retriever::S3PayloadRetriever,
-                   event_status::EventStatus,
-                   make_ten,
-                   s3_event_emitter::S3ToSqsEventNotifier,
-                   time_based_key_fn};
+use sqs_executor::{
+    cache::{Cache, CacheResponse, Cacheable},
+    errors::{CheckedError, Recoverable},
+    event_handler::{CompletedEvents, EventHandler},
+    event_retriever::S3PayloadRetriever,
+    event_status::EventStatus,
+    make_ten,
+    s3_event_emitter::S3ToSqsEventNotifier,
+    time_based_key_fn,
+};
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -48,12 +41,13 @@ pub mod dynamic_sessiondb;
 
 pub mod sessiondb;
 pub mod sessions;
+pub mod key_cache;
 
 #[derive(Clone)]
 pub struct NodeIdentifier<D, CacheT>
-where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        D: DynamoDb + Clone + Send + Sync + 'static,
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
     dynamic_identifier: NodeDescriptionIdentifier<D>,
     node_id_db: D,
@@ -62,9 +56,9 @@ where
 }
 
 impl<D, CacheT> NodeIdentifier<D, CacheT>
-where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        D: DynamoDb + Clone + Send + Sync + 'static,
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(
         dynamic_identifier: NodeDescriptionIdentifier<D>,
@@ -104,9 +98,9 @@ impl CheckedError for NodeIdentifierError {
 
 #[async_trait]
 impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
-where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        D: DynamoDb + Clone + Send + Sync + 'static,
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GraphDescription;
     // todo: IdentifiedGraph's should be emitted
@@ -151,22 +145,20 @@ where
         for (old_node_key, old_node) in output_subgraph.nodes.iter() {
             let node = old_node.clone();
 
-            // match self.cache.get(old_node_key.clone()).await {
-            //     Ok(CacheResponse::Hit) => {
-            //         info!("Got cache hit for old_node_key, skipping node.");
-            //         continue;
-            //     }
-            //     Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
-            //     _ => (),
-            // };
+            match self.cache.get(old_node_key.clone()).await {
+                Ok(CacheResponse::Hit) => {
+                    info!("Got cache hit for old_node_key, skipping node.");
+                    continue;
+                }
+                Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
+                _ => (),
+            };
 
             let node = match self.attribute_node_key(&node).await {
                 Ok(node) => node,
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
                     dead_node_ids.insert(node.clone_node_key());
-                    // completed.add_identity(node.clone_node_key(), EventStatus::Failure);
-
                     attribution_failure = Some(e);
                     continue;
                 }
@@ -257,6 +249,37 @@ where
     }
 }
 
+pub async fn into_cached(cache: key_cache::IdentityCache, graph_description: &mut GraphDescription) -> IdentifiedGraph {
+    let mut identified_graph = IdentifiedGraph::new();
+    // maps node_keys to associated optional primary keys
+    let mut session_keys = HashMap::new();
+    for (node_key, node) in graph_description.nodes.iter() {
+        if let Some(id_strategy::Strategy::Session(ref session)) = node.id_strategy[0].strategy {
+            for key in session.optional_static_keys.iter() {
+                if let Some(key) = node.properties.get(key) {
+                    session_keys.insert(key.to_string(), node_key.clone());
+                }
+            }
+        }
+    }
+
+    let keys: Vec<_> = session_keys.keys().cloned().collect();
+
+    let resolutions = cache.resolve_keys(&keys[..]).await.expect("keys failed to resolve");
+    for (resolved_property, resolved_identity) in resolutions.into_iter() {
+        let node_key = session_keys.remove(&resolved_property);
+        if let Some(node_key) = node_key {
+            let node = graph_description.nodes.remove(&resolved_property);
+            if let Some(mut node) = node {
+                node.node_key = resolved_identity;
+                identified_graph.nodes.insert(node_key, node.into());
+            }
+        }
+
+    }
+    identified_graph
+}
+
 pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
     let should_default = true;
     let (env, _guard) = grapl_config::init_grapl_env!();
@@ -284,7 +307,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
             MetricReporter::new(&env.service_name),
         )
     })
-    .await;
+        .await;
 
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
@@ -301,7 +324,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
             cache[0].to_owned(),
         )
     })
-    .await;
+        .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
@@ -315,7 +338,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
         serializer,
         MetricReporter::new(&env.service_name),
     )
-    .await;
+        .await;
 
     info!("Exiting");
     Ok(())

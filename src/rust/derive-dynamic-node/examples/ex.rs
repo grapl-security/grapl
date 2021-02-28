@@ -20,6 +20,10 @@ pub struct SpecialProcess {
     pub terminate_time: u64,
     #[grapl(pseudo_key, immutable)]
     pub process_id: u64,
+    #[grapl(negation_key, immutable, drop_after_identification)]
+    pub uid: u64,
+    #[grapl(negation_key, immutable, drop_after_identification)]
+    pub parent_process_id: u64,
 }
 
 

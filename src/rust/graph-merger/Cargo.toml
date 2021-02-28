@@ -54,7 +54,6 @@ chrono = "0.4"
 serde_dynamodb = { version="0.6", default_features = false, features=["rustls"] }
 tracing = "0.1.22"
 thiserror = "1.0.23"
-lambda_runtime = "0.2.1"
 tracing-futures = "0.2.4"
 tap = "1.0.0"
 lru = "0.6.5"

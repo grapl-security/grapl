@@ -36,7 +36,6 @@ simple_logger = "1.6.*"
 async-trait = "0.1.31"
 thiserror = "1.0.22"
 
-lambda_runtime = "0.2"
 zstd = "0.6"
 tokio-compat = "0.1"
 tokio = { version = "0.2", features = ["sync", "rt-core", "macros", "time", "rt-threaded"] }

@@ -20,6 +20,90 @@ use rusoto_dynamodb::{AttributeValue,
 use uuid::Uuid;
 
 use crate::sessions::*;
+use std::collections::HashMap;
+
+use grapl_graph_descriptions::{NodeProperty, node_property};
+use grapl_graph_descriptions::{
+    IncrementOnlyUintProp,
+    ImmutableUintProp,
+    DecrementOnlyUintProp,
+    DecrementOnlyIntProp,
+    IncrementOnlyIntProp,
+    ImmutableIntProp,
+    ImmutableStrProp,
+};
+
+fn convert_to_attribute_value(np: &NodeProperty) -> AttributeValue {
+    match &np.property {
+        Some(node_property::Property::IncrementOnlyUint(IncrementOnlyUintProp {prop})) => {
+            AttributeValue {
+                n: prop.to_string().into(),
+                ..Default::default()
+            }
+        }
+        Some(node_property::Property::ImmutableUint(ImmutableUintProp {prop})) => {
+            AttributeValue {
+                n: prop.to_string().into(),
+                ..Default::default()
+            }
+        }
+        Some(node_property::Property::DecrementOnlyUint(DecrementOnlyUintProp {prop})) => {
+            AttributeValue {
+                n: prop.to_string().into(),
+                ..Default::default()
+            }
+        }
+        Some(node_property::Property::DecrementOnlyInt(DecrementOnlyIntProp {prop})) => {
+            AttributeValue {
+                n: prop.to_string().into(),
+                ..Default::default()
+            }
+        }
+        Some(node_property::Property::IncrementOnlyInt(IncrementOnlyIntProp {prop})) => {
+            AttributeValue {
+                n: prop.to_string().into(),
+                ..Default::default()
+            }
+        }
+        Some(node_property::Property::ImmutableInt(ImmutableIntProp {prop})) => {
+            AttributeValue {
+                n: prop.to_string().into(),
+                ..Default::default()
+            }
+        }
+        Some(node_property::Property::ImmutableStr(ImmutableStrProp {prop})) => {
+            AttributeValue {
+                s: prop.clone().into(),
+                ..Default::default()
+            }
+        }
+        None => panic!("Invalid property : {:?}", np),
+    }
+}
+
+
+fn negation_key_expression(unid: &UnidSession) -> Option<(String, HashMap<String, AttributeValue>)> {
+    if unid.negation_keys.is_empty() {
+        return None
+    }
+    let mut attribute_map = HashMap::new();
+    let mut key_exprs = Vec::new();
+    for (key_name, key_value) in unid.negation_keys.iter() {
+        let key_expr = format!(
+            r#"(attribute_not_exists({key_name}) or {key_name} = :{key_name})"#,
+            key_name=key_name,
+        );
+        key_exprs.push(key_expr);
+        attribute_map.insert(
+            format!(":{}", key_name),
+            convert_to_attribute_value(key_value),
+        );
+    }
+
+    let key_exprs = key_exprs.join(" and ");
+
+    Some((key_exprs, attribute_map))
+}
 
 #[derive(Debug, Clone)]
 pub struct SessionDb<D>
@@ -46,23 +130,37 @@ where
         unid: &UnidSession,
     ) -> Result<Option<Session>, Error> {
         info!("Finding first session after : {}", &self.table_name);
+        let mut expression_attribute_values = hmap! {
+            ":pseudo_key".to_owned() => AttributeValue {
+                s: unid.pseudo_key.clone().into(),
+                ..Default::default()
+            },
+            ":create_time".to_owned() => AttributeValue {
+                n: unid.timestamp.to_string().into(),
+                ..Default::default()
+            }
+        };
+
+        let negation_keys_expr = negation_key_expression(unid);
+        let filter_expression = match negation_keys_expr {
+            Some((expr, attribute_values)) => {
+                expression_attribute_values.extend(attribute_values);
+                Some(expr)
+            },
+            None => None,
+        };
+        tracing::debug!(
+            message="find_first_session_after",
+            key_condition_expression=?filter_expression,
+        );
+
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
             table_name: self.table_name.clone(),
-            key_condition_expression: Some(
-                "pseudo_key = :pseudo_key AND create_time >= :create_time".into(),
-            ),
-            expression_attribute_values: Some(hmap! {
-                ":pseudo_key".to_owned() => AttributeValue {
-                    s: unid.pseudo_key.clone().into(),
-                    ..Default::default()
-                },
-                ":create_time".to_owned() => AttributeValue {
-                    n: unid.timestamp.to_string().into(),
-                    ..Default::default()
-                }
-            }),
+            key_condition_expression: Some("pseudo_key = :pseudo_key AND create_time >= :create_time".to_string()),
+            expression_attribute_values: Some(expression_attribute_values),
+            filter_expression,
             ..Default::default()
         };
 
@@ -87,24 +185,36 @@ where
         unid: &UnidSession,
     ) -> Result<Option<Session>, Error> {
         info!("Finding last session before");
+        let mut expression_attribute_values = hmap! {
+            ":pseudo_key".to_owned() => AttributeValue {
+                s: unid.pseudo_key.clone().into(),
+                ..Default::default()
+            },
+            ":create_time".to_owned() => AttributeValue {
+                n: unid.timestamp.to_string().into(),
+                ..Default::default()
+            }
+        };
+        let negation_keys_expr = negation_key_expression(unid);
+        let filter_expression = match negation_keys_expr {
+            Some((expr, attribute_values)) => {
+                expression_attribute_values.extend(attribute_values);
+                Some(expr)
+            },
+            None => None,
+        };
+        tracing::debug!(
+            message="find_first_session_after",
+            key_condition_expression=?filter_expression,
+        );
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
             scan_index_forward: Some(false),
             table_name: self.table_name.clone(),
-            key_condition_expression: Some(
-                "pseudo_key = :pseudo_key AND create_time <= :create_time".into(),
-            ),
-            expression_attribute_values: Some(hmap! {
-                ":pseudo_key".to_owned() => AttributeValue {
-                    s: unid.pseudo_key.clone().into(),
-                    ..Default::default()
-                },
-                ":create_time".to_owned() => AttributeValue {
-                    n: unid.timestamp.to_string().into(),
-                    ..Default::default()
-                }
-            }),
+            key_condition_expression: Some("pseudo_key = :pseudo_key AND create_time <= :create_time".to_string()),
+            expression_attribute_values: Some(expression_attribute_values),
+            filter_expression,
             ..Default::default()
         };
 
@@ -127,6 +237,7 @@ where
     // This method assumes that the `session` passed in has already been modified
     pub async fn update_session_create_time(
         &self,
+        unid: &UnidSession,
         session: &Session,
         new_time: u64,
         is_canon: bool,
@@ -138,8 +249,12 @@ where
         new_session.version += 1;
         // Create new session with new create_time, increment version
 
+        let mut item = serde_dynamodb::to_hashmap(&new_session).unwrap();
+        let keys = unid.negation_keys.iter().map(|(k, v)| (k.clone(), convert_to_attribute_value(v)));
+        item.extend(keys);
+
         let put_req = Put {
-            item: serde_dynamodb::to_hashmap(&new_session).unwrap(),
+            item,
             table_name: self.table_name.clone(),
             ..Default::default()
         };
@@ -282,10 +397,15 @@ where
         Ok(())
     }
 
-    pub async fn create_session(&self, session: &Session) -> Result<(), Error> {
+    pub async fn create_session(&self, unid: &UnidSession, session: &Session) -> Result<(), Error> {
         info!("create session");
+
+        let mut item = serde_dynamodb::to_hashmap(&session).unwrap();
+        let keys = unid.negation_keys.iter().map(|(k, v)| (k.clone(), convert_to_attribute_value(v)));
+        item.extend(keys);
+
         let put_req = PutItemInput {
-            item: serde_dynamodb::to_hashmap(session).unwrap(),
+            item,
             table_name: self.table_name.clone(),
             ..Default::default()
         };
@@ -331,7 +451,7 @@ where
             // and we should consider this the canonical ID for that session
             if !session.is_create_canon && session.create_time != unid.timestamp {
                 info!("Extending session create_time");
-                self.update_session_create_time(&session, unid.timestamp, true)
+                self.update_session_create_time(&unid, &session, unid.timestamp, true)
                     .await?;
                 return Ok(session.session_id);
             }
@@ -389,11 +509,11 @@ where
             is_create_canon: true,
             is_end_canon: false,
             version: 0,
-            pseudo_key: unid.pseudo_key,
+            pseudo_key: unid.pseudo_key.clone(),
         };
 
         info!("Creating session");
-        self.create_session(&session).await?;
+        self.create_session(&unid, &session).await?;
         Ok(session.session_id)
     }
 
@@ -430,7 +550,7 @@ where
             if !session.is_create_canon {
                 info!("Found a later, non canonical session. Extending create_time..");
 
-                self.update_session_create_time(&session, unid.timestamp, false)
+                self.update_session_create_time(&unid, &session, unid.timestamp, false)
                     .await?;
                 return Ok(session.session_id);
             }
@@ -446,9 +566,9 @@ where
                 is_create_canon: false,
                 is_end_canon: false,
                 version: 0,
-                pseudo_key: unid.pseudo_key,
+                pseudo_key: unid.pseudo_key.clone(),
             };
-            self.create_session(&session).await?;
+            self.create_session(&unid,&session).await?;
 
             Ok(session_id)
         } else {
