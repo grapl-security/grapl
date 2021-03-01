@@ -16,14 +16,13 @@ if TYPE_CHECKING:
 LOGGER = get_module_grapl_logger()
 
 
-def _ensure_alive(sqs: SQSClient) -> None:
+def _ensure_alive(sqs: SQSClient, queue_url: str) -> None:
+    queue_name = queue_url.split("/")[-1]
     while True:
         try:
-            if "QueueUrls" not in sqs.list_queues(
-                QueueNamePrefix="grapl-analyzer-executor-queue"
-            ):
+            if "QueueUrls" not in sqs.list_queues(QueueNamePrefix=queue_name):
                 LOGGER.info("Waiting for grapl-analyzer-executor-queue to be created")
-                time.sleep(2)
+                time.sleep(5)
                 continue
         except (
             botocore.exceptions.BotoCoreError,
@@ -31,7 +30,7 @@ def _ensure_alive(sqs: SQSClient) -> None:
             botocore.parsers.ResponseParserError,
         ):
             LOGGER.debug("Waiting for SQS to become available", exc_info=True)
-            time.sleep(2)
+            time.sleep(5)
             continue
         return
 
@@ -50,7 +49,7 @@ class EventRetriever:
         while True:
             try:
                 sqs = SQSClientFactory(boto3).from_env()
-                _ensure_alive(sqs)
+                _ensure_alive(sqs, self.queue_url)
 
                 res = sqs.receive_message(
                     QueueUrl=self.queue_url,

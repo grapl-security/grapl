@@ -40,6 +40,7 @@ export class RedisCluster extends cdk.Construct {
 
         // The cluster resource itself.
         this.cluster = new elasticache.CfnCacheCluster(this, 'Cluster', {
+            clusterName: `${props.prefix}-redis-${id}`,
             cacheNodeType: 'cache.t2.small',
             engine: 'redis',
             numCacheNodes: 1,

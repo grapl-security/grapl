@@ -191,7 +191,7 @@ class AnalyzerExecutor:
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.hit_cache.set(event_hash, "1")
 
-    async def lambda_handler_fn(self, events: SQSMessageBody, context: Any) -> None:
+    async def handle_events(self, events: SQSMessageBody, context: Any) -> None:
         # Parse sns message
         self.logger.debug(f"handling events: {events} context: {context}")
 
@@ -206,9 +206,6 @@ class AnalyzerExecutor:
         )
 
         for event in events["Records"]:
-            if not self.is_local:
-                event = json.loads(event["body"])["Records"][0]  # type: ignore
-
             data = parse_s3_event(s3, event)
 
             message = json.loads(data)

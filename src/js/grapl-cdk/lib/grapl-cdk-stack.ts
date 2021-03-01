@@ -221,6 +221,7 @@ export class GraplCdkStack extends cdk.Stack {
                 readsAnalyzersFrom: analyzers_bucket,
                 modelPluginsBucket: model_plugins_bucket,
                 ...graplProps,
+                ...enableMetricsProps,
             }
         );
 
@@ -228,7 +229,7 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'analyzer-dispatcher',
             {
-                writesTo: analyzer_executor.bucket,
+                writesTo: analyzer_executor.sourceBucket,
                 readsFrom: analyzers_bucket,
                 ...graplProps,
                 ...enableMetricsProps,

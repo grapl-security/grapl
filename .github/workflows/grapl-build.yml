@@ -25,21 +25,6 @@ jobs:
 
   python-unit-tests:
     runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Prepare Github Actions CI
-        run: |
-          ./etc/ci_scripts/clean_gh_actions_space.sh
-          ./etc/ci_scripts/install_requirements.sh
-
-      - name: Python unit tests
-        run: |
-          make test-unit-python
-
-  python-unit-tests-pants:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7]
@@ -59,7 +44,7 @@ jobs:
             ~/.cache/pants/named_caches
             ~/.cache/pants/lmdb_store
       - name: Python unit tests
-        run: make test-unit-python-pants
+        run: make test-unit-python
 
   python-typecheck:
     runs-on: ubuntu-latest

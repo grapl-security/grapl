@@ -23,7 +23,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Eq, PartialEq, Clone)]
 pub enum CacheResponse {
     Hit,
     Miss,

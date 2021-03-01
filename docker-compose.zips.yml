@@ -29,20 +29,6 @@ services:
   # grapl-analyzer-deployer:
   #   image: grapl/grapl-analyzer-deployer-zip:${TAG:-latest}
 
-  grapl-analyzer-executor-zip:
-    image: grapl/grapl-analyzer-executor-zip:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: analyzer-executor-zip
-    volumes:
-      - ./src/js/grapl-cdk/zips:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    environment:
-      - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip analyzer-executor-${TAG:-latest}.zip
-
   grapl-dgraph-ttl-zip:
     image: grapl/grapl-dgraph-ttl-zip:${TAG:-latest}
     build:

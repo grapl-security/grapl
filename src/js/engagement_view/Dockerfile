@@ -8,6 +8,8 @@ COPY js/engagement_view/package.json package.json
 COPY js/engagement_view/yarn.lock yarn.lock
 COPY js/engagement_view/.yarnrc.yml .yarnrc.yml
 COPY js/engagement_view/.yarn/releases .yarn/releases
+
+RUN yarn set version berry
 RUN yarn install
 
 # now copy all sources
