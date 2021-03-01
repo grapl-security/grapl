@@ -2,11 +2,25 @@
 pub mod graph_description {
     // TODO: Restructure the Rust modules to better reflect the new
     // Protobuf structure
-    include!(concat!(
-        env!("OUT_DIR"),
-        "/graplinc.grapl.api.graph.v1beta1.rs"
-    ));
+    include!(
+        concat!(
+            env!("OUT_DIR"),
+            "/graplinc.grapl.api.graph.v1beta1.rs"
+        )
+    );
 }
+
+pub mod graph_mutation_service {
+    include!(
+        concat!(
+            env!("OUT_DIR"),
+            "/graplinc.grapl.api.graph.graph_mutation.rs"
+        ),
+    );
+}
+
+pub use graph_description as v1beta1;
+
 pub use crate::{graph_description::*, node_property::Property};
 
 pub use node_property::Property::{

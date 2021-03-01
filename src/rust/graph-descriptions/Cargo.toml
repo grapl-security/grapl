@@ -29,12 +29,17 @@ tracing-subscriber = "*"
 hex = "0.4.2"
 arbitrary = { version="1" }
 
+tonic = { version="0.4" }
+
 [dependencies.uuid]
 version = "0.8"
 features = ["v4"]
 
 [build-dependencies]
 prost-build = "0.7"
+
+tonic-build = { version="0.4", features = ["prost"] }
+
 
 [dev-dependencies]
 test-env-log = "0.2.5"

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+import "graplinc/grapl/api/graph/v1beta1/types.proto";
+
+package graplinc.grapl.api.graph.graph_mutation;
+
+
+
+message Ok {}
+message Err {}
+
+message SetNodeRequest {
+  v1beta1.IdentifiedNode node = 1;
+}
+
+message SetNodeResult {
+  oneof rpc_result {
+    Ok set = 1;
+    Ok already_set = 2;
+    Err predicate_does_not_exist = 3;
+    Err predicate_type_mismatch = 4;
+  }
+}
+
+message SetNodeResponse {
+  SetNodeResult rpc_result = 1;
+}
+
+
+message SetEdgeRequest {
+  string from_node_key = 1;
+  string from_node_type = 2;
+  string to_node_key = 3;
+  string to_node_type = 4;
+  string f_edge_name = 5;
+  string r_edge_name = 6;
+}
+
+message SetEdgeResult {
+  oneof rpc_result {
+    Ok set = 1;
+    Ok negated = 2;
+    Err edge_does_not_exist = 3;
+    Err edge_type_mismatch = 4;
+  }
+}
+
+message SetEdgeResponse {
+  SetEdgeResult rpc_result = 1;
+}
+
+service GraphMutationRpc {
+  rpc SetNode(SetNodeRequest) returns (SetNodeResponse) {}
+  rpc SetEdge(SetEdgeRequest) returns (SetEdgeResponse) {}
+}

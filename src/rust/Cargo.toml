@@ -18,4 +18,5 @@ members = [
     "./generators/sysmon-subgraph-generator",
     "./sqs-executor",
     "./grapl-service",
+    "./graph-mutation-service",
 ]
