@@ -264,7 +264,7 @@ def _process_one_event(
             # i.e. "hostname", "DESKTOP-WHATEVER"
             LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
             lens_id = lens_name + lens_type
-            lens: LensView = lenses.get(lens_name) or LensView.get_or_create(
+            lens: LensView = lenses.get(lens_id) or LensView.get_or_create(
                 mg_client, lens_name, lens_type
             )
             lenses[lens_id] = lens
@@ -313,7 +313,16 @@ def _process_one_event(
             create_edge(mg_client, from_uid, edge_name, to_uid)
 
     for lens in lenses.values():
-        recalculate_score(lens)
+        lens_score = recalculate_score(lens)
+        upsert(
+            mg_client,
+            "Lens",
+            LensView,
+            lens.node_key,
+            {
+                "score": lens_score,
+            },
+        )
 
 
 def main() -> None:
