@@ -24,8 +24,8 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
         grapl_repo_root = grapl_repo_root.parent
 
     for additional_path in (
-            "src/python/grapl-tests-common",
-            "src/python/grapl-common",
+        "src/python/grapl-tests-common",
+        "src/python/grapl-common",
     ):
         additional_fullpath = grapl_repo_root.joinpath(additional_path)
         # Look at the inserted lib before system-installed one
