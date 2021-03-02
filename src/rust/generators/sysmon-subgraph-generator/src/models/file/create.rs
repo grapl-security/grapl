@@ -14,7 +14,7 @@ use crate::{generator::SysmonGeneratorError,
 
 /// Creates a subgrqph describing a `FileCreateEvent`
 ///
-/// The subgraphgeneration for a `FileCreateEvent` includes the following:
+/// The subgraph generation for a `FileCreateEvent` includes the following:
 /// * A creator `Process` node - denotes the process that created the file
 /// * A subject `File` node - the file that is created as part of this event
 pub fn generate_file_create_subgraph(
