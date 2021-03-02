@@ -26,7 +26,12 @@ setup(
     description="Grapl edge service for routing to our static ux content",
     packages=find_packages(),
     install_requires=REQUIREMENTS,
-    extras_require={"typecheck": ["mypy", "boto3-stubs[s3]",]},
+    extras_require={
+        "typecheck": [
+            "mypy",
+            "boto3-stubs[s3]",
+        ]
+    },
     setup_requires=("wheel",),
     zip_safe=False,
 )

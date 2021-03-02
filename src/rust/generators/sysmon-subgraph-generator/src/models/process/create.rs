@@ -124,11 +124,19 @@ mod tests {
         let graph: GraphDescription =
             generate_process_create_subgraph(&event).expect("failed to generate graph");
 
-        let process_a = find_node(&graph, "process_id", ImmutableUintProp{prop: 6132}.into())
-            .expect("process a missing");
+        let process_a = find_node(
+            &graph,
+            "process_id",
+            ImmutableUintProp { prop: 6132 }.into(),
+        )
+        .expect("process a missing");
 
-        let process_b = find_node(&graph, "process_id", ImmutableUintProp{prop: 5752}.into())
-            .expect("process b missing");
+        let process_b = find_node(
+            &graph,
+            "process_id",
+            ImmutableUintProp { prop: 5752 }.into(),
+        )
+        .expect("process b missing");
 
         let a_edges = graph.edges.get(process_a.get_node_key());
         let edge_to_b = a_edges

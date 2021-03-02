@@ -1,11 +1,9 @@
 fn main() {
-    // let mut config = prost_build::Config::new();
     let mut config = tonic_build::configure();
     config = config.type_attribute(
         ".",
         "#[derive(Eq, serde_derive::Serialize, serde_derive::Deserialize)]",
     );
-
 
     config = config.type_attribute(
         ".graplinc.grapl.api.graph.v1beta1.IncrementOnlyIntProp",
@@ -465,14 +463,4 @@ fn main() {
             &["../../proto/"],
         )
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
-
-    // tonic_build::configure()
-    //     .type_attribute(".", "#[derive(Eq)]")
-    //     .build_server(true)
-    //     .out_dir("src/")
-    //     .compile(
-    //         &["../../proto/graplinc/grapl/api/graph/v1beta1/graph_mutation.proto"],
-    //         &["../../proto/"],
-    //     )?;
-
 }

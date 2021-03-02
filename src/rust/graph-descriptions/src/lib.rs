@@ -21,15 +21,20 @@ pub mod graph_mutation_service {
 
 pub use graph_description as v1beta1;
 
-pub use crate::{graph_description::*, node_property::Property};
+pub use crate::{graph_description::*};
 
 pub use node_property::Property::{
-    DecrementOnlyInt as ProtoDecrementOnlyIntProp, DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-    ImmutableInt as ProtoImmutableIntProp, ImmutableStr as ProtoImmutableStrProp,
-    ImmutableUint as ProtoImmutableUintProp, IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+    ImmutableInt as ProtoImmutableIntProp,
+    ImmutableStr as ProtoImmutableStrProp,
+    ImmutableUint as ProtoImmutableUintProp,
+    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
     IncrementOnlyUint as ProtoIncrementOnlyUintProp,
 };
 
+pub use crate::{graph_description::*,
+                node_property::Property};
 
 // A helper macro to generate `From` impl boilerplate.
 macro_rules ! impl_from_for_unit {
@@ -627,12 +632,6 @@ impl NodeDescription {
         self.node_key = key;
     }
 
-    pub fn generate_negation_keys(&self) -> std::collections::HashMap<String, String> {
-        // let p = self.
-        let negation_keys = std::collections::HashMap::new();
-
-        negation_keys
-    }
 }
 
 impl<T> From<T> for NodeProperty
@@ -873,13 +872,15 @@ impl NodeProperty {
 
 #[cfg(test)]
 pub mod test {
-    use super::*;
-    use quickcheck_macros::quickcheck;
-    use std::hash::Hasher;
-    use std::collections::HashMap;
+    use std::{collections::HashMap,
+              hash::Hasher};
 
     #[cfg(not(feature = "fuzzing"))]
-    use quickcheck::{Arbitrary, Gen};
+    use quickcheck::{Arbitrary,
+                     Gen};
+    use quickcheck_macros::quickcheck;
+
+    use super::*;
 
     impl Arbitrary for IncrementOnlyIntProp {
         fn arbitrary(g: &mut Gen) -> Self {
@@ -1107,11 +1108,7 @@ pub mod test {
         if node_0.node_key != node_1.node_key {
             return;
         }
-        // let original = node_0.clone();
+        // todo: Add assertions here
         node_0.merge(&node_1);
-
-        // for (_o_pred_name, o_pred_val) in original.iter() {
-        //     let mut copy = o_pred_val.clone();
-        // }
     }
 }

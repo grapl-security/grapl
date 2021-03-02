@@ -132,7 +132,7 @@ message Edge {
     // The node_key associated with the 'destination' of the edge
     string to_node_key  = 2;
     // The name of the edge
-    string edgeName = 3;
+    string edge_name = 3;
 }
 
 // Represents a directed edge between two nodes, where both nodes, and this edge, exist in the graph.
@@ -146,7 +146,7 @@ message MergedEdge {
     // The node_key associated with the 'destination' of the edge
     string to_node_key = 4;
     // The name of the edge
-    string edgeName = 5;
+    string edge_name = 5;
 }
 
 // Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.

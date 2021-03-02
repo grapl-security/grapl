@@ -15,7 +15,6 @@ use syn::{parse_quote,
           NestedMeta,
           Type};
 
-
 const CREATE_TIME: &'static str = "create_time";
 const LAST_SEEN_TIME: &'static str = "last_seen_time";
 const TERMINATE_TIME: &'static str = "terminate_time";
@@ -64,13 +63,14 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
         _ => panic!("Requires named fields"),
     };
 
-    let methods = fields
-        .iter()
-        .map(|field| property_methods(field))
-        .fold(quote!(), |mut acc, method| {
-            acc.extend(method);
-            acc
-        });
+    let methods =
+        fields
+            .iter()
+            .map(|field| property_methods(field))
+            .fold(quote!(), |mut acc, method| {
+                acc.extend(method);
+                acc
+            });
 
     let struct_name = &input.ident;
     let struct_name_string = input.ident.to_string();
@@ -325,7 +325,6 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     q.into()
 }
 
-
 fn on_grapl_attrs(attr: &Attribute, mut on: impl FnMut(&str)) {
     if attr.path.segments.is_empty() {
         return;
@@ -370,7 +369,6 @@ fn assert_meta_attr_combo(field: &Field, meta_attr_match_a: &str, meta_attr_matc
         )
     }
 }
-
 
 fn resolvable_type_from(
     property_type: &Type,
@@ -434,7 +432,6 @@ fn resolvable_type_from(
     Some((return_type, method_ident))
 }
 
-
 fn identity_prop_setter(field: &Field, property_name: &Ident) -> TS2 {
     let mut created_time_prop = false;
     let mut last_seen_time_prop = false;
@@ -487,7 +484,8 @@ fn property_methods(field: &Field) -> TS2 {
 
     let property_name_str = format!("{}", property_name);
 
-    let inner_property_name = syn::Ident::new(&format!("__{}", property_name), property_name.span());
+    let inner_property_name =
+        syn::Ident::new(&format!("__{}", property_name), property_name.span());
 
     let set_identity_prop = identity_prop_setter(field, &inner_property_name);
     let mut implementation: TS2 = quote!();
