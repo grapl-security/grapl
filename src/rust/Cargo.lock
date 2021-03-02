@@ -1276,6 +1276,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "dgraph-tonic 0.9.0",
+ "dgraph_query_lib 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.13",
  "futures-retry 0.6.0",
  "grapl-graph-descriptions",

@@ -3,10 +3,11 @@ use crate::mutations::escape::{Escaped, escape_quote};
 use grapl_graph_descriptions::IdentifiedNode;
 use crate::mutations::predicate_mutation::NodePropertyUpsertGenerator;
 
+#[derive(Default)]
 pub struct NodeUpsertGenerator {
-    query_buffer: String,
-    mutations: Vec<dgraph_tonic::Mutation>,
-    node_property_upsert_generator: NodePropertyUpsertGenerator,
+    pub query_buffer: String,
+    pub mutations: Vec<dgraph_tonic::Mutation>,
+    pub node_property_upsert_generator: NodePropertyUpsertGenerator,
 }
 
 impl NodeUpsertGenerator {

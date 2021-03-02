@@ -5,6 +5,7 @@ use crate::v1beta1::node_property;
 use crate::mutations::immutable_string_mutation::ImmutableStringUpsertGenerator;
 use grapl_graph_descriptions::ImmutableStrProp;
 
+#[derive(Default)]
 pub struct NodePropertyUpsertGenerator {
     immutable_str_upsert_generator: ImmutableStringUpsertGenerator,
 }

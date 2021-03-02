@@ -5,8 +5,8 @@ use std::sync::Arc;
 use futures_retry::{FutureRetry, RetryPolicy};
 
 pub struct UpsertManager {
-    dgraph_client: Arc<DgraphClient>,
-    node_upsert_generator: NodeUpsertGenerator,
+    pub dgraph_client: Arc<DgraphClient>,
+    pub node_upsert_generator: NodeUpsertGenerator,
 }
 
 impl UpsertManager {

@@ -1,19 +1,18 @@
 use crate::mutations::{UpsertGenerator, QueryInput};
-use crate::v1beta1::ImmutableStrProp;
+use crate::v1beta1::ImmutableIntProp;
 use crate::mutations::escape::{Escaped, escape_quote};
 
-#[derive(Default)]
-pub struct ImmutableStringUpsertGenerator {
+pub struct ImmutableIntUpsertGenerator {
     query_buffer: String,
     mutations: Vec<dgraph_tonic::Mutation>,
 }
 
-impl UpsertGenerator for ImmutableStringUpsertGenerator {
-    type Input = ImmutableStrProp;
+impl UpsertGenerator for ImmutableIntUpsertGenerator {
+    type Input = ImmutableIntProp;
     fn generate_upserts(&mut self, creation_query: &QueryInput<'_>, predicate_name: &str, value: &Self::Input) -> (&str, &[dgraph_tonic::Mutation]) {
         let predicate_name = escape_quote(predicate_name);
-        let ImmutableStrProp {prop: ref value} = value;
-        let value = escape_quote(value);
+        let ImmutableIntProp {prop: ref value} = value;
+        let value = Escaped::from(value);
         let query_suffix = format!("{}_{}_{}", &creation_query.unique_id, &creation_query.node_id, &creation_query.predicate_id);
         let query_name = self.gen_query(
             &creation_query.creation_query_name,
@@ -33,7 +32,8 @@ impl UpsertGenerator for ImmutableStringUpsertGenerator {
     }
 }
 
-impl ImmutableStringUpsertGenerator {
+
+impl ImmutableIntUpsertGenerator {
     fn gen_query(&mut self, node_exists: &str, query_suffix: &str, prop_name: &Escaped, value: &Escaped) -> String {
         self.query_buffer.clear();
         let query_name = format!("exists_but_unset_{query_suffix}", query_suffix=query_suffix);
