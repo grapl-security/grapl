@@ -40,12 +40,18 @@ describe("login test", () => {
 			window.localStorage.setItem("grapl_jwt", JSON.stringify(grapl_jwt));
 		});
 		cy.contains("login").should("not.exist");
-		cy.getCookie("grapl_jwt");
 	});
 });
 
-// describe("checks that cookie was set after login", () => {
-// 	it("retrieves grapl_jwt", () => {
-// 		cy.getCookie("grapl_jwt");
-// 	});
-// });
+describe("checks that cookie was set after login", () => {
+	it("retrieves grapl_jwt", () => {
+        cy.getCookie("grapl_jwt");
+		cy.contains(/plugin/i).click();
+
+        const filePath = "../fixtures/sample_plugins.zip";
+        cy.get('input[type="file"]').attachFile(filePath);
+        cy.get('.submitBtn').click(); 
+        // cy.get('#uploaded-files').contains('plugin_1');
+        // cy.get('#uploaded-files').contains('plugin_2');
+	});
+});
