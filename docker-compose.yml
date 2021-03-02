@@ -58,8 +58,6 @@ services:
       - 127.0.0.1:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
       # required for RATEL interface to operate properly
       - 127.0.0.1:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
-    logging:
-      driver: none
     volumes:
       - type: volume
         source: dgraph_export
@@ -80,8 +78,6 @@ services:
         # to disable persistence
         rm -f /data/dump.rdb && redis-server
       "
-    logging:
-      driver: none
     networks:
       default:
         aliases:
@@ -132,8 +128,6 @@ services:
       default:
         aliases:
           - ${S3_HOST}
-    logging:
-      driver: none
 
   dynamodb:
     image: amazon/dynamodb-local
