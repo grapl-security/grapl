@@ -1,10 +1,8 @@
 import unittest
 import pytest
-from hypothesis import given
 
 from grapl_analyzerlib.prelude import GraphClient
 from grapl_analyzerlib.nodes.engagement import EngagementView
-from test_utils.dgraph_utils import upsert, create_edge
 
 
 @pytest.mark.integration_test

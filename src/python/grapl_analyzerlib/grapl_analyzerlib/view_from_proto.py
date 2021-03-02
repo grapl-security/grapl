@@ -4,7 +4,6 @@ from grapl_analyzerlib.prelude import (
 )
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedNode
 
-
 def view_from_proto(graph_client: GraphClient, node: MergedNode) -> BaseView:
     return BaseView(
         node.uid,
