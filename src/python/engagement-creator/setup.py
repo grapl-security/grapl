@@ -28,5 +28,9 @@ setup(
     install_requires=REQUIREMENTS,
     setup_requires=("wheel",),
     zip_safe=False,
-    extras_require={"typecheck": ["mypy",]},
+    extras_require={
+        "typecheck": [
+            "mypy",
+        ]
+    },
 )

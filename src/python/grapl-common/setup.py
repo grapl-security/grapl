@@ -33,7 +33,11 @@ setup(
     ],
     zip_safe=False,
     packages=find_packages(),
-    package_data={"grapl_common": ["py.typed",]},
+    package_data={
+        "grapl_common": [
+            "py.typed",
+        ]
+    },
     include_package_data=True,
     install_requires=[
         # We might want this in the future
@@ -42,5 +46,9 @@ setup(
     ],
     # We'll probably have some dataclasses in here in the future
     python_requires=">=3.6",
-    extras_require={"typecheck": ["mypy",],},
+    extras_require={
+        "typecheck": [
+            "mypy",
+        ],
+    },
 )
