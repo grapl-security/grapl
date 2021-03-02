@@ -732,7 +732,20 @@ dependencies = [
 [[package]]
 name = "dgraph_query_lib"
 version = "0.1.0"
-source = "git+https://github.com/d0nutptr/dgraph_query_lib?branch=main#62e885f1df88781f4f0a1825f8987e9f00b8bb57"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f801dd3b159613798898550c6583fe57e977948d07fe9813eb95f3b89953dd6"
+dependencies = [
+ "derive_builder",
+ "itertools 0.9.0",
+ "rand 0.7.3",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "dgraph_query_lib"
+version = "0.1.0"
+source = "git+https://github.com/d0nutptr/dgraph_query_lib?branch=main#033f8d5e55f4fb3eedb0c6c59f9ea4db6fedda88"
 dependencies = [
  "derive_builder",
  "itertools 0.9.0",
@@ -1164,7 +1177,7 @@ dependencies = [
  "base64 0.13.0",
  "chrono",
  "dgraph-tonic",
- "dgraph_query_lib",
+ "dgraph_query_lib 0.1.0 (git+https://github.com/d0nutptr/dgraph_query_lib?branch=main)",
  "failure",
  "futures 0.3.13",
  "futures-retry 0.6.0",
@@ -1244,7 +1257,7 @@ dependencies = [
  "arbitrary",
  "derive_builder",
  "dgraph-tonic",
- "dgraph_query_lib",
+ "dgraph_query_lib 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.13",
  "futures-retry 0.5.0",
  "grapl-utils",

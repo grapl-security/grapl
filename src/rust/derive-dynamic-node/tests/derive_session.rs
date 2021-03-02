@@ -1,5 +1,5 @@
-use derive_dynamic_node::{NodeDescription,
-                          GraplSessionId};
+use derive_dynamic_node::{GraplSessionId,
+                          NodeDescription};
 use grapl_graph_descriptions::graph_description::*;
 
 #[derive(NodeDescription, GraplSessionId)]
@@ -26,14 +26,16 @@ impl ISpecialProcessNode for SpecialProcessNode {
 
 #[test]
 fn test_session() {
-    let mut special_proc =
-        SpecialProcessNode::new(SpecialProcessNode::session_strategy());
+    let mut special_proc = SpecialProcessNode::new(SpecialProcessNode::session_strategy());
 
     special_proc.with_create_time(0u64);
     special_proc.with_seen_at(1u64);
     special_proc.with_terminate_time(2u64);
     special_proc.with_process_id(3u64);
-    assert_eq!(special_proc.get_process_id().unwrap(), ImmutableUintProp { prop: 3 });
+    assert_eq!(
+        special_proc.get_process_id().unwrap(),
+        ImmutableUintProp { prop: 3 }
+    );
 
     let strategy = special_proc.get_dynamic_node().id_strategy[0]
         .strategy

@@ -55,8 +55,7 @@ pub async fn run_graph_generator<
     let _s3_client = S3Client::from_env();
     let cache = &mut event_caches(&env).await;
 
-    let subgraph_generator =
-        &mut make_ten(async { (init_generator)(cache[0].clone()) }).await;
+    let subgraph_generator = &mut make_ten(async { (init_generator)(cache[0].clone()) }).await;
 
     let serializer = &mut make_ten(async { GraphDescriptionSerializer::default() }).await;
 

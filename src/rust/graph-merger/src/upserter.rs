@@ -1,39 +1,47 @@
-use crate::upsert_util;
-use dgraph_query_lib::mutation::Mutation;
-use dgraph_query_lib::queryblock::QueryBlock;
-use dgraph_query_lib::ToQueryString;
-use dgraph_query_lib::{
-    condition::{Condition, ConditionValue},
-    mutation::{MutationBuilder, MutationPredicateValue, MutationUID, MutationUnit},
-    predicate::{Field, Predicate},
-    query::QueryBuilder,
-    queryblock::{QueryBlockBuilder, QueryBlockType},
-    upsert::{Upsert, UpsertBlock},
-};
-use dgraph_tonic::Query;
-use grapl_graph_descriptions::MergedGraph;
-use grapl_graph_descriptions::{graph_description::*, node_property::Property};
+use std::{collections::HashMap,
+          sync::Arc};
+
+use dgraph_query_lib::{condition::{Condition,
+                                   ConditionValue},
+                       mutation::{Mutation,
+                                  MutationBuilder,
+                                  MutationPredicateValue,
+                                  MutationUID,
+                                  MutationUnit},
+                       predicate::{Field,
+                                   Predicate},
+                       query::QueryBuilder,
+                       queryblock::{QueryBlock,
+                                    QueryBlockBuilder,
+                                    QueryBlockType},
+                       upsert::{Upsert,
+                                UpsertBlock},
+                       ToQueryString};
+use dgraph_tonic::{Client as DgraphClient,
+                   Mutate,
+                   Mutation as DgraphMutation,
+                   MutationResponse,
+                   Query};
+use futures::StreamExt;
+use futures_retry::{FutureRetry,
+                    RetryPolicy};
+use grapl_graph_descriptions::{graph_description::*,
+                               node_property::Property,
+                               MergedGraph};
 use grapl_utils::iter_ext::GraplIterExt;
-use std::collections::HashMap;
-use std::sync::Arc;
 // use grapl_graph_descriptions::Edge;
 // use grapl_graph_descriptions::EdgeList;
 // use grapl_graph_descriptions::MergedNode;
 // use grapl_graph_descriptions::IdentifiedNode;
+pub use node_property::Property::{DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+                                  DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+                                  ImmutableInt as ProtoImmutableIntProp,
+                                  ImmutableStr as ProtoImmutableStrProp,
+                                  ImmutableUint as ProtoImmutableUintProp,
+                                  IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+                                  IncrementOnlyUint as ProtoIncrementOnlyUintProp};
 
-pub use node_property::Property::{
-    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-    ImmutableInt as ProtoImmutableIntProp,
-    ImmutableStr as ProtoImmutableStrProp,
-    ImmutableUint as ProtoImmutableUintProp,
-    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
-    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
-};
-
-use dgraph_tonic::{Client as DgraphClient, Mutate, Mutation as DgraphMutation, MutationResponse};
-use futures::StreamExt;
-use futures_retry::{FutureRetry, RetryPolicy};
+use crate::upsert_util;
 
 const DGRAPH_CONCURRENCY_UPSERTS: usize = 8;
 // DGraph Live Loader uses a size of 1,000 elements and they claim this has relatively good performance

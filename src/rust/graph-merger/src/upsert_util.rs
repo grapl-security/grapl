@@ -1,15 +1,14 @@
 use std::collections::HashMap;
 
-use grapl_graph_descriptions::{graph_description::*, node_property::Property};
-use node_property::Property::{
-    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-    ImmutableInt as ProtoImmutableIntProp,
-    ImmutableStr as ProtoImmutableStrProp,
-    ImmutableUint as ProtoImmutableUintProp,
-    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
-    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
-};
+use grapl_graph_descriptions::{graph_description::*,
+                               node_property::Property};
+use node_property::Property::{DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+                              DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+                              ImmutableInt as ProtoImmutableIntProp,
+                              ImmutableStr as ProtoImmutableStrProp,
+                              ImmutableUint as ProtoImmutableUintProp,
+                              IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+                              IncrementOnlyUint as ProtoIncrementOnlyUintProp};
 
 pub struct Escaped(String);
 
@@ -26,7 +25,6 @@ impl std::fmt::Display for Escaped {
         write!(f, "{}", self.0)
     }
 }
-
 
 fn escape_quote(s: &str) -> Escaped {
     // otherwise we need to double quote it
@@ -57,7 +55,7 @@ fn escape_prop(node_property: &NodeProperty) -> Escaped {
         Some(ProtoDecrementOnlyUintProp(i)) => escape_quote(&i.to_string()),
         Some(ProtoImmutableUintProp(i)) => escape_quote(&i.to_string()),
         Some(ProtoImmutableStrProp(s)) => escape_quote(s.as_inner()),
-        None => panic!("todo")
+        None => panic!("todo"),
     }
 }
 
@@ -73,15 +71,20 @@ pub(crate) fn build_upserts(
     let mut inner_queries = String::with_capacity(properties.len() * 32);
     let mut mutations = Vec::with_capacity(properties.len());
 
-    let (creation_var_name, creation_query, creation_quad) = node_creation_quads(query_param, &node_key, node_type);
+    let (creation_var_name, creation_query, creation_quad) =
+        node_creation_quads(query_param, &node_key, node_type);
     key_query_map.insert(_node_key.clone(), creation_var_name.clone());
 
     mutations.push(creation_quad);
     inner_queries.push_str(&creation_query);
     inner_queries.push('\n');
-    for (predicate_param, (prop_name, prop) )in properties.iter().enumerate() {
-        if &prop_name == &"node_key" {continue}
-        if &prop_name == &"dgraph.type" {continue}
+    for (predicate_param, (prop_name, prop)) in properties.iter().enumerate() {
+        if &prop_name == &"node_key" {
+            continue;
+        }
+        if &prop_name == &"dgraph.type" {
+            continue;
+        }
         tracing::debug!(
             message="generating upsert quads for predicate",
             predicate_name=?prop_name,
@@ -121,17 +124,17 @@ pub(crate) fn node_creation_quads(
                 node_key,
             }}
     "#,
-        creation_var_name=creation_var_name,
-        node_key=escaped_node_key,
+        creation_var_name = creation_var_name,
+        node_key = escaped_node_key,
     );
 
     // If the node exists, do nothing, otherwise create it with its type
     let mut mu_1 = dgraph_tonic::Mutation::new();
     let mut mu_1_n_quads = format!(
         concat!(
-        r#"_:{creation_var_name} <node_key> {node_key} ."#,
-        "\n",
-        r#"_:{creation_var_name} <dgraph.type> "{node_type}" ."#,
+            r#"_:{creation_var_name} <node_key> {node_key} ."#,
+            "\n",
+            r#"_:{creation_var_name} <dgraph.type> "{node_type}" ."#,
         ),
         node_key = escaped_node_key,
         node_type = node_type,
@@ -139,10 +142,12 @@ pub(crate) fn node_creation_quads(
     );
 
     mu_1.set_set_nquads(mu_1_n_quads);
-    mu_1.set_cond(format!("@if(eq(len({creation_var_name}), 0))", creation_var_name=creation_var_name));
+    mu_1.set_cond(format!(
+        "@if(eq(len({creation_var_name}), 0))",
+        creation_var_name = creation_var_name
+    ));
 
     (creation_var_name, inner_query, mu_1)
-
 }
 
 pub(crate) fn gen_node_property_upsert_quads(
@@ -161,34 +166,38 @@ pub(crate) fn gen_node_property_upsert_quads(
         r#"
             var(func: uid({creation_var_name}), first: 1)
     "#,
-        creation_var_name=creation_var_name,
+        creation_var_name = creation_var_name,
     );
 
     // If the node exists, set the predicate. Currently 'last write wins'.
     let mut mu_0_n_quads = format!(
         r#"uid({creation_var_name}) <{prop_name}> {prop_value} ."#,
-        creation_var_name=creation_var_name,
+        creation_var_name = creation_var_name,
         prop_name = prop_name,
         prop_value = prop_value,
     );
 
     mu_0.set_set_nquads(mu_0_n_quads);
-    mu_0.set_cond(format!("@if(eq(len({creation_var_name}), 1))", creation_var_name=creation_var_name));
+    mu_0.set_cond(format!(
+        "@if(eq(len({creation_var_name}), 1))",
+        creation_var_name = creation_var_name
+    ));
 
     let mut mu_1 = dgraph_tonic::Mutation::new();
 
     // condition if the node does not exist
     let mut mu_1_n_quads = format!(
-        concat!(
-        r#"_:{creation_var_name} <{prop_name}> {prop_value} ."#,
-        ),
-        creation_var_name=creation_var_name,
+        concat!(r#"_:{creation_var_name} <{prop_name}> {prop_value} ."#,),
+        creation_var_name = creation_var_name,
         prop_name = prop_name,
         prop_value = prop_value,
     );
 
     mu_1.set_set_nquads(mu_1_n_quads);
-    mu_1.set_cond(format!("@if(eq(len({creation_var_name}), 0))", creation_var_name=creation_var_name));
+    mu_1.set_cond(format!(
+        "@if(eq(len({creation_var_name}), 0))",
+        creation_var_name = creation_var_name
+    ));
 
     (inner_query, [mu_0, mu_1])
 }

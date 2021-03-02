@@ -7,10 +7,12 @@ description = "A library for interacting with Grapl graphs"
 license = "MIT"
 
 [dependencies]
-anyhow = "*"
 derive_builder = "0.9"
 dgraph-tonic = "0.8"
-dgraph_query_lib = { git = "https://github.com/d0nutptr/dgraph_query_lib", branch = "main" }
+
+dgraph_query_lib = "0.1"
+anyhow = "*"
+
 futures = "0.3"
 futures-retry = "0.5"
 grapl-utils = { path = "../grapl-utils" }

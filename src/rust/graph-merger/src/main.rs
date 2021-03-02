@@ -1,12 +1,10 @@
 #![allow(unused)]
 #![allow(dead_code)]
 
-pub mod service;
-pub mod upserter;
-pub mod upsert_util;
 pub mod reverse_resolver;
-
-use graph_merger_lib;
+pub mod service;
+pub mod upsert_util;
+pub mod upserter;
 
 use std::{collections::HashMap,
           fmt::Debug,
@@ -16,29 +14,28 @@ use std::{collections::HashMap,
           time::{Duration,
                  SystemTime,
                  UNIX_EPOCH}};
-use crate::reverse_resolver::{get_r_edges_from_dynamodb, ReverseEdgeResolver};
-use crate::service::{GraphMerger, time_based_key_fn};
+
 use async_trait::async_trait;
 use dgraph_tonic::{Client as DgraphClient,
                    Mutate,
                    Query};
 use failure::{bail,
               Error};
+use graph_merger_lib;
 use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
 use grapl_graph_descriptions::graph_description::{Edge,
+                                                  EdgeList,
                                                   IdentifiedGraph,
                                                   IdentifiedNode,
                                                   MergedGraph,
-                                                  MergedNode,
-                                                  EdgeList};
+                                                  MergedNode};
 use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
                     metric_reporter::{tag,
                                       MetricReporter}};
 use grapl_service::{decoder::ZstdProtoDecoder,
                     serialization::MergedGraphSerializer};
-
 use grapl_utils::{future_ext::GraplFutureExt,
                   rusoto_ext::dynamodb::GraplDynamoDbClientExt};
 use lazy_static::lazy_static;
@@ -66,6 +63,11 @@ use sqs_executor::{cache::{Cache,
                    event_retriever::S3PayloadRetriever,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier};
+
+use crate::{reverse_resolver::{get_r_edges_from_dynamodb,
+                               ReverseEdgeResolver},
+            service::{time_based_key_fn,
+                      GraphMerger}};
 
 #[tracing::instrument]
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
@@ -95,9 +97,8 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
             "Connecting to mg_alphas"
         );
         let dynamo = DynamoDbClient::from_env();
-        let reverse_edge_resolver = ReverseEdgeResolver::new(
-            dynamo, MetricReporter::new(&env.service_name), 1000,
-        );
+        let reverse_edge_resolver =
+            ReverseEdgeResolver::new(dynamo, MetricReporter::new(&env.service_name), 1000);
         GraphMerger::new(
             mg_alphas,
             reverse_edge_resolver,
@@ -105,7 +106,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
             cache[0].clone(),
         )
     })
-        .await;
+    .await;
 
     let serializer = &mut make_ten(async { MergedGraphSerializer::default() }).await;
 
@@ -120,7 +121,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
             MetricReporter::new(&env.service_name),
         )
     })
-        .await;
+    .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
@@ -134,7 +135,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
         serializer,
         MetricReporter::new(&env.service_name),
     )
-        .await;
+    .await;
 
     info!("Exiting");
 
