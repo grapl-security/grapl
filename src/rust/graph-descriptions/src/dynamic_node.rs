@@ -1,6 +1,6 @@
+use dgraph_query_lib::mutation::{MutationPredicateValue,
+                                 MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 
 use crate::{graph_description::{id_strategy,
                                 node_property,
@@ -20,31 +20,6 @@ impl DynamicNode {
 
     pub fn set_key(&mut self, key: String) {
         self.node_key = key;
-    }
-
-    pub fn into_json(self) -> Value {
-        let mut j = json!({
-            "node_key": self.node_key,
-            "dgraph.type": self.node_type,
-            "seen_at": self.seen_at,
-        });
-
-        if let Some(asset_id) = self.asset_id {
-            j["asset_id"] = asset_id.into();
-        }
-
-        for (key, prop) in self.properties {
-            let prop = match prop.property {
-                Some(node_property::Property::Intprop(i)) => Value::from(i),
-                Some(node_property::Property::Uintprop(i)) => Value::from(i),
-                Some(node_property::Property::Strprop(s)) => Value::from(s),
-                None => panic!("Invalid property on DynamicNode: {}", self.node_key),
-            };
-
-            j[key] = prop;
-        }
-
-        j
     }
 
     pub fn get_id_strategies(&self) -> &[IdStrategy] {
@@ -122,5 +97,61 @@ impl NodeT for DynamicNode {
         }
 
         merged
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref(
+            "seen_at",
+            MutationPredicateValue::Number(self.seen_at as i64),
+        );
+        mutation_unit.predicate_ref(
+            "dgraph.type",
+            MutationPredicateValue::string(&self.node_type),
+        );
+
+        if let Some(asset_id) = &self.asset_id {
+            mutation_unit.predicate_ref("asset_id", MutationPredicateValue::string(asset_id));
+        }
+
+        for (key, prop) in &self.properties {
+            let prop = match &prop.property {
+                Some(node_property::Property::Intprop(i)) => {
+                    MutationPredicateValue::Number(*i as i64)
+                }
+                Some(node_property::Property::Uintprop(i)) => {
+                    MutationPredicateValue::Number(*i as i64)
+                }
+                Some(node_property::Property::Strprop(s)) => MutationPredicateValue::string(s),
+                None => panic!("Invalid property on DynamicNode: {}", self.node_key),
+            };
+
+            mutation_unit.predicate_ref(key, prop);
+        }
+    }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::with_capacity(self.properties.len());
+
+        for (key, prop) in &self.properties {
+            let prop_value = match prop.property {
+                Some(node_property::Property::Intprop(i)) => format!("{}", i),
+                Some(node_property::Property::Uintprop(i)) => format!("{}", i),
+                Some(node_property::Property::Strprop(ref s)) => s.clone(),
+                None => panic!("Invalid property on DynamicNode: {}", self.node_key),
+            };
+
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                key,
+                prop_value
+            ));
+        }
+
+        predicate_cache_identities
+            .into_iter()
+            .map(|item| item.into_bytes())
+            .collect()
     }
 }

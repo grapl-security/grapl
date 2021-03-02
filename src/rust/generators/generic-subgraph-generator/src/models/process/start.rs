@@ -6,7 +6,6 @@ use grapl_graph_descriptions::{file::FileState,
                                process::ProcessState};
 use serde::{Deserialize,
             Serialize};
-use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessStart {
@@ -65,7 +64,6 @@ impl TryFrom<ProcessStart> for Graph {
                 child_exe.clone_node_key(),
             );
 
-            info!("child_exe: {}", child_exe.clone().into_json());
             graph.add_node(child_exe);
         }
 

@@ -130,15 +130,27 @@ pub fn generate_outbound_connection_subgraph(
     // There is also a connection between the two IP addresses
 
     graph.add_edge(
-        "network_connections",
+        "ip_connections",
         src_ip.clone_node_key(),
         ip_connection.clone_node_key(),
     );
 
     graph.add_edge(
-        "network_connections",
+        "ip_connections",
         dst_ip.clone_node_key(),
         ip_connection.clone_node_key(),
+    );
+
+    graph.add_edge(
+        "network_connections",
+        src_port.clone_node_key(),
+        network_connection.clone_node_key(),
+    );
+
+    graph.add_edge(
+        "network_connections",
+        dst_port.clone_node_key(),
+        network_connection.clone_node_key(),
     );
 
     graph.add_node(asset);

@@ -6,7 +6,6 @@ use grapl_graph_descriptions::{file::FileState,
                                process::ProcessState};
 use serde::{Deserialize,
             Serialize};
-use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct FileCreate {
@@ -40,8 +39,6 @@ impl TryFrom<FileCreate> for Graph {
             .created_timestamp(file_create.timestamp)
             .file_path(file_create.path)
             .build()?;
-
-        info!("file {}", file.clone().into_json());
 
         let mut graph = Graph::new(file_create.timestamp);
 

@@ -1,6 +1,6 @@
+use dgraph_query_lib::mutation::{MutationPredicateValue,
+                                 MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 
 use crate::{graph_description::IpPort,
             node::NodeT};
@@ -16,15 +16,6 @@ impl IpPort {
             port: port as u32,
             protocol,
         }
-    }
-
-    pub fn into_json(self) -> Value {
-        json!({
-            "node_key": self.node_key,
-            "dgraph.type": "IpPort",
-            "port": self.port,
-            "protocol": self.protocol,
-        })
     }
 }
 
@@ -62,5 +53,34 @@ impl NodeT for IpPort {
 
     fn merge_into(&mut self, _other: Self) -> bool {
         false
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref("dgraph.type", MutationPredicateValue::string("IpPort"));
+        mutation_unit.predicate_ref("protocol", MutationPredicateValue::string(&self.protocol));
+        mutation_unit.predicate_ref("port", MutationPredicateValue::Number(self.port as i64));
+    }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::new();
+
+        predicate_cache_identities.push(format!(
+            "{}:{}:{}",
+            self.get_node_key(),
+            "port",
+            self.port
+        ));
+        predicate_cache_identities.push(format!(
+            "{}:{}:{}",
+            self.get_node_key(),
+            "protocol",
+            self.protocol
+        ));
+
+        predicate_cache_identities
+            .into_iter()
+            .map(|item| item.into_bytes())
+            .collect()
     }
 }
