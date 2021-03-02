@@ -2,7 +2,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, List, Optional
+from typing import List
 
 import boto3
 import pydgraph

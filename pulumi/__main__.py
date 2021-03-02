@@ -1,4 +1,3 @@
-import infra
 import pulumi_aws as aws
 from infra import dynamodb
 from infra.service_queue import ServiceQueue

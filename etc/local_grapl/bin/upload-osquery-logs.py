@@ -4,7 +4,6 @@ Despite the path, this is *not* tied just to Local Grapl, and can also be used o
 """
 
 import argparse
-import os
 import sys
 from pathlib import Path
 from typing import Callable
