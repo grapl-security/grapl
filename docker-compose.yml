@@ -498,19 +498,48 @@ services:
   # Utility Services
   ########################################################################
 
+  grapl-pulumi:
+    image: grapl/grapl-local-pulumi:${TAG:-latest}
+    command: |
+      /bin/bash -c "
+         wait-for-it ${S3_HOST}:${S3_PORT_INTERNAL} --timeout=60 &&
+         wait-for-it ${LOCALSTACK_HOST}:${LOCALSTACK_PORT} --timeout=60 &&
+         sleep 10 &&
+         pulumi login --local &&
+         pulumi stack init local-grapl --non-interactive &&
+         # See pulumi/README.md fro why we do these configuration overrides
+         pulumi config set aws:accessKey ${FAKE_AWS_ACCESS_KEY_ID} --plaintext &&
+         pulumi config set aws:secretKey ${FAKE_AWS_SECRET_ACCESS_KEY} --plaintext &&
+         pulumi config set --path 'aws:endpoints[0].s3' ${S3_ENDPOINT} &&
+         pulumi up --yes --skip-preview --stack=local-grapl &&
+         # NOTE: This is running in localstack's network namespace, so
+         # we will need to wait on localstack, NOT grapl-pulumi.
+         python -u -m http.server ${WAIT_PORT}
+      "
+    # Our local-grapl Pulumi stack is configured to communicate with
+    # localhost. By participating in the network namespace of our
+    # localstack container, we can use the same stack configuration
+    # both inside this compose network, as well as from outside on our
+    # workstations.
+    network_mode: "service:localstack"
+    environment:
+      PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
+    depends_on:
+      - localstack
+      - s3
+
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
     command: |
       /bin/bash -c "
         export TIMEOUT=35 &&
-        wait-for-it ${S3_HOST}:${S3_PORT_INTERNAL} --timeout=$$TIMEOUT &&
+        # NOTE: We wait on localstack, even though we conceptually are
+        # waiting for grapl-pulumi to finish, because grapl-pulumi
+        # runs within the network namespace of localstack, and not a
+        # network namespace of its own.
+        wait-for-it localstack:${WAIT_PORT} --timeout=120 &&
         wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
-        wait-for-it ${LOCALSTACK_HOST}:${LOCALSTACK_PORT} --timeout=$$TIMEOUT &&
-        # Give all the localstack services time to come up and be ready
-        # TODO: replace with some kind of loop on the health endpoint
-        sleep 10 &&
         . venv/bin/activate &&
-        python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
         # Host a server on this port, so that tests can wait-for-it
         python -m http.server ${WAIT_PORT}
@@ -527,7 +556,7 @@ services:
     depends_on:
       - dgraph
       - localstack
-      - s3
+      - grapl-pulumi
 
 networks:
   default:

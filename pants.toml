@@ -31,6 +31,7 @@ pants_ignore = [
 root_patterns = [
   "/3rdparty",
   "/pants-plugins",
+  "/pulumi",
   "/src/js/grapl-cdk",
   "/src/proto",
   "/src/python/analyzer-deployer",
