@@ -105,16 +105,8 @@ services:
     image: localstack/localstack:0.12.6
     ports:
       # We'll expose localstack's edge port for ease of use with
-      # things like the AWS CLI, Pulumi, etc. We'll also re-expose it
-      # for various other services that we might want to otherwise
-      # target explicitly from our workstations.
-      #
-      # You can just stick with the main localstack port, though, and
-      # should get proxied through to where you're trying to go.
+      # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
-      # As such, these other port exposures can be considered "legacy"
-      # at this point.
-      - 127.0.0.1:${SQS_PORT_EXTERNAL}:${LOCALSTACK_PORT}
     environment:
       - IMAGE_NAME=localstack/localstack:0.12.6
       - EDGE_PORT=${LOCALSTACK_PORT}
