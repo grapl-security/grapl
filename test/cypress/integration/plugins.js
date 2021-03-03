@@ -39,17 +39,21 @@ describe("auth validation", () => {
 			const grapl_jwt = { user: { authenticationData: { token: body.token } } };
 			window.localStorage.setItem("grapl_jwt", JSON.stringify(grapl_jwt));
 		});
-		cy.contains("login").should("not.exist");
-	});
-});
 
-describe("upload plugin and render when successful", () => {
-	it("successfully uploads a plugin directory and validates uploaded file renders in uploaded table", () => {
-		cy.contains(/plugin/i).click();
-		const filePath = "../fixtures/sample_plugins.zip";
-        cy.get('input[type="file"]').attachFile(filePath);
-		cy.get('.submitBtn').click(); 
-		cy.contains('Successfully').should('exist');
-        cy.contains('grapl_plug_ins').should('exist');
+		cy.contains("login").should("not.exist");
+		it("checks we're authenticated on model-plugin page", () => {
+			cy.get("grapl_jwt").should("exist");
+			
+		});
+
+		it("uploads a model plugin and validates rendering in plugin table ", () => {
+			cy.url().should("include", "plugins");
+			cy.contains(/plugin/i).click();
+			const filePath = "../fixtures/sample_plugins.zip";
+			cy.get('input[type="file"]').attachFile(filePath);
+			cy.get(".submitBtn").click();
+			cy.contains("Successfully").should("exist");
+			cy.contains("grapl_plug_ins").should("exist");
+		})
 	});
 });
