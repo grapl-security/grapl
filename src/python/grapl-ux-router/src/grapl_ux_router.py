@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union,
 
 import boto3
 from chalice import Chalice, Response
+from grapl_common.env_helpers import S3ResourceFactory
 
 try:
     from src.lib.env_vars import GRAPL_LOG_LEVEL, IS_LOCAL, UX_BUCKET_NAME
@@ -86,13 +87,7 @@ class LazyUxBucket:
 
         for _ in range(timeout_secs):
             try:
-                s3 = boto3.resource(
-                    "s3",
-                    endpoint_url=os.environ["S3_ENDPOINT"],
-                    aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
-                    aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"],
-                )
-
+                s3 = S3ResourceFactory(boto3).from_env()
                 bucket = s3.Bucket(UX_BUCKET_NAME)
                 break
             except Exception as e:

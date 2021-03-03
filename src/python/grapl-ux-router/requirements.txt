@@ -3,3 +3,4 @@ boto3
 pyjwt==2.0.*
 grapl_analyzerlib
 chalice
+grapl_common
