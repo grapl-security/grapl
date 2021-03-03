@@ -9,6 +9,7 @@ from typing_extensions import Protocol
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBClient, DynamoDBServiceResource
     from mypy_boto3_s3 import S3Client, S3ServiceResource
+    from mypy_boto3_secretsmanager import SecretsManagerClient
     from mypy_boto3_sqs import SQSClient
 
 T = TypeVar("T", covariant=True)
@@ -158,4 +159,23 @@ class DynamoDBClientFactory(FromEnv["DynamoDBClient"]):
 
     def from_env(self) -> DynamoDBClient:
         client: DynamoDBClient = _client_get(self.client_create_fn, _DynamoDBParams)
+        return client
+
+
+_SecretsManagerParams = ClientGetParams(
+    boto3_client_name="secretsmanager",
+    endpoint_url_key="SECRETSMANAGER_ENDPOINT",
+    access_key_id_key="SECRETSMANAGER_ACCESS_KEY_ID",
+    access_key_secret_key="SECRETSMANAGER_ACCESS_KEY_SECRET",
+)
+
+
+class SecretsManagerClientFactory(FromEnv["SecretsManagerClient"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.client
+
+    def from_env(self) -> SecretsManagerClient:
+        client: SecretsManagerClient = _client_get(
+            self.client_create_fn, _SecretsManagerParams
+        )
         return client

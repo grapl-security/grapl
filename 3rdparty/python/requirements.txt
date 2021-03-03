@@ -5,6 +5,7 @@ hypothesis
 mypy_boto3_dynamodb
 mypy_boto3_s3
 mypy_boto3_sagemaker
+mypy_boto3_secretsmanager
 mypy_boto3_sqs
 protobuf>=3.12.1
 pulumi>=2.0.0,<3.0.0

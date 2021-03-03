@@ -25,7 +25,10 @@ from typing import (
 import boto3
 import jwt
 from chalice import Chalice, CORSConfig, Response
-from grapl_common.env_helpers import DynamoDBResourceFactory
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    SecretsManagerClientFactory,
+)
 from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
 from src.lib.sagemaker import create_sagemaker_client
 
@@ -70,16 +73,7 @@ class LazyJwtSecret:
 
         for _ in range(timeout_secs):
             try:
-                secretsmanager = boto3.client(
-                    "secretsmanager",
-                    region_name=os.environ["AWS_REGION"],
-                    aws_access_key_id=os.environ["SECRETSMANAGER_ACCESS_KEY_ID"],
-                    aws_secret_access_key=os.environ[
-                        "SECRETSMANAGER_ACCESS_KEY_SECRET"
-                    ],
-                    endpoint_url=os.environ["SECRETSMANAGER_ENDPOINT"],
-                )
-
+                secretsmanager = SecretsManagerClientFactory(boto3).from_env()
                 jwt_secret = secretsmanager.get_secret_value(
                     SecretId="JWT_SECRET_ID",
                 )["SecretString"]
