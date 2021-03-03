@@ -11,7 +11,7 @@ from grapl_analyzerlib.grapl_client import GraphClient
 
 class SubgraphView(object):
     def __init__(
-        self, nodes: Dict[str, BaseView], edges: MutableMapping[str, EdgeList]
+        self, nodes: Dict[str, BaseView], edges: MutableMapping[str, MergedEdgeList]
     ) -> None:
         self.nodes = nodes
         self.edges = edges
