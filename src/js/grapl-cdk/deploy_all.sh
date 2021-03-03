@@ -18,6 +18,7 @@ EDGE_UX_ARTIFACT_DIR="${THIS_DIR}/edge_ux_post_replace"
 cd "$THIS_DIR"
 
 mkdir -p "${EDGE_UX_ARTIFACT_DIR}"
+npm install
 npm run build
 cdk deploy \
     --require-approval=never \
