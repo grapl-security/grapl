@@ -39,8 +39,9 @@ describe("login test", () => {
 			const grapl_jwt = { user: { authenticationData: { token: body.token } } };
 			window.localStorage.setItem("grapl_jwt", JSON.stringify(grapl_jwt));
 		});
-		cy.contains("login").should("not.exist");
+		
 		it("checks to make sure grapl_jwt was set", () => {
+			cy.contains("login").should("not.exist");
 			cy.getCookie("grapl_jwt").should("exist");
 		})
 	});
