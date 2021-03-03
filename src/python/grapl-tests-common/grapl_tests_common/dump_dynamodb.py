@@ -7,6 +7,7 @@ from pprint import pformat as pretty_format
 from typing import TYPE_CHECKING, Any, Optional
 
 import boto3  # type: ignore
+from grapl_common.env_helpers import DynamoDBResourceFactory
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
@@ -15,13 +16,7 @@ DOCKER_VOLUME = Path("/mnt/dynamodb_dump")
 
 
 def dump_dynamodb() -> None:
-    dynamodb: DynamoDBServiceResource = boto3.resource(
-        "dynamodb",
-        region_name=os.environ["AWS_REGION"],
-        endpoint_url=os.environ["DYNAMODB_ENDPOINT"],
-        aws_access_key_id=os.environ["DYNAMODB_ACCESS_KEY_ID"],
-        aws_secret_access_key=os.environ["DYNAMODB_ACCESS_KEY_SECRET"],
-    )
+    dynamodb: DynamoDBServiceResource = DynamoDBResourceFactory(boto3).from_env()
     logging.info("Dumping DynamoDB")
 
     tables = [x for x in dynamodb.tables.all()]
