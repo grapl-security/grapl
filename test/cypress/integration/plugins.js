@@ -10,7 +10,7 @@ describe("application loads", () => {
 	});
 });
 
-describe("authentication", () => {
+describe("login form test", () => {
 	it("allows the user to log in with a valid username and password", () => {
 		cy.visit("/");
 		cy.contains(/login/i).click();
@@ -22,7 +22,7 @@ describe("authentication", () => {
 	});
 });
 
-describe("login test", () => {
+describe("auth validation", () => {
 	beforeEach(() => {
 		cy.request({
 			url: `http://localhost:1234/auth/login`,
@@ -43,15 +43,13 @@ describe("login test", () => {
 	});
 });
 
-describe("checks that cookie was set after login", () => {
-	it("retrieves grapl_jwt", () => {
-        cy.getCookie("grapl_jwt");
+describe("upload plugin and render when successful", () => {
+	it("successfully uploads a plugin directory and validates uploaded file renders in uploaded table", () => {
 		cy.contains(/plugin/i).click();
-
-        const filePath = "../fixtures/sample_plugins.zip";
+		const filePath = "../fixtures/sample_plugins.zip";
         cy.get('input[type="file"]').attachFile(filePath);
-        cy.get('.submitBtn').click(); 
-        // cy.get('#uploaded-files').contains('plugin_1');
-        // cy.get('#uploaded-files').contains('plugin_2');
+		cy.get('.submitBtn').click(); 
+		cy.contains('Successfully').should('exist');
+        cy.contains('grapl_plug_ins').should('exist');
 	});
 });
