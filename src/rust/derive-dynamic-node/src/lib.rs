@@ -27,9 +27,7 @@ fn name_and_ty(field: &Field) -> (&Ident, &Type, String) {
     for attr in &field.attrs {
         on_grapl_attrs(&attr, |attr| {
             match attr {
-                IMMUTABLE => resolution = Some(attr.to_string()),
-                INCREMENT => resolution = Some(attr.to_string()),
-                DECREMENT => resolution = Some(attr.to_string()),
+                IMMUTABLE | INCREMENT | DECREMENT => resolution = Some(attr.to_string()),
                 _ => (),
             };
         });
@@ -74,7 +72,7 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
     let node_trait_name = format!("I{}Node", struct_name);
     let node_trait_name = syn::Ident::new(&node_trait_name, struct_name.span());
 
-    let use_the_dead_code_method_name = format!("__avoid_dead_code_lint{}", struct_name);
+    let use_the_dead_code_method_name = format!("__avoid_dead_code_lint_{}", struct_name);
     let use_the_dead_code_method_name =
         syn::Ident::new(&use_the_dead_code_method_name, struct_name.span());
 
@@ -344,7 +342,6 @@ fn resolvable_type_from(
                 .path
                 .segments
                 .iter()
-                .into_iter()
                 .map(|x| x.ident.to_string())
                 .collect::<Vec<String>>()
                 .join("::");

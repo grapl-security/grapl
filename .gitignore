@@ -1,7 +1,6 @@
 # Mac OS
 .DS_Store
-.ninja_log
-.pytype/
+
 # Test outputs
 test/cypress/screenshots
 test/cypress/videos
@@ -16,6 +15,7 @@ __pycache__/
 *$py.class
 .mypy_cache
 .hypothesis
+.pytype/
 
 # Rust outputs
 target/
