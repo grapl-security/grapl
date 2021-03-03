@@ -17,13 +17,17 @@ usage() {
     echo 'Options:' 1>&2
     echo '    -f	Path to compose file. Can be passed multiple times.' 1>&2
     echo '    -p	Project name.' 1>&2
+    echo '    -t	Target (if you only want to execute one thing).' 1>&2
     exit 1
 }
 
-while getopts "hf:p:" arg; do
+while getopts "hf:p:t:" arg; do
     case $arg in
         f)
             FILE_ARGS+="-f ${OPTARG} "
+            ;;
+        t)
+            TARGET_ARGS="${OPTARG} "
             ;;
         p)
             p=${OPTARG}
@@ -38,14 +42,20 @@ if [ -z "${FILE_ARGS}" ] || [ -z "${p}" ]; then
     usage
 fi
 
+if [ -z "${TARGET_ARGS}" ]; then
+    TARGET_ARGS=""
+fi
+
 shift $(($OPTIND - 1))
 SERVICES="$@"
 
-docker-compose ${FILE_ARGS} --project-name "$p" up --force-recreate ${SERVICES}
+# Execute the 'up'
+docker-compose ${FILE_ARGS} --project-name "$p" up --force-recreate ${SERVICES} ${TARGET_ARGS}
 
 # check for container exit codes other than 0
 EXIT_CODE=0
-for test in $(docker-compose ${FILE_ARGS} --project-name "$p" ps -q ${SERVICES}); do
+ALL_TESTS=$(docker-compose ${FILE_ARGS} --project-name "$p" ps -q ${SERVICES})
+for test in $ALL_TESTS; do
     docker inspect -f "{{ .State.ExitCode }}" $test | grep -q ^0;
     if [ $? -ne 0 ]; then 
         EXIT_CODE=$?;
