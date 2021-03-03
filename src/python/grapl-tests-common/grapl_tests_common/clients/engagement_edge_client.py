@@ -1,3 +1,4 @@
+import os
 from http import HTTPStatus
 from typing import Optional
 
@@ -15,8 +16,8 @@ class EngagementEdgeException(Exception):
 
 class EngagementEdgeClient:
     def __init__(self, use_docker_links: bool = False) -> None:
-        hostname = "auth.grapl.test" if use_docker_links else "localhost"
-        self.endpoint = f"http://{hostname}:8900"
+        hostname = os.environ["GRAPL_AUTH_HOST"] if use_docker_links else "localhost"
+        self.endpoint = f"http://{hostname}:{os.environ['GRAPL_AUTH_PORT']}"
 
     def get_jwt(self) -> str:
         resp = requests.post(
