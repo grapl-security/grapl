@@ -129,6 +129,7 @@ pub mod test {
         upsert_manager.upsert_node(&n0).await;
         let res = retrieve_node(dgraph_client.as_ref(), "test_upsert_incr_only_uint-example-node-key").await;
         assert_eq!(1000, res["example_id"].as_u64().expect("example_id"));
+
         // If we try to upsert a smaller integer it will not be stored
         let mut properties = HashMap::new();
         properties.insert(

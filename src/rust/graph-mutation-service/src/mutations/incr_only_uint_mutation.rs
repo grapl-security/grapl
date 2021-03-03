@@ -39,10 +39,10 @@ impl IncrementOnlyUintUpsertGenerator {
         let query_name = format!("exists_but_lower_{query_suffix}", query_suffix=query_suffix);
         let query = format!(
             r#"
-            {query_name} as var(func: uid({node_exists}), first: 1) @cascade
+            var(func: uid({node_exists}), first: 1) @cascade
                 @filter(lt({prop_name}, {value}))
             {{
-                uid
+                {query_name} as uid
             }}
             "#,
             query_name = query_name,
@@ -65,27 +65,11 @@ impl IncrementOnlyUintUpsertGenerator {
             prop_value = prop_value,
         );
 
-        // If the node exists, and the value is smaller than the int we're updating with
+        // If the value is smaller than the int we're updating with, which also implies the node exists
         mu_0.set_set_nquads(mu_0_n_quads);
         mu_0.set_cond(
-            format!("@if(eq(len({node_exists}), 1) AND eq(len({query_name}), 1))", query_name = query_name, node_exists = node_exists)
-        );
-
-        let mut mu_1 = dgraph_tonic::Mutation::new();
-
-        let mut mu_1_n_quads = format!(
-            r#"uid({node_exists}) <{prop_name}> "{prop_value}" ."#,
-            node_exists = node_exists,
-            prop_name = prop_name,
-            prop_value = prop_value,
-        );
-
-        // If the node exists, and the value is smaller than the int we're updating with
-        mu_1.set_set_nquads(mu_1_n_quads);
-        mu_1.set_cond(
             format!("@if(eq(len({query_name}), 1))", query_name = query_name)
         );
-
 
         let mut mu_2 = dgraph_tonic::Mutation::new();
 
@@ -101,6 +85,6 @@ impl IncrementOnlyUintUpsertGenerator {
 
         mu_2.set_set_nquads(mu_2_n_quads);
         mu_2.set_cond(format!("@if(eq(len({node_exists}), 0))", node_exists = node_exists));
-        self.mutations.extend_from_slice(&[mu_0, mu_1, mu_2]);
+        self.mutations.extend_from_slice(&[mu_0, mu_2]);
     }
 }

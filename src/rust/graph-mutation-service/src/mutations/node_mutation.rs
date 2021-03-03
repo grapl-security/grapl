@@ -38,8 +38,28 @@ impl NodeUpsertGenerator {
             self.query_buffer.push_str(predicate_query);
             self.mutations.extend_from_slice(mutations);
         }
+
+        println!("---query---");
+        println!("{}", self.query_buffer);
+        println!("---mutations---");
+        println!("{}", format_mutations(&self.mutations));
+        println!("------");
+
+
         (creation_query_name, &self.query_buffer, &self.mutations)
     }
+}
+
+fn format_mutations(muts: &[dgraph_tonic::Mutation]) -> String {
+    let mut output = String::new();
+    for next_mut in muts {
+        let fmt = format!("nquads: {}\ncond: {:?}",
+            String::from_utf8_lossy(&next_mut.set_nquads),
+            next_mut.cond,
+        );
+        output.push_str(&fmt);
+    }
+    output
 }
 
 impl NodeUpsertGenerator {
@@ -48,7 +68,9 @@ impl NodeUpsertGenerator {
         let creation_var_name = format!("node_exists_{node_id}", node_id = node_id);
         let inner_query = format!(
             r#"
-            {creation_var_name} as var(func: eq(node_key, {node_key}), first: 1) @cascade
+            var(func: eq(node_key, {node_key}), first: 1) @cascade {{
+                {creation_var_name} as uid,
+            }}
             q_{creation_var_name}(func: uid({creation_var_name}), first: 1) @cascade
             {{
                 uid,
