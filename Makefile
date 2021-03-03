@@ -143,11 +143,15 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests
 .PHONY: test-integration
 test-integration: export COMPOSE_IGNORE_ORPHANS=1
 test-integration: build-test-integration ## Build and run integration tests
+	# Usage:
+	# make test-integration
+	# make test-integration TARGET=grapl-analyzerlib-integration-tests
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(MAKE) up-detach PROJECT_NAME="grapl-integration_tests" && \
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.integration-tests.yml \
-		-p "grapl-integration_tests"
+		-p "grapl-integration_tests" \
+		-t "$(TARGET)"
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_IGNORE_ORPHANS=1
