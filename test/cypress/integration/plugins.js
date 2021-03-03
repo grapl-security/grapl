@@ -44,15 +44,14 @@ describe("auth validation", () => {
 		it("checks we're authenticated on model-plugin page", () => {
 			cy.get("grapl_jwt").should("exist");
 		});
-
-		it("uploads a model plugin and validates rendering in plugin table ", () => {
-			cy.url().should("include", "plugins");
-			cy.contains(/plugin/i).click();
-			const filePath = "../fixtures/sample_plugins.zip";
-			cy.get('input[type="file"]').attachFile(filePath);
-			cy.get(".submitBtn").click();
-			cy.contains("Successfully").should("exist");
-			cy.contains("grapl_plug_ins").should("exist");
-		});
+	});
+	it("uploads a model plugin and validates rendering in plugin table ", () => {
+		cy.url().should("include", "plugins");
+		cy.contains(/plugin/i).click();
+		const filePath = "../fixtures/sample_plugins.zip";
+		cy.get('input[type="file"]').attachFile(filePath);
+		cy.get(".submitBtn").click();
+		cy.contains("Successfully").should("exist");
+		cy.contains("grapl_plug_ins").should("exist");
 	});
 });
