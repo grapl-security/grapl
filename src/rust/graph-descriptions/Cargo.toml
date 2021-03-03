@@ -18,8 +18,16 @@ serde_json = "1"
 serde_derive = "1"
 
 derive_builder = "0.9"
+dgraph-tonic = "0.8"
 
 log = "0.4"
+dgraph_query_lib = "0.1"
+futures-retry = "0.5"
+anyhow = "*"
+rand = "0.8"
+
+futures = "0.3"
+grapl-utils = { path = "../grapl-utils" }
 
 [dependencies.uuid]
 version = "0.8"

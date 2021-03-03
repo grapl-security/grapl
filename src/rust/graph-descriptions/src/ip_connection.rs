@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
+use dgraph_query_lib::mutation::{MutationPredicateValue,
+                                 MutationUnit};
 use log::warn;
-use serde_json::{json,
-                 Value};
 use uuid::Uuid;
 
 use crate::{error::Error,
@@ -63,30 +63,6 @@ impl IpConnection {
             last_seen_timestamp,
         }
     }
-
-    pub fn into_json(self) -> Value {
-        let mut j = json!({
-            "node_key": self.node_key,
-            "dgraph.type": "IpConnection",
-            "src_ip_address": self.src_ip_address,
-            "dst_ip_address": self.dst_ip_address,
-            "protocol": self.protocol,
-        });
-
-        if self.created_timestamp != 0 {
-            j["created_timestamp"] = self.created_timestamp.into();
-        }
-
-        if self.terminated_timestamp != 0 {
-            j["terminated_timestamp"] = self.terminated_timestamp.into();
-        }
-
-        if self.last_seen_timestamp != 0 {
-            j["last_seen_timestamp"] = self.last_seen_timestamp.into();
-        }
-
-        j
-    }
 }
 
 impl NodeT for IpConnection {
@@ -133,5 +109,98 @@ impl NodeT for IpConnection {
 
     fn merge_into(&mut self, other: Self) -> bool {
         self.merge(&other)
+    }
+
+    fn attach_predicates_to_mutation_unit(&self, mutation_unit: &mut MutationUnit) {
+        mutation_unit.predicate_ref("node_key", MutationPredicateValue::string(&self.node_key));
+        mutation_unit.predicate_ref(
+            "dgraph.type",
+            MutationPredicateValue::string("IpConnection"),
+        );
+        mutation_unit.predicate_ref(
+            "src_ip_address",
+            MutationPredicateValue::string(&self.src_ip_address),
+        );
+        mutation_unit.predicate_ref(
+            "dst_ip_address",
+            MutationPredicateValue::string(&self.dst_ip_address),
+        );
+        mutation_unit.predicate_ref("protocol", MutationPredicateValue::string(&self.protocol));
+
+        if self.created_timestamp != 0 {
+            mutation_unit.predicate_ref(
+                "created_timestamp",
+                MutationPredicateValue::Number(self.created_timestamp as i64),
+            );
+        }
+
+        if self.terminated_timestamp != 0 {
+            mutation_unit.predicate_ref(
+                "terminated_timestamp",
+                MutationPredicateValue::Number(self.terminated_timestamp as i64),
+            );
+        }
+
+        if self.last_seen_timestamp != 0 {
+            mutation_unit.predicate_ref(
+                "last_seen_timestamp",
+                MutationPredicateValue::Number(self.last_seen_timestamp as i64),
+            );
+        }
+    }
+
+    fn get_cache_identities_for_predicates(&self) -> Vec<Vec<u8>> {
+        let mut predicate_cache_identities = Vec::new();
+
+        predicate_cache_identities.push(format!(
+            "{}:{}:{}",
+            self.get_node_key(),
+            "src_ip_address",
+            self.src_ip_address
+        ));
+        predicate_cache_identities.push(format!(
+            "{}:{}:{}",
+            self.get_node_key(),
+            "dst_ip_address",
+            self.dst_ip_address
+        ));
+        predicate_cache_identities.push(format!(
+            "{}:{}:{}",
+            self.get_node_key(),
+            "protocol",
+            self.protocol
+        ));
+
+        if self.created_timestamp != 0 {
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "created_timestamp",
+                self.created_timestamp
+            ));
+        }
+
+        if self.terminated_timestamp != 0 {
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "terminated_timestamp",
+                self.terminated_timestamp
+            ));
+        }
+
+        if self.last_seen_timestamp != 0 {
+            predicate_cache_identities.push(format!(
+                "{}:{}:{}",
+                self.get_node_key(),
+                "last_seen_timestamp",
+                self.last_seen_timestamp
+            ));
+        }
+
+        predicate_cache_identities
+            .into_iter()
+            .map(|item| item.into_bytes())
+            .collect()
     }
 }

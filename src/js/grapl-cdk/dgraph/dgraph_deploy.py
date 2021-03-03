@@ -1,7 +1,6 @@
 import subprocess
 import sys
-
-from typing import Tuple, Iterator
+from typing import Iterator, Tuple
 
 
 def _deploy_dgraph(
