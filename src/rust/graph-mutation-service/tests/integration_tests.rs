@@ -166,6 +166,7 @@ pub mod test {
         };
 
         upsert_manager.upsert_node(&n0).await;
+        let res = retrieve_node(dgraph_client.as_ref(), "test_upsert_incr_only_uint-example-node-key").await;
         assert_eq!(1100, res["example_id"].as_u64().expect("example_id"));
 
         Ok(())
