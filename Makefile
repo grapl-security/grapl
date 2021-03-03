@@ -135,10 +135,19 @@ test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: test-typecheck
-test-typecheck: build-test-typecheck ## Build and run typecheck tests
+test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.typecheck-tests.yml \
 		-p grapl-typecheck_tests
+
+.PHONY: test-typecheck-pulumi
+test-typecheck-pulumi: ## Typecheck Pulumi Python code
+	./pants typecheck pulumi::
+
+# Right now, we're only typechecking Pulumi code with Pants until CM
+# fixes https://github.com/pantsbuild/pants/issues/11553
+.PHONY: test-typecheck-pants
+test-typecheck-pants: test-typecheck-pulumi ## Typecheck Python code with Pants
 
 .PHONY: test-integration
 test-integration: export COMPOSE_IGNORE_ORPHANS=1
@@ -255,7 +264,7 @@ e2e-logs: ## All docker-compose logs
 
 .PHONY: help
 help: ## Print this help
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: docker-kill-all
 docker-kill-all:  # Kill all currently running Docker containers

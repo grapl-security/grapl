@@ -78,10 +78,10 @@ def get_sqs_client() -> SQSClient:
     if IS_LOCAL:
         return boto3.client(
             "sqs",
-            endpoint_url="http://localhost:9324",
-            region_name="us-east-1",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
+            endpoint_url=os.environ["SQS_ENDPOINT"],
+            region_name=os.environ["AWS_REGION"],
+            aws_access_key_id=os.environ["SQS_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["SQS_ACCESS_KEY_SECRET"]
         )
     else:
         return boto3.client("sqs")
@@ -91,9 +91,9 @@ def get_s3_client() -> S3Client:
     if IS_LOCAL:
         return boto3.client(
             "s3",
-            endpoint_url="http://localhost:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
+            endpoint_url=os.environ["S3_ENDPOINT"],
+            aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"]
         )
 
     else:
