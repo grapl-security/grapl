@@ -5,7 +5,7 @@ import pulumi_aws as aws
 import pulumi
 
 
-def jwt_secret():
+def jwt_secret() -> None:
     """Set up a JWT secret for use in local environments"""
 
     secret = aws.secretsmanager.Secret("JWT_SECRET_ID", name="JWT_SECRET_ID")

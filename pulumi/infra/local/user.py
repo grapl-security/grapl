@@ -2,13 +2,14 @@ import json
 import os
 from base64 import b64encode
 from hashlib import pbkdf2_hmac, sha256
+from typing import Dict
 
 import pulumi_aws as aws
 
 import pulumi
 
 
-def local_user_item(username, cleartext):
+def local_user_item(username: str, cleartext: str) -> Dict[str, Dict[str, str]]:
     # We hash before calling 'hashed_password' because the frontend will also perform
     # client side hashing
     cleartext += "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254"
@@ -28,12 +29,12 @@ def local_user_item(username, cleartext):
     }
 
 
-def hash_password(cleartext, salt) -> str:
+def hash_password(cleartext: bytes, salt: bytes) -> str:
     hashed = sha256(cleartext).digest()
     return pbkdf2_hmac("sha256", hashed, salt, 512000).hex()
 
 
-def local_grapl_user(table, username, cleartext):
+def local_grapl_user(table: aws.dynamodb.Table, username: str, cleartext: str) -> None:
     """Create a user only for local development uses; NEVER REAL AWS"""
 
     prefix = pulumi.get_stack()

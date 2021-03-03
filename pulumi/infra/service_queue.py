@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 import pulumi_aws as aws
 
@@ -12,7 +13,9 @@ class ServiceQueue(pulumi.ComponentResource):
     letter" queue.
     """
 
-    def __init__(self, name, opts=None):
+    def __init__(
+        self, name: str, opts: Optional[pulumi.ResourceOptions] = None
+    ) -> None:
         # TODO: grapl_infra? grapl.infra? grapl:service:servicequeue?
         super().__init__("grapl:ServiceQueue", name, None, opts)
 
@@ -20,7 +23,7 @@ class ServiceQueue(pulumi.ComponentResource):
 
         # `arn` is the ARN of a queue. This is a function because of
         # the need to use Output.apply on the ARN.
-        def redrive_policy(arn):
+        def redrive_policy(arn: pulumi.Output) -> str:
             return json.dumps(
                 {
                     "deadLetterTargetArn": arn,

@@ -23,13 +23,13 @@ if __name__ == "__main__":
         "unid-subgraphs-generated-bucket",
     )
 
-    for bucket in buckets:
-        bucket_name = f"{PREFIX}-{bucket}"
+    for logical_bucket_name in buckets:
+        physical_bucket_name = f"{PREFIX}-{logical_bucket_name}"
         bucket = aws.s3.Bucket(
-            bucket,
-            bucket=bucket_name,
+            logical_bucket_name,
+            bucket=physical_bucket_name,
         )
-        pulumi.export(f"Bucket: {bucket_name}", bucket.id)
+        pulumi.export(f"Bucket: {physical_bucket_name}", bucket.id)
 
     services = (
         "analyzer-dispatcher",

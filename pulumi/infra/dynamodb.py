@@ -1,3 +1,5 @@
+from typing import Dict, List, Optional
+
 import pulumi_aws as aws
 
 import pulumi
@@ -16,7 +18,9 @@ class DynamoDB(pulumi.ComponentResource):
     created table names.
     """
 
-    def __init__(self, name, opts=None):
+    def __init__(
+        self, name: str, opts: Optional[pulumi.ResourceOptions] = None
+    ) -> None:
         super().__init__("grapl:DynamoDB", name, None, opts)
 
         self.schema_table = dynamodb_table(
@@ -74,7 +78,13 @@ class DynamoDB(pulumi.ComponentResource):
 # Below are essentially private functions
 
 
-def dynamodb_table(name, attrs, parent_resource, hash_key, range_key=None):
+def dynamodb_table(
+    name: str,
+    attrs: List[Dict[str, str]],
+    parent_resource: pulumi.Resource,
+    hash_key: str,
+    range_key: Optional[str] = None,
+) -> aws.dynamodb.Table:
     """Defines a single DynamoDB table.
 
     Of particular note:
@@ -94,7 +104,9 @@ def dynamodb_table(name, attrs, parent_resource, hash_key, range_key=None):
     )
 
 
-def dynamodb_history_table(name, parent_resource):
+def dynamodb_history_table(
+    name: str, parent_resource: pulumi.Resource
+) -> aws.dynamodb.Table:
     """A specialization of `dynamodb_table` for our various "history"
     tracking tables, which all share the same indexing structures.
 
