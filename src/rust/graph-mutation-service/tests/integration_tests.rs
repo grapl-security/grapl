@@ -6,6 +6,7 @@ pub mod test {
     use mutations::node_mutation::{NodeUpsertGenerator};
     use grapl_graph_descriptions::IdentifiedNode;
     use grapl_graph_descriptions::ImmutableUintProp;
+    use grapl_graph_descriptions::IncrementOnlyUintProp;
 
     use std::{collections::HashMap,
               sync::{Arc,
@@ -85,18 +86,36 @@ pub mod test {
         });
     }
 
+    async fn retrieve_node(dgraph_client: &DgraphClient, node_key: &str) -> serde_json::Value {
+        let query = r#"
+          query q0($a: string) {
+            q0(func: eq(node_key, $a)) {
+                uid,
+                expand(ExampleNode)
+            }
+          }
+        "#;
+        let mut variables = HashMap::with_capacity(1);
+        variables.insert("$a".to_string(), node_key.to_string());
+        let mut txn = dgraph_client.new_read_only_txn();
+        let res = txn.query_with_vars(query, variables).await.expect("query failed");
+        let value: serde_json::Value = serde_json::from_slice(&res.json).expect("json failed");
+        value["q0"][0].clone()
+    }
+
     #[tokio::test]
     async fn test_upsert_incr_only_uint() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client."));
         let mut upsert_manager = UpsertManager {
-            dgraph_client: std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client.")),
+            dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
         };
 
         let mut properties = HashMap::new();
         properties.insert(
             "example_id".to_string(),
-            ImmutableUintProp {
+            IncrementOnlyUintProp {
                 prop: 1000,
             }
                 .into(),
@@ -107,7 +126,46 @@ pub mod test {
             properties,
         };
 
-        upsert_manager.upsert_node(&n0);
+        upsert_manager.upsert_node(&n0).await;
+        let res = retrieve_node(dgraph_client.as_ref(), "test_upsert_incr_only_uint-example-node-key").await;
+        assert_eq!(1000, res["example_id"].as_u64().expect("example_id"));
+        // If we try to upsert a smaller integer it will not be stored
+        let mut properties = HashMap::new();
+        properties.insert(
+            "example_id".to_string(),
+            IncrementOnlyUintProp {
+                prop: 900,
+            }
+                .into(),
+        );
+        let n0 = IdentifiedNode {
+            node_key: "test_upsert_incr_only_uint-example-node-key".to_string(),
+            node_type: "ExampleNode".to_string(),
+            properties,
+        };
+
+        upsert_manager.upsert_node(&n0).await;
+        let res = retrieve_node(dgraph_client.as_ref(), "test_upsert_incr_only_uint-example-node-key").await;
+        assert_eq!(1000, res["example_id"].as_u64().expect("example_id"));
+
+
+        // If we try to upsert a larger integer it will be stored
+        let mut properties = HashMap::new();
+        properties.insert(
+            "example_id".to_string(),
+            IncrementOnlyUintProp {
+                prop: 1100,
+            }
+                .into(),
+        );
+        let n0 = IdentifiedNode {
+            node_key: "test_upsert_incr_only_uint-example-node-key".to_string(),
+            node_type: "ExampleNode".to_string(),
+            properties,
+        };
+
+        upsert_manager.upsert_node(&n0).await;
+        assert_eq!(1100, res["example_id"].as_u64().expect("example_id"));
 
         Ok(())
     }

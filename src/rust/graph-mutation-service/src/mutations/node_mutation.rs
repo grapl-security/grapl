@@ -12,9 +12,15 @@ pub struct NodeUpsertGenerator {
 
 impl NodeUpsertGenerator {
     pub fn generate_upserts(&mut self, unique_id: u128, node_id: u128, value: &IdentifiedNode) -> (String, &str, &[dgraph_tonic::Mutation]) {
+        let node_key = escape_quote(&value.node_key);
         let creation_query_name = self.gen_query(
             node_id,
-            &escape_quote(&value.node_key),
+            &node_key,
+        );
+        self.node_creation_quads(
+            &creation_query_name,
+            &node_key,
+            &value.node_type,
         );
         for (predicate_id, (predicate_name, predicate_value)) in value.properties.iter().enumerate() {
             let query_input = QueryInput {
@@ -55,49 +61,31 @@ impl NodeUpsertGenerator {
         self.query_buffer.push_str(&inner_query);
         creation_var_name
     }
-}
 
-pub(crate) fn node_creation_quads(
-    query_param: u128,
-    predicate_param: u128,
-    creation_var_name: &str,
-    node_key: &Escaped,
-    node_type: &str,
-    prop_name: &str,
-    prop_value: &Escaped,
-) -> (String, String, dgraph_tonic::Mutation) {
-    let creation_var_name = format!("node_exists_{}", query_param);
-    let mut mu_0 = dgraph_tonic::Mutation::new();
-    let escaped_node_key = node_key;
-    let inner_query = format!(
-        r#"
-            {creation_var_name} as var(func: eq(node_key, {node_key}), first: 1) @cascade
-            q_{creation_var_name}(func: uid({creation_var_name}), first: 1) @cascade
-            {{
-                uid,
-                node_key,
-            }}
-    "#,
-        creation_var_name=creation_var_name,
-        node_key=escaped_node_key,
-    );
 
-    // If the node exists, do nothing, otherwise create it with its type
-    let mut mu_1 = dgraph_tonic::Mutation::new();
-    let mut mu_1_n_quads = format!(
-        concat!(
-        r#"_:{creation_var_name} <node_key> {node_key} ."#,
-        "\n",
-        r#"_:{creation_var_name} <dgraph.type> "{node_type}" ."#,
-        ),
-        node_key = escaped_node_key,
-        node_type = node_type,
-        creation_var_name = creation_var_name,
-    );
+    pub(crate) fn node_creation_quads(
+        &mut self,
+        creation_var_name: &str,
+        node_key: &Escaped,
+        node_type: &str,
+    ) {
+        // If the node exists, do nothing, otherwise create it with its type
+        let mut mu_1 = dgraph_tonic::Mutation::new();
+        let mut mu_1_n_quads = format!(
+            concat!(
+            r#"_:{creation_var_name} <node_key> {node_key} ."#,
+            "\n",
+            r#"_:{creation_var_name} <dgraph.type> "{node_type}" ."#,
+            ),
+            node_key = node_key,
+            node_type = node_type,
+            creation_var_name = creation_var_name,
+        );
 
-    mu_1.set_set_nquads(mu_1_n_quads);
-    mu_1.set_cond(format!("@if(eq(len({creation_var_name}), 0))", creation_var_name=creation_var_name));
+        mu_1.set_set_nquads(mu_1_n_quads);
+        mu_1.set_cond(format!("@if(eq(len({creation_var_name}), 0))", creation_var_name=creation_var_name));
 
-    (creation_var_name, inner_query, mu_1)
+        self.mutations.push(mu_1);
+    }
 
 }

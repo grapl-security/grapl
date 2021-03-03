@@ -2,6 +2,7 @@ use crate::mutations::{UpsertGenerator, QueryInput};
 use crate::v1beta1::ImmutableIntProp;
 use crate::mutations::escape::{Escaped, escape_quote};
 
+#[derive(Default)]
 pub struct ImmutableIntUpsertGenerator {
     query_buffer: String,
     mutations: Vec<dgraph_tonic::Mutation>,

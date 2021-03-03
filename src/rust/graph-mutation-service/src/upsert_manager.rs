@@ -10,6 +10,7 @@ pub struct UpsertManager {
 }
 
 impl UpsertManager {
+    // todo: return uid
     pub async fn upsert_node(&mut self, node: &IdentifiedNode) {
         let (creation_var_name, query, mutations) = self.node_upsert_generator.generate_upserts(
             0u128,
