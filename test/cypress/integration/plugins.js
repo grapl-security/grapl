@@ -43,7 +43,6 @@ describe("auth validation", () => {
 		cy.contains("login").should("not.exist");
 		it("checks we're authenticated on model-plugin page", () => {
 			cy.get("grapl_jwt").should("exist");
-			
 		});
 
 		it("uploads a model plugin and validates rendering in plugin table ", () => {
@@ -54,6 +53,6 @@ describe("auth validation", () => {
 			cy.get(".submitBtn").click();
 			cy.contains("Successfully").should("exist");
 			cy.contains("grapl_plug_ins").should("exist");
-		})
+		});
 	});
 });
