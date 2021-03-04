@@ -23,35 +23,41 @@ describe("login form test", () => {
 });
 
 describe("auth validation", () => {
-	beforeEach(() => {
-		cy.request({
-			url: `http://localhost:1234/auth/login`,
-			method: "POST",
-			credentials: "include",
-			headers: new Headers({
-				"Content-Type": "application/json",
-			}),
-			body: JSON.stringify({
-				username: "grapluser",
-				password: "graplpassword",
-			}),
-		}).then((body) => {
-			const grapl_jwt = { user: { authenticationData: { token: body.token } } };
-			window.localStorage.setItem("grapl_jwt", JSON.stringify(grapl_jwt));
-		});
+	// beforeEach(() => {
+	// 	cy.request({
+	// 		url: `http://localhost:1234/auth/login`,
+	// 		method: "POST",
+	// 		credentials: "include",
+	// 		headers: new Headers({
+	// 			"Content-Type": "application/json",
+	// 		}),
+	// 		body: JSON.stringify({
+	// 			username: "grapluser",
+	// 			password: "graplpassword",
+	// 		}),
+	// 	}).then((body) => {
+	// 		const grapl_jwt = { user: { authenticationData: { token: body.token } } };
+	// 		cy.setLocalStorage("token", body.token);
 
-		cy.contains("login").should("not.exist");
-		it("checks we're authenticated on model-plugin page", () => {
-			cy.get("grapl_jwt").should("exist");
-		});
+	// 		window.localStorage.setItem("grapl_jwt", JSON.stringify(grapl_jwt));
+	// 	});
+
+	// 	cy.contains("login").should("not.exist");
+		
+	// });
+
+	it("checks we're authenticated on model-plugin page", () => {
+		cy.get("grapl_jwt").should("exist");
 	});
-	it("uploads a model plugin and validates rendering in plugin table ", () => {
-		cy.url().should("include", "plugins");
-		cy.contains(/plugin/i).click();
-		const filePath = "../fixtures/sample_plugins.zip";
-		cy.get('input[type="file"]').attachFile(filePath);
-		cy.get(".submitBtn").click();
-		cy.contains("Successfully").should("exist");
-		cy.contains("grapl_plug_ins").should("exist");
-	});
+	// it("uploads a model plugin and validates rendering in plugin table ", () => {
+	// 	cy.contains(/plugin/i).click();
+	// 	cy.url().should("include", "plugins");
+		
+	// 	cy.get('grapl_jwt').should('exist')
+	// 	// const filePath = "../fixtures/sample_plugins.zip";
+	// 	// cy.get('input[type="file"]').attachFile(filePath);
+	// 	// cy.get(".submitBtn").click();
+	// 	// cy.contains("Successfully").should("exist");
+	// 	// cy.contains("grapl_plug_ins").should("exist");
+	// });
 });
