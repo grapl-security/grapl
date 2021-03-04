@@ -18,7 +18,6 @@ serde_derive = "1.0.110"
 failure = "0.1.*"
 prost = "0.6.*"
 log = "0.4.3"
-base16 = "0.1.1"
 regex = "1.1.0"
 lazy_static = "1.2.0"
 sysmon = "0.2"
@@ -32,13 +31,10 @@ rusoto_credential = "0.46.0"
 futures = "0.3.*"
 aws_lambda_events = "0.2.0"
 
-simple_logger = "1.6.*"
 async-trait = "0.1.31"
 thiserror = "1.0.22"
 
-lambda_runtime = "0.2"
 zstd = "0.6"
-tokio-compat = "0.1"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
 graph-generator-lib = { path="../graph-generator-lib" }
 tracing = "0.1"

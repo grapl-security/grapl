@@ -25,7 +25,6 @@ serde_derive = "1.0.110"
 log = "0.4.*"
 
 dgraph-tonic = { version = "0.9", features = ["dgraph-1-1"] }
-grpc = "0.6.1"
 sqs-executor = { path = "../sqs-executor/" }
 
 rusoto_s3 = { version="0.46.0", default_features = false, features=["rustls"] }
@@ -48,13 +47,10 @@ dgraph_query_lib = "0.1"
 futures = "0.3"
 async-trait = "0.1"
 uuid = "0"
-tokio-compat = "0"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
 chrono = "0.4"
-serde_dynamodb = { version="0.7", default_features = false, features=["rustls"] }
 tracing = "0.1.22"
 thiserror = "1.0.23"
-lambda_runtime = "0.2.1"
 tracing-futures = "0.2.4"
 tap = "1.0.0"
 lru = "0.6.5"

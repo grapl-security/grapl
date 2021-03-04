@@ -10,10 +10,7 @@ grapl-config = {path="../grapl-config", version="*"}
 grapl-observe = {path = "../grapl-observe"}
 grapl-service = {path="../grapl-service"}
 aws_lambda_events = "0.2.1"
-base16 = "0.1.1"
-dgraph-rs = "0.1.2"
 futures = "0.3.*"
-grpc = "0.6.1"
 
 base64 = "0.13"
 bytes = "1"
@@ -26,10 +23,8 @@ rusoto_core = { version="0.46", default_features = false, features=["rustls"] }
 rusoto_sqs = { version="0.46", default_features = false, features=["rustls"] }
 rusoto_credential = "0.46"
 
-lambda_runtime = "0.2.*"
 async-trait = "0.1.22"
 zstd = "0.6"
-tokio-compat = "0.1.*"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
 chrono = "0.4.11"
 sqs-executor = { path = "../sqs-executor/" }
