@@ -138,7 +138,8 @@ test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.typecheck-tests.yml \
-		-p grapl-typecheck_tests
+		-p grapl-typecheck_tests \
+		-t "$(TARGET)"
 
 .PHONY: test-typecheck-pulumi
 test-typecheck-pulumi: ## Typecheck Pulumi Python code
