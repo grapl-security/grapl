@@ -10,7 +10,7 @@ from grapl_analyzerlib.nodes.lens import LensView, LensQuery
 class TestQueryGen(unittest.TestCase):
     @hypothesis.settings(deadline=None)
     @hypothesis.given(
-        lens_name=hypothesis.strategies.text(),
+        lens_name=hypothesis.strategies.text(max_size=100),
     )
     def test_weird_chars_in_lens_name(self, lens_name: str) -> None:
         """
