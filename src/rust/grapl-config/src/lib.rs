@@ -57,8 +57,8 @@ pub async fn event_cache(env: &ServiceEnv) -> RedisCache {
         cache_address.to_owned(),
         MetricReporter::<Stdout>::new(&env.service_name),
     )
-    .await
-    .expect("Could not create redis client")
+        .await
+        .expect("Could not create redis client")
 }
 
 pub async fn event_caches(env: &ServiceEnv) -> [RedisCache; 10] {
@@ -68,6 +68,7 @@ pub async fn event_caches(env: &ServiceEnv) -> [RedisCache; 10] {
 pub fn dest_bucket() -> String {
     std::env::var("DEST_BUCKET_NAME").expect("DEST_BUCKET_NAME")
 }
+
 pub fn dest_queue_url() -> String {
     std::env::var("DEST_QUEUE_URL").expect("DEST_QUEUE_URL")
 }
@@ -139,7 +140,7 @@ pub async fn wait_for_s3(s3_client: impl S3) -> color_eyre::Result<()> {
             _ => Ok(()),
         }
     })
-    .await?;
+        .await?;
 
     Ok(())
 }
@@ -165,15 +166,15 @@ pub async fn wait_for_sqs(
             _ => Ok(()),
         }
     })
-    .await?;
+        .await?;
 
     Ok(())
 }
 
 async fn wait_loop<F, E>(max_tries: u32, f: impl Fn() -> F) -> color_eyre::Result<()>
-where
-    F: std::future::Future<Output = Result<(), E>>,
-    E: std::error::Error + Send + Sync + 'static,
+    where
+        F: std::future::Future<Output=Result<(), E>>,
+        E: std::error::Error + Send + Sync + 'static,
 {
     let mut errs: Result<(), _> = Err(eyre::eyre!("wait_loop failed"));
     for _ in 0..max_tries {
@@ -191,40 +192,40 @@ where
 }
 
 pub fn static_mapping_table_name() -> String {
-    return std::env::var("STATIC_MAPPING_TABLE").expect("STATIC_MAPPING_TABLE");
+    std::env::var("STATIC_MAPPING_TABLE").expect("STATIC_MAPPING_TABLE")
 }
 
 pub fn dynamic_session_table_name() -> String {
-    return std::env::var("DYNAMIC_SESSION_TABLE").expect("DYNAMIC_SESSION_TABLE");
+    std::env::var("DYNAMIC_SESSION_TABLE").expect("DYNAMIC_SESSION_TABLE")
 }
 
 pub fn process_history_table_name() -> String {
-    return std::env::var("PROCESS_HISTORY_TABLE").expect("PROCESS_HISTORY_TABLE");
+    std::env::var("PROCESS_HISTORY_TABLE").expect("PROCESS_HISTORY_TABLE")
 }
 
 pub fn file_history_table_name() -> String {
-    return std::env::var("FILE_HISTORY_TABLE").expect("FILE_HISTORY_TABLE");
+    std::env::var("FILE_HISTORY_TABLE").expect("FILE_HISTORY_TABLE")
 }
 
 pub fn inbound_connection_history_table_name() -> String {
-    return std::env::var("INBOUND_CONNECTION_HISTORY_TABLE")
-        .expect("INBOUND_CONNECTION_HISTORY_TABLE");
+    std::env::var("INBOUND_CONNECTION_HISTORY_TABLE")
+        .expect("INBOUND_CONNECTION_HISTORY_TABLE")
 }
 
 pub fn outbound_connection_history_table_name() -> String {
-    return std::env::var("OUTBOUND_CONNECTION_HISTORY_TABLE")
-        .expect("OUTBOUND_CONNECTION_HISTORY_TABLE");
+    std::env::var("OUTBOUND_CONNECTION_HISTORY_TABLE")
+        .expect("OUTBOUND_CONNECTION_HISTORY_TABLE")
 }
 
 pub fn network_connection_history_table_name() -> String {
-    return std::env::var("NETWORK_CONNECTION_HISTORY_TABLE")
-        .expect("NETWORK_CONNECTION_HISTORY_TABLE");
+    std::env::var("NETWORK_CONNECTION_HISTORY_TABLE")
+        .expect("NETWORK_CONNECTION_HISTORY_TABLE")
 }
 
 pub fn ip_connection_history_table_name() -> String {
-    return std::env::var("IP_CONNECTION_HISTORY_TABLE").expect("IP_CONNECTION_HISTORY_TABLE");
+    std::env::var("IP_CONNECTION_HISTORY_TABLE").expect("IP_CONNECTION_HISTORY_TABLE")
 }
 
 pub fn asset_id_mappings_table_name() -> String {
-    return std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS");
+    std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS")
 }

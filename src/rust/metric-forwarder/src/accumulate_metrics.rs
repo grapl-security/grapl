@@ -115,7 +115,7 @@ impl<'a> PartialEq for WrappedDimensions<'a> {
     }
 }
 
-static NO_DIMENSIONS: &'static [Dimension] = &[];
+static NO_DIMENSIONS: &[Dimension] = &[];
 impl<'a> From<&'a Option<Vec<Dimension>>> for WrappedDimensions<'a> {
     fn from(input: &'a Option<Vec<Dimension>>) -> WrappedDimensions<'a> {
         match input {

@@ -243,7 +243,7 @@ impl MergedGraph {
         assert_ne!(from_uid, to_uid);
         let edge = MergedEdge {
             from_node_key: from_node_key.clone(),
-            from_uid: from_uid.clone(),
+            from_uid,
             to_node_key,
             to_uid,
             edge_name,
@@ -556,7 +556,7 @@ impl std::string::ToString for ImmutableStrProp {
 
 impl std::string::ToString for NodeProperty {
     fn to_string(&self) -> String {
-        let prop = match &self.property {
+        match &self.property {
             Some(node_property::Property::IncrementOnlyUint(increment_only_uint_prop)) => {
                 increment_only_uint_prop.to_string()
             }
@@ -579,8 +579,7 @@ impl std::string::ToString for NodeProperty {
                 immutable_str_prop.to_string()
             }
             None => panic!("Invalid property : {:?}", self),
-        };
-        prop
+        }
     }
 }
 
@@ -590,7 +589,7 @@ impl NodeDescription {
     }
 
     pub fn set_property(&mut self, name: impl Into<String>, value: impl Into<NodeProperty>) {
-        self.properties.insert(name.into(), value.into().into());
+        self.properties.insert(name.into(), value.into());
     }
 
     pub fn set_key(&mut self, key: String) {
@@ -785,42 +784,42 @@ impl From<ImmutableStrProp> for Property {
 impl NodeProperty {
     pub fn as_increment_only_uint(&self) -> Option<IncrementOnlyUintProp> {
         match self.property {
-            Some(ProtoIncrementOnlyUintProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoIncrementOnlyUintProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_immutable_uint(&self) -> Option<ImmutableUintProp> {
         match self.property {
-            Some(ProtoImmutableUintProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoImmutableUintProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_decrement_only_uint(&self) -> Option<DecrementOnlyUintProp> {
         match self.property {
-            Some(ProtoDecrementOnlyUintProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoDecrementOnlyUintProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_decrement_only_int(&self) -> Option<DecrementOnlyIntProp> {
         match self.property {
-            Some(ProtoDecrementOnlyIntProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoDecrementOnlyIntProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_increment_only_int(&self) -> Option<IncrementOnlyIntProp> {
         match self.property {
-            Some(ProtoIncrementOnlyIntProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoIncrementOnlyIntProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_immutable_int(&self) -> Option<ImmutableIntProp> {
         match self.property {
-            Some(ProtoImmutableIntProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoImmutableIntProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
