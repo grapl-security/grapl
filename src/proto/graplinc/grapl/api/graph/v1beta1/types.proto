@@ -13,12 +13,19 @@ package graplinc.grapl.api.graph.v1beta1;
 message Session {
     // Such as the pid + assetid
     repeated string primary_key_properties = 1;
+    // This is a special flag that specifies that this node's identity is dependent on a resolved asset identity
     bool primary_key_requires_asset_id = 2;
+    // The beginning of this session, in milliseconds
     uint64 create_time = 3;
+    // The last observed time, in milliseconds, of this entity
     uint64 last_seen_time = 4;
+    // The end of this session, in milliseconds
     uint64 terminate_time = 5;
+    // These keys can be used to rule out potential identity matches
     repeated string negation_keys = 6;
+    // These keys aren't guaratneed to exist but are guaranteed unique identifiers
     repeated string optional_static_keys = 7;
+    // These keys should be dropped once identification occurs
     repeated string drop_after_identification = 8;
 }
 
@@ -26,44 +33,62 @@ message Session {
 // As one example, an AWS Resource Name uniquely identifies all AWS resources across accounts, so it would be
 // a suitable Static identity.
 message Static {
+    // The properties that are used to derive a static identity
     repeated string primary_key_properties = 1;
+    // This is a special flag that specifies that this node's identity is dependent on a resolved asset identity
     bool primary_key_requires_asset_id = 2;
 }
 
+// Represents one of the multiple ways that a node can be identified
 message IdStrategy {
+    // There are multiple types of identification strategies
     oneof strategy {
+        // Session identity is used for entities that have a "beginning" and "end" - for example, a Process has a start and stop
         Session session = 1;
+        // Static identities are for entities that have an intrinsic, globally unique identifier
         Static static = 2;
     }
 }
 
-
-
+// Represents an unsigned integer that, when merged, will become the larger of the two properties
 message IncrementOnlyUintProp {
+    // The internal property, without its merge constraint
     uint64 prop = 1;
 }
 
+// Represents an unsigned integer that, when merged, will remain the same
 message ImmutableUintProp {
+    // The internal property, without its merge constraint
     uint64 prop = 1;
 }
 
+// Represents an unsigned integer that, when merged, will become the smaller of the two properties
 message DecrementOnlyUintProp {
+    // The internal property, without its merge constraint
     uint64 prop = 1;
 }
 
-message DecrementOnlyIntProp {
-    int64 prop = 1;
-}
-
+// Represents a signed integer that, when merged, will become the larger of the two properties
 message IncrementOnlyIntProp {
+    // The internal property, without its merge constraint
     int64 prop = 1;
 }
 
+// Represents a signed integer that, when merged, will become the smaller of the two properties
+message DecrementOnlyIntProp {
+    // The internal property, without its merge constraint
+    int64 prop = 1;
+}
+
+// Represents a signed integer that, when merged, will remain the same
 message ImmutableIntProp {
+    // The internal property, without its merge constraint
     int64 prop = 1;
 }
 
+// Represents a string that, when merged, will remain the same
 message ImmutableStrProp {
+    // The internal property, without its merge constraint
     string prop = 1;
 }
 
@@ -74,6 +99,7 @@ message ImmutableStrProp {
 // that gets set to the "first" value and then never changes is not commutative. This is actually OK, so long as  we
 // have external knowledge of the datasources that informs us that the string will never change.
 message NodeProperty {
+    // We have multiple different types of node properties
     oneof property {
         // `increment_only_uint_prop` is an unsigned 64bit integer. On merge the larger value is stored.
         IncrementOnlyUintProp increment_only_uint = 1;
@@ -110,17 +136,23 @@ message NodeDescription {
 // Identified nodes are similar to a 'NodeDescription', except that their node_key is
 // canonical.
 message IdentifiedNode {
+    // Represents the properties of a node
     map<string, NodeProperty> properties = 1;
+    // The node_key, which is now resolved and canonical
     string node_key = 2;
+    // The node type, as it exists in DGraph
     string node_type = 3;
 }
 
 // A MergedNode represents a node that has already been merged into Grapl.
 message MergedNode {
+    // Represents the properties of a node
     map<string, NodeProperty> properties = 1;
     // The 'uid' represents the DGraph node uid
     uint64 uid = 2;
+    // The node_key, which is now resolved and canonical
     string node_key = 3;
+    // The node type, as it exists in DGraph
     string node_type = 4;
 }
 
@@ -151,32 +183,40 @@ message MergedEdge {
 
 // Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
 message EdgeList {
+    // The internal repeated edges
     repeated Edge edges = 1;
 }
 
 // Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
 // Every edge in the MergedEdgeList has been merged into the graph store.
 message MergedEdgeList {
+    // The internal repeated edges
     repeated MergedEdge edges = 1;
 }
 
 // GraphDescription represents a graph of nodes that may or may not exist yet in the graph store.
 // These nodes may or may not have canonical identities.
 message GraphDescription {
+    // The mapping of node_key to NodeDescription
     map <string, NodeDescription> nodes = 1;
+    // The mapping of node_key to the EdgeLists
     map <string, EdgeList> edges = 2;
 }
 
 // GraphDescription represents a graph of nodes that may or may not exist yet in the graph store.
 // These nodes have canonical identities.
-message IdentifiedGraph{
+message IdentifiedGraph {
+    // The mapping of node_key to the IdentifiedNode
     map <string, IdentifiedNode> nodes = 1;
+    // The mapping of node_key to the EdgeLists
     map <string, EdgeList> edges = 2;
 }
 
 // GraphDescription represents a graph of nodes that exist in the graph store. These nodes
 // have canonical identities.
-message MergedGraph{
+message MergedGraph {
+    // The mapping of node_key to the MergedNode
     map <string, MergedNode> nodes = 1;
+    // The mapping of node_key to the EdgeLists
     map <string, MergedEdgeList> edges = 2;
 }
