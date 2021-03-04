@@ -57,8 +57,8 @@ pub async fn event_cache(env: &ServiceEnv) -> RedisCache {
         cache_address.to_owned(),
         MetricReporter::<Stdout>::new(&env.service_name),
     )
-        .await
-        .expect("Could not create redis client")
+    .await
+    .expect("Could not create redis client")
 }
 
 pub async fn event_caches(env: &ServiceEnv) -> [RedisCache; 10] {
@@ -140,7 +140,7 @@ pub async fn wait_for_s3(s3_client: impl S3) -> color_eyre::Result<()> {
             _ => Ok(()),
         }
     })
-        .await?;
+    .await?;
 
     Ok(())
 }
@@ -166,15 +166,15 @@ pub async fn wait_for_sqs(
             _ => Ok(()),
         }
     })
-        .await?;
+    .await?;
 
     Ok(())
 }
 
 async fn wait_loop<F, E>(max_tries: u32, f: impl Fn() -> F) -> color_eyre::Result<()>
-    where
-        F: std::future::Future<Output=Result<(), E>>,
-        E: std::error::Error + Send + Sync + 'static,
+where
+    F: std::future::Future<Output = Result<(), E>>,
+    E: std::error::Error + Send + Sync + 'static,
 {
     let mut errs: Result<(), _> = Err(eyre::eyre!("wait_loop failed"));
     for _ in 0..max_tries {
@@ -208,18 +208,15 @@ pub fn file_history_table_name() -> String {
 }
 
 pub fn inbound_connection_history_table_name() -> String {
-    std::env::var("INBOUND_CONNECTION_HISTORY_TABLE")
-        .expect("INBOUND_CONNECTION_HISTORY_TABLE")
+    std::env::var("INBOUND_CONNECTION_HISTORY_TABLE").expect("INBOUND_CONNECTION_HISTORY_TABLE")
 }
 
 pub fn outbound_connection_history_table_name() -> String {
-    std::env::var("OUTBOUND_CONNECTION_HISTORY_TABLE")
-        .expect("OUTBOUND_CONNECTION_HISTORY_TABLE")
+    std::env::var("OUTBOUND_CONNECTION_HISTORY_TABLE").expect("OUTBOUND_CONNECTION_HISTORY_TABLE")
 }
 
 pub fn network_connection_history_table_name() -> String {
-    std::env::var("NETWORK_CONNECTION_HISTORY_TABLE")
-        .expect("NETWORK_CONNECTION_HISTORY_TABLE")
+    std::env::var("NETWORK_CONNECTION_HISTORY_TABLE").expect("NETWORK_CONNECTION_HISTORY_TABLE")
 }
 
 pub fn ip_connection_history_table_name() -> String {

@@ -20,8 +20,7 @@ pub mod test {
                            ToQueryString};
     use dgraph_tonic::{Client as DgraphClient,
                        Query};
-    use graph_merger_lib::{upserter::GraphMergeHelper,
-                           *};
+    use graph_merger_lib::upserter::GraphMergeHelper;
     use grapl_graph_descriptions::*;
 
     async fn query_for_uid(dgraph_client: Arc<DgraphClient>, node_key: &str) -> u64 {

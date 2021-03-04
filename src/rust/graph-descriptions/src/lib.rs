@@ -1,4 +1,3 @@
-// #![allow(unused_imports, unused_mut)]
 pub mod graph_description {
     // TODO: Restructure the Rust modules to better reflect the new
     // Protobuf structure
