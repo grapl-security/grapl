@@ -30,9 +30,6 @@ serde = { version = "1.0", features = ["derive"] }
 grapl-graph-descriptions = { path="../graph-descriptions" }
 
 thiserror = "1.0"
-bincode = "1.3"
-levenshtein = "1.0"
-
 
 dgraph-tonic = { version = "0.9", features = ["dgraph-1-1"] }
 
@@ -42,6 +39,11 @@ lazy_static = "1.4"
 anyhow = "1.0.38"
 futures-retry = "0.6.0"
 dgraph_query_lib = "0.1.0"
+grapl-observe = { path = "../grapl-observe" }
+
+rusoto_dynamodb = { version="0.45", default_features = false, features=["rustls"] }
+lru = "0.6.5"
+grapl-utils = { path = "../grapl-utils" }
 
 [build-dependencies]
 tonic-build = { version="0.4", features = ["prost"] }

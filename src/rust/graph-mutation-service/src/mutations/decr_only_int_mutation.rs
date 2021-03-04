@@ -1,23 +1,23 @@
 use crate::mutations::{UpsertGenerator, QueryInput};
 use crate::mutations::escape::{Escaped, escape_quote};
-use grapl_graph_descriptions::IncrementOnlyUintProp;
+use grapl_graph_descriptions::DecrementOnlyIntProp;
 use crate::mutations::upsert_helpers::{gen_query, gen_mutations};
 
 #[derive(Default)]
-pub struct IncrementOnlyUintUpsertGenerator {
+pub struct DecrementOnlyIntUpsertGenerator {
     query_buffer: String,
     mutations: Vec<dgraph_tonic::Mutation>,
 }
 
-impl UpsertGenerator for IncrementOnlyUintUpsertGenerator {
-    type Input = IncrementOnlyUintProp;
+impl UpsertGenerator for DecrementOnlyIntUpsertGenerator {
+    type Input = DecrementOnlyIntProp;
     fn generate_upserts(&mut self, creation_query: &QueryInput<'_>, predicate_name: &str, value: &Self::Input) -> (&str, &[dgraph_tonic::Mutation]) {
-        let IncrementOnlyUintProp {prop: ref value} = value;
+        let DecrementOnlyIntProp {prop: ref value} = value;
         let value = Escaped::from(value);
         let query_suffix = format!("{}_{}_{}", &creation_query.unique_id, &creation_query.node_id, &creation_query.predicate_id);
         let (set_query_name, cmp_query_name) = gen_query(
             &mut self.query_buffer,
-            "lt",
+            "gt",
             &creation_query.creation_query_name,
             &query_suffix,
             predicate_name,

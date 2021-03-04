@@ -28,12 +28,7 @@ message SetNodeResponse {
 
 
 message SetEdgeRequest {
-  string from_node_key = 1;
-  string from_node_type = 2;
-  string to_node_key = 3;
-  string to_node_type = 4;
-  string f_edge_name = 5;
-  string r_edge_name = 6;
+  v1beta1.Edge edge = 1;
 }
 
 message SetEdgeResult {

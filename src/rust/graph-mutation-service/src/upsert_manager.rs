@@ -3,6 +3,7 @@ use grapl_graph_descriptions::IdentifiedNode;
 use dgraph_tonic::{Client as DgraphClient, Mutate, Mutation as DgraphMutation, MutationResponse};
 use std::sync::Arc;
 use futures_retry::{FutureRetry, RetryPolicy};
+use grapl_graph_descriptions::Edge;
 
 pub struct UpsertManager {
     pub dgraph_client: Arc<DgraphClient>,
@@ -10,8 +11,7 @@ pub struct UpsertManager {
 }
 
 impl UpsertManager {
-    // todo: return uid
-    pub async fn upsert_node(&mut self, node: &IdentifiedNode) {
+    pub async fn upsert_node(&mut self, node: &IdentifiedNode) -> u64 {
         let (creation_var_name, query, mutations) = self.node_upsert_generator.generate_upserts(
             0u128,
             0u128,
@@ -26,10 +26,33 @@ impl UpsertManager {
 
         let dgraph_client = self.dgraph_client.clone();
         let mutations = mutations.to_vec();
-        enforce_transaction(move || {
+        let res = enforce_transaction(move || {
             let mut txn = dgraph_client.new_mutated_txn();
             txn.upsert_and_commit_now(combined_query.clone(), mutations.clone())
         }).await;
+
+        extract_uid(&creation_var_name, &res)
+    }
+
+    pub async fn upsert_edge(&mut self, forward_edge: Edge, reverse_edge: Edge) -> (u64, u64) {
+
+        unimplemented!()
+    }
+}
+
+fn extract_uid(creation_var_name: &str, res: &dgraph_tonic::Response) -> u64 {
+    let uid = res.uids.get(creation_var_name);
+    match uid {
+        Some(uid) => {
+            u64::from_str_radix(&uid[2..], 16).expect("uid is not valid hex")
+        },
+        None => {
+            let creation_var_name = format!("q_{}", creation_var_name);
+            let v: serde_json::Value = serde_json::from_slice(&res.json).expect("response failed to parse");
+
+            let uid = &v[creation_var_name][0]["uid"].as_str().expect("string");
+            u64::from_str_radix(&uid[2..], 16).expect("uid is not valid hex")
+        }
     }
 }
 

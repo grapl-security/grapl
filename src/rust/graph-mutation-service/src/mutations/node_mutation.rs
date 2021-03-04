@@ -24,6 +24,7 @@ impl NodeUpsertGenerator {
             &node_key,
             &value.node_type,
         );
+
         for (predicate_id, (predicate_name, predicate_value)) in value.properties.iter().enumerate() {
             let query_input = QueryInput {
                 creation_query_name: &creation_query_name,
@@ -45,6 +46,7 @@ impl NodeUpsertGenerator {
         (creation_query_name, &self.query_buffer, &self.mutations)
     }
 }
+
 
 impl NodeUpsertGenerator {
     fn gen_query(&mut self, node_id: u128, node_key: &Escaped, predicate_names: &[impl AsRef<str>]) -> String {

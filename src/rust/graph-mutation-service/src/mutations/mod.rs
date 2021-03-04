@@ -1,9 +1,14 @@
+pub mod upsert_helpers;
 pub mod predicate_mutation;
 pub mod node_mutation;
+pub mod edge_mutation;
 pub mod immutable_string_mutation;
 pub mod immutable_uint_mutation;
 pub mod immutable_int_mutation;
 pub mod incr_only_uint_mutation;
+pub mod decr_only_uint_mutation;
+pub mod incr_only_int_mutation;
+pub mod decr_only_int_mutation;
 pub mod escape;
 
 pub struct QueryInput<'a> {

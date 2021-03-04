@@ -447,7 +447,7 @@ async fn test_negation_keys_single_mismatch_single_match() -> Result<(), Box<dyn
         .expect("Failed to create session");
 
     let negation_keys = hmap! {
-        "user_id".to_string() => ImmutableUintProp{prop: 1000}.into( )
+        "user_id".to_string() => ImmutableUintProp{prop: 1000}.into( ),
         "parent_process_id".to_string() => ImmutableUintProp{prop: 2345}.into( )
     };
     let unid = UnidSession {

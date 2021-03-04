@@ -13,11 +13,10 @@ pub mod graph_mutation_service {
     // TODO: Restructure the Rust modules to better reflect the new
     // Protobuf structure
     include!(concat!(
-    env!("OUT_DIR"),
-    "/graplinc.grapl.api.graph.graph_mutation.rs"
+        env!("OUT_DIR"),
+        "/graplinc.grapl.api.graph.graph_mutation.rs"
     ));
 }
-
 
 pub use node_property::Property::{DecrementOnlyInt as ProtoDecrementOnlyIntProp,
                                   DecrementOnlyUint as ProtoDecrementOnlyUintProp,
