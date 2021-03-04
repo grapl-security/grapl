@@ -15,6 +15,8 @@ use grapl_config::env_helpers::FromEnv;
 use lambda_runtime::{error::HandlerError,
                      lambda,
                      Context};
+use tokio_compat_02::FutureExt;
+
 use log::info;
 use rusoto_cloudwatch::CloudWatchClient;
 
@@ -39,7 +41,7 @@ fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), Handler
         tokio_compat::run_std(async move {
             let result: R = handler_async(event).await.clone();
             *result_arc_for_thread.lock().unwrap() = result;
-        })
+        }.compat())
     });
 
     thread.join().unwrap();

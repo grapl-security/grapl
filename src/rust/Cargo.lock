@@ -1706,6 +1706,7 @@ dependencies = [
  "thiserror",
  "tokio 1.2.0",
  "tokio-compat",
+ "tokio-compat-02",
  "uuid 0.8.2",
 ]
 
@@ -3422,6 +3423,20 @@ dependencies = [
  "tokio-executor",
  "tokio-reactor",
  "tokio-timer",
+]
+
+[[package]]
+name = "tokio-compat-02"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7d4237822b7be8fff0a7a27927462fad435dcb6650f95cea9e946bf6bdc7e07"
+dependencies = [
+ "bytes 0.5.6",
+ "once_cell",
+ "pin-project-lite 0.2.6",
+ "tokio 0.2.25",
+ "tokio 1.2.0",
+ "tokio-stream",
 ]
 
 [[package]]
