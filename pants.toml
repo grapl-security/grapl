@@ -5,6 +5,7 @@ backend_packages = [
   "pants.backend.python",
   "pants.backend.python.lint.isort",
   "pants.backend.python.lint.black",
+  "pants.backend.python.typecheck.mypy",
   "grapl_setup_py"
 ]
 
@@ -31,6 +32,8 @@ pants_ignore = [
 root_patterns = [
   "/3rdparty",
   "/pants-plugins",
+  "/pulumi",
+  "/src/js/grapl-cdk",
   "/src/proto",
   "/src/python/analyzer-deployer",
   "/src/python/analyzer_executor/src",
@@ -93,3 +96,7 @@ pytest_plugins = [
 # other ways to divide tests into classes (unit, integration, etc.) so
 # we can target things better with Pants tags.
 args = [ "--suppress-no-test-exit-code" ]
+
+[mypy]
+version = "mypy==0.800"
+config = "src/python/mypy.ini"

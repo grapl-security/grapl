@@ -15,8 +15,8 @@ x-common-variables:
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
   dynamodb-env: &dynamodb-env
-    DYNAMODB_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
-    DYNAMODB_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
+    DYNAMODB_ACCESS_KEY_ID: ${DYNAMODB_ACCESS_KEY_ID}
+    DYNAMODB_ACCESS_KEY_SECRET: ${DYNAMODB_ACCESS_KEY_SECRET}
     DYNAMODB_ENDPOINT: ${DYNAMODB_ENDPOINT}
   # TODO: Ensure these are matched with what's in provision_local_identity_table.py
   dynamodb-mapping-tables: &dynamodb-mapping-tables
@@ -32,13 +32,17 @@ x-common-variables:
   log-level: &log-level
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
     RUST_LOG: "${RUST_LOG:-ERROR}"
+  secretsmanager-env: &secretsmanager-env
+    SECRETSMANAGER_ACCESS_KEY_ID: ${SECRETSMANAGER_ACCESS_KEY_ID}
+    SECRETSMANAGER_ACCESS_KEY_SECRET: ${SECRETSMANAGER_ACCESS_KEY_SECRET}
+    SECRETSMANAGER_ENDPOINT: ${SECRETSMANAGER_ENDPOINT}
   s3-env: &s3-env
-    S3_ACCESS_KEY_ID: "minioadmin"
-    S3_ACCESS_KEY_SECRET: "minioadmin"
+    S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+    S3_ACCESS_KEY_SECRET: ${S3_ACCESS_KEY_SECRET}
     S3_ENDPOINT: ${S3_ENDPOINT}
   sqs-env: &sqs-env
-    SQS_ACCESS_KEY_ID: "dummy_cred_aws_access_key_id"
-    SQS_ACCESS_KEY_SECRET: "dummy_cred_aws_secret_access_key"
+    SQS_ACCESS_KEY_ID: ${SQS_ACCESS_KEY_ID}
+    SQS_ACCESS_KEY_SECRET: ${SQS_ACCESS_KEY_SECRET}
     SQS_ENDPOINT: ${SQS_ENDPOINT}
 
 services:
@@ -54,8 +58,6 @@ services:
       - 127.0.0.1:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
       # required for RATEL interface to operate properly
       - 127.0.0.1:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
-    logging:
-      driver: none
     volumes:
       - type: volume
         source: dgraph_export
@@ -76,71 +78,47 @@ services:
         # to disable persistence
         rm -f /data/dump.rdb && redis-server
       "
-    logging:
-      driver: none
     networks:
       default:
         aliases:
           - ${REDIS_HOST}
 
-  sqs:
-    image: localstack/localstack:0.11.5
-    environment:
-      - HOSTNAME_EXTERNAL=${SQS_HOST}
-      - IMAGE_NAME=localstack/localstack:0.11.5
-      - SERVICES=sqs:${SQS_PORT}
-    ports:
-      # Used to insert data in local grapl via upload-*.py
-      - 127.0.0.1:${SQS_PORT}:${SQS_PORT}
-    networks:
-      default:
-        aliases:
-          - ${SQS_HOST}
-    logging:
-      driver: none
-
-  secretsmanager:
-    image: localstack/localstack:0.11.5
-    environment:
-      - HOSTNAME_EXTERNAL=${SECRETSMANAGER_HOST}
-      - IMAGE_NAME=localstack/localstack:0.11.5
-      - PORT_WEB_UI=${SECRETSMANAGER_WEB_UI_PORT}
-      - SERVICES=secretsmanager:${SECRETSMANAGER_PORT}
-    ports:
-      - 127.0.0.1:${SECRETSMANAGER_WEB_UI_PORT}:${SECRETSMANAGER_WEB_UI_PORT}
-    networks:
-      default:
-        aliases:
-          - ${SECRETSMANAGER_HOST}
-    logging:
-      driver: none
-
+  # While localstack does offer S3 capabilities, it's not actually
+  # MinIO, which is a very full-featured and faithful S3 clone. We
+  # have noticed test failures when we use localstack's s3, so we will
+  # continue to use MinIO.
   s3:
     image: minio/minio
     command: server /data
     environment:
-      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY_ID}
       - MINIO_REGION_NAME=${AWS_REGION}
-      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_SECRET_KEY=${S3_ACCESS_KEY_SECRET}
     ports:
-      - 127.0.0.1:${S3_PORT}:${S3_PORT}
+      - 127.0.0.1:${S3_PORT_EXTERNAL}:${S3_PORT_INTERNAL}
     networks:
       default:
         aliases:
           - ${S3_HOST}
-    logging:
-      driver: none
 
-  dynamodb:
-    image: amazon/dynamodb-local
+  localstack:
+    image: localstack/localstack:0.12.6
+    ports:
+      # We'll expose localstack's edge port for ease of use with
+      # things like the AWS CLI, Pulumi, etc.
+      - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - REGION=${AWS_REGION}
-    logging:
-      driver: none
+      - IMAGE_NAME=localstack/localstack:0.12.6
+      - EDGE_PORT=${LOCALSTACK_PORT}
+      - SERVICES=dynamodb,sqs,secretsmanager
+      - DEBUG=${DEBUG- }
+      - DATA_DIR=${DATA_DIR- }
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
     networks:
       default:
         aliases:
-          - ${DYNAMODB_HOST}
+          - ${LOCALSTACK_HOST}
 
   ########################################################################
   # Rust Services
@@ -170,9 +148,9 @@ services:
       <<: *sqs-env
     depends_on:
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -192,9 +170,9 @@ services:
       <<: *sqs-env
     depends_on:
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -214,11 +192,10 @@ services:
       <<: *sqs-env
     tty: false
     depends_on:
-      - dynamodb
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -238,11 +215,10 @@ services:
       <<: *sqs-env
     tty: false
     depends_on:
-      - dynamodb
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -264,11 +240,10 @@ services:
     tty: false
     depends_on:
       - dgraph
-      - dynamodb
       - grapl-provision
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -287,8 +262,8 @@ services:
       <<: *sqs-env
     tty: false
     depends_on:
+      - localstack
       - s3
-      - sqs
 
   ########################################################################
   # Python Services
@@ -318,9 +293,9 @@ services:
       - 127.0.0.1:${VSC_DEBUGGER}:${VSC_DEBUGGER}
     depends_on:
       - dgraph
+      - localstack
       - redis
       - s3
-      - sqs
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
@@ -333,9 +308,10 @@ services:
       '
     environment:
       GRAPL_LOG_LEVEL: "DEBUG"
-      # TODO: Once we remove IS_LOCAL, this service will need to depend on s3 and be configured appropriately
       IS_LOCAL: "True"
       UX_BUCKET_NAME: "${BUCKET_PREFIX}-engagement-ux-bucket"
+      <<: *aws-region
+      <<: *s3-env
     depends_on:
       - grapl-engagement-view-uploader
     tty: true
@@ -358,8 +334,8 @@ services:
     tty: true
     depends_on:
       - dgraph
+      - localstack
       - s3
-      - sqs
 
   # TODO: really, this service should be grapl-auth
   grapl-engagement-edge:
@@ -381,18 +357,19 @@ services:
       <<: *dynamodb-env
       IS_LOCAL: "True"
       <<: *log-level
+      <<: *secretsmanager-env
       USER_AUTH_TABLE: "${BUCKET_PREFIX}-user_auth_table"
       UX_BUCKET_URL: "localhost:3000" # TODO: Port??
     depends_on:
-      - dynamodb
       - grapl-provision
-      - secretsmanager
+      - localstack
     tty: true
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: |
       /bin/sh -c '
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=60 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local \
@@ -407,13 +384,13 @@ services:
       IS_LOCAL: "True"
       <<: *log-level
       <<: *s3-env
+      <<: *secretsmanager-env
       UX_BUCKET_URL: "localhost"
     tty: true
     depends_on:
       - dgraph
-      - dynamodb
+      - localstack
       - s3
-      - secretsmanager
     networks:
       default:
         aliases:
@@ -469,19 +446,29 @@ services:
         ./upload_local.sh &&
         python -m http.server ${WAIT_PORT}  # wait-for-it
       "
+    environment:
+      <<: *aws-region
+      <<: *s3-env
     depends_on:
       - grapl-provision
+      - s3
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    command: yarn start server
+    command: bash -c "
+      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
+      yarn start server"
     environment:
+      <<: *aws-region
       <<: *dgraph-env
       IS_LOCAL: "True"
       JWT_SECRET_ID: "JWT_SECRET_ID"
       PORT: ${GRAPL_GRAPHQL_PORT}
+      <<: *secretsmanager-env
     depends_on:
       - dgraph
+      - grapl-provision
+      - localstack
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
     networks:
@@ -503,18 +490,48 @@ services:
   # Utility Services
   ########################################################################
 
+  grapl-pulumi:
+    image: grapl/grapl-local-pulumi:${TAG:-latest}
+    command: |
+      /bin/bash -c "
+         wait-for-it ${S3_HOST}:${S3_PORT_INTERNAL} --timeout=60 &&
+         wait-for-it ${LOCALSTACK_HOST}:${LOCALSTACK_PORT} --timeout=60 &&
+         sleep 10 &&
+         pulumi login --local &&
+         pulumi stack init local-grapl --non-interactive &&
+         # See pulumi/README.md fro why we do these configuration overrides
+         pulumi config set aws:accessKey ${FAKE_AWS_ACCESS_KEY_ID} --plaintext &&
+         pulumi config set aws:secretKey ${FAKE_AWS_SECRET_ACCESS_KEY} --plaintext &&
+         pulumi config set --path 'aws:endpoints[0].s3' ${S3_ENDPOINT} &&
+         pulumi up --yes --skip-preview --stack=local-grapl &&
+         # NOTE: This is running in localstack's network namespace, so
+         # we will need to wait on localstack, NOT grapl-pulumi.
+         python -u -m http.server ${WAIT_PORT}
+      "
+    # Our local-grapl Pulumi stack is configured to communicate with
+    # localhost. By participating in the network namespace of our
+    # localstack container, we can use the same stack configuration
+    # both inside this compose network, as well as from outside on our
+    # workstations.
+    network_mode: "service:localstack"
+    environment:
+      PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
+    depends_on:
+      - localstack
+      - s3
+
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
     command: |
       /bin/bash -c "
         export TIMEOUT=35 &&
-        wait-for-it ${SQS_HOST}:${SQS_PORT} --timeout=$$TIMEOUT &&
-        wait-for-it ${S3_HOST}:${S3_PORT} --timeout=$$TIMEOUT &&
-        wait-for-it ${DYNAMODB_HOST}:${DYNAMODB_PORT} --timeout=$$TIMEOUT &&
+        # NOTE: We wait on localstack, even though we conceptually are
+        # waiting for grapl-pulumi to finish, because grapl-pulumi
+        # runs within the network namespace of localstack, and not a
+        # network namespace of its own.
+        wait-for-it localstack:${WAIT_PORT} --timeout=120 &&
         wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
-        wait-for-it ${SECRETSMANAGER_HOST}:${SECRETSMANAGER_PORT} --timeout=$$TIMEOUT &&
         . venv/bin/activate &&
-        python /home/grapl/grapl_local_provision/provision_local_identity_table.py &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
         # Host a server on this port, so that tests can wait-for-it
         python -m http.server ${WAIT_PORT}
@@ -523,16 +540,15 @@ services:
       <<: *aws-region
       <<: *dgraph-env
       <<: *dynamodb-env
+      <<: *secretsmanager-env
       GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
       <<: *s3-env
       <<: *sqs-env
     tty: true
     depends_on:
       - dgraph
-      - dynamodb
-      - s3
-      - secretsmanager
-      - sqs
+      - localstack
+      - grapl-pulumi
 
 networks:
   default:

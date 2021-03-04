@@ -34,12 +34,6 @@ class SuspiciousSvchost(Analyzer):
                 risk_score=75,
                 lenses=[
                     ("hostname", asset_id),
-                    ("username", "hardcodeduser"),
-                    ("lens_type_0", "lens_value_0"),
-                    ("lens_type_1", "lens_value_1"),
-                    ("lens_type_2", "lens_value_2"),
-                    ("lens_type_3", "lens_value_3"),
-                    ("lens_type_4", "lens_value_4")
                 ],
                 risky_node_keys=[
                     # the asset and the process

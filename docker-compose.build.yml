@@ -157,3 +157,9 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: grapl-provision
+
+  grapl-pulumi:
+    image: grapl/grapl-local-pulumi:${TAG:-latest}
+    build:
+      context: pulumi
+      dockerfile: Dockerfile

@@ -1,7 +1,6 @@
 import base64
 import subprocess
 import sys
-
 from typing import List
 
 

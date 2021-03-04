@@ -81,7 +81,7 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
     let node_trait_name = format!("I{}Node", struct_name);
     let node_trait_name = syn::Ident::new(&node_trait_name, struct_name.span());
 
-    let use_the_dead_code_method_name = format!("__avoid_dead_code_lint{}", struct_name);
+    let use_the_dead_code_method_name = format!("__avoid_dead_code_lint_{}", struct_name);
     let use_the_dead_code_method_name =
         syn::Ident::new(&use_the_dead_code_method_name, struct_name.span());
 
@@ -194,7 +194,7 @@ pub fn derive_grapl_static(input: TokenStream) -> TokenStream {
         }
     });
 
-    assert!(id_fields.to_string().len() > 0);
+    assert!(!id_fields.to_string().is_empty());
 
     let struct_name = &input.ident;
 
@@ -245,7 +245,6 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
         assert_meta_attr_combo(field, TERMINATE_TIME, IMMUTABLE);
         assert_meta_attr_combo(field, NEGATION_KEY, IMMUTABLE);
         assert_meta_attr_combo(field, OPTIONAL_STATIC_ID, IMMUTABLE);
-
         set_timestamp_from_meta(field, CREATE_TIME, &mut create_time_prop);
         set_timestamp_from_meta(field, LAST_SEEN_TIME, &mut last_seen_time_prop);
         set_timestamp_from_meta(field, TERMINATE_TIME, &mut terminate_time_prop);
@@ -297,9 +296,9 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
         impl #node_name {
             pub fn session_strategy() -> IdStrategy {
                 Session {
-                    create_time: 0,
-                    last_seen_time: 0,
-                    terminate_time: 0,
+                    create_time: 0 ,
+                    last_seen_time: 0 ,
+                    terminate_time: 0 ,
                     primary_key_requires_asset_id: false,
                     primary_key_properties: vec![
                         #id_fields
@@ -381,7 +380,6 @@ fn resolvable_type_from(
                 .path
                 .segments
                 .iter()
-                .into_iter()
                 .map(|x| x.ident.to_string())
                 .collect::<Vec<String>>()
                 .join("::");

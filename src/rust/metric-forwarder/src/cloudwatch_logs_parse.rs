@@ -1,7 +1,6 @@
 use aws_lambda_events::event::cloudwatch_logs::{CloudwatchLogsData,
                                                 CloudwatchLogsLogEvent};
 use rayon::prelude::*;
-use statsd_parser;
 
 use crate::error::MetricForwarderError;
 
@@ -12,7 +11,7 @@ pub struct Stat {
     pub service_name: String,
 }
 
-const MONITORING_DELIM: &'static str = "|";
+const MONITORING_DELIM: &str = "|";
 
 pub fn parse_logs(logs_data: CloudwatchLogsData) -> Vec<Result<Stat, MetricForwarderError>> {
     /*
@@ -37,7 +36,7 @@ pub fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
             let statsd_msg = statsd_parser::parse(statsd_component.to_string());
             statsd_msg
                 .map(|msg| Stat {
-                    msg: msg,
+                    msg,
                     timestamp: timestamp.to_string(),
                     service_name: service_name.to_string(),
                 })

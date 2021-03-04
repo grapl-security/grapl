@@ -8,6 +8,7 @@ try:
 except:
     pass
 
+import os
 import time
 import string
 import boto3
@@ -68,11 +69,11 @@ def main(prefix, logfile):
     if prefix == "local-grapl":
         s3 = boto3.client(
             "s3",
-            endpoint_url="http://localhost:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
+            endpoint_url=os.environ["S3_ENDPOINT"],
+            aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"]
         )
-        sqs = boto3.client("sqs", endpoint_url="http://localhost:9324")
+        sqs = boto3.client("sqs", endpoint_url=os.environ["SQS_ENDPOINT"])
 
     else:
         s3 = boto3.client("s3")
@@ -100,7 +101,7 @@ def main(prefix, logfile):
         # local-grapl relies on manual eventing
         if sqs:
             sqs.send_message(
-                QueueUrl="http://localhost:9324/queue/grapl-generic-graph-generator-queue",
+                QueueUrl=f"{os.environ['SQS_ENDPOINT']}/queue/grapl-generic-graph-generator-queue",
                 MessageBody=into_sqs_message(
                     bucket="{}-sysmon-log-bucket".format(prefix), key=key
                 ),

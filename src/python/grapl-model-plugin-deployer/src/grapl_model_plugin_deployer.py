@@ -26,7 +26,11 @@ from grapl_analyzerlib.node_types import (
 )
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schema import Schema
-from grapl_common.env_helpers import DynamoDBResourceFactory, S3ClientFactory
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    S3ClientFactory,
+    SecretsManagerClientFactory,
+)
 from grapl_common.grapl_logger import get_module_grapl_logger
 
 sys.path.append("/tmp/")
@@ -48,14 +52,7 @@ if IS_LOCAL:
 
     for i in range(0, 150):
         try:
-            secretsmanager = boto3.client(
-                "secretsmanager",
-                region_name="us-east-1",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
-            )
-
+            secretsmanager = SecretsManagerClientFactory(boto3).from_env()
             JWT_SECRET = secretsmanager.get_secret_value(
                 SecretId="JWT_SECRET_ID",
             )["SecretString"]

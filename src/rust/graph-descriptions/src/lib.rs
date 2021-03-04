@@ -1,43 +1,37 @@
-// #![allow(unused_imports, unused_mut)]
 pub mod graph_description {
     // TODO: Restructure the Rust modules to better reflect the new
     // Protobuf structure
-    include!(
-        concat!(
-            env!("OUT_DIR"),
-            "/graplinc.grapl.api.graph.v1beta1.rs"
-        )
-    );
-}
-
-pub mod graph_mutation_service {
-    include!(
-        concat!(
-            env!("OUT_DIR"),
-            "/graplinc.grapl.api.graph.graph_mutation.rs"
-        ),
-    );
+    include!(concat!(
+    env!("OUT_DIR"),
+    "/graplinc.grapl.api.graph.v1beta1.rs"
+    ));
 }
 
 pub use graph_description as v1beta1;
 
-pub use crate::{graph_description::*};
+pub mod graph_mutation_service {
+    // TODO: Restructure the Rust modules to better reflect the new
+    // Protobuf structure
+    include!(concat!(
+    env!("OUT_DIR"),
+    "/graplinc.grapl.api.graph.graph_mutation.rs"
+    ));
+}
 
-pub use node_property::Property::{
-    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-    ImmutableInt as ProtoImmutableIntProp,
-    ImmutableStr as ProtoImmutableStrProp,
-    ImmutableUint as ProtoImmutableUintProp,
-    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
-    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
-};
+
+pub use node_property::Property::{DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+                                  DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+                                  ImmutableInt as ProtoImmutableIntProp,
+                                  ImmutableStr as ProtoImmutableStrProp,
+                                  ImmutableUint as ProtoImmutableUintProp,
+                                  IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+                                  IncrementOnlyUint as ProtoIncrementOnlyUintProp};
 
 pub use crate::{graph_description::*,
                 node_property::Property};
 
 // A helper macro to generate `From` impl boilerplate.
-macro_rules ! impl_from_for_unit {
+macro_rules! impl_from_for_unit {
     ($into_t:ty, $field:tt, $from_t:ty) => {
         impl From<$from_t> for $into_t
         {
@@ -53,7 +47,7 @@ macro_rules ! impl_from_for_unit {
     };
 }
 
-macro_rules ! extra_assert {
+macro_rules! extra_assert {
     ($x:expr) => {
         #[cfg(feature = "extra_assertions")]
         {
@@ -65,6 +59,24 @@ macro_rules ! extra_assert {
         extra_assert!($($tail), *);
     }
 }
+
+
+impl IdStrategy {
+    pub fn expect_session(&self) -> &Session {
+        match self.strategy {
+            Some(id_strategy::Strategy::Session(ref session)) => session,
+            _ => panic!("Expected session"),
+        }
+    }
+
+    pub fn expect_static(&self) -> &Static {
+        match self.strategy {
+            Some(id_strategy::Strategy::Static(ref st)) => st,
+            _ => panic!("Expected static"),
+        }
+    }
+}
+
 
 impl EdgeList {
     pub fn into_vec(self) -> Vec<Edge> {
@@ -261,7 +273,7 @@ impl MergedGraph {
         assert_ne!(from_uid, to_uid);
         let edge = MergedEdge {
             from_node_key: from_node_key.clone(),
-            from_uid: from_uid.clone(),
+            from_uid,
             to_node_key,
             to_uid,
             edge_name,
@@ -444,6 +456,7 @@ impl From<Session> for IdStrategy {
         }
     }
 }
+
 impl std::string::ToString for Property {
     fn to_string(&self) -> String {
         match self {
@@ -475,6 +488,7 @@ impl IncrementOnlyUintProp {
         self.prop = std::cmp::max(self.prop, other_prop.prop);
     }
 }
+
 impl ImmutableUintProp {
     pub fn as_inner(&self) -> u64 {
         self.prop
@@ -484,6 +498,7 @@ impl ImmutableUintProp {
         extra_assert! {debug_assert_eq!(*self, *other_prop)}
     }
 }
+
 impl DecrementOnlyUintProp {
     pub fn as_inner(&self) -> u64 {
         self.prop
@@ -492,6 +507,7 @@ impl DecrementOnlyUintProp {
         self.prop = std::cmp::min(self.prop, other_prop.prop);
     }
 }
+
 impl DecrementOnlyIntProp {
     pub fn as_inner(&self) -> i64 {
         self.prop
@@ -500,6 +516,7 @@ impl DecrementOnlyIntProp {
         self.prop = std::cmp::min(self.prop, other_prop.prop);
     }
 }
+
 impl IncrementOnlyIntProp {
     pub fn as_inner(&self) -> i64 {
         self.prop
@@ -510,6 +527,7 @@ impl IncrementOnlyIntProp {
         self.prop = std::cmp::max(self.prop, other_prop.prop);
     }
 }
+
 impl ImmutableIntProp {
     pub fn as_inner(&self) -> i64 {
         self.prop
@@ -519,6 +537,7 @@ impl ImmutableIntProp {
         extra_assert!(debug_assert_eq!(*self, *other_prop));
     }
 }
+
 impl ImmutableStrProp {
     pub fn as_inner(&self) -> &str {
         self.prop.as_str()
@@ -574,7 +593,7 @@ impl std::string::ToString for ImmutableStrProp {
 
 impl std::string::ToString for NodeProperty {
     fn to_string(&self) -> String {
-        let prop = match &self.property {
+        match &self.property {
             Some(node_property::Property::IncrementOnlyUint(increment_only_uint_prop)) => {
                 increment_only_uint_prop.to_string()
             }
@@ -597,24 +616,6 @@ impl std::string::ToString for NodeProperty {
                 immutable_str_prop.to_string()
             }
             None => panic!("Invalid property : {:?}", self),
-        };
-        prop
-    }
-}
-
-
-impl IdStrategy {
-    pub fn expect_session(&self) -> &Session {
-        match self.strategy {
-            Some(id_strategy::Strategy::Session(ref session)) => session,
-            _ => panic!("Expected session"),
-        }
-    }
-
-    pub fn expect_static(&self) -> &Static {
-        match self.strategy {
-            Some(id_strategy::Strategy::Static(ref st)) => st,
-            _ => panic!("Expected static"),
         }
     }
 }
@@ -625,18 +626,17 @@ impl NodeDescription {
     }
 
     pub fn set_property(&mut self, name: impl Into<String>, value: impl Into<NodeProperty>) {
-        self.properties.insert(name.into(), value.into().into());
+        self.properties.insert(name.into(), value.into());
     }
 
     pub fn set_key(&mut self, key: String) {
         self.node_key = key;
     }
-
 }
 
 impl<T> From<T> for NodeProperty
-where
-    T: Into<Property>,
+    where
+        T: Into<Property>,
 {
     fn from(t: T) -> Self {
         NodeProperty {
@@ -787,77 +787,82 @@ impl From<ImmutableUintProp> for Property {
         Self::ImmutableUint(p)
     }
 }
+
 impl From<IncrementOnlyUintProp> for Property {
     fn from(p: IncrementOnlyUintProp) -> Self {
         Self::IncrementOnlyUint(p)
     }
 }
+
 impl From<DecrementOnlyUintProp> for Property {
     fn from(p: DecrementOnlyUintProp) -> Self {
         Self::DecrementOnlyUint(p)
     }
 }
+
 impl From<ImmutableIntProp> for Property {
     fn from(p: ImmutableIntProp) -> Self {
         Self::ImmutableInt(p)
     }
 }
+
 impl From<IncrementOnlyIntProp> for Property {
     fn from(p: IncrementOnlyIntProp) -> Self {
         Self::IncrementOnlyInt(p)
     }
 }
+
 impl From<DecrementOnlyIntProp> for Property {
     fn from(p: DecrementOnlyIntProp) -> Self {
         Self::DecrementOnlyInt(p)
     }
 }
+
 impl From<ImmutableStrProp> for Property {
     fn from(p: ImmutableStrProp) -> Self {
         Self::ImmutableStr(p)
     }
 }
 
-
 impl NodeProperty {
     pub fn as_increment_only_uint(&self) -> Option<IncrementOnlyUintProp> {
         match self.property {
-            Some(ProtoIncrementOnlyUintProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoIncrementOnlyUintProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_immutable_uint(&self) -> Option<ImmutableUintProp> {
         match self.property {
-            Some(ProtoImmutableUintProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoImmutableUintProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_decrement_only_uint(&self) -> Option<DecrementOnlyUintProp> {
         match self.property {
-            Some(ProtoDecrementOnlyUintProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoDecrementOnlyUintProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_decrement_only_int(&self) -> Option<DecrementOnlyIntProp> {
         match self.property {
-            Some(ProtoDecrementOnlyIntProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoDecrementOnlyIntProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_increment_only_int(&self) -> Option<IncrementOnlyIntProp> {
         match self.property {
-            Some(ProtoIncrementOnlyIntProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoIncrementOnlyIntProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
 
     pub fn as_immutable_int(&self) -> Option<ImmutableIntProp> {
         match self.property {
-            Some(ProtoImmutableIntProp(ref prop)) => Some(prop.clone()),
+            Some(ProtoImmutableIntProp(ref prop)) => Some(*prop),
             _ => None,
         }
     }
@@ -889,6 +894,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for DecrementOnlyIntProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -896,6 +902,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for ImmutableIntProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -903,6 +910,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for IncrementOnlyUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -910,6 +918,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for DecrementOnlyUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -917,6 +926,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for ImmutableUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -924,6 +934,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for ImmutableStrProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -1108,7 +1119,11 @@ pub mod test {
         if node_0.node_key != node_1.node_key {
             return;
         }
-        // todo: Add assertions here
+        // let original = node_0.clone();
         node_0.merge(&node_1);
+
+        // for (_o_pred_name, o_pred_val) in original.iter() {
+        //     let mut copy = o_pred_val.clone();
+        // }
     }
 }

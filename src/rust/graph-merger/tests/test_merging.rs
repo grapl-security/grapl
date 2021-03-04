@@ -20,8 +20,7 @@ pub mod test {
                            ToQueryString};
     use dgraph_tonic::{Client as DgraphClient,
                        Query};
-    use graph_merger_lib::{upserter::GraphMergeHelper,
-                           *};
+    use graph_merger_lib::upserter::GraphMergeHelper;
     use grapl_graph_descriptions::*;
 
     async fn query_for_uid(dgraph_client: Arc<DgraphClient>, node_key: &str) -> u64 {
@@ -60,7 +59,6 @@ pub mod test {
     async fn query_for_edge(
         dgraph_client: Arc<DgraphClient>,
         from_uid: u64,
-        to_uid: u64,
         edge_name: &str,
     ) -> serde_json::Value {
         let edge = Predicate::Edge(
@@ -221,21 +219,10 @@ pub mod test {
         assert_ne!(node_uid_0, 0);
         assert_ne!(node_uid_1, 0);
 
-        let to_many_res = query_for_edge(
-            dgraph_client.clone(),
-            node_uid_0,
-            node_uid_1,
-            "to_many_edge",
-        )
-        .await;
+        let to_many_res = query_for_edge(dgraph_client.clone(), node_uid_0, "to_many_edge").await;
 
-        let to_single_res = query_for_edge(
-            dgraph_client.clone(),
-            node_uid_1,
-            node_uid_0,
-            "to_single_edge",
-        )
-        .await;
+        let to_single_res =
+            query_for_edge(dgraph_client.clone(), node_uid_1, "to_single_edge").await;
 
         let to_many_res = to_many_res
             .as_object()
@@ -405,7 +392,8 @@ pub mod test {
         let mut m = m.into_iter().next().unwrap().1;
         debug_assert_eq!(m.len(), 1);
         let mut m = m.remove(0);
-        let uid = m.remove("uid").expect("uid");
+        let _uid = m.remove("uid").expect("uid");
+
         let example_name = m.remove("example_name").expect("example_name");
         assert!(m.is_empty());
         assert_eq!(example_name, "test_upsert_multifield");

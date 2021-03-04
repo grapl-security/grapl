@@ -35,6 +35,7 @@ services:
       - IP_CONNECTION_HISTORY_TABLE=${BUCKET_PREFIX}-ip_connection_history_table
       - ASSET_ID_MAPPINGS=${BUCKET_PREFIX}-asset_id_mappings
       - DYNAMODB_ENDPOINT
+<<<<<<< HEAD
       - "DYNAMODB_ACCESS_KEY_ID=dummy_cred_aws_access_key_id"
       - "DYNAMODB_ACCESS_KEY_SECRET=dummy_cred_aws_secret_access_key"
 #
@@ -104,6 +105,79 @@ services:
 #        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
 #        cypress run --browser chrome --headless
 #      "
+=======
+      - DYNAMODB_ACCESS_KEY_ID
+      - DYNAMODB_ACCESS_KEY_SECRET
+
+  grapl-analyzerlib-integration-tests:
+    image: grapl/grapl-analyzerlib-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: grapl-analyzerlib-test
+    command: bash -c '
+      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
+      source venv/bin/activate &&
+      cd grapl_analyzerlib &&
+      py.test -n auto -m "integration_test"'
+    environment:
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - BUCKET_PREFIX
+      - IS_LOCAL=True
+      - MG_ALPHAS
+
+  # grapl-analyzer-deployer-integration-tests:
+
+  analyzer-executor-integration-tests:
+    image: grapl/grapl-analyzer-executor-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-executor-test
+    command: bash -c '
+      source venv/bin/activate &&
+      cd analyzer_executor &&
+      export PYTHONPATH="$${PYTHONPATH}:$$(pwd)/src" &&
+      py.test -n auto -m "integration_test"'
+    environment:
+      - HITCACHE_ADDR=${REDIS_HOST}
+      - HITCACHE_PORT=${REDIS_PORT}
+      - MESSAGECACHE_ADDR=${REDIS_HOST}
+      - MESSAGECACHE_PORT=${REDIS_PORT}
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - IS_LOCAL=True
+      - IS_RETRY=False
+
+  engagement-edge-integration-tests:
+    image: grapl/grapl-engagement-edge-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: engagement-edge-test
+    command: bash -c '
+      wait-for-it ${GRAPL_AUTH_HOST}:${GRAPL_AUTH_PORT} --timeout=180 &&
+      source venv/bin/activate &&
+      cd engagement_edge &&
+      py.test -n auto -m "integration_test"'
+    environment:
+      - IS_LOCAL=True
+      - BUCKET_PREFIX
+      - UX_BUCKET_URL="ux_bucket_url"
+      - GRAPL_AUTH_HOST
+      - GRAPL_AUTH_PORT
+
+  cypress-integration-tests:
+    image: grapl/grapl-cypress:${TAG:-latest}
+    build:
+      context: ${PWD}/test
+      dockerfile: ./Dockerfile
+      target: grapl-cypress
+    command: |
+      /bin/bash -c "
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
+        cypress run --browser chrome --headless
+      "
+>>>>>>> staging
 
 networks:
   default:

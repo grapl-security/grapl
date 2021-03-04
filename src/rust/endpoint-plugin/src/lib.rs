@@ -1,7 +1,6 @@
 pub mod asset;
 pub mod error;
 pub mod file;
-pub mod graph;
 pub mod ip_address;
 pub mod ip_connection;
 pub mod ip_port;
@@ -38,11 +37,3 @@ pub use crate::{asset::{Asset,
                 process_outbound_connection::{IProcessOutboundConnectionNode,
                                               ProcessOutboundConnection,
                                               ProcessOutboundConnectionNode}};
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}

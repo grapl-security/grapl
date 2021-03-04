@@ -16,6 +16,7 @@ __pycache__/
 *$py.class
 .mypy_cache
 .hypothesis
+.pytype/
 
 # Rust outputs
 target/

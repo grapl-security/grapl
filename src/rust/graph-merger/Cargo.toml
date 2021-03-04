@@ -43,7 +43,7 @@ zstd = "0.6"
 prost = "0.7"
 base64 = "0"
 rand = "0"
-dgraph_query_lib = { git = "https://github.com/d0nutptr/dgraph_query_lib", branch = "main" }
+dgraph_query_lib = "0.1"
 
 futures = "0.3"
 async-trait = "0.1"
