@@ -22,27 +22,27 @@ describe("authentication", () => {
 	});
 });
 
-describe("login test", () => {
-    beforeEach(() => {
-        cy.visit("/login");
-        cy.location("href").should("include", "/login");
-        cy.request({
-            url: "http://localhost:1234/login",
-            method: "POST",
-            credentials: "include",
-            headers: new Headers({
-                "Content-Type": "application/json",
-            }),
-            body: JSON.stringify({
-                username: "grapluser",
-                password: "graplpassword",
-            }),
-        }).then((body) => {
-            const grapl_jwt = { user: { authenticationData: { token: body.token } } };
-            window.localStorage.setItem("grapl_jwt", JSON.stringify(grapl_jwt));
-        });
-    });
-});
+// describe("login test", () => {
+//     beforeEach(() => {
+//         cy.visit("/login");
+//         cy.location("href").should("include", "/login");
+//         cy.request({
+//             url: "http://localhost:1234/auth/login",
+//             method: "POST",
+//             credentials: "include",
+//             headers: new Headers({
+//                 "Content-Type": "application/json",
+//             }),
+//             body: JSON.stringify({
+//                 username: "grapluser",
+//                 password: "graplpassword",
+//             }),
+//         }).then((body) => {
+//             const grapl_jwt = { user: { authenticationData: { token: body.token } } };
+//             window.localStorage.setItem("grapl_jwt", JSON.stringify(grapl_jwt));
+//         });
+//     });
+// });
 
 describe("checks that cookie was set after login", () => {
     it("retrieves cookie_name", () => {
@@ -50,28 +50,3 @@ describe("checks that cookie was set after login", () => {
         cy.getCookie("grapl_jwt");
     });
 });
-
-// describe("login test", () => {
-// 	beforeEach(() => {
-// 		cy.request({
-// 			url: `http://localhost:1234/auth/login`,
-// 			method: "POST",
-// 			credentials: "include",
-// 			headers: new Headers({
-// 				"Content-Type": "application/json",
-// 			}),
-// 			body: JSON.stringify({
-// 				username: "grapluser",
-// 				password: "graplpassword",
-// 			}),
-// 		}).then((body) => {
-// 			const grapl_jwt = { user: { authenticationData: { token: body.token } } };
-// 			window.localStorage.setItem("grapl_jwt", JSON.stringify(grapl_jwt));
-// 		});
-// 	});
-
-// 	it("checks to make sure grapl_jwt was set", () => {
-// 		cy.contains("login").should("not.exist");
-// 		cy.getCookie("grapl_jwt").should("exist");
-// 	});
-// });
