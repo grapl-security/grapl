@@ -24,8 +24,6 @@ pub enum SysmonGeneratorError {
     NegativeEventTime(i64),
     #[error("TimeError")]
     TimeError(#[from] chrono::ParseError),
-    #[error("GraphBuilderError")]
-    GraphBuilderError(String),
     #[error("Unsupported event type")]
     UnsupportedEventType(String),
     #[error("Generator failed")]
@@ -38,7 +36,6 @@ impl CheckedError for SysmonGeneratorError {
             Self::DeserializeError(_) => Recoverable::Persistent,
             Self::NegativeEventTime(_) => Recoverable::Persistent,
             Self::TimeError(_) => Recoverable::Persistent,
-            Self::GraphBuilderError(_) => Recoverable::Persistent,
             Self::UnsupportedEventType(_) => Recoverable::Persistent,
             Self::Unexpected => Recoverable::Transient,
         }
@@ -67,9 +64,12 @@ where
         &mut self,
         events: Vec<Cow<'_, str>>,
         identities: &mut CompletedEvents,
-    ) -> Result<Graph, Result<(Graph, SysmonGeneratorError), SysmonGeneratorError>> {
+    ) -> Result<
+        GraphDescription,
+        Result<(GraphDescription, SysmonGeneratorError), SysmonGeneratorError>,
+    > {
         let mut last_error: Option<SysmonGeneratorError> = None;
-        let mut final_subgraph = Graph::new(0);
+        let mut final_subgraph = GraphDescription::new();
 
         for event in events {
             let event = match Event::from_str(&event) {
@@ -94,11 +94,11 @@ where
                 _ => (),
             };
 
-            let graph = match Graph::try_from(event.clone()) {
+            let graph = match GraphDescription::try_from(event.clone()) {
                 Ok(subgraph) => subgraph,
                 Err(SysmonGeneratorError::UnsupportedEventType(_s)) => continue,
                 Err(new_error) => {
-                    error!("Graph::try_from failed with: {:?}", new_error);
+                    error!("GraphDescription::try_from failed with: {:?}", new_error);
                     // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
                     match last_error {
                         // Save the last error, but do not overwrite a transient error with a persistent error.
@@ -135,7 +135,7 @@ where
     C: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<u8>;
-    type OutputEvent = Graph;
+    type OutputEvent = GraphDescription;
     type Error = SysmonGeneratorError;
 
     async fn handle_event(

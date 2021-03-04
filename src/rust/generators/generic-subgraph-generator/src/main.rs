@@ -9,7 +9,7 @@ use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                    event_caches};
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::{decoder::ZstdJsonDecoder,
-                    serialization::SubgraphSerializer};
+                    serialization::GraphDescriptionSerializer};
 use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let generic_subgraph_generator =
         &mut make_ten(async { GenericSubgraphGenerator::new(NopCache {}) }).await;
 
-    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+    let serializer = &mut make_ten(async { GraphDescriptionSerializer::default() }).await;
     let s3_emitter =
         &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
             .await;

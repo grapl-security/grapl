@@ -7,7 +7,7 @@ use grapl_config::{event_caches,
                    ServiceEnv};
 pub use grapl_graph_descriptions::graph_description::*;
 pub use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::serialization::SubgraphSerializer;
+use grapl_service::serialization::GraphDescriptionSerializer;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use sqs_executor::{errors::CheckedError,
@@ -37,7 +37,11 @@ pub async fn run_graph_generator<
 ) where
     InputEventT: Send + 'static,
     InitGenerator: Clone + Send + 'static + Fn(RedisCache) -> EventHandlerT,
-    EventHandlerT: EventHandler<InputEvent = InputEventT, OutputEvent = Graph, Error = HandlerErrorT>
+    EventHandlerT: EventHandler<
+            InputEvent = InputEventT,
+            OutputEvent = GraphDescription,
+            Error = HandlerErrorT,
+        >
         + Send
         + Sync
         + 'static
@@ -51,9 +55,9 @@ pub async fn run_graph_generator<
     let _s3_client = S3Client::from_env();
     let cache = &mut event_caches(&env).await;
 
-    let sysmon_subgraph_generator =
-        &mut make_ten(async { (init_generator)(cache[0].clone()) }).await;
-    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+    let subgraph_generator = &mut make_ten(async { (init_generator)(cache[0].clone()) }).await;
+
+    let serializer = &mut make_ten(async { GraphDescriptionSerializer::default() }).await;
 
     let s3_emitter =
         &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
@@ -79,7 +83,7 @@ pub async fn run_graph_generator<
         std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
         cache,
         sqs_client.clone(),
-        sysmon_subgraph_generator,
+        subgraph_generator,
         s3_payload_retriever,
         s3_emitter,
         serializer,

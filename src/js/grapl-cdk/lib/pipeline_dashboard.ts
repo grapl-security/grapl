@@ -2,6 +2,7 @@ import * as cdk from '@aws-cdk/core';
 import * as cloudwatch from '@aws-cdk/aws-cloudwatch';
 import { Service } from './service';
 import {FargateService} from "./fargate_service";
+
 import * as sqs from '@aws-cdk/aws-sqs';
 
 // like traffic lights, from best to worst
@@ -55,11 +56,7 @@ function fargateInvocationsWidget(
 
 function fargateQueueWidget(
     service: FargateService,
-    isRetry?: boolean
 ): cloudwatch.GraphWidget {
-    let queues: sqs.Queue[] = [
-    ]
-
     return new cloudwatch.GraphWidget({
         title: `Queues for ${service.serviceName}`,
         left: [

@@ -1,5 +1,3 @@
-#![allow(unused_must_use)]
-
 use std::{sync::Arc,
           time::Duration};
 
@@ -99,23 +97,16 @@ impl<S> EventHandler for AnalyzerDispatcher<S>
 where
     S: S3 + Send + Sync + 'static,
 {
-    type InputEvent = GeneratedSubgraphs;
+    type InputEvent = MergedGraph;
     type OutputEvent = Vec<AnalyzerDispatchEvent>;
     type Error = AnalyzerDispatcherError;
 
     async fn handle_event(
         &mut self,
-        subgraphs: Self::InputEvent,
+        subgraph: Self::InputEvent,
         _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let bucket = std::env::var("ANALYZER_BUCKET").expect("ANALYZER_BUCKET");
-
-        let mut subgraph = Graph::new(0);
-
-        subgraphs
-            .subgraphs
-            .iter()
-            .for_each(|generated_subgraph| subgraph.merge(generated_subgraph));
 
         if subgraph.is_empty() {
             warn!("Attempted to handle empty subgraph");

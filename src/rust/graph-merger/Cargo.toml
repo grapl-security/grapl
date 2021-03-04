@@ -4,6 +4,12 @@ version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
+[[bin]]
+name = "graph-merger"
+
+[lib]
+name = "graph_merger_lib"
+
 [dependencies]
 grapl-graph-descriptions = { path="../graph-descriptions"}
 grapl-config = {path="../grapl-config", version="*"}
@@ -37,6 +43,7 @@ zstd = "0.6"
 prost = "0.7"
 base64 = "0"
 rand = "0"
+dgraph_query_lib = "0.1"
 
 futures = "0.3"
 async-trait = "0.1"
@@ -49,3 +56,14 @@ tracing = "0.1.22"
 thiserror = "1.0.23"
 lambda_runtime = "0.2.1"
 tracing-futures = "0.2.4"
+tap = "1.0.0"
+lru = "0.6.5"
+futures-retry = "0.6.0"
+
+
+[dev-dependencies]
+tracing-subscriber = "0.2"
+
+
+[features]
+integration = []

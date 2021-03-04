@@ -39,7 +39,6 @@ fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), Handler
         tokio_compat::run_std(async move {
             let result: R = handler_async(event).await.clone();
             *result_arc_for_thread.lock().unwrap() = result;
-            ()
         })
     });
 

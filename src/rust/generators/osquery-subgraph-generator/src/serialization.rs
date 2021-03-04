@@ -38,7 +38,7 @@ where
 
         let (deserialized_logs, deserialization_errors): (Vec<Result<D, _>>, Vec<Result<D, _>>) =
             decompressed
-                .split(|byte| *byte == '\n' as u8)
+                .split(|byte| *byte == b'\n')
                 .filter(|chunk| !chunk.is_empty())
                 .map(|chunk| serde_json::from_slice(chunk))
                 .partition(|result| result.is_ok());

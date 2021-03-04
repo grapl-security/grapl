@@ -45,7 +45,7 @@ pub(crate) struct PartiallyDeserializedOSQueryLog {
     other_fields: HashMap<String, Value>,
 }
 
-impl TryFrom<PartiallyDeserializedOSQueryLog> for Graph {
+impl TryFrom<PartiallyDeserializedOSQueryLog> for GraphDescription {
     type Error = failure::Error;
 
     /// Takes a [PartialOSQueryResponse], parses the pack and query name from the name field and
@@ -81,7 +81,7 @@ impl TryFrom<PartiallyDeserializedOSQueryLog> for Graph {
             ("grapl", "processes") => response.to_graph_from_grapl_processes(),
             ("grapl", "files") => response.to_graph_from_grapl_files(),
             ("grapl", "process-files") => response.to_graph_from_grapl_process_file(),
-            _ => Ok(Graph::new(response.unix_time)),
+            _ => Ok(GraphDescription::new()),
         }
     }
 }

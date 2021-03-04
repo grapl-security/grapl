@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 grapl-graph-descriptions = { path="../../graph-descriptions", version="*"}
+endpoint-plugin = { path="../../endpoint-plugin", version="*"}
 grapl-config = {path="../../grapl-config", version="*"}
 
 sqs-executor = { path = "../../sqs-executor/" }
@@ -33,7 +34,6 @@ eyre = "0.4.3"
 thiserror = "1.0.23"
 serde = "1.0.120"
 serde_json = "1.0.61"
-#openssl-probe = "0.1.2"
 
 
 [dependencies.uuid]

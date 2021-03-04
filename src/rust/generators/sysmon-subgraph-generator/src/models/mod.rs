@@ -11,8 +11,8 @@ mod file;
 mod network;
 mod process;
 
-/// Because this crate doesn't own sysmon::Event nor grapl_graph_descriptions::graph_description::Graph
-/// we need to create a new Trait to add a function to Graph for Event.
+/// Because this crate doesn't own sysmon::Event nor grapl_graph_descriptions::graph_description::GraphDescription
+/// we need to create a new Trait to add a function to graph for Event.
 ///
 /// Mimics TryFrom
 pub(crate) trait SysmonTryFrom<T>: Sized {
@@ -30,7 +30,7 @@ fn get_event_type(event: Event) -> String {
     }
 }
 
-impl SysmonTryFrom<Event> for Graph {
+impl SysmonTryFrom<Event> for GraphDescription {
     type Error = SysmonGeneratorError;
 
     fn try_from(instance: Event) -> Result<Self, Self::Error> {

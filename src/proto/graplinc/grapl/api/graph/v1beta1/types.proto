@@ -4,213 +4,213 @@ import "google/protobuf/wrappers.proto";
 
 package graplinc.grapl.api.graph.v1beta1;
 
-// Identity ypes
+// The Session Identity Strategy is used to derive a canonical identity for any node that has a
+// 'pseudo key', as well as a beginning, middle, and end.
+// The 'pseudo key' can itself be multiple values concatenated together.
+// As an example, a ProcessNode would have a pseudo key based on its hostname and pid,
+// but because that combination is only unique while the process is alive, we also take into account
+// the creation time of that process, when we've last seen it, and when it's terminated.
 message Session {
     // Such as the pid + assetid
     repeated string primary_key_properties = 1;
+    // This is a special flag that specifies that this node's identity is dependent on a resolved asset identity
     bool primary_key_requires_asset_id = 2;
-    uint64 created_time = 3;
+    // The beginning of this session, in milliseconds
+    uint64 create_time = 3;
+    // The last observed time, in milliseconds, of this entity
     uint64 last_seen_time = 4;
-    uint64 terminated_time = 5;
+    // The end of this session, in milliseconds
+    uint64 terminate_time = 5;
 }
 
+// The Static Identity Strategy is used when a node already has its own way of being uniquely identified.
+// As one example, an AWS Resource Name uniquely identifies all AWS resources across accounts, so it would be
+// a suitable Static identity.
 message Static {
+    // The properties that are used to derive a static identity
     repeated string primary_key_properties = 1;
+    // This is a special flag that specifies that this node's identity is dependent on a resolved asset identity
     bool primary_key_requires_asset_id = 2;
 }
 
+// Represents one of the multiple ways that a node can be identified
 message IdStrategy {
+    // There are multiple types of identification strategies
     oneof strategy {
+        // Session identity is used for entities that have a "beginning" and "end" - for example, a Process has a start and stop
         Session session = 1;
+        // Static identities are for entities that have an intrinsic, globally unique identifier
         Static static = 2;
     }
 }
 
-// Used to identify the system for a given node
-// for example, 'a process executed on cobrien-mbp'
-message Host {
-    oneof host_id {
-        // the hostname of the host
-        string hostname = 1;
-
-        // The asset ID itself
-        // We expect this to be the variant once we have attributed the node
-        string asset_id = 2;
-    }
+// Represents an unsigned integer that, when merged, will become the larger of the two properties
+message IncrementOnlyUintProp {
+    // The internal property, without its merge constraint
+    uint64 prop = 1;
 }
 
-message Node {
-    oneof which_node {
-        Asset asset_node = 1;
-        Process process_node = 2;
-        File file_node = 3;
-        IpAddress ip_address_node = 4;
-        ProcessOutboundConnection process_outbound_connection_node = 5;
-        ProcessInboundConnection process_inbound_connection_node = 6;
-        IpPort ip_port_node = 7;
-        NetworkConnection network_connection_node = 8;
-        IpConnection ip_connection_node = 9;
-        DynamicNode dynamic_node = 10;
-    }
+// Represents an unsigned integer that, when merged, will remain the same
+message ImmutableUintProp {
+    // The internal property, without its merge constraint
+    uint64 prop = 1;
 }
 
-message Asset {
-    string node_key = 1;
-    google.protobuf.StringValue asset_id = 2;
-    google.protobuf.StringValue hostname = 3;
-    google.protobuf.StringValue mac_address = 4;
-    uint64 first_seen_timestamp = 5;
-    uint64 last_seen_timestamp = 6;
+// Represents an unsigned integer that, when merged, will become the smaller of the two properties
+message DecrementOnlyUintProp {
+    // The internal property, without its merge constraint
+    uint64 prop = 1;
 }
 
-message IpConnection {
-    string node_key = 1;
-    string src_ip_address = 2;
-    string dst_ip_address = 3;
-    string protocol = 4;
-    uint64 created_timestamp = 5;
-    uint64 terminated_timestamp = 6;
-    uint64 last_seen_timestamp = 7;
-    uint32 state = 8;
+// Represents a signed integer that, when merged, will become the larger of the two properties
+message IncrementOnlyIntProp {
+    // The internal property, without its merge constraint
+    int64 prop = 1;
 }
 
-message NetworkConnection {
-    string node_key = 1;
-    string src_ip_address = 2;
-    string dst_ip_address = 3;
-    string protocol = 4;
-    uint32 src_port = 5;
-    uint32 dst_port = 6;
-    uint64 created_timestamp = 7;
-    uint64 terminated_timestamp = 8;
-    uint64 last_seen_timestamp = 9;
-    uint32 state = 10;
+// Represents a signed integer that, when merged, will become the smaller of the two properties
+message DecrementOnlyIntProp {
+    // The internal property, without its merge constraint
+    int64 prop = 1;
 }
 
-message IpPort {
-    string node_key = 1;
-    string ip_address = 2;
-    uint32 port = 3;
-    string protocol = 4;
+// Represents a signed integer that, when merged, will remain the same
+message ImmutableIntProp {
+    // The internal property, without its merge constraint
+    int64 prop = 1;
 }
 
-// Identity = Session(asset_id + port + ip_address, created_timestamp)
-message ProcessOutboundConnection {
-    string node_key = 1;
-    google.protobuf.StringValue asset_id = 2;
-    google.protobuf.StringValue hostname = 3;
-    // 1 = Created, 2 = Terminated, 3 = Existing
-    uint32 state = 4;
-    uint64 created_timestamp = 5;
-    uint64 terminated_timestamp = 6;
-    uint64 last_seen_timestamp = 7;
-    uint32 port = 8;
-    string ip_address = 9;
-    string protocol = 10;
+// Represents a string that, when merged, will remain the same
+message ImmutableStrProp {
+    // The internal property, without its merge constraint
+    string prop = 1;
 }
 
-// Identity = Session(asset_id + port + ip_address, created_timestamp)
-message ProcessInboundConnection {
-    string node_key = 1;
-    google.protobuf.StringValue asset_id = 2;
-    google.protobuf.StringValue hostname = 3;
-    // 1 = Created, 2 = Terminated, 3 = Existing
-    uint32 state = 4;
-    uint64 created_timestamp = 5;
-    uint64 terminated_timestamp = 6;
-    uint64 last_seen_timestamp = 7;
-    uint32 port = 8;
-    string ip_address = 9;
-    string protocol = 10;
-}
-
-message Process {
-    string node_key = 1;
-    google.protobuf.StringValue asset_id = 2;
-    google.protobuf.StringValue hostname = 3;
-    uint32 state = 4;
-    uint64 process_id = 5;
-    string process_guid = 6;
-    // When state == 1, create_time
-    // When state == 2, end_time
-    // When state == 3, seen_time
-    uint64 created_timestamp = 7;
-    uint64 terminated_timestamp = 8;
-    uint64 last_seen_timestamp = 9;
-    string process_name = 10;
-    string process_command_line = 11;
-    string operating_system = 12;
-}
-
-message File {
-    string node_key = 1;
-    google.protobuf.StringValue asset_id = 2;
-    google.protobuf.StringValue hostname = 3;
-    // 1 = Created, 2 = Deleted, 3 = Referenced
-    uint32 state = 4;
-    uint64 created_timestamp = 5;
-    uint64 deleted_timestamp = 6;
-    uint64 last_seen_timestamp = 7;
-    string file_name = 8;
-    string file_path = 9;
-    string file_extension = 10;
-    string file_mime_type = 11;
-    uint64 file_size = 12;
-    string file_version = 13;
-    string file_description = 14;
-    string file_product = 15;
-    string file_company = 16;
-    string file_directory = 17;
-    uint64 file_inode = 18;
-    uint64 file_hard_links = 19;
-    string md5_hash = 20;
-    string sha1_hash = 21;
-    string sha256_hash = 22;
-}
-
-message IpAddress {
-    string node_key = 1;
-    string ip_address = 2;
-    uint64 first_seen_timestamp = 3;
-    uint64 last_seen_timestamp = 4;
-}
-
+// NodeProperty not only denotes what primitive type the value should be treated as - such as u64, i64, string,
+// but also the behavior of property merges. Because Grapl can not expect any kind of strict ordering of events
+// within or across datasources every property has to define a merge function to resolve conflicts.
+// *In general* these merges are idempotent and commutative, but not necessarily - for example, a string
+// that gets set to the "first" value and then never changes is not commutative. This is actually OK, so long as  we
+// have external knowledge of the datasources that informs us that the string will never change.
 message NodeProperty {
+    // We have multiple different types of node properties
     oneof property {
-        int64 intprop = 1;
-        uint64 uintprop = 2;
-        string strprop = 3;
+        // `increment_only_uint_prop` is an unsigned 64bit integer. On merge the larger value is stored.
+        IncrementOnlyUintProp increment_only_uint = 1;
+        // `decrement_only_uint_prop` is an unsigned 64bit integer. On merge the smaller value is stored.
+        DecrementOnlyUintProp decrement_only_uint = 2;
+        // `immutable_uint_prop` is an unsigned 64bit integer. On merge the old value is preserved.
+        ImmutableUintProp immutable_uint = 3;
+        // `increment_only_int_prop` is a signed 64bit integer. On merge the larger value is stored.
+        IncrementOnlyIntProp increment_only_int = 4;
+        // `decrement_only_int_prop` is a signed 64bit integer. On merge the smaller value is stored.
+        DecrementOnlyIntProp decrement_only_int = 5;
+        // `immutable_int_prop` is a signed 64bit integer. On merge the old value is preserved.
+        ImmutableIntProp immutable_int = 6;
+        // `immutable_int_prop` is a utf8 encoded string. On merge the old value is preserved.
+        ImmutableStrProp immutable_str = 7;
     }
 }
 
-message DynamicNode {
+// A 'NodeDescription' is not a canonical, identified node. It describes, based on some data, a node
+// that may or may not yet exist. For example, if we parse a log we may have information about a Process,
+// - we don't know which Process in the graph that is, but we have information about it; we can describe it.
+message NodeDescription {
+    // The predicates for a given node, as they existed at that time
     map<string, NodeProperty> properties = 1;
+    // The node_key, though at this point it may not be a canonical identity
     string node_key = 2;
+    // The type of the node, as a string
     string node_type = 3;
-    uint64 seen_at = 4;
-    google.protobuf.StringValue asset_id = 5;
-    google.protobuf.StringValue hostname = 6;
-    google.protobuf.StringValue host_ip = 7;
-    repeated IdStrategy id_strategy = 8;
+    // The strategy to use for identifying this node. While we currently can store multiple strategies,
+    // currently only strategy one is supported.
+    repeated IdStrategy id_strategy = 4;
 }
 
+// Identified nodes are similar to a 'NodeDescription', except that their node_key is
+// canonical.
+message IdentifiedNode {
+    // Represents the properties of a node
+    map<string, NodeProperty> properties = 1;
+    // The node_key, which is now resolved and canonical
+    string node_key = 2;
+    // The node type, as it exists in DGraph
+    string node_type = 3;
+}
+
+// A MergedNode represents a node that has already been merged into Grapl.
+message MergedNode {
+    // Represents the properties of a node
+    map<string, NodeProperty> properties = 1;
+    // The 'uid' represents the DGraph node uid
+    uint64 uid = 2;
+    // The node_key, which is now resolved and canonical
+    string node_key = 3;
+    // The node type, as it exists in DGraph
+    string node_type = 4;
+}
+
+// Represents a directed edge between two nodes. The node_key's may be canonical, or they may not be,
+// depending on the pipeline stage
 message Edge {
-    string from = 1;
-    string to = 2;
-    // buf:lint:ignore FIELD_LOWER_SNAKE_CASE
-    string edgeName = 3;
+    // The node_key associated with the 'source' of the edge
+    string from_node_key = 1;
+    // The node_key associated with the 'destination' of the edge
+    string to_node_key  = 2;
+    // The name of the edge
+    string edge_name = 3;
 }
 
+// Represents a directed edge between two nodes, where both nodes, and this edge, exist in the graph.
+message MergedEdge {
+    // The uid associated with the 'source' of the edge
+    string from_uid = 1;
+    // The node_key associated with the 'source' of the edge
+    string from_node_key = 2;
+    // The uid associated with the 'destination' of the edge
+    string to_uid = 3;
+    // The node_key associated with the 'destination' of the edge
+    string to_node_key = 4;
+    // The name of the edge
+    string edge_name = 5;
+}
+
+// Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
 message EdgeList {
+    // The internal repeated edges
     repeated Edge edges = 1;
 }
 
-message Graph {
-    map <string, Node> nodes = 1;
-    map <string, EdgeList> edges = 2;
-    uint64 timestamp = 3;
+// Represents multiple edges - mostly necessary because protobuf can't express a `map` of `repeated` values directly.
+// Every edge in the MergedEdgeList has been merged into the graph store.
+message MergedEdgeList {
+    // The internal repeated edges
+    repeated MergedEdge edges = 1;
 }
 
-message GeneratedSubgraphs {
-    repeated Graph subgraphs = 1;
+// GraphDescription represents a graph of nodes that may or may not exist yet in the graph store.
+// These nodes may or may not have canonical identities.
+message GraphDescription {
+    // The mapping of node_key to NodeDescription
+    map <string, NodeDescription> nodes = 1;
+    // The mapping of node_key to the EdgeLists
+    map <string, EdgeList> edges = 2;
+}
+
+// GraphDescription represents a graph of nodes that may or may not exist yet in the graph store.
+// These nodes have canonical identities.
+message IdentifiedGraph {
+    // The mapping of node_key to the IdentifiedNode
+    map <string, IdentifiedNode> nodes = 1;
+    // The mapping of node_key to the EdgeLists
+    map <string, EdgeList> edges = 2;
+}
+
+// GraphDescription represents a graph of nodes that exist in the graph store. These nodes
+// have canonical identities.
+message MergedGraph {
+    // The mapping of node_key to the MergedNode
+    map <string, MergedNode> nodes = 1;
+    // The mapping of node_key to the EdgeLists
+    map <string, MergedEdgeList> edges = 2;
 }

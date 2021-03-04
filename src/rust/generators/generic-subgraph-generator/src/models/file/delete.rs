@@ -1,9 +1,12 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
+use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
 
@@ -16,31 +19,28 @@ pub struct FileDelete {
     timestamp: u64,
 }
 
-impl TryFrom<FileDelete> for Graph {
+impl TryFrom<FileDelete> for GraphDescription {
     type Error = String;
 
     fn try_from(file_delete: FileDelete) -> Result<Self, Self::Error> {
-        let asset = AssetBuilder::default()
-            .hostname(file_delete.hostname.clone())
-            .asset_id(file_delete.hostname.clone())
-            .build()?;
+        let mut asset = AssetNode::new(AssetNode::static_strategy());
+        asset
+            .with_hostname(file_delete.hostname.clone())
+            .with_asset_id(file_delete.hostname.clone());
 
-        let deleter = ProcessBuilder::default()
-            .hostname(file_delete.hostname.clone())
-            .state(ProcessState::Existing)
-            .process_name(file_delete.deleter_process_name.unwrap_or_default())
-            .process_id(file_delete.deleter_process_id)
-            .last_seen_timestamp(file_delete.timestamp)
-            .build()?;
+        let mut deleter = ProcessNode::new(ProcessNode::session_strategy());
+        deleter
+            .with_asset_id(file_delete.hostname.clone())
+            .with_process_name(file_delete.deleter_process_name.unwrap_or_default())
+            .with_process_id(file_delete.deleter_process_id)
+            .with_last_seen_timestamp(file_delete.timestamp);
 
-        let file = FileBuilder::default()
-            .hostname(file_delete.hostname)
-            .state(FileState::Deleted)
-            .deleted_timestamp(file_delete.timestamp)
-            .file_path(file_delete.path)
-            .build()?;
+        let mut file = FileNode::new(FileNode::session_strategy());
+        file.with_asset_id(file_delete.hostname)
+            .with_deleted_timestamp(file_delete.timestamp)
+            .with_file_path(file_delete.path);
 
-        let mut graph = Graph::new(file_delete.timestamp);
+        let mut graph = GraphDescription::new();
 
         graph.add_edge("deleted", deleter.clone_node_key(), file.clone_node_key());
 

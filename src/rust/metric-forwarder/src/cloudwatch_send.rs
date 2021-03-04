@@ -19,12 +19,12 @@ use crate::{cloudwatch_logs_parse::Stat,
 
 pub mod cw_units {
     // strings accepted by CloudWatch MetricDatum.unit
-    pub const COUNT: &'static str = "Count";
-    pub const MILLIS: &'static str = "Milliseconds";
-    pub const MICROS: &'static str = "Microseconds";
-    pub const SECONDS: &'static str = "Seconds";
+    pub const COUNT: &str = "Count";
+    pub const MILLIS: &str = "Milliseconds";
+    pub const MICROS: &str = "Microseconds";
+    pub const SECONDS: &str = "Seconds";
 }
-const RESERVED_UNIT_TAG: &'static str = "_unit";
+const RESERVED_UNIT_TAG: &str = "_unit";
 
 type PutResult = Result<(), RusotoError<PutMetricDataError>>;
 

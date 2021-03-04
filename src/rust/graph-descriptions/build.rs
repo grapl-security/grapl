@@ -7,6 +7,45 @@ fn main() {
     );
 
     config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.IncrementOnlyIntProp",
+        "#[derive(Copy, Ord, PartialOrd)]",
+    );
+
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.DecrementOnlyIntProp",
+        "#[derive(Copy, Ord, PartialOrd)]",
+    );
+
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.ImmutableIntProp",
+        "#[derive(Copy, Ord, PartialOrd)]",
+    );
+
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.IncrementOnlyUintProp",
+        "#[derive(Copy, Ord, PartialOrd)]",
+    );
+
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.DecrementOnlyUintProp",
+        "#[derive(Copy, Ord, PartialOrd)]",
+    );
+
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.ImmutableUintProp",
+        "#[derive(Copy, Ord, PartialOrd)]",
+    );
+
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.MergedEdge",
+        "#[derive(Ord, PartialOrd)]",
+    );
+    config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.Edge",
+        "#[derive(Ord, PartialOrd)]",
+    );
+
+    config.type_attribute(
         ".graplinc.grapl.api.graph.v1beta1.Asset",
         "#[derive(Builder)]",
     );

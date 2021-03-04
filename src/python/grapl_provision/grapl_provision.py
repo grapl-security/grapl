@@ -183,6 +183,7 @@ def provision_mg(mclient) -> None:
     provision_master_graph(mclient, schemas)
 
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
+
     table = dynamodb.Table("local-grapl-grapl_schema_table")
     for schema in schemas:
         try:

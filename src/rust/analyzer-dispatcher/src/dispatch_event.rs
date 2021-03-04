@@ -8,11 +8,11 @@ use sqs_executor::completion_event_serializer::CompletionEventSerializer;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalyzerDispatchEvent {
     key: String,
-    subgraph: Graph,
+    subgraph: MergedGraph,
 }
 
 impl AnalyzerDispatchEvent {
-    pub fn new(key: String, subgraph: Graph) -> Self {
+    pub fn new(key: String, subgraph: MergedGraph) -> Self {
         Self { key, subgraph }
     }
 }
@@ -43,7 +43,7 @@ impl CompletionEventSerializer for AnalyzerDispatchSerializer {
     ) -> Result<Vec<Self::Output>, Self::Error> {
         let unique_events: Vec<_> = completed_events.iter().flatten().collect();
 
-        let mut final_subgraph = Graph::new(0);
+        let mut final_subgraph = MergedGraph::new();
 
         for event in unique_events.iter() {
             final_subgraph.merge(&event.subgraph);

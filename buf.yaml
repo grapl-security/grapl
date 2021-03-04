@@ -6,9 +6,7 @@ lint:
   # https://docs.buf.build/lint-rules/
   use:
     - DEFAULT
-    # TODO: We should fully document the schema; at that point we can
-    # enable this lint
-    # - COMMENTS
+    - COMMENTS
   ignore:
     # We have vendored some of the Google protobuf definitions; we
     # don't need to lint them, and will be able to remove them soon.

@@ -1,5 +1,4 @@
 #![type_length_limit = "1232619"]
-
 mod generator;
 mod metrics;
 mod parsers;
@@ -11,7 +10,7 @@ use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    *};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::serialization::SubgraphSerializer;
+use grapl_service::serialization::GraphDescriptionSerializer;
 use log::*;
 use rusoto_sqs::SqsClient;
 use sqs_executor::{event_retriever::S3PayloadRetriever,
@@ -38,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &mut make_ten(async { OSQuerySubgraphGenerator::new(cache[0].clone(), metrics.clone()) })
             .await;
 
-    let serializer = &mut make_ten(async { SubgraphSerializer::default() }).await;
+    let serializer = &mut make_ten(async { GraphDescriptionSerializer::default() }).await;
     let s3_emitter =
         &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
             .await;

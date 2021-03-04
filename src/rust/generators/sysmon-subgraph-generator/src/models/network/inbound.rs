@@ -19,19 +19,20 @@ use crate::models::utc_to_epoch;
 #[allow(dead_code)]
 pub fn generate_inbound_connection_subgraph(
     conn_log: &NetworkEvent,
-) -> Result<Graph, failure::Error> {
+) -> Result<GraphDescription,failure::Error> {
     let timestamp = utc_to_epoch(&conn_log.event_data.utc_time)?;
 
-    let mut graph = Graph::new(timestamp);
+    let mut graph = GraphDescription::new();
 
-    let asset = AssetBuilder::default()
+    let mut asset = AssetNode::new(AssetNode::static_strategy());
+        asset
         .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .build()
         .map_err(|err| failure::err_msg(err))?;
 
     // A process creates an outbound connection to dst_port
-    let process = ProcessBuilder::default()
+    let process = ProcessNode::new(ProcessNode::session_strategy())
         .asset_id(conn_log.system.computer.computer.clone())
         .hostname(conn_log.system.computer.computer.clone())
         .state(ProcessState::Existing)

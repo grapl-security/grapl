@@ -5,13 +5,13 @@ from typing import (
     MutableMapping,
 )
 
+from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdgeList, MergedGraph
 from grapl_analyzerlib.grapl_client import GraphClient
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import EdgeList, Graph
 
 
 class SubgraphView(object):
     def __init__(
-        self, nodes: Dict[str, BaseView], edges: MutableMapping[str, EdgeList]
+        self, nodes: Dict[str, BaseView], edges: MutableMapping[str, MergedEdgeList]
     ) -> None:
         self.nodes = nodes
         self.edges = edges
@@ -20,7 +20,7 @@ class SubgraphView(object):
     def from_proto(graph_client: GraphClient, s: bytes) -> SubgraphView:
         from grapl_analyzerlib.view_from_proto import view_from_proto
 
-        subgraph = Graph()
+        subgraph = MergedGraph()
         subgraph.ParseFromString(s)
 
         nodes = {
@@ -32,17 +32,5 @@ class SubgraphView(object):
         for node in self.nodes.values():
             yield node
 
-    def process_iter(self) -> Iterator[ProcessView]:
-        for node in self.nodes.values():
-            maybe_node = node.into_view(ProcessView)
-            if maybe_node:
-                yield maybe_node
 
-    def file_iter(self) -> Iterator[FileView]:
-        for node in self.nodes.values():
-            maybe_node = node.into_view(FileView)
-            if maybe_node:
-                yield maybe_node
-
-
-from grapl_analyzerlib.prelude import BaseView, ProcessView, FileView
+from grapl_analyzerlib.prelude import BaseView

@@ -13,7 +13,6 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
 )
 from grapl_analyzerlib.queryable import Queryable
-from grapl_analyzerlib.retry import retry
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable
 

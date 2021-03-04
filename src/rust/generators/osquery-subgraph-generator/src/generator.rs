@@ -48,7 +48,7 @@ where
     C: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = Vec<PartiallyDeserializedOSQueryLog>;
-    type OutputEvent = Graph;
+    type OutputEvent = GraphDescription;
     type Error = OSQuerySubgraphGeneratorError;
 
     async fn handle_event(
@@ -60,7 +60,7 @@ where
 
         let (subgraphs, errors): (Vec<_>, Vec<_>) = input
             .into_iter()
-            .map(|log| Graph::try_from(log))
+            .map(|log| GraphDescription::try_from(log))
             .partition(|result| result.is_ok());
 
         for res in errors.iter().map(|e| e.as_ref().err()) {
@@ -69,7 +69,7 @@ where
         let final_subgraph = subgraphs
             .into_iter()
             .filter_map(|subgraph| subgraph.ok())
-            .fold(Graph::new(0), |mut current_graph, subgraph| {
+            .fold(GraphDescription::new(), |mut current_graph, subgraph| {
                 current_graph.merge(&subgraph);
                 current_graph
             });

@@ -367,7 +367,6 @@ class AnalyzerExecutor:
                         sender.send(ExecutionFailed())
                         raise
 
-                # exec_analyzer(nodes, sender)
                 pool.apply_async(exec_analyzer, args=(nodes, sender))
 
             pool.close()

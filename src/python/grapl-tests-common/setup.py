@@ -33,10 +33,20 @@ setup(
     ],
     zip_safe=False,
     packages=find_packages(),
-    package_data={"grapl_tests_common": ["py.typed",]},
+    package_data={
+        "grapl_tests_common": [
+            "py.typed",
+        ]
+    },
     include_package_data=True,
-    install_requires=["requests", "typing_extensions", "zstd",],
+    install_requires=[
+        "requests",
+        "typing_extensions",
+        "zstd",
+    ],
     # We'll probably have some dataclasses in here in the future
     python_requires=">=3.6",
-    extras_require={"typecheck": ["mypy", "boto3-stubs[dynamodb]"],},
+    extras_require={
+        "typecheck": ["mypy", "boto3-stubs[dynamodb]"],
+    },
 )

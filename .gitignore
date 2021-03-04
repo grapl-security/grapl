@@ -15,6 +15,7 @@ __pycache__/
 *$py.class
 .mypy_cache
 .hypothesis
+.pytype/
 
 # Rust outputs
 target/
@@ -52,6 +53,9 @@ dist/
 /build-support/.constraints-venv
 .yarn/
 
+# Generated when profiling rust code
+*.profdata
+*.profraw
 
 ### PERSONAL SCRIPTS
 upload_localhost.sh
