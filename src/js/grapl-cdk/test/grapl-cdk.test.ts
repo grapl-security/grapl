@@ -59,7 +59,7 @@ describe('Standard GraplCdkStack', () => {
     // they just don't show up in the stack, it's a CDK issue
   });
 
-  test('All dashboards have the prefix', () => {
+  test('All dashboards have the deployment_name', () => {
     const constructs = allConstructs.getAllOfType(cloudwatch.Dashboard);
 
     for (const c of constructs) {

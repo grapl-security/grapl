@@ -61,7 +61,7 @@ if IS_LOCAL:
             LOGGER.debug(e)
             time.sleep(1)
 
-    os.environ["BUCKET_PREFIX"] = "local-grapl"
+    os.environ["DEPLOYMENT_NAME"] = "local-grapl"
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
@@ -118,7 +118,7 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
 
 
 def store_schema(dynamodb, schema: "Schema"):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
             LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
@@ -215,7 +215,7 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
 
 
 def meta_into_edge(dynamodb, schema: "Schema", f_edge):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
     edge_t = schema.edges[f_edge][0]  # type: EdgeT
 
@@ -275,7 +275,7 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
 
 
 def get_reverse_edge(dynamodb, schema, f_edge):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
     return edge_res["r_edge"]
 
@@ -292,7 +292,7 @@ def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Response]:
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
 
     plugin_parts = key.split("/")
     plugin_name = plugin_parts[0]
@@ -324,7 +324,7 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
     return None
 
 
-BUCKET_PREFIX = os.environ["BUCKET_PREFIX"]
+DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 
 
 def respond(
@@ -456,7 +456,7 @@ def deploy():
 
 
 def get_plugin_list(s3: BaseClient):
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
     list_response = s3.list_objects_v2(Bucket=plugin_bucket)
     if not list_response.get("Contents"):
         return []
@@ -485,7 +485,7 @@ def list_model_plugins():
 
 
 def delete_plugin(s3_client, plugin_name):
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
 
     list_response = s3_client.list_objects_v2(
         Bucket=plugin_bucket,

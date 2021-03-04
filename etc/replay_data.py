@@ -100,12 +100,12 @@ def get_s3_client() -> S3Client:
         return boto3.client("s3")
 
 
-def main(bucket_prefix: str) -> None:
+def main(deployment_name: str) -> None:
     s3, sqs = get_s3_client(), get_sqs_client()
-    queue_name = bucket_prefix + "-graph-merger-queue"
+    queue_name = deployment_name + "-graph-merger-queue"
     queue_url = sqs.get_queue_url(QueueName=queue_name)["QueueUrl"]
 
-    bucket = bucket_prefix + "-subgraphs-generated-bucket"
+    bucket = deployment_name + "-subgraphs-generated-bucket"
     for key in list_objects(s3, bucket):
         send_s3_event(
             sqs,
@@ -117,16 +117,16 @@ def main(bucket_prefix: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Replay graph-merger events")
-    parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
+    parser.add_argument("--deployment_name", dest="deployment_name", required=True)
     return parser.parse_args()
 
 
 if __name__ == "__main__":
 
     args = parse_args()
-    if args.bucket_prefix is None:
-        raise Exception("Provide bucket prefix as first argument")
+    if args.deployment_name is None:
+        raise Exception("Provide deployment name as first argument")
     else:
-        if args.bucket_prefix == "local-grapl":
+        if args.deployment_name == "local-grapl":
             IS_LOCAL = True
-        main(args.bucket_prefix)
+        main(args.deployment_name)

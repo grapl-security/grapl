@@ -28,15 +28,15 @@ export class AnalyzerDispatch extends cdk.NestedStack {
         super(scope, id);
 
         const service_name = "analyzer-dispatcher";
-        const bucket_prefix = props.prefix.toLowerCase();
+        const deployment_name = props.deploymentName.toLowerCase();
         const subgraphs_merged = new EventEmitter(
             this,
-            bucket_prefix + '-subgraphs-merged'
+            deployment_name + '-subgraphs-merged'
         );
         const analyzer_bucket = s3.Bucket.fromBucketName(
             this,
             'analyzers-bucket',
-            bucket_prefix + "-analyzers-bucket"
+            deployment_name + "-analyzers-bucket"
         );
         this.bucket = subgraphs_merged.bucket;
         this.topic = subgraphs_merged.topic;
@@ -49,10 +49,10 @@ export class AnalyzerDispatch extends cdk.NestedStack {
         dispatch_event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         this.service = new FargateService(this, service_name, {
-            prefix: props.prefix,
+            deploymentName: props.deploymentName,
             environment: {
                 RUST_LOG: props.analyzerDispatcherLogLevel,
-                ANALYZER_BUCKET: bucket_prefix + "-analyzers-bucket",
+                ANALYZER_BUCKET: deployment_name + "-analyzers-bucket",
                 EVENT_CACHE_CLUSTER_ADDRESS: dispatch_event_cache.address,
                 DISPATCHED_ANALYZER_BUCKET: props.writesTo.bucketName,
                 SUBGRAPH_MERGED_BUCKET: subgraphs_merged.bucket.bucketName,

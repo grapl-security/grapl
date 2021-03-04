@@ -20,15 +20,15 @@ x-common-variables:
     DYNAMODB_ENDPOINT: ${DYNAMODB_ENDPOINT}
   # TODO: Ensure these are matched with what's in provision_local_identity_table.py
   dynamodb-mapping-tables: &dynamodb-mapping-tables
-    ASSET_ID_MAPPINGS: ${BUCKET_PREFIX}-asset_id_mappings
-    DYNAMIC_SESSION_TABLE: ${BUCKET_PREFIX}-dynamic_session_table
-    FILE_HISTORY_TABLE: ${BUCKET_PREFIX}-file_history_table
-    INBOUND_CONNECTION_HISTORY_TABLE: ${BUCKET_PREFIX}-inbound_connection_history_table
-    IP_CONNECTION_HISTORY_TABLE: ${BUCKET_PREFIX}-ip_connection_history_table
-    NETWORK_CONNECTION_HISTORY_TABLE: ${BUCKET_PREFIX}-network_connection_history_table
-    OUTBOUND_CONNECTION_HISTORY_TABLE: ${BUCKET_PREFIX}-outbound_connection_history_table
-    PROCESS_HISTORY_TABLE: ${BUCKET_PREFIX}-process_history_table
-    STATIC_MAPPING_TABLE: ${BUCKET_PREFIX}-static_mapping_table
+    ASSET_ID_MAPPINGS: ${DEPLOYMENT_NAME}-asset_id_mappings
+    DYNAMIC_SESSION_TABLE: ${DEPLOYMENT_NAME}-dynamic_session_table
+    FILE_HISTORY_TABLE: ${DEPLOYMENT_NAME}-file_history_table
+    INBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-inbound_connection_history_table
+    IP_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-ip_connection_history_table
+    NETWORK_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-network_connection_history_table
+    OUTBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-outbound_connection_history_table
+    PROCESS_HISTORY_TABLE: ${DEPLOYMENT_NAME}-process_history_table
+    STATIC_MAPPING_TABLE: ${DEPLOYMENT_NAME}-static_mapping_table
   log-level: &log-level
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
     RUST_LOG: "${RUST_LOG:-ERROR}"
@@ -44,6 +44,8 @@ x-common-variables:
     SQS_ACCESS_KEY_ID: ${SQS_ACCESS_KEY_ID}
     SQS_ACCESS_KEY_SECRET: ${SQS_ACCESS_KEY_SECRET}
     SQS_ENDPOINT: ${SQS_ENDPOINT}
+  rust-backtrace: &rust-backtrace
+    RUST_BACKTRACE: ${RUST_BACKTRACE}
 
 services:
   ########################################################################
@@ -137,7 +139,7 @@ services:
     environment:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-sysmon-graph-generator-dead-letter-queue"
-      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-unid-subgraphs-generated-bucket"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
@@ -146,6 +148,7 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/grapl-sysmon-graph-generator-queue"
       <<: *sqs-env
+      <<: *rust-backtrace
     depends_on:
       - grapl-provision
       - localstack
@@ -157,9 +160,9 @@ services:
     tty: false
     environment:
       <<: *aws-region
-      BUCKET_PREFIX: ${BUCKET_PREFIX}
+      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-dead-letter-queue"
-      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-unid-subgraphs-generated-bucket"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
@@ -168,6 +171,7 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-queue"
       <<: *sqs-env
+      <<: *rust-backtrace
     depends_on:
       - grapl-provision
       - localstack
@@ -179,7 +183,7 @@ services:
     environment:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
-      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-subgraphs-generated-bucket"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
       DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
@@ -190,6 +194,7 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
       <<: *sqs-env
+      <<: *rust-backtrace
     tty: false
     depends_on:
       - grapl-provision
@@ -202,7 +207,7 @@ services:
     environment:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
-      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-subgraphs-generated-bucket"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
       DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
@@ -213,6 +218,7 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
       <<: *sqs-env
+      <<: *rust-backtrace
     tty: false
     depends_on:
       - grapl-provision
@@ -225,18 +231,19 @@ services:
     environment:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-dead-letter-queue"
-      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-subgraphs-merged-bucket"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
       DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
       <<: *dgraph-env
       <<: *dynamodb-env
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
-      GRAPL_SCHEMA_TABLE: "${BUCKET_PREFIX}-grapl_schema_table"
+      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       IS_LOCAL: "True"
       <<: *log-level
       RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
       <<: *sqs-env
+      <<: *rust-backtrace
     tty: false
     depends_on:
       - dgraph
@@ -248,11 +255,11 @@ services:
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     environment:
-      ANALYZER_BUCKET: "${BUCKET_PREFIX}-analyzers-bucket"
-      ANALYZERS_BUCKET: "${BUCKET_PREFIX}-analyzers-bucket"
+      ANALYZER_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
+      ANALYZERS_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-dead-letter-queue"
-      DEST_BUCKET_NAME: "${BUCKET_PREFIX}-analyzer-dispatched-bucket"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-analyzer-dispatched-bucket"
       DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-queue"
       IS_LOCAL: "true"
       <<: *log-level
@@ -260,6 +267,7 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
       <<: *sqs-env
+      <<: *rust-backtrace
     tty: false
     depends_on:
       - localstack
@@ -273,7 +281,7 @@ services:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     environment:
       <<: *aws-region
-      BUCKET_PREFIX: ${BUCKET_PREFIX}
+      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       DEBUG_SERVICES: "${DEBUG_SERVICES}"
       <<: *dgraph-env
       GRPC_ENABLE_FORK_SUPPORT: "1"
@@ -309,7 +317,7 @@ services:
     environment:
       GRAPL_LOG_LEVEL: "DEBUG"
       IS_LOCAL: "True"
-      UX_BUCKET_NAME: "${BUCKET_PREFIX}-engagement-ux-bucket"
+      UX_BUCKET_NAME: "${DEPLOYMENT_NAME}-engagement-ux-bucket"
       <<: *aws-region
       <<: *s3-env
     depends_on:
@@ -325,7 +333,7 @@ services:
     command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
     environment:
       <<: *aws-region
-      BUCKET_PREFIX: ${BUCKET_PREFIX}
+      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       <<: *dgraph-env
       IS_LOCAL: "True"
       <<: *log-level
@@ -353,12 +361,12 @@ services:
           - ${GRAPL_AUTH_HOST}
     environment:
       <<: *aws-region
-      BUCKET_PREFIX: ${BUCKET_PREFIX}
+      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       <<: *dynamodb-env
       IS_LOCAL: "True"
       <<: *log-level
       <<: *secretsmanager-env
-      USER_AUTH_TABLE: "${BUCKET_PREFIX}-user_auth_table"
+      USER_AUTH_TABLE: "${DEPLOYMENT_NAME}-user_auth_table"
       UX_BUCKET_URL: "localhost:3000" # TODO: Port??
     depends_on:
       - grapl-provision

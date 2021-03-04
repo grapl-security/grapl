@@ -55,11 +55,11 @@ export class EngagementEdge extends cdk.NestedStack {
         const ux_bucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
-            props.prefix.toLowerCase() + '-engagement-ux-bucket'
+            props.deploymentName.toLowerCase() + '-engagement-ux-bucket'
         );
 
-        const serviceName = props.prefix + '-EngagementEdge';
-        this.name = id + props.prefix;
+        const serviceName = props.deploymentName + '-EngagementEdge';
+        this.name = id + props.deploymentName;
 
         this.event_handler = new lambda.Function(this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,
@@ -74,7 +74,7 @@ export class EngagementEdge extends cdk.NestedStack {
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
-                BUCKET_PREFIX: props.prefix,
+                DEPLOYMENT_NAME: props.deploymentName,
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
@@ -128,7 +128,7 @@ export class EngagementNotebook extends cdk.NestedStack {
     ) {
         super(scope, id);
 
-        let serviceName = `${props.prefix}-${id}`;
+        let serviceName = `${props.deploymentName}-${id}`;
         const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
             vpc: props.vpc,
         });
@@ -151,7 +151,7 @@ export class EngagementNotebook extends cdk.NestedStack {
         props.schema_db.allowReadWriteFromRole(role);
 
         this.notebookInstance = new sagemaker.CfnNotebookInstance(this, 'SageMakerEndpoint', {
-            notebookInstanceName: props.prefix + '-Notebook',
+            notebookInstanceName: props.deploymentName + '-Notebook',
             instanceType: 'ml.t2.medium',
             securityGroupIds: [securityGroup.securityGroupId],
             subnetId: props.vpc.privateSubnets[0].subnetId,
@@ -184,7 +184,7 @@ export class EngagementNotebook extends cdk.NestedStack {
 }
 
 interface EngagementUxProps extends cdk.StackProps {
-    prefix: string;
+    deploymentName: string;
     edgeApi: apigateway.RestApi;
 }
 
@@ -196,7 +196,7 @@ export class EngagementUx extends cdk.Stack {
         const edgeBucket = GraplS3Bucket.fromBucketName(
             this,
             'uxBucket',
-            props.prefix.toLowerCase() + '-engagement-ux-bucket'
+            props.deploymentName.toLowerCase() + '-engagement-ux-bucket'
         );
 
         new s3deploy.BucketDeployment(this, 'UxDeployment', {

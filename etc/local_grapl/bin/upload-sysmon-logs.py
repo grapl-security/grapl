@@ -36,7 +36,7 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     return upload_sysmon_logs
 
 
-def setup_env(bucket_prefix: str):
+def setup_env(deployment_name: str):
     """Ensures the environment is set up appropriately for interacting
     with Local Grapl (running inside a Docker Compose network locally)
     from *outside* that network (i.e., from your workstation).
@@ -48,7 +48,7 @@ def setup_env(bucket_prefix: str):
     # we should pull this functionality into something like graplctl
     # with a more formalized way of pointing to a specific Grapl
     # instance.
-    if bucket_prefix == "local-grapl":
+    if deployment_name == "local-grapl":
         kvs = [
             ("AWS_REGION", "us-east-1"),
             ("S3_ENDPOINT", "http://localhost:9000"),
@@ -65,7 +65,7 @@ def setup_env(bucket_prefix: str):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Send sysmon logs to Grapl")
-    parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
+    parser.add_argument("--deployment_name", dest="deployment_name", required=True)
     parser.add_argument(
         "--logfile",
         dest="logfile",
@@ -79,13 +79,13 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.bucket_prefix is None:
-        raise Exception("Provide bucket prefix as first argument")
+    if args.deployment_name is None:
+        raise Exception("Provide deployment name as first argument")
 
-    setup_env(args.bucket_prefix)
+    setup_env(args.deployment_name)
     upload_fn = hack_PATH_to_include_grapl_tests_common()
     upload_fn(
-        args.bucket_prefix,
+        args.deployment_name,
         args.logfile,
         delay=args.delay,
         batch_size=args.batch_size,

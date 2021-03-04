@@ -28,7 +28,7 @@ const grapl = new GraplCdkStack(app, 'Grapl', {
 });
 
 new EngagementUx(app, 'EngagementUX', {
-    prefix: grapl.prefix,
+    deploymentName: grapl.deploymentName,
     edgeApi: grapl.edgeApiGateway,
     stackName: DeploymentParameters.stackName + '-EngagementUX',
     description: 'Grapl Engagement UX',

@@ -7,7 +7,7 @@ import { Watchful } from 'cdk-watchful';
 import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface DGraphSwarmClusterProps {
-    prefix: string;
+    deploymentName: string;
     version: string;
     vpc: ec2.IVpc;
     watchful?: Watchful;
@@ -24,7 +24,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         super(parent, id);
 
         this.dgraphSwarmCluster = new Swarm(this, 'SwarmCluster', {
-            prefix: props.prefix,
+            deploymentName: props.deploymentName,
             version: props.version,
             vpc: props.vpc,
             logsGroupResourceArn: super.formatArn({
@@ -32,7 +32,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
                 service: 'logs',
                 resource: 'log-group',
                 sep: ':',
-                resourceName: `${props.prefix.toLowerCase()}-grapl-dgraph`
+                resourceName: `${props.deploymentName.toLowerCase()}-grapl-dgraph`
             }),
             internalServicePorts: [
                 ec2.Port.tcp(5080),
@@ -51,7 +51,7 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         });
 
         const dgraphConfigBucket = new GraplS3Bucket(this, 'DGraphConfigBucket', {
-            bucketName: `${props.prefix.toLowerCase()}-dgraph-config-bucket`,
+            bucketName: `${props.deploymentName.toLowerCase()}-dgraph-config-bucket`,
             publicReadAccess: false,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });

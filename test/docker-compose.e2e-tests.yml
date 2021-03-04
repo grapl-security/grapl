@@ -22,7 +22,7 @@ services:
       - ${PWD}/etc:/home/grapl/etc:ro
     environment:
       - AWS_REGION
-      - BUCKET_PREFIX
+      - DEPLOYMENT_NAME
       - DEBUG_SERVICES=${DEBUG_SERVICES}
       - DUMP_ARTIFACTS=${DUMP_ARTIFACTS:-False}
       - DYNAMODB_ACCESS_KEY_ID

@@ -39,9 +39,6 @@ use grapl_service::{decoder::ZstdProtoDecoder,
 use grapl_utils::{future_ext::GraplFutureExt,
                   rusoto_ext::dynamodb::GraplDynamoDbClientExt};
 use lazy_static::lazy_static;
-use log::{error,
-          info,
-          warn};
 use rusoto_dynamodb::{AttributeValue,
                       BatchGetItemInput,
                       DynamoDb,
@@ -63,6 +60,9 @@ use sqs_executor::{cache::{Cache,
                    event_retriever::S3PayloadRetriever,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier};
+use tracing::{error,
+              info,
+              warn};
 
 use crate::{reverse_resolver::{get_r_edges_from_dynamodb,
                                ReverseEdgeResolver},
@@ -78,29 +78,20 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
 
     let cache = &mut event_caches(&env).await;
 
+    let mg_alphas = grapl_config::mg_alphas();
+
     // todo: the intitializer should give a cache to each service
     let graph_merger = &mut make_ten(async {
-        let mg_alphas = grapl_config::mg_alphas();
-        // Shoehorn `http://` in, if the user understandably forgot to do so
-        let mg_alphas = mg_alphas
-            .into_iter()
-            .map(|mg_alpha| {
-                if mg_alpha.contains("http://") {
-                    mg_alpha
-                } else {
-                    format!("http://{}", mg_alpha)
-                }
-            })
-            .collect();
+        let mg_alphas_copy = mg_alphas.clone();
         tracing::debug!(
-            mg_alphas=?&mg_alphas,
+            mg_alphas=?&mg_alphas_copy,
             "Connecting to mg_alphas"
         );
         let dynamo = DynamoDbClient::from_env();
         let reverse_edge_resolver =
             ReverseEdgeResolver::new(dynamo, MetricReporter::new(&env.service_name), 1000);
         GraphMerger::new(
-            mg_alphas,
+            mg_alphas_copy,
             reverse_edge_resolver,
             MetricReporter::new(&env.service_name),
             cache[0].clone(),

@@ -49,7 +49,7 @@ To get data into Grapl, please run the following command:
 
 ```bash
 cd etc/local_grapl/bin/
-python3 ./upload-sysmon-logs.py --bucket_prefix=local-grapl --logfile=eventlog.xml 
+python3 ./upload-sysmon-logs.py --deployment_name=local-grapl --logfile=eventlog.xml 
 ```
 
 

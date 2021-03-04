@@ -192,7 +192,7 @@ def provision_mg(mclient) -> None:
             LOGGER.warn(f"storing schema: {schema} {table} {e}")
 
 
-BUCKET_PREFIX = "local-grapl"
+DEPLOYMENT_NAME = "local-grapl"
 
 
 def validate_environment():
