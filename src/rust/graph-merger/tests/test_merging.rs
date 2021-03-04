@@ -130,7 +130,7 @@ pub mod test {
                 .to_string();
 
             std::thread::spawn(move || {
-                let mut rt = tokio::runtime::Runtime::new().expect("failed to init runtime");
+                let rt = tokio::runtime::Runtime::new().expect("failed to init runtime");
                 rt.block_on(async {
                     let dgraph_client = DgraphClient::new("http://127.0.0.1:9080")
                         .expect("Failed to create dgraph client.");
@@ -157,7 +157,7 @@ pub mod test {
         });
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_edge_and_retrieve() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
         let mut identified_graph = IdentifiedGraph::new();
@@ -252,7 +252,7 @@ pub mod test {
         Ok(())
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_idempotency() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
 
@@ -331,7 +331,7 @@ pub mod test {
         Ok(())
     }
 
-    #[tokio::test(threaded_scheduler)]
+    #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_multifield() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
 

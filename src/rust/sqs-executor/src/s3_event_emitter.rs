@@ -20,8 +20,8 @@ use rusoto_sqs::{SendMessageError,
                  Sqs,
                  SqsClient};
 use tap::prelude::TapFallible;
-use tokio::time::{Duration,
-                  error::Elapsed};
+use tokio::time::{error::Elapsed,
+                  Duration};
 use tracing::error;
 
 use crate::{errors::{CheckedError,
