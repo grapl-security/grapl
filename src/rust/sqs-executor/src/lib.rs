@@ -426,7 +426,7 @@ async fn _process_loop<
                     error = e.to_string().as_str(),
                     "Failed to get_message from queue"
                 );
-                tokio::time::delay_for(std::time::Duration::from_millis(i * 250)).await;
+                tokio::time::sleep(std::time::Duration::from_millis(i * 250)).await;
                 i += 1;
                 continue;
             }
@@ -436,7 +436,7 @@ async fn _process_loop<
         info!(message_batch_len = message_batch_len, "Received messages");
 
         if message_batch.is_empty() {
-            tokio::time::delay_for(std::time::Duration::from_millis(250)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
             continue;
         }
         let combos = message_batch
@@ -574,7 +574,7 @@ pub async fn process_loop<
             } else {
                 error!("Unexpected error");
             }
-            tokio::time::delay_for(std::time::Duration::from_millis(200)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         }
     }
 }
@@ -594,7 +594,7 @@ where
             }
         };
 
-        tokio::time::delay_for(std::time::Duration::from_secs(2)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
     }
 
     if let Some(e) = errs {

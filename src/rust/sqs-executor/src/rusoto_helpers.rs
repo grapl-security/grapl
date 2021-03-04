@@ -15,7 +15,7 @@ use rusoto_sqs::{DeleteMessageError as InnerDeleteMessageError,
                  Sqs};
 use tokio::{task::{JoinError,
                    JoinHandle},
-            time::Elapsed};
+            time::error::Elapsed};
 use tracing::{debug,
               error,
               Instrument};
@@ -126,7 +126,7 @@ where
 pub enum SendMessageError {
     #[error("SendMessageError {0}")]
     InnerSendMessageError(#[from] RusotoError<rusoto_sqs::SendMessageError>),
-    #[error("SendMessage Elapsed {0}")]
+    #[error("SendMessage Timeout")]
     Timeout(#[from] Elapsed),
 }
 
@@ -206,7 +206,7 @@ where
                         return Err(SendMessageError::from(e));
                     } else {
                         last_err = Some(SendMessageError::from(e));
-                        tokio::time::delay_for(std::time::Duration::from_millis(10 * i)).await;
+                        tokio::time::sleep(std::time::Duration::from_millis(10 * i)).await;
                     }
                 }
                 (Err(e), ms) => {
@@ -225,7 +225,7 @@ where
                         });
 
                     last_err = Some(SendMessageError::from(e));
-                    tokio::time::delay_for(std::time::Duration::from_millis(10 * i)).await;
+                    tokio::time::sleep(std::time::Duration::from_millis(10 * i)).await;
                 }
             }
         }

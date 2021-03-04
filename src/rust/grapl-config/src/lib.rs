@@ -185,7 +185,7 @@ where
             }
         };
 
-        tokio::time::delay_for(Duration::from_secs(2)).await;
+        tokio::time::sleep(Duration::from_secs(2)).await;
     }
 
     errs

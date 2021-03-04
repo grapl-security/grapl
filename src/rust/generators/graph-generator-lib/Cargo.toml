@@ -15,13 +15,13 @@ failure = "0.1"
 grapl-observe = {path = "../../grapl-observe"}
 
 sha2 = "0.9"
-rusoto_s3 = { version="0.45.0", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
-rusoto_sqs = { version="0.45.0", default_features = false, features=["rustls"] }
-rusoto_sts =  { version="0.45.0", default_features = false, features=["rustls"] }
+rusoto_s3 = { version="0.46.0", default_features = false, features=["rustls"] }
+rusoto_core = { version="0.46.0", default_features = false, features=["rustls"] }
+rusoto_sqs = { version="0.46.0", default_features = false, features=["rustls"] }
+rusoto_sts =  { version="0.46.0", default_features = false, features=["rustls"] }
 grapl-config = { path="../../grapl-config", version="0.0.*" }
 tracing = "0.1.22"
-rusoto_credential = "0.45.0"
+rusoto_credential = "0.46.0"
 
 base64 = "0"
 prost = "0.7"
@@ -34,4 +34,4 @@ aws_lambda_events = "0.4"
 lambda_runtime = "0.2"
 chrono = "0.4"
 tokio-compat = "0.1"
-tokio = "0.2"
+tokio = "1"
