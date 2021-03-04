@@ -219,19 +219,10 @@ pub mod test {
         assert_ne!(node_uid_0, 0);
         assert_ne!(node_uid_1, 0);
 
-        let to_many_res = query_for_edge(
-            dgraph_client.clone(),
-            node_uid_0,
-            "to_many_edge",
-        )
-        .await;
+        let to_many_res = query_for_edge(dgraph_client.clone(), node_uid_0, "to_many_edge").await;
 
-        let to_single_res = query_for_edge(
-            dgraph_client.clone(),
-            node_uid_1,
-            "to_single_edge",
-        )
-        .await;
+        let to_single_res =
+            query_for_edge(dgraph_client.clone(), node_uid_1, "to_single_edge").await;
 
         let to_many_res = to_many_res
             .as_object()
