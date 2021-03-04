@@ -156,8 +156,9 @@ def hash_password(cleartext: bytes, salt: Salt) -> str:
 def user_auth_table() -> Table:
     global DYNAMO
     DYNAMO = DYNAMO or DynamoDBResourceFactory(boto3).from_env()
-
-    return DYNAMO.Table(os.environ["USER_AUTH_TABLE"])
+    user_auth_table = os.environ["USER_AUTH_TABLE"]
+    LOGGER.debug(f"Connecting to user_auth_table: {user_auth_table}")
+    return DYNAMO.Table(user_auth_table)
 
 
 def login(username: str, password: str) -> Optional[str]:

@@ -42,11 +42,12 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     endpoint_url = os.getenv(params.endpoint_url_key)
     access_key_id = os.getenv(params.access_key_id_key)
     access_key_secret = os.getenv(params.access_key_secret_key)
-
     # AWS_REGION is Fargate-specific, most AWS stuff uses AWS_DEFAULT_REGION.
     region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
     if not region:
         raise FromEnvException("Please set AWS_REGION= or AWS_DEFAULT_REGION=")
+
+    logging.info(f"Creating a client for which_service={which_service} endpoint_url={endpoint_url} access_key_id={access_key_id} region={region}")
 
     # Not needed long term, more to help migrate to `env_helpers`.
     # Notably, when `is_local` is not set, it won't break anything.
