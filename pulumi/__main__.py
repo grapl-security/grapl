@@ -35,7 +35,6 @@ if __name__ == "__main__":
         "analyzer-dispatcher",
         "analyzer-executor",
         "engagement-creator",
-        "generic-graph-generator",
         "graph-merger",
         "node-identifier",
         "osquery-graph-generator",
