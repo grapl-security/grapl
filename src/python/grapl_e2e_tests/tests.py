@@ -16,7 +16,7 @@ class TestEndToEnd(TestCase):
         # We fall into one of three buckets:
         # - No lens
         # - Lens with 3 scope
-        # - Lens with 4 scope 
+        # - Lens with 4 scope
         # - Lens with 5 scope (correct)
 
         query = LensQuery().with_lens_name(LENS_NAME)
