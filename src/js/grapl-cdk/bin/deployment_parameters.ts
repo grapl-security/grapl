@@ -133,24 +133,19 @@ function boolFromEnvVar(envVar: string | undefined): boolean | undefined {
     }
     return undefined;
 }
-
+// ^ and $ capture the whole string: start and end
+// Must start with an alpha
+// Must end with an alpha or number
+// In the middle, - and _ are fine
+const regex = /^[a-z]([a-z0-9_-]?[a-z0-9]+)*$/
 export function validateDeploymentName(deploymentName: string, allowLegacyDeploymentName: boolean) {
     if(allowLegacyDeploymentName) {
         return
     }
-    else {
-        // ^ and $ capture the whole string: start and end
-        // At least one of:
-        // [a-z] Lower case characters
-        // [0-9] Numbers
-        // hyphen
-        // underscore
-        const regex = /^([a-z][0-9]|-|_)+$/;
-        if(!regex.test(deploymentName)) {
-            throw new Error(
-                `Deployment name "${deploymentName}" is invalid - should match regex ${regex}.`
-                + "(You can, temporarily, allow this with GRAPL_ALLOW_LEGACY_DEPLOYMENT_NAME=true)."
-            )
-        }
+    if(!regex.test(deploymentName)) {
+        throw new Error(
+            `Deployment name "${deploymentName}" is invalid - should match regex ${regex}.`
+            + "(You can, temporarily, allow this with GRAPL_ALLOW_LEGACY_DEPLOYMENT_NAME=true)."
+        )
     }
 }

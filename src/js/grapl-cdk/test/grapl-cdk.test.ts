@@ -73,20 +73,50 @@ describe('Standard GraplCdkStack', () => {
 });
 
 describe("Deployment names", () => {
-  const testCases = [
-    "Hello",
-    "hello@",
-    "Grapl-Test-Mar3",
-  ]
-  for(const testCase of testCases) {
-    test(`Should fail when allow is false: ${testCase}`, () => {
-      expect(
-        () => validateDeploymentName(testCase, false)
-      ).toThrowError(/is invalid/);
-    });
+  describe("Valid names", () => {
+    const validTestCases = [
+      "a123",
+      "abc123",
+      "a_a123",
+      "a-123",
+      "a",
+      "b",
+      "ab",
+    ];
+    for(const testCase of validTestCases) {
+      test(`${testCase} works regardless of allowLegacy`, () => {
+        validateDeploymentName(testCase, false);
+        validateDeploymentName(testCase, true);
+      });
+    }
+  });
 
-    test(`Should not fail when allow is true: ${testCase}`, () => {
-      validateDeploymentName(testCase, true)
-    });
-  }
+  describe("Invalid names", () => {
+    const invalidTestCases = [
+      "testCases",
+      "hello@",
+      "Grapl-Test-Mar3",
+      "1",
+      "1a",
+      "a1-_b",
+      "123abc",
+      "-abc",
+      "_abc1",
+      "abc--asd",
+      "abc-_asd",
+    ]
+    for(const testCase of invalidTestCases) {
+      describe(`case ${testCase}`, () => {
+        test("Should fail when allow is false", () => {
+          expect(
+            () => validateDeploymentName(testCase, false)
+          ).toThrowError(/is invalid/);
+        });
+
+        test("Should not fail when allow is true", () => {
+          validateDeploymentName(testCase, true)
+        });
+      });
+    }
+  });
 });
