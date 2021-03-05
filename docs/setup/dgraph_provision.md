@@ -18,6 +18,16 @@ We'll use the `graplctl` tool to provision Dgraph:
    `GRAPL_VERSION` environment variables or supply the corresponding
    values via the CLI options (`graplctl --help` for more
    information).
+   For example:
+   ```bash
+   # Specify the flags if you didn't configure the environment variables.
+   graplctl \
+      --grapl-region your-region-1 \
+      --grapl-deployment-name your-deployment-name \
+      --grapl-version your-version-usually-latest \
+      dgraph create \
+        --instance-type i3.large
+  ```
 
 ## DGraph operations
 

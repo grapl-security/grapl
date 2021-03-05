@@ -12,8 +12,8 @@ import { Tags } from '@aws-cdk/core';
 import { GraplS3Bucket } from './grapl_s3_bucket';
 
 export interface SwarmProps {
-    // Grapl deployment name prefix.
-    readonly prefix: String;
+    // Grapl deployment name.
+    readonly deploymentName: String;
 
     // Grapl deployment version.
     readonly version: String;
@@ -48,12 +48,12 @@ export class Swarm extends cdk.Construct {
         super(scope, id);
 
         const swarmSecurityGroup = new ec2.SecurityGroup(scope, 'Swarm', {
-            description: `${props.prefix} Docker Swarm security group`,
+            description: `${props.deploymentName} Docker Swarm security group`,
             vpc: props.vpc,
             allowAllOutbound: false,
-            securityGroupName: `${props.prefix.toLowerCase()}-grapl-swarm`,
+            securityGroupName: `${props.deploymentName.toLowerCase()}-grapl-swarm`,
         });
-        Tags.of(swarmSecurityGroup).add("grapl-deployment-prefix", `${props.prefix.toLowerCase()}`);
+        Tags.of(swarmSecurityGroup).add("grapl-deployment-name", `${props.deploymentName.toLowerCase()}`);
 
         // allow hosts in the swarm security group to make outbound
         // connections to the Internet for these services:
@@ -85,7 +85,7 @@ export class Swarm extends cdk.Construct {
         // IAM Role for Swarm instances
         const swarmInstanceRole = new iam.Role(this, 'SwarmRole', {
             assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
-            roleName: `${props.prefix.toLowerCase()}-grapl-swarm-role`,
+            roleName: `${props.deploymentName.toLowerCase()}-grapl-swarm-role`,
         });
 
         // CloudWatchAgentServerPolicy allows the Swarm instances to
@@ -125,13 +125,13 @@ export class Swarm extends cdk.Construct {
             'SwarmZone',
             {
                 vpc: props.vpc,
-                zoneName: `${props.prefix.toLowerCase()}.dgraph.grapl`,
+                zoneName: `${props.deploymentName.toLowerCase()}.dgraph.grapl`,
             }
         );
 
         // Bucket for swarm configs
         const swarmConfigBucket = new GraplS3Bucket(this, 'SwarmConfigBucket', {
-            bucketName: `${props.prefix.toLowerCase()}-swarm-config-bucket`,
+            bucketName: `${props.deploymentName.toLowerCase()}-swarm-config-bucket`,
             publicReadAccess: false,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
@@ -150,7 +150,7 @@ export class Swarm extends cdk.Construct {
         // InstanceProfile for swarm instances
         new iam.CfnInstanceProfile(this, 'SwarmInstanceProfile', {
             roles: [swarmInstanceRole.roleName],
-            instanceProfileName: `${props.prefix.toLowerCase()}-swarm-instance-profile`
+            instanceProfileName: `${props.deploymentName.toLowerCase()}-swarm-instance-profile`
         });
     }
 

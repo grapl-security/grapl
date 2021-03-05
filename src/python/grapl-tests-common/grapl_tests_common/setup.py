@@ -25,8 +25,8 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
     from mypy_boto3_sqs import SQSClient
 
-BUCKET_PREFIX = environ["BUCKET_PREFIX"]
-assert BUCKET_PREFIX == "local-grapl"
+DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
+assert DEPLOYMENT_NAME == "local-grapl"
 
 # Toggle if you want to dump databases, logs, etc.
 DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
@@ -42,7 +42,7 @@ def _upload_analyzers(
     Janky, since Jesse will have an analyzer-uploader service pretty soon.
     """
 
-    bucket = f"{BUCKET_PREFIX}-analyzers-bucket"
+    bucket = f"{DEPLOYMENT_NAME}-analyzers-bucket"
     for (local_path, s3_key) in analyzers:
         logging.info(f"S3 uploading analyzer from {local_path}")
         with open(local_path, "r") as f:
@@ -80,9 +80,9 @@ def setup(
     wait_for(
         [
             # for uploading analyzers
-            WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-analyzers-bucket"),
+            WaitForS3Bucket(s3_client, f"{DEPLOYMENT_NAME}-analyzers-bucket"),
             # for upload-sysmon-logs.py
-            WaitForS3Bucket(s3_client, f"{BUCKET_PREFIX}-sysmon-log-bucket"),
+            WaitForS3Bucket(s3_client, f"{DEPLOYMENT_NAME}-sysmon-log-bucket"),
             WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
         ]
     )

@@ -6,8 +6,8 @@ from grapl_tests_common.setup import AnalyzerUpload
 from grapl_tests_common.sleep import verbose_sleep
 from grapl_tests_common.upload_test_data import UploadSysmonLogsTestData
 
-BUCKET_PREFIX = environ["BUCKET_PREFIX"]
-assert BUCKET_PREFIX == "local-grapl"
+DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
+assert DEPLOYMENT_NAME == "local-grapl"
 
 
 def main() -> None:

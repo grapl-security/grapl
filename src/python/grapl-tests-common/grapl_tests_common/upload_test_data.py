@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
     from mypy_boto3_sqs import SQSClient
 
-BUCKET_PREFIX = "local-grapl"
+DEPLOYMENT_NAME = "local-grapl"
 
 
 class UploadTestData(Protocol):
@@ -25,7 +25,7 @@ class UploadSysmonLogsTestData(UploadTestData):
     def upload(self, s3_client: S3Client, sqs_client: SQSClient) -> None:
         logging.info(f"S3 uploading test data from {self.path}")
         upload_sysmon_logs(
-            prefix=BUCKET_PREFIX,
+            deployment_name=DEPLOYMENT_NAME,
             logfile=self.path,
             s3_client=s3_client,
             sqs_client=sqs_client,

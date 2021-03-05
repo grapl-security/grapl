@@ -200,7 +200,7 @@ class AnalyzerExecutor:
         s3 = S3ResourceFactory(boto3).from_env()
 
         load_plugins(
-            os.environ["BUCKET_PREFIX"],
+            os.environ["DEPLOYMENT_NAME"],
             s3.meta.client,
             os.path.abspath(MODEL_PLUGINS_DIR),
         )
@@ -217,7 +217,7 @@ class AnalyzerExecutor:
             ):
                 analyzer = download_s3_file(
                     s3,
-                    f"{os.environ['BUCKET_PREFIX']}-analyzers-bucket",
+                    f"{os.environ['DEPLOYMENT_NAME']}-analyzers-bucket",
                     message["key"],
                 )
             analyzer_name = message["key"].split("/")[-2]
@@ -437,7 +437,7 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
     key = base64.urlsafe_b64encode(event_hash.digest()).decode("utf-8")
 
     obj = s3.Object(
-        f"{os.environ['BUCKET_PREFIX']}-analyzer-matched-subgraphs-bucket", key
+        f"{os.environ['DEPLOYMENT_NAME']}-analyzer-matched-subgraphs-bucket", key
     )
     obj.put(Body=event_s.encode("utf-8"))
 

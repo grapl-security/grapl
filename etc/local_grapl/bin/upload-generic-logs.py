@@ -62,11 +62,11 @@ def into_sqs_message(bucket: str, key: str) -> str:
     )
 
 
-def main(prefix, logfile):
-    print(f"Writing events to {prefix}")
+def main(deployment_name, logfile):
+    print(f"Writing events to {deployment_name}")
     sqs = None
-    # local-grapl prefix is reserved for running Grapl locally
-    if prefix == "local-grapl":
+    # local-grapl deployment_name is reserved for running Grapl locally
+    if deployment_name == "local-grapl":
         s3 = boto3.client(
             "s3",
             endpoint_url=os.environ["S3_ENDPOINT"],
@@ -97,13 +97,13 @@ def main(prefix, logfile):
             + rand_str(3)
         )
 
-        s3.put_object(Body=c_body, Bucket="{}-raw-log-bucket".format(prefix), Key=key)
+        s3.put_object(Body=c_body, Bucket="{}-raw-log-bucket".format(deployment_name), Key=key)
         # local-grapl relies on manual eventing
         if sqs:
             sqs.send_message(
                 QueueUrl=f"{os.environ['SQS_ENDPOINT']}/queue/grapl-generic-graph-generator-queue",
                 MessageBody=into_sqs_message(
-                    bucket="{}-sysmon-log-bucket".format(prefix), key=key
+                    bucket="{}-sysmon-log-bucket".format(deployment_name), key=key
                 ),
             )
     print(time.ctime())
@@ -111,7 +111,7 @@ def main(prefix, logfile):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Send generic logs to Grapl")
-    parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
+    parser.add_argument("--deployment_name", dest="deployment_name", required=True)
     parser.add_argument("--logfile", dest="logfile", required=True)
     return parser.parse_args()
 
@@ -119,4 +119,4 @@ def parse_args():
 if __name__ == "__main__":
 
     args = parse_args()
-    main(args.bucket_prefix, args.logfile)
+    main(args.deployment_name, args.logfile)

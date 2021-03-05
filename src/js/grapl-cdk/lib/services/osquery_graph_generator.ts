@@ -23,20 +23,20 @@ export class OSQueryGraphGenerator extends cdk.NestedStack {
         super(parent, id);
 
         const service_name = "osquery-generator";
-        const bucket_prefix = props.prefix.toLowerCase();
+        const deployment_name = props.deploymentName.toLowerCase();
         const osquery_log = new EventEmitter(
             this,
-            bucket_prefix + '-osquery-log'
+            deployment_name + '-osquery-log'
         );
 
         const event_cache = new RedisCluster(this, 'OSQueryEventCache', props);
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         this.service = new FargateService(this, service_name, {
-            prefix: props.prefix,
+            deploymentName: props.deploymentName,
             environment: {
                 RUST_LOG: props.osquerySubgraphGeneratorLogLevel,
-                BUCKET_PREFIX: bucket_prefix,
+                DEPLOYMENT_NAME: deployment_name,
                 EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
             },
             vpc: props.vpc,
