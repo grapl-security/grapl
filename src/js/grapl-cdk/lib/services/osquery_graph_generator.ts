@@ -35,8 +35,8 @@ export class OSQueryGraphGenerator extends cdk.NestedStack {
         this.service = new FargateService(this, service_name, {
             deploymentName: props.deploymentName,
             environment: {
-                RUST_LOG: props.osquerySubgraphGeneratorLogLevel,
                 DEPLOYMENT_NAME: deployment_name,
+                RUST_LOG: props.logLevels.osquerySubgraphGeneratorLogLevel,
                 EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
             },
             vpc: props.vpc,
