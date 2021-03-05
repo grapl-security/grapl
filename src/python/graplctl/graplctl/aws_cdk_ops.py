@@ -4,8 +4,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
-
-from typing import AnyStr, IO
+from typing import IO, AnyStr
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))

@@ -8,11 +8,12 @@ import boto3
 import click
 from mypy_boto3_cloudwatch.client import CloudWatchClient
 from mypy_boto3_ec2 import EC2ServiceResource
+from mypy_boto3_lambda import LambdaClient
 from mypy_boto3_route53 import Route53Client
 from mypy_boto3_sns.client import SNSClient
 from mypy_boto3_ssm import SSMClient
 
-from . import __version__, common, aws_cdk_ops, dgraph_ops, docker_swarm_ops
+from . import __version__, aws_cdk_ops, common, dgraph_ops, docker_swarm_ops
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
@@ -40,6 +41,7 @@ class GraplctlState:
     cloudwatch: CloudWatchClient
     sns: SNSClient
     route53: Route53Client
+    lambda_: LambdaClient
 
 
 @click.group()
@@ -128,7 +130,6 @@ def aws():
 def aws_deploy(
     graplctl_state: GraplctlState, all: bool, dgraph_instance_type: str, grapl_root: str
 ):
-    assert all  # TODO: when
     click.echo("deploying grapl cdk stacks to aws")
     aws_cdk_ops.deploy_grapl(
         grapl_root=pathlib.Path(grapl_root).absolute(),
