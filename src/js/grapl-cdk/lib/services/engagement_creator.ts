@@ -32,7 +32,7 @@ export class EngagementCreator extends cdk.NestedStack {
         this.service = new Service(this, id, {
             deploymentName: props.deploymentName,
             environment: {
-                GRAPL_LOG_LEVEL: props.analyzerExecutorLogLevel,
+                GRAPL_LOG_LEVEL: props.logLevels.analyzerExecutorLogLevel,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
             },
             vpc: props.vpc,

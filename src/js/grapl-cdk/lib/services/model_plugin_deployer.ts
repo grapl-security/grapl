@@ -55,7 +55,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
-                GRAPL_LOG_LEVEL: props.defaultLogLevel,
+                GRAPL_LOG_LEVEL: props.logLevels.defaultLogLevel,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,

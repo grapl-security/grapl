@@ -8,29 +8,24 @@ import { DeploymentParameters } from './deployment_parameters';
 
 const app = new cdk.App();
 
+const deploymentParameters = new DeploymentParameters();
+
 const grapl = new GraplCdkStack(app, 'Grapl', {
-    version: DeploymentParameters.graplVersion,
-    defaultLogLevel: DeploymentParameters.defaultLogLevel,
-    sysmonSubgraphGeneratorLogLevel: DeploymentParameters.sysmonSubgraphGeneratorLogLevel,
-    osquerySubgraphGeneratorLogLevel: DeploymentParameters.osquerySubgraphGeneratorLogLevel,
-    nodeIdentifierLogLevel: DeploymentParameters.nodeIdentifierLogLevel,
-    graphMergerLogLevel: DeploymentParameters.graphMergerLogLevel,
-    analyzerDispatcherLogLevel: DeploymentParameters.analyzerDispatcherLogLevel,
-    analyzerExecutorLogLevel: DeploymentParameters.analyzerExecutorLogLevel,
-    engagementCreatorLogLevel: DeploymentParameters.engagementCreatorLogLevel,
-    stackName: DeploymentParameters.stackName,
-    watchfulEmail: DeploymentParameters.watchfulEmail,
-    operationalAlarmsEmail: DeploymentParameters.operationalAlarmsEmail,
-    securityAlarmsEmail: DeploymentParameters.securityAlarmsEmail,
-    tags: { 'grapl deployment': DeploymentParameters.stackName },
+    version: deploymentParameters.graplVersion,
+    logLevels: deploymentParameters.logLevels,
+    stackName: deploymentParameters.stackName,
+    watchfulEmail: deploymentParameters.watchfulEmail,
+    operationalAlarmsEmail: deploymentParameters.operationalAlarmsEmail,
+    securityAlarmsEmail: deploymentParameters.securityAlarmsEmail,
+    tags: { 'grapl deployment': deploymentParameters.stackName },
     description: 'Grapl base deployment',
-    env: { 'region': DeploymentParameters.region },
+    env: { 'region': deploymentParameters.region },
 });
 
 new EngagementUx(app, 'EngagementUX', {
     deploymentName: grapl.deploymentName,
     edgeApi: grapl.edgeApiGateway,
-    stackName: DeploymentParameters.stackName + '-EngagementUX',
+    stackName: deploymentParameters.stackName + '-EngagementUX',
     description: 'Grapl Engagement UX',
-    env: { 'region': DeploymentParameters.region },
+    env: { 'region': deploymentParameters.region },
 });
