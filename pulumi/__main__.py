@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "engagement-creator",
         "graph-merger",
         "node-identifier",
-        "osquery-graph-generator",
+        "osquery-generator",
         "sysmon-graph-generator",
     )
 

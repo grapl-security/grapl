@@ -89,7 +89,7 @@ class SysmonGeneratorOptions(GeneratorOptions):
 class OSQueryGeneratorOptions(GeneratorOptions):
     def __init__(self) -> None:
         super().__init__(
-            queue_name="grapl-osquery-graph-generator-queue",
+            queue_name="grapl-osquery-generator-queue",
             bucket_suffix="osquery-log-bucket",
             key_infix="osquery",
         )
