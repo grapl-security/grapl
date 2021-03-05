@@ -16,7 +16,8 @@ class TestEndToEnd(TestCase):
         # We fall into one of three buckets:
         # - No lens
         # - Lens with 3 scope
-        # - Lens with 4 scope (correct)
+        # - Lens with 4 scope
+        # - Lens with 5 scope (correct)
 
         query = LensQuery().with_lens_name(LENS_NAME)
         lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=120)
@@ -25,13 +26,14 @@ class TestEndToEnd(TestCase):
         # lens scope is not atomic
         def condition() -> bool:
             length = len(lens.get_scope())
-            logging.info(f"Expected 3-4 nodes in scope, currently is {length}")
+            logging.info(f"Expected 3-5 nodes in scope, currently is {length}")
 
-            # The correct answer for this is 4.
-            # We are temp 'allowing' 3 because it means the pipeline is, _mostly_, working.
+            # The correct answer for this is 5.
+            # We are temp 'allowing' below that because it means the pipeline is, _mostly_, working.
             return length in (
                 3,
                 4,
+                5,
             )
 
         wait_for_one(WaitForCondition(condition), timeout_secs=240)
