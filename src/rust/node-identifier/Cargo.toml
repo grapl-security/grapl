@@ -28,14 +28,12 @@ prost = "0.7"
 
 base64 = "0.13"
 
-rusoto_s3 = {version="0.45", default_features = false, features=["rustls"]}
-rusoto_core = {version="0.45", default_features = false, features=["rustls"]}
-rusoto_sqs = {version="0.45", default_features = false, features=["rustls"]}
-rusoto_dynamodb = {version="0.45", default_features = false, features=["rustls"]}
-rusoto_credential = "0.45"
-serde_dynamodb = {version="0.6", default_features = false, features=["rustls"]}
-
-lambda_runtime = "0.2"
+rusoto_s3 = {version="0.46", default_features = false, features=["rustls"]}
+rusoto_core = {version="0.46", default_features = false, features=["rustls"]}
+rusoto_sqs = {version="0.46", default_features = false, features=["rustls"]}
+rusoto_dynamodb = {version="0.46", default_features = false, features=["rustls"]}
+rusoto_credential = "0.46"
+serde_dynamodb = {version="0.7", default_features = false, features=["rustls"]}
 
 sha2 = "0.9.2"
 log = "0.4"
@@ -54,8 +52,7 @@ serde_derive = "1"
 thiserror = "1.0.23"
 hex = "0.4"
 async-trait = "0.1"
-tokio-compat = "0.1"
-tokio = { version = "0.2", features = ["sync", "macros", "time", "rt-threaded"] }
+tokio = { version = "1", features = ["sync", "macros", "time", "rt-multi-thread"] }
 hmap = "0.1"
 tracing = "0.1"
 chrono = "0.4"

@@ -159,13 +159,13 @@ pub async fn get_r_edges_from_dynamodb(
         .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
         .responses
-        .ok_or(GraphMergerError::Unexpected(format!(
-            "Failed to fetch results from dynamodb"
-        )))?
+        .ok_or(GraphMergerError::Unexpected(
+            "Failed to fetch results from dynamodb".to_string(),
+        ))?
         .remove(&schema_table_name)
-        .ok_or(GraphMergerError::Unexpected(format!(
-            "Missing data from expected table in dynamodb"
-        )))?;
+        .ok_or(GraphMergerError::Unexpected(
+            "Missing data from expected table in dynamodb".to_string(),
+        ))?;
 
     /*
        1. Remove entries without f_edge and r_edge

@@ -48,7 +48,7 @@ where
         let max_iter = 10;
         for i in 1..=max_iter {
             let timeout_fut = async {
-                tokio::time::delay_for(Duration::from_secs(get_next_sleep_for(
+                tokio::time::sleep(Duration::from_secs(get_next_sleep_for(
                     visibility_timeout,
                     i,
                 )))
@@ -143,7 +143,7 @@ fn get_next_timeout(initial_timeout: u64, i: u64) -> i64 {
 // Provides a wrapper for a OneShot to communicate with an Mpsc. This is a hack
 // to work around async destructors.
 // todo: investigate https://docs.rs/tokio/1.0.1/tokio/sync/mpsc/struct.Sender.html#method.blocking_send
-async fn route_oneshot(source_queue: OneShotReceiver<()>, mut dest_queue: MpscSender<()>) {
+async fn route_oneshot(source_queue: OneShotReceiver<()>, dest_queue: MpscSender<()>) {
     let _ = source_queue.await;
     let _ = dest_queue.send(()).await;
 }
