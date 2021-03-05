@@ -17,16 +17,16 @@ local_grapl_dir="${analyzer_upload_script_path}/../"
 export AWS_ACCESS_KEY_ID="THIS_IS_A_FAKE_AWS_ACCESS_KEY_ID"
 export AWS_SECRET_ACCESS_KEY="THIS_IS_A_FAKE_AWS_SECRET_ACCESS_KEY"
 
-bucket_prefix="local-grapl"
+deployment_name="local-grapl"
 local_s3_endpoint="http://localhost:9000"
 region="us-east-1"
 
 aws s3 cp \
     "${local_grapl_dir}/suspicious_svchost/main.py" \
-    "s3://${bucket_prefix}-analyzers-bucket/analyzers/suspicious_svchost/main.py" \
+    "s3://${deployment_name}-analyzers-bucket/analyzers/suspicious_svchost/main.py" \
     --endpoint-url="${local_s3_endpoint}" --region="${region}"
 
 aws s3 cp \
     "${local_grapl_dir}/unique_cmd_parent/main.py" \
-    "s3://${bucket_prefix}-analyzers-bucket/analyzers/unique_cmd_parent/main.py" \
+    "s3://${deployment_name}-analyzers-bucket/analyzers/unique_cmd_parent/main.py" \
     --endpoint-url="${local_s3_endpoint}" --region="${region}"

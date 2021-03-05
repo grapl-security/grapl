@@ -1,3 +1,4 @@
+#![allow(unused_braces)]
 use std::{collections::HashMap,
           io::Stdout,
           marker::PhantomData,
@@ -16,7 +17,7 @@ use rusoto_s3::{GetObjectError,
                 S3};
 use rusoto_sqs::Message as SqsMessage;
 use tokio::{io::AsyncReadExt,
-            time::Elapsed};
+            time::error::Elapsed};
 use tracing::{debug,
               error,
               info};
@@ -171,9 +172,7 @@ where
                         ms as f64,
                         &[tag("success", s3_data.is_ok())],
                     )
-                    .unwrap_or_else(|e| {
-                        error!("failed to report s3_consumer.get_object.ms: {:?}", e)
-                    });
+                    .unwrap_or_else(|e| error!("failed to report s3_consumer.get_object.ms: {:?}", e));
                 s3_data
             })
             .await??;
@@ -202,9 +201,7 @@ where
                         ms as f64,
                         &[tag("success", res.is_ok())],
                     )
-                    .unwrap_or_else(|e| {
-                        error!("failed to report s3_consumer.read_to_end.ms: {:?}", e)
-                    });
+                    .unwrap_or_else(|e| error!("failed to report s3_consumer.read_to_end.ms: {:?}", e));
                 res
             })
             .await?;

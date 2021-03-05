@@ -13,7 +13,7 @@ let origin = true;
 let prefix = 'local-grapl';
 
 if (!IS_LOCAL) {
-    prefix = process.env.BUCKET_PREFIX;
+    prefix = process.env.DEPLOYMENT_NAME;
     origin = process.env.UX_BUCKET_URL;
     console.log("origin: " + origin);
 }

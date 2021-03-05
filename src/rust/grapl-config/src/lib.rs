@@ -126,7 +126,12 @@ pub fn mg_alphas() -> Vec<String> {
     return std::env::var("MG_ALPHAS")
         .expect("MG_ALPHAS")
         .split(',')
-        .map(|mg| format!("http://{}", mg))
+        .map(|mg| {
+            if mg.contains("http://") {
+                panic!("Expected mg_alphas without http://, but got {}", mg);
+            }
+            format!("http://{}", mg)
+        })
         .collect();
 }
 
@@ -185,7 +190,7 @@ where
             }
         };
 
-        tokio::time::delay_for(Duration::from_secs(2)).await;
+        tokio::time::sleep(Duration::from_secs(2)).await;
     }
 
     errs

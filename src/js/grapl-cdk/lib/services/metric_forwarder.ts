@@ -14,7 +14,7 @@ export class MetricForwarder extends cdk.NestedStack {
         super(scope, id);
 
         this.service = new Service(this, id, {
-            prefix: props.prefix,
+            deploymentName: props.deploymentName,
             environment: {
                 GRAPL_LOG_LEVEL: 'INFO',
             },

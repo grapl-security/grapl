@@ -1,38 +1,52 @@
 from copy import deepcopy
 
-from typing import Dict, Set, Optional, Iterator, Tuple, List
+from typing import Dict, Set, Optional, Iterator, Tuple, List, NewType
+
+# Represents a string like "$a" or "$b"
+VarPlaceholder = NewType("VarPlaceholder", str)
+
+
+def _placeholder_generator(prefix: str) -> Iterator[VarPlaceholder]:
+    curr = VarPlaceholder("$" + (prefix or "") + "a")
+
+    while True:
+        yield curr
+        last_char = curr[-1]
+        if last_char == "z":
+            # append a new digits place
+            curr = VarPlaceholder(curr + "a")
+        else:
+            # mutate last digit by 1
+            curr = VarPlaceholder(curr[:-1] + chr(ord(last_char) + 1))
 
 
 class VarAllocator(object):
     def __init__(self, prefix: Optional[str] = None):
         self.prefix = prefix
-        self.next_alloc: str = "$" + (prefix or "") + "a"
-        self.allocated: Dict[str, str] = dict()
-        self.typemap: Dict[str, str] = dict()
+        self.placeholder_generator: Iterator[VarPlaceholder] = _placeholder_generator(
+            self.prefix
+        )
+        # Value to var identifier, i.e. "hello" => "$a"
+        self.allocated: Dict[str, VarPlaceholder] = dict()
+        self.typemap: Dict[VarPlaceholder, str] = dict()
 
-    def alloc(self, cmp: "Cmp") -> str:
+    def alloc(self, cmp: "Cmp") -> VarPlaceholder:
         if isinstance(cmp, Has):
             raise NotImplementedError
             return ""
         else:
-            var: str = self.allocated.get(str(extract_value(cmp.value)), "")
-            if not var:
-                var = self.next_alloc
-                self.allocated[str(extract_value(cmp.value))] = var
-                self.incr_var()
+            cmp_value = str(extract_value(cmp.value))
 
+            var: Optional[VarPlaceholder] = self.allocated.get(cmp_value, None)
+            if not var:
+                var = next(self.placeholder_generator)
+                self.allocated[cmp_value] = var
             self.typemap[var] = dgraph_prop_type(cmp)
 
             return var
 
-    def incr_var(self):
-        if self.next_alloc[-1] == "z":
-            self.next_alloc = self.next_alloc + "a"
-        else:
-            self.next_alloc = self.next_alloc[:-1] + chr(ord(self.next_alloc[-1]) + 1)
-
-    def reset(self):
-        self.next_alloc = "$" + (self.prefix or "") + "a"
+    def reset(self) -> None:
+        self.placeholder_generator = _placeholder_generator(self.prefix)
         self.allocated.clear()
 
 
@@ -90,7 +104,6 @@ def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
     `find_func` will look for the most optimal filter.
 
     * Singular EQ on a unique value
-    * Multiple AND'd EQ on a unique value
     * Singular eq on a non-unique value
     * <todo, more optimized funcs>
     * Node type
@@ -98,7 +111,8 @@ def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
     :param q:
     :return:
     """
-    multiple_and_u = None
+    and_filter: List[Cmp]
+
     singular_eq_nu = None
 
     for (prop_name, or_filter) in q.property_filters():
@@ -107,23 +121,19 @@ def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
                 (isinstance(and_filter[0], Eq) or isinstance(and_filter[0], IntEq))
                 and not and_filter[0].negated
             ):
-                from copy import deepcopy
-
+                filter = deepcopy(and_filter[0])
                 if prop_name == "node_key":
-                    filter = deepcopy(and_filter[0])
-                    v = var_alloc.alloc(Eq("node_key", filter.value))
-                    filter.value = v
+                    filter.value = var_alloc.alloc(Eq("node_key", filter.value))
                     return filter.to_filter()
-                if prop_name == "uid":
-                    filter = deepcopy(and_filter[0])
-                    v = var_alloc.alloc(Eq("uid", filter.value))
-                    filter.value = v
+                elif prop_name == "uid":
+                    filter.value = var_alloc.alloc(Eq("uid", filter.value))
                     return filter.to_filter()
+                else:
+                    filter.value = var_alloc.alloc(Eq(filter.predicate, filter.value))
+                    singular_eq_nu = filter.to_filter()
 
-                singular_eq_nu = and_filter[0].to_filter()
-
-    if multiple_and_u or singular_eq_nu:
-        return multiple_and_u or singular_eq_nu
+    if singular_eq_nu:
+        return singular_eq_nu
 
     return f"type({q.node_schema().self_type()})"
 
@@ -329,7 +339,9 @@ def into_var_query(
     filter_str = ""
     if filters:
         filter_str = f"@filter({filters})"
-    query = f"""           {formatted_var_name} var(func: {func} {f_first})
+    query = f"""
+            # into_var_query
+            {formatted_var_name} var(func: {func} {f_first})
             {filter_str}
             {cascade_str}
             {{

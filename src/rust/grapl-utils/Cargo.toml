@@ -8,6 +8,6 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1"
-tokio = { version = "0.2", features = ["time"] }
-rusoto_core = { version="0.45.0", default_features = false, features=["rustls"] }
-rusoto_dynamodb = { version="0.45", default_features = false, features=["rustls"] }
+tokio = { version = "1", features = ["time"] }
+rusoto_core = { version="0.46.0", default_features = false, features=["rustls"] }
+rusoto_dynamodb = { version="0.46", default_features = false, features=["rustls"] }

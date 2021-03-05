@@ -11,7 +11,7 @@ use grapl_observe::{metric_reporter::{tag,
                     timers::TimedFutureExt};
 use grapl_utils::future_ext::GraplFutureExt;
 use lazy_static::lazy_static;
-use tokio::time::Elapsed;
+use tokio::time::error::Elapsed;
 
 use crate::{cache::{Cache,
                     CacheResponse,
@@ -35,7 +35,7 @@ const LRU_SET_VALUE: () = ();
 pub enum RedisCacheError {
     #[error("RedisError: {0}")]
     RedisError(#[from] RedisError),
-    #[error("Cache Timeout: {0}")]
+    #[error("Cache Timeout")]
     Timeout(#[from] Elapsed),
     #[error("JoinError: {0}")]
     JoinError(#[from] tokio::task::JoinError),

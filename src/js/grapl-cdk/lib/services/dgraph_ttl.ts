@@ -9,7 +9,7 @@ export class DGraphTtl extends cdk.NestedStack {
     constructor(parent: cdk.Construct, id: string, props: GraplServiceProps) {
         super(parent, id);
 
-        const serviceName = props.prefix + '-DGraphTtl';
+        const serviceName = props.deploymentName + '-DGraphTtl';
 
         const role = new iam.Role(this, 'ExecutionRole', {
             assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),

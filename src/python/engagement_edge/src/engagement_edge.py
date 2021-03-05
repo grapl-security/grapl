@@ -29,7 +29,7 @@ from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     SecretsManagerClientFactory,
 )
-from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
+from src.lib.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL, IS_LOCAL
 from src.lib.sagemaker import create_sagemaker_client
 
 if TYPE_CHECKING:
@@ -283,7 +283,7 @@ def check_login() -> Response:
 @requires_auth("/getNotebook")
 def get_notebook() -> Response:
     # cross-reference with `engagement.ts` notebookInstanceName
-    notebook_name = f"{BUCKET_PREFIX}-Notebook"
+    notebook_name = f"{DEPLOYMENT_NAME}-Notebook"
     client = create_sagemaker_client(is_local=IS_LOCAL)
     url = client.get_presigned_url(notebook_name)
     return respond(err=None, res={"notebook_url": url})

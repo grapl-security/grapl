@@ -257,7 +257,7 @@ CMD source venv/bin/activate && \
 FROM engagement-edge-build AS engagement-edge-test
 
 ENV IS_LOCAL=True
-ENV BUCKET_PREFIX=local-grapl
+ENV DEPLOYMENT_NAME=local-grapl
 ENV UX_BUCKET_URL="ux_bucket_url"
 
 ## Install test requirements

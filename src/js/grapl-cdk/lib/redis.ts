@@ -18,11 +18,11 @@ export class RedisCluster extends cdk.Construct {
             this,
             'ElasticacheSubnetGroup',
             {
-                description: `List of subnets used for redis cache ${props.prefix}-${id}`,
+                description: `List of subnets used for redis cache ${props.deploymentName}-${id}`,
                 subnetIds: props.vpc.privateSubnets.map(
                     (subnet) => subnet.subnetId
                 ),
-                cacheSubnetGroupName: `${props.prefix}-${id}-cache-subnet-group`,
+                cacheSubnetGroupName: `${props.deploymentName}-${id}-cache-subnet-group`,
             }
         );
 
@@ -40,7 +40,7 @@ export class RedisCluster extends cdk.Construct {
 
         // The cluster resource itself.
         this.cluster = new elasticache.CfnCacheCluster(this, 'Cluster', {
-            clusterName: `${props.prefix}-redis-${id}`,
+            clusterName: `${props.deploymentName}-redis-${id}`,
             cacheNodeType: 'cache.t2.small',
             engine: 'redis',
             numCacheNodes: 1,

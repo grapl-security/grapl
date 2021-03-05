@@ -43,7 +43,7 @@ export class Queues {
 
 
 export interface FargateServiceProps {
-    prefix: string;
+    deploymentName: string;
     version: string;
     // We read events from this
     eventEmitter: EventEmitter; 
@@ -73,7 +73,7 @@ export class FargateService {
     readonly logGroups: DeafultAndRetry<logs.LogGroup>;
 
     constructor(scope: cdk.Construct, serviceName: string, props: FargateServiceProps) {
-        this.serviceName = `${props.prefix}-${serviceName}`;
+        this.serviceName = `${props.deploymentName}-${serviceName}`;
         const cluster = new ecs.Cluster(scope, `${this.serviceName}-cluster`, {
             vpc: props.vpc,
             clusterName: `${this.serviceName}-cluster`,
@@ -86,7 +86,7 @@ export class FargateService {
         this.queues = queues;
 
         const defaultEnv: { [key: string]: string; } = {
-            "BUCKET_PREFIX": props.prefix,
+            "DEPLOYMENT_NAME": props.deploymentName,
             "DEAD_LETTER_QUEUE_URL": this.queues.deadLetterQueue.queueUrl,
             "GRAPL_LOG_LEVEL": "DEBUG",
             "RUST_LOG": "warn,main=debug,sqs-executor=info",

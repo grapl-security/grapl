@@ -69,6 +69,8 @@ async fn try_create_table(
 
 async fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) {
     init_test_env();
+    let runtime = Runtime::new().unwrap();
+
     let table_name = table_name.into();
 
     let _ = dynamo.delete_table(DeleteTableInput {
@@ -88,7 +90,8 @@ async fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<Str
 #[quickcheck]
 fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     init_test_env();
-    let mut runtime = Runtime::new().unwrap();
+    let runtime = Runtime::new().unwrap();
+
     let table_name = "process_history_canon_create_on_empty_timeline";
     let dynamo = DynamoDbClient::from_env();
 
@@ -119,7 +122,8 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
 #[quickcheck]
 fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     init_test_env();
-    let mut runtime = Runtime::new().unwrap();
+    let runtime = Runtime::new().unwrap();
+
     let table_name = "process_history_canon_create_update_existing_non_canon_create";
     let dynamo = DynamoDbClient::from_env();
 
@@ -167,7 +171,8 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
 #[quickcheck]
 fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     init_test_env();
-    let mut runtime = Runtime::new().unwrap();
+    let runtime = Runtime::new().unwrap();
+
     let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
     let dynamo = DynamoDbClient::from_env();
 
@@ -215,7 +220,7 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
 #[quickcheck]
 fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
     init_test_env();
-    let mut runtime = Runtime::new().unwrap();
+    let runtime = Runtime::new().unwrap();
     let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
     let dynamo = DynamoDbClient::from_env();
 
@@ -244,7 +249,8 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
 #[test]
 fn noncanon_create_on_empty_timeline_without_default() {
     init_test_env();
-    let mut runtime = Runtime::new().unwrap();
+    let runtime = Runtime::new().unwrap();
+
     let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
     let dynamo = DynamoDbClient::from_env();
 
@@ -267,7 +273,7 @@ fn noncanon_create_on_empty_timeline_without_default() {
 #[quickcheck]
 fn update_end_time(asset_id: String, pid: u64) {
     init_test_env();
-    let mut runtime = Runtime::new().unwrap();
+    let runtime = Runtime::new().unwrap();
     let table_name = "process_history_update_end_time";
     let dynamo = DynamoDbClient::from_env();
 

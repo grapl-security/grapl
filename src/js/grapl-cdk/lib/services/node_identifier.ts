@@ -26,10 +26,10 @@ export class NodeIdentifier extends cdk.NestedStack {
         const history_db = new HistoryDb(this, 'HistoryDB', props);
 
         const service_name = "node-identifier";
-        const bucket_prefix = props.prefix.toLowerCase();
+        const deployment_name = props.deploymentName.toLowerCase();
         const unid_subgraphs = new EventEmitter(
             this,
-            bucket_prefix + '-unid-subgraphs-generated'
+            deployment_name + '-unid-subgraphs-generated'
         );
         this.bucket = unid_subgraphs.bucket;
         this.topic = unid_subgraphs.topic;
@@ -42,7 +42,7 @@ export class NodeIdentifier extends cdk.NestedStack {
         event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
 
         this.service = new FargateService(this, service_name, {
-            prefix: props.prefix,
+            deploymentName: props.deploymentName,
             environment: {
                 RUST_LOG: props.nodeIdentifierLogLevel,
                 EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,

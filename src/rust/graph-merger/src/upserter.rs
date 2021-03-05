@@ -145,7 +145,7 @@ impl GraphMergeHelper {
 
             let uid = node_key_map_to_uid
                 .get(&node_key)
-                .map(|uid| *uid)
+                .copied()
                 .or_else(|| uid_from_uids(&node_key, &key_to_query_name, &uids));
             let uid = match uid {
                 Some(uid) => uid,
@@ -294,7 +294,7 @@ impl futures_retry::ErrorHandler<anyhow::Error> for UpsertErrorHandler {
         );
         match attempt {
             0..=5 => RetryPolicy::Repeat,
-            t @ 5..=20 => RetryPolicy::WaitRetry(std::time::Duration::from_millis(10 * t as u64)),
+            t @ 6..=20 => RetryPolicy::WaitRetry(std::time::Duration::from_millis(10 * t as u64)),
             21..=u64::MAX => RetryPolicy::ForwardError(e),
         }
     }
@@ -358,7 +358,7 @@ fn gen_node_key_query(node_key: &str) -> QueryBlock {
     QueryBlockBuilder::default()
         .query_type(QueryBlockType::query())
         .root_filter(Condition::EQ(
-            format!("node_key"),
+            "node_key".to_string(),
             ConditionValue::string(node_key),
         ))
         .predicates(vec![
@@ -380,8 +380,8 @@ fn uid_from_uids(
     Some(u64::from_str_radix(&uid[2..], 16).expect("uid is not valid hex"))
 }
 
-fn extract_node_key_map_uid<'a>(
-    dgraph_response: &'a serde_json::Value,
+fn extract_node_key_map_uid(
+    dgraph_response: &serde_json::Value,
     node_key_map_to_uid: &mut HashMap<String, u64>,
 ) {
     let query_responses = dgraph_response.as_object().expect("Invalid response");

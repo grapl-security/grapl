@@ -1,8 +1,10 @@
+from __future__ import annotations
 import abc
 import functools
 import json
 from collections import defaultdict
 from typing import (
+    Any,
     cast,
     Dict,
     TypeVar,
@@ -24,13 +26,13 @@ from grapl_analyzerlib.comparators import (
     IntOrNot,
 )
 from grapl_analyzerlib.extendable import Extendable
+from grapl_analyzerlib.grapl_client import GraphClient
 
 if TYPE_CHECKING:
     from grapl_analyzerlib.viewable import Viewable
 
 Q = TypeVar("Q", bound="Queryable")
 V = TypeVar("V", bound="Viewable")
-
 F = TypeVar("F", bound="Queryable")
 
 ToOneFilter = List[F]
@@ -75,6 +77,13 @@ def with_to_neighbor(*args):
         return wrapper_with_to_neighbor
 
     return _with_to_neighbor
+
+
+class QueryFailedException(Exception):
+    def __init__(self, query: Queryable, variables: Dict[VarPlaceholder, str]) -> None:
+        super(QueryFailedException, self).__init__(
+            "Failed query input\n" f"  Query: {query}\n" f"  Variables: {variables}\n"
+        )
 
 
 class Queryable(Generic[V, Q], Extendable, abc.ABC):
@@ -182,16 +191,17 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
     def set_neighbor_filters(self, edge_name: str, filters: EdgeFilter[Q]):
         self._edge_filters[edge_name].extend(filters)
 
-    def query(self, graph_client, first: int) -> List[V]:
+    def query(self, graph_client: GraphClient, first: int) -> List[V]:
         var_alloc, query = gen_query(self, "q0", first=first)
 
         variables = {v: k for k, v in var_alloc.allocated.items()}
         txn = graph_client.txn(read_only=True)
 
-        try:
-            qres = json.loads(txn.query(query, variables=variables).json)
-        finally:
-            txn.discard()
+        with graph_client.txn_context(read_only=True) as txn:
+            try:
+                qres = json.loads(txn.query(query, variables=variables).json)
+            except Exception as e:
+                raise QueryFailedException(query, variables) from e
 
         d = qres.get("q0")
         if d:
@@ -202,7 +212,7 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
 
     def query_first(
         self,
-        graph_client,
+        graph_client: GraphClient,
         contains_node_key: Optional[str] = None,
         best_effort=False,
     ) -> Optional[V]:
@@ -212,12 +222,12 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
             var_alloc, query = gen_query(self, "q0", first=1)
 
         variables = {v: k for k, v in var_alloc.allocated.items()}
-        txn = graph_client.txn(read_only=True, best_effort=best_effort)
 
-        try:
-            qres = json.loads(txn.query(query, variables=variables).json)
-        finally:
-            txn.discard()
+        with graph_client.txn_context(read_only=True, best_effort=best_effort) as txn:
+            try:
+                qres = json.loads(txn.query(query, variables=variables).json)
+            except Exception as e:
+                raise QueryFailedException(query, variables) from e
 
         d = qres.get("q0")
         if d:
@@ -241,7 +251,12 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
 
         return int(qres.get("query", {}).get("c", 0))
 
+    def debug_query(self) -> Dict[str, Any]:
+        var_alloc, query = gen_query(self, "q0", first=1)
+        variables = {v: k for k, v in var_alloc.allocated.items()}
+        return {"query": query, "variables": variables}
+
 
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.comparators import Cmp, Eq
-from grapl_analyzerlib.query_gen import gen_query, gen_query_parameterized
+from grapl_analyzerlib.query_gen import gen_query, gen_query_parameterized, VarAllocator
