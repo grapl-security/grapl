@@ -38,7 +38,7 @@ if __name__ == "__main__":
         "graph-merger",
         "node-identifier",
         "osquery-generator",
-        "sysmon-graph-generator",
+        "sysmon-generator",
     )
 
     for service in services:

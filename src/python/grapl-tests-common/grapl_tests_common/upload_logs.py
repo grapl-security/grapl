@@ -76,7 +76,7 @@ class GeneratorOptions:
 class SysmonGeneratorOptions(GeneratorOptions):
     def __init__(self) -> None:
         super().__init__(
-            queue_name="grapl-sysmon-graph-generator-queue",
+            queue_name="grapl-sysmon-generator-queue",
             bucket_suffix="sysmon-log-bucket",
             key_infix="sysmon",
         )
