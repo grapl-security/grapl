@@ -34,7 +34,9 @@ class ServiceQueue(pulumi.ComponentResource):
         # TODO: delete_before_replace is only needed if we're
         # overriding the name of the queues
 
-        dead_letter_name = f"grapl-{name}-dead_letter-queue"
+        prefix = pulumi.get_stack() if name in () else "grapl"
+
+        dead_letter_name = f"{prefix}-{name}-dead_letter-queue"
         self.dead_letter_queue = aws.sqs.Queue(
             dead_letter_name,
             name=dead_letter_name,
@@ -42,7 +44,7 @@ class ServiceQueue(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
 
-        retry_name = f"grapl-{name}-retry-queue"
+        retry_name = f"{prefix}-{name}-retry-queue"
         self.retry_queue = aws.sqs.Queue(
             retry_name,
             name=retry_name,
@@ -51,7 +53,7 @@ class ServiceQueue(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
 
-        queue_name = f"grapl-{name}-queue"
+        queue_name = f"{prefix}-{name}-queue"
         self.queue = aws.sqs.Queue(
             queue_name,
             name=queue_name,
