@@ -42,6 +42,7 @@ class ServiceQueue(pulumi.ComponentResource):
                 "osquery-generator",
                 "node-identifier",
                 "graph-merger",
+                "engagement-creator",
             )
             else "grapl"
         )
