@@ -27,7 +27,7 @@ class ServiceQueue(pulumi.ComponentResource):
             return json.dumps(
                 {
                     "deadLetterTargetArn": arn,
-                    "maxReceiveCount": 10,
+                    "maxReceiveCount": 3,
                 }
             )
 
