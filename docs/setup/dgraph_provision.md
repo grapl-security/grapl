@@ -10,7 +10,7 @@ cluster, and install Dgraph on it.
 We'll use the `graplctl` tool to provision Dgraph:
 
 1. Install `graplctl`. See the [graplctl
-   README](https://github.com/grapl-security/grapl/tree/master/src/python/grapctl/README.md)
+   README](https://github.com/grapl-security/grapl/tree/main/src/python/grapctl/README.md)
    for installation instructions.
 
 2. Run the `graplctl dgraph create` command. Note that you will either

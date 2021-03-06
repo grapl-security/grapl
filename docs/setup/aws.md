@@ -9,7 +9,7 @@ To get started, you'll need to install the following dependencies:
 - Node
 - Typescript
 - AWS CDK: `npm i -g aws-cdk@X.Y.Z` 
-  - version must be >= the version in [Grapl's package.json file](https://github.com/grapl-security/grapl/blob/master/src/js/grapl-cdk/package.json) - for instance, `@1.71.0`
+  - version must be >= the version in [Grapl's package.json file](https://github.com/grapl-security/grapl/blob/main/src/js/grapl-cdk/package.json) - for instance, `@1.71.0`
 - AWS CLI: `pip install awscli`
 
 You'll also need to have local AWS credentials, and a configuration profile. Instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).

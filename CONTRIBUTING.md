@@ -120,9 +120,9 @@ with an open issue. Please communicate with us before starting
 development so we can make sure everyone is on the same page and avoid
 wasting time and effort.
 
-Pull requests should be made against the `staging` branch. We will
-deploy and test all changes in our staging environment before merging
-them into `master`.
+Pull requests should be made against the `main` branch. We will
+deploy and test all changes in our main environment before we cut a 
+release-candidate branch from the `main` branch.
 
 #### Documentation
 

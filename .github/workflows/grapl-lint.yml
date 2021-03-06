@@ -7,8 +7,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging
-      - master
+      - staging  # TODO: Delete after https://github.com/grapl-security/issue-tracker/issues/224
+      - main
 
 jobs:
   proto-lint:
@@ -34,7 +34,7 @@ jobs:
         # is addressed
         run: |
           etc/install_buf.sh
-          ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=staging"
+          ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=main"
 
   rust-format:
     runs-on: ubuntu-latest

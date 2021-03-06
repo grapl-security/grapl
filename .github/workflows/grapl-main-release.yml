@@ -1,11 +1,14 @@
-name: Grapl Staging Release
+# https://github.com/grapl-security/issue-tracker/issues/224
+# TODO: 
+
+name: Release :main to Dockerhub
 
 on:
-  # Every time we push to staging,
-  # release that to Dockerhub with the tag 'staging'.
+  # Every time we push to main
+  # release that to Dockerhub with the tag 'main'.
   push:
     branches:
-    - staging
+    - main
 
 jobs:
   release-services:
@@ -21,7 +24,7 @@ jobs:
 
       - name: Export tag
         run: |
-          echo "TAG=staging" >> $GITHUB_ENV
+          echo "TAG=main" >> $GITHUB_ENV
 
       - name: Build services
         run: |

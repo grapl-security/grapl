@@ -4,8 +4,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging
-      - master
+      - staging  # TODO: Delete after https://github.com/grapl-security/issue-tracker/issues/224
+      - main
 
 jobs:
   rust-unit-tests:
