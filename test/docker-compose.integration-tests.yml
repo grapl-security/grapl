@@ -24,7 +24,7 @@ services:
       - IS_LOCAL=True
       - MG_ALPHAS
       - SOURCE_QUEUE_URL=${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue
-      - GRAPH_MERGER_QUEUE_URL=${SQS_ENDPOINT}/queue/grapl-graph-merger-queue
+      - GRAPH_MERGER_QUEUE_URL=${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue
       - STATIC_MAPPING_TABLE=${DEPLOYMENT_NAME}-static_mapping_table
       - DYNAMIC_SESSION_TABLE=${DEPLOYMENT_NAME}-dynamic_session_table
       - PROCESS_HISTORY_TABLE=${DEPLOYMENT_NAME}-process_history_table
