@@ -61,6 +61,41 @@ as well: `local-grapl-passphrase`. Setting this in the
 `PULUMI_CONFIG_PASSPHRASE` environment variable can make it easier to
 interact with this stack on your machine.
 
+# Migrating from CDK
+
+To help evaluate the faithfulness of this Pulumi port of our CDK
+logic, we can run Pulumi against an existing CDK-generated Grapl
+deployment in a kind of "import mode". This tells our Pulumi code to
+adopt existing AWS resources into its stack state, rather than
+creating them new. After the resources have been imported, we can
+manage them completely through Pulumi.
+
+If we are in "import mode", if our Pulumi code differs in any way from
+the resources we are trying to import, Pulumi will tell us. We can
+then inspect the difference and modify our Pulumi code appropriately.
+
+If we are *not* in "import mode", then Pulumi will attempt to create
+new resources, regardless of what exists in AWS. This is what you want
+if you are creating fresh infrastructure, or interacting with
+Localstack.
+
+You *must* set this value in configuration explicitly, or the Pulumi
+run *will* fail.
+
+To enable import mode:
+```sh
+pulumi config set grapl:import_from_existing True
+```
+
+To disable import mode:
+```sh
+pulumi config set grapl:import_from_existing False
+```
+
+Once we have fully migrated away from CDK, we can remove this
+configuration option and the code that supports it.
+
+
 [pulumi]: https://pulumi.com
 [ls]: https://localstack.cloud/
 [minio]: https://min.io

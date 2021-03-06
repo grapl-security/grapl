@@ -11,3 +11,4 @@ config:
   aws:secretKey: test
   aws:skipCredentialsValidation: "true"
   aws:skipRequestingAccountId: "true"
+  grapl:import_from_existing: "False"
