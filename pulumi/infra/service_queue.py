@@ -19,7 +19,7 @@ class ServiceQueue(pulumi.ComponentResource):
         # TODO: grapl_infra? grapl.infra? grapl:service:servicequeue?
         super().__init__("grapl:ServiceQueue", name, None, opts)
 
-        message_retention_seconds = 60 * 60 * 24  # 1 day
+        message_retention_seconds = 60 * 60 * 24 * 4  # 4 days
 
         # `arn` is the ARN of a queue. This is a function because of
         # the need to use Output.apply on the ARN.
