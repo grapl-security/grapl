@@ -247,12 +247,12 @@ invocation (see [previous section](#building-the-source)).
 
 Alternatively, you can set tag to of the tags to a particular Grapl release we
 have posted on our Dockerhub. At the time of this writing there are no releases
-currently supported for local Grapl, however the `staging` tag is kept
-up-to-date with the latest `staging` branch on GitHub for development and
+currently supported for local Grapl, however the `main` tag is kept
+up-to-date with the latest `main` branch on GitHub for development and
 testing. Example:
 
 ``` bash
-TAG=staging docker-compose up
+TAG=main docker-compose up
 ```
 
 ## The CI system

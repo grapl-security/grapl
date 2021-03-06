@@ -7,8 +7,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging
-      - master
+      - staging  # TODO: Delete after https://github.com/grapl-security/issue-tracker/issues/224
+      - main
 
 jobs:
   proto-lint:
@@ -29,7 +29,7 @@ jobs:
         # just shallow-clone in Github Actions, so we aren't going to
         # have the staging branch locally.
         #
-        # NB: This branch will have to change when
+        # NB: This branch will have to change to `main` when
         # https://github.com/grapl-security/issue-tracker/issues/224
         # is addressed
         run: |
