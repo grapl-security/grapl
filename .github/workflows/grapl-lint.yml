@@ -29,12 +29,12 @@ jobs:
         # just shallow-clone in Github Actions, so we aren't going to
         # have the staging branch locally.
         #
-        # NB: This branch will have to change when
+        # NB: This branch will have to change to `main` when
         # https://github.com/grapl-security/issue-tracker/issues/224
         # is addressed
         run: |
           etc/install_buf.sh
-          ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=main"
+          ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=staging"
 
   rust-format:
     runs-on: ubuntu-latest
