@@ -13,7 +13,6 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
 )
 from grapl_analyzerlib.queryable import Queryable
-from grapl_analyzerlib.retry import retry
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.viewable import Viewable
 
@@ -112,7 +111,7 @@ class BaseView(Viewable[BV, BQ]):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],
@@ -126,12 +125,15 @@ class BaseView(Viewable[BV, BQ]):
     def into_view(self, v: Type["V"]) -> Optional["V"]:
         if v.node_schema().self_type() in self.node_types:
             self.queryable = v.queryable
+            node_types = self.node_types.union(self.predicates.get("node_types", set()))
+            predicates_without_node_types = self.predicates.copy()
+            predicates_without_node_types.pop("node_types", None)
             return v(
                 uid=self.uid,
                 node_key=self.node_key,
                 graph_client=self.graph_client,
-                node_types=self.node_types,
-                **self.predicates,
+                node_types=node_types,
+                **predicates_without_node_types,
             )
         return None
 

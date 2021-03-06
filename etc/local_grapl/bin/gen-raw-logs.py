@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+TODO: I believe this script is superceded by `upload-sysmon-logs`, which takes in both
+--deployment-name and --log-file.
+"""
+
 import argparse
 import json
 from datetime import datetime
@@ -60,7 +65,7 @@ def into_sqs_message(bucket: str, key: str) -> str:
     )
 
 
-def main(prefix):
+def main(deployment_name):
 
     s3 = boto3.client("s3")
 
@@ -77,7 +82,7 @@ def main(prefix):
 
         s3.put_object(
             Body=c_body,
-            Bucket="{}-sysmon-log-bucket".format(prefix),
+            Bucket="{}-sysmon-log-bucket".format(deployment_name),
             Key=str(epoch - (epoch % (24 * 60 * 60)))
             + "/sysmon/"
             + str(epoch)
@@ -88,14 +93,14 @@ def main(prefix):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Send demo logs to Grapl")
-    parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
+    parser.add_argument("--deployment_name", dest="deployment_name", required=True)
     return parser.parse_args()
 
 
 if __name__ == "__main__":
 
     args = parse_args()
-    if args.bucket_prefix is None:
-        raise Exception("Provide bucket prefix as first argument")
+    if args.deployment_name is None:
+        raise Exception("Provide deployment name as first argument")
     else:
-        main(args.bucket_prefix)
+        main(args.deployment_name)

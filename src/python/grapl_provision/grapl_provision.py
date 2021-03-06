@@ -1,18 +1,12 @@
 import json
-import logging
 import os
 import sys
-import threading
 import time
-from hashlib import pbkdf2_hmac, sha256
 from typing import List
-from uuid import uuid4
 
 import boto3
-import botocore
 import pydgraph
-
-from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
     EdgeT,
@@ -34,19 +28,10 @@ from grapl_analyzerlib.prelude import (
     RiskSchema,
 )
 from grapl_analyzerlib.schema import Schema
+from grapl_common.env_helpers import DynamoDBResourceFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-
-
-def create_secret(secretsmanager):
-    secretsmanager.create_secret(
-        Name="JWT_SECRET_ID",
-        SecretString=str(uuid4()),
-    )
+LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
 
 def set_schema(client, schema) -> None:
@@ -166,11 +151,11 @@ def store_schema(table, schema: "Schema"):
 
         table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
-        print(f"stored edge mapping: {f_edge} {r_edge}")
+        LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
 
 
 def provision_mg(mclient) -> None:
-    # drop_all(mclient)
+    drop_all(mclient)
 
     schemas = (
         AssetSchema(),
@@ -190,197 +175,58 @@ def provision_mg(mclient) -> None:
         schema.init_reverse()
 
     for schema in schemas:
-        extend_schema(mclient, schema)
+        try:
+            extend_schema(mclient, schema)
+        except Exception as e:
+            LOGGER.warn(f"Failed to extend_schema: {schema} {e}")
 
     provision_master_graph(mclient, schemas)
 
-    dynamodb = boto3.resource(
-        "dynamodb",
-        region_name="us-west-2",
-        endpoint_url="http://dynamodb:8000",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
-    )
+    dynamodb = DynamoDBResourceFactory(boto3).from_env()
 
     table = dynamodb.Table("local-grapl-grapl_schema_table")
     for schema in schemas:
-        store_schema(table, schema)
-
-
-BUCKET_PREFIX = "local-grapl"
-
-services = (
-    "sysmon-graph-generator",
-    "generic-graph-generator",
-    "node-identifier",
-    "graph-merger",
-    "analyzer-dispatcher",
-    "analyzer-executor",
-    "engagement-creator",
-)
-
-buckets = (
-    BUCKET_PREFIX + "-sysmon-log-bucket",
-    BUCKET_PREFIX + "-unid-subgraphs-generated-bucket",
-    BUCKET_PREFIX + "-subgraphs-generated-bucket",
-    BUCKET_PREFIX + "-subgraphs-merged-bucket",
-    BUCKET_PREFIX + "-analyzer-dispatched-bucket",
-    BUCKET_PREFIX + "-analyzers-bucket",
-    BUCKET_PREFIX + "-analyzer-matched-subgraphs-bucket",
-    BUCKET_PREFIX + "-model-plugins-bucket",
-)
-
-
-def provision_sqs(sqs, service_name: str) -> None:
-    redrive_queue = sqs.create_queue(
-        QueueName="grapl-%s-retry-queue" % service_name,
-        Attributes={"MessageRetentionPeriod": "86400"},
-    )
-
-    redrive_url = redrive_queue["QueueUrl"]
-    LOGGER.debug(f"Provisioned {service_name} retry queue at " + redrive_url)
-
-    redrive_arn = sqs.get_queue_attributes(
-        QueueUrl=redrive_url, AttributeNames=["QueueArn"]
-    )["Attributes"]["QueueArn"]
-
-    redrive_policy = {
-        "deadLetterTargetArn": redrive_arn,
-        "maxReceiveCount": "10",
-    }
-
-    queue = sqs.create_queue(
-        QueueName="grapl-%s-queue" % service_name,
-    )
-
-    sqs.set_queue_attributes(
-        QueueUrl=queue["QueueUrl"],
-        Attributes={"RedrivePolicy": json.dumps(redrive_policy)},
-    )
-    LOGGER.debug(f"Provisioned {service_name} queue at " + queue["QueueUrl"])
-
-    sqs.purge_queue(QueueUrl=queue["QueueUrl"])
-    sqs.purge_queue(QueueUrl=redrive_queue["QueueUrl"])
-
-
-def provision_bucket(s3, bucket_name: str) -> None:
-    s3.create_bucket(Bucket=bucket_name)
-    LOGGER.debug(bucket_name)
-
-
-def bucket_provision_loop() -> None:
-    s3_succ = {bucket for bucket in buckets}
-    s3 = None
-    for i in range(0, 150):
         try:
-            s3 = s3 or boto3.client(
-                "s3",
-                endpoint_url="http://s3:9000",
-                aws_access_key_id="minioadmin",
-                aws_secret_access_key="minioadmin",
-            )
+            store_schema(table, schema)
         except Exception as e:
-            if i > 10:
-                LOGGER.debug("failed to connect to sqs or s3", e)
-            continue
-
-        for bucket in buckets:
-            if bucket in s3_succ:
-                try:
-                    provision_bucket(s3, bucket)
-                    s3_succ.discard(bucket)
-                except Exception as e:
-                    if "BucketAlreadyOwnedByYou" in str(e):
-                        s3_succ.discard(bucket)
-                        continue
-
-                    if i > 10:
-                        LOGGER.debug(e)
-                    time.sleep(1)
-
-        if not s3_succ:
-            return
-
-    raise Exception("Failed to provision s3")
+            LOGGER.warn(f"storing schema: {schema} {table} {e}")
 
 
-def hash_password(cleartext, salt) -> str:
-    hashed = sha256(cleartext).digest()
-    return pbkdf2_hmac("sha256", hashed, salt, 512000).hex()
+DEPLOYMENT_NAME = "local-grapl"
 
 
-def create_user(username, cleartext):
-    assert cleartext
-    dynamodb = boto3.resource(
-        "dynamodb",
-        region_name="us-west-2",
-        endpoint_url="http://dynamodb:8000",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
-    )
-    table = dynamodb.Table("local-grapl-user_auth_table")
+def validate_environment():
+    """Ensures that the required environment variables are present in the environment.
 
-    # We hash before calling 'hashed_password' because the frontend will also perform
-    # client side hashing
-    cleartext += "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254"
+    Other code actually reads the variables later.
+    """
+    required = [
+        "AWS_REGION",
+        "DYNAMODB_ACCESS_KEY_ID",
+        "DYNAMODB_ACCESS_KEY_SECRET",
+        "DYNAMODB_ENDPOINT",
+    ]
 
-    cleartext += username
+    missing = [var for var in required if var not in os.environ]
 
-    hashed = sha256(cleartext.encode("utf8")).hexdigest()
-
-    for i in range(0, 5000):
-        hashed = sha256(hashed.encode("utf8")).hexdigest()
-
-    salt = os.urandom(16)
-    password = hash_password(hashed.encode("utf8"), salt)
-    table.put_item(Item={"username": username, "salt": salt, "password": password})
-
-
-def sqs_provision_loop() -> None:
-    sqs_succ = {service for service in services}
-    sqs = None
-    for i in range(0, 150):
-        try:
-            sqs = sqs or boto3.client(
-                "sqs",
-                region_name="us-east-1",
-                endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-            )
-        except Exception as e:
-            if i > 50:
-                LOGGER.error("failed to connect to sqs or s3", e)
-            else:
-                LOGGER.debug("failed to connect to sqs or s3", e)
-
-            time.sleep(1)
-            continue
-
-        for service in services:
-            if service in sqs_succ:
-                try:
-                    provision_sqs(sqs, service)
-                    sqs_succ.discard(service)
-                except Exception as e:
-                    if i > 10:
-                        LOGGER.error(e)
-                    time.sleep(1)
-        if not sqs_succ:
-            return
-
-    raise Exception("Failed to provision sqs")
+    if missing:
+        print(
+            f"The following environment variables are required, but are not present: {missing}"
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":
+    validate_environment()
+
     time.sleep(5)
-    local_dg_provision_client = MasterGraphClient()
+    graph_client = GraphClient()
 
     LOGGER.debug("Provisioning graph database")
 
     for i in range(0, 150):
         try:
-            drop_all(local_dg_provision_client)
+            drop_all(graph_client)
             break
         except Exception as e:
             time.sleep(2)
@@ -389,57 +235,19 @@ if __name__ == "__main__":
 
     mg_succ = False
 
-    sqs_t = threading.Thread(target=sqs_provision_loop)
-    s3_t = threading.Thread(target=bucket_provision_loop)
-
-    sqs_t.start()
-    s3_t.start()
-
+    LOGGER.info("Starting to provision master graph")
     for i in range(0, 150):
         try:
             if not mg_succ:
                 time.sleep(1)
                 provision_mg(
-                    local_dg_provision_client,
+                    graph_client,
                 )
                 mg_succ = True
-                print("Provisioned mastergraph")
+                LOGGER.info("Provisioned master graph")
                 break
         except Exception as e:
             if i > 10:
-                LOGGER.error("mg provision failed with: ", e)
+                LOGGER.error(f"mg provision failed with: {e}")
 
-    for i in range(0, 150):
-        try:
-            client = boto3.client(
-                service_name="secretsmanager",
-                region_name="us-east-1",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-            )
-            create_secret(client)
-            break
-        except botocore.exceptions.ClientError as e:
-            if "ResourceExistsException" in e.__class__.__name__:
-                break
-            if i >= 50:
-                LOGGER.debug(e)
-        except Exception as e:
-            if i >= 50:
-                LOGGER.error(e)
-            time.sleep(1)
-
-    for i in range(0, 150):
-        try:
-            create_user("grapluser", "graplpassword")
-            break
-        except Exception as e:
-            if i >= 50:
-                LOGGER.error(e)
-            time.sleep(1)
-
-    sqs_t.join(timeout=300)
-    s3_t.join(timeout=300)
-
-    print("Completed provisioning")
+    LOGGER.info("Completed provisioning")

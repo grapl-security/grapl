@@ -1,16 +1,31 @@
-use crate::metric_error::MetricError;
-use crate::statsd_formatter;
-use crate::statsd_formatter::{statsd_format, MetricType};
-use crate::writer_wrapper::WriterWrapper;
-use chrono::{DateTime, SecondsFormat, Utc};
-use std::fmt::Write;
-use std::io::{stdout, Stdout};
+use std::{fmt::Write,
+          io::{stdout,
+               Stdout}};
+
+use chrono::{DateTime,
+             SecondsFormat,
+             Utc};
+
+use crate::{metric_error::MetricError,
+            statsd_formatter,
+            statsd_formatter::{statsd_format,
+                               MetricType},
+            writer_wrapper::WriterWrapper};
 
 pub mod common_strs {
     pub const STATUS: &'static str = "status";
     pub const SUCCESS: &'static str = "success";
     pub const FAIL: &'static str = "fail";
 }
+
+pub enum HistogramUnit {
+    // Notably, we should not support nanoseconds for the foreseeable future.
+    // See https://github.com/grapl-security/issue-tracker/issues/132
+    Seconds,
+    Millis,
+    Micros,
+}
+const RESERVED_UNIT_TAG: &'static str = "_unit";
 
 type NowGetter = fn() -> DateTime<Utc>;
 
@@ -27,6 +42,17 @@ pub struct MetricReporter<W: std::io::Write> {
     service_name: String,
 }
 
+impl MetricReporter<Stdout> {
+    pub fn new(service_name: &str) -> Self {
+        MetricReporter {
+            service_name: service_name.to_string(),
+            buffer: String::new(),
+            out: WriterWrapper::new(stdout()),
+            utc_now: Utc::now,
+        }
+    }
+}
+
 /**
 some followup TODOs:
     - add tags to the public functions (not needed right now)
@@ -36,15 +62,6 @@ impl<W> MetricReporter<W>
 where
     W: std::io::Write,
 {
-    pub fn new(service_name: &str) -> MetricReporter<Stdout> {
-        MetricReporter {
-            service_name: service_name.to_string(),
-            buffer: String::new(),
-            out: WriterWrapper::new(stdout()),
-            utc_now: Utc::now,
-        }
-    }
-
     fn write_metric(
         &mut self,
         metric_name: &str,
@@ -77,13 +94,23 @@ where
         dt.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
 
-    pub fn counter(
+    pub fn counter_notags(
         &mut self,
         metric_name: &str,
         value: f64,
         sample_rate: impl Into<Option<f64>>,
     ) -> Result<(), MetricError> {
         self.write_metric(metric_name, value, MetricType::Counter, sample_rate, &[])
+    }
+
+    pub fn counter(
+        &mut self,
+        metric_name: &str,
+        value: f64,
+        sample_rate: impl Into<Option<f64>>,
+        tags: &[TagPair],
+    ) -> Result<(), MetricError> {
+        self.write_metric(metric_name, value, MetricType::Counter, sample_rate, tags)
     }
 
     /**
@@ -109,8 +136,43 @@ where
 
     example: the time to complete rendering of a web page for a user.
     */
-    pub fn histogram(&mut self, metric_name: &str, value: f64) -> Result<(), MetricError> {
-        self.write_metric(metric_name, value, MetricType::Histogram, None, &[])
+    pub fn histogram(
+        &mut self,
+        metric_name: &str,
+        value_millis: f64,
+        tags: &[TagPair],
+    ) -> Result<(), MetricError> {
+        self.write_metric(metric_name, value_millis, MetricType::Histogram, None, tags)
+    }
+
+    /**
+     * In order to shoehorn units into the statsd protocol, we specify a
+     * special "_unit" tag that will
+     * be popped off in the metric forwarder.
+     */
+    pub fn histogram_with_units<'a>(
+        &mut self,
+        metric_name: &str,
+        value: f64,
+        unit: HistogramUnit,
+        tags: impl Into<Vec<TagPair<'a>>>,
+    ) -> Result<(), MetricError> {
+        let mut tags_with_unit: Vec<TagPair> = tags.into();
+        tags_with_unit.push(TagPair(
+            RESERVED_UNIT_TAG,
+            match unit {
+                HistogramUnit::Micros => "micros",
+                HistogramUnit::Millis => "millis",
+                HistogramUnit::Seconds => "seconds",
+            },
+        ));
+        self.write_metric(
+            metric_name,
+            value,
+            MetricType::Histogram,
+            None,
+            &tags_with_unit,
+        )
     }
 }
 
@@ -136,6 +198,45 @@ impl Clone for MetricReporter<Stdout> {
     }
 }
 
+pub trait ValidTag<'a> {
+    fn into_tag_str(self) -> &'a str;
+}
+
+impl<'a> ValidTag<'a> for &'a str {
+    fn into_tag_str(self) -> &'a str {
+        self
+    }
+}
+
+impl<'a> ValidTag<'a> for bool {
+    fn into_tag_str(self) -> &'a str {
+        if self {
+            "true"
+        } else {
+            "false"
+        }
+    }
+}
+
+impl<'a, T, U> From<(T, U)> for TagPair<'a>
+where
+    T: ValidTag<'a>,
+    U: ValidTag<'a>,
+{
+    fn from((k, v): (T, U)) -> Self {
+        Self(k.into_tag_str(), v.into_tag_str())
+    }
+}
+
+pub fn tag<'a, T, U>(t: T, u: U) -> TagPair<'a>
+where
+    T: ValidTag<'a>,
+    U: ValidTag<'a>,
+{
+    TagPair::from((t, u))
+}
+
+#[derive(Clone)]
 pub struct TagPair<'a>(pub &'a str, pub &'a str);
 
 impl TagPair<'_> {
@@ -169,9 +270,9 @@ mod tests {
             utc_now: test_utc,
             service_name: SERVICE_NAME.to_string(),
         };
-        reporter.histogram("metric_name", 123.45f64)?;
-        reporter.counter("metric_name", 123.45f64, None)?;
-        reporter.counter("metric_name", 123.45f64, 0.75)?;
+        reporter.histogram("metric_name", 123.45f64, &[])?;
+        reporter.counter_notags("metric_name", 123.45f64, None)?;
+        reporter.counter_notags("metric_name", 123.45f64, 0.75)?;
         reporter.gauge("metric_name", 123.45f64, &[TagPair("key", "value")])?;
         let vec = reporter.out.release();
 

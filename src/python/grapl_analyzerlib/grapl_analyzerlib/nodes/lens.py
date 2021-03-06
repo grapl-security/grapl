@@ -47,17 +47,17 @@ class LensSchema(BaseSchema):
 
 
 class LensQuery(BaseQuery[LV, LQ]):
-    def with_scope(self, *scope) -> "LensQuery":
+    def with_scope(self, *scope) -> LensQuery:
         return self.with_to_neighbor(EntityQuery, "scope", "in_scope", scope)
 
-    def with_lens_name(self, eq: str):
+    def with_lens_name(self, eq: str) -> LensQuery:
         return self.with_str_property("lens_name", eq=eq)
 
-    def with_lens_type(self, eq: str):
+    def with_lens_type(self, eq: str) -> LensQuery:
         return self.with_str_property("lens_type", eq=eq)
 
     @classmethod
-    def node_schema(cls) -> "Schema":
+    def node_schema(cls) -> Schema:
         return LensSchema()
 
 
@@ -84,7 +84,7 @@ class LensView(BaseView[LV, LQ]):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],
@@ -100,36 +100,37 @@ class LensView(BaseView[LV, LQ]):
         self.set_predicate("lens_name", lens_name)
         self.set_predicate("lens_type", lens_type)
 
-    def get_lens_name(self, cached=True):
+    def get_lens_name(self, cached=True) -> Optional[str]:
         return self.get_str("lens_name", cached=cached)
 
     def get_scope(self, *scope, cached=False):
         return self.get_neighbor(EntityQuery, "scope", "in_scope", scope, cached=cached)
 
     @staticmethod
-    def get_or_create(
-        gclient: "GraphClient", lens_name: str, lens_type: str
-    ) -> "LensView":
-        eg_txn = gclient.txn(read_only=False)
-        try:
-            query = f"""
-            {{
-              res(func: eq(node_key, "{'lens-' + lens_type + lens_name}"), first: 1) @cascade
-               {{
+    def get_or_create(gclient: GraphClient, lens_name: str, lens_type: str) -> LensView:
+        with gclient.txn_context(read_only=False) as txn:
+            query = """
+            # lens get_or_create
+            query res($a: string) 
+            {
+              res(func: eq(node_key, $a), first: 1) @cascade
+               {
                  uid,
                  node_type: dgraph.type,
                  node_key,
-               }}
-             }}"""
+               }
+             }"""
 
-            res = eg_txn.query(query)
+            variables = {"$a": f"lens-{lens_type}{lens_name}"}
+
+            res = txn.query(query, variables=variables)
 
             res = json.loads(res.json)["res"]
             new_uid = None
             if res:
                 new_uid = res[0]["uid"]
             else:
-                m_res = eg_txn.mutate(
+                m_res = txn.mutate(
                     set_obj={
                         "lens_name": lens_name,
                         "lens_type": lens_type,
@@ -142,15 +143,12 @@ class LensView(BaseView[LV, LQ]):
                 uids = m_res.uids
 
                 new_uid = new_uid or uids["blank-0"]
-        finally:
-            eg_txn.discard()
 
-        self_lens = (
-            LensQuery()
-            .with_node_key(eq="lens-" + lens_type + lens_name)
-            .query_first(gclient)
-        )
-        assert self_lens, "Lens must exist"
+        self_lens_query = LensQuery().with_node_key(eq="lens-" + lens_type + lens_name)
+        self_lens = self_lens_query.query_first(gclient)
+        assert (
+            self_lens
+        ), f"Lens must exist, but couldn't query: {self_lens_query.debug_query()}"
         return self_lens
 
     @classmethod

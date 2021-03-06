@@ -8,181 +8,252 @@ system.
 
 ## Building the source
 
-Grapl leverages Docker to control the build environment. All Grapl
-builds happen in Docker containers. This has the added benefit of
+Grapl uses Docker for build and test environments. All Grapl source
+builds happen in Docker image builds. This has the added benefit of
 enabling Grapl developers to easily spin up the entire Grapl stack
 locally for a nice interactive development experience.
 
-To facilitate this we have Dockerfiles which describe the build and
-deployment images for each service. The build system is logically
-split into 3 separate parts, one for each language:
+### Requirements
 
- - Rust -- All the Rust code and dependencies
- - Python -- All the Python code and dependencies
- - JS -- All the Javascript and Typescript
+- [Docker Engine](https://docs.docker.com/engine/install/) (version 20.10 or later)
+- [docker-compose](https://docs.docker.com/compose/install/)
+- [GNU Make](https://www.gnu.org/software/make/)
 
-To actually orchestrate builds we use
-[dobi](https://dnephin.github.io/dobi/config.html). Dobi allows us to
-define tasks such as building the source code, running unit and
-integration tests, and cleaning up build containers (e.g. in order to
-re-build afresh). After [installing
-dobi](https://dnephin.github.io/dobi/install.html) you can see these
-tasks by running `dobi list` in the root of the Grapl source tree:
+### Getting started
+
+Our Makefile defines a number of targets for building, testing and running
+Grapl locally. A listing of helpful targets can be printed with `make help`:
 
 ```
-jgrillo@penguin:~/src/grapl$ dobi list
-Resources:
-  build                Build artifacts and images for all services
-  clean-build          Delete all the build images
-  clean-js-build       Delete the js build images
-  clean-python-build   Delete the python build images
-  clean-rust-build     Delete the rust build image
-  integration-tests    Run all the integration tests
-  js                   Build artifacts and images for js services
-  js-unit-tests        Run the js unit tests
-  python               Build artifacts and images for python services
-  python-integration-tests Run the python integration tests
-  python-unit-tests    Run the python unit tests
-  rust                 Build artifacts and images for rust services
-  rust-integration-tests Run the rust integration tests
-  rust-unit-tests      Run the rust unit tests
-  unit-tests           Run all the unit tests
+$ make help
+build                Alias for `services` (default)
+build-all            Build all targets (incl. services, tests, zip)
+build-services       Build Grapl services
+build-aws            Build services for Grapl in AWS (subset of all services)
+test-unit            Build and run unit tests
+test-unit-rust       Build and run unit tests - Rust only
+test-unit-python     Build and run unit tests - Python only
+test-unit-js         Build and run unit tests - JavaScript only
+test-typecheck       Build and run typecheck tests
+test-integration     Build and run integration tests
+test-e2e             Build and run e2e tests
+test                 Run all tests
+lint-rust            Run Rust lint checks
+lint-python          Run Python lint checks
+lint                 Run all lint checks
+clean                Prune all docker build cache and remove Grapl containers and images
+clean-mount-cache    Prune all docker mount cache (used by sccache)
+release              'make build-services' with cargo --release
+zip                  Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+deploy               CDK deploy to AWS
+up                   Build Grapl services and launch docker-compose up
+down                 docker-compose down
+help                 Print this help
 ```
 
-To kick off a local build (but no tests), run the following command:
+Examples:
 
-``` bash
-TAG=latest GRAPL_RELEASE_TARGET=debug dobi --no-bind-mount build
-```
-
-To run all the unit tests, run the following command:
-
-``` bash
-TAG=latest GRAPL_RELEASE_TARGET=debug dobi --no-bind-mount unit-tests
-```
-
-To run all the integration tests, run the following command:
-
-``` bash
-TAG=latest GRAPL_RELEASE_TARGET=debug dobi --no-bind-mount integration-tests
-```
-
-Notice the environment variables:
-
-  - `TAG` -- Required. This is the tag we'll use for all the Docker
-    images. For local builds `latest` is fine. Production builds
-    should have a specific version e.g. `v1.2.3`. Users shouldn't need
-    to worry about this, our CI system takes care of it. More about
-    that later.
-  - `GRAPL_RELEASE_TARGET` -- Optional. This can be either `debug`
-    (default), or `release`. It controls whether Rust code is compiled
-    in debug or release mode.
-
-Note also the `--no-bind-mount` option. We use a [host bind
-mount](https://dnephin.github.io/dobi/config.html#mount) to emit build
-artifacts to the `/dist` directory in the Grapl root:
+- To kick off a local build (but no tests), run the following command:
 
 ```
-jgrillo@penguin:~/src/grapl$ tree dist
-dist
-├── analyzer-dispatcher
-├── analyzer-executor
-│   └── lambda.zip
-├── dgraph-ttl
-│   └── lambda.zip
-├── engagement-creator
-│   └── lambda.zip
-├── engagement-edge
-│   └── lambda.zip
-├── generic-subgraph-generator
-├── graph-merger
-├── graphql-endpoint
-│   └── lambda.zip
-├── model-plugin-deployer
-│   └── lambda.zip
-├── node-identifier
-├── node-identifier-retry-handler
-└── sysmon-subgraph-generator
+make build
 ```
 
-### Dobi in depth
+- To run all the unit tests, run the following command:
 
-This section is a more in-depth description of our
-[dobi.yaml](dobi.yaml) configuration. Dobi separates
-[images](https://dnephin.github.io/dobi/config.html#image) (Docker
-images) from [jobs](https://dnephin.github.io/dobi/config.html#job)
-(commands to run on a Docker image). Our configuration first defines
-all the images, then defines jobs which run on those images.
-
-For example, this is how we've configured the Rust build image:
-
-``` yaml
-image=rust-build:
-  image: grapl/grapl-rust-src-build
-  context: src/rust
-  dockerfile: Dockerfile
-  args:
-    release_target: "{env.GRAPL_RELEASE_TARGET:debug}"
-  target: grapl-rust-src-build
-  tags:
-    - latest
+```
+make test-unit
 ```
 
-And this is how the Rust build job is configured:
+To run build and launch Grapl locally, run the following command
 
-``` yaml
-job=build-rust:
-  use: rust-build
-  mounts:
-    - dist
-  artifact:
-    - ./dist/
+```
+make up
 ```
 
-Dobi also has a concept of
-[aliases](https://dnephin.github.io/dobi/config.html#alias) which are
-groupings of other tasks. Here is how the `rust` alias is configured:
+### Environment variables
 
-``` yaml
-alias=rust:
-  tasks:
-    - build-rust
-    - "analyzer-dispatcher:tag"
-    - "generic-subgraph-generator:tag"
-    - "graph-merger:tag"
-    - "node-identifier:tag"
-    - "node-identifier-retry-handler:tag"
-    - "sysmon-subgraph-generator:tag"
-  annotations:
-    description: "Build artifacts and images for rust services"
+For convenience, the Makefile imports environment variables from a `.env` file.
+
+The following environment variables can affect the build and test environments:
+
+- `TAG` (default: `latest`) - This is the tag we'll use for all the Docker
+  images. For local builds `latest` is fine. Production builds should have a
+specific version e.g. `v1.2.3`. Users may want to use a tag that includes
+version and/or branch information for tracking purposes (ex:
+`v1.2.3-my_feature`). This value corresponds to the `graplVersion` parameter in
+the CDK project for deploying to AWS, and is used to name the zip files in the
+Make `zip` target.
+- `CARGO_PROFILE` (default: `debug`) - Can either be `debug` or `release`. These
+  roughly translate to the [Cargo
+profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) to be used
+for Rust builds.
+- `GRAPL_RUST_ENV_FILE` - File path to a shell script in to be sources for the
+  Rust builds. This can be used to set and override environment variables,
+which can be useful for things like settings for
+[sccache](https://github.com/mozilla/sccache), which is used to for caching. It
+is passed as a [Docker build
+secret](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information)
+so it should be suitable secrets like S3 credentials for use with sccache. 
+- `DOCKER_BUILDX_BAKE_OPTS` - Docker images are built using [docker
+  buildx](https://github.com/docker/buildx). You can pass additional arguments
+to the `docker buildx build` commands by setting this option (ex: `--progress
+plain`).
+
+#### CDK deployment parameters
+
+Arguments to the CDK deployment parameters can be supplied via environment
+variables documented in [docs/setup/aws.md](./docs/setup/aws.md#configure). By
+using `make deploy` to execute a CDK deploy, the environment variables can be
+read from a `.env` in the root of the Grapl respository.
+
+### sccache
+
+By default, our builds will use Mozilla's
+[sccache](https://github.com/mozilla/sccache) to cache builds in a [cache mount
+type](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#run---mounttypecache).
+This improves performance for local development experience as Rust sources
+change. 
+
+Environment variables used by `sccache` can be supplied via the
+`GRAPL_RUST_ENV_FILE` environment variable when running Make. 
+
+Examples:
+
+- To disable `sccache` you can do the following:
+
+```
+$ echo "unset RUSTC_WRAPPER" > .rust_env.sh
+$ export GRAPL_RUST_ENV_FILE=.rust_env.sh
+$ make build
 ```
 
-This task builds all the Rust sources, but does not run any unit or
-integration tests. When we ran `dobi list`
-[above](#building-the-source), all the aliases and their documentation
-were printed to the console. Aliases therefore are the user-facing
-commands, jobs--which run on images--are the internal building blocks
-for these commands.
+- To configure `sccache` to use S3 on a local minio server running on 172.17.0.100:8000:
+
+```
+$ cat <<EOF > .rust_env.sh
+export SCCACHE_BUCKET=sccache
+export AWS_ACCESS_KEY_ID=AKIAEXAMPLE
+export AWS_SECRET_ACCESS_KEY="d2hhdCBkaWQgeW91IGV4cGVjdCB0byBmaW5kPwo="
+export SCCACHE_DIR=/root/sccache
+export SCCACHE_ENDPOINT="172.17.0.100:8000"
+EOF
+$ export GRAPL_RUST_ENV_FILE=.rust_env.sh
+$ make build
+```
+
+## How it works
+
+### Overview
+
+[Docker Compose files](https://docs.docker.com/compose/compose-file/) are used to define:
+
+1. how Docker images are to be built
+2. how to run tests in Docker containers
+3. how to run the local Grapl environment
+
+The Makefile references Docker Compose files for each target that uses Docker (most of them).
+
+### Building images
+
+We use Dockerfile [multi-stage
+builds](https://docs.docker.com/develop/develop-images/multistage-build/) so
+each service can be built with a single Docker build command. Additionally, we
+use [docker buildx
+bake](https://github.com/docker/buildx#buildx-bake-options-target) to build
+multiple Docker images with a single BuildKit command, which allows us to
+leverage BuildKit concurrency across all stages. The Docker build arguments for
+each service and container are defined in various Docker Compose files.
+
+For exmaple, to build Grapl services we have the following Make target:
+
+```Makefile
+DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
+
+...
+
+.PHONY: build-services
+build-services: ## Build Grapl services
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.yml
+```
+
+Within [docker-compose.yml](./docker-compose.yml), we have various services
+such as the Sysmon generator. The following defines how to build the Docker
+image.
+
+```yaml
+  grapl-rust-sysmon-subgraph-generator:
+    image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+    build:
+      context: src/rust
+      target: sysmon-subgraph-generator-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+...
+```
+
+Similar can be seen for other Grapl services, as well as Grapl tests, which can
+be found under the `test` directory.
+
+### Running tests
+
+Most Grapl Dockerfiles have build targets specific for running tests, which 
+
+Docker Compose is used to define the containers for running tests, as well as
+the how the image for the container should be built. The following is the
+definition for Rust unit tests
+([test/docker-compose.unit-tests-rust.yml](./test/docker-compose.unit-tests-rust.yml)):
+
+```yaml
+version: "3.8"
+
+# environment variable PWD is assumed to be grapl root directory
+
+services:
+
+  grapl-rust-test:
+    image: grapl/rust-test-unit:${TAG:-latest}
+    build:
+      context: ${PWD}/src/rust
+      target: build-test-unit
+      args:
+        - CARGO_PROFILE=debug
+    command: cargo test
+```
+
+The `build-test-unit` target is a [Dockerfile](./src/rust/Dockerfile) stage
+that will builds dependencies for `cargo test` that wasn't done so in the
+initial source build, `cargo build`.
+
+We're currently using `docker-compose up` to run our tests concurrently. We
+have a [helper script](./test/docker-compose-with-error.sh) that checks the
+exit code for each container (test) run. If any test exit code is non-zero, the
+script will return non-zero as well. This allows us to surface non-zero exit
+codes to Make.
 
 ## Running your locally-built Grapl images
 
-We use [Docker Compose](https://docs.docker.com/compose/) to manage
-our local Grapl runtime environment. The
-[docker-compose.yml](docker-compose.yml) file describes the
-relationships between each of the Grapl services. To spin up your
-locally-built Grapl, execute the following command in the Grapl root
-after [installing docker-compose](https://docs.docker.com/compose/install/):
+The `make up` command will build Grapl sources and launch Docker Compose to run
+the Grapl environment locally.
+
+If you'd like to skip building and run the Grapl environment locally you can run:
 
 ``` bash
 TAG=latest docker-compose up
 ```
 
-Note that `TAG` should be set to whatever you used in your `dobi`
+Note that `TAG` should be set to whatever you used in your `make`
 invocation (see [previous section](#building-the-source)).
 
-This Docker Compose environment serves double duty both for running
-Grapl locally and for running integration tests in builds. To see how
-that works, look for the `compose` section in [dobi.yaml](dobi.yaml).
+Alternatively, you can set tag to of the tags to a particular Grapl release we
+have posted on our Dockerhub. At the time of this writing there are no releases
+currently supported for local Grapl, however the `main` tag is kept
+up-to-date with the latest `main` branch on GitHub for development and
+testing. Example:
+
+``` bash
+TAG=main docker-compose up
+```
 
 ## The CI system
 
@@ -197,34 +268,34 @@ three workflow definitions:
     can be pushed to PyPI).
   - [grapl-build.yml](./.github/workflows/grapl-build.yml) -- This
     workflow also runs on every PR and every PR update. It runs all
-    the `dobi` build and test jobs, and performs some additional
-    analysis on the codebase (e.g. [LGTM](https://lgtm.com/) checks
-    and [cargo-audit](https://github.com/RustSec/cargo-audit)).
+    build and test targets, and performs some additional
+    analysis on the codebase (e.g. [LGTM](https://lgtm.com/) checks).
   - [grapl-release.yml](./github/workflows/grapl-release.yml) -- This
     workflow runs every time we cut a [Github
     Release](https://github.com/grapl-security/grapl/releases). It
     builds all the release artifacts, runs all the tests, publishes
     all the Grapl images to Dockerhub so folks can run local Grapl
-    easily, publishes Python libraries to PyPI, and attaches all the
-    release artifacts to the Github Release.
+    easily and publishes Python libraries to PyPI.
+  - [cargo-audit.yml](./github/workflows/cargo-audit.yml) -- Runs [cargo
+    audit](https://github.com/RustSec/cargo-audit) to check our Rust
+    dependencies for security vulnerabilities on every PR when Rust dependencies
+    are changed. Also periodically runs over _all_ Rust dependencies unconditionally.
 
 ## A philosophical note
 
 The core values of Grapl's build system are:
 
   - Simplicity -- It should be easy to understand what everything
-    does, and why. You need only to remember one thing: `dobi list`.
+    does, and why. You need only to remember one thing: `make help`.
   - Evolvability -- It should be easy to add functionality. When
     adding a new Grapl service or library to the build system you just
-    need to add (or in the case of Rust services update) a Dockerfile,
-    edit `docker-compose.yml` and `dobi.yaml`, and update the
-    `grapl-release.yml` action.
+    need to update a Dockerfile, and corresponding Docker Compose files.
   - Orthogonality -- All the tools should be easily composed. For
     example, in each of Grapl's source subtrees you will find that we
     use the normal build tools for each language. So in `src/rust` you
     can execute `cargo test` to run all the Rust tests. In
     `src/python/*` you can run `py.test` to execute python tests. We
-    run these same commands--via dobi jobs--in the build system.
+    run these same commands in the build system.
 
 Note that this list *does not include* the following:
 

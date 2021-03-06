@@ -6,7 +6,6 @@ import hypothesis
 import hypothesis.strategies as st
 import pytest
 from hypothesis import given
-from pydgraph import DgraphClient
 
 from grapl_analyzerlib.prelude import *
 from test_utils.dgraph_utils import upsert, create_edge
@@ -40,7 +39,7 @@ def assert_equal_identity(a: Viewable, b: Viewable) -> None:
 
 
 def get_or_create_process_node_deprecated(
-    local_client: DgraphClient,
+    graph_client: GraphClient,
     node_key: str,
     # properties
     process_id: str,
@@ -63,7 +62,7 @@ def get_or_create_process_node_deprecated(
     }
 
     return cast(
-        ProcessView, upsert(local_client, "Process", ProcessView, node_key, node_props)
+        ProcessView, upsert(graph_client, "Process", ProcessView, node_key, node_props)
     )
 
 
@@ -72,13 +71,13 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(deadline=None)
     @given(process_props=process_props())
     def test_single_process_contains_key(self, process_props: ProcessProps) -> None:
-        local_client = MasterGraphClient()
-        created_proc = get_or_create_process(self, local_client, process_props)
+        graph_client = GraphClient()
+        created_proc = get_or_create_process(self, graph_client, process_props)
 
         # Setup complete, do some queries
 
         queried_proc = ProcessQuery().query_first(
-            local_client, contains_node_key=created_proc.node_key
+            graph_client, contains_node_key=created_proc.node_key
         )
 
         assert queried_proc
@@ -105,24 +104,24 @@ class TestProcessQuery(unittest.TestCase):
         asset_props: AssetProps,
         process_props: ProcessProps,
     ):
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
-        created_asset = get_or_create_asset(self, local_client, asset_props)
-        created_proc = get_or_create_process(self, local_client, process_props)
+        created_asset = get_or_create_asset(self, graph_client, asset_props)
+        created_proc = get_or_create_process(self, graph_client, process_props)
 
         create_edge(
-            local_client,
+            graph_client,
             created_asset.uid,
             "asset_processes",
             created_proc.uid,
         )
-        create_edge(local_client, created_proc.uid, "process_asset", created_asset.uid)
+        create_edge(graph_client, created_proc.uid, "process_asset", created_asset.uid)
         # Setup complete, do some queries
 
         queried_proc = (
             ProcessQuery()
             .with_asset(AssetQuery().with_hostname(eq=created_asset.get_hostname()))
-            .query_first(local_client, contains_node_key=created_proc.node_key)
+            .query_first(graph_client, contains_node_key=created_proc.node_key)
         )
         assert queried_proc
         queried_proc._expand()
@@ -135,18 +134,18 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(deadline=None)
     @given(process_props=process_props())
     def test_process_query_view_parity(self, process_props: ProcessProps):
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         created_proc = get_or_create_process(
             self,
-            local_client,
+            graph_client,
             process_props,
         )
 
         queried_proc = (
             ProcessQuery()
             .with_node_key(eq=created_proc.node_key)
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert queried_proc
@@ -184,9 +183,9 @@ class TestProcessQuery(unittest.TestCase):
         arguments,
     ):
         node_key = "test_process_query_view_parity_eq" + str(node_key)
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
         get_or_create_process_node_deprecated(
-            local_client,
+            graph_client,
             node_key,
             process_id,
             arguments,
@@ -205,7 +204,7 @@ class TestProcessQuery(unittest.TestCase):
             .with_terminate_time(eq=terminate_time)
             .with_image_name(eq=image_name)
             .with_process_name(eq=process_name)
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert node_key == queried_proc.node_key
@@ -221,9 +220,9 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(deadline=None)
     @given(process_props=process_props())
     def test_process_query_view_miss(self, process_props: ProcessProps) -> None:
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
-        created_proc = get_or_create_process(self, local_client, process_props)
+        created_proc = get_or_create_process(self, graph_client, process_props)
 
         assert (
             created_proc.process_id is not None
@@ -242,7 +241,7 @@ class TestProcessQuery(unittest.TestCase):
             .with_terminate_time(eq=Not(created_proc.terminate_time))
             .with_image_name(eq=Not(created_proc.image_name))
             .with_process_name(eq=Not(created_proc.process_name))
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert not queried_proc
@@ -271,9 +270,9 @@ class TestProcessQuery(unittest.TestCase):
         arguments,
     ):
         node_key = "test_process_query_view_parity_contains" + str(node_key)
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
         get_or_create_process_node_deprecated(
-            local_client,
+            graph_client,
             node_key,
             process_id=process_id,
             arguments=arguments,
@@ -298,7 +297,7 @@ class TestProcessQuery(unittest.TestCase):
         query.with_image_name(contains=image_name[: len(image_name) - 1])
         query.with_process_name(contains=process_name[: len(process_name) - 1])
 
-        queried_proc = query.query_first(local_client)
+        queried_proc = query.query_first(graph_client)
 
         assert queried_proc
         assert "Process" == queried_proc.get_node_type()
@@ -312,7 +311,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_parent_children_edge(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         created_timestamp = int(time.time())
 
@@ -323,7 +322,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         parent_process_view = upsert(
-            local_client,
+            graph_client,
             "Process",
             ProcessView,
             "0e84f2ce-f711-46ce-bc9e-1b13c9ba6d6c",
@@ -337,7 +336,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         child_process_view = upsert(
-            local_client,
+            graph_client,
             "Process",
             ProcessView,
             "46d2862f-cb58-4062-b35e-bb310b8d5b0d",
@@ -345,7 +344,7 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            local_client,
+            graph_client,
             parent_process_view.uid,
             "children",
             child_process_view.uid,
@@ -364,7 +363,7 @@ class TestProcessQuery(unittest.TestCase):
                 .with_process_name(eq="malware.exe")
                 .with_created_timestamp(eq=created_timestamp + 1000)
             )
-            .query_first(local_client)
+            .query_first(graph_client)
         )
         assert queried_process
 
@@ -382,7 +381,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_with_bin_file(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         created_timestamp = int(time.time())
 
@@ -393,7 +392,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         parent_process_view = upsert(
-            local_client,
+            graph_client,
             "Process",
             ProcessView,
             "635952af-87f3-4a2a-a65d-3f1859db9525",
@@ -406,7 +405,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         bin_file_view = upsert(
-            local_client,
+            graph_client,
             "File",
             FileView,
             "9f16e0c9-33c0-4d18-9878-ef686373570b",
@@ -414,7 +413,7 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            local_client,
+            graph_client,
             parent_process_view.uid,
             "bin_file",
             bin_file_view.uid,
@@ -431,7 +430,7 @@ class TestProcessQuery(unittest.TestCase):
                 .with_node_key(eq="9f16e0c9-33c0-4d18-9878-ef686373570b")
                 .with_file_path(eq="/folder/file.txt")
             )
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert queried_process
@@ -447,7 +446,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_process_with_created_files(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         created_timestamp = int(time.time())
 
@@ -458,7 +457,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         parent_process_view = upsert(
-            local_client,
+            graph_client,
             "Process",
             ProcessView,
             "763ddbda-8812-4a07-acfe-83402b92379d",
@@ -471,7 +470,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         created_file_view = upsert(
-            local_client,
+            graph_client,
             "File",
             FileView,
             "575f103e-1a11-4650-9f1b-5b72e44dfec3",
@@ -479,7 +478,7 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            local_client,
+            graph_client,
             parent_process_view.uid,
             "created_files",
             created_file_view.uid,
@@ -496,7 +495,7 @@ class TestProcessQuery(unittest.TestCase):
                 .with_node_key(eq="575f103e-1a11-4650-9f1b-5b72e44dfec3")
                 .with_file_path(eq="/folder/file.txt")
             )
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert queried_process
@@ -508,7 +507,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_with_deleted_files(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         created_timestamp = int(time.time())
 
@@ -519,7 +518,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         parent_process_view = upsert(
-            local_client,
+            graph_client,
             "Process",
             ProcessView,
             "test_with_deleted_files-47527d73-22c4-4e0f-bf7d-184bf1f206e2",
@@ -532,7 +531,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         deleted_file_view = upsert(
-            local_client,
+            graph_client,
             "File",
             FileView,
             "test_with_deleted_files8b8364ea-9b47-476b-8cf0-0f724adff10f",
@@ -540,7 +539,7 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            local_client,
+            graph_client,
             parent_process_view.uid,
             "deleted_files",
             deleted_file_view.uid,
@@ -552,7 +551,7 @@ class TestProcessQuery(unittest.TestCase):
             .with_process_name(contains="word")
             .with_created_timestamp(eq=created_timestamp)
             .with_deleted_files(FileQuery().with_file_path(eq="/folder/file.txt"))
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert queried_process
@@ -560,7 +559,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_with_read_files(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         created_timestamp = int(time.time())
 
@@ -571,7 +570,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         parent_process_view = upsert(
-            local_client,
+            graph_client,
             "Process",
             ProcessView,
             "test_with_read_files-669a3693-d960-401c-8d29-5d669ffcd660",
@@ -584,7 +583,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         read_file_view = upsert(
-            local_client,
+            graph_client,
             "File",
             FileView,
             "test_with_read_files-aa9248ec-36ee-4177-ba1a-999de735e682",
@@ -592,7 +591,7 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            local_client,
+            graph_client,
             parent_process_view.uid,
             "read_files",
             read_file_view.uid,
@@ -604,7 +603,7 @@ class TestProcessQuery(unittest.TestCase):
             .with_process_name(contains="word")
             .with_created_timestamp(eq=created_timestamp)
             .with_read_files(FileQuery().with_file_path(eq="/folder/file.txt"))
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert queried_process
@@ -625,7 +624,7 @@ class TestProcessQuery(unittest.TestCase):
 
     def test_with_wrote_files(self) -> None:
         # Given: a process with a pid 100 & process_name word.exe,
-        local_client = MasterGraphClient()
+        graph_client = GraphClient()
 
         created_timestamp = int(time.time())
 
@@ -636,7 +635,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         parent_process_view = upsert(
-            local_client,
+            graph_client,
             "Process",
             ProcessView,
             "test_with_wrote_files-8f0761fb-2ffe-4d4b-ab38-68e5489f56dc",
@@ -649,7 +648,7 @@ class TestProcessQuery(unittest.TestCase):
         }  # type: Dict[str, Property]
 
         wrote_file_view = upsert(
-            local_client,
+            graph_client,
             "File",
             FileView,
             "test_with_wrote_files-2325c49a-95b4-423f-96d0-99539fe03833",
@@ -657,7 +656,7 @@ class TestProcessQuery(unittest.TestCase):
         )
 
         create_edge(
-            local_client,
+            graph_client,
             parent_process_view.uid,
             "wrote_files",
             wrote_file_view.uid,
@@ -678,7 +677,7 @@ class TestProcessQuery(unittest.TestCase):
                 )
                 .with_file_path(eq="/folder/file.txt")
             )
-            .query_first(local_client)
+            .query_first(graph_client)
         )
 
         assert queried_process

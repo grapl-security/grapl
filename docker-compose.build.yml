@@ -1,0 +1,165 @@
+# This file exists solely to coordinate the build of Grapl service
+# containers.
+#
+# At the moment, these are "local" Grapl containers, and not
+# necessarily identical to the artifacts we would use in real
+# deployments.
+version: "3.8"
+
+services:
+
+  ########################################################################
+  # Rust Services
+  ########################################################################
+
+  grapl-metric-forwarder:
+    image: grapl/grapl-metric-forwarder:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: metric-forwarder-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+
+  grapl-sysmon-subgraph-generator:
+    image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: sysmon-subgraph-generator-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+
+  grapl-osquery-subgraph-generator:
+    image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: osquery-subgraph-generator-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+
+  grapl-node-identifier:
+    image: grapl/grapl-node-identifier:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: node-identifier-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+
+  grapl-node-identifier-retry-handler:
+    image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: node-identifier-retry-handler-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+
+  grapl-graph-merger:
+    image: grapl/grapl-graph-merger:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: graph-merger-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+
+  grapl-analyzer-dispatcher:
+    image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: analyzer-dispatcher-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+
+  ########################################################################
+  # Python Services
+  ########################################################################
+
+  grapl-analyzer-executor:
+    image: grapl/grapl-analyzer-executor:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: analyzer-executor-deploy
+
+  grapl-ux-router:
+    image: grapl/grapl-ux-router:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-ux-router-deploy
+
+  grapl-engagement-creator:
+    image: grapl/grapl-engagement-creator:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: engagement-creator-deploy
+
+  # TODO: really, this service should be grapl-auth
+  grapl-engagement-edge:
+    image: grapl/grapl-engagement-edge:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: engagement-edge-deploy
+
+  grapl-model-plugin-deployer:
+    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: model-plugin-deployer-deploy
+
+  grapl-dgraph-ttl:
+    image: grapl/grapl-dgraph-ttl:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: dgraph-ttl-deploy
+
+  ########################################################################
+  # Web Services
+  ########################################################################
+
+  grapl-engagement-view-uploader:
+    image: grapl/grapl-engagement-view:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: js/engagement_view/Dockerfile
+      target: engagement-view-local-deploy
+
+  grapl-graphql-endpoint:
+    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: js/graphql_endpoint/Dockerfile
+      target: graphql-endpoint-deploy
+
+  grapl-notebook:
+    image: grapl/grapl-notebook:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-notebook
+
+  ########################################################################
+  # Utility Services
+  ########################################################################
+
+  grapl-provision:
+    image: grapl/grapl-provision:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-provision
+
+  grapl-pulumi:
+    image: grapl/grapl-local-pulumi:${TAG:-latest}
+    build:
+      context: pulumi
+      dockerfile: Dockerfile

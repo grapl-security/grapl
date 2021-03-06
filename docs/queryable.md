@@ -15,11 +15,11 @@ This query describes a process - any process, it's totally unconstrained.
 
 We can execute this query in a few ways. Here are three examples,
 ```python
-mclient = MasterGraphClient()
+gclient = GraphClient()
     
-all_processes = ProcessQuery().query(mclient)
-one_process = ProcessQuery().query_first(mclient)
-count = ProcessQuery().get_count(mclient)    
+all_processes = ProcessQuery().query(gclient)
+one_process = ProcessQuery().query_first(gclient)
+count = ProcessQuery().get_count(gclient)    
 ```
 
 ###### Queryable.query

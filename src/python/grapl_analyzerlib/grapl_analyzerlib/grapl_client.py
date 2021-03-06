@@ -19,26 +19,20 @@ class GraphClient(DgraphClient):
             *(DgraphClientStub(f"{host}:{port}") for host, port in mg_alphas())
         )
 
-    @classmethod
-    def from_host_port(cls, host: str, port: int) -> "GraphClient":
-        return cls(*(DgraphClientStub(f"{host}:{port}"),))
-
     @contextmanager
-    def txn_context(self, read_only: bool = False) -> Iterator[Txn]:
+    def txn_context(
+        self,
+        read_only: bool = False,
+        best_effort: bool = False,
+    ) -> Iterator[Txn]:
         """
         Essentially, this just automates the try-finally in every
         txn() use case, turning it into a context manager.
         It'd be nice to - after a full migration to `txn_context` - perhaps restrict calls to `.txn()`
         """
 
-        txn = self.txn(read_only=read_only)
+        txn = self.txn(read_only=read_only, best_effort=best_effort)
         try:
             yield txn
         finally:
             txn.discard()
-
-
-# These two classes were previously different, but now are unified by the MG_ALPHAS env variable.
-# Consider them deprecated, and prefer GraphClient().
-MasterGraphClient = GraphClient
-LocalMasterGraphClient = GraphClient

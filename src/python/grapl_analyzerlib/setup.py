@@ -48,7 +48,7 @@ setup(
     install_requires=[
         "boto3",
         "grapl_common",
-        "grapl_graph_descriptions==1.0.*",
+        "graplinc_grapl_api",
         "pydgraph",
         "typing_extensions",
     ],

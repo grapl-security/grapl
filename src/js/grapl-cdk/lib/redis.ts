@@ -8,6 +8,7 @@ export class RedisCluster extends cdk.Construct {
     readonly securityGroup: ec2.SecurityGroup;
     readonly connections: ec2.Connections;
     readonly cluster: elasticache.CfnCacheCluster;
+    readonly address: string;
 
     constructor(scope: cdk.Construct, id: string, props: GraplServiceProps) {
         super(scope, id);
@@ -17,11 +18,11 @@ export class RedisCluster extends cdk.Construct {
             this,
             'ElasticacheSubnetGroup',
             {
-                description: `List of subnets used for redis cache ${props.prefix}-${id}`,
+                description: `List of subnets used for redis cache ${props.deploymentName}-${id}`,
                 subnetIds: props.vpc.privateSubnets.map(
                     (subnet) => subnet.subnetId
                 ),
-                cacheSubnetGroupName: `${props.prefix}-${id}-cache-subnet-group`,
+                cacheSubnetGroupName: `${props.deploymentName}-${id}-cache-subnet-group`,
             }
         );
 
@@ -39,6 +40,7 @@ export class RedisCluster extends cdk.Construct {
 
         // The cluster resource itself.
         this.cluster = new elasticache.CfnCacheCluster(this, 'Cluster', {
+            clusterName: `${props.deploymentName}-redis-${id}`,
             cacheNodeType: 'cache.t2.small',
             engine: 'redis',
             numCacheNodes: 1,
@@ -46,6 +48,8 @@ export class RedisCluster extends cdk.Construct {
             cacheSubnetGroupName: subnetGroup.cacheSubnetGroupName,
             vpcSecurityGroupIds: [this.securityGroup.securityGroupId],
         });
+
+        this.address = `${this.cluster.attrRedisEndpointAddress}:${this.cluster.attrRedisEndpointPort}`;
 
         this.cluster.addDependsOn(subnetGroup);
     }

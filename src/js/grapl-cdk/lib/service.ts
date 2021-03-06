@@ -1,37 +1,34 @@
-
-
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
-import * as logs from '@aws-cdk/aws-logs';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
 import * as sqs from '@aws-cdk/aws-sqs';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
-import { FilterPattern, SubscriptionFilter } from '@aws-cdk/aws-logs';
+import { FilterPattern } from '@aws-cdk/aws-logs';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import { Watchful } from 'cdk-watchful';
 
 class Queues {
     readonly queue: sqs.Queue;
-    readonly retry_queue: sqs.Queue;
+    readonly retryQueue: sqs.Queue;
 
-    constructor(scope: cdk.Construct, queue_name: string) {
+    constructor(scope: cdk.Construct, queueName: string) {
         const dead_letter_queue = new sqs.Queue(scope, 'DeadLetterQueue', {
-            queueName: queue_name + '-dead-letter-queue',
+            queueName: queueName + '-dead-letter-queue',
         });
 
-        this.retry_queue = new sqs.Queue(scope, 'RetryQueue', {
-            queueName: queue_name + '-retry-queue',
-            deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 10 },
+        this.retryQueue = new sqs.Queue(scope, 'RetryQueue', {
+            queueName: queueName + '-retry-queue',
+            deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(360),
         });
 
         this.queue = new sqs.Queue(scope, 'Queue', {
-            queueName: queue_name + '-queue',
-            deadLetterQueue: { queue: this.retry_queue, maxReceiveCount: 5 },
+            queueName: queueName + '-queue',
+            deadLetterQueue: { queue: this.retryQueue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(180),
         });
     }
@@ -44,7 +41,7 @@ export interface ServicePropsOptions {
 
 export interface ServiceProps {
     version: string;
-    prefix: string;
+    deploymentName: string;
     environment?: any;
     vpc?: ec2.IVpc;
     reads_from?: s3.IBucket;
@@ -69,9 +66,11 @@ export class Service {
     readonly event_handler: lambda.IFunction;
     readonly event_retry_handler: lambda.Function;
     readonly queues: Queues;
+    readonly serviceName: string;
 
     constructor(scope: cdk.Construct, name: string, props: ServiceProps) {
-        const serviceName = `${props.prefix}-${name}`;
+        const serviceName = `${props.deploymentName}-${name}`;
+        this.serviceName = serviceName;
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;
         const opt = props.opt;
@@ -79,7 +78,8 @@ export class Service {
         const runtime =
             opt && opt.runtime
                 ? opt.runtime
-                : new lambda.Runtime('provided', undefined, {
+                // amazon linux - comes with glibc etc
+                : new lambda.Runtime('provided.al2', lambda.RuntimeFamily.OTHER, {
                       supportsInlineCode: true,
                   });
 
@@ -110,10 +110,10 @@ export class Service {
             description: 'Lambda execution role for: ' + serviceName,
             managedPolicies: [
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaBasicExecutionRole'
+                    'service-role/AWSLambdaBasicExecutionRole' // FIXME: remove managed policy
                 ),
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                    'service-role/AWSLambdaVPCAccessExecutionRole' // FIXME: remove managed policy
                 ),
             ],
         });
@@ -128,8 +128,8 @@ export class Service {
                 IS_RETRY: 'False',
                 ...environment,
             },
-            timeout: cdk.Duration.seconds(180),
-            memorySize: 256,
+            timeout: cdk.Duration.seconds(45),
+            memorySize: 128,
             description: props.version,
             role,
         });
@@ -147,7 +147,7 @@ export class Service {
         }
 
         if (environment) {
-            environment.SOURCE_QUEUE_URL = queues.retry_queue.queueUrl;
+            environment.SOURCE_QUEUE_URL = queues.retryQueue.queueUrl;
         }
 
         let event_retry_handler = new lambda.Function(scope, 'RetryHandler', {
@@ -162,8 +162,8 @@ export class Service {
                 IS_RETRY: 'True',
                 ...environment,
             },
-            timeout: cdk.Duration.seconds(360),
-            memorySize: 512,
+            timeout: cdk.Duration.seconds(90),
+            memorySize: 256,
             description: props.version,
             role,
         });
@@ -180,11 +180,11 @@ export class Service {
             new SqsEventSource(queues.queue, { batchSize: 10 })
         );
         event_retry_handler.addEventSource(
-            new SqsEventSource(queues.retry_queue, { batchSize: 10 })
+            new SqsEventSource(queues.retryQueue, { batchSize: 10 })
         );
 
         queues.queue.grantConsumeMessages(event_handler);
-        queues.retry_queue.grantConsumeMessages(event_retry_handler);
+        queues.retryQueue.grantConsumeMessages(event_retry_handler);
 
         this.queues = queues;
         this.event_handler = event_handler;

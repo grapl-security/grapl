@@ -1,73 +1,61 @@
-src/js/grapl-cdk/edge_ux_package/*
-src/rust/graph-descriptions/grapl_graph_descriptions
+# Mac OS
+.DS_Store
 
-grapl-cdk/cdk.out/
-lambda/
-__pycache__/
-*.pyc
-.mypy_cache/
-events.xml
-events2.xml
-events3.xml
-events4.xml
-target/
-node_modules/
-.idea/
-*.iml
+# Test outputs
+test/cypress/screenshots
+test/cypress/videos
+
+# Environments
 .env
 venv/
 
-log2/
-
-src/js/grapl-cdk/index.js
-
-word-macro-analyzer/*/
-bootstrap
-
-# Byte-compiled / optimized / DLL files
+# Python misc
 __pycache__/
 *.py[cod]
 *$py.class
+.mypy_cache
+.hypothesis
+.pytype/
 
+# Rust outputs
 target/
-.cargo
 
-# C extensions
-*.so
+# Node packages
+node_modules/
+
+# Yarn packages
+src/js/engagement_view/.yarn/install-state.gz
+
 
 # Distribution / packaging
-.Python
-env/
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-# lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.mypy_cache
+*.zip
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-
+# IDE files
 *.code-workspace
 *.vscode
-*.zip
-stale_outputs_checked
-.log/
-.dobi/
-.hypothesis/
+.idea/
+*.iml
+/tags
+/tags.lock
+/tags.temp
+.log
+
+# Pants-related artifacts
+# https://www.pantsbuild.org/docs/gitignore
+########################################################################
+/.pants.d/
+/dist/
+/.pids
+/.pants.workdir.file_lock*
+# See build-support/generate_constraints.sh
+/build-support/.constraints-venv
+.yarn/
+
+# Generated when profiling rust code
+*.profdata
+*.profraw
+
+### PERSONAL SCRIPTS
+upload_localhost.sh

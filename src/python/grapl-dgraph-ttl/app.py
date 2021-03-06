@@ -4,12 +4,7 @@ import os
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 from chalice import Chalice
-
-from grapl_analyzerlib.grapl_client import (
-    GraphClient,
-    LocalMasterGraphClient,
-    MasterGraphClient,
-)
+from grapl_analyzerlib.grapl_client import GraphClient
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 GRAPL_DGRAPH_TTL_S = int(os.environ.get("GRAPL_DGRAPH_TTL_S", "-1"))
@@ -122,7 +117,7 @@ def delete_edges(client: GraphClient, edges: Iterator[Tuple[str, str, str]]) -> 
 
 
 def create_edge_obj(
-    src_uid: str, predicate: str, dest_uid: str
+    src_uid: int, predicate: str, dest_uid: int
 ) -> Dict[str, Union[Dict, str]]:
     if predicate.startswith("~"):  # this is a reverse edge
         return {"uid": dest_uid, predicate.lstrip("~"): {"uid": src_uid}}
@@ -133,7 +128,7 @@ def create_edge_obj(
 @app.lambda_function(name="prune_expired_subgraphs")
 def prune_expired_subgraphs(event, lambda_context) -> None:
     if GRAPL_DGRAPH_TTL_S > 0:
-        client = LocalMasterGraphClient() if IS_LOCAL else MasterGraphClient()
+        client = GraphClient()
 
         node_count = 0
         edge_count = 0

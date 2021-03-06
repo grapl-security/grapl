@@ -19,16 +19,16 @@ from typing import (
 
 import boto3
 import botocore.exceptions  # type: ignore
-from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from mypy_boto3_s3 import S3ServiceResource
-from mypy_boto3_sqs import SQSClient
-from typing_extensions import Final, Literal
-
-from grapl_analyzerlib.grapl_client import GraphClient, MasterGraphClient
+from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.lens import LensView
 from grapl_analyzerlib.prelude import BaseView, RiskView
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.viewable import Viewable
+from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
+from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
+from mypy_boto3_s3 import S3ServiceResource
+from mypy_boto3_sqs import SQSClient
+from typing_extensions import Final, Literal
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
@@ -63,6 +63,23 @@ class EngagementCreatorMetrics:
     def time_to_process_event(self) -> ContextManager:
         return self.metric_reporter.histogram_ctx(metric_name="time_to_process_event")
 
+    def risk_node(self, analyzer_name: str) -> None:
+        # A generic "hey, there's a new risky node" metric that we can globally alarm on.
+        # Has no dimensions. (See the top of `alarms.ts` to learn why!)
+        self.metric_reporter.counter(
+            metric_name=f"risk_node",
+            value=1,
+        )
+        # A more-specific, per-analyzer metric, in case you wanted to define your own alarms
+        # about just "suspicious svc host", for example.
+        self.metric_reporter.counter(
+            metric_name=f"risk_node_for_analyzer",
+            value=1,
+            tags=[
+                TagPair("analyzer_name", analyzer_name),
+            ],
+        )
+
 
 def parse_s3_event(s3: S3ServiceResource, event: Any) -> bytes:
     # Retrieve body of sns message
@@ -82,7 +99,7 @@ def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
 
 
 def create_edge(
-    client: GraphClient, from_uid: str, edge_name: str, to_uid: str
+    client: GraphClient, from_uid: int, edge_name: str, to_uid: int
 ) -> None:
     if edge_name[0] == "~":
         mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
@@ -109,7 +126,6 @@ def recalculate_score(lens: LensView) -> int:
         for risk in node_risks:
             risk_score = risk.get_risk_score()
             analyzer_name = risk.get_analyzer_name()
-            print(node.node_key, analyzer_name, risk_score)
             risks_by_analyzer[analyzer_name] = risk_score
             key_to_analyzers[node.node_key].add(analyzer_name)
 
@@ -171,21 +187,6 @@ def upsert(
     return view_type.from_dict(node_props, client)
 
 
-def get_s3_client() -> S3ServiceResource:
-    if IS_LOCAL:
-        return cast(
-            S3ServiceResource,
-            boto3.resource(
-                "s3",
-                endpoint_url="http://s3:9000",
-                aws_access_key_id="minioadmin",
-                aws_secret_access_key="minioadmin",
-            ),
-        )
-    else:
-        return cast(S3ServiceResource, boto3.resource("s3"))
-
-
 def nodes_to_attach_risk_to(
     nodes: Sequence[BaseView],
     risky_node_keys: Optional[Sequence[str]],
@@ -205,14 +206,14 @@ def create_metrics_client() -> EngagementCreatorMetrics:
 
 
 def lambda_handler(s3_event: S3Event, context: Any) -> None:
-    mg_client = MasterGraphClient()
-    s3 = get_s3_client()
+    graph_client = GraphClient()
+    s3 = S3ResourceFactory(boto3).from_env()
     metrics = create_metrics_client()
 
     for event in s3_event["Records"]:
         with metrics.time_to_process_event():
             try:
-                _process_one_event(event, s3, mg_client)
+                _process_one_event(event, s3, graph_client, metrics)
             except:
                 metrics.event_processed(status="failure")
                 raise
@@ -224,6 +225,7 @@ def _process_one_event(
     event: Any,
     s3: S3ServiceResource,
     mg_client: GraphClient,
+    metrics: EngagementCreatorMetrics,
 ) -> None:
     if not IS_LOCAL:
         event = json.loads(event["body"])["Records"][0]
@@ -262,13 +264,14 @@ def _process_one_event(
             # i.e. "hostname", "DESKTOP-WHATEVER"
             LOGGER.debug(f"Getting lens for: {lens_type} {lens_name}")
             lens_id = lens_name + lens_type
-            lens: LensView = lenses.get(lens_name) or LensView.get_or_create(
+            lens: LensView = lenses.get(lens_id) or LensView.get_or_create(
                 mg_client, lens_name, lens_type
             )
             lenses[lens_id] = lens
 
             # Attach to scope
             create_edge(mg_client, lens.uid, "scope", node.uid)
+            create_edge(mg_client, node.uid, "in_score", lens.uid)
 
             # If a node shows up in a lens all of its connected nodes should also show up in that lens
             for edge_list in edges.values():
@@ -277,6 +280,9 @@ def _process_one_event(
                     to_uid = uid_map[edge["to"]]
                     create_edge(mg_client, lens.uid, "scope", from_uid)
                     create_edge(mg_client, lens.uid, "scope", to_uid)
+
+                    create_edge(mg_client, from_uid, "in_scope", lens.uid)
+                    create_edge(mg_client, to_uid, "in_scope", lens.uid)
 
     risk = upsert(
         mg_client,
@@ -294,6 +300,10 @@ def _process_one_event(
         create_edge(mg_client, node.uid, "risks", risk.uid)
         create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
 
+        # Or perhaps we should just emit per-risk instead of per-risky-node?
+        # (this alarming path is definitely a candidate for changing later)
+        metrics.risk_node(analyzer_name=analyzer_name)
+
     for edge_list in edges.values():
         for edge in edge_list:
             from_uid = uid_map[edge["from"]]
@@ -303,17 +313,21 @@ def _process_one_event(
             create_edge(mg_client, from_uid, edge_name, to_uid)
 
     for lens in lenses.values():
-        recalculate_score(lens)
+        lens_score = recalculate_score(lens)
+        upsert(
+            mg_client,
+            "Lens",
+            LensView,
+            lens.node_key,
+            {
+                "score": lens_score,
+            },
+        )
 
 
 def main() -> None:
-    sqs: SQSClient = boto3.client(
-        "sqs",
-        region_name="us-east-1",
-        endpoint_url="http://sqs.us-east-1.amazonaws.com:9324",
-        aws_access_key_id="dummy_cred_aws_access_key_id",
-        aws_secret_access_key="dummy_cred_aws_secret_access_key",
-    )
+    LOGGER.info("Starting engagement-creator")
+    sqs = SQSClientFactory(boto3).from_env()
 
     alive = False
     while not alive:

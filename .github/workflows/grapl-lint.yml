@@ -1,61 +1,89 @@
 name: Grapl Lint
 
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging
-      - master
+      - staging  # TODO: Delete after https://github.com/grapl-security/issue-tracker/issues/224
+      - main
 
 jobs:
-  rust-lint:
+  proto-lint:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: rustfmt
-
-      - name: Check rust formatting
+      - name: Lint Protobuf Definitions
         run: |
-          cd src/rust
-          cargo fmt -- --check
+          etc/install_buf.sh
+          ./buf lint
+
+  proto-breaking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check Protobufs for Backwards-Incompatible Changes
+        # We use the full URL instead of just ".git" here because we
+        # just shallow-clone in Github Actions, so we aren't going to
+        # have the staging branch locally.
+        #
+        # NB: This branch will have to change to `main` when
+        # https://github.com/grapl-security/issue-tracker/issues/224
+        # is addressed
+        run: |
+          etc/install_buf.sh
+          ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=staging"
+
+  rust-format:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/rust
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check Rust code formatting
+        # Github Workflow runners appear to already have rustup, but
+        # using a minimal profile, which runs afoul of the
+        # RUSTUP_TOOLCHAIN variable in bin/format, because `rustfmt`
+        # isn't included in the minimal profile :(
+        run: |
+          rustup set profile default
+          bin/format --check
+
+  rust-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/rust
+    steps:
+      - uses: actions/checkout@v2
+      - name: Lint Rust Code
+        run: bin/lint
 
   python-lint:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         python-version: [3.7]
-
     steps:
       - uses: actions/checkout@v2
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Set up virtualenv
-        run: |
-          python3 -mvenv .venv
-          source .venv/bin/activate
-          python -mpip install --upgrade pip
-          pip install black isort
-
-      - name: Check python formatting
-        run: |
-          source .venv/bin/activate
-          black --check .
-
-      - name: Check python isort
-        run: |
-          source .venv/bin/activate
-          cd src/python
-          isort --diff --check-only .
+      - name: Pants Cache
+        uses: actions/cache@v2
+        with:
+          # We'll set up a new cache when our lock-file changes
+          key: pants-${{ matrix.python-version }}-${{ hashFiles('3rdparty/python/constraints.txt') }}
+          path: |
+            ~/.cache/pants/setup
+            ~/.cache/pants/named_caches
+            ~/.cache/pants/lmdb_store
+      - name: Lint
+        run: make lint-python
 
   check-pypi:
     runs-on: ubuntu-latest
@@ -78,7 +106,7 @@ jobs:
           python3 -mvenv venv && . venv/bin/activate
           pip install pypi-simple
           deactivate
-      
+
       - name: Export CHECK_PYPI_VERSION_ARGS as "true" if channel is not latest
         # passing 'true' to check_pypi means "check test.pypi.org"
         run: |
@@ -88,14 +116,17 @@ jobs:
             echo "CHECK_PYPI_VERSION_ARGS=true" >> $GITHUB_ENV
           fi
 
-      - name: Check whether grapl_graph_descriptions version has been bumped
-        run: |
-          . venv/bin/activate
-          python etc/build_scripts/check_pypi_version.py \
-            grapl_graph_descriptions \
-            $(cat src/rust/graph-descriptions/VERSION) \
-            $CHECK_PYPI_VERSION_ARGS
-          deactivate
+      # TODO: Reactivate this once the new graplinc-grapl-api package
+      # has been pushed to PyPi
+      #
+      # - name: Check whether graplinc-grapl-api version has been bumped
+      #   run: |
+      #     . venv/bin/activate
+      #     python etc/build_scripts/check_pypi_version.py \
+      #       graplinc-grapl-api \
+      #       $(cat src/python/graplinc-grapl-api/VERSION) \
+      #       $CHECK_PYPI_VERSION_ARGS
+      #     deactivate
 
       - name: Check whether grapl_analyzerlib version has been bumped
         run: |

@@ -10,10 +10,10 @@ let JWT_SECRET = "";
 
 const secretsmanager = new AWS.SecretsManager({
     apiVersion: '2017-10-17',
-    region: IS_LOCAL ? 'us-east-1' : undefined,
-    accessKeyId: IS_LOCAL ? 'dummy_cred_aws_access_key_id' : undefined,
-    secretAccessKey: IS_LOCAL ? 'dummy_cred_aws_secret_access_key' : undefined,
-    endpoint: IS_LOCAL ? 'http://secretsmanager.us-east-1.amazonaws.com:4566': undefined,
+    region: IS_LOCAL ? process.env.AWS_REGION : undefined,
+    accessKeyId: IS_LOCAL ? process.env.SECRETSMANAGER_ACCESS_KEY_ID : undefined,
+    secretAccessKey: IS_LOCAL ? process.env.SECRETSMANAGER_ACCESS_KEY_SECRET : undefined,
+    endpoint: IS_LOCAL ? process.env.SECRETSMANAGER_ENDPOINT : undefined,
 });
 
 const fetchJwtSecret = async () => {

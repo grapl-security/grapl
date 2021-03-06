@@ -7,19 +7,26 @@ mod cloudwatch_send;
 mod deser_logs_data;
 mod error;
 
-use aws_lambda_events::event::cloudwatch_logs::CloudwatchLogsEvent;
-use lambda_runtime::error::HandlerError;
-use lambda_runtime::lambda;
-use lambda_runtime::Context;
-use log::info;
+use std::sync::{Arc,
+                Mutex};
 
-use crate::accumulate_metrics::accumulate_metric_data;
-use crate::cloudwatch_logs_parse::parse_logs;
-use crate::cloudwatch_send::statsd_as_cloudwatch_metric_bulk;
-use crate::cloudwatch_send::{filter_invalid_stats, get_namespace, put_metric_data};
-use crate::error::{to_handler_error, MetricForwarderError};
+use aws_lambda_events::event::cloudwatch_logs::CloudwatchLogsEvent;
+use grapl_config::env_helpers::FromEnv;
+use lambda_runtime::{error::HandlerError,
+                     lambda,
+                     Context};
+use log::info;
 use rusoto_cloudwatch::CloudWatchClient;
-use std::sync::{Arc, Mutex};
+use tokio_compat_02::FutureExt;
+
+use crate::{accumulate_metrics::accumulate_metric_data,
+            cloudwatch_logs_parse::parse_logs,
+            cloudwatch_send::{filter_invalid_stats,
+                              get_namespace,
+                              put_metric_data,
+                              statsd_as_cloudwatch_metric_bulk},
+            error::{to_handler_error,
+                    MetricForwarderError}};
 
 fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), HandlerError> {
     /**
@@ -30,11 +37,13 @@ fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), Handler
     let result_arc_for_thread = Arc::clone(&result_arc);
 
     let thread = std::thread::spawn(move || {
-        tokio_compat::run_std(async move {
-            let result: R = handler_async(event).await.clone();
-            *result_arc_for_thread.lock().unwrap() = result;
-            ()
-        })
+        tokio_compat::run_std(
+            async move {
+                let result: R = handler_async(event).await.clone();
+                *result_arc_for_thread.lock().unwrap() = result;
+            }
+            .compat(),
+        )
     });
 
     thread.join().unwrap();
@@ -47,7 +56,7 @@ fn handler_sync(event: CloudwatchLogsEvent, _ctx: Context) -> Result<(), Handler
 
 async fn handler_async(event: CloudwatchLogsEvent) -> Result<(), MetricForwarderError> {
     info!("Handling event");
-    let cw_client = get_prod_cloudwatch_client();
+    let cw_client = CloudWatchClient::from_env();
 
     let logs = deser_logs_data::aws_event_to_cloudwatch_logs_data(event);
     match logs {
@@ -67,15 +76,9 @@ async fn handler_async(event: CloudwatchLogsEvent) -> Result<(), MetricForwarder
     }
 }
 
-// TODO wimax Sep'20 - need to figure out how to do a local cloudwatch...
-fn get_prod_cloudwatch_client() -> CloudWatchClient {
-    let region = grapl_config::region();
-    CloudWatchClient::new(region)
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let env = grapl_config::init_grapl_env!();
+    let (env, _guard) = grapl_config::init_grapl_env!();
 
     if env.is_local {
         panic!("yeah, so... this doesn't work locally yet")

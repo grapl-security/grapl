@@ -1,13 +1,8 @@
-from grapl_analyzerlib.schema import Schema
-
-print("init")
 import base64
 import hmac
 import inspect
 import json
-import logging
 import os
-import re
 import sys
 import threading
 import traceback
@@ -15,7 +10,7 @@ from base64 import b64decode
 from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypeVar, Union
+from typing import Dict, List, Optional, TypeVar, Union
 
 import boto3  # type: ignore
 import jwt
@@ -23,7 +18,6 @@ import pydgraph  # type: ignore
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
-
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
     EdgeT,
@@ -31,6 +25,13 @@ from grapl_analyzerlib.node_types import (
     PropType,
 )
 from grapl_analyzerlib.prelude import *
+from grapl_analyzerlib.schema import Schema
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    S3ClientFactory,
+    SecretsManagerClientFactory,
+)
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 sys.path.append("/tmp/")
 
@@ -38,12 +39,7 @@ T = TypeVar("T")
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
-GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
-LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-LOGGER.info("Initializing Chalice server")
+LOGGER = get_module_grapl_logger(default_log_level="ERROR")
 
 try:
     directory = Path("/tmp/model_plugins/")
@@ -56,14 +52,7 @@ if IS_LOCAL:
 
     for i in range(0, 150):
         try:
-            secretsmanager = boto3.client(
-                "secretsmanager",
-                region_name="us-east-1",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4566",
-            )
-
+            secretsmanager = SecretsManagerClientFactory(boto3).from_env()
             JWT_SECRET = secretsmanager.get_secret_value(
                 SecretId="JWT_SECRET_ID",
             )["SecretString"]
@@ -72,7 +61,7 @@ if IS_LOCAL:
             LOGGER.debug(e)
             time.sleep(1)
 
-    os.environ["BUCKET_PREFIX"] = "local-grapl"
+    os.environ["DEPLOYMENT_NAME"] = "local-grapl"
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
@@ -82,11 +71,6 @@ else:
         SecretId=JWT_SECRET_ID,
     )["SecretString"]
 
-ORIGIN = os.environ["UX_BUCKET_URL"].lower()
-
-ORIGIN_OVERRIDE = os.environ.get("ORIGIN_OVERRIDE", None)
-
-LOGGER.debug("Origin: %s", ORIGIN)
 app = Chalice(app_name="model-plugin-deployer")
 
 
@@ -134,7 +118,7 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
 
 
 def store_schema(dynamodb, schema: "Schema"):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
             LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
@@ -161,31 +145,6 @@ def provision_master_graph(
 ) -> None:
     mg_schema_str = format_schemas(schemas)
     set_schema(master_graph_client, mg_schema_str)
-
-
-def get_s3_client() -> Any:
-    if IS_LOCAL:
-        return boto3.client(
-            "s3",
-            endpoint_url="http://s3:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
-        )
-    else:
-        return boto3.client("s3")
-
-
-def get_dynamodb_client() -> Any:
-    if IS_LOCAL:
-        return boto3.resource(
-            "dynamodb",
-            endpoint_url="http://dynamodb:8000",
-            region_name="us-west-2",
-            aws_access_key_id="dummy_cred_aws_access_key_id",
-            aws_secret_access_key="dummy_cred_aws_secret_access_key",
-        )
-    else:
-        return boto3.resource("dynamodb")
 
 
 def git_walker(repo, directory, f):
@@ -228,7 +187,7 @@ def provision_schemas(master_graph_client, raw_schemas):
         schema.init_reverse()
 
     LOGGER.info("Merge the schemas with what exists in the graph")
-    dynamodb = get_dynamodb_client()
+    dynamodb = DynamoDBResourceFactory(boto3).from_env()
     for schema in schemas:
         store_schema(dynamodb, schema)
 
@@ -256,7 +215,7 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
 
 
 def meta_into_edge(dynamodb, schema: "Schema", f_edge):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
     edge_t = schema.edges[f_edge][0]  # type: EdgeT
 
@@ -316,7 +275,7 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
 
 
 def get_reverse_edge(dynamodb, schema, f_edge):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
     return edge_res["r_edge"]
 
@@ -333,7 +292,7 @@ def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Response]:
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
 
     plugin_parts = key.split("/")
     plugin_name = plugin_parts[0]
@@ -365,47 +324,29 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
     return None
 
 
-origin_re = re.compile(
-    f'https://{os.environ["BUCKET_PREFIX"]}-engagement-ux-bucket.s3.[\w-]+.amazonaws.com',
-    re.IGNORECASE,
-)
+DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 
 
 def respond(
     err, res=None, headers=None, status_code: Optional[HTTPStatus] = None
 ) -> Response:
-    req_origin = app.current_request.headers.get("origin", "")
-
-    LOGGER.info(f"responding to origin: {req_origin}")
     if not headers:
         headers = {}
 
     if IS_LOCAL:
-        override = req_origin
-        LOGGER.info(f"overriding origin with {override}")
-    else:
-        override = ORIGIN_OVERRIDE
-
-    if origin_re.match(req_origin):
-        LOGGER.info("Origin matched")
-        allow_origin = req_origin
-    else:
-        LOGGER.info("Origin did not match")
-        # allow_origin = override or ORIGIN
-        allow_origin = req_origin
-
+        override = app.current_request.headers.get("origin", "")
+        headers = {"Access-Control-Allow-Origin": override, **headers}
     status_code = status_code or (HTTPStatus.BAD_REQUEST if err else HTTPStatus.OK)
 
     return Response(
         body={"error": err} if err else json.dumps({"success": res}),
         status_code=status_code.value,
         headers={
-            "Access-Control-Allow-Origin": allow_origin,
             "Access-Control-Allow-Credentials": "true",
-            "Content-Type": "application/json",
+            "Access-Control-Allow-Headers": ":authority, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+            "Content-Type": "application/json",
             "X-Requested-With": "*",
-            "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
             **headers,
         },
     )
@@ -426,7 +367,7 @@ def requires_auth(path):
                 return respond("Must log in", status_code=HTTPStatus.UNAUTHORIZED)
             try:
                 return route_fn()
-            except Exception as e:
+            except Exception:
                 LOGGER.error(traceback.format_exc())
                 return respond("Unexpected Error")
 
@@ -491,46 +432,6 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
     return None
 
 
-@no_auth("/gitWebhook")
-def webhook():
-    shared_secret = os.environ["GITHUB_SHARED_SECRET"]
-    access_token = os.environ["GITHUB_ACCESS_TOKEN"]
-
-    signature = app.current_request.headers["X-Hub-Signature"]
-
-    assert verify_payload(
-        app.current_request.body.encode("utf8"), shared_secret.encode(), signature
-    )
-
-    repo_name = app.current_request.json_body["repository"]["full_name"]
-    if body["ref"] != "refs/heads/master":
-        return
-
-    g = Github(access_token)
-
-    repo = g.get_repo(repo_name)
-
-    plugin_folders = repo.get_contents("model_plugins")
-    # Upload every single file and folder, within 'plugins', to Grapl
-
-    plugin_paths = []
-    for plugin_folder in plugin_folders:
-        git_walker(repo, plugin_folder, lambda file: plugin_paths.append(file))
-
-    plugin_files = {}
-    for path in plugin_paths:
-        if not path.content:
-            continue
-
-        file_contents = b64decode(path.content).decode()
-        plugin_files[path.path] = file_contents
-
-    upload_plugins_resp = upload_plugins(get_s3_client(), plugin_files)
-    if upload_plugins_resp:
-        return upload_plugins_resp
-    return respond(None, {})
-
-
 # We expect a body of:
 """
 "plugins": {
@@ -542,11 +443,12 @@ def webhook():
 @requires_auth("/deploy")
 def deploy():
     LOGGER.info("/deploy")
+    s3 = S3ClientFactory(boto3).from_env()
     request = app.current_request
     plugins = request.json_body.get("plugins", {})
 
     LOGGER.info(f"Deploying {request.json_body['plugins'].keys()}")
-    upload_plugins_resp = upload_plugins(get_s3_client(), plugins)
+    upload_plugins_resp = upload_plugins(s3, plugins)
     if upload_plugins_resp:
         return upload_plugins_resp
     LOGGER.info("uploaded plugins")
@@ -554,10 +456,8 @@ def deploy():
 
 
 def get_plugin_list(s3: BaseClient):
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
-
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
     list_response = s3.list_objects_v2(Bucket=plugin_bucket)
-
     if not list_response.get("Contents"):
         return []
 
@@ -570,10 +470,12 @@ def get_plugin_list(s3: BaseClient):
 
 
 @requires_auth("/listModelPlugins")
+@requires_auth("/{proxy+}/listModelPlugins")
 def list_model_plugins():
     LOGGER.info("/listModelPlugins")
+    s3 = S3ClientFactory(boto3).from_env()
     try:
-        plugin_names = get_plugin_list(get_s3_client())
+        plugin_names = get_plugin_list(s3)
     except Exception as e:
         LOGGER.error("failed with %s", traceback.format_exc())
         return respond({"Failed": "Failed"})
@@ -583,7 +485,7 @@ def list_model_plugins():
 
 
 def delete_plugin(s3_client, plugin_name):
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
 
     list_response = s3_client.list_objects_v2(
         Bucket=plugin_bucket,
@@ -615,19 +517,22 @@ def delete_model_plugin():
     return respond(None, {"Success": "Deleted plugins"})
 
 
-@app.route("/{proxy+}", methods=["OPTIONS", "POST"])
-def nop_route():
-    LOGGER.info("routing: " + app.current_request.context["path"])
+@app.route("/prod/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "PUT", "POST"])
+def prod_nop_route():
+    LOGGER.info("prod_nop_route: " + app.current_request.context["path"])
+
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
 
     try:
         path = app.current_request.context["path"]
-        if path == "/prod/gitWebhook":
+        if path == "/prod/modelPluginDeployer/gitWebhook":
             return webhook()
-        if path == "/prod/deploy":
+        if path == "/prod/modelPluginDeployer/deploy":
             return deploy()
-        if path == "/prod/listModelPlugins":
+        if path == "/prod/modelPluginDeployer/listModelPlugins":
             return list_model_plugins()
-        if path == "/prod/deleteModelPlugin":
+        if path == "/prod/modelPluginDeployer/deleteModelPlugin":
             return delete_model_plugin()
 
         return respond("InvalidPath")
@@ -636,4 +541,24 @@ def nop_route():
         return respond("Route Server Error")
 
 
-from grapl_analyzerlib.prelude import *
+@app.route("/modelPluginDeployer/{proxy+}", methods=["OPTIONS", "POST"])
+def nop_route():
+    LOGGER.info("nop_route: " + app.current_request.context["path"])
+
+    if app.current_request.method == "OPTIONS":
+        return respond(None, {})
+
+    path = app.current_request.context["path"]
+    path_to_handler = {
+        "/prod/modelPluginDeployer/deploy": deploy,
+        "/prod/modelPluginDeployer/listModelPlugins": list_model_plugins,
+        "/prod/modelPluginDeployer/deleteModelPlugin": delete_model_plugin,
+        "/modelPluginDeployer/deploy": deploy,
+        "/modelPluginDeployer/listModelPlugins": list_model_plugins,
+        "/modelPluginDeployer/deleteModelPlugin": delete_model_plugin,
+    }
+    handler = path_to_handler.get(path, None)
+    if handler:
+        return handler()
+
+    return respond(err=f"Invalid path: {path}", status_code=HTTPStatus.NOT_FOUND)

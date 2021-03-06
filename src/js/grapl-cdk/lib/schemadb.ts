@@ -4,6 +4,7 @@ import * as iam from '@aws-cdk/aws-iam';
 
 import { Service } from './service';
 import { RemovalPolicy } from '@aws-cdk/core';
+import { FargateService } from "./fargate_service";
 
 export interface SchemaDbProps {
     table_name: string;
@@ -27,9 +28,14 @@ export class SchemaDb extends cdk.Construct {
         });
     }
 
-    allowRead(service: Service) {
-        this.schema_table.grantReadData(service.event_handler);
-        this.schema_table.grantReadData(service.event_retry_handler);
+    allowRead(service: Service|FargateService) {
+        if (service instanceof FargateService) {
+            this.schema_table.grantReadData(service.service.taskDefinition.taskRole);
+            this.schema_table.grantReadData(service.retryService.taskDefinition.taskRole);
+        } else {
+            this.schema_table.grantReadData(service.event_handler);
+            this.schema_table.grantReadData(service.event_retry_handler);
+        }
     }
 
     allowReadWrite(service: Service) {

@@ -187,7 +187,7 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],

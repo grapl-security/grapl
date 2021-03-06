@@ -4,26 +4,28 @@ import * as cdk from '@aws-cdk/core';
 
 import { GraplCdkStack } from '../lib/grapl-cdk-stack';
 import { EngagementUx } from '../lib/engagement';
-
-const deployName = 'Grapl-MYDEPLOYMENT';
-const graplVersion = 'latest';
-const watchfulEmail = undefined;
+import { DeploymentParameters } from './deployment_parameters';
 
 const app = new cdk.App();
 
+const deploymentParameters = new DeploymentParameters();
+
 const grapl = new GraplCdkStack(app, 'Grapl', {
-    version: graplVersion,
-    stackName: deployName,
-    tags: { 'grapl deployment': deployName },
-    watchfulEmail,
+    version: deploymentParameters.graplVersion,
+    logLevels: deploymentParameters.logLevels,
+    stackName: deploymentParameters.stackName,
+    watchfulEmail: deploymentParameters.watchfulEmail,
+    operationalAlarmsEmail: deploymentParameters.operationalAlarmsEmail,
+    securityAlarmsEmail: deploymentParameters.securityAlarmsEmail,
+    tags: { 'grapl deployment': deploymentParameters.stackName },
     description: 'Grapl base deployment',
+    env: { 'region': deploymentParameters.region },
 });
 
 new EngagementUx(app, 'EngagementUX', {
-    prefix: grapl.prefix,
-    engagement_edge: grapl.engagement_edge,
-    graphql_endpoint: grapl.graphql_endpoint,
-    model_plugin_deployer: grapl.model_plugin_deployer,
-    stackName: deployName + '-EngagementUX',
+    deploymentName: grapl.deploymentName,
+    edgeApi: grapl.edgeApiGateway,
+    stackName: deploymentParameters.stackName + '-EngagementUX',
     description: 'Grapl Engagement UX',
+    env: { 'region': deploymentParameters.region },
 });

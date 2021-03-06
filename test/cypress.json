@@ -1,0 +1,4 @@
+{
+    "baseUrl": "http://api.grapl.test:3128",
+    "pageLoadTimeout": 180000
+}

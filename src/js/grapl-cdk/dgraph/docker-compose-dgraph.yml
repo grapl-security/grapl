@@ -37,6 +37,12 @@ services:
         target: /etc/envoy/envoy.yaml
     deploy:
       mode: global
+    logging:
+      driver: awslogs
+      options:
+        awslogs-create-group: "true"
+        awslogs-group: ${AWS_LOGS_GROUP}
+        awslogs-stream: "envoy"
 
   zero:
     image: dgraph/dgraph:v20.07.1
@@ -51,7 +57,13 @@ services:
       placement:
         constraints:
           - node.hostname == ${AWS01_NAME}
-    command: dgraph zero --my=zero:5080 --replicas 3
+    logging:
+      driver: awslogs
+      options:
+        awslogs-create-group: "true"
+        awslogs-group: ${AWS_LOGS_GROUP}
+        awslogs-stream: "zero"
+    command: dgraph zero --my=zero:5080 --replicas 1
     depends_on:
       - envoy
 
@@ -72,6 +84,12 @@ services:
       placement:
         constraints:
           - node.hostname == ${AWS01_NAME}
+    logging:
+      driver: awslogs
+      options:
+        awslogs-create-group: "true"
+        awslogs-group: ${AWS_LOGS_GROUP}
+        awslogs-stream: "alpha1"
     command: dgraph alpha --my=alpha1:7081 --lru_mb=2048 --zero=zero:5080 -o 1 --whitelist=10.0.0.0/8
     depends_on:
       - envoy
@@ -94,6 +112,12 @@ services:
       placement:
         constraints:
           - node.hostname == ${AWS02_NAME}
+    logging:
+      driver: awslogs
+      options:
+        awslogs-create-group: "true"
+        awslogs-group: ${AWS_LOGS_GROUP}
+        awslogs-stream: "alpha2"
     command: dgraph alpha --my=alpha2:7082 --lru_mb=2048 --zero=zero:5080 -o 2 --whitelist=10.0.0.0/8
     depends_on:
       - envoy
@@ -116,6 +140,12 @@ services:
       placement:
         constraints:
           - node.hostname == ${AWS03_NAME}
+    logging:
+      driver: awslogs
+      options:
+        awslogs-create-group: "true"
+        awslogs-group: ${AWS_LOGS_GROUP}
+        awslogs-stream: "alpha3"
     command: dgraph alpha --my=alpha3:7083 --lru_mb=2048 --zero=zero:5080 -o 3 --whitelist=10.0.0.0/8
     depends_on:
       - envoy

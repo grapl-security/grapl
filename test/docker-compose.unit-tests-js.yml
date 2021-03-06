@@ -1,0 +1,24 @@
+version: "3.8"
+
+# environment variable PWD is assumed to be grapl root directory
+
+services:
+
+  grapl-engagement-view-test:
+    image: grapl/grapl-engagement-view-build:${TAG:-latest}
+    build: 
+      context: ${PWD}/src
+      dockerfile: js/engagement_view/Dockerfile
+      target: engagement-view-deps
+    command: sh -c 'CI=true yarn test'
+
+  grapl-cdk-test:
+    image: grapl/grapl-cdk-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: js/grapl-cdk/Dockerfile
+      target: grapl-cdk-test
+    command: npm run test
+
+  # grapl-graphql-endpoint:
+  #   image: grapl/grapl-graphql-endpoint-test:${TAG:-latest}

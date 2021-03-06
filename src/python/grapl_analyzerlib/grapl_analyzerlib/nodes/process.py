@@ -223,7 +223,7 @@ class ProcessView(EntityView[PV, PQ]):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],
@@ -381,7 +381,7 @@ class ProcessExtendsProcessOutboundConnectionQuery(ProcessOutboundConnectionQuer
 class ProcessExtendsProcessOutboundConnectionView(ProcessOutboundConnectionView):
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],
@@ -428,7 +428,7 @@ class ProcessExtendsProcessInboundConnectionQuery(ProcessInboundConnectionQuery)
 class ProcessExtendsProcessInboundConnectionView(ProcessInboundConnectionView):
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],

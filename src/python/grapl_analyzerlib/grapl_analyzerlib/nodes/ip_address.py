@@ -149,7 +149,7 @@ class IpAddressView(EntityView[IPV, IPQ]):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],
@@ -204,7 +204,7 @@ class IpAddressExtendsIpConnectionView(IpConnectionView):
 
     def __init__(
         self,
-        uid: str,
+        uid: int,
         node_key: str,
         graph_client: Any,
         node_types: Set[str],
@@ -236,4 +236,4 @@ IpConnectionQuery = IpConnectionQuery.extend_self(IpAddressExtendsIpConnectionQu
 IpConnectionView = IpConnectionView.extend_self(IpAddressExtendsIpConnectionView)
 
 if TYPE_CHECKING:
-    from grapl_analyzerlib.nodes import ProcessQuery
+    from grapl_analyzerlib.nodes.process import ProcessQuery

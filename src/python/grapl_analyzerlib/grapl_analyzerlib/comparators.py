@@ -53,13 +53,10 @@ class Eq(object):
         if self.predicate == "dgraph.type":
             filter_str = f"type({self.value})"
         else:
-            filter_str = "eq({}, {})".format(
-                self.predicate,
-                self.value,
-            )
+            filter_str = f"eq({self.predicate}, {self.value})"
 
         if self.negated:
-            return "(NOT " + filter_str + ")"
+            return f"(NOT {filter_str})"
         else:
             return filter_str
 
@@ -215,7 +212,10 @@ def dgraph_prop_type(cmp: Cmp) -> str:
     if isinstance(cmp, Has):
         return "string"
     if isinstance(cmp, Eq):
-        return "string"
+        if isinstance(cmp.value, str):
+            return "string"
+        else:
+            return "int"
     if isinstance(cmp, Contains):
         return "string"
     if isinstance(cmp, StartsWith):
