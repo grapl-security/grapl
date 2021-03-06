@@ -34,7 +34,11 @@ class ServiceQueue(pulumi.ComponentResource):
         # TODO: delete_before_replace is only needed if we're
         # overriding the name of the queues
 
-        prefix = pulumi.get_stack() if name in ("sysmon-generator") else "grapl"
+        prefix = (
+            pulumi.get_stack()
+            if name in ("sysmon-generator", "osquery-generator")
+            else "grapl"
+        )
 
         dead_letter_name = f"{prefix}-{name}-dead_letter-queue"
         self.dead_letter_queue = aws.sqs.Queue(

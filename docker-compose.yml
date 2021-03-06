@@ -161,15 +161,15 @@ services:
     environment:
       <<: *aws-region
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-generator-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-generator-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-generator-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
