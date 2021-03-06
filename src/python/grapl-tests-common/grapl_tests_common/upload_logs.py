@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 import boto3  # type: ignore
 import zstd  # type: ignore
 
+DEPLOYMENT_NAME = "local-grapl"
+
 
 def rand_str(l: int) -> str:
     return "".join(
@@ -76,7 +78,7 @@ class GeneratorOptions:
 class SysmonGeneratorOptions(GeneratorOptions):
     def __init__(self) -> None:
         super().__init__(
-            queue_name="grapl-sysmon-generator-queue",
+            queue_name=f"{DEPLOYMENT_NAME}-sysmon-generator-queue",
             bucket_suffix="sysmon-log-bucket",
             key_infix="sysmon",
         )
