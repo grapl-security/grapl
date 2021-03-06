@@ -36,7 +36,7 @@ class ServiceQueue(pulumi.ComponentResource):
 
         prefix = (
             pulumi.get_stack()
-            if name in ("sysmon-generator", "osquery-generator")
+            if name in ("sysmon-generator", "osquery-generator", "node-identifier")
             else "grapl"
         )
 
