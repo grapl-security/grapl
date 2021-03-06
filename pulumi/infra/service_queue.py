@@ -42,6 +42,7 @@ class ServiceQueue(pulumi.ComponentResource):
             name=dead_letter_name,
             message_retention_seconds=message_retention_seconds,
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
+            visibility_timeout_seconds=30,
         )
 
         retry_name = f"{prefix}-{name}-retry-queue"
@@ -49,6 +50,7 @@ class ServiceQueue(pulumi.ComponentResource):
             retry_name,
             name=retry_name,
             message_retention_seconds=message_retention_seconds,
+            visibility_timeout_seconds=360,
             redrive_policy=self.dead_letter_queue.arn.apply(redrive_policy),
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
@@ -58,6 +60,7 @@ class ServiceQueue(pulumi.ComponentResource):
             queue_name,
             name=queue_name,
             message_retention_seconds=message_retention_seconds,
+            visibility_timeout_seconds=180,
             redrive_policy=self.retry_queue.arn.apply(redrive_policy),
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
