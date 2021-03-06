@@ -21,7 +21,7 @@ def _ensure_alive(sqs: SQSClient, queue_url: str) -> None:
     while True:
         try:
             if "QueueUrls" not in sqs.list_queues(QueueNamePrefix=queue_name):
-                LOGGER.info("Waiting for grapl-analyzer-executor-queue to be created")
+                LOGGER.info(f"Waiting for {queue_name} to be created")
                 time.sleep(5)
                 continue
         except (

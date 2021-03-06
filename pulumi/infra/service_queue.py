@@ -43,6 +43,7 @@ class ServiceQueue(pulumi.ComponentResource):
                 "node-identifier",
                 "graph-merger",
                 "engagement-creator",
+                "analyzer-executor"
             )
             else "grapl"
         )
