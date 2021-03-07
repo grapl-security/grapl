@@ -1,5 +1,5 @@
 import pulumi_aws as aws
-from infra import dynamodb
+from infra import dynamodb, emitter
 from infra.service_queue import ServiceQueue
 
 import pulumi
@@ -12,15 +12,9 @@ if __name__ == "__main__":
 
     buckets = (
         "analyzer-dispatched-bucket",
-        "analyzer-matched-subgraphs-bucket",
         "analyzers-bucket",
         "engagement-ux-bucket",
         "model-plugins-bucket",
-        "osquery-log-bucket",
-        "subgraphs-generated-bucket",
-        "subgraphs-merged-bucket",
-        "sysmon-log-bucket",
-        "unid-subgraphs-generated-bucket",
     )
 
     for logical_bucket_name in buckets:
@@ -30,6 +24,19 @@ if __name__ == "__main__":
             bucket=physical_bucket_name,
         )
         pulumi.export(f"Bucket: {physical_bucket_name}", bucket.id)
+
+
+    events = (
+        "analyzer-matched-subgraphs",
+        "dispatched-analyzer",
+        "osquery-log",
+        "subgraphs-generated",
+        "subgraphs-merged",
+        "sysmon-log",
+        "unid-subgraphs-generated",
+    )
+    for event in events:
+        emitter.EventEmitter(event)
 
     services = (
         "analyzer-dispatcher",
