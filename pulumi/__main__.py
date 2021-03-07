@@ -1,5 +1,5 @@
 import pulumi_aws as aws
-from infra import dynamodb, emitter, ui
+from infra import dynamodb, emitter, ui, util
 from infra.service_queue import ServiceQueue
 
 import pulumi
@@ -12,20 +12,8 @@ if __name__ == "__main__":
 
     ui = ui.UI(PREFIX)
 
-    buckets = (
-        "analyzer-dispatched-bucket",
-        "analyzers-bucket",
-        "model-plugins-bucket",
-    )
-
-    for logical_bucket_name in buckets:
-        physical_bucket_name = f"{PREFIX}-{logical_bucket_name}"
-        bucket = aws.s3.Bucket(
-            logical_bucket_name,
-            bucket=physical_bucket_name,
-        )
-        pulumi.export(f"Bucket: {physical_bucket_name}", bucket.id)
-
+    util.grapl_bucket("model-plugins-bucket", sse=False)
+    util.grapl_bucket("analyzers-bucket", sse=True)
 
     events = (
         "analyzer-matched-subgraphs",
