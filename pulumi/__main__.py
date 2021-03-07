@@ -1,5 +1,5 @@
 import pulumi_aws as aws
-from infra import dynamodb, emitter
+from infra import dynamodb, emitter, ui
 from infra.service_queue import ServiceQueue
 
 import pulumi
@@ -10,10 +10,11 @@ if __name__ == "__main__":
 
     dynamodb_tables = dynamodb.DynamoDB(PREFIX)
 
+    ui = ui.UI(PREFIX)
+
     buckets = (
         "analyzer-dispatched-bucket",
         "analyzers-bucket",
-        "engagement-ux-bucket",
         "model-plugins-bucket",
     )
 
