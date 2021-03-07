@@ -1,5 +1,7 @@
 from typing import Any
 
+import pulumi_aws as aws
+
 import pulumi
 
 # Use this to modify behavior or configuration for provisioning in
@@ -37,3 +39,52 @@ def import_aware_opts(resource_id: str, **kwargs: Any) -> pulumi.ResourceOptions
         import_=resource_id if import_from_existing else None
     )
     return pulumi.ResourceOptions.merge(given_opts, import_opts)
+
+
+def grapl_bucket(
+    logical_bucket_name: str,
+    prefix: str = pulumi.get_stack(),
+    sse: bool = False,
+    parent=None,
+) -> aws.s3.Bucket:
+    """Abstracts logic for creating an S3 bucket for our purposes.
+
+    logical_bucket_name: What we call this bucket in Pulumi terms.
+
+    prefix: an informative prefix to add to the logical bucket name to
+    form a physical bucket name. Generally, this will be the Pulumi
+    stack.
+
+    sse: Whether or not to apply server-side encryption of
+    bucket contents
+
+    parent: for use in ComponentResources; the Pulumi resource
+    that "owns" this resource.
+
+    """
+    physical_bucket_name = f"{prefix}-{logical_bucket_name}"
+    base_args = {
+        "bucket": physical_bucket_name,
+        "tags": {"grapl deployment": pulumi.get_stack()},
+    }
+
+    # TODO: Temporarily not doing encrypted buckets for Local
+    # Grapl... I think we need to configure some stuff in that
+    # environment a bit differently
+    if sse and not IS_LOCAL:
+        base_args["server_side_encryption_configuration"] = sse_config()
+
+    base_args["opts"] = import_aware_opts(physical_bucket_name, parent=parent)
+
+    return aws.s3.Bucket(logical_bucket_name, **base_args)
+
+
+def sse_config():
+    """ Applies SSE to a bucket using AWS KMS. """
+    return aws.s3.BucketServerSideEncryptionConfigurationArgs(
+        rule=aws.s3.BucketServerSideEncryptionConfigurationRuleArgs(
+            apply_server_side_encryption_by_default=aws.s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
+                sse_algorithm="aws:kms",
+            ),
+        ),
+    )
