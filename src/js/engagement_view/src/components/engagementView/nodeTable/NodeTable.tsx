@@ -67,8 +67,8 @@ function NodeTable({ node }: NodeTableProps) {
 	});
 
 	return (
-		<TableContainer>
-			<Table className={classes.nodeTable}>
+		<TableContainer className={classes.nodeTableContainer}>
+			<Table>
 				{nodeTableHeader(node, classes)}
 				<TableBody>
 					{Object.entries(displayNode).map((nodeProperty) => {
@@ -92,3 +92,4 @@ function NodeTable({ node }: NodeTableProps) {
 }
 
 export default NodeTable;
+

@@ -3,8 +3,8 @@ import React from "react";
 import NodeTable from '../nodeTable/NodeTable';
 import { NodeDetailsProps, EngagementViewProps } from "types/LensAndNodeTableTypes";
 
-import {ToggleLensTable} from "./utils/toggleLensTable";
-import {ToggleNodeDetailTable} from './utils/toggleNodeDetailTable';
+import {ToggleLensTable} from "./tableStructure/toggleLensTable";
+import {ToggleNodeDetailTable} from './tableStructure/toggleNodeDetailTable';
 
 export const NodeDetails = ({node}: NodeDetailsProps) => {
     return ( 

@@ -9,6 +9,7 @@ import { NodeDetails } from "../LensAndNodeTableContainer";
 
 import { useStyles } from "../styles";
 
+
 export function ToggleNodeDetailTable({ curNode }: ToggleNodeTableProps) {
 	const [toggled, setToggle] = useState(true);
 	const classes = useStyles();
