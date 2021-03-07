@@ -9,9 +9,16 @@ export const nodeTableStyles = makeStyles({
     }, 
     tableHeader: {
         fontSize: ".85rem", 
-        backgroundColor: "#595959"
+        backgroundColor: "#363434"
     }, 
     nodeTableData: {
-        fontSize: ".75rem"
+        fontSize: ".75rem",
+        backgroundColor: "#333333"
+    },
+    nodeTableContainer:{
+        textAlign: "center",
+        marginLeft: "auto",
+        marginRight: "auto",
+        width: "95%"
     },
 });

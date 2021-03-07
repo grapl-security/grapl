@@ -1,3 +1,4 @@
+
 import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
 
 export const dasboardStyles = makeStyles( (theme: Theme) =>
@@ -6,43 +7,47 @@ export const dasboardStyles = makeStyles( (theme: Theme) =>
             display: "flex",
         },
         button: {
-            backgroundColor: "#42C6FF",
-            margin: "0.25rem",
-            padding: "0.25rem",
+            backgroundColor: "#1A191C",
+            margin: "1rem",
+            fontSize: ".65rem",
         }, 
-        welcome: {
-            width:"70%",
-            textAlign:"center",
-            backgroundColor: "#373740",
-            height: "100vh",
-            color: "white",
-        },
         loggedIn: {
             display:"flex", 
             justifyContent: "flex-end",
             zIndex: 100, 
         }, 
-        nav: {
-            margin: "2rem",
-            width: "30%",
-            display: "flex",
-            flexDirection: "column",
-        },
         dashboard: {
             display: "flex",
             flexDirection: "row",
         }, 
         link: {
+            fontSize: ".75rem",
             color: "white",
             textDecoration: "none",
             padding: ".75rem",
-            backgroundColor: "#42C6FF",
+            backgroundColor: "#1A191C",
             margin: "1rem",
             textAlign: "center",
-            borderRadius: ".35rem",
+            borderRadius: ".15rem",
             textTransform: "uppercase",
-            fontWeight: "bolder"
         },
-        
+        sagemaker: {
+            fontSize: ".65rem",
+            color: "white",
+            textDecoration: "none",
+            padding: ".65rem",
+            backgroundColor: "#1A191C",
+            margin: "1rem",
+            textAlign: "center",
+            borderRadius: ".15rem",
+            textTransform: "uppercase",
+        },
+        navSec: {
+            margin: "0 auto",
+            marginTop: "6rem"
+        },
+        help: {
+            color:"white"
+        }
     })
 );
