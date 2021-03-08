@@ -21,36 +21,36 @@ impl std::fmt::Display for Escaped {
 
 impl From<u64> for Escaped {
     fn from(prop: u64) -> Self {
-        Self(prop.to_string())
+        Self(format!(r#""{}""#, prop))
     }
 }
 
 impl From<i64> for Escaped {
     fn from(prop: i64) -> Self {
-        Self(prop.to_string())
+        Self(format!(r#""{}""#, prop))
     }
 }
 
 impl From<&u64> for Escaped {
     fn from(prop: &u64) -> Self {
-        Self(prop.to_string())
+        Self(format!(r#""{}""#, prop))
     }
 }
 
 impl From<&i64> for Escaped {
     fn from(prop: &i64) -> Self {
-        Self(prop.to_string())
+        Self(format!(r#""{}""#, prop))
     }
 }
 impl From<ImmutableUintProp> for Escaped {
     fn from( ImmutableUintProp{ prop }: ImmutableUintProp) -> Self {
-        Self(prop.to_string())
+        Self(format!(r#""{}""#, prop))
     }
 }
 
 impl From<ImmutableIntProp> for Escaped {
     fn from( ImmutableIntProp{ prop }: ImmutableIntProp) -> Self {
-        Self(prop.to_string())
+        Self(format!(r#""{}""#, prop))
     }
 }
 

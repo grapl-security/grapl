@@ -12,6 +12,8 @@ use rusoto_dynamodb::{AttributeValue,
                       KeysAndAttributes};
 use serde::{Deserialize,
             Serialize};
+// pub use grapl_graph_descriptions::*;
+pub use dgraph_tonic::Status;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ReverseEdgeResolverError {
@@ -24,6 +26,12 @@ pub enum ReverseEdgeResolverError {
 lazy_static! {
     /// timeout for dynamodb queries
     static ref DYNAMODB_QUERY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+}
+
+impl From<ReverseEdgeResolverError> for Status {
+    fn from(_err: ReverseEdgeResolverError) -> Status {
+        unimplemented!()
+    }
 }
 
 #[derive(Clone)]

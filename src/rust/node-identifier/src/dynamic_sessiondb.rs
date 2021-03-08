@@ -188,21 +188,16 @@ where
 
         let created_time = strategy.create_time;
         let last_seen_time = strategy.last_seen_time;
-        let negation_keys: HashMap<String, _> = strategy.negation_keys.iter().flat_map(|negation_key| {
-            node.properties.get(negation_key).map(|value| (negation_key.to_string(), value.to_owned()))
-        }).collect();
         let unid = match (created_time != 0, last_seen_time != 0) {
             (true, _) => UnidSession {
                 pseudo_key: primary_key,
                 timestamp: created_time,
                 is_creation: true,
-                negation_keys,
             },
             (_, true) => UnidSession {
                 pseudo_key: primary_key,
                 timestamp: last_seen_time,
                 is_creation: false,
-                negation_keys,
             },
             _ => bail!(
                 "Terminating sessions not yet supported: {:?} {:?}",

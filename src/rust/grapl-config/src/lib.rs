@@ -123,7 +123,7 @@ pub fn retry_queue_url() -> String {
 }
 
 pub fn mg_alphas() -> Vec<String> {
-    return std::env::var("MG_ALPHAS")
+    std::env::var("MG_ALPHAS")
         .expect("MG_ALPHAS")
         .split(',')
         .map(|mg| {
@@ -132,7 +132,12 @@ pub fn mg_alphas() -> Vec<String> {
             }
             format!("http://{}", mg)
         })
-        .collect();
+        .collect()
+}
+
+pub fn mutation_endpoint() -> String {
+    std::env::var("MUTATION_ENDPOINT")
+        .expect("MUTATION_ENDPOINT")
 }
 
 pub async fn wait_for_s3(s3_client: impl S3) -> color_eyre::Result<()> {

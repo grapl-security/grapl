@@ -1,7 +1,6 @@
 #![allow(dead_code, unused_variables)]
 use std::{collections::HashMap,
           convert::TryFrom};
-use grapl_graph_descriptions::NodeProperty;
 use failure::Error;
 use rusoto_dynamodb::AttributeValue;
 use serde::{Deserialize,
@@ -12,7 +11,6 @@ pub struct UnidSession {
     pub pseudo_key: String,
     pub timestamp: u64,
     pub is_creation: bool, // Is this a creation event
-    pub negation_keys: HashMap<String, NodeProperty>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

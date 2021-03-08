@@ -1,6 +1,6 @@
 use darkredis::{ConnectionPool, Error as RedisError, MSetBuilder};
 use std::collections::HashMap;
-use tokio::time::Elapsed;
+use tokio::time::error::Elapsed;
 use lazy_static::lazy_static;
 use grapl_utils::future_ext::GraplFutureExt;
 use std::string::FromUtf8Error;

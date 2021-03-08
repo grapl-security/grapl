@@ -81,7 +81,9 @@ FROM build AS build-test-integration
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
-    cargo test --manifest-path node-identifier/Cargo.toml --features integration --no-run
+    cargo test --manifest-path node-identifier/Cargo.toml --features integration --no-run; \
+    cargo test --manifest-path graph-merger/Cargo.toml --features integration --no-run; \
+    cargo test --manifest-path graph-mutation-service/Cargo.toml --features integration --no-run
 
 
 # images for running services
@@ -114,6 +116,12 @@ FROM rust-dist AS graph-merger-deploy
 
 COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/graph-merger" /
 CMD ["/graph-merger"]
+
+# graph-mutation-service
+FROM rust-dist AS graph-mutation-service-deploy
+
+COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/graph-mutation-service" /
+CMD ["/graph-mutation-service"]
 
 # metric-forwarder
 FROM rust-dist AS metric-forwarder-deploy

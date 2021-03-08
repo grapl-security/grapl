@@ -40,8 +40,9 @@ anyhow = "1.0.38"
 futures-retry = "0.6.0"
 dgraph_query_lib = "0.1.0"
 grapl-observe = { path = "../grapl-observe" }
+grapl-config = { path="../grapl-config" }
 
-rusoto_dynamodb = { version="0.45", default_features = false, features=["rustls"] }
+rusoto_dynamodb = { version="0.46", default_features = false, features=["rustls"] }
 lru = "0.6.5"
 grapl-utils = { path = "../grapl-utils" }
 

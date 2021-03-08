@@ -16,12 +16,21 @@ use failure::{bail,
 use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
+use grapl_graph_descriptions::graph_mutation_service::{SetNodeRequest, SetNodeSuccess};
+use grapl_graph_descriptions::graph_mutation_service::set_node_result;
+use grapl_graph_descriptions::graph_mutation_service::set_edge_result;
+use grapl_graph_descriptions::graph_mutation_service::SetEdgeRequest;
+use grapl_graph_descriptions::graph_mutation_service::SetEdgeSuccess;
+use grapl_graph_descriptions::MergedEdge;
+
 use grapl_graph_descriptions::graph_description::{Edge,
                                                   EdgeList,
                                                   IdentifiedGraph,
                                                   IdentifiedNode,
                                                   MergedGraph,
                                                   MergedNode};
+pub use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient;
+
 use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
                     metric_reporter::{tag,
                                       MetricReporter}};
@@ -30,12 +39,6 @@ use grapl_service::{decoder::ZstdProtoDecoder,
 use grapl_utils::{future_ext::GraplFutureExt,
                   rusoto_ext::dynamodb::GraplDynamoDbClientExt};
 use lazy_static::lazy_static;
-use rusoto_dynamodb::{AttributeValue,
-                      BatchGetItemInput,
-                      DynamoDb,
-                      DynamoDbClient,
-                      GetItemInput,
-                      KeysAndAttributes};
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use serde::{Deserialize,
@@ -54,39 +57,30 @@ use sqs_executor::{cache::{Cache,
 use tracing::{error,
               info,
               warn};
+use tonic::transport::Channel;
 
-use crate::{reverse_resolver,
-            reverse_resolver::{get_r_edges_from_dynamodb,
-                               ReverseEdgeResolver},
-            upsert_util,
-            upserter};
 
 #[derive(Clone)]
 pub struct GraphMerger<CacheT>
-where
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
-    mg_client: Arc<DgraphClient>,
-    reverse_edge_resolver: ReverseEdgeResolver,
+    graph_mutation_client: GraphMutationRpcClient<Channel>,
     metric_reporter: MetricReporter<Stdout>,
     cache: CacheT,
 }
 
 impl<CacheT> GraphMerger<CacheT>
-where
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
-    pub fn new(
-        mg_alphas: Vec<String>,
-        reverse_edge_resolver: ReverseEdgeResolver,
+    pub async fn new(
+        graph_mutation_client: GraphMutationRpcClient<Channel>,
         metric_reporter: MetricReporter<Stdout>,
         cache: CacheT,
     ) -> Self {
-        let mg_client = DgraphClient::new(mg_alphas).expect("Failed to create dgraph client.");
-
         Self {
-            mg_client: Arc::new(mg_client),
-            reverse_edge_resolver,
+            graph_mutation_client,
             metric_reporter,
             cache,
         }
@@ -107,8 +101,8 @@ impl CheckedError for GraphMergerError {
 
 #[async_trait]
 impl<CacheT> EventHandler for GraphMerger<CacheT>
-where
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = IdentifiedGraph;
     type OutputEvent = MergedGraph;
@@ -131,42 +125,76 @@ where
             edges=?subgraph.edges.len(),
         );
 
-        let uncached_nodes = subgraph.nodes.into_iter().map(|(_, n)| n);
-        let mut uncached_edges: Vec<_> = subgraph
-            .edges
-            .into_iter()
-            .flat_map(|e| e.1.into_vec())
-            .collect();
-        let reverse = self
-            .reverse_edge_resolver
-            .resolve_reverse_edges(uncached_edges.clone())
-            .await
-            .map_err(Err)?;
-
-        uncached_edges.extend_from_slice(&reverse[..]);
-
         let mut merged_graph = MergedGraph::new();
-        let mut uncached_subgraph = IdentifiedGraph::new();
+        let mut node_requests = Vec::with_capacity(subgraph.nodes.len());
+        let mut edge_requests = Vec::with_capacity(subgraph.edges.len());
 
-        for node in uncached_nodes {
-            uncached_subgraph.add_node(node);
+        for (_, node) in subgraph.nodes.into_iter() {
+            let mut graph_mutation_client = self.graph_mutation_client.clone();
+            node_requests.push(
+                async move {
+                    let node_uid = graph_mutation_client.set_node(
+                        SetNodeRequest {
+                            node: Some(node.clone()),
+                        }
+                    ).await.expect("Failed to upsert node")
+                        .into_inner().rpc_result.unwrap();
+                    (node_uid, node)
+                }
+            );
         }
 
-        for edge in uncached_edges {
-            uncached_subgraph.add_edge(edge.edge_name, edge.from_node_key, edge.to_node_key);
+        for (_, EdgeList { edges }) in subgraph.edges.into_iter() {
+            for edge in edges {
+                let mut graph_mutation_client =  self.graph_mutation_client.clone();
+                edge_requests.push(
+                    async move {
+                        let set_edge_res = graph_mutation_client.set_edge(
+                            SetEdgeRequest {
+                                edge: Some(edge.clone()),
+                            }
+                        ).await.expect("Failed to upsert node")
+                            .into_inner().rpc_result.unwrap();
+                        (set_edge_res, edge)
+                    }
+                )
+            }
         }
 
-        upserter::GraphMergeHelper {}
-            .upsert_into(
-                self.mg_client.clone(),
-                &uncached_subgraph,
-                &mut merged_graph,
-            )
-            .await;
+        let (node_requests, edge_requests) = futures::future::join(
+            futures::future::join_all(node_requests),
+            futures::future::join_all(edge_requests),
+        ).await;
+
+        for (node_uid, node) in node_requests {
+            tracing::debug!(message="set_node", set_node_res=?node_uid);
+            if let set_node_result::RpcResult::Set(SetNodeSuccess { node_uid }) = node_uid {
+                merged_graph.add_node(MergedNode {
+                    uid: node_uid,
+                    node_key: node.node_key,
+                    node_type: node.node_type,
+                    properties: node.properties,
+                });
+            }
+        }
+
+        for (set_edge_res, edge) in edge_requests {
+            tracing::debug!(message="set_edge", set_edge_res=?set_edge_res);
+            if let set_edge_result::RpcResult::Set(SetEdgeSuccess { src_uid, dst_uid }) = set_edge_res {
+                merged_graph.add_edge(
+                    edge.edge_name,
+                    edge.from_node_key,
+                    src_uid,
+                    edge.to_node_key,
+                    dst_uid,
+                );
+            }
+        }
 
         Ok(merged_graph)
     }
 }
+
 
 pub fn time_based_key_fn(_event: &[u8]) -> String {
     let cur_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {

@@ -8,7 +8,8 @@ pub mod test {
     use grapl_graph_descriptions::ImmutableUintProp;
     use grapl_graph_descriptions::IncrementOnlyUintProp;
     use grapl_graph_descriptions::DecrementOnlyUintProp;
-
+    use grapl_graph_descriptions::Edge;
+    use mutations::edge_mutation::EdgeUpsertGenerator;
     use std::{collections::HashMap,
               sync::{Arc,
                      Once}};
@@ -19,7 +20,7 @@ pub mod test {
                                     PredicateDefinition,
                                     PredicateType,
                                     Schema,
-                                    SchemaDefinition}
+                                    SchemaDefinition},
     };
     use dgraph_tonic::{Client as DgraphClient,
                        Query};
@@ -92,7 +93,10 @@ pub mod test {
           query q0($a: string) {
             q0(func: eq(node_key, $a)) {
                 uid,
-                expand(ExampleNode)
+                expand(ExampleNode) {
+                    uid,
+                    expand(ExampleNode)
+                }
             }
           }
         "#;
@@ -107,10 +111,13 @@ pub mod test {
     #[tokio::test]
     async fn test_upsert_immutable_only_uint_after_create() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
-        let dgraph_client = std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client."));
+
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
         let mut upsert_manager = UpsertManager {
             dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
         let node_key = "test_upsert_immutable_only_uint_after_create-example-node-key";
         // First there's no example_id
@@ -150,10 +157,13 @@ pub mod test {
     #[tokio::test]
     async fn test_upsert_immutable_only_uint() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
-        let dgraph_client = std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client."));
+
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
         let mut upsert_manager = UpsertManager {
             dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
 
         let node_key = "test_upsert_immutable_only_uint-example-node-key";
@@ -202,10 +212,13 @@ pub mod test {
     #[tokio::test]
     async fn test_upsert_incr_only_uint_after_create() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
-        let dgraph_client = std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client."));
+
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
         let mut upsert_manager = UpsertManager {
             dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
         let node_key = "test_upsert_incr_only_uint_after_create-example-node-key";
         // First there's no example_id
@@ -244,10 +257,13 @@ pub mod test {
     #[tokio::test]
     async fn test_upsert_incr_only_uint() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
-        let dgraph_client = std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client."));
+
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
         let mut upsert_manager = UpsertManager {
             dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
         let node_key = "test_upsert_incr_only_uint-example-node-key";
 
@@ -315,10 +331,13 @@ pub mod test {
     #[tokio::test]
     async fn test_upsert_decr_only_uint_after_create() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
-        let dgraph_client = std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client."));
+
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
         let mut upsert_manager = UpsertManager {
             dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
         let node_key = "test_upsert_decr_only_uint_after_create-example-node-key";
         // First there's no example_id
@@ -358,10 +377,13 @@ pub mod test {
     #[tokio::test]
     async fn test_upsert_decr_only_uint() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
-        let dgraph_client = std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client."));
+
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
         let mut upsert_manager = UpsertManager {
             dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
 
         let mut properties = HashMap::new();
@@ -421,6 +443,56 @@ pub mod test {
         let res = retrieve_node(dgraph_client.as_ref(), "test_upsert_decr_only_uint-example-node-key").await;
         assert_eq!(900, res["example_id"].as_u64().expect("example_id"));
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_upsert_edge() -> Result<(), Box<dyn std::error::Error>> {
+        init_test_env();
+
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
+        let mut upsert_manager = UpsertManager {
+            dgraph_client: dgraph_client.clone(),
+            node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
+        };
+
+        let node_key_0 = "test_upsert_edge-node-key0".to_string();
+        let node_key_1 = "test_upsert_edge-node-key1".to_string();
+
+        let n0 = IdentifiedNode {
+            node_key: node_key_0.to_string(),
+            node_type: "ExampleNode".to_string(),
+            properties: HashMap::new(),
+        };
+
+        let n1 = IdentifiedNode {
+            node_key: node_key_1.to_string(),
+            node_type: "ExampleNode".to_string(),
+            properties: HashMap::new(),
+        };
+        upsert_manager.upsert_node(&n0).await;
+        upsert_manager.upsert_node(&n1).await;
+
+        let forward_edge = Edge {
+            from_node_key: node_key_0.to_string(),
+            to_node_key: node_key_1.to_string(),
+            edge_name: "to_many_edge".to_string(),
+        };
+        let reverse_edge = Edge {
+            from_node_key: node_key_1.to_string(),
+            to_node_key: node_key_0.to_string(),
+            edge_name: "to_single_edge".to_string(),
+        };
+        upsert_manager.upsert_edge(forward_edge.clone(), reverse_edge.clone()).await;
+        let res = retrieve_node(dgraph_client.as_ref(), &node_key_0).await;
+        assert_eq!(node_key_1, res["to_many_edge"][0]["node_key"].as_str().expect("as_str"));
+
+        let res = retrieve_node(dgraph_client.as_ref(), &node_key_1).await;
+        assert_eq!(node_key_0, res["to_single_edge"]["node_key"].as_str().expect("as_str"));
+
+        upsert_manager.upsert_edge(forward_edge.clone(), reverse_edge.clone()).await;
         Ok(())
     }
 }

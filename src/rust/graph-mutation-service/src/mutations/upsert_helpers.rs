@@ -35,7 +35,7 @@ pub(crate) fn gen_mutations(mutations: &mut Vec<dgraph_tonic::Mutation>, node_ex
 
     // If the value is smaller than the int we're updating with, which also implies the node exists
     let mut mu_0_n_quads = format!(
-        r#"uid({node_exists}) <{prop_name}> "{prop_value}" ."#,
+        r#"uid({node_exists}) <{prop_name}> {prop_value} ."#,
         node_exists = node_exists,
         prop_name = prop_name,
         prop_value = prop_value,
@@ -50,7 +50,7 @@ pub(crate) fn gen_mutations(mutations: &mut Vec<dgraph_tonic::Mutation>, node_ex
     let mut mu_1 = dgraph_tonic::Mutation::new();
 
     let mut mu_1_n_quads = format!(
-        r#"uid({node_exists}) <{prop_name}> "{prop_value}" ."#,
+        r#"uid({node_exists}) <{prop_name}> {prop_value} ."#,
         node_exists = node_exists,
         prop_name = prop_name,
         prop_value = prop_value,
@@ -66,7 +66,7 @@ pub(crate) fn gen_mutations(mutations: &mut Vec<dgraph_tonic::Mutation>, node_ex
     // condition if the node does not exist
     let mut mu_2_n_quads = format!(
         concat!(
-        r#"_:{node_exists} <{prop_name}> "{prop_value}" ."#,
+        r#"_:{node_exists} <{prop_name}> {prop_value} ."#,
         ),
         node_exists = node_exists,
         prop_name = prop_name,
@@ -106,7 +106,7 @@ pub(crate) fn gen_immutable_mutations(mutations: &mut Vec<dgraph_tonic::Mutation
     let mut mu_0 = dgraph_tonic::Mutation::new();
 
     let mut mu_0_n_quads = format!(
-        r#"uid({node_exists}) <{prop_name}> "{prop_value}" ."#,
+        r#"uid({node_exists}) <{prop_name}> {prop_value} ."#,
         node_exists = node_exists,
         prop_name = prop_name,
         prop_value = prop_value,
@@ -123,7 +123,7 @@ pub(crate) fn gen_immutable_mutations(mutations: &mut Vec<dgraph_tonic::Mutation
     // condition if the node does not exist
     let mut mu_1_n_quads = format!(
         concat!(
-        r#"_:{node_exists} <{prop_name}> "{prop_value}" ."#,
+        r#"_:{node_exists} <{prop_name}> {prop_value} ."#,
         ),
         node_exists = node_exists,
         prop_name = prop_name,

@@ -21,12 +21,6 @@ message Session {
     uint64 last_seen_time = 4;
     // The end of this session, in milliseconds
     uint64 terminate_time = 5;
-    // These keys can be used to rule out potential identity matches
-    repeated string negation_keys = 6;
-    // These keys aren't guaratneed to exist but are guaranteed unique identifiers
-    repeated string optional_static_keys = 7;
-    // These keys should be dropped once identification occurs
-    repeated string drop_after_identification = 8;
 }
 
 // The Static Identity Strategy is used when a node already has its own way of being uniquely identified.
@@ -170,11 +164,11 @@ message Edge {
 // Represents a directed edge between two nodes, where both nodes, and this edge, exist in the graph.
 message MergedEdge {
     // The uid associated with the 'source' of the edge
-    string from_uid = 1;
+    uint64 from_uid = 1;
     // The node_key associated with the 'source' of the edge
     string from_node_key = 2;
     // The uid associated with the 'destination' of the edge
-    string to_uid = 3;
+    uint64 to_uid = 3;
     // The node_key associated with the 'destination' of the edge
     string to_node_key = 4;
     // The name of the edge

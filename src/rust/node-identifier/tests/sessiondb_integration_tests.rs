@@ -18,11 +18,6 @@ use rusoto_dynamodb::{AttributeDefinition,
                       KeySchemaElement,
                       ProvisionedThroughput};
 use tokio::runtime::Runtime;
-use std::collections::HashMap;
-use hmap::hmap;
-use grapl_graph_descriptions::{
-    ImmutableUintProp,
-};
 
 fn init_test_env() {
     let subscriber = ::tracing_subscriber::FmtSubscriber::builder()
@@ -69,7 +64,6 @@ async fn try_create_table(
 
 async fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) {
     init_test_env();
-    let runtime = Runtime::new().unwrap();
 
     let table_name = table_name.into();
 
@@ -77,10 +71,10 @@ async fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<Str
         table_name: table_name.clone(),
     }).await;
 
-    tokio::time::delay_for(Duration::from_millis(250)).await;
+    tokio::time::sleep(Duration::from_millis(250)).await;
 
     while let Err(_e) = try_create_table(dynamo, table_name.clone()).await {
-        tokio::time::delay_for(Duration::from_millis(250)).await;
+        tokio::time::sleep(Duration::from_millis(250)).await;
     }
 }
 
@@ -104,7 +98,6 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
         pseudo_key: format!("{}{}", asset_id, pid),
         timestamp: 1544301484600,
         is_creation: true,
-        negation_keys: HashMap::default()
     };
 
     let session_id = runtime
@@ -138,7 +131,6 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
         pseudo_key: format!("{}{}", asset_id, pid),
         timestamp: 1_544_301_484_500,
         is_creation: true,
-        negation_keys: HashMap::default()
     };
     let session = Session {
         pseudo_key: format!("{}{}", asset_id, pid),
@@ -151,7 +143,7 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     };
 
     runtime
-        .block_on(session_db.create_session(&unid, &session))
+        .block_on(session_db.create_session( &session))
         .expect("Failed to create session");
 
     // When a canonical creation event comes in with a creation time of 'Y'
@@ -184,7 +176,6 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
         pseudo_key: format!("{}{}", asset_id, pid),
         timestamp: 1_544_301_484_500,
         is_creation: false,
-        negation_keys: HashMap::default()
     };
 
     // Given a timeline with a single session, where that session has a non canon
@@ -200,7 +191,7 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
     };
 
     runtime
-        .block_on(session_db.create_session(&unid, &session))
+        .block_on(session_db.create_session(&session))
         .expect("Failed to create session");
 
     // When a noncanonical creation event comes in with a creation time of 'Y'
@@ -233,7 +224,6 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
         pseudo_key: format!("{}{}", asset_id, pid),
         timestamp: 1_544_301_484_500,
         is_creation: false,
-        negation_keys: HashMap::new(),
     };
 
     let session_id = runtime
@@ -263,7 +253,6 @@ fn noncanon_create_on_empty_timeline_without_default() {
         pseudo_key: "asset_id_a1234".into(),
         timestamp: 1_544_301_484_500,
         is_creation: false,
-        negation_keys: HashMap::new(),
     };
 
     let session_id = runtime.block_on(session_db.handle_unid_session(unid, false));
@@ -285,9 +274,7 @@ fn update_end_time(asset_id: String, pid: u64) {
         pseudo_key: format!("{}{}", asset_id, pid),
         timestamp: 1_544_301_484_800,
         is_creation: false,
-        negation_keys: HashMap::new(),
     };
-
 
     // Given a timeline with a single session, where that session has a non canon
     //      end time 'X'
@@ -302,7 +289,7 @@ fn update_end_time(asset_id: String, pid: u64) {
     };
 
     runtime
-        .block_on(session_db.create_session(&unid, &session))
+        .block_on(session_db.create_session(&session))
         .expect("Failed to create session");
 
     // When a canonical creation event comes in with an end time of 'Y'
@@ -313,158 +300,4 @@ fn update_end_time(asset_id: String, pid: u64) {
         .expect("Failed to handle unid");
 
     assert_eq!(session_id, "SessionId");
-}
-
-#[tokio::test]
-async fn test_negation_keys_no_preexisting() -> Result<(), Box<dyn std::error::Error>> {
-    init_test_env();
-    let asset_id = "test_negation_keyssomehostname";
-    let pid = 1000u64;
-
-    let table_name = "test_negation_keys";
-    let dynamo = DynamoDbClient::from_env();
-
-    create_or_empty_table(&dynamo, table_name).await;
-
-    let session_db = SessionDb::new(dynamo, table_name);
-
-    // Given a timeline with a single session, where that session has a non canon
-    //      end time 'X'
-    let session = Session {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        create_time: 1_544_301_484_600,
-        is_create_canon: false,
-        session_id: "SessionId".into(),
-        is_end_canon: false,
-        end_time: 1_544_301_484_700,
-        version: 0,
-    };
-
-    let negation_keys = hmap! {
-        "parent_process_id".to_string() => ImmutableUintProp{prop: 1234}.into( )
-    };
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_800,
-        is_creation: false,
-        negation_keys,
-    };
-
-    session_db.create_session(&unid, &session).await
-        .expect("Failed to create session");
-
-    // When a canonical creation event comes in with an end time of 'Y'
-    //      where 'Y' < 'X'
-    let session_id = session_db.handle_unid_session(unid, false).await
-        .expect("Failed to handle unid");
-
-    assert_eq!(session_id, "SessionId");
-    Ok(())
-}
-
-#[tokio::test]
-async fn test_negation_keys_mismatch() -> Result<(), Box<dyn std::error::Error>> {
-    let asset_id = "test_negation_keys_mismatchsomehostname";
-    let pid = 1000u64;
-
-    let table_name = "test_negation_keys_mismatch";
-    let dynamo = DynamoDbClient::from_env();
-
-    create_or_empty_table(&dynamo, table_name).await;
-
-    let session_db = SessionDb::new(dynamo, table_name);
-
-    // Given a timeline with a single session, where that session has a non canon
-    //      end time 'X'
-    let session = Session {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        create_time: 1_544_301_484_600,
-        is_create_canon: false,
-        session_id: "SessionId".into(),
-        is_end_canon: false,
-        end_time: 1_544_301_484_700,
-        version: 0,
-    };
-
-    let negation_keys = hmap! {
-        "parent_process_id".to_string() => ImmutableUintProp{prop: 1234}.into( )
-    };
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_800,
-        is_creation: false,
-        negation_keys,
-    };
-    session_db.create_session(&unid, &session).await
-        .expect("Failed to create session");
-
-    let negation_keys = hmap! {
-        "parent_process_id".to_string() => ImmutableUintProp{prop: 2345}.into( )
-    };
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_800,
-        is_creation: false,
-        negation_keys,
-    };
-    // When an event comes in with a negation key that does not match the existing timeline,
-    // we should expect it to miss
-    assert!(session_db.handle_unid_session(unid, false).await.is_err());
-
-    Ok(())
-}
-
-
-#[tokio::test]
-async fn test_negation_keys_single_mismatch_single_match() -> Result<(), Box<dyn std::error::Error>> {
-    let asset_id = "test_negation_keys_mismatchsomehostname";
-    let pid = 1000u64;
-
-    let table_name = "test_negation_keys_mismatch";
-    let dynamo = DynamoDbClient::from_env();
-
-    create_or_empty_table(&dynamo, table_name).await;
-
-    let session_db = SessionDb::new(dynamo, table_name);
-
-    // Given a timeline with a single session, where that session has a non canon
-    //      end time 'X'
-    let session = Session {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        create_time: 1_544_301_484_600,
-        is_create_canon: false,
-        session_id: "SessionId".into(),
-        is_end_canon: false,
-        end_time: 1_544_301_484_700,
-        version: 0,
-    };
-
-    let negation_keys = hmap! {
-       "user_id".to_string() => ImmutableUintProp{prop: 1000}.into( ),
-       "parent_process_id".to_string() => ImmutableUintProp{prop: 1234}.into( )
-    };
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_800,
-        is_creation: false,
-        negation_keys,
-    };
-    session_db.create_session(&unid, &session).await
-        .expect("Failed to create session");
-
-    let negation_keys = hmap! {
-        "user_id".to_string() => ImmutableUintProp{prop: 1000}.into( ),
-        "parent_process_id".to_string() => ImmutableUintProp{prop: 2345}.into( )
-    };
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_800,
-        is_creation: false,
-        negation_keys,
-    };
-    // When an event comes in with a negation key that does not match the existing timeline,
-    // we should expect it to miss, even if another negation key does match
-    assert!(session_db.handle_unid_session(unid, false).await.is_err());
-
-    Ok(())
 }

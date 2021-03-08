@@ -234,14 +234,41 @@ services:
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
       DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
       <<: *dgraph-env
-      <<: *dynamodb-env
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
-      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       IS_LOCAL: "True"
       <<: *log-level
       RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      <<: *sqs-env
+      <<: *rust-backtrace
+      MUTATION_ENDPOINT: "http://${GRAPH_MUTATION_HOST}:${GRAPH_MUTATION_PORT}"
+    tty: false
+    depends_on:
+      - dgraph
+      - grapl-provision
+      - grapl-graph-mutation-service
+      - localstack
+      - redis
+      - s3
+
+
+  grapl-graph-mutation-service:
+    image: grapl/grapl-graph-mutation-service:${TAG:-latest}
+    environment:
+      <<: *aws-region
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-mutation-service-dead-letter-queue"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
+      <<: *dgraph-env
+      <<: *dynamodb-env
+      EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
+      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
+      IS_LOCAL: "True"
+      <<: *log-level
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-mutation-service-retry-queue"
+      <<: *s3-env
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-mutation-service-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     tty: false
@@ -251,6 +278,10 @@ services:
       - localstack
       - redis
       - s3
+    networks:
+      default:
+        aliases:
+          - ${GRAPH_MUTATION_HOST}
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}

@@ -13,38 +13,38 @@ message SetNodeRequest {
   v1beta1.IdentifiedNode node = 1;
 }
 
+message SetNodeSuccess {
+  uint64 node_uid = 1;
+}
+
 message SetNodeResult {
   oneof rpc_result {
-    Ok set = 1;
-    Ok already_set = 2;
-    Err predicate_does_not_exist = 3;
-    Err predicate_type_mismatch = 4;
+    SetNodeSuccess set = 1;
+    Err predicate_does_not_exist = 2;
+    Err predicate_type_mismatch = 3;
   }
 }
-
-message SetNodeResponse {
-  SetNodeResult rpc_result = 1;
-}
-
 
 message SetEdgeRequest {
   v1beta1.Edge edge = 1;
 }
 
+message SetEdgeSuccess {
+  uint64 src_uid = 1;
+  uint64 dst_uid = 2;
+}
+
 message SetEdgeResult {
   oneof rpc_result {
-    Ok set = 1;
-    Ok negated = 2;
+    SetEdgeSuccess set = 1;
+    SetEdgeSuccess negated = 2;
     Err edge_does_not_exist = 3;
     Err edge_type_mismatch = 4;
   }
 }
 
-message SetEdgeResponse {
-  SetEdgeResult rpc_result = 1;
-}
 
 service GraphMutationRpc {
-  rpc SetNode(SetNodeRequest) returns (SetNodeResponse) {}
-  rpc SetEdge(SetEdgeRequest) returns (SetEdgeResponse) {}
+  rpc SetNode(SetNodeRequest) returns (SetNodeResult) {}
+  rpc SetEdge(SetEdgeRequest) returns (SetEdgeResult) {}
 }

@@ -1,3 +1,4 @@
+#![allow(unused_braces)]
 use std::{collections::HashMap,
           io::Stdout,
           marker::PhantomData,

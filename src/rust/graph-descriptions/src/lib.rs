@@ -259,9 +259,9 @@ impl MergedGraph {
         &mut self,
         edge_name: impl Into<String>,
         from_node_key: impl Into<String>,
-        from_uid: impl Into<String>,
+        from_uid: impl Into<u64>,
         to_node_key: impl Into<String>,
-        to_uid: impl Into<String>,
+        to_uid: impl Into<u64>,
     ) {
         let edge_name = edge_name.into();
         let from_node_key = from_node_key.into();

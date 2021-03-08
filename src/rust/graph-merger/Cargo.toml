@@ -55,6 +55,7 @@ tracing-futures = "0.2.4"
 tap = "1.0.0"
 lru = "0.6.5"
 futures-retry = "0.6.0"
+tonic = "0.4.0"
 
 
 [dev-dependencies]

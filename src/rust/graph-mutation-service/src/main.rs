@@ -13,9 +13,33 @@ pub use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_ser
 use crate::mutations::node_mutation::NodeUpsertGenerator;
 use crate::upsert_manager::UpsertManager;
 use graph_mutation_service_lib::reverse_resolver::{ReverseEdgeResolver, ReverseEdgeResolverError};
+use crate::mutations::edge_mutation::EdgeUpsertGenerator;
+use tonic::transport::Server;
+use rusoto_dynamodb::DynamoDbClient;
+use grapl_observe::metric_reporter::MetricReporter;
+use grapl_config::env_helpers::FromEnv;
+use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_server::GraphMutationRpcServer;
 
-fn main() {
-    println!("Hello, world!");
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let (env, _guard) = grapl_config::init_grapl_env!();
+
+    let addr = "0.0.0.0:5500".parse().unwrap();
+    let service = GraphMutationService {
+        reverse_edge_resolver: ReverseEdgeResolver::new(
+            DynamoDbClient::from_env(),
+            MetricReporter::new(&env.service_name),
+            256,
+        )
+    };
+
+    println!("GraphMutationRpcServer listening on {}", addr);
+
+    Server::builder()
+        .add_service(GraphMutationRpcServer::new(service))
+        .serve(addr)
+        .await?;
+    Ok(())
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -30,16 +54,11 @@ pub enum GraphMutationError {
 
 impl From<GraphMutationError> for Status {
     fn from(_err: GraphMutationError) -> Status {
+        dbg!(&_err);
         unimplemented!()
     }
 }
 
-
-impl From<ReverseEdgeResolverError> for Status {
-    fn from(_err: ReverseEdgeResolverError) -> Status {
-        unimplemented!()
-    }
-}
 
 
 pub struct GraphMutationService {
@@ -51,26 +70,39 @@ impl GraphMutationRpc for GraphMutationService {
     async fn set_node(
         &self,
         request: Request<SetNodeRequest>,
-    ) -> Result<Response<SetNodeResponse>, Status> {
+    ) -> Result<Response<SetNodeResult>, Status> {
         let request = request.into_inner();
 
         let node = match request.node {
             Some(node) => node,
             None => return Err(GraphMutationError::SetNodeMissingField { missing_field: "node" }.into())
         };
-        let dgraph_client = std::sync::Arc::new(DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client."));
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
+
         let mut upsert_manager = UpsertManager {
             dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
-        let uid = upsert_manager.upsert_node(&node).await;
-        unimplemented!()
+        let node_uid = upsert_manager.upsert_node(&node).await;
+        Ok(
+            tonic::Response::new(SetNodeResult {
+                rpc_result: Some(
+                    set_node_result::RpcResult::Set(
+                        SetNodeSuccess {
+                            node_uid
+                        }
+                    )
+                )
+            })
+        )
     }
 
     async fn set_edge(
         &self,
         request: Request<SetEdgeRequest>,
-    ) -> Result<Response<SetEdgeResponse>, Status> {
+    ) -> Result<Response<SetEdgeResult>, Status> {
         let request = request.into_inner();
 
         let edge = match request.edge {
@@ -86,11 +118,26 @@ impl GraphMutationRpc for GraphMutationService {
             );
         }
         let reversed = reversed.remove(0);
+        let mg_alphas = grapl_config::mg_alphas();
+        let dgraph_client = std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
+
         let mut upsert_manager = UpsertManager {
             dgraph_client: dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
-        let uid = upsert_manager.upsert_edge(edge, reversed).await;
-        unimplemented!()
+        let (src_uid, dst_uid) = upsert_manager.upsert_edge(edge, reversed).await;
+
+        Ok(
+            tonic::Response::new(SetEdgeResult {
+                rpc_result: Some(
+                    set_edge_result::RpcResult::Set(
+                        SetEdgeSuccess {
+                            src_uid, dst_uid
+                        }
+                    )
+                )
+            })
+        )
     }
 }
