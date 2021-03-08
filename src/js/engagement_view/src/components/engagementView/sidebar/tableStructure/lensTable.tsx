@@ -41,10 +41,10 @@ export const lensTable = (
 				onChangePage={handleChangePage}
 				onChangeRowsPerPage={handleChangeRowsPerPage}
 			/>
-            <TableContainer class={classes.tableContainer}>
+            <TableContainer className={classes.tableContainer}>
 			<TableHead className={classes.head}>
-				<b className={classes.hdrTitle}> Lens Name </b>
-				<b className={classes.riskTitle}> Risk </b>
+				<TableRow className={classes.hdrTitle}> Lens Name </TableRow>
+				<TableRow className={classes.riskTitle}> Risk </TableRow>
 			</TableHead>
 			{state.lenses
 				.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
