@@ -14,7 +14,7 @@ services:
         - CARGO_PROFILE=debug
     command: bash -c "
       wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
-      cargo test --manifest-path node-identifier/Cargo.toml --features integration"
+      cargo test --manifest-path node-identifier/Cargo.toml --features integration -- --nocapture"
     environment:
       - AWS_REGION
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
@@ -48,7 +48,7 @@ services:
         - CARGO_PROFILE=debug
     command: bash -c "
       wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
-      cargo test --manifest-path graph-merger/Cargo.toml --features integration"
+      cargo test --manifest-path graph-merger/Cargo.toml --features integration -- --nocapture"
     environment:
       - AWS_REGION
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}

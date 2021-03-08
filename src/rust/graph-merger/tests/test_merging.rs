@@ -1,3 +1,13 @@
+#[cfg(not(feature = "integration"))]
+pub mod test {
+    use std::convert::TryFrom;
+    #[test]
+    fn test_endpoint() {
+        let dst = "http://graphmutation.grapl.test:5500";
+        tonic::transport::Endpoint::try_from(dst).unwrap().uri();
+    }
+}
+
 #[cfg(feature = "integration")]
 pub mod test {
     use std::{collections::HashMap,
@@ -167,10 +177,11 @@ pub mod test {
     async fn test_upsert_edge_and_retrieve() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
         let mutation_endpoint = grapl_config::mutation_endpoint();
-        tracing::debug!(message="Connecting to GraphMutationService", endpoint=mutation_endpoint);
+        tracing::debug!(message="Connecting to GraphMutationService", endpoint=?mutation_endpoint);
+        println!("Connecting to GraphMutationService {}", mutation_endpoint);
         let mut graph_merger = GraphMerger::new(
-            GraphMutationRpcClient::connect("http://127.0.0.1:5500").await
-                .expect("Failed to connect to graph-mutation-service"),
+            GraphMutationRpcClient::connect(mutation_endpoint.clone()).await
+                .unwrap_or_else(|e| panic!("Failed to connect to graph-mutation-service {} {:?}", mutation_endpoint, e)),
             MetricReporter::new("test_upsert_edge_and_retrieve"),
             NopCache {},
         ).await;
