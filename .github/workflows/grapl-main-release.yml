@@ -1,7 +1,10 @@
-# https://github.com/grapl-security/issue-tracker/issues/224
-# TODO: 
-
 name: Release :main to Dockerhub
+# The original motivation here was to provide working, latest-ish images of all
+# services so that external repos like the Cloudtrail generator could test
+# against the latest version of `main` without having to compile it.
+# 
+# As of cloudtrail 9b416d, we actually don't use this anymore; 
+# it's not the end of the world if we decide to remove it. 
 
 on:
   # Every time we push to main

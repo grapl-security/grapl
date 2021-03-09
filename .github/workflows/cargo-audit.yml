@@ -9,7 +9,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging  # TODO: Delete after https://github.com/grapl-security/issue-tracker/issues/224
       - main
     paths:
       # Only audit dependencies on PRs when we actually change dependencies.
