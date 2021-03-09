@@ -161,7 +161,9 @@ according to our configuration.
 
 ## TypeScript Setup
 
-In an effort to maintain consistency among the files in our front-end codebase, we use the VS Code extension, "Prettier". The reason why we use a consistent formatter on our front-end is because there are certain Material-UI elements that require not having spaces between tags and sometimes auto-formatters add extra spaces, sometimes resulting in bugs.
+In an effort to maintain consistency among the files in our front-end codebase, we use the VS Code extension, "Prettier". The reason why we use a consistent formatter on our front-end is because certain elements require no whitespace between tags. Sometimes auto-formatters add extra spaces, which may occasionally result in bugs. 
+
+If you don't have the VSCode extension, "Prettier", please install it by clicking the "Extensions" icon on the left panel, searching for "Prettier", then clicking the "Install" button.
 
 To update your Prettier extension settings in VSCode, navigate to:
 - File > Settings > Extensions > Prettier
