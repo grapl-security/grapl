@@ -67,9 +67,11 @@ async fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<Str
 
     let table_name = table_name.into();
 
-    let _ = dynamo.delete_table(DeleteTableInput {
-        table_name: table_name.clone(),
-    }).await;
+    let _ = dynamo
+        .delete_table(DeleteTableInput {
+            table_name: table_name.clone(),
+        })
+        .await;
 
     tokio::time::sleep(Duration::from_millis(250)).await;
 
@@ -89,8 +91,7 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     let table_name = "process_history_canon_create_on_empty_timeline";
     let dynamo = DynamoDbClient::from_env();
 
-    runtime
-        .block_on(create_or_empty_table(&dynamo, table_name));
+    runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
     let session_db = SessionDb::new(dynamo, table_name);
 
@@ -120,8 +121,7 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     let table_name = "process_history_canon_create_update_existing_non_canon_create";
     let dynamo = DynamoDbClient::from_env();
 
-    runtime
-        .block_on(create_or_empty_table(&dynamo, table_name));
+    runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
     let session_db = SessionDb::new(dynamo, table_name);
 
@@ -143,7 +143,7 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     };
 
     runtime
-        .block_on(session_db.create_session( &session))
+        .block_on(session_db.create_session(&session))
         .expect("Failed to create session");
 
     // When a canonical creation event comes in with a creation time of 'Y'
@@ -168,8 +168,7 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
     let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
     let dynamo = DynamoDbClient::from_env();
 
-    runtime
-        .block_on(create_or_empty_table(&dynamo, table_name));
+    runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
     let session_db = SessionDb::new(dynamo, table_name);
     let unid = UnidSession {
@@ -215,8 +214,7 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
     let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
     let dynamo = DynamoDbClient::from_env();
 
-    runtime
-        .block_on(create_or_empty_table(&dynamo, table_name));
+    runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
     let session_db = SessionDb::new(dynamo, table_name);
 
@@ -244,8 +242,7 @@ fn noncanon_create_on_empty_timeline_without_default() {
     let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
     let dynamo = DynamoDbClient::from_env();
 
-    runtime
-        .block_on(create_or_empty_table(&dynamo, table_name));
+    runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
     let session_db = SessionDb::new(dynamo, table_name);
 
@@ -266,8 +263,7 @@ fn update_end_time(asset_id: String, pid: u64) {
     let table_name = "process_history_update_end_time";
     let dynamo = DynamoDbClient::from_env();
 
-    runtime
-        .block_on(create_or_empty_table(&dynamo, table_name));
+    runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
     let session_db = SessionDb::new(dynamo, table_name);
     let unid = UnidSession {

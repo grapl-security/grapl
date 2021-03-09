@@ -27,9 +27,9 @@ pub enum MetricType {
     Histogram,
 }
 
-const GAUGE_STR: &'static str = "g";
-const COUNTER_STR: &'static str = "c";
-const HISTOGRAM_STR: &'static str = "h";
+const GAUGE_STR: &str = "g";
+const COUNTER_STR: &str = "c";
+const HISTOGRAM_STR: &str = "h";
 
 impl MetricType {
     fn statsd_type(&self) -> &'static str {

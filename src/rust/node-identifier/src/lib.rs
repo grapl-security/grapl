@@ -19,10 +19,10 @@ use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::{decoder::ZstdProtoDecoder,
                     serialization::IdentifiedGraphSerializer};
 use log::*;
-use rusoto_dynamodb::{DynamoDb, DynamoDbClient};
+use rusoto_dynamodb::{DynamoDb,
+                      DynamoDbClient};
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
-
 use sqs_executor::{cache::{Cache,
                            CacheResponse,
                            Cacheable},
@@ -44,15 +44,15 @@ macro_rules! wait_on {
 
 pub mod dynamic_sessiondb;
 
+pub mod key_cache;
 pub mod sessiondb;
 pub mod sessions;
-pub mod key_cache;
 
 #[derive(Clone)]
 pub struct NodeIdentifier<D, CacheT>
-    where
-        D: DynamoDb + Clone + Send + Sync + 'static,
-        CacheT: Cache + Clone + Send + Sync + 'static,
+where
+    D: DynamoDb + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     dynamic_identifier: NodeDescriptionIdentifier<D>,
     node_id_db: D,
@@ -61,9 +61,9 @@ pub struct NodeIdentifier<D, CacheT>
 }
 
 impl<D, CacheT> NodeIdentifier<D, CacheT>
-    where
-        D: DynamoDb + Clone + Send + Sync + 'static,
-        CacheT: Cache + Clone + Send + Sync + 'static,
+where
+    D: DynamoDb + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(
         dynamic_identifier: NodeDescriptionIdentifier<D>,
@@ -103,9 +103,9 @@ impl CheckedError for NodeIdentifierError {
 
 #[async_trait]
 impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
-    where
-        D: DynamoDb + Clone + Send + Sync + 'static,
-        CacheT: Cache + Clone + Send + Sync + 'static,
+where
+    D: DynamoDb + Clone + Send + Sync + 'static,
+    CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GraphDescription;
     type OutputEvent = IdentifiedGraph;
@@ -281,7 +281,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
             MetricReporter::new(&env.service_name),
         )
     })
-        .await;
+    .await;
 
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
@@ -298,7 +298,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
             cache[0].to_owned(),
         )
     })
-        .await;
+    .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
@@ -312,7 +312,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
         serializer,
         MetricReporter::new(&env.service_name),
     )
-        .await;
+    .await;
 
     info!("Exiting");
     Ok(())

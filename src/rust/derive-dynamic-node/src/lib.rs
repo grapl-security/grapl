@@ -24,8 +24,6 @@ const DECREMENT: &'static str = "decrement";
 
 const PSEUDO_KEY: &'static str = "pseudo_key";
 
-
-
 fn name_and_ty(field: &Field) -> (&Ident, &Type, String) {
     let mut resolution = None;
     for attr in &field.attrs {
@@ -248,15 +246,16 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     let mut id_fields = quote!();
     for field in fields {
         for attr in &field.attrs {
-            on_grapl_attrs(attr, |meta_attr| {
-                match meta_attr {
-                    PSEUDO_KEY => {
-                        let f = field.ident.as_ref().expect("field is missing an identifier")
-                            .to_string();
-                        id_fields.extend(quote!(#f .to_string(), ));
-                    },
-                    _ => (),
+            on_grapl_attrs(attr, |meta_attr| match meta_attr {
+                PSEUDO_KEY => {
+                    let f = field
+                        .ident
+                        .as_ref()
+                        .expect("field is missing an identifier")
+                        .to_string();
+                    id_fields.extend(quote!(#f .to_string(), ));
                 }
+                _ => (),
             });
         }
     }

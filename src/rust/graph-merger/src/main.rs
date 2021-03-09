@@ -22,13 +22,13 @@ use graph_merger_lib;
 use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
-use grapl_graph_descriptions::graph_description::{Edge,
-                                                  EdgeList,
-                                                  IdentifiedGraph,
-                                                  IdentifiedNode,
-                                                  MergedGraph,
-                                                  MergedNode};
-use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient;
+use grapl_graph_descriptions::{graph_description::{Edge,
+                                                   EdgeList,
+                                                   IdentifiedGraph,
+                                                   IdentifiedNode,
+                                                   MergedGraph,
+                                                   MergedNode},
+                               graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient};
 use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
                     metric_reporter::{tag,
                                       MetricReporter}};
@@ -52,14 +52,13 @@ use sqs_executor::{cache::{Cache,
                    event_retriever::S3PayloadRetriever,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier};
+use tonic::transport::Channel;
 use tracing::{error,
               info,
               warn};
 
-use crate::{
-            service::{time_based_key_fn,
-                      GraphMerger}};
-use tonic::transport::Channel;
+use crate::service::{time_based_key_fn,
+                     GraphMerger};
 
 #[tracing::instrument]
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
@@ -77,14 +76,17 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
             mutation_endpoint=?&mutation_endpoint,
             "Connecting to mutation_endpoint"
         );
-        let graph_mutation_client: GraphMutationRpcClient<Channel> = GraphMutationRpcClient::connect(mutation_endpoint).await
-            .expect("Failed to connect to graph-mutation-service");
+        let graph_mutation_client: GraphMutationRpcClient<Channel> =
+            GraphMutationRpcClient::connect(mutation_endpoint)
+                .await
+                .expect("Failed to connect to graph-mutation-service");
 
         GraphMerger::new(
             graph_mutation_client,
             MetricReporter::new(&env.service_name),
             cache[0].clone(),
-        ).await
+        )
+        .await
     })
     .await;
 

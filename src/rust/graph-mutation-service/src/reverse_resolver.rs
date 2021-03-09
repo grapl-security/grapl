@@ -1,6 +1,8 @@
 use std::{collections::HashMap,
           io::Stdout};
 
+// pub use grapl_graph_descriptions::*;
+pub use dgraph_tonic::Status;
 use grapl_graph_descriptions::Edge;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_utils::{future_ext::GraplFutureExt,
@@ -12,13 +14,11 @@ use rusoto_dynamodb::{AttributeValue,
                       KeysAndAttributes};
 use serde::{Deserialize,
             Serialize};
-// pub use grapl_graph_descriptions::*;
-pub use dgraph_tonic::Status;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ReverseEdgeResolverError {
     #[error("No reverse edge found for {forward_edge}")]
-    NoReverseEdgeFound{forward_edge: String},
+    NoReverseEdgeFound { forward_edge: String },
     #[error("Unexpected")]
     Unexpected(String),
 }

@@ -2,8 +2,8 @@ pub mod graph_description {
     // TODO: Restructure the Rust modules to better reflect the new
     // Protobuf structure
     include!(concat!(
-    env!("OUT_DIR"),
-    "/graplinc.grapl.api.graph.v1beta1.rs"
+        env!("OUT_DIR"),
+        "/graplinc.grapl.api.graph.v1beta1.rs"
     ));
 }
 
@@ -59,7 +59,6 @@ macro_rules! extra_assert {
     }
 }
 
-
 impl IdStrategy {
     pub fn expect_session(&self) -> &Session {
         match self.strategy {
@@ -75,7 +74,6 @@ impl IdStrategy {
         }
     }
 }
-
 
 impl EdgeList {
     pub fn into_vec(self) -> Vec<Edge> {
@@ -303,9 +301,9 @@ impl MergedGraph {
                 self.add_edge(
                     edge.edge_name.clone(),
                     edge.from_node_key.clone(),
-                    edge.from_uid.clone(),
+                    edge.from_uid,
                     edge.to_node_key.clone(),
-                    edge.to_uid.clone(),
+                    edge.to_uid,
                 );
             }
         }
@@ -634,8 +632,8 @@ impl NodeDescription {
 }
 
 impl<T> From<T> for NodeProperty
-    where
-        T: Into<Property>,
+where
+    T: Into<Property>,
 {
     fn from(t: T) -> Self {
         NodeProperty {

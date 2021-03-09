@@ -1,6 +1,7 @@
-use crate::v1beta1::NodeProperty;
 use std::fmt::Formatter;
-use grapl_graph_descriptions::{ImmutableIntProp, ImmutableUintProp};
+
+use grapl_graph_descriptions::{ImmutableIntProp,
+                               ImmutableUintProp};
 
 #[derive(Clone, Debug)]
 pub struct Escaped(String);
@@ -43,13 +44,13 @@ impl From<&i64> for Escaped {
     }
 }
 impl From<ImmutableUintProp> for Escaped {
-    fn from( ImmutableUintProp{ prop }: ImmutableUintProp) -> Self {
+    fn from(ImmutableUintProp { prop }: ImmutableUintProp) -> Self {
         Self(format!(r#""{}""#, prop))
     }
 }
 
 impl From<ImmutableIntProp> for Escaped {
-    fn from( ImmutableIntProp{ prop }: ImmutableIntProp) -> Self {
+    fn from(ImmutableIntProp { prop }: ImmutableIntProp) -> Self {
         Self(format!(r#""{}""#, prop))
     }
 }

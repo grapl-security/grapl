@@ -1,5 +1,5 @@
-use crate::mutations::{UpsertGenerator, QueryInput};
 use grapl_graph_descriptions::Edge;
+
 use crate::mutations::escape::escape_quote;
 
 #[derive(Default)]
@@ -7,7 +7,6 @@ pub struct EdgeUpsertGenerator {
     query_buffer: String,
     mutations: Vec<dgraph_tonic::Mutation>,
 }
-
 
 pub(crate) struct EdgeQueries {
     f_src_node: String,
@@ -17,7 +16,11 @@ pub(crate) struct EdgeQueries {
 }
 
 impl EdgeUpsertGenerator {
-    pub fn generate_upserts(&mut self, f_edge: &Edge, r_edge: &Edge) -> (&str, &[dgraph_tonic::Mutation]) {
+    pub fn generate_upserts(
+        &mut self,
+        f_edge: &Edge,
+        r_edge: &Edge,
+    ) -> (&str, &[dgraph_tonic::Mutation]) {
         let queries = self.gen_edge_queries(f_edge, r_edge);
         self.gen_edge_mutations(&queries, &f_edge.edge_name, &r_edge.edge_name);
 
@@ -64,25 +67,31 @@ impl EdgeUpsertGenerator {
         }
     }
 
-    pub(crate) fn gen_edge_mutations(&mut self, edge_queries: &EdgeQueries, f_edge_name: &str, r_edge_name: &str) {
+    pub(crate) fn gen_edge_mutations(
+        &mut self,
+        edge_queries: &EdgeQueries,
+        f_edge_name: &str,
+        r_edge_name: &str,
+    ) {
         self.mutations.clear();
 
         let mut mu_0 = dgraph_tonic::Mutation::new();
 
-        let mut mu_0_n_quads = format!(
+        let mu_0_n_quads = format!(
             r#"uid({f_src_node}) <{f_edge_name}> uid({f_dst_node}) ."#,
             f_src_node = edge_queries.f_src_node,
             f_edge_name = f_edge_name,
             f_dst_node = edge_queries.f_dst_node,
         );
         mu_0.set_set_nquads(mu_0_n_quads);
-        mu_0.set_cond(
-            format!("@if(eq(len({f_src_edge}), 0))", f_src_edge = edge_queries.f_src_edge)
-        );
+        mu_0.set_cond(format!(
+            "@if(eq(len({f_src_edge}), 0))",
+            f_src_edge = edge_queries.f_src_edge
+        ));
 
         let mut mu_1 = dgraph_tonic::Mutation::new();
 
-        let mut mu_1_n_quads = format!(
+        let mu_1_n_quads = format!(
             r#"uid({f_dst_node}) <{r_edge_name}> uid({f_src_node}) ."#,
             f_dst_node = edge_queries.f_dst_node,
             r_edge_name = r_edge_name,
@@ -90,9 +99,10 @@ impl EdgeUpsertGenerator {
         );
 
         mu_1.set_set_nquads(mu_1_n_quads);
-        mu_1.set_cond(
-            format!("@if(eq(len({f_dst_edge}), 0))", f_dst_edge = edge_queries.f_dst_edge)
-        );
+        mu_1.set_cond(format!(
+            "@if(eq(len({f_dst_edge}), 0))",
+            f_dst_edge = edge_queries.f_dst_edge
+        ));
 
         self.mutations.extend_from_slice(&[mu_0, mu_1]);
     }

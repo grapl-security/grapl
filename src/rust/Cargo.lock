@@ -35,7 +35,7 @@ name = "analyzer-dispatcher"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "base64 0.13.0",
  "bytes 1.0.1",
  "chrono",
@@ -46,7 +46,7 @@ dependencies = [
  "grapl-observe",
  "grapl-service",
  "log",
- "prost 0.7.0",
+ "prost",
  "rusoto_core",
  "rusoto_credential",
  "rusoto_s3",
@@ -118,7 +118,7 @@ checksum = "25f9db3b38af870bf7e5cc649167533b493928e50744e2c30ae350230b414670"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -129,18 +129,18 @@ checksum = "a3548b8efc9f8e8a5a0a2808c5bd8451a9031b9e5b879a79590304ae928b0a70"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
 name = "async-trait"
-version = "0.1.45"
+version = "0.1.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3340571769500ddef1e94b45055fabed6b08a881269b7570c830b8f32ef84ef"
+checksum = "36ea56748e10732c49404c153638a15ec3d6211ec5ff35d9bb20e13b93576adf"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -165,34 +165,6 @@ name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
-
-[[package]]
-name = "aws_lambda_events"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ef69d388b3f3692968c696e7a2356c23bd16fe88ff0c402c34fe8a5fa262aa2"
-dependencies = [
- "base64 0.9.3",
- "bytes 0.4.12",
- "chrono",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
-name = "aws_lambda_events"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fa8d1a23d23df1036a0976b032f40860d7521c98ef65c03c385b1acd1c8fb62"
-dependencies = [
- "base64 0.12.3",
- "bytes 0.5.6",
- "chrono",
- "serde",
- "serde_derive",
- "serde_json",
-]
 
 [[package]]
 name = "aws_lambda_events"
@@ -229,16 +201,6 @@ name = "base-x"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4521f3e3d031370679b3b140beb36dfe4801b09ac77e30c61941f97df3ef28b"
-
-[[package]]
-name = "base64"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "489d6c0ed21b11d038c31b6ceccca973e65d73ba3bd8ecb9a2babf5546164643"
-dependencies = [
- "byteorder",
- "safemem",
-]
 
 [[package]]
 name = "base64"
@@ -288,7 +250,6 @@ dependencies = [
  "byteorder",
  "either",
  "iovec",
- "serde",
 ]
 
 [[package]]
@@ -592,7 +553,7 @@ dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
  "strsim",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -603,7 +564,7 @@ checksum = "d9b5a2f4ac4969822c62224815d069952656cadc7084fdca9751e6d959189b72"
 dependencies = [
  "darling_core",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -617,7 +578,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "syn 1.0.61",
+ "syn 1.0.62",
  "uuid 0.8.2",
 ]
 
@@ -631,7 +592,7 @@ dependencies = [
  "derive_builder_core",
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -643,7 +604,7 @@ dependencies = [
  "darling",
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -669,7 +630,7 @@ dependencies = [
  "futures 0.3.13",
  "http 0.2.3",
  "lazy_static",
- "prost 0.7.0",
+ "prost",
  "rand 0.7.3",
  "serde",
  "serde_derive",
@@ -800,7 +761,7 @@ checksum = "aa4da3c766cd7a0db8242e326e9e4e081edd567072893ed320008189715366a4"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
  "synstructure 0.12.4",
 ]
 
@@ -933,7 +894,7 @@ dependencies = [
  "proc-macro-hack",
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -995,7 +956,7 @@ name = "generic-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "endpoint-plugin",
  "eyre",
  "futures 0.3.13",
@@ -1005,7 +966,7 @@ dependencies = [
  "grapl-service",
  "lazy_static",
  "log",
- "prost 0.7.0",
+ "prost",
  "regex",
  "rusoto_core",
  "rusoto_s3",
@@ -1055,7 +1016,7 @@ checksum = "f6503fe142514ca4799d4c26297c4248239fe8838d827db6bd6065c6ed29a6ce"
 name = "graph-generator-lib"
 version = "0.1.9"
 dependencies = [
- "aws_lambda_events 0.4.0",
+ "aws_lambda_events",
  "base64 0.13.0",
  "chrono",
  "grapl-config",
@@ -1063,7 +1024,7 @@ dependencies = [
  "grapl-observe",
  "grapl-service",
  "log",
- "prost 0.7.0",
+ "prost",
  "rusoto_core",
  "rusoto_credential",
  "rusoto_s3",
@@ -1083,7 +1044,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "base64 0.13.0",
  "chrono",
  "dgraph-tonic",
@@ -1099,7 +1060,7 @@ dependencies = [
  "lazy_static",
  "log",
  "lru",
- "prost 0.7.0",
+ "prost",
  "rand 0.8.3",
  "rusoto_core",
  "rusoto_credential",
@@ -1138,8 +1099,8 @@ dependencies = [
  "grapl-utils",
  "lazy_static",
  "lru",
- "prost 0.7.0",
- "prost-derive 0.7.0",
+ "prost",
+ "prost-derive",
  "prost-types",
  "rusoto_dynamodb",
  "serde",
@@ -1195,9 +1156,9 @@ dependencies = [
  "arbitrary",
  "derive_builder",
  "log",
- "prost 0.7.0",
+ "prost",
  "prost-build",
- "prost-derive 0.7.0",
+ "prost-derive",
  "prost-types",
  "quickcheck",
  "quickcheck_macros",
@@ -1232,7 +1193,7 @@ version = "0.1.0"
 dependencies = [
  "bytes 1.0.1",
  "grapl-graph-descriptions",
- "prost 0.7.0",
+ "prost",
  "serde",
  "serde_json",
  "sqs-executor",
@@ -1499,9 +1460,9 @@ checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
 
 [[package]]
 name = "indexmap"
-version = "1.6.1"
+version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fb1fa934250de4de8aef298d81c729a7d33d8c239daa3a7575e6b92bfc7313b"
+checksum = "824845a0bf897a9042383849b02c1bc219c2383772efcd5c6f9766fa4b81aef3"
 dependencies = [
  "autocfg 1.0.1",
  "hashbrown",
@@ -1514,15 +1475,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2b3ea6ff95e175473f8ffe6a7eb7c00d054240321b84c57051175fe3c1e075e"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "itertools"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f56a2d0bc861f9165be4eb3442afd3c236d8a98afd426f65d92324ae1091a484"
-dependencies = [
- "either",
 ]
 
 [[package]]
@@ -1745,7 +1697,7 @@ name = "metric-forwarder"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.4.0",
+ "aws_lambda_events",
  "base64 0.13.0",
  "chrono",
  "flate2",
@@ -1865,7 +1817,7 @@ name = "node-identifier"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.4.0",
+ "aws_lambda_events",
  "base64 0.13.0",
  "bytes 1.0.1",
  "chrono",
@@ -1881,7 +1833,7 @@ dependencies = [
  "hmap",
  "lazy_static",
  "log",
- "prost 0.7.0",
+ "prost",
  "quickcheck",
  "quickcheck_macros",
  "rusoto_core",
@@ -2125,7 +2077,7 @@ checksum = "758669ae3558c6f74bd2a18b41f7ac0b5a195aea6639d6a9b5e5d1ad5ba24c0b"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -2184,22 +2136,12 @@ dependencies = [
 
 [[package]]
 name = "prost"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce49aefe0a6144a45de32927c77bd2859a5f7677b55f220ae5b744e87389c212"
-dependencies = [
- "bytes 0.5.6",
- "prost-derive 0.6.1",
-]
-
-[[package]]
-name = "prost"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e6984d2f1a23009bd270b8bb56d0926810a3d483f59c987d77969e9d8e840b2"
 dependencies = [
  "bytes 1.0.1",
- "prost-derive 0.7.0",
+ "prost-derive",
 ]
 
 [[package]]
@@ -2214,23 +2156,10 @@ dependencies = [
  "log",
  "multimap",
  "petgraph",
- "prost 0.7.0",
+ "prost",
  "prost-types",
  "tempfile",
  "which",
-]
-
-[[package]]
-name = "prost-derive"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "537aa19b95acde10a12fec4301466386f757403de4cd4e5b4fa78fb5ecb18f72"
-dependencies = [
- "anyhow",
- "itertools 0.8.2",
- "proc-macro2 1.0.24",
- "quote 1.0.9",
- "syn 1.0.61",
 ]
 
 [[package]]
@@ -2243,7 +2172,7 @@ dependencies = [
  "itertools 0.9.0",
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -2253,7 +2182,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b518d7cdd93dab1d1122cf07fa9a60771836c668dde9d9e2a139f957f0d9f1bb"
 dependencies = [
  "bytes 1.0.1",
- "prost 0.7.0",
+ "prost",
 ]
 
 [[package]]
@@ -2287,7 +2216,7 @@ checksum = "b22a693222d716a9587786f37ac3f6b4faedb5b80c23914e7303ff5a1d8016e9"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -2801,12 +2730,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
 
 [[package]]
-name = "safemem"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef703b7cb59335eae2eb93ceb664c0eb7ea6bf567079d843e09420219668e072"
-
-[[package]]
 name = "schannel"
 version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2834,9 +2757,9 @@ dependencies = [
 
 [[package]]
 name = "security-framework"
-version = "2.1.1"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dfd318104249865096c8da1dfabf09ddbb6d0330ea176812a62ec75e40c4166"
+checksum = "d493c5f39e02dfb062cd8f33301f90f9b13b650e8c1b1d0fd75c19dd64bff69d"
 dependencies = [
  "bitflags",
  "core-foundation",
@@ -2872,9 +2795,9 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.123"
+version = "1.0.124"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92d5161132722baa40d802cc70b15262b98258453e85e5d1d365c757c73869ae"
+checksum = "bd761ff957cb2a45fbb9ab3da6512de9de55872866160b23c25f1a841e99d29f"
 dependencies = [
  "serde_derive",
 ]
@@ -2893,13 +2816,13 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.123"
+version = "1.0.124"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9391c295d64fc0abb2c556bad848f33cb8296276b1ad2677d1ae1ace4f258f31"
+checksum = "1800f7693e94e186f5e25a28291ae1570da908aff7d97a095dec1e56ff99069b"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3035,7 +2958,7 @@ name = "sqs-executor"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.3.1",
+ "aws_lambda_events",
  "chrono",
  "darkredis 0.8.0",
  "futures 0.3.13",
@@ -3046,7 +2969,7 @@ dependencies = [
  "lazy_static",
  "lru",
  "num_cpus",
- "prost 0.7.0",
+ "prost",
  "rusoto_core",
  "rusoto_s3",
  "rusoto_sqs",
@@ -3100,7 +3023,7 @@ dependencies = [
  "quote 1.0.9",
  "serde",
  "serde_derive",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3116,7 +3039,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "sha1",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3179,9 +3102,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.61"
+version = "1.0.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed22b90a0e734a23a7610f4283ac9e5acfb96cbb30dfefa540d66f866f1c09c5"
+checksum = "123a78a3596b24fee53a6464ce52d8ecbf62241e6294c7e7fe12086cd161f512"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
@@ -3217,7 +3140,7 @@ checksum = "b834f2d66f734cb897113e34aaff2f1ab4719ca946f9a7358dba8f8064148701"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
  "unicode-xid 0.2.1",
 ]
 
@@ -3242,7 +3165,7 @@ name = "sysmon-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events 0.2.7",
+ "aws_lambda_events",
  "chrono",
  "endpoint-plugin",
  "failure",
@@ -3254,7 +3177,7 @@ dependencies = [
  "grapl-service",
  "lazy_static",
  "log",
- "prost 0.6.1",
+ "prost",
  "regex",
  "rusoto_core",
  "rusoto_credential",
@@ -3312,7 +3235,7 @@ checksum = "b702a7712312156cffe3f809722039c0b7519a67c00d2461dc9bfb28b7aa3670"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3332,7 +3255,7 @@ checksum = "7765189610d8241a44529806d6fd1f2e0a08734313a35d5b3a556f92b381f3c0"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3390,7 +3313,7 @@ dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
  "standback",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3573,7 +3496,7 @@ checksum = "e44da00bfc73a25f814cd8d7e57a68a5c31b74b3152a0a1d1f590c97ed06265a"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3584,7 +3507,7 @@ checksum = "caf7b11a536f46a809a8a9f0bb4237020f70ecbf115b842360afb127ea2fda57"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3746,8 +3669,8 @@ dependencies = [
  "hyper 0.14.4",
  "percent-encoding",
  "pin-project",
- "prost 0.7.0",
- "prost-derive 0.7.0",
+ "prost",
+ "prost-derive",
  "tokio 1.2.0",
  "tokio-rustls",
  "tokio-stream",
@@ -3767,7 +3690,7 @@ dependencies = [
  "proc-macro2 1.0.24",
  "prost-build",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -3834,7 +3757,7 @@ checksum = "a8a9bd1db7706f2373a190b0d067146caa39350c486f3d455b0e33b431f94c07"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
 ]
 
 [[package]]
@@ -4060,7 +3983,7 @@ dependencies = [
  "log",
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
  "wasm-bindgen-shared",
 ]
 
@@ -4082,7 +4005,7 @@ checksum = "cc053ec74d454df287b9374ee8abb36ffd5acb95ba87da3ba5b7d3fe20eb401e"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.9",
- "syn 1.0.61",
+ "syn 1.0.62",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]

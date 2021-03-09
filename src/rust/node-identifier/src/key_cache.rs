@@ -1,9 +1,12 @@
-use darkredis::{ConnectionPool, Error as RedisError, MSetBuilder};
-use std::collections::HashMap;
-use tokio::time::error::Elapsed;
-use lazy_static::lazy_static;
+use std::{collections::HashMap,
+          string::FromUtf8Error};
+
+use darkredis::{ConnectionPool,
+                Error as RedisError,
+                MSetBuilder};
 use grapl_utils::future_ext::GraplFutureExt;
-use std::string::FromUtf8Error;
+use lazy_static::lazy_static;
+use tokio::time::error::Elapsed;
 
 lazy_static! {
     /// Timeout for requests to Redis
@@ -19,7 +22,7 @@ pub enum IdentityCacheError {
     #[error("Elapsed")]
     Elapsed(#[from] Elapsed),
     #[error("FromUtf8Error")]
-    FromUtf8Error(#[from] FromUtf8Error)
+    FromUtf8Error(#[from] FromUtf8Error),
 }
 
 pub struct IdentityCache {
@@ -27,7 +30,10 @@ pub struct IdentityCache {
 }
 
 impl IdentityCache {
-    pub async fn resolve_keys(&self, keys: &[String]) -> Result<HashMap<String, String>, IdentityCacheError> {
+    pub async fn resolve_keys(
+        &self,
+        keys: &[String],
+    ) -> Result<HashMap<String, String>, IdentityCacheError> {
         let mut client = self.client_pool.get().await;
         let mut cached_keys = HashMap::new();
         let responses: Vec<std::option::Option<Vec<u8>>> = client
@@ -43,8 +49,11 @@ impl IdentityCache {
         }
         Ok(cached_keys)
     }
-    
-    pub async fn store_keys(&self, identities: &HashMap<String, String>) -> Result<(), IdentityCacheError> {
+
+    pub async fn store_keys(
+        &self,
+        identities: &HashMap<String, String>,
+    ) -> Result<(), IdentityCacheError> {
         let mut client = self.client_pool.get().await;
         let mut mset_builder = MSetBuilder::new();
 
@@ -52,7 +61,10 @@ impl IdentityCache {
             mset_builder = mset_builder.set(key, identity);
         }
 
-        client.mset(mset_builder).timeout(REDIS_REQUEST_TIMEOUT.clone()).await??;
+        client
+            .mset(mset_builder)
+            .timeout(REDIS_REQUEST_TIMEOUT.clone())
+            .await??;
 
         Ok(())
     }

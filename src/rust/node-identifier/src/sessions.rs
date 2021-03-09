@@ -1,6 +1,7 @@
 #![allow(dead_code, unused_variables)]
 use std::{collections::HashMap,
           convert::TryFrom};
+
 use failure::Error;
 use rusoto_dynamodb::AttributeValue;
 use serde::{Deserialize,

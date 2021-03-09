@@ -61,6 +61,29 @@ services:
       - GRAPH_MUTATION_ENDPOINT
       - MG_ALPHAS
 
+  grapl-rust-graph-mutation-service-integration-tests:
+    image: grapl/grapl-graph-mutation-service-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: rust/Dockerfile
+      target: build-test-integration
+      args:
+        - CARGO_PROFILE=debug
+    command: bash -c "
+      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
+      cargo test --manifest-path graph-mutation-service/Cargo.toml --features integration -- --nocapture"
+    environment:
+      - AWS_REGION
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - RUST_LOG=INFO
+      - RUST_BACKTRACE=1
+      - DEPLOYMENT_NAME
+      - IS_LOCAL=True
+      - RETRY_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
+      - SOURCE_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      - MG_ALPHAS
+
+
   grapl-analyzerlib-integration-tests:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
     build:

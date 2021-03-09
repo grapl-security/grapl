@@ -21,7 +21,6 @@ use uuid::Uuid;
 
 use crate::sessions::*;
 
-
 #[derive(Debug, Clone)]
 pub struct SessionDb<D>
 where
@@ -62,7 +61,9 @@ where
             consistent_read: Some(true),
             limit: Some(1),
             table_name: self.table_name.clone(),
-            key_condition_expression: Some("pseudo_key = :pseudo_key AND create_time >= :create_time".to_string()),
+            key_condition_expression: Some(
+                "pseudo_key = :pseudo_key AND create_time >= :create_time".to_string(),
+            ),
             expression_attribute_values: Some(expression_attribute_values),
             ..Default::default()
         };
@@ -103,7 +104,9 @@ where
             limit: Some(1),
             scan_index_forward: Some(false),
             table_name: self.table_name.clone(),
-            key_condition_expression: Some("pseudo_key = :pseudo_key AND create_time <= :create_time".to_string()),
+            key_condition_expression: Some(
+                "pseudo_key = :pseudo_key AND create_time <= :create_time".to_string(),
+            ),
             expression_attribute_values: Some(expression_attribute_values),
             ..Default::default()
         };
@@ -435,7 +438,7 @@ where
             if !session.is_create_canon {
                 info!("Found a later, non canonical session. Extending create_time..");
 
-                self.update_session_create_time( &session, unid.timestamp, false)
+                self.update_session_create_time(&session, unid.timestamp, false)
                     .await?;
                 return Ok(session.session_id);
             }
