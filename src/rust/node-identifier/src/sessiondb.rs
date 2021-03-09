@@ -17,7 +17,6 @@ use rusoto_dynamodb::{AttributeValue,
                       TransactWriteItem,
                       TransactWriteItemsInput,
                       UpdateItemInput};
-use uuid::Uuid;
 
 use crate::sessions::*;
 use crate::node_allocator::NodeAllocator;

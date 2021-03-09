@@ -1,4 +1,3 @@
-#![allow(warnings)]
 use std::{collections::{HashMap,
                         HashSet},
           fmt::Debug,
@@ -55,9 +54,9 @@ pub mod node_allocator;
 
 #[derive(Clone)]
 pub struct NodeIdentifier<D, CacheT>
-where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        D: DynamoDb + Clone + Send + Sync + 'static,
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
     dynamic_identifier: NodeDescriptionIdentifier<D>,
     node_id_db: D,
@@ -66,9 +65,9 @@ where
 }
 
 impl<D, CacheT> NodeIdentifier<D, CacheT>
-where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        D: DynamoDb + Clone + Send + Sync + 'static,
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
     pub fn new(
         dynamic_identifier: NodeDescriptionIdentifier<D>,
@@ -84,13 +83,11 @@ where
         }
     }
 
-    // todo: We should be yielding IdentifiedNode's here
     async fn attribute_node_key(&self, node: &NodeDescription) -> Result<IdentifiedNode, Error> {
-        let new_node = self
+        self
             .dynamic_identifier
             .attribute_dynamic_node(&node)
-            .await?;
-        todo!("generated an identified node")
+            .await
     }
 }
 
@@ -108,9 +105,9 @@ impl CheckedError for NodeIdentifierError {
 
 #[async_trait]
 impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
-where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    where
+        D: DynamoDb + Clone + Send + Sync + 'static,
+        CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GraphDescription;
     type OutputEvent = IdentifiedGraph;
@@ -129,20 +126,6 @@ where
             warn!("Received empty subgraph");
             return Ok(IdentifiedGraph::new());
         }
-
-        let edges: HashSet<_> = unid_subgraph
-            .edges
-            .values()
-            .map(|e| e.edges.iter())
-            .flatten()
-            .map(|e| e.edge_name.as_str())
-            .collect();
-
-        info!(
-            "unid_subgraph: {} nodes {} edges",
-            unid_subgraph.nodes.len(),
-            unid_subgraph.edges.len(),
-        );
 
         let mut dead_node_ids = HashSet::new();
         let mut unid_id_map = HashMap::new();
@@ -276,7 +259,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
             MetricReporter::new(&env.service_name),
         )
     })
-    .await;
+        .await;
 
     let mutation_endpoint = grapl_config::mutation_endpoint();
 
@@ -284,10 +267,10 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
         GraphMutationRpcClient::connect(mutation_endpoint)
             .await
             .expect("Failed to connect to graph-mutation-service");
-
+    let node_allocator = NodeAllocator { mutation_client };
     let dynamo = DynamoDbClient::from_env();
-    let dyn_session_db = SessionDb::new(dynamo.clone(), NodeAllocator { mutation_client },grapl_config::dynamic_session_table_name());
-    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::from_env());
+    let dyn_session_db = SessionDb::new(dynamo.clone(), node_allocator.clone(), grapl_config::dynamic_session_table_name());
+    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::from_env(), node_allocator);
 
     let dyn_node_identifier =
         NodeDescriptionIdentifier::new(dyn_session_db, dyn_mapping_db, should_default);
@@ -300,7 +283,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
             cache[0].to_owned(),
         )
     })
-    .await;
+        .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
@@ -314,7 +297,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
         serializer,
         MetricReporter::new(&env.service_name),
     )
-    .await;
+        .await;
 
     info!("Exiting");
     Ok(())

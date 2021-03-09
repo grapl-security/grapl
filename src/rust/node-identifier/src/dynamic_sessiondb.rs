@@ -1,13 +1,11 @@
-use std::collections::{HashMap,
-                       HashSet};
+use std::collections::{HashMap};
 
 use failure::{bail,
               Error};
 use grapl_graph_descriptions::graph_description::{id_strategy,
                                                   Session as SessionStrategy,
                                                   *};
-use log::{info,
-          warn};
+use log::{info};
 use rusoto_dynamodb::{AttributeValue,
                       DynamoDb,
                       GetItemInput,
@@ -17,35 +15,37 @@ use serde::{Deserialize,
 
 use crate::{sessiondb::SessionDb,
             sessions::UnidSession};
+use crate::node_allocator::NodeAllocator;
 
 #[derive(Debug, Clone)]
 pub struct DynamicMappingDb<D>
-where
-    D: DynamoDb,
+    where
+        D: DynamoDb,
 {
     dyn_mapping_db: D,
+    node_allocator: NodeAllocator,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResolvedMapping {
-    pub mapping: String,
+    pub mapping: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DirectMapping {
     pub pseudo_key: String,
-    pub mapping: String,
+    pub mapping: u64,
 }
 
 impl<D> DynamicMappingDb<D>
-where
-    D: DynamoDb,
+    where
+        D: DynamoDb,
 {
-    pub fn new(dyn_mapping_db: D) -> Self {
-        Self { dyn_mapping_db }
+    pub fn new(dyn_mapping_db: D, node_allocator: NodeAllocator) -> Self {
+        Self { dyn_mapping_db, node_allocator }
     }
 
-    pub async fn direct_map(&self, input: &str) -> Result<Option<String>, Error> {
+    pub async fn direct_map(&self, input: &str) -> Result<Option<u64>, Error> {
         let mut key: HashMap<String, AttributeValue> = HashMap::new();
 
         key.insert(
@@ -74,7 +74,7 @@ where
         }
     }
 
-    pub async fn create_mapping(&self, input: String, maps_to: String) -> Result<(), Error> {
+    pub async fn create_mapping(&self, input: String, maps_to: u64) -> Result<(), Error> {
         info!("Creating dynamic mapping for: {} {}", input, maps_to);
         let mapping = DirectMapping {
             pseudo_key: input,
@@ -95,8 +95,8 @@ where
 
 #[derive(Debug, Clone)]
 pub struct NodeDescriptionIdentifier<D>
-where
-    D: DynamoDb,
+    where
+        D: DynamoDb,
 {
     dyn_session_db: SessionDb<D>,
     dyn_mapping_db: DynamicMappingDb<D>,
@@ -104,8 +104,8 @@ where
 }
 
 impl<D> NodeDescriptionIdentifier<D>
-where
-    D: DynamoDb,
+    where
+        D: DynamoDb,
 {
     pub fn new(
         dyn_session_db: SessionDb<D>,
@@ -150,7 +150,7 @@ where
 
     async fn primary_mapping_key(
         &self,
-        node: &mut NodeDescription,
+        node: &NodeDescription,
         strategy: &Static,
     ) -> Result<String, Error> {
         let mut primary_key = String::with_capacity(32);
@@ -179,7 +179,7 @@ where
         &self,
         node: NodeDescription,
         strategy: &SessionStrategy,
-    ) -> Result<NodeDescription, Error> {
+    ) -> Result<IdentifiedNode, Error> {
         let mut attributed_node = node.clone();
 
         let primary_key = self
@@ -213,97 +213,64 @@ where
             .handle_unid_session(unid, self.should_guess)
             .await?;
 
-        attributed_node.node_key = session_id;
-
-        Ok(attributed_node)
+        Ok(IdentifiedNode {
+            uid: session_id,
+            node_type: attributed_node.node_type,
+            properties: attributed_node.properties,
+        })
     }
 
     pub async fn attribute_static_mapping(
         &self,
         node: NodeDescription,
         strategy: &Static,
-    ) -> Result<NodeDescription, Error> {
-        let mut attributed_node = node.clone();
+    ) -> Result<IdentifiedNode, Error> {
         let key = self
-            .primary_mapping_key(&mut attributed_node, strategy)
+            .primary_mapping_key(&node, strategy)
             .await?;
 
-        let node_key = self.dyn_mapping_db.direct_map(&key).await?;
+        let uid = self.dyn_mapping_db.direct_map(&key).await?;
 
-        match node_key {
-            Some(node_key) => attributed_node.set_key(node_key),
+        let uid = match uid {
+            Some(uid) => uid,
             None => {
                 // Static mappings don't need to be guessed, if
                 // we don't find it just make it
-                let new_id = uuid::Uuid::new_v4().to_string();
+                let new_id = self.dyn_mapping_db.node_allocator.clone().allocate_node(node.node_type.clone()).await?;
                 info!("Creating static mapping for dynamic node");
                 self.dyn_mapping_db
-                    .create_mapping(key, new_id.clone())
+                    .create_mapping(key, new_id)
                     .await?;
-                attributed_node.set_key(new_id)
+                new_id
             }
-        }
+        };
 
-        Ok(attributed_node)
+        Ok(IdentifiedNode {
+            uid,
+            node_type: node.node_type,
+            properties: node.properties,
+        })
     }
 
     pub async fn attribute_dynamic_node(
         &self,
         node: &NodeDescription,
-    ) -> Result<NodeDescription, Error> {
-        let mut attributed_node = node.clone();
+    ) -> Result<IdentifiedNode, Error> {
         let strategy = &node.id_strategy[0];
 
         match strategy.strategy.as_ref().unwrap() {
             id_strategy::Strategy::Session(ref strategy) => {
                 info!("Attributing dynamic node via session");
-                attributed_node = self
-                    .attribute_dynamic_session(attributed_node, &strategy)
-                    .await?;
+                Ok(self
+                    .attribute_dynamic_session(node.clone(), &strategy)
+                    .await?)
             }
             id_strategy::Strategy::Static(ref strategy) => {
                 info!("Attributing dynamic node via static mapping");
-                attributed_node = self
-                    .attribute_static_mapping(attributed_node, &strategy)
-                    .await?;
+                Ok(self
+                    .attribute_static_mapping(node.clone(), &strategy)
+                    .await?)
             }
-        }
-
-        Ok(attributed_node)
-    }
-
-    pub async fn attribute_dynamic_nodes(
-        &self,
-        unid_graph: GraphDescription,
-        _unid_id_map: &mut HashMap<String, String>,
-    ) -> Result<GraphDescription, GraphDescription> {
-        let mut unid_id_map = HashMap::new();
-        let mut dead_nodes: HashSet<&str> = HashSet::new();
-        let mut output_graph = GraphDescription::new();
-        output_graph.edges = unid_graph.edges;
-
-        for node in unid_graph.nodes.values() {
-            let new_node = match self.attribute_dynamic_node(&node).await {
-                Ok(node) => node,
-                Err(e) => {
-                    warn!("Failed to attribute dynamic node: {}", e);
-                    dead_nodes.insert(node.node_key.as_ref());
-                    continue;
-                }
-            };
-
-            info!("Attributed NodeDescription");
-
-            unid_id_map.insert(node.clone_node_key(), new_node.clone_node_key());
-            output_graph.add_node(new_node);
-        }
-
-        if dead_nodes.is_empty() {
-            info!("Attributed all dynamic nodes");
-            Ok(output_graph)
-        } else {
-            warn!("Failed to attribute {} dynamic nodes", dead_nodes.len());
-            Err(output_graph)
         }
     }
 }

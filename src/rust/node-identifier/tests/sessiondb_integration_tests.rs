@@ -1,299 +1,340 @@
 #![cfg(feature = "integration")]
+pub mod test {
+    use std::time::Duration;
 
-use std::time::Duration;
+    use grapl_config::env_helpers::FromEnv;
+    use node_identifier::{sessiondb::SessionDb,
+                          sessions::{Session,
+                                     UnidSession}};
+    use quickcheck_macros::quickcheck;
+    use rusoto_core::RusotoError;
+    use rusoto_dynamodb::{AttributeDefinition,
+                          CreateTableError,
+                          CreateTableInput,
+                          CreateTableOutput,
+                          DeleteTableInput,
+                          DynamoDb,
+                          DynamoDbClient,
+                          KeySchemaElement,
+                          ProvisionedThroughput};
+    use tokio::runtime::Runtime;
+    use node_identifier::node_allocator::NodeAllocator;
+    use tonic::transport::Channel;
+    use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient;
 
-use grapl_config::env_helpers::FromEnv;
-use node_identifier::{sessiondb::SessionDb,
-                      sessions::{Session,
-                                 UnidSession}};
-use quickcheck_macros::quickcheck;
-use rusoto_core::RusotoError;
-use rusoto_dynamodb::{AttributeDefinition,
-                      CreateTableError,
-                      CreateTableInput,
-                      CreateTableOutput,
-                      DeleteTableInput,
-                      DynamoDb,
-                      DynamoDbClient,
-                      KeySchemaElement,
-                      ProvisionedThroughput};
-use tokio::runtime::Runtime;
-
-fn init_test_env() {
-    let subscriber = ::tracing_subscriber::FmtSubscriber::builder()
-        .with_env_filter(::tracing_subscriber::EnvFilter::from_default_env())
-        .finish();
-    let _ = ::tracing::subscriber::set_global_default(subscriber);
-}
-
-async fn try_create_table(
-    dynamo: &impl DynamoDb,
-    table_name: String,
-) -> Result<CreateTableOutput, RusotoError<CreateTableError>> {
-    dynamo
-        .create_table(CreateTableInput {
-            table_name,
-            attribute_definitions: vec![
-                AttributeDefinition {
-                    attribute_name: "pseudo_key".into(),
-                    attribute_type: "S".into(),
-                },
-                AttributeDefinition {
-                    attribute_name: "create_time".into(),
-                    attribute_type: "N".into(),
-                },
-            ],
-            key_schema: vec![
-                KeySchemaElement {
-                    attribute_name: "pseudo_key".into(),
-                    key_type: "HASH".into(),
-                },
-                KeySchemaElement {
-                    attribute_name: "create_time".into(),
-                    key_type: "RANGE".into(),
-                },
-            ],
-            provisioned_throughput: Some(ProvisionedThroughput {
-                read_capacity_units: 3,
-                write_capacity_units: 3,
-            }),
-            ..Default::default()
-        })
-        .await
-}
-
-async fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) {
-    init_test_env();
-
-    let table_name = table_name.into();
-
-    let _ = dynamo
-        .delete_table(DeleteTableInput {
-            table_name: table_name.clone(),
-        })
-        .await;
-
-    tokio::time::sleep(Duration::from_millis(250)).await;
-
-    while let Err(_e) = try_create_table(dynamo, table_name.clone()).await {
-        tokio::time::sleep(Duration::from_millis(250)).await;
+    fn init_test_env() {
+        let subscriber = ::tracing_subscriber::FmtSubscriber::builder()
+            .with_env_filter(::tracing_subscriber::EnvFilter::from_default_env())
+            .finish();
+        let _ = ::tracing::subscriber::set_global_default(subscriber);
     }
-}
 
-// Given an empty timeline
+    async fn try_create_table(
+        dynamo: &impl DynamoDb,
+        table_name: String,
+    ) -> Result<CreateTableOutput, RusotoError<CreateTableError>> {
+        dynamo
+            .create_table(CreateTableInput {
+                table_name,
+                attribute_definitions: vec![
+                    AttributeDefinition {
+                        attribute_name: "pseudo_key".into(),
+                        attribute_type: "S".into(),
+                    },
+                    AttributeDefinition {
+                        attribute_name: "create_time".into(),
+                        attribute_type: "N".into(),
+                    },
+                ],
+                key_schema: vec![
+                    KeySchemaElement {
+                        attribute_name: "pseudo_key".into(),
+                        key_type: "HASH".into(),
+                    },
+                    KeySchemaElement {
+                        attribute_name: "create_time".into(),
+                        key_type: "RANGE".into(),
+                    },
+                ],
+                provisioned_throughput: Some(ProvisionedThroughput {
+                    read_capacity_units: 3,
+                    write_capacity_units: 3,
+                }),
+                ..Default::default()
+            })
+            .await
+    }
+
+    async fn create_or_empty_table(dynamo: &impl DynamoDb, table_name: impl Into<String>) {
+        init_test_env();
+
+        let table_name = table_name.into();
+
+        let _ = dynamo
+            .delete_table(DeleteTableInput {
+                table_name: table_name.clone(),
+            })
+            .await;
+
+        tokio::time::sleep(Duration::from_millis(250)).await;
+
+        while let Err(_e) = try_create_table(dynamo, table_name.clone()).await {
+            tokio::time::sleep(Duration::from_millis(250)).await;
+        }
+    }
+
+    // Given an empty timeline
 // When a canonical creation event comes in
 // Then the newly created session should be in the timeline
-#[quickcheck]
-fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
-    init_test_env();
-    let runtime = Runtime::new().unwrap();
+    #[quickcheck]
+    fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
+        init_test_env();
+        let runtime = Runtime::new().unwrap();
 
-    let table_name = "process_history_canon_create_on_empty_timeline";
-    let dynamo = DynamoDbClient::from_env();
+        let table_name = "process_history_canon_create_on_empty_timeline";
+        let dynamo = DynamoDbClient::from_env();
 
-    runtime.block_on(create_or_empty_table(&dynamo, table_name));
+        runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
-    let session_db = SessionDb::new(dynamo, table_name);
+        let mutation_endpoint = grapl_config::mutation_endpoint();
+        let mutation_client: GraphMutationRpcClient<Channel> =
+            runtime.block_on(GraphMutationRpcClient::connect(mutation_endpoint))
+                .expect("Failed to connect to graph-mutation-service");
+        let node_allocator = NodeAllocator { mutation_client };
+        let session_db = SessionDb::new(dynamo, node_allocator,table_name);
 
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1544301484600,
-        is_creation: true,
-    };
+        let unid = UnidSession {
+            pseudo_key: format!("{}{}", asset_id, pid),
+            node_type: "Process".to_string(),
+            timestamp: 1544301484600,
+            is_creation: true,
+        };
 
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, false))
-        .expect("Failed to create session");
+        let session_id = runtime
+            .block_on(session_db.handle_unid_session(unid, false))
+            .expect("Failed to create session");
 
-    assert!(!session_id.is_empty());
-}
+        assert_ne!(session_id, 0);
+    }
 
-// Given a timeline with a single session, where that session has a non canon
+    // Given a timeline with a single session, where that session has a non canon
 //      creation time 'X'
 // When a canonical creation event comes in with a creation time of 'Y'
 //      where 'Y' < 'X'
 // Then the session should be updated to have 'Y' as its canonical create time
-#[quickcheck]
-fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
-    init_test_env();
-    let runtime = Runtime::new().unwrap();
+    #[quickcheck]
+    fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
+        init_test_env();
+        let runtime = Runtime::new().unwrap();
 
-    let table_name = "process_history_canon_create_update_existing_non_canon_create";
-    let dynamo = DynamoDbClient::from_env();
+        let table_name = "process_history_canon_create_update_existing_non_canon_create";
+        let dynamo = DynamoDbClient::from_env();
 
-    runtime.block_on(create_or_empty_table(&dynamo, table_name));
+        runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
-    let session_db = SessionDb::new(dynamo, table_name);
+        let mutation_endpoint = grapl_config::mutation_endpoint();
+        let mutation_client: GraphMutationRpcClient<Channel> =
+            runtime.block_on(GraphMutationRpcClient::connect(mutation_endpoint))
+                .expect("Failed to connect to graph-mutation-service");
+        let node_allocator = NodeAllocator { mutation_client };
+        let session_db = SessionDb::new(dynamo, node_allocator,table_name);
+
+        // Given a timeline with a single session, where that session has a non canon
+        //      creation time 'X'
+        let unid = UnidSession {
+            pseudo_key: format!("{}{}", asset_id, pid),
+            node_type: "Process".to_string(),
+            timestamp: 1_544_301_484_500,
+            is_creation: true,
+        };
+        let session = Session {
+            pseudo_key: format!("{}{}", asset_id, pid),
+            create_time: 1_544_301_484_600,
+            is_create_canon: false,
+            session_id: 1234,
+            is_end_canon: false,
+            end_time: 1_544_301_484_700,
+            version: 0,
+        };
+
+        runtime
+            .block_on(session_db.create_session(&session))
+            .expect("Failed to create session");
+
+        // When a canonical creation event comes in with a creation time of 'Y'
+        //      where 'Y' < 'X'
+        let session_id = runtime
+            .block_on(session_db.handle_unid_session(unid, false))
+            .expect("Failed to handle unid");
+
+        assert_eq!(session_id, 1234);
+    }
 
     // Given a timeline with a single session, where that session has a non canon
-    //      creation time 'X'
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_500,
-        is_creation: true,
-    };
-    let session = Session {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        create_time: 1_544_301_484_600,
-        is_create_canon: false,
-        session_id: "SessionId".into(),
-        is_end_canon: false,
-        end_time: 1_544_301_484_700,
-        version: 0,
-    };
-
-    runtime
-        .block_on(session_db.create_session(&session))
-        .expect("Failed to create session");
-
-    // When a canonical creation event comes in with a creation time of 'Y'
-    //      where 'Y' < 'X'
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, false))
-        .expect("Failed to handle unid");
-
-    assert_eq!(session_id, "SessionId");
-}
-
-// Given a timeline with a single session, where that session has a non canon
 //      creation time 'X'
 // When a noncanonical creation event comes in with a creation time of 'Y'
 //      where 'Y' < 'X'
 // Then the session should be updated to have 'Y' as its noncanonical create time
-#[quickcheck]
-fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
-    init_test_env();
-    let runtime = Runtime::new().unwrap();
+    #[quickcheck]
+    fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
+        init_test_env();
+        let runtime = Runtime::new().unwrap();
 
-    let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
-    let dynamo = DynamoDbClient::from_env();
+        let table_name = "process_history_noncanon_create_update_existing_non_canon_create";
+        let dynamo = DynamoDbClient::from_env();
 
-    runtime.block_on(create_or_empty_table(&dynamo, table_name));
+        runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
-    let session_db = SessionDb::new(dynamo, table_name);
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_500,
-        is_creation: false,
-    };
+        let mutation_endpoint = grapl_config::mutation_endpoint();
+        let mutation_client: GraphMutationRpcClient<Channel> =
+            runtime.block_on(GraphMutationRpcClient::connect(mutation_endpoint))
+                .expect("Failed to connect to graph-mutation-service");
+        let node_allocator = NodeAllocator { mutation_client };
+        let session_db = SessionDb::new(dynamo, node_allocator,table_name);
 
-    // Given a timeline with a single session, where that session has a non canon
-    //      creation time 'X'
-    let session = Session {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        create_time: 1_544_301_484_600,
-        is_create_canon: false,
-        session_id: "SessionId".into(),
-        is_end_canon: false,
-        end_time: 1_544_301_484_700,
-        version: 0,
-    };
+        let unid = UnidSession {
+            pseudo_key: format!("{}{}", asset_id, pid),
+            node_type: "Process".to_string(),
+            timestamp: 1_544_301_484_500,
+            is_creation: false,
+        };
 
-    runtime
-        .block_on(session_db.create_session(&session))
-        .expect("Failed to create session");
+        // Given a timeline with a single session, where that session has a non canon
+        //      creation time 'X'
+        let session = Session {
+            pseudo_key: format!("{}{}", asset_id, pid),
+            create_time: 1_544_301_484_600,
+            is_create_canon: false,
+            session_id: 12345,
+            is_end_canon: false,
+            end_time: 1_544_301_484_700,
+            version: 0,
+        };
 
-    // When a noncanonical creation event comes in with a creation time of 'Y'
-    //      where 'Y' < 'X'
+        runtime
+            .block_on(session_db.create_session(&session))
+            .expect("Failed to create session");
 
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, false))
-        .expect("Failed to handle unid");
+        // When a noncanonical creation event comes in with a creation time of 'Y'
+        //      where 'Y' < 'X'
 
-    // TODO: Assert that the create time was updated correctly
-    assert_eq!(session_id, "SessionId");
-}
+        let session_id = runtime
+            .block_on(session_db.handle_unid_session(unid, false))
+            .expect("Failed to handle unid");
 
-// Given an empty timeline
+        // TODO: Assert that the create time was updated correctly
+        assert_eq!(session_id, 12345);
+    }
+
+    // Given an empty timeline
 // When a noncanon create event comes in and 'should_default' is true
 // Then Create the new noncanon session
-#[quickcheck]
-fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
-    init_test_env();
-    let runtime = Runtime::new().unwrap();
-    let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
-    let dynamo = DynamoDbClient::from_env();
+    #[quickcheck]
+    fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
+        init_test_env();
+        let runtime = Runtime::new().unwrap();
+        let table_name = "process_history_noncanon_create_on_empty_timeline_with_default";
+        let dynamo = DynamoDbClient::from_env();
 
-    runtime.block_on(create_or_empty_table(&dynamo, table_name));
+        runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
-    let session_db = SessionDb::new(dynamo, table_name);
+        let mutation_endpoint = grapl_config::mutation_endpoint();
+        let mutation_client: GraphMutationRpcClient<Channel> =
+            runtime.block_on(GraphMutationRpcClient::connect(mutation_endpoint))
+                .expect("Failed to connect to graph-mutation-service");
+        let node_allocator = NodeAllocator { mutation_client };
+        let session_db = SessionDb::new(dynamo, node_allocator, table_name);
 
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_500,
-        is_creation: false,
-    };
+        let unid = UnidSession {
+            pseudo_key: format!("{}{}", asset_id, pid),
+            node_type: "Process".to_string(),
+            timestamp: 1_544_301_484_500,
+            is_creation: false,
+        };
 
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, true))
-        .expect("Failed to create session");
+        let session_id = runtime
+            .block_on(session_db.handle_unid_session(unid, true))
+            .expect("Failed to create session");
 
-    assert!(!session_id.is_empty());
-}
+        assert_ne!(session_id, 0);
+    }
 
-// Given an empty timeline
+    // Given an empty timeline
 // When a noncanon create event comes in and 'should_default' is false
 // Then return an error
-#[test]
-fn noncanon_create_on_empty_timeline_without_default() {
-    init_test_env();
-    let runtime = Runtime::new().unwrap();
+    #[test]
+    fn noncanon_create_on_empty_timeline_without_default() {
+        init_test_env();
+        let runtime = Runtime::new().unwrap();
 
-    let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
-    let dynamo = DynamoDbClient::from_env();
+        let table_name = "process_history_noncanon_create_on_empty_timeline_without_default";
+        let dynamo = DynamoDbClient::from_env();
 
-    runtime.block_on(create_or_empty_table(&dynamo, table_name));
+        runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
-    let session_db = SessionDb::new(dynamo, table_name);
+        let mutation_endpoint = grapl_config::mutation_endpoint();
+        let mutation_client: GraphMutationRpcClient<Channel> =
+            runtime.block_on(GraphMutationRpcClient::connect(mutation_endpoint))
+                .expect("Failed to connect to graph-mutation-service");
+        let node_allocator = NodeAllocator { mutation_client };
+        let session_db = SessionDb::new(dynamo, node_allocator,table_name);
 
-    let unid = UnidSession {
-        pseudo_key: "asset_id_a1234".into(),
-        timestamp: 1_544_301_484_500,
-        is_creation: false,
-    };
+        let unid = UnidSession {
+            pseudo_key: "asset_id_a1234".into(),
+            node_type: "Process".to_string(),
+            timestamp: 1_544_301_484_500,
+            is_creation: false,
+        };
 
-    let session_id = runtime.block_on(session_db.handle_unid_session(unid, false));
-    assert!(session_id.is_err());
-}
+        let session_id = runtime.block_on(session_db.handle_unid_session(unid, false));
+        assert!(session_id.is_err());
+    }
 
-#[quickcheck]
-fn update_end_time(asset_id: String, pid: u64) {
-    init_test_env();
-    let runtime = Runtime::new().unwrap();
-    let table_name = "process_history_update_end_time";
-    let dynamo = DynamoDbClient::from_env();
+    #[quickcheck]
+    fn update_end_time(asset_id: String, pid: u64) {
+        init_test_env();
+        let runtime = Runtime::new().unwrap();
+        let table_name = "process_history_update_end_time";
+        let dynamo = DynamoDbClient::from_env();
 
-    runtime.block_on(create_or_empty_table(&dynamo, table_name));
+        runtime.block_on(create_or_empty_table(&dynamo, table_name));
 
-    let session_db = SessionDb::new(dynamo, table_name);
-    let unid = UnidSession {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        timestamp: 1_544_301_484_800,
-        is_creation: false,
-    };
+        let mutation_endpoint = grapl_config::mutation_endpoint();
+        let mutation_client: GraphMutationRpcClient<Channel> =
+            runtime.block_on(GraphMutationRpcClient::connect(mutation_endpoint))
+                .expect("Failed to connect to graph-mutation-service");
+        let node_allocator = NodeAllocator { mutation_client };
+        let session_db = SessionDb::new(dynamo, node_allocator,table_name);
 
-    // Given a timeline with a single session, where that session has a non canon
-    //      end time 'X'
-    let session = Session {
-        pseudo_key: format!("{}{}", asset_id, pid),
-        create_time: 1_544_301_484_600,
-        is_create_canon: false,
-        session_id: "SessionId".into(),
-        is_end_canon: false,
-        end_time: 1_544_301_484_700,
-        version: 0,
-    };
+        let unid = UnidSession {
+            pseudo_key: format!("{}{}", asset_id, pid),
+            node_type: "Process".to_string(),
+            timestamp: 1_544_301_484_800,
+            is_creation: false,
+        };
 
-    runtime
-        .block_on(session_db.create_session(&session))
-        .expect("Failed to create session");
+        // Given a timeline with a single session, where that session has a non canon
+        //      end time 'X'
+        let session = Session {
+            pseudo_key: format!("{}{}", asset_id, pid),
+            create_time: 1_544_301_484_600,
+            is_create_canon: false,
+            session_id: 12345,
+            is_end_canon: false,
+            end_time: 1_544_301_484_700,
+            version: 0,
+        };
 
-    // When a canonical creation event comes in with an end time of 'Y'
-    //      where 'Y' < 'X'
+        runtime
+            .block_on(session_db.create_session(&session))
+            .expect("Failed to create session");
 
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, false))
-        .expect("Failed to handle unid");
+        // When a canonical creation event comes in with an end time of 'Y'
+        //      where 'Y' < 'X'
+        let session_id = runtime
+            .block_on(session_db.handle_unid_session(unid, false))
+            .expect("Failed to handle unid");
 
-    assert_eq!(session_id, "SessionId");
+        assert_eq!(session_id, 12345);
+    }
 }

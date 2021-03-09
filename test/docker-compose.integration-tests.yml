@@ -37,6 +37,7 @@ services:
       - DYNAMODB_ENDPOINT
       - DYNAMODB_ACCESS_KEY_ID
       - DYNAMODB_ACCESS_KEY_SECRET
+      - GRAPH_MUTATION_ENDPOINT
 
   grapl-rust-graph-merger-integration-tests:
     image: grapl/grapl-graph-merger-test:${TAG:-latest}
@@ -82,6 +83,7 @@ services:
       - RETRY_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
       - SOURCE_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
       - MG_ALPHAS
+      - GRAPH_MUTATION_ENDPOINT
 
 
   grapl-analyzerlib-integration-tests:

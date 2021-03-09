@@ -33,6 +33,7 @@ impl UpsertManager {
         let mutation = self.node_upsert_generator.generate_create_node(node_type);
         let txn = self.dgraph_client.new_mutated_txn();
         let res = txn.mutate_and_commit_now(mutation).await?;
+        tracing::debug!(message="create_node.MutationResponse", res=?res);
         let uid = res.uids.into_iter().next().expect("missing uid").0;
         Ok(uid_from_str(&uid)?)
     }

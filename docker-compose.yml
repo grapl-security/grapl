@@ -195,6 +195,7 @@ services:
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
       <<: *sqs-env
       <<: *rust-backtrace
+      GRAPH_MUTATION_ENDPOINT: "${GRAPH_MUTATION_ENDPOINT}"
     tty: false
     depends_on:
       - grapl-provision
@@ -219,6 +220,7 @@ services:
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
       <<: *sqs-env
       <<: *rust-backtrace
+      GRAPH_MUTATION_ENDPOINT: "${GRAPH_MUTATION_ENDPOINT}"
     tty: false
     depends_on:
       - grapl-provision

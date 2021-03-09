@@ -13,8 +13,7 @@ pub mod test {
     use std::{collections::HashMap,
               sync::Arc};
 
-    use dgraph_query_lib::{condition::{Condition,
-                                       ConditionValue},
+    use dgraph_query_lib::{condition::{Condition},
                            predicate::{Field,
                                        Predicate},
                            queryblock::QueryBlockType,
@@ -22,8 +21,7 @@ pub mod test {
                            QueryBlockBuilder,
                            QueryBuilder,
                            ToQueryString};
-    use dgraph_tonic::{Client as DgraphClient,
-                       Query};
+    use dgraph_tonic::{Client as DgraphClient, Query, Channel};
     use graph_merger_lib::service::GraphMerger;
     use grapl_graph_descriptions::{graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient,
                                    *};
@@ -32,37 +30,29 @@ pub mod test {
                        event_handler::{CompletedEvents,
                                        EventHandler}};
 
-    async fn query_for_uid(dgraph_client: Arc<DgraphClient>, node_key: &str) -> u64 {
-        let query_block = QueryBlockBuilder::default()
-            .query_type(QueryBlockType::query())
-            .root_filter(Condition::EQ(
-                format!("node_key"),
-                ConditionValue::string(node_key),
-            ))
-            .predicates(vec![Predicate::Field(Field::new("uid"))])
-            .first(1)
-            .build()
-            .unwrap();
+    use grapl_graph_descriptions::graph_mutation_service::CreateNodeSuccess;
+    use grapl_graph_descriptions::graph_mutation_service::CreateNodeRequest;
+    use grapl_graph_descriptions::graph_mutation_service::create_node_result;
 
-        let query = QueryBuilder::default()
-            .query_blocks(vec![query_block])
-            .build()
-            .unwrap();
+    async fn make_allocator() -> GraphMutationRpcClient<Channel> {
+        let mutation_endpoint = grapl_config::mutation_endpoint();
+        GraphMutationRpcClient::connect(mutation_endpoint).await
+            .expect("Failed to connect to graph-mutation-service")
+    }
 
-        let mut txn = dgraph_client.new_read_only_txn();
-        let response = txn
-            .query(query.to_query_string())
+    async fn create_process(mut mutation_client: GraphMutationRpcClient<Channel>) -> u64 {
+        let res = mutation_client
+            .create_node(CreateNodeRequest {
+                node_type: "Process".to_string(),
+            })
             .await
-            .expect("query failed");
-
-        let m: HashMap<String, Vec<HashMap<String, String>>> =
-            serde_json::from_slice(&response.json).expect("response failed to parse");
-        let m = m.into_iter().next().unwrap().1;
-        debug_assert!((m.len() == 1) || (m.len() == 0));
-
-        let uid = &m[0]["uid"][2..];
-        let uid = u64::from_str_radix(uid, 16).expect("uid is not valid hex");
-        uid
+            .expect("Failed to create node");
+        match res
+            .into_inner()
+            .rpc_result
+            .unwrap() {
+            create_node_result::RpcResult::Created(CreateNodeSuccess { uid }) => uid,
+        }
     }
 
     async fn query_for_edge(
@@ -113,6 +103,8 @@ pub mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_edge_and_retrieve() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
+        let node_allocator = make_allocator().await;
+
         let mutation_endpoint = grapl_config::mutation_endpoint();
         tracing::debug!(message="Connecting to GraphMutationService", endpoint=?mutation_endpoint);
 
@@ -136,8 +128,9 @@ pub mod test {
         );
 
         let mut identified_graph = IdentifiedGraph::new();
-        let node_key0 = "test_upsert_edge_and_retrieve-node-key0";
-        let node_key1 = "test_upsert_edge_and_retrieve-node-key1";
+
+        let uid0 = create_process(node_allocator.clone()).await;
+        let uid1 = create_process(node_allocator).await;
 
         let mut properties = HashMap::new();
         properties.insert(
@@ -148,7 +141,7 @@ pub mod test {
             .into(),
         );
         let n0 = IdentifiedNode {
-            node_key: node_key0.to_string(),
+            uid: uid0,
             node_type: "Process".to_string(),
             properties,
         };
@@ -163,7 +156,7 @@ pub mod test {
         );
 
         let n1 = IdentifiedNode {
-            node_key: node_key1.to_string(),
+            uid: uid1,
             node_type: "Process".to_string(),
             properties,
         };
@@ -173,14 +166,14 @@ pub mod test {
 
         identified_graph.add_edge(
             "children".to_string(),
-            node_key0.to_string(),
-            node_key1.to_string(),
+            uid0,
+            uid1,
         );
 
         identified_graph.add_edge(
             "parent".to_string(),
-            node_key0.to_string(),
-            node_key1.to_string(),
+            uid0,
+            uid1,
         );
 
         let _merged_graph = graph_merger
@@ -188,15 +181,9 @@ pub mod test {
             .await
             .expect("Failed to merged graph");
 
-        let node_uid_0 = query_for_uid(dgraph_client.clone(), node_key0).await;
-        let node_uid_1 = query_for_uid(dgraph_client.clone(), node_key1).await;
-        assert_ne!(node_uid_0, node_uid_1);
-        assert_ne!(node_uid_0, 0);
-        assert_ne!(node_uid_1, 0);
+        let to_many_res = query_for_edge(dgraph_client.clone(), uid0, "children").await;
 
-        let to_many_res = query_for_edge(dgraph_client.clone(), node_uid_0, "children").await;
-
-        let to_single_res = query_for_edge(dgraph_client.clone(), node_uid_1, "parent").await;
+        let to_single_res = query_for_edge(dgraph_client.clone(), uid1, "parent").await;
 
         let to_many_res = to_many_res
             .as_object()
@@ -227,6 +214,8 @@ pub mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_idempotency() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
+        let node_allocator = make_allocator().await;
+        let uid = create_process(node_allocator).await;
         let mutation_endpoint = grapl_config::mutation_endpoint();
         tracing::debug!(message="Connecting to GraphMutationService", endpoint=?mutation_endpoint);
 
@@ -244,12 +233,6 @@ pub mod test {
         )
         .await;
 
-        let mg_alphas = grapl_config::mg_alphas();
-        let dgraph_client = std::sync::Arc::new(
-            DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."),
-        );
-
-        let node_key = "test_upsert_idempotency-example-node-key";
         let mut properties = HashMap::new();
         properties.insert(
             "process_name".to_string(),
@@ -259,7 +242,7 @@ pub mod test {
             .into(),
         );
         let n0 = IdentifiedNode {
-            node_key: node_key.to_string(),
+            uid,
             node_type: "Process".to_string(),
             properties,
         };
@@ -290,39 +273,14 @@ pub mod test {
             assert_eq!(merged_graph.nodes.len(), 1);
         }
 
-        // If we query for multiple nodes by node_key we should only ever receive one
-        let query_block = QueryBlockBuilder::default()
-            .query_type(QueryBlockType::query())
-            .root_filter(Condition::EQ(
-                format!("node_key"),
-                ConditionValue::string(node_key),
-            ))
-            .predicates(vec![Predicate::Field(Field::new("uid"))])
-            .first(2)
-            .build()
-            .unwrap();
-
-        let query = QueryBuilder::default()
-            .query_blocks(vec![query_block])
-            .build()
-            .unwrap();
-
-        let mut txn = dgraph_client.new_read_only_txn();
-        let response = txn
-            .query(query.to_query_string())
-            .await
-            .expect("query failed");
-
-        let m: HashMap<String, Vec<HashMap<String, String>>> =
-            serde_json::from_slice(&response.json).expect("response failed to parse");
-        let m = m.into_iter().next().unwrap().1;
-        debug_assert_eq!(m.len(), 1);
         Ok(())
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_multifield() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
+        let node_allocator = make_allocator().await;
+        let uid = create_process(node_allocator).await;
         let mutation_endpoint = grapl_config::mutation_endpoint();
         tracing::debug!(message="Connecting to GraphMutationService", endpoint=?mutation_endpoint);
 
@@ -340,12 +298,6 @@ pub mod test {
         )
         .await;
 
-        let mg_alphas = grapl_config::mg_alphas();
-        let dgraph_client = std::sync::Arc::new(
-            DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."),
-        );
-
-        let node_key = "test_upsert_multifield-example-node-key";
         let mut properties = HashMap::new();
         properties.insert(
             "process_name".to_string(),
@@ -355,7 +307,7 @@ pub mod test {
             .into(),
         );
         let n0 = IdentifiedNode {
-            node_key: node_key.to_string(),
+            uid,
             node_type: "Process".to_string(),
             properties,
         };
@@ -367,42 +319,6 @@ pub mod test {
             .await
             .expect("Failed to merged graph");
 
-        // If we query for multiple nodes by node_key we should only ever receive one
-        let query_block = QueryBlockBuilder::default()
-            .query_type(QueryBlockType::query())
-            .root_filter(Condition::EQ(
-                format!("node_key"),
-                ConditionValue::string(node_key),
-            ))
-            .predicates(vec![
-                Predicate::Field(Field::new("uid")),
-                Predicate::Field(Field::new("process_name")),
-            ])
-            // .first(2)
-            .build()
-            .unwrap();
-
-        let query = QueryBuilder::default()
-            .query_blocks(vec![query_block])
-            .build()
-            .unwrap();
-
-        let mut txn = dgraph_client.new_read_only_txn();
-        let response = txn
-            .query(query.to_query_string())
-            .await
-            .expect("query failed");
-
-        let m: HashMap<String, Vec<HashMap<String, String>>> =
-            serde_json::from_slice(&response.json).expect("response failed to parse");
-        let mut m = m.into_iter().next().unwrap().1;
-        debug_assert_eq!(m.len(), 1);
-        let mut m = m.remove(0);
-        let _uid = m.remove("uid").expect("uid");
-
-        let process_name = m.remove("process_name").expect("process_name");
-        assert!(m.is_empty());
-        assert_eq!(process_name, "test_upsert_multifield");
         Ok(())
     }
 }

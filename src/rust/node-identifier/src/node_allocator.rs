@@ -13,7 +13,7 @@ pub enum NodeAllocatorError {
 
 #[derive(Clone, Debug)]
 pub struct NodeAllocator {
-    pub(crate) mutation_client: GraphMutationRpcClient<Channel>,
+    pub mutation_client: GraphMutationRpcClient<Channel>,
 }
 
 impl NodeAllocator {
@@ -31,7 +31,6 @@ impl NodeAllocator {
             .rpc_result
             .unwrap() {
             create_node_result::RpcResult::Created(CreateNodeSuccess { uid }) => Ok(uid),
-            _ => panic!("Failed")
         }
     }
 }
