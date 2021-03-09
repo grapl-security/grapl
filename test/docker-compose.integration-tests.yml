@@ -58,7 +58,7 @@ services:
       - IS_LOCAL=True
       - RETRY_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
       - SOURCE_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
-      - MUTATION_ENDPOINT="http://${GRAPH_MUTATION_HOST}:${GRAPH_MUTATION_PORT}"
+      - MUTATION_ENDPOINT
       - MG_ALPHAS
 
   grapl-analyzerlib-integration-tests:
