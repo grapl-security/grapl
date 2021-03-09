@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Optional
 import boto3
 import click
 from graplctl import __version__, common, dgraph_ops, docker_swarm_ops
-from graplctl.common import GraplctlState
+from graplctl.common import GraplctlState, pass_graplctl_state
 from graplctl.queues.commands import queues
 
 if TYPE_CHECKING:
@@ -306,7 +306,7 @@ def _create_swarm(
     help="unique ID for this swarm cluster (random default)",
     default=str(uuid.uuid4()),
 )
-@click.pass_obj
+@pass_graplctl_state
 def create_swarm(
     graplctl_state: GraplctlState,
     num_managers: int,
@@ -324,7 +324,7 @@ def create_swarm(
 
 
 @swarm.command(help="list swarm IDs for each of the swarm clusters")
-@click.pass_obj
+@pass_graplctl_state
 def ls(graplctl_state: GraplctlState):
     for swarm_id in docker_swarm_ops.swarm_ids(
         ec2=EC2,
@@ -343,7 +343,7 @@ def ls(graplctl_state: GraplctlState):
     help="unique ID of the swarm cluster",
     required=True,
 )
-@click.pass_obj
+@pass_graplctl_state
 def managers(graplctl_state: GraplctlState, swarm_id: str):
     for manager_instance in docker_swarm_ops.swarm_instances(
         ec2=EC2,
@@ -365,7 +365,7 @@ def managers(graplctl_state: GraplctlState, swarm_id: str):
     required=True,
 )
 @click.confirmation_option(prompt="are you sure you want to destroy the swarm cluster?")
-@click.pass_obj
+@pass_graplctl_state
 def destroy(graplctl_state: GraplctlState, swarm_id: str):
     for instance in docker_swarm_ops.swarm_instances(
         ec2=EC2,
@@ -387,7 +387,7 @@ def destroy(graplctl_state: GraplctlState, swarm_id: str):
     required=True,
 )
 @click.argument("command", nargs=-1, type=click.STRING)
-@click.pass_obj
+@pass_graplctl_state
 def exec_(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
     click.echo(
         docker_swarm_ops.exec_(
@@ -431,7 +431,7 @@ def exec_(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
     help="unique ID of the swarm cluster",
     required=True,
 )
-@click.pass_obj
+@pass_graplctl_state
 def scale(
     graplctl_state: GraplctlState,
     num_managers: int,
@@ -609,7 +609,7 @@ def dgraph():
     help="EC2 instance type for swarm nodes",
     required=True,
 )
-@click.pass_obj
+@pass_graplctl_state
 def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
     swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
     click.echo(f"creating swarm {swarm_id}")
@@ -704,8 +704,8 @@ def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
 @click.confirmation_option(
     prompt="are you sure you want to remove the DGraph DNS records?"
 )
-@click.pass_obj
-def remove_dns(graplctl_state: GraplctlState, swarm_id: str):
+@pass_graplctl_state
+def remove_dns(graplctl_state: GraplctlState, swarm_id: str) -> None:
     hosted_zone_id = ROUTE53.list_hosted_zones_by_name(
         DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
     )["HostedZones"][0]["Id"]
