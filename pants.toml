@@ -57,7 +57,7 @@ root_patterns = [
 
 [python-setup]
 # Use this as a lockfile; speeds up installation of dependencies
-# To update it, run build-support/generate_constraints.sh
+# To update it, see build-support/manage_virtualenv.sh
 requirement_constraints = "3rdparty/python/constraints.txt"
 interpreter_constraints = ["CPython==3.7.*"]
 
